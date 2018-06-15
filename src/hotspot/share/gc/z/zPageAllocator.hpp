@@ -102,6 +102,7 @@ public:
 
   void flip_pre_mapped();
 
+  bool is_alloc_stalled() const;
   void check_out_of_memory();
 };
 

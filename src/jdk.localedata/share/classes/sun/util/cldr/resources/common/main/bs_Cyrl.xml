@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="bs"/>
 		<script type="Cyrl"/>
 	</identity>
@@ -50,7 +51,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bal">балучи</language>
 			<language type="ban">балинезијски</language>
 			<language type="bas">баса</language>
-			<language type="be">белоруски</language>
+			<language type="be">бјелоруски</language>
 			<language type="bej">беја</language>
 			<language type="bem">бемба</language>
 			<language type="bg">бугарски</language>
@@ -90,14 +91,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="crh">кримеански турски</language>
 			<language type="cs">чешки</language>
 			<language type="csb">кашубијански</language>
-			<language type="cu">старословенски</language>
+			<language type="cu">старославенски</language>
 			<language type="cv">чувашки</language>
 			<language type="cy">велшки</language>
 			<language type="da">дански</language>
 			<language type="dak">дакота</language>
 			<language type="dar">даргва</language>
-			<language type="de">немачки</language>
-			<language type="de_AT">Аустријски немачки</language>
+			<language type="de">њемачки</language>
 			<language type="de_CH">Швајцарски високи немачки</language>
 			<language type="del">делавер</language>
 			<language type="den">славски</language>
@@ -110,6 +110,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="dv">дивехијски</language>
 			<language type="dyu">ђула</language>
 			<language type="dz">џонга</language>
+			<language type="ebu">ембу</language>
 			<language type="ee">еве</language>
 			<language type="efi">ефикски</language>
 			<language type="egy">староегипатски</language>
@@ -117,15 +118,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="el">грчки</language>
 			<language type="elx">еламитски</language>
 			<language type="en">енглески</language>
-			<language type="en_AU">Аустралијски енглески</language>
-			<language type="en_CA">Канадски енглески</language>
-			<language type="en_GB">Британски енглески</language>
-			<language type="en_US">САД енглески</language>
+			<language type="en_GB" alt="short">енглески (УК)</language>
+			<language type="en_US" alt="short">енглески (САД)</language>
 			<language type="enm">средњи енглески</language>
 			<language type="eo">есперанто</language>
 			<language type="es">шпански</language>
-			<language type="es_419">Латино-амерички шпански</language>
-			<language type="es_ES">Иберијски шпански</language>
 			<language type="et">естонски</language>
 			<language type="eu">баскијски</language>
 			<language type="ewo">евондо</language>
@@ -134,13 +131,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="fat">фанти</language>
 			<language type="ff">фулах</language>
 			<language type="fi">фински</language>
-			<language type="fil">тагалог</language>
+			<language type="fil">филипински</language>
 			<language type="fj">фиджијски</language>
 			<language type="fo">фарски</language>
 			<language type="fon">фон</language>
 			<language type="fr">француски</language>
-			<language type="fr_CA">Канадски француски</language>
-			<language type="fr_CH">Швајцарски француски</language>
 			<language type="frm">средњи француски</language>
 			<language type="fro">старофранцуски</language>
 			<language type="frr">северно-фризијски</language>
@@ -163,7 +158,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="got">готски</language>
 			<language type="grb">гребо</language>
 			<language type="grc">старогрчки</language>
-			<language type="gsw">швајцарски немачки</language>
+			<language type="gsw">њемачки (Швицарска)</language>
 			<language type="gu">гуџарати</language>
 			<language type="gv">манкс</language>
 			<language type="gwi">гвич’ин</language>
@@ -181,7 +176,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ht">хаитски</language>
 			<language type="hu">мађарски</language>
 			<language type="hup">хупа</language>
-			<language type="hy">јерменски</language>
+			<language type="hy">ерменски</language>
 			<language type="hz">хереро</language>
 			<language type="ia">интерлингва</language>
 			<language type="iba">ибан</language>
@@ -230,6 +225,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="krl">карелијски</language>
 			<language type="kru">курукх</language>
 			<language type="ks">кашмирски</language>
+			<language type="ksb">шамбала</language>
 			<language type="ku">курдски</language>
 			<language type="kum">кумик</language>
 			<language type="kut">кутенаи</language>
@@ -255,7 +251,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="lun">лунда</language>
 			<language type="luo">луо</language>
 			<language type="lus">лушаи</language>
-			<language type="lv">летонски</language>
+			<language type="lv">латвијски</language>
 			<language type="mad">мадурешки</language>
 			<language type="mag">магахи</language>
 			<language type="mai">маитили</language>
@@ -290,7 +286,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="na">науру</language>
 			<language type="nap">неаполитански</language>
 			<language type="nb">норвешки бокмал</language>
-			<language type="nd">северни ндебеле</language>
+			<language type="nd">сјеверни ндебеле</language>
 			<language type="nds">ниски немачки</language>
 			<language type="ne">непалски</language>
 			<language type="new">невари</language>
@@ -305,7 +301,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="non">стари норски</language>
 			<language type="nqo">н’ко</language>
 			<language type="nr">јужни ндебеле</language>
-			<language type="nso">северни сото</language>
+			<language type="nso">сјеверни сото</language>
 			<language type="nv">навахо</language>
 			<language type="nwc">класични невари</language>
 			<language type="ny">њања</language>
@@ -335,8 +331,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ps">паштунски</language>
 			<language type="ps" alt="variant" draft="contributed">пашто</language>
 			<language type="pt">португалски</language>
-			<language type="pt_BR">Бразилски португалски</language>
-			<language type="pt_PT">Иберијски португалски</language>
 			<language type="qu">квенча</language>
 			<language type="raj">рађастани</language>
 			<language type="rap">рапануи</language>
@@ -360,7 +354,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="scn">сицилијански</language>
 			<language type="sco">шкотски</language>
 			<language type="sd">синди</language>
-			<language type="se">северни сами</language>
+			<language type="se">сјеверни сами</language>
 			<language type="sel">селкап</language>
 			<language type="sg">санго</language>
 			<language type="sga">староирски</language>
@@ -369,7 +363,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="si">сингалески</language>
 			<language type="sid">сидамо</language>
 			<language type="sk">словачки</language>
-			<language type="sl">словеначки</language>
+			<language type="sl">словенски</language>
 			<language type="sm">самоански</language>
 			<language type="sma">јужни сами</language>
 			<language type="smj">луле сами</language>
@@ -428,7 +422,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="uga">угаритски</language>
 			<language type="uk">украјински</language>
 			<language type="umb">умбунду</language>
-			<language type="und">непознат или неважећи језик</language>
+			<language type="und">непознати језик</language>
 			<language type="ur">урду</language>
 			<language type="uz">узбечки</language>
 			<language type="vai">ваи</language>
@@ -452,6 +446,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zap">запотечки</language>
 			<language type="zbl">блисимболи</language>
 			<language type="zen">зенага</language>
+			<language type="zgh">стандардни марокански тамазигт</language>
 			<language type="zh">кинески</language>
 			<language type="zh_Hans">кинески (поједностављен)</language>
 			<language type="zh_Hant">кинески (традиционални)</language>
@@ -483,7 +478,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Cirt">цирт писмо</script>
 			<script type="Copt">коптичко писмо</script>
 			<script type="Cprt">кипарско писмо</script>
-			<script type="Cyrl">Ћирилица</script>
+			<script type="Cyrl">ћирилица</script>
 			<script type="Cyrs">Старословенска црквена ћирилица</script>
 			<script type="Deva">Деванагари</script>
 			<script type="Dsrt">Дезерет</script>
@@ -512,6 +507,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung">старомађарско писмо</script>
 			<script type="Inds">индушко писмо</script>
 			<script type="Ital">стари италик</script>
+			<script type="Jamo" draft="contributed">Џамо</script>
 			<script type="Java">јаванско писмо</script>
 			<script type="Jpan">јапанско писмо</script>
 			<script type="Kali">кајах-ли писмо</script>
@@ -525,7 +521,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Laoo">лаошко писмо</script>
 			<script type="Latf">латиница (фрактур варијанта)</script>
 			<script type="Latg">галска латиница</script>
-			<script type="Latn">Латиница</script>
+			<script type="Latn">латиница</script>
 			<script type="Lepc">лепча писмо</script>
 			<script type="Limb">лимбу писмо</script>
 			<script type="Lina">линеарно А писмо</script>
@@ -590,12 +586,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Zinh">наследно писмо</script>
 			<script type="Zmth">математичка нотација</script>
 			<script type="Zsym">симболи</script>
-			<script type="Zxxx">Неписани језик</script>
+			<script type="Zxxx">неписани језик</script>
 			<script type="Zyyy">заједничко писмо</script>
-			<script type="Zzzz">Непознато или неважеће писмо</script>
+			<script type="Zzzz">непознато писмо</script>
 		</scripts>
 		<territories>
-			<territory type="001">Свет</territory>
+			<territory type="001">Свијет</territory>
 			<territory type="002">Африка</territory>
 			<territory type="003">Северноамерички континент</territory>
 			<territory type="005">Јужна Америка</territory>
@@ -603,7 +599,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="011">Западна Африка</territory>
 			<territory type="013">Централна Америка</territory>
 			<territory type="014">Источна Африка</territory>
-			<territory type="015">Северна Африка</territory>
+			<territory type="015">Сјеверна Африка</territory>
 			<territory type="017">Централна Африка</territory>
 			<territory type="018">Јужна Африка</territory>
 			<territory type="019">Америке</territory>
@@ -622,17 +618,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="145">Западна Азија</territory>
 			<territory type="150">Европа</territory>
 			<territory type="151">Источна Европа</territory>
-			<territory type="154">Северна Европа</territory>
+			<territory type="154">Сјеверна Европа</territory>
 			<territory type="155">Западна Европа</territory>
 			<territory type="419">Латинска Америка</territory>
 			<territory type="AC">Острво Асенсион</territory>
 			<territory type="AD">Андора</territory>
 			<territory type="AE">Уједињени Арапски Емирати</territory>
-			<territory type="AF">Авганистан</territory>
+			<territory type="AF">Афганистан</territory>
 			<territory type="AG">Антигва и Барбуда</territory>
 			<territory type="AI">Ангвила</territory>
 			<territory type="AL">Албанија</territory>
-			<territory type="AM">Арменија</territory>
+			<territory type="AM">Ерменија</territory>
 			<territory type="AO">Ангола</territory>
 			<territory type="AQ">Антарктик</territory>
 			<territory type="AR">Аргентина</territory>
@@ -640,7 +636,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="AT">Аустрија</territory>
 			<territory type="AU">Аустралија</territory>
 			<territory type="AW">Аруба</territory>
-			<territory type="AX">Аландска острва</territory>
+			<territory type="AX">Оландска острва</territory>
 			<territory type="AZ">Азербејџан</territory>
 			<territory type="BA">Босна и Херцеговина</territory>
 			<territory type="BB">Барбадос</territory>
@@ -652,25 +648,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BI">Бурунди</territory>
 			<territory type="BJ">Бенин</territory>
 			<territory type="BL">Свети Бартоломеј</territory>
-			<territory type="BM">Бермуда</territory>
+			<territory type="BM">Бермуди</territory>
 			<territory type="BN">Брунеј</territory>
 			<territory type="BO">Боливија</territory>
+			<territory type="BQ">Карипска Холандија</territory>
 			<territory type="BR">Бразил</territory>
 			<territory type="BS">Бахами</territory>
 			<territory type="BT">Бутан</territory>
-			<territory type="BV">Буве Острва</territory>
+			<territory type="BV">Острво Буве</territory>
 			<territory type="BW">Боцвана</territory>
-			<territory type="BY">Белорусија</territory>
-			<territory type="BZ">Белизе</territory>
+			<territory type="BY">Бјелорусија</territory>
+			<territory type="BZ">Белиз</territory>
 			<territory type="CA">Канада</territory>
 			<territory type="CC">Кокос (Келинг) Острва</territory>
-			<territory type="CD">Конго - Киншаса</territory>
-			<territory type="CD" alt="variant" draft="contributed">Конго (ДРК)</territory>
-			<territory type="CF">Централно Афричка Република</territory>
-			<territory type="CG">Конго - Бразавил</territory>
-			<territory type="CG" alt="variant" draft="contributed">Конго (Република)</territory>
-			<territory type="CH">Швајцарска</territory>
+			<territory type="CD">Демократска Република Конго</territory>
+			<territory type="CD" alt="variant">ДР Конго</territory>
+			<territory type="CF">Средњоафричка Република</territory>
+			<territory type="CG">Конго</territory>
+			<territory type="CG" alt="variant">Република Конго</territory>
+			<territory type="CH">Швицарска</territory>
 			<territory type="CI">Обала Слоноваче</territory>
+			<territory type="CI" alt="variant">Обала Бјелокости</territory>
 			<territory type="CK">Кукова Острва</territory>
 			<territory type="CL">Чиле</territory>
 			<territory type="CM">Камерун</territory>
@@ -679,11 +677,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CP">Острво Клипертон</territory>
 			<territory type="CR">Костарика</territory>
 			<territory type="CU">Куба</territory>
-			<territory type="CV">Капе Верде</territory>
-			<territory type="CX">Божићна острва</territory>
+			<territory type="CV">Зеленортска Острва</territory>
+			<territory type="CW">Курасао</territory>
+			<territory type="CX">Божићно острво</territory>
 			<territory type="CY">Кипар</territory>
 			<territory type="CZ">Чешка</territory>
-			<territory type="DE">Немачка</territory>
+			<territory type="CZ" alt="variant">Чешка Република</territory>
+			<territory type="DE">Њемачка</territory>
 			<territory type="DG">Дијего Гарсија</territory>
 			<territory type="DJ">Џибути</territory>
 			<territory type="DK">Данска</territory>
@@ -698,34 +698,36 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ER">Еритреја</territory>
 			<territory type="ES">Шпанија</territory>
 			<territory type="ET">Етиопија</territory>
-			<territory type="EU">Европска Унија</territory>
+			<territory type="EU">Европска унија</territory>
+			<territory type="EZ">Еурозона</territory>
 			<territory type="FI">Финска</territory>
 			<territory type="FJ">Фиџи</territory>
 			<territory type="FK">Фокландска острва</territory>
 			<territory type="FK" alt="variant">Фокландска (Малвинска) острва</territory>
 			<territory type="FM">Микронезија</territory>
-			<territory type="FO">Фарска Острва</territory>
+			<territory type="FO">Фарска острва</territory>
 			<territory type="FR">Француска</territory>
 			<territory type="GA">Габон</territory>
-			<territory type="GB">Велика Британија</territory>
+			<territory type="GB">Уједињено Краљевство</territory>
+			<territory type="GB" alt="short">УК</territory>
 			<territory type="GD">Гренада</territory>
 			<territory type="GE">Грузија</territory>
 			<territory type="GF">Француска Гвајана</territory>
-			<territory type="GG">Гурнси</territory>
+			<territory type="GG">Гернзи</territory>
 			<territory type="GH">Гана</territory>
 			<territory type="GI">Гибралтар</territory>
 			<territory type="GL">Гренланд</territory>
 			<territory type="GM">Гамбија</territory>
 			<territory type="GN">Гвинеја</territory>
 			<territory type="GP">Гваделупе</territory>
-			<territory type="GQ">Екваторијална Гвинеја</territory>
+			<territory type="GQ">Екваторска Гвинеја</territory>
 			<territory type="GR">Грчка</territory>
 			<territory type="GS">Јужна Џорџија и Јужна Сендвич Острва</territory>
 			<territory type="GT">Гватемала</territory>
 			<territory type="GU">Гуам</territory>
-			<territory type="GW">Гвинеја-Бисао</territory>
+			<territory type="GW">Гвинеја-Бисау</territory>
 			<territory type="GY">Гвајана</territory>
-			<territory type="HK">Хонг Конг С. А. Р. Кина</territory>
+			<territory type="HK">Хонг Конг (САР Кина)</territory>
 			<territory type="HK" alt="short">Хонг Конг</territory>
 			<territory type="HM">Херд и Мекдоналд Острва</territory>
 			<territory type="HN">Хондурас</territory>
@@ -736,14 +738,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ID">Индонезија</territory>
 			<territory type="IE">Ирска</territory>
 			<territory type="IL">Израел</territory>
-			<territory type="IM">Острво Ман</territory>
+			<territory type="IM">Острво Мен</territory>
 			<territory type="IN">Индија</territory>
 			<territory type="IO">Британска територија у Индијском океану</territory>
 			<territory type="IQ">Ирак</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исланд</territory>
 			<territory type="IT">Италија</territory>
-			<territory type="JE">Џерси</territory>
+			<territory type="JE">Џерзи</territory>
 			<territory type="JM">Јамајка</territory>
 			<territory type="JO">Јордан</territory>
 			<territory type="JP">Јапан</territory>
@@ -751,38 +753,39 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KG">Киргизстан</territory>
 			<territory type="KH">Камбоџа</territory>
 			<territory type="KI">Кирибати</territory>
-			<territory type="KM">Коморска Острва</territory>
-			<territory type="KN">Сент Китс и Невис</territory>
-			<territory type="KP">Северна Кореја</territory>
+			<territory type="KM">Комори</territory>
+			<territory type="KN">Свети Кристофор и Невис</territory>
+			<territory type="KP">Сјеверна Кореја</territory>
 			<territory type="KR">Јужна Кореја</territory>
 			<territory type="KW">Кувајт</territory>
-			<territory type="KY">Кајманска Острва</territory>
+			<territory type="KY">Кајманска острва</territory>
 			<territory type="KZ">Казахстан</territory>
 			<territory type="LA">Лаос</territory>
 			<territory type="LB">Либан</territory>
-			<territory type="LC">Сент Луција</territory>
+			<territory type="LC">Света Луција</territory>
 			<territory type="LI">Лихтенштајн</territory>
 			<territory type="LK">Шри Ланка</territory>
 			<territory type="LR">Либерија</territory>
 			<territory type="LS">Лесото</territory>
 			<territory type="LT">Литванија</territory>
 			<territory type="LU">Луксембург</territory>
-			<territory type="LV">Летонија</territory>
+			<territory type="LV">Латвија</territory>
 			<territory type="LY">Либија</territory>
 			<territory type="MA">Мароко</territory>
 			<territory type="MC">Монако</territory>
 			<territory type="MD">Молдавија</territory>
 			<territory type="ME">Црна Гора</territory>
-			<territory type="MF">Сент Мартин</territory>
+			<territory type="MF">Свети Мартин</territory>
 			<territory type="MG">Мадагаскар</territory>
 			<territory type="MH">Маршалска Острва</territory>
 			<territory type="MK">Македонија</territory>
+			<territory type="MK" alt="variant">Македонија (БЈР)</territory>
 			<territory type="ML">Мали</territory>
-			<territory type="MM">Мијанмар (Бурма)</territory>
+			<territory type="MM">Мјанмар</territory>
 			<territory type="MN">Монголија</territory>
-			<territory type="MO">Макао С. А. Р. Кина</territory>
+			<territory type="MO">Макао (САР Кина)</territory>
 			<territory type="MO" alt="short">Макао</territory>
-			<territory type="MP">Северна Маријанска Острва</territory>
+			<territory type="MP">Сјеверна Маријанска острва</territory>
 			<territory type="MQ">Мартиник</territory>
 			<territory type="MR">Мауританија</territory>
 			<territory type="MS">Монсерат</territory>
@@ -796,7 +799,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NA">Намибија</territory>
 			<territory type="NC">Нова Каледонија</territory>
 			<territory type="NE">Нигер</territory>
-			<territory type="NF">Норфолк Острво</territory>
+			<territory type="NF">Острво Норфолк</territory>
 			<territory type="NG">Нигерија</territory>
 			<territory type="NI">Никарагва</territory>
 			<territory type="NL">Холандија</territory>
@@ -815,9 +818,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PL">Пољска</territory>
 			<territory type="PM">Сен Пјер и Микелон</territory>
 			<territory type="PN">Питкерн</territory>
-			<territory type="PR">Порто Рико</territory>
+			<territory type="PR">Порторико</territory>
 			<territory type="PS">Палестинске територије</territory>
-			<territory type="PT">Португалија</territory>
+			<territory type="PT">Португал</territory>
 			<territory type="PW">Палау</territory>
 			<territory type="PY">Парагвај</territory>
 			<territory type="QA">Катар</territory>
@@ -833,20 +836,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SD">Судан</territory>
 			<territory type="SE">Шведска</territory>
 			<territory type="SG">Сингапур</territory>
-			<territory type="SH">Света Јелена</territory>
+			<territory type="SH">Света Хелена</territory>
 			<territory type="SI">Словенија</territory>
-			<territory type="SJ">Свалбард и Јанмајен Острва</territory>
+			<territory type="SJ">Свалбард и Јан Мајен</territory>
 			<territory type="SK">Словачка</territory>
 			<territory type="SL">Сијера Леоне</territory>
 			<territory type="SM">Сан Марино</territory>
 			<territory type="SN">Сенегал</territory>
 			<territory type="SO">Сомалија</territory>
 			<territory type="SR">Суринам</territory>
-			<territory type="SS" draft="provisional">Јужни Судан</territory>
-			<territory type="ST">Сао Томе и Принципе</territory>
+			<territory type="SS">Јужни Судан</territory>
+			<territory type="ST">Свети Тома и Принцип</territory>
 			<territory type="SV">Салвадор</territory>
 			<territory type="SY">Сирија</territory>
-			<territory type="SZ">Свазиленд</territory>
+			<territory type="SZ">Свази</territory>
 			<territory type="TA">Тристан да Куња</territory>
 			<territory type="TC">Туркс и Кајкос Острва</territory>
 			<territory type="TD">Чад</territory>
@@ -867,18 +870,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Украјина</territory>
 			<territory type="UG">Уганда</territory>
 			<territory type="UM">Мања удаљена острва САД</territory>
+			<territory type="UN">Уједињене нације</territory>
 			<territory type="US">Сједињене Америчке Државе</territory>
+			<territory type="US" alt="short">САД</territory>
 			<territory type="UY">Уругвај</territory>
 			<territory type="UZ">Узбекистан</territory>
 			<territory type="VA">Ватикан</territory>
-			<territory type="VC">Сент Винсент и Гренадини</territory>
+			<territory type="VC">Свети Винсент и Гренадини</territory>
 			<territory type="VE">Венецуела</territory>
-			<territory type="VG">Британска Девичанска Острва</territory>
-			<territory type="VI">С.А.Д. Девичанска Острва</territory>
+			<territory type="VG">Британска Дјевичанска острва</territory>
+			<territory type="VI">Америчка Дјевичанска острва</territory>
 			<territory type="VN">Вијетнам</territory>
 			<territory type="VU">Вануату</territory>
-			<territory type="WF">Валис и Футуна Острва</territory>
+			<territory type="WF">Валис и Футуна</territory>
 			<territory type="WS">Самоа</territory>
+			<territory type="XK">Косово</territory>
 			<territory type="YE">Јемен</territory>
 			<territory type="YT">Мајоте</territory>
 			<territory type="ZA">Јужноафричка Република</territory>
@@ -951,6 +957,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="collation" type="stroke">Сортирање по броју црта</type>
 			<type key="collation" type="traditional">Традиционално сортирање</type>
 			<type key="collation" type="unihan" draft="contributed">Редослед сортирања радикалним цртицама</type>
+			<type key="d0" type="fwidth" draft="contributed">пуна ширина</type>
+			<type key="d0" type="hwidth" draft="contributed">пола ширине</type>
+			<type key="d0" type="npinyin" draft="contributed">Нумеричка</type>
+			<type key="m0" type="bgn" draft="contributed">БГН (BGN)</type>
+			<type key="m0" type="ungegn" draft="contributed">УНГЕГН (BGN)</type>
 			<type key="numbers" type="arab" draft="contributed">арапско-индијске цифре</type>
 			<type key="numbers" type="arabext" draft="contributed">продужене арапско-индијске цифре</type>
 			<type key="numbers" type="armn" draft="contributed">јерменски бројеви</type>
@@ -987,18 +998,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="thai" draft="contributed">тајске цифре</type>
 			<type key="numbers" type="tibt" draft="contributed">тибетанске цифре</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN" draft="contributed">БГН (BGN)</transformName>
-			<transformName type="Numeric" draft="contributed">Нумеричка</transformName>
-			<transformName type="Tone" draft="contributed">Тон</transformName>
-			<transformName type="UNGEGN" draft="contributed">УНГЕГН (BGN)</transformName>
-			<transformName type="x-Accents" draft="contributed">Акценти</transformName>
-			<transformName type="x-Fullwidth" draft="contributed">пуна ширина</transformName>
-			<transformName type="x-Halfwidth" draft="contributed">пола ширине</transformName>
-			<transformName type="x-Jamo" draft="contributed">Џамо</transformName>
-			<transformName type="x-Pinyin" draft="contributed">Пинјин</transformName>
-			<transformName type="x-Publishing" draft="contributed">Издавачки</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Метрички</measurementSystemName>
 			<measurementSystemName type="UK" draft="contributed">империјални</measurementSystemName>
@@ -1014,6 +1013,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[а б в г д ђ е ж з и ј к л љ м н њ о п р с т ћ у ф х ц ч џ ш]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[А Б В Г Д Ђ Е Ж З И Ј К Л Љ М Н Њ О П Р С Т Ћ У Ф Х Ц Ч Џ Ш]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<ellipsis type="final" draft="contributed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="contributed">…{0}</ellipsis>
 	</characters>
@@ -1236,7 +1236,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="5">мај</month>
 							<month type="6">јун</month>
 							<month type="7">јул</month>
-							<month type="8">авг</month>
+							<month type="8">ауг</month>
 							<month type="9">сеп</month>
 							<month type="10">окт</month>
 							<month type="11">нов</month>
@@ -1250,7 +1250,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="5">мај</month>
 							<month type="6">јуни</month>
 							<month type="7">јули</month>
-							<month type="8">август</month>
+							<month type="8">аугуст</month>
 							<month type="9">септембар</month>
 							<month type="10">октобар</month>
 							<month type="11">новембар</month>
@@ -1258,6 +1258,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="8">ауг</month>
+						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ј</month>
 							<month type="2">ф</month>
@@ -1271,6 +1274,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="10">о</month>
 							<month type="11">н</month>
 							<month type="12">д</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="8">аугуст</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1286,8 +1292,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="sat">суб</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun">недеља</day>
-							<day type="mon">понедељак</day>
+							<day type="sun">недјеља</day>
+							<day type="mon">понедјељак</day>
 							<day type="tue">уторак</day>
 							<day type="wed">сриједа</day>
 							<day type="thu">четвртак</day>
@@ -1304,6 +1310,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<day type="thu">ч</day>
 							<day type="fri">п</day>
 							<day type="sat">с</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">недјеља</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1351,8 +1360,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</dayPeriods>
 				<eras>
 					<eraNames>
-						<era type="0">Пре нове ере</era>
-						<era type="1">Нове ере</era>
+						<era type="0">прије нове ере</era>
+						<era type="1">нове ере</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">п. н. е.</era>
@@ -2106,6 +2115,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<gmtFormat>GMT{0}</gmtFormat>
 			<regionFormat draft="contributed">Време у земљи: {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Хонолулу</exemplarCity>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Непознат или неважећи град</exemplarCity>
 			</zone>
@@ -3159,9 +3171,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Мидвеј</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Џонстон</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Вејк</exemplarCity>
 			</zone>
@@ -3171,8 +3180,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Ном</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Хонолулу</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Џонстон</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Енкориџ</exemplarCity>
@@ -4234,6 +4243,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<plusSign>+</plusSign>
 			<minusSign>-</minusSign>
 			<exponential>E</exponential>
+			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan draft="contributed">NaN</nan>
@@ -4347,9 +4357,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">0 ¤</pattern>
-					<pattern type="1000" count="few" draft="provisional">0 ¤</pattern>
-					<pattern type="1000" count="other" draft="provisional">0 ¤</pattern>
+					<pattern type="1000" count="one" draft="provisional">0</pattern>
+					<pattern type="1000" count="few" draft="provisional">0</pattern>
+					<pattern type="1000" count="other" draft="provisional">0</pattern>
 					<pattern type="10000" count="one" draft="provisional">00 хиљ ¤</pattern>
 					<pattern type="10000" count="few" draft="provisional">00 хиљ ¤</pattern>
 					<pattern type="10000" count="other" draft="provisional">00 хиљ ¤</pattern>
@@ -4707,11 +4717,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="few">белоруске нове рубља</displayName>
 				<displayName count="other">белоруских нових рубљи</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Белоруска рубља</displayName>
 				<displayName count="one">белоруска рубља</displayName>
 				<displayName count="few">белоруске рубље</displayName>
 				<displayName count="other">белоруске рубље</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>Белоруска рубља (2000–2016)</displayName>
+				<displayName count="one">белоруска рубља (2000–2016)</displayName>
+				<displayName count="few">белоруске рубље (2000–2016)</displayName>
+				<displayName count="other">белоруске рубље (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>Белизе долар</displayName>
@@ -5387,6 +5403,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">маканешких патака</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Мауританијска угвија (1973–2017)</displayName>
+				<displayName count="one">мауританијска угвиља (1973–2017)</displayName>
+				<displayName count="few">мауританијске угвиље (1973–2017)</displayName>
+				<displayName count="other">мауританијске угвиље (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Мауританијска угвија</displayName>
 				<displayName count="one">мауританијска угвиља</displayName>
 				<displayName count="few">мауританијске угвиље</displayName>
@@ -5531,16 +5553,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">перувијских интија</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>Перуански нуево сол</displayName>
-				<displayName count="one">перуански нуево сол</displayName>
-				<displayName count="few">перуанска нуево сола</displayName>
-				<displayName count="other">перуанских нуево сола</displayName>
-			</currency>
-			<currency type="PES">
 				<displayName>Перуански сол</displayName>
 				<displayName count="one">перуански сол</displayName>
 				<displayName count="few">перуанска сола</displayName>
 				<displayName count="other">перуанских сола</displayName>
+			</currency>
+			<currency type="PES">
+				<displayName>Перуански сол (1863–1965)</displayName>
+				<displayName count="one">перуански сол (1863–1965)</displayName>
+				<displayName count="few">перуанска сола (1863–1965)</displayName>
+				<displayName count="other">перуанских сола (1863–1965)</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName>Папуа ново-гвинејшка кина</displayName>
@@ -5725,6 +5747,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">суринамских гилдера</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Сао Томе и Принципе добра (1977–2017)</displayName>
+				<displayName count="one">сао томе и принципе добар (1977–2017)</displayName>
+				<displayName count="few">сао томе и принципе добра (1977–2017)</displayName>
+				<displayName count="other">сао томе и принципе добри (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Сао Томе и Принципе добра</displayName>
 				<displayName count="one">сао томе и принципе добар</displayName>
 				<displayName count="few">сао томе и принципе добра</displayName>
@@ -6135,6 +6163,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other" draft="provisional">зимбабвејских долара (2008)</displayName>
 			</currency>
 		</currencies>
+		<minimalPairs>
+			<ordinalMinimalPairs ordinal="other" draft="contributed">Скрените на {0}. крижању десно.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -6238,5 +6269,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>не:н</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — све</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} потез</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="few">{0} потеза</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} потеза</characterLabelPattern>
+	</characterLabels>
 </ldml>
-

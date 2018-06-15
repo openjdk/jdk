@@ -317,7 +317,7 @@ public enum Option {
                                                  .flatMap(provider -> StreamSupport.stream(provider.getSupportedPlatformNames()
                                                                                                    .spliterator(),
                                                                                            false))
-                                                 .collect(Collectors.toCollection(TreeSet :: new));
+                                                 .collect(Collectors.toCollection(LinkedHashSet :: new));
 
             StringBuilder targets = new StringBuilder();
             String delim = "";

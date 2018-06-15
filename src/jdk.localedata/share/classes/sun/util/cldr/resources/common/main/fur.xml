@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="fur"/>
 	</identity>
 	<localeDisplayNames>
@@ -612,6 +613,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a à â b c ç d e è ê f g h i ì î j k l m n o ò ô p q r s t u ù û v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[å č é ë ğ ï ñ ó š ü]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A B C Ç D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="contributed">‘</quotationStart>
@@ -1428,8 +1430,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one" draft="contributed">real brasilian</displayName>
 				<displayName count="other" draft="contributed">real brasilians</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName draft="contributed">Rubli bielorùs</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName draft="contributed">Rubli bielorùs (2000–2016)</displayName>
 			</currency>
 			<currency type="CAD">
 				<displayName draft="contributed">dolar canadês</displayName>
@@ -1725,4 +1730,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

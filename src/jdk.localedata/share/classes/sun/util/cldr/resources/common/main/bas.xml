@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="bas"/>
 	</identity>
 	<localeDisplayNames>
@@ -285,6 +286,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a á à â ǎ ā {a\u1DC6}{a\u1DC7} b ɓ c d e é è ê ě ē {e\u1DC6}{e\u1DC7} ɛ {ɛ\u0301} {ɛ\u0300} {ɛ\u0302} {ɛ\u030C} {ɛ\u0304} {ɛ\u1DC6}{ɛ\u1DC7} f g h i í ì î ǐ ī {i\u1DC6}{i\u1DC7} j k l m n ń ǹ ŋ o ó ò ô ǒ ō {o\u1DC6}{o\u1DC7} ɔ {ɔ\u0301} {ɔ\u0300} {ɔ\u0302} {ɔ\u030C} {ɔ\u0304} {ɔ\u1DC6}{ɔ\u1DC7} p r s t u ú ù û ǔ ū {u\u1DC6}{u\u1DC7} v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[q x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B Ɓ C D E Ɛ F G H I J K L M N Ŋ O Ɔ P R S T U V W Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -709,6 +711,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Frǎŋ màlàgasì</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ùgwiya mòrìtanìa (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ùgwiya mòrìtanìa</displayName>
 			</currency>
 			<currency type="MUR">
@@ -751,6 +756,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Silîŋ sòmàli</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobrà sàotòme (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobrà sàotòme</displayName>
 			</currency>
 			<currency type="SZL">
@@ -795,4 +803,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

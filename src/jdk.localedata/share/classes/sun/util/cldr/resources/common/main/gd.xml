@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="gd"/>
 	</identity>
 	<localeDisplayNames>
@@ -33,6 +34,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="akz">Alabama</language>
 			<language type="ale">Aleutais</language>
 			<language type="aln">Albàinis Ghegeach</language>
+			<language type="alt">Altais Dheasach</language>
 			<language type="am">Amtharais</language>
 			<language type="an">Aragonais</language>
 			<language type="ang">Seann-Bheurla</language>
@@ -40,7 +42,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ar">Arabais</language>
 			<language type="ar_001">Nuadh-Arabais Stannardach</language>
 			<language type="arc">Aramais</language>
-			<language type="arn">Mapuche</language>
+			<language type="arn">Mapudungun</language>
 			<language type="aro">Araona</language>
 			<language type="arp">Arapaho</language>
 			<language type="arq">Arabais Aildireach</language>
@@ -81,7 +83,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bkm">Kom</language>
 			<language type="bla">Siksika</language>
 			<language type="bm">Bambara</language>
-			<language type="bn">Beangailis</language>
+			<language type="bn">Bangla</language>
 			<language type="bo">Tibeitis</language>
 			<language type="bpy">Bishnupriya</language>
 			<language type="bqi">Bakhtiari</language>
@@ -114,13 +116,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="chp">Chipewyan</language>
 			<language type="chr">Cherokee</language>
 			<language type="chy">Cheyenne</language>
-			<language type="ckb">Cùrdais Soranî</language>
+			<language type="ckb">Cùrdais Mheadhanach</language>
 			<language type="co">Corsais</language>
 			<language type="cop">Coptais</language>
 			<language type="cps">Capiznon</language>
 			<language type="cr">Cree</language>
 			<language type="crh">Turcais Chriomach</language>
-			<language type="cs">Seacais</language>
+			<language type="crs">Seiseallais</language>
+			<language type="cs">Seicis</language>
 			<language type="csb">Caisiubais</language>
 			<language type="cu">Slàbhais na h-Eaglaise</language>
 			<language type="cv">Chuvash</language>
@@ -269,6 +272,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="kaj">Jju</language>
 			<language type="kam">Kamba</language>
 			<language type="kaw">Kawi</language>
+			<language type="kbd">Cabardais</language>
 			<language type="kbl">Kanembu</language>
 			<language type="kcg">Tyap</language>
 			<language type="kde">Makonde</language>
@@ -299,10 +303,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="krc">Karachay-Balkar</language>
 			<language type="kri">Krio</language>
 			<language type="krj">Kinaray-a</language>
+			<language type="krl">Cairealais</language>
 			<language type="kru">Kurukh</language>
 			<language type="ks">Caismiris</language>
 			<language type="ksb">Shambala</language>
 			<language type="ksf">Bafia</language>
+			<language type="ksh">Gearmailtis Chologne</language>
 			<language type="ku">Cùrdais</language>
 			<language type="kum">Kumyk</language>
 			<language type="kut">Kutenai</language>
@@ -315,6 +321,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="lah">Lahnda</language>
 			<language type="lam">Lamba</language>
 			<language type="lb">Lugsamburgais</language>
+			<language type="lez">Leasgais</language>
 			<language type="lfn">Lingua Franca Nova</language>
 			<language type="lg">Ganda</language>
 			<language type="li">Cànan Limburg</language>
@@ -372,6 +379,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mua">Mundang</language>
 			<language type="mul">Iomadh cànan</language>
 			<language type="mus">Creek</language>
+			<language type="mwl">Miorandais</language>
 			<language type="mwr">Marwari</language>
 			<language type="mwv">Mentawai</language>
 			<language type="my">Burmais</language>
@@ -380,6 +388,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mzn">Mazanderani</language>
 			<language type="na">Nabhru</language>
 			<language type="nan">Min Nan</language>
+			<language type="nap">Eadailtis Napoli</language>
 			<language type="naq">Nama</language>
 			<language type="nb">Bokmål na Nirribhidh</language>
 			<language type="nd">Ndebele Thuathach</language>
@@ -402,11 +411,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="nov">Novial</language>
 			<language type="nqo">N’Ko</language>
 			<language type="nr">Ndebele Dheasach</language>
-			<language type="nso">Leasotais Thuathach</language>
+			<language type="nso">Sesotho sa Leboa</language>
 			<language type="nus">Nuer</language>
 			<language type="nv">Navajo</language>
 			<language type="nwc">Newari Chlasaigeach</language>
-			<language type="ny">Chichewa</language>
+			<language type="ny">Nyanja</language>
 			<language type="nym">Nyamwezi</language>
 			<language type="nyn">Nyankole</language>
 			<language type="nyo">Nyoro</language>
@@ -422,9 +431,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pag">Pangasinan</language>
 			<language type="pal">Pahlavi</language>
 			<language type="pam">Pampanga</language>
-			<language type="pap">Papiamento</language>
+			<language type="pap">Papiamentu</language>
 			<language type="pau">Palabhais</language>
 			<language type="pcd">Picard</language>
+			<language type="pcm">Beurla Nigèiriach</language>
 			<language type="pdc">Gearmailtis Phennsylvania</language>
 			<language type="pdt">Plautdietsch</language>
 			<language type="peo">Seann-Pheirsis</language>
@@ -439,7 +449,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pt">Portagailis</language>
 			<language type="pt_BR">Portagailis Bhraisileach</language>
 			<language type="pt_PT">Portagailis Eòrpach</language>
-			<language type="qu">Ceatsua</language>
+			<language type="qu">Quechua</language>
 			<language type="quc">K’iche’</language>
 			<language type="qug">Quichua Àrd-tìr Chimborazo</language>
 			<language type="raj">Rajasthani</language>
@@ -456,11 +466,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ru">Ruisis</language>
 			<language type="rue">Rusyn</language>
 			<language type="rug">Roviana</language>
+			<language type="rup">Aromanais</language>
 			<language type="rw">Kinyarwanda</language>
 			<language type="rwk">Rwa</language>
 			<language type="sa">Sanskrit</language>
 			<language type="sad">Sandawe</language>
-			<language type="sah">Sachais</language>
+			<language type="sah">Sakha</language>
 			<language type="sam">Aramais Shamaritanach</language>
 			<language type="saq">Samburu</language>
 			<language type="sas">Sasak</language>
@@ -505,7 +516,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="srr">Serer</language>
 			<language type="ss">Swati</language>
 			<language type="ssy">Saho</language>
-			<language type="st">Leasotach Dheasach</language>
+			<language type="st">Sesotho</language>
 			<language type="su">Cànan Sunda</language>
 			<language type="suk">Sukuma</language>
 			<language type="sus">Susu</language>
@@ -524,7 +535,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ter">Terêna</language>
 			<language type="tet">Tetum</language>
 			<language type="tg">Taidigis</language>
-			<language type="th">Tàidh</language>
+			<language type="th">Cànan nan Tàidh</language>
 			<language type="ti">Tigrinya</language>
 			<language type="tig">Tigre</language>
 			<language type="tiv">Tiv</language>
@@ -537,7 +548,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tly">Talysh</language>
 			<language type="tmh">Tamashek</language>
 			<language type="tn">Tswana</language>
-			<language type="to">Tongais</language>
+			<language type="to">Tonga</language>
 			<language type="tog">Nyasa Tonga</language>
 			<language type="tpi">Tok Pisin</language>
 			<language type="tr">Turcais</language>
@@ -553,7 +564,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="twq">Tasawaq</language>
 			<language type="ty">Cànan Tahiti</language>
 			<language type="tyv">Cànan Tuva</language>
-			<language type="tzm">Tamazight Meadhan na h-Atlas</language>
+			<language type="tzm">Tamazight an Atlais Mheadhanaich</language>
 			<language type="udm">Udmurt</language>
 			<language type="ug">Ùigiurais</language>
 			<language type="uk">Ucràinis</language>
@@ -585,7 +596,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="yav">Yangben</language>
 			<language type="ybb">Yemba</language>
 			<language type="yi">Iùdhais</language>
-			<language type="yo">Ioruba</language>
+			<language type="yo">Yoruba</language>
 			<language type="yrl">Nheengatu</language>
 			<language type="yue">Cantonais</language>
 			<language type="za">Zhuang</language>
@@ -603,6 +614,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zza">Zazaki</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Adlam</script>
 			<script type="Afak">Afaka</script>
 			<script type="Aghb">Albàinis Chabhcasach</script>
 			<script type="Ahom">Ahom</script>
@@ -615,13 +627,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Bass">Bassa Vah</script>
 			<script type="Batk">Batak</script>
 			<script type="Beng">Beangailis</script>
+			<script type="Bhks">Bhaiksuki</script>
 			<script type="Blis">Comharran Bliss</script>
 			<script type="Bopo">Bopomofo</script>
 			<script type="Brah">Brahmi</script>
 			<script type="Brai">Braille</script>
+			<script type="Bugi">Lontara</script>
 			<script type="Buhd">Buhid</script>
 			<script type="Cakm">Chakma</script>
 			<script type="Cans">Sgrìobhadh Lideach Aonaichte nan Tùsanach Canadach</script>
+			<script type="Cari">Carian</script>
 			<script type="Cham">Cham</script>
 			<script type="Cher">Cherokee</script>
 			<script type="Cirt">Cirth</script>
@@ -631,14 +646,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Cyrs">Cirilis Seann-Slàbhais na h-Eaglaise</script>
 			<script type="Deva">Devanagari</script>
 			<script type="Dsrt">Deseret</script>
+			<script type="Dupl">Gearr-sgrìobhadh Duployé</script>
 			<script type="Egyp">Sealbh-sgrìobhadh Èipheiteach</script>
+			<script type="Elba">Elbasan</script>
 			<script type="Ethi">Ge’ez</script>
 			<script type="Geor">Cairtbheilis</script>
+			<script type="Glag">Glagoliticeach</script>
+			<script type="Gonm">Masaram Gondi</script>
 			<script type="Goth">Gotais</script>
 			<script type="Gran">Grantha</script>
 			<script type="Grek">Greugais</script>
 			<script type="Gujr">Gujarati</script>
 			<script type="Guru">Gurmukhi</script>
+			<script type="Hanb">Han le Bopomofo</script>
 			<script type="Hang">Hangul</script>
 			<script type="Hani">Han</script>
 			<script type="Hano">Hanunoo</script>
@@ -646,6 +666,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hans" alt="stand-alone">Han simplichte</script>
 			<script type="Hant">Tradaiseanta</script>
 			<script type="Hant" alt="stand-alone">Han tradaiseanta</script>
+			<script type="Hatr">Hatran</script>
 			<script type="Hebr">Eabhra</script>
 			<script type="Hira">Hiragana</script>
 			<script type="Hluw">Dealbh-sgrìobhadh Anatolach</script>
@@ -653,6 +674,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hrkt">Katakana no Hiragana</script>
 			<script type="Hung">Seann-Ungarais</script>
 			<script type="Ital">Seann-Eadailtis</script>
+			<script type="Jamo">Jamo</script>
 			<script type="Java">Deàbhanais</script>
 			<script type="Jpan">Seapanais</script>
 			<script type="Jurc">Jurchen</script>
@@ -674,10 +696,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Limb">Limbu</script>
 			<script type="Lina">Linear A</script>
 			<script type="Linb">Linear B</script>
+			<script type="Lisu">Lisu</script>
 			<script type="Loma">Loma</script>
+			<script type="Lyci">Lycian</script>
+			<script type="Lydi">Lydian</script>
 			<script type="Mahj">Mahajani</script>
+			<script type="Mand">Mandaean</script>
+			<script type="Mani">Manichaean</script>
+			<script type="Marc">Marchen</script>
 			<script type="Maya">Dealbh-sgrìobhadh Mayach</script>
 			<script type="Mend">Mende</script>
+			<script type="Merc">Meroiticeach ceangailte</script>
+			<script type="Mero">Meroiticeach</script>
 			<script type="Mlym">Malayalam</script>
 			<script type="Modi">Modi</script>
 			<script type="Mong">Mongolais</script>
@@ -686,6 +716,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mult">Multani</script>
 			<script type="Mymr">Miànmar</script>
 			<script type="Narb">Seann-Arabach Thuathach</script>
+			<script type="Nbat">Nabataean</script>
+			<script type="Newa">Newa</script>
 			<script type="Nkgb">Naxi Geba</script>
 			<script type="Nkoo">N’ko</script>
 			<script type="Nshu">Nüshu</script>
@@ -693,22 +725,33 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Olck">Ol Chiki</script>
 			<script type="Orkh">Orkhon</script>
 			<script type="Orya">Oriya</script>
+			<script type="Osge">Osage</script>
 			<script type="Osma">Osmanya</script>
+			<script type="Palm">Palmyrene</script>
 			<script type="Pauc">Pau Cin Hau</script>
+			<script type="Perm">Seann-Phermic</script>
 			<script type="Phag">Phags-pa</script>
+			<script type="Phli">Pahlavi nan snaidh-sgrìobhaidhean</script>
+			<script type="Phlp">Pahlavi nan saltair</script>
+			<script type="Phnx">Pheniceach</script>
+			<script type="Plrd">Miao Phollard</script>
 			<script type="Prti">Partais snaidh-sgrìobhte</script>
 			<script type="Qaac">Qaac</script>
 			<script type="Rjng">Rejang</script>
 			<script type="Roro">Rongorongo</script>
 			<script type="Runr">Rùn-sgrìobhadh</script>
+			<script type="Samr">Samaritanais</script>
 			<script type="Sara">Sarati</script>
 			<script type="Sarb">Seann-Arabais Dheasach</script>
 			<script type="Saur">Saurashtra</script>
+			<script type="Sgnw">Sgrìobhadh cainnte-sanais</script>
+			<script type="Shaw">Sgrìobhadh an t-Seathaich</script>
 			<script type="Shrd">Sharada</script>
 			<script type="Sidd">Siddham</script>
 			<script type="Sind">Khudawadi</script>
 			<script type="Sinh">Sinhala</script>
 			<script type="Sora">Sora Sompeng</script>
+			<script type="Soyo">Soyombo</script>
 			<script type="Sund">Sunda</script>
 			<script type="Sylo">Syloti Nagri</script>
 			<script type="Syrc">Suraidheac</script>
@@ -729,12 +772,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Thai">Tàidh</script>
 			<script type="Tibt">Tibeitis</script>
 			<script type="Tirh">Tirhuta</script>
+			<script type="Ugar">Ugariticeach</script>
 			<script type="Vaii">Vai</script>
 			<script type="Wara">Varang Kshiti</script>
 			<script type="Wole">Woleai</script>
 			<script type="Xpeo">Seann-Pheirsis</script>
+			<script type="Xsux">Gèinn-sgrìobhadh Sumer is Akkad</script>
 			<script type="Yiii">Yi</script>
+			<script type="Zanb">Zanabazar ceàrnagach</script>
+			<script type="Zinh">Dìleab</script>
 			<script type="Zmth">Gnìomhairean matamataig</script>
+			<script type="Zsye">Emoji</script>
 			<script type="Zsym">Samhlaidhean</script>
 			<script type="Zxxx">Gun sgrìobhadh</script>
 			<script type="Zyyy">Coitcheann</script>
@@ -742,7 +790,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</scripts>
 		<territories>
 			<territory type="001">An Saoghal</territory>
-			<!-- UN codes -->
 			<territory type="002">Afraga</territory>
 			<territory type="003">Aimeireaga a Tuath</territory>
 			<territory type="005">Aimeireaga a Deas</territory>
@@ -777,9 +824,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="AE">Na h-Iomaratan Arabach Aonaichte</territory>
 			<territory type="AF">Afghanastàn</territory>
 			<territory type="AG">Aintìoga is Barbuda</territory>
-			<territory type="AI">Anguilla</territory>
+			<territory type="AI">Anguillia</territory>
 			<territory type="AL">Albàinia</territory>
-			<territory type="AM">Airmeinia</territory>
+			<territory type="AM">Airmeinea</territory>
 			<territory type="AO">Angòla</territory>
 			<territory type="AQ">An Antartaig</territory>
 			<territory type="AR">An Argantain</territory>
@@ -789,7 +836,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="AW">Arùba</territory>
 			<territory type="AX">Na h-Eileanan Åland</territory>
 			<territory type="AZ">Asarbaideàn</territory>
-			<territory type="BA">Bosna agus Hearsagobhana</territory>
+			<territory type="BA">Bosna is Hearsagobhana</territory>
 			<territory type="BB">Barbados</territory>
 			<territory type="BD">Bangladais</territory>
 			<territory type="BE">A’ Bheilg</territory>
@@ -811,12 +858,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BY">A’ Bhealaruis</territory>
 			<territory type="BZ">A’ Bheilìs</territory>
 			<territory type="CA">Canada</territory>
-			<territory type="CC">Na h-Eileanan Cocos (Keeling)</territory>
+			<territory type="CC">Na h-Eileanan Chocos (Keeling)</territory>
 			<territory type="CD">Congo - Kinshasa</territory>
 			<territory type="CD" alt="variant">A’ Chongo (PDC)</territory>
 			<territory type="CF">Poblachd Meadhan Afraga</territory>
 			<territory type="CG">A’ Chongo - Brazzaville</territory>
-			<territory type="CG" alt="variant">A’ Chongo (Poblachd)</territory>
+			<territory type="CG" alt="variant">A’ Chongo</territory>
 			<territory type="CH">An Eilbheis</territory>
 			<territory type="CI">Côte d’Ivoire</territory>
 			<territory type="CI" alt="variant">An Costa Ìbhri</territory>
@@ -832,7 +879,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">Curaçao</territory>
 			<territory type="CX">Eilean na Nollaig</territory>
 			<territory type="CY">Cìopras</territory>
-			<territory type="CZ">Poblachd na Seice</territory>
+			<territory type="CZ">An t-Seic</territory>
+			<territory type="CZ" alt="variant">Poblachd na Seice</territory>
 			<territory type="DE">A’ Ghearmailt</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">Diobùtaidh</territory>
@@ -846,14 +894,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="EG">An Èiphit</territory>
 			<territory type="EH">Sathara an Iar</territory>
 			<territory type="ER">Eartra</territory>
-			<territory type="ES">An Spàinn</territory>
+			<territory type="ES">An Spàinnt</territory>
 			<territory type="ET">An Itiop</territory>
 			<territory type="EU">An t-Aonadh Eòrpach</territory>
+			<territory type="EZ">Raon an Eòro</territory>
 			<territory type="FI">An Fhionnlann</territory>
 			<territory type="FJ">Fìdi</territory>
 			<territory type="FK">Na h-Eileanan Fàclannach</territory>
 			<territory type="FK" alt="variant">Na h-Eileanan Fàclannach (Islas Malvinas)</territory>
-			<territory type="FM">Na Meanbh-Eileanan</territory>
+			<territory type="FM">Na Meanbh-eileanan</territory>
 			<territory type="FO">Na h-Eileanan Fàro</territory>
 			<territory type="FR">An Fhraing</territory>
 			<territory type="GA">Gabon</territory>
@@ -871,7 +920,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GP">Guadalup</territory>
 			<territory type="GQ">Gini Mheadhan-Chriosach</territory>
 			<territory type="GR">A’ Ghreug</territory>
-			<territory type="GS">Seòrsea a Deas is na h-Eileanan Sandwich a Deas</territory>
+			<territory type="GS">Seòirsea a Deas is na h-Eileanan Sandwich a Deas</territory>
 			<territory type="GT">Guatamala</territory>
 			<territory type="GU">Guam</territory>
 			<territory type="GW">Gini-Bioso</territory>
@@ -884,7 +933,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="HT">Haidhti</territory>
 			<territory type="HU">An Ungair</territory>
 			<territory type="IC">Na h-Eileanan Canàrach</territory>
-			<territory type="ID">Na h-Innd Innse</territory>
+			<territory type="ID">Na h-Innd-innse</territory>
 			<territory type="IE">Èirinn</territory>
 			<territory type="IL">Iosrael</territory>
 			<territory type="IM">Eilean Mhanainn</territory>
@@ -905,7 +954,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="KM">Comoros</territory>
 			<territory type="KN">Naomh Crìstean is Nibheis</territory>
 			<territory type="KP">Coirèa a Tuath</territory>
-			<territory type="KR">Coirèa a Deas</territory>
+			<territory type="KR">Coirèa</territory>
 			<territory type="KW">Cuibhèit</territory>
 			<territory type="KY">Na h-Eileanan Caimean</territory>
 			<territory type="KZ">Casachstàn</territory>
@@ -952,7 +1001,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="NG">Nigèiria</territory>
 			<territory type="NI">Niocaragua</territory>
 			<territory type="NL">Na Tìrean Ìsle</territory>
-			<territory type="NO">An Nirribhidh</territory>
+			<territory type="NO">Nirribhidh</territory>
 			<territory type="NP">Neapàl</territory>
 			<territory type="NR">Nabhru</territory>
 			<territory type="NU">Niue</territory>
@@ -966,7 +1015,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PK">Pagastàn</territory>
 			<territory type="PL">A’ Phòlainn</territory>
 			<territory type="PM">Saint Pierre agus Miquelon</territory>
-			<territory type="PN">Eilean Peit a’ Chàirn</territory>
+			<territory type="PN">Eileanan Pheit a’ Chàirn</territory>
 			<territory type="PR">Porto Rìceo</territory>
 			<territory type="PS">Na Ranntairean Palastaineach</territory>
 			<territory type="PS" alt="short">Palastain</territory>
@@ -1022,6 +1071,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">An Ucràin</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Meanbh-Eileanan Iomallach nan SA</territory>
+			<territory type="UN">Na Dùthchannan Aonaichte</territory>
 			<territory type="US">Na Stàitean Aonaichte</territory>
 			<territory type="US" alt="short">SA</territory>
 			<territory type="UY">Uruguaidh</territory>
@@ -1030,7 +1080,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="VC">Naomh Bhionsant agus Eileanan Greanadach</territory>
 			<territory type="VE">A’ Bheiniseala</territory>
 			<territory type="VG">Eileanan Breatannach na Maighdinn</territory>
-			<territory type="VI">Eileanan Aimeireagach na Maighdinn</territory>
+			<territory type="VI">Eileanan na Maighdinn aig na SA</territory>
 			<territory type="VN">Bhiet-Nam</territory>
 			<territory type="VU">Vanuatu</territory>
 			<territory type="WF">Uallas agus Futuna</territory>
@@ -1044,10 +1094,95 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ZZ">Roinn-dùthcha neo-aithnichte</territory>
 		</territories>
 		<variants>
-			<variant type="SCOTLAND">Beurla Bhun-Tomhasach na h-Alba</variant>
+			<variant type="1901">Litreachadh tradaiseanta na Gearmailtise</variant>
+			<variant type="1994">Litreachadh stannardach dual-chainnt Resia</variant>
+			<variant type="1996">Litreachadh na Gearmailtise 1996</variant>
+			<variant type="1606NICT">Meadhan-Fhraingis anmoch gu 1606</variant>
+			<variant type="1694ACAD">Nua-Fhraingis thràth</variant>
+			<variant type="1959ACAD">Bealaruisis Acadamaigeach</variant>
+			<variant type="ABL1943">Gnàthas-litreachaidh 1943</variant>
+			<variant type="ALALC97">Ròmanachadh ALA-LC 1997</variant>
+			<variant type="ALUKU">Dual-chainnt Aluku</variant>
+			<variant type="AO1990">Aonta litreachadh na Portagailise 1990</variant>
+			<variant type="AREVELA">Airmeinis an Ear</variant>
+			<variant type="AREVMDA">Airmeinis an Iar</variant>
+			<variant type="BAKU1926">Abidil Laideann aonaichte na Turcaise</variant>
+			<variant type="BALANKA">Dual-chainnt Balanka de Anii</variant>
+			<variant type="BARLA">Dual-chainntean Barlavento de Kabuverdianu</variant>
+			<variant type="BASICENG">Beurla bhunasach</variant>
+			<variant type="BAUDDHA">Bauddha</variant>
+			<variant type="BISCAYAN">Dual-chainnt Bizkaia</variant>
+			<variant type="BISKE">Dual-chainnt San Giorgio/Bila</variant>
+			<variant type="BOHORIC">Aibidil Bohorič</variant>
+			<variant type="BOONT">Boontling</variant>
+			<variant type="COLB1945">Aonta litreachaidh eadar a’ Phortagail is Braisil 1945</variant>
+			<variant type="CORNU">Beurla na Còirne</variant>
+			<variant type="DAJNKO">Aibidil Dajnko</variant>
+			<variant type="EKAVSK">Sèirbhis le fuaimneachadh iarach</variant>
+			<variant type="EMODENG">Nua-Bheurla thràth</variant>
+			<variant type="FONIPA">Comharran fuaim-eòlais an IPA</variant>
+			<variant type="FONNAPA">FONNAPA</variant>
+			<variant type="FONUPA">Comharran fuaim-eòlais an UPA</variant>
+			<variant type="FONXSAMP">FONXSAMP</variant>
+			<variant type="HEPBURN">Ròmanachadh Hepburn</variant>
+			<variant type="HOGNORSK">Høgnorsk</variant>
+			<variant type="HSISTEMO">HSISTEMO</variant>
+			<variant type="IJEKAVSK">Sèirbis le fuaimneachadh Ijekavia</variant>
+			<variant type="ITIHASA">Itihasa</variant>
+			<variant type="JAUER">Jauer</variant>
+			<variant type="JYUTPING">Jyutping</variant>
+			<variant type="KKCOR">Litreachadh coitcheann</variant>
+			<variant type="KOCIEWIE">Kociewie</variant>
+			<variant type="KSCOR">Litreachadh stannardach</variant>
+			<variant type="LAUKIKA">Laukika</variant>
+			<variant type="LIPAW">Dual-chainnt Lipovaz Resia</variant>
+			<variant type="LUNA1918">LUNA1918</variant>
+			<variant type="METELKO">Aibidil Metelko</variant>
+			<variant type="MONOTON">Greugais mhonotonach</variant>
+			<variant type="NDYUKA">Dual-chainnt Ndyuka</variant>
+			<variant type="NEDIS">Dual-chainnt Natisone</variant>
+			<variant type="NEWFOUND">Beurla Talamh an Èisg</variant>
+			<variant type="NJIVA">Dual-chainnt Gniva/Njiva</variant>
+			<variant type="NULIK">Nua-Volapük</variant>
+			<variant type="OSOJS">Dual-chainnt Oseacco/Osojane</variant>
+			<variant type="OXENDICT">Litreachadh faclair Oxford na Beurla</variant>
+			<variant type="PAHAWH2">Pahawh Hmong na 2na ìre</variant>
+			<variant type="PAHAWH3">Pahawh Hmong na 3s ìre</variant>
+			<variant type="PAHAWH4">Pahawh Hmong na 4mh ìre</variant>
+			<variant type="PAMAKA">Dual-chainnt Pamaka</variant>
+			<variant type="PETR1708">Litreachadh Pheadair 1708</variant>
+			<variant type="PINYIN">Ròmanachadh Pinyin</variant>
+			<variant type="POLYTON">Greugais phoiliotonach</variant>
+			<variant type="POSIX">Coimpiutair</variant>
+			<variant type="PUTER">Puter</variant>
+			<variant type="REVISED">Litreachadh lèirmheasaichte</variant>
+			<variant type="RIGIK">Volapük chlasaigeach</variant>
+			<variant type="ROZAJ">Dual-chainnt Resia</variant>
+			<variant type="RUMGR">Rumantsch Grischun</variant>
+			<variant type="SAAHO">Saho</variant>
+			<variant type="SCOTLAND">Beurla Stannardach na h-Alba</variant>
+			<variant type="SCOUSE">Scouse</variant>
+			<variant type="SIMPLE">SIMPLE</variant>
+			<variant type="SOLBA">Dual-chainnt Stolvizza/Solbica</variant>
+			<variant type="SOTAV">Dual-chainntean Sotavento de Kabuverdianu</variant>
+			<variant type="SPANGLIS">Spanglish</variant>
+			<variant type="SURMIRAN">Surmiran</variant>
+			<variant type="SURSILV">Sursilvan</variant>
+			<variant type="SUTSILV">Sutsilvan</variant>
+			<variant type="TARASK">Litreachadh Taraškievica</variant>
+			<variant type="UCCOR">Litreachadh aonaichte</variant>
+			<variant type="UCRCOR">Litreachadh aonaichte ’s lèirmheasaichte</variant>
+			<variant type="ULSTER">Albais Uladh</variant>
+			<variant type="UNIFON">Aibidil fuaim-eòlais Unifon</variant>
+			<variant type="VAIDIKA">Vaidika</variant>
+			<variant type="VALENCIA">Valencià</variant>
+			<variant type="VALLADER">Vallader</variant>
+			<variant type="WADEGILE">Ròmanachadh Wade-Giles</variant>
+			<variant type="XSISTEMO">XSISTEMO</variant>
 		</variants>
 		<keys>
 			<key type="calendar">Mìosachan</key>
+			<key type="cf">Fòrmat an airgeadra</key>
 			<key type="collation">Òrdugh an t-seòrsachaidh</key>
 			<key type="currency">Airgeadra</key>
 			<key type="hc">Cearcall an ama (12 no 24 uair)</key>
@@ -1074,6 +1209,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">Am Mìosachan Seapanach</type>
 			<type key="calendar" type="persian">Am Mìosachan Pearsach</type>
 			<type key="calendar" type="roc">Mìosachan Poblachd na Sìne</type>
+			<type key="cf" type="account">Fòrmat airgeadra na cunntasachd</type>
+			<type key="cf" type="standard">Fòrmat stannardach an airgeadra</type>
 			<type key="collation" type="big5han">Òrdugh seòrsachaidh na Sìnise Tradaiseanta - Big5</type>
 			<type key="collation" type="compat">Òrdugh seòrsachaidh roimhe a chum co-chòrdalachd</type>
 			<type key="collation" type="dictionary">Òrdugh seòrsachaidh an fhaclair</type>
@@ -1091,6 +1228,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="collation" type="traditional">Òrdugh seòrsachaidh tradaiseanta</type>
 			<type key="collation" type="unihan">Òrdugh an fhreumha ’s nan stràcan</type>
 			<type key="collation" type="zhuyin">Òrdugh seòrsachaidh Zhuyin</type>
+			<type key="d0" type="fwidth">Làn-Leud</type>
+			<type key="d0" type="hwidth">Leth-Leud</type>
+			<type key="d0" type="npinyin">Àireamhach</type>
 			<type key="hc" type="h11">Cleoc 12 uair a thìde (0–11)</type>
 			<type key="hc" type="h12">Cleoc 12 uair a thìde (1–12)</type>
 			<type key="hc" type="h23">Cleoc 24 uair a thìde (0–23)</type>
@@ -1098,6 +1238,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">Brisidhean-loidhe fuasgailte</type>
 			<type key="lb" type="normal">Brisidhean-loidhe àbhaisteach</type>
 			<type key="lb" type="strict">Brisidhean-loidhe teanna</type>
+			<type key="m0" type="bgn">Tar-litreachadh BGN nan Stàitean Aonaichte</type>
+			<type key="m0" type="ungegn">Tar-litreachadh GEGN nan Dùthchannan Aonaichte</type>
 			<type key="ms" type="metric">Tomhas meatrach</type>
 			<type key="ms" type="uksystem">Tomhas impireil</type>
 			<type key="ms" type="ussystem">Tomhas nan Stàitean Aonaichte</type>
@@ -1143,7 +1285,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="mymrshan">Àireamhan Shan Miànmar</type>
 			<type key="numbers" type="nkoo">Àireamhan N’Ko</type>
 			<type key="numbers" type="olck">Àireamhan Ol Chiki</type>
-			<type key="numbers" type="orya">Àireamhan Oriya</type>
+			<type key="numbers" type="orya">Àireamhan Odia</type>
 			<type key="numbers" type="osma">Àireamhan Osmanya</type>
 			<type key="numbers" type="roman">Àireamhan Ròmanach</type>
 			<type key="numbers" type="romanlow">Àireamhan beaga Ròmanach</type>
@@ -1160,18 +1302,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="tibt">Àireamhan na Tibeitise</type>
 			<type key="numbers" type="vaii">Àireamhan Vai</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">BGN</transformName>
-			<transformName type="Numeric">Àireamhach</transformName>
-			<transformName type="Tone">Tòna</transformName>
-			<transformName type="UNGEGN">UNGEGN</transformName>
-			<transformName type="x-Accents">Stràcan</transformName>
-			<transformName type="x-Fullwidth">Làn-Leud</transformName>
-			<transformName type="x-Halfwidth">Leth-Leud</transformName>
-			<transformName type="x-Jamo">Jamo</transformName>
-			<transformName type="x-Pinyin">Pinyin</transformName>
-			<transformName type="x-Publishing">Foillseachadh</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Meatrach</measurementSystemName>
 			<measurementSystemName type="UK">RA</measurementSystemName>
@@ -1187,6 +1317,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a à b c d e è f g h i ì l m n o ò p r s t u ù]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á ă â å ä ã ā æ ċ ç ḋ é ĕ ê ë ē ḟ ġ í ĭ î ï ī ı j k ł ṁ ñ ó ŏ ô ö ø ō œ ṗ q ṡ ş ș ṫ ú ŭ û ü ū v w x y ÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I L M N O P R S T U]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐ – — , ; \: ! ¡ ? . … · ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} § ¶ @ * / \&amp; ⁊ # % † ‡ ‧ ° © ® ™]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1270,13 +1401,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">LLL y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm a</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
@@ -1285,6 +1431,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
 						<dateFormatItem id="yMM">MM/y</dateFormatItem>
@@ -1748,6 +1895,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d'mh' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'seachdain' W MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="two">'seachdain' W MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="few">'seachdain' W MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'seachdain' W MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -1760,6 +1911,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">LLLL y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'seachdain' w 'dhe' y</dateFormatItem>
+						<dateFormatItem id="yw" count="two">'seachdain' w 'dhe' y</dateFormatItem>
+						<dateFormatItem id="yw" count="few">'seachdain' w 'dhe' y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'seachdain' w 'dhe' y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1907,6 +2062,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<fields>
 			<field type="era">
 				<displayName>linn</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>linn</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>li.</displayName>
 			</field>
 			<field type="year">
 				<displayName>bliadhna</displayName>
@@ -2090,6 +2251,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="few">{0} seachdainean air ais</relativeTimePattern>
 					<relativeTimePattern count="other">{0} seachdain air ais</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>an t-seachdain aig {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>seachd.</displayName>
@@ -2108,6 +2270,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="few">o {0} seachd.</relativeTimePattern>
 					<relativeTimePattern count="other">o {0} seachd.</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>an t-seachdain aig {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>sn.</displayName>
@@ -2126,6 +2289,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="few">-{0} sn.</relativeTimePattern>
 					<relativeTimePattern count="other">-{0} sn.</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>an t-seachdain aig {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>seachdain dhen mhìos</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>seachd. mìos</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>seachd. mìos</displayName>
 			</field>
 			<field type="day">
 				<displayName>latha</displayName>
@@ -2190,119 +2363,402 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">-{0} là</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>là dhen bhliadhna</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>là blia.</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>là bl.</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>latha na seachdaine</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>là seachd.</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>là sn.</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>là na seachdaine dhen mhìos</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>là seachd. mìos</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>là sn. mìos</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">DiDòmhnaich seo chaidh</relative>
 				<relative type="0">DiDòmhnaich</relative>
 				<relative type="1">DiDòmhnaich seo tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiDòmhnaich</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiDòmhnaich</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiDòmhnaich</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiDòmhnaich</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiDòmhnaich</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiDòmhnaich</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiDòmhnaich</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiDòmhnaich</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">DiD. sa chaidh</relative>
 				<relative type="0">DiD.</relative>
 				<relative type="1">DiD. sa tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiD.</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiD.</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiD.</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiD.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiD.</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiD.</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiDòmhnaich</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiDòmhnaich</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">Dò. ch.</relative>
 				<relative type="0">Dò.</relative>
 				<relative type="1">Dò. ti.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an {0} DiD.</relativeTimePattern>
+					<relativeTimePattern count="two">an {0} DhiD.</relativeTimePattern>
+					<relativeTimePattern count="few">an {0} DiD.</relativeTimePattern>
+					<relativeTimePattern count="other">an {0} DiD.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o {0} DiD.</relativeTimePattern>
+					<relativeTimePattern count="two">o {0} DhiD.</relativeTimePattern>
+					<relativeTimePattern count="few">o {0} DiD.</relativeTimePattern>
+					<relativeTimePattern count="other">o {0} DiD.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">DiLuain seo chaidh</relative>
 				<relative type="0">DiLuain</relative>
 				<relative type="1">DiLuain seo tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiLuain</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiLuain</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiLuain</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiLuain</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiLuain</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiLuain</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiLuain</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiLuain</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">DiL. sa chaidh</relative>
 				<relative type="0">DiL.</relative>
 				<relative type="1">DiL. sa tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiL.</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiL.</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiL.</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiL.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiL.</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiL.</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiL.</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiL.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">Lu. ch.</relative>
 				<relative type="0">Lu.</relative>
 				<relative type="1">Lu. ti.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an {0} DiL.</relativeTimePattern>
+					<relativeTimePattern count="two">an {0} DhiL.</relativeTimePattern>
+					<relativeTimePattern count="few">an {0} DiL.</relativeTimePattern>
+					<relativeTimePattern count="other">an {0} DiL.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o {0} DiL.</relativeTimePattern>
+					<relativeTimePattern count="two">o {0} DhiL.</relativeTimePattern>
+					<relativeTimePattern count="few">o {0} DiL.</relativeTimePattern>
+					<relativeTimePattern count="other">o {0} DiL.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">DiMàirt seo chaidh</relative>
 				<relative type="0">DiMàirt</relative>
 				<relative type="1">DiMàirt seo tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiMàirt</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiMàirt</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiMàirt</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiMàirt</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiMàirt</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiMàirt</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiMàirt</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiMàirt</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">DiM. sa chaidh</relative>
 				<relative type="0">DiM.</relative>
 				<relative type="1">DiM. sa tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiM.</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiM.</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiM.</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiM.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiM.</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiM.</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiM.</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiM.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">Mà. ch.</relative>
 				<relative type="0">Mà.</relative>
 				<relative type="1">Mà. ti.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an {0} DiM.</relativeTimePattern>
+					<relativeTimePattern count="two">an {0} DhiM.</relativeTimePattern>
+					<relativeTimePattern count="few">an {0} DiM.</relativeTimePattern>
+					<relativeTimePattern count="other">an {0} DiM.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o {0} DiM.</relativeTimePattern>
+					<relativeTimePattern count="two">o {0} DhiM.</relativeTimePattern>
+					<relativeTimePattern count="few">o {0} DiM.</relativeTimePattern>
+					<relativeTimePattern count="other">o {0} DiM.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">DiCiadain seo chaidh</relative>
 				<relative type="0">DiCiadain</relative>
 				<relative type="1">DiCiadain seo tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiCiadain</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiCiadain</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiCiadain</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiCiadain</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiCiadain</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiCiadain</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiCiadain</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiCiadain</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">DiC. sa chaidh</relative>
 				<relative type="0">DiC.</relative>
 				<relative type="1">DiC. sa tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiC.</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiC.</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiC.</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiC.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiC.</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiC.</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiC.</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiC.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">Ci. ch.</relative>
 				<relative type="0">Ci.</relative>
 				<relative type="1">Ci. ti.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an {0} DiC.</relativeTimePattern>
+					<relativeTimePattern count="two">an {0} DhiC.</relativeTimePattern>
+					<relativeTimePattern count="few">an {0} DiC.</relativeTimePattern>
+					<relativeTimePattern count="other">an {0} DiC.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o {0} DiC.</relativeTimePattern>
+					<relativeTimePattern count="two">o {0} DhiC.</relativeTimePattern>
+					<relativeTimePattern count="few">o {0} DiC.</relativeTimePattern>
+					<relativeTimePattern count="other">o {0} DiC.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">DiarDaoin seo chaidh</relative>
 				<relative type="0">DiarDaoin</relative>
 				<relative type="1">DiarDaoin seo tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiarDaoin</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiarDaoin</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiarDaoin</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiarDaoin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiarDaoin</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiarDaoin</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiarDaoin</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiarDaoin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">Dia. sa chaidh</relative>
 				<relative type="0">Dia.</relative>
 				<relative type="1">Dia. sa tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} Dia.</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} Dhia.</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} Dia.</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} Dia.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} Dia.</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} Dhia.</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} Dia.</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} Dia.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">Da. ch.</relative>
 				<relative type="0">Da.</relative>
 				<relative type="1">Da. ti.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an {0} Dia.</relativeTimePattern>
+					<relativeTimePattern count="two">an {0} Dhia.</relativeTimePattern>
+					<relativeTimePattern count="few">an {0} Dia.</relativeTimePattern>
+					<relativeTimePattern count="other">an {0} Dia.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o {0} Dia.</relativeTimePattern>
+					<relativeTimePattern count="two">o {0} Dhia.</relativeTimePattern>
+					<relativeTimePattern count="few">o {0} Dia.</relativeTimePattern>
+					<relativeTimePattern count="other">o {0} Dia.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">DihAoine seo chaidh</relative>
 				<relative type="0">DihAoine</relative>
 				<relative type="1">DihAoine seo tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DihAoine</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhihAoine</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DihAoine</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DihAoine</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DihAoine</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhihAoine</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DihAoine</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DihAoine</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">Dih. sa chaidh</relative>
 				<relative type="0">Dih.</relative>
 				<relative type="1">Dih. sa tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} Dih.</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} Dhih.</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} Dih.</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} Dih.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} Dih.</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} Dhih.</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} Dih.</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} Dih.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">hA. ch.</relative>
 				<relative type="0">hA.</relative>
 				<relative type="1">hA. ti.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an {0} Dih.</relativeTimePattern>
+					<relativeTimePattern count="two">an {0} Dhih.</relativeTimePattern>
+					<relativeTimePattern count="few">an {0} Dih.</relativeTimePattern>
+					<relativeTimePattern count="other">an {0} Dih.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o {0} Dih.</relativeTimePattern>
+					<relativeTimePattern count="two">o {0} Dhih.</relativeTimePattern>
+					<relativeTimePattern count="few">o {0} Dih.</relativeTimePattern>
+					<relativeTimePattern count="other">o {0} Dih.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">DiSathairne seo chaidh</relative>
 				<relative type="0">DiSathairne</relative>
 				<relative type="1">DiSathairne seo tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiSathairne</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiSathairne</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiSathairne</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiSathairne</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiSathairne</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiSathairne</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiSathairne</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiSathairne</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">DiS. sa chaidh</relative>
 				<relative type="0">DiS.</relative>
 				<relative type="1">DiS. sa tighinn</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an ceann {0} DiS.</relativeTimePattern>
+					<relativeTimePattern count="two">an ceann {0} DhiS.</relativeTimePattern>
+					<relativeTimePattern count="few">an ceann {0} DiS.</relativeTimePattern>
+					<relativeTimePattern count="other">an ceann {0} DiS.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o chionn {0} DiS.</relativeTimePattern>
+					<relativeTimePattern count="two">o chionn {0} DhiS.</relativeTimePattern>
+					<relativeTimePattern count="few">o chionn {0} DiS.</relativeTimePattern>
+					<relativeTimePattern count="other">o chionn {0} DiS.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">Sa. ch.</relative>
 				<relative type="0">Sa.</relative>
 				<relative type="1">Sa. ti.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">an {0} DiS.</relativeTimePattern>
+					<relativeTimePattern count="two">an {0} DhiS.</relativeTimePattern>
+					<relativeTimePattern count="few">an {0} DiS.</relativeTimePattern>
+					<relativeTimePattern count="other">an {0} DiS.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">o {0} DiS.</relativeTimePattern>
+					<relativeTimePattern count="two">o {0} DhiS.</relativeTimePattern>
+					<relativeTimePattern count="few">o {0} DiS.</relativeTimePattern>
+					<relativeTimePattern count="other">o {0} DiS.</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>m/f</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>m/f</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>m/f</displayName>
+			</field>
 			<field type="hour">
 				<displayName>uair a thìde</displayName>
+				<relative type="0">am broinn uair a thìde</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">an ceann {0} uair a thìde</relativeTimePattern>
 					<relativeTimePattern count="two">an ceann {0} uair a thìde</relativeTimePattern>
@@ -2318,6 +2774,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-short">
 				<displayName>uair</displayName>
+				<relative type="0">am broinn uair</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">an {0} uair</relativeTimePattern>
 					<relativeTimePattern count="two">an {0} uair</relativeTimePattern>
@@ -2333,6 +2790,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-narrow">
 				<displayName>u</displayName>
+				<relative type="0">san uair</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">+{0} u.</relativeTimePattern>
 					<relativeTimePattern count="two">+{0} u.</relativeTimePattern>
@@ -2348,6 +2806,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>mionaid</displayName>
+				<relative type="0">am broinn mionaid</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">an ceann {0} mhionaid</relativeTimePattern>
 					<relativeTimePattern count="two">an ceann {0} mhionaid</relativeTimePattern>
@@ -2363,6 +2822,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-short">
 				<displayName>mion.</displayName>
+				<relative type="0">am broinn mion.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">an {0} mhion.</relativeTimePattern>
 					<relativeTimePattern count="two">an {0} mhion.</relativeTimePattern>
@@ -2378,6 +2838,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-narrow">
 				<displayName>m</displayName>
+				<relative type="0">sa mhion.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">+{0} m</relativeTimePattern>
 					<relativeTimePattern count="two">+{0} m</relativeTimePattern>
@@ -2442,6 +2903,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>roinn-tìde</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>roinn</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>roinn</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
@@ -2451,6 +2918,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">Tìde samhraidh: {0}</regionFormat>
 			<regionFormat type="standard">Bun-àm: {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>HST</generic>
+					<standard>HST</standard>
+					<daylight>HDT</daylight>
+				</short>
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Àm Uile-choitcheann Co-òrdanaichte</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Baile neo-aithnichte</exemplarCity>
 			</zone>
@@ -2715,6 +3198,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>Vancouver</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Dawson Creek</exemplarCity>
 			</zone>
@@ -2811,6 +3297,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Rapa Nui</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago</exemplarCity>
 			</zone>
@@ -2843,6 +3332,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nicosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Pràg</exemplarCity>
@@ -3108,6 +3600,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atyrau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>Aqtöbe</exemplarCity>
 			</zone>
@@ -3221,9 +3716,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
@@ -3390,6 +3882,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrakhan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -3401,6 +3905,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -3570,9 +4080,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midway</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake</exemplarCity>
 			</zone>
@@ -3582,13 +4089,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -4546,6 +5048,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>Àm Pohnpei</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Àm Pyeongyang</standard>
+				</long>
+			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
 					<generic>Àm Qızılorda</generic>
@@ -4742,8 +5249,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<group>٬</group>
 			<list>؛</list>
 			<percentSign>٪</percentSign>
-			<plusSign>‏+</plusSign>
-			<minusSign>‏-</minusSign>
+			<plusSign>؜+</plusSign>
+			<minusSign>؜-</minusSign>
 			<exponential>اس</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>؉</perMille>
@@ -4757,12 +5264,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<list>؛</list>
 			<percentSign>٪</percentSign>
 			<plusSign>‎+‎</plusSign>
-			<minusSign>‎-‎</minusSign>
+			<minusSign>-</minusSign>
 			<exponential>×۱۰^</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>؉</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
+			<timeSeparator draft="contributed">٫</timeSeparator>
 		</symbols>
 		<symbols numberSystem="bali">
 			<decimal>.</decimal>
@@ -4854,6 +5362,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
 			<nan>NaN</nan>
+			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<symbols numberSystem="gujr">
 			<decimal>.</decimal>
@@ -5956,14 +6465,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">rùbal ùr Bealaruiseach (1994–1999)</displayName>
 				<symbol>BYB</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Rùbal Bealaruiseach</displayName>
 				<displayName count="one">rùbal Bealaruiseach</displayName>
 				<displayName count="two">rùbal Bealaruiseach</displayName>
 				<displayName count="few">rùbalan Bealaruiseach</displayName>
 				<displayName count="other">rùbal Bealaruiseach</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Rùbal Bealaruiseach (2000–2016)</displayName>
+				<displayName count="one">rùbal Bealaruiseach (2000–2016)</displayName>
+				<displayName count="two">rùbal Bealaruiseach (2000–2016)</displayName>
+				<displayName count="few">rùbalan Bealaruiseach (2000–2016)</displayName>
+				<displayName count="other">rùbal Bealaruiseach (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Dolar Beilìseach</displayName>
@@ -6333,6 +6850,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="few">lari Cairtbheileach</displayName>
 				<displayName count="other">lari Cairtbheileach</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Cedi Gànach (1979–2007)</displayName>
@@ -6916,12 +7434,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ouguiya Moratàineach (1973–2017)</displayName>
+				<displayName count="one">ouguiya Moratàineach (1973–2017)</displayName>
+				<displayName count="two">ouguiya Moratàineach (1973–2017)</displayName>
+				<displayName count="few">ouguiya Moratàineach (1973–2017)</displayName>
+				<displayName count="other">ouguiya Moratàineach (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ouguiya Moratàineach</displayName>
 				<displayName count="one">ouguiya Moratàineach</displayName>
 				<displayName count="two">ouguiya Moratàineach</displayName>
 				<displayName count="few">ouguiya Moratàineach</displayName>
 				<displayName count="other">ouguiya Moratàineach</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Lira Maltach</displayName>
@@ -7125,11 +7650,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>PEI</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>Sol ùr Pearùthach</displayName>
-				<displayName count="one">sol ùr Pearùthach</displayName>
-				<displayName count="two">shol ùr Pearùthach</displayName>
-				<displayName count="few">sol ùra Pearùthach</displayName>
-				<displayName count="other">sol ùr Pearùthach</displayName>
+				<displayName>Sol Pearùthach</displayName>
+				<displayName count="one">sol Pearùthach</displayName>
+				<displayName count="two">shol Pearùthach</displayName>
+				<displayName count="few">sol Pearùthach</displayName>
+				<displayName count="other">sol Pearùthach</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
@@ -7231,6 +7756,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="few">leu Romàineach</displayName>
 				<displayName count="other">leu Romàineach</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">leu</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Dinar Sèirbeach</displayName>
@@ -7402,12 +7928,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobra São Tomé agus Príncipe (1977–2017)</displayName>
+				<displayName count="one">dobra São Tomé agus Príncipe (1977–2017)</displayName>
+				<displayName count="two">dhobra São Tomé agus Príncipe (1977–2017)</displayName>
+				<displayName count="few">dobra São Tomé agus Príncipe (1977–2017)</displayName>
+				<displayName count="other">dobra São Tomé agus Príncipe (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobra São Tomé agus Príncipe</displayName>
 				<displayName count="one">dobra São Tomé agus Príncipe</displayName>
 				<displayName count="two">dhobra São Tomé agus Príncipe</displayName>
 				<displayName count="few">dobra São Tomé agus Príncipe</displayName>
 				<displayName count="other">dobra São Tomé agus Príncipe</displayName>
-				<symbol>STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -7994,6 +8527,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} chaora bhàin</pluralMinimalPairs>
+			<pluralMinimalPairs count="two">{0} caora bàn</pluralMinimalPairs>
+			<pluralMinimalPairs count="few">{0} chaora bhàn</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} caoraich bhàna</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Gabh an {0}mh air an taobh dheas.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -8055,6 +8595,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} chilemeatair ceàrnagach</unitPattern>
 				<unitPattern count="few">{0} cilemeatairean ceàrnagach</unitPattern>
 				<unitPattern count="other">{0} cilemeatair ceàrnagach</unitPattern>
+				<perUnitPattern>{0} sa chilemeatair cheàrnagach</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>heactair</displayName>
@@ -8085,6 +8626,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} mhìle cheàrnagach</unitPattern>
 				<unitPattern count="few">{0} mìltean ceàrnagach</unitPattern>
 				<unitPattern count="other">{0} mìle cheàrnagach</unitPattern>
+				<perUnitPattern>{0} sa mhìle cheàrnagach</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acair</displayName>
@@ -8122,6 +8664,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mille-ghrama san deicheamh-liotair</displayName>
+				<unitPattern count="one">{0} mhille-ghrama san deicheamh-liotair</unitPattern>
+				<unitPattern count="two">{0} mhille-ghrama san deicheamh-liotair</unitPattern>
+				<unitPattern count="few">{0} mille-ghramaichean san deicheamh-liotair</unitPattern>
+				<unitPattern count="other">{0} mille-ghrama san deicheamh-liotair</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mille-mhòl san liotair</displayName>
+				<unitPattern count="one">{0} mhille-mhòl san liotair</unitPattern>
+				<unitPattern count="two">{0} mhille-mhòl san liotair</unitPattern>
+				<unitPattern count="few">{0} mille-mhòlaichean san liotair</unitPattern>
+				<unitPattern count="other">{0} mille-mhòl san liotair</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>pàirt sa mhillean</displayName>
+				<unitPattern count="one">{0} phàirt sa mhillean</unitPattern>
+				<unitPattern count="two">{0} phàirt sa mhillean</unitPattern>
+				<unitPattern count="few">{0} pàirtean sa mhillean</unitPattern>
+				<unitPattern count="other">{0} pàirt sa mhillean</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liotair sa chilemeatair</displayName>
 				<unitPattern count="one">{0} liotair sa chilemeatair</unitPattern>
@@ -8142,6 +8705,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} mhìle sa ghalan</unitPattern>
 				<unitPattern count="few">{0} mìltean sa ghalan</unitPattern>
 				<unitPattern count="other">{0} mìle sa ghalan</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mìle sa ghalan impireil</displayName>
+				<unitPattern count="one">{0} mhìle sa ghalan impireil</unitPattern>
+				<unitPattern count="two">{0} mhìle sa ghalan impireil</unitPattern>
+				<unitPattern count="few">{0} mìltean sa ghalan impireil</unitPattern>
+				<unitPattern count="other">{0} mìle sa ghalan impireil</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>tera-baidht</displayName>
@@ -8533,6 +9103,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} mìltean Lochlannach</unitPattern>
 				<unitPattern count="other">{0} mìle Lochlannach</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>puing</displayName>
+				<unitPattern count="one">{0} phuing</unitPattern>
+				<unitPattern count="two">{0} phuing</unitPattern>
+				<unitPattern count="few">{0} puingean</unitPattern>
+				<unitPattern count="other">{0} puing</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
@@ -8884,6 +9461,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} galan</unitPattern>
 				<perUnitPattern>{0} sa ghalan</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>galan impireil</displayName>
+				<unitPattern count="one">{0} ghalan impireil</unitPattern>
+				<unitPattern count="two">{0} ghalan impireil</unitPattern>
+				<unitPattern count="few">{0} galanan impireil</unitPattern>
+				<unitPattern count="other">{0} galan impireil</unitPattern>
+				<perUnitPattern>{0} sa ghalan impireil</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>càrt</displayName>
 				<unitPattern count="one">{0} chàrt</unitPattern>
@@ -8992,6 +9577,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} km²</unitPattern>
 				<unitPattern count="few">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>heactair</displayName>
@@ -9022,6 +9608,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} mì²</unitPattern>
 				<unitPattern count="few">{0} mì²</unitPattern>
 				<unitPattern count="other">{0} mì²</unitPattern>
+				<perUnitPattern>{0}/mì²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acair</displayName>
@@ -9059,6 +9646,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="two">{0} mg/dL</unitPattern>
+				<unitPattern count="few">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmòl/L</displayName>
+				<unitPattern count="one">{0} mmòl/L</unitPattern>
+				<unitPattern count="two">{0} mmòl/L</unitPattern>
+				<unitPattern count="few">{0} mmòl/L</unitPattern>
+				<unitPattern count="other">{0} mmòl/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="two">{0} ppm</unitPattern>
+				<unitPattern count="few">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>liotair/km</displayName>
 				<unitPattern count="one">{0} L/km</unitPattern>
@@ -9079,6 +9687,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0} mì/g</unitPattern>
 				<unitPattern count="few">{0} mì/g</unitPattern>
 				<unitPattern count="other">{0} mì/g</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mìle/gal imp.</displayName>
+				<unitPattern count="one">{0} mhì/gal imp.</unitPattern>
+				<unitPattern count="two">{0} mhì/gal imp.</unitPattern>
+				<unitPattern count="few">{0} mì/gal imp.</unitPattern>
+				<unitPattern count="other">{0} mì/gal imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -9470,6 +10085,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>puing</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="two">{0} pt</unitPattern>
+				<unitPattern count="few">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lx</unitPattern>
@@ -9821,6 +10443,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gal imp.</displayName>
+				<unitPattern count="one">{0} ghal imp.</unitPattern>
+				<unitPattern count="two">{0} ghal imp.</unitPattern>
+				<unitPattern count="few">{0} gal imp.</unitPattern>
+				<unitPattern count="other">{0} gal imp.</unitPattern>
+				<perUnitPattern>{0}/gal imp.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>càrt</displayName>
 				<unitPattern count="one">{0} chàrt</unitPattern>
@@ -9929,6 +10559,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0}km²</unitPattern>
 				<unitPattern count="few">{0}km²</unitPattern>
 				<unitPattern count="other">{0}km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>heactair</displayName>
@@ -9959,6 +10590,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0}mì²</unitPattern>
 				<unitPattern count="few">{0}mì²</unitPattern>
 				<unitPattern count="other">{0}mì²</unitPattern>
+				<perUnitPattern>{0}/mì²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acair</displayName>
@@ -9996,6 +10628,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0}kt</unitPattern>
 				<unitPattern count="other">{0}kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0}mg/dL</unitPattern>
+				<unitPattern count="two">{0}mg/dL</unitPattern>
+				<unitPattern count="few">{0}mg/dL</unitPattern>
+				<unitPattern count="other">{0}mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmòl/L</displayName>
+				<unitPattern count="one">{0}mmòl/L</unitPattern>
+				<unitPattern count="two">{0}mmòl/L</unitPattern>
+				<unitPattern count="few">{0}mmòl/L</unitPattern>
+				<unitPattern count="other">{0}mmòl/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0}ppm</unitPattern>
+				<unitPattern count="two">{0}ppm</unitPattern>
+				<unitPattern count="few">{0}ppm</unitPattern>
+				<unitPattern count="other">{0}ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
 				<unitPattern count="one">{0}L/km</unitPattern>
@@ -10016,6 +10669,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="two">{0}mì/g</unitPattern>
 				<unitPattern count="few">{0}mì/g</unitPattern>
 				<unitPattern count="other">{0}mì/g</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mìle/gal RA</displayName>
+				<unitPattern count="one">{0}m/gRA</unitPattern>
+				<unitPattern count="two">{0}m/gRA</unitPattern>
+				<unitPattern count="few">{0}m/gRA</unitPattern>
+				<unitPattern count="other">{0}m/gRA</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -10407,6 +11067,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="few">{0}smi</unitPattern>
 				<unitPattern count="other">{0}smi</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0}pt</unitPattern>
+				<unitPattern count="two">{0}pt</unitPattern>
+				<unitPattern count="few">{0}pt</unitPattern>
+				<unitPattern count="other">{0}pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0}lx</unitPattern>
@@ -10758,6 +11425,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gal imp.</displayName>
+				<unitPattern count="one">{0} ghal i.</unitPattern>
+				<unitPattern count="two">{0} ghal i.</unitPattern>
+				<unitPattern count="few">{0} gal i.</unitPattern>
+				<unitPattern count="other">{0} gal i.</unitPattern>
+				<perUnitPattern>{0}/gal i.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>càrt</displayName>
 				<unitPattern count="one">{0}càrt</unitPattern>
@@ -10824,6 +11499,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} agus {1}</listPatternPart>
 			<listPatternPart type="2">{0} agus {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} no {1}</listPatternPart>
+			<listPatternPart type="2">{0} no {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} is {1}</listPatternPart>
+			<listPatternPart type="2">{0} is {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
@@ -10849,5 +11536,105 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>chan eil:ch:c:n</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} – na h-uile</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} – co-chòrdalachd</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} – cuairtichte</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} – leudaichte</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} – eachdraidheil</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} – measgaichte</characterLabelPattern>
+		<characterLabelPattern type="other">{0} – eile</characterLabelPattern>
+		<characterLabelPattern type="scripts">sgriobtaichean – {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} stràc</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="two">{0} stràc</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="few">{0} stràcan</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} stràc</characterLabelPattern>
+		<characterLabel type="activities">gnìomhachd</characterLabel>
+		<characterLabel type="african_scripts">sgriobt Afragach</characterLabel>
+		<characterLabel type="american_scripts">sgriobt Aimeireagach</characterLabel>
+		<characterLabel type="animal">beathach</characterLabel>
+		<characterLabel type="animals_nature">beathach no an nàdar</characterLabel>
+		<characterLabel type="arrows">saighead</characterLabel>
+		<characterLabel type="body">bodhaig</characterLabel>
+		<characterLabel type="box_drawing">tarraing bhogsaichean</characterLabel>
+		<characterLabel type="braille">Braille</characterLabel>
+		<characterLabel type="building">togalach</characterLabel>
+		<characterLabel type="bullets_stars">peilear no rionnag</characterLabel>
+		<characterLabel type="consonantal_jamo">Jamo chonsanach</characterLabel>
+		<characterLabel type="currency_symbols">samhla airgeadra</characterLabel>
+		<characterLabel type="dash_connector">strìochag no ceangladair</characterLabel>
+		<characterLabel type="digits">àireamh</characterLabel>
+		<characterLabel type="dingbats">dingbat</characterLabel>
+		<characterLabel type="divination_symbols">samhla fàidheadaireachd</characterLabel>
+		<characterLabel type="downwards_arrows">saighead sìos</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">saighead sìos is suas</characterLabel>
+		<characterLabel type="east_asian_scripts">sgriobt Ear-Àiseanach</characterLabel>
+		<characterLabel type="emoji">Emoji</characterLabel>
+		<characterLabel type="european_scripts">sgriobt Eòrpach</characterLabel>
+		<characterLabel type="female">boireann</characterLabel>
+		<characterLabel type="flag">bratach</characterLabel>
+		<characterLabel type="flags">brataich</characterLabel>
+		<characterLabel type="food_drink">biadh ⁊ deoch</characterLabel>
+		<characterLabel type="format">fòrmatadh</characterLabel>
+		<characterLabel type="format_whitespace">fòrmatadh ⁊ geal-spàs</characterLabel>
+		<characterLabel type="full_width_form_variant">eug-samhail làn-leud</characterLabel>
+		<characterLabel type="geometric_shapes">cruth geomatrach</characterLabel>
+		<characterLabel type="half_width_form_variant">eug-samhail leth-leud</characterLabel>
+		<characterLabel type="han_characters">caractar Han</characterLabel>
+		<characterLabel type="han_radicals">feumh Han</characterLabel>
+		<characterLabel type="hanja">Hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">Hanzi (shìmplichte)</characterLabel>
+		<characterLabel type="hanzi_traditional">Hanzi (thradaiseanta)</characterLabel>
+		<characterLabel type="heart">cridhe</characterLabel>
+		<characterLabel type="historic_scripts">sgriobt eachdraidheil</characterLabel>
+		<characterLabel type="ideographic_desc_characters">idea-ghraf mìneachaidh</characterLabel>
+		<characterLabel type="japanese_kana">Kana na Seapanaise</characterLabel>
+		<characterLabel type="kanbun">Kanbun</characterLabel>
+		<characterLabel type="kanji">Kanji</characterLabel>
+		<characterLabel type="keycap">còmhdachadh iuchrach</characterLabel>
+		<characterLabel type="leftwards_arrows">saighead gu clì</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">saighead gu clì ’s deas</characterLabel>
+		<characterLabel type="letterlike_symbols">samhla coltach ri litir</characterLabel>
+		<characterLabel type="limited_use">cleachdadh cuingichte</characterLabel>
+		<characterLabel type="male">fireann</characterLabel>
+		<characterLabel type="math_symbols">samhla matamataig</characterLabel>
+		<characterLabel type="middle_eastern_scripts">sgriobt Ear-mheadhain</characterLabel>
+		<characterLabel type="miscellaneous">measgaichte</characterLabel>
+		<characterLabel type="modern_scripts">sgriobt ùr-nòsach</characterLabel>
+		<characterLabel type="modifier">atharraichear</characterLabel>
+		<characterLabel type="musical_symbols">samhla ciùil</characterLabel>
+		<characterLabel type="nature">an nàdar</characterLabel>
+		<characterLabel type="nonspacing">gun bheàrnadh</characterLabel>
+		<characterLabel type="numbers">àireamhan</characterLabel>
+		<characterLabel type="objects">oibseact</characterLabel>
+		<characterLabel type="other">eile</characterLabel>
+		<characterLabel type="paired">paidhrichte</characterLabel>
+		<characterLabel type="person">neach</characterLabel>
+		<characterLabel type="phonetic_alphabet">aibidil fhuaim-eòlach</characterLabel>
+		<characterLabel type="pictographs">picteagram</characterLabel>
+		<characterLabel type="place">àite</characterLabel>
+		<characterLabel type="plant">lus</characterLabel>
+		<characterLabel type="punctuation">puingeachadh</characterLabel>
+		<characterLabel type="rightwards_arrows">saighead gu deas</characterLabel>
+		<characterLabel type="sign_standard_symbols">sanas no samhla</characterLabel>
+		<characterLabel type="small_form_variant">eug-samhailean beaga</characterLabel>
+		<characterLabel type="smiley">samhla-gniùis</characterLabel>
+		<characterLabel type="smileys_people">samhla-gniùis no neach</characterLabel>
+		<characterLabel type="south_asian_scripts">sgriobt Àisianach deasach</characterLabel>
+		<characterLabel type="southeast_asian_scripts">sgriobt Ear-Àisianach deasach</characterLabel>
+		<characterLabel type="spacing">beàrnadh</characterLabel>
+		<characterLabel type="sport">spòrs</characterLabel>
+		<characterLabel type="symbols">samhla</characterLabel>
+		<characterLabel type="technical_symbols">samhla teignigeach</characterLabel>
+		<characterLabel type="tone_marks">comharra tòna</characterLabel>
+		<characterLabel type="travel">siubhal</characterLabel>
+		<characterLabel type="travel_places">siubhal no àite</characterLabel>
+		<characterLabel type="upwards_arrows">saighead suas</characterLabel>
+		<characterLabel type="variant_forms">eug-samhail</characterLabel>
+		<characterLabel type="vocalic_jamo">Jamo fhuaimreagach</characterLabel>
+		<characterLabel type="weather">an aimsir</characterLabel>
+		<characterLabel type="western_asian_scripts">sgriobt Iar-Àisianach</characterLabel>
+		<characterLabel type="whitespace">geal-spàs</characterLabel>
+	</characterLabels>
 </ldml>
-

@@ -337,6 +337,17 @@ ZPage* ZPageAllocator::alloc_page_blocking(uint8_t type, size_t size, ZAllocatio
       // Wait for allocation to complete or fail
       page = request.wait();
     } while (page == gc_marker);
+
+    {
+      // Guard deletion of underlying semaphore. This is a workaround for a
+      // bug in sem_post() in glibc < 2.21, where it's not safe to destroy
+      // the semaphore immediately after returning from sem_wait(). The
+      // reason is that sem_post() can touch the semaphore after a waiting
+      // thread have returned from sem_wait(). To avoid this race we are
+      // forcing the waiting thread to acquire/release the lock held by the
+      // posting thread. https://sourceware.org/bugzilla/show_bug.cgi?id=12674
+      ZLocker locker(&_lock);
+    }
   }
 
   return page;
@@ -448,24 +459,25 @@ void ZPageAllocator::free_page(ZPage* page, bool reclaimed) {
   satisfy_alloc_queue();
 }
 
+bool ZPageAllocator::is_alloc_stalled() const {
+  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
+  return !_queue.is_empty();
+}
+
 void ZPageAllocator::check_out_of_memory() {
   ZLocker locker(&_lock);
 
-  ZPageAllocRequest* const first = _queue.first();
-  if (first == NULL) {
-    // Allocation queue is empty
-    return;
-  }
-
-  // Fail the allocation request if it was enqueued before the
+  // Fail allocation requests that were enqueued before the
   // last GC cycle started, otherwise start a new GC cycle.
-  if (first->total_collections() < ZCollectedHeap::heap()->total_collections()) {
-    // Out of memory, fail all enqueued requests
-    for (ZPageAllocRequest* request = _queue.remove_first(); request != NULL; request = _queue.remove_first()) {
-      request->satisfy(NULL);
+  for (ZPageAllocRequest* request = _queue.first(); request != NULL; request = _queue.first()) {
+    if (request->total_collections() == ZCollectedHeap::heap()->total_collections()) {
+      // Start a new GC cycle, keep allocation requests enqueued
+      request->satisfy(gc_marker);
+      return;
     }
-  } else {
-    // Start another GC cycle, keep all enqueued requests
-    first->satisfy(gc_marker);
+
+    // Out of memory, fail allocation request
+    _queue.remove_first();
+    request->satisfy(NULL);
   }
 }

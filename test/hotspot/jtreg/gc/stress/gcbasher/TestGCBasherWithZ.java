@@ -28,7 +28,7 @@ import java.io.IOException;
  * @test TestGCBasherWithZ
  * @key gc stress
  * @requires vm.gc.Z
- * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.flavor == "server" & !vm.emulatedClient & !vm.graal.enabled
  * @summary Stress ZGC
  * @run main/othervm/timeout=200 -Xlog:gc*=info -Xmx384m -server -XX:+UnlockExperimentalVMOptions -XX:+UseZGC TestGCBasherWithZ 120000
  */

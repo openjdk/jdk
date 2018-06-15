@@ -6153,6 +6153,9 @@
                 <df name="IsModifiableModule">
                   <in>libIsModifiableModuleTest.c</in>
                 </df>
+                <df name="HeapMonitorModule">
+                  <in>libHeapMonitorTest.c</in>
+                </df>
                 <df name="ModuleAwareAgents">
                   <df name="ClassFileLoadHook">
                     <in>libMAAClassFileLoadHook.c</in>
@@ -40150,6 +40153,11 @@
             flavor2="0">
       </item>
       <item path="../../test/hotspot/jtreg/serviceability/jvmti/IsModifiableModule/libIsModifiableModuleTest.c"
+            ex="false"
+            tool="0"
+            flavor2="0">
+      </item>
+      <item path="../../test/hotspot/jtreg/serviceability/jvmti/HeapMonitor/libHeapMonitorTest.c"
             ex="false"
             tool="0"
             flavor2="0">

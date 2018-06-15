@@ -37,6 +37,12 @@ class GlobalTLABStats;
 //            It is thread-private at any time, but maybe multiplexed over
 //            time across multiple threads. The park()/unpark() pair is
 //            used to make it available for such multiplexing.
+//
+//            Heap sampling is performed via the end and allocation_end
+//            fields.
+//            allocation_end contains the real end of the tlab allocation,
+//            whereas end can be set to an arbitrary spot in the tlab to
+//            trip the return and sample the allocation.
 class ThreadLocalAllocBuffer: public CHeapObj<mtThread> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -44,10 +50,13 @@ private:
   HeapWord* _start;                              // address of TLAB
   HeapWord* _top;                                // address after last allocation
   HeapWord* _pf_top;                             // allocation prefetch watermark
-  HeapWord* _end;                                // allocation end (excluding alignment_reserve)
+  HeapWord* _end;                                // allocation end (can be the sampling end point or _allocation_end)
+  HeapWord* _allocation_end;                     // end for allocations (actual TLAB end, excluding alignment_reserve)
+
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
   size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
+  size_t    _bytes_since_last_sample_point;      // bytes since last sample point.
 
   static size_t   _max_size;                          // maximum size of any TLAB
   static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
@@ -67,6 +76,7 @@ private:
 
   void set_start(HeapWord* start)                { _start = start; }
   void set_end(HeapWord* end)                    { _end = end; }
+  void set_allocation_end(HeapWord* ptr)         { _allocation_end = ptr; }
   void set_top(HeapWord* top)                    { _top = top; }
   void set_pf_top(HeapWord* pf_top)              { _pf_top = pf_top; }
   void set_desired_size(size_t desired_size)     { _desired_size = desired_size; }
@@ -77,7 +87,7 @@ private:
   static int    target_refills()                 { return _target_refills; }
   size_t initial_desired_size();
 
-  size_t remaining() const                       { return end() == NULL ? 0 : pointer_delta(hard_end(), top()); }
+  size_t remaining();
 
   bool is_last_allocation(HeapWord* obj, size_t size) { return pointer_delta(top(), obj) == size; }
 
@@ -118,8 +128,8 @@ public:
 
   HeapWord* start() const                        { return _start; }
   HeapWord* end() const                          { return _end; }
-  HeapWord* hard_end() const                     { return _end + alignment_reserve(); }
   HeapWord* top() const                          { return _top; }
+  HeapWord* hard_end();
   HeapWord* pf_top() const                       { return _pf_top; }
   size_t desired_size() const                    { return _desired_size; }
   size_t used() const                            { return pointer_delta(top(), start()); }
@@ -127,9 +137,11 @@ public:
   size_t free() const                            { return pointer_delta(end(), top()); }
   // Don't discard tlab if remaining space is larger than this.
   size_t refill_waste_limit() const              { return _refill_waste_limit; }
+  size_t bytes_since_last_sample_point() const   { return _bytes_since_last_sample_point; }
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
+  HeapWord* allocate_sampled_object(size_t size);
 
   // Undo last allocation.
   inline bool undo_allocate(HeapWord* obj, size_t size);
@@ -171,6 +183,9 @@ public:
   void fill(HeapWord* start, HeapWord* top, size_t new_size);
   void initialize();
 
+  void set_back_allocation_end();
+  void set_sample_end();
+
   static size_t refill_waste_limit_increment()   { return TLABWasteIncrement; }
 
   template <typename T> void addresses_do(T f) {
@@ -178,6 +193,7 @@ public:
     f(&_top);
     f(&_pf_top);
     f(&_end);
+    f(&_allocation_end);
   }
 
   // Code generation support

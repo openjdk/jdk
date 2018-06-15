@@ -99,10 +99,6 @@ FD handleOpen(const char *path, int oflag, int mode);
     } while((_result == -1) && (errno == EINTR)); \
 } while(0)
 
-/*
- * IO helper function(s)
- */
-void fileClose(JNIEnv *env, jobject this, jfieldID fid);
 void fileDescriptorClose(JNIEnv *env, jobject this);
 
 #ifdef MACOSX

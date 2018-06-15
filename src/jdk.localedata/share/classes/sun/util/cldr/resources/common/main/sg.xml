@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="sg"/>
 	</identity>
 	<localeDisplayNames>
@@ -289,6 +290,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a â ä b d e ê ë f g h i î ï j k l m n o ô ö p r s t u ù û ü v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c q x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P R S T U V W Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -529,6 +531,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
 					</availableFormats>
+					<appendItems>
+						<appendItem request="Day">{0} ({2}: {1})</appendItem>
+						<appendItem request="Day-Of-Week">{0} {1}</appendItem>
+						<appendItem request="Era">{1} {0}</appendItem>
+						<appendItem request="Hour">{0} ({2}: {1})</appendItem>
+						<appendItem request="Minute">{0} ({2}: {1})</appendItem>
+						<appendItem request="Month">{0} ({2}: {1})</appendItem>
+						<appendItem request="Quarter">{0} ({2}: {1})</appendItem>
+						<appendItem request="Second">{0} ({2}: {1})</appendItem>
+						<appendItem request="Timezone">{0} {1}</appendItem>
+						<appendItem request="Week">{0} ({2}: {1})</appendItem>
+						<appendItem request="Year">{1} {0}</appendItem>
+					</appendItems>
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
@@ -691,6 +706,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ariâri tî Madagasikära</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>ugîya tî Moritanïi (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>ugîya tî Moritanïi</displayName>
 			</currency>
 			<currency type="MUR">
@@ -730,6 +748,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>shilîngi tî Somalïi</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>dôbra tî Sâô Tomë na Prinsîpe (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>dôbra tî Sâô Tomë na Prinsîpe</displayName>
 			</currency>
 			<currency type="SZL">
@@ -774,4 +795,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

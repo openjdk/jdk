@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="en"/>
 		<territory type="SG"/>
 	</identity>
@@ -92,6 +93,45 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</dateTimeFormats>
 			</calendar>
 		</calendars>
+		<fields>
+			<field type="year-short">
+				<relative type="-1">last yr</relative>
+				<relative type="0">this yr</relative>
+				<relative type="1">next yr</relative>
+			</field>
+			<field type="quarter-short">
+				<relative type="-1">last qtr</relative>
+				<relative type="0">this qtr</relative>
+				<relative type="1">next qtr</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} qtr</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} qtrs</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} qtr ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} qtrs ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="month-short">
+				<displayName>mth</displayName>
+				<relative type="-1">last mth</relative>
+				<relative type="0">this mth</relative>
+				<relative type="1">next mth</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} mth</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} mth</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} mth ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} mth ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="week-short">
+				<relative type="-1">last wk</relative>
+				<relative type="0">this wk</relative>
+				<relative type="1">next wk</relative>
+			</field>
+		</fields>
 		<timeZoneNames>
 			<metazone type="Malaysia">
 				<short>
@@ -113,4 +153,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencies>
 	</numbers>
 </ldml>
-

@@ -24,7 +24,7 @@
 /**
  * @test TestDieWithOnError
  * @key gc
- * @requires vm.gc.Epsilon
+ * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Epsilon GC should die on heap exhaustion with error handler attached
  * @library /test/lib
  * @run main TestDieWithOnError

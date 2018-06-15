@@ -135,7 +135,7 @@ In general, OpenJDK can be built on a wide range of versions of these operating
 systems, but the further you deviate from what is tested on a daily basis, the
 more likely you are to run into problems.
 
-This table lists the OS versions used by Oracle when building JDK 9. Such
+This table lists the OS versions used by Oracle when building OpenJDK. Such
 information is always subject to change, but this table is up to date at the
 time of writing.
 
@@ -164,8 +164,8 @@ On Windows, it is important that you pay attention to the instructions in the
 [Special Considerations](#special-considerations).
 
 Windows is the only non-POSIX OS supported by OpenJDK, and as such, requires
-some extra care. A POSIX support layer is required to build on Windows. For
-OpenJDK 9, the only supported such layer is Cygwin. (Msys is no longer
+some extra care. A POSIX support layer is required to build on Windows.
+Currently, the only supported such layer is Cygwin. (Msys is no longer
 supported due to a too old bash; msys2 and the new Windows Subsystem for Linux
 (WSL) would likely be possible to support in a future version but that would
 require a community effort to implement.)
@@ -291,18 +291,18 @@ issues.
 
  Operating system   Toolchain version
  ------------------ -------------------------------------------------------
- Linux              gcc 4.9.2
+ Linux              gcc 7.3.0
  macOS              Apple Xcode 6.3 (using clang 6.1.0)
  Solaris            Oracle Solaris Studio 12.4 (with compiler version 5.13)
  Windows            Microsoft Visual Studio 2013 update 4
 
 ### gcc
 
-The minimum accepted version of gcc is 4.7. Older versions will generate a warning
+The minimum accepted version of gcc is 4.8. Older versions will generate a warning
 by `configure` and are unlikely to work.
 
-OpenJDK 9 includes patches that should allow gcc 6 to compile, but this should
-be considered experimental.
+OpenJDK is currently known to be able to compile with at least version 7.4 of
+gcc.
 
 In general, any version between these two should be usable.
 
@@ -1460,10 +1460,11 @@ product.
 #### Building Individual Modules
 
 The safe way to use fine-grained make targets is to use the module specific
-make targets. All source code in JDK 9 is organized so it belongs to a module,
-e.g. `java.base` or `jdk.jdwp.agent`. You can build only a specific module, by
-giving it as make target: `make jdk.jdwp.agent`. If the specified module
-depends on other modules (e.g. `java.base`), those modules will be built first.
+make targets. All source code in OpenJDK is organized so it belongs to a
+module, e.g. `java.base` or `jdk.jdwp.agent`. You can build only a specific
+module, by giving it as make target: `make jdk.jdwp.agent`. If the specified
+module depends on other modules (e.g. `java.base`), those modules will be built
+first.
 
 You can also specify a set of modules, just as you can always specify a set of
 make targets: `make jdk.crypto.cryptoki jdk.crypto.ec jdk.crypto.mscapi

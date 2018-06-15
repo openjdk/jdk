@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="mzn"/>
 	</identity>
 	<localeDisplayNames>
@@ -1178,11 +1179,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>بلاروس ِروبل</displayName>
 				<displayName count="other">بلاروس ِروبل</displayName>
-				<symbol draft="contributed">BYR</symbol>
+				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>بلاروس ِروبل (۲۰۰۰–۲۰۱۶)</displayName>
+				<displayName count="other">بلاروس ِروبل (۲۰۰۰–۲۰۱۶)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>بلیز ِدولار</displayName>
@@ -1548,9 +1554,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>موریتانی ِاوگوئیا (1973–2017)</displayName>
+				<displayName count="other">موریتانی ِاوگوئیا (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>موریتانی ِاوگوئیا</displayName>
 				<displayName count="other">موریتانی ِاوگوئیا</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>موریتیان ِروپیه</displayName>
@@ -1626,8 +1636,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>پروی ِنوئوو سول</displayName>
-				<displayName count="other">پروی ِنوئوو سول</displayName>
+				<displayName>پروی ِسول</displayName>
+				<displayName count="other">پروی ِسول</displayName>
 				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PHP">
@@ -1737,9 +1747,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>سائوتومه و پرینسیپ ِدوبرا (1977–2017)</displayName>
+				<displayName count="other">سائوتومه و پرینسیپ ِدوبرا (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>سائوتومه و پرینسیپ ِدوبرا</displayName>
 				<displayName count="other">سائوتومه و پرینسیپ ِدوبرا</displayName>
-				<symbol draft="contributed">STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -2786,4 +2800,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

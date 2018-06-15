@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8190918
+ * @bug 8190918 8202537
  * @summary Tests for region dependent calendar data, i.e.,
  *      firstDayOfWeek and minimalDaysInFirstWeek.
  * @modules jdk.localedata
@@ -40,23 +40,23 @@ public class CalendarDataTest {
 
     // golden data from CLDR
     private static final List<List<String>> FIRSTDAYDATA = List.of(
-        List.of("1", "AG AR AS AU BR BS BT BW BZ CA CN CO DM DO ET GT " +
+        List.of("1", "AG AR AS AU BD BR BS BT BW BZ CA CN CO DM DO ET GT " +
             "GU HK HN ID IE IL IN JM JP KE KH KR LA MH MM MO MT MX MZ " +
-            "NI NP NZ PA PE PH PK PR PY SA SG SV TH TN TT TW UM US VE " +
+            "NI NP PA PE PH PK PR PY SA SG SV TH TN TT TW UM US VE " +
             "VI WS YE ZA ZW"),
         List.of("2",   "001 AD AI AL AM AN AT AX AZ BA BE BG BM BN BY " +
             "CH CL CM CR CY CZ DE DK EC EE ES FI FJ FO FR GB GE GF GP " +
             "GR HR HU IS IT KG KZ LB LI LK LT LU LV MC MD ME MK MN MQ " +
-            "MY NL NO PL PT RE RO RS RU SE SI SK SM TJ TM TR UA UY UZ " +
+            "MY NL NO NZ PL PT RE RO RU RS SE SI SK SM TJ TM TR UA UY UZ " +
             "VA VN XK"),
-        List.of("6", "BD MV"),
+        List.of("6", "MV"),
         List.of("7", "AE AF BH DJ DZ EG IQ IR JO KW LY MA OM QA SD SY"));
 
     private static final List<List<String>> MINDAYSDATA = List.of(
         List.of("1", "001 GU UM US VI"),
         List.of("4", "AD AN AT AX BE BG CH CZ DE DK EE ES FI FJ FO FR " +
             "GB GF GG GI GP GR HU IE IM IS IT JE LI LT LU MC MQ NL NO " +
-            "PL PT RE SE SJ SK SM VA"));
+            "PL PT RE RU SE SJ SK SM VA"));
 
     public static void main(String... args) throws Exception {
         // world
@@ -95,7 +95,7 @@ public class CalendarDataTest {
             .get(0));
         if (minDays != expected) {
             throw new RuntimeException("minimalDaysInFirstWeek is incorrect for the region: " +
-                    region + ". Returned: " + firstDay + ", Expected: " + expected);
+                    region + ". Returned: " + minDays + ", Expected: " + expected);
         }
     }
 

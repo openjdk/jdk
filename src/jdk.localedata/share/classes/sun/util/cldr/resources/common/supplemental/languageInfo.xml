@@ -3,24 +3,25 @@
 <!-- Copyright © 1991-2013 Unicode, Inc. CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/) For terms 
 	of use, see http://www.unicode.org/copyright.html -->
 <supplementalData>
-	<version number="$Revision: 12017 $"/>
+	<version number="$Revision: 13628 $"/>
 	<languageMatching>
 		<languageMatches type="written">
 			<!-- Base Language Matches -->
 			<languageMatch desired="no" supported="nb" percent="99"/>  <!-- The language no is normally taken as nb in content. -->
-			<languageMatch desired="ku" supported="ckb" percent="96"/>  <!-- These are like regional variants -->
+			<!-- These are like regional variants -->
+			<!-- languageMatch desired="ku" supported="ckb" percent="96" oneway="true"/ -->  
 			<languageMatch desired="hr" supported="bs" percent="96"/>   <!-- Serbo-croatian variants are all very close. -->
 			<languageMatch desired="sh" supported="bs" percent="96"/>
-			<languageMatch desired="sr" supported="bs" percent="96"/>
+			<!-- languageMatch desired="sr" supported="bs" percent="96"/-->
 			<languageMatch desired="sh" supported="hr" percent="96"/>
-			<languageMatch desired="sr" supported="hr" percent="96"/>
+			<!-- languageMatch desired="sr" supported="hr" percent="96"/-->
 			<languageMatch desired="sh" supported="sr" percent="96"/>
 			<languageMatch desired="ssy" supported="aa" percent="96"/>  <!-- Saho is closely related to Afar -->
 			<languageMatch desired="gsw" supported="de" percent="96" oneway="true"/> <!-- All Swiss speakers can read High German -->
 			<languageMatch desired="lb" supported="de" percent="96" oneway="true"/> <!-- All Luxemburgisch speakers can read High German -->
 			<languageMatch desired="da" supported="no" percent="92"/>   <!-- Danish and norwegian are reasonably close. -->
 			<languageMatch desired="da" supported="nb" percent="92"/>
-			<languageMatch desired="ckb" supported="ku" percent="92"/> <!-- variants of Kurdish -->
+			<!-- languageMatch desired="ckb" supported="ku" percent="92" oneway="true"/--> <!-- variants of Kurdish -->
 			<!-- Other fallbacks -->
 			<languageMatch desired="ab" supported="ru" percent="90" oneway="true"/>
 			<languageMatch desired="ach" supported="en" percent="90" oneway="true"/>
@@ -32,7 +33,7 @@
 			<languageMatch desired="az_Latn" supported="ru_Cyrl" percent="90" oneway="true"/>
 			<languageMatch desired="be" supported="ru" percent="90" oneway="true"/>
 			<languageMatch desired="bem" supported="en" percent="90" oneway="true"/>
-			<languageMatch desired="bh" supported="hi" percent="90" oneway="true"/>
+			<languageMatch desired="bho" supported="hi" percent="90" oneway="true"/>
 			<languageMatch desired="bn" supported="en" percent="90" oneway="true"/>
 			<languageMatch desired="bn_Beng" supported="en_Latn" percent="90" oneway="true"/>
 			<languageMatch desired="br" supported="fr" percent="90" oneway="true"/>
@@ -151,8 +152,8 @@
 			<languageMatch desired="zu" supported="en" percent="90" oneway="true"/>
 			<!-- Script Matches -->
 			<languageMatch desired="sr_Latn" supported="sr_Cyrl" percent="95"/> <!-- Most serbs can read either script. -->
-			<languageMatch desired="*_Hans" supported="*_Hant" percent="85" oneway="true"/> <!-- Readers of simplified can read traditional much better than reverse. -->
-			<languageMatch desired="*_Hant" supported="*_Hans" percent="81" oneway="true"/>
+			<languageMatch desired="zh_Hans" supported="zh_Hant" percent="85" oneway="true"/> <!-- Readers of simplified can read traditional much better than reverse. -->
+			<languageMatch desired="zh_Hant" supported="zh_Hans" percent="81" oneway="true"/>
 			<!-- Region Matches -->
 			<!-- MO and HK are close -->
 			<languageMatch desired="zh_Hant_HK" supported="zh_Hant_MO" percent="97"/>
@@ -176,6 +177,175 @@
 			<languageMatch desired="*" supported="*" percent="20"/>  <!-- [Default value - must be at end!] Normally there is no comprehension of different languages. -->
 			<languageMatch desired="*_*" supported="*_*" percent="60"/> <!-- [Default value - must be at end!] Normally there is little comprehension of different scripts. -->
 			<languageMatch desired="*_*_*" supported="*_*_*" percent="96"/> <!-- [Default value - must be at end!] Normally there are small differences across regions. -->
+		</languageMatches>
+		<languageMatches type="written_new">
+			<paradigmLocales locales="en en-GB es es-419 pt-BR pt-PT"/>
+			<matchVariable id="$enUS" value="AS+GU+MH+MP+PR+UM+US+VI"/>
+			<matchVariable id="$cnsar" value="HK+MO"/>
+			<matchVariable id="$americas" value="019"/>
+			<matchVariable id="$maghreb" value="MA+DZ+TN+LY+MR+EH"/>
+			<languageMatch desired="no"	supported="nb"	distance="1"/>	<!-- no ⇒ nb -->
+			<!-- languageMatch desired="ku"	supported="ckb"	distance="4" oneway="true"/ -->	<!-- ku ⇒ ckb -->
+			<!-- languageMatch desired="ckb" supported="ku" percent="8" oneway="true"/ --> <!-- ckb ⇒ ku -->
+			<languageMatch desired="hr"	supported="bs"	distance="4"/>	<!-- hr ⇒ bs -->
+			<languageMatch desired="sh"	supported="bs"	distance="4"/>	<!-- sh ⇒ bs -->
+			<!-- languageMatch desired="sr"	supported="bs"	distance="4"/-->	<!-- sr ⇒ bs -->
+			<languageMatch desired="sh"	supported="hr"	distance="4"/>	<!-- sh ⇒ hr -->
+			<!-- languageMatch desired="sr"	supported="hr"	distance="4"/-->	<!-- sr ⇒ hr -->
+			<languageMatch desired="sh"	supported="sr"	distance="4"/>	<!-- sh ⇒ sr -->
+			<languageMatch desired="ssy"	supported="aa"	distance="4"/>	<!-- ssy ⇒ aa -->
+			<languageMatch desired="gsw"	supported="de"	distance="4"	oneway="true"/>	<!-- gsw ⇒ de -->
+			<languageMatch desired="lb"	supported="de"	distance="4"	oneway="true"/>	<!-- lb ⇒ de -->
+			<languageMatch desired="da"	supported="no"	distance="8"/>	<!-- da ⇒ no -->
+			<languageMatch desired="da"	supported="nb"	distance="8"/>	<!-- da ⇒ nb -->
+			<languageMatch desired="ab"	supported="ru"	distance="10"	oneway="true"/>	<!-- ab ⇒ ru -->
+			<languageMatch desired="ach"	supported="en"	distance="10"	oneway="true"/>	<!-- ach ⇒ en -->
+			<languageMatch desired="af"	supported="nl"	distance="10"	oneway="true"/>	<!-- af ⇒ nl -->
+			<languageMatch desired="ak"	supported="en"	distance="10"	oneway="true"/>	<!-- ak ⇒ en -->
+			<languageMatch desired="ay"	supported="es"	distance="10"	oneway="true"/>	<!-- ay ⇒ es -->
+			<languageMatch desired="az"	supported="ru"	distance="10"	oneway="true"/>	<!-- az ⇒ ru -->
+			<languageMatch desired="be"	supported="ru"	distance="10"	oneway="true"/>	<!-- be ⇒ ru -->
+			<languageMatch desired="bem"	supported="en"	distance="10"	oneway="true"/>	<!-- bem ⇒ en -->
+			<languageMatch desired="bh"	supported="hi"	distance="10"	oneway="true"/>	<!-- bh ⇒ hi -->
+			<languageMatch desired="bn"	supported="en"	distance="10"	oneway="true"/>	<!-- bn ⇒ en -->
+			<languageMatch desired="br"	supported="fr"	distance="10"	oneway="true"/>	<!-- br ⇒ fr -->
+			<languageMatch desired="ceb"	supported="fil"	distance="10"	oneway="true"/>	<!-- ceb ⇒ fil -->
+			<languageMatch desired="chr"	supported="en"	distance="10"	oneway="true"/>	<!-- chr ⇒ en -->
+			<languageMatch desired="ckb"	supported="ar"	distance="10"	oneway="true"/>	<!-- ckb ⇒ ar -->
+			<languageMatch desired="co"	supported="fr"	distance="10"	oneway="true"/>	<!-- co ⇒ fr -->
+			<languageMatch desired="crs"	supported="fr"	distance="10"	oneway="true"/>	<!-- crs ⇒ fr -->
+			<languageMatch desired="cy"	supported="en"	distance="10"	oneway="true"/>	<!-- cy ⇒ en -->
+			<languageMatch desired="ee"	supported="en"	distance="10"	oneway="true"/>	<!-- ee ⇒ en -->
+			<languageMatch desired="eo"	supported="en"	distance="10"	oneway="true"/>	<!-- eo ⇒ en -->
+			<languageMatch desired="et"	supported="fi"	distance="10"	oneway="true"/>	<!-- et ⇒ fi -->
+			<languageMatch desired="eu"	supported="es"	distance="10"	oneway="true"/>	<!-- eu ⇒ es -->
+			<languageMatch desired="fo"	supported="da"	distance="10"	oneway="true"/>	<!-- fo ⇒ da -->
+			<languageMatch desired="fy"	supported="nl"	distance="10"	oneway="true"/>	<!-- fy ⇒ nl -->
+			<languageMatch desired="ga"	supported="en"	distance="10"	oneway="true"/>	<!-- ga ⇒ en -->
+			<languageMatch desired="gaa"	supported="en"	distance="10"	oneway="true"/>	<!-- gaa ⇒ en -->
+			<languageMatch desired="gd"	supported="en"	distance="10"	oneway="true"/>	<!-- gd ⇒ en -->
+			<languageMatch desired="gl"	supported="es"	distance="10"	oneway="true"/>	<!-- gl ⇒ es -->
+			<languageMatch desired="gn"	supported="es"	distance="10"	oneway="true"/>	<!-- gn ⇒ es -->
+			<languageMatch desired="gu"	supported="hi"	distance="10"	oneway="true"/>	<!-- gu ⇒ hi -->
+			<languageMatch desired="ha"	supported="en"	distance="10"	oneway="true"/>	<!-- ha ⇒ en -->
+			<languageMatch desired="haw"	supported="en"	distance="10"	oneway="true"/>	<!-- haw ⇒ en -->
+			<languageMatch desired="ht"	supported="fr"	distance="10"	oneway="true"/>	<!-- ht ⇒ fr -->
+			<languageMatch desired="hy"	supported="ru"	distance="10"	oneway="true"/>	<!-- hy ⇒ ru -->
+			<languageMatch desired="ia"	supported="en"	distance="10"	oneway="true"/>	<!-- ia ⇒ en -->
+			<languageMatch desired="ig"	supported="en"	distance="10"	oneway="true"/>	<!-- ig ⇒ en -->
+			<languageMatch desired="is"	supported="en"	distance="10"	oneway="true"/>	<!-- is ⇒ en -->
+			<languageMatch desired="jv"	supported="id"	distance="10"	oneway="true"/>	<!-- jv ⇒ id -->
+			<languageMatch desired="ka"	supported="en"	distance="10"	oneway="true"/>	<!-- ka ⇒ en -->
+			<languageMatch desired="kg"	supported="fr"	distance="10"	oneway="true"/>	<!-- kg ⇒ fr -->
+			<languageMatch desired="kk"	supported="ru"	distance="10"	oneway="true"/>	<!-- kk ⇒ ru -->
+			<languageMatch desired="km"	supported="en"	distance="10"	oneway="true"/>	<!-- km ⇒ en -->
+			<languageMatch desired="kn"	supported="en"	distance="10"	oneway="true"/>	<!-- kn ⇒ en -->
+			<languageMatch desired="kri"	supported="en"	distance="10"	oneway="true"/>	<!-- kri ⇒ en -->
+			<languageMatch desired="ku"	supported="tr"	distance="10"	oneway="true"/>	<!-- ku ⇒ tr -->
+			<languageMatch desired="ky"	supported="ru"	distance="10"	oneway="true"/>	<!-- ky ⇒ ru -->
+			<languageMatch desired="la"	supported="it"	distance="10"	oneway="true"/>	<!-- la ⇒ it -->
+			<languageMatch desired="lg"	supported="en"	distance="10"	oneway="true"/>	<!-- lg ⇒ en -->
+			<languageMatch desired="ln"	supported="fr"	distance="10"	oneway="true"/>	<!-- ln ⇒ fr -->
+			<languageMatch desired="lo"	supported="en"	distance="10"	oneway="true"/>	<!-- lo ⇒ en -->
+			<languageMatch desired="loz"	supported="en"	distance="10"	oneway="true"/>	<!-- loz ⇒ en -->
+			<languageMatch desired="lua"	supported="fr"	distance="10"	oneway="true"/>	<!-- lua ⇒ fr -->
+			<languageMatch desired="mfe"	supported="en"	distance="10"	oneway="true"/>	<!-- mfe ⇒ en -->
+			<languageMatch desired="mg"	supported="fr"	distance="10"	oneway="true"/>	<!-- mg ⇒ fr -->
+			<languageMatch desired="mi"	supported="en"	distance="10"	oneway="true"/>	<!-- mi ⇒ en -->
+			<languageMatch desired="mk"	supported="bg"	distance="10"	oneway="true"/>	<!-- mk ⇒ bg -->
+			<languageMatch desired="ml"	supported="en"	distance="10"	oneway="true"/>	<!-- ml ⇒ en -->
+			<languageMatch desired="mn"	supported="ru"	distance="10"	oneway="true"/>	<!-- mn ⇒ ru -->
+			<languageMatch desired="mr"	supported="hi"	distance="10"	oneway="true"/>	<!-- mr ⇒ hi -->
+			<languageMatch desired="ms"	supported="id"	distance="10"	oneway="true"/>	<!-- ms ⇒ id -->
+			<languageMatch desired="mt"	supported="en"	distance="10"	oneway="true"/>	<!-- mt ⇒ en -->
+			<languageMatch desired="my"	supported="en"	distance="10"	oneway="true"/>	<!-- my ⇒ en -->
+			<languageMatch desired="ne"	supported="en"	distance="10"	oneway="true"/>	<!-- ne ⇒ en -->
+			<languageMatch desired="nn"	supported="nb"	distance="10"/>	<!-- nn ⇒ nb -->
+			<languageMatch desired="nn"	supported="no"	distance="10"	oneway="true"/>	<!-- nn ⇒ no -->
+			<languageMatch desired="nso"	supported="en"	distance="10"	oneway="true"/>	<!-- nso ⇒ en -->
+			<languageMatch desired="ny"	supported="en"	distance="10"	oneway="true"/>	<!-- ny ⇒ en -->
+			<languageMatch desired="nyn"	supported="en"	distance="10"	oneway="true"/>	<!-- nyn ⇒ en -->
+			<languageMatch desired="oc"	supported="fr"	distance="10"	oneway="true"/>	<!-- oc ⇒ fr -->
+			<languageMatch desired="om"	supported="en"	distance="10"	oneway="true"/>	<!-- om ⇒ en -->
+			<languageMatch desired="or"	supported="en"	distance="10"	oneway="true"/>	<!-- or ⇒ en -->
+			<languageMatch desired="pa"	supported="en"	distance="10"	oneway="true"/>	<!-- pa ⇒ en -->
+			<languageMatch desired="pcm"	supported="en"	distance="10"	oneway="true"/>	<!-- pcm ⇒ en -->
+			<languageMatch desired="ps"	supported="en"	distance="10"	oneway="true"/>	<!-- ps ⇒ en -->
+			<languageMatch desired="qu"	supported="es"	distance="10"	oneway="true"/>	<!-- qu ⇒ es -->
+			<languageMatch desired="rm"	supported="de"	distance="10"	oneway="true"/>	<!-- rm ⇒ de -->
+			<languageMatch desired="rn"	supported="en"	distance="10"	oneway="true"/>	<!-- rn ⇒ en -->
+			<languageMatch desired="rw"	supported="fr"	distance="10"	oneway="true"/>	<!-- rw ⇒ fr -->
+			<languageMatch desired="sa"	supported="hi"	distance="10"	oneway="true"/>	<!-- sa ⇒ hi -->
+			<languageMatch desired="sd"	supported="en"	distance="10"	oneway="true"/>	<!-- sd ⇒ en -->
+			<languageMatch desired="si"	supported="en"	distance="10"	oneway="true"/>	<!-- si ⇒ en -->
+			<languageMatch desired="sn"	supported="en"	distance="10"	oneway="true"/>	<!-- sn ⇒ en -->
+			<languageMatch desired="so"	supported="en"	distance="10"	oneway="true"/>	<!-- so ⇒ en -->
+			<languageMatch desired="sq"	supported="en"	distance="10"	oneway="true"/>	<!-- sq ⇒ en -->
+			<languageMatch desired="st"	supported="en"	distance="10"	oneway="true"/>	<!-- st ⇒ en -->
+			<languageMatch desired="su"	supported="id"	distance="10"	oneway="true"/>	<!-- su ⇒ id -->
+			<languageMatch desired="sw"	supported="en"	distance="10"	oneway="true"/>	<!-- sw ⇒ en -->
+			<languageMatch desired="ta"	supported="en"	distance="10"	oneway="true"/>	<!-- ta ⇒ en -->
+			<languageMatch desired="te"	supported="en"	distance="10"	oneway="true"/>	<!-- te ⇒ en -->
+			<languageMatch desired="tg"	supported="ru"	distance="10"	oneway="true"/>	<!-- tg ⇒ ru -->
+			<languageMatch desired="ti"	supported="en"	distance="10"	oneway="true"/>	<!-- ti ⇒ en -->
+			<languageMatch desired="tk"	supported="ru"	distance="10"	oneway="true"/>	<!-- tk ⇒ ru -->
+			<languageMatch desired="tlh"	supported="en"	distance="10"	oneway="true"/>	<!-- tlh ⇒ en -->
+			<languageMatch desired="tn"	supported="en"	distance="10"	oneway="true"/>	<!-- tn ⇒ en -->
+			<languageMatch desired="to"	supported="en"	distance="10"	oneway="true"/>	<!-- to ⇒ en -->
+			<languageMatch desired="tt"	supported="ru"	distance="10"	oneway="true"/>	<!-- tt ⇒ ru -->
+			<languageMatch desired="tum"	supported="en"	distance="10"	oneway="true"/>	<!-- tum ⇒ en -->
+			<languageMatch desired="ug"	supported="zh"	distance="10"	oneway="true"/>	<!-- ug ⇒ zh -->
+			<languageMatch desired="ur"	supported="en"	distance="10"	oneway="true"/>	<!-- ur ⇒ en -->
+			<languageMatch desired="uz"	supported="ru"	distance="10"	oneway="true"/>	<!-- uz ⇒ ru -->
+			<languageMatch desired="wo"	supported="fr"	distance="10"	oneway="true"/>	<!-- wo ⇒ fr -->
+			<languageMatch desired="xh"	supported="en"	distance="10"	oneway="true"/>	<!-- xh ⇒ en -->
+			<languageMatch desired="yi"	supported="en"	distance="10"	oneway="true"/>	<!-- yi ⇒ en -->
+			<languageMatch desired="yo"	supported="en"	distance="10"	oneway="true"/>	<!-- yo ⇒ en -->
+			<languageMatch desired="zu"	supported="en"	distance="10"	oneway="true"/>	<!-- zu ⇒ en -->
+			<languageMatch desired="*"	supported="*"	distance="80"/>	<!-- * ⇒ * -->
+			<languageMatch desired="az_Latn"	supported="ru_Cyrl"	distance="10"	oneway="true"/>	<!-- az; Latn ⇒ ru; Cyrl -->
+			<languageMatch desired="bn_Beng"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- bn; Beng ⇒ en; Latn -->
+			<languageMatch desired="hy_Armn"	supported="ru_Cyrl"	distance="10"	oneway="true"/>	<!-- hy; Armn ⇒ ru; Cyrl -->
+			<languageMatch desired="ka_Geor"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- ka; Geor ⇒ en; Latn -->
+			<languageMatch desired="km_Khmr"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- km; Khmr ⇒ en; Latn -->
+			<languageMatch desired="kn_Knda"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- kn; Knda ⇒ en; Latn -->
+			<languageMatch desired="lo_Laoo"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- lo; Laoo ⇒ en; Latn -->
+			<languageMatch desired="ml_Mlym"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- ml; Mlym ⇒ en; Latn -->
+			<languageMatch desired="my_Mymr"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- my; Mymr ⇒ en; Latn -->
+			<languageMatch desired="ne_Deva"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- ne; Deva ⇒ en; Latn -->
+			<languageMatch desired="or_Orya"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- or; Orya ⇒ en; Latn -->
+			<languageMatch desired="pa_Guru"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- pa; Guru ⇒ en; Latn -->
+			<languageMatch desired="ps_Arab"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- ps; Arab ⇒ en; Latn -->
+			<languageMatch desired="sd_Arab"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- sd; Arab ⇒ en; Latn -->
+			<languageMatch desired="si_Sinh"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- si; Sinh ⇒ en; Latn -->
+			<languageMatch desired="ta_Taml"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- ta; Taml ⇒ en; Latn -->
+			<languageMatch desired="te_Telu"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- te; Telu ⇒ en; Latn -->
+			<languageMatch desired="ti_Ethi"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- ti; Ethi ⇒ en; Latn -->
+			<languageMatch desired="tk_Latn"	supported="ru_Cyrl"	distance="10"	oneway="true"/>	<!-- tk; Latn ⇒ ru; Cyrl -->
+			<languageMatch desired="ur_Arab"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- ur; Arab ⇒ en; Latn -->
+			<languageMatch desired="uz_Latn"	supported="ru_Cyrl"	distance="10"	oneway="true"/>	<!-- uz; Latn ⇒ ru; Cyrl -->
+			<languageMatch desired="yi_Hebr"	supported="en_Latn"	distance="10"	oneway="true"/>	<!-- yi; Hebr ⇒ en; Latn -->
+			<languageMatch desired="sr_Latn"	supported="sr_Cyrl"	distance="5"/>	<!-- sr; Latn ⇒ sr; Cyrl -->
+			<languageMatch desired="zh_Hans"	supported="zh_Hant"	distance="15"	oneway="true"/>	<!-- zh; Hans ⇒ zh; Hant -->
+			<languageMatch desired="zh_Hant"	supported="zh_Hans"	distance="19"	oneway="true"/>	<!-- zh; Hant ⇒ zh; Hans -->
+			<languageMatch desired="*_*"	supported="*_*"	distance="50"/>	<!-- *; * ⇒ *; * -->
+			<languageMatch desired="ar_*_$maghreb"	supported="ar_*_$maghreb"	distance="4"/>	<!-- ar; *; $maghreb ⇒ ar; *; $maghreb -->
+			<languageMatch desired="ar_*_$!maghreb"	supported="ar_*_$!maghreb"	distance="4"/>	<!-- ar; *; $!maghreb ⇒ ar; *; $!maghreb -->
+			<languageMatch desired="ar_*_*"	supported="ar_*_*"	distance="5"/>	<!-- ar; *; * ⇒ ar; *; * -->
+			<languageMatch desired="en_*_$enUS"	supported="en_*_$enUS"	distance="4"/>	<!-- en; *; $enUS ⇒ en; *; $enUS -->
+			<languageMatch desired="en_*_$!enUS"	supported="en_*_GB"	distance="3"/>	<!--  Make en_GB preferred... -->
+			<languageMatch desired="en_*_$!enUS"	supported="en_*_$!enUS"	distance="4"/>	<!-- en; *; $!enUS ⇒ en; *; $!enUS -->
+			<languageMatch desired="en_*_*"	supported="en_*_*"	distance="5"/>	<!-- en; *; * ⇒ en; *; * -->
+			<languageMatch desired="es_*_$americas"	supported="es_*_$americas"	distance="4"/>	<!-- es; *; $americas ⇒ es; *; $americas -->
+			<languageMatch desired="es_*_$!americas"	supported="es_*_$!americas"	distance="4"/>	<!-- es; *; $!americas ⇒ es; *; $!americas -->
+			<languageMatch desired="es_*_*"	supported="es_*_*"	distance="5"/>	<!-- es; *; * ⇒ es; *; * -->
+			<languageMatch desired="pt_*_$americas"	supported="pt_*_$americas"	distance="4"/>	<!-- pt; *; $americas ⇒ pt; *; $americas -->
+			<languageMatch desired="pt_*_$!americas"	supported="pt_*_$!americas"	distance="4"/>	<!-- pt; *; $!americas ⇒ pt; *; $!americas -->
+			<languageMatch desired="pt_*_*"	supported="pt_*_*"	distance="5"/>	<!-- pt; *; * ⇒ pt; *; * -->
+			<languageMatch desired="zh_Hant_$cnsar"	supported="zh_Hant_$cnsar"	distance="4"/>	<!-- zh; Hant; $cnsar ⇒ zh; Hant; $cnsar -->
+			<languageMatch desired="zh_Hant_$!cnsar"	supported="zh_Hant_$!cnsar"	distance="4"/>	<!-- zh; Hant; $!cnsar ⇒ zh; Hant; $!cnsar -->
+			<languageMatch desired="zh_Hant_*"	supported="zh_Hant_*"	distance="5"/>	<!-- zh; Hant; * ⇒ zh; Hant; * -->
+			<languageMatch desired="*_*_*"	supported="*_*_*"	distance="4"/>	<!-- *; *; * ⇒ *; *; * -->
 		</languageMatches>
 	</languageMatching>
 </supplementalData>

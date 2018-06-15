@@ -172,9 +172,6 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 vmTestbase/nsk/jdb/exclude/exclude001/exclude001.java 8197938 windows-all
 
-vmTestbase/heapdump/JMapHeapCore/TestDescription.java 8023376,8001227,8051445 generic-all
-vmTestbase/heapdump/JMapMetaspaceCore/TestDescription.java 8023376,8001227,8051445 generic-all
-
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
 #############################################################################

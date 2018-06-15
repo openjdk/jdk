@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13869 $"/>
 		<language type="lrc"/>
 	</identity>
 	<localeDisplayNames>
@@ -346,6 +347,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[\u0659 \u065B آ أ ؤ ئ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ڤ ق ک گ ل م ن ھ ە و ۉ ۊ ی ؽ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200B\u200C\u200D\u200E\u200F \u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0654 إ ة ك ه ى ي]</exemplarCharacters>
 		<exemplarCharacters type="index">[آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ھ و ی]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
 	</characters>
 	<delimiters>
@@ -802,6 +804,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">₹</symbol>
 				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
+			<currency type="IQD">
+				<symbol>د.ع.‏</symbol>
+			</currency>
 			<currency type="JPY">
 				<displayName>یئن جاپوٙن</displayName>
 				<displayName count="other">یئن جاپوٙن</displayName>
@@ -827,6 +832,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencies>
 	</numbers>
 	<units>
+		<unitLength type="long">
+			<unit type="area-square-kilometer">
+				<unitPattern count="other">{0} km²</unitPattern>
+			</unit>
+		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern>h:mm</durationUnitPattern>
 		</durationUnit>
@@ -852,4 +862,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

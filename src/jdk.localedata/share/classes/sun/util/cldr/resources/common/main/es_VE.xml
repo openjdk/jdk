@@ -1,15 +1,41 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12217 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="es"/>
 		<territory type="VE"/>
 	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ace" draft="contributed">acehnés</language>
+			<language type="arp" draft="contributed">arapaho</language>
+			<language type="bho" draft="contributed">bhojpuri</language>
+			<language type="eu" draft="contributed">euskera</language>
+			<language type="grc" draft="contributed">griego antiguo</language>
+			<language type="lo" draft="contributed">lao</language>
+			<language type="nso" draft="contributed">sotho septentrional</language>
+			<language type="pa" draft="contributed">punyabí</language>
+			<language type="ss" draft="contributed">siswati</language>
+			<language type="sw" draft="contributed">suajili</language>
+			<language type="sw_CD" draft="contributed">suajili del Congo</language>
+			<language type="tn" draft="contributed">setswana</language>
+			<language type="wo" draft="contributed">wolof</language>
+			<language type="zgh" draft="contributed">tamazight marroquí estándar</language>
+		</languages>
+		<territories>
+			<territory type="BA" draft="contributed">Bosnia y Herzegovina</territory>
+			<territory type="GB" alt="short" draft="contributed">RU</territory>
+			<territory type="TA" draft="contributed">Tristán de Acuña</territory>
+			<territory type="TL" draft="contributed">Timor-Leste</territory>
+			<territory type="UM" draft="contributed">Islas menores alejadas de EE. UU.</territory>
+		</territories>
+	</localeDisplayNames>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
@@ -28,20 +54,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="10" draft="contributed">oct.</month>
 							<month type="11" draft="contributed">nov.</month>
 							<month type="12" draft="contributed">dic.</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="contributed">E</month>
-							<month type="2" draft="contributed">F</month>
-							<month type="3" draft="contributed">M</month>
-							<month type="4" draft="contributed">A</month>
-							<month type="5" draft="contributed">M</month>
-							<month type="6" draft="contributed">J</month>
-							<month type="7" draft="contributed">J</month>
-							<month type="8" draft="contributed">A</month>
-							<month type="9" draft="contributed">S</month>
-							<month type="10" draft="contributed">O</month>
-							<month type="11" draft="contributed">N</month>
-							<month type="12" draft="contributed">D</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
@@ -105,14 +117,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
 							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
 							<dayPeriod type="noon" draft="contributed">m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -210,4 +236,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencies>
 	</numbers>
 </ldml>
-

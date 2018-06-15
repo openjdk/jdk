@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="tzm"/>
 	</identity>
 	<localeDisplayNames>
@@ -288,6 +289,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b c d ḍ e ɛ f g {gʷ} ɣ h ḥ i j k {kʷ} l m n q r ṛ s ṣ t ṭ u w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[o p v]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D Ḍ E Ɛ F G Ɣ H Ḥ I J K L M N Q R Ṛ S Ṣ T Ṭ U W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -686,6 +688,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Aryari Umalɣaci</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Uqiyya Umuritani (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Uqiyya Umuritani</displayName>
 			</currency>
 			<currency type="MUR">
@@ -728,6 +733,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Cilin Uṣumali</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dubra Usawṭumi (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dubra Usawṭumi</displayName>
 			</currency>
 			<currency type="SZL">
@@ -772,4 +780,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2014 Unicode, Inc.
+Copyright © 1991-2016 Unicode, Inc.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 For terms of use, see http://www.unicode.org/copyright.html
 -->
 <supplementalData>
-    <version number="$Revision: 11966 $"/>
+    <version number="$Revision: 13459 $"/>
     <numberingSystems>
+        <numberingSystem id="adlm" type="numeric" digits="&#x1E950;&#x1E951;&#x1E952;&#x1E953;&#x1E954;&#x1E955;&#x1E956;&#x1E957;&#x1E958;&#x1E959;"/>
         <numberingSystem id="ahom" type="numeric" digits="&#x11730;&#x11731;&#x11732;&#x11733;&#x11734;&#x11735;&#x11736;&#x11737;&#x11738;&#x11739;"/>
         <numberingSystem id="arab" type="numeric" digits="٠١٢٣٤٥٦٧٨٩"/>
         <numberingSystem id="arabext" type="numeric" digits="۰۱۲۳۴۵۶۷۸۹"/>
@@ -15,6 +16,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="armnlow" type="algorithmic" rules="armenian-lower"/>
         <numberingSystem id="bali" type="numeric" digits="᭐᭑᭒᭓᭔᭕᭖᭗᭘᭙"/>
         <numberingSystem id="beng" type="numeric" digits="০১২৩৪৫৬৭৮৯"/>
+        <numberingSystem id="bhks" type="numeric" digits="&#x11C50;&#x11C51;&#x11C52;&#x11C53;&#x11C54;&#x11C55;&#x11C56;&#x11C57;&#x11C58;&#x11C59;"/>
         <numberingSystem id="brah" type="numeric" digits="&#x11066;&#x11067;&#x11068;&#x11069;&#x1106A;&#x1106B;&#x1106C;&#x1106D;&#x1106E;&#x1106F;"/>
         <numberingSystem id="cakm" type="numeric" digits="&#x11136;&#x11137;&#x11138;&#x11139;&#x1113A;&#x1113B;&#x1113C;&#x1113D;&#x1113E;&#x1113F;"/>
         <numberingSystem id="cham" type="numeric" digits="꩐꩑꩒꩓꩔꩕꩖꩗꩘꩙"/>
@@ -23,6 +25,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="ethi" type="algorithmic" rules="ethiopic"/>
         <numberingSystem id="fullwide" type="numeric" digits="０１２３４５６７８９"/>
         <numberingSystem id="geor" type="algorithmic" rules="georgian"/>
+        <numberingSystem id="gonm" type="numeric" digits="&#x11D50;&#x11D51;&#x11D52;&#x11D53;&#x11D54;&#x11D55;&#x11D56;&#x11D57;&#x11D58;&#x11D59;"/>
         <numberingSystem id="grek" type="algorithmic" rules="greek-upper"/>
         <numberingSystem id="greklow" type="algorithmic" rules="greek-lower"/>
         <numberingSystem id="gujr" type="numeric" digits="૦૧૨૩૪૫૬૭૮૯"/>
@@ -60,6 +63,7 @@ For terms of use, see http://www.unicode.org/copyright.html
         <numberingSystem id="mymr" type="numeric" digits="၀၁၂၃၄၅၆၇၈၉"/>
         <numberingSystem id="mymrshan" type="numeric" digits="႐႑႒႓႔႕႖႗႘႙"/>
         <numberingSystem id="mymrtlng" type="numeric" digits="&#xA9F0;&#xA9F1;&#xA9F2;&#xA9F3;&#xA9F4;&#xA9F5;&#xA9F6;&#xA9F7;&#xA9F8;&#xA9F9;"/>
+        <numberingSystem id="newa" type="numeric" digits="&#x11450;&#x11451;&#x11452;&#x11453;&#x11454;&#x11455;&#x11456;&#x11457;&#x11458;&#x11459;"/>
         <numberingSystem id="nkoo" type="numeric" digits="߀߁߂߃߄߅߆߇߈߉"/>
         <numberingSystem id="olck" type="numeric" digits="᱐᱑᱒᱓᱔᱕᱖᱗᱘᱙"/>
         <numberingSystem id="orya" type="numeric" digits="୦୧୨୩୪୫୬୭୮୯"/>

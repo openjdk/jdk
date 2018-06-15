@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12295 $"/>
+		<version number="$Revision: 13873 $"/>
 		<language type="en"/>
 		<territory type="NZ"/>
 	</identity>
@@ -82,6 +83,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<availableFormats>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="yMd">d/MM/y</dateFormatItem>
+						<dateFormatItem id="yw" count="one" draft="contributed">'week' w 'of' y</dateFormatItem>
+						<dateFormatItem id="yw" count="other" draft="contributed">'week' w 'of' y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Md">
@@ -170,4 +173,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencies>
 	</numbers>
 </ldml>
-

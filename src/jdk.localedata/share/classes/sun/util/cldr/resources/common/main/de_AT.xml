@@ -1,16 +1,35 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 11914 $"/>
+		<version number="$Revision: 13839 $"/>
 		<language type="de"/>
 		<territory type="AT"/>
 	</identity>
 	<localeDisplayNames>
+		<languages>
+			<language type="ar_001" draft="contributed">modernes Hocharabisch</language>
+			<language type="car" draft="contributed">karibische Sprache</language>
+			<language type="chb" draft="contributed">Chibcha-Sprache</language>
+			<language type="del" draft="contributed">Delawarisch</language>
+			<language type="fur" draft="contributed">Friulanisch</language>
+			<language type="ha" draft="contributed">Hausa</language>
+			<language type="haw" draft="contributed">Hawaiianisch</language>
+			<language type="hmn" draft="contributed">Miao-Sprache</language>
+			<language type="mus" draft="contributed">Muskogee-Sprache</language>
+			<language type="niu" draft="contributed">Niueanisch</language>
+			<language type="pag" draft="contributed">Pangasinensisch</language>
+			<language type="sh" draft="contributed">Serbokroatisch</language>
+			<language type="szl" draft="contributed">Schlesisch</language>
+		</languages>
+		<territories>
+			<territory type="SJ" draft="contributed">Svalbard und Jan Mayen</territory>
+		</territories>
 		<measurementSystemNames>
 			<measurementSystemName type="metric" draft="contributed">Internationales Maßsystem (SI)</measurementSystemName>
 			<measurementSystemName type="UK" draft="contributed">Englisches Maßsystem</measurementSystemName>
@@ -19,6 +38,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters type="index">[A Ä B C D E F G H I J K L M N O Ö P Q R S T U Ü V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -85,12 +105,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 				</months>
+				<dayPeriods>
+					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="contributed">vm.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">nm.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
 			</calendar>
 		</calendars>
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
 			<group draft="contributed"> </group>
+			<currencyGroup>.</currencyGroup>
 		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
@@ -101,4 +130,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencyFormats>
 	</numbers>
 </ldml>
-

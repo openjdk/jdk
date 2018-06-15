@@ -35,6 +35,13 @@ frame JavaThread::pd_last_frame() {
   return frame(last_Java_sp(), frame::unpatchable, _anchor.last_Java_pc());
 }
 
+bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava) {
+  ucontext_t* uc = (ucontext_t*) ucontext;
+  *fr_addr = frame((intptr_t*)uc->uc_mcontext.mc_i7, frame::unpatchable,
+                   (address)uc->uc_mcontext.mc_gregs[MC_PC]);
+  return true;
+}
+
 // For Forte Analyzer AsyncGetCallTrace profiling support - thread is
 // currently interrupted by SIGPROF
 bool JavaThread::pd_get_top_frame_for_signal_handler(frame* fr_addr,

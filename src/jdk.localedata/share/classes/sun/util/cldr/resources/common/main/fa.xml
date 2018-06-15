@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="fa"/>
 	</identity>
 	<localeDisplayNames>
@@ -36,7 +39,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="am">امهری</language>
 			<language type="an">آراگونی</language>
 			<language type="ang">انگلیسی باستان</language>
-			<language type="anp" draft="contributed">آنگیکا</language>
+			<language type="anp">آنگیکا</language>
 			<language type="ar">عربی</language>
 			<language type="ar_001">عربی رسمی</language>
 			<language type="arc">آرامی</language>
@@ -50,6 +53,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="asa">آسو</language>
 			<language type="ast">آستوری</language>
 			<language type="av">آواری</language>
+			<language type="awa">اودهی</language>
 			<language type="ay">آیمارایی</language>
 			<language type="az">ترکی آذربایجانی</language>
 			<language type="az" alt="short">آذری</language>
@@ -70,19 +74,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bho">بوجپوری</language>
 			<language type="bi">بیسلاما</language>
 			<language type="bik">بیکولی</language>
-			<language type="bin" draft="contributed">بینی</language>
+			<language type="bin">بینی</language>
+			<language type="bla">سیکسیکا</language>
 			<language type="bm">بامبارایی</language>
 			<language type="bn">بنگالی</language>
 			<language type="bo">تبتی</language>
 			<language type="bqi">لری بختیاری</language>
 			<language type="br">برتون</language>
-			<language type="bra" draft="contributed">براج</language>
+			<language type="bra">براج</language>
 			<language type="brh">براهویی</language>
 			<language type="brx">بودویی</language>
 			<language type="bs">بوسنیایی</language>
 			<language type="bua">بوریاتی</language>
 			<language type="bug">بوگیایی</language>
-			<language type="byn" draft="contributed">بلین</language>
+			<language type="byn">بلین</language>
 			<language type="ca">کاتالان</language>
 			<language type="cad">کادویی</language>
 			<language type="car">کاریبی</language>
@@ -90,7 +95,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ceb">سبویی</language>
 			<language type="cgg">چیگا</language>
 			<language type="ch">چامورویی</language>
-			<language type="chb" draft="contributed">چیبچا</language>
+			<language type="chb">چیبچا</language>
 			<language type="chg">جغتایی</language>
 			<language type="chk">چوکی</language>
 			<language type="chm">ماریایی</language>
@@ -98,11 +103,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="chp">چیپه‌ویه‌ای</language>
 			<language type="chr">چروکیایی</language>
 			<language type="chy">شایانی</language>
-			<language type="ckb">کردی سورانی</language>
+			<language type="ckb">کردی مرکزی</language>
 			<language type="co">کورسی</language>
 			<language type="cop">قبطی</language>
 			<language type="cr">کریایی</language>
 			<language type="crh">ترکی کریمه</language>
+			<language type="crs">سیشل آمیختهٔ فرانسوی</language>
 			<language type="cs">چکی</language>
 			<language type="csb">کاشوبی</language>
 			<language type="cu">اسلاوی کلیسایی</language>
@@ -116,22 +122,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="de_AT">آلمانی اتریش</language>
 			<language type="de_CH">آلمانی معیار سوئیس</language>
 			<language type="del">دلاواری</language>
-			<language type="dgr" draft="contributed">دوگریب</language>
+			<language type="dgr">دوگریب</language>
 			<language type="din">دینکایی</language>
 			<language type="dje">زرما</language>
-			<language type="doi" draft="contributed">دوگری</language>
+			<language type="doi">دوگری</language>
 			<language type="dsb">صُربی سفلی</language>
 			<language type="dua">دوآلایی</language>
 			<language type="dum">هلندی میانه</language>
-			<language type="dv">مالدیوی</language>
+			<language type="dv">دیوهی</language>
 			<language type="dyo">دیولا فونی</language>
 			<language type="dyu">دایولایی</language>
 			<language type="dz">جونخایی</language>
+			<language type="dzg">دازاگایی</language>
 			<language type="ebu">امبو</language>
 			<language type="ee">اوه‌ای</language>
 			<language type="efi">افیکی</language>
 			<language type="egy">مصری کهن</language>
-			<language type="eka" draft="contributed">اکاجوک</language>
+			<language type="eka">اکاجوک</language>
 			<language type="el">یونانی</language>
 			<language type="elx">عیلامی</language>
 			<language type="en">انگلیسی</language>
@@ -149,10 +156,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es_MX">اسپانیایی مکزیک</language>
 			<language type="et">استونیایی</language>
 			<language type="eu">باسکی</language>
-			<language type="ewo" draft="contributed">اواندو</language>
+			<language type="ewo">اواندو</language>
 			<language type="fa">فارسی</language>
 			<language type="fa_AF">دری</language>
-			<language type="fan">فانکی</language>
+			<language type="fan">فانگی</language>
 			<language type="fat">فانتیایی</language>
 			<language type="ff">فولایی</language>
 			<language type="fi">فنلاندی</language>
@@ -185,7 +192,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="gn">گوارانی</language>
 			<language type="goh">آلمانی علیای باستان</language>
 			<language type="gon">گوندی</language>
-			<language type="gor" draft="contributed">گورونتالو</language>
+			<language type="gor">گورونتالو</language>
 			<language type="got">گوتی</language>
 			<language type="grb">گریبویی</language>
 			<language type="grc">یونانی کهن</language>
@@ -193,7 +200,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="gu">گجراتی</language>
 			<language type="guz">گوسی</language>
 			<language type="gv">مانی</language>
-			<language type="gwi" draft="contributed">گویچ این</language>
+			<language type="gwi">گویچ این</language>
 			<language type="ha">هوسیایی</language>
 			<language type="hai">هایدایی</language>
 			<language type="haw">هاوائیایی</language>
@@ -202,17 +209,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="hif">هندی فیجیایی</language>
 			<language type="hil">هیلی‌گاینونی</language>
 			<language type="hit">هیتی</language>
-			<language type="hmn" draft="contributed">همونگ</language>
+			<language type="hmn">همونگ</language>
 			<language type="ho">موتویی هیری</language>
 			<language type="hr">کروات</language>
 			<language type="hsb">صُربی علیا</language>
 			<language type="ht">هائیتیایی</language>
 			<language type="hu">مجاری</language>
-			<language type="hup" draft="contributed">هوپا</language>
+			<language type="hup">هوپا</language>
 			<language type="hy">ارمنی</language>
 			<language type="hz">هریرویی</language>
 			<language type="ia">میان‌زبان</language>
-			<language type="iba" draft="contributed">آیبن</language>
+			<language type="iba">ایبانی</language>
+			<language type="ibb">ایبیبیو</language>
 			<language type="id">اندونزیایی</language>
 			<language type="ie">اکسیدنتال</language>
 			<language type="ig">ایگبویی</language>
@@ -220,7 +228,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ik">اینوپیک</language>
 			<language type="ilo">ایلوکویی</language>
 			<language type="inh">اینگوشی</language>
-			<language type="io" draft="contributed">ایدو</language>
+			<language type="io">ایدو</language>
 			<language type="is">ایسلندی</language>
 			<language type="it">ایتالیایی</language>
 			<language type="iu">اینوکتیتوت</language>
@@ -235,14 +243,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="kaa">قره‌قالپاقی</language>
 			<language type="kab">قبایلی</language>
 			<language type="kac">کاچینی</language>
-			<language type="kaj" draft="contributed">جو</language>
+			<language type="kaj">جو</language>
 			<language type="kam">کامبایی</language>
 			<language type="kaw">کاویایی</language>
 			<language type="kbd">کاباردینی</language>
 			<language type="kcg">تیاپی</language>
 			<language type="kde">ماکونده</language>
 			<language type="kea">کابووردیانو</language>
-			<language type="kfo" draft="contributed">کورو</language>
+			<language type="kfo">کورو</language>
 			<language type="kg">کنگویی</language>
 			<language type="kha">خاسیایی</language>
 			<language type="kho">ختنی</language>
@@ -252,6 +260,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="kiu">کرمانجی</language>
 			<language type="kj">کوانیاما</language>
 			<language type="kk">قزاقی</language>
+			<language type="kkj">کاکایی</language>
 			<language type="kl">گرینلندی</language>
 			<language type="kln">کالنجین</language>
 			<language type="km">خمری</language>
@@ -263,13 +272,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="kpe">کپله‌ای</language>
 			<language type="kr">کانوریایی</language>
 			<language type="krc">قره‌چایی‐بالکاری</language>
+			<language type="krl">کاریلیانی</language>
 			<language type="kru">کوروخی</language>
 			<language type="ks">کشمیری</language>
 			<language type="ksb">شامبالا</language>
 			<language type="ksf">بافیایی</language>
+			<language type="ksh">ریپواری</language>
 			<language type="ku">کردی</language>
 			<language type="kum">کومیکی</language>
-			<language type="kut" draft="contributed">کوتنی</language>
+			<language type="kut">کوتنی</language>
 			<language type="kv">کومیایی</language>
 			<language type="kw">کرنوالی</language>
 			<language type="ky">قرقیزی</language>
@@ -286,6 +297,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ln">لینگالا</language>
 			<language type="lo">لائوسی</language>
 			<language type="lol">مونگویی</language>
+			<language type="lou" draft="contributed">زبان آمیختهٔ مادری لوئیزیانا</language>
 			<language type="loz">لوزیایی</language>
 			<language type="lrc">لری شمالی</language>
 			<language type="lt">لیتوانیایی</language>
@@ -330,6 +342,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mua">ماندانگی</language>
 			<language type="mul">چندین زبان</language>
 			<language type="mus">کریکی</language>
+			<language type="mwl">میراندی</language>
 			<language type="mwr">مارواری</language>
 			<language type="my">برمه‌ای</language>
 			<language type="myv">ارزیایی</language>
@@ -350,6 +363,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="nl_BE">فلمنگی</language>
 			<language type="nmg">کوازیو</language>
 			<language type="nn">نروژی نی‌نُشک</language>
+			<language type="nnh">انگیمبونی</language>
 			<language type="no">نروژی</language>
 			<language type="nog">نغایی</language>
 			<language type="non">نرس باستان</language>
@@ -363,7 +377,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="nym">نیام‌وزیایی</language>
 			<language type="nyn">نیانکوله‌ای</language>
 			<language type="nyo">نیورویی</language>
-			<language type="nzi" draft="contributed">نزیمایی</language>
+			<language type="nzi">نزیمایی</language>
 			<language type="oc">اوکیتایی</language>
 			<language type="oj">اوجیبوایی</language>
 			<language type="om">اورومویی</language>
@@ -377,6 +391,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pam">پامپانگایی</language>
 			<language type="pap">پاپیامنتو</language>
 			<language type="pau">پالائویی</language>
+			<language type="pcm">نیم‌زبان نیجریه‌ای</language>
 			<language type="pdc">آلمانی پنسیلوانیایی</language>
 			<language type="peo">فارسی باستان</language>
 			<language type="phn">فنیقی</language>
@@ -413,6 +428,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="saq">سامبورو</language>
 			<language type="sas">ساساکی</language>
 			<language type="sat">سانتالی</language>
+			<language type="sba">انگامبایی</language>
 			<language type="sbp">سانگویی</language>
 			<language type="sc">ساردینیایی</language>
 			<language type="scn">سیسیلی</language>
@@ -448,14 +464,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="srn">تاکی‌تاکی</language>
 			<language type="srr">سریری</language>
 			<language type="ss">سوازیایی</language>
+			<language type="ssy">ساهو</language>
 			<language type="st">سوتویی جنوبی</language>
 			<language type="su">سوندایی</language>
 			<language type="suk">سوکومایی</language>
 			<language type="sus">سوسویی</language>
 			<language type="sux">سومری</language>
 			<language type="sv">سوئدی</language>
-			<language type="sw">سواحلی</language>
-			<language type="sw_CD">سواحلی کنگویی</language>
+			<language type="sw">سواحیلی</language>
+			<language type="sw_CD">سواحیلی کنگو</language>
 			<language type="swb">کوموری</language>
 			<language type="syc">سریانی کلاسیک</language>
 			<language type="syr">سریانی</language>
@@ -464,7 +481,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="te">تلوگویی</language>
 			<language type="tem">تمنه‌ای</language>
 			<language type="teo">تسویی</language>
-			<language type="ter" draft="contributed">ترنو</language>
+			<language type="ter">ترنو</language>
 			<language type="tet">تتومی</language>
 			<language type="tg">تاجیکی</language>
 			<language type="th">تایلندی</language>
@@ -482,6 +499,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tpi">توک‌پیسینی</language>
 			<language type="tr">ترکی استانبولی</language>
 			<language type="tr" alt="secondary">ترکی</language>
+			<language type="trv">تاروکویی</language>
 			<language type="ts">تسونگایی</language>
 			<language type="tsi">تسیم‌شیانی</language>
 			<language type="tt">تاتاری</language>
@@ -507,7 +525,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="vot">وتی</language>
 			<language type="vun">ونجو</language>
 			<language type="wa">والونی</language>
-			<language type="wal" draft="contributed">والامو</language>
+			<language type="wae">والسر</language>
+			<language type="wal">والامو</language>
 			<language type="war">وارایی</language>
 			<language type="was">واشویی</language>
 			<language type="wbp">وارلپیری</language>
@@ -517,6 +536,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="xog">سوگایی</language>
 			<language type="yao">یائویی</language>
 			<language type="yap">یاپی</language>
+			<language type="yav">یانگبنی</language>
+			<language type="ybb">یمبایی</language>
 			<language type="yi">یدی</language>
 			<language type="yo">یوروبایی</language>
 			<language type="yue">کانتونی</language>
@@ -568,6 +589,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">یونانی</script>
 			<script type="Gujr">گجراتی</script>
 			<script type="Guru">گورومخی</script>
+			<script type="Hanb">هانبی</script>
 			<script type="Hang">هانگول</script>
 			<script type="Hani">هان</script>
 			<script type="Hano" draft="contributed">هانونویی</script>
@@ -582,6 +604,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung">مجاری باستان</script>
 			<script type="Inds" draft="contributed">ایندوس</script>
 			<script type="Ital">ایتالی باستان</script>
+			<script type="Jamo">جامو</script>
 			<script type="Java">جاوه‌ای</script>
 			<script type="Jpan">ژاپنی</script>
 			<script type="Kali" draft="contributed">کایالی</script>
@@ -652,6 +675,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">یی</script>
 			<script type="Zinh">موروثی</script>
 			<script type="Zmth">علائم ریاضی</script>
+			<script type="Zsye">اموجی</script>
 			<script type="Zsym">علائم</script>
 			<script type="Zxxx">نانوشته</script>
 			<script type="Zyyy">مشترک</script>
@@ -687,6 +711,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">شرق اروپا</territory>
 			<territory type="154">شمال اروپا</territory>
 			<territory type="155">غرب اروپا</territory>
+			<territory type="202" draft="contributed">افریقای سیاه</territory>
 			<territory type="419">امریکای لاتین</territory>
 			<territory type="AC">جزایر آسنسیون</territory>
 			<territory type="AD">آندورا</territory>
@@ -764,6 +789,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">اسپانیا</territory>
 			<territory type="ET">اتیوپی</territory>
 			<territory type="EU">اتحادیهٔ اروپا</territory>
+			<territory type="EZ">منطقه یورو</territory>
 			<territory type="FI">فنلاند</territory>
 			<territory type="FJ">فیجی</territory>
 			<territory type="FK">جزایر فالکلند</territory>
@@ -786,7 +812,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GP">گوادلوپ</territory>
 			<territory type="GQ">گینهٔ استوایی</territory>
 			<territory type="GR">یونان</territory>
-			<territory type="GS">جورجیای جنوبی و جزایر ساندویچ جنوبی</territory>
+			<territory type="GS">جزایر جورجیای جنوبی و ساندویچ جنوبی</territory>
 			<territory type="GT">گواتمالا</territory>
 			<territory type="GU">گوام</territory>
 			<territory type="GW">گینهٔ بیسائو</territory>
@@ -912,7 +938,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SO">سومالی</territory>
 			<territory type="SR">سورینام</territory>
 			<territory type="SS">سودان جنوبی</territory>
-			<territory type="ST">پرینسیپ و سائوتومه</territory>
+			<territory type="ST">سائوتومه و پرینسیپ</territory>
 			<territory type="SV">السالوادور</territory>
 			<territory type="SX">سنت مارتن</territory>
 			<territory type="SY">سوریه</territory>
@@ -938,12 +964,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">اوکراین</territory>
 			<territory type="UG">اوگاندا</territory>
 			<territory type="UM">جزایر دورافتادهٔ ایالات متحده</territory>
+			<territory type="UN">سازمان ملل متحد</territory>
+			<territory type="UN" alt="short">سازمان ملل</territory>
 			<territory type="US">ایالات متحده</territory>
 			<territory type="US" alt="short">ایالات متحده</territory>
 			<territory type="UY">اروگوئه</territory>
 			<territory type="UZ">ازبکستان</territory>
 			<territory type="VA">واتیکان</territory>
-			<territory type="VC">سنت وینسنت و گرنادین‌ها</territory>
+			<territory type="VC">سنت وینسنت و گرنادین</territory>
 			<territory type="VE">ونزوئلا</territory>
 			<territory type="VG">جزایر ویرجین بریتانیا</territory>
 			<territory type="VI">جزایر ویرجین ایالات متحده</territory>
@@ -968,16 +996,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<variant type="FONUPA">فونتیک UPA</variant>
 			<variant type="POSIX">کامپیوتری</variant>
 			<variant type="REVISED">رسم‌الخط تجدیدنظرشده</variant>
+			<variant type="ROZAJ" draft="contributed">روژان</variant>
 			<variant type="SAAHO">ساهویی</variant>
 			<variant type="SCOTLAND">انگلیسی معیار اسکاتلند</variant>
 		</variants>
 		<keys>
 			<key type="calendar">تقویم</key>
-			<key type="colAlternate">مرتب‌سازی با نادیده گرفتن نمادها</key>
+			<key type="cf">قالب واحد پول</key>
+			<key type="colAlternate">نادیده گرفتن مرتب‌سازی نمادها</key>
 			<key type="colBackwards">مرتب‌سازی معکوس براساس آکسان</key>
 			<key type="colCaseFirst">ترتیب بر اساس حروف کوچک/بزرگ</key>
 			<key type="colCaseLevel">مرتب‌سازی حساس به اندازه حروف</key>
-			<key type="colHiraganaQuaternary">سیستم مرتب‌سازی کانا</key>
 			<key type="collation">ترتیب</key>
 			<key type="colNormalization">مرتب‌سازی معمولی</key>
 			<key type="colNumeric">مرتب‌سازی عددی</key>
@@ -987,9 +1016,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="lb">شیوهٔ اعمال سرخط</key>
 			<key type="ms">دستگاه اندازه‌گیری</key>
 			<key type="numbers">اعداد</key>
-			<key type="timezone">منطقه زمانی</key>
+			<key type="timezone">منطقهٔ زمانی</key>
 			<key type="va">متغیر محلی</key>
-			<key type="variableTop">مرتب‌سازی به عنوان نماد</key>
 			<key type="x">استفادهٔ خصوصی</key>
 		</keys>
 		<types>
@@ -1011,6 +1039,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">تقویم ژاپنی</type>
 			<type key="calendar" type="persian">تقویم هجری شمسی</type>
 			<type key="calendar" type="roc">تقویم جمهوری چین (تایوان)</type>
+			<type key="cf" type="account">قالب حسابداری واحد پول</type>
+			<type key="cf" type="standard">قالب استاندارد واحد پول</type>
 			<type key="colAlternate" type="non-ignorable">مرتب‌سازی نمادها</type>
 			<type key="colAlternate" type="shifted">مرتب‌سازی با نادیده گرفتن نمادها</type>
 			<type key="colBackwards" type="no">مرتب‌سازی آکسان‌ها به صورت معمولی</type>
@@ -1020,12 +1050,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper">مرتب‌سازی بر اساس حرف بزرگ در ابتدا</type>
 			<type key="colCaseLevel" type="no">مرتب‌سازی بدون توجه به کوچک و بزرگی حروف</type>
 			<type key="colCaseLevel" type="yes">مرتب‌سازی با حساسیت به اندازه حروف</type>
-			<type key="colHiraganaQuaternary" type="no">مرتب‌سازی بر اساس سیستم کانا به صورت جداگانه</type>
-			<type key="colHiraganaQuaternary" type="yes">مرتب‌سازی کانا به صورت متفاوت</type>
 			<type key="collation" type="big5han">ترتیب چینی سنتی - Big5</type>
+			<type key="collation" type="compat" draft="contributed">ترتیب پیشین، برای سازگاری</type>
 			<type key="collation" type="dictionary">ترتیب فرهنگ لغت</type>
 			<type key="collation" type="ducet">ترتیب پیش‌فرض یونی‌کد</type>
 			<type key="collation" type="emoji">ترتیب ایموجی</type>
+			<type key="collation" type="eor" draft="contributed">قوانین ترتیب اروپایی</type>
 			<type key="collation" type="gb2312han">ترتیب چینی ساده‌شده - GB2312</type>
 			<type key="collation" type="phonebook">ترتیب دفتر تلفن</type>
 			<type key="collation" type="phonetic">مرتب کردن بر اساس آوایی</type>
@@ -1038,7 +1068,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="collation" type="traditional">ترتیب سنتی</type>
 			<type key="collation" type="unihan">ترتیب رادیکالی-حرکتی</type>
 			<type key="colNormalization" type="no">مرتب‌سازی بدون عادی‌سازی</type>
-			<type key="colNormalization" type="yes">مرتب‌سازی یونیکد نرمال‌شده</type>
+			<type key="colNormalization" type="yes">مرتب‌سازی یونی‌کد نرمال‌شده</type>
 			<type key="colNumeric" type="no">مرتب‌سازی ارقام بصورت مجزا</type>
 			<type key="colNumeric" type="yes">مرتب‌سازی شماره‌ها با سیستم عددی</type>
 			<type key="colStrength" type="identical">مرتب‌سازی همه</type>
@@ -1046,6 +1076,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary">مرتب‌سازی بر اساس آکسان/اندازه حروف/عرض/کانا</type>
 			<type key="colStrength" type="secondary">مرتب‌سازی آکسان‌ها</type>
 			<type key="colStrength" type="tertiary">مرتب‌سازی بر اساس آکسان/اندازه حرف/عرض</type>
+			<type key="d0" type="fwidth">تمام‌عرض</type>
+			<type key="d0" type="hwidth">نیم‌عرض</type>
+			<type key="d0" type="npinyin">سیستم اعداد</type>
 			<type key="hc" type="h11">سیستم ۱۲ ساعته (۰ تا ۱۱)</type>
 			<type key="hc" type="h12">سیستم ۱۲ ساعته (۱ تا ۱۲)</type>
 			<type key="hc" type="h23">سیستم ۲۴ ساعته (۰ تا ۲۳)</type>
@@ -1053,6 +1086,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">شیوهٔ ضعیف اعمال سرخط</type>
 			<type key="lb" type="normal">شیوهٔ عادی اعمال سرخط</type>
 			<type key="lb" type="strict">شیوهٔ قوی اعمال سرخط</type>
+			<type key="m0" type="bgn">ترانویسی انجمن نام‌های جغرافیایی ایالات متحده</type>
+			<type key="m0" type="ungegn">ترانویسی گروه نام‌های جغرافیایی سازمان ملل</type>
 			<type key="ms" type="metric">دستگاه متریک</type>
 			<type key="ms" type="uksystem">دستگاه اندازه‌گیری بریتانیایی</type>
 			<type key="ms" type="ussystem">دستگاه اندازه‌گیری امریکایی</type>
@@ -1062,6 +1097,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="armnlow">اعداد ارمنی با حروف کوچک</type>
 			<type key="numbers" type="bali">ارقام بالیایی</type>
 			<type key="numbers" type="beng">ارقام بنگالی</type>
+			<type key="numbers" type="cyrl" draft="contributed">ارقام سیریلیک</type>
 			<type key="numbers" type="deva">ارقام دوناگری</type>
 			<type key="numbers" type="ethi">اعداد اتیوپیایی</type>
 			<type key="numbers" type="finance">سیستم عددی مالی</type>
@@ -1100,18 +1136,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional">سیستم اعداد سنتی</type>
 			<type key="numbers" type="vaii">ارقام وایی</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">BGN</transformName>
-			<transformName type="Numeric">سیستم اعداد</transformName>
-			<transformName type="Tone">تون</transformName>
-			<transformName type="UNGEGN">UNGEGN</transformName>
-			<transformName type="x-Accents">تکیه</transformName>
-			<transformName type="x-Fullwidth">تمام‌عرض</transformName>
-			<transformName type="x-Halfwidth">نیم‌عرض</transformName>
-			<transformName type="x-Jamo">جامو</transformName>
-			<transformName type="x-Pinyin">پین‌یین</transformName>
-			<transformName type="x-Publishing">نشر</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">متریک</measurementSystemName>
 			<measurementSystemName type="UK">بریتانیایی</measurementSystemName>
@@ -1130,8 +1154,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</layout>
 	<characters>
 		<exemplarCharacters>[\u064B \u064D \u064C \u0651 \u0654 آ ا ء أ ؤ ئ ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ه ة ی]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200D\u200E\u200F \u064E \u0650 \u064F \u0652 \u0656 \u0670 إ ك ى ي]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ـ\u200C\u200D\u200E\u200F \u064E \u0650 \u064F \u0652 \u0656 \u0670 إ ك ى ي]</exemplarCharacters>
 		<exemplarCharacters type="index">[آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ه ی]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\u200E , ٫ ٬ . % ٪ ‰ ؉ + − 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1140,6 +1165,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>؟</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -1149,6 +1193,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 	</delimiters>
 	<dates>
 		<calendars>
+			<calendar type="buddhist">
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">تقویم بودایی</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">تقویم بودایی</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">تقویم بودایی</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="chinese">
 				<cyclicNameSets>
 					<cyclicNameSet type="zodiacs">
@@ -1171,26 +1228,190 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</cyclicNameSet>
 				</cyclicNameSets>
 			</calendar>
+			<calendar type="coptic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">توت</month>
+							<month type="2" draft="contributed">پاوی</month>
+							<month type="3" draft="contributed">اثور</month>
+							<month type="4" draft="contributed">کواق</month>
+							<month type="5" draft="contributed">طوفی</month>
+							<month type="6" draft="contributed">ماخیر</month>
+							<month type="7" draft="contributed">فامینوث</month>
+							<month type="8" draft="contributed">فرموثی</month>
+							<month type="9" draft="contributed">پاخون</month>
+							<month type="10" draft="contributed">پاونی</month>
+							<month type="11" draft="contributed">افیفی</month>
+							<month type="12" draft="contributed">ماسوری</month>
+							<month type="13" draft="contributed">ماه کوچک</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">توت</month>
+							<month type="2" draft="contributed">پاوی</month>
+							<month type="3" draft="contributed">اثور</month>
+							<month type="4" draft="contributed">کواق</month>
+							<month type="5" draft="contributed">طوفی</month>
+							<month type="6" draft="contributed">ماخیر</month>
+							<month type="7" draft="contributed">فامینوث</month>
+							<month type="8" draft="contributed">فرموثی</month>
+							<month type="9" draft="contributed">پاخون</month>
+							<month type="10" draft="contributed">پاونی</month>
+							<month type="11" draft="contributed">افیفی</month>
+							<month type="12" draft="contributed">ماسوری</month>
+							<month type="13" draft="contributed">ماه کوچک</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">توت</month>
+							<month type="2" draft="contributed">پاوی</month>
+							<month type="3" draft="contributed">اثور</month>
+							<month type="4" draft="contributed">کواق</month>
+							<month type="5" draft="contributed">طوفی</month>
+							<month type="6" draft="contributed">ماخیر</month>
+							<month type="7" draft="contributed">فامینوث</month>
+							<month type="8" draft="contributed">فرموثی</month>
+							<month type="9" draft="contributed">پاخون</month>
+							<month type="10" draft="contributed">پاونی</month>
+							<month type="11" draft="contributed">افیفی</month>
+							<month type="12" draft="contributed">ماسوری</month>
+							<month type="13" draft="contributed">ماه کوچک</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">توت</month>
+							<month type="2" draft="contributed">پاوی</month>
+							<month type="3" draft="contributed">اثور</month>
+							<month type="4" draft="contributed">کواق</month>
+							<month type="5" draft="contributed">طوفی</month>
+							<month type="6" draft="contributed">ماخیر</month>
+							<month type="7" draft="contributed">فامینوث</month>
+							<month type="8" draft="contributed">فرموثی</month>
+							<month type="9" draft="contributed">پاخون</month>
+							<month type="10" draft="contributed">پاونی</month>
+							<month type="11" draft="contributed">افیفی</month>
+							<month type="12" draft="contributed">ماسوری</month>
+							<month type="13" draft="contributed">ماه کوچک</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">قبل از حلول مسیح</era>
+						<era type="1" draft="contributed">بعد از حلول مسیح</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">قبل از مسیح</era>
+						<era type="1" draft="contributed">پس از مسیح</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ق.م.</era>
+						<era type="1" draft="contributed">ب.م.</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="ethiopic">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">مسکرم</month>
+							<month type="2" draft="contributed">تکیمت</month>
+							<month type="3" draft="contributed">هیدار</month>
+							<month type="4" draft="contributed">طه‌ساز</month>
+							<month type="5" draft="contributed">تر</month>
+							<month type="6" draft="contributed">یکوتیت</month>
+							<month type="7" draft="contributed">مگابیت</month>
+							<month type="8" draft="contributed">میازیا</month>
+							<month type="9" draft="contributed">گین‌بوت</month>
+							<month type="10" draft="contributed">سنه</month>
+							<month type="11" draft="contributed">حمله</month>
+							<month type="12" draft="contributed">نحسه</month>
+							<month type="13" draft="contributed">پاگومه</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">مسکرم</month>
+							<month type="2" draft="contributed">تکیمت</month>
+							<month type="3" draft="contributed">هیدار</month>
+							<month type="4" draft="contributed">طه‌ساز</month>
+							<month type="5" draft="contributed">تر</month>
+							<month type="6" draft="contributed">یکوتیت</month>
+							<month type="7" draft="contributed">مگابیت</month>
+							<month type="8" draft="contributed">میازیا</month>
+							<month type="9" draft="contributed">گین‌بوت</month>
+							<month type="10" draft="contributed">سنه</month>
+							<month type="11" draft="contributed">حمله</month>
+							<month type="12" draft="contributed">نحسه</month>
+							<month type="13" draft="contributed">پاگومه</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">مسکرم</month>
+							<month type="2" draft="contributed">تکیمت</month>
+							<month type="3" draft="contributed">هیدار</month>
+							<month type="4" draft="contributed">طه‌ساز</month>
+							<month type="5" draft="contributed">تر</month>
+							<month type="6" draft="contributed">یکوتیت</month>
+							<month type="7" draft="contributed">مگابیت</month>
+							<month type="8" draft="contributed">میازیا</month>
+							<month type="9" draft="contributed">گین‌بوت</month>
+							<month type="10" draft="contributed">سنه</month>
+							<month type="11" draft="contributed">حمله</month>
+							<month type="12" draft="contributed">نحسه</month>
+							<month type="13" draft="contributed">پاگومه</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">مسکرم</month>
+							<month type="2" draft="contributed">تکیمت</month>
+							<month type="3" draft="contributed">هیدار</month>
+							<month type="4" draft="contributed">طه‌ساز</month>
+							<month type="5" draft="contributed">تر</month>
+							<month type="6" draft="contributed">یکوتیت</month>
+							<month type="7" draft="contributed">مگابیت</month>
+							<month type="8" draft="contributed">میازیا</month>
+							<month type="9" draft="contributed">گین‌بوت</month>
+							<month type="10" draft="contributed">سنه</month>
+							<month type="11" draft="contributed">حمله</month>
+							<month type="12" draft="contributed">نحسه</month>
+							<month type="13" draft="contributed">پاگومه</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0">ERA0</era>
+						<era type="1">ERA1</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0">ERA0</era>
+						<era type="1">ERA1</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0">ERA0</era>
+						<era type="1">ERA1</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>G y MMMM d, EEEE</pattern>
+							<pattern>G EEEE d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>d MMMM y G</pattern>
+							<pattern>G d MMMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>d MMM y G</pattern>
+							<pattern>G d MMM y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>y/M/d G</pattern>
+							<pattern>G d/M/y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1216,9 +1437,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
@@ -1571,7 +1801,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="noon">ظهر</dayPeriod>
 							<dayPeriod type="pm">ب.ظ.</dayPeriod>
 							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">عصر</dayPeriod>
+							<dayPeriod type="afternoon1">ب.ظ.</dayPeriod>
 							<dayPeriod type="evening1">عصر</dayPeriod>
 							<dayPeriod type="night1">شب</dayPeriod>
 						</dayPeriodWidth>
@@ -1581,7 +1811,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="noon">ظ</dayPeriod>
 							<dayPeriod type="pm">ب</dayPeriod>
 							<dayPeriod type="morning1">ص</dayPeriod>
-							<dayPeriod type="afternoon1">ب</dayPeriod>
+							<dayPeriod type="afternoon1">ب.ظ.</dayPeriod>
 							<dayPeriod type="evening1">ع</dayPeriod>
 							<dayPeriod type="night1">ش</dayPeriod>
 						</dayPeriodWidth>
@@ -1591,7 +1821,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="noon">ظهر</dayPeriod>
 							<dayPeriod type="pm">بعدازظهر</dayPeriod>
 							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">عصر</dayPeriod>
+							<dayPeriod type="afternoon1">بعدازظهر</dayPeriod>
 							<dayPeriod type="evening1">عصر</dayPeriod>
 							<dayPeriod type="night1">شب</dayPeriod>
 						</dayPeriodWidth>
@@ -1600,22 +1830,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">نیمه‌شب</dayPeriod>
 							<dayPeriod type="am">ق.ظ.</dayPeriod>
-							<dayPeriod type="noon">ظ</dayPeriod>
-							<dayPeriod type="pm">ب.ظ.</dayPeriod>
-							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">عصر</dayPeriod>
-							<dayPeriod type="evening1">سر شب</dayPeriod>
-							<dayPeriod type="night1">شب</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">نیمه‌شب</dayPeriod>
-							<dayPeriod type="am">ق.ظ.</dayPeriod>
 							<dayPeriod type="noon">ظهر</dayPeriod>
 							<dayPeriod type="pm">ب.ظ.</dayPeriod>
 							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">عصر</dayPeriod>
-							<dayPeriod type="evening1">سر شب</dayPeriod>
+							<dayPeriod type="afternoon1">بعدازظهر</dayPeriod>
+							<dayPeriod type="evening1">عصر</dayPeriod>
 							<dayPeriod type="night1">شب</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">ن</dayPeriod>
+							<dayPeriod type="am">ق.ظ.</dayPeriod>
+							<dayPeriod type="noon">ظ</dayPeriod>
+							<dayPeriod type="pm">ب.ظ.</dayPeriod>
+							<dayPeriod type="morning1">ص</dayPeriod>
+							<dayPeriod type="afternoon1">ب.ظ.</dayPeriod>
+							<dayPeriod type="evening1">ع</dayPeriod>
+							<dayPeriod type="night1">ش</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">نیمه‌شب</dayPeriod>
@@ -1623,8 +1853,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="noon">ظهر</dayPeriod>
 							<dayPeriod type="pm">بعدازظهر</dayPeriod>
 							<dayPeriod type="morning1">صبح</dayPeriod>
-							<dayPeriod type="afternoon1">عصر</dayPeriod>
-							<dayPeriod type="evening1">سر شب</dayPeriod>
+							<dayPeriod type="afternoon1">بعدازظهر</dayPeriod>
+							<dayPeriod type="evening1">عصر</dayPeriod>
 							<dayPeriod type="night1">شب</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
@@ -1715,8 +1945,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E H:mm</dateFormatItem>
@@ -1745,6 +1980,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMEd">E d LLL</dateFormatItem>
 						<dateFormatItem id="MMMMd">d LLLL</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E d LLLL</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">هفته W از MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">هفته W از MMM</dateFormatItem>
 						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
@@ -1758,6 +1995,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMMEEEEd">EEEE d MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">هفته w از Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">هفته w از Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Day-Of-Week">{1} {0}</appendItem>
@@ -1963,6 +2202,92 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</monthWidth>
 					</monthContext>
 				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">تقویم عبری</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">تقویم عبری</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">تقویم عبری</era>
+					</eraNarrow>
+				</eras>
+			</calendar>
+			<calendar type="indian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">چیتره</month>
+							<month type="2" draft="contributed">ویشاکهه</month>
+							<month type="3" draft="contributed">جییشته</month>
+							<month type="4" draft="contributed">آشادهه</month>
+							<month type="5" draft="contributed">شراونه</month>
+							<month type="6" draft="contributed">بهادره</month>
+							<month type="7" draft="contributed">آشوین</month>
+							<month type="8" draft="contributed">کارتیکه</month>
+							<month type="9" draft="contributed">آگرهینه</month>
+							<month type="10" draft="contributed">پاوشه</month>
+							<month type="11" draft="contributed">ماگهه</month>
+							<month type="12" draft="contributed">پهالگونه</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">چیتره</month>
+							<month type="2" draft="contributed">ویشاکهه</month>
+							<month type="3" draft="contributed">جییشته</month>
+							<month type="4" draft="contributed">آشادهه</month>
+							<month type="5" draft="contributed">شراونه</month>
+							<month type="6" draft="contributed">بهادره</month>
+							<month type="7" draft="contributed">آشوین</month>
+							<month type="8" draft="contributed">کارتیکه</month>
+							<month type="9" draft="contributed">آگرهینه</month>
+							<month type="10" draft="contributed">پاوشه</month>
+							<month type="11" draft="contributed">ماگهه</month>
+							<month type="12" draft="contributed">پهالگونه</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="contributed">چیتره</month>
+							<month type="2" draft="contributed">ویشاکهه</month>
+							<month type="3" draft="contributed">جییشته</month>
+							<month type="4" draft="contributed">آشادهه</month>
+							<month type="5" draft="contributed">شراونه</month>
+							<month type="6" draft="contributed">بهادره</month>
+							<month type="7" draft="contributed">آشوین</month>
+							<month type="8" draft="contributed">کارتیکه</month>
+							<month type="9" draft="contributed">آگرهینه</month>
+							<month type="10" draft="contributed">پاوشه</month>
+							<month type="11" draft="contributed">ماگهه</month>
+							<month type="12" draft="contributed">پهالگونه</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="contributed">چیتره</month>
+							<month type="2" draft="contributed">ویشاکهه</month>
+							<month type="3" draft="contributed">جییشته</month>
+							<month type="4" draft="contributed">آشادهه</month>
+							<month type="5" draft="contributed">شراونه</month>
+							<month type="6" draft="contributed">بهادره</month>
+							<month type="7" draft="contributed">آشوین</month>
+							<month type="8" draft="contributed">کارتیکه</month>
+							<month type="9" draft="contributed">آگرهینه</month>
+							<month type="10" draft="contributed">پاوشه</month>
+							<month type="11" draft="contributed">ماگهه</month>
+							<month type="12" draft="contributed">پهالگونه</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">تقویم ساکا</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">تقویم ساکا</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">تقویم ساکا</era>
+					</eraNarrow>
+				</eras>
 			</calendar>
 			<calendar type="islamic">
 				<months>
@@ -1970,10 +2295,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<monthWidth type="abbreviated">
 							<month type="1">محرم</month>
 							<month type="2">صفر</month>
-							<month type="3">ربیع الاول</month>
-							<month type="4">ربیع الثانی</month>
-							<month type="5">جمادی الاول</month>
-							<month type="6">جمادی الثانی</month>
+							<month type="3">ربیع‌الاول</month>
+							<month type="4">ربیع‌الثانی</month>
+							<month type="5">جمادی‌الاول</month>
+							<month type="6">جمادی‌الثانی</month>
 							<month type="7">رجب</month>
 							<month type="8">شعبان</month>
 							<month type="9">رمضان</month>
@@ -1998,10 +2323,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<monthWidth type="wide">
 							<month type="1">محرم</month>
 							<month type="2">صفر</month>
-							<month type="3">ربیع الاول</month>
-							<month type="4">ربیع الثانی</month>
-							<month type="5">جمادی الاول</month>
-							<month type="6">جمادی الثانی</month>
+							<month type="3">ربیع‌الاول</month>
+							<month type="4">ربیع‌الثانی</month>
+							<month type="5">جمادی‌الاول</month>
+							<month type="6">جمادی‌الثانی</month>
 							<month type="7">رجب</month>
 							<month type="8">شعبان</month>
 							<month type="9">رمضان</month>
@@ -2014,10 +2339,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<monthWidth type="abbreviated">
 							<month type="1">محرم</month>
 							<month type="2">صفر</month>
-							<month type="3">ربیع الاول</month>
-							<month type="4">ربیع الثانی</month>
-							<month type="5">جمادی الاول</month>
-							<month type="6">جمادی الثانی</month>
+							<month type="3">ربیع‌الاول</month>
+							<month type="4">ربیع‌الثانی</month>
+							<month type="5">جمادی‌الاول</month>
+							<month type="6">جمادی‌الثانی</month>
 							<month type="7">رجب</month>
 							<month type="8">شعبان</month>
 							<month type="9">رمضان</month>
@@ -2042,7 +2367,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<monthWidth type="wide">
 							<month type="1">محرم</month>
 							<month type="2">صفر</month>
-							<month type="3">ربیع الاول</month>
+							<month type="3">ربیع‌الاول</month>
 							<month type="4">ربیع الثانی</month>
 							<month type="5">جمادی الاول</month>
 							<month type="6">جمادی الثانی</month>
@@ -2062,6 +2387,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<eraAbbr>
 						<era type="0">ه‍.ق.</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ه‍.ق.</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -2229,11 +2557,110 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<eraAbbr>
 						<era type="0">ه‍.ش.</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">ه‍.ش.</era>
+					</eraNarrow>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern>y MMMM d, EEEE</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern>d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern>d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern>y/M/d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="y">y</dateFormatItem>
+						<dateFormatItem id="yyyy">y</dateFormatItem>
+						<dateFormatItem id="yyyyM">y/M</dateFormatItem>
+						<dateFormatItem id="yyyyMd">y/M/d</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E y/M/d</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">MMM y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d MMM y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E d MMM y</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">y MMMM</dateFormatItem>
+						<dateFormatItem id="yyyyQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yyyyQQQQ">QQQQ y</dateFormatItem>
+					</availableFormats>
+					<intervalFormats>
+						<intervalFormatItem id="y">
+							<greatestDifference id="y">y تا y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yM">
+							<greatestDifference id="M">y/M تا y/M</greatestDifference>
+							<greatestDifference id="y">y/M تا y/M</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMd">
+							<greatestDifference id="d">y/M/d تا y/M/d</greatestDifference>
+							<greatestDifference id="M">y/M/d تا y/M/d</greatestDifference>
+							<greatestDifference id="y">y/M/d تا y/M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMEd">
+							<greatestDifference id="d">E y/M/d تا E y/M/d</greatestDifference>
+							<greatestDifference id="M">E y/M/d تا E y/M/d</greatestDifference>
+							<greatestDifference id="y">E y/M/d تا E y/M/d</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMM">
+							<greatestDifference id="M">LLL تا MMM y</greatestDifference>
+							<greatestDifference id="y">MMM y تا MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMd">
+							<greatestDifference id="d">d تا d MMM y</greatestDifference>
+							<greatestDifference id="M">d LLL تا d MMM y</greatestDifference>
+							<greatestDifference id="y">d MMM y تا d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMEd">
+							<greatestDifference id="d">E d LLL تا E d MMM y</greatestDifference>
+							<greatestDifference id="M">E d LLL تا E d MMM y</greatestDifference>
+							<greatestDifference id="y">E d MMM y تا E d MMM y</greatestDifference>
+						</intervalFormatItem>
+						<intervalFormatItem id="yMMMM">
+							<greatestDifference id="M">LLLL تا MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y تا MMMM y</greatestDifference>
+						</intervalFormatItem>
+					</intervalFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="roc">
+				<eras>
+					<eraNames>
+						<era type="0" draft="contributed">قبل از R.O.C.</era>
+						<era type="1" draft="contributed">تقویم مینگو</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="contributed">قبل از R.O.C.</era>
+						<era type="1" draft="contributed">تقویم مینگو</era>
+					</eraAbbr>
+					<eraNarrow>
+						<era type="0" draft="contributed">قبل از R.O.C.</era>
+						<era type="1" draft="contributed">تقویم مینگو</era>
+					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
+				<displayName>دوره</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>دوره</displayName>
+			</field>
+			<field type="era-narrow">
 				<displayName>دوره</displayName>
 			</field>
 			<field type="year">
@@ -2375,6 +2802,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} هفته پیش</relativeTimePattern>
 					<relativeTimePattern count="other">{0} هفته پیش</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>هفتهٔ {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>هفته</displayName>
@@ -2389,6 +2817,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} هفته پیش</relativeTimePattern>
 					<relativeTimePattern count="other">{0} هفته پیش</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>هفتهٔ {0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>هفته</displayName>
@@ -2403,6 +2832,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} هفته پیش</relativeTimePattern>
 					<relativeTimePattern count="other">{0} هفته پیش</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>هفتهٔ {0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>هفتهٔ ماه</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>هفتهٔ ماه</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>هفتهٔ ماه</displayName>
 			</field>
 			<field type="day">
 				<displayName>روز</displayName>
@@ -2452,119 +2891,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} روز پیش</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>روز سال</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>روز سال</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>روز سال</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>روز هفته</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>روز هفته</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>روز هفته</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>روز کاری ماه</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>روز کاری ماه</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>روز کاری ماه</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">یکشنبهٔ گذشته</relative>
 				<relative type="0">این یکشنبه</relative>
 				<relative type="1">یکشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} یکشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} یکشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} یکشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} یکشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">یکشنبهٔ گذشته</relative>
 				<relative type="0">این یکشنبه</relative>
 				<relative type="1">یکشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} یکشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} یکشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} یکشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} یکشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">یکشنبهٔ گذشته</relative>
 				<relative type="0">این یکشنبه</relative>
 				<relative type="1">یکشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} یکشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} یکشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} یکشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} یکشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">دوشنبهٔ گذشته</relative>
 				<relative type="0">این دوشنبه</relative>
 				<relative type="1">دوشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} دوشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} دوشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} دوشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} دوشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">دوشنبهٔ گذشته</relative>
 				<relative type="0">این دوشنبه</relative>
 				<relative type="1">دوشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} دوشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} دوشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} دوشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} دوشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">دوشنبهٔ گذشته</relative>
 				<relative type="0">این دوشنبه</relative>
 				<relative type="1">دوشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} دوشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} دوشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} دوشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} دوشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">سه‌شنبهٔ گذشته</relative>
 				<relative type="0">این سه‌شنبه</relative>
 				<relative type="1">سه‌شنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} سه‌شنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} سه‌شنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} سه‌شنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} سه‌شنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">سه‌شنبهٔ گذشته</relative>
 				<relative type="0">این سه‌شنبه</relative>
 				<relative type="1">سه‌شنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} سه‌شنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} سه‌شنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} سه‌شنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} سه‌شنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">سه‌شنبهٔ گذشته</relative>
 				<relative type="0">این سه‌شنبه</relative>
 				<relative type="1">سه‌شنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} سه‌شنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} سه‌شنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} سه‌شنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} سه‌شنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">چهارشنبهٔ گذشته</relative>
 				<relative type="0">این چهارشنبه</relative>
 				<relative type="1">چهارشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} چهارشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} چهارشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} چهارشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} چهارشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">چهارشنبهٔ گذشته</relative>
 				<relative type="0">این چهارشنبه</relative>
 				<relative type="1">چهارشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} چهارشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} چهارشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} چهارشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} چهارشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">چهارشنبهٔ گذشته</relative>
 				<relative type="0">این چهارشنبه</relative>
 				<relative type="1">چهارشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} چهارشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} چهارشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} چهارشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} چهارشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">پنجشنبهٔ گذشته</relative>
 				<relative type="0">این پنجشنبه</relative>
 				<relative type="1">پنجشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} پنجشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} پنجشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} پنجشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} پنجشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">پنجشنبهٔ گذشته</relative>
 				<relative type="0">این پنجشنبه</relative>
 				<relative type="1">پنجشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} پنجشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} پنجشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} پنجشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} پنجشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">پنجشنبهٔ گذشته</relative>
 				<relative type="0">این پنجشنبه</relative>
 				<relative type="1">پنجشنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} پنجشنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} پنجشنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} پنجشنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} پنجشنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">جمعهٔ گذشته</relative>
 				<relative type="0">این جمعه</relative>
 				<relative type="1">جمعهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} جمعهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} جمعهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} جمعهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} جمعهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">جمعهٔ گذشته</relative>
 				<relative type="0">این جمعه</relative>
 				<relative type="1">جمعهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} جمعهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} جمعهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} جمعهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} جمعهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">جمعهٔ گذشته</relative>
 				<relative type="0">این جمعه</relative>
 				<relative type="1">جمعهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} جمعهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} جمعهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} جمعهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} جمعهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">شنبهٔ گذشته</relative>
 				<relative type="0">این شنبه</relative>
 				<relative type="1">شنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} شنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} شنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} شنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} شنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">شنبهٔ گذشته</relative>
 				<relative type="0">این شنبه</relative>
 				<relative type="1">شنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} شنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} شنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} شنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} شنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">شنبهٔ گذشته</relative>
 				<relative type="0">این شنبه</relative>
 				<relative type="1">شنبهٔ آینده</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} شنبهٔ بعد</relativeTimePattern>
+					<relativeTimePattern count="other">{0} شنبهٔ بعد</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} شنبهٔ پیش</relativeTimePattern>
+					<relativeTimePattern count="other">{0} شنبهٔ پیش</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>قبل/بعدازظهر</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>قبل/بعدازظهر</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>قبل/بعدازظهر</displayName>
+			</field>
 			<field type="hour">
 				<displayName>ساعت</displayName>
+				<relative type="0">همین ساعت</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ساعت بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ساعت بعد</relativeTimePattern>
@@ -2576,6 +3214,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-short">
 				<displayName>ساعت</displayName>
+				<relative type="0" draft="contributed">همین ساعت</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ساعت بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ساعت بعد</relativeTimePattern>
@@ -2587,6 +3226,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour-narrow">
 				<displayName>ساعت</displayName>
+				<relative type="0" draft="contributed">همین ساعت</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ساعت بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ساعت بعد</relativeTimePattern>
@@ -2598,6 +3238,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>دقیقه</displayName>
+				<relative type="0">همین دقیقه</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} دقیقه بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} دقیقه بعد</relativeTimePattern>
@@ -2609,6 +3250,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-short">
 				<displayName>دقیقه</displayName>
+				<relative type="0" draft="contributed">همین دقیقه</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} دقیقه بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} دقیقه بعد</relativeTimePattern>
@@ -2620,6 +3262,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute-narrow">
 				<displayName>دقیقه</displayName>
+				<relative type="0" draft="contributed">همین دقیقه</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} دقیقه بعد</relativeTimePattern>
 					<relativeTimePattern count="other">{0} دقیقه بعد</relativeTimePattern>
@@ -2668,15 +3311,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>منطقهٔ زمانی</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>منطقهٔ زمانی</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>منطقهٔ زمانی</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;−HH:mm</hourFormat>
+			<hourFormat>‎+HH:mm;‎−HH:mm</hourFormat>
 			<gmtFormat>{0} گرینویچ</gmtFormat>
 			<gmtZeroFormat>گرینویچ</gmtZeroFormat>
 			<regionFormat>وقت {0}</regionFormat>
 			<regionFormat type="daylight">وقت تابستانی {0}</regionFormat>
 			<regionFormat type="standard">وقت عادی {0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>سانتا ایزابل</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>هونولولو</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>زمان هماهنگ جهانی</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>شهر نامشخص</exemplarCity>
 			</zone>
@@ -2723,7 +3383,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>دیویس</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Vostok">
-				<exemplarCity>ووستوک</exemplarCity>
+				<exemplarCity>وستوک</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Casey">
 				<exemplarCity>کیسی</exemplarCity>
@@ -2941,6 +3601,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>ونکوور</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>فورت نلسون</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>داوسن کریک</exemplarCity>
 			</zone>
@@ -3037,6 +3700,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>ایستر</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>پونتا آرناس</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>سانتیاگو</exemplarCity>
 			</zone>
@@ -3069,6 +3735,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>نیکوزیا</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>فاماگوستا</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>پراگ</exemplarCity>
@@ -3328,6 +3997,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>اورال</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>آتیراو</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>آقتوبه</exemplarCity>
 			</zone>
@@ -3441,9 +4113,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>تیخوانا</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>سانتا ایزابل</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>ارموسیو</exemplarCity>
@@ -3610,6 +4279,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>ولگاگراد</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>ساراتوف</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>آستراخان</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>اولیانوفسک</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>کیروف</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>سامارا</exemplarCity>
 			</zone>
@@ -3621,6 +4302,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>نووسیبیریسک</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>بارنائول</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>تومسک</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>نوووکوزنتسک</exemplarCity>
@@ -3790,9 +4477,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>میدوی</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>جانستون</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>ویک</exemplarCity>
 			</zone>
@@ -3802,8 +4486,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>نوم</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>هونولولو</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>جانستون</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>انکوریج</exemplarCity>
@@ -3878,7 +4562,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>مانتیسلو، کنتاکی</exemplarCity>
 			</zone>
 			<zone type="America/Detroit">
-				<exemplarCity>دترویت</exemplarCity>
+				<exemplarCity>دیترویت</exemplarCity>
 			</zone>
 			<zone type="America/New_York">
 				<exemplarCity>نیویورک</exemplarCity>
@@ -4682,6 +5366,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>وقت پوناپه</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>وقت پیونگ‌یانگ</standard>
+				</long>
+			</metazone>
 			<metazone type="Qyzylorda">
 				<long>
 					<generic>وقت قیزیل‌اوردا</generic>
@@ -4888,7 +5577,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<group>٬</group>
 			<list>؛</list>
 			<percentSign>٪</percentSign>
-			<plusSign>‎+‎</plusSign>
+			<plusSign>‎+</plusSign>
 			<minusSign>‎−</minusSign>
 			<exponential>×۱۰^</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
@@ -4995,6 +5684,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</scientificFormat>
 			</scientificFormatLength>
 		</scientificFormats>
+		<percentFormats numberSystem="arab">
+			<percentFormatLength>
+				<percentFormat>
+					<pattern draft="contributed">#,##0%</pattern>
+				</percentFormat>
+			</percentFormatLength>
+		</percentFormats>
 		<percentFormats numberSystem="arabext">
 			<percentFormatLength>
 				<percentFormat>
@@ -5009,6 +5705,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</percentFormat>
 			</percentFormatLength>
 		</percentFormats>
+		<currencyFormats numberSystem="arab">
+			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="contributed">‎¤#,##0.00</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="arabext">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
@@ -5019,10 +5722,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>‎¤#,##0.00</pattern>
+					<pattern>‎¤ #,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>‎¤#,##0.00;‎(¤#,##0.00)</pattern>
+					<pattern>‎¤ #,##0.00;‎(¤ #,##0.00)</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -5243,12 +5946,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="BYB">
 				<displayName>روبل جدید بیلوروسی (۱۹۹۴ تا ۱۹۹۹)</displayName>
 			</currency>
-			<currency type="BYR">
-				<displayName>روبل بیلوروسی</displayName>
-				<displayName count="one">روبل بیلوروسی</displayName>
-				<displayName count="other">روبل بیلوروسی</displayName>
-				<symbol draft="contributed">BYR</symbol>
+			<currency type="BYN">
+				<displayName>روبل بلاروسی</displayName>
+				<displayName count="one">روبل بلاروسی</displayName>
+				<displayName count="other">روبل بلاروسی</displayName>
+				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>روبل بلاروسی (۲۰۱۶–۲۰۰۰)</displayName>
+				<displayName count="one">روبل بلاروسی (۲۰۱۶–۲۰۰۰)</displayName>
+				<displayName count="other">روبل بلاروسی (۲۰۱۶–۲۰۰۰)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>دلار بلیز</displayName>
@@ -5282,6 +5991,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">پزوی شیلی</displayName>
 				<symbol draft="contributed">CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>یوآن چین (برون‌مرزی)</displayName>
+				<displayName count="one">یوآن چین (برون‌مرزی)</displayName>
+				<displayName count="other">یوآن چین (برون‌مرزی)</displayName>
+				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>یوآن چین</displayName>
@@ -5372,9 +6087,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="EGP">
-				<displayName>لیرهٔ مصر</displayName>
-				<displayName count="one">لیرهٔ مصر</displayName>
-				<displayName count="other">لیرهٔ مصر</displayName>
+				<displayName>پوند مصر</displayName>
+				<displayName count="one">پوند مصر</displayName>
+				<displayName count="other">پوند مصر</displayName>
 				<symbol draft="contributed">EGP</symbol>
 				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
@@ -5428,6 +6143,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">لاری گرجستان</displayName>
 				<displayName count="other">لاری گرجستان</displayName>
 				<symbol draft="contributed">GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
@@ -5750,10 +6466,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>اوگوئیای موریتانی (۱۹۷۳ تا ۲۰۱۷)</displayName>
+				<displayName count="one">اوگوئیای موریتانی (۱۹۷۳ تا ۲۰۱۷)</displayName>
+				<displayName count="other">اوگوئیای موریتانی (۱۹۷۳ تا ۲۰۱۷)</displayName>
+				<symbol draft="contributed">MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>اوگوئیای موریتانی</displayName>
 				<displayName count="one">اوگوئیای موریتانی</displayName>
 				<displayName count="other">اوگوئیای موریتانی</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>لیرهٔ مالت</displayName>
@@ -5925,6 +6646,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">لئوی رومانی</displayName>
 				<displayName count="other">لئوی رومانی</displayName>
 				<symbol draft="contributed">RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>دینار صربستان</displayName>
@@ -5973,9 +6695,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>دینار سودان (۱۹۹۲ تا ۲۰۰۷)</displayName>
 			</currency>
 			<currency type="SDG">
-				<displayName>لیرهٔ سودان</displayName>
-				<displayName count="one">لیرهٔ سودان</displayName>
-				<displayName count="other">لیرهٔ سودان</displayName>
+				<displayName>پوند سودان</displayName>
+				<displayName count="one">پوند سودان</displayName>
+				<displayName count="other">پوند سودان</displayName>
 				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SEK">
@@ -6029,10 +6751,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>دوبرای سائوتومه و پرنسیپ (۱۹۷۷ تا ۲۰۱۷)</displayName>
+				<displayName count="one">دوبرای سائوتومه و پرنسیپ (۱۹۷۷ تا ۲۰۱۷)</displayName>
+				<displayName count="other">دوبرای سائوتومه و پرنسیپ (۱۹۷۷ تا ۲۰۱۷)</displayName>
+				<symbol draft="contributed">STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>دوبرای سائوتومه و پرنسیپ</displayName>
 				<displayName count="one">دوبرای سائوتومه و پرنسیپ</displayName>
 				<displayName count="other">دوبرای سائوتومه و پرنسیپ</displayName>
-				<symbol draft="contributed">STD</symbol>
+				<symbol draft="contributed">STN</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
@@ -6288,8 +7016,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">‎{0}+‎</pattern>
-			<pattern type="range">{0} تا {1}</pattern>
+			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">او {0} فیلم در هفته می‌بیند که کمدی است.</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">او {0} فیلم در هفته می‌بیند که کمدی هستند.</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">در پیچ {0}ام سمت راست بپیچید.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -6335,6 +7068,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>کیلومتر مربع</displayName>
 				<unitPattern count="one">{0} کیلومتر مربع</unitPattern>
 				<unitPattern count="other">{0} کیلومتر مربع</unitPattern>
+				<perUnitPattern>کیلومتر مربع در {0}</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>هکتار</displayName>
@@ -6357,6 +7091,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>مایل مربع</displayName>
 				<unitPattern count="one">{0} مایل مربع</unitPattern>
 				<unitPattern count="other">{0} مایل مربع</unitPattern>
+				<perUnitPattern>{0} در مایل مربع</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>جریب</displayName>
@@ -6384,6 +7119,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} عیار</unitPattern>
 				<unitPattern count="other">{0} عیار</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>میلی‌گرم در دسی‌لیتر</displayName>
+				<unitPattern count="one">{0} میلی‌گرم در دسی‌لیتر</unitPattern>
+				<unitPattern count="other">{0} میلی‌گرم در دسی‌لیتر</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>میلی‌مول در لیتر</displayName>
+				<unitPattern count="one">{0} میلی‌مول در لیتر</unitPattern>
+				<unitPattern count="other">{0} میلی‌مول در لیتر</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>بخش در میلیون</displayName>
+				<unitPattern count="one">{0} بخش در میلیون</unitPattern>
+				<unitPattern count="other">{0} بخش در میلیون</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لیتر در کیلومتر</displayName>
 				<unitPattern count="one">{0} لیتر در کیلومتر</unitPattern>
@@ -6398,6 +7148,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>مایل در گالن</displayName>
 				<unitPattern count="one">{0} مایل در گالن</unitPattern>
 				<unitPattern count="other">{0} مایل در گالن</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>مایل در امپریال گالن</displayName>
+				<unitPattern count="one">{0} مایل در امپریال گالن</unitPattern>
+				<unitPattern count="other">{0} مایل در امپریال گالن</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ترابایت</displayName>
@@ -6671,6 +7426,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} مایل اسکاندیناوی</unitPattern>
 				<unitPattern count="other">{0} مایل اسکاندیناوی</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>امتیاز</displayName>
+				<unitPattern count="one">{0} امتیاز</unitPattern>
+				<unitPattern count="other">{0} امتیاز</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>لوکس</displayName>
 				<unitPattern count="one">{0} لوکس</unitPattern>
@@ -6914,6 +7674,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} گالن</unitPattern>
 				<perUnitPattern>{0} در گالن</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>گالن امپریال</displayName>
+				<unitPattern count="one">{0} گالن امپریال</unitPattern>
+				<unitPattern count="other">{0} گالن امپریال</unitPattern>
+				<perUnitPattern>{0} در گالن امپریال</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>کوارت</displayName>
 				<unitPattern count="one">{0} کوارت</unitPattern>
@@ -6962,8 +7728,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="acceleration-meter-per-second-squared">
 				<displayName>متر/مجذور ثانیه</displayName>
-				<unitPattern count="one">{0} m/s²</unitPattern>
-				<unitPattern count="other">{0} m/s²</unitPattern>
+				<unitPattern count="one">{0}&lt;LRM&gt; m/s²</unitPattern>
+				<unitPattern count="other">{0}&lt;LRM&gt; m/s²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName>دور</displayName>
@@ -6994,6 +7760,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>کیلومتر مربع</displayName>
 				<unitPattern count="one">{0}‎ km²</unitPattern>
 				<unitPattern count="other">{0}‎ km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>هکتار</displayName>
@@ -7016,6 +7783,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>مایل مربع</displayName>
 				<unitPattern count="one">{0} مایل مربع</unitPattern>
 				<unitPattern count="other">{0} مایل مربع</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>جریب</displayName>
@@ -7043,6 +7811,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} عیار</unitPattern>
 				<unitPattern count="other">{0} عیار</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>میلی‌گرم در دسی‌لیتر</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>میلی‌مول/لیتر</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>بخش/میلیون</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>لیتر/کیلومتر</displayName>
 				<unitPattern count="one">{0} ل./ک.م.</unitPattern>
@@ -7057,6 +7840,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>مایل/گالن</displayName>
 				<unitPattern count="one">{0} مایل در گالن</unitPattern>
 				<unitPattern count="other">{0} مایل در گالن</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>مایل/امپریال گالن</displayName>
+				<unitPattern count="one">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>ترابایت</displayName>
@@ -7196,9 +7984,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ک.کالری</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName>کالری</displayName>
+				<unitPattern count="one">{0} کالری</unitPattern>
+				<unitPattern count="other">{0} کالری</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
 				<displayName>کالری</displayName>
@@ -7329,6 +8117,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>مایل اسکاندیناوی</displayName>
 				<unitPattern count="one">{0}‎ smi</unitPattern>
 				<unitPattern count="other">{0}‎ smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>امتیاز</displayName>
+				<unitPattern count="one">{0} امتیاز</unitPattern>
+				<unitPattern count="other">{0} امتیاز</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>لوکس</displayName>
@@ -7573,6 +8366,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} گالن</unitPattern>
 				<perUnitPattern>{0} در گالن</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>گالن امپریال</displayName>
+				<unitPattern count="one">{0} گالن امپریال</unitPattern>
+				<unitPattern count="other">{0} گالن امپریال</unitPattern>
+				<perUnitPattern>{0}/گالن امپریال</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>کوارت</displayName>
 				<unitPattern count="one">{0} کوارت</unitPattern>
@@ -7615,8 +8414,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
+				<displayName draft="contributed">نیروی جاذبه</displayName>
 				<unitPattern count="one">{0}G</unitPattern>
 				<unitPattern count="other">{0}G</unitPattern>
+			</unit>
+			<unit type="acceleration-meter-per-second-squared">
+				<displayName draft="contributed">متر/مجذور ثانیه</displayName>
+				<unitPattern count="one" draft="contributed">{0} m/s²</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} m/s²</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>رادیان</displayName>
@@ -7674,6 +8479,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="digital-bit">
 				<displayName>بیت</displayName>
 			</unit>
+			<unit type="duration-century">
+				<displayName draft="contributed">سده</displayName>
+				<unitPattern count="one" draft="contributed">{0} سده</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} سده</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>سال</displayName>
 				<unitPattern count="one">{0} سال</unitPattern>
@@ -7723,6 +8533,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>میکروثانیه</displayName>
+				<unitPattern count="one" draft="contributed">{0} م.ث.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} م.ث.</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName draft="contributed">نانوثانیه</displayName>
+				<unitPattern count="one" draft="contributed">{0}ن.ث.</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}ن.ث.</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>گ‌.هرتز</displayName>
@@ -7743,6 +8560,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>کیلومتر</displayName>
 				<unitPattern count="one">{0}km</unitPattern>
 				<unitPattern count="other">{0}km</unitPattern>
+				<perUnitPattern draft="contributed">{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>متر</displayName>
@@ -7750,21 +8568,39 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} متر</unitPattern>
 				<perUnitPattern>{0}/متر</perUnitPattern>
 			</unit>
+			<unit type="length-decimeter">
+				<displayName draft="contributed">dm</displayName>
+				<unitPattern count="one" draft="contributed">{0}dm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}dm</unitPattern>
+			</unit>
 			<unit type="length-centimeter">
 				<displayName>سانت</displayName>
 				<unitPattern count="one">{0} سانت</unitPattern>
 				<unitPattern count="other">{0} سانت</unitPattern>
+				<perUnitPattern draft="contributed">{0}/سانت</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>م‌م</displayName>
 				<unitPattern count="one">{0} م‌م</unitPattern>
 				<unitPattern count="other">{0} م‌م</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName draft="contributed">µm</displayName>
+				<unitPattern count="one" draft="contributed">{0}µm</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}µm</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName draft="contributed">نانومتر</displayName>
+				<unitPattern count="one" draft="contributed">{0} نانومتر</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} نانومتر</unitPattern>
+			</unit>
 			<unit type="length-picometer">
+				<displayName draft="contributed">پیکومتر</displayName>
 				<unitPattern count="one">{0}pm</unitPattern>
 				<unitPattern count="other">{0}pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
+				<displayName draft="contributed">مایل</displayName>
 				<unitPattern count="one">{0}mi</unitPattern>
 				<unitPattern count="other">{0}mi</unitPattern>
 			</unit>
@@ -7774,12 +8610,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} یارد</unitPattern>
 			</unit>
 			<unit type="length-foot">
+				<displayName draft="contributed">فوت</displayName>
 				<unitPattern count="one">{0}ft</unitPattern>
 				<unitPattern count="other">{0}ft</unitPattern>
+				<perUnitPattern draft="contributed">{0}/فوت</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
+				<displayName draft="contributed">اینچ</displayName>
 				<unitPattern count="one">{0}in</unitPattern>
 				<unitPattern count="other">{0}in</unitPattern>
+				<perUnitPattern draft="contributed">{0}/اینچ</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>پارسک</displayName>
@@ -7787,29 +8627,59 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} پارسک</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName draft="contributed">سال نوری</displayName>
 				<unitPattern count="one">{0}ly</unitPattern>
 				<unitPattern count="other">{0}ly</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>واحد نجومی</displayName>
+				<unitPattern count="one" draft="contributed">{0} au</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} au</unitPattern>
+			</unit>
+			<unit type="mass-metric-ton">
+				<displayName draft="contributed">تن متریک</displayName>
+				<unitPattern count="one" draft="contributed">{0} تن</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} تن</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>کیلوگرم</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
+				<perUnitPattern draft="contributed">{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>گرم</displayName>
 				<unitPattern count="one">{0} گرم</unitPattern>
 				<unitPattern count="other">{0} گرم</unitPattern>
+				<perUnitPattern draft="contributed">{0} در گرم</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName draft="contributed">میلی‌گرم</displayName>
+				<unitPattern count="one" draft="contributed">{0} mg</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} mg</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName draft="contributed">میکروگرم</displayName>
+			</unit>
+			<unit type="mass-ton">
+				<displayName draft="contributed">تن</displayName>
+			</unit>
+			<unit type="mass-stone">
+				<displayName draft="contributed">سنگ</displayName>
+				<unitPattern count="one" draft="contributed">{0} سنگ</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} سنگ</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName draft="contributed">پوند</displayName>
 				<unitPattern count="one">{0}lb</unitPattern>
 				<unitPattern count="other">{0}lb</unitPattern>
+				<perUnitPattern draft="contributed">{0} در پوند</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName draft="contributed">اونس</displayName>
 				<unitPattern count="one">{0}oz</unitPattern>
 				<unitPattern count="other">{0}oz</unitPattern>
+				<perUnitPattern draft="contributed">{0} در اونس</perUnitPattern>
 			</unit>
 			<unit type="power-kilowatt">
 				<unitPattern count="one">{0}kW</unitPattern>
@@ -7824,14 +8694,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}hp</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
+				<displayName draft="contributed">هکتوپاسکال</displayName>
 				<unitPattern count="one">{0}hPa</unitPattern>
 				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
+			<unit type="pressure-millimeter-of-mercury">
+				<displayName draft="contributed">میلی‌متر جیوه</displayName>
+				<unitPattern count="one" draft="contributed">{0} م‌م جیوه</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} م‌م جیوه</unitPattern>
+			</unit>
+			<unit type="pressure-pound-per-square-inch">
+				<displayName draft="contributed">پوند در اینچ مربع</displayName>
+				<unitPattern count="one" draft="contributed">{0}‎ psi</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}‎ psi</unitPattern>
+			</unit>
 			<unit type="pressure-inch-hg">
+				<displayName draft="contributed">اینچ جیوه</displayName>
 				<unitPattern count="one">{0}inHg</unitPattern>
 				<unitPattern count="other">{0}inHg</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
+				<displayName draft="contributed">میلی‌بار</displayName>
 				<unitPattern count="one">{0}mbar</unitPattern>
 				<unitPattern count="other">{0}mbar</unitPattern>
 			</unit>
@@ -7841,12 +8724,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}‎ km/h</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName draft="contributed">متر در ثانیه</displayName>
 				<unitPattern count="one">{0}m/s</unitPattern>
 				<unitPattern count="other">{0}m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName draft="contributed">مایل در ساعت</displayName>
 				<unitPattern count="one">{0}mph</unitPattern>
 				<unitPattern count="other">{0}mph</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName draft="contributed">گره</displayName>
+				<unitPattern count="one" draft="contributed">{0} گره</unitPattern>
+				<unitPattern count="other" draft="contributed">{0} گره</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName draft="contributed">°</displayName>
+				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
+				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>‎°C</displayName>
@@ -7900,6 +8795,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0}، و {1}</listPatternPart>
 			<listPatternPart type="2">{0} و {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}، {1}</listPatternPart>
+			<listPatternPart type="middle">{0}، {1}</listPatternPart>
+			<listPatternPart type="end">{0}، یا {1}</listPatternPart>
+			<listPatternPart type="2">{0} یا {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}،‏ {1}</listPatternPart>
+			<listPatternPart type="middle">{0}،‏ {1}</listPatternPart>
+			<listPatternPart type="end">{0}، و {1}</listPatternPart>
+			<listPatternPart type="2">{0} و {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}،‏ {1}</listPatternPart>
 			<listPatternPart type="middle">{0}،‏ {1}</listPatternPart>
@@ -7925,5 +8832,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>نه:ن:خیر:خ</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — همه</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — سازگاری</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — محصور</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — گسترش‌یافته</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — تاریخی</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — متفرقه</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — دیگر</characterLabelPattern>
+		<characterLabelPattern type="scripts">دبیره‌ها — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} ضربه</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} ضربه</characterLabelPattern>
+		<characterLabel type="activities">فعالیت</characterLabel>
+		<characterLabel type="african_scripts">دبیره‌های افریقایی</characterLabel>
+		<characterLabel type="american_scripts">دبیره‌های امریکایی</characterLabel>
+		<characterLabel type="animal">حیوان</characterLabel>
+		<characterLabel type="animals_nature">حیوانات و طبیعت</characterLabel>
+		<characterLabel type="arrows">پیکان‌ها</characterLabel>
+		<characterLabel type="body">جسم</characterLabel>
+		<characterLabel type="box_drawing">رسم جعبه</characterLabel>
+		<characterLabel type="braille">بریل</characterLabel>
+		<characterLabel type="building">ساختمان</characterLabel>
+		<characterLabel type="bullets_stars">گلوله‌ها/ستاره‌ها</characterLabel>
+		<characterLabel type="consonantal_jamo">جاموی بی‌صدا</characterLabel>
+		<characterLabel type="currency_symbols">علائم واحد پول</characterLabel>
+		<characterLabel type="dash_connector">خط فاصله/رابط</characterLabel>
+		<characterLabel type="digits">ارقام</characterLabel>
+		<characterLabel type="dingbats">نویسه‌های چاپی</characterLabel>
+		<characterLabel type="divination_symbols">نمادهای فالگیری</characterLabel>
+		<characterLabel type="downwards_arrows">پیکان‌های رو به پایین</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">پیکان‌های رو به بالا</characterLabel>
+		<characterLabel type="east_asian_scripts">دبیره‌های آسیای شرقی</characterLabel>
+		<characterLabel type="emoji">اموجی</characterLabel>
+		<characterLabel type="european_scripts">دبیره‌های اروپایی</characterLabel>
+		<characterLabel type="female">زن</characterLabel>
+		<characterLabel type="flag">پرچم</characterLabel>
+		<characterLabel type="flags">پرچم‌ها</characterLabel>
+		<characterLabel type="food_drink">غذا و نوشیدنی</characterLabel>
+		<characterLabel type="format">قالب</characterLabel>
+		<characterLabel type="format_whitespace">قالب و فضای سفید</characterLabel>
+		<characterLabel type="full_width_form_variant">گونه قالب تمام‌پهنا</characterLabel>
+		<characterLabel type="geometric_shapes">اشکال هندسی</characterLabel>
+		<characterLabel type="half_width_form_variant">گونه‌های قالب پهنا</characterLabel>
+		<characterLabel type="han_characters">نویسه‌های هان</characterLabel>
+		<characterLabel type="han_radicals">ریشه‌های هان</characterLabel>
+		<characterLabel type="hanja">هانجا</characterLabel>
+		<characterLabel type="hanzi_simplified">هانزی (ساده‌شده)</characterLabel>
+		<characterLabel type="hanzi_traditional">هانزی (سنتی)</characterLabel>
+		<characterLabel type="heart">قلب</characterLabel>
+		<characterLabel type="historic_scripts">دبیره‌های تاریخی</characterLabel>
+		<characterLabel type="ideographic_desc_characters">نویسه‌های توصیفی اندیش‌نگاری</characterLabel>
+		<characterLabel type="japanese_kana">کانای ژاپنی</characterLabel>
+		<characterLabel type="kanbun">کانبوم</characterLabel>
+		<characterLabel type="kanji">کانجی</characterLabel>
+		<characterLabel type="keycap">جلد کلید</characterLabel>
+		<characterLabel type="leftwards_arrows">پیکان‌های رو به چپ</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">پیکان‌های رو به راست رو به چپ</characterLabel>
+		<characterLabel type="letterlike_symbols">علائم حروف‌مانند</characterLabel>
+		<characterLabel type="limited_use">استفادهٔ محدود</characterLabel>
+		<characterLabel type="male">مرد</characterLabel>
+		<characterLabel type="math_symbols">علائم ریاضی</characterLabel>
+		<characterLabel type="middle_eastern_scripts">دبیره‌های آسیای میانه</characterLabel>
+		<characterLabel type="miscellaneous">متفرقه</characterLabel>
+		<characterLabel type="modern_scripts">دبیره‌های مدرن</characterLabel>
+		<characterLabel type="modifier">توصیف‌کننده</characterLabel>
+		<characterLabel type="musical_symbols">علائم موسیقی</characterLabel>
+		<characterLabel type="nature">طبیعت</characterLabel>
+		<characterLabel type="nonspacing">بدون فاصله</characterLabel>
+		<characterLabel type="numbers">اعداد</characterLabel>
+		<characterLabel type="objects">اشیاء</characterLabel>
+		<characterLabel type="other">دیگر</characterLabel>
+		<characterLabel type="paired">جفتی</characterLabel>
+		<characterLabel type="person">شخص</characterLabel>
+		<characterLabel type="phonetic_alphabet">الفبای آوانگاری</characterLabel>
+		<characterLabel type="pictographs">تصویرنگاشت</characterLabel>
+		<characterLabel type="place">جا</characterLabel>
+		<characterLabel type="plant">گیاه</characterLabel>
+		<characterLabel type="punctuation">سجاوندی</characterLabel>
+		<characterLabel type="rightwards_arrows">پیکان‌های رو به راست</characterLabel>
+		<characterLabel type="sign_standard_symbols">نمادهای استاندارد/نشان</characterLabel>
+		<characterLabel type="small_form_variant">گونه‌های کوچک</characterLabel>
+		<characterLabel type="smiley">شکلک</characterLabel>
+		<characterLabel type="smileys_people">صورتک‌ها و افراد</characterLabel>
+		<characterLabel type="south_asian_scripts">دبیره‌های آسیای جنوبی</characterLabel>
+		<characterLabel type="southeast_asian_scripts">دبیره‌های آسیای جنوب شرقی</characterLabel>
+		<characterLabel type="spacing">فاصله‌گذاری</characterLabel>
+		<characterLabel type="sport">ورزش</characterLabel>
+		<characterLabel type="symbols">علائم</characterLabel>
+		<characterLabel type="technical_symbols">علائم فنی</characterLabel>
+		<characterLabel type="tone_marks">نشانه‌های نواخت</characterLabel>
+		<characterLabel type="travel">مسافرت</characterLabel>
+		<characterLabel type="travel_places">سفر و جای‌ها</characterLabel>
+		<characterLabel type="upwards_arrows">پیکان‌های رو به بالا</characterLabel>
+		<characterLabel type="variant_forms">گونه‌ها</characterLabel>
+		<characterLabel type="vocalic_jamo">جاموی آوایی</characterLabel>
+		<characterLabel type="weather">هوا</characterLabel>
+		<characterLabel type="western_asian_scripts">دبیره‌های آسیای غربی</characterLabel>
+		<characterLabel type="whitespace">فضای سفید</characterLabel>
+	</characterLabels>
 </ldml>
-

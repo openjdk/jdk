@@ -22,16 +22,16 @@
  */
 package test;
 
-import java.text.FieldPosition;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.text.ParsePosition;
 import java.text.spi.NumberFormatProvider;
 import java.util.Locale;
 
 public class NumberFormatProviderImpl extends NumberFormatProvider {
 
     private static final Locale[] locales = {Locale.FRENCH, Locale.JAPANESE,
-            new Locale("hi", "IN")};
+            new Locale("hi", "IN"), new Locale("xx", "YY")};
 
     @Override
     public NumberFormat getCurrencyInstance(Locale locale) {
@@ -45,7 +45,11 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
 
     @Override
     public NumberFormat getNumberInstance(Locale locale) {
-        return null;
+        if (locale.getLanguage().equals("xx")) {
+            return new DecimalFormat("#0.###", DecimalFormatSymbols.getInstance(Locale.US));
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -58,4 +62,3 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
         return locales;
     }
 }
-

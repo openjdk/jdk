@@ -39,7 +39,9 @@ requires.properties= \
     java.runtime.name \
     vm.gc.Z \
     vm.graal.enabled \
-    vm.cds
+    vm.cds \
+    docker.support \
+    release.implementor
 
 # Minimum jtreg version
 requiredVersion=4.2 b12

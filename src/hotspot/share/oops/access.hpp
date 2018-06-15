@@ -379,8 +379,7 @@ void Access<decorators>::verify_decorators() {
     (location_decorators ^ IN_ROOT) == 0 ||
     (location_decorators ^ IN_HEAP) == 0 ||
     (location_decorators ^ (IN_HEAP | IN_HEAP_ARRAY)) == 0 ||
-    (location_decorators ^ (IN_ROOT | IN_CONCURRENT_ROOT)) == 0 ||
-    (location_decorators ^ (IN_ROOT | IN_ARCHIVE_ROOT)) == 0
+    (location_decorators ^ (IN_ROOT | IN_CONCURRENT_ROOT)) == 0
   ));
 }
 

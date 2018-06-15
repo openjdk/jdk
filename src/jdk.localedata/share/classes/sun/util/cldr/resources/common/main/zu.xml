@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="zu"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,55 +19,89 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="aa">isi-Afar</language>
 			<language type="ab">isi-Abkhazian</language>
-			<language type="ach">Isi-Acoli</language>
+			<language type="ace">isi-Achinese</language>
+			<language type="ach">isi-Acoli</language>
+			<language type="ada">isi-Adangme</language>
+			<language type="ady">isi-Adyghe</language>
 			<language type="af">i-Afrikaans</language>
 			<language type="agq">isi-Aghem</language>
+			<language type="ain">isi-Ainu</language>
 			<language type="ak">isi-Akan</language>
+			<language type="ale">isi-Aleut</language>
+			<language type="alt">i-Southern Altai</language>
 			<language type="am">isi-Amharic</language>
+			<language type="an">isi-Aragonese</language>
+			<language type="anp">isi-Angika</language>
 			<language type="ar">isi-Arabic</language>
 			<language type="ar_001">isi-Arabic esivamile sesimanje</language>
 			<language type="arn">isi-Mapuche</language>
+			<language type="arp">isi-Arapaho</language>
 			<language type="as">isi-Assamese</language>
 			<language type="asa">isi-Asu</language>
+			<language type="ast">isi-Asturian</language>
+			<language type="av">isi-Avaric</language>
+			<language type="awa">isi-Awadhi</language>
 			<language type="ay">isi-Aymara</language>
 			<language type="az">isi-Azerbaijani</language>
 			<language type="az" alt="short">isi-Azeria</language>
 			<language type="ba">isi-Bashkir</language>
+			<language type="ban">isi-Balinese</language>
+			<language type="bas">isi-Basaa</language>
 			<language type="be">isi-Belarusian</language>
 			<language type="bem">isi-Bemba</language>
 			<language type="bez">isi-Bena</language>
 			<language type="bg">isi-Bulgari</language>
 			<language type="bgn">isi-Western Balochi</language>
+			<language type="bho">isi-Bhojpuri</language>
+			<language type="bi">i-Bislama</language>
+			<language type="bin">i-Bini</language>
+			<language type="bla">i-Siksika</language>
 			<language type="bm">isi-Bambara</language>
 			<language type="bn">isi-Bengali</language>
 			<language type="bo">isi-Tibetan</language>
 			<language type="br">isi-Breton</language>
 			<language type="brx">isi-Bodo</language>
 			<language type="bs">isi-Bosnian</language>
+			<language type="bug">isi-Buginese</language>
+			<language type="byn">i-Blin</language>
 			<language type="ca">isi-Catalan</language>
 			<language type="ce">isi-Chechen</language>
+			<language type="ceb">isi-Cebuano</language>
 			<language type="cgg">isi-Chiga</language>
+			<language type="ch">isi-Chamorro</language>
+			<language type="chk">isi-Chuukese</language>
+			<language type="chm">isi-Mari</language>
+			<language type="cho">isi-Choctaw</language>
 			<language type="chr">isi-Cherokee</language>
+			<language type="chy">isi-Cheyenne</language>
 			<language type="ckb">isi-Central Kurdish</language>
 			<language type="co">isi-Corsican</language>
+			<language type="crs">i-Seselwa Creole French</language>
 			<language type="cs">isi-Czech</language>
+			<language type="cu">isi-Church Slavic</language>
 			<language type="cv">isi-Chuvash</language>
 			<language type="cy">isi-Welsh</language>
 			<language type="da">isi-Danish</language>
+			<language type="dak">isi-Dakota</language>
+			<language type="dar">isi-Dargwa</language>
 			<language type="dav">isi-Taita</language>
 			<language type="de">isi-German</language>
 			<language type="de_AT">isi-Austrian German</language>
 			<language type="de_CH">i-Swiss High German</language>
+			<language type="dgr">isi-Dogrib</language>
 			<language type="dje">isi-Zarma</language>
 			<language type="dsb">isi-Lower Sorbian</language>
 			<language type="dua">isi-Duala</language>
 			<language type="dv">isi-Divehi</language>
-			<language type="dyo">isi-Jola-Fonyl</language>
+			<language type="dyo">isi-Jola-Fonyi</language>
 			<language type="dz">isi-Dzongkha</language>
+			<language type="dzg">isi-Dazaga</language>
 			<language type="ebu">isi-Embu</language>
 			<language type="ee">isi-Ewe</language>
 			<language type="efi">isi-Efik</language>
+			<language type="eka">isi-Ekajuk</language>
 			<language type="el">isi-Greek</language>
 			<language type="en">i-English</language>
 			<language type="en_AU">isi-Austrillian English</language>
@@ -80,122 +117,197 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es_MX">i-Mexican Spanish</language>
 			<language type="et">isi-Estonia</language>
 			<language type="eu">isi-Basque</language>
+			<language type="ewo">isi-Ewondo</language>
 			<language type="fa">isi-Persian</language>
+			<language type="ff">isi-Fulah</language>
 			<language type="fi">isi-Finnish</language>
 			<language type="fil">isi-Filipino</language>
 			<language type="fj">isi-Fijian</language>
 			<language type="fo">isi-Faroese</language>
+			<language type="fon">isi-Fon</language>
 			<language type="fr">isi-French</language>
 			<language type="fr_CA">i-Canadian French</language>
 			<language type="fr_CH">i-Swiss French</language>
+			<language type="fur">isi-Friulian</language>
 			<language type="fy">isi-Western Frisian</language>
 			<language type="ga">isi-Irish</language>
-			<language type="gaa">Isi-Ga</language>
+			<language type="gaa">isi-Ga</language>
 			<language type="gag">isi-Gagauz</language>
+			<language type="gan">isi-Gan Chinese</language>
 			<language type="gd">i-Scottish Gaelic</language>
+			<language type="gez">isi-Geez</language>
+			<language type="gil">isi-Gilbertese</language>
 			<language type="gl">isi-Galicia</language>
 			<language type="gn">isi-Guarani</language>
+			<language type="gor">isi-Gorontalo</language>
 			<language type="gsw">isi-Swiss German</language>
 			<language type="gu">isi-Gujarati</language>
 			<language type="guz">isi-Gusli</language>
 			<language type="gv">isi-Manx</language>
+			<language type="gwi">isi-Gwichʼin</language>
 			<language type="ha">isi-Hausa</language>
+			<language type="hak">isi-Hakka Chinese</language>
 			<language type="haw">isi-Hawaiian</language>
 			<language type="he">isi-Hebrew</language>
 			<language type="hi">isi-Hindi</language>
+			<language type="hil">isi-Hiligaynon</language>
+			<language type="hmn">isi-Hmong</language>
 			<language type="hr">isi-Croatian</language>
 			<language type="hsb">isi-Upper Sorbian</language>
+			<language type="hsn">isi-Xiang Chinese</language>
 			<language type="ht">isi-Haitian</language>
 			<language type="hu">isi-Hungarian</language>
+			<language type="hup">isi-Hupa</language>
 			<language type="hy">isi-Armenia</language>
-			<language type="ia">Izilimi ezihlangene</language>
+			<language type="hz">isi-Herero</language>
+			<language type="ia">izilimi ezihlangene</language>
+			<language type="iba">isi-Iban</language>
+			<language type="ibb">isi-Ibibio</language>
 			<language type="id">isi-Indonesian</language>
-			<language type="ie" draft="unconfirmed">Izilimu</language>
+			<language type="ie">izimili</language>
 			<language type="ig">isi-Igbo</language>
 			<language type="ii">isi-Sichuan Yi</language>
+			<language type="ilo">isi-Iloko</language>
+			<language type="inh">isi-Ingush</language>
+			<language type="io">isi-Ido</language>
 			<language type="is">isi-Icelandic</language>
 			<language type="it">isi-Italian</language>
 			<language type="iu">isi-Inuktitut</language>
 			<language type="ja">isi-Japanese</language>
+			<language type="jbo">isi-Lojban</language>
 			<language type="jgo">isi-Ngomba</language>
 			<language type="jmc">isi-Machame</language>
 			<language type="jv">isi-Javanese</language>
 			<language type="ka">isi-Georgian</language>
 			<language type="kab">isi-Kabyle</language>
+			<language type="kac">isi-Kachin</language>
+			<language type="kaj">isi-Jju</language>
 			<language type="kam">isi-Kamba</language>
+			<language type="kbd">isi-Kabardian</language>
+			<language type="kcg">isi-Tyap</language>
 			<language type="kde">isi-Makonde</language>
 			<language type="kea">isi-Kabuverdianu</language>
-			<language type="kg">Isi-Kongo</language>
+			<language type="kfo">isi-Koro</language>
+			<language type="kg">isi-Kongo</language>
+			<language type="kha">isi-Khasi</language>
 			<language type="khq">isi-Koyra Chiini</language>
 			<language type="ki">isi-Kikuyu</language>
+			<language type="kj">isi-Kuanyama</language>
 			<language type="kk">isi-Kazakh</language>
+			<language type="kkj">isi-Kako</language>
 			<language type="kl">isi-Kalaallisut</language>
 			<language type="kln">isi-Kalenjin</language>
 			<language type="km">isi-Khmer</language>
+			<language type="kmb">isi-Kimbundu</language>
 			<language type="kn">isi-Kannada</language>
 			<language type="ko">isi-Korean</language>
 			<language type="koi">isi-Komi-Permyak</language>
 			<language type="kok">isi-Konkani</language>
+			<language type="kpe">isi-Kpelle</language>
+			<language type="kr">isi-Kanuri</language>
+			<language type="krc">isi-Karachay-Balkar</language>
+			<language type="krl">isi-Karelian</language>
+			<language type="kru">isi-Kurukh</language>
 			<language type="ks">isi-Kashmiri</language>
 			<language type="ksb">isiShambala</language>
 			<language type="ksf">isi-Bafia</language>
+			<language type="ksh">isi-Colognian</language>
 			<language type="ku">isi-Kurdish</language>
+			<language type="kum">isi-Kumyk</language>
+			<language type="kv">isi-Komi</language>
 			<language type="kw">isi-Cornish</language>
 			<language type="ky">isi-Kyrgyz</language>
 			<language type="la">isi-Latin</language>
+			<language type="lad">isi-Ladino</language>
 			<language type="lag">isi-Langi</language>
 			<language type="lb">isi-Luxembourgish</language>
+			<language type="lez">isi-Lezghian</language>
 			<language type="lg">isi-Ganda</language>
+			<language type="li">isi-Limburgish</language>
 			<language type="lkt">isi-Lakota</language>
 			<language type="ln">isi-Lingala</language>
 			<language type="lo">i-Lao</language>
-			<language type="loz">Isi-Lozi</language>
+			<language type="loz">isi-Lozi</language>
 			<language type="lrc">isi-Northern Luri</language>
 			<language type="lt">isi-Lithuanian</language>
 			<language type="lu">isi-Luba-Katanga</language>
-			<language type="lua">Isi-Luba-Lulua</language>
+			<language type="lua">isi-Luba-Lulua</language>
+			<language type="lun">isi-Lunda</language>
 			<language type="luo">isi-Luo</language>
+			<language type="lus">isi-Mizo</language>
 			<language type="luy">isi-Luyia</language>
 			<language type="lv">isi-Latvian</language>
+			<language type="mad">isi-Madurese</language>
+			<language type="mag">isi-Magahi</language>
+			<language type="mai">isi-Maithili</language>
+			<language type="mak">isi-Makasar</language>
 			<language type="mas">isi-Masai</language>
+			<language type="mdf">isi-Moksha</language>
+			<language type="men">isi-Mende</language>
 			<language type="mer">isi-Meru</language>
 			<language type="mfe">isi-Morisyen</language>
 			<language type="mg">isi-Malagasy</language>
 			<language type="mgh">isi-Makhuwa-Meetto</language>
 			<language type="mgo">isi-Meta’</language>
+			<language type="mh">isi-Marshallese</language>
 			<language type="mi">isi-Maori</language>
+			<language type="mic">isi-Micmac</language>
+			<language type="min">isi-Minangkabau</language>
 			<language type="mk">isi-Macedonian</language>
 			<language type="ml">isi-Malayalam</language>
 			<language type="mn">isi-Mongolian</language>
+			<language type="mni">isi-Manipuri</language>
 			<language type="moh">isi-Mohawk</language>
+			<language type="mos">isi-Mossi</language>
 			<language type="mr">isi-Marathi</language>
 			<language type="ms">isi-Malay</language>
 			<language type="mt">isi-Maltese</language>
 			<language type="mua">isi-Mundang</language>
+			<language type="mul">izilimi ezehlukene</language>
+			<language type="mus">isi-Creek</language>
+			<language type="mwl">isi-Mirandese</language>
 			<language type="my">isi-Burmese</language>
+			<language type="myv">isi-Erzya</language>
 			<language type="mzn">isi-Mazanderani</language>
+			<language type="na">isi-Nauru</language>
+			<language type="nan">isi-Min Nan Chinese</language>
+			<language type="nap">isi-Neapolitan</language>
 			<language type="naq">isi-Nama</language>
 			<language type="nb">isi-Norwegian Bokmål</language>
 			<language type="nd">isi-North Ndebele</language>
-			<language type="nds">nds</language>
+			<language type="nds">isi-Low German</language>
 			<language type="nds_NL">isi-Low Saxon</language>
 			<language type="ne">isi-Nepali</language>
+			<language type="new">isi-Newari</language>
+			<language type="ng">isi-Ndonga</language>
+			<language type="nia">isi-Nias</language>
+			<language type="niu">isi-Niuean</language>
 			<language type="nl">isi-Dutch</language>
 			<language type="nl_BE">isi-Flemish</language>
 			<language type="nmg">isi-Kwasio</language>
 			<language type="nn">i-Norwegian Nynorsk</language>
-			<language type="no" draft="unconfirmed">IsiNoweyi</language>
+			<language type="nnh">isi-Ngiemboon</language>
+			<language type="no">isi-Norwegian</language>
+			<language type="nog">isi-Nogai</language>
 			<language type="nqo">isi-N’Ko</language>
+			<language type="nr">i-South Ndebele</language>
 			<language type="nso">isi-Northern Sotho</language>
 			<language type="nus">isi-Nuer</language>
+			<language type="nv">isi-Navajo</language>
 			<language type="ny">isi-Nyanja</language>
 			<language type="nyn">isi-Nyankole</language>
-			<language type="oc">Isi-Osithani</language>
+			<language type="oc">isi-Occitan</language>
 			<language type="om">i-Oromo</language>
-			<language type="or">isi-Oriya</language>
+			<language type="or">isi-Odia</language>
 			<language type="os">isi-Ossetic</language>
 			<language type="pa">isi-Punjabi</language>
+			<language type="pag">isi-Pangasinan</language>
+			<language type="pam">isi-Pampanga</language>
+			<language type="pap">isi-Papiamento</language>
+			<language type="pau">isi-Palauan</language>
+			<language type="pcm">isi-Nigerian Pidgin</language>
 			<language type="pl">isi-Polish</language>
+			<language type="prg">isi-Prussian</language>
 			<language type="ps">isi-Pashto</language>
 			<language type="ps" alt="variant">isi-Pushto</language>
 			<language type="pt">isi-Portuguese</language>
@@ -203,126 +315,169 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pt_PT">isi-European Portuguese</language>
 			<language type="qu">isi-Quechua</language>
 			<language type="quc">isi-Kʼicheʼ</language>
+			<language type="rap">i-Rapanui</language>
+			<language type="rar">i-Rarotongan</language>
 			<language type="rm">isi-Romansh</language>
 			<language type="rn">isi-Rundi</language>
 			<language type="ro">isi-Romanian</language>
 			<language type="ro_MD">isi-Moldavian</language>
 			<language type="rof">isi-Rombo</language>
+			<language type="root">i-Root</language>
 			<language type="ru">isi-Russian</language>
+			<language type="rup">isi-Aromanian</language>
 			<language type="rw">isi-Kinyarwanda</language>
 			<language type="rwk">isi-Rwa</language>
 			<language type="sa">isi-Sanskrit</language>
+			<language type="sad">i-Sandawe</language>
+			<language type="sah">i-Sakha</language>
 			<language type="saq">isi-Samburu</language>
+			<language type="sat">i-Santali</language>
+			<language type="sba">isi-Ngambay</language>
 			<language type="sbp">isi-Sangu</language>
+			<language type="sc">i-Sardinian</language>
+			<language type="scn">i-Sicilian</language>
+			<language type="sco">i-Scots</language>
 			<language type="sd">isi-Sindhi</language>
 			<language type="sdh">i-Southern Kurdish</language>
 			<language type="se">isi-Northern Sami</language>
 			<language type="seh">isi-Sena</language>
 			<language type="ses">isi-Koyraboro Senni</language>
 			<language type="sg">isi-Sango</language>
-			<language type="sh" draft="unconfirmed">Serbo-Croatian</language>
+			<language type="sh">isi-Serbo-Croatian</language>
 			<language type="shi">isi-Tachelhit</language>
+			<language type="shn">i-Shan</language>
 			<language type="si">i-Sinhala</language>
 			<language type="sk">isi-Slovak</language>
 			<language type="sl">isi-Slovenian</language>
 			<language type="sm">isi-Samoan</language>
-			<language type="sma">isi-Southern Sami</language>
+			<language type="sma">i-Southern Sami</language>
 			<language type="smj">isi-Lule Sami</language>
 			<language type="smn">isi-Inari Sami</language>
 			<language type="sms">isi-Skolt Sami</language>
 			<language type="sn">isiShona</language>
+			<language type="snk">i-Soninke</language>
 			<language type="so">isi-Somali</language>
 			<language type="sq">isi-Albania</language>
 			<language type="sr">isi-Serbian</language>
+			<language type="srn">i-Sranan Tongo</language>
 			<language type="ss">isiSwati</language>
+			<language type="ssy">i-Saho</language>
 			<language type="st">isiSuthu</language>
 			<language type="su">isi-Sundanese</language>
+			<language type="suk">i-Sukuma</language>
 			<language type="sv">isi-Swedish</language>
 			<language type="sw">isiSwahili</language>
 			<language type="sw_CD">isi-Congo Swahili</language>
+			<language type="swb">isi-Comorian</language>
+			<language type="syr">i-Syriac</language>
 			<language type="ta">isi-Tamil</language>
 			<language type="te">isi-Telugu</language>
+			<language type="tem">isi-Timne</language>
 			<language type="teo">isi-Teso</language>
 			<language type="tet">isi-Tetum</language>
 			<language type="tg">isi-Tajik</language>
 			<language type="th">isi-Thai</language>
 			<language type="ti">isi-Tigrinya</language>
+			<language type="tig">isi-Tigre</language>
 			<language type="tk">isi-Turkmen</language>
-			<language type="tlh">Isi-Klingon</language>
+			<language type="tlh">isi-Klingon</language>
 			<language type="tn">isi-Tswana</language>
 			<language type="to">isi-Tongan</language>
 			<language type="tpi">isi-Tok Pisin</language>
 			<language type="tr">isi-Turkish</language>
+			<language type="trv">isi-Taroko</language>
 			<language type="ts">isi-Tsonga</language>
 			<language type="tt">isi-Tatar</language>
-			<language type="tum">Isi-Tumbuka</language>
-			<language type="tw" draft="unconfirmed">Twi</language>
+			<language type="tum">isi-Tumbuka</language>
+			<language type="tvl">isi-Tuvalu</language>
+			<language type="tw">isi-Twi</language>
 			<language type="twq">isi-Tasawaq</language>
 			<language type="ty">isi-Tahitian</language>
+			<language type="tyv">isi-Tuvinian</language>
 			<language type="tzm">isi-Central Atlas Tamazight</language>
+			<language type="udm">isi-Udmurt</language>
 			<language type="ug">isi-Uighur</language>
 			<language type="uk">isi-Ukrainian</language>
+			<language type="umb">isi-Umbundu</language>
 			<language type="und">ulimi olungaziwa</language>
 			<language type="ur">isi-Urdu</language>
 			<language type="uz">isi-Uzbek</language>
 			<language type="vai">isi-Vai</language>
 			<language type="ve">isi-Venda</language>
 			<language type="vi">isi-Vietnamese</language>
+			<language type="vo">isi-Volapük</language>
 			<language type="vun">isiVunjo</language>
+			<language type="wa">isi-Walloon</language>
+			<language type="wae">isi-Walser</language>
+			<language type="wal">isi-Wolaytta</language>
+			<language type="war">isi-Waray</language>
 			<language type="wbp">isi-Warlpiri</language>
 			<language type="wo">isi-Wolof</language>
+			<language type="wuu">isi-Wu Chinese</language>
+			<language type="xal">isi-Kalmyk</language>
 			<language type="xh">isiXhosa</language>
 			<language type="xog">isi-Soga</language>
-			<language type="yi">Isi-Yidish</language>
+			<language type="yav">isi-Yangben</language>
+			<language type="ybb">isi-Yemba</language>
+			<language type="yi">isi-Yiddish</language>
 			<language type="yo">isi-Yoruba</language>
-			<language type="zgh">isi-Standard Moroccan Tamazight</language>
+			<language type="yue">isi-Cantonese</language>
+			<language type="zgh">isi-Moroccan Tamazight esivamile</language>
 			<language type="zh">isi-Chinese</language>
+			<language type="zh_Hans">isi-Chinese (esenziwe-lula)</language>
 			<language type="zh_Hant">isi-Chinese (Okosiko)</language>
 			<language type="zu">isiZulu</language>
+			<language type="zun">isi-Zuni</language>
 			<language type="zxx">akukho okuqukethwe kolimi</language>
+			<language type="zza">isi-Zaza</language>
 		</languages>
 		<scripts>
-			<script type="Arab">i-Arab</script>
-			<script type="Arab" alt="variant">i-Perso-Arabic</script>
-			<script type="Armn">i-Armenian</script>
-			<script type="Beng">i-Bengali</script>
-			<script type="Bopo">i-Bopomofo</script>
+			<script type="Arab">isi-Arabic</script>
+			<script type="Arab" alt="variant">isi-Perso-Arabic</script>
+			<script type="Armn">isi-Armenian</script>
+			<script type="Beng">isi-Bangla</script>
+			<script type="Bopo">isi-Bopomofo</script>
 			<script type="Brai">i-Braille</script>
-			<script type="Cyrl">i-Cyrillic</script>
-			<script type="Deva">i-Devanagari</script>
-			<script type="Ethi">i-Ethiopic</script>
-			<script type="Geor">i-Georgian</script>
-			<script type="Grek">i-Greek</script>
-			<script type="Gujr">i-Gujarati</script>
-			<script type="Guru">i-Gurmukhi</script>
-			<script type="Hang">i-Hangul</script>
-			<script type="Hani">i-Han</script>
-			<script type="Hans">i-Simplified</script>
-			<script type="Hans" alt="stand-alone">i-Simplified Han</script>
+			<script type="Cyrl">isi-Cyrillic</script>
+			<script type="Deva">isi-Devanagari</script>
+			<script type="Ethi">isi-Ethiopic</script>
+			<script type="Geor">isi-Georgian</script>
+			<script type="Grek">isi-Greek</script>
+			<script type="Gujr">isi-Gujarati</script>
+			<script type="Guru">isi-Gurmukhi</script>
+			<script type="Hanb">isi-Hanb</script>
+			<script type="Hang">isi-Hangul</script>
+			<script type="Hani">isi-Han</script>
+			<script type="Hans">enziwe lula</script>
+			<script type="Hans" alt="stand-alone">isi-Han esenziwe lula</script>
 			<script type="Hant">okosiko</script>
-			<script type="Hant" alt="stand-alone">i-Traditional Han</script>
-			<script type="Hebr">i-Hebrew</script>
-			<script type="Hira">i-Hiragana</script>
-			<script type="Jpan">i-Japanese</script>
-			<script type="Kana">i-Katakana</script>
-			<script type="Khmr">i-Khmer</script>
-			<script type="Knda">i-Kannada</script>
-			<script type="Kore">i-Korean</script>
-			<script type="Laoo">i-Lao</script>
-			<script type="Latn">i-Latin</script>
-			<script type="Mlym">i-Malayam</script>
-			<script type="Mong">i-Mongolian</script>
-			<script type="Mymr">i-Myanmar</script>
-			<script type="Orya">i-Oriya</script>
-			<script type="Sinh">i-Sinhala</script>
-			<script type="Taml">i-Tamil</script>
-			<script type="Telu">i-Telegu</script>
-			<script type="Thaa">i-Thaana</script>
-			<script type="Thai">i-Thai</script>
+			<script type="Hant" alt="stand-alone">isi-Han sosiko</script>
+			<script type="Hebr">isi-Hebrew</script>
+			<script type="Hira">isi-Hiragana</script>
+			<script type="Hrkt">i-Japanese syllabaries</script>
+			<script type="Jamo">isi-Jamo</script>
+			<script type="Jpan">isi-Japanese</script>
+			<script type="Kana">isi-Katakana</script>
+			<script type="Khmr">isi-Khmer</script>
+			<script type="Knda">isi-Kannada</script>
+			<script type="Kore">isi-Korean</script>
+			<script type="Laoo">isi-Lao</script>
+			<script type="Latn">isi-Latin</script>
+			<script type="Mlym">isi-Malayalam</script>
+			<script type="Mong">isi-Mongolian</script>
+			<script type="Mymr">isi-Myanmar</script>
+			<script type="Orya">isi-Odia</script>
+			<script type="Sinh">isi-Sinhala</script>
+			<script type="Taml">isi-Tamil</script>
+			<script type="Telu">isi-Telugu</script>
+			<script type="Thaa">isi-Thaana</script>
+			<script type="Thai">isi-Thai</script>
 			<script type="Tibt">i-Tibetan</script>
+			<script type="Zmth">i-Mathematical Notation</script>
+			<script type="Zsye">i-Emoji</script>
 			<script type="Zsym">amasimbuli</script>
 			<script type="Zxxx">okungabhaliwe</script>
-			<script type="Zyyy">ejwayelekile</script>
+			<script type="Zyyy">jwayelekile</script>
 			<script type="Zzzz">iskripthi esingaziwa</script>
 		</scripts>
 		<territories>
@@ -355,12 +510,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">i-Eastern Europe</territory>
 			<territory type="154">i-Northern Europe</territory>
 			<territory type="155">i-Western Europe</territory>
+			<territory type="202">Sub-Saharan Africa</territory>
 			<territory type="419">i-Latin America</territory>
 			<territory type="AC">i-Ascension Island</territory>
 			<territory type="AD">i-Andorra</territory>
 			<territory type="AE">i-United Arab Emirates</territory>
 			<territory type="AF">i-Afghanistan</territory>
-			<territory type="AG">i-Antigua and Barbuda</territory>
+			<territory type="AG">i-Antigua ne-Barbuda</territory>
 			<territory type="AI">i-Anguilla</territory>
 			<territory type="AL">i-Albania</territory>
 			<territory type="AM">i-Armenia</territory>
@@ -416,7 +572,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">i-Curaçao</territory>
 			<territory type="CX">i-Christmas Island</territory>
 			<territory type="CY">i-Cyprus</territory>
-			<territory type="CZ">i-Czech Republic</territory>
+			<territory type="CZ">i-Czechia</territory>
+			<territory type="CZ" alt="variant">i-Czech Republic</territory>
 			<territory type="DE">i-Germany</territory>
 			<territory type="DG">i-Diego Garcia</territory>
 			<territory type="DJ">i-Djibouti</territory>
@@ -433,6 +590,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">i-Spain</territory>
 			<territory type="ET">i-Ethiopia</territory>
 			<territory type="EU">i-European Union</territory>
+			<territory type="EZ">EZ</territory>
 			<territory type="FI">i-Finland</territory>
 			<territory type="FJ">i-Fiji</territory>
 			<territory type="FK">i-Falkland Islands</territory>
@@ -553,7 +711,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PN">i-Pitcairn Islands</territory>
 			<territory type="PR">i-Puerto Rico</territory>
 			<territory type="PS">i-Palestinian Territories</territory>
-			<territory type="PS" alt="short">i-Phalestine</territory>
+			<territory type="PS" alt="short">i-Palestine</territory>
 			<territory type="PT">i-Portugal</territory>
 			<territory type="PW">i-Palau</territory>
 			<territory type="PY">i-Paraguay</territory>
@@ -570,7 +728,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SD">i-Sudan</territory>
 			<territory type="SE">i-Sweden</territory>
 			<territory type="SG">i-Singapore</territory>
-			<territory type="SH">i-Saint Helena</territory>
+			<territory type="SH">i-St. Helena</territory>
 			<territory type="SI">i-Slovenia</territory>
 			<territory type="SJ">i-Svalbard ne-Jan Mayen</territory>
 			<territory type="SK">i-Slovakia</territory>
@@ -586,7 +744,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SY">i-Syria</territory>
 			<territory type="SZ">i-Swaziland</territory>
 			<territory type="TA">i-Tristan da Cunha</territory>
-			<territory type="TC">i-Turks and Caicos Islands</territory>
+			<territory type="TC">i-Turks ne-Caicos Islands</territory>
 			<territory type="TD">i-Chad</territory>
 			<territory type="TF">i-French Southern Territories</territory>
 			<territory type="TG">i-Togo</territory>
@@ -606,6 +764,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">i-Ukraine</territory>
 			<territory type="UG">i-Uganda</territory>
 			<territory type="UM">i-U.S. Minor Outlying Islands</territory>
+			<territory type="UN">I-United Nations</territory>
+			<territory type="UN" alt="short">ifulegi</territory>
 			<territory type="US">i-United States</territory>
 			<territory type="US" alt="short">i-U.S</territory>
 			<territory type="UY">i-Uruguay</territory>
@@ -622,18 +782,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="XK">i-Kosovo</territory>
 			<territory type="YE">i-Yemen</territory>
 			<territory type="YT">i-Mayotte</territory>
-			<territory type="ZA">i-South Africa</territory>
+			<territory type="ZA">iNingizimu Afrika</territory>
 			<territory type="ZM">i-Zambia</territory>
 			<territory type="ZW">iZimbabwe</territory>
 			<territory type="ZZ">iSifunda esingaziwa</territory>
 		</territories>
 		<keys>
 			<key type="calendar">Ikhalenda</key>
+			<key type="cf">Ifomethi yemali</key>
 			<key type="colAlternate">Ziba Ukuhlelwa Kwezimpawu</key>
 			<key type="colBackwards">Ukuhlelwa Kwendlela Yokubiza Okuhlehlisiwe</key>
 			<key type="colCaseFirst">Ukuhlelwa Ngokwezinhlamvu Ezinkulu/Ezincane</key>
 			<key type="colCaseLevel">Ukuhlelwa Okuncike Ezinkinobhweni</key>
-			<key type="colHiraganaQuaternary">Ukuhlela ngokwe-Kana</key>
 			<key type="collation">Uhlelo lokuhlunga</key>
 			<key type="colNormalization">Ukuhlelwa Okulinganisiwe</key>
 			<key type="colNumeric">Ukuhlelwa Ngezinombolo</key>
@@ -645,7 +805,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">Izinombolo</key>
 			<key type="timezone">Izoni yesikhathi:</key>
 			<key type="va">Okokwehlukanisa Kwasendaweni</key>
-			<key type="variableTop">Hlela Njengezimpawu</key>
 			<key type="x">i-Private-Use</key>
 		</keys>
 		<types>
@@ -664,6 +823,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">ikhalenda lesi-Japanese</type>
 			<type key="calendar" type="persian">ikhalenda lesi-Persian</type>
 			<type key="calendar" type="roc">ikhalenda lesi-Minguo</type>
+			<type key="cf" type="account">Ifomethi yemali ye-Accounting</type>
+			<type key="cf" type="standard">Ifomethi yemali ejwayelekile</type>
 			<type key="colAlternate" type="non-ignorable">Hlela Izimpawu</type>
 			<type key="colAlternate" type="shifted">Hlela Ukuziba Izimpawu</type>
 			<type key="colBackwards" type="no">Hlela Izindlela Zokuphimisela Ngokujwayelekile</type>
@@ -673,8 +834,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper">Hlela Izinhlamvu Ezinkulu Kuqala</type>
 			<type key="colCaseLevel" type="no">Hlela Okungancikile Ezinkinobhweni</type>
 			<type key="colCaseLevel" type="yes">Hlela Okuncike Ekumeni Kwezinkinobho</type>
-			<type key="colHiraganaQuaternary" type="no">Hlela i-Kana Eceleni</type>
-			<type key="colHiraganaQuaternary" type="yes">Hlela i-Kana Ngendlela Ehlukile</type>
 			<type key="collation" type="big5han">Ukuhlunga kwe-Traditional Chinese - Big5</type>
 			<type key="collation" type="dictionary">Ukuhlunga kwesichazimazwi</type>
 			<type key="collation" type="ducet">Ukuhlunga okuzenzakalelayo kwe-Unicode</type>
@@ -698,6 +857,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary">Hlola Ukuphimisela/Ukuma kwezinhlamvu/Ububanzi/i-Kana</type>
 			<type key="colStrength" type="secondary">Hlela Ukuphimisela</type>
 			<type key="colStrength" type="tertiary">Hlela Ukuphimisela/Ukuma kwezinhlamvu/Ububanzi</type>
+			<type key="d0" type="fwidth">i-Fullwidth</type>
+			<type key="d0" type="hwidth">Ubude obuhhafu</type>
+			<type key="d0" type="npinyin">Okwezinombolo</type>
 			<type key="hc" type="h11">isistimu yamahora angu-12 (0-11)</type>
 			<type key="hc" type="h12">isistimu yamahora angu-12 (1-12)</type>
 			<type key="hc" type="h23">isistimu yamahora angu-24 (0-23)</type>
@@ -705,6 +867,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">i-Line Break Style exegayo</type>
 			<type key="lb" type="normal">i-Line Break Style ekahle</type>
 			<type key="lb" type="strict">i-Line Break Style enomthetho oqinile</type>
+			<type key="m0" type="bgn">I-BGN</type>
+			<type key="m0" type="ungegn">I-UNGEGN</type>
 			<type key="ms" type="metric">isistimu ye-Metric</type>
 			<type key="ms" type="uksystem">isistimu yokulinganisa ebusayo</type>
 			<type key="ms" type="ussystem">isistimu yokulinganisa yase-US</type>
@@ -738,7 +902,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="mong">i-Mongolian Digits</type>
 			<type key="numbers" type="mymr">amadijithi esi-Maynmar</type>
 			<type key="numbers" type="native">Izinkinobho Zasendaweni</type>
-			<type key="numbers" type="orya">amadijithi esi-Oriya</type>
+			<type key="numbers" type="orya">Amadijithi ase-Odia</type>
 			<type key="numbers" type="roman">izinombolo zesi-Roman</type>
 			<type key="numbers" type="romanlow">izinombolo zesi-Tamil</type>
 			<type key="numbers" type="taml">izinombolo zesi-Tamil</type>
@@ -749,33 +913,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional">Izinombolo Ezijwayelekile</type>
 			<type key="numbers" type="vaii">Izinhlazu Zezinombolo ze-Vai</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">I-BGN</transformName>
-			<transformName type="Numeric">Okwezinombolo</transformName>
-			<transformName type="Tone">Ithoni</transformName>
-			<transformName type="UNGEGN">I-UNGEGN</transformName>
-			<transformName type="x-Accents">Ama-Accent</transformName>
-			<transformName type="x-Fullwidth">i-Fullwidth</transformName>
-			<transformName type="x-Halfwidth">Ubude obuhhafu</transformName>
-			<transformName type="x-Jamo">i-Jamo</transformName>
-			<transformName type="x-Pinyin">i-Pinyin</transformName>
-			<transformName type="x-Publishing">Ukushicilela</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">i-Metric</measurementSystemName>
 			<measurementSystemName type="UK">i-UK</measurementSystemName>
 			<measurementSystemName type="US">i-US</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language">{0}</codePattern>
-			<codePattern type="script">{0}</codePattern>
-			<codePattern type="territory">{0}</codePattern>
+			<codePattern type="language">Ulimi: {0}</codePattern>
+			<codePattern type="script">Umbhalo: {0}</codePattern>
+			<codePattern type="territory">Isiyingi: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b {bh} c {ch} d {dl} {dy} e f g {gc} {gq} {gx} h {hh} {hl} i j k {kh} {kl} {kp} l m n {nc} {ngc} {ngq} {ngx} {nhl} {nk} {nkc} {nkq} {nkx} {nq} {ntsh} {nx} {ny} o p {ph} q {qh} r {rh} s {sh} t {th} {tl} {ts} {tsh} u v w x {xh} y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ ç é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -783,6 +936,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -837,9 +1009,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">MMM d, y G</dateFormatItem>
@@ -930,7 +1111,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">MMM–MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">MMM d–d</greatestDifference>
+							<greatestDifference id="d">MMM d – d</greatestDifference>
 							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
@@ -955,11 +1136,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">E, M/d/y – E, M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM–MMM y</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y G</greatestDifference>
 							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">MMM d–d, y</greatestDifference>
+							<greatestDifference id="d">MMM d – d, y G</greatestDifference>
 							<greatestDifference id="M">MMM d – MMM d, y</greatestDifference>
 							<greatestDifference id="y">MMM d, y – MMM d, y</greatestDifference>
 						</intervalFormatItem>
@@ -969,7 +1150,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">E, MMM d, y – E, MMM d, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y G</greatestDifference>
 							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
@@ -1191,27 +1372,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">ekuseni</dayPeriod>
+							<dayPeriod type="morning1">entathakusa</dayPeriod>
 							<dayPeriod type="morning2">ekuseni</dayPeriod>
-							<dayPeriod type="afternoon1">ntambama</dayPeriod>
+							<dayPeriod type="afternoon1">emini</dayPeriod>
 							<dayPeriod type="evening1">ntambama</dayPeriod>
 							<dayPeriod type="night1">ebusuku</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am">a</dayPeriod>
 							<dayPeriod type="pm">p</dayPeriod>
-							<dayPeriod type="morning1">ekuseni</dayPeriod>
+							<dayPeriod type="morning1">entathakusa</dayPeriod>
 							<dayPeriod type="morning2">ekuseni</dayPeriod>
-							<dayPeriod type="afternoon1">ntambama</dayPeriod>
+							<dayPeriod type="afternoon1">emini</dayPeriod>
 							<dayPeriod type="evening1">ntambama</dayPeriod>
 							<dayPeriod type="night1">ebusuku</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">ekuseni</dayPeriod>
-							<dayPeriod type="morning2">ekuseni2</dayPeriod>
-							<dayPeriod type="afternoon1">ntambama</dayPeriod>
+							<dayPeriod type="morning1">entathakusa</dayPeriod>
+							<dayPeriod type="morning2">ekuseni</dayPeriod>
+							<dayPeriod type="afternoon1">emini</dayPeriod>
 							<dayPeriod type="evening1">ntambama</dayPeriod>
 							<dayPeriod type="night1">ebusuku</dayPeriod>
 						</dayPeriodWidth>
@@ -1223,25 +1404,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="morning1">entathakusa</dayPeriod>
 							<dayPeriod type="morning2">ekuseni</dayPeriod>
 							<dayPeriod type="afternoon1">emini</dayPeriod>
-							<dayPeriod type="evening1">ebusuku1</dayPeriod>
+							<dayPeriod type="evening1">ntambama</dayPeriod>
 							<dayPeriod type="night1">ebusuku</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">a</dayPeriod>
-							<dayPeriod type="pm">p</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">entathakusa</dayPeriod>
 							<dayPeriod type="morning2">ekuseni</dayPeriod>
 							<dayPeriod type="afternoon1">emini</dayPeriod>
-							<dayPeriod type="evening1">ebusuku1</dayPeriod>
+							<dayPeriod type="evening1">ntambama</dayPeriod>
 							<dayPeriod type="night1">ebusuku</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">entathakusa</dayPeriod>
-							<dayPeriod type="morning2">ekuseni2</dayPeriod>
+							<dayPeriod type="morning2">ekuseni</dayPeriod>
 							<dayPeriod type="afternoon1">emini</dayPeriod>
-							<dayPeriod type="evening1">ebusuku1</dayPeriod>
+							<dayPeriod type="evening1">ntambama</dayPeriod>
 							<dayPeriod type="night1">ebusuku</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
@@ -1285,22 +1466,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
-							<pattern>h:mm:ss a zzzz</pattern>
+							<pattern>HH:mm:ss zzzz</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
-							<pattern>h:mm:ss a z</pattern>
+							<pattern>HH:mm:ss z</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
-							<pattern>h:mm:ss a</pattern>
+							<pattern>HH:mm:ss</pattern>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
-							<pattern>h:mm a</pattern>
+							<pattern>HH:mm</pattern>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -1326,8 +1507,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1348,23 +1534,27 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">M/d</dateFormatItem>
-						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
+						<dateFormatItem id="Md">MM-dd</dateFormatItem>
+						<dateFormatItem id="MEd">MM-dd, E</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'week' W 'of' MMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
-						<dateFormatItem id="yM">M/y</dateFormatItem>
-						<dateFormatItem id="yMd">M/d/y</dateFormatItem>
-						<dateFormatItem id="yMEd">E, M/d/y</dateFormatItem>
+						<dateFormatItem id="yM">y-MM</dateFormatItem>
+						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
+						<dateFormatItem id="yMEd">y-MM-dd, E</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMd">MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMEd">E, MMM d, y</dateFormatItem>
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'week' w 'of' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'week' w 'of' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1376,38 +1566,38 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">h a – h a</greatestDifference>
-							<greatestDifference id="h">h–h a</greatestDifference>
+							<greatestDifference id="h">h – h a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
+							<greatestDifference id="H">HH – HH</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">h:mm a – h:mm a</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="h">h:mm – h:mm a v</greatestDifference>
+							<greatestDifference id="m">h:mm – h:mm a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm – HH:mm v</greatestDifference>
+							<greatestDifference id="m">HH:mm – HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="h">h – h a v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
+							<greatestDifference id="H">HH – HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
-							<greatestDifference id="M">M–M</greatestDifference>
+							<greatestDifference id="M">M – M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">M/d – M/d</greatestDifference>
@@ -1418,7 +1608,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">E, M/d – E, M/d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM–MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMM d–d</greatestDifference>
@@ -1446,11 +1636,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">E, M/d/y – E, M/d/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM–MMM y</greatestDifference>
+							<greatestDifference id="M">MMM – MMM y</greatestDifference>
 							<greatestDifference id="y">MMM y – MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">MMM d–d, y</greatestDifference>
+							<greatestDifference id="d">MMM d – d, y</greatestDifference>
 							<greatestDifference id="M">MMM d – MMM d, y</greatestDifference>
 							<greatestDifference id="y">MMM d, y – MMM d, y</greatestDifference>
 						</intervalFormatItem>
@@ -1460,7 +1650,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">E, MMM d, y – E, MMM d, y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM–MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
 							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
@@ -1469,6 +1659,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</calendars>
 		<fields>
 			<field type="era">
+				<displayName>Isikhathi</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>Isikhathi</displayName>
+			</field>
+			<field type="era-narrow">
 				<displayName>Isikhathi</displayName>
 			</field>
 			<field type="year">
@@ -1509,6 +1705,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>Ikota</displayName>
+				<relative type="-1">ikota edlule</relative>
+				<relative type="0">le kota</relative>
+				<relative type="1">ikota ezayo</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">kwikota engu-{0} ezayo</relativeTimePattern>
 					<relativeTimePattern count="other">kumakota angu-{0} ezayo</relativeTimePattern>
@@ -1589,6 +1788,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">evikini elingu-{0} eledlule</relativeTimePattern>
 					<relativeTimePattern count="other">amaviki angu-{0} edlule</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>evikini le-{0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>Iviki</displayName>
@@ -1600,6 +1800,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">amaviki angu-{0} edlule</relativeTimePattern>
 					<relativeTimePattern count="other">amaviki angu-{0} edlule</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>evikini le-{0}</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>Iviki</displayName>
@@ -1611,6 +1812,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">amaviki angu-{0} edlule</relativeTimePattern>
 					<relativeTimePattern count="other">amaviki angu-{0} edlule</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>evikini le-{0}</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>Iviki leNyanga</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>Iviki leNyanga</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>Iviki leNyanga</displayName>
 			</field>
 			<field type="day">
 				<displayName>Usuku</displayName>
@@ -1650,119 +1861,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} izinsuku ezedlule</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>Day Of Year</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>usuku lonyaka</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>usuku lonyaka</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>Usuku evikini</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>Usuku evikini</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>Usuku evikini</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>usuku lwenyanga</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>usuku lwenyanga</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>usuku lwenyanga</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">iSonto eledlule</relative>
 				<relative type="0">kuleli Sonto</relative>
 				<relative type="1">iSonto elizayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kwiSonto elingu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">kumaSonto angu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} iSonto eledlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} amaSonto edlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">iSonto eledlule</relative>
 				<relative type="0">kuleli Sonto</relative>
 				<relative type="1">iSonto elizayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kumaSonto angu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">kumaSonto angu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} amaSonto edlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} amaSonto edlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">iSonto eledlule</relative>
 				<relative type="0">kuleli Sonto</relative>
 				<relative type="1">iSonto elizayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">kumaSonto angu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">kumaSonto angu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} amaSonto edlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} amaSonto edlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">uMsombuluko odlule</relative>
 				<relative type="0">kulo Msombuluko</relative>
 				<relative type="1">uMsombuluko ozayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoMsombuluko o-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMisombuluko e-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoMsombuluko o-{0} odlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMsombuluko e-{0} edlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">uMsombuluko odlule</relative>
 				<relative type="0">kulo Msombuluko</relative>
 				<relative type="1">uMsombuluko ozayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngeMisombuluko e-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMisombuluko e-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngeMsombuluko e-{0} edlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMsombuluko e-{0} edlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">uMsombuluko odlule</relative>
 				<relative type="0">kulo Msombuluko</relative>
 				<relative type="1">uMsombuluko ozayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngeMisombuluko e-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMisombuluko e-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngeMsombuluko e-{0} edlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMsombuluko e-{0} edlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">uLwesibili oludlule</relative>
 				<relative type="0">kulo Lwesibili</relative>
 				<relative type="1">uLwesibili oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoLwesibili olu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezibili abangu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoLwesibili ongu-{0} owedlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezibili abangu-{0} abedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">uLwesibili oludlule</relative>
 				<relative type="0">kulo Lwesibili</relative>
 				<relative type="1">uLwesibili oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ngoLwezibili</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ngoLwezibili</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ngoLwezibili olwedlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ngoLwezibili olwedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">uLwesibili oludlule</relative>
 				<relative type="0">kulo Lwesibili</relative>
 				<relative type="1">uLwesibili oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ngoLwezibili</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ngoLwezibili</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ngoLwezibili olwedlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ngoLwezibili olwedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">uLwesithathu oludlule</relative>
 				<relative type="0">kulo Lwesithathu</relative>
 				<relative type="1">uLwesithathu oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoLwesithathu o-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezithathu abangu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoLwesithathu olungu-{0} olwedlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezithathu abangu-{0} abedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">uLwesithathu oludlule</relative>
 				<relative type="0">kulo Lwesithathu</relative>
 				<relative type="1">uLwesithathu oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoLwezithathu abangu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezithathu abangu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoLwezithathu abangu-{0} abedlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezithathu abangu-{0} abedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">uLwesithathu oludlule</relative>
 				<relative type="0">kulo Lwesithathu</relative>
 				<relative type="1">uLwesithathu oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoLwezithathu abangu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezithathu abangu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoLwezithathu abangu-{0} abedlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezithathu abangu-{0} abedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">uLwesine oludlule</relative>
 				<relative type="0">kulo Lwesine</relative>
 				<relative type="1">uLwesine oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoLwesine olu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezine abangu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoLwesine olu-{0} olwedlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezine abangu-{0} abedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1">uLwesine oludlule</relative>
+				<relative type="-1">uLwesine olwedlule</relative>
 				<relative type="0">kulo Lwesine</relative>
 				<relative type="1">uLwesine oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoLwezine abangu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezine abangu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoLwezine abangu-{0} abedlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezine abangu-{0} abedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
-				<relative type="-1">uLwesine oludlule</relative>
+				<relative type="-1">uLwesine olwedlule</relative>
 				<relative type="0">kulo Lwesine</relative>
 				<relative type="1">uLwesine oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoLwezine abangu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezine abangu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoLwezine abangu-{0} abedlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngoLwezine abangu-{0} abedlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">uLwesihlanu oludlule</relative>
 				<relative type="0">kulo Lwesihlanu</relative>
 				<relative type="1">uLwesihlanu oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngo {0} Lwesihlanu</relativeTimePattern>
+					<relativeTimePattern count="other">ngo {0} Lwezihlanu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Lwesihlanu oludlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Lwezihlanu oludlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">uLwesihlanu oludlule</relative>
 				<relative type="0">kulo Lwesihlanu</relative>
 				<relative type="1">uLwesihlanu oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngo {0} Lwezihlanu</relativeTimePattern>
+					<relativeTimePattern count="other">ngo {0} Lwezihlanu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Lwezihlanu oludlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Lwezihlanu oludlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">uLwesihlanu oludlule</relative>
 				<relative type="0">kulo Lwesihlanu</relative>
 				<relative type="1">uLwesihlanu oluzayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngo {0} Lwezihlanu</relativeTimePattern>
+					<relativeTimePattern count="other">ngo {0} Lwezihlanu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Lwezihlanu oludlule</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Lwezihlanu oludlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">uMgqibelo odlule</relative>
 				<relative type="0">kulo Mgqibelo</relative>
 				<relative type="1">uMgqibelo ozayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngoMgqibelo o-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMgqibelo engu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngoMgqibelo o-{0} odlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMgqibelo engu-{0} edlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">uMgqibelo odlule</relative>
 				<relative type="0">kulo Mgqibelo</relative>
 				<relative type="1">uMgqibelo ozayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngeMgqibelo engu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMgqibelo engu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngeMgqibelo engu-{0} edlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMgqibelo engu-{0} edlule</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">uMgqibelo odlule</relative>
 				<relative type="0">kulo Mgqibelo</relative>
 				<relative type="1">uMgqibelo ozayo</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">ngeMgqibelo engu-{0}</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMgqibelo engu-{0}</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">ngeMgqibelo engu-{0} edlule</relativeTimePattern>
+					<relativeTimePattern count="other">ngeMgqibelo engu-{0} edlule</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
+			</field>
 			<field type="hour">
 				<displayName>Ihora</displayName>
+				<relative type="0">leli hora</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">ehoreni elingu-{0} elizayo</relativeTimePattern>
 					<relativeTimePattern count="other">emahoreni angu-{0} ezayo</relativeTimePattern>
@@ -1780,7 +2190,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} ihora eledlule</relativeTimePattern>
-					<relativeTimePattern count="other">{0} amahora edlule</relativeTimePattern>
+					<relativeTimePattern count="other">emahoreni angu-{0} edlule</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="hour-narrow">
@@ -1796,6 +2206,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>Iminithi</displayName>
+				<relative type="0">leli minithi</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">kuminithi elingu-{0} elizayo</relativeTimePattern>
 					<relativeTimePattern count="other">kumaminithi angu-{0} ezayo</relativeTimePattern>
@@ -1864,6 +2275,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>Isikhathi sendawo</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>Isikhathi sendawo</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>Isikhathi sendawo</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
@@ -1873,6 +2290,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} Isikhathi sasemini</regionFormat>
 			<regionFormat type="standard">{0} isikhathi esivamile</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>i-Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>i-Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>isikhathi somhlaba esididiyelwe</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>idolobha elingaziwa</exemplarCity>
 			</zone>
@@ -2137,6 +2565,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>i-Vancouver</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>i-Fort Nelson</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>i-Dawson Creek</exemplarCity>
 			</zone>
@@ -2265,6 +2696,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>i-Nicosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>i-Prague</exemplarCity>
@@ -2524,6 +2958,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Oral">
 				<exemplarCity>i-Oral</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atyrau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>i-Aqtobe</exemplarCity>
 			</zone>
@@ -2637,9 +3074,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>i-Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>i-Santa Isabel</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>i-Hermosillo</exemplarCity>
@@ -2806,6 +3240,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>i-Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>i-Astrakhan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>i-Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>i-Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>i-Samara</exemplarCity>
 			</zone>
@@ -2817,6 +3260,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>i-Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>i-Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>i-Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>i-Novokuznetsk</exemplarCity>
@@ -2986,9 +3435,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>i-Midway</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>i-Johnston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>i-Wake</exemplarCity>
 			</zone>
@@ -2998,8 +3444,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>i-Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>i-Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>i-Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>i-Anchorage</exemplarCity>
@@ -3132,7 +3578,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<metazone type="Afghanistan">
 				<long>
-					<standard>esase-Afghanistan Time</standard>
+					<standard>Isikhathi sase-Afghanistan</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Central">
@@ -3159,8 +3605,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Alaska">
 				<long>
-					<generic>isikhathi sase-Alaska</generic>
-					<standard>isikhathi sase-Alaska esijwayelekile</standard>
+					<generic>Isikhathi sase-Alaska</generic>
+					<standard>Isikhathi sase-Alaska esijwayelekile</standard>
 					<daylight>Isikhathi sase-Alaska sasemini</daylight>
 				</long>
 			</metazone>
@@ -3173,30 +3619,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="America_Central">
 				<long>
-					<generic>isikhathi sase-North American Central</generic>
-					<standard>isikhathi sase-North American Central esijwayelekile</standard>
-					<daylight>isikhathi sase-North American Central sasemini</daylight>
+					<generic>Isikhathi sase-North American Central</generic>
+					<standard>Isikhathi sase-North American Central esijwayelekile</standard>
+					<daylight>Isikhathi sase-North American Central sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Eastern">
 				<long>
-					<generic>isikhathi sase-North American East</generic>
-					<standard>isikhathi sase-North American East esijwayelekile</standard>
-					<daylight>isikhathi sase-North American East sasemini</daylight>
+					<generic>Isikhathi sase-North American East</generic>
+					<standard>Isikhathi sase-North American East esijwayelekile</standard>
+					<daylight>Isikhathi sase-North American East sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>isikhathi sase-North American Mountain</generic>
-					<standard>isikhathi sase-North American Mountain esijwayelekile</standard>
-					<daylight>isikhathi sase-North American Mountain sasemini</daylight>
+					<generic>Isikhathi sase-North American Mountain</generic>
+					<standard>Isikhathi sase-North American Mountain esijwayelekile</standard>
+					<daylight>Isikhathi sase-North American Mountain sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>isikhathi sase-North American Pacific</generic>
-					<standard>isikhathi sase-North American Pacific esijwayelekile</standard>
-					<daylight>isikhathi sase-North American Pacific sasemini</daylight>
+					<generic>Isikhathi sase-North American Pacific</generic>
+					<standard>Isikhathi sase-North American Pacific esijwayelekile</standard>
+					<daylight>Isikhathi sase-North American Pacific sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Anadyr">
@@ -3208,9 +3654,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Apia">
 				<long>
-					<generic>esase-Apia Time</generic>
-					<standard>esase-Apia Standard Time</standard>
-					<daylight>esase-Apia Daylight Time</daylight>
+					<generic>Isikhathi sase-Apia</generic>
+					<standard>Isikhathi sase-Apia esivamile</standard>
+					<daylight>Isikhathi sase-Apia sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Arabian">
@@ -3243,16 +3689,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>isikhathi sase-Atlantic</generic>
-					<standard>isikhathi sase-Atlantic esijwayelekile</standard>
-					<daylight>isikhathi sase-Atlantic sasemini</daylight>
+					<generic>Isikhathi sase-Atlantic</generic>
+					<standard>Isikhathi sase-Atlantic esijwayelekile</standard>
+					<daylight>Isikhathi sase-Atlantic sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>esase-Central Australia Time</generic>
-					<standard>esase-Austrilian Central Standard Time</standard>
-					<daylight>esase-Austrilian Central Daylight Time</daylight>
+					<generic>Isikhathi sase-Central Australia</generic>
+					<standard>Isikhathi sase-Australian Central esivamile</standard>
+					<daylight>Isikhathi sase-Australian Central sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
@@ -3272,8 +3718,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Australia_Western">
 				<long>
 					<generic>Isikhathi sase-Western Australia</generic>
-					<standard>I-Australian Western Standard Time</standard>
-					<daylight>I-Australian Western Daylight Time</daylight>
+					<standard>Isikhathi sase-Australian Western esivamile</standard>
+					<daylight>Isikhathi sase-Australian Western sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
@@ -3292,14 +3738,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Bangladesh">
 				<long>
-					<generic>esase-Bangladesh Time</generic>
-					<standard>esase-Bangladesh Standard Time</standard>
-					<daylight>esase-Bangladesh Summer Time</daylight>
+					<generic>Isikhathi sase-Bangladesh</generic>
+					<standard>Isikhathi sase-Bangladesh esivamile</standard>
+					<daylight>Isikhathi sase-Bangladesh sasehlobo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Bhutan">
 				<long>
-					<standard>esase-Bhutan Time</standard>
+					<standard>Isikhathi sase-Bhutan</standard>
 				</long>
 			</metazone>
 			<metazone type="Bolivia">
@@ -3335,7 +3781,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Isikhathi sase-Chatham</generic>
 					<standard>Isikhathi esivamile sase-Chatham</standard>
-					<daylight>Isikhathi semini sase-Chatham</daylight>
+					<daylight>Isikhathi sasemini sase-Chatham</daylight>
 				</long>
 			</metazone>
 			<metazone type="Chile">
@@ -3356,7 +3802,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Isikhathi sase-Choibalsan</generic>
 					<standard>Isikhathi Esimisiwe sase-Choibalsan</standard>
-					<daylight>esase-Choibalsan Summer Time</daylight>
+					<daylight>Isikhathi sehlobo e-Choibalsan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3385,9 +3831,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Cuba">
 				<long>
-					<generic>isikhathi sase-Cuba</generic>
-					<standard>isikhathi sase-Cuba esijwayelekile</standard>
-					<daylight>isikhathi sase-Cuba sasemini</daylight>
+					<generic>Isikhathi sase-Cuba</generic>
+					<standard>Isikhathi sase-Cuba esijwayelekile</standard>
+					<daylight>Isikhathi sase-Cuba sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Davis">
@@ -3464,7 +3910,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>Isikhathi sase-French Southern and Antarctic</standard>
+					<standard>Isikhathi sase-French Southern nase-Antarctic</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -3496,16 +3942,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>isikhathi sase-East Greenland</generic>
-					<standard>isikhathi sase-East Greenland esijwayelekile</standard>
-					<daylight>isikhathi sase-East Greenland sasemini</daylight>
+					<generic>Isikhathi sase-East Greenland</generic>
+					<standard>Isikhathi sase-East Greenland esijwayelekile</standard>
+					<daylight>Isikhathi sase-East Greenland sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>isikhathi sase-West Greenland</generic>
-					<standard>isikhathi sase-West Greenland esijwayelekile</standard>
-					<daylight>isikhathi sase-West Greenland sasemini</daylight>
+					<generic>Isikhathi sase-West Greenland</generic>
+					<standard>Isikhathi sase-West Greenland esijwayelekile</standard>
+					<daylight>Isikhathi sase-West Greenland sasehlobo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -3520,9 +3966,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Hawaii_Aleutian">
 				<long>
-					<generic>isikhathi sase-Hawaii-Aleutia</generic>
-					<standard>isikhathi sase-Hawaii-Aleutia esijwayelekile</standard>
-					<daylight>isikhathi sase-Hawaii-Aleutia sasemini</daylight>
+					<generic>Isikhathi sase-Hawaii-Aleutia</generic>
+					<standard>Isikhathi sase-Hawaii-Aleutia esijwayelekile</standard>
+					<daylight>Isikhathi sase-Hawaii-Aleutia sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Hong_Kong">
@@ -3536,12 +3982,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Isikhathi sase-Hovd</generic>
 					<standard>Isikhathi Esimisiwe sase-Hovd</standard>
-					<daylight>esase-Hovd Summer Time</daylight>
+					<daylight>Isikhathi sehlobo e-Hovd</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
 				<long>
-					<standard>esase-India Standard Time</standard>
+					<standard>Isikhathi sase-India esivamile</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
@@ -3571,23 +4017,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Iran">
 				<long>
-					<generic>esase-Iran Time</generic>
-					<standard>esase-Iran Standard Time</standard>
-					<daylight>esase-Iran Daylight Time</daylight>
+					<generic>Isikhathi sase-Iran</generic>
+					<standard>Isikhathi sase-Iran esivamile</standard>
+					<daylight>Isikhathi sase-Iran sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Irkutsk">
 				<long>
 					<generic>Isikhathi sase-Irkutsk</generic>
 					<standard>Isikhathi Esimisiwe sase-Irkutsk</standard>
-					<daylight>esase-Irkutsk Summer Time</daylight>
+					<daylight>Isikhathi sasehlobo e-Irkutsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Israel">
 				<long>
 					<generic>Isikhathi sase-Israel</generic>
 					<standard>Isikhathi esivamile sase-Israel</standard>
-					<daylight>Isikhathi sasemini sase-Israel</daylight>
+					<daylight>Isikhathi sasemini sakwa-Israel</daylight>
 				</long>
 			</metazone>
 			<metazone type="Japan">
@@ -3630,7 +4076,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Isikhathi sase-Krasnoyarsk</generic>
 					<standard>Isikhathi Esimisiwe sase-Krasnoyarsk</standard>
-					<daylight>Isikhathi sase-Krasnoyarsk sasehlobo</daylight>
+					<daylight>Isikhathi sasehlobo e-Krasnoyarsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
@@ -3659,7 +4105,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Isikhathi sase-Magadan</generic>
 					<standard>Isikhathi Esimisiwe sase-Magadan</standard>
-					<daylight>esase-Magadan Summer Time</daylight>
+					<daylight>Isikhathi sasehlobo e-Magadan</daylight>
 				</long>
 			</metazone>
 			<metazone type="Malaysia">
@@ -3669,7 +4115,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Maldives">
 				<long>
-					<standard>esase-Maldives Time</standard>
+					<standard>Isikhathi sase-Maldives</standard>
 				</long>
 			</metazone>
 			<metazone type="Marquesas">
@@ -3696,30 +4142,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Mexico_Northwest">
 				<long>
-					<generic>isikhathi sase-Northwest Mexico</generic>
-					<standard>isikhathi sase-Northwest Mexico esijwayelekile</standard>
-					<daylight>isikhathi sase-Northwest Mexico sasemini</daylight>
+					<generic>Isikhathi sase-Northwest Mexico</generic>
+					<standard>Isikhathi sase-Northwest Mexico esijwayelekile</standard>
+					<daylight>Isikhathi sase-Northwest Mexico sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
-					<generic>isikhathi sase-Mexican Pacific</generic>
-					<standard>isikhathi sase-Mexican Pacific esijwayelekile</standard>
-					<daylight>isikhathi sase-Mexican Pacific sasemini</daylight>
+					<generic>Isikhathi sase-Mexican Pacific</generic>
+					<standard>Isikhathi sase-Mexican Pacific esijwayelekile</standard>
+					<daylight>Isikhathi sase-Mexican Pacific sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
 					<generic>Isikhathi sase-Ulan Bator</generic>
 					<standard>Isikhathi Esimisiwe sase-Ulan Bator</standard>
-					<daylight>esase-Ulan Bator Summer Time</daylight>
+					<daylight>Isikhathi sehlobo e-Ulan Bator</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
 				<long>
-					<generic>esase-Moscow Time</generic>
-					<standard>esase-Moscow Standard Time</standard>
-					<daylight>esase-Moscow Summer Time</daylight>
+					<generic>Isikhathi sase-Moscow</generic>
+					<standard>Isikhathi sase-Moscow esijwayelekile</standard>
+					<daylight>Isikhathi sasehlobo e-Moscow</daylight>
 				</long>
 			</metazone>
 			<metazone type="Myanmar">
@@ -3734,7 +4180,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Nepal">
 				<long>
-					<standard>esase-Nepal Time</standard>
+					<standard>Isikhathi sase-Nepal</standard>
 				</long>
 			</metazone>
 			<metazone type="New_Caledonia">
@@ -3753,9 +4199,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Newfoundland">
 				<long>
-					<generic>isikhathi sase-Newfoundland</generic>
-					<standard>isikhathi sase-Newfoundland esijwayelekile</standard>
-					<daylight>isikhathi sase-Newfoundland sasemini</daylight>
+					<generic>Isikhathi sase-Newfoundland</generic>
+					<standard>Isikhathi sase-Newfoundland esijwayelekile</standard>
+					<daylight>Isikhathi sase-Newfoundland sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Niue">
@@ -3779,21 +4225,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Isikhathi sase-Novosibirsk</generic>
 					<standard>Isikhathi Esimisiwe sase-Novosibirsk</standard>
-					<daylight>esase-Novosibirsk Summer Time</daylight>
+					<daylight>Isikhathi sasehlobo sase-Novosibirsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Omsk">
 				<long>
 					<generic>Isikhathi sase-Omsk</generic>
 					<standard>Isikhathi Esimisiwe sase-Omsk</standard>
-					<daylight>esase-Omsk Summer Time</daylight>
+					<daylight>Isikhathi sasehlobo sase-Omsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pakistan">
 				<long>
-					<generic>esase-Pakistan Time</generic>
-					<standard>esase-Pakistan Standard Time</standard>
-					<daylight>esase-Pakistan Summer Time</daylight>
+					<generic>Isikhathi sase-Pakistan</generic>
+					<standard>Isikhathi sase-Pakistan esivamile</standard>
+					<daylight>Isikhathi sase-Pakistan sasehlobo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Palau">
@@ -3834,9 +4280,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Pierre_Miquelon">
 				<long>
-					<generic>isikhathi sase-Saint Pierre nase-Miquelon</generic>
-					<standard>isikhathi sase-Saint Pierre nase-Miquelon esijwayelekile</standard>
-					<daylight>isikhathi sase-Saint Pierre nase-Miquelon sasemini</daylight>
+					<generic>Isikhathi sase-Saint Pierre nase-Miquelon</generic>
+					<standard>Iikhathi sase-Saint Pierre nase-Miquelon esijwayelekile</standard>
+					<daylight>Isikhathi sase-Saint Pierre nase-Miquelon sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Pitcairn">
@@ -3847,6 +4293,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<metazone type="Ponape">
 				<long>
 					<standard>Isikhathi sase-Ponape</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Isikhathi sase-Pyongyang</standard>
 				</long>
 			</metazone>
 			<metazone type="Reunion">
@@ -3863,7 +4314,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Isikhathi sase-Sakhalin</generic>
 					<standard>Isikhathi Esimisiwe sase-Sakhalin</standard>
-					<daylight>esase-Sakhalin Summer Time</daylight>
+					<daylight>Isikhathi sasehlobo e-Sakhalin</daylight>
 				</long>
 			</metazone>
 			<metazone type="Samara">
@@ -3986,14 +4437,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<long>
 					<generic>Isikhathi sase-Vladivostok</generic>
 					<standard>Isikhathi Esimisiwe sase-Vladivostok</standard>
-					<daylight>esase-Vladivostok Summer Time</daylight>
+					<daylight>Isikhathi sasehlobo e-Vladivostok</daylight>
 				</long>
 			</metazone>
 			<metazone type="Volgograd">
 				<long>
 					<generic>Isikhathi sase-Volgograd</generic>
 					<standard>Isikhathi Esimisiwe sase-Volgograd</standard>
-					<daylight>esase-Volgograd Summer Time</daylight>
+					<daylight>Isikhathi sase-Volgograd sasehlobo</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vostok">
@@ -4008,21 +4459,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Wallis">
 				<long>
-					<standard>Isikhathi sase-Wallis and Futuna</standard>
+					<standard>Isikhathi sase-Wallis nase-Futuna</standard>
 				</long>
 			</metazone>
 			<metazone type="Yakutsk">
 				<long>
 					<generic>Isikhathi sase-Yakutsk</generic>
 					<standard>Isikhathi Esimisiwe sase-Yakutsk</standard>
-					<daylight>esase-Yakutsk Summer Time</daylight>
+					<daylight>Isikhathi sasehlobo e-Yakutsk</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
 					<generic>Isikhathi sase-Yekaterinburg</generic>
 					<standard>Isikhathi Esimisiwe sase-Yekaterinburg</standard>
-					<daylight>esase-Yekaterinburg Summer Time</daylight>
+					<daylight>Isikhathi sasehlobo e-Yekaterinburg</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -4130,7 +4581,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<pattern>¤#,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
-					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+					<pattern>¤#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
@@ -4315,12 +4766,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>i-Belarusian Ruble</displayName>
 				<displayName count="one">i-Belarusian Ruble</displayName>
 				<displayName count="other">i-Belarusian Ruble</displayName>
-				<symbol draft="contributed">BYR</symbol>
+				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">P.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>i-Belarusian Ruble (2000–2016)</displayName>
+				<displayName count="one">i-Belarusian Ruble (2000–2016)</displayName>
+				<displayName count="other">i-Belarusian Ruble (2000–2016)</displayName>
+				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>i-Belize Dollar</displayName>
@@ -4354,6 +4811,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">i-Chilean Peso</displayName>
 				<symbol draft="contributed">CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>CNH</displayName>
+				<displayName count="one">CNH</displayName>
+				<displayName count="other">CNH</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>i-Chinese Yuan</displayName>
@@ -4393,7 +4855,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="CVE">
 				<displayName>i-Cape Verdean Escudo</displayName>
 				<displayName count="one">i-Cape Verdean Escudo</displayName>
-				<displayName count="other">i-Cape Verdean Escudo</displayName>
+				<displayName count="other">i-Cape Verdean escudos</displayName>
 				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CZK">
@@ -4481,12 +4943,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">i-Georgian Lari</displayName>
 				<displayName count="other">i-Georgian Lari</displayName>
 				<symbol draft="contributed">GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>i-Ghanaian Cedi</displayName>
 				<displayName count="one">i-Ghanaian Cedi</displayName>
-				<displayName count="other">i-Ghanaian Cedi</displayName>
+				<displayName count="other">i-Ghanaian cedis</displayName>
 				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
@@ -4499,13 +4962,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="GMD">
 				<displayName>i-Gambian Dalasi</displayName>
 				<displayName count="one">i-Gambian Dalasi</displayName>
-				<displayName count="other">i-Gambian Dalasi</displayName>
+				<displayName count="other">i-Gambian dalasis</displayName>
 				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>i-Gunean Franc</displayName>
 				<displayName count="one">i-Gunean Franc</displayName>
-				<displayName count="other">i-Gunean Franc</displayName>
+				<displayName count="other">i-Guinean francs</displayName>
 				<symbol draft="contributed">GNF</symbol>
 				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
@@ -4766,10 +5229,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>i-Mauritanian Ouguiya (1973–2017)</displayName>
+				<displayName count="one">i-Mauritanian Ouguiya (1973–2017)</displayName>
+				<displayName count="other">i-Mauritanian Ouguiya (1973–2017)</displayName>
+				<symbol draft="contributed">MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>i-Mauritanian Ouguiya</displayName>
 				<displayName count="one">i-Mauritanian Ouguiya</displayName>
 				<displayName count="other">i-Mauritanian Ouguiya</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>i-Mauritian Rupee</displayName>
@@ -5009,10 +5477,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>i-São Tomé kanye ne-Príncipe Dobra (1977–2017)</displayName>
+				<displayName count="one">i-São Tomé kanye ne-Príncipe Dobra (1977–2017)</displayName>
+				<displayName count="other">i-São Tomé kanye ne-Príncipe Dobra (1977–2017)</displayName>
+				<symbol draft="contributed">STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>i-São Tomé kanye ne-Príncipe Dobra</displayName>
 				<displayName count="one">i-São Tomé kanye ne-Príncipe Dobra</displayName>
 				<displayName count="other">i-São Tomé kanye ne-Príncipe Dobra</displayName>
-				<symbol draft="contributed">STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -5071,7 +5544,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<currency type="TTD">
 				<displayName>i-Trinidad and Tobago Dollar</displayName>
 				<displayName count="one">i-Trinidad and Tobago dollar</displayName>
-				<displayName count="other">i-Trinidad and Tobago dollars</displayName>
+				<displayName count="other">i-Trinidad &amp; Tobago dollars</displayName>
 				<symbol>TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -5148,7 +5621,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
-				<displayName>i-CFA Franc BCEA</displayName>
+				<displayName>i-Central African CFA Franc</displayName>
 				<displayName count="one">i-CFA Franc BCEA</displayName>
 				<displayName count="other">i-CFA Franc BCEA</displayName>
 				<symbol draft="contributed">FCFA</symbol>
@@ -5161,9 +5634,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
-				<displayName>i-CFA Franc BCEAO</displayName>
-				<displayName count="one">i-CFA Franc BCEAO</displayName>
-				<displayName count="other">i-CFA Franc BCEAO</displayName>
+				<displayName>i-West African CFA Franc</displayName>
+				<displayName count="one">i-West African CFA Franc</displayName>
+				<displayName count="other">i-West African CFA francs</displayName>
 				<symbol draft="contributed">CFA</symbol>
 			</currency>
 			<currency type="XPF">
@@ -5205,6 +5678,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} usuku</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} izinsuku</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Thatha indlela ejikela kwesokudla engu-{0}</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5227,8 +5705,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} revolutions</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName>rad</displayName>
-				<unitPattern count="one">{0} i-radian</unitPattern>
+				<displayName>radians</displayName>
+				<unitPattern count="one">{0} radians</unitPattern>
 				<unitPattern count="other">{0} radians</unitPattern>
 			</unit>
 			<unit type="angle-degree">
@@ -5250,6 +5728,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hectare</displayName>
@@ -5272,6 +5751,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mi²</displayName>
 				<unitPattern count="one">{0} mi²</unitPattern>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acre</displayName>
@@ -5295,9 +5775,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>karats</displayName>
+				<displayName>ama-karats</displayName>
 				<unitPattern count="one">{0} i-karat</unitPattern>
 				<unitPattern count="other">{0} ama-karats</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
@@ -5313,6 +5808,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mpg</displayName>
 				<unitPattern count="one">{0} mpg</unitPattern>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg Imp.</displayName>
+				<unitPattern count="one">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -5379,7 +5879,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>izinyanga</displayName>
 				<unitPattern count="one">{0} inyanga</unitPattern>
 				<unitPattern count="other">{0} izinyanga</unitPattern>
-				<perUnitPattern>{0}/m</perUnitPattern>
+				<perUnitPattern>{0} ngenyanga</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>amaviki</displayName>
@@ -5418,7 +5918,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>microseconds</displayName>
-				<unitPattern count="one">{0} ama-microsecond</unitPattern>
+				<unitPattern count="one">{0} microsecond</unitPattern>
 				<unitPattern count="other">{0} microseconds</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
@@ -5469,7 +5969,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="energy-joule">
 				<displayName>joule</displayName>
 				<unitPattern count="one">{0} i-joule</unitPattern>
-				<unitPattern count="other">{0} ama-joules</unitPattern>
+				<unitPattern count="other">{0} J</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kWh</displayName>
@@ -5585,6 +6085,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>smi</displayName>
 				<unitPattern count="one">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -5829,6 +6334,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
 				<unitPattern count="one">{0} qt</unitPattern>
@@ -5909,6 +6420,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hectare</displayName>
@@ -5931,6 +6443,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mi²</displayName>
 				<unitPattern count="one">{0} mi²</unitPattern>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acre</displayName>
@@ -5958,6 +6471,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>mmol/L</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>izingxenye/izigidi</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>L/km</displayName>
 				<unitPattern count="one">{0} L/km</unitPattern>
@@ -5972,6 +6500,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>miles/gal</displayName>
 				<unitPattern count="one">{0} mpg</unitPattern>
 				<unitPattern count="other">{0} mpg</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mpg Imp.</displayName>
+				<unitPattern count="one">{0} mpg Imp.</unitPattern>
+				<unitPattern count="other">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -6055,7 +6588,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-hour">
 				<displayName>amahora</displayName>
 				<unitPattern count="one">{0} hora</unitPattern>
-				<unitPattern count="other">{0} amahora</unitPattern>
+				<unitPattern count="other">{0} hr</unitPattern>
 				<perUnitPattern>{0}/h</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
@@ -6067,8 +6600,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-second">
 				<displayName>amasekhondi</displayName>
 				<unitPattern count="one">{0} sekhondi</unitPattern>
-				<unitPattern count="other">{0} s</unitPattern>
-				<perUnitPattern>{0}ps</perUnitPattern>
+				<unitPattern count="other">{0} sec</unitPattern>
+				<perUnitPattern>{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
@@ -6244,6 +6777,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>smi</displayName>
 				<unitPattern count="one">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -6488,6 +7026,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>Imp. gal</displayName>
+				<unitPattern count="one">{0} gal Imp.</unitPattern>
+				<unitPattern count="other">{0} gal Imp.</unitPattern>
+				<perUnitPattern>{0}/gal Imp.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
 				<unitPattern count="one">{0} qt</unitPattern>
@@ -6661,7 +7205,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, ne-{1}</listPatternPart>
-			<listPatternPart type="2">I-{0} ne-{1}</listPatternPart>
+			<listPatternPart type="2">{0} ne-{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, or {1}</listPatternPart>
+			<listPatternPart type="2">{0} or {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, ne-{1}</listPatternPart>
+			<listPatternPart type="2">{0} ne-{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -6688,5 +7244,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>cha:c</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — All</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — Kungasebenziswa</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — kakiwe</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — nwetshiwe</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — komlando</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — okuxubile</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — Okunye</characterLabelPattern>
+		<characterLabelPattern type="scripts">Amaskripthi — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} Imivimbo</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} Imivimbo</characterLabelPattern>
+		<characterLabel type="activities">Activities</characterLabel>
+		<characterLabel type="african_scripts">amaskripthi ase-Africa</characterLabel>
+		<characterLabel type="american_scripts">amaskripthi ase-America</characterLabel>
+		<characterLabel type="animal">isilwane</characterLabel>
+		<characterLabel type="animals_nature">izilwane nemvelo</characterLabel>
+		<characterLabel type="arrows">imicibisholo</characterLabel>
+		<characterLabel type="body">umzimba</characterLabel>
+		<characterLabel type="box_drawing">i-Box Drawing</characterLabel>
+		<characterLabel type="braille">i-Braille</characterLabel>
+		<characterLabel type="building">isakhiwo</characterLabel>
+		<characterLabel type="bullets_stars">Amabhulethi/izinkanyezi</characterLabel>
+		<characterLabel type="consonantal_jamo">i-Consonantal Jamo</characterLabel>
+		<characterLabel type="currency_symbols">Amasimbuli emali</characterLabel>
+		<characterLabel type="dash_connector">Dash/Connector</characterLabel>
+		<characterLabel type="digits">Amadijithi</characterLabel>
+		<characterLabel type="dingbats">i-Dingbats</characterLabel>
+		<characterLabel type="divination_symbols">Amasimbuli e-Divination</characterLabel>
+		<characterLabel type="downwards_arrows">Imicibisholo ye-Downwards</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">Downwards Upwards Arrows</characterLabel>
+		<characterLabel type="east_asian_scripts">Amaskripthi ase-East Asia</characterLabel>
+		<characterLabel type="emoji">Ama-Emoji</characterLabel>
+		<characterLabel type="european_scripts">Amaskripthi ase-Europe</characterLabel>
+		<characterLabel type="female">owesfazane</characterLabel>
+		<characterLabel type="flag">ifulegi</characterLabel>
+		<characterLabel type="flags">Amafulegi</characterLabel>
+		<characterLabel type="food_drink">Ukudla neziphuzo</characterLabel>
+		<characterLabel type="format">Ifomethi</characterLabel>
+		<characterLabel type="format_whitespace">Ifomethi ne-Whitespace</characterLabel>
+		<characterLabel type="full_width_form_variant">i-Full-Width Form Variants</characterLabel>
+		<characterLabel type="geometric_shapes">i-Geometric Shapes</characterLabel>
+		<characterLabel type="half_width_form_variant">i-Half-Width Form Variants</characterLabel>
+		<characterLabel type="han_characters">i-Han Characters</characterLabel>
+		<characterLabel type="han_radicals">i-Han Radicals</characterLabel>
+		<characterLabel type="hanja">i-Hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">i-Hanzi (Eyenziwe lula)</characterLabel>
+		<characterLabel type="hanzi_traditional">i-Hanzi (Yendabuko)</characterLabel>
+		<characterLabel type="heart">inhliziyo</characterLabel>
+		<characterLabel type="historic_scripts">Amaskripthi omlando</characterLabel>
+		<characterLabel type="ideographic_desc_characters">i-Ideographic Desc. Characters</characterLabel>
+		<characterLabel type="japanese_kana">i-Japanese Kana</characterLabel>
+		<characterLabel type="kanbun">i-Kanbun</characterLabel>
+		<characterLabel type="kanji">i-Kanji</characterLabel>
+		<characterLabel type="keycap">i-keycap</characterLabel>
+		<characterLabel type="leftwards_arrows">Imicibisholo eya ngakwesokunxele</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Imicibisholo eya ngakwesokunxele nangakwesokudla</characterLabel>
+		<characterLabel type="letterlike_symbols">Amasimbuli ayizinhlamvu</characterLabel>
+		<characterLabel type="limited_use">ukusetshenziswa kwesikhashana</characterLabel>
+		<characterLabel type="male">owesilisa</characterLabel>
+		<characterLabel type="math_symbols">Amasimbuli ezibalo</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Amaskripthi ase-Midlle East</characterLabel>
+		<characterLabel type="miscellaneous">Okuxubile</characterLabel>
+		<characterLabel type="modern_scripts">Amaskripthi esimanje</characterLabel>
+		<characterLabel type="modifier">Okwewashi</characterLabel>
+		<characterLabel type="musical_symbols">Amasimbuli omculo</characterLabel>
+		<characterLabel type="nature">imvelo</characterLabel>
+		<characterLabel type="nonspacing">kungashiyi sikhala</characterLabel>
+		<characterLabel type="numbers">Izinombolo</characterLabel>
+		<characterLabel type="objects">Izinto</characterLabel>
+		<characterLabel type="other">Okunye</characterLabel>
+		<characterLabel type="paired">bhanqiwe</characterLabel>
+		<characterLabel type="person">umuntu</characterLabel>
+		<characterLabel type="phonetic_alphabet">izinhlamvu zefonetiki</characterLabel>
+		<characterLabel type="pictographs">amagrafu ezithombe</characterLabel>
+		<characterLabel type="place">indawo</characterLabel>
+		<characterLabel type="plant">isitshalo</characterLabel>
+		<characterLabel type="punctuation">izimpawu zokubhala</characterLabel>
+		<characterLabel type="rightwards_arrows">Imicibisholo eya ngakwesokudla</characterLabel>
+		<characterLabel type="sign_standard_symbols">Ngena ngemvume/Izimpawu ezivamile</characterLabel>
+		<characterLabel type="small_form_variant">okuncane okwahlukile</characterLabel>
+		<characterLabel type="smiley">okumoyizelayo</characterLabel>
+		<characterLabel type="smileys_people">ukumoyizela nabantu</characterLabel>
+		<characterLabel type="south_asian_scripts">Amaskripthi ase-South Asia</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Amaskripthi ase-South East Asia</characterLabel>
+		<characterLabel type="spacing">ukushiya izikhala</characterLabel>
+		<characterLabel type="sport">umdlalo</characterLabel>
+		<characterLabel type="symbols">Amasimbuli</characterLabel>
+		<characterLabel type="technical_symbols">Amasimbuli okobuchwepheshe</characterLabel>
+		<characterLabel type="tone_marks">Amamaki e-Tone</characterLabel>
+		<characterLabel type="travel">ukuvakasha</characterLabel>
+		<characterLabel type="travel_places">Ukuhamba nezindawo</characterLabel>
+		<characterLabel type="upwards_arrows">Imicibisholo ebheke phezulu</characterLabel>
+		<characterLabel type="variant_forms">Okwehlukahlukene</characterLabel>
+		<characterLabel type="vocalic_jamo">i-Vocalic Jamo</characterLabel>
+		<characterLabel type="weather">isimo sezulu</characterLabel>
+		<characterLabel type="western_asian_scripts">Amaskripthi ase-Western Asia</characterLabel>
+		<characterLabel type="whitespace">i-Whitespace</characterLabel>
+	</characterLabels>
 </ldml>
-

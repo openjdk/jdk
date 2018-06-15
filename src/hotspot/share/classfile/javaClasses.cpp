@@ -63,7 +63,6 @@
 #include "runtime/vframe.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/preserveException.hpp"
-
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
@@ -798,7 +797,7 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
       // update all the static field offsets to included the size.
-        for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
+      for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
         if (fs.access_flags().is_static()) {
           int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
           fs.set_offset(real_offset);
@@ -809,12 +808,8 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
 
   if (k->is_shared() && k->has_raw_archived_mirror()) {
     if (MetaspaceShared::open_archive_heap_region_mapped()) {
-      oop m = k->archived_java_mirror();
-      assert(m != NULL, "archived mirror is NULL");
-      assert(MetaspaceShared::is_archive_object(m), "must be archived mirror object");
-      Handle m_h(THREAD, m);
-      // restore_archived_mirror() clears the klass' _has_raw_archived_mirror flag
-      restore_archived_mirror(k, m_h, Handle(), Handle(), Handle(), CHECK);
+      bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
+      assert(present, "Missing archived mirror for %s", k->external_name());
       return;
     } else {
       k->set_java_mirror_handle(NULL);
@@ -1207,11 +1202,23 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   return archived_mirror;
 }
 
-// After the archived mirror object is restored, the shared klass'
-// _has_raw_archived_mirror flag is cleared
-void java_lang_Class::restore_archived_mirror(Klass *k, Handle mirror,
+// Returns true if the mirror is updated, false if no archived mirror
+// data is present. After the archived mirror object is restored, the
+// shared klass' _has_raw_archived_mirror flag is cleared.
+bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle class_loader, Handle module,
                                               Handle protection_domain, TRAPS) {
+  oop m = MetaspaceShared::materialize_archived_object(k->archived_java_mirror_raw());
+
+  if (m == NULL) {
+    return false;
+  }
+
+  log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
+
+  // mirror is archived, restore
+  assert(MetaspaceShared::is_archive_object(m), "must be archived mirror object");
+  Handle mirror(THREAD, m);
 
   // The java.lang.Class field offsets were archived and reloaded from archive.
   // No need to put classes on the fixup_mirror_list before java.lang.Class
@@ -1221,7 +1228,7 @@ void java_lang_Class::restore_archived_mirror(Klass *k, Handle mirror,
     // - local static final fields with initial values were initialized at dump time
 
     // create the init_lock
-    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK);
+    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_(false));
     set_init_lock(mirror(), r);
 
     if (protection_domain.not_null()) {
@@ -1241,6 +1248,8 @@ void java_lang_Class::restore_archived_mirror(Klass *k, Handle mirror,
 
   ResourceMark rm;
   log_trace(cds, mirror)("Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
+
+  return true;
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 

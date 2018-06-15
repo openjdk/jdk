@@ -63,7 +63,7 @@ public:
   virtual void do_oop(oop* p) {
     // Load barrier needed here for the same reason we
     // need fixup_partial_loads() in ZHeap::mark_end()
-    const oop obj = RootAccess<>::oop_load(p);
+    const oop obj = ZBarrier::load_barrier_on_oop_field(p);
     _iter->push(obj);
     _iter->drain(_cl);
   }

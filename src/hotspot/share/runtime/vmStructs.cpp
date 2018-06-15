@@ -291,6 +291,7 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(DataLayout,                  _header._struct._tag,                          u1)                                    \
   nonstatic_field(DataLayout,                  _header._struct._flags,                        u1)                                    \
   nonstatic_field(DataLayout,                  _header._struct._bci,                          u2)                                    \
+  nonstatic_field(DataLayout,                  _header._struct._traps,                        u4)                                    \
   nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
   nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
   nonstatic_field(MethodCounters,              _interpreter_invocation_limit,                 int)                                   \

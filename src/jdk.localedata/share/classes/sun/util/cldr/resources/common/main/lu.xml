@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12307 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="lu"/>
 	</identity>
 	<localeDisplayNames>
@@ -286,6 +287,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a á à b c d e é è ɛ {ɛ\u0301} {ɛ\u0300} f h i í ì j k l m n {ng} {ny} o ó ò ɔ {ɔ\u0301} {ɔ\u0300} p {ph} q s {shi} t u ú ù v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[g r x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F H I J K L M N O P Q S T U V W Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -704,6 +706,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Nfalanga wa Madagasikare</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Ugwiya wa Moritani (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Ugwiya wa Moritani</displayName>
 			</currency>
 			<currency type="MUR">
@@ -746,6 +751,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Nshili wa Somali</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>Dobra wa Sao Tome ne Presipe (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>Dobra wa Sao Tome ne Presipe</displayName>
 			</currency>
 			<currency type="SZL">
@@ -790,4 +798,3 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</messages>
 	</posix>
 </ldml>
-

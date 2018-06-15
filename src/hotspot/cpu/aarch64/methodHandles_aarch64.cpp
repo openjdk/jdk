@@ -152,7 +152,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
     // assert(sizeof(u2) == sizeof(Method::_size_of_parameters), "");
     Label L;
     __ ldr(rscratch1, __ argument_address(temp2, -1));
-    __ cmp(recv, rscratch1);
+    __ cmpoop(recv, rscratch1);
     __ br(Assembler::EQ, L);
     __ ldr(r0, __ argument_address(temp2, -1));
     __ hlt(0);

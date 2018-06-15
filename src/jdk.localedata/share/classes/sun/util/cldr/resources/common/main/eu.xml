@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="eu"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,253 +19,408 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
-			<language type="ab">abkhazera</language>
-			<language type="ach">Acholiera</language>
+			<language type="aa">afarera</language>
+			<language type="ab">abkhaziera</language>
+			<language type="ace">acehnera</language>
+			<language type="ach">acholiera</language>
+			<language type="ada">adangmera</language>
+			<language type="ady">adigera</language>
 			<language type="af">afrikaansa</language>
 			<language type="agq">aghemera</language>
+			<language type="ain">ainuera</language>
 			<language type="ak">akanera</language>
+			<language type="ale">aleutera</language>
+			<language type="alt">hegoaldeko altaiera</language>
 			<language type="am">amharera</language>
+			<language type="an">aragoiera</language>
+			<language type="anp">angikera</language>
 			<language type="ar">arabiera</language>
 			<language type="ar_001">arabiera moderno estandarra</language>
 			<language type="arn">maputxea</language>
+			<language type="arp">arapahoa</language>
 			<language type="as">assamera</language>
 			<language type="asa">asua</language>
+			<language type="ast">asturiera</language>
+			<language type="av">avarera</language>
+			<language type="awa">awadhiera</language>
 			<language type="ay">aimara</language>
 			<language type="az">azerbaijanera</language>
-			<language type="az" alt="short">azeriera</language>
+			<language type="az" alt="short">azerbaijanera</language>
 			<language type="ba">bashkirrera</language>
+			<language type="ban">baliera</language>
+			<language type="bas">basaa</language>
 			<language type="be">bielorrusiera</language>
 			<language type="bem">bembera</language>
 			<language type="bez">benera</language>
 			<language type="bg">bulgariera</language>
+			<language type="bho">bhojpurera</language>
+			<language type="bi">bislama</language>
+			<language type="bin">edoera</language>
+			<language type="bla">siksikera</language>
 			<language type="bm">bambarera</language>
 			<language type="bn">bengalera</language>
 			<language type="bo">tibetera</language>
 			<language type="br">bretoiera</language>
 			<language type="brx">bodoera</language>
 			<language type="bs">bosniera</language>
+			<language type="bug">buginera</language>
+			<language type="byn">bilena</language>
 			<language type="ca">katalana</language>
+			<language type="ce">txetxeniera</language>
+			<language type="ceb">cebuera</language>
 			<language type="cgg">chigera</language>
+			<language type="ch">chamorrera</language>
+			<language type="chk">chuukera</language>
+			<language type="chm">mariera</language>
+			<language type="cho">choctaw</language>
 			<language type="chr">txerokiera</language>
-			<language type="ckb">soraniera</language>
+			<language type="chy">cheyennera</language>
+			<language type="ckb">sorania</language>
 			<language type="co">korsikera</language>
+			<language type="crs">seselwa frantses-kreolera</language>
 			<language type="cs">txekiera</language>
-			<language type="cy">galesera</language>
+			<language type="cu">Elizako eslaviera</language>
+			<language type="cv">chuvashera</language>
+			<language type="cy">galesa</language>
 			<language type="da">daniera</language>
+			<language type="dak">dakotera</language>
+			<language type="dar">dargvera</language>
 			<language type="dav">taitera</language>
 			<language type="de">alemana</language>
+			<language type="de_AT">Austriako alemana</language>
 			<language type="de_CH">aleman garaia (Suitza)</language>
-			<language type="dje">zarmera</language>
+			<language type="dgr">dogribera</language>
+			<language type="dje">zarma</language>
 			<language type="dsb">behe-sorabiera</language>
 			<language type="dua">dualera</language>
 			<language type="dv">divehiera</language>
 			<language type="dyo">fonyi jolera</language>
 			<language type="dz">dzongkha</language>
+			<language type="dzg">dazaga</language>
 			<language type="ebu">embua</language>
 			<language type="ee">eweera</language>
 			<language type="efi">efikera</language>
+			<language type="eka">akajuka</language>
 			<language type="el">greziera</language>
 			<language type="en">ingelesa</language>
-			<language type="en_US">ingelesa (AEB)</language>
-			<language type="en_US" alt="short">ingelesa (AEB)</language>
+			<language type="en_AU">Australiako ingelesa</language>
+			<language type="en_CA">Kanadako ingelesa</language>
+			<language type="en_GB">Britainia Handiko ingelesa</language>
+			<language type="en_GB" alt="short">Erresuma Batuko ingelesa</language>
+			<language type="en_US">AEBko ingelesa</language>
+			<language type="en_US" alt="short">AEBko ingelesa</language>
 			<language type="eo">esperantoa</language>
 			<language type="es">espainiera</language>
+			<language type="es_419">Latinoamerikako espainiera</language>
 			<language type="es_ES">espainiera (Europa)</language>
+			<language type="es_MX">Mexikoko espainiera</language>
 			<language type="et">estoniera</language>
 			<language type="eu">euskara</language>
+			<language type="ewo">ewondera</language>
 			<language type="fa">persiera</language>
+			<language type="ff">fula</language>
 			<language type="fi">finlandiera</language>
-			<language type="fil">tagaloga</language>
+			<language type="fil">filipinera</language>
 			<language type="fj">fijiera</language>
 			<language type="fo">faroera</language>
+			<language type="fon">fona</language>
 			<language type="fr">frantsesa</language>
+			<language type="fr_CA">Kanadako frantsesa</language>
+			<language type="fr_CH">Suitzako frantsesa</language>
+			<language type="fur">friuliera</language>
 			<language type="fy">frisiera</language>
 			<language type="ga">gaelikoa</language>
-			<language type="gaa">Ga</language>
+			<language type="gaa">ga</language>
 			<language type="gag">gagauzera</language>
-			<language type="gd">eskoziako gaelikoa</language>
+			<language type="gd">Eskoziako gaelikoa</language>
+			<language type="gez">ge’ez</language>
+			<language type="gil">gilbertera</language>
 			<language type="gl">galiziera</language>
 			<language type="gn">guaraniera</language>
+			<language type="gor">gorontaloa</language>
 			<language type="gsw">alemana (Suitza)</language>
 			<language type="gu">gujaratera</language>
 			<language type="guz">gusiiera</language>
 			<language type="gv">manxera</language>
+			<language type="gwi">gwichʼin</language>
 			<language type="ha">hausa</language>
 			<language type="haw">hawaiiera</language>
 			<language type="he">hebreera</language>
 			<language type="hi">hindia</language>
+			<language type="hil">hiligainona</language>
+			<language type="hmn">hmong</language>
 			<language type="hr">kroaziera</language>
 			<language type="hsb">goi-sorabiera</language>
-			<language type="ht">haitiera</language>
+			<language type="ht">Haitiko kreolera</language>
 			<language type="hu">hungariera</language>
+			<language type="hup">hupera</language>
 			<language type="hy">armeniera</language>
-			<language type="ia">Interlingua</language>
+			<language type="hz">herera</language>
+			<language type="ia">interlingua</language>
+			<language type="iba">ibanera</language>
+			<language type="ibb">ibibioera</language>
 			<language type="id">indonesiera</language>
 			<language type="ie">interlingue</language>
 			<language type="ig">igboera</language>
-			<language type="ii">sichuan yia</language>
+			<language type="ii">Sichuango yiera</language>
+			<language type="ilo">ilokanera</language>
+			<language type="inh">ingushera</language>
+			<language type="io">ido</language>
 			<language type="is">islandiera</language>
 			<language type="it">italiera</language>
 			<language type="iu">inuitera</language>
 			<language type="ja">japoniera</language>
+			<language type="jbo">lojbanera</language>
 			<language type="jgo">ngomba</language>
 			<language type="jmc">machamera</language>
 			<language type="jv">javera</language>
 			<language type="ka">georgiera</language>
 			<language type="kab">kabilera</language>
+			<language type="kac">jingpoera</language>
+			<language type="kaj">kaiji</language>
 			<language type="kam">kambera</language>
+			<language type="kbd">kabardiera</language>
+			<language type="kcg">kataba</language>
 			<language type="kde">makondera</language>
 			<language type="kea">Cabo Verdeko kreola</language>
-			<language type="kg">Kikongoa</language>
+			<language type="kfo">koroa</language>
+			<language type="kg">kikongoa</language>
+			<language type="kha">kashia</language>
 			<language type="khq">koyra chiiniera</language>
 			<language type="ki">kikuyuera</language>
+			<language type="kj">kuanyama</language>
 			<language type="kk">kazakhera</language>
-			<language type="kl">kalaallisutera</language>
+			<language type="kkj">kakoa</language>
+			<language type="kl">groenlandiera</language>
 			<language type="kln">kalenjinera</language>
 			<language type="km">khemerera</language>
-			<language type="kn">kannadera</language>
+			<language type="kmb">kimbundua</language>
+			<language type="kn">kannada</language>
 			<language type="ko">koreera</language>
 			<language type="koi">komi-permyakera</language>
-			<language type="kok">konkaniera</language>
-			<language type="ks">kashmirera</language>
+			<language type="kok">konkanera</language>
+			<language type="kpe">kpellea</language>
+			<language type="kr">kanuriera</language>
+			<language type="krc">karachayera-balkarera</language>
+			<language type="krl">kareliera</language>
+			<language type="kru">kurukhera</language>
+			<language type="ks">kaxmirera</language>
 			<language type="ksb">shambalera</language>
 			<language type="ksf">bafiera</language>
+			<language type="ksh">koloniera</language>
 			<language type="ku">kurduera</language>
+			<language type="kum">kumykera</language>
+			<language type="kv">komiera</language>
 			<language type="kw">kornubiera</language>
 			<language type="ky">kirgizera</language>
 			<language type="la">latina</language>
+			<language type="lad">ladinera</language>
 			<language type="lag">langiera</language>
 			<language type="lb">luxenburgera</language>
+			<language type="lez">lezgiera</language>
 			<language type="lg">gandera</language>
+			<language type="li">limburgera</language>
 			<language type="lkt">lakotera</language>
 			<language type="ln">lingala</language>
 			<language type="lo">laosera</language>
-			<language type="loz">Loziera</language>
+			<language type="loz">loziera</language>
+			<language type="lrc">iparraldeko lurera</language>
 			<language type="lt">lituaniera</language>
 			<language type="lu">luba-katangera</language>
-			<language type="lua">Luba-lulua</language>
+			<language type="lua">txilubera</language>
+			<language type="lun">lundera</language>
 			<language type="luo">luoera</language>
+			<language type="lus">mizoa</language>
 			<language type="luy">luhyera</language>
 			<language type="lv">letoniera</language>
+			<language type="mad">madurera</language>
+			<language type="mag">magahiera</language>
+			<language type="mai">maithilera</language>
+			<language type="mak">makasarera</language>
 			<language type="mas">masaiera</language>
+			<language type="mdf">mokxera</language>
+			<language type="men">mendeera</language>
 			<language type="mer">meruera</language>
 			<language type="mfe">Mauritaniako kreolera</language>
-			<language type="mg">malagasyera</language>
+			<language type="mg">malgaxea</language>
 			<language type="mgh">makhuwa-meettoera</language>
 			<language type="mgo">metera</language>
+			<language type="mh">marshallera</language>
 			<language type="mi">maoriera</language>
+			<language type="mic">mikmakera</language>
+			<language type="min">minangkabauera</language>
 			<language type="mk">mazedoniera</language>
-			<language type="ml">malayalamera</language>
+			<language type="ml">malabarera</language>
 			<language type="mn">mongoliera</language>
+			<language type="mni">manipurera</language>
 			<language type="moh">mohawkera</language>
+			<language type="mos">moreera</language>
 			<language type="mr">marathera</language>
 			<language type="ms">malaysiera</language>
 			<language type="mt">maltera</language>
 			<language type="mua">mudangera</language>
-			<language type="mul">hizkuntza anitzak</language>
-			<language type="my">burmatarra</language>
+			<language type="mul">zenbait hizkuntza</language>
+			<language type="mus">creera</language>
+			<language type="mwl">mirandera</language>
+			<language type="my">birmaniera</language>
+			<language type="myv">erziera</language>
+			<language type="mzn">mazandarandera</language>
+			<language type="na">nauruera</language>
+			<language type="nap">napoliera</language>
 			<language type="naq">namera</language>
 			<language type="nb">bokmala (Norvegia)</language>
 			<language type="nd">iparraldeko ndebeleera</language>
+			<language type="nds_NL">behe-saxoiera</language>
 			<language type="ne">nepalera</language>
+			<language type="new">newarera</language>
+			<language type="ng">ndongera</language>
+			<language type="nia">niasa</language>
+			<language type="niu">niuera</language>
 			<language type="nl">nederlandera</language>
 			<language type="nl_BE">flandriera</language>
 			<language type="nmg">kwasiera</language>
 			<language type="nn">nynorsk norvegiera</language>
+			<language type="nnh">ngiemboonera</language>
 			<language type="no">norvegiera</language>
+			<language type="nog">nogaiera</language>
 			<language type="nqo">n’koera</language>
+			<language type="nr">hegoaldeko ndebelera</language>
 			<language type="nso">pediera</language>
 			<language type="nus">nuerera</language>
-			<language type="ny">nyanja</language>
+			<language type="nv">navahoera</language>
+			<language type="ny">chewera</language>
 			<language type="nyn">ankolera</language>
-			<language type="oc">Okzitaniera</language>
+			<language type="oc">okzitaniera</language>
 			<language type="om">oromoera</language>
-			<language type="or">oriyera</language>
+			<language type="or">oriya</language>
 			<language type="os">osetiera</language>
 			<language type="pa">punjabera</language>
+			<language type="pag">pangasinanera</language>
+			<language type="pam">pampangera</language>
+			<language type="pap">papiamentoa</language>
+			<language type="pau">palauera</language>
+			<language type="pcm">Nigeriako pidgina</language>
 			<language type="pl">poloniera</language>
+			<language type="prg">prusiera</language>
 			<language type="ps">paxtuera</language>
-			<language type="ps" alt="variant">pashtoera</language>
 			<language type="pt">portugesa</language>
+			<language type="pt_BR">Brasilgo portugesa</language>
 			<language type="pt_PT">portugesa (Europa)</language>
-			<language type="qu">quechuera</language>
-			<language type="quc">k’iche’ra</language>
-			<language type="rm">erromantxera</language>
+			<language type="qu">kitxua</language>
+			<language type="quc">quicheera</language>
+			<language type="rap">rapa nui</language>
+			<language type="rar">rarotongera</language>
+			<language type="rm">erretorromaniera</language>
 			<language type="rn">rundiera</language>
 			<language type="ro">errumaniera</language>
+			<language type="ro_MD">moldaviera</language>
 			<language type="rof">romboera</language>
+			<language type="root">erroa</language>
 			<language type="ru">errusiera</language>
+			<language type="rup">aromania</language>
 			<language type="rw">kinyaruanda</language>
 			<language type="rwk">rwaera</language>
 			<language type="sa">sanskritoa</language>
+			<language type="sad">sandawea</language>
+			<language type="sah">sakhera</language>
 			<language type="saq">samburuera</language>
+			<language type="sat">santalera</language>
+			<language type="sba">ngambayera</language>
 			<language type="sbp">sanguera</language>
+			<language type="sc">sardiniera</language>
+			<language type="scn">siziliera</language>
+			<language type="sco">eskoziera</language>
 			<language type="sd">sindhia</language>
 			<language type="se">iparraldeko samiera</language>
 			<language type="seh">senera</language>
 			<language type="ses">koyraboro sennia</language>
-			<language type="sg">sangoera</language>
+			<language type="sg">sangoa</language>
 			<language type="sh">serbokroaziera</language>
 			<language type="shi">tachelhita</language>
+			<language type="shn">shanera</language>
 			<language type="si">sinhala</language>
 			<language type="sk">eslovakiera</language>
 			<language type="sl">esloveniera</language>
 			<language type="sm">samoera</language>
 			<language type="sma">hegoaldeko samiera</language>
-			<language type="smj">Lule samiera</language>
-			<language type="smn">Inari samiera</language>
-			<language type="sms">Skolt samiera</language>
+			<language type="smj">lule samiera</language>
+			<language type="smn">inari-samiera</language>
+			<language type="sms">skolten samiera</language>
 			<language type="sn">shonera</language>
+			<language type="snk">soninkera</language>
 			<language type="so">somaliera</language>
 			<language type="sq">albaniera</language>
 			<language type="sr">serbiera</language>
+			<language type="srn">srananera</language>
 			<language type="ss">swatiera</language>
+			<language type="ssy">sahoa</language>
 			<language type="st">hegoaldeko sothoera</language>
 			<language type="su">sundanera</language>
+			<language type="suk">sukumera</language>
 			<language type="sv">suediera</language>
-			<language type="sw">swahili</language>
+			<language type="sw">swahilia</language>
 			<language type="sw_CD">Kongoko swahilia</language>
+			<language type="swb">komoreera</language>
+			<language type="syr">asiriera</language>
 			<language type="ta">tamilera</language>
-			<language type="te">teluguera</language>
+			<language type="te">telugua</language>
+			<language type="tem">temnea</language>
 			<language type="teo">tesoera</language>
 			<language type="tet">tetuma</language>
-			<language type="tg">tajikistanera</language>
+			<language type="tg">tajikera</language>
 			<language type="th">thailandiera</language>
 			<language type="ti">tigriñera</language>
-			<language type="tk">turkmeniera</language>
+			<language type="tig">tigrea</language>
+			<language type="tk">turkmenera</language>
 			<language type="tl">tagalog</language>
-			<language type="tlh">Klingonera</language>
+			<language type="tlh">klingonera</language>
 			<language type="tn">tswanera</language>
 			<language type="to">tongera</language>
 			<language type="tpi">tok pisina</language>
 			<language type="tr">turkiera</language>
+			<language type="trv">tarokoa</language>
 			<language type="ts">tsongera</language>
 			<language type="tt">tatarera</language>
-			<language type="tum">Tumbukera</language>
+			<language type="tum">tumbukera</language>
+			<language type="tvl">tuvaluera</language>
 			<language type="tw">twia</language>
 			<language type="twq">tasawaqa</language>
 			<language type="ty">tahitiera</language>
-			<language type="tzm">Maroko erdialdeko tamazighta</language>
+			<language type="tyv">tuvera</language>
+			<language type="tzm">Erdialdeko Atlaseko amazigera</language>
+			<language type="udm">udmurtera</language>
 			<language type="ug">uigurrera</language>
 			<language type="uk">ukrainera</language>
+			<language type="umb">umbunduera</language>
 			<language type="und">hizkuntza ezezaguna</language>
 			<language type="ur">urdua</language>
 			<language type="uz">uzbekera</language>
 			<language type="vai">vaiera</language>
 			<language type="ve">vendera</language>
 			<language type="vi">vietnamera</language>
+			<language type="vo">volapüka</language>
 			<language type="vun">vunjoa</language>
+			<language type="wa">waloiera</language>
+			<language type="wae">walserera</language>
+			<language type="wal">welayta</language>
+			<language type="war">samerera</language>
 			<language type="wo">wolofera</language>
+			<language type="xal">kalmykera</language>
 			<language type="xh">xhosera</language>
 			<language type="xog">sogera</language>
-			<language type="yi">Jiddisha</language>
-			<language type="yo">yorubera</language>
-			<language type="zgh">tamazight estandarra</language>
+			<language type="yav">jangbenera</language>
+			<language type="ybb">yemba</language>
+			<language type="yi">yiddisha</language>
+			<language type="yo">jorubera</language>
+			<language type="yue">kantonera</language>
+			<language type="zgh">amazigera estandarra</language>
 			<language type="zh">txinera</language>
 			<language type="zh_Hans">txinera soildua</language>
 			<language type="zh_Hant">txinera tradizionala</language>
 			<language type="zu">zuluera</language>
+			<language type="zun">zuñia</language>
 			<language type="zxx">ez dago eduki linguistikorik</language>
+			<language type="zza">zazakia</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arabiarra</script>
@@ -278,6 +436,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">greziarra</script>
 			<script type="Gujr">gujaratera</script>
 			<script type="Guru">gurmukhia</script>
+			<script type="Hanb">hänera</script>
 			<script type="Hang">hangula</script>
 			<script type="Hani">idazkera txinatarra</script>
 			<script type="Hans">sinplifikatua</script>
@@ -286,6 +445,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hant" alt="stand-alone">idazkera txinatar tradizionala</script>
 			<script type="Hebr">hebreera</script>
 			<script type="Hira">hiragana</script>
+			<script type="Hrkt">silaba japoniarrak</script>
+			<script type="Jamo">jamo-bihurketa</script>
 			<script type="Jpan">japoniarra</script>
 			<script type="Kana">katakana</script>
 			<script type="Khmr">khemerarra</script>
@@ -303,6 +464,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Thaa">thaana</script>
 			<script type="Thai">thailandiarra</script>
 			<script type="Tibt">tibetarra</script>
+			<script type="Zmth">matematikako notazioa</script>
+			<script type="Zsye">emotikonoa</script>
 			<script type="Zsym">ikurrak</script>
 			<script type="Zxxx">idatzi gabea</script>
 			<script type="Zyyy">ohikoa</script>
@@ -338,19 +501,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Europa ekialdea</territory>
 			<territory type="154">Europa iparraldea</territory>
 			<territory type="155">Europa mendebaldea</territory>
+			<territory type="202">Saharaz hegoaldeko Afrika</territory>
 			<territory type="419">Latinoamerika</territory>
 			<territory type="AC">Ascension uhartea</territory>
 			<territory type="AD">Andorra</territory>
 			<territory type="AE">Arabiar Emirerri Batuak</territory>
 			<territory type="AF">Afganistan</territory>
 			<territory type="AG">Antigua eta Barbuda</territory>
-			<territory type="AI">Angila</territory>
+			<territory type="AI">Aingira</territory>
 			<territory type="AL">Albania</territory>
 			<territory type="AM">Armenia</territory>
 			<territory type="AO">Angola</territory>
 			<territory type="AQ">Antartika</territory>
 			<territory type="AR">Argentina</territory>
-			<territory type="AS">Amerikar Samoa</territory>
+			<territory type="AS">Samoa Estatubatuarra</territory>
 			<territory type="AT">Austria</territory>
 			<territory type="AU">Australia</territory>
 			<territory type="AW">Aruba</territory>
@@ -380,12 +544,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CA">Kanada</territory>
 			<territory type="CC">Cocos uharteak</territory>
 			<territory type="CD">Kongoko Errepublika Demokratikoa</territory>
-			<territory type="CD" alt="variant">Kongo (KED)</territory>
+			<territory type="CD" alt="variant">Kongo (DR)</territory>
 			<territory type="CF">Afrika Erdiko Errepublika</territory>
-			<territory type="CG">Kongo (Brazzaville)</territory>
-			<territory type="CG" alt="variant">Kongo (errepublika)</territory>
+			<territory type="CG">Kongo</territory>
+			<territory type="CG" alt="variant">Kongoko Errepublika</territory>
 			<territory type="CH">Suitza</territory>
 			<territory type="CI">Boli Kosta</territory>
+			<territory type="CI" alt="variant">CI</territory>
 			<territory type="CK">Cook uharteak</territory>
 			<territory type="CL">Txile</territory>
 			<territory type="CM">Kamerun</territory>
@@ -398,9 +563,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">Curaçao</territory>
 			<territory type="CX">Christmas uhartea</territory>
 			<territory type="CY">Zipre</territory>
-			<territory type="CZ">Txekiar Errepublika</territory>
+			<territory type="CZ">Txekia</territory>
+			<territory type="CZ" alt="variant">Txekiar Errepublika</territory>
 			<territory type="DE">Alemania</territory>
-			<territory type="DG">Diego Garcia</territory>
+			<territory type="DG">Diego García</territory>
 			<territory type="DJ">Djibuti</territory>
 			<territory type="DK">Danimarka</territory>
 			<territory type="DM">Dominika</territory>
@@ -415,10 +581,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Espainia</territory>
 			<territory type="ET">Etiopia</territory>
 			<territory type="EU">Europar Batasuna</territory>
+			<territory type="EZ">Eurogunea</territory>
 			<territory type="FI">Finlandia</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Malvinak</territory>
-			<territory type="FK" alt="variant">Falkland uharteak (Malvina uharteak)</territory>
+			<territory type="FK" alt="variant">Falkland uharteak</territory>
 			<territory type="FM">Mikronesia</territory>
 			<territory type="FO">Faroe uharteak</territory>
 			<territory type="FR">Frantzia</territory>
@@ -440,9 +607,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="GS">Hegoaldeko Georgia eta Hegoaldeko Sandwich uharteak</territory>
 			<territory type="GT">Guatemala</territory>
 			<territory type="GU">Guam</territory>
-			<territory type="GW">Ginea-Bissau</territory>
+			<territory type="GW">Ginea Bissau</territory>
 			<territory type="GY">Guyana</territory>
-			<territory type="HK">Hong Kong AEB Txina</territory>
+			<territory type="HK">Hong Kong Txinako AEB</territory>
 			<territory type="HK" alt="short">Hong Kong</territory>
 			<territory type="HM">Heard eta McDonald uharteak</territory>
 			<territory type="HN">Honduras</territory>
@@ -490,17 +657,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MC">Monako</territory>
 			<territory type="MD">Moldavia</territory>
 			<territory type="ME">Montenegro</territory>
-			<territory type="MF">Saint Martin</territory>
+			<territory type="MF">San Martin</territory>
 			<territory type="MG">Madagaskar</territory>
-			<territory type="MH">Marshall uharteak</territory>
+			<territory type="MH">Marshall Uharteak</territory>
 			<territory type="MK">Mazedonia</territory>
-			<territory type="MK" alt="variant">Mazedonia (Mazedoniako Yugoslaviar Errepublika ohia)</territory>
+			<territory type="MK" alt="variant">Mazedoniako Jugoslaviar Errepublika Ohia</territory>
 			<territory type="ML">Mali</territory>
-			<territory type="MM">Myanmar</territory>
+			<territory type="MM">Myanmar (Birmania)</territory>
 			<territory type="MN">Mongolia</territory>
-			<territory type="MO">Macau AEB Txina</territory>
+			<territory type="MO">Macau Txinako AEB</territory>
 			<territory type="MO" alt="short">Macau</territory>
-			<territory type="MP">Iparraldeko Mariana uharteak</territory>
+			<territory type="MP">Ipar Mariana uharteak</territory>
 			<territory type="MQ">Martinika</territory>
 			<territory type="MR">Mauritania</territory>
 			<territory type="MS">Montserrat</territory>
@@ -547,12 +714,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="RU">Errusia</territory>
 			<territory type="RW">Ruanda</territory>
 			<territory type="SA">Saudi Arabia</territory>
-			<territory type="SB">Salomon uharteak</territory>
+			<territory type="SB">Salomon Uharteak</territory>
 			<territory type="SC">Seychelleak</territory>
 			<territory type="SD">Sudan</territory>
 			<territory type="SE">Suedia</territory>
 			<territory type="SG">Singapur</territory>
-			<territory type="SH">Saint Helena</territory>
+			<territory type="SH">Santa Helena</territory>
 			<territory type="SI">Eslovenia</territory>
 			<territory type="SJ">Svalbard eta Jan Mayen uharteak</territory>
 			<territory type="SK">Eslovakia</territory>
@@ -568,7 +735,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SY">Siria</territory>
 			<territory type="SZ">Swazilandia</territory>
 			<territory type="TA">Tristan da Cunha</territory>
-			<territory type="TC">Turk eta Caicos uharteak</territory>
+			<territory type="TC">Turk eta Caico uharteak</territory>
 			<territory type="TD">Txad</territory>
 			<territory type="TF">Hegoaldeko lurralde frantsesak</territory>
 			<territory type="TG">Togo</territory>
@@ -576,7 +743,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TJ">Tajikistan</territory>
 			<territory type="TK">Tokelau</territory>
 			<territory type="TL">Ekialdeko Timor</territory>
-			<territory type="TL" alt="variant">Timor ekialdea</territory>
+			<territory type="TL" alt="variant">TL</territory>
 			<territory type="TM">Turkmenistan</territory>
 			<territory type="TN">Tunisia</territory>
 			<territory type="TO">Tonga</territory>
@@ -588,6 +755,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Ukraina</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">Ameriketako Estatu Batuetako Kanpoaldeko Uharte Txikiak</territory>
+			<territory type="UN">Nazio Batuak</territory>
 			<territory type="US">Ameriketako Estatu Batuak</territory>
 			<territory type="US" alt="short">AEB</territory>
 			<territory type="UY">Uruguai</territory>
@@ -618,20 +786,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">Egutegia</key>
+			<key type="cf">Moneta-formatua</key>
 			<key type="colAlternate">Egin ez ikusi ikurren ordenari</key>
 			<key type="colBackwards">Azentuen alderantzizko ordena</key>
 			<key type="colCaseFirst">Maiuskula/Minuskula ordena</key>
 			<key type="colCaseLevel">Maiuskulak eta minuskulak bereizten dituen ordena</key>
-			<key type="colHiraganaQuaternary">Kana ordena</key>
 			<key type="collation">Ordenatzeko irizpidea</key>
 			<key type="colNormalization">Araututako ordena</key>
 			<key type="colNumeric">Zenbakizko ordena</key>
 			<key type="colStrength">Ordenaren sendotasuna</key>
 			<key type="currency">Moneta</key>
+			<key type="hc">Ordu-zikloa (12 vs 24)</key>
+			<key type="lb">Lerro-jauziaren estiloa</key>
+			<key type="ms">Neurketa-sistema</key>
 			<key type="numbers">Zenbakiak</key>
 			<key type="timezone">Ordu-zona</key>
 			<key type="va">Eskualdeko ezarpenen aldaera</key>
-			<key type="variableTop">Ordenatu ikur gisa</key>
 			<key type="x">Erabilera pribatua</key>
 		</keys>
 		<types>
@@ -649,7 +819,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="iso8601">ISO-8601 egutegia</type>
 			<type key="calendar" type="japanese">Japoniar egutegia</type>
 			<type key="calendar" type="persian">Egutegi persiarra</type>
-			<type key="calendar" type="roc">Txinako Errepublikako egutegia</type>
+			<type key="calendar" type="roc">Minguo egutegia</type>
+			<type key="cf" type="account">Kontabilitateko moneta-formatua</type>
+			<type key="cf" type="standard">Moneta-formatu estandarra</type>
 			<type key="colAlternate" type="non-ignorable">Ordenatu ikurrak</type>
 			<type key="colAlternate" type="shifted">Ordenatu ikurrei ez ikusi eginda</type>
 			<type key="colBackwards" type="no">Ordenatu azentuak modu normalean</type>
@@ -659,8 +831,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper">Ordenatu maiuskulak lehenik</type>
 			<type key="colCaseLevel" type="no">Ordenatu maiuskulak eta minuskulak bereizi gabe</type>
 			<type key="colCaseLevel" type="yes">Ordenatu maiuskulak eta minuskulak bereizita</type>
-			<type key="colHiraganaQuaternary" type="no">Ordenatu kanak bereizita</type>
-			<type key="colHiraganaQuaternary" type="yes">Ordenatu kanak desberdin</type>
 			<type key="collation" type="big5han">Txinera tradizionalaren alfabetoa-Big5</type>
 			<type key="collation" type="dictionary">Hurrenkera alfabetikoa</type>
 			<type key="collation" type="ducet">Unicode hurrenkera lehenetsia</type>
@@ -684,11 +854,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary">Ordenatu azentuak / maiuskula eta minuskulak / zabalera / kanak</type>
 			<type key="colStrength" type="secondary">Ordenatu azentuak</type>
 			<type key="colStrength" type="tertiary">Ordenatu azentuak / maiuskula eta minuskulak / zabalera</type>
+			<type key="d0" type="fwidth">Zabalera osoko karaktere-bihurketa</type>
+			<type key="d0" type="hwidth">Zabalera erdiko karaktere-bihurketa</type>
+			<type key="d0" type="npinyin">Zenbakizko bihurketa</type>
+			<type key="hc" type="h11">12 orduko sistema (0–11)</type>
+			<type key="hc" type="h12">12 orduko sistema (1–12)</type>
+			<type key="hc" type="h23">24 orduko sistema (0–23)</type>
+			<type key="hc" type="h24">24 orduko sistema (1–24)</type>
+			<type key="lb" type="loose">Lerro-jauziaren estilo malgua</type>
+			<type key="lb" type="normal">Lerro-jauziaren estilo arrunta</type>
+			<type key="lb" type="strict">Lerro-jauziaren estilo zorrotza</type>
+			<type key="m0" type="bgn">BGN bihurketa</type>
+			<type key="m0" type="ungegn">UNGEGN bihurketa</type>
+			<type key="ms" type="metric">Sistema metrikoa</type>
+			<type key="ms" type="uksystem">Neurketa-sistema inperiala</type>
+			<type key="ms" type="ussystem">Neurketa-sistema anglosaxoia</type>
 			<type key="numbers" type="arab">Digitu arabiar-hindikoak</type>
 			<type key="numbers" type="arabext">Digitu arabiar-hindiko hedatuak</type>
 			<type key="numbers" type="armn">Zenbaki armeniarrak</type>
 			<type key="numbers" type="armnlow">Zenbaki armeniarrak minuskulaz</type>
-			<type key="numbers" type="beng">Digitu bengalarrak</type>
+			<type key="numbers" type="beng">digitu bengalarrak</type>
 			<type key="numbers" type="deva">Digitu devanagariak</type>
 			<type key="numbers" type="ethi">Zenbaki etiopiarrak</type>
 			<type key="numbers" type="finance">Finantza-zenbakiak</type>
@@ -725,18 +910,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional">Zenbaki tradizionalak</type>
 			<type key="numbers" type="vaii">Vai digituak</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">BGN bihurketa</transformName>
-			<transformName type="Numeric">Zenbakizko bihurketa</transformName>
-			<transformName type="Tone">Tonu-bihurketa</transformName>
-			<transformName type="UNGEGN">UNGEGN bihurketa</transformName>
-			<transformName type="x-Accents">Azentu-bihurketa</transformName>
-			<transformName type="x-Fullwidth">Zabalera osoko karaktere-bihurketa</transformName>
-			<transformName type="x-Halfwidth">Zabalera erdiko karaktere-bihurketa</transformName>
-			<transformName type="x-Jamo">Jamo-bihurketa</transformName>
-			<transformName type="x-Pinyin">Pinyina</transformName>
-			<transformName type="x-Publishing">Argitalpen-bihurketa</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Sistema metrikoa</measurementSystemName>
 			<measurementSystemName type="UK">Erresuma Batuko sistema</measurementSystemName>
@@ -752,6 +925,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[a b c ç d e f g h i j k l m n ñ o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ é è ĕ ê ë ē í ì ĭ î ï ī ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[, . % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -820,12 +995,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d, EEEE</dateFormatItem>
+						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G. 'aroko' y. 'urtea'</dateFormatItem>
 						<dateFormatItem id="GyMMM">G. 'aroko' y('e')'ko' MMMM</dateFormatItem>
 						<dateFormatItem id="GyMMMd">G. 'aroko' y('e')'ko' MMMM d</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">G. 'aroko' y('e')'ko' MMMM d, EEEE</dateFormatItem>
+						<dateFormatItem id="h">h a</dateFormatItem>
 						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
@@ -837,6 +1023,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d, EEEE</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">y/MM</dateFormatItem>
@@ -909,7 +1096,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">MM/dd, EEEE – MM/dd, EEEE</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">MMM–MMM</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d">MMMM d–d</greatestDifference>
@@ -989,34 +1176,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="12">A</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">urtarrilak</month>
-							<month type="2">otsailak</month>
-							<month type="3">martxoak</month>
-							<month type="4">apirilak</month>
-							<month type="5">maiatzak</month>
-							<month type="6">ekainak</month>
-							<month type="7">uztailak</month>
-							<month type="8">abuztuak</month>
-							<month type="9">irailak</month>
-							<month type="10">urriak</month>
-							<month type="11">azaroak</month>
-							<month type="12">abenduak</month>
+							<month type="1">urtarrila</month>
+							<month type="2">otsaila</month>
+							<month type="3">martxoa</month>
+							<month type="4">apirila</month>
+							<month type="5">maiatza</month>
+							<month type="6">ekaina</month>
+							<month type="7">uztaila</month>
+							<month type="8">abuztua</month>
+							<month type="9">iraila</month>
+							<month type="10">urria</month>
+							<month type="11">azaroa</month>
+							<month type="12">abendua</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1">Urt.</month>
-							<month type="2">Ots.</month>
-							<month type="3">Mar.</month>
-							<month type="4">Api.</month>
-							<month type="5">Mai.</month>
-							<month type="6">Eka.</month>
-							<month type="7">Uzt.</month>
-							<month type="8">Abu.</month>
-							<month type="9">Ira.</month>
-							<month type="10">Urr.</month>
-							<month type="11">Aza.</month>
-							<month type="12">Abe.</month>
+							<month type="1">urt.</month>
+							<month type="2">ots.</month>
+							<month type="3">mar.</month>
+							<month type="4">api.</month>
+							<month type="5">mai.</month>
+							<month type="6">eka.</month>
+							<month type="7">uzt.</month>
+							<month type="8">abu.</month>
+							<month type="9">ira.</month>
+							<month type="10">urr.</month>
+							<month type="11">aza.</month>
+							<month type="12">abe.</month>
 						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">U</month>
@@ -1033,7 +1220,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="12">A</month>
 						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1">Urtarrila</month>
+							<month type="1">urtarrila</month>
 							<month type="2">Otsaila</month>
 							<month type="3">Martxoa</month>
 							<month type="4">Apirila</month>
@@ -1089,13 +1276,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun">Ig.</day>
-							<day type="mon">Al.</day>
-							<day type="tue">Ar.</day>
-							<day type="wed">Az.</day>
-							<day type="thu">Og.</day>
-							<day type="fri">Or.</day>
-							<day type="sat">Lr.</day>
+							<day type="sun">ig.</day>
+							<day type="mon">al.</day>
+							<day type="tue">ar.</day>
+							<day type="wed">az.</day>
+							<day type="thu">og.</day>
+							<day type="fri">or.</day>
+							<day type="sat">lr.</day>
 						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">I</day>
@@ -1171,19 +1358,62 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight">gauerdia</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="morning1">goizald.</dayPeriod>
+							<dayPeriod type="morning2">goizeko</dayPeriod>
+							<dayPeriod type="afternoon1">eguerd.</dayPeriod>
+							<dayPeriod type="afternoon2">arrats.</dayPeriod>
+							<dayPeriod type="evening1">iluntz.</dayPeriod>
+							<dayPeriod type="night1">gaueko</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">gauerdia</dayPeriod>
 							<dayPeriod type="am">g</dayPeriod>
 							<dayPeriod type="pm">a</dayPeriod>
+							<dayPeriod type="morning1">goizald.</dayPeriod>
+							<dayPeriod type="morning2">goizeko</dayPeriod>
+							<dayPeriod type="afternoon1">eguerd.</dayPeriod>
+							<dayPeriod type="afternoon2">arrats.</dayPeriod>
+							<dayPeriod type="evening1">iluntz.</dayPeriod>
+							<dayPeriod type="night1">gaueko</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
+							<dayPeriod type="midnight">gauerdia</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="morning1">goizaldeko</dayPeriod>
+							<dayPeriod type="morning2">goizeko</dayPeriod>
+							<dayPeriod type="afternoon1">eguerdiko</dayPeriod>
+							<dayPeriod type="afternoon2">arratsaldeko</dayPeriod>
+							<dayPeriod type="evening1">iluntzeko</dayPeriod>
+							<dayPeriod type="night1">gaueko</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight">gauerdia</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="morning1">goiz.</dayPeriod>
+							<dayPeriod type="morning2">goiza</dayPeriod>
+							<dayPeriod type="afternoon1">eguerd.</dayPeriod>
+							<dayPeriod type="afternoon2">arrats.</dayPeriod>
+							<dayPeriod type="evening1">iluntz.</dayPeriod>
+							<dayPeriod type="night1">gaua</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="narrow">
+							<dayPeriod type="midnight">gauerdia</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="morning1">goizald.</dayPeriod>
+							<dayPeriod type="morning2">goiza</dayPeriod>
+							<dayPeriod type="afternoon1">eguerd.</dayPeriod>
+							<dayPeriod type="afternoon2">arrats.</dayPeriod>
+							<dayPeriod type="evening1">iluntz.</dayPeriod>
+							<dayPeriod type="night1">gaua</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">gauerdia</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
@@ -1200,22 +1430,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<eras>
 					<eraNames>
 						<era type="0">K.a.</era>
-						<era type="1">K.o.</era>
+						<era type="0" alt="variant">Gure aroaren aurretik</era>
+						<era type="1">Kristo ondoren</era>
+						<era type="1" alt="variant">Gure aroa</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">K.a.</era>
+						<era type="0" alt="variant">G.a.a.</era>
 						<era type="1">K.o.</era>
+						<era type="1" alt="variant">G.a.</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>y('e')'ko' MMMM d, EEEE</pattern>
+							<pattern>y('e')'ko' MMMM'ren' d('a'), EEEE</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>y('e')'ko' MMMM d</pattern>
+							<pattern>y('e')'ko' MMMM'ren' d('a')</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -1225,7 +1459,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>y/MM/dd</pattern>
+							<pattern>yy/M/d</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1273,8 +1507,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1290,12 +1529,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
+						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">M/d, E</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
+						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM W. 'astea'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM W. 'astea'</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">y/M</dateFormatItem>
@@ -1305,10 +1551,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMd">y MMM d</dateFormatItem>
 						<dateFormatItem id="yMMMEd">y MMM d, E</dateFormatItem>
 						<dateFormatItem id="yMMMM">y('e')'ko' MMMM</dateFormatItem>
-						<dateFormatItem id="yMMMMd">y('e')'ko' MMMM d</dateFormatItem>
-						<dateFormatItem id="yMMMMEd">y('e')'ko' MMMM d, E</dateFormatItem>
+						<dateFormatItem id="yMMMMd">y('e')'ko' MMMM'ren' d</dateFormatItem>
+						<dateFormatItem id="yMMMMEd">y('e')'ko' MMMM'k' d, E</dateFormatItem>
 						<dateFormatItem id="yQQQ">y('e')'ko' QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y('e')'ko' QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">Y. 'urteko' w. 'astea'</dateFormatItem>
+						<dateFormatItem id="yw" count="other">Y. 'urteko' w. 'astea'</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} ({1})</appendItem>
@@ -1421,13 +1669,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>Aroa</displayName>
+				<displayName>aroa</displayName>
+			</field>
+			<field type="era-short">
+				<displayName>aroa</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>aroa</displayName>
 			</field>
 			<field type="year">
-				<displayName>Urtea</displayName>
-				<relative type="-1">aurreko urtea</relative>
+				<displayName>urtea</displayName>
+				<relative type="-1">iaz</relative>
 				<relative type="0">aurten</relative>
-				<relative type="1">hurrengo urtea</relative>
+				<relative type="1">hurrengo urtean</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} urte barru</relativeTimePattern>
 					<relativeTimePattern count="other">{0} urte barru</relativeTimePattern>
@@ -1466,7 +1720,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="quarter">
-				<displayName>Hiruhilekoa</displayName>
+				<displayName>hiruhilekoa</displayName>
+				<relative type="-1">aurreko hiruhilekoa</relative>
+				<relative type="0">hiruhileko hau</relative>
+				<relative type="1">hurrengo hiruhilekoa</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} hiruhileko barru</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hiruhileko barru</relativeTimePattern>
@@ -1499,10 +1756,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="month">
-				<displayName>Hilabetea</displayName>
-				<relative type="-1">aurreko hilabetea</relative>
-				<relative type="0">hilabete hau</relative>
-				<relative type="1">hurrengo hilabetea</relative>
+				<displayName>hilabetea</displayName>
+				<relative type="-1">aurreko hilabetean</relative>
+				<relative type="0">hilabete honetan</relative>
+				<relative type="1">hurrengo hilabetean</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} hilabete barru</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hilabete barru</relativeTimePattern>
@@ -1535,10 +1792,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="week">
-				<displayName>Astea</displayName>
-				<relative type="-1">aurreko astea</relative>
-				<relative type="0">aste hau</relative>
-				<relative type="1">hurrengo astea</relative>
+				<displayName>astea</displayName>
+				<relative type="-1">aurreko astean</relative>
+				<relative type="0">aste honetan</relative>
+				<relative type="1">hurrengo astean</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} aste barru</relativeTimePattern>
 					<relativeTimePattern count="other">{0} aste barru</relativeTimePattern>
@@ -1547,6 +1804,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">Duela {0} aste</relativeTimePattern>
 					<relativeTimePattern count="other">Duela {0} aste</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} astea</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>ast.</displayName>
@@ -1558,6 +1816,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">Duela {0} aste</relativeTimePattern>
 					<relativeTimePattern count="other">Duela {0} aste</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} astea</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>ast.</displayName>
@@ -1569,9 +1828,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">Duela {0} aste</relativeTimePattern>
 					<relativeTimePattern count="other">Duela {0} aste</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0} astea</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>hileko #. astea</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>hileko #. astea</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>hileko #. astea</displayName>
 			</field>
 			<field type="day">
-				<displayName>Eguna</displayName>
+				<displayName>eguna</displayName>
 				<relative type="-2">herenegun</relative>
 				<relative type="-1">atzo</relative>
 				<relative type="0">gaur</relative>
@@ -1608,119 +1877,318 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">Duela {0} egun</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>urteko #. eguna</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>urteko #. eguna</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>urteko #. eguna</displayName>
+			</field>
 			<field type="weekday">
-				<displayName>Asteguna</displayName>
+				<displayName>asteguna</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>asteguna</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>asteguna</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>hileko #. asteguna</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>hileko #. asteguna</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>hileko #. asteguna</displayName>
 			</field>
 			<field type="sun">
-				<relative type="-1">aurreko igandea</relative>
-				<relative type="0">igande hau</relative>
-				<relative type="1">hurrengo igandea</relative>
+				<relative type="-1">aurreko igandean</relative>
+				<relative type="0">igande honetan</relative>
+				<relative type="1">hurrengo igandean</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} igande barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} igande barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} igande</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} igande</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
-				<relative type="-1">aurreko igandea</relative>
-				<relative type="0">igande hau</relative>
-				<relative type="1">hurrengo igandea</relative>
+				<relative type="-1">aurreko ig.</relative>
+				<relative type="0">ig. honetan</relative>
+				<relative type="1">hurrengo ig.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} igande barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} igande barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} igande</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} igande</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
-				<relative type="-1">aurreko igandea</relative>
-				<relative type="0">igande hau</relative>
-				<relative type="1">hurrengo igandea</relative>
+				<relative type="-1">aurreko ig.</relative>
+				<relative type="0">ig. honetan</relative>
+				<relative type="1">hurrengo ig.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} igande barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} igande barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} igande</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} igande</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
-				<relative type="-1">aurreko astelehena</relative>
-				<relative type="0">astelehen hau</relative>
-				<relative type="1">hurrengo astelehena</relative>
+				<relative type="-1">aurreko astelehenean</relative>
+				<relative type="0">astelehen honetan</relative>
+				<relative type="1">hurrengo astelehenean</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} astelehen barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} astelehen barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} astelehen</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} astelehen</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
-				<relative type="-1">aurreko astelehena</relative>
-				<relative type="0">astelehen hau</relative>
-				<relative type="1">hurrengo astelehena</relative>
+				<relative type="-1">aurreko al.</relative>
+				<relative type="0">al. honetan</relative>
+				<relative type="1">hurrengo al.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} astelehen barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} astelehen barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} astelehen</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} astelehen</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
-				<relative type="-1">aurreko astelehena</relative>
-				<relative type="0">astelehen hau</relative>
-				<relative type="1">hurrengo astelehena</relative>
+				<relative type="-1">aurreko al.</relative>
+				<relative type="0">al. honetan</relative>
+				<relative type="1">hurrengo al.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} al. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} al. barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} al.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} al.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
-				<relative type="-1">aurreko asteartea</relative>
-				<relative type="0">astearte hau</relative>
-				<relative type="1">hurrengo asteartea</relative>
+				<relative type="-1">aurreko asteartean</relative>
+				<relative type="0">astearte honetan</relative>
+				<relative type="1">hurrengo asteartean</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} astearte barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} astearte barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} astearte</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} astearte</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
-				<relative type="-1">aurreko asteartea</relative>
-				<relative type="0">astearte hau</relative>
-				<relative type="1">hurrengo asteartea</relative>
+				<relative type="-1">aurreko ar.</relative>
+				<relative type="0">ar. honetan</relative>
+				<relative type="1">hurrengo ar.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} astearte barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} astearte barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} astearte</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} astearte</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
-				<relative type="-1">aurreko asteartea</relative>
-				<relative type="0">astearte hau</relative>
-				<relative type="1">hurrengo asteartea</relative>
+				<relative type="-1">aurreko ar.</relative>
+				<relative type="0">ar. honetan</relative>
+				<relative type="1">hurrengo ar.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ar. barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ar. barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} ar.</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ar.</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
-				<relative type="-1">aurreko asteazkena</relative>
-				<relative type="0">asteazken hau</relative>
-				<relative type="1">hurrengo asteazkena</relative>
+				<relative type="-1">aurreko asteazkenean</relative>
+				<relative type="0">asteazken honetan</relative>
+				<relative type="1">hurrengo asteazkenean</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} asteazken barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} asteazken barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} asteazken</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} asteazken</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
-				<relative type="-1">aurreko asteazkena</relative>
-				<relative type="0">asteazken hau</relative>
-				<relative type="1">hurrengo asteazkena</relative>
+				<relative type="-1">aurreko az.</relative>
+				<relative type="0">az. honetan</relative>
+				<relative type="1">hurrengo az.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} asteazken barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} asteazken barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} asteazken</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} asteazken</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
-				<relative type="-1">aurreko asteazkena</relative>
-				<relative type="0">asteazken hau</relative>
-				<relative type="1">hurrengo asteazkena</relative>
+				<relative type="-1">aurreko az.</relative>
+				<relative type="0">az. honetan</relative>
+				<relative type="1">hurrengo az.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} asteazken barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} asteazken barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} asteazken</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} asteazken</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
-				<relative type="-1">aurreko osteguna</relative>
-				<relative type="0">ostegun hau</relative>
-				<relative type="1">hurrengo osteguna</relative>
+				<relative type="-1">aurreko ostegunean</relative>
+				<relative type="0">ostegun honetan</relative>
+				<relative type="1">hurrengo ostegunean</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ostegun barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ostegun barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} ostegun</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ostegun</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1">aurreko osteguna</relative>
-				<relative type="0">ostegun hau</relative>
-				<relative type="1">hurrengo osteguna</relative>
+				<relative type="-1">aurreko og.</relative>
+				<relative type="0">og. honetan</relative>
+				<relative type="1">hurrengo og.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ostegun barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ostegun barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} ostegun</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ostegun</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
-				<relative type="-1">aurreko osteguna</relative>
-				<relative type="0">ostegun hau</relative>
-				<relative type="1">hurrengo osteguna</relative>
+				<relative type="-1">aurreko og.</relative>
+				<relative type="0">og. honetan</relative>
+				<relative type="1">hurrengo og.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ostegun barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ostegun barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} ostegun</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ostegun</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
-				<relative type="-1">aurreko ostirala</relative>
-				<relative type="0">ostiral hau</relative>
-				<relative type="1">hurrengo ostirala</relative>
+				<relative type="-1">aurreko ostiralean</relative>
+				<relative type="0">ostiral honetan</relative>
+				<relative type="1">hurrengo ostiralean</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ostiral barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ostiral barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} ostiral</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ostiral</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">aurreko ostirala</relative>
-				<relative type="0">ostiral hau</relative>
-				<relative type="1">hurrengo ostirala</relative>
+				<relative type="-1">aurreko or.</relative>
+				<relative type="0">or. honetan</relative>
+				<relative type="1">hurrengo or.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ostiral barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ostiral barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} ostiral</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ostiral</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
-				<relative type="-1">aurreko ostirala</relative>
-				<relative type="0">ostiral hau</relative>
-				<relative type="1">hurrengo ostirala</relative>
+				<relative type="-1">aurreko or.</relative>
+				<relative type="0">or. honetan</relative>
+				<relative type="1">hurrengo or.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ostiral barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ostiral barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} ostiral</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} ostiral</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
-				<relative type="-1">aurreko larunbata</relative>
-				<relative type="0">larunbat hau</relative>
-				<relative type="1">hurrengo larunbata</relative>
+				<relative type="-1">aurreko larunbatean</relative>
+				<relative type="0">larunbat honetan</relative>
+				<relative type="1">hurrengo larunbatean</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} larunbat barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} larunbat barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} larunbat</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} larunbat</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
-				<relative type="-1">aurreko larunbata</relative>
-				<relative type="0">larunbat hau</relative>
-				<relative type="1">hurrengo larunbata</relative>
+				<relative type="-1">aurreko lr.</relative>
+				<relative type="0">lr. honetan</relative>
+				<relative type="1">hurrengo lr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} larunbat barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} larunbat barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} larunbat</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} larunbat</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
-				<relative type="-1">aurreko larunbata</relative>
-				<relative type="0">larunbat hau</relative>
-				<relative type="1">hurrengo larunbata</relative>
+				<relative type="-1">aurreko lr.</relative>
+				<relative type="0">lr. honetan</relative>
+				<relative type="1">hurrengo lr.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} larunbat barru</relativeTimePattern>
+					<relativeTimePattern count="other">{0} larunbat barru</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">Duela {0} larunbat</relativeTimePattern>
+					<relativeTimePattern count="other">Duela {0} larunbat</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>AM//PM</displayName>
+				<displayName>AM/PM</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
-				<displayName>Ordua</displayName>
+				<displayName>ordua</displayName>
+				<relative type="0">ordu honetan</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ordu barru</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ordu barru</relativeTimePattern>
@@ -1753,7 +2221,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="minute">
-				<displayName>Minutua</displayName>
+				<displayName>minutua</displayName>
+				<relative type="0">minutu honetan</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} minutu barru</relativeTimePattern>
 					<relativeTimePattern count="other">{0} minutu barru</relativeTimePattern>
@@ -1786,7 +2255,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="second">
-				<displayName>Segundoa</displayName>
+				<displayName>segundoa</displayName>
 				<relative type="0">orain</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} segundo barru</relativeTimePattern>
@@ -1820,17 +2289,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName>Ordu-zona</displayName>
+				<displayName>ordu-zona</displayName>
+			</field>
+			<field type="zone-short">
+				<displayName>ordu-zona</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>ordu-zona</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>{0}</regionFormat>
+			<regionFormat>{0} aldeko ordua</regionFormat>
 			<regionFormat type="daylight">{0} (udako ordua)</regionFormat>
-			<regionFormat type="standard">{0} (ordu estandarra)</regionFormat>
+			<regionFormat type="standard">{0}(e)ko ordu estandarra</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa Isabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Honolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Ordu Unibertsal Koordinatua</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Hiri ezezaguna</exemplarCity>
 			</zone>
@@ -1847,13 +2333,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Antigua</exemplarCity>
 			</zone>
 			<zone type="America/Anguilla">
-				<exemplarCity>Anguilla</exemplarCity>
+				<exemplarCity>Aingira</exemplarCity>
 			</zone>
 			<zone type="Europe/Tirane">
 				<exemplarCity>Tirana</exemplarCity>
 			</zone>
 			<zone type="Asia/Yerevan">
-				<exemplarCity>Yerevan</exemplarCity>
+				<exemplarCity>Erevan</exemplarCity>
 			</zone>
 			<zone type="Africa/Luanda">
 				<exemplarCity>Luanda</exemplarCity>
@@ -1916,10 +2402,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Jujuy</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Tucuman">
-				<exemplarCity>Tucuman</exemplarCity>
+				<exemplarCity>Tucumán</exemplarCity>
 			</zone>
 			<zone type="America/Cordoba">
-				<exemplarCity>Cordoba</exemplarCity>
+				<exemplarCity>Córdoba</exemplarCity>
 			</zone>
 			<zone type="America/Buenos_Aires">
 				<exemplarCity>Buenos Aires</exemplarCity>
@@ -1940,7 +2426,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Darwin</exemplarCity>
 			</zone>
 			<zone type="Australia/Adelaide">
-				<exemplarCity>Adelaida</exemplarCity>
+				<exemplarCity>Adelaide</exemplarCity>
 			</zone>
 			<zone type="Australia/Broken_Hill">
 				<exemplarCity>Broken Hill</exemplarCity>
@@ -1991,7 +2477,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Brusela</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
-				<exemplarCity>Ouagadougou</exemplarCity>
+				<exemplarCity>Uagadugu</exemplarCity>
 			</zone>
 			<zone type="Europe/Sofia">
 				<exemplarCity>Sofia</exemplarCity>
@@ -2003,10 +2489,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Bujumbura</exemplarCity>
 			</zone>
 			<zone type="Africa/Porto-Novo">
-				<exemplarCity>Porto-Novo</exemplarCity>
+				<exemplarCity>Porto Novo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>Saint Barthélemy</exemplarCity>
+				<exemplarCity>Saint-Barthélemy</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity>Bermuda</exemplarCity>
@@ -2021,7 +2507,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Kralendijk</exemplarCity>
 			</zone>
 			<zone type="America/Eirunepe">
-				<exemplarCity>Eirunepe</exemplarCity>
+				<exemplarCity>Eirunepé</exemplarCity>
 			</zone>
 			<zone type="America/Rio_Branco">
 				<exemplarCity>Rio Branco</exemplarCity>
@@ -2036,10 +2522,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Manaus</exemplarCity>
 			</zone>
 			<zone type="America/Cuiaba">
-				<exemplarCity>Cuiaba</exemplarCity>
+				<exemplarCity>Cuiabá</exemplarCity>
 			</zone>
 			<zone type="America/Santarem">
-				<exemplarCity>Santarem</exemplarCity>
+				<exemplarCity>Santarém</exemplarCity>
 			</zone>
 			<zone type="America/Campo_Grande">
 				<exemplarCity>Campo Grande</exemplarCity>
@@ -2048,10 +2534,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Belem</exemplarCity>
 			</zone>
 			<zone type="America/Araguaina">
-				<exemplarCity>Araguaina</exemplarCity>
+				<exemplarCity>Araguaína</exemplarCity>
 			</zone>
 			<zone type="America/Sao_Paulo">
-				<exemplarCity>Sao Paulo</exemplarCity>
+				<exemplarCity>São Paulo</exemplarCity>
 			</zone>
 			<zone type="America/Bahia">
 				<exemplarCity>Bahia</exemplarCity>
@@ -2060,7 +2546,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Fortaleza</exemplarCity>
 			</zone>
 			<zone type="America/Maceio">
-				<exemplarCity>Maceio</exemplarCity>
+				<exemplarCity>Maceió</exemplarCity>
 			</zone>
 			<zone type="America/Recife">
 				<exemplarCity>Recife</exemplarCity>
@@ -2094,6 +2580,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity>Vancouver</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Dawson Creek</exemplarCity>
@@ -2162,7 +2651,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Blanc-Sablon</exemplarCity>
 			</zone>
 			<zone type="America/St_Johns">
-				<exemplarCity>St. John’s</exemplarCity>
+				<exemplarCity>Saint John’s</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
 				<exemplarCity>Cocos</exemplarCity>
@@ -2174,13 +2663,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Lubumbashi</exemplarCity>
 			</zone>
 			<zone type="Africa/Bangui">
-				<exemplarCity>Bangui</exemplarCity>
+				<exemplarCity>Bangi</exemplarCity>
 			</zone>
 			<zone type="Africa/Brazzaville">
 				<exemplarCity>Brazzaville</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
-				<exemplarCity>Zurich</exemplarCity>
+				<exemplarCity>Zürich</exemplarCity>
 			</zone>
 			<zone type="Africa/Abidjan">
 				<exemplarCity>Abidjan</exemplarCity>
@@ -2189,7 +2678,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Rarotonga</exemplarCity>
 			</zone>
 			<zone type="Pacific/Easter">
-				<exemplarCity>Easter</exemplarCity>
+				<exemplarCity>Pazko uhartea</exemplarCity>
+			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta Arenas</exemplarCity>
 			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santiago</exemplarCity>
@@ -2198,7 +2690,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Douala</exemplarCity>
 			</zone>
 			<zone type="Asia/Urumqi">
-				<exemplarCity>Urumqi</exemplarCity>
+				<exemplarCity>Ürümqi</exemplarCity>
 			</zone>
 			<zone type="Asia/Shanghai">
 				<exemplarCity>Shanghai</exemplarCity>
@@ -2210,7 +2702,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Costa Rica</exemplarCity>
 			</zone>
 			<zone type="America/Havana">
-				<exemplarCity>Havana</exemplarCity>
+				<exemplarCity>Habana</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Cape_Verde">
 				<exemplarCity>Cabo Verde</exemplarCity>
@@ -2222,19 +2714,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Christmas</exemplarCity>
 			</zone>
 			<zone type="Asia/Nicosia">
-				<exemplarCity>Nicosia</exemplarCity>
+				<exemplarCity>Nikosia</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Praga</exemplarCity>
 			</zone>
 			<zone type="Europe/Busingen">
-				<exemplarCity>Busingen</exemplarCity>
+				<exemplarCity>Büsingen</exemplarCity>
 			</zone>
 			<zone type="Europe/Berlin">
 				<exemplarCity>Berlin</exemplarCity>
 			</zone>
 			<zone type="Africa/Djibouti">
-				<exemplarCity>Djibouti</exemplarCity>
+				<exemplarCity>Djibuti</exemplarCity>
 			</zone>
 			<zone type="Europe/Copenhagen">
 				<exemplarCity>Kopenhage</exemplarCity>
@@ -2261,7 +2756,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Kairo</exemplarCity>
 			</zone>
 			<zone type="Africa/El_Aaiun">
-				<exemplarCity>El Aaiun</exemplarCity>
+				<exemplarCity>Aaiun</exemplarCity>
 			</zone>
 			<zone type="Africa/Asmera">
 				<exemplarCity>Asmara</exemplarCity>
@@ -2321,16 +2816,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Cayenne</exemplarCity>
 			</zone>
 			<zone type="Europe/Guernsey">
-				<exemplarCity>Guernsey</exemplarCity>
+				<exemplarCity>Guernesey</exemplarCity>
 			</zone>
 			<zone type="Africa/Accra">
-				<exemplarCity>Accra</exemplarCity>
+				<exemplarCity>Akkra</exemplarCity>
 			</zone>
 			<zone type="Europe/Gibraltar">
 				<exemplarCity>Gibraltar</exemplarCity>
 			</zone>
 			<zone type="America/Thule">
-				<exemplarCity>Thule</exemplarCity>
+				<exemplarCity>Qaanaac</exemplarCity>
 			</zone>
 			<zone type="America/Godthab">
 				<exemplarCity>Nuuk</exemplarCity>
@@ -2345,7 +2840,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Banjul</exemplarCity>
 			</zone>
 			<zone type="Africa/Conakry">
-				<exemplarCity>Conakry</exemplarCity>
+				<exemplarCity>Konakry</exemplarCity>
 			</zone>
 			<zone type="America/Guadeloupe">
 				<exemplarCity>Guadalupe</exemplarCity>
@@ -2400,7 +2895,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Europe/Dublin">
 				<long>
-					<daylight>Dublingo udako ordua</daylight>
+					<daylight>Irlandako ordu estandarra</daylight>
 				</long>
 				<exemplarCity>Dublin</exemplarCity>
 			</zone>
@@ -2411,16 +2906,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Man uhartea</exemplarCity>
 			</zone>
 			<zone type="Asia/Calcutta">
-				<exemplarCity>Kolkata</exemplarCity>
+				<exemplarCity>Kalkuta</exemplarCity>
 			</zone>
 			<zone type="Indian/Chagos">
 				<exemplarCity>Chagos</exemplarCity>
 			</zone>
 			<zone type="Asia/Baghdad">
-				<exemplarCity>Baghdad</exemplarCity>
+				<exemplarCity>Bagdad</exemplarCity>
 			</zone>
 			<zone type="Asia/Tehran">
-				<exemplarCity>Tehran</exemplarCity>
+				<exemplarCity>Teheran</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Reykjavik">
 				<exemplarCity>Reykjavik</exemplarCity>
@@ -2444,7 +2939,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Nairobi</exemplarCity>
 			</zone>
 			<zone type="Asia/Bishkek">
-				<exemplarCity>Bishkek</exemplarCity>
+				<exemplarCity>Bixkek</exemplarCity>
 			</zone>
 			<zone type="Asia/Phnom_Penh">
 				<exemplarCity>Phnom Penh</exemplarCity>
@@ -2462,10 +2957,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Comoro</exemplarCity>
 			</zone>
 			<zone type="America/St_Kitts">
-				<exemplarCity>St. Kitts</exemplarCity>
+				<exemplarCity>Saint Kitts</exemplarCity>
 			</zone>
 			<zone type="Asia/Pyongyang">
-				<exemplarCity>Pyongyang</exemplarCity>
+				<exemplarCity>Piongiang</exemplarCity>
 			</zone>
 			<zone type="Asia/Seoul">
 				<exemplarCity>Seul</exemplarCity>
@@ -2474,37 +2969,40 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Kuwait</exemplarCity>
 			</zone>
 			<zone type="America/Cayman">
-				<exemplarCity>Cayman</exemplarCity>
+				<exemplarCity>Kaiman</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtau">
-				<exemplarCity>Aqtau</exemplarCity>
+				<exemplarCity>Aktau</exemplarCity>
 			</zone>
 			<zone type="Asia/Oral">
 				<exemplarCity>Oral</exemplarCity>
 			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atyrau</exemplarCity>
+			</zone>
 			<zone type="Asia/Aqtobe">
-				<exemplarCity>Aqtobe</exemplarCity>
+				<exemplarCity>Aktobe</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
-				<exemplarCity>Qyzylorda</exemplarCity>
+				<exemplarCity>Kyzylorda</exemplarCity>
 			</zone>
 			<zone type="Asia/Almaty">
 				<exemplarCity>Almaty</exemplarCity>
 			</zone>
 			<zone type="Asia/Vientiane">
-				<exemplarCity>Vientiane</exemplarCity>
+				<exemplarCity>Vientian</exemplarCity>
 			</zone>
 			<zone type="Asia/Beirut">
 				<exemplarCity>Beirut</exemplarCity>
 			</zone>
 			<zone type="America/St_Lucia">
-				<exemplarCity>St. Lucia</exemplarCity>
+				<exemplarCity>Santa Luzia</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
 				<exemplarCity>Vaduz</exemplarCity>
 			</zone>
 			<zone type="Asia/Colombo">
-				<exemplarCity>Colombo</exemplarCity>
+				<exemplarCity>Kolombo</exemplarCity>
 			</zone>
 			<zone type="Africa/Monrovia">
 				<exemplarCity>Monrovia</exemplarCity>
@@ -2555,19 +3053,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Bamako</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
-				<exemplarCity>Rangun</exemplarCity>
+				<exemplarCity>Yangon</exemplarCity>
 			</zone>
 			<zone type="Asia/Hovd">
-				<exemplarCity>Hovd</exemplarCity>
+				<exemplarCity>Khovd</exemplarCity>
 			</zone>
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>Ulan Bator</exemplarCity>
 			</zone>
 			<zone type="Asia/Choibalsan">
-				<exemplarCity>Choibalsan</exemplarCity>
+				<exemplarCity>Txoibalsan</exemplarCity>
 			</zone>
 			<zone type="Asia/Macau">
-				<exemplarCity>Macau</exemplarCity>
+				<exemplarCity>Macao</exemplarCity>
 			</zone>
 			<zone type="Pacific/Saipan">
 				<exemplarCity>Saipan</exemplarCity>
@@ -2576,7 +3074,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Martinika</exemplarCity>
 			</zone>
 			<zone type="Africa/Nouakchott">
-				<exemplarCity>Nouakchott</exemplarCity>
+				<exemplarCity>Nuakxot</exemplarCity>
 			</zone>
 			<zone type="America/Montserrat">
 				<exemplarCity>Montserrat</exemplarCity>
@@ -2596,20 +3094,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Tijuana">
 				<exemplarCity>Tijuana</exemplarCity>
 			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Hermosillo</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
-				<exemplarCity>Mazatlan</exemplarCity>
+				<exemplarCity>Mazatlán</exemplarCity>
 			</zone>
 			<zone type="America/Chihuahua">
 				<exemplarCity>Chihuahua</exemplarCity>
 			</zone>
 			<zone type="America/Bahia_Banderas">
-				<exemplarCity>Bahia Banderas</exemplarCity>
+				<exemplarCity>Bahía de Banderas</exemplarCity>
 			</zone>
 			<zone type="America/Ojinaga">
 				<exemplarCity>Ojinaga</exemplarCity>
@@ -2618,16 +3113,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Monterrey</exemplarCity>
 			</zone>
 			<zone type="America/Mexico_City">
-				<exemplarCity>Mexico Hiria</exemplarCity>
+				<exemplarCity>Mexiko Hiria</exemplarCity>
 			</zone>
 			<zone type="America/Matamoros">
 				<exemplarCity>Matamoros</exemplarCity>
 			</zone>
 			<zone type="America/Merida">
-				<exemplarCity>Merida</exemplarCity>
+				<exemplarCity>Mérida</exemplarCity>
 			</zone>
 			<zone type="America/Cancun">
-				<exemplarCity>Cancun</exemplarCity>
+				<exemplarCity>Cancún</exemplarCity>
 			</zone>
 			<zone type="Asia/Kuala_Lumpur">
 				<exemplarCity>Kuala Lumpur</exemplarCity>
@@ -2642,10 +3137,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Windhoek</exemplarCity>
 			</zone>
 			<zone type="Pacific/Noumea">
-				<exemplarCity>Noumea</exemplarCity>
+				<exemplarCity>Nouméa</exemplarCity>
 			</zone>
 			<zone type="Africa/Niamey">
-				<exemplarCity>Niamey</exemplarCity>
+				<exemplarCity>Niamei</exemplarCity>
 			</zone>
 			<zone type="Pacific/Norfolk">
 				<exemplarCity>Norfolk</exemplarCity>
@@ -2663,7 +3158,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Oslo</exemplarCity>
 			</zone>
 			<zone type="Asia/Katmandu">
-				<exemplarCity>Kathmandu</exemplarCity>
+				<exemplarCity>Katmandu</exemplarCity>
 			</zone>
 			<zone type="Pacific/Nauru">
 				<exemplarCity>Nauru</exemplarCity>
@@ -2678,7 +3173,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Auckland</exemplarCity>
 			</zone>
 			<zone type="Asia/Muscat">
-				<exemplarCity>Muscat</exemplarCity>
+				<exemplarCity>Maskat</exemplarCity>
 			</zone>
 			<zone type="America/Panama">
 				<exemplarCity>Panama</exemplarCity>
@@ -2690,7 +3185,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Tahiti</exemplarCity>
 			</zone>
 			<zone type="Pacific/Marquesas">
-				<exemplarCity>Marquesas</exemplarCity>
+				<exemplarCity>Markesak</exemplarCity>
 			</zone>
 			<zone type="Pacific/Gambier">
 				<exemplarCity>Gambier</exemplarCity>
@@ -2698,11 +3193,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Port_Moresby">
 				<exemplarCity>Port Moresby</exemplarCity>
 			</zone>
+			<zone type="Pacific/Bougainville">
+				<exemplarCity>Bougainville</exemplarCity>
+			</zone>
 			<zone type="Asia/Manila">
 				<exemplarCity>Manila</exemplarCity>
 			</zone>
 			<zone type="Asia/Karachi">
-				<exemplarCity>Karachi</exemplarCity>
+				<exemplarCity>Karatxi</exemplarCity>
 			</zone>
 			<zone type="Europe/Warsaw">
 				<exemplarCity>Varsovia</exemplarCity>
@@ -2735,7 +3233,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Palau</exemplarCity>
 			</zone>
 			<zone type="America/Asuncion">
-				<exemplarCity>Asunción</exemplarCity>
+				<exemplarCity>Asuncion</exemplarCity>
 			</zone>
 			<zone type="Asia/Qatar">
 				<exemplarCity>Qatar</exemplarCity>
@@ -2747,7 +3245,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Bukarest</exemplarCity>
 			</zone>
 			<zone type="Europe/Belgrade">
-				<exemplarCity>Belgrado</exemplarCity>
+				<exemplarCity>Belgrad</exemplarCity>
 			</zone>
 			<zone type="Europe/Kaliningrad">
 				<exemplarCity>Kaliningrad</exemplarCity>
@@ -2761,11 +3259,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astrakhan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ulianovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
 			<zone type="Asia/Yekaterinburg">
-				<exemplarCity>Yekaterinburg</exemplarCity>
+				<exemplarCity>Jekaterinburg</exemplarCity>
 			</zone>
 			<zone type="Asia/Omsk">
 				<exemplarCity>Omsk</exemplarCity>
@@ -2773,23 +3283,32 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
 			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
+			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Krasnoyarsk">
-				<exemplarCity>Krasnoyarsk</exemplarCity>
+				<exemplarCity>Krasnoiarsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Irkutsk">
 				<exemplarCity>Irkutsk</exemplarCity>
 			</zone>
+			<zone type="Asia/Chita">
+				<exemplarCity>Chita</exemplarCity>
+			</zone>
 			<zone type="Asia/Yakutsk">
-				<exemplarCity>Yakutsk</exemplarCity>
+				<exemplarCity>Jakutsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Vladivostok">
 				<exemplarCity>Vladivostok</exemplarCity>
 			</zone>
 			<zone type="Asia/Khandyga">
-				<exemplarCity>Khandyga</exemplarCity>
+				<exemplarCity>Khandiga</exemplarCity>
 			</zone>
 			<zone type="Asia/Sakhalin">
 				<exemplarCity>Sakhalin</exemplarCity>
@@ -2800,8 +3319,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Asia/Magadan">
 				<exemplarCity>Magadan</exemplarCity>
 			</zone>
+			<zone type="Asia/Srednekolymsk">
+				<exemplarCity>Srednekolimsk</exemplarCity>
+			</zone>
 			<zone type="Asia/Kamchatka">
-				<exemplarCity>Kamchatka</exemplarCity>
+				<exemplarCity>Kamtxatka</exemplarCity>
 			</zone>
 			<zone type="Asia/Anadyr">
 				<exemplarCity>Anadyr</exemplarCity>
@@ -2810,13 +3332,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Kigali</exemplarCity>
 			</zone>
 			<zone type="Asia/Riyadh">
-				<exemplarCity>Riyadh</exemplarCity>
+				<exemplarCity>Riad</exemplarCity>
 			</zone>
 			<zone type="Pacific/Guadalcanal">
 				<exemplarCity>Guadalcanal</exemplarCity>
 			</zone>
 			<zone type="Indian/Mahe">
-				<exemplarCity>Mahe</exemplarCity>
+				<exemplarCity>Mahé</exemplarCity>
 			</zone>
 			<zone type="Africa/Khartoum">
 				<exemplarCity>Khartoum</exemplarCity>
@@ -2828,7 +3350,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Singapur</exemplarCity>
 			</zone>
 			<zone type="Atlantic/St_Helena">
-				<exemplarCity>St. Helena</exemplarCity>
+				<exemplarCity>Santa Helena</exemplarCity>
 			</zone>
 			<zone type="Europe/Ljubljana">
 				<exemplarCity>Ljubljana</exemplarCity>
@@ -2849,7 +3371,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Dakar</exemplarCity>
 			</zone>
 			<zone type="Africa/Mogadishu">
-				<exemplarCity>Mogadishu</exemplarCity>
+				<exemplarCity>Muqdisho</exemplarCity>
 			</zone>
 			<zone type="America/Paramaribo">
 				<exemplarCity>Paramaribo</exemplarCity>
@@ -2858,7 +3380,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Juba</exemplarCity>
 			</zone>
 			<zone type="Africa/Sao_Tome">
-				<exemplarCity>São Tomé</exemplarCity>
+				<exemplarCity>Sao Tome</exemplarCity>
 			</zone>
 			<zone type="America/El_Salvador">
 				<exemplarCity>El Salvador</exemplarCity>
@@ -2876,7 +3398,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Grand Turk</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
-				<exemplarCity>Ndjamena</exemplarCity>
+				<exemplarCity>N’djamena</exemplarCity>
 			</zone>
 			<zone type="Indian/Kerguelen">
 				<exemplarCity>Kerguelen</exemplarCity>
@@ -2888,7 +3410,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Bangkok</exemplarCity>
 			</zone>
 			<zone type="Asia/Dushanbe">
-				<exemplarCity>Dushanbe</exemplarCity>
+				<exemplarCity>Duxanbe</exemplarCity>
 			</zone>
 			<zone type="Pacific/Fakaofo">
 				<exemplarCity>Fakaofo</exemplarCity>
@@ -2897,7 +3419,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Dili</exemplarCity>
 			</zone>
 			<zone type="Asia/Ashgabat">
-				<exemplarCity>Ashgabat</exemplarCity>
+				<exemplarCity>Asgabat</exemplarCity>
 			</zone>
 			<zone type="Africa/Tunis">
 				<exemplarCity>Tunis</exemplarCity>
@@ -2909,7 +3431,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Istanbul</exemplarCity>
 			</zone>
 			<zone type="America/Port_of_Spain">
-				<exemplarCity>Port of Spain</exemplarCity>
+				<exemplarCity>Port-of-Spain</exemplarCity>
 			</zone>
 			<zone type="Pacific/Funafuti">
 				<exemplarCity>Funafuti</exemplarCity>
@@ -2921,7 +3443,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Dar es Salaam</exemplarCity>
 			</zone>
 			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Uzhgorod</exemplarCity>
+				<exemplarCity>Uzhhorod</exemplarCity>
 			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
@@ -2935,9 +3457,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midway</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Johnston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Wake</exemplarCity>
 			</zone>
@@ -2947,8 +3466,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nome</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Honolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Anchorage</exemplarCity>
@@ -2984,7 +3503,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>New Salem, Ipar Dakota</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Center">
-				<exemplarCity>Erdialdea, Ipar Dakota</exemplarCity>
+				<exemplarCity>Center, Ipar Dakota</exemplarCity>
 			</zone>
 			<zone type="America/Chicago">
 				<exemplarCity>Chicago</exemplarCity>
@@ -3032,16 +3551,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Montevideo</exemplarCity>
 			</zone>
 			<zone type="Asia/Samarkand">
-				<exemplarCity>Samarkand</exemplarCity>
+				<exemplarCity>Samarkanda</exemplarCity>
 			</zone>
 			<zone type="Asia/Tashkent">
-				<exemplarCity>Tashkent</exemplarCity>
+				<exemplarCity>Taxkent</exemplarCity>
 			</zone>
 			<zone type="Europe/Vatican">
-				<exemplarCity>Vaticano Hiria</exemplarCity>
+				<exemplarCity>Vatikano Hiria</exemplarCity>
 			</zone>
 			<zone type="America/St_Vincent">
-				<exemplarCity>St. Vincent</exemplarCity>
+				<exemplarCity>Saint Vincent</exemplarCity>
 			</zone>
 			<zone type="America/Caracas">
 				<exemplarCity>Caracas</exemplarCity>
@@ -3050,13 +3569,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Tortola</exemplarCity>
 			</zone>
 			<zone type="America/St_Thomas">
-				<exemplarCity>St. Thomas</exemplarCity>
+				<exemplarCity>Saint-Thomas</exemplarCity>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh</exemplarCity>
 			</zone>
 			<zone type="Pacific/Efate">
-				<exemplarCity>Efate</exemplarCity>
+				<exemplarCity>Éfaté</exemplarCity>
 			</zone>
 			<zone type="Pacific/Wallis">
 				<exemplarCity>Wallis</exemplarCity>
@@ -3086,24 +3605,24 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Africa_Central">
 				<long>
-					<standard>Afrika erdialdeko ordua</standard>
+					<standard>Afrikako erdialdeko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Eastern">
 				<long>
-					<standard>Afrika ekialdeko ordua</standard>
+					<standard>Afrikako ekialdeko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Southern">
 				<long>
-					<standard>Afrika hegoaldeko ordua</standard>
+					<standard>Afrikako hegoaldeko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Africa_Western">
 				<long>
-					<generic>Afrika mendebaldeko ordua</generic>
-					<standard>Afrika mendebaldeko ordu estandarra</standard>
-					<daylight>Afrika mendebaldeko udako ordua</daylight>
+					<generic>Afrikako mendebaldeko ordua</generic>
+					<standard>Afrikako mendebaldeko ordu estandarra</standard>
+					<daylight>Afrikako mendebaldeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Alaska">
@@ -3192,37 +3711,37 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Atlantic">
 				<long>
-					<generic>Atlantikoko ordua</generic>
-					<standard>Atlantikoko ordu estandarra</standard>
-					<daylight>Atlantikoko udako ordua</daylight>
+					<generic>Ipar Amerikako Atlantikoko ordua</generic>
+					<standard>Ipar Amerikako Atlantikoko ordu estandarra</standard>
+					<daylight>Ipar Amerikako Atlantikoko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>Australia erdialdeko ordua</generic>
-					<standard>Australia erdialdeko ordu estandarra</standard>
-					<daylight>Australia erdialdeko udako ordua</daylight>
+					<generic>Australiako erdialdeko ordua</generic>
+					<standard>Australiako erdialdeko ordu estandarra</standard>
+					<daylight>Australiako erdialdeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
-					<generic>Australia erdi-mendebaldeko ordua</generic>
-					<standard>Australia erdi-mendebaldeko ordu estandarra</standard>
-					<daylight>Australia erdi-mendebaldeko udako ordua</daylight>
+					<generic>Australiako erdi-mendebaldeko ordua</generic>
+					<standard>Australiako erdi-mendebaldeko ordu estandarra</standard>
+					<daylight>Australiako erdi-mendebaldeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
-					<generic>Australia ekialdeko ordua</generic>
-					<standard>Australia ekialdeko ordu estandarra</standard>
-					<daylight>Australia ekialdeko udako ordua</daylight>
+					<generic>Australiako ekialdeko ordua</generic>
+					<standard>Australiako ekialdeko ordu estandarra</standard>
+					<daylight>Australiako ekialdeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>Australia mendebaldeko ordua</generic>
-					<standard>Australia mendebaldeko ordu estandarra</standard>
-					<daylight>Australia mendebaldeko udako ordua</daylight>
+					<generic>Australiako mendebaldeko ordua</generic>
+					<standard>Australiako mendebaldeko ordu estandarra</standard>
+					<daylight>Australiako mendebaldeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">
@@ -3303,9 +3822,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Choibalsan">
 				<long>
-					<generic>Choibalsango ordua</generic>
-					<standard>Choibalsango ordu estandarra</standard>
-					<daylight>Choibalsango udako ordua</daylight>
+					<generic>Txoibalsango ordua</generic>
+					<standard>Txoibalsango ordu estandarra</standard>
+					<daylight>Txoibalsango udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Christmas">
@@ -3368,9 +3887,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Europe_Central">
 				<long>
-					<generic>Europa erdialdeko ordua</generic>
-					<standard>Europa erdialdeko ordu estandarra</standard>
-					<daylight>Europa erdialdeko udako ordua</daylight>
+					<generic>Europako erdialdeko ordua</generic>
+					<standard>Europako erdialdeko ordu estandarra</standard>
+					<daylight>Europako erdialdeko udako ordua</daylight>
 				</long>
 				<short>
 					<generic>CET</generic>
@@ -3380,9 +3899,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Europe_Eastern">
 				<long>
-					<generic>Europa ekialdeko ordua</generic>
-					<standard>Europa ekialdeko ordu estandarra</standard>
-					<daylight>Europa ekialdeko udako ordua</daylight>
+					<generic>Europako ekialdeko ordua</generic>
+					<standard>Europako ekialdeko ordu estandarra</standard>
+					<daylight>Europako ekialdeko udako ordua</daylight>
 				</long>
 				<short>
 					<generic>EET</generic>
@@ -3392,14 +3911,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Europe_Further_Eastern">
 				<long>
-					<standard>Ekialde urruneko Europako ordua</standard>
+					<standard>Europako ekialde urruneko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Western">
 				<long>
-					<generic>Europa mendebaldeko ordua</generic>
-					<standard>Europa mendebaldeko ordu estandarra</standard>
-					<daylight>Europa mendebaldeko udako ordua</daylight>
+					<generic>Europako mendebaldeko ordua</generic>
+					<standard>Europako mendebaldeko ordu estandarra</standard>
+					<daylight>Europako mendebaldeko udako ordua</daylight>
 				</long>
 				<short>
 					<generic>WET</generic>
@@ -3428,7 +3947,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>Frantziaren lurralde austral eta antartikoetako ordua</standard>
+					<standard>Frantziaren lurralde austral eta antartikoetako ordutegia</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -3438,7 +3957,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Gambier">
 				<long>
-					<standard>Gambierreko ordua</standard>
+					<standard>Gambierretako ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Georgia">
@@ -3455,7 +3974,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard>Greenwich meridianoko ordua</standard>
+					<standard>Greenwichko meridianoaren ordua</standard>
 				</long>
 				<short>
 					<standard>GMT</standard>
@@ -3463,16 +3982,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Greenland_Eastern">
 				<long>
-					<generic>Groenlandia ekialdeko ordua</generic>
-					<standard>Groenlandia ekialdeko ordu estandarra</standard>
-					<daylight>Groenlandia ekialdeko udako ordua</daylight>
+					<generic>Groenlandiako ekialdeko ordua</generic>
+					<standard>Groenlandiako ekialdeko ordu estandarra</standard>
+					<daylight>Groenlandiako ekialdeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>Groenlandia mendebaldeko ordua</generic>
-					<standard>Groenlandia mendebaldeko ordu estandarra</standard>
-					<daylight>Groenlandia mendebaldeko udako ordua</daylight>
+					<generic>Groenlandiako mendebaldeko ordua</generic>
+					<standard>Groenlandiako mendebaldeko ordu estandarra</standard>
+					<daylight>Groenlandiako mendebaldeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -3501,9 +4020,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Hovd">
 				<long>
-					<generic>Hovdeko ordua</generic>
-					<standard>Hovdeko ordu estandarra</standard>
-					<daylight>Hovdeko udako ordua</daylight>
+					<generic>Khovdeko ordua</generic>
+					<standard>Khovdeko ordu estandarra</standard>
+					<daylight>Khovdeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="India">
@@ -3513,7 +4032,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Indian_Ocean">
 				<long>
-					<standard>Ozeano Indikoko ordua</standard>
+					<standard>Indiako Ozeanoko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Indochina">
@@ -3523,17 +4042,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Indonesia_Central">
 				<long>
-					<standard>Indonesia erdialdeko ordua</standard>
+					<standard>Indonesiako erdialdeko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Eastern">
 				<long>
-					<standard>Indonesia ekialdeko ordua</standard>
+					<standard>Indonesiako ekialdeko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Indonesia_Western">
 				<long>
-					<standard>Indonesia mendebaldeko ordua</standard>
+					<standard>Indonesiako mendebaldeko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Iran">
@@ -3573,12 +4092,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
 				<long>
-					<standard>Kazakhstan ekialdeko ordua</standard>
+					<standard>Kazakhstango ekialdeko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Western">
 				<long>
-					<standard>Kazakhstan mendebaldeko ordua</standard>
+					<standard>Kazakhstango mendebaldeko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Korea">
@@ -3595,9 +4114,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Krasnoyarsk">
 				<long>
-					<generic>Krasnoyarskeko ordua</generic>
-					<standard>Krasnoyarskeko ordu estandarra</standard>
-					<daylight>Krasnoyarskeko udako ordua</daylight>
+					<generic>Krasnoiarskeko ordua</generic>
+					<standard>Krasnoiarskeko ordu estandarra</standard>
+					<daylight>Krasnoiarskeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Kyrgystan">
@@ -3624,7 +4143,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Magadan">
 				<long>
-					<generic>Magadako ordua</generic>
+					<generic>Magadango ordua</generic>
 					<standard>Magadango ordu estandarra</standard>
 					<daylight>Magadango udako ordua</daylight>
 				</long>
@@ -3646,7 +4165,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Marshall_Islands">
 				<long>
-					<standard>Marshall uharteetako ordua</standard>
+					<standard>Marshall Uharteetako ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Mauritius">
@@ -3706,7 +4225,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="New_Caledonia">
 				<long>
-					<generic>Kaledonia Berriako ordua</generic>
+					<generic>Kaledonia Berriko ordua</generic>
 					<standard>Kaledonia Berriko ordu estandarra</standard>
 					<daylight>Kaledonia Berriko udako ordua</daylight>
 				</long>
@@ -3775,9 +4294,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Paraguay">
 				<long>
-					<generic>Paraguayko ordua</generic>
-					<standard>Paraguayko ordu estandarra</standard>
-					<daylight>Paraguayko udako ordua</daylight>
+					<generic>Paraguaiko ordua</generic>
+					<standard>Paraguaiko ordu estandarra</standard>
+					<daylight>Paraguaiko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Peru">
@@ -3816,9 +4335,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>Ponapeko ordua</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Piongiangeko ordua</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
-					<standard>Reunion uharteetako ordua</standard>
+					<standard>Reunioneko ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Rothera">
@@ -3859,12 +4383,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Solomon">
 				<long>
-					<standard>Salomon uharteetako ordua</standard>
+					<standard>Salomon Uharteetako ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="South_Georgia">
 				<long>
-					<standard>Hego Georgiako ordua</standard>
+					<standard>Hegoaldeko Georgietako ordua</standard>
 				</long>
 			</metazone>
 			<metazone type="Suriname">
@@ -3925,9 +4449,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Uruguay">
 				<long>
-					<generic>Uruguayko ordua</generic>
-					<standard>Uruguayko ordu estandarra</standard>
-					<daylight>Uruguayko udako ordua</daylight>
+					<generic>Uruguaiko ordua</generic>
+					<standard>Uruguaiko ordu estandarra</standard>
+					<daylight>Uruguaiko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Uzbekistan">
@@ -3975,21 +4499,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Wallis">
 				<long>
-					<standard>Wallis eta Futunako ordua</standard>
+					<standard>Wallis eta Futunako ordutegia</standard>
 				</long>
 			</metazone>
 			<metazone type="Yakutsk">
 				<long>
-					<generic>Yakutskeko ordua</generic>
-					<standard>Yakutskeko ordu estandarra</standard>
-					<daylight>Yakutskeko udako ordua</daylight>
+					<generic>Jakutskeko ordua</generic>
+					<standard>Jakutskeko ordu estandarra</standard>
+					<daylight>Jakutskeko udako ordua</daylight>
 				</long>
 			</metazone>
 			<metazone type="Yekaterinburg">
 				<long>
-					<generic>Yekaterinburgeko ordua</generic>
+					<generic>Jekaterinburgeko ordua</generic>
 					<standard>Jekaterinburgeko ordu estandarra</standard>
-					<daylight>Yekaterinburgeko udako ordua</daylight>
+					<daylight>Jekaterinburgeko udako ordua</daylight>
 				</long>
 			</metazone>
 		</timeZoneNames>
@@ -4006,7 +4530,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<list>;</list>
 			<percentSign>%</percentSign>
 			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
+			<minusSign>−</minusSign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -4102,30 +4626,30 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">0000 ¤</pattern>
-					<pattern type="1000" count="other" draft="provisional">0000 ¤</pattern>
-					<pattern type="10000" count="one" draft="provisional">00000 ¤</pattern>
-					<pattern type="10000" count="other" draft="provisional">00000 ¤</pattern>
-					<pattern type="100000" count="one" draft="provisional">000000 ¤</pattern>
-					<pattern type="100000" count="other" draft="provisional">000000 ¤</pattern>
-					<pattern type="1000000" count="one" draft="provisional">0 M ¤</pattern>
-					<pattern type="1000000" count="other" draft="provisional">0 M ¤</pattern>
-					<pattern type="10000000" count="one" draft="provisional">00 M ¤</pattern>
-					<pattern type="10000000" count="other" draft="provisional">00 M ¤</pattern>
-					<pattern type="100000000" count="one" draft="provisional">000 M ¤</pattern>
-					<pattern type="100000000" count="other" draft="provisional">000 M ¤</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">0000 M ¤</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">0000 M ¤</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">00000 M ¤</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">00000 M ¤</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">000000 M ¤</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">000000 M ¤</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">0 B ¤</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">0 B ¤</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">00 B ¤</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">00 B ¤</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">000 B ¤</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">000 B ¤</pattern>
+					<pattern type="1000" count="one">0000 ¤</pattern>
+					<pattern type="1000" count="other">0000 ¤</pattern>
+					<pattern type="10000" count="one">00000 ¤</pattern>
+					<pattern type="10000" count="other">00000 ¤</pattern>
+					<pattern type="100000" count="one">000000 ¤</pattern>
+					<pattern type="100000" count="other">000000 ¤</pattern>
+					<pattern type="1000000" count="one">0 M ¤</pattern>
+					<pattern type="1000000" count="other">0 M ¤</pattern>
+					<pattern type="10000000" count="one">00 M ¤</pattern>
+					<pattern type="10000000" count="other">00 M ¤</pattern>
+					<pattern type="100000000" count="one">000 M ¤</pattern>
+					<pattern type="100000000" count="other">000 M ¤</pattern>
+					<pattern type="1000000000" count="one">0000 M ¤</pattern>
+					<pattern type="1000000000" count="other">0000 M ¤</pattern>
+					<pattern type="10000000000" count="one">00000 M ¤</pattern>
+					<pattern type="10000000000" count="other">00000 M ¤</pattern>
+					<pattern type="100000000000" count="one">000000 M ¤</pattern>
+					<pattern type="100000000000" count="other">000000 M ¤</pattern>
+					<pattern type="1000000000000" count="one">0 B ¤</pattern>
+					<pattern type="1000000000000" count="other">0 B ¤</pattern>
+					<pattern type="10000000000000" count="one">00 B ¤</pattern>
+					<pattern type="10000000000000" count="other">00 B ¤</pattern>
+					<pattern type="100000000000000" count="one">000 B ¤</pattern>
+					<pattern type="100000000000000" count="other">000 B ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="one">{0} {1}</unitPattern>
@@ -4167,6 +4691,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Angolako kwanza</displayName>
 				<displayName count="other">Angolako kwanza</displayName>
 				<symbol>AOA</symbol>
+				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>Argentinako pesoa</displayName>
@@ -4183,9 +4708,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
-				<displayName>Arubeko florina</displayName>
-				<displayName count="one">Arubeko florin</displayName>
-				<displayName count="other">Arubeko florin</displayName>
+				<displayName>Arubako florina</displayName>
+				<displayName count="one">Arubako florin</displayName>
+				<displayName count="other">Arubako florin</displayName>
 				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZN">
@@ -4199,6 +4724,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Bosnia-Herzegovinako marko trukakor</displayName>
 				<displayName count="other">Bosnia-Herzegovinako marko trukakor</displayName>
 				<symbol>BAM</symbol>
+				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>Barbadosetako dolarra</displayName>
@@ -4251,6 +4777,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Boliviako boliviano</displayName>
 				<displayName count="other">Boliviako boliviano</displayName>
 				<symbol>BOB</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>Brasilgo erreala</displayName>
@@ -4277,13 +4804,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Bosniako pula</displayName>
 				<displayName count="other">Bosniako pula</displayName>
 				<symbol>BWP</symbol>
+				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Bielorrusiako errubloa</displayName>
 				<displayName count="one">Bielorrusiako errublo</displayName>
 				<displayName count="other">Bielorrusiako errublo</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Bielorrusiako errubloa (2000–2016)</displayName>
+				<displayName count="one">Bielorrusiako errublo (2000–2016)</displayName>
+				<displayName count="other">Bielorrusiako errublo (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belizeko dolarra</displayName>
@@ -4318,6 +4852,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="CNH">
+				<displayName>yuan txinatar (itsasoz haraindikoa)</displayName>
+				<displayName count="one">yuan txinatar (itsasoz haraindikoa)</displayName>
+				<displayName count="other">yuan txinatar (itsasoz haraindikoa)</displayName>
+			</currency>
 			<currency type="CNY">
 				<displayName>Txinako yuana</displayName>
 				<displayName count="one">Txinako yuan</displayName>
@@ -4344,6 +4883,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Kubako peso trukakor</displayName>
 				<displayName count="other">Kubako peso trukakor</displayName>
 				<symbol>CUC</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>Kubako pesoa</displayName>
@@ -4363,11 +4903,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Txekiar Errepublikako koroa</displayName>
 				<displayName count="other">Txekiar Errepublikako koroa</displayName>
 				<symbol>CZK</symbol>
+				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DJF">
-				<displayName>Djibouteko frankoa</displayName>
-				<displayName count="one">Djibouteko franko</displayName>
-				<displayName count="other">Djibouteko franko</displayName>
+				<displayName>Djibutiko frankoa</displayName>
+				<displayName count="one">Djibutiko franko</displayName>
+				<displayName count="other">Djibutiko franko</displayName>
 				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
@@ -4375,6 +4916,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Danimarkako koroa</displayName>
 				<displayName count="other">Danimarkako koroa</displayName>
 				<symbol>DKK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>Dominikar Errepublikako pesoa</displayName>
@@ -4384,9 +4926,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
-				<displayName>Algeriako dinarra</displayName>
-				<displayName count="one">Algeriako dinar</displayName>
-				<displayName count="other">Algeriako dinar</displayName>
+				<displayName>Aljeriako dinarra</displayName>
+				<displayName count="one">Aljeriako dinar</displayName>
+				<displayName count="other">Aljeriako dinar</displayName>
 				<symbol>DZD</symbol>
 			</currency>
 			<currency type="EGP">
@@ -4394,6 +4936,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Egiptoko libera</displayName>
 				<displayName count="other">Egiptoko libera</displayName>
 				<symbol>EGP</symbol>
+				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>Eritreako nakfa</displayName>
@@ -4409,12 +4952,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currency>
 			<currency type="ETB">
 				<displayName>Etiopiako birra</displayName>
-				<displayName count="one">Etiopiako birra</displayName>
-				<displayName count="other">Etiopiako birra</displayName>
+				<displayName count="one">Etiopiako birr</displayName>
+				<displayName count="other">Etiopiako birr</displayName>
 				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
-				<displayName>Euroa</displayName>
+				<displayName>euroa</displayName>
 				<displayName count="one">euro</displayName>
 				<displayName count="other">euro</displayName>
 				<symbol>€</symbol>
@@ -4432,11 +4975,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Falkland uharteetako libera</displayName>
 				<displayName count="other">Falkland uharteetako libera</displayName>
 				<symbol>FKP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>Libera esterlina</displayName>
-				<displayName count="one">libera esterlina</displayName>
-				<displayName count="other">libera esterlina</displayName>
+				<displayName count="one">Libera esterlina</displayName>
+				<displayName count="other">Libera esterlina</displayName>
 				<symbol>£</symbol>
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
@@ -4445,6 +4989,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Georgiako lari</displayName>
 				<displayName count="other">Georgiako lari</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>Ghanako cedia</displayName>
@@ -4470,12 +5015,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Gineako franko</displayName>
 				<displayName count="other">Gineako franko</displayName>
 				<symbol>GNF</symbol>
+				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>Guatemalako quetzala</displayName>
 				<displayName count="one">Guatemalako quetzal</displayName>
 				<displayName count="other">Guatemalako quetzal</displayName>
 				<symbol>GTQ</symbol>
+				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>Guyanako dolarra</displayName>
@@ -4496,12 +5043,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Hondurasko lempira</displayName>
 				<displayName count="other">Hondurasko lempira</displayName>
 				<symbol>HNL</symbol>
+				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>Kroaziako kuna</displayName>
 				<displayName count="one">Kroaziako kuna</displayName>
 				<displayName count="other">Kroaziako kuna</displayName>
 				<symbol>HRK</symbol>
+				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>Haitiko gourdea</displayName>
@@ -4514,17 +5063,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Hungariako florin</displayName>
 				<displayName count="other">Hungariako florin</displayName>
 				<symbol>HUF</symbol>
+				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Indonesiako errupia</displayName>
 				<displayName count="one">Indonesiako errupia</displayName>
 				<displayName count="other">Indonesiako errupia</displayName>
 				<symbol>IDR</symbol>
+				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="ILS">
-				<displayName>Israeleko sheqel berria</displayName>
-				<displayName count="one">Israeleko sheqel berri</displayName>
-				<displayName count="other">Israeleko sheqel berri</displayName>
+				<displayName>Israelgo shekel berria</displayName>
+				<displayName count="one">Israelgo shekel berri</displayName>
+				<displayName count="other">Israelgo shekel berri</displayName>
 				<symbol>₪</symbol>
 				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
@@ -4552,6 +5103,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Islandiako koroa</displayName>
 				<displayName count="other">Islandiako koroa</displayName>
 				<symbol>ISK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>Jamaikako dolarra</displayName>
@@ -4597,12 +5149,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Komoreetako franko</displayName>
 				<displayName count="other">Komoreetako franko</displayName>
 				<symbol>KMF</symbol>
+				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>Ipar Koreako wona</displayName>
 				<displayName count="one">Ipar Koreako won</displayName>
 				<displayName count="other">Ipar Koreako won</displayName>
 				<symbol>KPW</symbol>
+				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>Hego Koreako wona</displayName>
@@ -4643,12 +5197,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Libanoko libera</displayName>
 				<displayName count="other">Libanoko libera</displayName>
 				<symbol>LBP</symbol>
+				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Sri Lankako errupia</displayName>
 				<displayName count="one">Sri Lankako errupia</displayName>
 				<displayName count="other">Sri Lankako errupia</displayName>
 				<symbol>LKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Liberiako dolarra</displayName>
@@ -4695,9 +5251,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Madagaskarreko ariary</displayName>
 				<displayName count="other">Madagaskarreko ariary</displayName>
 				<symbol>MGA</symbol>
+				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MKD">
-				<displayName>Mazedoniako denara</displayName>
+				<displayName>Mazedoniako dinarra</displayName>
 				<displayName count="one">Mazedoniako dinar</displayName>
 				<displayName count="other">Mazedoniako dinar</displayName>
 				<symbol>MKD</symbol>
@@ -4707,6 +5264,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Myanmarreko kyat</displayName>
 				<displayName count="other">Myanmarreko kyat</displayName>
 				<symbol>MMK</symbol>
+				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>Mongoliako tugrika</displayName>
@@ -4722,16 +5280,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>Mauritaniako ouguiya (1973–2017)</displayName>
+				<displayName count="one">Mauritaniako ouguiya (1973–2017)</displayName>
+				<displayName count="other">Mauritaniako ouguiya (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>Mauritaniako ouguiya</displayName>
 				<displayName count="one">Mauritaniako ouguiya</displayName>
 				<displayName count="other">Mauritaniako ouguiya</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>Maurizio uharteetako errupia</displayName>
 				<displayName count="one">Maurizio uharteetako errupia</displayName>
 				<displayName count="other">Maurizio uharteetako errupia</displayName>
 				<symbol>MUR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>Maldivetako rufiyaa</displayName>
@@ -4757,6 +5321,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Malaysiako ringgit</displayName>
 				<displayName count="other">Malaysiako ringgit</displayName>
 				<symbol>MYR</symbol>
+				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>Mozambikeko metikala</displayName>
@@ -4783,18 +5348,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Nikaraguako cordoba</displayName>
 				<displayName count="other">Nikaraguako cordoba</displayName>
 				<symbol>NIO</symbol>
+				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>Norvegiako koroa</displayName>
 				<displayName count="one">Norvegiako koroa</displayName>
 				<displayName count="other">Norvegiako koroa</displayName>
 				<symbol>NOK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Nepalgo errupia</displayName>
 				<displayName count="one">Nepalgo errupia</displayName>
 				<displayName count="other">Nepalgo errupia</displayName>
 				<symbol>NPR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Zeelanda Berriko dolarra</displayName>
@@ -4816,9 +5384,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>Peruko sol berria</displayName>
-				<displayName count="one">Peruko sol berri</displayName>
-				<displayName count="other">Peruko sol berri</displayName>
+				<displayName>Peruko sol</displayName>
+				<displayName count="one">Peruko sol</displayName>
+				<displayName count="other">Peruko sol</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
@@ -4839,12 +5407,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Pakistango errupia</displayName>
 				<displayName count="other">Pakistango errupia</displayName>
 				<symbol>PKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>Poloniako zlotya</displayName>
 				<displayName count="one">Poloniako zloty</displayName>
 				<displayName count="other">Poloniako zloty</displayName>
 				<symbol>PLN</symbol>
+				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>Paraguaiko guarania</displayName>
@@ -4876,17 +5446,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Errusiako errublo</displayName>
 				<displayName count="other">Errusiako errublo</displayName>
 				<symbol>RUB</symbol>
+				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>Ruandako frankoa</displayName>
 				<displayName count="one">Ruandako franko</displayName>
 				<displayName count="other">Ruandako franko</displayName>
 				<symbol>RWF</symbol>
+				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
-				<displayName>Saudiko riala</displayName>
-				<displayName count="one">Saudiko rial</displayName>
-				<displayName count="other">Saudiko rial</displayName>
+				<displayName>Arabia Saudiko riala</displayName>
+				<displayName count="one">Arabia Saudiko rial</displayName>
+				<displayName count="other">Arabia Saudiko rial</displayName>
 				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
@@ -4913,6 +5485,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Suediako koroa</displayName>
 				<displayName count="other">Suediako koroa</displayName>
 				<symbol>SEK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Singapurreko dolarra</displayName>
@@ -4926,6 +5499,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Santa Helenako libera</displayName>
 				<displayName count="other">Santa Helenako libera</displayName>
 				<symbol>SHP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SLL">
 				<displayName>Sierra Leonako leona</displayName>
@@ -4954,21 +5528,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>Sao Tomeko eta Principeko dobra (1977–2017)</displayName>
+				<displayName count="one">Sao Tomeko eta Principeko dobra (1977–2017)</displayName>
+				<displayName count="other">Sao Tomeko eta Principeko dobra (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>Sao Tomeko eta Principeko dobra</displayName>
 				<displayName count="one">Sao Tomeko eta Principeko dobra</displayName>
 				<displayName count="other">Sao Tomeko eta Principeko dobra</displayName>
-				<symbol>STD</symbol>
+				<symbol draft="contributed">STN</symbol>
+				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>Siriako libera</displayName>
 				<displayName count="one">Siriako libera</displayName>
 				<displayName count="other">Siriako libera</displayName>
 				<symbol>SYP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
-				<displayName>Swaziko lilangenia</displayName>
-				<displayName count="one">Swaziko lilangeni</displayName>
-				<displayName count="other">Swaziko lilangeni</displayName>
+				<displayName>Swazilandiako lilangenia</displayName>
+				<displayName count="one">Swazilandiako lilangeni</displayName>
+				<displayName count="other">Swazilandiako lilangeni</displayName>
 				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
@@ -5001,6 +5583,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Tongako Paʻanga</displayName>
 				<displayName count="other">Tongako Paʻanga</displayName>
 				<symbol>TOP</symbol>
+				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>Turkiako lira</displayName>
@@ -5008,11 +5591,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Turkiako lira</displayName>
 				<symbol>TRY</symbol>
 				<symbol alt="narrow" draft="contributed">₺</symbol>
+				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
-				<displayName>Trinidadeko eta Tobagoko dolarra</displayName>
-				<displayName count="one">Trinidadeko eta Tobagoko dolar</displayName>
-				<displayName count="other">Trinidadeko eta Tobagoko dolar</displayName>
+				<displayName>Trinidad eta Tobagoko dolarra</displayName>
+				<displayName count="one">Trinidad eta Tobagoko dolar</displayName>
+				<displayName count="other">Trinidad eta Tobagoko dolar</displayName>
 				<symbol>TTD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -5043,9 +5627,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
-				<displayName>AEBetako dolarra</displayName>
-				<displayName count="one">AEBetako dolar</displayName>
-				<displayName count="other">AEBetako dolar</displayName>
+				<displayName>AEBko dolarra</displayName>
+				<displayName count="one">AEBko dolar</displayName>
+				<displayName count="other">AEBko dolar</displayName>
 				<symbol>US$</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -5067,6 +5651,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Venezuelako bolivar</displayName>
 				<displayName count="other">Venezuelako bolivar</displayName>
 				<symbol>VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Vietnameko donga</displayName>
@@ -5088,9 +5673,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
-				<displayName>Afrika erdialdeko frankoa BEAC</displayName>
-				<displayName count="one">Afrika erdialdeko franko BEAC</displayName>
-				<displayName count="other">Afrika erdialdeko franko BEAC</displayName>
+				<displayName>Afrika erdialdeko CFA frankoa</displayName>
+				<displayName count="one">Afrika erdialdeko CFA franko</displayName>
+				<displayName count="other">Afrika erdialdeko CFA franko</displayName>
 				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
@@ -5098,11 +5683,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Karibe ekialdeko dolar</displayName>
 				<displayName count="other">Karibe ekialdeko dolar</displayName>
 				<symbol>EC$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XOF">
-				<displayName>Afrika ekialdeko frankoa BCEAO</displayName>
-				<displayName count="one">Afrika ekialdeko franko BCEAO</displayName>
-				<displayName count="other">Afrika ekialdeko franko BCEAO</displayName>
+				<displayName>Afrika mendebaldeko CFA frankoa</displayName>
+				<displayName count="one">Afrika mendebaldeko CFA franko</displayName>
+				<displayName count="other">Afrika mendebaldeko CFA franko</displayName>
 				<symbol>CFA</symbol>
 			</currency>
 			<currency type="XPF">
@@ -5127,6 +5713,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Hegoafrikako randa</displayName>
 				<displayName count="other">Hegoafrikako randa</displayName>
 				<symbol>ZAR</symbol>
+				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Zambiako kwacha (1968–2012)</displayName>
@@ -5136,12 +5723,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Zambiako kwacha</displayName>
 				<displayName count="other">Zambiako kwacha</displayName>
 				<symbol>ZMW</symbol>
+				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">{0}+</pattern>
-			<pattern type="range">{0}–{1}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">Nire {0} lagunarekin nago</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">Nire {0} lagunekin nago</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}. bira eskuinetara</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5154,34 +5747,40 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} grabitate-indar</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-second-squared">
-				<displayName>metro segundo karratuko</displayName>
-				<unitPattern count="one">{0} metro segundo karratuko</unitPattern>
-				<unitPattern count="other">{0} metro segundo karratuko</unitPattern>
+				<displayName>metroak segundo karratu bakoitzeko</displayName>
+				<unitPattern count="one">{0} metro segundo karratu bakoitzeko</unitPattern>
+				<unitPattern count="other">{0} metro segundo karratu bakoitzeko</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>bira</displayName>
+				<unitPattern count="one">{0} bira</unitPattern>
+				<unitPattern count="other">{0} bira</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName>radian</displayName>
+				<displayName>radianak</displayName>
 				<unitPattern count="one">{0} radian</unitPattern>
 				<unitPattern count="other">{0} radian</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>gradu</displayName>
+				<displayName>graduak</displayName>
 				<unitPattern count="one">{0} gradu</unitPattern>
 				<unitPattern count="other">{0} gradu</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>minutu</displayName>
-				<unitPattern count="one">{0} minutu</unitPattern>
-				<unitPattern count="other">{0} minutu</unitPattern>
+				<displayName>arku-minutuak</displayName>
+				<unitPattern count="one">{0} arku-minutu</unitPattern>
+				<unitPattern count="other">{0} arku-minutu</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>segundo</displayName>
-				<unitPattern count="one">{0} segundo</unitPattern>
-				<unitPattern count="other">{0} segundo</unitPattern>
+				<displayName>arku-segundoak</displayName>
+				<unitPattern count="one">{0} arku-segundo</unitPattern>
+				<unitPattern count="other">{0} arku-segundo</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>kilometro karratu</displayName>
 				<unitPattern count="one">{0} kilometro karratu</unitPattern>
 				<unitPattern count="other">{0} kilometro karratu</unitPattern>
+				<perUnitPattern>{0} kilometro karratu bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektarea</displayName>
@@ -5192,16 +5791,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>metro karratu</displayName>
 				<unitPattern count="one">{0} metro karratu</unitPattern>
 				<unitPattern count="other">{0} metro karratu</unitPattern>
+				<perUnitPattern>{0} metro karratu bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>cm²</displayName>
-				<unitPattern count="one">{0} cm²</unitPattern>
+				<unitPattern count="one">{0} zentimetro karratu</unitPattern>
 				<unitPattern count="other">{0} cm²</unitPattern>
+				<perUnitPattern>{0} zentimetro karratu bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>milia karratu</displayName>
 				<unitPattern count="one">{0} milia karratu</unitPattern>
 				<unitPattern count="other">{0} milia karratu</unitPattern>
+				<perUnitPattern>{0} milia karratu bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akre</displayName>
@@ -5222,91 +5824,126 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>hazbete karratu</displayName>
 				<unitPattern count="one">{0} hazbete karratu</unitPattern>
 				<unitPattern count="other">{0} hazbete karratu</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>kilate</displayName>
+				<displayName>kilateak</displayName>
 				<unitPattern count="one">{0} kilate</unitPattern>
 				<unitPattern count="other">{0} kilate</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>miligramo dezilitro bakoitzeko</displayName>
+				<unitPattern count="one">{0} miligramo dezilitro bakoitzeko</unitPattern>
+				<unitPattern count="other">{0} miligramo dezilitro bakoitzeko</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>milimole litro bakoitzeko</displayName>
+				<unitPattern count="one">{0} milimole litro bakoitzeko</unitPattern>
+				<unitPattern count="other">{0} milimole litro bakoitzeko</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>zati milioi bakoitzeko</displayName>
+				<unitPattern count="one">{0} zati milioi bakoitzeko</unitPattern>
+				<unitPattern count="other">{0} zati milioi bakoitzeko</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>litro kilometroko</displayName>
-				<unitPattern count="one">{0} litro kilometroko</unitPattern>
-				<unitPattern count="other">{0} litro kilometroko</unitPattern>
+				<displayName>litro kilometro bakoitzeko</displayName>
+				<unitPattern count="one">{0} litro kilometro bakoitzeko</unitPattern>
+				<unitPattern count="other">{0} litro kilometro bakoitzeko</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100kilometers">
+				<displayName>litro 100 kilometro bakoitzeko</displayName>
+				<unitPattern count="one">{0} litro 100 kilometro bakoitzeko</unitPattern>
+				<unitPattern count="other">{0} litro 100 kilometro bakoitzeko</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>milia galoiko</displayName>
-				<unitPattern count="one">{0} milia galoiko</unitPattern>
-				<unitPattern count="other">{0} milia galoiko</unitPattern>
+				<displayName>milia galoi bakoitzeko</displayName>
+				<unitPattern count="one">{0} milia galoi bakoitzeko</unitPattern>
+				<unitPattern count="other">{0} milia galoi bakoitzeko</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>milia galoi britainiar bakoitzeko</displayName>
+				<unitPattern count="one">{0} milia galoi britainiar bakoitzeko</unitPattern>
+				<unitPattern count="other">{0} milia galoi britainiar bakoitzeko</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
-				<displayName>terabyte</displayName>
+				<displayName>terabyte-ak</displayName>
 				<unitPattern count="one">{0} terabyte</unitPattern>
 				<unitPattern count="other">{0} terabyte</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
-				<displayName>terabit</displayName>
+				<displayName>terabit-ak</displayName>
 				<unitPattern count="one">{0} terabit</unitPattern>
 				<unitPattern count="other">{0} terabit</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
-				<displayName>gigabyte</displayName>
+				<displayName>gigabyte-ak</displayName>
 				<unitPattern count="one">{0} gigabyte</unitPattern>
 				<unitPattern count="other">{0} gigabyte</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
-				<displayName>gigabit</displayName>
+				<displayName>gigabit-ak</displayName>
 				<unitPattern count="one">{0} gigabit</unitPattern>
 				<unitPattern count="other">{0} gigabit</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
-				<displayName>megabyte</displayName>
+				<displayName>megabyte-ak</displayName>
 				<unitPattern count="one">{0} megabyte</unitPattern>
 				<unitPattern count="other">{0} megabyte</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
-				<displayName>megabit</displayName>
+				<displayName>megabit-ak</displayName>
 				<unitPattern count="one">{0} megabit</unitPattern>
 				<unitPattern count="other">{0} megabit</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<displayName>kilobyte</displayName>
+				<displayName>kilobyte-ak</displayName>
 				<unitPattern count="one">{0} kilobyte</unitPattern>
 				<unitPattern count="other">{0} kilobyte</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
-				<displayName>kilobit</displayName>
+				<displayName>kilobit-ak</displayName>
 				<unitPattern count="one">{0} kilobit</unitPattern>
 				<unitPattern count="other">{0} kilobit</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName>byte</displayName>
+				<displayName>byte-ak</displayName>
 				<unitPattern count="one">{0} byte</unitPattern>
 				<unitPattern count="other">{0} byte</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<displayName>bit</displayName>
+				<displayName>bit-ak</displayName>
 				<unitPattern count="one">{0} bit</unitPattern>
 				<unitPattern count="other">{0} bit</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>mendeak</displayName>
+				<unitPattern count="one">{0} mende</unitPattern>
+				<unitPattern count="other">{0} mende</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>urte</displayName>
 				<unitPattern count="one">{0} urte</unitPattern>
 				<unitPattern count="other">{0} urte</unitPattern>
+				<perUnitPattern>{0} urte bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>hilabete</displayName>
 				<unitPattern count="one">{0} hilabete</unitPattern>
 				<unitPattern count="other">{0} hilabete</unitPattern>
+				<perUnitPattern>{0} hilabete bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>aste</displayName>
 				<unitPattern count="one">{0} aste</unitPattern>
 				<unitPattern count="other">{0} aste</unitPattern>
+				<perUnitPattern>{0} aste bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>egun</displayName>
 				<unitPattern count="one">{0} egun</unitPattern>
 				<unitPattern count="other">{0} egun</unitPattern>
+				<perUnitPattern>{0} egun bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ordu</displayName>
@@ -5318,6 +5955,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>minutu</displayName>
 				<unitPattern count="one">{0} minutu</unitPattern>
 				<unitPattern count="other">{0} minutu</unitPattern>
+				<perUnitPattern>{0} minutu bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>segundo</displayName>
@@ -5341,47 +5979,47 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} nanosegundo</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<displayName>ampere</displayName>
+				<displayName>ampereak</displayName>
 				<unitPattern count="one">{0} ampere</unitPattern>
 				<unitPattern count="other">{0} ampere</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
-				<displayName>miliampere</displayName>
+				<displayName>miliampereak</displayName>
 				<unitPattern count="one">{0} miliampere</unitPattern>
 				<unitPattern count="other">{0} miliampere</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>ohm</displayName>
+				<displayName>ohm-ak</displayName>
 				<unitPattern count="one">{0} ohm</unitPattern>
 				<unitPattern count="other">{0} ohm</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName>volt</displayName>
+				<displayName>voltak</displayName>
 				<unitPattern count="one">{0} volt</unitPattern>
 				<unitPattern count="other">{0} volt</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
-				<displayName>kilokaloria</displayName>
+				<displayName>kilokaloriak</displayName>
 				<unitPattern count="one">{0} kilokaloria</unitPattern>
 				<unitPattern count="other">{0} kilokaloria</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<displayName>kaloria</displayName>
+				<displayName>kaloriak</displayName>
 				<unitPattern count="one">{0} kaloria</unitPattern>
 				<unitPattern count="other">{0} kaloria</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kaloria</displayName>
+				<displayName>kaloriak</displayName>
 				<unitPattern count="one">{0} kaloria</unitPattern>
 				<unitPattern count="other">{0} kaloria</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
-				<displayName>kilojoule</displayName>
+				<displayName>kilojoule-ak</displayName>
 				<unitPattern count="one">{0} kilojoule</unitPattern>
 				<unitPattern count="other">{0} kilojoule</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName>joule</displayName>
+				<displayName>joule-ak</displayName>
 				<unitPattern count="one">{0} joule</unitPattern>
 				<unitPattern count="other">{0} joule</unitPattern>
 			</unit>
@@ -5414,11 +6052,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kilometro</displayName>
 				<unitPattern count="one">{0} kilometro</unitPattern>
 				<unitPattern count="other">{0} kilometro</unitPattern>
+				<perUnitPattern>{0} kilometro bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>metro</displayName>
 				<unitPattern count="one">{0} metro</unitPattern>
 				<unitPattern count="other">{0} metro</unitPattern>
+				<perUnitPattern>{0} metro bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>dezimetro</displayName>
@@ -5429,6 +6069,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>zentimetro</displayName>
 				<unitPattern count="one">{0} zentimetro</unitPattern>
 				<unitPattern count="other">{0} zentimetro</unitPattern>
+				<perUnitPattern>{0} zentimetro bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>milimetro</displayName>
@@ -5464,11 +6105,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>oin</displayName>
 				<unitPattern count="one">{0} oin</unitPattern>
 				<unitPattern count="other">{0} oin</unitPattern>
+				<perUnitPattern>{0} oin bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>hazbete</displayName>
 				<unitPattern count="one">{0} hazbete</unitPattern>
 				<unitPattern count="other">{0} hazbete</unitPattern>
+				<perUnitPattern>{0} hazbete bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>parsec</displayName>
@@ -5490,83 +6133,97 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} milia nautiko</unitPattern>
 				<unitPattern count="other">{0} milia nautiko</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>milia eskandinaviar</displayName>
+				<unitPattern count="one">{0} milia eskandinaviar</unitPattern>
+				<unitPattern count="other">{0} milia eskandinaviar</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>puntu</displayName>
+				<unitPattern count="one">{0} puntu</unitPattern>
+				<unitPattern count="other">{0} puntu</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
 				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
-				<displayName>tona</displayName>
+				<displayName>tonak</displayName>
 				<unitPattern count="one">{0} tona</unitPattern>
 				<unitPattern count="other">{0} tona</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>kilogramo</displayName>
+				<displayName>kilogramoak</displayName>
 				<unitPattern count="one">{0} kilogramo</unitPattern>
 				<unitPattern count="other">{0} kilogramo</unitPattern>
+				<perUnitPattern>{0} kilogramo bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>gramo</displayName>
+				<displayName>gramoak</displayName>
 				<unitPattern count="one">{0} gramo</unitPattern>
 				<unitPattern count="other">{0} gramo</unitPattern>
+				<perUnitPattern>{0} gramo bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
-				<displayName>miligramo</displayName>
+				<displayName>miligramoak</displayName>
 				<unitPattern count="one">{0} miligramo</unitPattern>
 				<unitPattern count="other">{0} miligramo</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName>mikrogramo</displayName>
+				<displayName>mikrogramoak</displayName>
 				<unitPattern count="one">{0} mikrogramo</unitPattern>
 				<unitPattern count="other">{0} mikrogramo</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>AEBetako tona</displayName>
-				<unitPattern count="one">{0} AEBetako tona</unitPattern>
-				<unitPattern count="other">{0} AEBetako tona</unitPattern>
+				<displayName>AEBko tonak</displayName>
+				<unitPattern count="one">{0} AEBko tona</unitPattern>
+				<unitPattern count="other">{0} AEBko tona</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>libra</displayName>
+				<displayName>librak</displayName>
 				<unitPattern count="one">{0} libra</unitPattern>
 				<unitPattern count="other">{0} libra</unitPattern>
+				<perUnitPattern>{0} libra bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
-				<displayName>ontza</displayName>
+				<displayName>ontzak</displayName>
 				<unitPattern count="one">{0} ontza</unitPattern>
 				<unitPattern count="other">{0} ontza</unitPattern>
+				<perUnitPattern>{0} ontza bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName>troy ontza</displayName>
+				<displayName>troy ontzak</displayName>
 				<unitPattern count="one">{0} troy ontza</unitPattern>
 				<unitPattern count="other">{0} troy ontza</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName>kilate</displayName>
+				<displayName>kilateak</displayName>
 				<unitPattern count="one">{0} kilate</unitPattern>
 				<unitPattern count="other">{0} kilate</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
-				<displayName>gigawatt</displayName>
+				<displayName>gigawatt-ak</displayName>
 				<unitPattern count="one">{0} gigawatt</unitPattern>
 				<unitPattern count="other">{0} gigawatt</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
-				<displayName>megawatt</displayName>
+				<displayName>megawatt-ak</displayName>
 				<unitPattern count="one">{0} megawatt</unitPattern>
 				<unitPattern count="other">{0} megawatt</unitPattern>
 			</unit>
 			<unit type="power-kilowatt">
-				<displayName>kilowatt</displayName>
+				<displayName>kilowatt-ak</displayName>
 				<unitPattern count="one">{0} kilowatt</unitPattern>
 				<unitPattern count="other">{0} kilowatt</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<displayName>watt</displayName>
+				<displayName>watt-ak</displayName>
 				<unitPattern count="one">{0} watt</unitPattern>
 				<unitPattern count="other">{0} watt</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
-				<displayName>miliwatt</displayName>
+				<displayName>miliwatt-ak</displayName>
 				<unitPattern count="one">{0} miliwatt</unitPattern>
 				<unitPattern count="other">{0} miliwatt</unitPattern>
 			</unit>
@@ -5576,12 +6233,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} zaldi-potentzia</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName>hektopascal</displayName>
+				<displayName>hektopascalak</displayName>
 				<unitPattern count="one">{0} hektopascal</unitPattern>
 				<unitPattern count="other">{0} hektopascal</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-of-mercury">
-				<displayName>merkurio-milimetro</displayName>
+				<displayName>merkurio-milimetroak</displayName>
 				<unitPattern count="one">{0} merkurio-milimetro</unitPattern>
 				<unitPattern count="other">{0} merkurio-milimetro</unitPattern>
 			</unit>
@@ -5591,12 +6248,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} libra hazbete karratuko</unitPattern>
 			</unit>
 			<unit type="pressure-inch-hg">
-				<displayName>merkurio-hazbete</displayName>
+				<displayName>merkurio-hazbeteak</displayName>
 				<unitPattern count="one">{0} merkurio-hazbete</unitPattern>
 				<unitPattern count="other">{0} merkurio-hazbete</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
-				<displayName>milibar</displayName>
+				<displayName>milibarrak</displayName>
 				<unitPattern count="one">{0} milibar</unitPattern>
 				<unitPattern count="other">{0} milibar</unitPattern>
 			</unit>
@@ -5615,18 +6272,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} milia orduko</unitPattern>
 				<unitPattern count="other">{0} milia orduko</unitPattern>
 			</unit>
+			<unit type="speed-knot">
+				<displayName>knot</displayName>
+				<unitPattern count="one">{0} knot</unitPattern>
+				<unitPattern count="other">{0} knot</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
-				<displayName>Celcius gradu</displayName>
-				<unitPattern count="one">{0} Celcius gradu</unitPattern>
-				<unitPattern count="other">{0} Celcius gradu</unitPattern>
+				<displayName>Celsius graduak</displayName>
+				<unitPattern count="one">{0} Celsius gradu</unitPattern>
+				<unitPattern count="other">{0} Celsius gradu</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
-				<displayName>Fahrenheit gradu</displayName>
-				<unitPattern count="one">{0}Fahrenheit gradu</unitPattern>
-				<unitPattern count="other">{0}Fahrenheit gradu</unitPattern>
+				<displayName>Fahrenheit graduak</displayName>
+				<unitPattern count="one">{0} Fahrenheit gradu</unitPattern>
+				<unitPattern count="other">{0} Fahrenheit gradu</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
-				<displayName>kelvin gradu</displayName>
+				<displayName>kelvin graduak</displayName>
 				<unitPattern count="one">{0} kelvin gradu</unitPattern>
 				<unitPattern count="other">{0} kelvin gradu</unitPattern>
 			</unit>
@@ -5639,11 +6306,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>metro kubiko</displayName>
 				<unitPattern count="one">{0} metro kubiko</unitPattern>
 				<unitPattern count="other">{0} metro kubiko</unitPattern>
+				<perUnitPattern>{0} metro kubiko bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>zentimetro kubiko</displayName>
 				<unitPattern count="one">{0} zentimetro kubiko</unitPattern>
 				<unitPattern count="other">{0} zentimetro kubiko</unitPattern>
+				<perUnitPattern>{0} zentimetro kubiko bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>milia kubiko</displayName>
@@ -5679,6 +6348,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>litro</displayName>
 				<unitPattern count="one">{0} litro</unitPattern>
 				<unitPattern count="other">{0} litro</unitPattern>
+				<perUnitPattern>{0} litro bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>dezilitro</displayName>
@@ -5695,6 +6365,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} mililitro</unitPattern>
 				<unitPattern count="other">{0} mililitro</unitPattern>
 			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>pinta metrikoak</displayName>
+				<unitPattern count="one">{0} pinta metriko</unitPattern>
+				<unitPattern count="other">{0} pinta metriko</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>katilu metrikoak</displayName>
+				<unitPattern count="one">{0} katilu metriko</unitPattern>
+				<unitPattern count="other">{0} katilu metriko</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>akre-oin</displayName>
 				<unitPattern count="one">{0} akre-oin</unitPattern>
@@ -5704,6 +6384,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>galoi</displayName>
 				<unitPattern count="one">{0} galoi</unitPattern>
 				<unitPattern count="other">{0} galoi</unitPattern>
+				<perUnitPattern>{0} galoi bakoitzeko</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>galoi brit.</displayName>
+				<unitPattern count="one">{0} galoi brit.</unitPattern>
+				<unitPattern count="other">{0} galoi brit.</unitPattern>
+				<perUnitPattern>{0} galoi brit. bakoitzeko</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>galoi-laurden</displayName>
@@ -5735,6 +6422,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} koilaratxokada</unitPattern>
 				<unitPattern count="other">{0} koilaratxokada</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} I</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} H</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} M</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
 			<compoundUnit type="per">
@@ -5750,6 +6443,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} m/s²</unitPattern>
 				<unitPattern count="other">{0} m/s²</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>bira</displayName>
+				<unitPattern count="one">{0} bira</unitPattern>
+				<unitPattern count="other">{0} bira</unitPattern>
+			</unit>
 			<unit type="angle-radian">
 				<displayName>rad</displayName>
 				<unitPattern count="one">{0} rad</unitPattern>
@@ -5761,19 +6459,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>minutu</displayName>
-				<unitPattern count="one">{0}′</unitPattern>
-				<unitPattern count="other">{0}′</unitPattern>
+				<displayName>arku-min</displayName>
+				<unitPattern count="one">{0} arku-min</unitPattern>
+				<unitPattern count="other">{0} arku-min</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>segundo</displayName>
-				<unitPattern count="one">{0}″</unitPattern>
-				<unitPattern count="other">{0}″</unitPattern>
+				<displayName>arku-seg</displayName>
+				<unitPattern count="one">{0} arku-seg</unitPattern>
+				<unitPattern count="other">{0} arku-seg</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hektarea</displayName>
@@ -5784,16 +6483,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>m²</displayName>
 				<unitPattern count="one">{0} m²</unitPattern>
 				<unitPattern count="other">{0} m²</unitPattern>
+				<perUnitPattern>{0}/m²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>cm²</displayName>
 				<unitPattern count="one">{0} cm²</unitPattern>
 				<unitPattern count="other">{0} cm²</unitPattern>
+				<perUnitPattern>{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>mi²</displayName>
 				<unitPattern count="one">{0} mi²</unitPattern>
 				<unitPattern count="other">{0} mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akre</displayName>
@@ -5814,21 +6516,47 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>in²</displayName>
 				<unitPattern count="one">{0} in²</unitPattern>
 				<unitPattern count="other">{0} in²</unitPattern>
+				<perUnitPattern>{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kt</displayName>
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dl</displayName>
+				<unitPattern count="one">{0} mg/dl</unitPattern>
+				<unitPattern count="other">{0} mg/dl</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>milimole/litro</displayName>
+				<unitPattern count="one">{0} mmol/l</unitPattern>
+				<unitPattern count="other">{0} mmol/l</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>zati/milioi</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>l/km</displayName>
 				<unitPattern count="one">{0} l/km</unitPattern>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
+			<unit type="consumption-liter-per-100kilometers">
+				<displayName>l/100 km</displayName>
+				<unitPattern count="one">{0} l/100 km</unitPattern>
+				<unitPattern count="other">{0} l/100 km</unitPattern>
+			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>mpg</displayName>
-				<unitPattern count="one">{0} mpg</unitPattern>
-				<unitPattern count="other">{0} mpg</unitPattern>
+				<displayName>mi/gal</displayName>
+				<unitPattern count="one">mi/gal</unitPattern>
+				<unitPattern count="other">{0} mi/gal</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>milia/galoi britainiar</displayName>
+				<unitPattern count="one">{0} mi gal brit.</unitPattern>
+				<unitPattern count="other">{0} mi gal brit.</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -5880,25 +6608,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} bit</unitPattern>
 				<unitPattern count="other">{0} bit</unitPattern>
 			</unit>
+			<unit type="duration-century">
+				<displayName>m.</displayName>
+				<unitPattern count="one">{0} m.</unitPattern>
+				<unitPattern count="other">{0} m.</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>urte</displayName>
 				<unitPattern count="one">{0} urte</unitPattern>
 				<unitPattern count="other">{0} urte</unitPattern>
+				<perUnitPattern>{0}/u.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>hilabete</displayName>
 				<unitPattern count="one">{0} hilabete</unitPattern>
 				<unitPattern count="other">{0} hilabete</unitPattern>
+				<perUnitPattern>{0}/hilabete</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>aste</displayName>
 				<unitPattern count="one">{0} aste</unitPattern>
 				<unitPattern count="other">{0} aste</unitPattern>
+				<perUnitPattern>{0}/a.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>egun</displayName>
 				<unitPattern count="one">{0} egun</unitPattern>
 				<unitPattern count="other">{0} egun</unitPattern>
+				<perUnitPattern>{0}/e.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ordu</displayName>
@@ -5910,6 +6647,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>min</displayName>
 				<unitPattern count="one">{0} min</unitPattern>
 				<unitPattern count="other">{0} min</unitPattern>
+				<perUnitPattern>{0}/min</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>seg</displayName>
@@ -5963,9 +6701,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName>cal</displayName>
+				<unitPattern count="one">{0} cal</unitPattern>
+				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -5979,8 +6717,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kWh</displayName>
-				<unitPattern count="one">{0} kWh</unitPattern>
-				<unitPattern count="other">{0} kWh</unitPattern>
+				<unitPattern count="one">{0} kW/h</unitPattern>
+				<unitPattern count="other">{0} kW/h</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>GHz</displayName>
@@ -6006,11 +6744,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km</displayName>
 				<unitPattern count="one">{0} km</unitPattern>
 				<unitPattern count="other">{0} km</unitPattern>
+				<perUnitPattern>{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
+				<perUnitPattern>{0}/m</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
 				<displayName>dm</displayName>
@@ -6021,6 +6761,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>cm</displayName>
 				<unitPattern count="one">{0} cm</unitPattern>
 				<unitPattern count="other">{0} cm</unitPattern>
+				<perUnitPattern>{0}/cm</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>mm</displayName>
@@ -6056,11 +6797,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>oin</displayName>
 				<unitPattern count="one">{0} ft</unitPattern>
 				<unitPattern count="other">{0} ft</unitPattern>
+				<perUnitPattern>{0}/ft</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
 				<displayName>hazbete</displayName>
 				<unitPattern count="one">{0} in</unitPattern>
 				<unitPattern count="other">{0} in</unitPattern>
+				<perUnitPattern>{0}/in</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>pc</displayName>
@@ -6073,7 +6816,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ly</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName>au</displayName>
+				<displayName>ua</displayName>
 				<unitPattern count="one">{0} au</unitPattern>
 				<unitPattern count="other">{0} au</unitPattern>
 			</unit>
@@ -6082,10 +6825,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} nmi</unitPattern>
 				<unitPattern count="other">{0} nmi</unitPattern>
 			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>smi</displayName>
+				<unitPattern count="one">{0} smi</unitPattern>
+				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pt</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
+			</unit>
 			<unit type="light-lux">
-				<displayName>lx</displayName>
-				<unitPattern count="one">{0} lx</unitPattern>
-				<unitPattern count="other">{0} lx</unitPattern>
+				<displayName>lux</displayName>
+				<unitPattern count="one">{0} lux</unitPattern>
+				<unitPattern count="other">{0} lux</unitPattern>
 			</unit>
 			<unit type="mass-metric-ton">
 				<displayName>t</displayName>
@@ -6096,11 +6849,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kg</displayName>
 				<unitPattern count="one">{0} kg</unitPattern>
 				<unitPattern count="other">{0} kg</unitPattern>
+				<perUnitPattern>{0}/kg</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>g</displayName>
 				<unitPattern count="one">{0} g</unitPattern>
 				<unitPattern count="other">{0} g</unitPattern>
+				<perUnitPattern>{0}/g</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>mg</displayName>
@@ -6121,11 +6876,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>lb</displayName>
 				<unitPattern count="one">{0} lb</unitPattern>
 				<unitPattern count="other">{0} lb</unitPattern>
+				<perUnitPattern>{0}/lb</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>oz</displayName>
 				<unitPattern count="one">{0} oz</unitPattern>
 				<unitPattern count="other">{0} oz</unitPattern>
+				<perUnitPattern>{0}/oz</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>oz t</displayName>
@@ -6207,15 +6964,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} mph</unitPattern>
 				<unitPattern count="other">{0} mph</unitPattern>
 			</unit>
+			<unit type="speed-knot">
+				<displayName>kn</displayName>
+				<unitPattern count="one">{0} kn</unitPattern>
+				<unitPattern count="other">{0} kn</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="one">{0}°</unitPattern>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one">{0}°C</unitPattern>
-				<unitPattern count="other">{0}°C</unitPattern>
+				<unitPattern count="one">{0} °C</unitPattern>
+				<unitPattern count="other">{0} °C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>°F</displayName>
-				<unitPattern count="one">{0}°F</unitPattern>
-				<unitPattern count="other">{0}°F</unitPattern>
+				<unitPattern count="one">{0} °F</unitPattern>
+				<unitPattern count="other">{0} °F</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
 				<displayName>K</displayName>
@@ -6231,11 +6998,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>m³</displayName>
 				<unitPattern count="one">{0} m³</unitPattern>
 				<unitPattern count="other">{0} m³</unitPattern>
+				<perUnitPattern>{0}/m³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName>cm³</displayName>
 				<unitPattern count="one">{0} cm³</unitPattern>
 				<unitPattern count="other">{0} cm³</unitPattern>
+				<perUnitPattern>{0}/cm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>mi³</displayName>
@@ -6271,6 +7040,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>l</displayName>
 				<unitPattern count="one">{0} l</unitPattern>
 				<unitPattern count="other">{0} l</unitPattern>
+				<perUnitPattern>{0}/l</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>dl</displayName>
@@ -6287,6 +7057,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} ml</unitPattern>
 				<unitPattern count="other">{0} ml</unitPattern>
 			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>m/pt</displayName>
+				<unitPattern count="one">{0} m/pt</unitPattern>
+				<unitPattern count="other">{0} m/pt</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>mc</displayName>
+				<unitPattern count="one">{0} mc</unitPattern>
+				<unitPattern count="other">{0} mc</unitPattern>
+			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ac ft</displayName>
 				<unitPattern count="one">{0} ac ft</unitPattern>
@@ -6296,6 +7076,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>gal</displayName>
 				<unitPattern count="one">{0} gal</unitPattern>
 				<unitPattern count="other">{0} gal</unitPattern>
+				<perUnitPattern>{0}/galoi estatubatuar</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>gal brit.</displayName>
+				<unitPattern count="one">{0} gal brit.</unitPattern>
+				<unitPattern count="other">{0} gal brit.</unitPattern>
+				<perUnitPattern>{0}/gal brit.</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qt</displayName>
@@ -6327,6 +7114,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} tsp</unitPattern>
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} I</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} H</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} M</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
 			<compoundUnit type="per">
@@ -6371,6 +7164,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-foot">
 				<unitPattern count="one">{0} ft²</unitPattern>
 				<unitPattern count="other">{0} ft²</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-100kilometers">
+				<displayName>l/100 km</displayName>
+				<unitPattern count="one">{0} l/100 km</unitPattern>
+				<unitPattern count="other">{0} l/100 km</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>urte</displayName>
@@ -6418,7 +7216,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>metro</displayName>
+				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
 			</unit>
@@ -6513,8 +7311,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
+				<unitPattern count="one">{0} °C</unitPattern>
+				<unitPattern count="other">{0} °C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="one">{0}°F</unitPattern>
@@ -6533,6 +7331,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} l</unitPattern>
 				<unitPattern count="other">{0} l</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} I</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} H</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} M</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
 			<durationUnitPattern>h:mm</durationUnitPattern>
@@ -6550,6 +7354,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} eta {1}</listPatternPart>
 			<listPatternPart type="2">{0} eta {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} edo {1}</listPatternPart>
+			<listPatternPart type="2">{0} edo {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -6576,5 +7386,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>ez:e</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — Guztiak</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — Bateragarritasuna</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — Inguratua</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — Luzatua</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — Historikoa</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — Askotarikoak</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — Bestelakoak</characterLabelPattern>
+		<characterLabelPattern type="scripts">Scriptak — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} trazuak</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} trazuak</characterLabelPattern>
+		<characterLabel type="activities">Jarduerak</characterLabel>
+		<characterLabel type="african_scripts">Script afrikarrak</characterLabel>
+		<characterLabel type="american_scripts">Script amerikarrak</characterLabel>
+		<characterLabel type="animal">animalia</characterLabel>
+		<characterLabel type="animals_nature">Animaliak eta natura</characterLabel>
+		<characterLabel type="arrows">Geziak</characterLabel>
+		<characterLabel type="body">gorputza</characterLabel>
+		<characterLabel type="box_drawing">Koadro-marrazketa</characterLabel>
+		<characterLabel type="braille">Braille</characterLabel>
+		<characterLabel type="building">eraikina</characterLabel>
+		<characterLabel type="bullets_stars">Buletak/Izarrak</characterLabel>
+		<characterLabel type="consonantal_jamo">Jamo kontsonantea</characterLabel>
+		<characterLabel type="currency_symbols">Moneten ikurrak</characterLabel>
+		<characterLabel type="dash_connector">Marratxoa/Konektorea</characterLabel>
+		<characterLabel type="digits">Digituak</characterLabel>
+		<characterLabel type="dingbats">Piktogramak</characterLabel>
+		<characterLabel type="divination_symbols">Astrologia-ikurrak</characterLabel>
+		<characterLabel type="downwards_arrows">Behera-geziak</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">Behera-/Gora-geziak</characterLabel>
+		<characterLabel type="east_asian_scripts">Asiako ekialdeko scriptak</characterLabel>
+		<characterLabel type="emoji">Emotikonoa</characterLabel>
+		<characterLabel type="european_scripts">Script europearrak</characterLabel>
+		<characterLabel type="female">emakumea</characterLabel>
+		<characterLabel type="flag">bandera</characterLabel>
+		<characterLabel type="flags">Banderak</characterLabel>
+		<characterLabel type="food_drink">Jan-edariak</characterLabel>
+		<characterLabel type="format">Formatua</characterLabel>
+		<characterLabel type="format_whitespace">Formatua eta zuriunea</characterLabel>
+		<characterLabel type="full_width_form_variant">Zabalera osoko forma-aldaerak</characterLabel>
+		<characterLabel type="geometric_shapes">Forma geometrikoak</characterLabel>
+		<characterLabel type="half_width_form_variant">Zabalera erdiko forma-aldaerak</characterLabel>
+		<characterLabel type="han_characters">Han karaktereak</characterLabel>
+		<characterLabel type="han_radicals">Han radikalak</characterLabel>
+		<characterLabel type="hanja">Hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">Hanzi (sinplifikatua)</characterLabel>
+		<characterLabel type="hanzi_traditional">Hanzi (tradizionala)</characterLabel>
+		<characterLabel type="heart">bihotza</characterLabel>
+		<characterLabel type="historic_scripts">Script historikoak</characterLabel>
+		<characterLabel type="ideographic_desc_characters">Karaktere ideografiko deskribatzaileak</characterLabel>
+		<characterLabel type="japanese_kana">Japonierako kana</characterLabel>
+		<characterLabel type="kanbun">Kanbuna</characterLabel>
+		<characterLabel type="kanji">Kanjia</characterLabel>
+		<characterLabel type="keycap">tekla</characterLabel>
+		<characterLabel type="leftwards_arrows">Ezker-geziak</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">Ezker-/Eskuin-geziak</characterLabel>
+		<characterLabel type="letterlike_symbols">Hizkien antzeko ikurrak</characterLabel>
+		<characterLabel type="limited_use">Erabilera mugatua</characterLabel>
+		<characterLabel type="male">gizona</characterLabel>
+		<characterLabel type="math_symbols">Matematikako ikurrak</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Ekialde Ertaineko scriptak</characterLabel>
+		<characterLabel type="miscellaneous">Askotarikoak</characterLabel>
+		<characterLabel type="modern_scripts">Script modernoak</characterLabel>
+		<characterLabel type="modifier">Aldatzailea</characterLabel>
+		<characterLabel type="musical_symbols">Musika-ikurrak</characterLabel>
+		<characterLabel type="nature">natura</characterLabel>
+		<characterLabel type="nonspacing">Tarterik gabeko</characterLabel>
+		<characterLabel type="numbers">Zenbakiak</characterLabel>
+		<characterLabel type="objects">Objektuak</characterLabel>
+		<characterLabel type="other">Bestelakoak</characterLabel>
+		<characterLabel type="paired">Parekatuta</characterLabel>
+		<characterLabel type="person">pertsona</characterLabel>
+		<characterLabel type="phonetic_alphabet">Alfabeto fonetikoa</characterLabel>
+		<characterLabel type="pictographs">Piktogramak</characterLabel>
+		<characterLabel type="place">tokia</characterLabel>
+		<characterLabel type="plant">landarea</characterLabel>
+		<characterLabel type="punctuation">Puntuazioa</characterLabel>
+		<characterLabel type="rightwards_arrows">Eskuin-geziak</characterLabel>
+		<characterLabel type="sign_standard_symbols">Zeinuak / Ikur estandarrak</characterLabel>
+		<characterLabel type="small_form_variant">Forma-aldaera txikiak</characterLabel>
+		<characterLabel type="smiley">emotikonoa</characterLabel>
+		<characterLabel type="smileys_people">Emotikonoak eta jendea</characterLabel>
+		<characterLabel type="south_asian_scripts">Asiako hegoaldeko scriptak</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Asiako hego-ekialdeko scriptak</characterLabel>
+		<characterLabel type="spacing">Tartea</characterLabel>
+		<characterLabel type="sport">kirola</characterLabel>
+		<characterLabel type="symbols">Ikurrak</characterLabel>
+		<characterLabel type="technical_symbols">Ikur teknikoak</characterLabel>
+		<characterLabel type="tone_marks">Tonu-markak</characterLabel>
+		<characterLabel type="travel">bidaiak</characterLabel>
+		<characterLabel type="travel_places">Bidaiak eta tokiak</characterLabel>
+		<characterLabel type="upwards_arrows">Gora-geziak</characterLabel>
+		<characterLabel type="variant_forms">Aldaeren formak</characterLabel>
+		<characterLabel type="vocalic_jamo">Jamo bokala</characterLabel>
+		<characterLabel type="weather">eguraldia</characterLabel>
+		<characterLabel type="western_asian_scripts">Asiako mendebaldeko scriptak</characterLabel>
+		<characterLabel type="whitespace">Zuriunea</characterLabel>
+	</characterLabels>
 </ldml>
-

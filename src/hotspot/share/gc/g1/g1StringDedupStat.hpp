@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,126 +25,28 @@
 #ifndef SHARE_VM_GC_G1_G1STRINGDEDUPSTAT_HPP
 #define SHARE_VM_GC_G1_G1STRINGDEDUPSTAT_HPP
 
-#include "memory/allocation.hpp"
-#include "runtime/os.hpp"
+#include "gc/shared/stringdedup/stringDedupStat.hpp"
 
-// Macros for GC log output formating
-#define G1_STRDEDUP_OBJECTS_FORMAT         UINTX_FORMAT_W(12)
-#define G1_STRDEDUP_TIME_FORMAT            "%.3fs"
-#define G1_STRDEDUP_TIME_PARAM(time)       (time)
-#define G1_STRDEDUP_TIME_FORMAT_MS         "%.3fms"
-#define G1_STRDEDUP_TIME_PARAM_MS(time)    ((time) * MILLIUNITS)
-#define G1_STRDEDUP_PERCENT_FORMAT         "%5.1f%%"
-#define G1_STRDEDUP_PERCENT_FORMAT_NS      "%.1f%%"
-#define G1_STRDEDUP_BYTES_FORMAT           "%8.1f%s"
-#define G1_STRDEDUP_BYTES_FORMAT_NS        "%.1f%s"
-#define G1_STRDEDUP_BYTES_PARAM(bytes)     byte_size_in_proper_unit((double)(bytes)), proper_unit_for_byte_size((bytes))
-
-//
-// Statistics gathered by the deduplication thread.
-//
-class G1StringDedupStat : public StackObj {
+// G1 extension for gathering/reporting generational statistics
+class G1StringDedupStat : public StringDedupStat {
 private:
-  // Counters
-  uintx  _inspected;
-  uintx  _skipped;
-  uintx  _hashed;
-  uintx  _known;
-  uintx  _new;
-  uintx  _new_bytes;
-  uintx  _deduped;
-  uintx  _deduped_bytes;
   uintx  _deduped_young;
   uintx  _deduped_young_bytes;
   uintx  _deduped_old;
   uintx  _deduped_old_bytes;
-  uintx  _idle;
-  uintx  _exec;
-  uintx  _block;
 
-  // Time spent by the deduplication thread in different phases
-  double _start_concurrent;
-  double _end_concurrent;
-  double _start_phase;
-  double _idle_elapsed;
-  double _exec_elapsed;
-  double _block_elapsed;
+  G1CollectedHeap* const _heap;
 
 public:
   G1StringDedupStat();
 
-  void inc_inspected() {
-    _inspected++;
-  }
+  void deduped(oop obj, uintx bytes);
 
-  void inc_skipped() {
-    _skipped++;
-  }
+  void add(const StringDedupStat* const stat);
 
-  void inc_hashed() {
-    _hashed++;
-  }
+  void print_statistics(bool total) const;
 
-  void inc_known() {
-    _known++;
-  }
-
-  void inc_new(uintx bytes) {
-    _new++;
-    _new_bytes += bytes;
-  }
-
-  void inc_deduped_young(uintx bytes) {
-    _deduped++;
-    _deduped_bytes += bytes;
-    _deduped_young++;
-    _deduped_young_bytes += bytes;
-  }
-
-  void inc_deduped_old(uintx bytes) {
-    _deduped++;
-    _deduped_bytes += bytes;
-    _deduped_old++;
-    _deduped_old_bytes += bytes;
-  }
-
-  void mark_idle() {
-    _start_phase = os::elapsedTime();
-    _idle++;
-  }
-
-  void mark_exec() {
-    double now = os::elapsedTime();
-    _idle_elapsed = now - _start_phase;
-    _start_phase = now;
-    _start_concurrent = now;
-    _exec++;
-  }
-
-  void mark_block() {
-    double now = os::elapsedTime();
-    _exec_elapsed += now - _start_phase;
-    _start_phase = now;
-    _block++;
-  }
-
-  void mark_unblock() {
-    double now = os::elapsedTime();
-    _block_elapsed += now - _start_phase;
-    _start_phase = now;
-  }
-
-  void mark_done() {
-    double now = os::elapsedTime();
-    _exec_elapsed += now - _start_phase;
-    _end_concurrent = now;
-  }
-
-  void add(const G1StringDedupStat& stat);
-
-  static void print_start(const G1StringDedupStat& last_stat);
-  static void print_end(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat);
-  static void print_statistics(const G1StringDedupStat& stat, bool total);
+  void reset();
 };
 
 #endif // SHARE_VM_GC_G1_G1STRINGDEDUPSTAT_HPP

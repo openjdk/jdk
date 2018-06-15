@@ -535,16 +535,6 @@ jint handleAppend(FD fd, const void *buf, jint len) {
     return writeInternal(fd, buf, len, JNI_TRUE);
 }
 
-void
-handleClose(JNIEnv *env, jobject this, jfieldID fid)
-{
-    jobject fileDescriptor = (*env)->GetObjectField(env, (this), (fid));
-    if (fileDescriptor == NULL) {
-        return;
-    }
-    fileDescriptorClose(env, fileDescriptor);
-}
-
 // Function to close the fd held by this FileDescriptor and set fd to -1.
 void
 fileDescriptorClose(JNIEnv *env, jobject this)

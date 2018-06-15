@@ -1396,6 +1396,16 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseFastStosb, false);
   }
 
+  // Use XMM/YMM MOVDQU instruction for Object Initialization
+  if (!UseFastStosb && UseSSE >= 2 && UseUnalignedLoadStores) {
+    if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
+      UseXMMForObjInit = true;
+    }
+  } else if (UseXMMForObjInit) {
+    warning("UseXMMForObjInit requires SSE2 and unaligned load/stores. Feature is switched off.");
+    FLAG_SET_DEFAULT(UseXMMForObjInit, false);
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(AlignVector)) {
     // Modern processors allow misaligned memory operations for vectors.

@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12418 $"/>
+		<version number="$Revision: 13927 $"/>
 		<language type="en"/>
 	</identity>
 	<localeDisplayNames>
@@ -45,6 +48,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="aro">Araona</language>
 			<language type="arp">Arapaho</language>
 			<language type="arq">Algerian Arabic</language>
+			<language type="ars">Najdi Arabic</language>
 			<language type="arw">Arawak</language>
 			<language type="ary">Moroccan Arabic</language>
 			<language type="arz">Egyptian Arabic</language>
@@ -83,7 +87,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="bkm">Kom</language>
 			<language type="bla">Siksika</language>
 			<language type="bm">Bambara</language>
-			<language type="bn">Bengali</language>
+			<language type="bn">Bangla</language>
 			<language type="bo">Tibetan</language>
 			<language type="bpy">Bishnupriya</language>
 			<language type="bqi">Bakhtiari</language>
@@ -103,6 +107,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="car">Carib</language>
 			<language type="cay">Cayuga</language>
 			<language type="cch">Atsam</language>
+			<language type="ccp">Chakma</language>
 			<language type="ce">Chechen</language>
 			<language type="ceb">Cebuano</language>
 			<language type="cgg">Chiga</language>
@@ -122,6 +127,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="cps">Capiznon</language>
 			<language type="cr">Cree</language>
 			<language type="crh">Crimean Turkish</language>
+			<language type="crs">Seselwa Creole French</language>
 			<language type="cs">Czech</language>
 			<language type="csb">Kashubian</language>
 			<language type="cu">Church Slavic</language>
@@ -337,6 +343,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ln">Lingala</language>
 			<language type="lo">Lao</language>
 			<language type="lol">Mongo</language>
+			<language type="lou">Louisiana Creole</language>
 			<language type="loz">Lozi</language>
 			<language type="lrc">Northern Luri</language>
 			<language type="lt">Lithuanian</language>
@@ -370,7 +377,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mgo">Metaʼ</language>
 			<language type="mh">Marshallese</language>
 			<language type="mi">Maori</language>
-			<language type="mic">Micmac</language>
+			<language type="mic">Mi'kmaq</language>
 			<language type="min">Minangkabau</language>
 			<language type="mk">Macedonian</language>
 			<language type="ml">Malayalam</language>
@@ -384,7 +391,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ms">Malay</language>
 			<language type="mt">Maltese</language>
 			<language type="mua">Mundang</language>
-			<language type="mul">Multiple Languages</language>
+			<language type="mul">Multiple languages</language>
 			<language type="mus">Creek</language>
 			<language type="mwl">Mirandese</language>
 			<language type="mwr">Marwari</language>
@@ -431,7 +438,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="oc">Occitan</language>
 			<language type="oj">Ojibwa</language>
 			<language type="om">Oromo</language>
-			<language type="or">Oriya</language>
+			<language type="or">Odia</language>
 			<language type="os">Ossetic</language>
 			<language type="osa">Osage</language>
 			<language type="ota">Ottoman Turkish</language>
@@ -442,6 +449,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pap">Papiamento</language>
 			<language type="pau">Palauan</language>
 			<language type="pcd">Picard</language>
+			<language type="pcm">Nigerian Pidgin</language>
 			<language type="pdc">Pennsylvania German</language>
 			<language type="pdt">Plautdietsch</language>
 			<language type="peo">Old Persian</language>
@@ -527,6 +535,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sog">Sogdien</language>
 			<language type="sq">Albanian</language>
 			<language type="sr">Serbian</language>
+			<language type="sr_ME">Montenegrin</language>
 			<language type="srn">Sranan Tongo</language>
 			<language type="srr">Serer</language>
 			<language type="ss">Swati</language>
@@ -589,7 +598,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="uga">Ugaritic</language>
 			<language type="uk">Ukrainian</language>
 			<language type="umb">Umbundu</language>
-			<language type="und">Unknown Language</language>
+			<language type="und">Unknown language</language>
 			<language type="ur">Urdu</language>
 			<language type="uz">Uzbek</language>
 			<language type="vai">Vai</language>
@@ -630,6 +639,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zen">Zenaga</language>
 			<language type="zgh">Standard Moroccan Tamazight</language>
 			<language type="zh">Chinese</language>
+			<language type="zh" alt="long">Mandarin Chinese</language>
 			<language type="zh_Hans">Simplified Chinese</language>
 			<language type="zh_Hant">Traditional Chinese</language>
 			<language type="zu">Zulu</language>
@@ -638,6 +648,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="zza">Zaza</language>
 		</languages>
 		<scripts>
+			<script type="Adlm">Adlam</script>
 			<script type="Afak">Afaka</script>
 			<script type="Aghb">Caucasian Albanian</script>
 			<script type="Ahom">Ahom</script>
@@ -650,7 +661,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Bamu">Bamum</script>
 			<script type="Bass">Bassa Vah</script>
 			<script type="Batk">Batak</script>
-			<script type="Beng">Bengali</script>
+			<script type="Beng">Bangla</script>
+			<script type="Bhks">Bhaiksuki</script>
 			<script type="Blis">Blissymbols</script>
 			<script type="Bopo">Bopomofo</script>
 			<script type="Brah">Brahmi</script>
@@ -679,11 +691,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Geok">Georgian Khutsuri</script>
 			<script type="Geor">Georgian</script>
 			<script type="Glag">Glagolitic</script>
+			<script type="Gonm">Masaram Gondi</script>
 			<script type="Goth">Gothic</script>
 			<script type="Gran">Grantha</script>
 			<script type="Grek">Greek</script>
 			<script type="Gujr">Gujarati</script>
 			<script type="Guru">Gurmukhi</script>
+			<script type="Hanb">Han with Bopomofo</script>
 			<script type="Hang">Hangul</script>
 			<script type="Hani">Han</script>
 			<script type="Hano">Hanunoo</script>
@@ -700,6 +714,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung">Old Hungarian</script>
 			<script type="Inds">Indus</script>
 			<script type="Ital">Old Italic</script>
+			<script type="Jamo">Jamo</script>
 			<script type="Java">Javanese</script>
 			<script type="Jpan">Japanese</script>
 			<script type="Jurc">Jurchen</script>
@@ -728,6 +743,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mahj">Mahajani</script>
 			<script type="Mand">Mandaean</script>
 			<script type="Mani">Manichaean</script>
+			<script type="Marc">Marchen</script>
 			<script type="Maya">Mayan hieroglyphs</script>
 			<script type="Mend">Mende</script>
 			<script type="Merc">Meroitic Cursive</script>
@@ -742,13 +758,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Mymr">Myanmar</script>
 			<script type="Narb">Old North Arabian</script>
 			<script type="Nbat">Nabataean</script>
+			<script type="Newa">Newa</script>
 			<script type="Nkgb">Naxi Geba</script>
 			<script type="Nkoo">N’Ko</script>
 			<script type="Nshu">Nüshu</script>
 			<script type="Ogam">Ogham</script>
 			<script type="Olck">Ol Chiki</script>
 			<script type="Orkh">Orkhon</script>
-			<script type="Orya">Oriya</script>
+			<script type="Orya">Odia</script>
+			<script type="Osge">Osage</script>
 			<script type="Osma">Osmanya</script>
 			<script type="Palm">Palmyrene</script>
 			<script type="Pauc">Pau Cin Hau</script>
@@ -774,6 +792,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Sind">Khudawadi</script>
 			<script type="Sinh">Sinhala</script>
 			<script type="Sora">Sora Sompeng</script>
+			<script type="Soyo">Soyombo</script>
 			<script type="Sund">Sundanese</script>
 			<script type="Sylo">Syloti Nagri</script>
 			<script type="Syrc">Syriac</script>
@@ -804,6 +823,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Xsux">Sumero-Akkadian Cuneiform</script>
 			<script type="Xsux" alt="short">S-A Cuneiform</script>
 			<script type="Yiii">Yi</script>
+			<script type="Zanb">Zanabazar Square</script>
 			<script type="Zinh">Inherited</script>
 			<script type="Zmth">Mathematical Notation</script>
 			<script type="Zsye">Emoji</script>
@@ -843,6 +863,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Eastern Europe</territory>
 			<territory type="154">Northern Europe</territory>
 			<territory type="155">Western Europe</territory>
+			<territory type="202">Sub-Saharan Africa</territory>
 			<territory type="419">Latin America</territory>
 			<territory type="AC">Ascension Island</territory>
 			<territory type="AD">Andorra</territory>
@@ -905,7 +926,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">Curaçao</territory>
 			<territory type="CX">Christmas Island</territory>
 			<territory type="CY">Cyprus</territory>
-			<territory type="CZ">Czech Republic</territory>
+			<territory type="CZ">Czechia</territory>
+			<territory type="CZ" alt="variant">Czech Republic</territory>
 			<territory type="DE">Germany</territory>
 			<territory type="DG">Diego Garcia</territory>
 			<territory type="DJ">Djibouti</territory>
@@ -922,6 +944,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Spain</territory>
 			<territory type="ET">Ethiopia</territory>
 			<territory type="EU">European Union</territory>
+			<territory type="EZ">Eurozone</territory>
 			<territory type="FI">Finland</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Falkland Islands</territory>
@@ -1096,6 +1119,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Ukraine</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">U.S. Outlying Islands</territory>
+			<territory type="UN">United Nations</territory>
+			<territory type="UN" alt="short">UN</territory>
 			<territory type="US">United States</territory>
 			<territory type="US" alt="short">US</territory>
 			<territory type="UY">Uruguay</territory>
@@ -1181,28 +1206,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="colBackwards">Reversed Accent Sorting</key>
 			<key type="colCaseFirst">Uppercase/Lowercase Ordering</key>
 			<key type="colCaseLevel">Case Sensitive Sorting</key>
-			<key type="colHiraganaQuaternary">Kana Sorting</key>
 			<key type="collation">Sort Order</key>
 			<key type="colNormalization">Normalized Sorting</key>
 			<key type="colNumeric">Numeric Sorting</key>
 			<key type="colReorder">Script/Block Reordering</key>
 			<key type="colStrength">Sorting Strength</key>
 			<key type="currency">Currency</key>
+			<key type="d0">Transform Destination</key>
 			<key type="em">Emoji Presentation Style</key>
 			<key type="fw">First day of week</key>
+			<key type="h0">Mixed-in Language</key>
 			<key type="hc">Hour Cycle (12 vs 24)</key>
+			<key type="i0">Input Method</key>
+			<key type="k0">Keyboard</key>
 			<key type="kv">Highest Ignored</key>
 			<key type="lb">Line Break Style</key>
 			<key type="lw">Line Breaks In Words Setting</key>
+			<key type="m0">Transform Rules</key>
 			<key type="ms">Measurement System</key>
 			<key type="numbers">Numbers</key>
 			<key type="rg">Region For Supplemental Data</key>
+			<key type="s0">Transform Source</key>
 			<key type="sd">Region Subdivision</key>
 			<key type="ss">Sentence Break Suppressions Type</key>
+			<key type="t0">Machine Translated</key>
 			<key type="timezone">Time Zone</key>
 			<key type="va">Locale Variant</key>
-			<key type="variableTop">Sort As Symbols</key>
 			<key type="x">Private-Use</key>
+			<key type="x0">Private-Use Transform</key>
 		</keys>
 		<types>
 			<type key="calendar" type="buddhist">Buddhist Calendar</type>
@@ -1234,8 +1265,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper">Sort Uppercase First</type>
 			<type key="colCaseLevel" type="no">Sort Case Insensitive</type>
 			<type key="colCaseLevel" type="yes">Sort Case Sensitive</type>
-			<type key="colHiraganaQuaternary" type="no">Sort Kana Separately</type>
-			<type key="colHiraganaQuaternary" type="yes">Sort Kana Differently</type>
 			<type key="collation" type="big5han">Traditional Chinese Sort Order - Big5</type>
 			<type key="collation" type="compat">Previous Sort Order, for compatibility</type>
 			<type key="collation" type="dictionary">Dictionary Sort Order</type>
@@ -1263,6 +1292,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary">Sort Accents/Case/Width/Kana</type>
 			<type key="colStrength" type="secondary">Sort Accents</type>
 			<type key="colStrength" type="tertiary">Sort Accents/Case/Width</type>
+			<type key="d0" type="accents">To Accented Characters From ASCII Sequence</type>
+			<type key="d0" type="ascii">To ASCII</type>
+			<type key="d0" type="casefold">To Casefolded</type>
+			<type key="d0" type="charname">To Unicode Character Names</type>
+			<type key="d0" type="fcc">To Unicode FCC</type>
+			<type key="d0" type="fcd">To Unicode FCD</type>
+			<type key="d0" type="fwidth">To Fullwidth</type>
+			<type key="d0" type="hex">To Hexadecimal Codes</type>
+			<type key="d0" type="hwidth">To Halfwidth</type>
+			<type key="d0" type="lower">To Lowercase</type>
+			<type key="d0" type="nfc">To Unicode NFC</type>
+			<type key="d0" type="nfd">To Unicode NFD</type>
+			<type key="d0" type="nfkc">To Unicode NFKC</type>
+			<type key="d0" type="nfkd">To Unicode NFKD</type>
+			<type key="d0" type="npinyin">To Pinyin With Numeric Tones</type>
+			<type key="d0" type="null">No Change</type>
+			<type key="d0" type="publish">To Publishing Characters From ASCII</type>
+			<type key="d0" type="remove">To Empty String</type>
+			<type key="d0" type="title">To Titlecase</type>
+			<type key="d0" type="upper">To Uppercase</type>
 			<type key="em" type="default">Use Default Presentation For Emoji Characters</type>
 			<type key="em" type="emoji">Prefer Emoji Presentation For Emoji Characters</type>
 			<type key="em" type="text">Prefer Text Presentation For Emoji Characters</type>
@@ -1273,19 +1322,74 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="fw" type="thu">First Day of Week Is Thursday</type>
 			<type key="fw" type="tue">First Day of Week Is Tuesday</type>
 			<type key="fw" type="wed">First Day of Week Is Wednesday</type>
+			<type key="h0" type="hybrid">Hybrid Language</type>
 			<type key="hc" type="h11">12 Hour System (0–11)</type>
 			<type key="hc" type="h12">12 Hour System (1–12)</type>
 			<type key="hc" type="h23">24 Hour System (0–23)</type>
 			<type key="hc" type="h24">24 Hour System (1–24)</type>
+			<type key="i0" type="handwrit">Handwriting Input Method</type>
+			<type key="i0" type="pinyin">Pinyin Input Method</type>
+			<type key="i0" type="und">Unspecified Input Method</type>
+			<type key="i0" type="wubi">Wubi Input Method</type>
+			<type key="k0" type="101key">101-Key Keyboard</type>
+			<type key="k0" type="102key">102-Key Keyboard</type>
+			<type key="k0" type="600dpi">600 dpi Keyboard</type>
+			<type key="k0" type="768dpi">768 dpi Keyboard</type>
+			<type key="k0" type="android">Android Keyboard</type>
+			<type key="k0" type="azerty">AZERTY-Based Keyboard</type>
+			<type key="k0" type="chromeos">ChromeOS Keyboard</type>
+			<type key="k0" type="colemak">Colemak Keyboard</type>
+			<type key="k0" type="dvorak">Dvorak Keyboard</type>
+			<type key="k0" type="dvorakl">Dvorak Left-Handed Keyboard</type>
+			<type key="k0" type="dvorakr">Dvorak Right-Handed Keyboard</type>
+			<type key="k0" type="el220">Greek 220 Keyboard</type>
+			<type key="k0" type="el319">Greek 319 Keyboard</type>
+			<type key="k0" type="extended">Keyboard With Many Extra Characters</type>
+			<type key="k0" type="googlevk">Google Virtual Keyboard</type>
+			<type key="k0" type="isiri">Persian ISIRI Keyboard</type>
+			<type key="k0" type="legacy">Legacy Keyboard</type>
+			<type key="k0" type="lt1205">Lithuanian LST 1205 Keyboard</type>
+			<type key="k0" type="lt1582">Lithuanian LST 1582 Keyboard</type>
+			<type key="k0" type="nutaaq">Inuktitut Nutaaq Keyboard</type>
+			<type key="k0" type="osx">macOS Keyboard</type>
+			<type key="k0" type="patta">Thai Pattachote Keyboard</type>
+			<type key="k0" type="qwerty">QWERTY-Based Keyboard</type>
+			<type key="k0" type="qwertz">QWERTZ-Based Keyboard</type>
+			<type key="k0" type="ta99">Tamil 99 Keyboard</type>
+			<type key="k0" type="und">Unspecified Keyboard</type>
+			<type key="k0" type="var">Keyboard Variant</type>
+			<type key="k0" type="viqr">Vietnamese VIQR Keyboard</type>
+			<type key="k0" type="windows">Windows Keyboard</type>
+			<type key="kr" type="currency">Currency</type>
+			<type key="kr" type="digit">Digits</type>
+			<type key="kr" type="punct">Punctuation</type>
+			<type key="kr" type="space">Whitespace</type>
+			<type key="kr" type="symbol">Symbol</type>
+			<type key="kv" type="currency">Ignore Symbols affects spaces, punctuation, all symbols</type>
+			<type key="kv" type="punct">Ignore Symbols affects spaces and punctuation only</type>
+			<type key="kv" type="space">Ignore Symbols affects spaces only</type>
+			<type key="kv" type="symbol">Ignore Symbols affects spaces, punctuation, non-currency symbols</type>
 			<type key="lb" type="loose">Loose Line Break Style</type>
 			<type key="lb" type="normal">Normal Line Break Style</type>
 			<type key="lb" type="strict">Strict Line Break Style</type>
 			<type key="lw" type="breakall">Allow Line Breaks In All Words</type>
 			<type key="lw" type="keepall">Prevent Line Breaks In All Words</type>
 			<type key="lw" type="normal">Normal Line Breaks For Words</type>
+			<type key="m0" type="alaloc">US ALA-LOC Transliteration</type>
+			<type key="m0" type="bgn">US BGN Transliteration</type>
+			<type key="m0" type="buckwalt">Buckwalter Arabic Transliteration</type>
+			<type key="m0" type="din">German DIN Transliteration</type>
+			<type key="m0" type="gost">CIS GOST Transliteration</type>
+			<type key="m0" type="iso">ISO Transliteration</type>
+			<type key="m0" type="mcst">Korean MCST Transliteration</type>
+			<type key="m0" type="mns">Mongolian National Standard Transliteration</type>
+			<type key="m0" type="prprname">Personal Name Transliteration Variant</type>
+			<type key="m0" type="satts">Standard Arabic Technical Transliteration</type>
+			<type key="m0" type="ungegn">UN GEGN Transliteration</type>
 			<type key="ms" type="metric">Metric System</type>
 			<type key="ms" type="uksystem">Imperial Measurement System</type>
 			<type key="ms" type="ussystem">US Measurement System</type>
+			<type key="numbers" type="adlm">Adlam Digits</type>
 			<type key="numbers" type="ahom">Ahom Digits</type>
 			<type key="numbers" type="arab">Arabic-Indic Digits</type>
 			<type key="numbers" type="arabext">Extended Arabic-Indic Digits</type>
@@ -1293,7 +1397,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="armn">Armenian Numerals</type>
 			<type key="numbers" type="armnlow">Armenian Lowercase Numerals</type>
 			<type key="numbers" type="bali">Balinese Digits</type>
-			<type key="numbers" type="beng">Bengali Digits</type>
+			<type key="numbers" type="beng">Bangla Digits</type>
+			<type key="numbers" type="bhks">Bhaiksuki Digits</type>
 			<type key="numbers" type="brah">Brahmi Digits</type>
 			<type key="numbers" type="cakm">Chakma Digits</type>
 			<type key="numbers" type="cham">Cham Digits</type>
@@ -1303,6 +1408,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="finance">Financial Numerals</type>
 			<type key="numbers" type="fullwide">Full-Width Digits</type>
 			<type key="numbers" type="geor">Georgian Numerals</type>
+			<type key="numbers" type="gonm">Masaram Gondi digits</type>
 			<type key="numbers" type="grek">Greek Numerals</type>
 			<type key="numbers" type="greklow">Greek Lowercase Numerals</type>
 			<type key="numbers" type="gujr">Gujarati Digits</type>
@@ -1341,9 +1447,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="mymrshan">Myanmar Shan Digits</type>
 			<type key="numbers" type="mymrtlng">Myanmar Tai Laing Digits</type>
 			<type key="numbers" type="native">Native Digits</type>
+			<type key="numbers" type="newa">Newa Digits</type>
 			<type key="numbers" type="nkoo">N’Ko Digits</type>
 			<type key="numbers" type="olck">Ol Chiki Digits</type>
-			<type key="numbers" type="orya">Oriya Digits</type>
+			<type key="numbers" type="orya">Odia Digits</type>
 			<type key="numbers" type="osma">Osmanya Digits</type>
 			<type key="numbers" type="roman">Roman Numerals</type>
 			<type key="numbers" type="romanlow">Roman Lowercase Numerals</type>
@@ -1364,22 +1471,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional">Traditional Numerals</type>
 			<type key="numbers" type="vaii">Vai Digits</type>
 			<type key="numbers" type="wara">Warang Citi Digits</type>
+			<type key="s0" type="accents">From Accented Characters To ASCII Sequence</type>
+			<type key="s0" type="ascii">From ASCII</type>
+			<type key="s0" type="hex">From Hexadecimal Codes</type>
+			<type key="s0" type="npinyin">From Pinyin With Numeric Tones</type>
+			<type key="s0" type="publish">From Publishing Punctuation To ASCII</type>
+			<type key="s0" type="zawgyi">From Zawgyi Myanmar Encoding</type>
 			<type key="ss" type="none">Sentence Breaks Without Abbreviation Handling</type>
 			<type key="ss" type="standard">Suppress Sentence Breaks After Standard Abbreviations</type>
+			<type key="t0" type="und">Unspecified Machine Translation</type>
 			<type key="va" type="posix">POSIX Compliant Locale</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN">BGN</transformName>
-			<transformName type="Numeric">Numeric</transformName>
-			<transformName type="Tone">Tone</transformName>
-			<transformName type="UNGEGN">UNGEGN</transformName>
-			<transformName type="x-Accents">Accents</transformName>
-			<transformName type="x-Fullwidth">Fullwidth</transformName>
-			<transformName type="x-Halfwidth">Halfwidth</transformName>
-			<transformName type="x-Jamo">Jamo</transformName>
-			<transformName type="x-Pinyin">Pinyin</transformName>
-			<transformName type="x-Publishing">Publishing</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Metric</measurementSystemName>
 			<measurementSystemName type="UK">UK</measurementSystemName>
@@ -1408,11 +1510,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<contextTransform type="stand-alone">titlecase-firstword</contextTransform>
 			<contextTransform type="uiListOrMenu">titlecase-firstword</contextTransform>
 		</contextTransformUsage>
+		<contextTransformUsage type="typographicNames">
+			<contextTransform type="stand-alone">titlecase-firstword</contextTransform>
+			<contextTransform type="uiListOrMenu">titlecase-firstword</contextTransform>
+		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ ç é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\- , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
@@ -1527,8 +1634,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -1711,8 +1823,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2011,6 +2128,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight">midnight</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
+							<dayPeriod type="noon">noon</dayPeriod>
+							<dayPeriod type="pm">PM</dayPeriod>
+							<dayPeriod type="morning1">morning</dayPeriod>
+							<dayPeriod type="afternoon1">afternoon</dayPeriod>
+							<dayPeriod type="evening1">evening</dayPeriod>
+							<dayPeriod type="night1">night</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="midnight">midnight</dayPeriod>
 							<dayPeriod type="am">AM</dayPeriod>
@@ -2107,8 +2234,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
@@ -2135,6 +2267,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, MMM d</dateFormatItem>
 						<dateFormatItem id="MMMMd">MMMM d</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">'week' W 'of' MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">'week' W 'of' MMMM</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
@@ -2146,6 +2280,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">MMMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ y</dateFormatItem>
+						<dateFormatItem id="yw" count="one">'week' w 'of' Y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">'week' w 'of' Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Day">{0} ({2}: {1})</appendItem>
@@ -2417,6 +2553,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>era</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>era</displayName>
+			</field>
 			<field type="year">
 				<displayName>year</displayName>
 				<relative type="-1">last year</relative>
@@ -2514,6 +2653,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} week ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} weeks ago</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>the week of {0}</relativePeriod> <!-- for example, “the week of April 1” -->
 			</field>
 			<field type="week-short">
 				<displayName>wk.</displayName>
@@ -2528,6 +2668,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="one">{0} wk. ago</relativeTimePattern>
 					<relativeTimePattern count="other">{0} wk. ago</relativeTimePattern>
 				</relativeTime>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>week of month</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>wk. of mo.</displayName>
 			</field>
 			<field type="day">
 				<displayName>day</displayName>
@@ -2554,113 +2700,300 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} days ago</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>day of year</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>day of yr.</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>day of the week</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>day of wk.</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>weekday of the month</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>wkday. of mo.</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">last Sunday</relative>
 				<relative type="0">this Sunday</relative>
 				<relative type="1">next Sunday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Sunday</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sundays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sunday ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sundays ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">last Sun.</relative>
 				<relative type="0">this Sun.</relative>
 				<relative type="1">next Sun.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Sun.</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sun.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sun. ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sun. ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">last Su</relative>
 				<relative type="0">this Su</relative>
 				<relative type="1">next Su</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Su</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Su</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Su ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Su ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">last Monday</relative>
 				<relative type="0">this Monday</relative>
 				<relative type="1">next Monday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Monday</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Mondays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Monday ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Mondays ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">last Mon.</relative>
 				<relative type="0">this Mon.</relative>
 				<relative type="1">next Mon.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Mon.</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Mon.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Mon. ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Mon. ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">last M</relative>
 				<relative type="0">this M</relative>
 				<relative type="1">next M</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} M</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} M</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} M ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} M ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">last Tuesday</relative>
 				<relative type="0">this Tuesday</relative>
 				<relative type="1">next Tuesday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Tuesday</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Tuesdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Tuesday ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tuesdays ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">last Tue.</relative>
 				<relative type="0">this Tue.</relative>
 				<relative type="1">next Tue.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Tue.</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Tue.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Tue. ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tue. ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">last Tu</relative>
 				<relative type="0">this Tu</relative>
 				<relative type="1">next Tu</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Tu</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Tu</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Tu ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Tu ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">last Wednesday</relative>
 				<relative type="0">this Wednesday</relative>
 				<relative type="1">next Wednesday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Wednesday</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Wednesdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Wednesday ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Wednesdays ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">last Wed.</relative>
 				<relative type="0">this Wed.</relative>
 				<relative type="1">next Wed.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Wed.</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Wed.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Wed. ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Wed. ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">last W</relative>
 				<relative type="0">this W</relative>
 				<relative type="1">next W</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} W</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} W</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} W ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} W ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">last Thursday</relative>
 				<relative type="0">this Thursday</relative>
 				<relative type="1">next Thursday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Thursday</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Thursdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Thursday ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Thursdays ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">last Thu.</relative>
 				<relative type="0">this Thu.</relative>
 				<relative type="1">next Thu.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Thu.</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Thu.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Thu. ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Thu. ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">last Th</relative>
 				<relative type="0">this Th</relative>
 				<relative type="1">next Th</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Th</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Th</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Th ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Th ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">last Friday</relative>
 				<relative type="0">this Friday</relative>
 				<relative type="1">next Friday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Friday</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Fridays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Friday ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Fridays ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">last Fri.</relative>
 				<relative type="0">this Fri.</relative>
 				<relative type="1">next Fri.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Fri.</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Fri.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Fri. ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Fri. ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">last F</relative>
 				<relative type="0">this F</relative>
 				<relative type="1">next F</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} F</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} F</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} F ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} F ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">last Saturday</relative>
 				<relative type="0">this Saturday</relative>
 				<relative type="1">next Saturday</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Saturday</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Saturdays</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Saturday ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Saturdays ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">last Sat.</relative>
 				<relative type="0">this Sat.</relative>
 				<relative type="1">next Sat.</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Sat.</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sat.</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sat. ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sat. ago</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">last Sa</relative>
 				<relative type="0">this Sa</relative>
 				<relative type="1">next Sa</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">in {0} Sa</relativeTimePattern>
+					<relativeTimePattern count="other">in {0} Sa</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} Sa ago</relativeTimePattern>
+					<relativeTimePattern count="other">{0} Sa ago</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>AM/PM</displayName>
+				<displayName alt="variant">am/pm</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>AM/PM</displayName>
@@ -2668,6 +3001,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="hour">
 				<displayName>hour</displayName>
+				<relative type="0">this hour</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">in {0} hour</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} hours</relativeTimePattern>
@@ -2690,6 +3024,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>minute</displayName>
+				<relative type="0">this minute</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">in {0} minute</relativeTimePattern>
 					<relativeTimePattern count="other">in {0} minutes</relativeTimePattern>
@@ -2737,6 +3072,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>time zone</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>zone</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
@@ -2745,6 +3083,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">{0} Daylight Time</regionFormat>
 			<regionFormat type="standard">{0} Standard Time</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="Pacific/Honolulu">
+				<short>
+					<generic>HST</generic>
+					<standard>HST</standard>
+					<daylight>HDT</daylight>
+				</short>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Coordinated Universal Time</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>Unknown City</exemplarCity>
 			</zone>
@@ -2778,13 +3128,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Europe/Uzhgorod">
 				<exemplarCity>Uzhhorod</exemplarCity>
-			</zone>
-			<zone type="Pacific/Honolulu">
-				<short>
-					<generic>HST</generic>
-					<standard>HST</standard>
-					<daylight>HDT</daylight>
-				</short>
 			</zone>
 			<zone type="Asia/Saigon">
 				<exemplarCity>Ho Chi Minh City</exemplarCity>
@@ -3370,7 +3713,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Kyrgystan">
 				<long>
-					<standard>Kyrgystan Time</standard>
+					<standard>Kyrgyzstan Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Lanka">
@@ -3457,9 +3800,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
-					<generic>Ulan Bator Time</generic>
-					<standard>Ulan Bator Standard Time</standard>
-					<daylight>Ulan Bator Summer Time</daylight>
+					<generic>Ulaanbaatar Time</generic>
+					<standard>Ulaanbaatar Standard Time</standard>
+					<daylight>Ulaanbaatar Summer Time</daylight>
 				</long>
 			</metazone>
 			<metazone type="Moscow">
@@ -3615,7 +3958,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Reunion">
 				<long>
-					<standard>Reunion Time</standard>
+					<standard>Réunion Time</standard>
 				</long>
 			</metazone>
 			<metazone type="Rothera">
@@ -4189,14 +4532,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Botswanan pulas</displayName>
 			</currency>
 			<currency type="BYB">
-				<displayName>Belarusian New Ruble (1994–1999)</displayName>
-				<displayName count="one">Belarusian new ruble (1994–1999)</displayName>
-				<displayName count="other">Belarusian new rubles (1994–1999)</displayName>
+				<displayName>Belarusian Ruble (1994–1999)</displayName>
+				<displayName count="one">Belarusian ruble (1994–1999)</displayName>
+				<displayName count="other">Belarusian rubles (1994–1999)</displayName>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Belarusian Ruble</displayName>
 				<displayName count="one">Belarusian ruble</displayName>
 				<displayName count="other">Belarusian rubles</displayName>
+			</currency>
+			<currency type="BYR">
+				<displayName>Belarusian Ruble (2000–2016)</displayName>
+				<displayName count="one">Belarusian ruble (2000–2016)</displayName>
+				<displayName count="other">Belarusian rubles (2000–2016)</displayName>
 			</currency>
 			<currency type="BZD">
 				<displayName>Belize Dollar</displayName>
@@ -4242,6 +4590,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>Chilean Peso</displayName>
 				<displayName count="one">Chilean peso</displayName>
 				<displayName count="other">Chilean pesos</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName>Chinese Yuan (offshore)</displayName>
+				<displayName count="one">Chinese yuan (offshore)</displayName>
+				<displayName count="other">Chinese yuan (offshore)</displayName>
 			</currency>
 			<currency type="CNX">
 				<displayName>Chinese People’s Bank Dollar</displayName>
@@ -4299,9 +4652,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Cypriot pounds</displayName>
 			</currency>
 			<currency type="CZK">
-				<displayName>Czech Republic Koruna</displayName>
-				<displayName count="one">Czech Republic koruna</displayName>
-				<displayName count="other">Czech Republic korunas</displayName>
+				<displayName>Czech Koruna</displayName>
+				<displayName count="one">Czech koruna</displayName>
+				<displayName count="other">Czech korunas</displayName>
 			</currency>
 			<currency type="DDM">
 				<displayName>East German Mark</displayName>
@@ -4524,14 +4877,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Israeli pounds</displayName>
 			</currency>
 			<currency type="ILR">
-				<displayName>Israeli Sheqel (1980–1985)</displayName>
-				<displayName count="one">Israeli sheqel (1980–1985)</displayName>
-				<displayName count="other">Israeli sheqels (1980–1985)</displayName>
+				<displayName>Israeli Shekel (1980–1985)</displayName>
+				<displayName count="one">Israeli shekel (1980–1985)</displayName>
+				<displayName count="other">Israeli shekels (1980–1985)</displayName>
 			</currency>
 			<currency type="ILS">
-				<displayName>Israeli New Sheqel</displayName>
-				<displayName count="one">Israeli new sheqel</displayName>
-				<displayName count="other">Israeli new sheqels</displayName>
+				<displayName>Israeli New Shekel</displayName>
+				<displayName count="one">Israeli new shekel</displayName>
+				<displayName count="other">Israeli new shekels</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName>Indian Rupee</displayName>
@@ -4765,6 +5118,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Macanese patacas</displayName>
 			</currency>
 			<currency type="MRO">
+				<displayName>Mauritanian Ouguiya (1973–2017)</displayName>
+				<displayName count="one">Mauritanian ouguiya (1973–2017)</displayName>
+				<displayName count="other">Mauritanian ouguiyas (1973–2017)</displayName>
+			</currency>
+			<currency type="MRU">
 				<displayName>Mauritanian Ouguiya</displayName>
 				<displayName count="one">Mauritanian ouguiya</displayName>
 				<displayName count="other">Mauritanian ouguiyas</displayName>
@@ -4890,9 +5248,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Peruvian intis</displayName>
 			</currency>
 			<currency type="PEN">
-				<displayName>Peruvian Nuevo Sol</displayName>
-				<displayName count="one">Peruvian nuevo sol</displayName>
-				<displayName count="other">Peruvian nuevos soles</displayName>
+				<displayName>Peruvian Sol</displayName>
+				<displayName count="one">Peruvian sol</displayName>
+				<displayName count="other">Peruvian soles</displayName>
 			</currency>
 			<currency type="PES">
 				<displayName>Peruvian Sol (1863–1965)</displayName>
@@ -4905,9 +5263,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Papua New Guinean kina</displayName>
 			</currency>
 			<currency type="PHP">
-				<displayName>Philippine Peso</displayName>
-				<displayName count="one">Philippine peso</displayName>
-				<displayName count="other">Philippine pesos</displayName>
+				<displayName>Philippine Piso</displayName>
+				<displayName count="one">Philippine piso</displayName>
+				<displayName count="other">Philippine pisos</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName>Pakistani Rupee</displayName>
@@ -5055,6 +5413,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">South Sudanese pounds</displayName>
 			</currency>
 			<currency type="STD">
+				<displayName>São Tomé &amp; Príncipe Dobra (1977–2017)</displayName>
+				<displayName count="one">São Tomé &amp; Príncipe dobra (1977–2017)</displayName>
+				<displayName count="other">São Tomé &amp; Príncipe dobras (1977–2017)</displayName>
+			</currency>
+			<currency type="STN">
 				<displayName>São Tomé &amp; Príncipe Dobra</displayName>
 				<displayName count="one">São Tomé &amp; Príncipe dobra</displayName>
 				<displayName count="other">São Tomé &amp; Príncipe dobras</displayName>
@@ -5414,6 +5777,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">{0}+</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">{0} day</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">{0} days</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="few">Take the {0}rd right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="one">Take the {0}st right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Take the {0}th right.</ordinalMinimalPairs>
+			<ordinalMinimalPairs ordinal="two">Take the {0}nd right.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5459,6 +5830,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>square kilometers</displayName>
 				<unitPattern count="one">{0} square kilometer</unitPattern>
 				<unitPattern count="other">{0} square kilometers</unitPattern>
+				<perUnitPattern>{0} per square kilometer</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hectares</displayName>
@@ -5481,6 +5853,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>square miles</displayName>
 				<unitPattern count="one">{0} square mile</unitPattern>
 				<unitPattern count="other">{0} square miles</unitPattern>
+				<perUnitPattern>{0} per square mile</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acres</displayName>
@@ -5825,6 +6198,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} mile-scandinavian</unitPattern>
 				<unitPattern count="other">{0} miles-scandinavian</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>points</displayName>
+				<unitPattern count="one">{0} point</unitPattern>
+				<unitPattern count="other">{0} points</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
 				<unitPattern count="one">{0} lux</unitPattern>
@@ -6109,6 +6487,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} teaspoon</unitPattern>
 				<unitPattern count="other">{0} teaspoons</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} east</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} north</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} south</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} west</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
 			<compoundUnit type="per">
@@ -6153,6 +6537,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hectares</displayName>
@@ -6175,6 +6560,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>sq miles</displayName>
 				<unitPattern count="one">{0} sq mi</unitPattern>
 				<unitPattern count="other">{0} sq mi</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acres</displayName>
@@ -6426,7 +6812,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>{0}/km</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>meters</displayName>
+				<displayName>m</displayName>
 				<unitPattern count="one">{0} m</unitPattern>
 				<unitPattern count="other">{0} m</unitPattern>
 				<perUnitPattern>{0}/m</perUnitPattern>
@@ -6518,6 +6904,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>smi</displayName>
 				<unitPattern count="one">{0} smi</unitPattern>
 				<unitPattern count="other">{0} smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>points</displayName>
+				<unitPattern count="one">{0} pt</unitPattern>
+				<unitPattern count="other">{0} pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -6619,9 +7010,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} hPa</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-of-mercury">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0} mm Hg</unitPattern>
-				<unitPattern count="other">{0} mm Hg</unitPattern>
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0} mmHg</unitPattern>
+				<unitPattern count="other">{0} mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-per-square-inch">
 				<displayName>psi</displayName>
@@ -6629,7 +7020,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} psi</unitPattern>
 			</unit>
 			<unit type="pressure-inch-hg">
-				<displayName>in Hg</displayName>
+				<displayName>inHg</displayName>
 				<unitPattern count="one">{0} inHg</unitPattern>
 				<unitPattern count="other">{0} inHg</unitPattern>
 			</unit>
@@ -6722,6 +7113,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>liters</displayName>
 				<unitPattern count="one">{0} L</unitPattern>
 				<unitPattern count="other">{0} L</unitPattern>
+				<perUnitPattern>{0}/L</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>dL</displayName>
@@ -6798,6 +7190,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} tsp</unitPattern>
 				<unitPattern count="other">{0} tsp</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} W</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="acceleration-g-force">
@@ -6849,6 +7247,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mi²</displayName>
 				<unitPattern count="one">{0}mi²</unitPattern>
 				<unitPattern count="other">{0}mi²</unitPattern>
+				<perUnitPattern>{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>acre</displayName>
@@ -6906,9 +7305,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}mpg</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName>mpg Imp</displayName>
-				<unitPattern count="one">{0}mpgIm</unitPattern>
-				<unitPattern count="other">{0}mpgIm</unitPattern>
+				<displayName>mpg UK</displayName>
+				<unitPattern count="one">{0}m/gUK</unitPattern>
+				<unitPattern count="other">{0}m/gUK</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TByte</displayName>
@@ -6952,8 +7351,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="digital-byte">
 				<displayName>byte</displayName>
-				<unitPattern count="one">{0}byte</unitPattern>
-				<unitPattern count="other">{0}byte</unitPattern>
+				<unitPattern count="one">{0}B</unitPattern>
+				<unitPattern count="other">{0}B</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>bit</displayName>
@@ -7086,7 +7485,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}km</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>meter</displayName>
+				<displayName>m</displayName>
 				<unitPattern count="one">{0}m</unitPattern>
 				<unitPattern count="other">{0}m</unitPattern>
 			</unit>
@@ -7174,6 +7573,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>smi</displayName>
 				<unitPattern count="one">{0}smi</unitPattern>
 				<unitPattern count="other">{0}smi</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>pts</displayName>
+				<unitPattern count="one">{0}pt</unitPattern>
+				<unitPattern count="other">{0}pt</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lux</displayName>
@@ -7271,9 +7675,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}hPa</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-of-mercury">
-				<displayName>mm Hg</displayName>
-				<unitPattern count="one">{0}mm Hg</unitPattern>
-				<unitPattern count="other">{0}mm Hg</unitPattern>
+				<displayName>mmHg</displayName>
+				<unitPattern count="one">{0}mmHg</unitPattern>
+				<unitPattern count="other">{0}mmHg</unitPattern>
 			</unit>
 			<unit type="pressure-pound-per-square-inch">
 				<displayName>psi</displayName>
@@ -7455,6 +7859,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0}tsp</unitPattern>
 				<unitPattern count="other">{0}tsp</unitPattern>
 			</unit>
+			<coordinateUnit>
+				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
+			</coordinateUnit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -7463,6 +7873,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, and {1}</listPatternPart>
 			<listPatternPart type="2">{0} and {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0}, or {1}</listPatternPart>
+			<listPatternPart type="2">{0} or {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
@@ -7489,5 +7905,174 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>no:n</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — all</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — compatibility</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — enclosed</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — extended</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — historic</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — miscellaneous</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — other</characterLabelPattern>
+		<characterLabelPattern type="scripts">scripts — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} stroke</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} strokes</characterLabelPattern>
+		<!-- regular -->
+		<characterLabel type="activities">activity</characterLabel>
+		<characterLabel type="african_scripts">African script</characterLabel>
+		<characterLabel type="american_scripts">American script</characterLabel>
+		<characterLabel type="animal">animal</characterLabel>
+		<characterLabel type="animals_nature">animal or nature</characterLabel>
+		<characterLabel type="arrows">arrow</characterLabel>
+		<characterLabel type="body">body</characterLabel>
+		<characterLabel type="box_drawing">box drawing</characterLabel>
+		<characterLabel type="braille">braille</characterLabel>
+		<characterLabel type="building">building</characterLabel>
+		<characterLabel type="bullets_stars">bullet or star</characterLabel>
+		<characterLabel type="consonantal_jamo">consonantal jamo</characterLabel>
+		<characterLabel type="currency_symbols">currency symbol</characterLabel>
+		<characterLabel type="dash_connector">dash or connector</characterLabel>
+		<characterLabel type="digits">digit</characterLabel>
+		<characterLabel type="dingbats">dingbat</characterLabel>
+		<characterLabel type="divination_symbols">divination symbol</characterLabel>
+		<characterLabel type="downwards_arrows">downwards arrow</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">downwards upwards arrow</characterLabel>
+		<characterLabel type="east_asian_scripts">East Asian script</characterLabel>
+		<characterLabel type="emoji">emoji</characterLabel>
+		<characterLabel type="european_scripts">European script</characterLabel>
+		<characterLabel type="female">female</characterLabel>
+		<characterLabel type="flag">flag</characterLabel>
+		<characterLabel type="flags">flags</characterLabel>
+		<characterLabel type="food_drink">food &amp; drink</characterLabel>
+		<characterLabel type="format">format</characterLabel>
+		<characterLabel type="format_whitespace">format &amp; whitespace</characterLabel>
+		<characterLabel type="full_width_form_variant">full-width variant</characterLabel>
+		<characterLabel type="geometric_shapes">geometric shape</characterLabel>
+		<characterLabel type="half_width_form_variant">half-width variant</characterLabel>
+		<characterLabel type="han_characters">Han character</characterLabel>
+		<characterLabel type="han_radicals">Han radical</characterLabel>
+		<characterLabel type="hanja">hanja</characterLabel>
+		<characterLabel type="hanzi_simplified">Hanzi (simplified)</characterLabel>
+		<characterLabel type="hanzi_traditional">Hanzi (traditional)</characterLabel>
+		<characterLabel type="heart">heart</characterLabel>
+		<characterLabel type="historic_scripts">historic script</characterLabel>
+		<characterLabel type="ideographic_desc_characters">ideographic desc. character</characterLabel>
+		<characterLabel type="japanese_kana">Japanese kana</characterLabel>
+		<characterLabel type="kanbun">kanbun</characterLabel>
+		<characterLabel type="kanji">kanji</characterLabel>
+		<characterLabel type="keycap">keycap</characterLabel>
+		<characterLabel type="leftwards_arrows">leftwards arrow</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">leftwards rightwards arrow</characterLabel>
+		<characterLabel type="letterlike_symbols">letterlike symbol</characterLabel>
+		<characterLabel type="limited_use">limited-use</characterLabel>
+		<characterLabel type="male">male</characterLabel>
+		<characterLabel type="math_symbols">math symbol</characterLabel>
+		<characterLabel type="middle_eastern_scripts">Middle Eastern script</characterLabel>
+		<characterLabel type="miscellaneous">miscellaneous</characterLabel>
+		<characterLabel type="modern_scripts">modern script</characterLabel>
+		<characterLabel type="modifier">modifier</characterLabel>
+		<characterLabel type="musical_symbols">musical symbol</characterLabel>
+		<characterLabel type="nature">nature</characterLabel>
+		<characterLabel type="nonspacing">nonspacing</characterLabel>
+		<characterLabel type="numbers">numbers</characterLabel>
+		<characterLabel type="objects">object</characterLabel>
+		<characterLabel type="other">other</characterLabel>
+		<characterLabel type="paired">paired</characterLabel>
+		<characterLabel type="person">person</characterLabel>
+		<characterLabel type="phonetic_alphabet">phonetic alphabet</characterLabel>
+		<characterLabel type="pictographs">pictograph</characterLabel>
+		<characterLabel type="place">place</characterLabel>
+		<characterLabel type="plant">plant</characterLabel>
+		<characterLabel type="punctuation">punctuation</characterLabel>
+		<characterLabel type="rightwards_arrows">rightwards arrow</characterLabel>
+		<characterLabel type="sign_standard_symbols">sign or symbol</characterLabel>
+		<characterLabel type="small_form_variant">small variants</characterLabel>
+		<characterLabel type="smiley">smiley</characterLabel>
+		<characterLabel type="smileys_people">smiley or person</characterLabel>
+		<characterLabel type="south_asian_scripts">South Asian script</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Southeast Asian script</characterLabel>
+		<characterLabel type="spacing">spacing</characterLabel>
+		<characterLabel type="sport">sport</characterLabel>
+		<characterLabel type="symbols">symbol</characterLabel>
+		<characterLabel type="technical_symbols">technical symbol</characterLabel>
+		<characterLabel type="tone_marks">tone mark</characterLabel>
+		<characterLabel type="travel">travel</characterLabel>
+		<characterLabel type="travel_places">travel or place</characterLabel>
+		<characterLabel type="upwards_arrows">upwards arrows</characterLabel>
+		<characterLabel type="variant_forms">variant</characterLabel>
+		<characterLabel type="vocalic_jamo">vocalic jamo</characterLabel>
+		<characterLabel type="weather">weather</characterLabel>
+		<characterLabel type="western_asian_scripts">Western Asian script</characterLabel>
+		<characterLabel type="whitespace">whitespace</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<axisName type="ital">italic</axisName>
+		<axisName type="opsz">optical size</axisName>
+		<axisName type="slnt">slant</axisName>
+		<axisName type="wdth">width</axisName>
+		<axisName type="wght">weight</axisName>
+		<styleName type="ital" subtype="1">cursive</styleName>
+		<styleName type="opsz" subtype="8">caption</styleName>
+		<styleName type="opsz" subtype="12">text</styleName>
+		<styleName type="opsz" subtype="18">titling</styleName>
+		<styleName type="opsz" subtype="72">display</styleName>
+		<styleName type="opsz" subtype="144">poster</styleName>
+		<styleName type="slnt" subtype="-12">backslanted</styleName>
+		<styleName type="slnt" subtype="0">upright</styleName>
+		<styleName type="slnt" subtype="12">slanted</styleName>
+		<styleName type="slnt" subtype="24">extra-slanted</styleName>
+		<styleName type="wdth" subtype="50">ultracondensed</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">ultracompressed</styleName>
+		<styleName type="wdth" subtype="50" alt="narrow">ultranarrow</styleName>
+		<styleName type="wdth" subtype="62.5">extra-condensed</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">extra-compressed</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">extra-narrow</styleName>
+		<styleName type="wdth" subtype="75">condensed</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">compressed</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">compressed</styleName>
+		<styleName type="wdth" subtype="87.5">semicondensed</styleName>
+		<styleName type="wdth" subtype="87.5" alt="compressed">semicompressed</styleName>
+		<styleName type="wdth" subtype="87.5" alt="narrow">seminarrow</styleName>
+		<styleName type="wdth" subtype="100">normal</styleName>
+		<styleName type="wdth" subtype="112.5">semiexpanded</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">semiextended</styleName>
+		<styleName type="wdth" subtype="112.5" alt="wide">semiwide</styleName>
+		<styleName type="wdth" subtype="125">expanded</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">extended</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">wide</styleName>
+		<styleName type="wdth" subtype="150">extra-expanded</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">extra-extended</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">extra-wide</styleName>
+		<styleName type="wdth" subtype="200">ultraexpanded</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">ultraextended</styleName>
+		<styleName type="wdth" subtype="200" alt="wide">ultrawide</styleName>
+		<styleName type="wght" subtype="100">thin</styleName>
+		<styleName type="wght" subtype="200">extra-light</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">ultralight</styleName>
+		<styleName type="wght" subtype="300">light</styleName>
+		<styleName type="wght" subtype="350">semilight</styleName>
+		<styleName type="wght" subtype="380">book</styleName>
+		<styleName type="wght" subtype="400">regular</styleName>
+		<styleName type="wght" subtype="500">medium</styleName>
+		<styleName type="wght" subtype="600">semibold</styleName>
+		<styleName type="wght" subtype="600" alt="demi">demibold</styleName>
+		<styleName type="wght" subtype="700">bold</styleName>
+		<styleName type="wght" subtype="800">extra-bold</styleName>
+		<styleName type="wght" subtype="900">black</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">heavy</styleName>
+		<styleName type="wght" subtype="950">extra-black</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">ultraheavy</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ultrablack</styleName>
+		<featureName type="afrc">vertical fractions</featureName>
+		<featureName type="cpsp">capital spacing</featureName>
+		<featureName type="dlig">optional ligatures</featureName>
+		<featureName type="frac">diagonal fractions</featureName>
+		<featureName type="lnum">lining numbers</featureName>
+		<featureName type="onum">old-style figures</featureName>
+		<featureName type="ordn">ordinals</featureName>
+		<featureName type="pnum">proportional numbers</featureName>
+		<featureName type="smcp">small capitals</featureName>
+		<featureName type="tnum">tabular numbers</featureName>
+		<featureName type="zero">slashed zero</featureName>
+	</typographicNames>
 </ldml>
-

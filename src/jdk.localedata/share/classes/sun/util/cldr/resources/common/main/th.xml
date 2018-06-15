@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13920 $"/>
 		<language type="th"/>
 	</identity>
 	<localeDisplayNames>
@@ -17,22 +20,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</localeDisplayPattern>
 		<languages>
 			<language type="aa">อะฟาร์</language>
-			<language type="ab">อับคาซ</language>
+			<language type="ab">อับฮาเซีย</language>
 			<language type="ace">อาเจะห์</language>
 			<language type="ach">อาโคลิ</language>
 			<language type="ada">อาแดงมี</language>
 			<language type="ady">อะดืยเก</language>
 			<language type="ae">อเวสตะ</language>
-			<language type="aeb" draft="contributed">อาหรับตูนิเซีย</language>
+			<language type="aeb">อาหรับตูนิเซีย</language>
 			<language type="af">แอฟริกานส์</language>
 			<language type="afh">แอฟริฮีลี</language>
 			<language type="agq">อักเฮม</language>
 			<language type="ain">ไอนุ</language>
-			<language type="ak">อาคัน</language>
+			<language type="ak">อาคาน</language>
 			<language type="akk">อักกาด</language>
-			<language type="akz" draft="contributed">แอละแบมา</language>
+			<language type="akz">แอละแบมา</language>
 			<language type="ale">อาลิวต์</language>
-			<language type="aln" draft="contributed">เกกแอลเบเนีย</language>
+			<language type="aln">เกกแอลเบเนีย</language>
 			<language type="alt">อัลไตใต้</language>
 			<language type="am">อัมฮารา</language>
 			<language type="an">อารากอน</language>
@@ -41,19 +44,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ar">อาหรับ</language>
 			<language type="ar_001">อาหรับมาตรฐานสมัยใหม่</language>
 			<language type="arc">อราเมอิก</language>
-			<language type="arn">อาเราคาเนียน</language>
-			<language type="aro" draft="contributed">อาเรานา</language>
+			<language type="arn">มาปูเช</language>
+			<language type="aro">อาเรานา</language>
 			<language type="arp">อาราปาโฮ</language>
-			<language type="arq" draft="contributed">อาหรับแอลจีเรีย</language>
+			<language type="arq">อาหรับแอลจีเรีย</language>
+			<language type="ars">อาหรับนัจญ์ดี</language>
 			<language type="arw">อาราวัก</language>
-			<language type="ary" draft="contributed">อาหรับโมร็อกโก</language>
-			<language type="arz" draft="contributed">อาหรับพื้นเมืองอียิปต์</language>
+			<language type="ary">อาหรับโมร็อกโก</language>
+			<language type="arz">อาหรับพื้นเมืองอียิปต์</language>
 			<language type="as">อัสสัม</language>
 			<language type="asa">อาซู</language>
-			<language type="ase" draft="contributed">ภาษามืออเมริกัน</language>
+			<language type="ase">ภาษามืออเมริกัน</language>
 			<language type="ast">อัสตูเรียส</language>
 			<language type="av">อาวาร์</language>
-			<language type="avk" draft="contributed">โคตาวา</language>
+			<language type="avk">โคตาวา</language>
 			<language type="awa">อวธี</language>
 			<language type="ay">ไอย์มารา</language>
 			<language type="az">อาเซอร์ไบจาน</language>
@@ -61,47 +65,47 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ba">บัชคีร์</language>
 			<language type="bal">บาลูชิ</language>
 			<language type="ban">บาหลี</language>
-			<language type="bar" draft="contributed">บาวาเรีย</language>
+			<language type="bar">บาวาเรีย</language>
 			<language type="bas">บาสา</language>
-			<language type="bax" draft="contributed">บามัน</language>
-			<language type="bbc" draft="contributed">บาตักโทบา</language>
-			<language type="bbj" draft="contributed">โคมาลา</language>
+			<language type="bax">บามัน</language>
+			<language type="bbc">บาตักโทบา</language>
+			<language type="bbj">โคมาลา</language>
 			<language type="be">เบลารุส</language>
 			<language type="bej">เบจา</language>
 			<language type="bem">เบมบา</language>
-			<language type="bew" draft="contributed">เบตาวี</language>
+			<language type="bew">เบตาวี</language>
 			<language type="bez">เบนา</language>
-			<language type="bfd" draft="contributed">บาฟัต</language>
-			<language type="bfq" draft="contributed">พทคะ</language>
+			<language type="bfd">บาฟัต</language>
+			<language type="bfq">พทคะ</language>
 			<language type="bg">บัลแกเรีย</language>
-			<language type="bgn" draft="contributed">บาลูจิตะวันออก</language>
+			<language type="bgn">บาลูจิตะวันตก</language>
 			<language type="bho">โภชปุรี</language>
 			<language type="bi">บิสลามา</language>
 			<language type="bik">บิกอล</language>
 			<language type="bin">บินี</language>
-			<language type="bjn" draft="contributed">บันจาร์</language>
-			<language type="bkm" draft="contributed">กม</language>
+			<language type="bjn">บันจาร์</language>
+			<language type="bkm">กม</language>
 			<language type="bla">สิกสิกา</language>
 			<language type="bm">บัมบารา</language>
 			<language type="bn">เบงกาลี</language>
 			<language type="bo">ทิเบต</language>
-			<language type="bpy" draft="contributed">พิศนุปริยะ</language>
-			<language type="bqi" draft="contributed">บักติยารี</language>
+			<language type="bpy">พิศนุปริยะ</language>
+			<language type="bqi">บักติยารี</language>
 			<language type="br">เบรตัน</language>
 			<language type="bra">พัรช</language>
-			<language type="brh" draft="contributed">บราฮุย</language>
+			<language type="brh">บราฮุย</language>
 			<language type="brx">โพโฑ</language>
 			<language type="bs">บอสเนีย</language>
-			<language type="bss" draft="contributed">อาโคซี</language>
+			<language type="bss">อาโคซี</language>
 			<language type="bua">บูเรียต</language>
 			<language type="bug">บูกิส</language>
-			<language type="bum" draft="contributed">บูลู</language>
+			<language type="bum">บูลู</language>
 			<language type="byn">บลิน</language>
-			<language type="byv" draft="contributed">เมดุมบา</language>
+			<language type="byv">เมดุมบา</language>
 			<language type="ca">กาตาลัง</language>
 			<language type="cad">คัดโด</language>
 			<language type="car">คาริบ</language>
-			<language type="cay" draft="contributed">คายูกา</language>
+			<language type="cay">คายูกา</language>
 			<language type="cch">แอตแซม</language>
 			<language type="ce">เชเชน</language>
 			<language type="ceb">เซบู</language>
@@ -119,9 +123,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ckb">เคิร์ดโซรานี</language>
 			<language type="co">คอร์ซิกา</language>
 			<language type="cop">คอปติก</language>
-			<language type="cps" draft="contributed">กาปิซนอน</language>
+			<language type="cps">กาปิซนอน</language>
 			<language type="cr">ครี</language>
 			<language type="crh">ตุรกีไครเมีย</language>
+			<language type="crs" draft="contributed">ครีโอลเซเซลส์ฝรั่งเศส</language>
 			<language type="cs">เช็ก</language>
 			<language type="csb">คาซูเบียน</language>
 			<language type="cu">เชอร์ชสลาวิก</language>
@@ -141,18 +146,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="dje">ซาร์มา</language>
 			<language type="doi">โฑครี</language>
 			<language type="dsb">ซอร์บส์ตอนล่าง</language>
-			<language type="dtp" draft="contributed">ดูซุนกลาง</language>
+			<language type="dtp">ดูซุนกลาง</language>
 			<language type="dua">ดัวลา</language>
 			<language type="dum">ดัตช์กลาง</language>
 			<language type="dv">ธิเวหิ</language>
 			<language type="dyo">โจลา-ฟอนยี</language>
 			<language type="dyu">ดิวลา</language>
 			<language type="dz">ซองคา</language>
-			<language type="dzg" draft="contributed">ดาซากา</language>
+			<language type="dzg">ดาซากา</language>
 			<language type="ebu">เอ็มบู</language>
 			<language type="ee">เอเว</language>
 			<language type="efi">อีฟิก</language>
-			<language type="egl" draft="contributed">เอมีเลีย</language>
+			<language type="egl">เอมีเลีย</language>
 			<language type="egy">อียิปต์โบราณ</language>
 			<language type="eka">อีกาจุก</language>
 			<language type="el">กรีก</language>
@@ -165,33 +170,33 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="en_US">อังกฤษ - อเมริกัน</language>
 			<language type="en_US" alt="short">อังกฤษ - อเมริกัน</language>
 			<language type="enm">อังกฤษกลาง</language>
-			<language type="eo">เอสเปอรันโต</language>
+			<language type="eo">เอสเปรันโต</language>
 			<language type="es">สเปน</language>
 			<language type="es_419">สเปน - ละตินอเมริกา</language>
 			<language type="es_ES">สเปน - ยุโรป</language>
 			<language type="es_MX">สเปน - เม็กซิโก</language>
-			<language type="esu" draft="contributed">ยูพิกกลาง</language>
+			<language type="esu">ยูพิกกลาง</language>
 			<language type="et">เอสโตเนีย</language>
-			<language type="eu">บัสเก</language>
+			<language type="eu">บาสก์</language>
 			<language type="ewo">อีวันโด</language>
-			<language type="ext" draft="contributed">เอกซ์เตรมาดูรา</language>
+			<language type="ext">เอกซ์เตรมาดูรา</language>
 			<language type="fa">เปอร์เซีย</language>
 			<language type="fan">ฟอง</language>
 			<language type="fat">ฟันติ</language>
-			<language type="ff">ฟูลาฮ์</language>
+			<language type="ff">ฟูลาห์</language>
 			<language type="fi">ฟินแลนด์</language>
 			<language type="fil">ฟิลิปปินส์</language>
-			<language type="fit" draft="contributed">ฟินแลนด์ทอร์เนดาเล็น</language>
+			<language type="fit">ฟินแลนด์ทอร์เนดาเล็น</language>
 			<language type="fj">ฟิจิ</language>
 			<language type="fo">แฟโร</language>
 			<language type="fon">ฟอน</language>
 			<language type="fr">ฝรั่งเศส</language>
 			<language type="fr_CA">ฝรั่งเศส - แคนาดา</language>
 			<language type="fr_CH">ฝรั่งเศส (สวิส)</language>
-			<language type="frc" draft="contributed">ฝรั่งเศสกาฌ็อง</language>
+			<language type="frc">ฝรั่งเศสกาฌ็อง</language>
 			<language type="frm">ฝรั่งเศสกลาง</language>
 			<language type="fro">ฝรั่งเศสโบราณ</language>
-			<language type="frp" draft="contributed">อาร์พิตา</language>
+			<language type="frp">อาร์พิตา</language>
 			<language type="frr">ฟริเซียนเหนือ</language>
 			<language type="frs">ฟริเซียนตะวันออก</language>
 			<language type="fur">ฟรูลี</language>
@@ -199,19 +204,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ga">ไอริช</language>
 			<language type="gaa">กา</language>
 			<language type="gag">กากาอุซ</language>
-			<language type="gan" draft="contributed">จีนกาน</language>
+			<language type="gan">จีนกั้น</language>
 			<language type="gay">กาโย</language>
 			<language type="gba">กบายา</language>
-			<language type="gbz" draft="contributed">ดารีโซโรอัสเตอร์</language>
-			<language type="gd">สกอตส์กาลิก</language>
+			<language type="gbz">ดารีโซโรอัสเตอร์</language>
+			<language type="gd">เกลิกสกอต</language>
 			<language type="gez">กีซ</language>
 			<language type="gil">กิลเบอร์ต</language>
 			<language type="gl">กาลิเซีย</language>
-			<language type="glk" draft="contributed">กิลากี</language>
+			<language type="glk">กิลากี</language>
 			<language type="gmh">เยอรมันสูงกลาง</language>
-			<language type="gn">กวารานี</language>
+			<language type="gn">กัวรานี</language>
 			<language type="goh">เยอรมันสูงโบราณ</language>
-			<language type="gom" draft="contributed">กอนกานีของกัว</language>
+			<language type="gom">กอนกานีของกัว</language>
 			<language type="gon">กอนดิ</language>
 			<language type="gor">กอรอนทาโล</language>
 			<language type="got">โกธิก</language>
@@ -219,34 +224,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="grc">กรีกโบราณ</language>
 			<language type="gsw">เยอรมันสวิส</language>
 			<language type="gu">คุชราต</language>
-			<language type="guc" draft="contributed">วายู</language>
-			<language type="gur" draft="contributed">ฟราฟรา</language>
+			<language type="guc">วายู</language>
+			<language type="gur">ฟราฟรา</language>
 			<language type="guz">กุซซี</language>
 			<language type="gv">มานซ์</language>
 			<language type="gwi">กวิชอิน</language>
-			<language type="ha">เฮาชา</language>
+			<language type="ha">เฮาซา</language>
 			<language type="hai">ไฮดา</language>
-			<language type="hak" draft="contributed">จีนแคะ</language>
+			<language type="hak">จีนแคะ</language>
 			<language type="haw">ฮาวาย</language>
 			<language type="he">ฮิบรู</language>
 			<language type="hi">ฮินดี</language>
-			<language type="hif" draft="contributed">ฮินดีฟิจิ</language>
+			<language type="hif">ฮินดีฟิจิ</language>
 			<language type="hil">ฮีลีกัยนน</language>
 			<language type="hit">ฮิตไตต์</language>
 			<language type="hmn">ม้ง</language>
 			<language type="ho">ฮีรีโมตู</language>
 			<language type="hr">โครเอเชีย</language>
-			<language type="hsb">ซอร์บส์ตอนบน</language>
-			<language type="hsn" draft="contributed">จีนเซียง</language>
-			<language type="ht">เฮติ</language>
+			<language type="hsb">ซอร์เบียตอนบน</language>
+			<language type="hsn">จีนเซียง</language>
+			<language type="ht">เฮติครีโอล</language>
 			<language type="hu">ฮังการี</language>
 			<language type="hup">ฮูปา</language>
 			<language type="hy">อาร์เมเนีย</language>
 			<language type="hz">เฮเรโร</language>
 			<language type="ia">อินเตอร์ลิงกัว</language>
 			<language type="iba">อิบาน</language>
-			<language type="ibb" draft="contributed">อิบิบิโอ</language>
-			<language type="id">อินโดนีเชีย</language>
+			<language type="ibb">อิบิบิโอ</language>
+			<language type="id">อินโดนีเซีย</language>
 			<language type="ie">อินเตอร์ลิงกิว</language>
 			<language type="ig">อิกโบ</language>
 			<language type="ii">เสฉวนยิ</language>
@@ -257,15 +262,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="is">ไอซ์แลนด์</language>
 			<language type="it">อิตาลี</language>
 			<language type="iu">อินุกติตุต</language>
-			<language type="izh" draft="contributed">อินเกรียน</language>
+			<language type="izh">อินเกรียน</language>
 			<language type="ja">ญี่ปุ่น</language>
-			<language type="jam" draft="contributed">อังกฤษคลีโอลจาเมกา</language>
+			<language type="jam">อังกฤษคลีโอลจาเมกา</language>
 			<language type="jbo">โลชบัน</language>
 			<language type="jgo">อึนกอมบา</language>
 			<language type="jmc">มาชาเม</language>
 			<language type="jpr">ยิว-เปอร์เซีย</language>
 			<language type="jrb">ยิว-อาหรับ</language>
-			<language type="jut" draft="contributed">จัท</language>
+			<language type="jut">จัท</language>
 			<language type="jv">ชวา</language>
 			<language type="ka">จอร์เจีย</language>
 			<language type="kaa">การา-กาลพาก</language>
@@ -275,23 +280,23 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="kam">คัมบา</language>
 			<language type="kaw">กวี</language>
 			<language type="kbd">คาร์บาเดีย</language>
-			<language type="kbl" draft="contributed">คาเนมบู</language>
+			<language type="kbl">คาเนมบู</language>
 			<language type="kcg">ทีแยป</language>
 			<language type="kde">มาคอนเด</language>
 			<language type="kea">คาบูเวอร์เดียนู</language>
-			<language type="ken" draft="contributed">เกินยาง</language>
+			<language type="ken">เกินยาง</language>
 			<language type="kfo">โคโร</language>
 			<language type="kg">คองโก</language>
-			<language type="kgp" draft="contributed">เคนก่าง</language>
+			<language type="kgp">เคนก่าง</language>
 			<language type="kha">กาสี</language>
 			<language type="kho">โคตัน</language>
 			<language type="khq">โคย์ราชีนี</language>
-			<language type="khw" draft="contributed">โควาร์</language>
+			<language type="khw">โควาร์</language>
 			<language type="ki">กีกูยู</language>
-			<language type="kiu" draft="contributed">เคอร์มานิกิ</language>
+			<language type="kiu">เคอร์มานิกิ</language>
 			<language type="kj">กวนยามา</language>
 			<language type="kk">คาซัค</language>
-			<language type="kkj" draft="contributed">คาโก</language>
+			<language type="kkj">คาโก</language>
 			<language type="kl">กรีนแลนด์</language>
 			<language type="kln">คาเลนจิน</language>
 			<language type="km">เขมร</language>
@@ -304,14 +309,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="kpe">กาแปล</language>
 			<language type="kr">คานูรี</language>
 			<language type="krc">คาราไช-บัลคาร์</language>
-			<language type="kri" draft="contributed">คริโอ</language>
-			<language type="krj" draft="contributed">กินารายอา</language>
+			<language type="kri">คริโอ</language>
+			<language type="krj">กินารายอา</language>
 			<language type="krl">แกรเลียน</language>
 			<language type="kru">กุรุข</language>
 			<language type="ks">กัศมีร์</language>
 			<language type="ksb">ชัมบาลา</language>
 			<language type="ksf">บาเฟีย</language>
-			<language type="ksh" draft="contributed">โคโลญ</language>
+			<language type="ksh">โคโลญ</language>
 			<language type="ku">เคิร์ด</language>
 			<language type="kum">คูมืยค์</language>
 			<language type="kut">คูเทไน</language>
@@ -325,20 +330,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="lam">แลมบา</language>
 			<language type="lb">ลักเซมเบิร์ก</language>
 			<language type="lez">เลซเกียน</language>
-			<language type="lfn" draft="contributed">ลิงกัวฟรังกาโนวา</language>
+			<language type="lfn">ลิงกัวฟรังกาโนวา</language>
 			<language type="lg">ยูกันดา</language>
 			<language type="li">ลิมเบิร์ก</language>
-			<language type="lij" draft="contributed">ลิกูเรีย</language>
-			<language type="liv" draft="contributed">ลิโวเนีย</language>
+			<language type="lij">ลิกูเรีย</language>
+			<language type="liv">ลิโวเนีย</language>
 			<language type="lkt">ลาโกตา</language>
-			<language type="lmo" draft="contributed">ลอมบาร์ด</language>
+			<language type="lmo">ลอมบาร์ด</language>
 			<language type="ln">ลิงกาลา</language>
 			<language type="lo">ลาว</language>
 			<language type="lol">มองโก</language>
+			<language type="lou">ภาษาครีโอลุยเซียนา</language>
 			<language type="loz">โลซิ</language>
-			<language type="lrc" draft="contributed">ลูรีเหนือ</language>
+			<language type="lrc">ลูรีเหนือ</language>
 			<language type="lt">ลิทัวเนีย</language>
-			<language type="ltg" draft="contributed">ลัตเกล</language>
+			<language type="ltg">ลัตเกล</language>
 			<language type="lu">ลูบา-กาตองกา</language>
 			<language type="lua">ลูบา-ลูลัว</language>
 			<language type="lui">ลุยเซโน</language>
@@ -347,16 +353,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="lus">ลูไช</language>
 			<language type="luy">ลูเยีย</language>
 			<language type="lv">ลัตเวีย</language>
-			<language type="lzh" draft="contributed">จีนคลาสสิก</language>
-			<language type="lzz" draft="contributed">แลซ</language>
+			<language type="lzh">จีนคลาสสิก</language>
+			<language type="lzz">แลซ</language>
 			<language type="mad">มาดูรา</language>
-			<language type="maf" draft="contributed">มาฟา</language>
+			<language type="maf">มาฟา</language>
 			<language type="mag">มคหี</language>
 			<language type="mai">ไมถิลี</language>
 			<language type="mak">มากาซาร์</language>
 			<language type="man">มันดิงกา</language>
 			<language type="mas">มาไซ</language>
-			<language type="mde" draft="contributed">มาบา</language>
+			<language type="mde">มาบา</language>
 			<language type="mdf">มอคชา</language>
 			<language type="mdr">มานดาร์</language>
 			<language type="men">เมนเด</language>
@@ -378,7 +384,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="moh">โมฮอว์ก</language>
 			<language type="mos">โมซี</language>
 			<language type="mr">มราฐี</language>
-			<language type="mrj" draft="contributed">มารีตะวันตก</language>
+			<language type="mrj">มารีตะวันตก</language>
 			<language type="ms">มาเลย์</language>
 			<language type="mt">มอลตา</language>
 			<language type="mua">มันดัง</language>
@@ -386,34 +392,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="mus">ครีก</language>
 			<language type="mwl">มีรันดา</language>
 			<language type="mwr">มารวาฑี</language>
-			<language type="mwv" draft="contributed">เม็นตาไว</language>
+			<language type="mwv">เม็นตาไว</language>
 			<language type="my">พม่า</language>
-			<language type="mye" draft="contributed">มยีน</language>
+			<language type="mye">มยีน</language>
 			<language type="myv">เอียร์ซยา</language>
-			<language type="mzn" draft="contributed">มาซันดารานี</language>
+			<language type="mzn">มาซันดารานี</language>
 			<language type="na">นาอูรู</language>
-			<language type="nan" draft="contributed">จีนมินหนาน</language>
+			<language type="nan">จีนมินหนาน</language>
 			<language type="nap">นาโปลี</language>
 			<language type="naq">นามา</language>
 			<language type="nb">นอร์เวย์บุคมอล</language>
 			<language type="nd">เอ็นเดเบเลเหนือ</language>
 			<language type="nds">เยอรมันต่ำ - แซกซอนต่ำ</language>
-			<language type="nds_NL" draft="contributed">แซกซอนใต้</language>
+			<language type="nds_NL">แซกซอนใต้</language>
 			<language type="ne">เนปาล</language>
 			<language type="new">เนวาร์</language>
 			<language type="ng">ดองกา</language>
 			<language type="nia">นีอัส</language>
 			<language type="niu">นีอู</language>
-			<language type="njo" draft="contributed">อ๋าวนากา</language>
+			<language type="njo">อ๋าวนากา</language>
 			<language type="nl">ดัตช์</language>
 			<language type="nl_BE">เฟลมิช</language>
 			<language type="nmg">กวาซิโอ</language>
 			<language type="nn">นอร์เวย์นีนอสก์</language>
-			<language type="nnh" draft="contributed">จีมบูน</language>
+			<language type="nnh">จีมบูน</language>
 			<language type="no">นอร์เวย์</language>
 			<language type="nog">โนไก</language>
 			<language type="non">นอร์สโบราณ</language>
-			<language type="nov" draft="contributed">โนเวียล</language>
+			<language type="nov">โนเวียล</language>
 			<language type="nqo">เอ็นโก</language>
 			<language type="nr">เอ็นเดเบเลใต้</language>
 			<language type="nso">โซโทเหนือ</language>
@@ -439,6 +445,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pap">ปาเปียเมนโต</language>
 			<language type="pau">ปาเลา</language>
 			<language type="pcd" draft="contributed">ปิการ์</language>
+			<language type="pcm" draft="contributed">พิดจิน</language>
 			<language type="pdc" draft="contributed">เยอรมันเพนซิลเวเนีย</language>
 			<language type="pdt" draft="contributed">เพลาท์ดิช</language>
 			<language type="peo">เปอร์เซียโบราณ</language>
@@ -451,14 +458,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="pon">พอห์นเพ</language>
 			<language type="prg" draft="contributed">ปรัสเซีย</language>
 			<language type="pro">โปรวองซาลโบราณ</language>
-			<language type="ps">พาชตู</language>
+			<language type="ps">พัชโต</language>
 			<language type="ps" alt="variant">พุชโต</language>
 			<language type="pt">โปรตุเกส</language>
 			<language type="pt_BR">โปรตุเกส - บราซิล</language>
 			<language type="pt_PT">โปรตุเกส - ยุโรป</language>
-			<language type="qu">ควิชัว</language>
+			<language type="qu">เคชวา</language>
 			<language type="quc">กีเช</language>
-			<language type="qug" draft="contributed">ควิชัวไฮแลนด์ชิมโบราโซ</language>
+			<language type="qug">ควิชัวไฮแลนด์ชิมโบราโซ</language>
 			<language type="raj">ราชสถาน</language>
 			<language type="rap">ราปานู</language>
 			<language type="rar">ราโรทองกา</language>
@@ -480,18 +487,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="rwk">รวา</language>
 			<language type="sa">สันสกฤต</language>
 			<language type="sad">ซันดาเว</language>
-			<language type="sah">ซาฮา</language>
+			<language type="sah">ซาคา</language>
 			<language type="sam">อราเมอิกซามาเรีย</language>
 			<language type="saq">แซมบูรู</language>
 			<language type="sas">ซาซัก</language>
 			<language type="sat">สันตาลี</language>
 			<language type="saz" draft="contributed">เสาราษฏร์</language>
-			<language type="sba" draft="contributed">กัมเบ</language>
+			<language type="sba">กัมเบ</language>
 			<language type="sbp">แซงกู</language>
 			<language type="sc">ซาร์เดญา</language>
 			<language type="scn">ซิซิลี</language>
 			<language type="sco">สกอตส์</language>
-			<language type="sd">สินธุ</language>
+			<language type="sd">สินธิ</language>
 			<language type="sdc" draft="contributed">ซาร์ดิเนียซาสซารี</language>
 			<language type="sdh">เคอร์ดิชใต้</language>
 			<language type="se">ซามิเหนือ</language>
@@ -500,18 +507,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sei" draft="contributed">เซรี</language>
 			<language type="sel">เซลคุป</language>
 			<language type="ses">โคย์ราโบโรเซนนี</language>
-			<language type="sg">แซงโก</language>
+			<language type="sg">ซันโก</language>
 			<language type="sga">ไอริชโบราณ</language>
 			<language type="sgs" draft="contributed">ซาโมจิเตียน</language>
 			<language type="sh">เซอร์โบ-โครเอเชีย</language>
 			<language type="shi">ทาเชลีห์ท</language>
 			<language type="shn">ไทใหญ่</language>
-			<language type="shu" draft="contributed">อาหรับ-ชาด</language>
+			<language type="shu">อาหรับ-ชาด</language>
 			<language type="si">สิงหล</language>
 			<language type="sid">ซิดาโม</language>
 			<language type="sk">สโลวัก</language>
 			<language type="sl">สโลวีเนีย</language>
-			<language type="sli" draft="contributed">ไซลีเซียตอนล่าง</language>
+			<language type="sli">ไซลีเซียตอนล่าง</language>
 			<language type="sly" draft="contributed">เซลายาร์</language>
 			<language type="sm">ซามัว</language>
 			<language type="sma">ซามิใต้</language>
@@ -527,7 +534,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="srn">ซูรินาเม</language>
 			<language type="srr">เซแรร์</language>
 			<language type="ss">สวาติ</language>
-			<language type="ssy" draft="contributed">ซาโฮ</language>
+			<language type="ssy">ซาโฮ</language>
 			<language type="st">โซโทใต้</language>
 			<language type="stq" draft="contributed">ฟรีเซียนซัทเธอร์แลนด์</language>
 			<language type="su">ซุนดา</language>
@@ -536,13 +543,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="sux">ซูเมอ</language>
 			<language type="sv">สวีเดน</language>
 			<language type="sw">สวาฮีลี</language>
-			<language type="sw_CD">สวาฮีลี-คองโก</language>
+			<language type="sw_CD">สวาฮีลี - คองโก</language>
 			<language type="swb">โคเมอเรียน</language>
 			<language type="syc">ซีเรียแบบดั้งเดิม</language>
 			<language type="syr">ซีเรีย</language>
 			<language type="szl" draft="contributed">ไซลีเซีย</language>
 			<language type="ta">ทมิฬ</language>
-			<language type="tcy" draft="contributed">ตูลู</language>
+			<language type="tcy">ตูลู</language>
 			<language type="te">เตลูกู</language>
 			<language type="tem">ทิมเน</language>
 			<language type="teo">เตโซ</language>
@@ -553,26 +560,26 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ti">ติกริญญา</language>
 			<language type="tig">ตีเกร</language>
 			<language type="tiv">ทิฟ</language>
-			<language type="tk">เติร์กเมนิสถาน</language>
+			<language type="tk">เติร์กเมน</language>
 			<language type="tkl">โตเกเลา</language>
-			<language type="tkr" draft="contributed">แซคเซอร์</language>
+			<language type="tkr">แซคเซอร์</language>
 			<language type="tl">ตากาล็อก</language>
 			<language type="tlh">คลิงกอน</language>
 			<language type="tli">ทลิงกิต</language>
-			<language type="tly" draft="contributed">ทาลิช</language>
+			<language type="tly">ทาลิช</language>
 			<language type="tmh">ทามาเชก</language>
 			<language type="tn">บอตสวานา</language>
 			<language type="to">ตองกา</language>
 			<language type="tog">ไนอะซาตองกา</language>
 			<language type="tpi">ท็อกพิซิน</language>
 			<language type="tr">ตุรกี</language>
-			<language type="tru" draft="contributed">ตูโรโย</language>
+			<language type="tru">ตูโรโย</language>
 			<language type="trv" draft="contributed">ทาโรโก</language>
-			<language type="ts">ซิิตซองกา</language>
-			<language type="tsd" draft="contributed">ซาโคเนีย</language>
+			<language type="ts">ซิตซองกา</language>
+			<language type="tsd">ซาโคเนีย</language>
 			<language type="tsi">ซิมชีแอน</language>
 			<language type="tt">ตาตาร์</language>
-			<language type="ttt" draft="contributed">ตัตมุสลิม</language>
+			<language type="ttt">ตัตมุสลิม</language>
 			<language type="tum">ทุมบูกา</language>
 			<language type="tvl">ตูวาลู</language>
 			<language type="tw">ทวิ</language>
@@ -581,8 +588,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="tyv">ตูวา</language>
 			<language type="tzm">ทามาไซต์แอตลาสกลาง</language>
 			<language type="udm">อุดมูร์ต</language>
-			<language type="ug">อุยกัว</language>
-			<language type="ug" alt="variant">อุยกูร์</language>
+			<language type="ug">อุยกูร์</language>
 			<language type="uga">ยูการิต</language>
 			<language type="uk">ยูเครน</language>
 			<language type="umb">อุมบุนดู</language>
@@ -591,39 +597,39 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="uz">อุซเบก</language>
 			<language type="vai">ไว</language>
 			<language type="ve">เวนดา</language>
-			<language type="vec" draft="contributed">เวเนโต้</language>
-			<language type="vep" draft="contributed">เวปส์</language>
+			<language type="vec">เวเนโต้</language>
+			<language type="vep">เวปส์</language>
 			<language type="vi">เวียดนาม</language>
-			<language type="vls" draft="contributed">เฟลมิชตะวันตก</language>
-			<language type="vmf" draft="contributed">เมน-ฟรานโกเนีย</language>
+			<language type="vls">เฟลมิชตะวันตก</language>
+			<language type="vmf">เมน-ฟรานโกเนีย</language>
 			<language type="vo">โวลาพึค</language>
 			<language type="vot">โวทิก</language>
-			<language type="vro" draft="contributed">โวโร</language>
+			<language type="vro">โวโร</language>
 			<language type="vun">วุนจู</language>
 			<language type="wa">วาโลนี</language>
-			<language type="wae" draft="contributed">วัลเซอร์</language>
+			<language type="wae">วัลเซอร์</language>
 			<language type="wal">วาลาโม</language>
 			<language type="war">วาเรย์</language>
 			<language type="was">วาโช</language>
 			<language type="wbp">วอล์เพอร์รี</language>
 			<language type="wo">โวลอฟ</language>
-			<language type="wuu" draft="contributed">จีนอู๋</language>
+			<language type="wuu">จีนอู๋</language>
 			<language type="xal">คัลมืยค์</language>
 			<language type="xh">คะห์โอซา</language>
-			<language type="xmf" draft="contributed">เมเกรเลีย</language>
+			<language type="xmf">เมเกรเลีย</language>
 			<language type="xog">โซกา</language>
 			<language type="yao">เย้า</language>
 			<language type="yap">ยัป</language>
-			<language type="yav" draft="contributed">แยงเบน</language>
-			<language type="ybb" draft="contributed">เยมบา</language>
-			<language type="yi">ยิว</language>
+			<language type="yav">แยงเบน</language>
+			<language type="ybb">เยมบา</language>
+			<language type="yi">ยิดดิช</language>
 			<language type="yo">โยรูบา</language>
-			<language type="yrl" draft="contributed">เหงงกาตุ</language>
+			<language type="yrl">เหงงกาตุ</language>
 			<language type="yue">กวางตุ้ง</language>
 			<language type="za">จ้วง</language>
 			<language type="zap">ซาโปเตก</language>
 			<language type="zbl">บลิสซิมโบลส์</language>
-			<language type="zea" draft="contributed">เซแลนด์</language>
+			<language type="zea">เซแลนด์</language>
 			<language type="zen">เซนากา</language>
 			<language type="zgh">ทามาไซต์โมร็อกโกมาตรฐาน</language>
 			<language type="zh">จีน</language>
@@ -670,7 +676,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Egyh">เฮียราติกอียิปต์</script>
 			<script type="Egyp">เฮียโรกลิฟส์อียิปต์</script>
 			<script type="Elba" draft="contributed">เอลบ์ซาน</script>
-			<script type="Ethi">เอทิโอปิก</script>
+			<script type="Ethi">เอธิโอปิก</script>
 			<script type="Geok">คัตซูรีจอร์เจีย</script>
 			<script type="Geor">จอร์เจีย</script>
 			<script type="Glag">กลาโกลิติก</script>
@@ -679,7 +685,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Grek">กรีก</script>
 			<script type="Gujr">คุชราต</script>
 			<script type="Guru">กูร์มูคี</script>
-			<script type="Hang">ฮันกูล</script>
+			<script type="Hanb" draft="contributed">จีนกลาง</script>
+			<script type="Hang">ฮันกึล</script>
 			<script type="Hani">ฮั่น</script>
 			<script type="Hano">ฮานูโนโอ</script>
 			<script type="Hans">ตัวย่อ</script>
@@ -694,6 +701,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Hung">ฮังการีโบราณ</script>
 			<script type="Inds">อินดัส</script>
 			<script type="Ital">อิตาลีโบราณ</script>
+			<script type="Jamo" draft="contributed">จาโม</script>
 			<script type="Java">ชวา</script>
 			<script type="Jpan">ญี่ปุ่น</script>
 			<script type="Jurc" draft="contributed">จูร์เชน</script>
@@ -780,7 +788,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Taml">ทมิฬ</script>
 			<script type="Tang" draft="contributed">ตันกัท</script>
 			<script type="Tavt">ไทเวียต</script>
-			<script type="Telu">เทลูกู</script>
+			<script type="Telu">เตลูกู</script>
 			<script type="Teng">เทงกวาร์</script>
 			<script type="Tfng">ทิฟินาก</script>
 			<script type="Tglg">ตากาล็อก</script>
@@ -798,7 +806,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Yiii">ยิ</script>
 			<script type="Zinh">อินเฮอริต</script>
 			<script type="Zmth">เครื่องหมายทางคณิตศาสตร์</script>
-			<script type="Zsym">ซิมโบลส์</script>
+			<script type="Zsye">อีโมจิ</script>
+			<script type="Zsym">สัญลักษณ์</script>
 			<script type="Zxxx">ไม่มีภาษาเขียน</script>
 			<script type="Zyyy">สามัญ</script>
 			<script type="Zzzz">สคริปต์ที่ไม่รู้จัก</script>
@@ -833,6 +842,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">ยุโรปตะวันออก</territory>
 			<territory type="154">ยุโรปเหนือ</territory>
 			<territory type="155">ยุโรปตะวันตก</territory>
+			<territory type="202" draft="contributed">แอฟริกาใต้สะฮารา</territory>
 			<territory type="419">ละตินอเมริกา</territory>
 			<territory type="AC">เกาะแอสเซนชัน</territory>
 			<territory type="AD">อันดอร์รา</territory>
@@ -874,13 +884,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="BZ">เบลีซ</territory>
 			<territory type="CA">แคนาดา</territory>
 			<territory type="CC">หมู่เกาะโคโคส (คีลิง)</territory>
-			<territory type="CD">คองโก-กินชาซา</territory>
+			<territory type="CD">คองโก - กินชาซา</territory>
 			<territory type="CD" alt="variant">คองโก (สาธารณรัฐประชาธิปไตย)</territory>
 			<territory type="CF">สาธารณรัฐแอฟริกากลาง</territory>
-			<territory type="CG">คองโก-บราซซาวิล</territory>
+			<territory type="CG">คองโก - บราซซาวิล</territory>
 			<territory type="CG" alt="variant">คองโก (สาธารณรัฐ)</territory>
 			<territory type="CH">สวิตเซอร์แลนด์</territory>
-			<territory type="CI">ไอวอรี่โคสต์</territory>
+			<territory type="CI">โกตดิวัวร์</territory>
+			<territory type="CI" alt="variant">ไอวอรี่โคสต์</territory>
 			<territory type="CK">หมู่เกาะคุก</territory>
 			<territory type="CL">ชิลี</territory>
 			<territory type="CM">แคเมอรูน</territory>
@@ -893,7 +904,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">คูราเซา</territory>
 			<territory type="CX">เกาะคริสต์มาส</territory>
 			<territory type="CY">ไซปรัส</territory>
-			<territory type="CZ">สาธารณรัฐเช็ก</territory>
+			<territory type="CZ">เช็ก</territory>
+			<territory type="CZ" alt="variant">สาธารณรัฐเช็ก</territory>
 			<territory type="DE">เยอรมนี</territory>
 			<territory type="DG">ดิเอโกการ์เซีย</territory>
 			<territory type="DJ">จิบูตี</territory>
@@ -901,7 +913,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="DM">โดมินิกา</territory>
 			<territory type="DO">สาธารณรัฐโดมินิกัน</territory>
 			<territory type="DZ">แอลจีเรีย</territory>
-			<territory type="EA">ซีโอตาและเมลิลลา</territory>
+			<territory type="EA">เซวตาและเมลียา</territory>
 			<territory type="EC">เอกวาดอร์</territory>
 			<territory type="EE">เอสโตเนีย</territory>
 			<territory type="EG">อียิปต์</territory>
@@ -910,6 +922,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">สเปน</territory>
 			<territory type="ET">เอธิโอเปีย</territory>
 			<territory type="EU">สหภาพยุโรป</territory>
+			<territory type="EZ">ยูโรโซน</territory>
 			<territory type="FI">ฟินแลนด์</territory>
 			<territory type="FJ">ฟิจิ</territory>
 			<territory type="FK">หมู่เกาะฟอล์กแลนด์</territory>
@@ -985,13 +998,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="MC">โมนาโก</territory>
 			<territory type="MD">มอลโดวา</territory>
 			<territory type="ME">มอนเตเนโกร</territory>
-			<territory type="MF">เซนต์มาติน</territory>
+			<territory type="MF">เซนต์มาร์ติน</territory>
 			<territory type="MG">มาดากัสการ์</territory>
 			<territory type="MH">หมู่เกาะมาร์แชลล์</territory>
 			<territory type="MK">มาซิโดเนีย</territory>
 			<territory type="MK" alt="variant">มาซิโดเนีย (FYROM)</territory>
 			<territory type="ML">มาลี</territory>
-			<territory type="MM">เมียนม่าร์ (พม่า)</territory>
+			<territory type="MM">เมียนมาร์ (พม่า)</territory>
 			<territory type="MN">มองโกเลีย</territory>
 			<territory type="MO">เขตปกครองพิเศษมาเก๊าแห่งสาธารณรัฐประชาชนจีน</territory>
 			<territory type="MO" alt="short">มาเก๊า</territory>
@@ -1052,17 +1065,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SJ">สฟาลบาร์และยานไมเอน</territory>
 			<territory type="SK">สโลวะเกีย</territory>
 			<territory type="SL">เซียร์ราลีโอน</territory>
-			<territory type="SM">ซานมารีโน</territory>
+			<territory type="SM">ซานมาริโน</territory>
 			<territory type="SN">เซเนกัล</territory>
 			<territory type="SO">โซมาเลีย</territory>
 			<territory type="SR">ซูรินาเม</territory>
 			<territory type="SS">ซูดานใต้</territory>
 			<territory type="ST">เซาตูเมและปรินซิปี</territory>
 			<territory type="SV">เอลซัลวาดอร์</territory>
-			<territory type="SX">เซนต์มาร์ติน</territory>
+			<territory type="SX">ซินต์มาร์เทน</territory>
 			<territory type="SY">ซีเรีย</territory>
 			<territory type="SZ">สวาซิแลนด์</territory>
-			<territory type="TA">ทริสตัน เดอ คูนา</territory>
+			<territory type="TA">ทริสตันดาคูนา</territory>
 			<territory type="TC">หมู่เกาะเติกส์และหมู่เกาะเคคอส</territory>
 			<territory type="TD">ชาด</territory>
 			<territory type="TF">เฟรนช์เซาเทิร์นเทร์ริทอรีส์</territory>
@@ -1083,6 +1096,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">ยูเครน</territory>
 			<territory type="UG">ยูกันดา</territory>
 			<territory type="UM">หมู่เกาะรอบนอกของสหรัฐอเมริกา</territory>
+			<territory type="UN">สหประชาชาติ</territory>
+			<territory type="UN" alt="short">สหประชาชาติ</territory>
 			<territory type="US">สหรัฐอเมริกา</territory>
 			<territory type="US" alt="short">สหรัฐฯ</territory>
 			<territory type="UY">อุรุกวัย</territory>
@@ -1171,11 +1186,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</variants>
 		<keys>
 			<key type="calendar">ปฏิทิน</key>
+			<key type="cf" draft="contributed">รูปแบบสกุลเงิน</key>
 			<key type="colAlternate" draft="contributed">ละเว้นการจัดเรียงสัญลักษณ์</key>
 			<key type="colBackwards" draft="contributed">การจัดเรียงเสียงหนักเบาในลำดับถอยหลัง</key>
 			<key type="colCaseFirst" draft="contributed">การเรียงลำดับตัวพิมพ์ใหญ่/ตัวพิมพ์เล็ก</key>
 			<key type="colCaseLevel" draft="contributed">การจัดเรียงตามความสำคัญของตัวพิมพ์อักษร</key>
-			<key type="colHiraganaQuaternary" draft="contributed">การจัดเรียงตัวอักษรคะนะ</key>
 			<key type="collation">ลำดับการจัดเรียง</key>
 			<key type="colNormalization" draft="contributed">การจัดเรียงแบบที่เป็นปกติ</key>
 			<key type="colNumeric" draft="contributed">การจัดเรียงตัวเลข</key>
@@ -1187,7 +1202,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">ตัวเลข</key>
 			<key type="timezone" draft="contributed">เขตเวลา</key>
 			<key type="va" draft="contributed">ตัวแปรภาษาถิ่น</key>
-			<key type="variableTop" draft="contributed">จัดเรียงเป็นสัญลักษณ์</key>
 			<key type="x">ใช้งานส่วนบุคคล</key>
 		</keys>
 		<types>
@@ -1209,6 +1223,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="calendar" type="japanese">ปฏิทินญี่ปุ่น</type>
 			<type key="calendar" type="persian">ปฏิทินเปอร์เชีย</type>
 			<type key="calendar" type="roc">ปฏิทินไต้หวัน</type>
+			<type key="cf" type="account" draft="contributed">รูปแบบสกุลเงินบัญชี</type>
+			<type key="cf" type="standard" draft="contributed">รูปแบบสกุลเงินมาตรฐาน</type>
 			<type key="colAlternate" type="non-ignorable" draft="contributed">จัดเรียงสัญลักษณ์</type>
 			<type key="colAlternate" type="shifted" draft="contributed">จัดเรียงสัญลักษณ์ที่ละไว้</type>
 			<type key="colBackwards" type="no" draft="contributed">จัดเรียงเสียงหนักเบาตามปกติ</type>
@@ -1218,8 +1234,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colCaseFirst" type="upper" draft="contributed">จัดเรียงตัวพิมพ์ใหญ่ก่อน</type>
 			<type key="colCaseLevel" type="no" draft="contributed">จัดเรียงตามความสำคัญของตัวพิมพ์</type>
 			<type key="colCaseLevel" type="yes" draft="contributed">จัดเรียงความสำคัญของตัวพิมพ์</type>
-			<type key="colHiraganaQuaternary" type="no" draft="contributed">จัดเรียงตัวอักษรคะนะแยกต่างหาก</type>
-			<type key="colHiraganaQuaternary" type="yes" draft="contributed">จัดเรียงตัวอักษรคะนะในแบบอื่น</type>
 			<type key="collation" type="big5han">เรียงตามอักษรจีนดั้งเดิม</type>
 			<type key="collation" type="dictionary" draft="contributed">เรียงตามพจนานุกรม</type>
 			<type key="collation" type="ducet">ลำดับการจัดเรียงตาม Unicode เริ่มต้น</type>
@@ -1245,6 +1259,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="colStrength" type="quaternary" draft="contributed">จัดเรียงตามเสียงหนักเบา/ตัวพิมพ์/ความกว้าง/ตัวอักษรคะนะ</type>
 			<type key="colStrength" type="secondary" draft="contributed">จัดเรียงเสียงหนักเบา</type>
 			<type key="colStrength" type="tertiary" draft="contributed">จัดเรียงเสียงหนักเบา/ตัวพิมพ์/ความกว้าง</type>
+			<type key="d0" type="fwidth" draft="contributed">ตัวเต็ม</type>
+			<type key="d0" type="hwidth" draft="contributed">ตัวย่อ</type>
+			<type key="d0" type="npinyin" draft="contributed">ตัวเลข</type>
 			<type key="hc" type="h11">ระบบ 12 ชั่วโมง (0–11)</type>
 			<type key="hc" type="h12">ระบบ 12 ชั่วโมง (1–12)</type>
 			<type key="hc" type="h23">ระบบ 24 ชั่วโมง (0–23)</type>
@@ -1252,11 +1269,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="lb" type="loose">รูปแบบที่ยืดหยุ่นของการขึ้นบรรทัดใหม่</type>
 			<type key="lb" type="normal">รูปแบบปกติของการขึ้นบรรทัดใหม่</type>
 			<type key="lb" type="strict">รูปแบบที่เคร่งครัดของการขึ้นบรรทัดใหม่</type>
+			<type key="m0" type="bgn" draft="contributed">ชื่อมาตรฐานอังกฤษ (BGN)</type>
+			<type key="m0" type="ungegn" draft="contributed">ชื่อภูมิศาสตร์มาตรฐาน UN (UNGEGN)</type>
 			<type key="ms" type="metric">ระบบเมตริก</type>
 			<type key="ms" type="uksystem">ระบบการวัดอิมพีเรียล</type>
 			<type key="ms" type="ussystem">ระบบการวัดอเมริกัน</type>
-			<type key="numbers" type="arab">ตัวเลขอินเดีย-อารบิก</type>
-			<type key="numbers" type="arabext">ตัวเลขอินเดีย-อารบิกตัวเต็ม</type>
+			<type key="numbers" type="arab">ตัวเลขอารบิก-อินดิก</type>
+			<type key="numbers" type="arabext">ตัวเลขอารบิก-อินดิกแบบขยาย</type>
 			<type key="numbers" type="armn">ตัวเลขอาร์เมเนีย</type>
 			<type key="numbers" type="armnlow">ตัวเลขอาร์เมเนียพิมพ์เล็ก</type>
 			<type key="numbers" type="bali">ตัวเลขบาหลี</type>
@@ -1288,7 +1307,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="lana">ตัวเลขไททัมโฮรา</type>
 			<type key="numbers" type="lanatham">ตัวเลขไททัมทัม</type>
 			<type key="numbers" type="laoo">ตัวเลขลาว</type>
-			<type key="numbers" type="latn">ตัวเลขอารบิค</type>
+			<type key="numbers" type="latn">ตัวเลขอารบิก</type>
 			<type key="numbers" type="lepc">ตัวเลขเลปชา</type>
 			<type key="numbers" type="limb">ตัวเลขลิมบู</type>
 			<type key="numbers" type="mlym">ตัวเลขมาลายาลัม</type>
@@ -1317,18 +1336,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="traditional" draft="contributed">ตัวเลขแบบดั้งเดิม</type>
 			<type key="numbers" type="vaii" draft="contributed">ตัวเลขไว</type>
 		</types>
-		<transformNames>
-			<transformName type="BGN" draft="contributed">ชื่อมาตรฐานอังกฤษ (BGN)</transformName>
-			<transformName type="Numeric" draft="contributed">ตัวเลข</transformName>
-			<transformName type="Tone" draft="contributed">ระดับเสียง</transformName>
-			<transformName type="UNGEGN" draft="contributed">ชื่อภูมิศาสตร์มาตรฐาน UN (UNGEGN)</transformName>
-			<transformName type="x-Accents" draft="contributed">สำเนียง</transformName>
-			<transformName type="x-Fullwidth" draft="contributed">ตัวเต็ม</transformName>
-			<transformName type="x-Halfwidth" draft="contributed">ตัวย่อ</transformName>
-			<transformName type="x-Jamo" draft="contributed">จาโม</transformName>
-			<transformName type="x-Pinyin" draft="contributed">พินอิน</transformName>
-			<transformName type="x-Publishing" draft="contributed">เพื่อเผยแพร่</transformName>
-		</transformNames>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">เมตริก</measurementSystemName>
 			<measurementSystemName type="UK">สหราชอาณาจักร</measurementSystemName>
@@ -1344,6 +1351,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<exemplarCharacters>[ฯ ๆ \u0E4E \u0E4C \u0E47 \u0E48 \u0E49 \u0E4A \u0E4B ก ข ฃ ค ฅ ฆ ง จ ฉ ช ซ ฌ ญ ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ฤ ล ฦ ว ศ ษ ส ห ฬ อ ฮ \u0E4D ะ \u0E31 า ๅ ำ \u0E34 \u0E35 \u0E36 \u0E37 \u0E38 \u0E39 เ แ โ ใ ไ \u0E3A]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200B]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ก ข ฃ ค ฅ ฆ ง จ ฉ ช ซ ฌ ญ ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ฤ ล ฦ ว ศ ษ ส ห ฬ อ ฮ]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[% , \- . ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[! &quot; # ' ( ) * , \- . / \: @ \[ \] ‐ – — ‘ ’ “ ” … ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
@@ -1352,6 +1360,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
+		<parseLenients scope="date" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="general" level="lenient">
+			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="lenient">
+			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+		</parseLenients>
+		<parseLenients scope="number" level="stricter">
+			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+		</parseLenients>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -1395,7 +1422,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E" draft="contributed">ccc</dateFormatItem>
+						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
@@ -2222,9 +2249,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh" draft="contributed">h B</dateFormatItem>
+						<dateFormatItem id="Bhm" draft="contributed">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms" draft="contributed">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm" draft="contributed">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms" draft="contributed">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="Ehm" draft="contributed">E h:mm a</dateFormatItem>
+						<dateFormatItem id="EHm" draft="contributed">E HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms" draft="contributed">E h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="EHms" draft="contributed">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM G y</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM G y</dateFormatItem>
@@ -2303,7 +2339,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E d – E d/M</greatestDifference>
+							<greatestDifference id="d">E d/M – E d/M</greatestDifference>
 							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
@@ -2314,7 +2350,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
-							<greatestDifference id="d">E d – E d MMM</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM</greatestDifference>
 							<greatestDifference id="M">E d MMM – E d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEEEEd">
@@ -2329,12 +2365,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">M/y – M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d–d/M/y G</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y G</greatestDifference>
 							<greatestDifference id="M">d/M/y – d/M/y G</greatestDifference>
 							<greatestDifference id="y">d/M/y – d/M/y G</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E d – E d/M/y G</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y G</greatestDifference>
 							<greatestDifference id="M">E d/M/y – E d/M/y G</greatestDifference>
 							<greatestDifference id="y">E d/M/y – E d/M/y G</greatestDifference>
 						</intervalFormatItem>
@@ -2348,7 +2384,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">d MMM G y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d – E d MMM G y</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM G y</greatestDifference>
 							<greatestDifference id="M">E d MMM – E d MMM G y</greatestDifference>
 							<greatestDifference id="y">E d MMM G y – E d MMM y</greatestDifference>
 						</intervalFormatItem>
@@ -2616,8 +2652,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="midnight">เที่ยงคืน</dayPeriod>
 							<dayPeriod type="am">ก่อนเที่ยง</dayPeriod>
+							<dayPeriod type="noon">เที่ยง</dayPeriod>
 							<dayPeriod type="pm">หลังเที่ยง</dayPeriod>
+							<dayPeriod type="morning1">ในตอนเช้า</dayPeriod>
+							<dayPeriod type="afternoon1">ในตอนบ่าย</dayPeriod>
+							<dayPeriod type="afternoon2">บ่าย</dayPeriod>
+							<dayPeriod type="evening1">ในตอนเย็น</dayPeriod>
+							<dayPeriod type="evening2">ค่ำ</dayPeriod>
+							<dayPeriod type="night1">กลางคืน</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">เที่ยงคืน</dayPeriod>
@@ -2636,10 +2680,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="am">ก่อนเที่ยง</dayPeriod>
 							<dayPeriod type="noon">เที่ยง</dayPeriod>
 							<dayPeriod type="pm">หลังเที่ยง</dayPeriod>
-							<dayPeriod type="morning1">เช้า</dayPeriod>
-							<dayPeriod type="afternoon1">ช่วงเที่ยง</dayPeriod>
+							<dayPeriod type="morning1">ในตอนเช้า</dayPeriod>
+							<dayPeriod type="afternoon1">ในตอนบ่าย</dayPeriod>
 							<dayPeriod type="afternoon2">บ่าย</dayPeriod>
-							<dayPeriod type="evening1">เย็น</dayPeriod>
+							<dayPeriod type="evening1">ในตอนเย็น</dayPeriod>
 							<dayPeriod type="evening2">ค่ำ</dayPeriod>
 							<dayPeriod type="night1">กลางคืน</dayPeriod>
 						</dayPeriodWidth>
@@ -2731,8 +2775,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">h B</dateFormatItem>
+						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
+						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
+						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E HH:mm น.</dateFormatItem>
@@ -2751,7 +2800,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm น. a v</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
@@ -2763,6 +2812,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEEEEd">EEEEที่ d MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">สัปดาห์ที่ W ของ MMM</dateFormatItem>
 						<dateFormatItem id="mmss">mm:ss</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
@@ -2779,6 +2829,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMMEEEEd">EEEEที่ d MMMM G y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ G y</dateFormatItem>
+						<dateFormatItem id="yw" count="other">สัปดาห์ที่ w ของ Y</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -2828,14 +2879,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">d/M – d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E d – E d/M</greatestDifference>
+							<greatestDifference id="d">E d/M – E d/M/</greatestDifference>
 							<greatestDifference id="M">E d/M – E d/M</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">LLL–LLL</greatestDifference>
+							<greatestDifference id="M">MMM – MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">d – d MMM</greatestDifference>
+							<greatestDifference id="d">MMM d–d</greatestDifference>
 							<greatestDifference id="M">d MMM – d MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
@@ -2854,12 +2905,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">M/y – M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">d–d/M/y</greatestDifference>
+							<greatestDifference id="d">d/M/y – d/M/y</greatestDifference>
 							<greatestDifference id="M">d/M/y – d/M/y</greatestDifference>
 							<greatestDifference id="y">d/M/y – d/M/y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E d – E d/M/y</greatestDifference>
+							<greatestDifference id="d">E d/M/y – E d/M/y</greatestDifference>
 							<greatestDifference id="M">E d/M/y – E d/M/y</greatestDifference>
 							<greatestDifference id="y">E d/M/y – E d/M/y</greatestDifference>
 						</intervalFormatItem>
@@ -2873,7 +2924,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">d MMM y – d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">E d – E d MMM y</greatestDifference>
+							<greatestDifference id="d">E d MMM – E d MMM y</greatestDifference>
 							<greatestDifference id="M">E d MMM – E d MMM y</greatestDifference>
 							<greatestDifference id="y">E d MMM y – E d MMM y</greatestDifference>
 						</intervalFormatItem>
@@ -2883,8 +2934,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="y">EEEEที่ d MMM y – EEEEที่ d MMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">MMMM–MMMM G y</greatestDifference>
-							<greatestDifference id="y">MMMM G y – MMMM y</greatestDifference>
+							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
+							<greatestDifference id="y">MMMM y – MMMM y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMMd">
 							<greatestDifference id="d">d–d MMMM G y</greatestDifference>
@@ -3761,6 +3812,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>สมัย</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>สมัย</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>สมัย</displayName>
+			</field>
 			<field type="year">
 				<displayName>ปี</displayName>
 				<relative type="-1">ปีที่แล้ว</relative>
@@ -3799,6 +3856,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>ไตรมาส</displayName>
+				<relative type="-1">ไตรมาสที่แล้ว</relative>
+				<relative type="0">ไตรมาสนี้</relative>
+				<relative type="1">ไตรมาสหน้า</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ในอีก {0} ไตรมาส</relativeTimePattern>
 				</relativeTime>
@@ -3871,6 +3931,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} สัปดาห์ที่ผ่านมา</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>สัปดาห์</displayName>
@@ -3883,6 +3944,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} สัปดาห์ที่แล้ว</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>สัปดาห์</displayName>
@@ -3895,6 +3957,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} สัปดาห์ที่แล้ว</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>สัปดาห์ที่เริ่มต้นวันที่</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>สัปดาห์ของเดือน</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>สัปดาห์ของเดือน</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>สัปดาห์ของเดือน</displayName>
 			</field>
 			<field type="day">
 				<displayName>วัน</displayName>
@@ -3938,119 +4010,276 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<relativeTimePattern count="other">{0} วันที่แล้ว</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>วันของปี</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>วันของปี</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>วันของปี</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>วันในสัปดาห์</displayName>
 			</field>
+			<field type="weekday-short">
+				<displayName>วันของสัปดาห์</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>วันของสัปดาห์</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>วันของเดือน</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>วันของเดือน</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>วันของเดือน</displayName>
+			</field>
 			<field type="sun">
-				<relative type="-1">อาทิตย์ที่แล้ว</relative>
-				<relative type="0">อาทิตย์นี้</relative>
-				<relative type="1">อาทิตย์หน้า</relative>
+				<relative type="-1">วันอาทิตย์ที่แล้ว</relative>
+				<relative type="0">วันอาทิตย์นี้</relative>
+				<relative type="1">วันอาทิตย์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">วันอาทิตย์ในอีก {0} สัปดาห์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">วันอาทิตย์เมื่อ {0} สัปดาห์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
-				<relative type="-1">อาทิตย์ที่แล้ว</relative>
-				<relative type="0">อาทิตย์นี้</relative>
-				<relative type="1">อาทิตย์หน้า</relative>
+				<relative type="-1">วันอาทิตย์ที่แล้ว</relative>
+				<relative type="0">วันอาทิตย์นี้</relative>
+				<relative type="1">วันอาทิตย์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">วันอาทิตย์ในอีก {0} สัปดาห์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">วันอาทิตย์เมื่อ {0} สัปดาห์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
-				<relative type="-1">อาทิตย์ที่แล้ว</relative>
-				<relative type="0">อาทิตย์นี้</relative>
-				<relative type="1">อาทิตย์หน้า</relative>
+				<relative type="-1">วันอาทิตย์ที่แล้ว</relative>
+				<relative type="0">วันอาทิตย์นี้</relative>
+				<relative type="1">วันอาทิตย์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">วันอาทิตย์ในอีก {0} สัปดาห์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">วันอาทิตย์เมื่อ {0} สัปดาห์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">จันทร์ที่แล้ว</relative>
 				<relative type="0">จันทร์นี้</relative>
 				<relative type="1">จันทร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} จันทร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} จันทร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">จันทร์ที่แล้ว</relative>
 				<relative type="0">จันทร์นี้</relative>
 				<relative type="1">จันทร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} จันทร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} จันทร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">จันทร์ที่แล้ว</relative>
 				<relative type="0">จันทร์นี้</relative>
 				<relative type="1">จันทร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">อีก {0} จันทร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} จันทร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">อังคารที่แล้ว</relative>
 				<relative type="0">อังคารนี้</relative>
 				<relative type="1">อังคารหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} อังคาร</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} อังคารที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">อังคารที่แล้ว</relative>
 				<relative type="0">อังคารนี้</relative>
 				<relative type="1">อังคารหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} อังคาร</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} อังคารที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">อังคารที่แล้ว</relative>
 				<relative type="0">อังคารนี้</relative>
 				<relative type="1">อังคารหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">อีก {0} อังคาร</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} อังคารที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">พุธที่แล้ว</relative>
 				<relative type="0">พุธนี้</relative>
 				<relative type="1">พุธหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} พุธ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} พุธที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">พุธที่แล้ว</relative>
 				<relative type="0">พุธนี้</relative>
 				<relative type="1">พุธหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} พุธ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} พุธที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">พุธที่แล้ว</relative>
 				<relative type="0">พุธนี้</relative>
 				<relative type="1">พุธหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} พุธ</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} พุธที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">พฤหัสที่แล้ว</relative>
 				<relative type="0">พฤหัสนี้</relative>
 				<relative type="1">พฤหัสหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} พฤหัส</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} พฤหัสที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">พฤหัสที่แล้ว</relative>
 				<relative type="0">พฤหัสนี้</relative>
 				<relative type="1">พฤหัสหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">อีก {0} พฤหัส</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} พฤหัสที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">พฤหัสที่แล้ว</relative>
 				<relative type="0">พฤหัสนี้</relative>
 				<relative type="1">พฤหัสหน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">อีก {0} พฤหัส</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} พฤหัสที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">ศุกร์ที่แล้ว</relative>
 				<relative type="0">ศุกร์นี้</relative>
 				<relative type="1">ศุกร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} ศุกร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ศุกร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">ศุกร์ที่แล้ว</relative>
 				<relative type="0">ศุกร์นี้</relative>
 				<relative type="1">ศุกร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} ศุกร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ศุกร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">ศุกร์ที่แล้ว</relative>
 				<relative type="0">ศุกร์นี้</relative>
 				<relative type="1">ศุกร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">อีก {0} ศุกร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} ศุกร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">เสาร์ที่แล้ว</relative>
 				<relative type="0">เสาร์นี้</relative>
 				<relative type="1">เสาร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} เสาร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} เสาร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">เสาร์ที่แล้ว</relative>
 				<relative type="0">เสาร์นี้</relative>
 				<relative type="1">เสาร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">ในอีก {0} เสาร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} เสาร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">เสาร์ที่แล้ว</relative>
 				<relative type="0">เสาร์นี้</relative>
 				<relative type="1">เสาร์หน้า</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">อีก {0} เสาร์</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">{0} เสาร์ที่แล้ว</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>ช่วงวัน</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName>ช่วงวัน</displayName>
 			</field>
+			<field type="dayperiod-narrow">
+				<displayName>ช่วงวัน</displayName>
+			</field>
 			<field type="hour">
 				<displayName>ชั่วโมง</displayName>
+				<relative type="0">ชั่วโมงนี้</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ในอีก {0} ชั่วโมง</relativeTimePattern>
 				</relativeTime>
@@ -4078,6 +4307,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>นาที</displayName>
+				<relative type="0">นาทีนี้</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">ในอีก {0} นาที</relativeTimePattern>
 				</relativeTime>
@@ -4134,6 +4364,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>เขตเวลา</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>โซน</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>เขตเวลา</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
@@ -4143,6 +4379,17 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<regionFormat type="daylight">เวลาออมแสง{0}</regionFormat>
 			<regionFormat type="standard">เวลามาตรฐาน{0}</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>ซานตาอิซาเบล</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>โฮโนลูลู</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>เวลาสากลเชิงพิกัด</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
 				<exemplarCity>เมืองที่ไม่รู้จัก</exemplarCity>
 			</zone>
@@ -4171,7 +4418,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ลูอันดา</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Rothera">
-				<exemplarCity>โรเทรา</exemplarCity>
+				<exemplarCity>โรธีรา</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Palmer">
 				<exemplarCity>พาล์เมอร์</exemplarCity>
@@ -4180,16 +4427,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>โทรล</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Syowa">
-				<exemplarCity>เซียวา</exemplarCity>
+				<exemplarCity>ไซโยวา</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Mawson">
-				<exemplarCity>มาว์ซัน</exemplarCity>
+				<exemplarCity>มอว์สัน</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Davis">
-				<exemplarCity>ดาวีส์</exemplarCity>
+				<exemplarCity>เดวิส</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Vostok">
-				<exemplarCity>วอสต็อค</exemplarCity>
+				<exemplarCity>วอสตอค</exemplarCity>
 			</zone>
 			<zone type="Antarctica/Casey">
 				<exemplarCity>เคซีย์</exemplarCity>
@@ -4279,7 +4526,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>แมคควอรี</exemplarCity>
 			</zone>
 			<zone type="Australia/Lord_Howe">
-				<exemplarCity>ลอร์ดโฮวี</exemplarCity>
+				<exemplarCity>ลอร์ดโฮว์</exemplarCity>
 			</zone>
 			<zone type="America/Aruba">
 				<exemplarCity>อารูบา</exemplarCity>
@@ -4407,6 +4654,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Vancouver">
 				<exemplarCity>แวนคูเวอร์</exemplarCity>
 			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>ฟอร์ตเนลสัน</exemplarCity>
+			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>ดอว์สัน ครีก</exemplarCity>
 			</zone>
@@ -4468,7 +4718,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>กูสเบย์</exemplarCity>
 			</zone>
 			<zone type="America/Glace_Bay">
-				<exemplarCity>แกลซเบย์</exemplarCity>
+				<exemplarCity>เกลซเบย์</exemplarCity>
 			</zone>
 			<zone type="America/Blanc-Sablon">
 				<exemplarCity>บลังค์-ซาบลอน</exemplarCity>
@@ -4503,6 +4753,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>อีสเตอร์</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>ปุนตาอาเรนัส</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>ซันติอาโก</exemplarCity>
 			</zone>
@@ -4535,6 +4788,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>นิโคเซีย</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>แฟมากุสตา</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>ปราก</exemplarCity>
@@ -4606,7 +4862,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>โปนาเป</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kosrae">
-				<exemplarCity>คอสแร</exemplarCity>
+				<exemplarCity>คอสไร</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity>แฟโร</exemplarCity>
@@ -4762,7 +5018,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>พนมเปญ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Enderbury">
-				<exemplarCity>เอนเดอร์เบอร์รี</exemplarCity>
+				<exemplarCity>เอนเดอร์เบอรี</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kiritimati">
 				<exemplarCity>คิริทิมาตี</exemplarCity>
@@ -4793,6 +5049,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Oral">
 				<exemplarCity>ออรัล</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity draft="contributed">อทีราว</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity>อัคโทบี</exemplarCity>
@@ -4908,9 +5167,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Tijuana">
 				<exemplarCity>ทิฮัวนา</exemplarCity>
 			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>ซานตาอิซาเบล</exemplarCity>
-			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>เอร์โมซีโย</exemplarCity>
 			</zone>
@@ -4984,7 +5240,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>นีอูเอ</exemplarCity>
 			</zone>
 			<zone type="Pacific/Chatham">
-				<exemplarCity>แชแทม</exemplarCity>
+				<exemplarCity>แชทัม</exemplarCity>
 			</zone>
 			<zone type="Pacific/Auckland">
 				<exemplarCity>โอคแลนด์</exemplarCity>
@@ -4999,10 +5255,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>ลิมา</exemplarCity>
 			</zone>
 			<zone type="Pacific/Tahiti">
-				<exemplarCity>ทาฮิติ</exemplarCity>
+				<exemplarCity>ตาฮีตี</exemplarCity>
 			</zone>
 			<zone type="Pacific/Marquesas">
-				<exemplarCity>มาร์เควซัส</exemplarCity>
+				<exemplarCity>มาร์เคซัส</exemplarCity>
 			</zone>
 			<zone type="Pacific/Gambier">
 				<exemplarCity>แกมเบียร์</exemplarCity>
@@ -5076,6 +5332,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>วอลโกกราด</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity draft="contributed">ซาราทอฟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity draft="contributed">แอสตราคาน</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity draft="contributed">อะลิยานอฟ</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity draft="contributed">คิรอฟ</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>ซามารา</exemplarCity>
 			</zone>
@@ -5087,6 +5355,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>โนโวซิบิร์สก์</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity draft="contributed">บราโมล</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity draft="contributed">ตอมสค์</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>โนโวคุซเนตสค์</exemplarCity>
@@ -5256,9 +5530,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>มิดเวย์</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>จอห์นสตัน</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>เวก</exemplarCity>
 			</zone>
@@ -5268,8 +5539,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>นอม</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>โฮโนลูลู</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>จอห์นสตัน</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>แองเคอเรจ</exemplarCity>
@@ -5450,9 +5721,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Amazon">
 				<long>
-					<generic>เวลาอะเมซอน</generic>
-					<standard>เวลามาตรฐานอะเมซอน</standard>
-					<daylight>เวลาฤดูร้อนอะเมซอน</daylight>
+					<generic>เวลาแอมะซอน</generic>
+					<standard>เวลามาตรฐานแอมะซอน</standard>
+					<daylight>เวลาฤดูร้อนแอมะซอน</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Central">
@@ -5958,9 +6229,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Lord_Howe">
 				<long>
-					<generic>เวลาลอร์ดโฮว</generic>
+					<generic>เวลาลอร์ดโฮว์</generic>
 					<standard>เวลามาตรฐานลอร์ดโฮว์</standard>
-					<daylight>เวลาออมแสงของลอร์ดโฮว์</daylight>
+					<daylight>เวลาออมแสงลอร์ดโฮว์</daylight>
 				</long>
 			</metazone>
 			<metazone type="Macau">
@@ -6171,7 +6442,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Ponape">
 				<long>
-					<standard>เวลาโปเนป</standard>
+					<standard>เวลาโปนาเป</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard draft="contributed">เวลาเปียงยาง</standard>
 				</long>
 			</metazone>
 			<metazone type="Qyzylorda">
@@ -6239,7 +6515,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Syowa">
 				<long>
-					<standard>เวลาโซวา</standard>
+					<standard>เวลาไซโยวา</standard>
 				</long>
 			</metazone>
 			<metazone type="Tahiti">
@@ -6403,18 +6679,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</decimalFormatLength>
 			<decimalFormatLength type="short">
 				<decimalFormat>
-					<pattern type="1000" count="other">0 พ'.'</pattern>
-					<pattern type="10000" count="other">0 ม'.'</pattern>
-					<pattern type="100000" count="other">0 ส'.'</pattern>
-					<pattern type="1000000" count="other">0 ล'.'</pattern>
-					<pattern type="10000000" count="other">00 ล'.'</pattern>
-					<pattern type="100000000" count="other">000 ล'.'</pattern>
-					<pattern type="1000000000" count="other">0 พ'.'ล'.'</pattern>
-					<pattern type="10000000000" count="other">0 ม'.'ล'.'</pattern>
-					<pattern type="100000000000" count="other">0 ส'.'ล'.'</pattern>
-					<pattern type="1000000000000" count="other">0 ล'.'ล'.'</pattern>
-					<pattern type="10000000000000" count="other">00 ล'.'ล'.'</pattern>
-					<pattern type="100000000000000" count="other">000 ล'.'ล'.'</pattern>
+					<pattern type="1000" count="other">0K</pattern>
+					<pattern type="10000" count="other">00K</pattern>
+					<pattern type="100000" count="other">000K</pattern>
+					<pattern type="1000000" count="other">0M</pattern>
+					<pattern type="10000000" count="other">00M</pattern>
+					<pattern type="100000000" count="other">000M</pattern>
+					<pattern type="1000000000" count="other">0B</pattern>
+					<pattern type="10000000000" count="other">00B</pattern>
+					<pattern type="100000000000" count="other">000B</pattern>
+					<pattern type="1000000000000" count="other">0T</pattern>
+					<pattern type="10000000000000" count="other">00T</pattern>
+					<pattern type="100000000000000" count="other">000T</pattern>
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
@@ -6443,18 +6719,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="other" draft="provisional">¤0 พ'.'</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤0 ม'.'</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤0 ส'.'</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤0 ล'.'</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤00 ล'.'</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤000 ล'.'</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤0 พ'.'ล'.'</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤0 ม'.'ล'.'</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤0 ส'.'ล'.'</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤0 ล'.'ล'.'</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤00 ล'.'ล'.'</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤000 ล'.'ล'.'</pattern>
+					<pattern type="1000" count="other">¤0K</pattern>
+					<pattern type="10000" count="other">¤00K</pattern>
+					<pattern type="100000" count="other">¤000K</pattern>
+					<pattern type="1000000" count="other">¤0M</pattern>
+					<pattern type="10000000" count="other">¤00M</pattern>
+					<pattern type="100000000" count="other">¤000M</pattern>
+					<pattern type="1000000000" count="other">¤0B</pattern>
+					<pattern type="10000000000" count="other">¤00B</pattern>
+					<pattern type="100000000000" count="other">¤000B</pattern>
+					<pattern type="1000000000000" count="other">¤0T</pattern>
+					<pattern type="10000000000000" count="other">¤00T</pattern>
+					<pattern type="100000000000000" count="other">¤000T</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="other">{0} {1}</unitPattern>
@@ -6497,6 +6773,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>กวานซาแองโกลา</displayName>
 				<displayName count="other">กวานซาแองโกลา</displayName>
 				<symbol>AOA</symbol>
+				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>กวานซาแองโกลา (1977–1990)</displayName>
@@ -6564,6 +6841,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>มาร์กบอสเนีย-เฮอร์เซโกวีนา</displayName>
 				<displayName count="other">มาร์กบอสเนีย-เฮอร์เซโกวีนา</displayName>
 				<symbol>BAM</symbol>
+				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName draft="contributed">ดีนาร์ใหม่บอสเนีย-เฮอร์เซโกวีนา (1994–1997)</displayName>
@@ -6636,6 +6914,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>โบลิเวียโนโบลิเวีย</displayName>
 				<displayName count="other">โบลิเวียโนโบลิเวีย</displayName>
 				<symbol>BOB</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName draft="contributed">โบลิเวียโนโบลิเวีย (1863–1963)</displayName>
@@ -6698,16 +6977,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ปูลาบอตสวานา</displayName>
 				<displayName count="other">ปูลาบอตสวานา</displayName>
 				<symbol>BWP</symbol>
+				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>นิวรูเบิลเบลารุส (1994–1999)</displayName>
 				<symbol draft="contributed">BYB</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>รูเบิลเบลารุส</displayName>
 				<displayName count="other">รูเบิลเบลารุส</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>รูเบิลเบลารุส (2000–2016)</displayName>
+				<displayName count="other">รูเบิลเบลารุส (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>ดอลลาร์เบลีซ</displayName>
@@ -6753,6 +7038,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
+			<currency type="CNH">
+				<displayName draft="contributed">หยวน</displayName>
+				<displayName count="other" draft="contributed">หยวน</displayName>
+				<symbol draft="contributed">CNH</symbol>
+			</currency>
 			<currency type="CNY">
 				<displayName>หยวนจีน</displayName>
 				<displayName count="other">หยวนจีน</displayName>
@@ -6787,6 +7077,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>เปโซคิวบา (แปลงสภาพ)</displayName>
 				<displayName count="other">เปโซคิวบา (แปลงสภาพ)</displayName>
 				<symbol>CUC</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>เปโซคิวบา</displayName>
@@ -6807,6 +7098,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>โครูนาสาธารณรัฐเช็ก</displayName>
 				<displayName count="other">โครูนาสาธารณรัฐเช็ก</displayName>
 				<symbol>CZK</symbol>
+				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>มาร์กเยอรมันตะวันออก</displayName>
@@ -6825,6 +7117,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>โครนเดนมาร์ก</displayName>
 				<displayName count="other">โครนเดนมาร์ก</displayName>
 				<symbol>DKK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>เปโซโดมินิกัน</displayName>
@@ -6853,6 +7146,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ปอนด์อียิปต์</displayName>
 				<displayName count="other">ปอนด์อียิปต์</displayName>
 				<symbol>EGP</symbol>
+				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>แนกฟาเอริเทรีย</displayName>
@@ -6896,6 +7190,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ปอนด์หมู่เกาะฟอล์กแลนด์</displayName>
 				<displayName count="other">ปอนด์หมู่เกาะฟอล์กแลนด์</displayName>
 				<symbol>FKP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>ฟรังก์ฝรั่งเศส</displayName>
@@ -6915,6 +7210,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ลารีจอร์เจีย</displayName>
 				<displayName count="other">ลารีจอร์เจีย</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
@@ -6941,6 +7237,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ฟรังก์กินี</displayName>
 				<displayName count="other">ฟรังก์กินี</displayName>
 				<symbol>GNF</symbol>
+				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>ไซลีกินี</displayName>
@@ -6958,6 +7255,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>เควตซัลกัวเตมาลา</displayName>
 				<displayName count="other">เควตซัลกัวเตมาลา</displayName>
 				<symbol>GTQ</symbol>
+				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>เอสคูโดกินีโปรตุเกส</displayName>
@@ -6983,6 +7281,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>เลมปิราฮอนดูรัส</displayName>
 				<displayName count="other">เลมปิราฮอนดูรัส</displayName>
 				<symbol>HNL</symbol>
+				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>ดีนาร์โครเอเชีย</displayName>
@@ -6992,6 +7291,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>คูนาโครเอเชีย</displayName>
 				<displayName count="other">คูนาโครเอเชีย</displayName>
 				<symbol>HRK</symbol>
+				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>กูร์ดเฮติ</displayName>
@@ -7002,6 +7302,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ฟอรินต์ฮังการี</displayName>
 				<displayName count="other">ฟอรินต์ฮังการี</displayName>
 				<symbol>HUF</symbol>
+				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>รูเปียห์อินโดนีเซีย</displayName>
@@ -7043,6 +7344,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>โครนาไอซ์แลนด์</displayName>
 				<displayName count="other">โครนาไอซ์แลนด์</displayName>
 				<symbol>ISK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>ลีราอิตาลี</displayName>
@@ -7066,8 +7368,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
-				<displayName>ชิลลิ่งเคนยา</displayName>
-				<displayName count="other">ชิลลิ่งเคนยา</displayName>
+				<displayName>ชิลลิงเคนยา</displayName>
+				<displayName count="other">ชิลลิงเคนยา</displayName>
 				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
@@ -7085,11 +7387,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ฟรังก์คอโมโรส</displayName>
 				<displayName count="other">ฟรังก์คอโมโรส</displayName>
 				<symbol>KMF</symbol>
+				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>วอนเกาหลีเหนือ</displayName>
 				<displayName count="other">วอนเกาหลีเหนือ</displayName>
 				<symbol>KPW</symbol>
+				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRH">
 				<displayName draft="contributed">ฮวานเกาหลีใต้ (1953–1962)</displayName>
@@ -7132,11 +7436,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ปอนด์เลบานอน</displayName>
 				<displayName count="other">ปอนด์เลบานอน</displayName>
 				<symbol>LBP</symbol>
+				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>รูปีศรีลังกา</displayName>
 				<displayName count="other">รูปีศรีลังกา</displayName>
 				<symbol>LKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ดอลลาร์ไลบีเรีย</displayName>
@@ -7209,6 +7515,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>อาเรียรีมาลากาซี</displayName>
 				<displayName count="other">อาเรียรีมาลากาซี</displayName>
 				<symbol>MGA</symbol>
+				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>ฟรังก์มาดากัสการ์</displayName>
@@ -7231,6 +7538,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>จ๊าตพม่า</displayName>
 				<displayName count="other">จ๊าตพม่า</displayName>
 				<symbol>MMK</symbol>
+				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>ทูกริกมองโกเลีย</displayName>
@@ -7244,9 +7552,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
+				<displayName>อูกียามอริเตเนีย (1973–2017)</displayName>
+				<displayName count="other">อูกียามอริเตเนีย (1973–2017)</displayName>
+				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
 				<displayName>อูกียามอริเตเนีย</displayName>
 				<displayName count="other">อูกียามอริเตเนีย</displayName>
-				<symbol>MRO</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>ลีรามอลตา</displayName>
@@ -7260,6 +7572,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>รูปีมอริเชียส</displayName>
 				<displayName count="other">รูปีมอริเชียส</displayName>
 				<symbol>MUR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>รูฟิยามัลดีฟส์</displayName>
@@ -7289,6 +7602,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ริงกิตมาเลเซีย</displayName>
 				<displayName count="other">ริงกิตมาเลเซีย</displayName>
 				<symbol>MYR</symbol>
+				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>เอสคูโดโมซัมบิก</displayName>
@@ -7323,6 +7637,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>กอร์โดบานิการากัว</displayName>
 				<displayName count="other">กอร์โดบานิการากัว</displayName>
 				<symbol>NIO</symbol>
+				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>กิลเดอร์เนเธอร์แลนด์</displayName>
@@ -7332,11 +7647,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>โครนนอร์เวย์</displayName>
 				<displayName count="other">โครนนอร์เวย์</displayName>
 				<symbol>NOK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>รูปีเนปาล</displayName>
 				<displayName count="other">รูปีเนปาล</displayName>
 				<symbol>NPR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>ดอลลาร์นิวซีแลนด์</displayName>
@@ -7359,12 +7676,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol draft="contributed">PEI</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>นูโวซอลเปรู</displayName>
-				<displayName count="other">นูโวซอลเปรู</displayName>
+				<displayName>ซอลเปรู</displayName>
+				<displayName count="other">ซอลเปรู</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PES">
-				<displayName>ซอลเปรู</displayName>
+				<displayName>ซอลเปรู (1863–1965)</displayName>
+				<displayName count="other">ซอลเปรู(1863–1965)</displayName>
 				<symbol draft="contributed">PES</symbol>
 			</currency>
 			<currency type="PGK">
@@ -7382,11 +7700,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>รูปีปากีสถาน</displayName>
 				<displayName count="other">รูปีปากีสถาน</displayName>
 				<symbol>PKR</symbol>
+				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>ซลอตีโปแลนด์</displayName>
 				<displayName count="other">ซลอตีโปแลนด์</displayName>
 				<symbol>PLN</symbol>
+				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>ซลอตีโปแลนด์ (1950–1995)</displayName>
@@ -7419,6 +7739,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ลิวโรมาเนีย</displayName>
 				<displayName count="other">ลิวโรมาเนีย</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>ดีนาร์เซอร์เบีย</displayName>
@@ -7429,6 +7750,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>รูเบิลรัสเซีย</displayName>
 				<displayName count="other">รูเบิลรัสเซีย</displayName>
 				<symbol>RUB</symbol>
+				<symbol alt="narrow" draft="contributed">₽</symbol>
 				<symbol alt="variant">₽</symbol>
 			</currency>
 			<currency type="RUR">
@@ -7439,6 +7761,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ฟรังก์รวันดา</displayName>
 				<displayName count="other">ฟรังก์รวันดา</displayName>
 				<symbol>RWF</symbol>
+				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>ริยัลซาอุดีอาระเบีย</displayName>
@@ -7473,6 +7796,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>โครนาสวีเดน</displayName>
 				<displayName count="other">โครนาสวีเดน</displayName>
 				<symbol>SEK</symbol>
+				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>ดอลลาร์สิงคโปร์</displayName>
@@ -7484,6 +7808,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ปอนด์เซนต์เฮเลนา</displayName>
 				<displayName count="other">ปอนด์เซนต์เฮเลนา</displayName>
 				<symbol>SHP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>ทอลาร์สโลวีเนีย</displayName>
@@ -7520,9 +7845,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>ดอบราเซาตูเมและปรินซิปี (1977–2017)</displayName>
+				<displayName count="other">ดอบราเซาตูเมและปรินซิปี (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>ดอบราเซาตูเมและปรินซิปี</displayName>
 				<displayName count="other">ดอบราเซาตูเมและปรินซิปี</displayName>
-				<symbol>STD</symbol>
+				<symbol draft="contributed">STN</symbol>
+				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>รูเบิลโซเวียต</displayName>
@@ -7536,6 +7867,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ปอนด์ซีเรีย</displayName>
 				<displayName count="other">ปอนด์ซีเรีย</displayName>
 				<symbol>SYP</symbol>
+				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>ลิลันเจนีสวาซิ</displayName>
@@ -7543,7 +7875,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
-				<displayName>บาทไทย</displayName>
+				<displayName>บาท</displayName>
 				<displayName count="other">บาทไทย</displayName>
 				<symbol>THB</symbol>
 				<symbol alt="narrow">฿</symbol>
@@ -7575,6 +7907,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>พาแองกาตองกา</displayName>
 				<displayName count="other">พาแองกาตองกา</displayName>
 				<symbol>TOP</symbol>
+				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>เอสคูโดติมอร์</displayName>
@@ -7670,6 +8003,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>โบลิวาร์เวเนซุเอลา</displayName>
 				<displayName count="other">โบลิวาร์เวเนซุเอลา</displayName>
 				<symbol>VEF</symbol>
+				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>ดองเวียดนาม</displayName>
@@ -7724,6 +8058,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ดอลลาร์แคริบเบียนตะวันออก</displayName>
 				<displayName count="other">ดอลลาร์แคริบเบียนตะวันออก</displayName>
 				<symbol>EC$</symbol>
+				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>สิทธิถอนเงินพิเศษ</displayName>
@@ -7813,6 +8148,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>แรนด์แอฟริกาใต้</displayName>
 				<displayName count="other">แรนด์แอฟริกาใต้</displayName>
 				<symbol>ZAR</symbol>
+				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>ควาชาแซมเบีย (1968–2012)</displayName>
@@ -7822,6 +8158,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ควาชาแซมเบีย</displayName>
 				<displayName count="other">ควาชาแซมเบีย</displayName>
 				<symbol>ZMW</symbol>
+				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>นิวแซร์คองโก</displayName>
@@ -7848,6 +8185,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<pattern type="atLeast">{0}+</pattern>
 			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other">{0} วัน</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">เลี้ยวขวาที่ทางเลี้ยวที่ {0}</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -7863,8 +8204,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} เมตรต่อวินาทีกำลังสอง</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName draft="contributed">รอบ</displayName>
-				<unitPattern count="other" draft="contributed">{0} รอบ</unitPattern>
+				<displayName>รอบ</displayName>
+				<unitPattern count="other">{0} รอบ</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>เรเดียน</displayName>
@@ -7885,6 +8226,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>ตารางกิโลเมตร</displayName>
 				<unitPattern count="other">{0} ตารางกิโลเมตร</unitPattern>
+				<perUnitPattern>{0} ต่อตารางกิโลเมตร</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>เฮกตาร์</displayName>
@@ -7893,7 +8235,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-meter">
 				<displayName>ตารางเมตร</displayName>
 				<unitPattern count="other">{0} ตารางเมตร</unitPattern>
-				<perUnitPattern>{0} ต่อ ตร.ม.</perUnitPattern>
+				<perUnitPattern>{0} ต่อตารางเมตร</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>ตารางเซนติเมตร</displayName>
@@ -7903,14 +8245,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-mile">
 				<displayName>ตารางไมล์</displayName>
 				<unitPattern count="other">{0} ตารางไมล์</unitPattern>
+				<perUnitPattern draft="contributed">{0} ต่อตารางไมล์</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>เอเคอร์</displayName>
 				<unitPattern count="other">{0} เอเคอร์</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName>ตารางวา</displayName>
-				<unitPattern count="other">{0} ตารางวา</unitPattern>
+				<displayName>ตารางหลา</displayName>
+				<unitPattern count="other">{0} ตารางหลา</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>ตารางฟุต</displayName>
@@ -7925,17 +8268,33 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>กะรัต</displayName>
 				<unitPattern count="other">{0} กะรัต</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>มิลลิกรัมต่อเดซิลิตร</displayName>
+				<unitPattern count="other">{0} มิลลิกรัมต่อเดซิลิตร</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>มิลลิโมลต่อลิตร</displayName>
+				<unitPattern count="other">{0} มิลลิโมลต่อลิตร</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ส่วนต่อล้าน</displayName>
+				<unitPattern count="other">{0} ส่วนต่อล้าน</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ลิตรต่อกิโลเมตร</displayName>
 				<unitPattern count="other">{0} ลิตรต่อกิโลเมตร</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>ลิตรต่อ100 กิโลเมตร</displayName>
-				<unitPattern count="other">{0} ลิตร/100 กิโลเมตร</unitPattern>
+				<unitPattern count="other">{0} ลิตรต่อ100 กิโลเมตร</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ไมล์ต่อแกลลอน</displayName>
 				<unitPattern count="other">{0} ไมล์ต่อแกลลอน</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ไมล์ต่อแกลลอนอังกฤษ</displayName>
+				<unitPattern count="other">{0} ไมล์ต่อแกลลอนอังกฤษ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>เทราไบต์</displayName>
@@ -7978,28 +8337,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} บิต</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName draft="contributed">ศตวรรษ</displayName>
-				<unitPattern count="other" draft="contributed">{0} ศตวรรษ</unitPattern>
+				<displayName>ศตวรรษ</displayName>
+				<unitPattern count="other">{0} ศตวรรษ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ปี</displayName>
 				<unitPattern count="other">{0} ปี</unitPattern>
-				<perUnitPattern draft="contributed">{0} ต่อปี</perUnitPattern>
+				<perUnitPattern>{0} ต่อปี</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>เดือน</displayName>
 				<unitPattern count="other">{0} เดือน</unitPattern>
-				<perUnitPattern draft="contributed">{0} ต่อเดือน</perUnitPattern>
+				<perUnitPattern>{0} ต่อเดือน</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>สัปดาห์</displayName>
 				<unitPattern count="other">{0} สัปดาห์</unitPattern>
-				<perUnitPattern draft="contributed">{0} ต่อสัปดาห์</perUnitPattern>
+				<perUnitPattern>{0} ต่อสัปดาห์</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>วัน</displayName>
 				<unitPattern count="other">{0} วัน</unitPattern>
-				<perUnitPattern draft="contributed">{0} ต่อวัน</perUnitPattern>
+				<perUnitPattern>{0} ต่อวัน</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ชั่วโมง</displayName>
@@ -8009,7 +8368,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-minute">
 				<displayName>นาที</displayName>
 				<unitPattern count="other">{0} นาที</unitPattern>
-				<perUnitPattern draft="contributed">{0} ต่อนาที</perUnitPattern>
+				<perUnitPattern>{0} ต่อนาที</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>วินาที</displayName>
@@ -8045,16 +8404,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} โวลต์</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
-				<displayName>กิโลแคลอรี่</displayName>
-				<unitPattern count="other">{0} กิโลแคลอรี่</unitPattern>
+				<displayName>กิโลแคลอรี</displayName>
+				<unitPattern count="other">{0} กิโลแคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<displayName>แคลอรี่</displayName>
-				<unitPattern count="other">{0} แคลอรี่</unitPattern>
+				<displayName>แคลอรี</displayName>
+				<unitPattern count="other">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>แคลอรี่</displayName>
-				<unitPattern count="other">{0} แคลอรี่</unitPattern>
+				<displayName>แคลอรี</displayName>
+				<unitPattern count="other">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>กิโลจูล</displayName>
@@ -8157,6 +8516,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ไมล์สแกนดิเนเวีย</displayName>
 				<unitPattern count="other">{0} ไมล์สแกนดิเนเวีย</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>จุด</displayName>
+				<unitPattern count="other">{0} จุด</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>ลักซ์</displayName>
 				<unitPattern count="other">{0} ลักซ์</unitPattern>
@@ -8173,7 +8536,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="mass-gram">
 				<displayName>กรัม</displayName>
 				<unitPattern count="other">{0} กรัม</unitPattern>
-				<perUnitPattern draft="contributed">{0} ต่อกรัม</perUnitPattern>
+				<perUnitPattern>{0} ต่อกรัม</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>มิลลิกรัม</displayName>
@@ -8190,12 +8553,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="mass-pound">
 				<displayName>ปอนด์</displayName>
 				<unitPattern count="other">{0} ปอนด์</unitPattern>
-				<perUnitPattern draft="contributed">{0} ต่อปอนด์</perUnitPattern>
+				<perUnitPattern>{0} ต่อปอนด์</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>ออนซ์</displayName>
 				<unitPattern count="other">{0} ออนซ์</unitPattern>
-				<perUnitPattern draft="contributed">{0} ต่อออนซ์</perUnitPattern>
+				<perUnitPattern>{0} ต่อออนซ์</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>ทรอยออนซ์</displayName>
@@ -8262,8 +8625,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ไมล์ต่อชั่วโมง</unitPattern>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="contributed">นอต</displayName>
-				<unitPattern count="other" draft="contributed">{0} นอต</unitPattern>
+				<displayName>นอต</displayName>
+				<unitPattern count="other">{0} นอต</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
@@ -8312,8 +8675,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ลูกบาศก์นิ้ว</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
-				<displayName>เมกกะลิตร</displayName>
-				<unitPattern count="other">{0} เมกกะลิตร</unitPattern>
+				<displayName>เมกะลิตร</displayName>
+				<unitPattern count="other">{0} เมกะลิตร</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>เฮกโตลิตร</displayName>
@@ -8353,6 +8716,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} แกลลอน</unitPattern>
 				<perUnitPattern>{0} ต่อแกลลอน</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName draft="contributed">แกลลอนอังกฤษ</displayName>
+				<unitPattern count="other" draft="contributed">{0} แกลลอนอังกฤษ</unitPattern>
+				<perUnitPattern draft="contributed">{0} ต่อแกลลอนอังกฤษ</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>ควอร์ต</displayName>
 				<unitPattern count="other">{0} ควอร์ต</unitPattern>
@@ -8378,10 +8746,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ช้อนชา</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="contributed">{0}ตะวันออก</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="contributed">{0}เหนือ</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="contributed">{0}ใต้</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="contributed">{0}ตะวันตก</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0}ตะวันออก</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0}เหนือ</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}ใต้</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0}ตะวันตก</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -8394,11 +8762,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="acceleration-meter-per-second-squared">
 				<displayName>เมตร/วินาที²</displayName>
-				<unitPattern count="other">{0} ม./วินาที²</unitPattern>
+				<unitPattern count="other">{0} ม./วิ²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName draft="contributed">รอบ</displayName>
-				<unitPattern count="other" draft="contributed">{0} รอบ</unitPattern>
+				<displayName>รอบ</displayName>
+				<unitPattern count="other">{0} รอบ</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>เรเดียน</displayName>
@@ -8419,6 +8787,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-kilometer">
 				<displayName>ตร.กม.</displayName>
 				<unitPattern count="other">{0} ตร.กม.</unitPattern>
+				<perUnitPattern>{0}/ตร.กม.</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>เฮกตาร์</displayName>
@@ -8427,24 +8796,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-meter">
 				<displayName>ตร.ม.</displayName>
 				<unitPattern count="other">{0} ตร.ม.</unitPattern>
-				<perUnitPattern>{0} ต่อ ตร.ม.</perUnitPattern>
+				<perUnitPattern>{0}/ตร.ม.</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
 				<displayName>ตร.ซม.</displayName>
 				<unitPattern count="other">{0} ตร.ซม.</unitPattern>
-				<perUnitPattern>{0} ต่อ ตร.ซม.</perUnitPattern>
+				<perUnitPattern>{0}/ตร.ซม.</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>ตร.ไมล์</displayName>
 				<unitPattern count="other">{0} ตร.ไมล์</unitPattern>
+				<perUnitPattern draft="contributed">{0}/ตร.ไมล์</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>เอเคอร์</displayName>
 				<unitPattern count="other">{0} เอเคอร์</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName>ตร.ว.</displayName>
-				<unitPattern count="other">{0} ตร.ว.</unitPattern>
+				<displayName>ตร.หลา</displayName>
+				<unitPattern count="other">{0} ตร.หลา</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>ตร.ฟุต</displayName>
@@ -8453,23 +8823,39 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="area-square-inch">
 				<displayName>ตร.นิ้ว</displayName>
 				<unitPattern count="other">{0} ตร.นิ้ว</unitPattern>
-				<perUnitPattern>{0} ต่อตารางนิ้ว</perUnitPattern>
+				<perUnitPattern>{0}/ตร.นิ้ว</perUnitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>กะรัต</displayName>
 				<unitPattern count="other">{0} กะรัต</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>มก./ดล.</displayName>
+				<unitPattern count="other">{0} มก./ดล.</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>มิลลิโมล/ลิตร</displayName>
+				<unitPattern count="other">{0} มลม./ล.</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ส่วน/ล้าน</displayName>
+				<unitPattern count="other">{0} สตล.</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ลิตร/กม.</displayName>
 				<unitPattern count="other">{0} ล./กม.</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
-				<displayName>ลิตร/100 กิโลเมตร</displayName>
+				<displayName>ล./100 กม.</displayName>
 				<unitPattern count="other">{0} ล./100กม.</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>ไมล์/แกลลอน</displayName>
 				<unitPattern count="other">{0} ไมล์/แกลลอน</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>ไมล์/แกลลอนอังกฤษ</displayName>
+				<unitPattern count="other">{0} ไมล์ต่อแกลลอนอังกฤษ</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -8512,28 +8898,28 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} บิต</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName draft="contributed">ศตวรรษ</displayName>
-				<unitPattern count="other" draft="contributed">{0} ศตวรรษ</unitPattern>
+				<displayName>ศตวรรษ</displayName>
+				<unitPattern count="other">{0} ศตวรรษ</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ปี</displayName>
 				<unitPattern count="other">{0} ปี</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ปี</perUnitPattern>
+				<perUnitPattern>{0}/ปี</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>เดือน</displayName>
 				<unitPattern count="other">{0} เดือน</unitPattern>
-				<perUnitPattern draft="contributed">{0}/เดือน</perUnitPattern>
+				<perUnitPattern>{0}/เดือน</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>สัปดาห์</displayName>
 				<unitPattern count="other">{0} สัปดาห์</unitPattern>
-				<perUnitPattern draft="contributed">{0}/สัปดาห์</perUnitPattern>
+				<perUnitPattern>{0}/สัปดาห์</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>วัน</displayName>
 				<unitPattern count="other">{0} วัน</unitPattern>
-				<perUnitPattern draft="contributed">{0}/วัน</perUnitPattern>
+				<perUnitPattern>{0}/วัน</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>ชั่วโมง</displayName>
@@ -8543,7 +8929,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-minute">
 				<displayName>นาที</displayName>
 				<unitPattern count="other">{0} นาที</unitPattern>
-				<perUnitPattern draft="contributed">{0}/นาที</perUnitPattern>
+				<perUnitPattern>{0}/นาที</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>วินาที</displayName>
@@ -8579,16 +8965,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} V</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
-				<displayName>กิโลแคลอรี่</displayName>
-				<unitPattern count="other">{0} กิโลแคลอรี่</unitPattern>
+				<displayName>กิโลแคลอรี</displayName>
+				<unitPattern count="other">{0} กิโลแคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<displayName>แคลอรี่</displayName>
-				<unitPattern count="other">{0} แคลอรี่</unitPattern>
+				<displayName>แคลอรี</displayName>
+				<unitPattern count="other">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>แคลอรี่</displayName>
-				<unitPattern count="other">{0} แคลอรี่</unitPattern>
+				<displayName>แคลอรี</displayName>
+				<unitPattern count="other">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>กิโลจูล</displayName>
@@ -8691,6 +9077,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>ไมล์สแกนดินีเวีย</displayName>
 				<unitPattern count="other">{0} ไมล์สแกนดินีเวีย</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<displayName>จุด</displayName>
+				<unitPattern count="other">{0} จุด</unitPattern>
+			</unit>
 			<unit type="light-lux">
 				<displayName>ลักซ์</displayName>
 				<unitPattern count="other">{0} ลักซ์</unitPattern>
@@ -8702,12 +9092,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="mass-kilogram">
 				<displayName>กก.</displayName>
 				<unitPattern count="other">{0} กก.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ก.ก.</perUnitPattern>
+				<perUnitPattern>{0}/กก.</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>กรัม</displayName>
 				<unitPattern count="other">{0} ก.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/กรัม</perUnitPattern>
+				<perUnitPattern>{0}/ก.</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
 				<displayName>มก.</displayName>
@@ -8724,12 +9114,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="mass-pound">
 				<displayName>ปอนด์</displayName>
 				<unitPattern count="other">{0} ปอนด์</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ปอนด์</perUnitPattern>
+				<perUnitPattern>{0}/ปอนด์</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>ออนซ์</displayName>
 				<unitPattern count="other">{0} ออนซ์</unitPattern>
-				<perUnitPattern draft="contributed">{0}/ออนซ์</perUnitPattern>
+				<perUnitPattern>{0}/ออนซ์</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>ทรอยออนซ์</displayName>
@@ -8796,8 +9186,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ไมล์/ชม.</unitPattern>
 			</unit>
 			<unit type="speed-knot">
-				<displayName draft="contributed">นอต</displayName>
-				<unitPattern count="other" draft="contributed">{0} นอต</unitPattern>
+				<displayName>นอต</displayName>
+				<unitPattern count="other">{0} นอต</unitPattern>
 			</unit>
 			<unit type="temperature-generic">
 				<displayName>°</displayName>
@@ -8846,8 +9236,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ลบ.นิ้ว</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
-				<displayName>เมกกะลิตร</displayName>
-				<unitPattern count="other">{0} เมกกะลิตร</unitPattern>
+				<displayName>เมกะลิตร</displayName>
+				<unitPattern count="other">{0} เมกะลิตร</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>ฮล.</displayName>
@@ -8887,6 +9277,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} แกลลอน</unitPattern>
 				<perUnitPattern>{0}/แกลลอน</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName draft="contributed">แกลลอนอังกฤษ</displayName>
+				<unitPattern count="other" draft="contributed">{0} แกลลอนอังกฤษ</unitPattern>
+				<perUnitPattern draft="contributed">{0}/แกลลอนอังกฤษ</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>คว.</displayName>
 				<unitPattern count="other">{0} คว.</unitPattern>
@@ -8912,10 +9307,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} ชช.</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="contributed">{0} ตอ</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="contributed">{0} น</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="contributed">{0}ใต้</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="contributed">{0} ตต</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} ตอ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} น</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}ใต้</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ตต</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -8954,7 +9349,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="consumption-liter-per-100kilometers">
 				<displayName>ล. /100 กม.</displayName>
-				<unitPattern count="other">{0}ล/100กม</unitPattern>
+				<unitPattern count="other">{0} ล./100กม.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ปี</displayName>
@@ -8987,6 +9382,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<unit type="duration-millisecond">
 				<displayName>มิลลิวินาที</displayName>
 				<unitPattern count="other">{0} มิลลิวิ</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName draft="contributed">กิโลแคลอรี</displayName>
+				<unitPattern count="other">{0}กแคลอรี</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName draft="contributed">แคลอรี</displayName>
+				<unitPattern count="other" draft="contributed">{0} แคลอรี</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName draft="contributed">แคลอรี</displayName>
+				<unitPattern count="other" draft="contributed">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>กม.</displayName>
@@ -9083,10 +9490,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0}ล.</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east" draft="contributed">{0} ตอ</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="contributed">{0} น</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="contributed">{0}ใต้</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="contributed">{0} ตต</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} ตอ</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} น</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0}ใต้</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} ตต</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -9105,6 +9512,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} และ{1}</listPatternPart>
 			<listPatternPart type="2">{0}และ{1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or">
+			<listPatternPart type="start" draft="contributed">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle" draft="contributed">{0}, {1}</listPatternPart>
+			<listPatternPart type="end" draft="contributed">{0} หรือ {1}</listPatternPart>
+			<listPatternPart type="2" draft="contributed">{0} หรือ {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="end">{0} และ{1}</listPatternPart>
+			<listPatternPart type="2">{0} และ {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
@@ -9131,5 +9550,162 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>ไม่ใช่</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — ทั้งหมด</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility" draft="contributed">{0} — ความเข้ากันได้</characterLabelPattern>
+		<characterLabelPattern type="enclosed" draft="contributed">{0} — ล้อมรอบ</characterLabelPattern>
+		<characterLabelPattern type="extended" draft="contributed">{0} — ขยาย</characterLabelPattern>
+		<characterLabelPattern type="historic" draft="contributed">{0} — โบราณ</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous" draft="contributed">{0} — อื่นๆ</characterLabelPattern>
+		<characterLabelPattern type="other" draft="contributed">{0} — อื่นๆ</characterLabelPattern>
+		<characterLabelPattern type="scripts" draft="contributed">สคริปต์ — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other" draft="contributed">{0} ขีด</characterLabelPattern>
+		<characterLabel type="activities">กิจกรรม</characterLabel>
+		<characterLabel type="african_scripts" draft="contributed">สคริปต์แอฟริกัน</characterLabel>
+		<characterLabel type="american_scripts" draft="contributed">สคริปต์อเมริกัน</characterLabel>
+		<characterLabel type="animal">สัตว์</characterLabel>
+		<characterLabel type="animals_nature">สัตว์และธรรมชาติ</characterLabel>
+		<characterLabel type="arrows" draft="contributed">ลูกศร</characterLabel>
+		<characterLabel type="body">ร่างกาย</characterLabel>
+		<characterLabel type="box_drawing" draft="contributed">การวาดกล่อง</characterLabel>
+		<characterLabel type="braille" draft="contributed">อักษรเบรลล์</characterLabel>
+		<characterLabel type="building">อาคาร</characterLabel>
+		<characterLabel type="bullets_stars" draft="contributed">จุดนำ/ดาว</characterLabel>
+		<characterLabel type="consonantal_jamo" draft="contributed">พยัญชนะเกาหลี</characterLabel>
+		<characterLabel type="currency_symbols" draft="contributed">สัญลักษณ์สกุลเงิน</characterLabel>
+		<characterLabel type="dash_connector" draft="contributed">ขีดกลาง/สัญลักษณ์เชื่อมต่อ</characterLabel>
+		<characterLabel type="digits" draft="contributed">ตัวเลข</characterLabel>
+		<characterLabel type="dingbats" draft="contributed">ดิงแบตส์</characterLabel>
+		<characterLabel type="divination_symbols" draft="contributed">สัญลักษณ์การทำนาย</characterLabel>
+		<characterLabel type="downwards_arrows" draft="contributed">ลูกศรลง</characterLabel>
+		<characterLabel type="downwards_upwards_arrows" draft="contributed">ลูกศรชี้ขึ้นและลง</characterLabel>
+		<characterLabel type="east_asian_scripts" draft="contributed">สคริปต์เอเชียตะวันออก</characterLabel>
+		<characterLabel type="emoji">อิโมจิ</characterLabel>
+		<characterLabel type="european_scripts" draft="contributed">สคริปต์ยุโรป</characterLabel>
+		<characterLabel type="female">ผู้หญิง</characterLabel>
+		<characterLabel type="flag">ธง</characterLabel>
+		<characterLabel type="flags">ธง</characterLabel>
+		<characterLabel type="food_drink">อาหารและเครื่องดื่ม</characterLabel>
+		<characterLabel type="format" draft="contributed">รูปแบบ</characterLabel>
+		<characterLabel type="format_whitespace" draft="contributed">รูปแบบและช่องว่าง</characterLabel>
+		<characterLabel type="full_width_form_variant" draft="contributed">รูปแบบความกว้างแบบเต็ม</characterLabel>
+		<characterLabel type="geometric_shapes" draft="contributed">รูปทรงเรขาคณิต</characterLabel>
+		<characterLabel type="half_width_form_variant" draft="contributed">รูปแบบขนาดครึ่งความกว้าง</characterLabel>
+		<characterLabel type="han_characters" draft="contributed">อักษรฮั่น</characterLabel>
+		<characterLabel type="han_radicals" draft="contributed">ขีดของภาษาฮั่น</characterLabel>
+		<characterLabel type="hanja" draft="contributed">อักษรฮันจา</characterLabel>
+		<characterLabel type="hanzi_simplified" draft="contributed">อักษรจีน (ตัวย่อ)</characterLabel>
+		<characterLabel type="hanzi_traditional" draft="contributed">อักษรจีน (ตัวเต็ม)</characterLabel>
+		<characterLabel type="heart">หัวใจ</characterLabel>
+		<characterLabel type="historic_scripts" draft="contributed">สคริปต์โบราณ</characterLabel>
+		<characterLabel type="ideographic_desc_characters" draft="contributed">อักขระเป็นภาพที่แสดงความหมาย</characterLabel>
+		<characterLabel type="japanese_kana" draft="contributed">คะนะญี่ปุ่น</characterLabel>
+		<characterLabel type="kanbun" draft="contributed">อักษรจีน</characterLabel>
+		<characterLabel type="kanji">คันจิ</characterLabel>
+		<characterLabel type="keycap">ปุ่มกดเลข</characterLabel>
+		<characterLabel type="leftwards_arrows" draft="contributed">ลูกศรซ้าย</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows" draft="contributed">ลูกศรชี้ซ้ายและขวา</characterLabel>
+		<characterLabel type="letterlike_symbols" draft="contributed">สัญลักษณ์ที่เหมือนตัวอักษร</characterLabel>
+		<characterLabel type="limited_use" draft="contributed">ใช้งานแบบจำกัด</characterLabel>
+		<characterLabel type="male">ผู้ชาย</characterLabel>
+		<characterLabel type="math_symbols">สัญลักษณ์ทางคณิตศาสตร์</characterLabel>
+		<characterLabel type="middle_eastern_scripts" draft="contributed">สคริปต์ตะวันออกกลาง</characterLabel>
+		<characterLabel type="miscellaneous" draft="contributed">อื่นๆ</characterLabel>
+		<characterLabel type="modern_scripts" draft="contributed">สคริปต์ปัจจุบัน</characterLabel>
+		<characterLabel type="modifier" draft="contributed">ตัวขยาย</characterLabel>
+		<characterLabel type="musical_symbols" draft="contributed">สัญลักษณ์ทางดนตรี</characterLabel>
+		<characterLabel type="nature">ธรรมชาติ</characterLabel>
+		<characterLabel type="nonspacing" draft="contributed">ไม่มีช่องว่าง</characterLabel>
+		<characterLabel type="numbers" draft="contributed">ตัวเลข</characterLabel>
+		<characterLabel type="objects" draft="contributed">วัตถุ</characterLabel>
+		<characterLabel type="other" draft="contributed">อื่นๆ</characterLabel>
+		<characterLabel type="paired" draft="contributed">จับคู่</characterLabel>
+		<characterLabel type="person">คน</characterLabel>
+		<characterLabel type="phonetic_alphabet">ตัวอักษรสัทศาสตร์</characterLabel>
+		<characterLabel type="pictographs" draft="contributed">ภาพสัญลักษณ์</characterLabel>
+		<characterLabel type="place">สถานที่</characterLabel>
+		<characterLabel type="plant">พืช</characterLabel>
+		<characterLabel type="punctuation" draft="contributed">เครื่องหมายวรรคตอน</characterLabel>
+		<characterLabel type="rightwards_arrows" draft="contributed">ลูกศรขวา</characterLabel>
+		<characterLabel type="sign_standard_symbols" draft="contributed">เครื่องหมาย/สัญลักษณ์มาตรฐาน</characterLabel>
+		<characterLabel type="small_form_variant" draft="contributed">รูปแบบขนาดเล็ก</characterLabel>
+		<characterLabel type="smiley">หน้ายิ้ม</characterLabel>
+		<characterLabel type="smileys_people" draft="contributed">หน้ายิ้มและรูปคน</characterLabel>
+		<characterLabel type="south_asian_scripts" draft="contributed">สคริปต์เอเชียใต้</characterLabel>
+		<characterLabel type="southeast_asian_scripts" draft="contributed">สคริปต์เอเชียตะวันออกเฉียงใต้</characterLabel>
+		<characterLabel type="spacing" draft="contributed">การเว้นวรรค</characterLabel>
+		<characterLabel type="sport">กีฬา</characterLabel>
+		<characterLabel type="symbols">สัญลักษณ์</characterLabel>
+		<characterLabel type="technical_symbols" draft="contributed">สัญลักษณ์ทางเทคนิค</characterLabel>
+		<characterLabel type="tone_marks">วรรณยุกต์</characterLabel>
+		<characterLabel type="travel">การเดินทาง</characterLabel>
+		<characterLabel type="travel_places" draft="contributed">การเดินทางและสถานที่</characterLabel>
+		<characterLabel type="upwards_arrows" draft="contributed">ลูกศรขึ้น</characterLabel>
+		<characterLabel type="variant_forms" draft="contributed">รูปแบบที่เปลี่ยนแปลง</characterLabel>
+		<characterLabel type="vocalic_jamo" draft="contributed">สระภาษาเกาหลี</characterLabel>
+		<characterLabel type="weather">สภาพอากาศ</characterLabel>
+		<characterLabel type="western_asian_scripts" draft="contributed">สคริปต์เอเชียตะวันตก</characterLabel>
+		<characterLabel type="whitespace" draft="contributed">ช่องว่าง</characterLabel>
+	</characterLabels>
+	<typographicNames>
+		<styleName type="ital" subtype="1">เล่นหาง</styleName>
+		<styleName type="opsz" subtype="18">ตัวพิมพ์ใหญ่</styleName>
+		<styleName type="opsz" subtype="72">การแสดงผล</styleName>
+		<styleName type="opsz" subtype="144">รูปโปสเตอร์</styleName>
+		<styleName type="slnt" subtype="-12">เอนหลัง</styleName>
+		<styleName type="slnt" subtype="0">ตั้งตรง</styleName>
+		<styleName type="slnt" subtype="12">เอน</styleName>
+		<styleName type="slnt" subtype="24">เอนพิเศษ</styleName>
+		<styleName type="wdth" subtype="50">บีบมากที่สุด</styleName>
+		<styleName type="wdth" subtype="50" alt="compressed">บีบอัดมากที่สุด</styleName>
+		<styleName type="wdth" subtype="62.5">บีบพิเศษ</styleName>
+		<styleName type="wdth" subtype="62.5" alt="compressed">บีบอัดพิเศษ</styleName>
+		<styleName type="wdth" subtype="62.5" alt="narrow">แคบพิเศษ</styleName>
+		<styleName type="wdth" subtype="75">บีบ</styleName>
+		<styleName type="wdth" subtype="75" alt="compressed">บีบอัด</styleName>
+		<styleName type="wdth" subtype="75" alt="narrow">แบบแคบ</styleName>
+		<styleName type="wdth" subtype="87.5">กึ่งบีบ</styleName>
+		<styleName type="wdth" subtype="100">ปกติ</styleName>
+		<styleName type="wdth" subtype="112.5">กึ่งขยาย</styleName>
+		<styleName type="wdth" subtype="112.5" alt="extended">กึ่งเสริม</styleName>
+		<styleName type="wdth" subtype="125">ขยายแล้ว</styleName>
+		<styleName type="wdth" subtype="125" alt="extended">แบบขยาย</styleName>
+		<styleName type="wdth" subtype="125" alt="wide">กว้าง</styleName>
+		<styleName type="wdth" subtype="150">ขยายพิเศษ</styleName>
+		<styleName type="wdth" subtype="150" alt="extended">เสริมพิเศษ</styleName>
+		<styleName type="wdth" subtype="150" alt="wide">กว้างพิเศษ</styleName>
+		<styleName type="wdth" subtype="200">ขยายมากที่สุด</styleName>
+		<styleName type="wdth" subtype="200" alt="extended">เสริมมากที่สุด</styleName>
+		<styleName type="wght" subtype="100">ผอม</styleName>
+		<styleName type="wght" subtype="200">บางพิเศษ</styleName>
+		<styleName type="wght" subtype="200" alt="ultra">บางมากที่สุด</styleName>
+		<styleName type="wght" subtype="300">บาง</styleName>
+		<styleName type="wght" subtype="350">กึ่งบาง</styleName>
+		<styleName type="wght" subtype="380">หนังสือ</styleName>
+		<styleName type="wght" subtype="400">ปกติ</styleName>
+		<styleName type="wght" subtype="500">ปานกลาง</styleName>
+		<styleName type="wght" subtype="600">กึ่งหนา</styleName>
+		<styleName type="wght" subtype="600" alt="demi">หนา demi</styleName>
+		<styleName type="wght" subtype="700">หนา</styleName>
+		<styleName type="wght" subtype="800">หนาพิเศษ</styleName>
+		<styleName type="wght" subtype="800" alt="ultra">หนามากที่สุด</styleName>
+		<styleName type="wght" subtype="900">ดำ</styleName>
+		<styleName type="wght" subtype="900" alt="heavy">หนัก</styleName>
+		<styleName type="wght" subtype="950">ดำพิเศษ</styleName>
+		<styleName type="wght" subtype="950" alt="ultraheavy">หนักมากที่สุด</styleName>
+		<styleName type="wght" subtype="950" alt="ultrablack">ดำมากที่สุด</styleName>
+		<featureName type="afrc">เศษส่วนแนวตั้ง</featureName>
+		<featureName type="cpsp">ระยะห่างตัวพิมพ์ใหญ่</featureName>
+		<featureName type="dlig">ลิเกเจอร์ทางเลือก</featureName>
+		<featureName type="frac">เศษส่วนทแยงมุม</featureName>
+		<featureName type="lnum">ตัวเลขบนเส้นบรรทัด</featureName>
+		<featureName type="onum">ตัวเลขลักษณะเก่า</featureName>
+		<featureName type="ordn">ตัวเลขบริบท</featureName>
+		<featureName type="pnum">ตัวเลขแบบสัดส่วน</featureName>
+		<featureName type="smcp">ตัวพิมพ์ใหญ่แบบเล็ก</featureName>
+		<featureName type="smcp" alt="short">ตัวพิมพ์ใหญ่เล็ก</featureName>
+		<featureName type="tnum">ตัวเลขแบบตาราง</featureName>
+		<featureName type="zero">เลขศูนย์เอียง</featureName>
+	</typographicNames>
 </ldml>
-

@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2015 Unicode, Inc.
-CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+<!-- Copyright © 1991-2018 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
+Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+
+Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
 -->
 <ldml>
 	<identity>
-		<version number="$Revision: 12293 $"/>
+		<version number="$Revision: 13911 $"/>
 		<language type="uz"/>
 	</identity>
 	<localeDisplayNames>
@@ -16,51 +19,88 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
+			<language type="aa">afar</language>
 			<language type="ab">abxaz</language>
+			<language type="ace">achin</language>
+			<language type="ada">adangme</language>
+			<language type="ady">adigey</language>
 			<language type="af">afrikaans</language>
 			<language type="agq">agem</language>
+			<language type="ain">aynu</language>
 			<language type="ak">akan</language>
+			<language type="ale">aleut</language>
+			<language type="alt">janubiy oltoy</language>
 			<language type="am">amxar</language>
+			<language type="an">aragon</language>
+			<language type="anp">angika</language>
 			<language type="ar">arab</language>
 			<language type="ar_001">standart arab</language>
-			<language type="arn">araukan</language>
+			<language type="arn">mapuche</language>
+			<language type="arp">arapaxo</language>
 			<language type="as">assam</language>
 			<language type="asa">asu</language>
+			<language type="ast">asturiy</language>
+			<language type="av">avar</language>
+			<language type="awa">avadxi</language>
+			<language type="ay">aymara</language>
 			<language type="az">ozarbayjon</language>
 			<language type="az" alt="short">ozar</language>
 			<language type="ba">boshqird</language>
+			<language type="ban">bali</language>
+			<language type="bas">basa</language>
 			<language type="be">belarus</language>
 			<language type="bem">bemba</language>
 			<language type="bez">bena</language>
 			<language type="bg">bolgar</language>
-			<language type="bgn">g‘arbiy beluji</language>
-			<language type="bm">bambar</language>
+			<language type="bgn">g‘arbiy baluj</language>
+			<language type="bho">bxojpuri</language>
+			<language type="bi">bislama</language>
+			<language type="bin">bini</language>
+			<language type="bla">siksika</language>
+			<language type="bm">bambara</language>
 			<language type="bn">bengal</language>
 			<language type="bo">tibet</language>
 			<language type="br">breton</language>
 			<language type="brx">bodo</language>
 			<language type="bs">bosniy</language>
+			<language type="bug">bugi</language>
+			<language type="byn">blin</language>
 			<language type="ca">katalan</language>
 			<language type="ce">chechen</language>
+			<language type="ceb">sebuan</language>
 			<language type="cgg">chiga</language>
+			<language type="ch">chamorro</language>
+			<language type="chk">chukot</language>
+			<language type="chm">mari</language>
+			<language type="cho">choktav</language>
 			<language type="chr">cheroki</language>
+			<language type="chy">cheyenn</language>
 			<language type="ckb">sorani-kurd</language>
 			<language type="co">korsikan</language>
+			<language type="crs">kreol (Seyshel)</language>
 			<language type="cs">chex</language>
+			<language type="cu">slavyan (cherkov)</language>
 			<language type="cv">chuvash</language>
 			<language type="cy">valliy</language>
-			<language type="da">dat</language>
+			<language type="da">dan</language>
+			<language type="dak">dakota</language>
+			<language type="dar">dargva</language>
 			<language type="dav">taita</language>
 			<language type="de">nemischa</language>
 			<language type="de_AT">nemis (Avstriya)</language>
 			<language type="de_CH">yuqori nemis (Shveytsariya)</language>
+			<language type="dgr">dogrib</language>
 			<language type="dje">zarma</language>
 			<language type="dsb">quyi sorbcha</language>
 			<language type="dua">duala</language>
+			<language type="dv">divexi</language>
 			<language type="dyo">diola-fogni</language>
 			<language type="dz">dzongka</language>
+			<language type="dzg">dazag</language>
 			<language type="ebu">embu</language>
 			<language type="ee">eve</language>
+			<language type="efi">efik</language>
+			<language type="eka">ekajuk</language>
 			<language type="el">grek</language>
 			<language type="en">inglizcha</language>
 			<language type="en_AU">ingliz (Avstraliya)</language>
@@ -76,128 +116,222 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="es_MX">ispan (Meksika)</language>
 			<language type="et">estoncha</language>
 			<language type="eu">bask</language>
+			<language type="ewo">evondo</language>
 			<language type="fa">fors</language>
+			<language type="ff">fula</language>
 			<language type="fi">fincha</language>
 			<language type="fil">filipincha</language>
 			<language type="fj">fiji</language>
 			<language type="fo">farercha</language>
+			<language type="fon">fon</language>
 			<language type="fr">fransuzcha</language>
 			<language type="fr_CA">fransuz (Kanada)</language>
 			<language type="fr_CH">fransuz (Shveytsariya)</language>
+			<language type="fur">friul</language>
 			<language type="fy">g‘arbiy friz</language>
 			<language type="ga">irland</language>
+			<language type="gaa">ga</language>
 			<language type="gag">gagauz</language>
+			<language type="gan">gan</language>
+			<language type="gd">shotland-gel</language>
+			<language type="gez">geez</language>
+			<language type="gil">gilbert</language>
 			<language type="gl">galisiy</language>
 			<language type="gn">guarani</language>
+			<language type="gor">gorontalo</language>
 			<language type="gsw">nemis (Shveytsariya)</language>
 			<language type="gu">gujarot</language>
 			<language type="guz">gusii</language>
 			<language type="gv">men</language>
+			<language type="gwi">gvichin</language>
 			<language type="ha">xausa</language>
+			<language type="hak">hak</language>
 			<language type="haw">gavaycha</language>
-			<language type="he">ibroniy</language>
+			<language type="he">ivrit</language>
 			<language type="hi">hind</language>
+			<language type="hil">hiligaynon</language>
+			<language type="hmn">xmong</language>
 			<language type="hr">xorvat</language>
 			<language type="hsb">yuqori sorb</language>
+			<language type="hsn">hsn</language>
 			<language type="ht">gaityan</language>
 			<language type="hu">venger</language>
+			<language type="hup">xupa</language>
 			<language type="hy">arman</language>
+			<language type="hz">gerero</language>
+			<language type="ia">interlingva</language>
+			<language type="iba">iban</language>
+			<language type="ibb">ibibio</language>
 			<language type="id">indonez</language>
 			<language type="ig">igbo</language>
 			<language type="ii">sichuan</language>
+			<language type="ilo">iloko</language>
+			<language type="inh">ingush</language>
+			<language type="io">ido</language>
 			<language type="is">island</language>
 			<language type="it">italyan</language>
 			<language type="iu">inuktitut</language>
 			<language type="ja">yapon</language>
+			<language type="jbo">lojban</language>
 			<language type="jgo">ngomba</language>
 			<language type="jmc">machame</language>
 			<language type="jv">yavan</language>
 			<language type="ka">gruzincha</language>
 			<language type="kab">kabil</language>
+			<language type="kac">kachin</language>
+			<language type="kaj">kaji</language>
 			<language type="kam">kamba</language>
+			<language type="kbd">kabardin</language>
+			<language type="kcg">tyap</language>
 			<language type="kde">makonde</language>
 			<language type="kea">kabuverdianu</language>
+			<language type="kfo">koro</language>
+			<language type="kha">kxasi</language>
 			<language type="khq">koyra-chiini</language>
 			<language type="ki">kikuyu</language>
+			<language type="kj">kvanyama</language>
 			<language type="kk">qozoqcha</language>
+			<language type="kkj">kako</language>
 			<language type="kl">grenland</language>
 			<language type="kln">kalenjin</language>
-			<language type="km">xmercha</language>
+			<language type="km">xmer</language>
+			<language type="kmb">kimbundu</language>
 			<language type="kn">kannada</language>
 			<language type="ko">koreyscha</language>
 			<language type="koi">komi-permyak</language>
 			<language type="kok">konkan</language>
+			<language type="kpe">kpelle</language>
+			<language type="kr">kanuri</language>
+			<language type="krc">qorachoy-bolqor</language>
+			<language type="krl">karel</language>
+			<language type="kru">kurux</language>
 			<language type="ks">kashmircha</language>
 			<language type="ksb">shambala</language>
 			<language type="ksf">bafiya</language>
+			<language type="ksh">kyoln</language>
 			<language type="ku">kurdcha</language>
+			<language type="kum">qo‘miq</language>
+			<language type="kv">komi</language>
 			<language type="kw">korn</language>
 			<language type="ky">qirgʻizcha</language>
 			<language type="la">lotincha</language>
+			<language type="lad">ladino</language>
 			<language type="lag">langi</language>
 			<language type="lb">lyuksemburgcha</language>
+			<language type="lez">lezgin</language>
 			<language type="lg">ganda</language>
+			<language type="li">limburg</language>
 			<language type="lkt">lakota</language>
 			<language type="ln">lingala</language>
-			<language type="lo">laoscha</language>
+			<language type="lo">laos</language>
+			<language type="loz">lozi</language>
 			<language type="lrc">shimoliy luri</language>
 			<language type="lt">litva</language>
 			<language type="lu">luba-katanga</language>
+			<language type="lua">luba-lulua</language>
+			<language type="lun">lunda</language>
 			<language type="luo">luo</language>
+			<language type="lus">lushay</language>
 			<language type="luy">luhya</language>
 			<language type="lv">latishcha</language>
+			<language type="mad">madur</language>
+			<language type="mag">magahi</language>
+			<language type="mai">maythili</language>
+			<language type="mak">makasar</language>
 			<language type="mas">masay</language>
+			<language type="mdf">moksha</language>
 			<language type="men">mende</language>
 			<language type="mer">meru</language>
 			<language type="mfe">morisyen</language>
 			<language type="mg">malagasiy</language>
 			<language type="mgh">maxuva-mitto</language>
 			<language type="mgo">meta</language>
+			<language type="mh">marshall</language>
 			<language type="mi">maori</language>
+			<language type="mic">mikmak</language>
+			<language type="min">minangkabau</language>
 			<language type="mk">makedon</language>
 			<language type="ml">malayalam</language>
-			<language type="mn">mo‘g‘ul</language>
+			<language type="mn">mongol</language>
+			<language type="mni">manipur</language>
 			<language type="moh">mohauk</language>
+			<language type="mos">mossi</language>
 			<language type="mr">maratxi</language>
 			<language type="ms">malay</language>
 			<language type="mt">maltiy</language>
 			<language type="mua">mundang</language>
+			<language type="mul">bir nechta til</language>
+			<language type="mus">krik</language>
+			<language type="mwl">miranda</language>
 			<language type="my">birman</language>
-			<language type="mzn">mazanderan</language>
+			<language type="myv">erzya</language>
+			<language type="mzn">mozandaron</language>
+			<language type="na">nauru</language>
+			<language type="nan">nan</language>
+			<language type="nap">neapolitan</language>
 			<language type="naq">nama</language>
 			<language type="nb">norveg-bokmal</language>
 			<language type="nd">shimoliy ndebele</language>
 			<language type="nds">quyi nemis</language>
 			<language type="nds_NL">quyi sakson</language>
 			<language type="ne">nepal</language>
-			<language type="nl">golland</language>
+			<language type="new">nevar</language>
+			<language type="ng">ndonga</language>
+			<language type="nia">nias</language>
+			<language type="niu">niue</language>
+			<language type="nl">niderland</language>
 			<language type="nl_BE">flamand</language>
 			<language type="nmg">kvasio</language>
 			<language type="nn">norveg-nyunorsk</language>
+			<language type="nnh">ngiyembun</language>
+			<language type="nog">no‘g‘ay</language>
 			<language type="nqo">nko</language>
+			<language type="nr">janubiy ndebel</language>
+			<language type="nso">shimoliy soto</language>
 			<language type="nus">nuer</language>
+			<language type="nv">navaxo</language>
+			<language type="ny">cheva</language>
 			<language type="nyn">nyankole</language>
+			<language type="oc">oksitan</language>
 			<language type="om">oromo</language>
 			<language type="or">oriya</language>
+			<language type="os">osetin</language>
 			<language type="pa">panjobcha</language>
+			<language type="pag">pangasinan</language>
+			<language type="pam">pampanga</language>
+			<language type="pap">papiyamento</language>
+			<language type="pau">palau</language>
+			<language type="pcm">kreol (Nigeriya)</language>
 			<language type="pl">polyakcha</language>
+			<language type="prg">pruss</language>
 			<language type="ps">pushtu</language>
 			<language type="pt">portugalcha</language>
 			<language type="pt_BR">portugal (Braziliya)</language>
 			<language type="pt_PT">portugal (Yevropa)</language>
 			<language type="qu">kechua</language>
 			<language type="quc">kiche</language>
+			<language type="rap">rapanui</language>
+			<language type="rar">rarotongan</language>
 			<language type="rm">romansh</language>
 			<language type="rn">rundi</language>
 			<language type="ro">rumincha</language>
 			<language type="ro_MD">moldovan</language>
 			<language type="rof">rombo</language>
+			<language type="root">tub aholi tili</language>
 			<language type="ru">ruscha</language>
+			<language type="rup">arumin</language>
 			<language type="rw">kinyaruanda</language>
 			<language type="rwk">ruanda</language>
 			<language type="sa">sanskrit</language>
+			<language type="sad">sandave</language>
+			<language type="sah">saxa</language>
 			<language type="saq">samburu</language>
+			<language type="sat">santal</language>
+			<language type="sba">ngambay</language>
 			<language type="sbp">sangu</language>
+			<language type="sc">sardin</language>
+			<language type="scn">sitsiliya</language>
+			<language type="sco">shotland</language>
 			<language type="sd">sindxi</language>
 			<language type="sdh">janubiy kurd</language>
 			<language type="se">shimoliy saam</language>
@@ -205,83 +339,124 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<language type="ses">koyraboro-senni</language>
 			<language type="sg">sango</language>
 			<language type="shi">tashelxit</language>
+			<language type="shn">shan</language>
 			<language type="si">singal</language>
 			<language type="sk">slovakcha</language>
 			<language type="sl">slovencha</language>
+			<language type="sm">samoa</language>
 			<language type="sma">janubiy saam</language>
 			<language type="smj">lule-saam</language>
 			<language type="smn">inari-saam</language>
 			<language type="sms">skolt-saam</language>
 			<language type="sn">shona</language>
+			<language type="snk">soninke</language>
 			<language type="so">somalicha</language>
 			<language type="sq">alban</language>
 			<language type="sr">serbcha</language>
+			<language type="srn">sranan-tongo</language>
+			<language type="ss">svati</language>
+			<language type="ssy">saho</language>
+			<language type="st">janubiy soto</language>
 			<language type="su">sundan</language>
+			<language type="suk">sukuma</language>
 			<language type="sv">shved</language>
 			<language type="sw">suaxili</language>
-			<language type="sw_CD">kongo-suaxili</language>
+			<language type="sw_CD">suaxili (Kongo)</language>
+			<language type="swb">qamar</language>
+			<language type="syr">suriyacha</language>
 			<language type="ta">tamil</language>
 			<language type="te">telugu</language>
+			<language type="tem">timne</language>
 			<language type="teo">teso</language>
+			<language type="tet">tetum</language>
 			<language type="tg">tojik</language>
 			<language type="th">tay</language>
 			<language type="ti">tigrinya</language>
+			<language type="tig">tigre</language>
 			<language type="tk">turkman</language>
+			<language type="tlh">klingon</language>
+			<language type="tn">tsvana</language>
 			<language type="to">tongan</language>
+			<language type="tpi">tok-piksin</language>
 			<language type="tr">turk</language>
+			<language type="trv">taroko</language>
+			<language type="ts">tsonga</language>
 			<language type="tt">tatar</language>
-			<language type="twq">tasavaq</language>
+			<language type="tum">tumbuka</language>
+			<language type="tvl">tuvalu</language>
+			<language type="twq">tasavak</language>
+			<language type="ty">taiti</language>
+			<language type="tyv">tuva</language>
 			<language type="tzm">markaziy atlas tamazigxt</language>
+			<language type="udm">udmurt</language>
 			<language type="ug">uyg‘ur</language>
 			<language type="uk">ukrain</language>
+			<language type="umb">umbundu</language>
 			<language type="und">noma’lum til</language>
 			<language type="ur">urdu</language>
 			<language type="uz">o‘zbek</language>
 			<language type="vai">vai</language>
+			<language type="ve">venda</language>
 			<language type="vi">vyetnam</language>
+			<language type="vo">volapyuk</language>
 			<language type="vun">vunjo</language>
+			<language type="wa">vallon</language>
+			<language type="wae">valis</language>
+			<language type="wal">volamo</language>
+			<language type="war">varay</language>
 			<language type="wbp">valbiri</language>
 			<language type="wo">volof</language>
+			<language type="wuu">wuu</language>
+			<language type="xal">qalmoq</language>
 			<language type="xh">kxosa</language>
 			<language type="xog">soga</language>
+			<language type="yav">yangben</language>
+			<language type="ybb">yemba</language>
+			<language type="yi">idish</language>
 			<language type="yo">yoruba</language>
+			<language type="yue">kanton</language>
 			<language type="zgh">tamazigxt</language>
 			<language type="zh">xitoy</language>
-			<language type="zh_Hans">soddalashgan xitoy</language>
-			<language type="zh_Hant">an’anaviy xitoy</language>
+			<language type="zh_Hans">xitoy (soddalashgan)</language>
+			<language type="zh_Hant">xitoy (an’anaviy)</language>
 			<language type="zu">zulu</language>
+			<language type="zun">zuni</language>
 			<language type="zxx">til tarkibi yo‘q</language>
+			<language type="zza">zaza</language>
 		</languages>
 		<scripts>
 			<script type="Arab">arab</script>
 			<script type="Armn">arman</script>
 			<script type="Beng">bengal</script>
 			<script type="Bopo">bopomofo</script>
-			<script type="Brai">Brayl</script>
+			<script type="Brai">brayl</script>
 			<script type="Cyrl">kirill</script>
-			<script type="Deva">devanagar</script>
+			<script type="Deva">devanagari</script>
 			<script type="Ethi">habash</script>
 			<script type="Geor">gruzin</script>
 			<script type="Grek">grek</script>
 			<script type="Gujr">gujarot</script>
 			<script type="Guru">gurmukxi</script>
+			<script type="Hanb">hanb</script>
 			<script type="Hang">hangul</script>
 			<script type="Hani">xitoy</script>
 			<script type="Hans">soddalashgan xitoy</script>
 			<script type="Hans" alt="stand-alone">soddalashgan xitoy</script>
 			<script type="Hant">an’anaviy xitoy</script>
 			<script type="Hant" alt="stand-alone">an’anaviy xitoy</script>
-			<script type="Hebr">ibroniy</script>
+			<script type="Hebr">ivrit</script>
 			<script type="Hira">hiragana</script>
+			<script type="Hrkt">katakana yoki hiragana</script>
+			<script type="Jamo">jamo</script>
 			<script type="Jpan">yapon</script>
 			<script type="Kana">katakana</script>
-			<script type="Khmr">xmer</script>
+			<script type="Khmr">kxmer</script>
 			<script type="Knda">kannada</script>
 			<script type="Kore">koreys</script>
 			<script type="Laoo">laos</script>
 			<script type="Latn">lotin</script>
 			<script type="Mlym">malayalam</script>
-			<script type="Mong">mo‘g‘ul</script>
+			<script type="Mong">mongol</script>
 			<script type="Mymr">myanma</script>
 			<script type="Orya">oriya</script>
 			<script type="Sinh">singal</script>
@@ -290,6 +465,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<script type="Thaa">taana</script>
 			<script type="Thai">tay</script>
 			<script type="Tibt">tibet</script>
+			<script type="Zmth">matematik ifodalar</script>
+			<script type="Zsye">emoji</script>
 			<script type="Zsym">belgilar</script>
 			<script type="Zxxx">yozuvsiz</script>
 			<script type="Zyyy">umumiy</script>
@@ -325,12 +502,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="151">Sharqiy Yevropa</territory>
 			<territory type="154">Shimoliy Yevropa</territory>
 			<territory type="155">G‘arbiy Yevropa</territory>
+			<territory type="202">Sahro janubidagi Afrika</territory>
 			<territory type="419">Lotin Amerikasi</territory>
 			<territory type="AC">Me’roj oroli</territory>
 			<territory type="AD">Andorra</territory>
 			<territory type="AE">Birlashgan Arab Amirliklari</territory>
 			<territory type="AF">Afgʻoniston</territory>
-			<territory type="AG">Antigua va Barbados</territory>
+			<territory type="AG">Antigua va Barbuda</territory>
 			<territory type="AI">Angilya</territory>
 			<territory type="AL">Albaniya</territory>
 			<territory type="AM">Armaniston</territory>
@@ -386,7 +564,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="CW">Kyurasao</territory>
 			<territory type="CX">Rojdestvo oroli</territory>
 			<territory type="CY">Kipr</territory>
-			<territory type="CZ">Chexiya Respublikasi</territory>
+			<territory type="CZ">Chexiya</territory>
+			<territory type="CZ" alt="variant">Chexiya Respublikasi</territory>
 			<territory type="DE">Germaniya</territory>
 			<territory type="DG">Diyego-Garsiya</territory>
 			<territory type="DJ">Jibuti</territory>
@@ -403,6 +582,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="ES">Ispaniya</territory>
 			<territory type="ET">Efiopiya</territory>
 			<territory type="EU">Yevropa Ittifoqi</territory>
+			<territory type="EZ">yevrozona</territory>
 			<territory type="FI">Finlandiya</territory>
 			<territory type="FJ">Fiji</territory>
 			<territory type="FK">Folklend orollari</territory>
@@ -411,8 +591,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="FO">Farer orollari</territory>
 			<territory type="FR">Fransiya</territory>
 			<territory type="GA">Gabon</territory>
-			<territory type="GB">Birlashgan Qirollik</territory>
-			<territory type="GB" alt="short">B.Q.</territory>
+			<territory type="GB">Buyuk Britaniya</territory>
+			<territory type="GB" alt="short">Britaniya</territory>
 			<territory type="GD">Grenada</territory>
 			<territory type="GE">Gruziya</territory>
 			<territory type="GF">Fransuz Gvianasi</territory>
@@ -519,16 +699,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="PH">Filippin</territory>
 			<territory type="PK">Pokiston</territory>
 			<territory type="PL">Polsha</territory>
-			<territory type="PM">Sent-Pyer va Mikelon</territory>
+			<territory type="PM">Sen-Pyer va Mikelon</territory>
 			<territory type="PN">Pitkern orollari</territory>
 			<territory type="PR">Puerto-Riko</territory>
-			<territory type="PS">Falastin hududi</territory>
+			<territory type="PS">Falastin hududlari</territory>
 			<territory type="PS" alt="short">Falastin</territory>
 			<territory type="PT">Portugaliya</territory>
 			<territory type="PW">Palau</territory>
 			<territory type="PY">Paragvay</territory>
 			<territory type="QA">Qatar</territory>
-			<territory type="QO">Yondosh Okeaniya</territory>
+			<territory type="QO">Tashqi Okeaniya</territory>
 			<territory type="RE">Reyunion</territory>
 			<territory type="RO">Ruminiya</territory>
 			<territory type="RS">Serbiya</territory>
@@ -542,7 +722,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="SG">Singapur</territory>
 			<territory type="SH">Muqaddas Yelena oroli</territory>
 			<territory type="SI">Sloveniya</territory>
-			<territory type="SJ">Svalbard va Yan-Mayen</territory>
+			<territory type="SJ">Shpitsbergen va Yan-Mayen</territory>
 			<territory type="SK">Slovakiya</territory>
 			<territory type="SL">Syerra-Leone</territory>
 			<territory type="SM">San-Marino</territory>
@@ -563,7 +743,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="TH">Tailand</territory>
 			<territory type="TJ">Tojikiston</territory>
 			<territory type="TK">Tokelau</territory>
-			<territory type="TL">Timor</territory>
+			<territory type="TL">Timor-Leste</territory>
 			<territory type="TL" alt="variant">Sharqiy Timor</territory>
 			<territory type="TM">Turkmaniston</territory>
 			<territory type="TN">Tunis</territory>
@@ -576,7 +756,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<territory type="UA">Ukraina</territory>
 			<territory type="UG">Uganda</territory>
 			<territory type="UM">AQSH yondosh orollari</territory>
-			<territory type="US">Qoʻshma Shtatlar</territory>
+			<territory type="UN">Birlashgan Millatlar Tashkiloti</territory>
+			<territory type="UN" alt="short">BMT</territory>
+			<territory type="US">Amerika Qo‘shma Shtatlari</territory>
 			<territory type="US" alt="short">AQSH</territory>
 			<territory type="UY">Urugvay</territory>
 			<territory type="UZ">Oʻzbekiston</territory>
@@ -599,6 +781,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</territories>
 		<keys>
 			<key type="calendar">taqvim</key>
+			<key type="cf">valyuta formati</key>
 			<key type="collation">saralash tartibi</key>
 			<key type="currency">valyuta</key>
 			<key type="hc">soat tizimi (12 yoki 24)</key>
@@ -607,18 +790,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<key type="numbers">raqamlar</key>
 		</keys>
 		<types>
-			<type key="calendar" type="buddhist">buddistlar taqvimi</type>
+			<type key="calendar" type="buddhist">buddizm taqvimi</type>
 			<type key="calendar" type="chinese">xitoy taqvimi</type>
 			<type key="calendar" type="dangi">dangi taqvimi</type>
 			<type key="calendar" type="ethiopic">habash taqvimi</type>
 			<type key="calendar" type="gregorian">grigorian taqvimi</type>
-			<type key="calendar" type="hebrew">ibroniy taqvim</type>
+			<type key="calendar" type="hebrew">yahudiy taqvimi</type>
 			<type key="calendar" type="islamic">islomiy taqvim</type>
 			<type key="calendar" type="iso8601">ISO-8601 taqvimi</type>
 			<type key="calendar" type="japanese">yapon taqvimi</type>
 			<type key="calendar" type="persian">fors taqvimi</type>
-			<type key="calendar" type="roc">xitoy taqvimi</type>
-			<type key="collation" type="ducet">standart YUNIKOD saralash tartibi</type>
+			<type key="calendar" type="roc">Mingo taqvimi</type>
+			<type key="cf" type="account">moliyaviy valyuta formati</type>
+			<type key="cf" type="standard">standart valyuta formati</type>
+			<type key="collation" type="ducet">standart Unicode saralash tartibi</type>
 			<type key="collation" type="search">qidiruv</type>
 			<type key="collation" type="standard">standart saralash tartibi</type>
 			<type key="hc" type="h11">12 soatlik tizim (0–11)</type>
@@ -636,9 +821,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="armn">arman raqamlari</type>
 			<type key="numbers" type="armnlow">arman kichik raqamlari</type>
 			<type key="numbers" type="beng">bengal raqamlari</type>
-			<type key="numbers" type="deva">devanagar raqamlari</type>
+			<type key="numbers" type="deva">devanagari raqamlari</type>
 			<type key="numbers" type="ethi">habash raqamlari</type>
-			<type key="numbers" type="fullwide">to‘liq kenglikdagi raqamlar</type>
+			<type key="numbers" type="fullwide">to‘liq enli raqamlar</type>
 			<type key="numbers" type="geor">gruzin raqamlari</type>
 			<type key="numbers" type="grek">grek raqamlari</type>
 			<type key="numbers" type="greklow">kichik grek raqamlari</type>
@@ -649,15 +834,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<type key="numbers" type="hansfin">soddalashgan xitoy raqamlari (moliyaviy)</type>
 			<type key="numbers" type="hant">an’anaviy xitoy raqamlari</type>
 			<type key="numbers" type="hantfin">an’anaviy xitoy raqamlari (moliyaviy)</type>
-			<type key="numbers" type="hebr">ibroniy raqamlar</type>
+			<type key="numbers" type="hebr">ivrit raqamlari</type>
 			<type key="numbers" type="jpan">yapon raqamlari</type>
 			<type key="numbers" type="jpanfin">yapon raqamlari (moliyaviy)</type>
-			<type key="numbers" type="khmr">xmer raqamlari</type>
+			<type key="numbers" type="khmr">kxmer raqamlari</type>
 			<type key="numbers" type="knda">kannada raqamlari</type>
 			<type key="numbers" type="laoo">laos raqamlari</type>
 			<type key="numbers" type="latn">zamonaviy arab raqamlari</type>
 			<type key="numbers" type="mlym">malayalam raqamlari</type>
-			<type key="numbers" type="mymr">birman raqamlari</type>
+			<type key="numbers" type="mymr">birma raqamlari</type>
 			<type key="numbers" type="orya">oriya raqamlari</type>
 			<type key="numbers" type="roman">rim raqamlari</type>
 			<type key="numbers" type="romanlow">kichik rim raqamlari</type>
@@ -679,10 +864,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a {aʼ} b {ch} d e {eʼ} f g {gʻ} h i {iʼ} j k l m n o {oʻ} p q r s {sh} t u {uʼ} v x y z]</exemplarCharacters>
+		<exemplarCharacters>[a b d e f g h i j k l m n o p q r s t u v x y z {oʻ} {gʻ} {sh} {ch} ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c w]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B {CH} D E F G {Gʻ} H I J K L M N O {Oʻ} P Q R S {SH} T U V X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P Q R S T U V X Y Z {Oʻ} {Gʻ} {Sh} {Ch}]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[  \- , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” „ « » ( ) \[ \] \{ \} § @ * / \&amp; # ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -703,22 +889,22 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, d-MMMM, G y</pattern>
+							<pattern>EEEE, d-MMMM, y (G)</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
-							<pattern>d-MMMM, G y</pattern>
+							<pattern>d-MMMM, y (G)</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
-							<pattern>d-MMM, G y</pattern>
+							<pattern>d-MMM, y (G)</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>GGGGG dd/MM/y</pattern>
+							<pattern>dd.MM.y (GGGGG)</pattern>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -744,29 +930,45 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="Ed">d, E</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM, G y</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d-MMM, G y</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d-MMM, G y</dateFormatItem>
-						<dateFormatItem id="M">LL</dateFormatItem>
-						<dateFormatItem id="Md">dd/MM</dateFormatItem>
-						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
+						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
+						<dateFormatItem id="Ed">E, d</dateFormatItem>
+						<dateFormatItem id="Ehm">E, h:mm (a)</dateFormatItem>
+						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
+						<dateFormatItem id="Ehms">E, h:mm:ss (a)</dateFormatItem>
+						<dateFormatItem id="EHms">E, HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="Gy">y (G)</dateFormatItem>
+						<dateFormatItem id="GyMMM">MMM, y (G)</dateFormatItem>
+						<dateFormatItem id="GyMMMd">d-MMM, y (G)</dateFormatItem>
+						<dateFormatItem id="GyMMMEd">E, d-MMM, y (G)</dateFormatItem>
+						<dateFormatItem id="h">h (a)</dateFormatItem>
+						<dateFormatItem id="H">HH</dateFormatItem>
+						<dateFormatItem id="hm">h:mm (a)</dateFormatItem>
+						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
+						<dateFormatItem id="hms">h:mm:ss (a)</dateFormatItem>
+						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
+						<dateFormatItem id="M">L</dateFormatItem>
+						<dateFormatItem id="Md">dd.MM</dateFormatItem>
+						<dateFormatItem id="MEd">E, dd.MM</dateFormatItem>
 						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d-MMMM</dateFormatItem>
-						<dateFormatItem id="y">G y</dateFormatItem>
-						<dateFormatItem id="yyyy">G y</dateFormatItem>
-						<dateFormatItem id="yyyyM">MM/y (GGGGG)</dateFormatItem>
-						<dateFormatItem id="yyyyMd">dd/MM/y (GGGGG)</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, dd/MM/y (GGGGG)</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">MMM, G y</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd">d-MMM, G y</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, d-MMM, G y</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">MMMM, G y</dateFormatItem>
+						<dateFormatItem id="ms">mm:ss</dateFormatItem>
+						<dateFormatItem id="y">y (G)</dateFormatItem>
+						<dateFormatItem id="yyyy">y (G)</dateFormatItem>
+						<dateFormatItem id="yyyyM">MM.y (GGGGG)</dateFormatItem>
+						<dateFormatItem id="yyyyMd">dd.MM.y (GGGGG)</dateFormatItem>
+						<dateFormatItem id="yyyyMEd">E, dd.MM.y (GGGGG)</dateFormatItem>
+						<dateFormatItem id="yyyyMMM">y (G), MMM</dateFormatItem>
+						<dateFormatItem id="yyyyMMMd">d-MMM, y (G)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMEd">E, d-MMM, y (G)</dateFormatItem>
+						<dateFormatItem id="yyyyMMMM">y (G), MMMM</dateFormatItem>
 						<dateFormatItem id="yyyyQQQ">y (G), QQQ</dateFormatItem>
 						<dateFormatItem id="yyyyQQQQ">y (G), QQQQ</dateFormatItem>
 					</availableFormats>
@@ -779,12 +981,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
-							<greatestDifference id="d">dd/MM – dd/MM</greatestDifference>
-							<greatestDifference id="M">dd/MM – dd/MM</greatestDifference>
+							<greatestDifference id="d">dd.MM – dd.MM</greatestDifference>
+							<greatestDifference id="M">dd.MM – dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MEd">
-							<greatestDifference id="d">E, dd/MM – E, dd/MM</greatestDifference>
-							<greatestDifference id="M">E, dd/MM – E, dd/MM</greatestDifference>
+							<greatestDifference id="d">E, dd.MM – E, dd.MM</greatestDifference>
+							<greatestDifference id="M">E, dd.MM – E, dd.MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMM">
 							<greatestDifference id="M">MMM – MMM</greatestDifference>
@@ -798,29 +1000,29 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="M">E, d-MMM – E, d-MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="y">
-							<greatestDifference id="y">G y–y</greatestDifference>
+							<greatestDifference id="y">y–y (G)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
-							<greatestDifference id="M">MM/y – MM/y (GGGGG)</greatestDifference>
-							<greatestDifference id="y">MM/y – MM/y (GGGGG)</greatestDifference>
+							<greatestDifference id="M">MM.y – MM.y (GGGGG)</greatestDifference>
+							<greatestDifference id="y">MM.y – MM.y (GGGGG)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMd">
-							<greatestDifference id="d">dd/MM/y – dd/MM/y (GGGGG)</greatestDifference>
-							<greatestDifference id="M">dd/MM/y – dd/MM/y (GGGGG)</greatestDifference>
-							<greatestDifference id="y">dd/MM/y – dd/MM/y (GGGGG)</greatestDifference>
+							<greatestDifference id="d">dd.MM.y – dd.MM.y (GGGGG)</greatestDifference>
+							<greatestDifference id="M">dd.MM.y – dd.MM.y (GGGGG)</greatestDifference>
+							<greatestDifference id="y">dd.MM.y – dd.MM.y (GGGGG)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMEd">
-							<greatestDifference id="d">E, dd/MM/y – E, dd/MM/y (GGGGG)</greatestDifference>
-							<greatestDifference id="M">E, dd/MM/y – E, dd/MM/y (GGGGG)</greatestDifference>
-							<greatestDifference id="y">E, dd/MM/y – E, dd/MM/y (GGGGG)</greatestDifference>
+							<greatestDifference id="d">E, dd.MM.y – E, dd.MM.y (GGGGG)</greatestDifference>
+							<greatestDifference id="M">E, dd.MM.y – E, dd.MM.y (GGGGG)</greatestDifference>
+							<greatestDifference id="y">E, dd.MM.y – E, dd.MM.y (GGGGG)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">MMM – MMM, G y</greatestDifference>
-							<greatestDifference id="y">MMM, y – MMM, y (G)</greatestDifference>
+							<greatestDifference id="M">y (G), MMM – MMM</greatestDifference>
+							<greatestDifference id="y">y (G), MMM – y, MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">d – d-MMM, G y</greatestDifference>
-							<greatestDifference id="M">d-MMM – d-MMM, G y</greatestDifference>
+							<greatestDifference id="d">d – d-MMM, y (G)</greatestDifference>
+							<greatestDifference id="M">d-MMM – d-MMM, y (G)</greatestDifference>
 							<greatestDifference id="y">d-MMM, y – d-MMM, y (G)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
@@ -875,25 +1077,25 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<month type="6">iyun</month>
 							<month type="7">iyul</month>
 							<month type="8">avgust</month>
-							<month type="9">Sentabr</month>
-							<month type="10">Oktabr</month>
+							<month type="9">sentabr</month>
+							<month type="10">oktabr</month>
 							<month type="11">noyabr</month>
 							<month type="12">dekabr</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
 						<monthWidth type="abbreviated">
-							<month type="1">Yanv</month>
+							<month type="1">Yan</month>
 							<month type="2">Fev</month>
 							<month type="3">Mar</month>
 							<month type="4">Apr</month>
 							<month type="5">May</month>
-							<month type="6">Iyun</month>
-							<month type="7">Iyul</month>
+							<month type="6">Iyn</month>
+							<month type="7">Iyl</month>
 							<month type="8">Avg</month>
 							<month type="9">Sen</month>
 							<month type="10">Okt</month>
-							<month type="11">Noya</month>
+							<month type="11">Noy</month>
 							<month type="12">Dek</month>
 						</monthWidth>
 						<monthWidth type="narrow">
@@ -929,13 +1131,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<days>
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
-							<day type="sun">Ya</day>
-							<day type="mon">Du</day>
-							<day type="tue">Se</day>
-							<day type="wed">Ch</day>
-							<day type="thu">Pa</day>
-							<day type="fri">Ju</day>
-							<day type="sat">Sh</day>
+							<day type="sun">Yak</day>
+							<day type="mon">Dush</day>
+							<day type="tue">Sesh</day>
+							<day type="wed">Chor</day>
+							<day type="thu">Pay</day>
+							<day type="fri">Jum</day>
+							<day type="sat">Shan</day>
 						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">Y</day>
@@ -967,13 +1169,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dayContext>
 					<dayContext type="stand-alone">
 						<dayWidth type="abbreviated">
-							<day type="sun">Ya</day>
-							<day type="mon">Du</day>
-							<day type="tue">Se</day>
-							<day type="wed">Ch</day>
-							<day type="thu">Pa</day>
-							<day type="fri">Ju</day>
-							<day type="sat">Sh</day>
+							<day type="sun">Yak</day>
+							<day type="mon">Dush</day>
+							<day type="tue">Sesh</day>
+							<day type="wed">Chor</day>
+							<day type="thu">Pay</day>
+							<day type="fri">Jum</day>
+							<day type="sat">Shan</day>
 						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">Y</day>
@@ -1049,7 +1251,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">yarim kechasi</dayPeriod>
+							<dayPeriod type="midnight">yarim tun</dayPeriod>
 							<dayPeriod type="am">TO</dayPeriod>
 							<dayPeriod type="noon">tush payti</dayPeriod>
 							<dayPeriod type="pm">TK</dayPeriod>
@@ -1059,7 +1261,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">kechasi</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">yarim kechasi</dayPeriod>
+							<dayPeriod type="midnight">yarim tun</dayPeriod>
 							<dayPeriod type="am">TO</dayPeriod>
 							<dayPeriod type="noon">tush payti</dayPeriod>
 							<dayPeriod type="pm">TK</dayPeriod>
@@ -1069,7 +1271,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">kechasi</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">yarim kechasi</dayPeriod>
+							<dayPeriod type="midnight">yarim tun</dayPeriod>
 							<dayPeriod type="am">TO</dayPeriod>
 							<dayPeriod type="noon">tush payti</dayPeriod>
 							<dayPeriod type="pm">TK</dayPeriod>
@@ -1081,7 +1283,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">yarim kechasi</dayPeriod>
+							<dayPeriod type="midnight">yarim tun</dayPeriod>
 							<dayPeriod type="am">TO</dayPeriod>
 							<dayPeriod type="noon">tush payti</dayPeriod>
 							<dayPeriod type="pm">TK</dayPeriod>
@@ -1091,7 +1293,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">kechasi</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">yarim kechasi</dayPeriod>
+							<dayPeriod type="midnight">yarim tun</dayPeriod>
 							<dayPeriod type="am">TO</dayPeriod>
 							<dayPeriod type="noon">tush payti</dayPeriod>
 							<dayPeriod type="pm">TK</dayPeriod>
@@ -1101,7 +1303,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<dayPeriod type="night1">kechasi</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">yarim kechasi</dayPeriod>
+							<dayPeriod type="midnight">yarim tun</dayPeriod>
 							<dayPeriod type="am">TO</dayPeriod>
 							<dayPeriod type="noon">tush payti</dayPeriod>
 							<dayPeriod type="pm">TK</dayPeriod>
@@ -1117,17 +1319,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<era type="0">miloddan avvalgi</era>
 						<era type="0" alt="variant">eramizdan avvalgi</era>
 						<era type="1">milodiy</era>
+						<era type="1" alt="variant">mil.</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">m.a.</era>
 						<era type="0" alt="variant">e.a.</era>
 						<era type="1">milodiy</era>
+						<era type="1" alt="variant">mil.</era>
 					</eraAbbr>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
-							<pattern>EEEE, y MMMM dd</pattern>
+							<pattern>EEEE, d-MMMM, y</pattern>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
@@ -1190,8 +1394,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
+						<dateFormatItem id="Bh">B h</dateFormatItem>
+						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
+						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="d">d</dateFormatItem>
 						<dateFormatItem id="E">ccc</dateFormatItem>
+						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
+						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d, E</dateFormatItem>
 						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
@@ -1207,9 +1416,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv">h:mm:ss (v)</dateFormatItem>
+						<dateFormatItem id="hmsv">h:mm:ss a (v)</dateFormatItem>
 						<dateFormatItem id="Hmsv">HH:mm:ss (v)</dateFormatItem>
-						<dateFormatItem id="hmv">h:mm (v)</dateFormatItem>
+						<dateFormatItem id="hmv">h:mm a (v)</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm (v)</dateFormatItem>
 						<dateFormatItem id="M">LL</dateFormatItem>
 						<dateFormatItem id="Md">dd/MM</dateFormatItem>
@@ -1218,9 +1427,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="MMMd">d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d-MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d-MMMM</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="one">MMM, W-'hafta'</dateFormatItem>
+						<dateFormatItem id="MMMMW" count="other">MMM, W-'hafta'</dateFormatItem>
 						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y</dateFormatItem>
-						<dateFormatItem id="yM">MM/y</dateFormatItem>
+						<dateFormatItem id="yM">MM.y</dateFormatItem>
 						<dateFormatItem id="yMd">dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM, y</dateFormatItem>
@@ -1229,6 +1440,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 						<dateFormatItem id="yMMMM">MMMM, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">y, QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ">y, QQQQ</dateFormatItem>
+						<dateFormatItem id="yw" count="one">y, w-'hafta'</dateFormatItem>
+						<dateFormatItem id="yw" count="other">y, w-'hafta'</dateFormatItem>
 					</availableFormats>
 					<appendItems>
 						<appendItem request="Timezone">{0} {1}</appendItem>
@@ -1255,20 +1468,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
-							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
-							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
-							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
+							<greatestDifference id="a">h:mm a – h:mm a (v)</greatestDifference>
+							<greatestDifference id="h">h:mm–h:mm a (v)</greatestDifference>
+							<greatestDifference id="m">h:mm–h:mm a (v)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
+							<greatestDifference id="H">HH:mm–HH:mm (v)</greatestDifference>
+							<greatestDifference id="m">HH:mm–HH:mm (v)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
-							<greatestDifference id="a">h a – h a v</greatestDifference>
-							<greatestDifference id="h">h–h a v</greatestDifference>
+							<greatestDifference id="a">h a – h a (v)</greatestDifference>
+							<greatestDifference id="h">h–h a (v)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
+							<greatestDifference id="H">HH–HH (v)</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M–M</greatestDifference>
@@ -1355,14 +1568,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="era">
 				<displayName>era</displayName>
 			</field>
+			<field type="era-short">
+				<displayName>era</displayName>
+			</field>
+			<field type="era-narrow">
+				<displayName>era</displayName>
+			</field>
 			<field type="year">
 				<displayName>yil</displayName>
-				<relative type="-1">oʻtgan yil</relative>
-				<relative type="0">bu yil</relative>
+				<relative type="-1">o‘tgan yil</relative>
+				<relative type="0">shu yil</relative>
 				<relative type="1">keyingi yil</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} yildan soʻng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} yildan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} yildan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} yildan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} yil oldin</relativeTimePattern>
@@ -1375,8 +1594,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">bu yil</relative>
 				<relative type="1">keyingi yil</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} yildan soʻng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} yildan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} yildan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} yildan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} yil oldin</relativeTimePattern>
@@ -1389,8 +1608,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">bu yil</relative>
 				<relative type="1">keyingi yil</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} yildan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} yildan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} yildan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} yildan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} yil oldin</relativeTimePattern>
@@ -1399,9 +1618,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="quarter">
 				<displayName>chorak</displayName>
+				<relative type="-1">o‘tgan chorak</relative>
+				<relative type="0">shu chorak</relative>
+				<relative type="1">keyingi chorak</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} chorakdan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} chorakdan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} chorakdan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} chorakdan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} chorak oldin</relativeTimePattern>
@@ -1411,8 +1633,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="quarter-short">
 				<displayName>ch</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} chorakdan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} chorakdan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} chorakdan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} chorakdan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} chorak oldin</relativeTimePattern>
@@ -1422,8 +1644,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="quarter-narrow">
 				<displayName>ch</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} chorakdan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} chorakdan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} chorakdan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} chorakdan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} chorak oldin</relativeTimePattern>
@@ -1436,8 +1658,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">shu oy</relative>
 				<relative type="1">keyingi oy</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} oydan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} oydan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} oydan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} oydan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} oy oldin</relativeTimePattern>
@@ -1447,8 +1669,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="month-short">
 				<displayName>oy</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} oydan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} oydan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} oydan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} oydan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} oy oldin</relativeTimePattern>
@@ -1458,8 +1680,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="month-narrow">
 				<displayName>oy</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} oydan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} oydan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} oydan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} oydan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} oy oldin</relativeTimePattern>
@@ -1472,35 +1694,47 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">shu hafta</relative>
 				<relative type="1">keyingi hafta</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} haftadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} haftadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} haftadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} haftadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} hafta oldin</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hafta oldin</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0}-hafta</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>hafta</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} haftadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} haftadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} haftadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} haftadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} hafta oldin</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hafta oldin</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0}-hafta</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>hafta</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} haftadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} haftadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} haftadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} haftadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} hafta oldin</relativeTimePattern>
 					<relativeTimePattern count="other">{0} hafta oldin</relativeTimePattern>
 				</relativeTime>
+				<relativePeriod>{0}-hafta</relativePeriod>
+			</field>
+			<field type="weekOfMonth">
+				<displayName>oyning haftasi</displayName>
+			</field>
+			<field type="weekOfMonth-short">
+				<displayName>oyning haftasi</displayName>
+			</field>
+			<field type="weekOfMonth-narrow">
+				<displayName>oyning haftasi</displayName>
 			</field>
 			<field type="day">
 				<displayName>kun</displayName>
@@ -1508,8 +1742,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<relative type="0">bugun</relative>
 				<relative type="1">ertaga</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} kundan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} kundan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} kundan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kundan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} kun oldin</relativeTimePattern>
@@ -1519,8 +1753,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="day-short">
 				<displayName>kun</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} kundan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} kundan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} kundan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kundan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} kun oldin</relativeTimePattern>
@@ -1530,130 +1764,329 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="day-narrow">
 				<displayName>kun</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} kundan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} kundan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} kundan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} kundan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} kun oldin</relativeTimePattern>
 					<relativeTimePattern count="other">{0} kun oldin</relativeTimePattern>
 				</relativeTime>
 			</field>
+			<field type="dayOfYear">
+				<displayName>yilning kuni</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName>yilning kuni</displayName>
+			</field>
+			<field type="dayOfYear-narrow">
+				<displayName>yilning kuni</displayName>
+			</field>
 			<field type="weekday">
 				<displayName>hafta kuni</displayName>
+			</field>
+			<field type="weekday-short">
+				<displayName>hafta kuni</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>hafta kuni</displayName>
+			</field>
+			<field type="weekdayOfMonth">
+				<displayName>oyning hafta kuni</displayName>
+			</field>
+			<field type="weekdayOfMonth-short">
+				<displayName>oyning hafta kuni</displayName>
+			</field>
+			<field type="weekdayOfMonth-narrow">
+				<displayName>oyning hafta kuni</displayName>
 			</field>
 			<field type="sun">
 				<relative type="-1">o‘tgan yakshanba</relative>
 				<relative type="0">shu yakshanba</relative>
 				<relative type="1">keyingi yakshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta yakshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta yakshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta yakshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta yakshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-short">
 				<relative type="-1">o‘tgan yakshanba</relative>
 				<relative type="0">shu yakshanba</relative>
 				<relative type="1">keyingi yakshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta yakshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta yakshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta yakshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta yakshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sun-narrow">
 				<relative type="-1">o‘tgan yakshanba</relative>
 				<relative type="0">shu yakshanba</relative>
 				<relative type="1">keyingi yakshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta yakshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta yakshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta yakshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta yakshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon">
 				<relative type="-1">o‘tgan dushanba</relative>
 				<relative type="0">shu dushanba</relative>
 				<relative type="1">keyingi dushanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta dushanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta dushanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta dushanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta dushanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-short">
 				<relative type="-1">o‘tgan dushanba</relative>
 				<relative type="0">shu dushanba</relative>
 				<relative type="1">keyingi dushanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta dushanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta dushanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta dushanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta dushanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="mon-narrow">
 				<relative type="-1">o‘tgan dushanba</relative>
 				<relative type="0">shu dushanba</relative>
 				<relative type="1">keyingi dushanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta dushanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta dushanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta dushanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta dushanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue">
 				<relative type="-1">o‘tgan seshanba</relative>
 				<relative type="0">shu seshanba</relative>
 				<relative type="1">keyingi seshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta seshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta seshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta seshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta seshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-short">
 				<relative type="-1">o‘tgan seshanba</relative>
 				<relative type="0">shu seshanba</relative>
 				<relative type="1">keyingi seshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta seshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta seshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta seshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta seshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="tue-narrow">
 				<relative type="-1">o‘tgan seshanba</relative>
 				<relative type="0">shu seshanba</relative>
 				<relative type="1">keyingi seshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta seshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta seshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta seshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta seshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1">o‘tgan chorshanba</relative>
 				<relative type="0">shu chorshanba</relative>
 				<relative type="1">keyingi chorshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta chorshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta chorshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta chorshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta chorshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-short">
 				<relative type="-1">o‘tgan chorshanba</relative>
 				<relative type="0">shu chorshanba</relative>
 				<relative type="1">keyingi chorshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta chorshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta chorshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta chorshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta chorshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed-narrow">
 				<relative type="-1">o‘tgan chorshanba</relative>
 				<relative type="0">shu chorshanba</relative>
 				<relative type="1">keyingi chorshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta chorshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta chorshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta chorshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta chorshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu">
 				<relative type="-1">o‘tgan payshanba</relative>
 				<relative type="0">shu payshanba</relative>
 				<relative type="1">keyingi payshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta payshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta payshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta payshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta payshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-short">
 				<relative type="-1">o‘tgan payshanba</relative>
 				<relative type="0">shu payshanba</relative>
 				<relative type="1">keyingi payshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta payshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta payshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta payshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta payshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="thu-narrow">
 				<relative type="-1">o‘tgan payshanba</relative>
 				<relative type="0">shu payshanba</relative>
 				<relative type="1">keyingi payshanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta payshanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta payshanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta payshanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta payshanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri">
 				<relative type="-1">o‘tgan juma</relative>
 				<relative type="0">shu juma</relative>
 				<relative type="1">keyingi juma</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta jumadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta jumadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta juma oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta juma oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-short">
 				<relative type="-1">o‘tgan juma</relative>
 				<relative type="0">shu juma</relative>
 				<relative type="1">keyingi juma</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta jumadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta jumadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta juma oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta juma oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="fri-narrow">
 				<relative type="-1">o‘tgan juma</relative>
 				<relative type="0">shu juma</relative>
 				<relative type="1">keyingi juma</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta jumadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta jumadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta juma oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta juma oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat">
 				<relative type="-1">o‘tgan shanba</relative>
 				<relative type="0">shu shanba</relative>
 				<relative type="1">keyingi shanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta shanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta shanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta shanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta shanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-short">
 				<relative type="-1">o‘tgan shanba</relative>
 				<relative type="0">shu shanba</relative>
 				<relative type="1">keyingi shanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta shanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta shanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta shanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta shanba oldin</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="sat-narrow">
 				<relative type="-1">o‘tgan shanba</relative>
 				<relative type="0">shu shanba</relative>
 				<relative type="1">keyingi shanba</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one">{0} ta shanbadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta shanbadan keyin</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one">{0} ta shanba oldin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} ta shanba oldin</relativeTimePattern>
+				</relativeTime>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>TO/TK</displayName>
 			</field>
 			<field type="dayperiod">
-				<displayName>kun qismi</displayName>
+				<displayName>TO/TK</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>TO/TK</displayName>
 			</field>
 			<field type="hour">
 				<displayName>soat</displayName>
+				<relative type="0">shu soatda</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} soatdan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} soatdan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} soatdan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} soatdan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} soat oldin</relativeTimePattern>
@@ -1663,8 +2096,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="hour-short">
 				<displayName>soat</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} soatdan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} soatdan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} soatdan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} soatdan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} soat oldin</relativeTimePattern>
@@ -1674,8 +2107,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="hour-narrow">
 				<displayName>soat</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} soatdan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} soatdan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} soatdan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} soatdan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} soat oldin</relativeTimePattern>
@@ -1684,9 +2117,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</field>
 			<field type="minute">
 				<displayName>daqiqa</displayName>
+				<relative type="0">shu daqiqada</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} daqiqadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} daqiqadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} daqiqadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} daqiqadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} daqiqa oldin</relativeTimePattern>
@@ -1696,8 +2130,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="minute-short">
 				<displayName>daq.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} daqiqadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} daqiqadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} daqiqadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} daqiqadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} daqiqa oldin</relativeTimePattern>
@@ -1707,8 +2141,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="minute-narrow">
 				<displayName>daq.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} daqiqadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} daqiqadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} daqiqadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} daqiqadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} daqiqa oldin</relativeTimePattern>
@@ -1719,8 +2153,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>soniya</displayName>
 				<relative type="0">hozir</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} soniyadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} soniyadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} soniyadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} soniyadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} soniya oldin</relativeTimePattern>
@@ -1730,8 +2164,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="second-short">
 				<displayName>son.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} soniyadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} soniyadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} soniyadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} soniyadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} soniya oldin</relativeTimePattern>
@@ -1741,8 +2175,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="second-narrow">
 				<displayName>son.</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} soniyadan so‘ng</relativeTimePattern>
-					<relativeTimePattern count="other">{0} soniyadan so‘ng</relativeTimePattern>
+					<relativeTimePattern count="one">{0} soniyadan keyin</relativeTimePattern>
+					<relativeTimePattern count="other">{0} soniyadan keyin</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} soniya oldin</relativeTimePattern>
@@ -1752,17 +2186,34 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<field type="zone">
 				<displayName>vaqt mintaqasi</displayName>
 			</field>
+			<field type="zone-short">
+				<displayName>vaqt mintaqasi</displayName>
+			</field>
+			<field type="zone-narrow">
+				<displayName>vaqt mintaqasi</displayName>
+			</field>
 		</fields>
 		<timeZoneNames>
 			<hourFormat>+HH:mm;-HH:mm</hourFormat>
 			<gmtFormat>GMT{0}</gmtFormat>
 			<gmtZeroFormat>GMT</gmtZeroFormat>
-			<regionFormat>{0} vaqti</regionFormat>
-			<regionFormat type="daylight">{0} yozgi vaqti</regionFormat>
-			<regionFormat type="standard">{0} standart vaqti</regionFormat>
+			<regionFormat>{0}</regionFormat>
+			<regionFormat type="daylight">{0} (+1)</regionFormat>
+			<regionFormat type="standard">{0} (+0)</regionFormat>
 			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<zone type="America/Santa_Isabel">
+				<exemplarCity>Santa-Izabel</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>Gonolulu</exemplarCity>
+			</zone>
+			<zone type="Etc/UTC">
+				<long>
+					<standard>Koordinatali universal vaqt</standard>
+				</long>
+			</zone>
 			<zone type="Etc/Unknown">
-				<exemplarCity>Noma’lum shahar</exemplarCity>
+				<exemplarCity>noma’lum shahar</exemplarCity>
 			</zone>
 			<zone type="Europe/Andorra">
 				<exemplarCity>Andorra</exemplarCity>
@@ -1819,7 +2270,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Mak-Merdo</exemplarCity>
 			</zone>
 			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>Rio-Gallegos</exemplarCity>
+				<exemplarCity>Rio-Galyegos</exemplarCity>
 			</zone>
 			<zone type="America/Mendoza">
 				<exemplarCity>Mendoza</exemplarCity>
@@ -1864,7 +2315,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Pert</exemplarCity>
 			</zone>
 			<zone type="Australia/Eucla">
-				<exemplarCity>Yukla</exemplarCity>
+				<exemplarCity>Evkla</exemplarCity>
 			</zone>
 			<zone type="Australia/Darwin">
 				<exemplarCity>Darvin</exemplarCity>
@@ -1906,7 +2357,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Mariyexamn</exemplarCity>
 			</zone>
 			<zone type="Asia/Baku">
-				<exemplarCity>Baku</exemplarCity>
+				<exemplarCity>Boku</exemplarCity>
 			</zone>
 			<zone type="Europe/Sarajevo">
 				<exemplarCity>Sarayevo</exemplarCity>
@@ -1918,7 +2369,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Dakka</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
-				<exemplarCity>Brussel</exemplarCity>
+				<exemplarCity>Bryussel</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
 				<exemplarCity>Uagadugu</exemplarCity>
@@ -1936,7 +2387,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Porto-Novo</exemplarCity>
 			</zone>
 			<zone type="America/St_Barthelemy">
-				<exemplarCity>Sen-Bartelmi</exemplarCity>
+				<exemplarCity>Sen-Bartelemi</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity>Bermuda orollari</exemplarCity>
@@ -1984,7 +2435,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>San-Paulu</exemplarCity>
 			</zone>
 			<zone type="America/Bahia">
-				<exemplarCity>Bahiya</exemplarCity>
+				<exemplarCity>Baiya</exemplarCity>
 			</zone>
 			<zone type="America/Fortaleza">
 				<exemplarCity>Fortaleza</exemplarCity>
@@ -1996,13 +2447,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Resifi</exemplarCity>
 			</zone>
 			<zone type="America/Noronha">
-				<exemplarCity>Noronxa</exemplarCity>
+				<exemplarCity>Noronya</exemplarCity>
 			</zone>
 			<zone type="America/Nassau">
 				<exemplarCity>Nassau</exemplarCity>
 			</zone>
 			<zone type="Asia/Thimphu">
-				<exemplarCity>Timpu</exemplarCity>
+				<exemplarCity>Thimphu</exemplarCity>
 			</zone>
 			<zone type="Africa/Gaborone">
 				<exemplarCity>Gaborone</exemplarCity>
@@ -2024,6 +2475,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Vancouver">
 				<exemplarCity>Vankuver</exemplarCity>
+			</zone>
+			<zone type="America/Fort_Nelson">
+				<exemplarCity>Fort Nelson</exemplarCity>
 			</zone>
 			<zone type="America/Dawson_Creek">
 				<exemplarCity>Douson-Krik</exemplarCity>
@@ -2121,6 +2575,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Easter">
 				<exemplarCity>Pasxa oroli</exemplarCity>
 			</zone>
+			<zone type="America/Punta_Arenas">
+				<exemplarCity>Punta-Arenas</exemplarCity>
+			</zone>
 			<zone type="America/Santiago">
 				<exemplarCity>Santyago</exemplarCity>
 			</zone>
@@ -2153,6 +2610,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Nicosia">
 				<exemplarCity>Nikosiya</exemplarCity>
+			</zone>
+			<zone type="Asia/Famagusta">
+				<exemplarCity>Famagusta</exemplarCity>
 			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity>Praga</exemplarCity>
@@ -2191,7 +2651,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Qohira</exemplarCity>
 			</zone>
 			<zone type="Africa/El_Aaiun">
-				<exemplarCity>El-Ayun</exemplarCity>
+				<exemplarCity>Al-Ayun</exemplarCity>
 			</zone>
 			<zone type="Africa/Asmera">
 				<exemplarCity>Asmera</exemplarCity>
@@ -2221,7 +2681,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Truk orollari</exemplarCity>
 			</zone>
 			<zone type="Pacific/Ponape">
-				<exemplarCity>Ponape oroli</exemplarCity>
+				<exemplarCity>Ponpei oroli</exemplarCity>
 			</zone>
 			<zone type="Pacific/Kosrae">
 				<exemplarCity>Kosrae</exemplarCity>
@@ -2266,7 +2726,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Gotxob</exemplarCity>
 			</zone>
 			<zone type="America/Scoresbysund">
-				<exemplarCity>Skorsbisunn</exemplarCity>
+				<exemplarCity>Ittokkortoormiut</exemplarCity>
 			</zone>
 			<zone type="America/Danmarkshavn">
 				<exemplarCity>Denmarksxavn</exemplarCity>
@@ -2335,7 +2795,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Dublin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
-				<exemplarCity>Ierusalim</exemplarCity>
+				<exemplarCity>Quddus</exemplarCity>
 			</zone>
 			<zone type="Europe/Isle_of_Man">
 				<exemplarCity>Men oroli</exemplarCity>
@@ -2365,7 +2825,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Yamayka</exemplarCity>
 			</zone>
 			<zone type="Asia/Amman">
-				<exemplarCity>Amman</exemplarCity>
+				<exemplarCity>Ammon</exemplarCity>
 			</zone>
 			<zone type="Asia/Tokyo">
 				<exemplarCity>Tokio</exemplarCity>
@@ -2410,16 +2870,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Oqtov</exemplarCity>
 			</zone>
 			<zone type="Asia/Oral">
-				<exemplarCity>Oral</exemplarCity>
+				<exemplarCity>Uralsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Atyrau">
+				<exemplarCity>Atirau</exemplarCity>
 			</zone>
 			<zone type="Asia/Aqtobe">
-				<exemplarCity>Aktobe</exemplarCity>
+				<exemplarCity>Oqto‘ba</exemplarCity>
 			</zone>
 			<zone type="Asia/Qyzylorda">
 				<exemplarCity>Qizilo‘rda</exemplarCity>
 			</zone>
 			<zone type="Asia/Almaty">
-				<exemplarCity>Olma-Ota</exemplarCity>
+				<exemplarCity>Almati</exemplarCity>
 			</zone>
 			<zone type="Asia/Vientiane">
 				<exemplarCity>Vyentyan</exemplarCity>
@@ -2431,7 +2894,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Sent-Lyusiya</exemplarCity>
 			</zone>
 			<zone type="Europe/Vaduz">
-				<exemplarCity>Vaduz</exemplarCity>
+				<exemplarCity>Vaduts</exemplarCity>
 			</zone>
 			<zone type="Asia/Colombo">
 				<exemplarCity>Kolombo</exemplarCity>
@@ -2461,7 +2924,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Monako</exemplarCity>
 			</zone>
 			<zone type="Europe/Chisinau">
-				<exemplarCity>Kishinev</exemplarCity>
+				<exemplarCity>Kishinyov</exemplarCity>
 			</zone>
 			<zone type="Europe/Podgorica">
 				<exemplarCity>Podgoritsa</exemplarCity>
@@ -2506,7 +2969,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Martinika</exemplarCity>
 			</zone>
 			<zone type="Africa/Nouakchott">
-				<exemplarCity>Nuakshot</exemplarCity>
+				<exemplarCity>Nouakchott</exemplarCity>
 			</zone>
 			<zone type="America/Montserrat">
 				<exemplarCity>Montserrat</exemplarCity>
@@ -2525,9 +2988,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="America/Tijuana">
 				<exemplarCity>Tixuana</exemplarCity>
-			</zone>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa-Izabel</exemplarCity>
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Ermosillo</exemplarCity>
@@ -2694,6 +3154,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Europe/Volgograd">
 				<exemplarCity>Volgograd</exemplarCity>
 			</zone>
+			<zone type="Europe/Saratov">
+				<exemplarCity>Saratov</exemplarCity>
+			</zone>
+			<zone type="Europe/Astrakhan">
+				<exemplarCity>Astraxan</exemplarCity>
+			</zone>
+			<zone type="Europe/Ulyanovsk">
+				<exemplarCity>Ulyanovsk</exemplarCity>
+			</zone>
+			<zone type="Europe/Kirov">
+				<exemplarCity>Kirov</exemplarCity>
+			</zone>
 			<zone type="Europe/Samara">
 				<exemplarCity>Samara</exemplarCity>
 			</zone>
@@ -2705,6 +3177,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</zone>
 			<zone type="Asia/Novosibirsk">
 				<exemplarCity>Novosibirsk</exemplarCity>
+			</zone>
+			<zone type="Asia/Barnaul">
+				<exemplarCity>Barnaul</exemplarCity>
+			</zone>
+			<zone type="Asia/Tomsk">
+				<exemplarCity>Tomsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Novokuznetsk">
 				<exemplarCity>Novokuznetsk</exemplarCity>
@@ -2755,7 +3233,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Gvadalkanal</exemplarCity>
 			</zone>
 			<zone type="Indian/Mahe">
-				<exemplarCity>Mahe</exemplarCity>
+				<exemplarCity>Mae</exemplarCity>
 			</zone>
 			<zone type="Africa/Khartoum">
 				<exemplarCity>Xartum</exemplarCity>
@@ -2874,9 +3352,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midvey orollari</exemplarCity>
 			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Jonston</exemplarCity>
-			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Ueyk oroli</exemplarCity>
 			</zone>
@@ -2886,8 +3361,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<zone type="America/Nome">
 				<exemplarCity>Nom</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>Gonolulu</exemplarCity>
+			<zone type="Pacific/Johnston">
+				<exemplarCity>Jonston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorij</exemplarCity>
@@ -2935,7 +3410,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Vinsens, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Petersburg">
-				<exemplarCity>Peterburg, Indiana</exemplarCity>
+				<exemplarCity>Pitersberg, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Indiana/Tell_City">
 				<exemplarCity>Tell-Siti, Indiana</exemplarCity>
@@ -3004,7 +3479,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<exemplarCity>Apia</exemplarCity>
 			</zone>
 			<zone type="Asia/Aden">
-				<exemplarCity>Aden</exemplarCity>
+				<exemplarCity>Adan</exemplarCity>
 			</zone>
 			<zone type="Indian/Mayotte">
 				<exemplarCity>Mayorka</exemplarCity>
@@ -3075,16 +3550,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="America_Mountain">
 				<long>
-					<generic>Shimoliy Amerika togʻ vaqti</generic>
-					<standard>Shimoliy Amerika togʻ standart vaqti</standard>
-					<daylight>Shimoliy Amerika togʻ yozgi vaqti</daylight>
+					<generic>Tog‘ vaqti (AQSH)</generic>
+					<standard>Tog‘ standart vaqti (AQSH)</standard>
+					<daylight>Tog‘ yozgi vaqti (AQSH)</daylight>
 				</long>
 			</metazone>
 			<metazone type="America_Pacific">
 				<long>
-					<generic>Shimoliy Amerika Tinch okeani vaqti</generic>
-					<standard>Shimoliy Amerika Tinch okeani standart vaqti</standard>
-					<daylight>Shimoliy Amerika Tinch okeani yozgi vaqti</daylight>
+					<generic>Tinch okeani vaqti</generic>
+					<standard>Tinch okeani standart vaqti</standard>
+					<daylight>Tinch okeani yozgi vaqti</daylight>
 				</long>
 			</metazone>
 			<metazone type="Apia">
@@ -3345,7 +3820,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="French_Southern">
 				<long>
-					<standard>Fransuz Janubiy va Antarktika vaqti</standard>
+					<standard>Fransuz Janubiy hududlari va Antarktika vaqti</standard>
 				</long>
 			</metazone>
 			<metazone type="Galapagos">
@@ -3384,9 +3859,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Greenland_Western">
 				<long>
-					<generic>Gʻarbiy Grenlandiya vaqti</generic>
-					<standard>Gʻarbiy Grenlandiya standart vaqti</standard>
-					<daylight>Gʻarbiy Grenlandiya yozgi vaqti</daylight>
+					<generic>G‘arbiy Grenlandiya vaqti</generic>
+					<standard>G‘arbiy Grenlandiya standart vaqti</standard>
+					<daylight>G‘arbiy Grenlandiya yozgi vaqti</daylight>
 				</long>
 			</metazone>
 			<metazone type="Gulf">
@@ -3422,7 +3897,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="India">
 				<long>
-					<standard>Hindiston vaqti</standard>
+					<standard>Hindiston standart vaqti</standard>
 				</long>
 			</metazone>
 			<metazone type="Indian_Ocean">
@@ -3723,6 +4198,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 					<standard>Ponape vaqti</standard>
 				</long>
 			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Pxenyan vaqti</standard>
+				</long>
+			</metazone>
 			<metazone type="Reunion">
 				<long>
 					<standard>Reyunion vaqti</standard>
@@ -3832,9 +4312,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</metazone>
 			<metazone type="Uzbekistan">
 				<long>
-					<generic>Oʻzbekiston vaqti</generic>
-					<standard>Oʻzbekiston standart vaqti</standard>
-					<daylight>Oʻzbekiston yozgi vaqti</daylight>
+					<generic>O‘zbekiston vaqti</generic>
+					<standard>O‘zbekiston standart vaqti</standard>
+					<daylight>O‘zbekiston yozgi vaqti</daylight>
 				</long>
 			</metazone>
 			<metazone type="Vanuatu">
@@ -3910,7 +4390,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>؉</perMille>
 			<infinity>∞</infinity>
-			<nan>haqiqiy son emas</nan>
+			<nan>son emas</nan>
+			<timeSeparator draft="contributed">٫</timeSeparator>
 		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
@@ -3922,7 +4403,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
 			<infinity>∞</infinity>
-			<nan>haqiqiy son emas</nan>
+			<nan>son emas</nan>
 			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="arabext">
@@ -4026,7 +4507,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 		<currencyFormats numberSystem="arabext">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
+					<pattern>#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -4078,9 +4559,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFN">
-				<displayName>Afg‘oniston afg‘oni</displayName>
-				<displayName count="one">Afg‘oniston afg‘oni</displayName>
-				<displayName count="other">Afg‘oniston afg‘oni</displayName>
+				<displayName>Afg‘oniston afg‘oniysi</displayName>
+				<displayName count="one">Afg‘oniston afg‘oniysi</displayName>
+				<displayName count="other">Afg‘oniston afg‘oniysi</displayName>
 				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
@@ -4096,9 +4577,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
-				<displayName>Niderland antil guldeni</displayName>
-				<displayName count="one">Niderland antil guldeni</displayName>
-				<displayName count="other">Niderland antil guldeni</displayName>
+				<displayName>Niderlandiya antil guldeni</displayName>
+				<displayName count="one">Niderlandiya antil guldeni</displayName>
+				<displayName count="other">Niderlandiya antil guldeni</displayName>
 				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
@@ -4221,12 +4702,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>BWP</symbol>
 				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
-			<currency type="BYR">
+			<currency type="BYN">
 				<displayName>Belarus rubli</displayName>
 				<displayName count="one">Belarus rubli</displayName>
 				<displayName count="other">Belarus rubli</displayName>
-				<symbol>BYR</symbol>
+				<symbol>BYN</symbol>
 				<symbol alt="narrow" draft="contributed">р.</symbol>
+			</currency>
+			<currency type="BYR">
+				<displayName>Belarus rubli (2000–2016)</displayName>
+				<displayName count="one">Belarus rubli (2000–2016)</displayName>
+				<displayName count="other">Belarus rubli (2000–2016)</displayName>
+				<symbol>BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Beliz dollari</displayName>
@@ -4260,6 +4747,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="other">Chili pesosi</displayName>
 				<symbol>CLP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
+			</currency>
+			<currency type="CNH">
+				<displayName>CNH</displayName>
+				<displayName count="one">CNH</displayName>
+				<displayName count="other">CNH</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Xitoy yuani</displayName>
@@ -4323,9 +4815,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
-				<displayName>Dominikan pesosi</displayName>
-				<displayName count="one">Dominikan pesosi</displayName>
-				<displayName count="other">Dominikan pesosi</displayName>
+				<displayName>Dominikana pesosi</displayName>
+				<displayName count="one">Dominikana pesosi</displayName>
+				<displayName count="other">Dominikana pesosi</displayName>
 				<symbol>DOP</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -4387,6 +4879,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Gruziya larisi</displayName>
 				<displayName count="other">Gruziya larisi</displayName>
 				<symbol>GEL</symbol>
+				<symbol alt="narrow" draft="contributed">₾</symbol>
 				<symbol alt="variant" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHS">
@@ -4404,7 +4897,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currency>
 			<currency type="GMD">
 				<displayName>Gambiya dalasisi</displayName>
-				<displayName count="one">Gambiya dalisisi</displayName>
+				<displayName count="one">Gambiya dalasisi</displayName>
 				<displayName count="other">Gambiya dalasisi</displayName>
 				<symbol>GMD</symbol>
 			</currency>
@@ -4451,9 +4944,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
-				<displayName>Gaiti gurdasi</displayName>
-				<displayName count="one">Gaiti gurdasi</displayName>
-				<displayName count="other">Gaiti gurdasi</displayName>
+				<displayName>Gaiti gurdi</displayName>
+				<displayName count="one">Gaiti gurdi</displayName>
+				<displayName count="other">Gaiti gurdi</displayName>
 				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
@@ -4491,9 +4984,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
-				<displayName>Eron riali</displayName>
-				<displayName count="one">Eron riali</displayName>
-				<displayName count="other">Eron riali</displayName>
+				<displayName>Eron riyoli</displayName>
+				<displayName count="one">Eron riyoli</displayName>
+				<displayName count="other">Eron riyoli</displayName>
 				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
@@ -4530,15 +5023,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
-				<displayName>Qirg‘iziston so‘mi</displayName>
-				<displayName count="one">Qirg‘iziston so‘mi</displayName>
-				<displayName count="other">Qirg‘iziston so‘mi</displayName>
+				<displayName>Qirg‘iziston somi</displayName>
+				<displayName count="one">Qirg‘iziston somi</displayName>
+				<displayName count="other">Qirg‘iziston somi</displayName>
 				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
-				<displayName>Kamboja rieli</displayName>
-				<displayName count="one">Kamboja rieli</displayName>
-				<displayName count="other">Kamboja rieli</displayName>
+				<displayName>Kambodja rieli</displayName>
+				<displayName count="one">Kambodja rieli</displayName>
+				<displayName count="other">Kambodja rieli</displayName>
 				<symbol>KHR</symbol>
 				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
@@ -4564,9 +5057,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
-				<displayName>Quvayt dinori</displayName>
-				<displayName count="one">Quvayt dinori</displayName>
-				<displayName count="other">Quvayt dinori</displayName>
+				<displayName>Kuvayt dinori</displayName>
+				<displayName count="one">Kuvayt dinori</displayName>
+				<displayName count="other">Kuvayt dinori</displayName>
 				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
@@ -4675,10 +5168,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
-				<displayName>Mavritaniya ugiyasi</displayName>
-				<displayName count="one">Mavritaniya ugiyasi</displayName>
-				<displayName count="other">Mavritaniya ugiyasi</displayName>
+				<displayName>Mavritaniya uqiyasi (1973–2017)</displayName>
+				<displayName count="one">Mavritaniya uqiyasi (1973–2017)</displayName>
+				<displayName count="other">Mavritaniya uqiyasi (1973–2017)</displayName>
 				<symbol>MRO</symbol>
+			</currency>
+			<currency type="MRU">
+				<displayName>Mavritaniya uqiyasi</displayName>
+				<displayName count="one">Mavritaniya uqiyasi</displayName>
+				<displayName count="other">Mavritaniya uqiyasi</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName>Mavritaniya rupiyasi</displayName>
@@ -4720,9 +5218,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
-				<displayName>Nambiya dollari</displayName>
-				<displayName count="one">Nambiya dollari</displayName>
-				<displayName count="other">Nambiya dollari</displayName>
+				<displayName>Namibiya dollari</displayName>
+				<displayName count="one">Namibiya dollari</displayName>
+				<displayName count="other">Namibiya dollari</displayName>
 				<symbol>NAD</symbol>
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
@@ -4762,9 +5260,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
-				<displayName>Ummon riali</displayName>
-				<displayName count="one">Ummon riali</displayName>
-				<displayName count="other">Ummon riali</displayName>
+				<displayName>Ummon riyoli</displayName>
+				<displayName count="one">Ummon riyoli</displayName>
+				<displayName count="other">Ummon riyoli</displayName>
 				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
@@ -4774,9 +5272,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
-				<displayName>Peru yangi soli</displayName>
-				<displayName count="one">Peru yangi soli</displayName>
-				<displayName count="other">Peru yangi soli</displayName>
+				<displayName>Peru soli</displayName>
+				<displayName count="one">Peru soli</displayName>
+				<displayName count="other">Peru soli</displayName>
 				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
@@ -4814,9 +5312,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
-				<displayName>Qatar riali</displayName>
-				<displayName count="one">Qatar riali</displayName>
-				<displayName count="other">Qatar riali</displayName>
+				<displayName>Qatar riyoli</displayName>
+				<displayName count="one">Qatar riyoli</displayName>
+				<displayName count="other">Qatar riyoli</displayName>
 				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RON">
@@ -4824,6 +5322,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName count="one">Ruminiya leyi</displayName>
 				<displayName count="other">Ruminiya leyi</displayName>
 				<symbol>RON</symbol>
+				<symbol alt="narrow" draft="contributed">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Serbiya dinori</displayName>
@@ -4918,10 +5417,15 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
+				<displayName>San-Tome va Prinsipi dobrasi (1977–2017)</displayName>
+				<displayName count="one">San-Tome va Prinsipi dobrasi (1977–2017)</displayName>
+				<displayName count="other">San-Tome va Prinsipi dobrasi (1977–2017)</displayName>
+				<symbol>STD</symbol>
+			</currency>
+			<currency type="STN">
 				<displayName>San-Tome va Prinsipi dobrasi</displayName>
 				<displayName count="one">San-Tome va Prinsipi dobrasi</displayName>
 				<displayName count="other">San-Tome va Prinsipi dobrasi</displayName>
-				<symbol>STD</symbol>
 				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SYP">
@@ -4963,9 +5467,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
-				<displayName>Tonga pangasi</displayName>
-				<displayName count="one">Tonga pangasi</displayName>
-				<displayName count="other">Tonga pangasi</displayName>
+				<displayName>Tonga paangasi</displayName>
+				<displayName count="one">Tonga paangasi</displayName>
+				<displayName count="other">Tonga paangasi</displayName>
 				<symbol>TOP</symbol>
 				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
@@ -5025,9 +5529,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
-				<displayName>Oʻzbekiston soʻmi</displayName>
-				<displayName count="one">Oʻzbekiston soʻmi</displayName>
-				<displayName count="other">Oʻzbekiston soʻmi</displayName>
+				<displayName>O‘zbekiston so‘mi</displayName>
+				<displayName count="one">O‘zbekiston so‘mi</displayName>
+				<displayName count="other">O‘zbekiston so‘mi</displayName>
 				<symbol>soʻm</symbol>
 			</currency>
 			<currency type="VEF">
@@ -5082,14 +5586,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XXX">
-				<displayName>Noma’lum pul birligi</displayName>
-				<displayName count="one">(noma’lum pul birligi)</displayName>
-				<displayName count="other">(noma’lum pul birligi)</displayName>
+				<displayName>Noma’lum valyuta</displayName>
+				<displayName count="one">(noma’lum valyuta)</displayName>
+				<displayName count="other">(noma’lum valyuta)</displayName>
 			</currency>
 			<currency type="YER">
-				<displayName>Yaman riali</displayName>
-				<displayName count="one">Yaman riali</displayName>
-				<displayName count="other">Yaman riali</displayName>
+				<displayName>Yaman riyoli</displayName>
+				<displayName count="one">Yaman riyoli</displayName>
+				<displayName count="other">Yaman riyoli</displayName>
 				<symbol>YER</symbol>
 			</currency>
 			<currency type="ZAR">
@@ -5108,9 +5612,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="atLeast">{0}+</pattern>
+			<pattern type="atLeast">⩾{0}</pattern>
 			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="one">Savatingizda {0}X bor. Uni sotib olasizmi?</pluralMinimalPairs>
+			<pluralMinimalPairs count="other">Savatingizda {0}X bor. Ularni sotib olasizmi?</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">{0}chi chorraxada oʼngga buriling.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
 		<unitLength type="long">
@@ -5123,7 +5632,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} grav. kuchi</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-second-squared">
-				<displayName>metr taqsim soniyaning kvadrati</displayName>
+				<displayName>metr/soniya kvadrat</displayName>
 				<unitPattern count="one">{0} metr/soniya kvadrat</unitPattern>
 				<unitPattern count="other">{0} metr/soniya kvadrat</unitPattern>
 			</unit>
@@ -5156,6 +5665,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kvadrat kilometr</displayName>
 				<unitPattern count="one">{0} kvadrat kilometr</unitPattern>
 				<unitPattern count="other">{0} kvadrat kilometr</unitPattern>
+				<perUnitPattern>{0} kvadrat kilometr</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>gektar</displayName>
@@ -5178,6 +5688,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kvadrat mil</displayName>
 				<unitPattern count="one">{0} kvadrat mil</unitPattern>
 				<unitPattern count="other">{0} kvadrat mil</unitPattern>
+				<perUnitPattern>{0}/kvadrat mil</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akr</displayName>
@@ -5205,6 +5716,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} karat</unitPattern>
 				<unitPattern count="other">{0} karat</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>milligramm/detsilitr</displayName>
+				<unitPattern count="one">{0} milligramm/detsilitr</unitPattern>
+				<unitPattern count="other">{0} milligramm/detsilitr</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>millimol/litr</displayName>
+				<unitPattern count="one">{0} millimol/litr</unitPattern>
+				<unitPattern count="other">{0} millimol/litr</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>millionning ulushi</displayName>
+				<unitPattern count="one">milliondan {0}</unitPattern>
+				<unitPattern count="other">milliondan {0}</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litr/kilometr</displayName>
 				<unitPattern count="one">{0} litr/kilometr</unitPattern>
@@ -5219,6 +5745,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mil/gallon</displayName>
 				<unitPattern count="one">{0} mil/gallon</unitPattern>
 				<unitPattern count="other">{0} mil/gallon</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mil/imp. gallon</displayName>
+				<unitPattern count="one">{0} mil/imp. gallon</unitPattern>
+				<unitPattern count="other">{0} mil/imp. gallon</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>terabayt</displayName>
@@ -5462,10 +5993,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>{0}/fut</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName>dyum</displayName>
-				<unitPattern count="one">{0} dyum</unitPattern>
-				<unitPattern count="other">{0} dyum</unitPattern>
-				<perUnitPattern draft="provisional">{0}/duym</perUnitPattern>
+				<displayName>duym</displayName>
+				<unitPattern count="one">{0} duym</unitPattern>
+				<unitPattern count="other">{0} duym</unitPattern>
+				<perUnitPattern>{0}/duym</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>parsek</displayName>
@@ -5488,9 +6019,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} dengiz mili</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName>Skandinaviya mili</displayName>
-				<unitPattern count="one">{0} Skandinaviya mili</unitPattern>
-				<unitPattern count="other">{0} Skandinaviya mili</unitPattern>
+				<displayName>skandinav mili</displayName>
+				<unitPattern count="one">{0} skandinav mili</unitPattern>
+				<unitPattern count="other">{0} skandinav mili</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>nuqta</displayName>
+				<unitPattern count="one">{0} nuqta</unitPattern>
+				<unitPattern count="other">{0} nuqta</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lyuks</displayName>
@@ -5608,8 +6144,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>km/soat</displayName>
-				<unitPattern count="one">soatiga {0} kilometr</unitPattern>
-				<unitPattern count="other">soatiga {0} kilometr</unitPattern>
+				<unitPattern count="one">{0} km/soat</unitPattern>
+				<unitPattern count="other">{0} km/soat</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>metr/soniya</displayName>
@@ -5735,6 +6271,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gallon</unitPattern>
 				<perUnitPattern>{0}/gallon</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>imp. gallon</displayName>
+				<unitPattern count="one">{0} imp. gallon</unitPattern>
+				<unitPattern count="other">{0} imp. gallon</unitPattern>
+				<perUnitPattern>{0}/imp. gallon</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>kvart</displayName>
 				<unitPattern count="one">{0} kvart</unitPattern>
@@ -5766,10 +6308,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} choy qoshiq</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} sharqiy uzunlik</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} shimoliy kenglik</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} janubiy kenglik</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} g‘arbiy uzunlik</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
@@ -5815,6 +6357,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>km²</displayName>
 				<unitPattern count="one">{0} km²</unitPattern>
 				<unitPattern count="other">{0} km²</unitPattern>
+				<perUnitPattern>{0}/km²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>gektar</displayName>
@@ -5837,6 +6380,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>kv. mil</displayName>
 				<unitPattern count="one">{0} kv. mil</unitPattern>
 				<unitPattern count="other">{0} kv. mil</unitPattern>
+				<perUnitPattern>{0}/mil²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akr</displayName>
@@ -5864,6 +6408,21 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="one">{0} kt</unitPattern>
 				<unitPattern count="other">{0} kt</unitPattern>
 			</unit>
+			<unit type="concentr-milligram-per-deciliter">
+				<displayName>mg/dL</displayName>
+				<unitPattern count="one">{0} mg/dL</unitPattern>
+				<unitPattern count="other">{0} mg/dL</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>millimol/litr</displayName>
+				<unitPattern count="one">{0} mmol/L</unitPattern>
+				<unitPattern count="other">{0} mmol/L</unitPattern>
+			</unit>
+			<unit type="concentr-part-per-million">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>litr/km</displayName>
 				<unitPattern count="one">{0} L/km</unitPattern>
@@ -5878,6 +6437,11 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<displayName>mil/gal</displayName>
 				<unitPattern count="one">{0} mil/gal</unitPattern>
 				<unitPattern count="other">{0} mil/gal</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>mil/imp. gallon</displayName>
+				<unitPattern count="one">{0} mil/imp.gal</unitPattern>
+				<unitPattern count="other">{0} mil/imp.gal</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
@@ -5910,9 +6474,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} Mbit</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<displayName>kB</displayName>
-				<unitPattern count="one">{0} kB</unitPattern>
-				<unitPattern count="other">{0} kB</unitPattern>
+				<displayName>KB</displayName>
+				<unitPattern count="one">{0} KB</unitPattern>
+				<unitPattern count="other">{0} KB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kbit</displayName>
@@ -5960,20 +6524,20 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-hour">
 				<displayName>soat</displayName>
-				<unitPattern count="one">{0} st</unitPattern>
-				<unitPattern count="other">{0} st</unitPattern>
-				<perUnitPattern>{0}/st</perUnitPattern>
+				<unitPattern count="one">{0} soat</unitPattern>
+				<unitPattern count="other">{0} soat</unitPattern>
+				<perUnitPattern>{0}/soat</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>daq</displayName>
-				<unitPattern count="one">{0} daq</unitPattern>
-				<unitPattern count="other">{0} daq</unitPattern>
-				<perUnitPattern>{0}/daq</perUnitPattern>
+				<displayName>daq.</displayName>
+				<unitPattern count="one">{0} daq.</unitPattern>
+				<unitPattern count="other">{0} daq.</unitPattern>
+				<perUnitPattern>{0}/daq.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>son</displayName>
-				<unitPattern count="one">{0} son</unitPattern>
-				<unitPattern count="other">{0} son</unitPattern>
+				<displayName>son.</displayName>
+				<unitPattern count="one">{0} son.</unitPattern>
+				<unitPattern count="other">{0} son.</unitPattern>
 				<perUnitPattern>{0}/s</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -6121,7 +6685,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<perUnitPattern>{0} fut</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName>dyum</displayName>
+				<displayName>duym</displayName>
 				<unitPattern count="one">{0} dy</unitPattern>
 				<unitPattern count="other">{0} dy</unitPattern>
 				<perUnitPattern>{0}/dy</perUnitPattern>
@@ -6142,14 +6706,19 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} a.b.</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName>den.mili</displayName>
-				<unitPattern count="one">{0} den.mili</unitPattern>
-				<unitPattern count="other">{0} den.mili</unitPattern>
+				<displayName>den. mili</displayName>
+				<unitPattern count="one">{0} den. mili</unitPattern>
+				<unitPattern count="other">{0} den. mili</unitPattern>
 			</unit>
 			<unit type="length-mile-scandinavian">
-				<displayName>s-mil</displayName>
-				<unitPattern count="one">{0} s-mil</unitPattern>
-				<unitPattern count="other">{0} s-mil</unitPattern>
+				<displayName>sk. mili</displayName>
+				<unitPattern count="one">{0} sk. mili</unitPattern>
+				<unitPattern count="other">{0} sk. mili</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>nuqta</displayName>
+				<unitPattern count="one">{0} nuqta</unitPattern>
+				<unitPattern count="other">{0} nuqta</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>lk</displayName>
@@ -6354,9 +6923,9 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-liter">
 				<displayName>litr</displayName>
-				<unitPattern count="one">{0} l</unitPattern>
-				<unitPattern count="other">{0} l</unitPattern>
-				<perUnitPattern>{0}/l</perUnitPattern>
+				<unitPattern count="one">{0} L</unitPattern>
+				<unitPattern count="other">{0} L</unitPattern>
+				<perUnitPattern>{0}/L</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>dL</displayName>
@@ -6394,6 +6963,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} gal</unitPattern>
 				<perUnitPattern>{0}/gal</perUnitPattern>
 			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>imp. gal.</displayName>
+				<unitPattern count="one">{0} imp. gal.</unitPattern>
+				<unitPattern count="other">{0} imp. gal.</unitPattern>
+				<perUnitPattern>{0} imp. gal.</perUnitPattern>
+			</unit>
 			<unit type="volume-quart">
 				<displayName>kvart</displayName>
 				<unitPattern count="one">{0} kvart</unitPattern>
@@ -6425,10 +7000,10 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<unitPattern count="other">{0} choy qoshiq</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} shq. u.</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} shm. k.</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} jan. k.</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} g‘rb. u.</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -6502,16 +7077,16 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="duration-hour">
 				<displayName>soat</displayName>
-				<unitPattern count="one">{0} st</unitPattern>
-				<unitPattern count="other">{0} st</unitPattern>
+				<unitPattern count="one">{0} soat</unitPattern>
+				<unitPattern count="other">{0} soat</unitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>daq</displayName>
-				<unitPattern count="one">{0} d</unitPattern>
-				<unitPattern count="other">{0} d</unitPattern>
+				<displayName>daq.</displayName>
+				<unitPattern count="one">{0} daq.</unitPattern>
+				<unitPattern count="other">{0} daq.</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>son</displayName>
+				<displayName>son.</displayName>
 				<unitPattern count="one">{0} s</unitPattern>
 				<unitPattern count="other">{0} s</unitPattern>
 			</unit>
@@ -6638,14 +7213,14 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</unit>
 			<unit type="volume-liter">
 				<displayName>litr</displayName>
-				<unitPattern count="one">{0} l</unitPattern>
-				<unitPattern count="other">{0} l</unitPattern>
+				<unitPattern count="one">{0}L</unitPattern>
+				<unitPattern count="other">{0}L</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<coordinateUnitPattern type="east">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}W</coordinateUnitPattern>
+				<coordinateUnitPattern type="east">{0} shq. u.</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} shm. k.</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} jan. k.</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} g‘rb. u.</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<durationUnit type="hm">
@@ -6665,21 +7240,33 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<listPatternPart type="end">{0} va {1}</listPatternPart>
 			<listPatternPart type="2">{0} va {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="unit">
+		<listPattern type="or">
 			<listPatternPart type="start">{0}, {1}</listPatternPart>
 			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} yoki {1}</listPatternPart>
+			<listPatternPart type="2">{0} yoki {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} va {1}</listPatternPart>
+			<listPatternPart type="2">{0} va {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit">
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} {1}</listPatternPart>
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} {1}</listPatternPart>
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} {1}</listPatternPart>
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
@@ -6690,5 +7277,103 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<nostr>yo‘q:y</nostr>
 		</messages>
 	</posix>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — hammasi</characterLabelPattern>
+		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — mos</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — biriktirilgan</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — kengaytirilgan</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — tarixiy</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — har xil</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — boshqa</characterLabelPattern>
+		<characterLabelPattern type="scripts">yozuvlar — {0}</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="one">{0} ta chiziq</characterLabelPattern>
+		<characterLabelPattern type="strokes" count="other">{0} ta chiziq</characterLabelPattern>
+		<characterLabel type="activities">mashg‘ulotlar</characterLabel>
+		<characterLabel type="african_scripts">Afrika yozuvlari</characterLabel>
+		<characterLabel type="american_scripts">Amerika yozuvlari</characterLabel>
+		<characterLabel type="animal">hayvon</characterLabel>
+		<characterLabel type="animals_nature">hayvonlar va tabiat</characterLabel>
+		<characterLabel type="arrows">strelkalar</characterLabel>
+		<characterLabel type="body">tana</characterLabel>
+		<characterLabel type="box_drawing">soxta grafika</characterLabel>
+		<characterLabel type="braille">Brayl yozuvi</characterLabel>
+		<characterLabel type="building">bino</characterLabel>
+		<characterLabel type="bullets_stars">ro‘yxat belgilari/yulduzchalar</characterLabel>
+		<characterLabel type="consonantal_jamo">undosh jamo</characterLabel>
+		<characterLabel type="currency_symbols">valyuta belgilari</characterLabel>
+		<characterLabel type="dash_connector">tire/bog‘lama</characterLabel>
+		<characterLabel type="digits">raqamlar</characterLabel>
+		<characterLabel type="dingbats">dingbatlar</characterLabel>
+		<characterLabel type="divination_symbols">okkult belgilar</characterLabel>
+		<characterLabel type="downwards_arrows">pastga qaragan strelkalar</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">tepaga va pastga qaragan strelkalar</characterLabel>
+		<characterLabel type="east_asian_scripts">Sharqiy Osiyo yozuvlari</characterLabel>
+		<characterLabel type="emoji">emoji</characterLabel>
+		<characterLabel type="european_scripts">Yevropa yozuvlari</characterLabel>
+		<characterLabel type="female">ayol</characterLabel>
+		<characterLabel type="flag">bayroq</characterLabel>
+		<characterLabel type="flags">bayroqlar</characterLabel>
+		<characterLabel type="food_drink">taom va ichimliklar</characterLabel>
+		<characterLabel type="format">formatlash</characterLabel>
+		<characterLabel type="format_whitespace">formatlash va bo‘sh joy</characterLabel>
+		<characterLabel type="full_width_form_variant">to‘liq enli shakl variantlari</characterLabel>
+		<characterLabel type="geometric_shapes">geometrik shakllar</characterLabel>
+		<characterLabel type="half_width_form_variant">yarim enli shakl variantlari</characterLabel>
+		<characterLabel type="han_characters">xitoycha belgilar</characterLabel>
+		<characterLabel type="han_radicals">iyeroglif kalitlari</characterLabel>
+		<characterLabel type="hanja">hancha</characterLabel>
+		<characterLabel type="hanzi_simplified">xitoycha iyerogliflar (soddalashgan)</characterLabel>
+		<characterLabel type="hanzi_traditional">xitoycha iyerogliflar (an’anaviy)</characterLabel>
+		<characterLabel type="heart">yurak</characterLabel>
+		<characterLabel type="historic_scripts">tarixiy yozuvlar</characterLabel>
+		<characterLabel type="ideographic_desc_characters">iyeroglif tavsifi belgilari</characterLabel>
+		<characterLabel type="japanese_kana">yaponcha kana</characterLabel>
+		<characterLabel type="kanbun">kambun</characterLabel>
+		<characterLabel type="kanji">kanji</characterLabel>
+		<characterLabel type="keycap">tugma qalpog‘i</characterLabel>
+		<characterLabel type="leftwards_arrows">chapga qaragan strelkalar</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">chapga va o‘ngga qaragan strelkalar</characterLabel>
+		<characterLabel type="letterlike_symbols">harfsimon belgilar</characterLabel>
+		<characterLabel type="limited_use">foydalanish cheklangan</characterLabel>
+		<characterLabel type="male">erkak</characterLabel>
+		<characterLabel type="math_symbols">matematik belgilar</characterLabel>
+		<characterLabel type="middle_eastern_scripts">O‘rta Sharq yozuvlari</characterLabel>
+		<characterLabel type="miscellaneous">har xil</characterLabel>
+		<characterLabel type="modern_scripts">zamonaviy yozuvlar</characterLabel>
+		<characterLabel type="modifier">modifikator</characterLabel>
+		<characterLabel type="musical_symbols">musiqiy belgilar</characterLabel>
+		<characterLabel type="nature">tabiat</characterLabel>
+		<characterLabel type="nonspacing">cho‘zilmagan belgilar</characterLabel>
+		<characterLabel type="numbers">sonlar</characterLabel>
+		<characterLabel type="objects">obyektlar</characterLabel>
+		<characterLabel type="other">boshqa</characterLabel>
+		<characterLabel type="paired">juft belgilar</characterLabel>
+		<characterLabel type="person">shaxs</characterLabel>
+		<characterLabel type="phonetic_alphabet">fonetik alifbo</characterLabel>
+		<characterLabel type="pictographs">piktogrammalar</characterLabel>
+		<characterLabel type="place">joy</characterLabel>
+		<characterLabel type="plant">o‘simlik</characterLabel>
+		<characterLabel type="punctuation">tinish belgilari</characterLabel>
+		<characterLabel type="rightwards_arrows">o‘ngga qaragan strelkalar</characterLabel>
+		<characterLabel type="sign_standard_symbols">nishon/standart belgilar</characterLabel>
+		<characterLabel type="small_form_variant">kichik shakldagi variantlar</characterLabel>
+		<characterLabel type="smiley">kulgich</characterLabel>
+		<characterLabel type="smileys_people">kulgichlar va odamlar</characterLabel>
+		<characterLabel type="south_asian_scripts">Janubiy Osiyo yozuvlari</characterLabel>
+		<characterLabel type="southeast_asian_scripts">Janubi-sharqiy Osiyo yozuvlari</characterLabel>
+		<characterLabel type="spacing">oraliq</characterLabel>
+		<characterLabel type="sport">sport</characterLabel>
+		<characterLabel type="symbols">maxsus belgilar</characterLabel>
+		<characterLabel type="technical_symbols">texnik belgilar</characterLabel>
+		<characterLabel type="tone_marks">ohang belgilari</characterLabel>
+		<characterLabel type="travel">sayohat</characterLabel>
+		<characterLabel type="travel_places">sayohat va joylar</characterLabel>
+		<characterLabel type="upwards_arrows">tepaga qaragan strelkalar</characterLabel>
+		<characterLabel type="variant_forms">variant shakllari</characterLabel>
+		<characterLabel type="vocalic_jamo">unli jamo</characterLabel>
+		<characterLabel type="weather">ob-havo</characterLabel>
+		<characterLabel type="western_asian_scripts">G‘arbiy Osiyo yozuvlari</characterLabel>
+		<characterLabel type="whitespace">probellar</characterLabel>
+	</characterLabels>
 </ldml>
-

@@ -94,11 +94,6 @@ void ZArguments::initialize() {
   // Verification of stacks not (yet) supported, for the same reason
   // we need fixup_partial_loads
   DEBUG_ONLY(FLAG_SET_DEFAULT(VerifyStack, false));
-
-  // JVMCI not (yet) supported
-  if (EnableJVMCI) {
-    vm_exit_during_initialization("The flag -XX:+UseZGC can not be combined with -XX:+EnableJVMCI");
-  }
 }
 
 CollectedHeap* ZArguments::create_heap() {

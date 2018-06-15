@@ -24,7 +24,7 @@
 /**
  * @test TestHelloWorld
  * @key gc
- * @requires vm.gc.Epsilon
+ * @requires vm.gc.Epsilon & !vm.graal.enabled
  * @summary Basic sanity test for Epsilon
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC TestHelloWorld
  */
