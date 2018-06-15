@@ -176,7 +176,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp) {
   delayed()->andcc(value, JNIHandles::weak_tag_mask, G0); // Test for jweak
   brx(Assembler::zero, true, Assembler::pt, not_weak);
   delayed()->nop();
-  access_load_at(T_OBJECT, IN_ROOT | ON_PHANTOM_OOP_REF,
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
                  Address(value, -JNIHandles::weak_tag_value), value, tmp);
   verify_oop(value);
   br (Assembler::always, true, Assembler::pt, done);

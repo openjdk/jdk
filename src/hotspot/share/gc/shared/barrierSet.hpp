@@ -270,7 +270,7 @@ public:
     }
 
     // Off-heap oop accesses. These accessors get resolved when
-    // IN_HEAP is not set (e.g. when using the RootAccess API), it is
+    // IN_HEAP is not set (e.g. when using the NativeAccess API), it is
     // an oop* overload, and the barrier strength is AS_NORMAL.
     template <typename T>
     static oop oop_load_not_in_heap(T* addr) {
