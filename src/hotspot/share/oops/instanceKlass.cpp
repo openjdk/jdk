@@ -2641,7 +2641,12 @@ Method* InstanceKlass::method_at_itable(Klass* holder, int index, TRAPS) {
     // If the interface isn't implemented by the receiver class,
     // the VM should throw IncompatibleClassChangeError.
     if (cnt >= nof_interfaces) {
-      THROW_NULL(vmSymbols::java_lang_IncompatibleClassChangeError());
+      ResourceMark rm(THREAD);
+      stringStream ss;
+      ss.print("Receiver class %s does not implement "
+               "the interface %s defining the method to be called",
+               class_loader_and_module_name(), holder->class_loader_and_module_name());
+      THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
     }
 
     Klass* ik = ioe->interface_klass();

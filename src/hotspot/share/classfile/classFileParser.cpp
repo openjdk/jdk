@@ -955,7 +955,9 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
 
       if (!interf->is_interface()) {
         THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
-                   "Implementing class");
+                  err_msg("Class %s can not implement %s, because it is not an interface",
+                          _class_name->as_klass_external_name(),
+                          interf->class_loader_and_module_name()));
       }
 
       if (InstanceKlass::cast(interf)->has_nonstatic_concrete_methods()) {

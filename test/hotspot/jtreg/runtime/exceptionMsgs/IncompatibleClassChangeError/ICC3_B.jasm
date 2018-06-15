@@ -22,31 +22,8 @@
  * questions.
  */
 
-class ICC_B implements ICC_iA {
+package test;
 
-    public Method "<init>":"()V"
-        stack 1 locals 1
-    {
-        aload_0;
-        invokespecial Method java/lang/Object."<init>":"()V";
-        return;
-    }
-
-  public Method a:"()V"
-        stack 2 locals 1
-    {
-        getstatic     Field java/lang/System.out:"Ljava/io/PrintStream;";
-        ldc           String "B.a()";
-        invokevirtual Method java/io/PrintStream.print:"(Ljava/lang/String;)V";
-        return;
-    }
-
-  public Method b:"()V"
-        stack 2 locals 1
-    {
-        getstatic     Field java/lang/System.out:"Ljava/io/PrintStream;";
-        ldc           String "B.b()";
-        invokevirtual Method java/io/PrintStream.print:"(Ljava/lang/String;)V";
-        return;
-    }
+// Erroneous class: ICC3_A is not an interface but a class.
+class ICC3_B implements ICC3_A {
 }
