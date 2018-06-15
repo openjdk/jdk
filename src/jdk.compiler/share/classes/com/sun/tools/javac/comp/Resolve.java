@@ -69,8 +69,6 @@ import java.util.stream.Stream;
 
 import javax.lang.model.element.ElementVisitor;
 
-import com.sun.tools.javac.comp.Infer.InferenceException;
-
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Flags.STATIC;
@@ -818,8 +816,28 @@ public class Resolve {
             String key = inferDiag ? diag.inferKey : diag.basicKey;
             throw inferDiag ?
                 infer.error(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args)) :
-                new InapplicableMethodException(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
+                methodCheckFailure.setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
         }
+
+        /**
+         * To eliminate the overhead associated with allocating an exception object in such an
+         * hot execution path, we use flyweight pattern - and share the same exception instance
+         * across multiple method check failures.
+         */
+        class SharedInapplicableMethodException extends InapplicableMethodException {
+            private static final long serialVersionUID = 0;
+
+            SharedInapplicableMethodException() {
+                super(null);
+            }
+
+            SharedInapplicableMethodException setMessage(JCDiagnostic details) {
+                this.diagnostic = details;
+                return this;
+            }
+        }
+
+        SharedInapplicableMethodException methodCheckFailure = new SharedInapplicableMethodException();
 
         public MethodCheck mostSpecificCheck(List<Type> actuals) {
             return nilMethodCheck;
