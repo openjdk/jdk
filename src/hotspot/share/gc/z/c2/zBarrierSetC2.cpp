@@ -1181,8 +1181,14 @@ static bool split_barrier_thru_phi(PhaseIdealLoop* phase, LoadBarrierNode* lb) {
           if (is_strip_mined && (i == LoopNode::EntryControl)) {
             assert(region->in(i)->is_OuterStripMinedLoop(), "");
             igvn.replace_input_of(region->in(i), i, out_ctrl);
+            phase->set_idom(region->in(i), out_ctrl, phase->dom_depth(out_ctrl));
           } else if (ctrl == region->in(i)) {
             igvn.replace_input_of(region, i, out_ctrl);
+            // Only update the idom if is the loop entry we are updating
+            // - A loop backedge doesn't change the idom
+            if (region->is_Loop() && i == LoopNode::EntryControl) {
+              phase->set_idom(region, out_ctrl, phase->dom_depth(out_ctrl));
+            }
           } else {
             Node* iff = region->in(i)->in(0);
             igvn.replace_input_of(iff, 0, out_ctrl);
