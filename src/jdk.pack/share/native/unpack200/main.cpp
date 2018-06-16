@@ -139,7 +139,7 @@ static void setup_gzin(unpacker* u) {
 }
 
 static const char* nbasename(const char* progname) {
-  const char* slash = strrchr(progname, '/');
+  const char* slash = strrchr(progname, PATH_SEPARATOR);
   if (slash != null)  progname = ++slash;
   return progname;
 }
@@ -160,6 +160,13 @@ static const char* nbasename(const char* progname) {
     "\n" \
     "Exit Status:\n" \
     "  0 if successful, >0 if an error occurred\n"
+
+#define DEPRECATE_WARNING \
+    "\nWarning: The %s tool is deprecated, and is planned for removal in a future JDK release.\n\n"
+
+#define SUPPRESS_DEPRECATE_MSG "-XDsuppress-tool-removal-message"
+
+static bool suppress_warning = false;
 
 static void usage(unpacker* u, const char* progname, bool full = false) {
   // WinMain does not set argv[0] to the progrname
@@ -182,7 +189,11 @@ static char** init_args(int argc, char** argv, int &envargc) {
     char* buf = (char*) strdup(env);
     const char* delim = "\n\t ";
     for (char* p = strtok(buf, delim); p != null; p = strtok(null, delim)) {
-      envargs.add(p);
+      if (!strcmp(p, SUPPRESS_DEPRECATE_MSG)) {
+        suppress_warning = true;
+      } else {
+        envargs.add(p);
+      }
     }
   }
   // allocate extra margin at both head and tail
@@ -194,7 +205,11 @@ static char** init_args(int argc, char** argv, int &envargc) {
   }
   for (i = 1; i < argc; i++) {
     // note: skip argv[0] (program name)
-    *argp++ = (char*) strdup(argv[i]);  // make a scratch copy
+    if (!strcmp(argv[i], SUPPRESS_DEPRECATE_MSG)) {
+      suppress_warning = true;
+    } else {
+      *argp++ = (char*) strdup(argv[i]);  // make a scratch copy
+    }
   }
   *argp = null; // sentinel
   envargc = envargs.length();  // report this count to next_arg
@@ -292,6 +307,10 @@ int unpacker::run(int argc, char **argv) {
 
   int verbose = 0;
   char* logfile = null;
+
+  if (!suppress_warning) {
+      fprintf(u.errstrm, DEPRECATE_WARNING, nbasename(argv[0]));
+  }
 
   for (;;) {
     const char* arg = (*argp == null)? "": u.saveStr(*argp);

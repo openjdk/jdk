@@ -53,6 +53,7 @@ import java.util.zip.ZipEntry;
  */
 
 
+@SuppressWarnings({"removal"})
 public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
 
     public UnpackerImpl() {}
