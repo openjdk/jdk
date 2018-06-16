@@ -26,6 +26,7 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayDeque;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import jdk.internal.misc.Unsafe;
 
@@ -92,7 +94,9 @@ class PollSelectorImpl extends SelectorImpl {
     }
 
     @Override
-    protected int doSelect(long timeout) throws IOException {
+    protected int doSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
 
         int to = (int) Math.min(timeout, Integer.MAX_VALUE); // max poll timeout
@@ -125,7 +129,7 @@ class PollSelectorImpl extends SelectorImpl {
         }
 
         processDeregisterQueue();
-        return updateSelectedKeys();
+        return processEvents(action);
     }
 
     /**
@@ -157,13 +161,13 @@ class PollSelectorImpl extends SelectorImpl {
     }
 
     /**
-     * Update the keys of file descriptors that were polled and add them to
-     * the selected-key set.
+     * Process the polled events.
      * If the interrupt fd has been selected, drain it and clear the interrupt.
      */
-    private int updateSelectedKeys() throws IOException {
+    private int processEvents(Consumer<SelectionKey> action)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(nioSelectedKeys());
         assert pollArraySize > 0 && pollArraySize == pollKeys.size();
 
         int numKeysUpdated = 0;
@@ -173,17 +177,7 @@ class PollSelectorImpl extends SelectorImpl {
                 SelectionKeyImpl ski = pollKeys.get(i);
                 assert ski.getFDVal() == getDescriptor(i);
                 if (ski.isValid()) {
-                    if (selectedKeys.contains(ski)) {
-                        if (ski.translateAndUpdateReadyOps(rOps)) {
-                            numKeysUpdated++;
-                        }
-                    } else {
-                        ski.translateAndSetReadyOps(rOps);
-                        if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
-                            selectedKeys.add(ski);
-                            numKeysUpdated++;
-                        }
-                    }
+                    numKeysUpdated += processReadyEvents(rOps, ski, action);
                 }
             }
         }
