@@ -497,6 +497,10 @@ class Utils {
     }
 
     static List<String> runExec(List<String> cmdsList, Map<String, String> penv) {
+        return runExec(cmdsList, penv, false);
+    }
+
+    static List<String> runExec(List<String> cmdsList, Map<String, String> penv, boolean ignoreReturnValue) {
         ArrayList<String> alist = new ArrayList<String>();
         ProcessBuilder pb =
                 new ProcessBuilder(cmdsList);
@@ -529,7 +533,7 @@ class Utils {
                 in = rd.readLine();
             }
             retval = p.waitFor();
-            if (retval != 0) {
+            if (!ignoreReturnValue && retval != 0) {
                 throw new RuntimeException("process failed with non-zero exit");
             }
         } catch (Exception ex) {

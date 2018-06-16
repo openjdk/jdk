@@ -55,7 +55,7 @@ import java.util.jar.Pack200;
  * @author Kumar Srinivasan
  */
 
-
+@SuppressWarnings({"removal"})
 public class PackerImpl  extends TLGlobals implements Pack200.Packer {
 
     /**

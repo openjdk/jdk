@@ -47,6 +47,7 @@ import java.util.jar.Pack200;
  * Control block for publishing Pack200 options to the other classes.
  */
 
+@SuppressWarnings({"removal"})
 final class PropMap implements SortedMap<String, String>  {
     private final TreeMap<String, String> theMap = new TreeMap<>();;
 
