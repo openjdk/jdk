@@ -128,8 +128,8 @@ public final class RawStoreNode extends UnsafeAccessNode implements StateSplit, 
     }
 
     @Override
-    protected ValueNode cloneAsFieldAccess(Assumptions assumptions, ResolvedJavaField field) {
-        return new StoreFieldNode(object(), field, value(), stateAfter());
+    protected ValueNode cloneAsFieldAccess(Assumptions assumptions, ResolvedJavaField field, boolean volatileAccess) {
+        return new StoreFieldNode(object(), field, value(), stateAfter(), volatileAccess);
     }
 
     @Override

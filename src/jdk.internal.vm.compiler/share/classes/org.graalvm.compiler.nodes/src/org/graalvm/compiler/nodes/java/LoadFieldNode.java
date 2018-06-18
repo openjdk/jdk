@@ -69,12 +69,20 @@ public final class LoadFieldNode extends AccessFieldNode implements Canonicaliza
     private final Stamp uncheckedStamp;
 
     protected LoadFieldNode(StampPair stamp, ValueNode object, ResolvedJavaField field) {
-        super(TYPE, stamp.getTrustedStamp(), object, field);
+        this(stamp, object, field, field.isVolatile());
+    }
+
+    protected LoadFieldNode(StampPair stamp, ValueNode object, ResolvedJavaField field, boolean volatileAccess) {
+        super(TYPE, stamp.getTrustedStamp(), object, field, volatileAccess);
         this.uncheckedStamp = stamp.getUncheckedStamp();
     }
 
     public static LoadFieldNode create(Assumptions assumptions, ValueNode object, ResolvedJavaField field) {
-        return new LoadFieldNode(StampFactory.forDeclaredType(assumptions, field.getType(), false), object, field);
+        return create(assumptions, object, field, field.isVolatile());
+    }
+
+    public static LoadFieldNode create(Assumptions assumptions, ValueNode object, ResolvedJavaField field, boolean volatileAccess) {
+        return new LoadFieldNode(StampFactory.forDeclaredType(assumptions, field.getType(), false), object, field, volatileAccess);
     }
 
     public static ValueNode create(ConstantFieldProvider constantFields, ConstantReflectionProvider constantReflection, MetaAccessProvider metaAccess,
@@ -202,7 +210,7 @@ public final class LoadFieldNode extends AccessFieldNode implements Canonicaliza
 
     @Override
     public NodeCycles estimatedNodeCycles() {
-        if (field.isVolatile()) {
+        if (isVolatile()) {
             return CYCLES_2;
         }
         return super.estimatedNodeCycles();

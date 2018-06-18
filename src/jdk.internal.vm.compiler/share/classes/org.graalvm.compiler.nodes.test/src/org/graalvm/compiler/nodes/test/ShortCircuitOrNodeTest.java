@@ -24,24 +24,27 @@ package org.graalvm.compiler.nodes.test;
 
 import java.util.function.Function;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.graalvm.compiler.core.test.GraalCompilerTest;
 import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.ShortCircuitOrNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
 import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugin;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins;
 import org.graalvm.compiler.nodes.graphbuilderconf.InvocationPlugins.Registration;
+import org.graalvm.compiler.nodes.spi.LoweringTool;
 import org.graalvm.compiler.phases.common.CanonicalizerPhase;
+import org.graalvm.compiler.phases.common.FloatingReadPhase;
+import org.graalvm.compiler.phases.common.IncrementalCanonicalizerPhase;
+import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -101,7 +104,7 @@ public class ShortCircuitOrNodeTest extends GraalCompilerTest {
         return trueCount;
     }
 
-    public boolean testSimpleSnippet(boolean a, boolean b) {
+    public boolean testSimpleSnippet(Boolean a, Boolean b) {
         return shortCircuitOr(a, b);
     }
 
@@ -110,259 +113,260 @@ public class ShortCircuitOrNodeTest extends GraalCompilerTest {
         testInputCombinations("testSimpleSnippet");
     }
 
-    public static boolean testCascadeSnippet1(boolean a, boolean b) {
+    // We cannot trust subword inputs. Parameter declared as boolean will have a stamp of int32.
+    public static boolean testCascadeSnippet1(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(a, b), a);
     }
 
-    public static boolean testCascadeSnippet2(boolean a, boolean b) {
+    public static boolean testCascadeSnippet2(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(b, a), a);
     }
 
-    public static boolean testCascadeSnippet3(boolean a, boolean b) {
+    public static boolean testCascadeSnippet3(Boolean a, Boolean b) {
         return shortCircuitOr(a, shortCircuitOr(a, b));
     }
 
-    public static boolean testCascadeSnippet4(boolean a, boolean b) {
+    public static boolean testCascadeSnippet4(Boolean a, Boolean b) {
         return shortCircuitOr(a, shortCircuitOr(b, a));
     }
 
-    public static boolean testCascadeSnippet5(boolean a, boolean b) {
+    public static boolean testCascadeSnippet5(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(a, b), a);
     }
 
-    public static boolean testCascadeSnippet6(boolean a, boolean b) {
+    public static boolean testCascadeSnippet6(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(b, a), a);
     }
 
-    public static boolean testCascadeSnippet7(boolean a, boolean b) {
+    public static boolean testCascadeSnippet7(Boolean a, Boolean b) {
         return shortCircuitOr(!a, shortCircuitOr(a, b));
     }
 
-    public static boolean testCascadeSnippet8(boolean a, boolean b) {
+    public static boolean testCascadeSnippet8(Boolean a, Boolean b) {
         return shortCircuitOr(!a, shortCircuitOr(b, a));
     }
 
-    public static boolean testCascadeSnippet9(boolean a, boolean b) {
+    public static boolean testCascadeSnippet9(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(!a, b), a);
     }
 
-    public static boolean testCascadeSnippet10(boolean a, boolean b) {
+    public static boolean testCascadeSnippet10(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(!b, a), a);
     }
 
-    public static boolean testCascadeSnippet11(boolean a, boolean b) {
+    public static boolean testCascadeSnippet11(Boolean a, Boolean b) {
         return shortCircuitOr(a, !shortCircuitOr(a, b));
     }
 
-    public static boolean testCascadeSnippet12(boolean a, boolean b) {
+    public static boolean testCascadeSnippet12(Boolean a, Boolean b) {
         return shortCircuitOr(a, !shortCircuitOr(b, a));
     }
 
-    public static boolean testCascadeSnippet13(boolean a, boolean b) {
+    public static boolean testCascadeSnippet13(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(!a, b), a);
     }
 
-    public static boolean testCascadeSnippet14(boolean a, boolean b) {
+    public static boolean testCascadeSnippet14(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(!b, a), a);
     }
 
-    public static boolean testCascadeSnippet15(boolean a, boolean b) {
+    public static boolean testCascadeSnippet15(Boolean a, Boolean b) {
         return shortCircuitOr(!a, !shortCircuitOr(a, b));
     }
 
-    public static boolean testCascadeSnippet16(boolean a, boolean b) {
+    public static boolean testCascadeSnippet16(Boolean a, Boolean b) {
         return shortCircuitOr(!a, !shortCircuitOr(!b, a));
     }
 
-    public static boolean testCascadeSnippet17(boolean a, boolean b) {
+    public static boolean testCascadeSnippet17(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(a, !b), a);
     }
 
-    public static boolean testCascadeSnippet18(boolean a, boolean b) {
+    public static boolean testCascadeSnippet18(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(b, !a), a);
     }
 
-    public static boolean testCascadeSnippet19(boolean a, boolean b) {
+    public static boolean testCascadeSnippet19(Boolean a, Boolean b) {
         return shortCircuitOr(a, shortCircuitOr(!a, b));
     }
 
-    public static boolean testCascadeSnippet20(boolean a, boolean b) {
+    public static boolean testCascadeSnippet20(Boolean a, Boolean b) {
         return shortCircuitOr(a, shortCircuitOr(!b, a));
     }
 
-    public static boolean testCascadeSnippet21(boolean a, boolean b) {
+    public static boolean testCascadeSnippet21(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(a, !b), a);
     }
 
-    public static boolean testCascadeSnippet22(boolean a, boolean b) {
+    public static boolean testCascadeSnippet22(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(b, !a), a);
     }
 
-    public static boolean testCascadeSnippet23(boolean a, boolean b) {
+    public static boolean testCascadeSnippet23(Boolean a, Boolean b) {
         return shortCircuitOr(!a, shortCircuitOr(!a, b));
     }
 
-    public static boolean testCascadeSnippet24(boolean a, boolean b) {
+    public static boolean testCascadeSnippet24(Boolean a, Boolean b) {
         return shortCircuitOr(!a, shortCircuitOr(!b, a));
     }
 
-    public static boolean testCascadeSnippet25(boolean a, boolean b) {
+    public static boolean testCascadeSnippet25(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(!a, !b), a);
     }
 
-    public static boolean testCascadeSnippet26(boolean a, boolean b) {
+    public static boolean testCascadeSnippet26(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(!b, !a), a);
     }
 
-    public static boolean testCascadeSnippet27(boolean a, boolean b) {
+    public static boolean testCascadeSnippet27(Boolean a, Boolean b) {
         return shortCircuitOr(a, !shortCircuitOr(!a, b));
     }
 
-    public static boolean testCascadeSnippet28(boolean a, boolean b) {
+    public static boolean testCascadeSnippet28(Boolean a, Boolean b) {
         return shortCircuitOr(a, !shortCircuitOr(!b, a));
     }
 
-    public static boolean testCascadeSnippet29(boolean a, boolean b) {
+    public static boolean testCascadeSnippet29(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(!a, !b), a);
     }
 
-    public static boolean testCascadeSnippet30(boolean a, boolean b) {
+    public static boolean testCascadeSnippet30(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(!b, !a), a);
     }
 
-    public static boolean testCascadeSnippet31(boolean a, boolean b) {
+    public static boolean testCascadeSnippet31(Boolean a, Boolean b) {
         return shortCircuitOr(!a, !shortCircuitOr(!a, b));
     }
 
-    public static boolean testCascadeSnippet32(boolean a, boolean b) {
+    public static boolean testCascadeSnippet32(Boolean a, Boolean b) {
         return shortCircuitOr(!a, !shortCircuitOr(!b, a));
     }
 
-    public static boolean testCascadeSnippet33(boolean a, boolean b) {
+    public static boolean testCascadeSnippet33(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(a, b), !a);
     }
 
-    public static boolean testCascadeSnippet34(boolean a, boolean b) {
+    public static boolean testCascadeSnippet34(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(b, a), !a);
     }
 
-    public static boolean testCascadeSnippet35(boolean a, boolean b) {
+    public static boolean testCascadeSnippet35(Boolean a, Boolean b) {
         return shortCircuitOr(a, shortCircuitOr(a, !b));
     }
 
-    public static boolean testCascadeSnippet36(boolean a, boolean b) {
+    public static boolean testCascadeSnippet36(Boolean a, Boolean b) {
         return shortCircuitOr(a, shortCircuitOr(b, !a));
     }
 
-    public static boolean testCascadeSnippet37(boolean a, boolean b) {
+    public static boolean testCascadeSnippet37(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(a, b), !a);
     }
 
-    public static boolean testCascadeSnippet38(boolean a, boolean b) {
+    public static boolean testCascadeSnippet38(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(b, a), !a);
     }
 
-    public static boolean testCascadeSnippet39(boolean a, boolean b) {
+    public static boolean testCascadeSnippet39(Boolean a, Boolean b) {
         return shortCircuitOr(!a, shortCircuitOr(a, !b));
     }
 
-    public static boolean testCascadeSnippet40(boolean a, boolean b) {
+    public static boolean testCascadeSnippet40(Boolean a, Boolean b) {
         return shortCircuitOr(!a, shortCircuitOr(b, !a));
     }
 
-    public static boolean testCascadeSnippet41(boolean a, boolean b) {
+    public static boolean testCascadeSnippet41(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(!a, b), !a);
     }
 
-    public static boolean testCascadeSnippet42(boolean a, boolean b) {
+    public static boolean testCascadeSnippet42(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(!b, a), !a);
     }
 
-    public static boolean testCascadeSnippet43(boolean a, boolean b) {
+    public static boolean testCascadeSnippet43(Boolean a, Boolean b) {
         return shortCircuitOr(a, !shortCircuitOr(a, !b));
     }
 
-    public static boolean testCascadeSnippet44(boolean a, boolean b) {
+    public static boolean testCascadeSnippet44(Boolean a, Boolean b) {
         return shortCircuitOr(a, !shortCircuitOr(b, !a));
     }
 
-    public static boolean testCascadeSnippet45(boolean a, boolean b) {
+    public static boolean testCascadeSnippet45(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(!a, b), !a);
     }
 
-    public static boolean testCascadeSnippet46(boolean a, boolean b) {
+    public static boolean testCascadeSnippet46(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(!b, a), !a);
     }
 
-    public static boolean testCascadeSnippet47(boolean a, boolean b) {
+    public static boolean testCascadeSnippet47(Boolean a, Boolean b) {
         return shortCircuitOr(!a, !shortCircuitOr(a, !b));
     }
 
-    public static boolean testCascadeSnippet48(boolean a, boolean b) {
+    public static boolean testCascadeSnippet48(Boolean a, Boolean b) {
         return shortCircuitOr(!a, !shortCircuitOr(!b, !a));
     }
 
-    public static boolean testCascadeSnippet49(boolean a, boolean b) {
+    public static boolean testCascadeSnippet49(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(a, !b), !a);
     }
 
-    public static boolean testCascadeSnippet50(boolean a, boolean b) {
+    public static boolean testCascadeSnippet50(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(b, !a), !a);
     }
 
-    public static boolean testCascadeSnippet51(boolean a, boolean b) {
+    public static boolean testCascadeSnippet51(Boolean a, Boolean b) {
         return shortCircuitOr(a, shortCircuitOr(!a, !b));
     }
 
-    public static boolean testCascadeSnippet52(boolean a, boolean b) {
+    public static boolean testCascadeSnippet52(Boolean a, Boolean b) {
         return shortCircuitOr(a, shortCircuitOr(!b, !a));
     }
 
-    public static boolean testCascadeSnippet53(boolean a, boolean b) {
+    public static boolean testCascadeSnippet53(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(a, !b), !a);
     }
 
-    public static boolean testCascadeSnippet54(boolean a, boolean b) {
+    public static boolean testCascadeSnippet54(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(b, !a), !a);
     }
 
-    public static boolean testCascadeSnippet55(boolean a, boolean b) {
+    public static boolean testCascadeSnippet55(Boolean a, Boolean b) {
         return shortCircuitOr(!a, shortCircuitOr(!a, !b));
     }
 
-    public static boolean testCascadeSnippet56(boolean a, boolean b) {
+    public static boolean testCascadeSnippet56(Boolean a, Boolean b) {
         return shortCircuitOr(!a, shortCircuitOr(!b, !a));
     }
 
-    public static boolean testCascadeSnippet57(boolean a, boolean b) {
+    public static boolean testCascadeSnippet57(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(!a, !b), !a);
     }
 
-    public static boolean testCascadeSnippet58(boolean a, boolean b) {
+    public static boolean testCascadeSnippet58(Boolean a, Boolean b) {
         return shortCircuitOr(shortCircuitOr(!b, !a), !a);
     }
 
-    public static boolean testCascadeSnippet59(boolean a, boolean b) {
+    public static boolean testCascadeSnippet59(Boolean a, Boolean b) {
         return shortCircuitOr(a, !shortCircuitOr(!a, !b));
     }
 
-    public static boolean testCascadeSnippet60(boolean a, boolean b) {
+    public static boolean testCascadeSnippet60(Boolean a, Boolean b) {
         return shortCircuitOr(a, !shortCircuitOr(!b, !a));
     }
 
-    public static boolean testCascadeSnippet61(boolean a, boolean b) {
+    public static boolean testCascadeSnippet61(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(!a, !b), !a);
     }
 
-    public static boolean testCascadeSnippet62(boolean a, boolean b) {
+    public static boolean testCascadeSnippet62(Boolean a, Boolean b) {
         return shortCircuitOr(!shortCircuitOr(!b, !a), !a);
     }
 
-    public static boolean testCascadeSnippet63(boolean a, boolean b) {
+    public static boolean testCascadeSnippet63(Boolean a, Boolean b) {
         return shortCircuitOr(!a, !shortCircuitOr(!a, !b));
     }
 
-    public static boolean testCascadeSnippet64(boolean a, boolean b) {
+    public static boolean testCascadeSnippet64(Boolean a, Boolean b) {
         return shortCircuitOr(!a, !shortCircuitOr(!b, !a));
     }
 
@@ -374,6 +378,8 @@ public class ShortCircuitOrNodeTest extends GraalCompilerTest {
             PhaseContext context = new PhaseContext(getProviders());
             CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
             canonicalizer.apply(graph, context);
+            new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
+            new IncrementalCanonicalizerPhase<>(canonicalizer, new FloatingReadPhase()).apply(graph, context);
             int shortCircuitCount = graph.getNodes(ShortCircuitOrNode.TYPE).count();
 
             int trueCount = testInputCombinations(snippet);

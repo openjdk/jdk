@@ -1859,7 +1859,7 @@ public class AMD64Assembler extends Assembler {
      * values were equal, and cleared otherwise.
      */
     public final void cmpxchgb(Register reg, AMD64Address adr) { // cmpxchg
-        prefix(adr, reg);
+        prefixb(adr, reg);
         emitByte(0x0F);
         emitByte(0xB0);
         emitOperandHelper(reg, adr, 0);
@@ -2136,7 +2136,7 @@ public class AMD64Assembler extends Assembler {
 
     public final void movb(AMD64Address dst, Register src) {
         assert src.getRegisterCategory().equals(AMD64.CPU) : "must have byte register";
-        prefix(dst, src, true);
+        prefixb(dst, src);
         emitByte(0x88);
         emitOperandHelper(src, dst, 0);
     }
@@ -3282,6 +3282,10 @@ public class AMD64Assembler extends Assembler {
         }
     }
 
+    private void prefixb(AMD64Address adr, Register reg) {
+        prefix(adr, reg, true);
+    }
+
     private void prefix(AMD64Address adr, Register reg) {
         prefix(adr, reg, false);
     }
@@ -3705,7 +3709,7 @@ public class AMD64Assembler extends Assembler {
     }
 
     public final void xaddb(AMD64Address dst, Register src) {
-        prefix(dst, src);
+        prefixb(dst, src);
         emitByte(0x0F);
         emitByte(0xC0);
         emitOperandHelper(src, dst, 0);
@@ -3734,7 +3738,7 @@ public class AMD64Assembler extends Assembler {
     }
 
     public final void xchgb(Register dst, AMD64Address src) {
-        prefix(src, dst);
+        prefixb(src, dst);
         emitByte(0x86);
         emitOperandHelper(dst, src, 0);
     }
