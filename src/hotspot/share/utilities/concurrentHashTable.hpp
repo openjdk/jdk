@@ -361,7 +361,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   template <typename EVALUATE_FUNC, typename DELETE_FUNC>
   void do_bulk_delete_locked_for(Thread* thread, size_t start_idx,
                                  size_t stop_idx, EVALUATE_FUNC& eval_f,
-                                 DELETE_FUNC& del_f);
+                                 DELETE_FUNC& del_f, bool is_mt = false);
 
   // Method to delete one items.
   template <typename LOOKUP_FUNC>

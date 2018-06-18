@@ -45,9 +45,10 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BucketsOperation {
   size_t _task_size_log2; // Number of buckets.
   size_t _stop_task;      // Last task
   size_t _size_log2;      // Table size.
+  bool   _is_mt;
 
-  BucketsOperation(ConcurrentHashTable<VALUE, CONFIG, F>* cht)
-    : _cht(cht), _next_to_claim(0), _task_size_log2(DEFAULT_TASK_SIZE_LOG2),
+  BucketsOperation(ConcurrentHashTable<VALUE, CONFIG, F>* cht, bool is_mt = false)
+    : _cht(cht), _is_mt(is_mt), _next_to_claim(0), _task_size_log2(DEFAULT_TASK_SIZE_LOG2),
     _stop_task(0), _size_log2(0) {}
 
   // Returns true if you succeeded to claim the range start -> (stop-1).
@@ -107,8 +108,8 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BulkDeleteTask :
   public BucketsOperation
 {
  public:
-  BulkDeleteTask(ConcurrentHashTable<VALUE, CONFIG, F>* cht)
-    : BucketsOperation(cht) {
+  BulkDeleteTask(ConcurrentHashTable<VALUE, CONFIG, F>* cht, bool is_mt = false)
+    : BucketsOperation(cht, is_mt) {
   }
   // Before start prepare must be called.
   bool prepare(Thread* thread) {
@@ -124,7 +125,7 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BulkDeleteTask :
   // Does one range destroying all matching EVALUATE_FUNC and
   // DELETE_FUNC is called be destruction. Returns true if there is more work.
   template <typename EVALUATE_FUNC, typename DELETE_FUNC>
-  bool doTask(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f) {
+  bool do_task(Thread* thread, EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f) {
     size_t start, stop;
     assert(BucketsOperation::_cht->_resize_lock_owner != NULL,
            "Should be locked");
@@ -132,7 +133,8 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BulkDeleteTask :
       return false;
     }
     BucketsOperation::_cht->do_bulk_delete_locked_for(thread, start, stop,
-                                                      eval_f, del_f);
+                                                      eval_f, del_f,
+                                                      BucketsOperation::_is_mt);
     return true;
   }
 
@@ -187,7 +189,7 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::GrowTask :
   }
 
   // Re-sizes a portion of the table. Returns true if there is more work.
-  bool doTask(Thread* thread) {
+  bool do_task(Thread* thread) {
     size_t start, stop;
     assert(BucketsOperation::_cht->_resize_lock_owner != NULL,
            "Should be locked");
@@ -217,7 +219,7 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::GrowTask :
     this->thread_owns_resize_lock(thread);
   }
 
-  // Must be called after doTask returns false.
+  // Must be called after do_task returns false.
   void done(Thread* thread) {
     this->thread_owns_resize_lock(thread);
     BucketsOperation::_cht->internal_grow_epilog(thread);
