@@ -102,22 +102,29 @@ public class ExecDriver {
         // adding jvm.so to library path
         if (launcher) {
             Path dir = Paths.get(Utils.TEST_JDK);
+            String value;
             String name;
             if (Platform.isWindows()) {
-                dir = dir.resolve("bin")
-                         .resolve(variant())
-                         .toAbsolutePath();
+                value = dir.resolve("bin")
+                           .resolve(variant())
+                           .toAbsolutePath()
+                           .toString();
+                value += File.pathSeparator;
+                value += dir.resolve("bin")
+                            .toAbsolutePath()
+                            .toString();
                 name = "PATH";
             } else {
-                dir = dir.resolve("lib")
-                         .resolve(variant())
-                         .toAbsolutePath();
+                value = dir.resolve("lib")
+                           .resolve(variant())
+                           .toAbsolutePath()
+                           .toString();
                 name = Platform.isOSX() ? "DYLD_LIBRARY_PATH" : "LD_LIBRARY_PATH";
             }
 
             System.out.println("  with " + name + " = " +
                     pb.environment()
-                      .merge(name, dir.toString(), (x, y) -> y + File.pathSeparator + x));
+                      .merge(name, value, (x, y) -> y + File.pathSeparator + x));
             System.out.println("  with CLASSPATH = " +
                     pb.environment()
                       .put("CLASSPATH", Utils.TEST_CLASS_PATH));
