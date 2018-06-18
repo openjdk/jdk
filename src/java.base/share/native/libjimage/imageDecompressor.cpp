@@ -322,6 +322,7 @@ void SharedStringDecompressor::decompress_resource(u1* data,
             {
                 i++;
             }
+            /* fall through */
             default:
             {
                 *uncompressed_resource = tag;
