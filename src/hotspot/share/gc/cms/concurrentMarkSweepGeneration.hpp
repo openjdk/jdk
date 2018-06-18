@@ -486,7 +486,7 @@ public:
   { }
 
   // Executes a task using worker threads.
-  virtual void execute(ProcessTask& task);
+  virtual void execute(ProcessTask& task, uint ergo_workers);
 private:
   CMSCollector& _collector;
 };

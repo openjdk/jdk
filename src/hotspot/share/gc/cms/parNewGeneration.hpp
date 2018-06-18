@@ -298,7 +298,7 @@ class ParNewRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
   { }
 
   // Executes a task using worker threads.
-  virtual void execute(ProcessTask& task);
+  virtual void execute(ProcessTask& task, uint ergo_workers);
   // Switch to single threaded mode.
   virtual void set_single_threaded_mode();
 };

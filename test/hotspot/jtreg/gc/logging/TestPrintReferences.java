@@ -121,10 +121,10 @@ public class TestPrintReferences {
         if (parallelRefProcEnabled) {
             final String timeInParRegex = timeRegex +",\\s";
             return gcLogTimeRegex + indent(8) + subphaseName +
-                   " \\(ms\\):\\s+Min: " + timeInParRegex + "Avg: " + timeInParRegex + "Max: " + timeInParRegex + "Diff: " + timeInParRegex + "Sum: " + timeInParRegex +
-                   "Workers: [0-9]+" + "\n";
+                   " \\(ms\\):\\s+(Min:" + timeInParRegex + "Avg:" + timeInParRegex + "Max:" + timeInParRegex + "Diff:" + timeInParRegex + "Sum:" + timeInParRegex +
+                   "Workers: [0-9]+|skipped)" + "\n";
         } else {
-            return gcLogTimeRegex + indent(8) + subphaseName + ":" + timeRegex + "ms\n";
+            return gcLogTimeRegex + indent(8) + subphaseName + ":(" + timeRegex + "ms|\\s+skipped)\n";
         }
     }
 
@@ -136,7 +136,7 @@ public class TestPrintReferences {
         /* Total Reference processing time */
         String totalRegex = gcLogTimeRegex + indent(4) + referenceProcessing + ": " + timeRegex + "\n";
 
-        String balanceRegex = parallelRefProcEnabled ? gcLogTimeRegex + indent(8) + "Balance queues: " + timeRegex + "\n" : "";
+        String balanceRegex = parallelRefProcEnabled ? "(" + gcLogTimeRegex + indent(8) + "Balance queues: " + timeRegex + "\n)??" : "";
 
         final boolean p = parallelRefProcEnabled;
 

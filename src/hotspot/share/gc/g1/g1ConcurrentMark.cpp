@@ -1518,8 +1518,7 @@ public:
     _g1h(g1h), _cm(cm),
     _workers(workers), _active_workers(n_workers) { }
 
-  // Executes the given task using concurrent marking worker threads.
-  virtual void execute(ProcessTask& task);
+  virtual void execute(ProcessTask& task, uint ergo_workers);
 };
 
 class G1CMRefProcTaskProxy : public AbstractGangTask {
@@ -1550,9 +1549,12 @@ public:
   }
 };
 
-void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
+void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task, uint ergo_workers) {
   assert(_workers != NULL, "Need parallel worker threads.");
   assert(_g1h->ref_processor_cm()->processing_is_mt(), "processing is not MT");
+  assert(_workers->active_workers() >= ergo_workers,
+         "Ergonomically chosen workers(%u) should be less than or equal to active workers(%u)",
+         ergo_workers, _workers->active_workers());
 
   G1CMRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _cm);
 
@@ -1560,8 +1562,8 @@ void G1CMRefProcTaskExecutor::execute(ProcessTask& proc_task) {
   // proxy task execution, so that the termination protocol
   // and overflow handling in G1CMTask::do_marking_step() knows
   // how many workers to wait for.
-  _cm->set_concurrency(_active_workers);
-  _workers->run_task(&proc_task_proxy);
+  _cm->set_concurrency(ergo_workers);
+  _workers->run_task(&proc_task_proxy, ergo_workers);
 }
 
 void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
