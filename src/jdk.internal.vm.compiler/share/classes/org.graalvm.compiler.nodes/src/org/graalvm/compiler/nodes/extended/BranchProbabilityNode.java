@@ -25,7 +25,10 @@ package org.graalvm.compiler.nodes.extended;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_0;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_0;
 
+import jdk.vm.ci.meta.JavaKind;
 import org.graalvm.compiler.core.common.calc.CanonicalCondition;
+import org.graalvm.compiler.core.common.type.IntegerStamp;
+import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.iterators.NodePredicates;
@@ -40,6 +43,8 @@ import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.ConditionalNode;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.calc.IntegerEqualsNode;
+import org.graalvm.compiler.nodes.calc.NarrowNode;
+import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.spi.Lowerable;
 import org.graalvm.compiler.nodes.spi.LoweringTool;
 
@@ -68,7 +73,7 @@ public final class BranchProbabilityNode extends FloatingNode implements Simplif
     @Input ValueNode condition;
 
     public BranchProbabilityNode(ValueNode probability, ValueNode condition) {
-        super(TYPE, condition.stamp(NodeView.DEFAULT));
+        super(TYPE, StampFactory.forKind(JavaKind.Boolean));
         this.probability = probability;
         this.condition = condition;
     }
@@ -122,6 +127,11 @@ public final class BranchProbabilityNode extends FloatingNode implements Simplif
             }
             if (usageFound) {
                 ValueNode currentCondition = condition;
+                IntegerStamp currentStamp = (IntegerStamp) currentCondition.stamp(NodeView.DEFAULT);
+                if (currentStamp.lowerBound() < 0 || 1 < currentStamp.upperBound()) {
+                    ValueNode narrow = graph().maybeAddOrUnique(NarrowNode.create(currentCondition, 1, NodeView.DEFAULT));
+                    currentCondition = graph().maybeAddOrUnique(ZeroExtendNode.create(narrow, 32, NodeView.DEFAULT));
+                }
                 replaceAndDelete(currentCondition);
                 if (tool != null) {
                     tool.addToWorkList(currentCondition.usages());

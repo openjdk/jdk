@@ -98,7 +98,7 @@ public final class ObjectCloneNode extends BasicObjectCloneNode {
                 Assumptions assumptions = graph().getAssumptions();
                 type = getConcreteType(getObject().stamp(NodeView.DEFAULT));
                 if (type != null) {
-                    StructuredGraph newGraph = new StructuredGraph.Builder(graph().getOptions(), graph().getDebug(), AllowAssumptions.ifNonNull(assumptions)).build();
+                    StructuredGraph newGraph = new StructuredGraph.Builder(graph().getOptions(), graph().getDebug(), AllowAssumptions.ifNonNull(assumptions)).name("<clone>").build();
                     ParameterNode param = newGraph.addWithoutUnique(new ParameterNode(0, StampPair.createSingle(getObject().stamp(NodeView.DEFAULT))));
                     NewInstanceNode newInstance = newGraph.add(new NewInstanceNode(type, true));
                     newGraph.addAfterFixed(newGraph.start(), newInstance);

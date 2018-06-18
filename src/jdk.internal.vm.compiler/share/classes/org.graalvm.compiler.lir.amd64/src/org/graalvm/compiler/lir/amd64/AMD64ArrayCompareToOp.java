@@ -32,7 +32,6 @@ import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.util.EnumSet;
 
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
@@ -125,10 +124,9 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
         return arch.getFeatures().contains(CPUFeature.AVX2);
     }
 
-    private static boolean supportsAVX512VLBW(TargetDescription target) {
-        AMD64 arch = (AMD64) target.arch;
-        EnumSet<CPUFeature> features = arch.getFeatures();
-        return features.contains(CPUFeature.AVX512BW) && features.contains(CPUFeature.AVX512VL);
+    private static boolean supportsAVX512VLBW(@SuppressWarnings("unused") TargetDescription target) {
+        // TODO Add EVEX encoder in our assembler.
+        return false;
     }
 
     @Override

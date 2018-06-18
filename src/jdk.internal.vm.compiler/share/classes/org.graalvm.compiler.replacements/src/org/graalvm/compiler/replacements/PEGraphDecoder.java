@@ -846,7 +846,9 @@ public abstract class PEGraphDecoder extends SimplifyingGraphDecoder {
         // Copy inlined methods from inlinee to caller
         List<ResolvedJavaMethod> inlinedMethods = graphToInline.getInlinedMethods();
         if (inlinedMethods != null) {
-            graph.getMethods().addAll(inlinedMethods);
+            for (ResolvedJavaMethod other : inlinedMethods) {
+                graph.recordMethod(other);
+            }
         }
 
         if (graphToInline.getFields() != null) {
