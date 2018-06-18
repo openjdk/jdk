@@ -26,7 +26,6 @@
 ###########################################################################
 #
 # javadoc
-jdk/javadoc/tool/VerifyLocale.java                                              8149565    generic-all    -locale option issues
 jdk/javadoc/tool/enum/docComments/Main.java                                     8152313    generic-all    convert to doclet test framework
 jdk/javadoc/tool/enum/enumType/Main.java                                        8152313    generic-all    convert to doclet test framework
 jdk/javadoc/tool/varArgs/Main.java                                              8152313    generic-all    convert to doclet test framework
