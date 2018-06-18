@@ -213,6 +213,7 @@ private:
   uint        _next_id;                 // round-robin mod _num_queues counter in
                                         // support of work distribution
 
+  bool        _adjust_no_of_processing_threads; // allow dynamic adjustment of processing threads
   // For collectors that do not keep GC liveness information
   // in the object header, this field holds a closure that
   // helps the reference processor determine the reachability
@@ -378,13 +379,16 @@ private:
 
   bool is_subject_to_discovery(oop const obj) const;
 
+  bool is_mt_processing_set_up(AbstractRefProcTaskExecutor* task_executor) const;
+
 public:
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(BoolObjectClosure* is_subject_to_discovery,
                      bool mt_processing = false, uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
-                     BoolObjectClosure* is_alive_non_header = NULL);
+                     BoolObjectClosure* is_alive_non_header = NULL,
+                     bool adjust_no_of_processing_threads = false);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {
@@ -457,6 +461,8 @@ public:
   // debugging
   void verify_no_references_recorded() PRODUCT_RETURN;
   void verify_referent(oop obj)        PRODUCT_RETURN;
+
+  bool adjust_no_of_processing_threads() const { return _adjust_no_of_processing_threads; }
 };
 
 // A subject-to-discovery closure that uses a single memory span to determine the area that
@@ -634,7 +640,7 @@ public:
   class ProcessTask;
 
   // Executes a task using worker threads.
-  virtual void execute(ProcessTask& task) = 0;
+  virtual void execute(ProcessTask& task, uint ergo_workers) = 0;
 
   // Switch to single threaded mode.
   virtual void set_single_threaded_mode() { };
@@ -664,6 +670,29 @@ public:
                     VoidClosure& complete_gc) = 0;
 
   bool marks_oops_alive() const { return _marks_oops_alive; }
+};
+
+// Temporarily change the number of workers based on given reference count.
+// This ergonomically decided worker count will be used to activate worker threads.
+class RefProcMTDegreeAdjuster : public StackObj {
+  typedef ReferenceProcessor::RefProcPhases RefProcPhases;
+
+  ReferenceProcessor* _rp;
+  bool                _saved_mt_processing;
+  uint                _saved_num_queues;
+
+  // Calculate based on total of references.
+  uint ergo_proc_thread_count(size_t ref_count,
+                              uint max_threads,
+                              RefProcPhases phase) const;
+
+  bool use_max_threads(RefProcPhases phase) const;
+
+public:
+  RefProcMTDegreeAdjuster(ReferenceProcessor* rp,
+                          RefProcPhases phase,
+                          size_t ref_count);
+  ~RefProcMTDegreeAdjuster();
 };
 
 #endif // SHARE_VM_GC_SHARED_REFERENCEPROCESSOR_HPP

@@ -300,7 +300,8 @@ void CMSCollector::ref_processor_init() {
                              _cmsGen->refs_discovery_is_mt(),        // mt discovery
                              MAX2(ConcGCThreads, ParallelGCThreads), // mt discovery degree
                              _cmsGen->refs_discovery_is_atomic(),    // discovery is not atomic
-                             &_is_alive_closure);                    // closure for liveness info
+                             &_is_alive_closure,                     // closure for liveness info
+                             false);                                 // disable adjusting number of processing threads
     // Initialize the _ref_processor field of CMSGen
     _cmsGen->set_ref_processor(_ref_processor);
 
@@ -5126,16 +5127,18 @@ void CMSRefProcTaskProxy::do_work_steal(int i,
   log_develop_trace(gc, task)("\t(%d: stole %d oops)", i, num_steals);
 }
 
-void CMSRefProcTaskExecutor::execute(ProcessTask& task)
-{
+void CMSRefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers) {
   CMSHeap* heap = CMSHeap::heap();
   WorkGang* workers = heap->workers();
   assert(workers != NULL, "Need parallel worker threads.");
+  assert(workers->active_workers() == ergo_workers,
+         "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
+         ergo_workers, workers->active_workers());
   CMSRefProcTaskProxy rp_task(task, &_collector,
                               _collector.ref_processor_span(),
                               _collector.markBitMap(),
                               workers, _collector.task_queues());
-  workers->run_task(&rp_task);
+  workers->run_task(&rp_task, workers->active_workers());
 }
 
 void CMSCollector::refProcessingWork() {

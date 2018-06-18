@@ -150,20 +150,26 @@ void PSRefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
 }
 
 class PSRefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-  virtual void execute(ProcessTask& task);
+  virtual void execute(ProcessTask& task, uint ergo_workers);
 };
 
-void PSRefProcTaskExecutor::execute(ProcessTask& task)
+void PSRefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers)
 {
   GCTaskQueue* q = GCTaskQueue::create();
   GCTaskManager* manager = ParallelScavengeHeap::gc_task_manager();
-  for(uint i=0; i < manager->active_workers(); i++) {
+  uint active_workers = manager->active_workers();
+
+  assert(active_workers == ergo_workers,
+         "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
+         ergo_workers, active_workers);
+
+  for(uint i=0; i < active_workers; i++) {
     q->enqueue(new PSRefProcTaskProxy(task, i));
   }
-  ParallelTaskTerminator terminator(manager->active_workers(),
+  ParallelTaskTerminator terminator(active_workers,
                                     (TaskQueueSetSuper*) PSPromotionManager::stack_array_depth());
-  if (task.marks_oops_alive() && manager->active_workers() > 1) {
-    for (uint j = 0; j < manager->active_workers(); j++) {
+  if (task.marks_oops_alive() && active_workers > 1) {
+    for (uint j = 0; j < active_workers; j++) {
       q->enqueue(new StealTask(&terminator));
     }
   }
@@ -748,7 +754,8 @@ void PSScavenge::initialize() {
                            true,                       // mt discovery
                            ParallelGCThreads,          // mt discovery degree
                            true,                       // atomic_discovery
-                           NULL);                      // header provides liveness info
+                           NULL,                       // header provides liveness info
+                           false);
 
   // Cache the cardtable
   _card_table = heap->card_table();

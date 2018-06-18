@@ -67,9 +67,13 @@ void G1FullGCReferenceProcessingExecutor::run_task(AbstractGangTask* task) {
   G1CollectedHeap::heap()->workers()->run_task(task, _collector->workers());
 }
 
-void G1FullGCReferenceProcessingExecutor::execute(ProcessTask& proc_task) {
+void G1FullGCReferenceProcessingExecutor::run_task(AbstractGangTask* task, uint workers) {
+  G1CollectedHeap::heap()->workers()->run_task(task, workers);
+}
+
+void G1FullGCReferenceProcessingExecutor::execute(ProcessTask& proc_task, uint ergo_workers) {
   G1RefProcTaskProxy proc_task_proxy(proc_task, _collector);
-  run_task(&proc_task_proxy);
+  run_task(&proc_task_proxy, ergo_workers);
 }
 
 void G1FullGCReferenceProcessingExecutor::execute(STWGCTimer* timer, G1FullGCTracer* tracer) {

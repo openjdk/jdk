@@ -378,9 +378,13 @@ void ReferenceProcessorPhaseTimes::print_worker_time(LogStream* ls, WorkerDataAr
       worker_time->print_details_on(&ls2);
     }
   } else {
-    ls->print_cr("%s " TIME_FORMAT,
-                 ser_title,
-                 worker_time->get(0) * MILLIUNITS);
+    if (worker_time->get(0) != uninitialized()) {
+      ls->print_cr("%s " TIME_FORMAT,
+                   ser_title,
+                   worker_time->get(0) * MILLIUNITS);
+    } else {
+      ls->print_cr("%s skipped", ser_title);
+    }
   }
 }
 
