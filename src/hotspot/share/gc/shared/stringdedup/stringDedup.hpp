@@ -102,9 +102,9 @@ public:
 
 protected:
   // Initialize string deduplication.
-  // QUEUE: String Dedup Queue implementation
-  // STAT:  String Dedup Stat implementation
-  template <typename QUEUE, typename STAT>
+  // Q: String Dedup Queue implementation
+  // S: String Dedup Stat implementation
+  template <typename Q, typename S>
   static void initialize_impl();
 };
 
