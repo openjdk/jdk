@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
@@ -853,45 +854,16 @@ public class Start extends ToolOption.Helper {
      * then return default locale.
      */
     private Locale getLocale(String localeName) throws ToolException {
-        Locale userlocale = null;
-        if (localeName == null || localeName.isEmpty()) {
-            return Locale.getDefault();
-        }
-        int firstuscore = localeName.indexOf('_');
-        int seconduscore = -1;
-        String language = null;
-        String country = null;
-        String variant = null;
-        if (firstuscore == 2) {
-            language = localeName.substring(0, firstuscore);
-            seconduscore = localeName.indexOf('_', firstuscore + 1);
-            if (seconduscore > 0) {
-                if (seconduscore != firstuscore + 3
-                        || localeName.length() <= seconduscore + 1) {
-                    String text = messager.getText("main.malformed_locale_name", localeName);
-                    throw new ToolException(CMDERR, text);
-                }
-                country = localeName.substring(firstuscore + 1,
-                        seconduscore);
-                variant = localeName.substring(seconduscore + 1);
-            } else if (localeName.length() == firstuscore + 3) {
-                country = localeName.substring(firstuscore + 1);
-            } else {
-                String text = messager.getText("main.malformed_locale_name", localeName);
-                throw new ToolException(CMDERR, text);
-            }
-        } else if (firstuscore == -1 && localeName.length() == 2) {
-            language = localeName;
-        } else {
+        try {
+            // Tolerate, at least for a while, the older syntax accepted by javadoc,
+            // using _ as the separator
+            localeName = localeName.replace("_", "-");
+            Locale l =  new Locale.Builder().setLanguageTag(localeName).build();
+            // Ensure that a non-empty language is available for the <HTML lang=...> element
+            return (l.getLanguage().isEmpty()) ? Locale.ENGLISH : l;
+        } catch (IllformedLocaleException e) {
             String text = messager.getText("main.malformed_locale_name", localeName);
             throw new ToolException(CMDERR, text);
-        }
-        userlocale = searchLocale(language, country, variant);
-        if (userlocale == null) {
-            String text = messager.getText("main.illegal_locale_name", localeName);
-            throw new ToolException(CMDERR, text);
-        } else {
-            return userlocale;
         }
     }
 
