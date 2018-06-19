@@ -91,7 +91,7 @@ class G1PageBasedVirtualSpace {
   void pretouch_internal(size_t start_page, size_t end_page);
 
   // Returns the index of the page which contains the given address.
-  uintptr_t  addr_to_page_index(char* addr) const;
+  size_t  addr_to_page_index(char* addr) const;
   // Returns the address of the given page index.
   char*  page_start(size_t index) const;
 

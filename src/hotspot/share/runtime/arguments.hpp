@@ -333,7 +333,7 @@ class Arguments : AllStatic {
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
-  static uintx  _min_heap_size;
+  static size_t  _min_heap_size;
 
   // -Xrun arguments
   static AgentLibraryList _libraryList;
