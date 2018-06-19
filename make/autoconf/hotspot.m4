@@ -241,15 +241,25 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
 #
 AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_CDS],
 [
-  AC_ARG_ENABLE([cds], [AS_HELP_STRING([--enable-cds@<:@=yes/no@:>@],
-      [enable class data sharing feature in non-minimal VM. Default is yes.])])
+  AC_ARG_ENABLE([cds], [AS_HELP_STRING([--enable-cds@<:@=yes/no/auto@:>@],
+      [enable class data sharing feature in non-minimal VM. Default is auto, where cds is enabled if supported on the platform.])])
 
-  if test "x$enable_cds" = "x" || test "x$enable_cds" = "xyes"; then
+  if test "x$enable_cds" = "x" || test "x$enable_cds" = "xauto"; then
+    ENABLE_CDS="true"
+  elif test "x$enable_cds" = "xyes"; then
     ENABLE_CDS="true"
   elif test "x$enable_cds" = "xno"; then
     ENABLE_CDS="false"
   else
     AC_MSG_ERROR([Invalid value for --enable-cds: $enable_cds])
+  fi
+
+  # Disable CDS on AIX.
+  if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+    ENABLE_CDS="false"
+    if test "x$enable_cds" = "xyes"; then
+      AC_MSG_ERROR([CDS is currently not supported on AIX. Remove --enable-cds.])
+    fi
   fi
 
   AC_SUBST(ENABLE_CDS)
@@ -424,8 +434,21 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
 
   # All variants but minimal (and custom) get these features
   NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cmsgc g1gc parallelgc serialgc epsilongc jni-check jvmti management nmt services vm-structs"
+
+  AC_MSG_CHECKING([if cds should be enabled])
   if test "x$ENABLE_CDS" = "xtrue"; then
+    if test "x$enable_cds" = "xyes"; then
+      AC_MSG_RESULT([yes, forced])
+    else
+      AC_MSG_RESULT([yes])
+    fi
     NON_MINIMAL_FEATURES="$NON_MINIMAL_FEATURES cds"
+  else
+    if test "x$enable_cds" = "xno"; then
+      AC_MSG_RESULT([no, forced])
+    else
+      AC_MSG_RESULT([no])
+    fi
   fi
 
   # Enable features depending on variant.
