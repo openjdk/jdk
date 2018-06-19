@@ -4013,11 +4013,7 @@ void TemplateTable::_new() {
 #endif // _LP64
 
   if (UseTLAB) {
-    __ movptr(rax, Address(thread, in_bytes(JavaThread::tlab_top_offset())));
-    __ lea(rbx, Address(rax, rdx, Address::times_1));
-    __ cmpptr(rbx, Address(thread, in_bytes(JavaThread::tlab_end_offset())));
-    __ jcc(Assembler::above, slow_case);
-    __ movptr(Address(thread, in_bytes(JavaThread::tlab_top_offset())), rbx);
+    __ tlab_allocate(rax, rdx, 0, rcx, rbx, slow_case);
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ jmp(initialize_header);
@@ -4030,28 +4026,7 @@ void TemplateTable::_new() {
     //
     // rdx: instance size in bytes
     if (allow_shared_alloc) {
-      ExternalAddress heap_top((address)Universe::heap()->top_addr());
-      ExternalAddress heap_end((address)Universe::heap()->end_addr());
-
-      Label retry;
-      __ bind(retry);
-      __ movptr(rax, heap_top);
-      __ lea(rbx, Address(rax, rdx, Address::times_1));
-      __ cmpptr(rbx, heap_end);
-      __ jcc(Assembler::above, slow_case);
-
-      // Compare rax, with the top addr, and if still equal, store the new
-      // top addr in rbx, at the address of the top addr pointer. Sets ZF if was
-      // equal, and clears it otherwise. Use lock prefix for atomicity on MPs.
-      //
-      // rax,: object begin
-      // rbx,: object end
-      // rdx: instance size in bytes
-      __ locked_cmpxchgptr(rbx, heap_top);
-
-      // if someone beat us on the allocation, try again, otherwise continue
-      __ jcc(Assembler::notEqual, retry);
-
+      __ eden_allocate(rax, rdx, 0, rbx, slow_case);
       __ incr_allocated_bytes(thread, rdx, 0);
     }
   }
