@@ -2570,54 +2570,47 @@ void MacroAssembler::c_stub_prolog(int gp_arg_count, int fp_arg_count, int ret_t
 #endif
 
 void MacroAssembler::push_call_clobbered_registers() {
+  int step = 4 * wordSize;
   push(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
-
+  sub(sp, sp, step);
+  mov(rscratch1, -step);
   // Push v0-v7, v16-v31.
-  for (int i = 30; i >= 0; i -= 2) {
-    if (i <= v7->encoding() || i >= v16->encoding()) {
-        stpd(as_FloatRegister(i), as_FloatRegister(i+1),
-             Address(pre(sp, -2 * wordSize)));
-    }
+  for (int i = 31; i>= 4; i -= 4) {
+    if (i <= v7->encoding() || i >= v16->encoding())
+      st1(as_FloatRegister(i-3), as_FloatRegister(i-2), as_FloatRegister(i-1),
+          as_FloatRegister(i), T1D, Address(post(sp, rscratch1)));
   }
+  st1(as_FloatRegister(0), as_FloatRegister(1), as_FloatRegister(2),
+      as_FloatRegister(3), T1D, Address(sp));
 }
 
 void MacroAssembler::pop_call_clobbered_registers() {
-
-  for (int i = 0; i < 32; i += 2) {
-    if (i <= v7->encoding() || i >= v16->encoding()) {
-      ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
-           Address(post(sp, 2 * wordSize)));
-    }
+  for (int i = 0; i < 32; i += 4) {
+    if (i <= v7->encoding() || i >= v16->encoding())
+      ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
+          as_FloatRegister(i+3), T1D, Address(post(sp, 4 * wordSize)));
   }
 
   pop(RegSet::range(r0, r18) - RegSet::of(rscratch1, rscratch2), sp);
 }
 
 void MacroAssembler::push_CPU_state(bool save_vectors) {
+  int step = (save_vectors ? 8 : 4) * wordSize;
   push(0x3fffffff, sp);         // integer registers except lr & sp
-
-  if (!save_vectors) {
-    for (int i = 30; i >= 0; i -= 2)
-      stpd(as_FloatRegister(i), as_FloatRegister(i+1),
-           Address(pre(sp, -2 * wordSize)));
-  } else {
-    for (int i = 30; i >= 0; i -= 2)
-      stpq(as_FloatRegister(i), as_FloatRegister(i+1),
-           Address(pre(sp, -4 * wordSize)));
+  mov(rscratch1, -step);
+  sub(sp, sp, step);
+  for (int i = 28; i >= 4; i -= 4) {
+    st1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
+        as_FloatRegister(i+3), save_vectors ? T2D : T1D, Address(post(sp, rscratch1)));
   }
+  st1(v0, v1, v2, v3, save_vectors ? T2D : T1D, sp);
 }
 
 void MacroAssembler::pop_CPU_state(bool restore_vectors) {
-  if (!restore_vectors) {
-    for (int i = 0; i < 32; i += 2)
-      ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
-           Address(post(sp, 2 * wordSize)));
-  } else {
-    for (int i = 0; i < 32; i += 2)
-      ldpq(as_FloatRegister(i), as_FloatRegister(i+1),
-           Address(post(sp, 4 * wordSize)));
-  }
-
+  int step = (restore_vectors ? 8 : 4) * wordSize;
+  for (int i = 0; i <= 28; i += 4)
+    ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
+        as_FloatRegister(i+3), restore_vectors ? T2D : T1D, Address(post(sp, step)));
   pop(0x3fffffff, sp);         // integer registers except lr & sp
 }
 
