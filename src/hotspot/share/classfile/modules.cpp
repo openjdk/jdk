@@ -312,6 +312,10 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
               "Class loader is an invalid delegating class loader");
   }
   Handle h_loader = Handle(THREAD, loader);
+  // define_module can be called during start-up, before the class loader's ClassLoaderData
+  // has been created.  SystemDictionary::register_loader ensures creation, if needed.
+  ClassLoaderData* loader_data = SystemDictionary::register_loader(h_loader);
+  assert(loader_data != NULL, "class loader data shouldn't be null");
 
   // Check that the list of packages has no duplicates and that the
   // packages are syntactically ok.
@@ -329,7 +333,7 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
         !SystemDictionary::is_platform_class_loader(h_loader()) &&
         (strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0 &&
           (package_name[JAVAPKG_LEN] == '/' || package_name[JAVAPKG_LEN] == '\0'))) {
-      const char* class_loader_name = SystemDictionary::loader_name(h_loader());
+      const char* class_loader_name = loader_data->loader_name_and_id();
       size_t pkg_len = strlen(package_name);
       char* pkg_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, pkg_len);
       strncpy(pkg_name, package_name, pkg_len);
@@ -372,9 +376,6 @@ void Modules::define_module(jobject module, jboolean is_open, jstring version,
       location_symbol = SymbolTable::new_symbol(module_location, CHECK);
     }
   }
-
-  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data_or_null(h_loader());
-  assert(loader_data != NULL, "class loader data shouldn't be null");
 
   PackageEntryTable* package_table = NULL;
   PackageEntry* existing_pkg = NULL;

@@ -238,9 +238,9 @@ int write__artifact__classloader(JfrCheckpointWriter* writer, JfrArtifactSet* ar
     // (primordial) boot class loader
     writer->write(cld_id); // class loader instance id
     writer->write((traceid)0);  // class loader type id (absence of)
-    writer->write((traceid)CREATE_SYMBOL_ID(1)); // 1 maps to synthetic name -> "boot"
+    writer->write((traceid)CREATE_SYMBOL_ID(1)); // 1 maps to synthetic name -> "bootstrap"
   } else {
-    Symbol* symbol_name = cld->class_loader_name();
+    Symbol* symbol_name = cld->name();
     const traceid symbol_name_id = symbol_name != NULL ? artifacts->mark(symbol_name) : 0;
     writer->write(cld_id); // class loader instance id
     writer->write(TRACE_ID(class_loader_klass)); // class loader type id
@@ -441,13 +441,13 @@ int KlassSymbolWriterImpl<Predicate>::class_loader_symbols(CldPtr cld) {
     CStringEntryPtr entry = this->_artifacts->map_cstring(0);
     assert(entry != NULL, "invariant");
     assert(strncmp(entry->literal(),
-      boot_class_loader_name,
-      strlen(boot_class_loader_name)) == 0, "invariant");
+      BOOTSTRAP_LOADER_NAME,
+      BOOTSTRAP_LOADER_NAME_LEN) == 0, "invariant");
     if (_unique_predicate(entry->id())) {
       count += write__artifact__cstring__entry__(this->_writer, entry);
     }
   } else {
-    const Symbol* class_loader_name = cld->class_loader_name();
+    const Symbol* class_loader_name = cld->name();
     if (class_loader_name != NULL) {
       SymbolEntryPtr entry = this->_artifacts->map_symbol(class_loader_name);
       assert(entry != NULL, "invariant");

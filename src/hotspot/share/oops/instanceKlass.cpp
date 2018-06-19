@@ -2328,8 +2328,7 @@ ModuleEntry* InstanceKlass::module() const {
 void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
 
   // ensure java/ packages only loaded by boot or platform builtin loaders
-  Handle class_loader(THREAD, loader_data->class_loader());
-  check_prohibited_package(name(), class_loader, CHECK);
+  check_prohibited_package(name(), loader_data, CHECK);
 
   TempNewSymbol pkg_name = package_from_name(name(), CHECK);
 
@@ -2359,7 +2358,7 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
 
       // A package should have been successfully created
       assert(_package_entry != NULL, "Package entry for class %s not found, loader %s",
-             name()->as_C_string(), loader_data->loader_name());
+             name()->as_C_string(), loader_data->loader_name_and_id());
     }
 
     if (log_is_enabled(Debug, module)) {
@@ -2368,14 +2367,14 @@ void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
       log_trace(module)("Setting package: class: %s, package: %s, loader: %s, module: %s",
                         external_name(),
                         pkg_name->as_C_string(),
-                        loader_data->loader_name(),
+                        loader_data->loader_name_and_id(),
                         (m->is_named() ? m->name()->as_C_string() : UNNAMED_MODULE));
     }
   } else {
     ResourceMark rm;
     log_trace(module)("Setting package: class: %s, package: unnamed, loader: %s, module: %s",
                       external_name(),
-                      (loader_data != NULL) ? loader_data->loader_name() : "NULL",
+                      (loader_data != NULL) ? loader_data->loader_name_and_id() : "NULL",
                       UNNAMED_MODULE);
   }
 }
@@ -2471,10 +2470,10 @@ bool InstanceKlass::is_override(const methodHandle& super_method, Handle targetc
 
 // Only boot and platform class loaders can define classes in "java/" packages.
 void InstanceKlass::check_prohibited_package(Symbol* class_name,
-                                             Handle class_loader,
+                                             ClassLoaderData* loader_data,
                                              TRAPS) {
-  if (!class_loader.is_null() &&
-      !SystemDictionary::is_platform_class_loader(class_loader()) &&
+  if (!loader_data->is_boot_class_loader_data() &&
+      !loader_data->is_platform_class_loader_data() &&
       class_name != NULL) {
     ResourceMark rm(THREAD);
     char* name = class_name->as_C_string();
@@ -2482,7 +2481,7 @@ void InstanceKlass::check_prohibited_package(Symbol* class_name,
       TempNewSymbol pkg_name = InstanceKlass::package_from_name(class_name, CHECK);
       assert(pkg_name != NULL, "Error in parsing package name starting with 'java/'");
       name = pkg_name->as_C_string();
-      const char* class_loader_name = SystemDictionary::loader_name(class_loader());
+      const char* class_loader_name = loader_data->loader_name_and_id();
       StringUtils::replace_no_expand(name, "/", ".");
       const char* msg_text1 = "Class loader (instance of): ";
       const char* msg_text2 = " tried to load prohibited package name: ";

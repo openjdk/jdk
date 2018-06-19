@@ -105,22 +105,41 @@ void ClassLoaderData::init_null_class_loader_data() {
   }
 }
 
-// JFR and logging support so that the name and klass are available after the
-// class_loader oop is no longer alive, during unloading.
+// Obtain and set the class loader's name within the ClassLoaderData so
+// it will be available for error messages, logging, JFR, etc.  The name
+// and klass are available after the class_loader oop is no longer alive,
+// during unloading.
 void ClassLoaderData::initialize_name_and_klass(Handle class_loader) {
+  Thread* THREAD = Thread::current();
+  ResourceMark rm(THREAD);
   _class_loader_klass = class_loader->klass();
-  oop class_loader_name = java_lang_ClassLoader::name(class_loader());
-  if (class_loader_name != NULL) {
-    Thread* THREAD = Thread::current();
-    ResourceMark rm(THREAD);
-    const char* class_loader_instance_name =
-      java_lang_String::as_utf8_string(class_loader_name);
 
-    if (class_loader_instance_name != NULL && class_loader_instance_name[0] != '\0') {
+  // Obtain the class loader's name.  If the class loader's name was not
+  // explicitly set during construction, the CLD's _name field will be null.
+  oop cl_name = java_lang_ClassLoader::name(class_loader());
+  if (cl_name != NULL) {
+    const char* cl_instance_name = java_lang_String::as_utf8_string(cl_name);
+
+    if (cl_instance_name != NULL && cl_instance_name[0] != '\0') {
       // Can't throw InternalError and SymbolTable doesn't throw OOM anymore.
-      _class_loader_name = SymbolTable::new_symbol(class_loader_instance_name, CATCH);
+      _name = SymbolTable::new_symbol(cl_instance_name, CATCH);
     }
   }
+
+  // Obtain the class loader's name and identity hash.  If the class loader's
+  // name was not explicitly set during construction, the class loader's name and id
+  // will be set to the qualified class name of the class loader along with its
+  // identity hash.
+  // If for some reason the ClassLoader's constructor has not been run, instead of
+  // leaving the _name_and_id field null, fall back to the external qualified class
+  // name.  Thus CLD's _name_and_id field should never have a null value.
+  oop cl_name_and_id = java_lang_ClassLoader::nameAndId(class_loader());
+  const char* cl_instance_name_and_id =
+                  (cl_name_and_id == NULL) ? _class_loader_klass->external_name() :
+                                             java_lang_String::as_utf8_string(cl_name_and_id);
+  assert(cl_instance_name_and_id != NULL && cl_instance_name_and_id[0] != '\0', "class loader has no name and id");
+  // Can't throw InternalError and SymbolTable doesn't throw OOM anymore.
+  _name_and_id = SymbolTable::new_symbol(cl_instance_name_and_id, CATCH);
 }
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
@@ -134,7 +153,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
   _claimed(0), _modified_oops(true), _accumulated_modified_oops(false),
   _jmethod_ids(NULL), _handles(), _deallocate_list(NULL),
   _next(NULL),
-  _class_loader_klass(NULL), _class_loader_name(NULL),
+  _class_loader_klass(NULL), _name(NULL), _name_and_id(NULL),
   _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
                             Monitor::_safepoint_check_never)) {
 
@@ -911,29 +930,40 @@ ClassLoaderData* ClassLoaderData::anonymous_class_loader_data(Handle loader) {
   return ClassLoaderDataGraph::add(loader, true);
 }
 
+// Caller needs ResourceMark
+// If the class loader's _name has not been explicitly set, the class loader's
+// qualified class name is returned.
 const char* ClassLoaderData::loader_name() const {
-  if (is_unloading()) {
-    if (_class_loader_klass == NULL) {
-      return "<bootloader>";
-    } else if (_class_loader_name != NULL) {
-      return _class_loader_name->as_C_string();
-    } else {
-      return _class_loader_klass->name()->as_C_string();
-    }
-  } else {
-    // Handles null class loader
-    return SystemDictionary::loader_name(class_loader());
-  }
+   if (_class_loader_klass == NULL) {
+     return BOOTSTRAP_LOADER_NAME;
+   } else if (_name != NULL) {
+     return _name->as_C_string();
+   } else {
+     return _class_loader_klass->external_name();
+   }
 }
 
+// Caller needs ResourceMark
+// Format of the _name_and_id is as follows:
+//   If the defining loader has a name explicitly set then '<loader-name>' @<id>
+//   If the defining loader has no name then <qualified-class-name> @<id>
+//   If built-in loader, then omit '@<id>' as there is only one instance.
+const char* ClassLoaderData::loader_name_and_id() const {
+  if (_class_loader_klass == NULL) {
+    return "'" BOOTSTRAP_LOADER_NAME "'";
+  } else {
+    assert(_name_and_id != NULL, "encountered a class loader null name and id");
+    return _name_and_id->as_C_string();
+  }
+}
 
 void ClassLoaderData::print_value_on(outputStream* out) const {
   if (!is_unloading() && class_loader() != NULL) {
     out->print("loader data: " INTPTR_FORMAT " for instance ", p2i(this));
-    class_loader()->print_value_on(out);  // includes loader_name() and address of class loader instance
+    class_loader()->print_value_on(out);  // includes loader_name_and_id() and address of class loader instance
   } else {
-    // loader data: 0xsomeaddr of <bootloader>
-    out->print("loader data: " INTPTR_FORMAT " of %s", p2i(this), loader_name());
+    // loader data: 0xsomeaddr of 'bootstrap'
+    out->print("loader data: " INTPTR_FORMAT " of %s", p2i(this), loader_name_and_id());
   }
   if (is_anonymous()) {
     out->print(" anonymous");
@@ -943,7 +973,7 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
 #ifndef PRODUCT
 void ClassLoaderData::print_on(outputStream* out) const {
   out->print("ClassLoaderData CLD: " PTR_FORMAT ", loader: " PTR_FORMAT ", loader_klass: %s {",
-              p2i(this), p2i(_class_loader.ptr_raw()), loader_name());
+              p2i(this), p2i(_class_loader.ptr_raw()), loader_name_and_id());
   if (is_anonymous()) out->print(" anonymous");
   if (claimed()) out->print(" claimed");
   if (is_unloading()) out->print(" unloading");
@@ -1237,7 +1267,7 @@ void ClassLoaderDataGraph::print_dictionary_statistics(outputStream* st) {
   FOR_ALL_DICTIONARY(cld) {
     ResourceMark rm;
     stringStream tempst;
-    tempst.print("System Dictionary for %s", cld->loader_name());
+    tempst.print("System Dictionary for %s class loader", cld->loader_name_and_id());
     cld->dictionary()->print_table_statistics(st, tempst.as_string());
   }
 }
