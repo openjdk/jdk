@@ -52,7 +52,7 @@ static jvmtiEnv *second_jvmti = NULL;
 
 typedef struct _ObjectTrace{
   jweak object;
-  size_t size;
+  jlong size;
   jvmtiFrameInfo* frames;
   size_t frame_count;
   jthread thread;
