@@ -33,7 +33,6 @@ import com.sun.org.apache.xml.internal.security.transforms.Transforms;
 /**
  * Class TransformXPointer
  *
- * @author Christian Geuer-Pollmann
  */
 public class TransformXPointer extends TransformSpi {
 
@@ -42,7 +41,7 @@ public class TransformXPointer extends TransformSpi {
         Transforms.TRANSFORM_XPOINTER;
 
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected String engineGetURI() {
         return implementedTransformURI;
     }

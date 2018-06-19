@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMXPathTransform.java 1203789 2011-11-18 18:46:07Z mullan $
+ * $Id: DOMXPathTransform.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -44,10 +44,10 @@ import org.w3c.dom.NamedNodeMap;
  * DOM-based implementation of XPath Filtering Transform.
  * (Uses Apache XML-Sec Transform implementation)
  *
- * @author Sean Mullan
  */
 public final class DOMXPathTransform extends ApacheTransform {
 
+    @Override
     public void init(TransformParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
@@ -60,6 +60,7 @@ public final class DOMXPathTransform extends ApacheTransform {
         this.params = params;
     }
 
+    @Override
     public void init(XMLStructure parent, XMLCryptoContext context)
         throws InvalidAlgorithmParameterException
     {
@@ -74,11 +75,11 @@ public final class DOMXPathTransform extends ApacheTransform {
         if (attributes != null) {
             int length = attributes.getLength();
             Map<String, String> namespaceMap =
-                new HashMap<String, String>(length);
+                new HashMap<>(length);
             for (int i = 0; i < length; i++) {
                 Attr attr = (Attr)attributes.item(i);
                 String prefix = attr.getPrefix();
-                if (prefix != null && prefix.equals("xmlns")) {
+                if (prefix != null && "xmlns".equals(prefix)) {
                     namespaceMap.put(attr.getLocalName(), attr.getValue());
                 }
             }
@@ -88,6 +89,7 @@ public final class DOMXPathTransform extends ApacheTransform {
         }
     }
 
+    @Override
     public void marshalParams(XMLStructure parent, XMLCryptoContext context)
         throws MarshalException
     {
@@ -99,6 +101,7 @@ public final class DOMXPathTransform extends ApacheTransform {
         xpathElem.appendChild(ownerDoc.createTextNode(xp.getXPath()));
 
         // add namespace attributes, if necessary
+        @SuppressWarnings("unchecked")
         Set<Map.Entry<String, String>> entries =
             xp.getNamespaceMap().entrySet();
         for (Map.Entry<String, String> entry : entries) {

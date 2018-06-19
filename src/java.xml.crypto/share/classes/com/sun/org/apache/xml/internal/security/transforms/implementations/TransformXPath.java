@@ -44,10 +44,9 @@ import org.w3c.dom.Node;
 /**
  * Class TransformXPath
  *
- * Implements the <CODE>http://www.w3.org/TR/1999/REC-xpath-19991116</CODE>
+ * Implements the {@code http://www.w3.org/TR/1999/REC-xpath-19991116}
  * transform.
  *
- * @author Christian Geuer-Pollmann
  * @see <a href="http://www.w3.org/TR/1999/REC-xpath-19991116">XPath</a>
  *
  */
@@ -59,7 +58,7 @@ public class TransformXPath extends TransformSpi {
     /**
      * Method engineGetURI
      *
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected String engineGetURI() {
         return implementedTransformURI;
@@ -67,7 +66,7 @@ public class TransformXPath extends TransformSpi {
 
     /**
      * Method enginePerformTransform
-     * @inheritDoc
+     * {@inheritDoc}
      * @param input
      *
      * @throws TransformationException
@@ -96,14 +95,14 @@ public class TransformXPath extends TransformSpi {
 
                 throw new TransformationException("xml.WrongContent", exArgs);
             }
-            Node xpathnode = xpathElement.getChildNodes().item(0);
-            String str = XMLUtils.getStrFromNode(xpathnode);
-            input.setNeedsToBeExpanded(needsCircumvent(str));
+            Node xpathnode = xpathElement.getFirstChild();
             if (xpathnode == null) {
                 throw new DOMException(
                     DOMException.HIERARCHY_REQUEST_ERR, "Text must be in ds:Xpath"
                 );
             }
+            String str = XMLUtils.getStrFromNode(xpathnode);
+            input.setNeedsToBeExpanded(needsCircumvent(str));
 
             XPathFactory xpathFactory = XPathFactory.newInstance();
             XPathAPI xpathAPIInstance = xpathFactory.newXPathAPI();
@@ -111,7 +110,7 @@ public class TransformXPath extends TransformSpi {
             input.setNodeSet(true);
             return input;
         } catch (DOMException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         }
     }
 
@@ -120,7 +119,7 @@ public class TransformXPath extends TransformSpi {
      * @return true if needs to be circumvent for bug.
      */
     private boolean needsCircumvent(String str) {
-        return (str.indexOf("namespace") != -1) || (str.indexOf("name()") != -1);
+        return str.indexOf("namespace") != -1 || str.indexOf("name()") != -1;
     }
 
     static class XPathNodeFilter implements NodeFilter {
@@ -151,7 +150,7 @@ public class TransformXPath extends TransformSpi {
                 Object[] eArgs = {currentNode};
                 throw new XMLSecurityRuntimeException("signature.Transform.node", eArgs, e);
             } catch (Exception e) {
-                Object[] eArgs = {currentNode, Short.valueOf(currentNode.getNodeType())};
+                Object[] eArgs = {currentNode, currentNode.getNodeType()};
                 throw new XMLSecurityRuntimeException("signature.Transform.nodeAndType",eArgs, e);
             }
         }

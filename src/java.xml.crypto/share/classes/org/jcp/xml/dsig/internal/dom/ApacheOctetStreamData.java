@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: ApacheOctetStreamData.java 1197150 2011-11-03 14:34:57Z coheigea $
+ * $Id: ApacheOctetStreamData.java 1667527 2015-03-18 12:54:20Z mullan $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -45,6 +45,7 @@ public class ApacheOctetStreamData extends OctetStreamData
         this.xi = xi;
     }
 
+    @Override
     public XMLSignatureInput getXMLSignatureInput() {
         return xi;
     }

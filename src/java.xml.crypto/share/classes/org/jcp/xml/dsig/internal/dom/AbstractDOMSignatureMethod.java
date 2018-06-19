@@ -29,23 +29,19 @@ import java.security.InvalidKeyException;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 import javax.xml.crypto.MarshalException;
-import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.SignatureMethod;
-import javax.xml.crypto.dsig.SignedInfo;
 import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.XMLSignatureException;
 import javax.xml.crypto.dsig.XMLSignContext;
 import javax.xml.crypto.dsig.XMLValidateContext;
 import javax.xml.crypto.dsig.spec.SignatureMethodParameterSpec;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 /**
  * An abstract class representing a SignatureMethod. Subclasses implement
  * a specific XML DSig signature algorithm.
  */
-abstract class AbstractDOMSignatureMethod extends DOMStructure
+abstract class AbstractDOMSignatureMethod extends BaseStructure
     implements SignatureMethod {
 
     // denotes the type of signature algorithm
@@ -59,17 +55,17 @@ abstract class AbstractDOMSignatureMethod extends DOMStructure
      * @param si the SignedInfo
      * @param sig the signature bytes to be verified
      * @param context the XMLValidateContext
-     * @return <code>true</code> if the signature verified successfully,
-     *    <code>false</code> if not
-     * @throws NullPointerException if <code>key</code>, <code>si</code> or
-     *    <code>sig</code> are <code>null</code>
+     * @return {@code true} if the signature verified successfully,
+     *    {@code false} if not
+     * @throws NullPointerException if {@code key}, {@code si} or
+     *    {@code sig} are {@code null}
      * @throws InvalidKeyException if the key is improperly encoded, of
      *    the wrong type, or parameters are missing, etc
      * @throws SignatureException if an unexpected error occurs, such
      *    as the passed in signature is improperly encoded
      * @throws XMLSignatureException if an unexpected error occurs
      */
-    abstract boolean verify(Key key, SignedInfo si, byte[] sig,
+    abstract boolean verify(Key key, DOMSignedInfo si, byte[] sig,
                             XMLValidateContext context)
         throws InvalidKeyException, SignatureException, XMLSignatureException;
 
@@ -81,13 +77,13 @@ abstract class AbstractDOMSignatureMethod extends DOMStructure
      * @param si the SignedInfo
      * @param context the XMLSignContext
      * @return the signature
-     * @throws NullPointerException if <code>key</code> or
-     *    <code>si</code> are <code>null</code>
+     * @throws NullPointerException if {@code key} or
+     *    {@code si} are {@code null}
      * @throws InvalidKeyException if the key is improperly encoded, of
      *    the wrong type, or parameters are missing, etc
      * @throws XMLSignatureException if an unexpected error occurs
      */
-    abstract byte[] sign(Key key, SignedInfo si, XMLSignContext context)
+    abstract byte[] sign(Key key, DOMSignedInfo si, XMLSignContext context)
         throws InvalidKeyException, XMLSignatureException;
 
     /**
@@ -105,20 +101,16 @@ abstract class AbstractDOMSignatureMethod extends DOMStructure
      * This method invokes the {@link #marshalParams marshalParams}
      * method to marshal any algorithm-specific parameters.
      */
-    public void marshal(Node parent, String dsPrefix, DOMCryptoContext context)
+    public void marshal(XmlWriter xwriter, String dsPrefix)
         throws MarshalException
     {
-        Document ownerDoc = DOMUtils.getOwnerDocument(parent);
-
-        Element smElem = DOMUtils.createElement(ownerDoc, "SignatureMethod",
-                                                XMLSignature.XMLNS, dsPrefix);
-        DOMUtils.setAttribute(smElem, "Algorithm", getAlgorithm());
+        xwriter.writeStartElement(dsPrefix, "SignatureMethod", XMLSignature.XMLNS);
+        xwriter.writeAttribute("", "", "Algorithm", getAlgorithm());
 
         if (getParameterSpec() != null) {
-            marshalParams(smElem, dsPrefix);
+            marshalParams(xwriter, dsPrefix);
         }
-
-        parent.appendChild(smElem);
+        xwriter.writeEndElement(); // "SignatureMethod"
     }
 
     /**
@@ -131,7 +123,7 @@ abstract class AbstractDOMSignatureMethod extends DOMStructure
      * @param paramsPrefix the algorithm parameters prefix to use
      * @throws MarshalException if the parameters cannot be marshalled
      */
-    void marshalParams(Element parent, String paramsPrefix)
+    void marshalParams(XmlWriter xwriter, String paramsPrefix)
         throws MarshalException
     {
         throw new MarshalException("no parameters should " +
@@ -140,13 +132,13 @@ abstract class AbstractDOMSignatureMethod extends DOMStructure
     }
 
     /**
-     * Unmarshals <code>SignatureMethodParameterSpec</code> from the specified
-     * <code>Element</code>. By default, this method throws an exception since
+     * Unmarshals {@code SignatureMethodParameterSpec} from the specified
+     * {@code Element}. By default, this method throws an exception since
      * most SignatureMethod algorithms do not have parameters. Subclasses should
      * override it if they have parameters.
      *
-     * @param paramsElem the <code>Element</code> holding the input params
-     * @return the algorithm-specific <code>SignatureMethodParameterSpec</code>
+     * @param paramsElem the {@code Element} holding the input params
+     * @return the algorithm-specific {@code SignatureMethodParameterSpec}
      * @throws MarshalException if the parameters cannot be unmarshalled
      */
     SignatureMethodParameterSpec unmarshalParams(Element paramsElem)
@@ -163,7 +155,7 @@ abstract class AbstractDOMSignatureMethod extends DOMStructure
      * since most SignatureMethod algorithms do not have parameters. Subclasses
      * should override it if they have parameters.
      *
-     * @param params the algorithm-specific params (may be <code>null</code>)
+     * @param params the algorithm-specific params (may be {@code null})
      * @throws InvalidAlgorithmParameterException if the parameters are not
      *    appropriate for this signature method
      */
@@ -189,8 +181,8 @@ abstract class AbstractDOMSignatureMethod extends DOMStructure
         }
         SignatureMethod osm = (SignatureMethod)o;
 
-        return (getAlgorithm().equals(osm.getAlgorithm()) &&
-            paramsEqual(osm.getParameterSpec()));
+        return getAlgorithm().equals(osm.getAlgorithm()) &&
+            paramsEqual(osm.getParameterSpec());
     }
 
     @Override
@@ -213,6 +205,6 @@ abstract class AbstractDOMSignatureMethod extends DOMStructure
      */
     boolean paramsEqual(AlgorithmParameterSpec spec)
     {
-        return (getParameterSpec() == spec);
+        return getParameterSpec() == spec;
     }
 }

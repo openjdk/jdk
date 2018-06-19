@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: Utils.java 1197150 2011-11-03 14:34:57Z coheigea $
+ * $Id: Utils.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -39,7 +39,6 @@ import org.w3c.dom.Node;
 /**
  * Miscellaneous static utility methods for use in JSR 105 RI.
  *
- * @author Sean Mullan
  */
 public final class Utils {
 
@@ -48,19 +47,20 @@ public final class Utils {
     public static byte[] readBytesFromStream(InputStream is)
         throws IOException
     {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buf = new byte[1024];
-        while (true) {
-            int read = is.read(buf);
-            if (read == -1) { // EOF
-                break;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] buf = new byte[1024];
+            while (true) {
+                int read = is.read(buf);
+                if (read == -1) { // EOF
+                    break;
+                }
+                baos.write(buf, 0, read);
+                if (read < 1024) {
+                    break;
+                }
             }
-            baos.write(buf, 0, read);
-            if (read < 1024) {
-                break;
-            }
+            return baos.toByteArray();
         }
-        return baos.toByteArray();
     }
 
     /**
@@ -71,7 +71,7 @@ public final class Utils {
      * @return the Set of Nodes
      */
     static Set<Node> toNodeSet(Iterator<?> i) {
-        Set<Node> nodeSet = new HashSet<Node>();
+        Set<Node> nodeSet = new HashSet<>();
         while (i.hasNext()) {
             Node n = (Node)i.next();
             nodeSet.add(n);
@@ -106,7 +106,7 @@ public final class Utils {
      * Returns true if uri is a same-document URI, false otherwise.
      */
     public static boolean sameDocumentURI(String uri) {
-        return (uri != null && (uri.length() == 0 || uri.charAt(0) == '#'));
+        return uri != null && (uri.length() == 0 || uri.charAt(0) == '#');
     }
 
     static boolean secureValidation(XMLCryptoContext xc) {
@@ -118,6 +118,6 @@ public final class Utils {
 
     private static boolean getBoolean(XMLCryptoContext xc, String name) {
         Boolean value = (Boolean)xc.getProperty(name);
-        return (value != null && value.booleanValue());
+        return value != null && value.booleanValue();
     }
 }

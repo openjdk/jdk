@@ -2,6 +2,24 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations;
 
 import java.security.Key;
@@ -23,9 +41,8 @@ import org.w3c.dom.Element;
  */
 public class SecretKeyResolver extends KeyResolverSpi
 {
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(SecretKeyResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(SecretKeyResolver.class);
 
     private KeyStore keyStore;
     private char[] password;
@@ -67,7 +84,7 @@ public class SecretKeyResolver extends KeyResolverSpi
 
     /**
      * Method engineResolveX509Certificate
-     * @inheritDoc
+     * {@inheritDoc}
      * @param element
      * @param baseURI
      * @param storage
@@ -92,9 +109,7 @@ public class SecretKeyResolver extends KeyResolverSpi
     public SecretKey engineResolveSecretKey(
         Element element, String baseURI, StorageResolver storage
     ) throws KeyResolverException {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName() + "?");
-        }
+        LOG.debug("Can I resolve {}?", element.getTagName());
 
         if (XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYNAME)) {
             String keyName = element.getFirstChild().getNodeValue();
@@ -104,17 +119,17 @@ public class SecretKeyResolver extends KeyResolverSpi
                     return (SecretKey) key;
                 }
             } catch (Exception e) {
-                log.log(java.util.logging.Level.FINE, "Cannot recover the key", e);
+                LOG.debug("Cannot recover the key", e);
             }
         }
 
-        log.log(java.util.logging.Level.FINE, "I can't");
+        LOG.debug("I can't");
         return null;
     }
 
     /**
      * Method engineResolvePrivateKey
-     * @inheritDoc
+     * {@inheritDoc}
      * @param element
      * @param baseURI
      * @param storage

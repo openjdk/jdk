@@ -23,211 +23,19 @@
 
 package com.sun.org.apache.xml.internal.security.transforms;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-
-/**
- * This class is extremely useful for loading resources and classes in a fault
- * tolerant manner that works across different applications servers. Do not
- * touch this unless you're a grizzled classloading guru veteran who is going to
- * verify any change on 6 different application servers.
- */
 // NOTE! This is a duplicate of utils.ClassLoaderUtils with public
 // modifiers changed to package-private. Make sure to integrate any future
 // changes to utils.ClassLoaderUtils to this file.
 final class ClassLoaderUtils {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static final java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(ClassLoaderUtils.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(ClassLoaderUtils.class);
 
     private ClassLoaderUtils() {
     }
 
     /**
-     * Load a given resource. <p/> This method will try to load the resource
-     * using the following methods (in order):
-     * <ul>
-     * <li>From Thread.currentThread().getContextClassLoader()
-     * <li>From ClassLoaderUtil.class.getClassLoader()
-     * <li>callingClass.getClassLoader()
-     * </ul>
-     *
-     * @param resourceName The name of the resource to load
-     * @param callingClass The Class object of the calling object
-     */
-    static URL getResource(String resourceName, Class<?> callingClass) {
-        URL url = Thread.currentThread().getContextClassLoader().getResource(resourceName);
-        if (url == null && resourceName.startsWith("/")) {
-            //certain classloaders need it without the leading /
-            url =
-                Thread.currentThread().getContextClassLoader().getResource(
-                    resourceName.substring(1)
-                );
-        }
-
-        ClassLoader cluClassloader = ClassLoaderUtils.class.getClassLoader();
-        if (cluClassloader == null) {
-            cluClassloader = ClassLoader.getSystemClassLoader();
-        }
-        if (url == null) {
-            url = cluClassloader.getResource(resourceName);
-        }
-        if (url == null && resourceName.startsWith("/")) {
-            //certain classloaders need it without the leading /
-            url = cluClassloader.getResource(resourceName.substring(1));
-        }
-
-        if (url == null) {
-            ClassLoader cl = callingClass.getClassLoader();
-
-            if (cl != null) {
-                url = cl.getResource(resourceName);
-            }
-        }
-
-        if (url == null) {
-            url = callingClass.getResource(resourceName);
-        }
-
-        if ((url == null) && (resourceName != null) && (resourceName.charAt(0) != '/')) {
-            return getResource('/' + resourceName, callingClass);
-        }
-
-        return url;
-    }
-
-    /**
-     * Load a given resources. <p/> This method will try to load the resources
-     * using the following methods (in order):
-     * <ul>
-     * <li>From Thread.currentThread().getContextClassLoader()
-     * <li>From ClassLoaderUtil.class.getClassLoader()
-     * <li>callingClass.getClassLoader()
-     * </ul>
-     *
-     * @param resourceName The name of the resource to load
-     * @param callingClass The Class object of the calling object
-     */
-    static List<URL> getResources(String resourceName, Class<?> callingClass) {
-        List<URL> ret = new ArrayList<URL>();
-        Enumeration<URL> urls = new Enumeration<URL>() {
-            public boolean hasMoreElements() {
-                return false;
-            }
-            public URL nextElement() {
-                return null;
-            }
-
-        };
-        try {
-            urls = Thread.currentThread().getContextClassLoader().getResources(resourceName);
-        } catch (IOException e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-            }
-            //ignore
-        }
-        if (!urls.hasMoreElements() && resourceName.startsWith("/")) {
-            //certain classloaders need it without the leading /
-            try {
-                urls =
-                    Thread.currentThread().getContextClassLoader().getResources(
-                        resourceName.substring(1)
-                    );
-            } catch (IOException e) {
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-                }
-                // ignore
-            }
-        }
-
-        ClassLoader cluClassloader = ClassLoaderUtils.class.getClassLoader();
-        if (cluClassloader == null) {
-            cluClassloader = ClassLoader.getSystemClassLoader();
-        }
-        if (!urls.hasMoreElements()) {
-            try {
-                urls = cluClassloader.getResources(resourceName);
-            } catch (IOException e) {
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-                }
-                // ignore
-            }
-        }
-        if (!urls.hasMoreElements() && resourceName.startsWith("/")) {
-            //certain classloaders need it without the leading /
-            try {
-                urls = cluClassloader.getResources(resourceName.substring(1));
-            } catch (IOException e) {
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-                }
-                // ignore
-            }
-        }
-
-        if (!urls.hasMoreElements()) {
-            ClassLoader cl = callingClass.getClassLoader();
-
-            if (cl != null) {
-                try {
-                    urls = cl.getResources(resourceName);
-                } catch (IOException e) {
-                    if (log.isLoggable(java.util.logging.Level.FINE)) {
-                        log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-                    }
-                    // ignore
-                }
-            }
-        }
-
-        if (!urls.hasMoreElements()) {
-            URL url = callingClass.getResource(resourceName);
-            if (url != null) {
-                ret.add(url);
-            }
-        }
-        while (urls.hasMoreElements()) {
-            ret.add(urls.nextElement());
-        }
-
-
-        if (ret.isEmpty() && (resourceName != null) && (resourceName.charAt(0) != '/')) {
-            return getResources('/' + resourceName, callingClass);
-        }
-        return ret;
-    }
-
-
-    /**
-     * This is a convenience method to load a resource as a stream. <p/> The
-     * algorithm used to find the resource is given in getResource()
-     *
-     * @param resourceName The name of the resource to load
-     * @param callingClass The Class object of the calling object
-     */
-    static InputStream getResourceAsStream(String resourceName, Class<?> callingClass) {
-        URL url = getResource(resourceName, callingClass);
-
-        try {
-            return (url != null) ? url.openStream() : null;
-        } catch (IOException e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-            }
-            return null;
-        }
-    }
-
-    /**
-     * Load a class with a given name. <p/> It will try to load the class in the
+     * Load a class with a given name. <p></p> It will try to load the class in the
      * following order:
      * <ul>
      * <li>From Thread.currentThread().getContextClassLoader()
@@ -249,9 +57,7 @@ final class ClassLoaderUtils {
                 return cl.loadClass(className);
             }
         } catch (ClassNotFoundException e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-            }
+            LOG.debug(e.getMessage(), e);
             //ignore
         }
         return loadClass2(className, callingClass);
@@ -271,9 +77,7 @@ final class ClassLoaderUtils {
                     return callingClass.getClassLoader().loadClass(className);
                 }
             }
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
             throw ex;
         }
     }

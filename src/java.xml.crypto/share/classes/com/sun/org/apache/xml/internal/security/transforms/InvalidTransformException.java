@@ -26,7 +26,6 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 
 /**
  *
- * @author Christian Geuer-Pollmann
  */
 public class InvalidTransformException extends XMLSecurityException {
 
@@ -68,8 +67,13 @@ public class InvalidTransformException extends XMLSecurityException {
      * @param msgId
      * @param originalException
      */
-    public InvalidTransformException(String msgId, Exception originalException) {
-        super(msgId, originalException);
+    public InvalidTransformException(Exception originalException, String msgId) {
+        super(originalException, msgId);
+    }
+
+    @Deprecated
+    public InvalidTransformException(String msgID, Exception originalException) {
+        this(originalException, msgID);
     }
 
     /**
@@ -79,7 +83,12 @@ public class InvalidTransformException extends XMLSecurityException {
      * @param exArgs
      * @param originalException
      */
-    public InvalidTransformException(String msgId, Object exArgs[], Exception originalException) {
-        super(msgId, exArgs, originalException);
+    public InvalidTransformException(Exception originalException, String msgId, Object exArgs[]) {
+        super(originalException, msgId, exArgs);
+    }
+
+    @Deprecated
+    public InvalidTransformException(String msgID, Object[] exArgs, Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 }

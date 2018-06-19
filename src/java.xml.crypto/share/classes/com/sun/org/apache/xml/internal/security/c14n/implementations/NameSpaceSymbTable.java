@@ -35,7 +35,6 @@ import org.w3c.dom.Node;
  * A stack based Symbol Table.
  *<br>For speed reasons all the symbols are introduced in the same map,
  * and at the same time in a list so it can be removed when the frame is pop back.
- * @author Raul Benito
  */
 public class NameSpaceSymbTable {
 
@@ -59,7 +58,7 @@ public class NameSpaceSymbTable {
      * Default constractor
      **/
     public NameSpaceSymbTable() {
-        level = new ArrayList<SymbMap>();
+        level = new ArrayList<>();
         //Insert the default binding for xmlns.
         symb = (SymbMap) initialMap.clone();
     }
@@ -74,7 +73,7 @@ public class NameSpaceSymbTable {
         while (it.hasNext()) {
             NameSpaceSymbEntry n = it.next();
             //put them rendered?
-            if ((!n.rendered) && (n.n != null)) {
+            if (!n.rendered && n.n != null) {
                 n = (NameSpaceSymbEntry) n.clone();
                 needsClone();
                 symb.put(n.prefix, n);
@@ -123,7 +122,7 @@ public class NameSpaceSymbTable {
             if (size == 0) {
                 cloned = false;
             } else {
-                cloned = (level.get(size - 1) != symb);
+                cloned = level.get(size - 1) != symb;
             }
         } else {
             cloned = false;
@@ -191,7 +190,7 @@ public class NameSpaceSymbTable {
      **/
     public boolean addMapping(String prefix, String uri, Attr n) {
         NameSpaceSymbEntry ob = symb.get(prefix);
-        if ((ob != null) && uri.equals(ob.uri)) {
+        if (ob != null && uri.equals(ob.uri)) {
             //If we have it previously defined. Don't keep working.
             return false;
         }
@@ -203,7 +202,7 @@ public class NameSpaceSymbTable {
             //We have a previous definition store it for the pop.
             //Check if a previous definition(not the inmidiatly one) has been rendered.
             ne.lastrendered = ob.lastrendered;
-            if ((ob.lastrendered != null) && (ob.lastrendered.equals(uri))) {
+            if (ob.lastrendered != null && ob.lastrendered.equals(uri)) {
                 //Yes it is. Mark as rendered.
                 ne.rendered = true;
             }
@@ -222,7 +221,7 @@ public class NameSpaceSymbTable {
     public Node addMappingAndRender(String prefix, String uri, Attr n) {
         NameSpaceSymbEntry ob = symb.get(prefix);
 
-        if ((ob != null) && uri.equals(ob.uri)) {
+        if (ob != null && uri.equals(ob.uri)) {
             if (!ob.rendered) {
                 ob = (NameSpaceSymbEntry) ob.clone();
                 needsClone();
@@ -234,11 +233,11 @@ public class NameSpaceSymbTable {
             return null;
         }
 
-        NameSpaceSymbEntry ne = new NameSpaceSymbEntry(uri,n,true,prefix);
+        NameSpaceSymbEntry ne = new NameSpaceSymbEntry(uri, n, true, prefix);
         ne.lastrendered = uri;
         needsClone();
         symb.put(prefix, ne);
-        if ((ob != null) && (ob.lastrendered != null) && (ob.lastrendered.equals(uri))) {
+        if (ob != null && ob.lastrendered != null && ob.lastrendered.equals(uri)) {
             ne.rendered = true;
             return null;
         }
@@ -304,7 +303,7 @@ class NameSpaceSymbEntry implements Cloneable {
         this.prefix = prefix;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public Object clone() {
         try {
             return super.clone();
@@ -312,7 +311,7 @@ class NameSpaceSymbEntry implements Cloneable {
             return null;
         }
     }
-};
+}
 
 class SymbMap implements Cloneable {
     int free = 23;
@@ -329,7 +328,7 @@ class SymbMap implements Cloneable {
         Object oldKey = keys[index];
         keys[index] = key;
         entries[index] = value;
-        if ((oldKey == null || !oldKey.equals(key)) && (--free == 0)) {
+        if ((oldKey == null || !oldKey.equals(key)) && --free == 0) {
             free = entries.length;
             int newCapacity = free << 2;
             rehash(newCapacity);
@@ -337,9 +336,9 @@ class SymbMap implements Cloneable {
     }
 
     List<NameSpaceSymbEntry> entrySet() {
-        List<NameSpaceSymbEntry> a = new ArrayList<NameSpaceSymbEntry>();
+        List<NameSpaceSymbEntry> a = new ArrayList<>();
         for (int i = 0;i < entries.length;i++) {
-            if ((entries[i] != null) && !("".equals(entries[i].uri))) {
+            if (entries[i] != null && !"".equals(entries[i].uri)) {
                 a.add(entries[i]);
             }
         }
@@ -353,21 +352,21 @@ class SymbMap implements Cloneable {
         int index = (obj.hashCode() & 0x7fffffff) % length;
         Object cur = set[index];
 
-        if (cur == null || (cur.equals(obj))) {
+        if (cur == null || cur.equals(obj)) {
             return index;
         }
         length--;
         do {
             index = index == length ? 0 : ++index;
             cur = set[index];
-        } while (cur != null && (!cur.equals(obj)));
+        } while (cur != null && !cur.equals(obj));
         return index;
     }
 
     /**
      * rehashes the map to the new capacity.
      *
-     * @param newCapacity an <code>int</code> value
+     * @param newCapacity an {@code int} value
      */
     protected void rehash(int newCapacity) {
         int oldCapacity = keys.length;

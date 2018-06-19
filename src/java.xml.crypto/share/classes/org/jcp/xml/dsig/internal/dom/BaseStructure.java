@@ -20,27 +20,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.sun.org.apache.xml.internal.security.encryption;
+package org.jcp.xml.dsig.internal.dom;
 
-/**
- * The {@code EncryptedData} element is the core element in the syntax. Not
- * only does its {@code CipherData} child contain the encrypted data, but
- * it's also the element that replaces the encrypted element, or serves as the
- * new document root.
- * <p>
- * It's schema definition is as follows:
- * <p>
- * <pre>{@code
- * <element name='EncryptedData' type='xenc:EncryptedDataType'/>
- * <complexType name='EncryptedDataType'>
- *     <complexContent>
- *         <extension base='xenc:EncryptedType'/>
- *     </complexContent>
- * </complexType>
- * }</pre>
- *
- * @author Axl Mattheus
- */
-public interface EncryptedData extends EncryptedType {
+import javax.xml.crypto.XMLStructure;
+
+import org.w3c.dom.Node;
+
+public abstract class BaseStructure implements XMLStructure {
+
+    /**
+     * Just return the text of the immediate child of a node.
+     *
+     * @param node
+     * @return the text of a Node
+     */
+    public static String textOfNode(Node node) {
+        return node.getFirstChild().getNodeValue();
+    }
+
+    public final boolean isFeatureSupported(String feature) {
+        if (feature == null) {
+            throw new NullPointerException();
+        } else {
+            return false;
+        }
+    }
+
 }
-

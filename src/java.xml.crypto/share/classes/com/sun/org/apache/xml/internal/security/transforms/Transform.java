@@ -55,36 +55,35 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
- * Implements the behaviour of the <code>ds:Transform</code> element.
+ * Implements the behaviour of the {@code ds:Transform} element.
  *
- * This <code>Transform</code>(Factory) class acts as the Factory and Proxy of
+ * This {@code Transform}(Factory) class acts as the Factory and Proxy of
  * the implementing class that supports the functionality of <a
  * href=http://www.w3.org/TR/xmldsig-core/#sec-TransformAlg>a Transform
  * algorithm</a>.
  * Implements the Factory and Proxy pattern for ds:Transform algorithms.
  *
- * @author Christian Geuer-Pollmann
  * @see Transforms
  * @see TransformSpi
  */
 public final class Transform extends SignatureElementProxy {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(Transform.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(Transform.class);
 
     /** All available Transform classes are registered here */
     private static Map<String, Class<? extends TransformSpi>> transformSpiHash =
         new ConcurrentHashMap<String, Class<? extends TransformSpi>>();
 
     private final TransformSpi transformSpi;
+    private boolean secureValidation;
 
     /**
      * Generates a Transform object that implements the specified
-     * <code>Transform algorithm</code> URI.
+     * {@code Transform algorithm} URI.
      *
      * @param doc the proxy {@link Document}
-     * @param algorithmURI <code>Transform algorithm</code> URI representation,
+     * @param algorithmURI {@code Transform algorithm} URI representation,
      * such as specified in
      * <a href=http://www.w3.org/TR/xmldsig-core/#sec-TransformAlg>Transform algorithm </a>
      * @throws InvalidTransformException
@@ -95,12 +94,12 @@ public final class Transform extends SignatureElementProxy {
 
     /**
      * Generates a Transform object that implements the specified
-     * <code>Transform algorithm</code> URI.
+     * {@code Transform algorithm} URI.
      *
-     * @param algorithmURI <code>Transform algorithm</code> URI representation,
+     * @param algorithmURI {@code Transform algorithm} URI representation,
      * such as specified in
      * <a href=http://www.w3.org/TR/xmldsig-core/#sec-TransformAlg>Transform algorithm </a>
-     * @param contextChild the child element of <code>Transform</code> element
+     * @param contextChild the child element of {@code Transform} element
      * @param doc the proxy {@link Document}
      * @throws InvalidTransformException
      */
@@ -123,10 +122,10 @@ public final class Transform extends SignatureElementProxy {
     /**
      * Constructs {@link Transform}
      *
-     * @param doc the {@link Document} in which <code>Transform</code> will be
+     * @param doc the {@link Document} in which {@code Transform} will be
      * placed
-     * @param algorithmURI URI representation of <code>Transform algorithm</code>
-     * @param contextNodes the child node list of <code>Transform</code> element
+     * @param algorithmURI URI representation of {@code Transform algorithm}
+     * @param contextNodes the child node list of {@code Transform} element
      * @throws InvalidTransformException
      */
     public Transform(Document doc, String algorithmURI, NodeList contextNodes)
@@ -136,15 +135,15 @@ public final class Transform extends SignatureElementProxy {
     }
 
     /**
-     * @param element <code>ds:Transform</code> element
-     * @param BaseURI the URI of the resource where the XML instance was stored
+     * @param element {@code ds:Transform} element
+     * @param baseURI the URI of the resource where the XML instance was stored
      * @throws InvalidTransformException
      * @throws TransformationException
      * @throws XMLSecurityException
      */
-    public Transform(Element element, String BaseURI)
+    public Transform(Element element, String baseURI)
         throws InvalidTransformException, TransformationException, XMLSecurityException {
-        super(element, BaseURI);
+        super(element, baseURI);
 
         // retrieve Algorithm Attribute from ds:Transform
         String algorithmURI = element.getAttributeNS(null, Constants._ATT_ALGORITHM);
@@ -166,12 +165,12 @@ public final class Transform extends SignatureElementProxy {
         } catch (InstantiationException ex) {
             Object exArgs[] = { algorithmURI };
             throw new InvalidTransformException(
-                "signature.Transform.UnknownTransform", exArgs, ex
+                ex, "signature.Transform.UnknownTransform", exArgs
             );
         } catch (IllegalAccessException ex) {
             Object exArgs[] = { algorithmURI };
             throw new InvalidTransformException(
-                "signature.Transform.UnknownTransform", exArgs, ex
+                ex, "signature.Transform.UnknownTransform", exArgs
             );
         }
     }
@@ -179,8 +178,8 @@ public final class Transform extends SignatureElementProxy {
     /**
      * Registers implementing class of the Transform algorithm with algorithmURI
      *
-     * @param algorithmURI algorithmURI URI representation of <code>Transform algorithm</code>
-     * @param implementingClass <code>implementingClass</code> the implementing
+     * @param algorithmURI algorithmURI URI representation of {@code Transform algorithm}
+     * @param implementingClass {@code implementingClass} the implementing
      * class of {@link TransformSpi}
      * @throws AlgorithmAlreadyRegisteredException if specified algorithmURI
      * is already registered
@@ -207,8 +206,8 @@ public final class Transform extends SignatureElementProxy {
     /**
      * Registers implementing class of the Transform algorithm with algorithmURI
      *
-     * @param algorithmURI algorithmURI URI representation of <code>Transform algorithm</code>
-     * @param implementingClass <code>implementingClass</code> the implementing
+     * @param algorithmURI algorithmURI URI representation of {@code Transform algorithm}
+     * @param implementingClass {@code implementingClass} the implementing
      * class of {@link TransformSpi}
      * @throws AlgorithmAlreadyRegisteredException if specified algorithmURI
      * is already registered
@@ -272,7 +271,7 @@ public final class Transform extends SignatureElementProxy {
      * @return the URI representation of Transformation algorithm
      */
     public String getURI() {
-        return this.constructionElement.getAttributeNS(null, Constants._ATT_ALGORITHM);
+        return getLocalAttribute(Constants._ATT_ALGORITHM);
     }
 
     /**
@@ -313,21 +312,22 @@ public final class Transform extends SignatureElementProxy {
         XMLSignatureInput result = null;
 
         try {
+            transformSpi.secureValidation = secureValidation;
             result = transformSpi.enginePerformTransform(input, os, this);
         } catch (ParserConfigurationException ex) {
             Object exArgs[] = { this.getURI(), "ParserConfigurationException" };
             throw new CanonicalizationException(
-                "signature.Transform.ErrorDuringTransform", exArgs, ex);
+                ex, "signature.Transform.ErrorDuringTransform", exArgs);
         } catch (SAXException ex) {
             Object exArgs[] = { this.getURI(), "SAXException" };
             throw new CanonicalizationException(
-                "signature.Transform.ErrorDuringTransform", exArgs, ex);
+                ex, "signature.Transform.ErrorDuringTransform", exArgs);
         }
 
         return result;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_TRANSFORM;
     }
@@ -338,7 +338,7 @@ public final class Transform extends SignatureElementProxy {
     private TransformSpi initializeTransform(String algorithmURI, NodeList contextNodes)
         throws InvalidTransformException {
 
-        this.constructionElement.setAttributeNS(null, Constants._ATT_ALGORITHM, algorithmURI);
+        setLocalAttribute(Constants._ATT_ALGORITHM, algorithmURI);
 
         Class<? extends TransformSpi> transformSpiClass = transformSpiHash.get(algorithmURI);
         if (transformSpiClass == null) {
@@ -353,28 +353,34 @@ public final class Transform extends SignatureElementProxy {
         } catch (InstantiationException ex) {
             Object exArgs[] = { algorithmURI };
             throw new InvalidTransformException(
-                "signature.Transform.UnknownTransform", exArgs, ex
+                ex, "signature.Transform.UnknownTransform", exArgs
             );
         } catch (IllegalAccessException ex) {
             Object exArgs[] = { algorithmURI };
             throw new InvalidTransformException(
-                "signature.Transform.UnknownTransform", exArgs, ex
+                ex, "signature.Transform.UnknownTransform", exArgs
             );
         }
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Create URI \"" + algorithmURI + "\" class \""
-                      + newTransformSpi.getClass() + "\"");
-            log.log(java.util.logging.Level.FINE, "The NodeList is " + contextNodes);
-        }
+        LOG.debug("Create URI \"{}\" class \"{}\"", algorithmURI, newTransformSpi.getClass());
+        LOG.debug("The NodeList is {}", contextNodes);
 
         // give it to the current document
         if (contextNodes != null) {
-            for (int i = 0; i < contextNodes.getLength(); i++) {
-                this.constructionElement.appendChild(contextNodes.item(i).cloneNode(true));
+            int length = contextNodes.getLength();
+            for (int i = 0; i < length; i++) {
+                appendSelf(contextNodes.item(i).cloneNode(true));
             }
         }
         return newTransformSpi;
+    }
+
+    public boolean isSecureValidation() {
+        return secureValidation;
+    }
+
+    public void setSecureValidation(boolean secureValidation) {
+        this.secureValidation = secureValidation;
     }
 
 }

@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMXSLTTransform.java 1197150 2011-11-03 14:34:57Z coheigea $
+ * $Id: DOMXSLTTransform.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -40,10 +40,10 @@ import javax.xml.crypto.dsig.spec.XSLTTransformParameterSpec;
  * DOM-based implementation of XSLT Transform.
  * (Uses Apache XML-Sec Transform implementation)
  *
- * @author Sean Mullan
  */
 public final class DOMXSLTTransform extends ApacheTransform {
 
+    @Override
     public void init(TransformParameterSpec params)
         throws InvalidAlgorithmParameterException {
         if (params == null) {
@@ -55,6 +55,7 @@ public final class DOMXSLTTransform extends ApacheTransform {
         this.params = params;
     }
 
+    @Override
     public void init(XMLStructure parent, XMLCryptoContext context)
         throws InvalidAlgorithmParameterException {
 
@@ -67,6 +68,7 @@ public final class DOMXSLTTransform extends ApacheTransform {
             (new javax.xml.crypto.dom.DOMStructure(sheet));
     }
 
+    @Override
     public void marshalParams(XMLStructure parent, XMLCryptoContext context)
         throws MarshalException {
         super.marshalParams(parent, context);

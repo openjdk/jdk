@@ -31,10 +31,9 @@ import org.w3c.dom.Node;
 
 
 /**
- * Handles <code>&lt;ds:Object&gt;</code> elements
- * <code>Object<code> {@link Element} supply facility which can contain any kind data
+ * Handles {@code &lt;ds:Object&gt;} elements
+ * {@code Object} {@link Element} supply facility which can contain any kind data
  *
- * @author Christian Geuer-Pollmann
  * $todo$ if we remove childen, the boolean values are not updated
  */
 public class ObjectContainer extends SignatureElementProxy {
@@ -42,7 +41,7 @@ public class ObjectContainer extends SignatureElementProxy {
     /**
      * Constructs {@link ObjectContainer}
      *
-     * @param doc the {@link Document} in which <code>Object</code> element is placed
+     * @param doc the {@link Document} in which {@code Object} element is placed
      */
     public ObjectContainer(Document doc) {
         super(doc);
@@ -51,7 +50,7 @@ public class ObjectContainer extends SignatureElementProxy {
     /**
      * Constructs {@link ObjectContainer} from {@link Element}
      *
-     * @param element is <code>Object</code> element
+     * @param element is {@code Object} element
      * @param baseURI the URI of the resource where the XML instance was stored
      * @throws XMLSecurityException
      */
@@ -60,64 +59,63 @@ public class ObjectContainer extends SignatureElementProxy {
     }
 
     /**
-     * Sets the <code>Id</code> attribute
+     * Sets the {@code Id} attribute
      *
-     * @param Id <code>Id</code> attribute
+     * @param Id {@code Id} attribute
      */
     public void setId(String Id) {
         if (Id != null) {
-            this.constructionElement.setAttributeNS(null, Constants._ATT_ID, Id);
-            this.constructionElement.setIdAttributeNS(null, Constants._ATT_ID, true);
+            setLocalIdAttribute(Constants._ATT_ID, Id);
         }
     }
 
     /**
-     * Returns the <code>Id</code> attribute
+     * Returns the {@code Id} attribute
      *
-     * @return the <code>Id</code> attribute
+     * @return the {@code Id} attribute
      */
     public String getId() {
-        return this.constructionElement.getAttributeNS(null, Constants._ATT_ID);
+        return getLocalAttribute(Constants._ATT_ID);
     }
 
     /**
-     * Sets the <code>MimeType</code> attribute
+     * Sets the {@code MimeType} attribute
      *
-     * @param MimeType the <code>MimeType</code> attribute
+     * @param MimeType the {@code MimeType} attribute
      */
     public void setMimeType(String MimeType) {
         if (MimeType != null) {
-            this.constructionElement.setAttributeNS(null, Constants._ATT_MIMETYPE, MimeType);
+            setLocalAttribute(Constants._ATT_MIMETYPE, MimeType);
         }
     }
 
     /**
-     * Returns the <code>MimeType</code> attribute
+     * Returns the {@code MimeType} attribute
      *
-     * @return the <code>MimeType</code> attribute
+     * @return the {@code MimeType} attribute
      */
     public String getMimeType() {
-        return this.constructionElement.getAttributeNS(null, Constants._ATT_MIMETYPE);
+        return getLocalAttribute(Constants._ATT_MIMETYPE);
     }
 
     /**
-     * Sets the <code>Encoding</code> attribute
+     * Sets the {@code Encoding} attribute
      *
-     * @param Encoding the <code>Encoding</code> attribute
+     * @param Encoding the {@code Encoding} attribute
      */
     public void setEncoding(String Encoding) {
         if (Encoding != null) {
-            this.constructionElement.setAttributeNS(null, Constants._ATT_ENCODING, Encoding);
+            setLocalAttribute(Constants._ATT_ENCODING, Encoding);
         }
     }
 
     /**
-     * Returns the <code>Encoding</code> attribute
+     * Returns the {@code Encoding} attribute
      *
-     * @return the <code>Encoding</code> attribute
+     * @return the {@code Encoding} attribute
      */
     public String getEncoding() {
-        return this.constructionElement.getAttributeNS(null, Constants._ATT_ENCODING);
+        return getLocalAttribute(Constants._ATT_ENCODING);
     }
 
     /**
@@ -127,10 +125,11 @@ public class ObjectContainer extends SignatureElementProxy {
      * @return the new node in the tree.
      */
     public Node appendChild(Node node) {
-        return this.constructionElement.appendChild(node);
+        appendSelf(node);
+        return node;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_OBJECT;
     }

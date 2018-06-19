@@ -35,7 +35,6 @@ import org.w3c.dom.Node;
  * Implements the parameters for a custom Transform which has a better performance
  * than the xfilter2.
  *
- * @author $Author: coheigea $
  */
 public class XPathFilterCHGPContainer extends ElementProxy implements TransformParam {
 
@@ -87,52 +86,48 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
         super(doc);
 
         if (includeSlashPolicy) {
-            this.constructionElement.setAttributeNS(
-                null, XPathFilterCHGPContainer._ATT_INCLUDESLASH, "true"
-            );
+            setLocalAttribute(XPathFilterCHGPContainer._ATT_INCLUDESLASH, "true");
         } else {
-            this.constructionElement.setAttributeNS(
-                null, XPathFilterCHGPContainer._ATT_INCLUDESLASH, "false"
-            );
+            setLocalAttribute(XPathFilterCHGPContainer._ATT_INCLUDESLASH, "false");
         }
 
-        if ((includeButSearch != null) && (includeButSearch.trim().length() > 0)) {
+        if (includeButSearch != null && includeButSearch.trim().length() > 0) {
             Element includeButSearchElem =
                 ElementProxy.createElementForFamily(
                     doc, this.getBaseNamespace(), XPathFilterCHGPContainer._TAG_INCLUDE_BUT_SEARCH
                 );
 
             includeButSearchElem.appendChild(
-                this.doc.createTextNode(indentXPathText(includeButSearch))
+                createText(indentXPathText(includeButSearch))
             );
-            XMLUtils.addReturnToElement(this.constructionElement);
-            this.constructionElement.appendChild(includeButSearchElem);
+            addReturnToSelf();
+            appendSelf(includeButSearchElem);
         }
 
-        if ((excludeButSearch != null) && (excludeButSearch.trim().length() > 0)) {
+        if (excludeButSearch != null && excludeButSearch.trim().length() > 0) {
             Element excludeButSearchElem =
                 ElementProxy.createElementForFamily(
                     doc, this.getBaseNamespace(), XPathFilterCHGPContainer._TAG_EXCLUDE_BUT_SEARCH
                 );
 
             excludeButSearchElem.appendChild(
-                this.doc.createTextNode(indentXPathText(excludeButSearch)));
+                createText(indentXPathText(excludeButSearch)));
 
-            XMLUtils.addReturnToElement(this.constructionElement);
-            this.constructionElement.appendChild(excludeButSearchElem);
+            addReturnToSelf();
+            appendSelf(excludeButSearchElem);
         }
 
-        if ((exclude != null) && (exclude.trim().length() > 0)) {
+        if (exclude != null && exclude.trim().length() > 0) {
             Element excludeElem =
                 ElementProxy.createElementForFamily(
                    doc, this.getBaseNamespace(), XPathFilterCHGPContainer._TAG_EXCLUDE);
 
-            excludeElem.appendChild(this.doc.createTextNode(indentXPathText(exclude)));
-            XMLUtils.addReturnToElement(this.constructionElement);
-            this.constructionElement.appendChild(excludeElem);
+            excludeElem.appendChild(createText(indentXPathText(exclude)));
+            addReturnToSelf();
+            appendSelf(excludeElem);
         }
 
-        XMLUtils.addReturnToElement(this.constructionElement);
+        addReturnToSelf();
     }
 
     /**
@@ -142,7 +137,7 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
      * @return the string with enters
      */
     static String indentXPathText(String xp) {
-        if ((xp.length() > 2) && (!Character.isWhitespace(xp.charAt(0)))) {
+        if (xp.length() > 2 && !Character.isWhitespace(xp.charAt(0))) {
             return "\n" + xp + "\n";
         }
         return xp;
@@ -152,12 +147,12 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
      * Constructor XPathFilterCHGPContainer
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    private XPathFilterCHGPContainer(Element element, String BaseURI)
+    private XPathFilterCHGPContainer(Element element, String baseURI)
         throws XMLSecurityException {
-        super(element, BaseURI);
+        super(element, baseURI);
     }
 
     /**
@@ -182,15 +177,15 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
      * Creates a XPathFilterCHGPContainer from an existing Element; needed for verification.
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      *
      * @throws XMLSecurityException
      * @return the created object.
      */
     public static XPathFilterCHGPContainer getInstance(
-        Element element, String BaseURI
+        Element element, String baseURI
     ) throws XMLSecurityException {
-        return new XPathFilterCHGPContainer(element, BaseURI);
+        return new XPathFilterCHGPContainer(element, baseURI);
     }
 
     /**
@@ -206,7 +201,7 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
 
         Element xElem =
             XMLUtils.selectNode(
-                this.constructionElement.getFirstChild(), this.getBaseNamespace(), type, 0
+                getElement().getFirstChild(), this.getBaseNamespace(), type, 0
             );
 
         return XMLUtils.getFullTextChildrenFromElement(xElem);
@@ -245,8 +240,7 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
      * @return the string
      */
     public boolean getIncludeSlashPolicy() {
-        return this.constructionElement.getAttributeNS(
-            null, XPathFilterCHGPContainer._ATT_INCLUDESLASH).equals("true");
+        return getLocalAttribute(XPathFilterCHGPContainer._ATT_INCLUDESLASH).equals("true");
     }
 
     /**
@@ -265,7 +259,7 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
         }
 
         return XMLUtils.selectNodeText(
-            this.constructionElement.getFirstChild(), this.getBaseNamespace(), type, 0
+            getFirstChild(), this.getBaseNamespace(), type, 0
         );
     }
 
@@ -299,7 +293,7 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
     /**
      * Method getBaseLocalName
      *
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public final String getBaseLocalName() {
         return XPathFilterCHGPContainer._TAG_XPATHCHGP;
@@ -308,7 +302,7 @@ public class XPathFilterCHGPContainer extends ElementProxy implements TransformP
     /**
      * Method getBaseNamespace
      *
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public final String getBaseNamespace() {
         return TRANSFORM_XPATHFILTERCHGP;

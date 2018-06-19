@@ -25,7 +25,6 @@ package com.sun.org.apache.xml.internal.security.exceptions;
 /**
  * This Exception is thrown if decoding of Base64 data fails.
  *
- * @author Christian Geuer-Pollmann
  */
 public class Base64DecodingException extends XMLSecurityException {
 
@@ -61,22 +60,32 @@ public class Base64DecodingException extends XMLSecurityException {
     /**
      * Constructor Base64DecodingException
      *
-     * @param msgID
      * @param originalException
+     * @param msgID
      */
+    public Base64DecodingException(Exception originalException, String msgID) {
+        super(originalException, msgID);
+    }
+
+    @Deprecated
     public Base64DecodingException(String msgID, Exception originalException) {
-        super(msgID, originalException);
+        this(originalException, msgID);
     }
 
     /**
      * Constructor Base64DecodingException
      *
+     * @param originalException
      * @param msgID
      * @param exArgs
-     * @param originalException
      */
-    public Base64DecodingException(String msgID, Object exArgs[], Exception originalException) {
-        super(msgID, exArgs, originalException);
+    public Base64DecodingException(Exception originalException, String msgID, Object exArgs[]) {
+        super(originalException, msgID, exArgs);
+    }
+
+    @Deprecated
+    public Base64DecodingException(String msgID, Object[] exArgs, Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 
 }

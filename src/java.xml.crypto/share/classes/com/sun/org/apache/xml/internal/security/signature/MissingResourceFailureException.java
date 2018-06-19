@@ -27,7 +27,6 @@ package com.sun.org.apache.xml.internal.security.signature;
  * testing the signature fails because of uninitialized
  * {@link com.sun.org.apache.xml.internal.security.signature.Reference}s.
  *
- * @author Christian Geuer-Pollmann
  * @see ReferenceNotInitializedException
  */
 public class MissingResourceFailureException extends XMLSignatureException {
@@ -38,65 +37,89 @@ public class MissingResourceFailureException extends XMLSignatureException {
     private static final long serialVersionUID = 1L;
 
     /** Field uninitializedReference */
-    private Reference uninitializedReference = null;
+    private Reference uninitializedReference;
 
     /**
      * MissingKeyResourceFailureException constructor.
-     * @param msgID
      * @param reference
+     * @param msgID
      * @see #getReference
      */
-    public MissingResourceFailureException(String msgID, Reference reference) {
+    public MissingResourceFailureException(Reference reference, String msgID) {
         super(msgID);
 
         this.uninitializedReference = reference;
     }
 
+    @Deprecated
+    public MissingResourceFailureException(String msgID, Reference reference) {
+        this(reference, msgID);
+    }
+
     /**
      * Constructor MissingResourceFailureException
      *
+     * @param reference
      * @param msgID
      * @param exArgs
-     * @param reference
      * @see #getReference
      */
-    public MissingResourceFailureException(String msgID, Object exArgs[], Reference reference) {
+    public MissingResourceFailureException(Reference reference, String msgID, Object exArgs[]) {
         super(msgID, exArgs);
 
         this.uninitializedReference = reference;
     }
 
-    /**
-     * Constructor MissingResourceFailureException
-     *
-     * @param msgID
-     * @param originalException
-     * @param reference
-     * @see #getReference
-     */
-    public MissingResourceFailureException(
-        String msgID, Exception originalException, Reference reference
-    ) {
-        super(msgID, originalException);
-
-        this.uninitializedReference = reference;
+    @Deprecated
+    public MissingResourceFailureException(String msgID, Object exArgs[], Reference reference) {
+        this(reference, msgID, exArgs);
     }
 
     /**
      * Constructor MissingResourceFailureException
      *
-     * @param msgID
-     * @param exArgs
      * @param originalException
      * @param reference
+     * @param msgID
      * @see #getReference
      */
     public MissingResourceFailureException(
-        String msgID, Object exArgs[], Exception originalException, Reference reference
+        Exception originalException, Reference reference, String msgID
     ) {
-        super(msgID, exArgs, originalException);
+        super(originalException, msgID);
 
         this.uninitializedReference = reference;
+    }
+
+    @Deprecated
+    public MissingResourceFailureException(
+        String msgID, Exception originalException, Reference reference
+    ) {
+        this(originalException, reference, msgID);
+    }
+
+    /**
+     * Constructor MissingResourceFailureException
+     *
+     * @param originalException
+     * @param reference
+     * @param msgID
+     * @param exArgs
+     * @see #getReference
+     */
+    public MissingResourceFailureException(
+        Exception originalException, Reference reference, String msgID, Object exArgs[]
+    ) {
+        super(originalException, msgID, exArgs);
+
+        this.uninitializedReference = reference;
+    }
+
+    @Deprecated
+    public MissingResourceFailureException(
+        String msgID, Object exArgs[], Exception originalException, Reference reference
+    ) {
+        this(originalException, reference, msgID, exArgs);
     }
 
     /**

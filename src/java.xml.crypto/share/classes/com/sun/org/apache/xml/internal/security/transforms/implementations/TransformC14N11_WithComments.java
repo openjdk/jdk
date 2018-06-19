@@ -32,10 +32,9 @@ import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
 
 /**
- * Implements the <CODE>http://www.w3.org/2006/12/xml-c14n-11#WithComments</CODE>
+ * Implements the {@code http://www.w3.org/2006/12/xml-c14n-11#WithComments}
  * (C14N 1.1 With Comments) transform.
  *
- * @author Sean Mullan
  */
 public class TransformC14N11_WithComments extends TransformSpi {
 
@@ -48,6 +47,7 @@ public class TransformC14N11_WithComments extends TransformSpi {
     ) throws CanonicalizationException {
 
         Canonicalizer11_WithComments c14n = new Canonicalizer11_WithComments();
+        c14n.setSecureValidation(secureValidation);
         if (os != null) {
             c14n.setWriter(os);
         }
@@ -55,6 +55,7 @@ public class TransformC14N11_WithComments extends TransformSpi {
         byte[] result = null;
         result = c14n.engineCanonicalize(input);
         XMLSignatureInput output = new XMLSignatureInput(result);
+        output.setSecureValidation(secureValidation);
         if (os != null) {
             output.setOutputStream(os);
         }

@@ -23,11 +23,7 @@
 package com.sun.org.apache.xml.internal.security.c14n.implementations;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.io.OutputStream;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -38,9 +34,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
 import com.sun.org.apache.xml.internal.security.c14n.helper.C14nHelper;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Attr;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -51,97 +47,13 @@ import org.xml.sax.SAXException;
  * Implements <A HREF="http://www.w3.org/TR/2001/REC-xml-c14n-20010315">Canonical
  * XML Version 1.0</A>, a W3C Recommendation from 15 March 2001.
  *
- * @author Christian Geuer-Pollmann <geuerp@apache.org>
  */
 public abstract class Canonicalizer20010315 extends CanonicalizerBase {
-    private static final String XMLNS_URI = Constants.NamespaceSpecNS;
-    private static final String XML_LANG_URI = Constants.XML_LANG_SPACE_SpecNS;
 
     private boolean firstCall = true;
-    private final SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
 
-    private static class XmlAttrStack {
-        static class XmlsStackElement {
-            int level;
-            boolean rendered = false;
-            List<Attr> nodes = new ArrayList<Attr>();
-        };
-
-        int currentLevel = 0;
-        int lastlevel = 0;
-        XmlsStackElement cur;
-        List<XmlsStackElement> levels = new ArrayList<XmlsStackElement>();
-
-        void push(int level) {
-            currentLevel = level;
-            if (currentLevel == -1) {
-                return;
-            }
-            cur = null;
-            while (lastlevel >= currentLevel) {
-                levels.remove(levels.size() - 1);
-                int newSize = levels.size();
-                if (newSize == 0) {
-                    lastlevel = 0;
-                    return;
-                }
-                lastlevel = (levels.get(newSize - 1)).level;
-            }
-        }
-
-        void addXmlnsAttr(Attr n) {
-            if (cur == null) {
-                cur = new XmlsStackElement();
-                cur.level = currentLevel;
-                levels.add(cur);
-                lastlevel = currentLevel;
-            }
-            cur.nodes.add(n);
-        }
-
-        void getXmlnsAttr(Collection<Attr> col) {
-            int size = levels.size() - 1;
-            if (cur == null) {
-                cur = new XmlsStackElement();
-                cur.level = currentLevel;
-                lastlevel = currentLevel;
-                levels.add(cur);
-            }
-            boolean parentRendered = false;
-            XmlsStackElement e = null;
-            if (size == -1) {
-                parentRendered = true;
-            } else {
-                e = levels.get(size);
-                if (e.rendered && e.level + 1 == currentLevel) {
-                    parentRendered = true;
-                }
-            }
-            if (parentRendered) {
-                col.addAll(cur.nodes);
-                cur.rendered = true;
-                return;
-            }
-
-            Map<String, Attr> loa = new HashMap<String, Attr>();
-            for (; size >= 0; size--) {
-                e = levels.get(size);
-                Iterator<Attr> it = e.nodes.iterator();
-                while (it.hasNext()) {
-                    Attr n = it.next();
-                    if (!loa.containsKey(n.getName())) {
-                        loa.put(n.getName(), n);
-                    }
-                }
-            }
-
-            cur.rendered = true;
-            col.addAll(loa.values());
-        }
-
-    }
-
-    private XmlAttrStack xmlattrStack = new XmlAttrStack();
+    private final XmlAttrStack xmlattrStack;
+    private final boolean c14n11;
 
     /**
      * Constructor Canonicalizer20010315
@@ -149,8 +61,21 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
      * @param includeComments
      */
     public Canonicalizer20010315(boolean includeComments) {
-        super(includeComments);
+        this(includeComments, false);
     }
+
+    /**
+     * Constructor Canonicalizer20010315
+     *
+     * @param includeComments
+     * @param c14n11 Whether this is a Canonical XML 1.1 implementation or not
+     */
+    public Canonicalizer20010315(boolean includeComments, boolean c14n11) {
+        super(includeComments);
+        xmlattrStack = new XmlAttrStack(c14n11);
+        this.c14n11 = c14n11;
+    }
+
 
     /**
      * Always throws a CanonicalizationException because this is inclusive c14n.
@@ -183,28 +108,44 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
     }
 
     /**
-     * Returns the Attr[]s to be output for the given element.
+     * Always throws a CanonicalizationException because this is inclusive c14n.
+     *
+     * @param rootNode
+     * @param inclusiveNamespaces
+     * @return none it always fails
+     * @throws CanonicalizationException
+     */
+    public byte[] engineCanonicalizeSubTree(
+            Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace)
+            throws CanonicalizationException {
+
+        /** $todo$ well, should we throw UnsupportedOperationException ? */
+        throw new CanonicalizationException("c14n.Canonicalizer.UnsupportedOperation");
+    }
+
+    /**
+     * Output the Attr[]s for the given element.
      * <br>
-     * The code of this method is a copy of {@link #handleAttributes(Element,
-     * NameSpaceSymbTable)},
+     * The code of this method is a copy of {@link #outputAttributes(Element,
+     * NameSpaceSymbTable, Map<String, byte[]>)},
      * whereas it takes into account that subtree-c14n is -- well -- subtree-based.
      * So if the element in question isRoot of c14n, it's parent is not in the
      * node set, as well as all other ancestors.
      *
      * @param element
      * @param ns
-     * @return the Attr[]s to be output
-     * @throws CanonicalizationException
+     * @param cache
+     * @throws CanonicalizationException, DOMException, IOException
      */
     @Override
-    protected Iterator<Attr> handleAttributesSubtree(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException {
+    protected void outputAttributesSubtree(Element element, NameSpaceSymbTable ns,
+                                           Map<String, byte[]> cache)
+        throws CanonicalizationException, DOMException, IOException {
         if (!element.hasAttributes() && !firstCall) {
-            return null;
+            return;
         }
         // result will contain the attrs which have to be output
-        final SortedSet<Attr> result = this.result;
-        result.clear();
+        SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
 
         if (element.hasAttributes()) {
             NamedNodeMap attrs = element.getAttributes();
@@ -246,11 +187,15 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
             firstCall = false;
         }
 
-        return result.iterator();
+        OutputStream writer = getWriter();
+        //we output all Attrs which are available
+        for (Attr attr : result) {
+            outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
+        }
     }
 
     /**
-     * Returns the Attr[]s to be output for the given element.
+     * Output the Attr[]s for the given element.
      * <br>
      * IMPORTANT: This method expects to work on a modified DOM tree, i.e. a DOM which has
      * been prepared using {@link com.sun.org.apache.xml.internal.security.utils.XMLUtils#circumventBug2650(
@@ -258,17 +203,17 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
      *
      * @param element
      * @param ns
-     * @return the Attr[]s to be output
-     * @throws CanonicalizationException
+     * @param cache
+     * @throws CanonicalizationException, DOMException, IOException
      */
     @Override
-    protected Iterator<Attr> handleAttributes(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException {
+    protected void outputAttributes(Element element, NameSpaceSymbTable ns,
+                                    Map<String, byte[]> cache)
+        throws CanonicalizationException, DOMException, IOException {
         // result will contain the attrs which have to be output
         xmlattrStack.push(ns.getLevel());
         boolean isRealVisible = isVisibleDO(element, ns.getLevel()) == 1;
-        final SortedSet<Attr> result = this.result;
-        result.clear();
+        SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
 
         if (element.hasAttributes()) {
             NamedNodeMap attrs = element.getAttributes();
@@ -283,7 +228,15 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
                 if (!XMLNS_URI.equals(NUri)) {
                     //A non namespace definition node.
                     if (XML_LANG_URI.equals(NUri)) {
-                        xmlattrStack.addXmlnsAttr(attribute);
+                        if (c14n11 && "id".equals(NName)) {
+                            if (isRealVisible) {
+                                // treat xml:id like any other attribute
+                                // (emit it, but don't inherit it)
+                                result.add(attribute);
+                            }
+                        } else {
+                            xmlattrStack.addXmlnsAttr(attribute);
+                        }
                     } else if (isRealVisible) {
                         //The node is visible add the attribute to the list of output attributes.
                         result.add(attribute);
@@ -339,7 +292,11 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
             ns.getUnrenderedNodes(result);
         }
 
-        return result.iterator();
+        OutputStream writer = getWriter();
+        //we output all Attrs which are available
+        for (Attr attr : result) {
+            outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
+        }
     }
 
     protected void circumventBugIfNeeded(XMLSignatureInput input)
@@ -369,11 +326,12 @@ public abstract class Canonicalizer20010315 extends CanonicalizerBase {
             String NName = attribute.getLocalName();
             String NValue = attribute.getNodeValue();
 
-            if (Constants.NamespaceSpecNS.equals(attribute.getNamespaceURI())) {
-                if (!XML.equals(NName) || !Constants.XML_LANG_SPACE_SpecNS.equals(NValue)) {
+            if (XMLNS_URI.equals(attribute.getNamespaceURI())) {
+                if (!XML.equals(NName) || !XML_LANG_URI.equals(NValue)) {
                     ns.addMapping(NName, NValue, attribute);
                 }
-            } else if (XML_LANG_URI.equals(attribute.getNamespaceURI())) {
+            } else if (XML_LANG_URI.equals(attribute.getNamespaceURI())
+                && (!c14n11 || c14n11 && !"id".equals(NName))) {
                 xmlattrStack.addXmlnsAttr(attribute);
             }
         }

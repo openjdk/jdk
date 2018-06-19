@@ -28,12 +28,11 @@ import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithm;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
 
 /**
- * @author raul
  *
  */
 public class SignerOutputStream extends ByteArrayOutputStream {
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(SignerOutputStream.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(SignerOutputStream.class);
 
     final SignatureAlgorithm sa;
 
@@ -44,7 +43,7 @@ public class SignerOutputStream extends ByteArrayOutputStream {
         this.sa = sa;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public void write(byte[] arg0)  {
         try {
             sa.update(arg0);
@@ -53,7 +52,7 @@ public class SignerOutputStream extends ByteArrayOutputStream {
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public void write(int arg0) {
         try {
             sa.update((byte)arg0);
@@ -62,15 +61,15 @@ public class SignerOutputStream extends ByteArrayOutputStream {
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public void write(byte[] arg0, int arg1, int arg2) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Canonicalized SignedInfo:");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Canonicalized SignedInfo:");
             StringBuilder sb = new StringBuilder(arg2);
             for (int i = arg1; i < (arg1 + arg2); i++) {
                 sb.append((char)arg0[i]);
             }
-            log.log(java.util.logging.Level.FINE, sb.toString());
+            LOG.debug(sb.toString());
         }
         try {
             sa.update(arg0, arg1, arg2);

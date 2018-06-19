@@ -24,9 +24,9 @@ package com.sun.org.apache.xml.internal.security.keys.content.x509;
 
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Base64;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import org.w3c.dom.Document;
@@ -40,20 +40,19 @@ import org.w3c.dom.Element;
  */
 public class XMLX509SKI extends SignatureElementProxy implements XMLX509DataContent {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(XMLX509SKI.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(XMLX509SKI.class);
 
     /**
-     * <CODE>SubjectKeyIdentifier (id-ce-subjectKeyIdentifier) (2.5.29.14)</CODE>:
+     * {@code SubjectKeyIdentifier (id-ce-subjectKeyIdentifier) (2.5.29.14)}:
      * This extension identifies the public key being certified. It enables
      * distinct keys used by the same subject to be differentiated
      * (e.g., as key updating occurs).
-     * <BR />
+     * <p></p>
      * A key identifier shall be unique with respect to all key identifiers
      * for the subject with which it is used. This extension is always non-critical.
      */
-    public static final String SKI_OID = "2.5.29.14";
+    public static final String SKI_OID = "2.5.29.14"; //NOPMD
 
     /**
      * Constructor X509SKI
@@ -83,11 +82,11 @@ public class XMLX509SKI extends SignatureElementProxy implements XMLX509DataCont
      * Constructor XMLX509SKI
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public XMLX509SKI(Element element, String BaseURI) throws XMLSecurityException {
-        super(element, BaseURI);
+    public XMLX509SKI(Element element, String baseURI) throws XMLSecurityException {
+        super(element, baseURI);
     }
 
     /**
@@ -113,7 +112,7 @@ public class XMLX509SKI extends SignatureElementProxy implements XMLX509DataCont
         throws XMLSecurityException {
 
         if (cert.getVersion() < 3) {
-            Object exArgs[] = { Integer.valueOf(cert.getVersion()) };
+            Object exArgs[] = { cert.getVersion() };
             throw new XMLSecurityException("certificate.noSki.lowVersion", exArgs);
         }
 
@@ -138,14 +137,14 @@ public class XMLX509SKI extends SignatureElementProxy implements XMLX509DataCont
 
         System.arraycopy(extensionValue, 4, skidValue, 0, skidValue.length);
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Base64 of SKI is " + Base64.encode(skidValue));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Base64 of SKI is " + Base64.getMimeEncoder().encodeToString(skidValue));
         }
 
         return skidValue;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public boolean equals(Object obj) {
         if (!(obj instanceof XMLX509SKI)) {
             return false;
@@ -168,15 +167,13 @@ public class XMLX509SKI extends SignatureElementProxy implements XMLX509DataCont
                 result = 31 * result + bytes[i];
             }
         } catch (XMLSecurityException e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-            }
+            LOG.debug(e.getMessage(), e);
         }
         return result;
 
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_X509SKI;
     }

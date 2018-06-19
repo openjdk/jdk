@@ -23,6 +23,8 @@
 package com.sun.org.apache.xml.internal.security.keys.content.x509;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -44,11 +46,11 @@ public class XMLX509Certificate extends SignatureElementProxy implements XMLX509
      * Constructor X509Certificate
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public XMLX509Certificate(Element element, String BaseURI) throws XMLSecurityException {
-        super(element, BaseURI);
+    public XMLX509Certificate(Element element, String baseURI) throws XMLSecurityException {
+        super(element, baseURI);
     }
 
     /**
@@ -77,7 +79,7 @@ public class XMLX509Certificate extends SignatureElementProxy implements XMLX509
         try {
             this.addBase64Text(x509certificate.getEncoded());
         } catch (java.security.cert.CertificateEncodingException ex) {
-            throw new XMLSecurityException("empty", ex);
+            throw new XMLSecurityException(ex);
         }
     }
 
@@ -98,22 +100,20 @@ public class XMLX509Certificate extends SignatureElementProxy implements XMLX509
      * @throws XMLSecurityException
      */
     public X509Certificate getX509Certificate() throws XMLSecurityException {
-        try {
-            byte certbytes[] = this.getCertificateBytes();
+        byte certbytes[] = this.getCertificateBytes();
+        try (InputStream is = new ByteArrayInputStream(certbytes)) {
             CertificateFactory certFact =
                 CertificateFactory.getInstance(XMLX509Certificate.JCA_CERT_ID);
             X509Certificate cert =
-                (X509Certificate) certFact.generateCertificate(
-                    new ByteArrayInputStream(certbytes)
-                );
+                (X509Certificate) certFact.generateCertificate(is);
 
             if (cert != null) {
                 return cert;
             }
 
             return null;
-        } catch (CertificateException ex) {
-            throw new XMLSecurityException("empty", ex);
+        } catch (CertificateException | IOException ex) {
+            throw new XMLSecurityException(ex);
         }
     }
 
@@ -123,7 +123,7 @@ public class XMLX509Certificate extends SignatureElementProxy implements XMLX509
      * @return the publickey
      * @throws XMLSecurityException
      */
-    public PublicKey getPublicKey() throws XMLSecurityException {
+    public PublicKey getPublicKey() throws XMLSecurityException, IOException {
         X509Certificate cert = this.getX509Certificate();
 
         if (cert != null) {
@@ -133,7 +133,7 @@ public class XMLX509Certificate extends SignatureElementProxy implements XMLX509
         return null;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public boolean equals(Object obj) {
         if (!(obj instanceof XMLX509Certificate)) {
             return false;
@@ -154,14 +154,12 @@ public class XMLX509Certificate extends SignatureElementProxy implements XMLX509
                 result = 31 * result + bytes[i];
             }
         } catch (XMLSecurityException e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-            }
+            LOG.debug(e.getMessage(), e);
         }
         return result;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_X509CERTIFICATE;
     }

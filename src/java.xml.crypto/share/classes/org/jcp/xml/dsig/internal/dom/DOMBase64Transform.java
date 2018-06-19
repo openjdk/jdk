@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMBase64Transform.java 1197150 2011-11-03 14:34:57Z coheigea $
+ * $Id: DOMBase64Transform.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -36,10 +36,10 @@ import javax.xml.crypto.dsig.spec.TransformParameterSpec;
  * DOM-based implementation of Base64 Encoding Transform.
  * (Uses Apache XML-Sec Transform implementation)
  *
- * @author Sean Mullan
  */
 public final class DOMBase64Transform extends ApacheTransform {
 
+    @Override
     public void init(TransformParameterSpec params)
         throws InvalidAlgorithmParameterException {
         if (params != null) {
