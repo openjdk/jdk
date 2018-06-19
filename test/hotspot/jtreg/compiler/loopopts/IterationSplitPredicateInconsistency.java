@@ -23,11 +23,12 @@
 
 /**
  * @test
- * @bug 8193130
+ * @bug 8193130 8203915
  * @summary Bad graph when unrolled loop bounds conflicts with range checks
  *
  * @run main/othervm IterationSplitPredicateInconsistency
  * @run main/othervm -XX:-UseLoopPredicate IterationSplitPredicateInconsistency
+ * @run main/othervm -XX:LoopStripMiningIter=0 IterationSplitPredicateInconsistency
  *
  */
 

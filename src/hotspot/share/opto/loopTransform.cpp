@@ -1059,8 +1059,7 @@ Node* PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) 
 // loop is never executed). When that happens, range check
 // CastII/ConvI2L nodes cause some data paths to die. For consistency,
 // the control paths must die too but the range checks were removed by
-// predication. The range checks that we add here guarantee that they
-// do.
+// predication. The range checks that we add here guarantee that they do.
 void PhaseIdealLoop::duplicate_predicates_helper(Node* predicate, Node* castii, IdealLoopTree* outer_loop,
                                                  LoopNode* outer_main_head, uint dd_main_head) {
   if (predicate != NULL) {
@@ -1069,108 +1068,126 @@ void PhaseIdealLoop::duplicate_predicates_helper(Node* predicate, Node* castii, 
     Node* rgn = uncommon_proj->unique_ctrl_out();
     assert(rgn->is_Region() || rgn->is_Call(), "must be a region or call uct");
     assert(iff->in(1)->in(1)->Opcode() == Op_Opaque1, "unexpected predicate shape");
-    predicate = predicate->in(0)->in(0);
+    predicate = iff->in(0);
     Node* current_proj = outer_main_head->in(LoopNode::EntryControl);
     Node* prev_proj = current_proj;
     while (predicate != NULL && predicate->is_Proj() && predicate->in(0)->is_If()) {
-      uncommon_proj = predicate->in(0)->as_If()->proj_out(1 - predicate->as_Proj()->_con);
+      iff = predicate->in(0)->as_If();
+      uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
       if (uncommon_proj->unique_ctrl_out() != rgn)
         break;
-      iff = predicate->in(0)->as_If();
       if (iff->in(1)->Opcode() == Op_Opaque4) {
-        Node_Stack to_clone(2);
-        to_clone.push(iff->in(1), 1);
-        uint current = C->unique();
-        Node* result = NULL;
-        // Look for the opaque node to replace with the init value
-        // and clone everything in between. We keep the Opaque4 node
-        // so the duplicated predicates are eliminated once loop
-        // opts are over: they are here only to keep the IR graph
-        // consistent.
-        do {
-          Node* n = to_clone.node();
-          uint i = to_clone.index();
-          Node* m = n->in(i);
-          int op = m->Opcode();
-          if (m->is_Bool() ||
-              m->is_Cmp() ||
-              op == Op_AndL ||
-              op == Op_OrL ||
-              op == Op_RShiftL ||
-              op == Op_LShiftL ||
-              op == Op_AddL ||
-              op == Op_AddI ||
-              op == Op_MulL ||
-              op == Op_MulI ||
-              op == Op_SubL ||
-              op == Op_SubI ||
-              op == Op_ConvI2L) {
-            to_clone.push(m, 1);
-            continue;
-          }
-          if (op == Op_Opaque1) {
-            if (n->_idx < current) {
-              n = n->clone();
-            }
-            n->set_req(i, castii);
-            register_new_node(n, current_proj);
-            to_clone.set_node(n);
-          }
-          for (;;) {
-            Node* cur = to_clone.node();
-            uint j = to_clone.index();
-            if (j+1 < cur->req()) {
-              to_clone.set_index(j+1);
-              break;
-            }
-            to_clone.pop();
-            if (to_clone.size() == 0) {
-              result = cur;
-              break;
-            }
-            Node* next = to_clone.node();
-            j = to_clone.index();
-            if (cur->_idx >= current) {
-              if (next->_idx < current) {
-                next = next->clone();
-                register_new_node(next, current_proj);
-                to_clone.set_node(next);
-              }
-              assert(next->in(j) != cur, "input should have been cloned");
-              next->set_req(j, cur);
-            }
-          }
-        } while (result == NULL);
-        assert(result->_idx >= current, "new node expected");
-
-        Node* proj = predicate->clone();
-        Node* other_proj = uncommon_proj->clone();
-        Node* new_iff = iff->clone();
-        new_iff->set_req(1, result);
-        proj->set_req(0, new_iff);
-        other_proj->set_req(0, new_iff);
-        Node *frame = new ParmNode(C->start(), TypeFunc::FramePtr);
-        register_new_node(frame, C->start());
-        // It's impossible for the predicate to fail at runtime. Use
-        // an Halt node.
-        Node* halt = new HaltNode(other_proj, frame);
-        C->root()->add_req(halt);
-        new_iff->set_req(0, prev_proj);
-
-        register_control(new_iff, outer_loop->_parent, prev_proj);
-        register_control(proj, outer_loop->_parent, new_iff);
-        register_control(other_proj, _ltree_root, new_iff);
-        register_control(halt, _ltree_root, other_proj);
-
-        prev_proj = proj;
+        // Clone the predicate twice and initialize one with the initial
+        // value of the loop induction variable. Leave the other predicate
+        // to be initialized when increasing the stride during loop unrolling.
+        prev_proj = update_skeleton_predicate(iff, castii, predicate, uncommon_proj, current_proj, outer_loop, prev_proj);
+        Node* value = new Opaque1Node(C, castii);
+        register_new_node(value, current_proj);
+        prev_proj = update_skeleton_predicate(iff, value, predicate, uncommon_proj, current_proj, outer_loop, prev_proj);
+        // Remove the skeleton predicate from the pre-loop
+        _igvn.replace_input_of(iff, 1, _igvn.intcon(1));
       }
       predicate = predicate->in(0)->in(0);
     }
-    if (prev_proj != current_proj) {
-      _igvn.replace_input_of(outer_main_head, LoopNode::EntryControl, prev_proj);
-      set_idom(outer_main_head, prev_proj, dd_main_head);
-    }
+    _igvn.replace_input_of(outer_main_head, LoopNode::EntryControl, prev_proj);
+    set_idom(outer_main_head, prev_proj, dd_main_head);
   }
+}
+
+Node* PhaseIdealLoop::update_skeleton_predicate(Node* iff, Node* value, Node* predicate, Node* uncommon_proj,
+                                                Node* current_proj, IdealLoopTree* outer_loop, Node* prev_proj) {
+  bool clone = (outer_loop != NULL); // Clone the predicate?
+  Node_Stack to_clone(2);
+  to_clone.push(iff->in(1), 1);
+  uint current = C->unique();
+  Node* result = NULL;
+  // Look for the opaque node to replace with the new value
+  // and clone everything in between. We keep the Opaque4 node
+  // so the duplicated predicates are eliminated once loop
+  // opts are over: they are here only to keep the IR graph
+  // consistent.
+  do {
+    Node* n = to_clone.node();
+    uint i = to_clone.index();
+    Node* m = n->in(i);
+    int op = m->Opcode();
+    if (m->is_Bool() ||
+        m->is_Cmp() ||
+        op == Op_AndL ||
+        op == Op_OrL ||
+        op == Op_RShiftL ||
+        op == Op_LShiftL ||
+        op == Op_AddL ||
+        op == Op_AddI ||
+        op == Op_MulL ||
+        op == Op_MulI ||
+        op == Op_SubL ||
+        op == Op_SubI ||
+        op == Op_ConvI2L) {
+        to_clone.push(m, 1);
+        continue;
+    }
+    if (op == Op_Opaque1) {
+      if (!clone) {
+        // Update the input of the Opaque1Node and exit
+        _igvn.replace_input_of(m, 1, value);
+        return prev_proj;
+      }
+      if (n->_idx < current) {
+        n = n->clone();
+      }
+      n->set_req(i, value);
+      register_new_node(n, current_proj);
+      to_clone.set_node(n);
+    }
+    for (;;) {
+      Node* cur = to_clone.node();
+      uint j = to_clone.index();
+      if (j+1 < cur->req()) {
+        to_clone.set_index(j+1);
+        break;
+      }
+      to_clone.pop();
+      if (to_clone.size() == 0) {
+        result = cur;
+        break;
+      }
+      Node* next = to_clone.node();
+      j = to_clone.index();
+      if (clone && cur->_idx >= current) {
+        if (next->_idx < current) {
+          next = next->clone();
+          register_new_node(next, current_proj);
+          to_clone.set_node(next);
+        }
+        assert(next->in(j) != cur, "input should have been cloned");
+        next->set_req(j, cur);
+      }
+    }
+  } while (result == NULL);
+  if (!clone) {
+    return NULL;
+  }
+  assert(result->_idx >= current, "new node expected");
+
+  Node* proj = predicate->clone();
+  Node* other_proj = uncommon_proj->clone();
+  Node* new_iff = iff->clone();
+  new_iff->set_req(1, result);
+  proj->set_req(0, new_iff);
+  other_proj->set_req(0, new_iff);
+  Node *frame = new ParmNode(C->start(), TypeFunc::FramePtr);
+  register_new_node(frame, C->start());
+  // It's impossible for the predicate to fail at runtime. Use an Halt node.
+  Node* halt = new HaltNode(other_proj, frame);
+  C->root()->add_req(halt);
+  new_iff->set_req(0, prev_proj);
+
+  register_control(new_iff, outer_loop->_parent, prev_proj);
+  register_control(proj, outer_loop->_parent, new_iff);
+  register_control(other_proj, _ltree_root, new_iff);
+  register_control(halt, _ltree_root, other_proj);
+  return proj;
 }
 
 void PhaseIdealLoop::duplicate_predicates(CountedLoopNode* pre_head, Node* castii, IdealLoopTree* outer_loop,
@@ -1681,6 +1698,30 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
   // Verify that unroll policy result is still valid.
   assert(old_trip_count > 1 &&
       (!adjust_min_trip || stride_p <= (1<<3)*loop_head->unrolled_count()), "sanity");
+
+  if (UseLoopPredicate) {
+    // Search for skeleton predicates and update them according to the new stride
+    Node* entry = ctrl;
+    while (entry != NULL && entry->is_Proj() && entry->in(0)->is_If()) {
+      IfNode* iff = entry->in(0)->as_If();
+      ProjNode* proj = iff->proj_out(1 - entry->as_Proj()->_con);
+      if (proj->unique_ctrl_out()->Opcode() != Op_Halt) {
+        break;
+      }
+      if (iff->in(1)->Opcode() == Op_Opaque4) {
+        // Compute the value of the loop induction variable at the end of the
+        // first iteration of the unrolled loop: init + new_stride_con - init_inc
+        int init_inc = stride_con/loop_head->unrolled_count();
+        assert(init_inc != 0, "invalid loop increment");
+        int new_stride_con = stride_con * 2;
+        Node* max_value = _igvn.intcon(new_stride_con - init_inc);
+        max_value = new AddINode(init, max_value);
+        register_new_node(max_value, get_ctrl(iff->in(1)));
+        update_skeleton_predicate(iff, max_value);
+      }
+      entry = entry->in(0)->in(0);
+    }
+  }
 
   // Adjust loop limit to keep valid iterations number after unroll.
   // Use (limit - stride) instead of (((limit - init)/stride) & (-2))*stride
