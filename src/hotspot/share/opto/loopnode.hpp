@@ -38,6 +38,7 @@ class IdealLoopTree;
 class LoopNode;
 class Node;
 class OuterStripMinedLoopEndNode;
+class PathFrequency;
 class PhaseIdealLoop;
 class CountedLoopReserveKit;
 class VectorSet;
@@ -57,7 +58,7 @@ class LoopNode : public RegionNode {
   // the semantics so it does not appear in the hash & cmp functions.
   virtual uint size_of() const { return sizeof(*this); }
 protected:
-  short _loop_flags;
+  uint _loop_flags;
   // Names for flag bitfields
   enum { Normal=0, Pre=1, Main=2, Post=3, PreMainPostFlagsMask=3,
          MainHasNoPreLoop=4,
@@ -73,26 +74,31 @@ protected:
          HasAtomicPostLoop=4096,
          HasRangeChecks=8192,
          IsMultiversioned=16384,
-         StripMined=32768};
+         StripMined=32768,
+         ProfileTripFailed=65536};
   char _unswitch_count;
   enum { _unswitch_max=3 };
   char _postloop_flags;
   enum { LoopNotRCEChecked = 0, LoopRCEChecked = 1, RCEPostLoop = 2 };
 
+  // Expected trip count from profile data
+  float _profile_trip_cnt;
+
 public:
   // Names for edge indices
   enum { Self=0, EntryControl, LoopBackControl };
 
-  int is_inner_loop() const { return _loop_flags & InnerLoop; }
+  bool is_inner_loop() const { return _loop_flags & InnerLoop; }
   void set_inner_loop() { _loop_flags |= InnerLoop; }
 
-  int range_checks_present() const { return _loop_flags & HasRangeChecks; }
-  int is_multiversioned() const { return _loop_flags & IsMultiversioned; }
-  int is_vectorized_loop() const { return _loop_flags & VectorizedLoop; }
-  int is_partial_peel_loop() const { return _loop_flags & PartialPeelLoop; }
+  bool range_checks_present() const { return _loop_flags & HasRangeChecks; }
+  bool is_multiversioned() const { return _loop_flags & IsMultiversioned; }
+  bool is_vectorized_loop() const { return _loop_flags & VectorizedLoop; }
+  bool is_partial_peel_loop() const { return _loop_flags & PartialPeelLoop; }
   void set_partial_peel_loop() { _loop_flags |= PartialPeelLoop; }
-  int partial_peel_has_failed() const { return _loop_flags & PartialPeelFailed; }
-  int is_strip_mined() const { return _loop_flags & StripMined; }
+  bool partial_peel_has_failed() const { return _loop_flags & PartialPeelFailed; }
+  bool is_strip_mined() const { return _loop_flags & StripMined; }
+  bool is_profile_trip_failed() const { return _loop_flags & ProfileTripFailed; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_has_reductions() { _loop_flags |= HasReductions; }
@@ -105,6 +111,7 @@ public:
   void mark_is_multiversioned() { _loop_flags |= IsMultiversioned; }
   void mark_strip_mined() { _loop_flags |= StripMined; }
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
+  void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -119,7 +126,12 @@ public:
     _unswitch_count = val;
   }
 
-  LoopNode(Node *entry, Node *backedge) : RegionNode(3), _loop_flags(0), _unswitch_count(0), _postloop_flags(0) {
+  void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
+  float profile_trip_cnt()             { return _profile_trip_cnt; }
+
+  LoopNode(Node *entry, Node *backedge)
+    : RegionNode(3), _loop_flags(0), _unswitch_count(0),
+      _postloop_flags(0), _profile_trip_cnt(COUNT_UNKNOWN)  {
     init_class_id(Class_Loop);
     init_req(EntryControl, entry);
     init_req(LoopBackControl, backedge);
@@ -186,9 +198,6 @@ class CountedLoopNode : public LoopNode {
   // Known trip count calculated by compute_exact_trip_count()
   uint  _trip_count;
 
-  // Expected trip count from profile data
-  float _profile_trip_cnt;
-
   // Log2 of original loop bodies in unrolled loop
   int _unrolled_count_log2;
 
@@ -203,8 +212,8 @@ class CountedLoopNode : public LoopNode {
 public:
   CountedLoopNode( Node *entry, Node *backedge )
     : LoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
-      _profile_trip_cnt(COUNT_UNKNOWN), _unrolled_count_log2(0),
-      _node_count_before_unroll(0), _slp_maximum_unroll_factor(0) {
+      _unrolled_count_log2(0), _node_count_before_unroll(0),
+      _slp_maximum_unroll_factor(0) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -245,16 +254,16 @@ public:
 
   // A 'main' loop that is ONLY unrolled or peeled, never RCE'd or
   // Aligned, may be missing it's pre-loop.
-  int is_normal_loop   () const { return (_loop_flags&PreMainPostFlagsMask) == Normal; }
-  int is_pre_loop      () const { return (_loop_flags&PreMainPostFlagsMask) == Pre;    }
-  int is_main_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Main;   }
-  int is_post_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Post;   }
-  int is_reduction_loop() const { return (_loop_flags&HasReductions) == HasReductions; }
-  int was_slp_analyzed () const { return (_loop_flags&WasSlpAnalyzed) == WasSlpAnalyzed; }
-  int has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
-  int do_unroll_only      () const { return (_loop_flags&DoUnrollOnly) == DoUnrollOnly; }
-  int is_main_no_pre_loop() const { return _loop_flags & MainHasNoPreLoop; }
-  int has_atomic_post_loop  () const { return (_loop_flags & HasAtomicPostLoop) == HasAtomicPostLoop; }
+  bool is_normal_loop   () const { return (_loop_flags&PreMainPostFlagsMask) == Normal; }
+  bool is_pre_loop      () const { return (_loop_flags&PreMainPostFlagsMask) == Pre;    }
+  bool is_main_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Main;   }
+  bool is_post_loop     () const { return (_loop_flags&PreMainPostFlagsMask) == Post;   }
+  bool is_reduction_loop() const { return (_loop_flags&HasReductions) == HasReductions; }
+  bool was_slp_analyzed () const { return (_loop_flags&WasSlpAnalyzed) == WasSlpAnalyzed; }
+  bool has_passed_slp   () const { return (_loop_flags&PassedSlpAnalysis) == PassedSlpAnalysis; }
+  bool do_unroll_only      () const { return (_loop_flags&DoUnrollOnly) == DoUnrollOnly; }
+  bool is_main_no_pre_loop() const { return _loop_flags & MainHasNoPreLoop; }
+  bool has_atomic_post_loop  () const { return (_loop_flags & HasAtomicPostLoop) == HasAtomicPostLoop; }
   void set_main_no_pre_loop() { _loop_flags |= MainHasNoPreLoop; }
 
   int main_idx() const { return _main_idx; }
@@ -280,9 +289,6 @@ public:
     _loop_flags &= ~PassedSlpAnalysis;
   }
 
-  void set_profile_trip_cnt(float ptc) { _profile_trip_cnt = ptc; }
-  float profile_trip_cnt()             { return _profile_trip_cnt; }
-
   void double_unrolled_count() { _unrolled_count_log2++; }
   int  unrolled_count()        { return 1 << MIN2(_unrolled_count_log2, BitsPerInt-3); }
 
@@ -301,6 +307,7 @@ public:
   // If this is a main loop in a pre/main/post loop nest, walk over
   // the predicates that were inserted by
   // duplicate_predicates()/add_range_check_predicate()
+  static Node* skip_predicates_from_entry(Node* ctrl);
   Node* skip_predicates();
 
 #ifndef PRODUCT
@@ -588,6 +595,7 @@ public:
   void compute_trip_count(PhaseIdealLoop* phase);
 
   // Compute loop trip count from profile data
+  float compute_profile_trip_cnt_helper(Node* n);
   void compute_profile_trip_cnt( PhaseIdealLoop *phase );
 
   // Reassociate invariant expressions.
@@ -732,9 +740,10 @@ private:
   }
 
   Node* cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
-  void duplicate_predicates(CountedLoopNode* pre_head, Node *min_taken, Node* castii,
-                            IdealLoopTree* outer_loop, LoopNode* outer_main_head,
-                            uint dd_main_head);
+  void duplicate_predicates_helper(Node* predicate, Node* castii, IdealLoopTree* outer_loop,
+                                   LoopNode* outer_main_head, uint dd_main_head);
+  void duplicate_predicates(CountedLoopNode* pre_head, Node* castii, IdealLoopTree* outer_loop,
+                            LoopNode* outer_main_head, uint dd_main_head);
 
 public:
 
@@ -1073,6 +1082,7 @@ public:
                                          PhaseIterGVN* igvn);
   Node* clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
 
+  static Node* skip_all_loop_predicates(Node* entry);
   static Node* skip_loop_predicates(Node* entry);
 
   // Find a good location to insert a predicate
@@ -1087,12 +1097,20 @@ public:
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
+  bool loop_predication_impl_helper(IdealLoopTree *loop, ProjNode* proj, ProjNode *predicate_proj,
+                                    CountedLoopNode *cl, ConNode* zero, Invariance& invar,
+                                    Deoptimization::DeoptReason reason);
+  bool loop_predication_should_follow_branches(IdealLoopTree *loop, ProjNode *predicate_proj, float& loop_trip_cnt);
+  void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
+                                        PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
+                                        Node_List& if_proj_list);
   ProjNode* insert_skeleton_predicate(IfNode* iff, IdealLoopTree *loop,
                                       ProjNode* proj, ProjNode *predicate_proj,
                                       ProjNode* upper_bound_proj,
                                       int scale, Node* offset,
                                       Node* init, Node* limit, jint stride,
-                                      Node* rng, bool& overflow);
+                                      Node* rng, bool& overflow,
+                                      Deoptimization::DeoptReason reason);
   Node* add_range_check_predicate(IdealLoopTree* loop, CountedLoopNode* cl,
                                   Node* predicate_proj, int scale_con, Node* offset,
                                   Node* limit, jint stride_con);
