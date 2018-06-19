@@ -58,6 +58,28 @@ extern "C" void entry(CodeBuffer *cb);
 
 static float unpack(unsigned value);
 
+short Assembler::SIMD_Size_in_bytes[] = {
+  // T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q
+       8,   16,   8,  16,   8,  16,   8,  16,  16
+};
+
+#ifdef ASSERT
+static void asm_check(const unsigned int *insns, const unsigned int *insns1, size_t len) {
+    bool ok = true;
+    for (unsigned int i = 0; i < len; i++) {
+      if (insns[i] != insns1[i]) {
+        ok = false;
+        printf("Ours:\n");
+        Disassembler::decode((address)&insns1[i], (address)&insns1[i+1]);
+        printf("Theirs:\n");
+        Disassembler::decode((address)&insns[i], (address)&insns[i+1]);
+        printf("\n");
+      }
+    }
+    assert(ok, "Assembler smoke test failed");
+  }
+#endif // ASSERT
+
 void entry(CodeBuffer *cb) {
 
   // {
@@ -1155,31 +1177,24 @@ Disassembly of section .text:
   };
 // END  Generated code -- do not edit
 
+  asm_check((unsigned int *)entry, insns, sizeof insns / sizeof insns[0]);
+
   {
-    bool ok = true;
-    unsigned int *insns1 = (unsigned int *)entry;
-    for (unsigned int i = 0; i < sizeof insns / sizeof insns[0]; i++) {
-      if (insns[i] != insns1[i]) {
-        ok = false;
-        printf("Ours:\n");
-        Disassembler::decode((address)&insns1[i], (address)&insns1[i+1]);
-        printf("Theirs:\n");
-        Disassembler::decode((address)&insns[i], (address)&insns[i+1]);
-        printf("\n");
-      }
-    }
-    assert(ok, "Assembler smoke test failed");
+    address PC = __ pc();
+    __ ld1(v0, __ T16B, Address(r16));      // No offset
+    __ ld1(v0, __ T8H, __ post(r16, 16));   // Post-index
+    __ ld2(v0, v1, __ T8H, __ post(r24, 16 * 2));   // Post-index
+    __ ld1(v0, __ T16B, __ post(r16, r17)); // Register post-index
+    static const unsigned int vector_insns[] = {
+       0x4c407200, // ld1   {v0.16b}, [x16]
+       0x4cdf7600, // ld1   {v0.8h}, [x16], #16
+       0x4cdf8700, // ld2   {v0.8h, v1.8h}, [x24], #32
+       0x4cd17200, // ld1   {v0.16b}, [x16], x17
+      };
+    asm_check((unsigned int *)PC, vector_insns,
+              sizeof vector_insns / sizeof vector_insns[0]);
   }
 
-#ifndef PRODUCT
-
-  address PC = __ pc();
-  __ ld1(v0, __ T16B, Address(r16)); // No offset
-  __ ld1(v0, __ T16B, __ post(r16, 0)); // Post-index
-  __ ld1(v0, __ T16B, Address(r16, r17)); //
-
-
-#endif // PRODUCT
 #endif // ASSERT
 }
 
