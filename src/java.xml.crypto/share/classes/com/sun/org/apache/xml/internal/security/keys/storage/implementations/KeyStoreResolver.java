@@ -39,7 +39,7 @@ import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolverSpi;
 public class KeyStoreResolver extends StorageResolverSpi {
 
     /** Field keyStore */
-    private KeyStore keyStore = null;
+    private KeyStore keyStore;
 
     /**
      * Constructor KeyStoreResolver
@@ -53,11 +53,11 @@ public class KeyStoreResolver extends StorageResolverSpi {
         try {
             keyStore.aliases();
         } catch (KeyStoreException ex) {
-            throw new StorageResolverException("generic.EmptyMessage", ex);
+            throw new StorageResolverException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public Iterator<Certificate> getIterator() {
         return new KeyStoreIterator(this.keyStore);
     }
@@ -98,16 +98,16 @@ public class KeyStoreResolver extends StorageResolverSpi {
             }
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public boolean hasNext() {
             if (nextCert == null) {
                 nextCert = findNextCert();
             }
 
-            return (nextCert != null);
+            return nextCert != null;
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public Certificate next() {
             if (nextCert == null) {
                 // maybe caller did not call hasNext()

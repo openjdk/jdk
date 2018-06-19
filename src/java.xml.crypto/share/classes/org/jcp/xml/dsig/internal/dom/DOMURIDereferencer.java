@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMURIDereferencer.java 1231033 2012-01-13 12:12:12Z coheigea $
+ * $Id: DOMURIDereferencer.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -43,9 +43,8 @@ import javax.xml.crypto.dom.*;
 /**
  * DOM-based implementation of URIDereferencer.
  *
- * @author Sean Mullan
  */
-public class DOMURIDereferencer implements URIDereferencer {
+public final class DOMURIDereferencer implements URIDereferencer {
 
     static final URIDereferencer INSTANCE = new DOMURIDereferencer();
 
@@ -55,6 +54,7 @@ public class DOMURIDereferencer implements URIDereferencer {
         Init.init();
     }
 
+    @Override
     public Data dereference(URIReference uriRef, XMLCryptoContext context)
         throws URIReferenceException {
 
@@ -106,6 +106,7 @@ public class DOMURIDereferencer implements URIDereferencer {
                 }
 
                 XMLSignatureInput result = new XMLSignatureInput(referencedElem);
+                result.setSecureValidation(secVal);
                 if (!uri.substring(1).startsWith("xpointer(id(")) {
                     result.setExcludeComments(true);
                 }
@@ -123,8 +124,7 @@ public class DOMURIDereferencer implements URIDereferencer {
         try {
             ResourceResolver apacheResolver =
                 ResourceResolver.getInstance(uriAttr, baseURI, false);
-            XMLSignatureInput in = apacheResolver.resolve(uriAttr,
-                                                          baseURI, false);
+            XMLSignatureInput in = apacheResolver.resolve(uriAttr, baseURI, false);
             if (in.isOctetStream()) {
                 return new ApacheOctetStreamData(in);
             } else {

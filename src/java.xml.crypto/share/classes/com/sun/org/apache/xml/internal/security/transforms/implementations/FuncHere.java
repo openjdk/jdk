@@ -34,9 +34,10 @@ import com.sun.org.apache.xpath.internal.functions.Function;
 import com.sun.org.apache.xpath.internal.objects.XNodeSet;
 import com.sun.org.apache.xpath.internal.objects.XObject;
 import com.sun.org.apache.xpath.internal.res.XPATHErrorResources;
-import java.util.List;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+
+import java.util.List;
 
 /**
  * The 'here()' function returns a node-set containing the attribute or
@@ -73,9 +74,7 @@ public class FuncHere extends Function {
      * @return the xobject
      * @throws javax.xml.transform.TransformerException
      */
-    @Override
-    public XObject execute(XPathContext xctxt)
-        throws javax.xml.transform.TransformerException {
+    public XObject execute(XPathContext xctxt) throws TransformerException {
 
         Node xpathOwnerNode = (Node) xctxt.getOwnerObject();
 

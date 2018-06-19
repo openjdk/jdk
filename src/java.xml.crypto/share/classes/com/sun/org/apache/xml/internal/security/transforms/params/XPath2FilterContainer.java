@@ -36,7 +36,6 @@ import org.w3c.dom.NodeList;
  * Implements the parameters for the <A
  * HREF="http://www.w3.org/TR/xmldsig-filter2/">XPath Filter v2.0</A>.
  *
- * @author $Author: coheigea $
  * @see <A HREF="http://www.w3.org/TR/xmldsig-filter2/">XPath Filter v2.0 (TR)</A>
  */
 public class XPath2FilterContainer extends ElementProxy implements TransformParam {
@@ -90,24 +89,22 @@ public class XPath2FilterContainer extends ElementProxy implements TransformPara
     private XPath2FilterContainer(Document doc, String xpath2filter, String filterType) {
         super(doc);
 
-        this.constructionElement.setAttributeNS(
-            null, XPath2FilterContainer._ATT_FILTER, filterType);
-        this.constructionElement.appendChild(doc.createTextNode(xpath2filter));
+        setLocalAttribute(XPath2FilterContainer._ATT_FILTER, filterType);
+        appendSelf(createText(xpath2filter));
     }
 
     /**
      * Constructor XPath2FilterContainer
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    private XPath2FilterContainer(Element element, String BaseURI) throws XMLSecurityException {
+    private XPath2FilterContainer(Element element, String baseURI) throws XMLSecurityException {
 
-        super(element, BaseURI);
+        super(element, baseURI);
 
-        String filterStr =
-            this.constructionElement.getAttributeNS(null, XPath2FilterContainer._ATT_FILTER);
+        String filterStr = getLocalAttribute(XPath2FilterContainer._ATT_FILTER);
 
         if (!filterStr.equals(XPath2FilterContainer._ATT_FILTER_VALUE_INTERSECT)
             && !filterStr.equals(XPath2FilterContainer._ATT_FILTER_VALUE_SUBTRACT)
@@ -179,7 +176,7 @@ public class XPath2FilterContainer extends ElementProxy implements TransformPara
 
             if (!(type.equals(XPath2FilterContainer._ATT_FILTER_VALUE_INTERSECT)
                 || type.equals(XPath2FilterContainer._ATT_FILTER_VALUE_SUBTRACT)
-                || type.equals(XPath2FilterContainer._ATT_FILTER_VALUE_UNION))){
+                || type.equals(XPath2FilterContainer._ATT_FILTER_VALUE_UNION))) {
                 throw new IllegalArgumentException("The type(" + i + ")=\"" + type
                                                    + "\" is illegal");
             }
@@ -197,47 +194,44 @@ public class XPath2FilterContainer extends ElementProxy implements TransformPara
      * Creates a XPath2FilterContainer from an existing Element; needed for verification.
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @return the filter
      *
      * @throws XMLSecurityException
      */
     public static XPath2FilterContainer newInstance(
-        Element element, String BaseURI
+        Element element, String baseURI
     ) throws XMLSecurityException {
-        return new XPath2FilterContainer(element, BaseURI);
+        return new XPath2FilterContainer(element, baseURI);
     }
 
     /**
-     * Returns <code>true</code> if the <code>Filter</code> attribute has value "intersect".
+     * Returns {@code true} if the {@code Filter} attribute has value "intersect".
      *
-     * @return <code>true</code> if the <code>Filter</code> attribute has value "intersect".
+     * @return {@code true} if the {@code Filter} attribute has value "intersect".
      */
     public boolean isIntersect() {
-        return this.constructionElement.getAttributeNS(
-            null, XPath2FilterContainer._ATT_FILTER
+        return getLocalAttribute(XPath2FilterContainer._ATT_FILTER
         ).equals(XPath2FilterContainer._ATT_FILTER_VALUE_INTERSECT);
     }
 
     /**
-     * Returns <code>true</code> if the <code>Filter</code> attribute has value "subtract".
+     * Returns {@code true} if the {@code Filter} attribute has value "subtract".
      *
-     * @return <code>true</code> if the <code>Filter</code> attribute has value "subtract".
+     * @return {@code true} if the {@code Filter} attribute has value "subtract".
      */
     public boolean isSubtract() {
-        return this.constructionElement.getAttributeNS(
-            null, XPath2FilterContainer._ATT_FILTER
+        return getLocalAttribute(XPath2FilterContainer._ATT_FILTER
         ).equals(XPath2FilterContainer._ATT_FILTER_VALUE_SUBTRACT);
     }
 
     /**
-     * Returns <code>true</code> if the <code>Filter</code> attribute has value "union".
+     * Returns {@code true} if the {@code Filter} attribute has value "union".
      *
-     * @return <code>true</code> if the <code>Filter</code> attribute has value "union".
+     * @return {@code true} if the {@code Filter} attribute has value "union".
      */
     public boolean isUnion() {
-        return this.constructionElement.getAttributeNS(
-            null, XPath2FilterContainer._ATT_FILTER
+        return getLocalAttribute(XPath2FilterContainer._ATT_FILTER
         ).equals(XPath2FilterContainer._ATT_FILTER_VALUE_UNION);
     }
 
@@ -255,18 +249,15 @@ public class XPath2FilterContainer extends ElementProxy implements TransformPara
      * Filter String. We must use this stupid hook to enable the here() function
      * to work.
      *
-     * $todo$ I dunno whether this crashes: <XPath> here()<!-- comment -->/ds:Signature[1]</XPath>
      * @return the first Text node which contains information from the XPath 2 Filter String
      */
     public Node getXPathFilterTextNode() {
-
-        NodeList children = this.constructionElement.getChildNodes();
-        int length = children.getLength();
-
-        for (int i = 0; i < length; i++) {
-            if (children.item(i).getNodeType() == Node.TEXT_NODE) {
-                return children.item(i);
+        Node childNode = getElement().getFirstChild();
+        while (childNode != null) {
+            if (childNode.getNodeType() == Node.TEXT_NODE) {
+                return childNode;
             }
+            childNode = childNode.getNextSibling();
         }
 
         return null;

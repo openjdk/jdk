@@ -26,7 +26,6 @@ package com.sun.org.apache.xml.internal.security.signature;
  * Raised if verifying a {@link com.sun.org.apache.xml.internal.security.signature.Reference} fails
  * because of an uninitialized {@link com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput}
  *
- * @author Christian Geuer-Pollmann
  */
 public class ReferenceNotInitializedException extends XMLSignatureException {
 
@@ -41,6 +40,10 @@ public class ReferenceNotInitializedException extends XMLSignatureException {
      */
     public ReferenceNotInitializedException() {
         super();
+    }
+
+    public ReferenceNotInitializedException(Exception ex) {
+        super(ex);
     }
 
     /**
@@ -65,21 +68,31 @@ public class ReferenceNotInitializedException extends XMLSignatureException {
     /**
      * Constructor ReferenceNotInitializedException
      *
-     * @param msgID
      * @param originalException
+     * @param msgID
      */
+    public ReferenceNotInitializedException(Exception originalException, String msgID) {
+        super(originalException, msgID);
+    }
+
+    @Deprecated
     public ReferenceNotInitializedException(String msgID, Exception originalException) {
-        super(msgID, originalException);
+        this(originalException, msgID);
     }
 
     /**
      * Constructor ReferenceNotInitializedException
      *
+     * @param originalException
      * @param msgID
      * @param exArgs
-     * @param originalException
      */
-    public ReferenceNotInitializedException(String msgID, Object exArgs[], Exception originalException) {
-        super(msgID, exArgs, originalException);
+    public ReferenceNotInitializedException(Exception originalException, String msgID, Object exArgs[]) {
+        super(originalException, msgID, exArgs);
+    }
+
+    @Deprecated
+    public ReferenceNotInitializedException(String msgID, Object[] exArgs, Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 }

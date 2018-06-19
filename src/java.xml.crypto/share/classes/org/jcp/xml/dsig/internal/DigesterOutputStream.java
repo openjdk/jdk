@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DigesterOutputStream.java,v 1.5 2005/12/20 20:02:39 mullan Exp $
+ * $Id: DigesterOutputStream.java, v 1.5 2005/12/20 20:02:39 mullan Exp $
  */
 package org.jcp.xml.dsig.internal;
 
@@ -42,12 +42,10 @@ import com.sun.org.apache.xml.internal.security.utils.UnsyncByteArrayOutputStrea
  * com.sun.org.apache.xml.internal.security.algorithms.MessageDigestAlgorithm objects.
  * It also optionally caches the input bytes.
  *
- * @author raul
- * @author Sean Mullan
  */
 public class DigesterOutputStream extends OutputStream {
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger("org.jcp.xml.dsig.internal");
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(DigesterOutputStream.class);
 
     private final boolean buffer;
     private UnsyncByteArrayOutputStream bos;
@@ -88,13 +86,13 @@ public class DigesterOutputStream extends OutputStream {
         if (buffer) {
             bos.write(input, offset, len);
         }
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Pre-digested input:");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Pre-digested input:");
             StringBuilder sb = new StringBuilder(len);
             for (int i = offset; i < (offset + len); i++) {
                 sb.append((char)input[i]);
             }
-            log.log(java.util.logging.Level.FINE, sb.toString());
+            LOG.debug(sb.toString());
         }
         md.update(input, offset, len);
     }

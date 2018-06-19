@@ -34,11 +34,11 @@ public class XMLX509CRL extends SignatureElementProxy implements XMLX509DataCont
      * Constructor XMLX509CRL
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public XMLX509CRL(Element element, String BaseURI) throws XMLSecurityException {
-        super(element, BaseURI);
+    public XMLX509CRL(Element element, String baseURI) throws XMLSecurityException {
+        super(element, baseURI);
     }
 
     /**
@@ -63,7 +63,7 @@ public class XMLX509CRL extends SignatureElementProxy implements XMLX509DataCont
         return this.getBytesFromTextChild();
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_X509CRL;
     }

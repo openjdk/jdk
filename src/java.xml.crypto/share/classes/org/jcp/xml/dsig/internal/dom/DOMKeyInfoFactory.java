@@ -21,21 +21,26 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMKeyInfoFactory.java 1333869 2012-05-04 10:42:44Z coheigea $
+ * $Id: DOMKeyInfoFactory.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
 import java.math.BigInteger;
 import java.security.KeyException;
 import java.security.PublicKey;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.List;
+
 import javax.xml.crypto.*;
 import javax.xml.crypto.dom.DOMCryptoContext;
-import javax.xml.crypto.dsig.Transform;
+import javax.xml.crypto.dsig.XMLSignature;
 import javax.xml.crypto.dsig.keyinfo.*;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -43,72 +48,87 @@ import org.w3c.dom.Node;
 /**
  * DOM-based implementation of KeyInfoFactory.
  *
- * @author Sean Mullan
  */
 public final class DOMKeyInfoFactory extends KeyInfoFactory {
 
     public DOMKeyInfoFactory() { }
 
-    public KeyInfo newKeyInfo(List<? extends XMLStructure> content) {
+    @Override
+    @SuppressWarnings("rawtypes")
+    public KeyInfo newKeyInfo(List content) {
         return newKeyInfo(content, null);
     }
 
-    public KeyInfo newKeyInfo(List<? extends XMLStructure> content, String id) {
+    @Override
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public KeyInfo newKeyInfo(List content, String id) {
         return new DOMKeyInfo(content, id);
     }
 
+    @Override
     public KeyName newKeyName(String name) {
         return new DOMKeyName(name);
     }
 
+    @Override
     public KeyValue newKeyValue(PublicKey key)  throws KeyException {
         String algorithm = key.getAlgorithm();
-        if (algorithm.equals("DSA")) {
-            return new DOMKeyValue.DSA(key);
-        } else if (algorithm.equals("RSA")) {
-            return new DOMKeyValue.RSA(key);
-        } else if (algorithm.equals("EC")) {
-            return new DOMKeyValue.EC(key);
+        if ("DSA".equals(algorithm)) {
+            return new DOMKeyValue.DSA((DSAPublicKey) key);
+        } else if ("RSA".equals(algorithm)) {
+            return new DOMKeyValue.RSA((RSAPublicKey) key);
+        } else if ("EC".equals(algorithm)) {
+            return new DOMKeyValue.EC((ECPublicKey) key);
         } else {
             throw new KeyException("unsupported key algorithm: " + algorithm);
         }
     }
 
+    @Override
     public PGPData newPGPData(byte[] keyId) {
         return newPGPData(keyId, null, null);
     }
 
-    public PGPData newPGPData(byte[] keyId, byte[] keyPacket,
-        List<? extends XMLStructure> other) {
+    @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public PGPData newPGPData(byte[] keyId, byte[] keyPacket, List other) {
         return new DOMPGPData(keyId, keyPacket, other);
     }
 
-    public PGPData newPGPData(byte[] keyPacket,
-        List<? extends XMLStructure> other) {
+    @Override
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public PGPData newPGPData(byte[] keyPacket, List other) {
         return new DOMPGPData(keyPacket, other);
     }
 
+    @Override
     public RetrievalMethod newRetrievalMethod(String uri) {
         return newRetrievalMethod(uri, null, null);
     }
 
+    @Override
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public RetrievalMethod newRetrievalMethod(String uri, String type,
-        List<? extends Transform> transforms) {
+        List transforms) {
         if (uri == null) {
             throw new NullPointerException("uri must not be null");
         }
         return new DOMRetrievalMethod(uri, type, transforms);
     }
 
-    public X509Data newX509Data(List<?> content) {
+    @Override
+    @SuppressWarnings("rawtypes")
+    public X509Data newX509Data(List content) {
         return new DOMX509Data(content);
     }
 
+    @Override
     public X509IssuerSerial newX509IssuerSerial(String issuerName,
         BigInteger serialNumber) {
         return new DOMX509IssuerSerial(issuerName, serialNumber);
     }
 
+    @Override
     public boolean isFeatureSupported(String feature) {
         if (feature == null) {
             throw new NullPointerException();
@@ -117,10 +137,12 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
         }
     }
 
+    @Override
     public URIDereferencer getURIDereferencer() {
         return DOMURIDereferencer.INSTANCE;
     }
 
+    @Override
     public KeyInfo unmarshalKeyInfo(XMLStructure xmlStructure)
         throws MarshalException {
         if (xmlStructure == null) {
@@ -145,14 +167,15 @@ public final class DOMKeyInfoFactory extends KeyInfoFactory {
 
         // check tag
         String tag = element.getLocalName();
-        if (tag == null) {
+        String namespace = element.getNamespaceURI();
+        if (tag == null || namespace == null) {
             throw new MarshalException("Document implementation must " +
                 "support DOM Level 2 and be namespace aware");
         }
-        if (tag.equals("KeyInfo")) {
+        if ("KeyInfo".equals(tag) && XMLSignature.XMLNS.equals(namespace)) {
             return new DOMKeyInfo(element, new UnmarshalContext(), getProvider());
         } else {
-            throw new MarshalException("invalid KeyInfo tag: " + tag);
+            throw new MarshalException("invalid KeyInfo tag: " + namespace + ":" + tag);
         }
     }
 

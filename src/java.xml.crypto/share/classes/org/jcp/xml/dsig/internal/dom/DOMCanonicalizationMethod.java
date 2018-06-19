@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMCanonicalizationMethod.java 1333415 2012-05-03 12:03:51Z coheigea $
+ * $Id: DOMCanonicalizationMethod.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -41,13 +41,12 @@ import javax.xml.crypto.dsig.*;
 /**
  * DOM-based abstract implementation of CanonicalizationMethod.
  *
- * @author Sean Mullan
  */
 public class DOMCanonicalizationMethod extends DOMTransform
     implements CanonicalizationMethod {
 
     /**
-     * Creates a <code>DOMCanonicalizationMethod</code>.
+     * Creates a {@code DOMCanonicalizationMethod}.
      *
      * @param spi TransformService
      */
@@ -55,17 +54,14 @@ public class DOMCanonicalizationMethod extends DOMTransform
         throws InvalidAlgorithmParameterException
     {
         super(spi);
-        if (!(spi instanceof ApacheCanonicalizer) &&
-                !isC14Nalg(spi.getAlgorithm())) {
-            throw new InvalidAlgorithmParameterException(
-                "Illegal CanonicalizationMethod");
+        if (!(spi instanceof ApacheCanonicalizer) && !isC14Nalg(spi.getAlgorithm())) {
+            throw new InvalidAlgorithmParameterException("Illegal CanonicalizationMethod");
         }
     }
 
     /**
-     * Creates a <code>DOMCanonicalizationMethod</code> from an element. This
-     * ctor invokes the abstract {@link #unmarshalParams unmarshalParams}
-     * method to unmarshal any algorithm-specific input parameters.
+     * Creates a {@code DOMCanonicalizationMethod} from an element. It unmarshals any
+     * algorithm-specific input parameters.
      *
      * @param cmElem a CanonicalizationMethod element
      */
@@ -74,8 +70,7 @@ public class DOMCanonicalizationMethod extends DOMTransform
         throws MarshalException
     {
         super(cmElem, context, provider);
-        if (!(spi instanceof ApacheCanonicalizer) &&
-                !isC14Nalg(spi.getAlgorithm())) {
+        if (!(spi instanceof ApacheCanonicalizer) && !isC14Nalg(spi.getAlgorithm())) {
             throw new MarshalException("Illegal CanonicalizationMethod");
         }
     }
@@ -86,10 +81,10 @@ public class DOMCanonicalizationMethod extends DOMTransform
      * the {@link #transform transform} method.
      *
      * @param data the data to be canonicalized
-     * @param xc the <code>XMLCryptoContext</code> containing
-     *     additional context (may be <code>null</code> if not applicable)
+     * @param xc the {@code XMLCryptoContext} containing
+     *     additional context (may be {@code null} if not applicable)
      * @return the canonicalized data
-     * @throws NullPointerException if <code>data</code> is <code>null</code>
+     * @throws NullPointerException if {@code data} is {@code null}
      * @throws TransformException if an unexpected error occurs while
      *    canonicalizing the data
      */
@@ -116,8 +111,8 @@ public class DOMCanonicalizationMethod extends DOMTransform
         }
         CanonicalizationMethod ocm = (CanonicalizationMethod)o;
 
-        return (getAlgorithm().equals(ocm.getAlgorithm()) &&
-            DOMUtils.paramsEqual(getParameterSpec(), ocm.getParameterSpec()));
+        return getAlgorithm().equals(ocm.getAlgorithm()) &&
+            DOMUtils.paramsEqual(getParameterSpec(), ocm.getParameterSpec());
     }
 
     @Override
@@ -133,11 +128,21 @@ public class DOMCanonicalizationMethod extends DOMTransform
     }
 
     private static boolean isC14Nalg(String alg) {
-        return (alg.equals(CanonicalizationMethod.INCLUSIVE) ||
-                alg.equals(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS) ||
-                alg.equals(CanonicalizationMethod.EXCLUSIVE) ||
-                alg.equals(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS) ||
-                alg.equals(DOMCanonicalXMLC14N11Method.C14N_11) ||
-                alg.equals(DOMCanonicalXMLC14N11Method.C14N_11_WITH_COMMENTS));
+        return isInclusiveC14Nalg(alg) || isExclusiveC14Nalg(alg) || isC14N11alg(alg);
+    }
+
+    private static boolean isInclusiveC14Nalg(String alg) {
+        return alg.equals(CanonicalizationMethod.INCLUSIVE)
+            || alg.equals(CanonicalizationMethod.INCLUSIVE_WITH_COMMENTS);
+    }
+
+    private static boolean isExclusiveC14Nalg(String alg) {
+        return alg.equals(CanonicalizationMethod.EXCLUSIVE)
+            || alg.equals(CanonicalizationMethod.EXCLUSIVE_WITH_COMMENTS);
+    }
+
+    private static boolean isC14N11alg(String alg) {
+        return alg.equals(DOMCanonicalXMLC14N11Method.C14N_11)
+            || alg.equals(DOMCanonicalXMLC14N11Method.C14N_11_WITH_COMMENTS);
     }
 }

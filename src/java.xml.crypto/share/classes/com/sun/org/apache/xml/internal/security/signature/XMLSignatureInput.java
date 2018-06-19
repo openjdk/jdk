@@ -27,20 +27,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
-import com.sun.org.apache.xml.internal.security.c14n.implementations.CanonicalizerBase;
-import com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer20010315OmitComments;
 import com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer11_OmitComments;
+import com.sun.org.apache.xml.internal.security.c14n.implementations.Canonicalizer20010315OmitComments;
+import com.sun.org.apache.xml.internal.security.c14n.implementations.CanonicalizerBase;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityRuntimeException;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
@@ -51,7 +50,6 @@ import org.xml.sax.SAXException;
 /**
  * Class XMLSignatureInput
  *
- * @author Christian Geuer-Pollmann
  * $todo$ check whether an XMLSignatureInput can be _both_, octet stream _and_ node set?
  */
 public class XMLSignatureInput {
@@ -68,19 +66,19 @@ public class XMLSignatureInput {
      * Some InputStreams do not support the {@link java.io.InputStream#reset}
      * method, so we read it in completely and work on our Proxy.
      */
-    private InputStream inputOctetStreamProxy = null;
+    private InputStream inputOctetStreamProxy;
     /**
      * The original NodeSet for this XMLSignatureInput
      */
-    private Set<Node> inputNodeSet = null;
+    private Set<Node> inputNodeSet;
     /**
      * The original Element
      */
-    private Node subNode = null;
+    private Node subNode;
     /**
      * Exclude Node *for enveloped transformations*
      */
-    private Node excludeNode = null;
+    private Node excludeNode;
     /**
      *
      */
@@ -90,7 +88,8 @@ public class XMLSignatureInput {
     /**
      * A cached bytes
      */
-    private byte[] bytes = null;
+    private byte[] bytes;
+    private boolean secureValidation;
 
     /**
      * Some Transforms may require explicit MIME type, charset (IANA registered
@@ -101,22 +100,25 @@ public class XMLSignatureInput {
      * Transform algorithm and should be described in the specification for the
      * algorithm.
      */
-    private String mimeType = null;
+    private String mimeType;
 
     /**
      * Field sourceURI
      */
-    private String sourceURI = null;
+    private String sourceURI;
 
     /**
      * Node Filter list.
      */
-    private List<NodeFilter> nodeFilters = new ArrayList<NodeFilter>();
+    private List<NodeFilter> nodeFilters = new ArrayList<>();
 
     private boolean needsToBeExpanded = false;
-    private OutputStream outputStream = null;
+    private OutputStream outputStream;
 
-    private DocumentBuilderFactory dfactory;
+    /**
+     * Pre-calculated digest value of the object in base64.
+     */
+    private String preCalculatedDigest;
 
     /**
      * Construct a XMLSignatureInput from an octet array.
@@ -132,7 +134,7 @@ public class XMLSignatureInput {
     }
 
     /**
-     * Constructs a <code>XMLSignatureInput</code> from an octet stream. The
+     * Constructs a {@code XMLSignatureInput} from an octet stream. The
      * stream is directly read.
      *
      * @param inputOctetStream
@@ -158,6 +160,15 @@ public class XMLSignatureInput {
      */
     public XMLSignatureInput(Set<Node> inputNodeSet) {
         this.inputNodeSet = inputNodeSet;
+    }
+
+    /**
+     * Construct a {@code XMLSignatureInput} from a known digest value in Base64.
+     * This makes it possible to compare the element digest with the provided digest value.
+     * @param preCalculatedDigest digest value in base64.
+     */
+    public XMLSignatureInput(String preCalculatedDigest) {
+        this.preCalculatedDigest = preCalculatedDigest;
     }
 
     /**
@@ -286,8 +297,7 @@ public class XMLSignatureInput {
      * @return true if the object has been set up with a Node set
      */
     public boolean isNodeSet() {
-        return ((inputOctetStreamProxy == null
-            && inputNodeSet != null) || isNodeSet);
+        return inputOctetStreamProxy == null && inputNodeSet != null || isNodeSet;
     }
 
     /**
@@ -296,8 +306,8 @@ public class XMLSignatureInput {
      * @return true if the object has been set up with an Element
      */
     public boolean isElement() {
-        return (inputOctetStreamProxy == null && subNode != null
-            && inputNodeSet == null && !isNodeSet);
+        return inputOctetStreamProxy == null && subNode != null
+            && inputNodeSet == null && !isNodeSet;
     }
 
     /**
@@ -306,8 +316,8 @@ public class XMLSignatureInput {
      * @return true if the object has been set up with an octet stream
      */
     public boolean isOctetStream() {
-        return ((inputOctetStreamProxy != null || bytes != null)
-          && (inputNodeSet == null && subNode == null));
+        return (inputOctetStreamProxy != null || bytes != null)
+          && inputNodeSet == null && subNode == null;
     }
 
     /**
@@ -327,7 +337,15 @@ public class XMLSignatureInput {
      * @return true is the object has been set up with an octet stream
      */
     public boolean isByteArray() {
-        return (bytes != null && (this.inputNodeSet == null && subNode == null));
+        return bytes != null && this.inputNodeSet == null && subNode == null;
+    }
+
+    /**
+     * Determines if the object has been set up with a pre-calculated digest.
+     * @return
+     */
+    public boolean isPreCalculatedDigest() {
+        return preCalculatedDigest != null;
     }
 
     /**
@@ -377,7 +395,7 @@ public class XMLSignatureInput {
 
     /**
      * Method toString
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public String toString() {
         if (isNodeSet()) {
@@ -556,13 +574,7 @@ public class XMLSignatureInput {
 
     void convertToNodes() throws CanonicalizationException,
         ParserConfigurationException, IOException, SAXException {
-        if (dfactory == null) {
-            dfactory = DocumentBuilderFactory.newInstance();
-            dfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
-            dfactory.setValidating(false);
-            dfactory.setNamespaceAware(true);
-        }
-        DocumentBuilder db = dfactory.newDocumentBuilder();
+        DocumentBuilder db = XMLUtils.createDocumentBuilder(false, secureValidation);
         // select all nodes, also the comments.
         try {
             db.setErrorHandler(new com.sun.org.apache.xml.internal.security.utils.IgnoreAllErrorHandler());
@@ -570,16 +582,20 @@ public class XMLSignatureInput {
             Document doc = db.parse(this.getOctetStream());
             this.subNode = doc;
         } catch (SAXException ex) {
+            byte[] result = null;
             // if a not-wellformed nodeset exists, put a container around it...
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
-            baos.write("<container>".getBytes("UTF-8"));
-            baos.write(this.getBytes());
-            baos.write("</container>".getBytes("UTF-8"));
+                baos.write("<container>".getBytes(StandardCharsets.UTF_8));
+                baos.write(this.getBytes());
+                baos.write("</container>".getBytes(StandardCharsets.UTF_8));
 
-            byte result[] = baos.toByteArray();
-            Document document = db.parse(new ByteArrayInputStream(result));
-            this.subNode = document.getDocumentElement().getFirstChild().getFirstChild();
+                result = baos.toByteArray();
+            }
+            try (InputStream is = new ByteArrayInputStream(result)) {
+                Document document = db.parse(is);
+                this.subNode = document.getDocumentElement().getFirstChild().getFirstChild();
+            }
         } finally {
             if (this.inputOctetStreamProxy != null) {
                 this.inputOctetStreamProxy.close();
@@ -589,4 +605,15 @@ public class XMLSignatureInput {
         }
     }
 
+    public boolean isSecureValidation() {
+        return secureValidation;
+    }
+
+    public void setSecureValidation(boolean secureValidation) {
+        this.secureValidation = secureValidation;
+    }
+
+    public String getPreCalculatedDigest() {
+        return preCalculatedDigest;
+    }
 }

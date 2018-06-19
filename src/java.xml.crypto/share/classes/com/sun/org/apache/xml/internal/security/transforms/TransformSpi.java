@@ -36,9 +36,10 @@ import org.xml.sax.SAXException;
  * have to be overridden are the
  * {@link #enginePerformTransform(XMLSignatureInput, Transform)} method.
  *
- * @author Christian Geuer-Pollmann
  */
 public abstract class TransformSpi {
+
+    protected boolean secureValidation;
 
     /**
      * The mega method which MUST be implemented by the Transformation Algorithm.
@@ -104,9 +105,9 @@ public abstract class TransformSpi {
     }
 
     /**
-     * Returns the URI representation of <code>Transformation algorithm</code>
+     * Returns the URI representation of {@code Transformation algorithm}
      *
-     * @return the URI representation of <code>Transformation algorithm</code>
+     * @return the URI representation of {@code Transformation algorithm}
      */
     protected abstract String engineGetURI();
 }

@@ -30,9 +30,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- * Provides content model support for the <code>dsig11:KeyInfoReference</code> element.
+ * Provides content model support for the {@code dsig11:KeyInfoReference} element.
  *
- * @author Brent Putman (putmanb@georgetown.edu)
  */
 public class KeyInfoReference extends Signature11ElementProxy implements KeyInfoContent {
 
@@ -40,7 +39,7 @@ public class KeyInfoReference extends Signature11ElementProxy implements KeyInfo
      * Constructor RetrievalMethod
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
     public KeyInfoReference(Element element, String baseURI) throws XMLSecurityException {
@@ -51,12 +50,12 @@ public class KeyInfoReference extends Signature11ElementProxy implements KeyInfo
      * Constructor RetrievalMethod
      *
      * @param doc
-     * @param URI
+     * @param uri
      */
-    public KeyInfoReference(Document doc, String URI) {
+    public KeyInfoReference(Document doc, String uri) {
         super(doc);
 
-        this.constructionElement.setAttributeNS(null, Constants._ATT_URI, URI);
+        setLocalAttribute(Constants._ATT_URI, uri);
     }
 
     /**
@@ -65,7 +64,7 @@ public class KeyInfoReference extends Signature11ElementProxy implements KeyInfo
      * @return the URI attribute
      */
     public Attr getURIAttr() {
-        return this.constructionElement.getAttributeNodeNS(null, Constants._ATT_URI);
+        return getElement().getAttributeNodeNS(null, Constants._ATT_URI);
     }
 
     /**
@@ -78,29 +77,24 @@ public class KeyInfoReference extends Signature11ElementProxy implements KeyInfo
     }
 
     /**
-     * Sets the <code>Id</code> attribute
+     * Sets the {@code Id} attribute
      *
-     * @param Id ID
+     * @param id ID
      */
     public void setId(String id) {
-        if (id != null) {
-            this.constructionElement.setAttributeNS(null, Constants._ATT_ID, id);
-            this.constructionElement.setIdAttributeNS(null, Constants._ATT_ID, true);
-        } else {
-            this.constructionElement.removeAttributeNS(null, Constants._ATT_ID);
-        }
+        setLocalIdAttribute(Constants._ATT_ID, id);
     }
 
     /**
-     * Returns the <code>Id</code> attribute
+     * Returns the {@code Id} attribute
      *
-     * @return the <code>Id</code> attribute
+     * @return the {@code Id} attribute
      */
     public String getId() {
-        return this.constructionElement.getAttributeNS(null, Constants._ATT_ID);
+        return getLocalAttribute(Constants._ATT_ID);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_KEYINFOREFERENCE;
     }

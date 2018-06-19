@@ -24,6 +24,7 @@ package com.sun.org.apache.xml.internal.security.utils;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -31,6 +32,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
 import com.sun.org.apache.xml.internal.security.c14n.Canonicalizer;
@@ -41,32 +46,25 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.ProcessingInstruction;
 import org.w3c.dom.Text;
 
 /**
  * DOM and XML accessibility and comfort functions.
  *
- * @author Christian Geuer-Pollmann
  */
-public class XMLUtils {
+public final class XMLUtils {
 
     private static boolean ignoreLineBreaks =
-        AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-            public Boolean run() {
-                return Boolean.valueOf(Boolean.getBoolean
-                    ("com.sun.org.apache.xml.internal.security.ignoreLineBreaks"));
-            }
-        }).booleanValue();
+        AccessController.doPrivileged(
+            (PrivilegedAction<Boolean>) () -> Boolean.getBoolean("com.sun.org.apache.xml.internal.security.ignoreLineBreaks"));
 
     private static volatile String dsPrefix = "ds";
     private static volatile String ds11Prefix = "dsig11";
     private static volatile String xencPrefix = "xenc";
     private static volatile String xenc11Prefix = "xenc11";
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static final java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(XMLUtils.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(XMLUtils.class);
 
 
     /**
@@ -123,7 +121,7 @@ public class XMLUtils {
 
     public static Element getNextElement(Node el) {
         Node node = el;
-        while ((node != null) && (node.getNodeType() != Node.ELEMENT_NODE)) {
+        while (node != null && node.getNodeType() != Node.ELEMENT_NODE) {
             node = node.getNextSibling();
         }
         return (Element)node;
@@ -136,7 +134,7 @@ public class XMLUtils {
      * @param com whether comments or not
      */
     public static void getSet(Node rootNode, Set<Node> result, Node exclude, boolean com) {
-        if ((exclude != null) && isDescendantOrSelf(exclude, rootNode)) {
+        if (exclude != null && isDescendantOrSelf(exclude, rootNode)) {
             return;
         }
         getSetRec(rootNode, result, exclude, com);
@@ -154,7 +152,8 @@ public class XMLUtils {
             Element el = (Element)rootNode;
             if (el.hasAttributes()) {
                 NamedNodeMap nl = el.getAttributes();
-                for (int i = 0;i < nl.getLength(); i++) {
+                int length = nl.getLength();
+                for (int i = 0; i < length; i++) {
                     result.add(nl.item(i));
                 }
             }
@@ -163,7 +162,7 @@ public class XMLUtils {
             for (Node r = rootNode.getFirstChild(); r != null; r = r.getNextSibling()) {
                 if (r.getNodeType() == Node.TEXT_NODE) {
                     result.add(r);
-                    while ((r != null) && (r.getNodeType() == Node.TEXT_NODE)) {
+                    while (r != null && r.getNodeType() == Node.TEXT_NODE) {
                         r = r.getNextSibling();
                     }
                     if (r == null) {
@@ -208,37 +207,31 @@ public class XMLUtils {
     public static void outputDOM(Node contextNode, OutputStream os, boolean addPreamble) {
         try {
             if (addPreamble) {
-                os.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".getBytes("UTF-8"));
+                os.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".getBytes(java.nio.charset.StandardCharsets.UTF_8));
             }
 
             os.write(Canonicalizer.getInstance(
-                Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS).canonicalizeSubtree(contextNode)
+                Canonicalizer.ALGO_ID_C14N_PHYSICAL).canonicalizeSubtree(contextNode)
             );
         } catch (IOException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
         }
         catch (InvalidCanonicalizerException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
         } catch (CanonicalizationException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
         }
     }
 
     /**
-     * Serializes the <CODE>contextNode</CODE> into the OutputStream, <I>but
+     * Serializes the {@code contextNode} into the OutputStream, <I>but
      * suppresses all Exceptions</I>.
-     * <BR />
+     * <p></p>
      * NOTE: <I>This should only be used for debugging purposes,
      * NOT in a production environment; this method ignores all exceptions,
      * so you won't notice if something goes wrong. If you're asking what is to
      * be used in a production environment, simply use the code inside the
-     * <code>try{}</code> statement, but handle the Exceptions appropriately.</I>
+     * {@code try{}} statement, but handle the Exceptions appropriately.</I>
      *
      * @param contextNode
      * @param os
@@ -249,19 +242,13 @@ public class XMLUtils {
                 Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS).canonicalizeSubtree(contextNode)
             );
         } catch (IOException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
             // throw new RuntimeException(ex.getMessage());
         } catch (InvalidCanonicalizerException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
             // throw new RuntimeException(ex.getMessage());
         } catch (CanonicalizationException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
             // throw new RuntimeException(ex.getMessage());
         }
     }
@@ -298,7 +285,7 @@ public class XMLUtils {
             throw new RuntimeException("Document is null");
         }
 
-        if ((dsPrefix == null) || (dsPrefix.length() == 0)) {
+        if (dsPrefix == null || dsPrefix.length() == 0) {
             return doc.createElementNS(Constants.SignatureSpecNS, elementName);
         }
         return doc.createElementNS(Constants.SignatureSpecNS, dsPrefix + ":" + elementName);
@@ -316,52 +303,10 @@ public class XMLUtils {
             throw new RuntimeException("Document is null");
         }
 
-        if ((ds11Prefix == null) || (ds11Prefix.length() == 0)) {
+        if (ds11Prefix == null || ds11Prefix.length() == 0) {
             return doc.createElementNS(Constants.SignatureSpec11NS, elementName);
         }
         return doc.createElementNS(Constants.SignatureSpec11NS, ds11Prefix + ":" + elementName);
-    }
-
-    /**
-     * Creates an Element in the XML Encryption specification namespace.
-     *
-     * @param doc the factory Document
-     * @param elementName the local name of the Element
-     * @return the Element
-     */
-    public static Element createElementInEncryptionSpace(Document doc, String elementName) {
-        if (doc == null) {
-            throw new RuntimeException("Document is null");
-        }
-
-        if ((xencPrefix == null) || (xencPrefix.length() == 0)) {
-            return doc.createElementNS(EncryptionConstants.EncryptionSpecNS, elementName);
-        }
-        return
-            doc.createElementNS(
-                EncryptionConstants.EncryptionSpecNS, xencPrefix + ":" + elementName
-            );
-    }
-
-    /**
-     * Creates an Element in the XML Encryption 1.1 specification namespace.
-     *
-     * @param doc the factory Document
-     * @param elementName the local name of the Element
-     * @return the Element
-     */
-    public static Element createElementInEncryption11Space(Document doc, String elementName) {
-        if (doc == null) {
-            throw new RuntimeException("Document is null");
-        }
-
-        if ((xenc11Prefix == null) || (xenc11Prefix.length() == 0)) {
-            return doc.createElementNS(EncryptionConstants.EncryptionSpec11NS, elementName);
-        }
-        return
-            doc.createElementNS(
-                EncryptionConstants.EncryptionSpec11NS, xenc11Prefix + ":" + elementName
-            );
     }
 
     /**
@@ -401,43 +346,9 @@ public class XMLUtils {
     }
 
     /**
-     * Returns true if the element is in XML Encryption namespace and the local
-     * name equals the supplied one.
-     *
-     * @param element
-     * @param localName
-     * @return true if the element is in XML Encryption namespace and the local name
-     * equals the supplied one
-     */
-    public static boolean elementIsInEncryptionSpace(Element element, String localName) {
-        if (element == null){
-            return false;
-        }
-        return EncryptionConstants.EncryptionSpecNS.equals(element.getNamespaceURI())
-            && element.getLocalName().equals(localName);
-    }
-
-    /**
-     * Returns true if the element is in XML Encryption 1.1 namespace and the local
-     * name equals the supplied one.
-     *
-     * @param element
-     * @param localName
-     * @return true if the element is in XML Encryption 1.1 namespace and the local name
-     * equals the supplied one
-     */
-    public static boolean elementIsInEncryption11Space(Element element, String localName) {
-        if (element == null){
-            return false;
-        }
-        return EncryptionConstants.EncryptionSpec11NS.equals(element.getNamespaceURI())
-            && element.getLocalName().equals(localName);
-    }
-
-    /**
      * This method returns the owner document of a particular node.
      * This method is necessary because it <I>always</I> returns a
-     * {@link Document}. {@link Node#getOwnerDocument} returns <CODE>null</CODE>
+     * {@link Document}. {@link Node#getOwnerDocument} returns {@code null}
      * if the {@link Node} is a {@link Document}.
      *
      * @param node
@@ -459,7 +370,7 @@ public class XMLUtils {
     /**
      * This method returns the first non-null owner document of the Nodes in this Set.
      * This method is necessary because it <I>always</I> returns a
-     * {@link Document}. {@link Node#getOwnerDocument} returns <CODE>null</CODE>
+     * {@link Document}. {@link Node#getOwnerDocument} returns {@code null}
      * if the {@link Node} is a {@link Document}.
      *
      * @param xpathNodeSet
@@ -496,7 +407,7 @@ public class XMLUtils {
      * @return the element.
      */
     public static Element createDSctx(Document doc, String prefix, String namespace) {
-        if ((prefix == null) || (prefix.trim().length() == 0)) {
+        if (prefix == null || prefix.trim().length() == 0) {
             throw new IllegalArgumentException("You must supply a prefix");
         }
 
@@ -540,11 +451,11 @@ public class XMLUtils {
      */
     public static Set<Node> convertNodelistToSet(NodeList xpathNodeSet) {
         if (xpathNodeSet == null) {
-            return new HashSet<Node>();
+            return new HashSet<>();
         }
 
         int length = xpathNodeSet.getLength();
-        Set<Node> set = new HashSet<Node>(length);
+        Set<Node> set = new HashSet<>(length);
 
         for (int i = 0; i < length; i++) {
             set.add(xpathNodeSet.item(i));
@@ -632,7 +543,7 @@ public class XMLUtils {
                 sibling = node.getFirstChild();
                 break;
             }
-            while ((sibling == null) && (parent != null)) {
+            while (sibling == null && parent != null) {
                 sibling = parent.getNextSibling();
                 parent = parent.getParentNode();
             }
@@ -691,29 +602,8 @@ public class XMLUtils {
      * @param number
      * @return nodes with the constrain
      */
-    public static Element selectXencNode(Node sibling, String nodeName, int number) {
-        while (sibling != null) {
-            if (EncryptionConstants.EncryptionSpecNS.equals(sibling.getNamespaceURI())
-                && sibling.getLocalName().equals(nodeName)) {
-                if (number == 0){
-                    return (Element)sibling;
-                }
-                number--;
-            }
-            sibling = sibling.getNextSibling();
-        }
-        return null;
-    }
-
-
-    /**
-     * @param sibling
-     * @param nodeName
-     * @param number
-     * @return nodes with the constrain
-     */
     public static Text selectDsNodeText(Node sibling, String nodeName, int number) {
-        Node n = selectDsNode(sibling,nodeName,number);
+        Node n = selectDsNode(sibling, nodeName, number);
         if (n == null) {
             return null;
         }
@@ -731,7 +621,7 @@ public class XMLUtils {
      * @return nodes with the constrain
      */
     public static Text selectDs11NodeText(Node sibling, String nodeName, int number) {
-        Node n = selectDs11Node(sibling,nodeName,number);
+        Node n = selectDs11Node(sibling, nodeName, number);
         if (n == null) {
             return null;
         }
@@ -750,7 +640,7 @@ public class XMLUtils {
      * @return nodes with the constrain
      */
     public static Text selectNodeText(Node sibling, String uri, String nodeName, int number) {
-        Node n = selectNode(sibling,uri,nodeName,number);
+        Node n = selectNode(sibling, uri, nodeName, number);
         if (n == null) {
             return null;
         }
@@ -807,7 +697,7 @@ public class XMLUtils {
      * @return nodes with the constraint
      */
     public static Element[] selectNodes(Node sibling, String uri, String nodeName) {
-        List<Element> list = new ArrayList<Element>();
+        List<Element> list = new ArrayList<>();
         while (sibling != null) {
             if (sibling.getNamespaceURI() != null && sibling.getNamespaceURI().equals(uri)
                 && sibling.getLocalName().equals(nodeName)) {
@@ -824,7 +714,7 @@ public class XMLUtils {
      * @return nodes with the constrain
      */
     public static Set<Node> excludeNodeFromSet(Node signatureElement, Set<Node> inputSet) {
-        Set<Node> resultSet = new HashSet<Node>();
+        Set<Node> resultSet = new HashSet<>();
         Iterator<Node> iterator = inputSet.iterator();
 
         while (iterator.hasNext()) {
@@ -859,9 +749,9 @@ public class XMLUtils {
 
             return sb.toString();
         } else if (xpathnode.getNodeType() == Node.ATTRIBUTE_NODE) {
-            return ((Attr) xpathnode).getNodeValue();
+            return xpathnode.getNodeValue();
         } else if (xpathnode.getNodeType() == Node.PROCESSING_INSTRUCTION_NODE) {
-            return ((ProcessingInstruction) xpathnode).getNodeValue();
+            return xpathnode.getNodeValue();
         }
 
         return null;
@@ -909,7 +799,7 @@ public class XMLUtils {
      * the empty string if the attribute value is empty.
      *
      * <p>This works around a limitation of the DOM
-     * <code>Element.getAttributeNode</code> method, which does not distinguish
+     * {@code Element.getAttributeNode} method, which does not distinguish
      * between an unspecified attribute and an attribute with a value of
      * "" (it returns "" for both cases).
      *
@@ -929,13 +819,16 @@ public class XMLUtils {
      * a matching Element has been found, just that no wrapping attack has been detected.
      */
     public static boolean protectAgainstWrappingAttack(Node startNode, String value) {
-        Node startParent = startNode.getParentNode();
-        Node processedNode = null;
-        Element foundElement = null;
-
         String id = value.trim();
         if (!id.isEmpty() && id.charAt(0) == '#') {
             id = id.substring(1);
+        }
+
+        Node startParent = null;
+        Node processedNode = null;
+        Element foundElement = null;
+        if (startNode != null) {
+            startParent = startNode.getParentNode();
         }
 
         while (startNode != null) {
@@ -944,14 +837,15 @@ public class XMLUtils {
 
                 NamedNodeMap attributes = se.getAttributes();
                 if (attributes != null) {
-                    for (int i = 0; i < attributes.getLength(); i++) {
+                    int length = attributes.getLength();
+                    for (int i = 0; i < length; i++) {
                         Attr attr = (Attr)attributes.item(i);
                         if (attr.isId() && id.equals(attr.getValue())) {
                             if (foundElement == null) {
                                 // Continue searching to find duplicates
                                 foundElement = attr.getOwnerElement();
                             } else {
-                                log.log(java.util.logging.Level.FINE, "Multiple elements with the same 'Id' attribute value!");
+                                LOG.debug("Multiple elements with the same 'Id' attribute value!");
                                 return false;
                             }
                         }
@@ -990,12 +884,15 @@ public class XMLUtils {
     public static boolean protectAgainstWrappingAttack(
         Node startNode, Element knownElement, String value
     ) {
-        Node startParent = startNode.getParentNode();
-        Node processedNode = null;
-
         String id = value.trim();
         if (!id.isEmpty() && id.charAt(0) == '#') {
             id = id.substring(1);
+        }
+
+        Node startParent = null;
+        Node processedNode = null;
+        if (startNode != null) {
+            startParent = startNode.getParentNode();
         }
 
         while (startNode != null) {
@@ -1004,10 +901,11 @@ public class XMLUtils {
 
                 NamedNodeMap attributes = se.getAttributes();
                 if (attributes != null) {
-                    for (int i = 0; i < attributes.getLength(); i++) {
+                    int length = attributes.getLength();
+                    for (int i = 0; i < length; i++) {
                         Attr attr = (Attr)attributes.item(i);
                         if (attr.isId() && id.equals(attr.getValue()) && se != knownElement) {
-                            log.log(java.util.logging.Level.FINE, "Multiple elements with the same 'Id' attribute value!");
+                            LOG.debug("Multiple elements with the same 'Id' attribute value!");
                             return false;
                         }
                     }
@@ -1037,4 +935,68 @@ public class XMLUtils {
         return true;
     }
 
+    public static DocumentBuilder createDocumentBuilder(boolean validating)
+            throws ParserConfigurationException {
+        return createDocumentBuilder(validating, true);
+    }
+
+    // The current implementation does not throw a ParserConfigurationException.
+    // Kept here in case we create the DocumentBuilder inline again.
+    public static DocumentBuilder createDocumentBuilder(
+        boolean validating, boolean disAllowDocTypeDeclarations
+    ) throws ParserConfigurationException {
+        DocumentBuilderFactory dfactory = DocumentBuilderFactory.newInstance();
+        dfactory.setFeature(javax.xml.XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        if (disAllowDocTypeDeclarations) {
+            dfactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        }
+        dfactory.setValidating(validating);
+        dfactory.setNamespaceAware(true);
+        return dfactory.newDocumentBuilder();
+    }
+
+    /**
+     * Returns a byte-array representation of a {@code {@link BigInteger}}.
+     * No sign-bit is output.
+     *
+     * <b>N.B.:</B> {@code {@link BigInteger}}'s toByteArray
+     * returns eventually longer arrays because of the leading sign-bit.
+     *
+     * @param big {@code BigInteger} to be converted
+     * @param bitlen {@code int} the desired length in bits of the representation
+     * @return a byte array with {@code bitlen} bits of {@code big}
+     */
+    public static byte[] getBytes(BigInteger big, int bitlen) {
+
+        //round bitlen
+        bitlen = ((bitlen + 7) >> 3) << 3;
+
+        if (bitlen < big.bitLength()) {
+            throw new IllegalArgumentException(I18n.translate("utils.Base64.IllegalBitlength"));
+        }
+
+        byte[] bigBytes = big.toByteArray();
+
+        if (big.bitLength() % 8 != 0
+            && big.bitLength() / 8 + 1 == bitlen / 8) {
+            return bigBytes;
+        }
+
+        // some copying needed
+        int startSrc = 0;    // no need to skip anything
+        int bigLen = bigBytes.length;    //valid length of the string
+
+        if (big.bitLength() % 8 == 0) {    // correct values
+            startSrc = 1;    // skip sign bit
+
+            bigLen--;    // valid length of the string
+        }
+
+        int startDst = bitlen / 8 - bigLen;    //pad with leading nulls
+        byte[] resizedBytes = new byte[bitlen / 8];
+
+        System.arraycopy(bigBytes, startSrc, resizedBytes, startDst, bigLen);
+
+        return resizedBytes;
+    }
 }

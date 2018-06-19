@@ -48,14 +48,14 @@ import org.w3c.dom.NodeList;
  */
 public class XalanXPathAPI implements XPathAPI {
 
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(XalanXPathAPI.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(XalanXPathAPI.class);
 
-    private String xpathStr = null;
+    private String xpathStr;
 
-    private XPath xpath = null;
+    private XPath xpath;
 
-    private static FunctionTable funcTable = null;
+    private static FunctionTable funcTable;
 
     private static boolean installed;
 
@@ -111,7 +111,7 @@ public class XalanXPathAPI implements XPathAPI {
         context = null;
     }
 
-    public synchronized static boolean isInstalled() {
+    public static synchronized boolean isInstalled() {
         return installed;
     }
 
@@ -150,14 +150,12 @@ public class XalanXPathAPI implements XPathAPI {
         Class<?>[] classes = new Class<?>[]{String.class, SourceLocator.class, PrefixResolver.class, int.class,
                                       ErrorListener.class, FunctionTable.class};
         Object[] objects =
-            new Object[]{str, null, prefixResolver, Integer.valueOf(XPath.SELECT), null, funcTable};
+            new Object[]{str, null, prefixResolver, XPath.SELECT, null, funcTable};
         try {
             Constructor<?> constructor = XPath.class.getConstructor(classes);
             xpath = (XPath) constructor.newInstance(objects);
         } catch (Exception ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
         }
         if (xpath == null) {
             xpath = new XPath(str, null, prefixResolver, XPath.SELECT, null);
@@ -165,18 +163,14 @@ public class XalanXPathAPI implements XPathAPI {
         return xpath;
     }
 
-    private synchronized static void fixupFunctionTable() {
+    private static synchronized void fixupFunctionTable() {
         installed = false;
         if (new FunctionTable().functionAvailable("here")) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "Here function already registered");
-            }
+            LOG.debug("Here function already registered");
             installed = true;
             return;
         }
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Registering Here function");
-        }
+        LOG.debug("Registering Here function");
         /**
          * Try to register our here() implementation as internal function.
          */
@@ -189,7 +183,7 @@ public class XalanXPathAPI implements XPathAPI {
                 installed = true;
             }
         } catch (Exception ex) {
-            log.log(java.util.logging.Level.FINE, "Error installing function using the static installFunction method", ex);
+            LOG.debug("Error installing function using the static installFunction method", ex);
         }
         if (!installed) {
             try {
@@ -200,17 +194,13 @@ public class XalanXPathAPI implements XPathAPI {
                 installFunction.invoke(funcTable, params);
                 installed = true;
             } catch (Exception ex) {
-                log.log(java.util.logging.Level.FINE, "Error installing function using the static installFunction method", ex);
+                LOG.debug("Error installing function using the static installFunction method", ex);
             }
         }
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            if (installed) {
-                log.log(java.util.logging.Level.FINE, "Registered class " + FuncHere.class.getName()
-                          + " for XPath function 'here()' function in internal table");
-            } else {
-                log.log(java.util.logging.Level.FINE, "Unable to register class " + FuncHere.class.getName()
-                          + " for XPath function 'here()' function in internal table");
-            }
+        if (installed) {
+            LOG.debug("Registered class {} for XPath function 'here()' function in internal table", FuncHere.class.getName());
+        } else {
+            LOG.debug("Unable to register class {} for XPath function 'here()' function in internal table", FuncHere.class.getName());
         }
     }
 

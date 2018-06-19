@@ -27,41 +27,33 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
- * This {@link org.xml.sax.ErrorHandler} does absolutely nothing but log
+ * This {@link org.xml.sax.ErrorHandler} does absolutely nothing but LOG
  * the events.
  *
- * @author Christian Geuer-Pollmann
  */
 public class IgnoreAllErrorHandler implements ErrorHandler {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static final java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(IgnoreAllErrorHandler.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(IgnoreAllErrorHandler.class);
 
     /** Field throwExceptions */
-    private static final boolean warnOnExceptions = getProperty(
-            "com.sun.org.apache.xml.internal.security.test.warn.on.exceptions");
+    private static final boolean warnOnExceptions =
+        getProperty("com.sun.org.apache.xml.internal.security.test.warn.on.exceptions");
 
     /** Field throwExceptions           */
-    private static final boolean throwExceptions = getProperty(
-            "com.sun.org.apache.xml.internal.security.test.throw.exceptions");
+    private static final boolean throwExceptions =
+        getProperty("com.sun.org.apache.xml.internal.security.test.throw.exceptions");
 
-    private static boolean getProperty(String name) {
+    private static boolean getProperty(final String name) {
         return java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Boolean>() {
-
-                    @Override
-                    public Boolean run() {
-                        return Boolean.getBoolean(name);
-                    }
-                });
+            (java.security.PrivilegedAction<Boolean>) () -> Boolean.getBoolean(name));
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public void warning(SAXParseException ex) throws SAXException {
         if (IgnoreAllErrorHandler.warnOnExceptions) {
-            log.log(java.util.logging.Level.WARNING, "", ex);
+            LOG.warn("", ex);
         }
         if (IgnoreAllErrorHandler.throwExceptions) {
             throw ex;
@@ -69,11 +61,11 @@ public class IgnoreAllErrorHandler implements ErrorHandler {
     }
 
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public void error(SAXParseException ex) throws SAXException {
         if (IgnoreAllErrorHandler.warnOnExceptions) {
-            log.log(java.util.logging.Level.SEVERE, "", ex);
+            LOG.error("", ex);
         }
         if (IgnoreAllErrorHandler.throwExceptions) {
             throw ex;
@@ -81,11 +73,11 @@ public class IgnoreAllErrorHandler implements ErrorHandler {
     }
 
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     @Override
     public void fatalError(SAXParseException ex) throws SAXException {
         if (IgnoreAllErrorHandler.warnOnExceptions) {
-            log.log(java.util.logging.Level.WARNING, "", ex);
+            LOG.warn("", ex);
         }
         if (IgnoreAllErrorHandler.throwExceptions) {
             throw ex;

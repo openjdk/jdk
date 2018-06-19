@@ -41,7 +41,6 @@ import java.util.Comparator;
  *   key (an empty namespace URI is lexicographically least).
  * </UL>
  *
- * @author Christian Geuer-Pollmann
  */
 public class AttrCompare implements Comparator<Attr>, Serializable {
 
@@ -117,6 +116,6 @@ public class AttrCompare implements Comparator<Attr>, Serializable {
             return a;
         }
 
-        return (attr0.getLocalName()).compareTo(attr1.getLocalName());
+        return attr0.getLocalName().compareTo(attr1.getLocalName());
     }
 }

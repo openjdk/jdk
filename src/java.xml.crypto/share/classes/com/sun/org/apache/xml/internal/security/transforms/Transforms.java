@@ -43,11 +43,10 @@ import org.w3c.dom.NodeList;
  * Holder of the {@link com.sun.org.apache.xml.internal.security.transforms.Transform} steps to
  * be performed on the data.
  * The input to the first Transform is the result of dereferencing the
- * <code>URI</code> attribute of the <code>Reference</code> element.
+ * {@code URI} attribute of the {@code Reference} element.
  * The output from the last Transform is the input for the
- * <code>DigestMethod algorithm</code>
+ * {@code DigestMethod algorithm}
  *
- * @author Christian Geuer-Pollmann
  * @see Transform
  * @see com.sun.org.apache.xml.internal.security.signature.Reference
  */
@@ -101,43 +100,42 @@ public class Transforms extends SignatureElementProxy {
     public static final String TRANSFORM_XPATH2FILTER
         = "http://www.w3.org/2002/06/xmldsig-filter2";
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(Transforms.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(Transforms.class);
 
     private Element[] transforms;
 
-    protected Transforms() { };
+    protected Transforms() { }
 
     private boolean secureValidation;
 
     /**
      * Constructs {@link Transforms}.
      *
-     * @param doc the {@link Document} in which <code>XMLSignature</code> will
+     * @param doc the {@link Document} in which {@code XMLSignature} will
      * be placed
      */
     public Transforms(Document doc) {
         super(doc);
-        XMLUtils.addReturnToElement(this.constructionElement);
+        addReturnToSelf();
     }
 
     /**
      * Constructs {@link Transforms} from {@link Element} which is
-     * <code>Transforms</code> Element
+     * {@code Transforms} Element
      *
-     * @param element  is <code>Transforms</code> element
-     * @param BaseURI the URI where the XML instance was stored
+     * @param element  is {@code Transforms} element
+     * @param baseURI the URI where the XML instance was stored
      * @throws DOMException
      * @throws InvalidTransformException
      * @throws TransformationException
      * @throws XMLSecurityException
      * @throws XMLSignatureException
      */
-    public Transforms(Element element, String BaseURI)
+    public Transforms(Element element, String baseURI)
         throws DOMException, XMLSignatureException, InvalidTransformException,
             TransformationException, XMLSecurityException {
-        super(element, BaseURI);
+        super(element, baseURI);
 
         int numberOfTransformElems = this.getLength();
 
@@ -157,7 +155,7 @@ public class Transforms extends SignatureElementProxy {
     }
 
     /**
-     * Adds the <code>Transform</code> with the specified <code>Transform
+     * Adds the {@code Transform} with the specified <code>Transform
      * algorithm URI</code>
      *
      * @param transformURI the URI form of transform that indicates which
@@ -166,20 +164,18 @@ public class Transforms extends SignatureElementProxy {
      */
     public void addTransform(String transformURI) throws TransformationException {
         try {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "Transforms.addTransform(" + transformURI + ")");
-            }
+            LOG.debug("Transforms.addTransform({})", transformURI);
 
-            Transform transform = new Transform(this.doc, transformURI);
+            Transform transform = new Transform(getDocument(), transformURI);
 
             this.addTransform(transform);
         } catch (InvalidTransformException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         }
     }
 
     /**
-     * Adds the <code>Transform</code> with the specified <code>Transform
+     * Adds the {@code Transform} with the specified <code>Transform
      * algorithm URI</code>
      *
      * @param transformURI the URI form of transform that indicates which
@@ -190,20 +186,18 @@ public class Transforms extends SignatureElementProxy {
     public void addTransform(String transformURI, Element contextElement)
        throws TransformationException {
         try {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "Transforms.addTransform(" + transformURI + ")");
-            }
+            LOG.debug("Transforms.addTransform({})", transformURI);
 
-            Transform transform = new Transform(this.doc, transformURI, contextElement);
+            Transform transform = new Transform(getDocument(), transformURI, contextElement);
 
             this.addTransform(transform);
         } catch (InvalidTransformException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         }
     }
 
     /**
-     * Adds the <code>Transform</code> with the specified <code>Transform
+     * Adds the {@code Transform} with the specified <code>Transform
      * algorithm URI</code>.
      *
      * @param transformURI the URI form of transform that indicates which
@@ -215,10 +209,10 @@ public class Transforms extends SignatureElementProxy {
        throws TransformationException {
 
         try {
-            Transform transform = new Transform(this.doc, transformURI, contextNodes);
+            Transform transform = new Transform(getDocument(), transformURI, contextNodes);
             this.addTransform(transform);
         } catch (InvalidTransformException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         }
     }
 
@@ -228,22 +222,20 @@ public class Transforms extends SignatureElementProxy {
      * @param transform {@link Transform} object
      */
     private void addTransform(Transform transform) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Transforms.addTransform(" + transform.getURI() + ")");
-        }
+        LOG.debug("Transforms.addTransform({})", transform.getURI());
 
         Element transformElement = transform.getElement();
 
-        this.constructionElement.appendChild(transformElement);
-        XMLUtils.addReturnToElement(this.constructionElement);
+        appendSelf(transformElement);
+        addReturnToSelf();
     }
 
     /**
-     * Applies all included <code>Transform</code>s to xmlSignatureInput and
+     * Applies all included {@code Transform}s to xmlSignatureInput and
      * returns the result of these transformations.
      *
-     * @param xmlSignatureInput the input for the <code>Transform</code>s
-     * @return the result of the <code>Transforms</code>
+     * @param xmlSignatureInput the input for the {@code Transform}s
+     * @return the result of the {@code Transforms}
      * @throws TransformationException
      */
     public XMLSignatureInput performTransforms(
@@ -253,12 +245,12 @@ public class Transforms extends SignatureElementProxy {
     }
 
     /**
-     * Applies all included <code>Transform</code>s to xmlSignatureInput and
+     * Applies all included {@code Transform}s to xmlSignatureInput and
      * returns the result of these transformations.
      *
-     * @param xmlSignatureInput the input for the <code>Transform</code>s
+     * @param xmlSignatureInput the input for the {@code Transform}s
      * @param os where to output the last transformation.
-     * @return the result of the <code>Transforms</code>
+     * @return the result of the {@code Transforms}
      * @throws TransformationException
      */
     public XMLSignatureInput performTransforms(
@@ -268,26 +260,24 @@ public class Transforms extends SignatureElementProxy {
             int last = this.getLength() - 1;
             for (int i = 0; i < last; i++) {
                 Transform t = this.item(i);
-                String uri = t.getURI();
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, "Perform the (" + i + ")th " + uri + " transform");
-                }
+                LOG.debug("Perform the ({})th {} transform", i, t.getURI());
                 checkSecureValidation(t);
                 xmlSignatureInput = t.performTransform(xmlSignatureInput);
             }
             if (last >= 0) {
                 Transform t = this.item(last);
+                LOG.debug("Perform the ({})th {} transform", last, t.getURI());
                 checkSecureValidation(t);
                 xmlSignatureInput = t.performTransform(xmlSignatureInput, os);
             }
 
             return xmlSignatureInput;
         } catch (IOException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (CanonicalizationException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (InvalidCanonicalizerException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         }
     }
 
@@ -300,6 +290,7 @@ public class Transforms extends SignatureElementProxy {
                 "signature.Transform.ForbiddenTransform", exArgs
             );
         }
+        transform.setSecureValidation(secureValidation);
     }
 
     /**
@@ -308,34 +299,34 @@ public class Transforms extends SignatureElementProxy {
      * @return the number of transformations
      */
     public int getLength() {
-        if (transforms == null) {
-            transforms =
-                XMLUtils.selectDsNodes(this.constructionElement.getFirstChild(), "Transform");
-        }
+        initTransforms();
         return transforms.length;
     }
 
     /**
-     * Return the <it>i</it><sup>th</sup> <code>{@link Transform}</code>.
-     * Valid <code>i</code> values are 0 to <code>{@link #getLength}-1</code>.
+     * Return the <i>i</i><sup>th</sup> {@code {@link Transform}}.
+     * Valid {@code i} values are 0 to {@code {@link #getLength}-1}.
      *
      * @param i index of {@link Transform} to return
-     * @return the <it>i</it><sup>th</sup> Transform
+     * @return the <i>i</i><sup>th</sup> Transform
      * @throws TransformationException
      */
     public Transform item(int i) throws TransformationException {
         try {
-            if (transforms == null) {
-                transforms =
-                    XMLUtils.selectDsNodes(this.constructionElement.getFirstChild(), "Transform");
-            }
+            initTransforms();
             return new Transform(transforms[i], this.baseURI);
         } catch (XMLSecurityException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         }
     }
 
-    /** @inheritDoc */
+    private void initTransforms() {
+        if (transforms == null) {
+            transforms = XMLUtils.selectDsNodes(getFirstChild(), "Transform");
+        }
+    }
+
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_TRANSFORMS;
     }
