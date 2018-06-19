@@ -1203,7 +1203,7 @@ inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
   if (!try_resize_lock(thread)) {
     return false;
   }
-  assert(_new_table == NULL, "Must be NULL");
+  assert(_new_table == NULL || _new_table == POISON_PTR, "Must be NULL");
   for (size_t bucket_it = 0; bucket_it < _table->_size; bucket_it++) {
     Bucket* bucket = _table->get_bucket(bucket_it);
     assert(!bucket->have_redirect() && !bucket->is_locked(), "Table must be uncontended");
