@@ -1737,7 +1737,7 @@ void G1CollectedHeap::initialize_serviceability() {
 
   _memory_manager.add_pool(_eden_pool);
   _memory_manager.add_pool(_survivor_pool);
-
+  _memory_manager.add_pool(_old_pool, false /* always_affected_by_gc */);
 }
 
 void G1CollectedHeap::stop() {
@@ -2833,7 +2833,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
-    TraceMemoryManagerStats tms(&_memory_manager, gc_cause());
+    TraceMemoryManagerStats tms(&_memory_manager, gc_cause(),
+                                collector_state()->yc_type() == Mixed /* allMemoryPoolsAffected */);
 
     G1HeapTransition heap_transition(this);
     size_t heap_used_bytes_before_gc = used();

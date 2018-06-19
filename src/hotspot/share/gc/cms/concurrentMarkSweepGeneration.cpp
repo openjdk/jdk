@@ -8088,6 +8088,7 @@ TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorSt
     case CMSCollector::InitialMarking:
       initialize(manager /* GC manager */ ,
                  cause   /* cause of the GC */,
+                 true    /* allMemoryPoolsAffected */,
                  true    /* recordGCBeginTime */,
                  true    /* recordPreGCUsage */,
                  false   /* recordPeakUsage */,
@@ -8100,6 +8101,7 @@ TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorSt
     case CMSCollector::FinalMarking:
       initialize(manager /* GC manager */ ,
                  cause   /* cause of the GC */,
+                 true    /* allMemoryPoolsAffected */,
                  false   /* recordGCBeginTime */,
                  false   /* recordPreGCUsage */,
                  false   /* recordPeakUsage */,
@@ -8112,6 +8114,7 @@ TraceCMSMemoryManagerStats::TraceCMSMemoryManagerStats(CMSCollector::CollectorSt
     case CMSCollector::Sweeping:
       initialize(manager /* GC manager */ ,
                  cause   /* cause of the GC */,
+                 true    /* allMemoryPoolsAffected */,
                  false   /* recordGCBeginTime */,
                  false   /* recordPreGCUsage */,
                  true    /* recordPeakUsage */,
