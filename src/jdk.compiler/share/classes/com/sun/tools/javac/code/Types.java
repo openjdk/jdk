@@ -676,10 +676,21 @@ public class Types {
 
             public Type getType(Type site) {
                 site = removeWildcards(site);
-                if (!chk.checkValidGenericType(site)) {
-                    //if the inferred functional interface type is not well-formed,
-                    //or if it's not a subtype of the original target, issue an error
-                    throw failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
+                if (site.isIntersection()) {
+                    IntersectionClassType ict = (IntersectionClassType)site;
+                    for (Type component : ict.getExplicitComponents()) {
+                        if (!chk.checkValidGenericType(component)) {
+                            //if the inferred functional interface type is not well-formed,
+                            //or if it's not a subtype of the original target, issue an error
+                            throw failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
+                        }
+                    }
+                } else {
+                    if (!chk.checkValidGenericType(site)) {
+                        //if the inferred functional interface type is not well-formed,
+                        //or if it's not a subtype of the original target, issue an error
+                        throw failure(diags.fragment(Fragments.NoSuitableFunctionalIntfInst(site)));
+                    }
                 }
                 return memberType(site, descSym);
             }
