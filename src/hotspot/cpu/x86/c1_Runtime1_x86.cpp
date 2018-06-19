@@ -1056,8 +1056,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // get the instance size (size is postive so movl is fine for 64bit)
           __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
 
-          __ eden_allocate(obj, obj_size, 0, t1, slow_path);
-          __ incr_allocated_bytes(thread, obj_size, 0);
+          __ eden_allocate(thread, obj, obj_size, 0, t1, slow_path);
 
           __ initialize_object(obj, klass, obj_size, 0, t1, t2, /* is_tlab_allocated */ false);
           __ verify_oop(obj);
@@ -1155,12 +1154,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ addptr(arr_size, MinObjAlignmentInBytesMask); // align up
           __ andptr(arr_size, ~MinObjAlignmentInBytesMask);
 
-          __ eden_allocate(obj, arr_size, 0, t1, slow_path);  // preserves arr_size
-
           // Using t2 for non 64-bit.
           const Register thread = NOT_LP64(t2) LP64_ONLY(r15_thread);
           NOT_LP64(__ get_thread(thread));
-          __ incr_allocated_bytes(thread, arr_size, 0);
+          __ eden_allocate(thread, obj, arr_size, 0, t1, slow_path);  // preserves arr_size
 
           __ initialize_header(obj, klass, length, t1, t2);
           __ movb(t1, Address(klass, in_bytes(Klass::layout_helper_offset()) + (Klass::_lh_header_size_shift / BitsPerByte)));
