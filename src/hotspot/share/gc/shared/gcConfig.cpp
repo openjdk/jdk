@@ -76,11 +76,29 @@ static const SupportedGC SupportedGCs[] = {
          ZGC_ONLY_ARG(SupportedGC(UseZGC,             CollectedHeap::Z,        zArguments,        "z gc"))
 };
 
-#define FOR_EACH_SUPPORTED_GC(var) \
+#define FOR_EACH_SUPPORTED_GC(var)                                          \
   for (const SupportedGC* var = &SupportedGCs[0]; var < &SupportedGCs[ARRAY_SIZE(SupportedGCs)]; var++)
+
+#define FAIL_IF_SELECTED(option, enabled)                                   \
+  if (option == enabled && FLAG_IS_CMDLINE(option)) {                       \
+    vm_exit_during_initialization(enabled ?                                 \
+                                  "Option -XX:+" #option " not supported" : \
+                                  "Option -XX:-" #option " not supported"); \
+  }
 
 GCArguments* GCConfig::_arguments = NULL;
 bool GCConfig::_gc_selected_ergonomically = false;
+
+void GCConfig::fail_if_unsupported_gc_is_selected() {
+  NOT_CMSGC(     FAIL_IF_SELECTED(UseConcMarkSweepGC, true));
+  NOT_EPSILONGC( FAIL_IF_SELECTED(UseEpsilonGC,       true));
+  NOT_G1GC(      FAIL_IF_SELECTED(UseG1GC,            true));
+  NOT_PARALLELGC(FAIL_IF_SELECTED(UseParallelGC,      true));
+  NOT_PARALLELGC(FAIL_IF_SELECTED(UseParallelOldGC,   true));
+  NOT_SERIALGC(  FAIL_IF_SELECTED(UseSerialGC,        true));
+  NOT_SERIALGC(  FAIL_IF_SELECTED(UseParallelOldGC,   false));
+  NOT_ZGC(       FAIL_IF_SELECTED(UseZGC,             true));
+}
 
 void GCConfig::select_gc_ergonomically() {
   if (os::is_server_class_machine()) {
@@ -96,14 +114,6 @@ void GCConfig::select_gc_ergonomically() {
     FLAG_SET_ERGO_IF_DEFAULT(bool, UseSerialGC, true);
 #endif
   }
-
-  NOT_CMSGC(     UNSUPPORTED_OPTION(UseConcMarkSweepGC));
-  NOT_EPSILONGC( UNSUPPORTED_OPTION(UseEpsilonGC);)
-  NOT_G1GC(      UNSUPPORTED_OPTION(UseG1GC);)
-  NOT_PARALLELGC(UNSUPPORTED_OPTION(UseParallelGC);)
-  NOT_PARALLELGC(UNSUPPORTED_OPTION(UseParallelOldGC));
-  NOT_SERIALGC(  UNSUPPORTED_OPTION(UseSerialGC);)
-  NOT_ZGC(       UNSUPPORTED_OPTION(UseZGC);)
 }
 
 bool GCConfig::is_no_gc_selected() {
@@ -135,6 +145,9 @@ bool GCConfig::is_exactly_one_gc_selected() {
 }
 
 GCArguments* GCConfig::select_gc() {
+  // Fail immediately if an unsupported GC is selected
+  fail_if_unsupported_gc_is_selected();
+
   if (is_no_gc_selected()) {
     // Try select GC ergonomically
     select_gc_ergonomically();
@@ -153,12 +166,6 @@ GCArguments* GCConfig::select_gc() {
     // More than one GC selected
     vm_exit_during_initialization("Multiple garbage collectors selected", NULL);
   }
-
-#if INCLUDE_PARALLELGC && !INCLUDE_SERIALGC
-  if (FLAG_IS_CMDLINE(UseParallelOldGC) && !UseParallelOldGC) {
-    vm_exit_during_initialization("This JVM build only supports UseParallelOldGC as the full GC");
-  }
-#endif
 
   // Exactly one GC selected
   FOR_EACH_SUPPORTED_GC(gc) {
