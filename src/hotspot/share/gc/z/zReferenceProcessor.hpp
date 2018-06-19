@@ -53,7 +53,7 @@ private:
   volatile oop* reference_referent_addr(oop obj) const;
   oop reference_referent(oop obj) const;
   bool is_reference_inactive(oop obj) const;
-  bool is_referent_alive_or_null(oop obj, ReferenceType type) const;
+  bool is_referent_strongly_alive_or_null(oop obj, ReferenceType type) const;
   bool is_referent_softly_alive(oop obj, ReferenceType type) const;
   bool should_drop_reference(oop obj, ReferenceType type) const;
   bool should_mark_referent(ReferenceType type) const;
