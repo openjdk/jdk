@@ -1117,11 +1117,11 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* FileMapInfo fields (CDS archive related) */                                                                                     \
   /********************************************/                                                                                     \
                                                                                                                                      \
-  nonstatic_field(FileMapInfo,                 _header,                                       FileMapInfo::FileMapHeader*)           \
-     static_field(FileMapInfo,                 _current_info,                                 FileMapInfo*)                          \
-  nonstatic_field(FileMapInfo::FileMapHeader,  _space[0],                                     FileMapInfo::FileMapHeader::space_info)\
-  nonstatic_field(FileMapInfo::FileMapHeader::space_info, _addr._base,                        char*)                                 \
-  nonstatic_field(FileMapInfo::FileMapHeader::space_info, _used,                              size_t)                                \
+  CDS_ONLY(nonstatic_field(FileMapInfo,                            _header,                   FileMapInfo::FileMapHeader*))          \
+  CDS_ONLY(   static_field(FileMapInfo,                            _current_info,             FileMapInfo*))                         \
+  CDS_ONLY(nonstatic_field(FileMapInfo::FileMapHeader,             _space[0],                 FileMapInfo::FileMapHeader::space_info))\
+  CDS_ONLY(nonstatic_field(FileMapInfo::FileMapHeader::space_info, _addr._base,               char*))                                \
+  CDS_ONLY(nonstatic_field(FileMapInfo::FileMapHeader::space_info, _used,                     size_t))                               \
                                                                                                                                      \
   /******************/                                                                                                               \
   /* VMError fields */                                                                                                               \
