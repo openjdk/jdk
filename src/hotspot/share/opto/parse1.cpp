@@ -666,10 +666,13 @@ void Parse::do_all_blocks() {
         if (block->is_SEL_head()) {
           // Add predicate to single entry (not irreducible) loop head.
           assert(!block->has_merged_backedge(), "only entry paths should be merged for now");
-          // Need correct bci for predicate.
-          // It is fine to set it here since do_one_block() will set it anyway.
-          set_parse_bci(block->start());
-          add_predicate();
+          // Predicates may have been added after a dominating if
+          if (!block->has_predicates()) {
+            // Need correct bci for predicate.
+            // It is fine to set it here since do_one_block() will set it anyway.
+            set_parse_bci(block->start());
+            add_predicate();
+          }
           // Add new region for back branches.
           int edges = block->pred_count() - block->preds_parsed() + 1; // +1 for original region
           RegionNode *r = new RegionNode(edges+1);
@@ -1262,6 +1265,7 @@ Parse::Block::Block(Parse* outer, int rpo) : _live_locals() {
   _is_handler = false;
   _has_merged_backedge = false;
   _start_map = NULL;
+  _has_predicates = false;
   _num_successors = 0;
   _all_successors = 0;
   _successors = NULL;

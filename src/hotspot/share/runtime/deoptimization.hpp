@@ -41,7 +41,7 @@ class Deoptimization : AllStatic {
   enum DeoptReason {
     Reason_many = -1,             // indicates presence of several reasons
     Reason_none = 0,              // indicates absence of a relevant deopt.
-    // Next 7 reasons are recorded per bytecode in DataLayout::trap_bits.
+    // Next 8 reasons are recorded per bytecode in DataLayout::trap_bits.
     // This is more complicated for JVMCI as JVMCI may deoptimize to *some* bytecode before the
     // bytecode that actually caused the deopt (with inlining, JVMCI may even deoptimize to a
     // bytecode in another method):
@@ -61,6 +61,8 @@ class Deoptimization : AllStatic {
     Reason_type_checked_inlining  = Reason_intrinsic,
     Reason_optimized_type_check   = Reason_bimorphic,
 #endif
+
+    Reason_profile_predicate,     // compiler generated predicate moved from frequent branch in a loop failed
 
     // recorded per method
     Reason_unloaded,              // unloaded class or constant pool entry
@@ -92,8 +94,8 @@ class Deoptimization : AllStatic {
     Reason_LIMIT,
 
     // Note:  Keep this enum in sync. with _trap_reason_name.
-    Reason_RECORDED_LIMIT = Reason_bimorphic  // some are not recorded per bc
-    // Note:  Reason_RECORDED_LIMIT should be < 8 to fit into 3 bits of
+    Reason_RECORDED_LIMIT = Reason_profile_predicate  // some are not recorded per bc
+    // Note:  Reason_RECORDED_LIMIT should fit into 31 bits of
     // DataLayout::trap_bits.  This dependency is enforced indirectly
     // via asserts, to avoid excessive direct header-to-header dependencies.
     // See Deoptimization::trap_state_reason and class DataLayout.
