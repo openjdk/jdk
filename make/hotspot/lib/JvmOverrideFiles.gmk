@@ -74,6 +74,8 @@ ifeq ($(OPENJDK_TARGET_OS), linux)
 
 else ifeq ($(OPENJDK_TARGET_OS), solaris)
   ifneq ($(DEBUG_LEVEL), slowdebug)
+    # dev studio 12.6 workaround
+    BUILD_LIBJVM_arguments.cpp_OPTIMIZATION := LOW
     # Workaround for a bug in dtrace.  If ciEnv::post_compiled_method_load_event()
     # is inlined, the resulting dtrace object file needs a reference to this
     # function, whose symbol name is too long for dtrace.  So disable inlining
