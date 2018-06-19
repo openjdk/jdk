@@ -81,7 +81,7 @@ private:
   void check_concurrent_work();
   void trigger_concurrent_work();
 
-  static uintx item_added();
+  static size_t item_added();
   static void item_removed();
   size_t add_items_to_clean(size_t ndead);
 

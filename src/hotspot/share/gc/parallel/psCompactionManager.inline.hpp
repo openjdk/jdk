@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ inline void oop_pc_follow_contents_specialized(objArrayOop obj, int index, ParCo
   const size_t beg_index = size_t(index);
   assert(beg_index < len || len == 0, "index too large");
 
-  const size_t stride = MIN2(len - beg_index, ObjArrayMarkingStride);
+  const size_t stride = MIN2(len - beg_index, (size_t)ObjArrayMarkingStride);
   const size_t end_index = beg_index + stride;
   T* const base = (T*)obj->base_raw();
   T* const beg = base + beg_index;
