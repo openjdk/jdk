@@ -121,7 +121,7 @@ class Access: public AllStatic {
   static void verify_heap_oop_decorators() {
     const DecoratorSet heap_oop_decorators = AS_DECORATOR_MASK | ON_DECORATOR_MASK |
                                              OOP_DECORATOR_MASK | (IN_DECORATOR_MASK ^
-                                                                   (IN_ROOT | IN_CONCURRENT_ROOT)); // no root accesses in the heap
+                                                                   (IN_NATIVE | IN_CONCURRENT_ROOT)); // no root accesses in the heap
     verify_decorators<expected_mo_decorators | heap_oop_decorators>();
   }
 
@@ -296,7 +296,7 @@ class HeapAccess: public Access<IN_HEAP | decorators> {};
 // Helper for performing normal accesses in roots. These accesses
 // may resolve an accessor on a GC barrier set
 template <DecoratorSet decorators = INTERNAL_EMPTY>
-class RootAccess: public Access<IN_ROOT | decorators> {};
+class NativeAccess: public Access<IN_NATIVE | decorators> {};
 
 // Helper for array access.
 template <DecoratorSet decorators = INTERNAL_EMPTY>
@@ -376,10 +376,10 @@ void Access<decorators>::verify_decorators() {
   ));
   const DecoratorSet location_decorators = decorators & IN_DECORATOR_MASK;
   STATIC_ASSERT(location_decorators == 0 || ( // make sure location decorators are disjoint if set
-    (location_decorators ^ IN_ROOT) == 0 ||
+    (location_decorators ^ IN_NATIVE) == 0 ||
     (location_decorators ^ IN_HEAP) == 0 ||
     (location_decorators ^ (IN_HEAP | IN_HEAP_ARRAY)) == 0 ||
-    (location_decorators ^ (IN_ROOT | IN_CONCURRENT_ROOT)) == 0
+    (location_decorators ^ (IN_NATIVE | IN_CONCURRENT_ROOT)) == 0
   ));
 }
 

@@ -31,9 +31,8 @@ import org.w3c.dom.NamedNodeMap;
 /**
  * Temporary swapped static functions from the normalizer Section
  *
- * @author Christian Geuer-Pollmann
  */
-public class C14nHelper {
+public final class C14nHelper {
 
     /**
      * Constructor C14nHelper
@@ -100,7 +99,7 @@ public class C14nHelper {
         }
 
         String nodeAttrName = attr.getNodeName();
-        boolean definesDefaultNS = nodeAttrName.equals("xmlns");
+        boolean definesDefaultNS = "xmlns".equals(nodeAttrName);
         boolean definesNonDefaultNS = nodeAttrName.startsWith("xmlns:");
 
         if ((definesDefaultNS || definesNonDefaultNS) && namespaceIsRelative(attr)) {
@@ -145,7 +144,8 @@ public class C14nHelper {
         if (ctxNode != null) {
             NamedNodeMap attributes = ctxNode.getAttributes();
 
-            for (int i = 0; i < attributes.getLength(); i++) {
+            int length = attributes.getLength();
+            for (int i = 0; i < length; i++) {
                 C14nHelper.assertNotRelativeNS((Attr) attributes.item(i));
             }
         } else {

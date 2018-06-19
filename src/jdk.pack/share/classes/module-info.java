@@ -36,7 +36,10 @@
  * </dl>
  *
  * @moduleGraph
+ * @deprecated This module is deprecated, and is planned for removal in a
+ *             future release.
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 module jdk.pack {
 }

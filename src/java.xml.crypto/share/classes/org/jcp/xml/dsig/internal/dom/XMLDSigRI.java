@@ -28,10 +28,10 @@
  * ===========================================================================
  */
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Portions copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: XMLDSigRI.java 1400021 2012-10-19 10:16:04Z coheigea $
+ * $Id: XMLDSigRI.java 1804972 2017-08-14 09:59:23Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -43,7 +43,6 @@ import javax.xml.crypto.dsig.*;
 /**
  * The XMLDSig RI Provider.
  *
- * @author Joyce Leung
  */
 
 /**

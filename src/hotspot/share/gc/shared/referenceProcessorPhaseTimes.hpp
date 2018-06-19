@@ -25,107 +25,75 @@
 #ifndef SHARE_VM_GC_SHARED_REFERENCEPROCESSORPHASETIMES_HPP
 #define SHARE_VM_GC_SHARED_REFERENCEPROCESSORPHASETIMES_HPP
 
+#include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shared/workerDataArray.hpp"
+#include "memory/allocation.hpp"
 #include "memory/referenceType.hpp"
 #include "utilities/ticks.hpp"
 
 class DiscoveredList;
 class GCTimer;
+class LogStream;
 
 class ReferenceProcessorPhaseTimes : public CHeapObj<mtGC> {
-public:
-  // Detailed phases that has parallel work.
-  enum RefProcParPhases {
-    SoftRefPhase1,
-    SoftRefPhase2,
-    SoftRefPhase3,
-    WeakRefPhase2,
-    WeakRefPhase3,
-    FinalRefPhase2,
-    FinalRefPhase3,
-    PhantomRefPhase2,
-    PhantomRefPhase3,
-    RefParPhaseMax
-  };
-
-  // Sub-phases that are used when processing each j.l.Reference types.
-  // Only SoftReference has RefPhase1.
-  enum RefProcPhaseNumbers {
-    RefPhase1,
-    RefPhase2,
-    RefPhase3,
-    RefPhaseMax
-  };
-
-private:
   static const int number_of_subclasses_of_ref = REF_PHANTOM - REF_OTHER; // 5 - 1 = 4
 
-  // Records per thread information of each phase.
-  WorkerDataArray<double>* _worker_time_sec[RefParPhaseMax];
-  // Records elapsed time of each phase.
-  double                   _par_phase_time_ms[RefParPhaseMax];
+  // Records per thread time information of each sub phase.
+  WorkerDataArray<double>* _sub_phases_worker_time_sec[ReferenceProcessor::RefSubPhaseMax];
+  // Total time of each sub phase.
+  double                   _sub_phases_total_time_ms[ReferenceProcessor::RefSubPhaseMax];
 
-  // Total spent time for references.
-  // e.g. _ref_proc_time_ms[0] = _par_phase_time_ms[SoftRefPhase1] +
-  //                             _par_phase_time_ms[SoftRefPhase2] +
-  //                             _par_phase_time_ms[SoftRefPhase3] + extra time.
-  double                   _ref_proc_time_ms[number_of_subclasses_of_ref];
+  // Records total elapsed time for each phase.
+  double                   _phases_time_ms[ReferenceProcessor::RefPhaseMax];
+  // Records total queue balancing for each phase.
+  double                   _balance_queues_time_ms[ReferenceProcessor::RefPhaseMax];
 
+  WorkerDataArray<double>* _phase2_worker_time_sec;
+
+  // Total spent time for reference processing.
   double                   _total_time_ms;
 
   size_t                   _ref_cleared[number_of_subclasses_of_ref];
   size_t                   _ref_discovered[number_of_subclasses_of_ref];
-  size_t                   _ref_enqueued[number_of_subclasses_of_ref];
-  double                   _balance_queues_time_ms[number_of_subclasses_of_ref];
 
   bool                     _processing_is_mt;
 
-  // Currently processing reference type.
-  ReferenceType            _processing_ref_type;
-
   GCTimer*                 _gc_timer;
 
-  double par_phase_time_ms(RefProcParPhases phase) const;
-  double ref_proc_time_ms(ReferenceType ref_type) const;
+  double phase_time_ms(ReferenceProcessor::RefProcPhases phase) const;
+  double sub_phase_total_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase) const;
 
   double total_time_ms() const { return _total_time_ms; }
 
-  size_t ref_cleared(ReferenceType ref_type) const;
-  size_t ref_enqueued(ReferenceType ref_type) const;
-
-  double balance_queues_time_ms(ReferenceType ref_type) const;
+  double balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase) const;
 
   void print_reference(ReferenceType ref_type, uint base_indent) const;
-  void print_phase(RefProcParPhases phase, uint indent) const;
 
+  void print_phase(ReferenceProcessor::RefProcPhases phase, uint indent) const;
+  void print_balance_time(LogStream* ls, ReferenceProcessor::RefProcPhases phase, uint indent) const;
+  void print_sub_phase(LogStream* ls, ReferenceProcessor::RefProcSubPhases sub_phase, uint indent) const;
+  void print_worker_time(LogStream* ls, WorkerDataArray<double>* worker_time, const char* ser_title, uint indent) const;
+
+  static double uninitialized() { return -1.0; }
 public:
   ReferenceProcessorPhaseTimes(GCTimer* gc_timer, uint max_gc_threads);
   ~ReferenceProcessorPhaseTimes();
 
-  static double uninitialized() { return -1.0; }
+  WorkerDataArray<double>* phase2_worker_time_sec() const { return _phase2_worker_time_sec; }
+  WorkerDataArray<double>* sub_phase_worker_time_sec(ReferenceProcessor::RefProcSubPhases phase) const;
+  void set_phase_time_ms(ReferenceProcessor::RefProcPhases phase, double par_phase_time_ms);
 
-  WorkerDataArray<double>* worker_time_sec(RefProcParPhases phase) const;
-  void set_par_phase_time_ms(RefProcParPhases phase, double par_phase_time_ms);
-
-  void set_ref_proc_time_ms(ReferenceType ref_type, double ref_proc_time_ms);
+  void set_sub_phase_total_phase_time_ms(ReferenceProcessor::RefProcSubPhases sub_phase, double ref_proc_time_ms);
 
   void set_total_time_ms(double total_time_ms) { _total_time_ms = total_time_ms; }
 
-  void set_ref_cleared(ReferenceType ref_type, size_t count);
-  size_t ref_discovered(ReferenceType ref_type) const;
+  void add_ref_cleared(ReferenceType ref_type, size_t count);
   void set_ref_discovered(ReferenceType ref_type, size_t count);
-  void set_ref_enqueued(ReferenceType ref_type, size_t count);
 
-  void set_balance_queues_time_ms(ReferenceType ref_type, double time_ms);
+  void set_balance_queues_time_ms(ReferenceProcessor::RefProcPhases phase, double time_ms);
 
   void set_processing_is_mt(bool processing_is_mt) { _processing_is_mt = processing_is_mt; }
-
-  ReferenceType processing_ref_type() const { return _processing_ref_type; }
-  void set_processing_ref_type(ReferenceType processing_ref_type) { _processing_ref_type = processing_ref_type; }
-
-  // Returns RefProcParPhases calculated from phase_number and _processing_ref_type.
-  RefProcParPhases par_phase(RefProcPhaseNumbers phase_number) const;
 
   GCTimer* gc_timer() const { return _gc_timer; }
 
@@ -135,38 +103,40 @@ public:
   void print_all_references(uint base_indent = 0, bool print_total = true) const;
 };
 
-// Updates working time of each worker thread.
-class RefProcWorkerTimeTracker : public StackObj {
+class RefProcWorkerTimeTracker : public CHeapObj<mtGC> {
 protected:
   WorkerDataArray<double>* _worker_time;
   double                   _start_time;
   uint                     _worker_id;
-
 public:
-  RefProcWorkerTimeTracker(ReferenceProcessorPhaseTimes::RefProcPhaseNumbers number,
-                           ReferenceProcessorPhaseTimes* phase_times,
-                           uint worker_id);
-  RefProcWorkerTimeTracker(ReferenceProcessorPhaseTimes::RefProcParPhases phase,
-                           ReferenceProcessorPhaseTimes* phase_times,
-                           uint worker_id);
-  ~RefProcWorkerTimeTracker();
+  RefProcWorkerTimeTracker(WorkerDataArray<double>* worker_time, uint worker_id);
+  virtual ~RefProcWorkerTimeTracker();
+};
+
+// Updates working time of each worker thread for a given sub phase.
+class RefProcSubPhasesWorkerTimeTracker : public RefProcWorkerTimeTracker {
+public:
+  RefProcSubPhasesWorkerTimeTracker(ReferenceProcessor::RefProcSubPhases phase,
+                                    ReferenceProcessorPhaseTimes* phase_times,
+                                    uint worker_id);
+  ~RefProcSubPhasesWorkerTimeTracker();
 };
 
 class RefProcPhaseTimeBaseTracker : public StackObj {
 protected:
-  const char*                   _title;
   ReferenceProcessorPhaseTimes* _phase_times;
   Ticks                         _start_ticks;
   Ticks                         _end_ticks;
 
+  ReferenceProcessor::RefProcPhases _phase_number;
+
   Ticks end_ticks();
   double elapsed_time();
   ReferenceProcessorPhaseTimes* phase_times() const { return _phase_times; }
-  // Print phase elapsed time with each worker information if MT processed.
-  void print_phase(ReferenceProcessorPhaseTimes::RefProcParPhases phase, uint indent);
 
 public:
   RefProcPhaseTimeBaseTracker(const char* title,
+                              ReferenceProcessor::RefProcPhases _phase_number,
                               ReferenceProcessorPhaseTimes* phase_times);
   ~RefProcPhaseTimeBaseTracker();
 };
@@ -175,30 +145,27 @@ public:
 // save it into GCTimer.
 class RefProcBalanceQueuesTimeTracker : public RefProcPhaseTimeBaseTracker {
 public:
-  RefProcBalanceQueuesTimeTracker(ReferenceProcessorPhaseTimes* phase_times);
+  RefProcBalanceQueuesTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
+                                  ReferenceProcessorPhaseTimes* phase_times);
   ~RefProcBalanceQueuesTimeTracker();
 };
 
 // Updates phase time at ReferenceProcessorPhaseTimes and save it into GCTimer.
-class RefProcParPhaseTimeTracker : public RefProcPhaseTimeBaseTracker {
-  ReferenceProcessorPhaseTimes::RefProcPhaseNumbers _phase_number;
-
+class RefProcPhaseTimeTracker : public RefProcPhaseTimeBaseTracker {
 public:
-  RefProcParPhaseTimeTracker(ReferenceProcessorPhaseTimes::RefProcPhaseNumbers phase_number,
-                             ReferenceProcessorPhaseTimes* phase_times);
-  ~RefProcParPhaseTimeTracker();
+  RefProcPhaseTimeTracker(ReferenceProcessor::RefProcPhases phase_number,
+                          ReferenceProcessorPhaseTimes* phase_times);
+  ~RefProcPhaseTimeTracker();
 };
 
-// Updates phase time related information.
-// - Each phase processing time, cleared/discovered reference counts and stats for each working threads if MT processed.
-class RefProcPhaseTimesTracker : public RefProcPhaseTimeBaseTracker {
+// Highest level time tracker.
+class RefProcTotalPhaseTimesTracker : public RefProcPhaseTimeBaseTracker {
   ReferenceProcessor* _rp;
-
 public:
-  RefProcPhaseTimesTracker(ReferenceType ref_type,
-                           ReferenceProcessorPhaseTimes* phase_times,
-                           ReferenceProcessor* rp);
-  ~RefProcPhaseTimesTracker();
+  RefProcTotalPhaseTimesTracker(ReferenceProcessor::RefProcPhases phase_number,
+                                ReferenceProcessorPhaseTimes* phase_times,
+                                ReferenceProcessor* rp);
+  ~RefProcTotalPhaseTimesTracker();
 };
 
 #endif // SHARE_VM_GC_SHARED_REFERENCEPROCESSORPHASETIMES_HPP

@@ -37,6 +37,9 @@
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
 
+// external name (synthetic) for the primordial "bootstrap" class loader instance
+#define BOOTSTRAP_LOADER_NAME "bootstrap"
+#define BOOTSTRAP_LOADER_NAME_LEN 9
 
 //
 // A class loader represents a linkset. Conceptually, a linkset identifies
@@ -258,9 +261,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Support for walking class loader data objects
   ClassLoaderData* _next; /// Next loader_datas created
 
-  // JFR support
   Klass*  _class_loader_klass;
-  Symbol* _class_loader_name;
+  Symbol* _name;
+  Symbol* _name_and_id;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
   void set_next(ClassLoaderData* next) { _next = next; }
@@ -362,8 +365,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   void initialize_holder(Handle holder);
 
-  inline unsigned int identity_hash() const { return (unsigned int)(((intptr_t)this) >> 3); }
-
   void oops_do(OopClosure* f, bool must_claim, bool clear_modified_oops = false);
 
   void classes_do(KlassClosure* klass_closure);
@@ -377,7 +378,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void print_value()                               { print_value_on(tty); }
   void print_value_on(outputStream* out) const;
   void verify();
-  const char* loader_name() const;
 
   OopHandle add_handle(Handle h);
   void remove_handle(OopHandle h);
@@ -400,15 +400,20 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* class_loader_data_or_null(oop loader);
   static ClassLoaderData* anonymous_class_loader_data(Handle loader);
 
-  // Returns Klass* of associated class loader, or NULL if associated loader is <bootstrap>.
+  // Returns Klass* of associated class loader, or NULL if associated loader is 'bootstrap'.
   // Also works if unloading.
   Klass* class_loader_klass() const { return _class_loader_klass; }
 
-  // Returns Name of associated class loader.
-  // Returns NULL if associated class loader is <bootstrap> or if no name has been set for
-  //   this loader.
-  // Also works if unloading.
-  Symbol* class_loader_name() const { return _class_loader_name; }
+  // Returns the class loader's explict name as specified during
+  // construction or the class loader's qualified class name.
+  // Works during unloading.
+  const char* loader_name() const;
+  // Returns the explicitly specified class loader name or NULL.
+  Symbol* name() const { return _name; }
+
+  // Obtain the class loader's _name_and_id, works during unloading.
+  const char* loader_name_and_id() const;
+  Symbol* name_and_id() const { return _name_and_id; }
 
   JFR_ONLY(DEFINE_TRACE_ID_METHODS;)
 };

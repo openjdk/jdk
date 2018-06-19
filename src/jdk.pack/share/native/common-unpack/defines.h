@@ -118,6 +118,7 @@ typedef DWORDLONG       julong;
 #define tempname        _tempname
 #define sleep           Sleep
 #define snprintf        _snprintf
+#define PATH_SEPARATOR '\\'
 #else
 typedef signed char byte;
 #ifdef _LP64
@@ -128,6 +129,7 @@ typedef long long jlong;
 typedef long long unsigned julong;
 #endif
 #define MKDIR(dir) mkdir(dir, 0777);
+#define PATH_SEPARATOR '/'
 #endif
 
 #ifdef OLDCC

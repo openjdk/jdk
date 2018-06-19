@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,27 +68,27 @@ void GenDCmdArgument::read_value(const char* str, size_t len, TRAPS) {
   set_is_set(true);
 }
 
-void GenDCmdArgument::to_string(jlong l, char* buf, size_t len) {
+void GenDCmdArgument::to_string(jlong l, char* buf, size_t len) const {
   jio_snprintf(buf, len, INT64_FORMAT, l);
 }
 
-void GenDCmdArgument::to_string(bool b, char* buf, size_t len) {
+void GenDCmdArgument::to_string(bool b, char* buf, size_t len) const {
   jio_snprintf(buf, len, b ? "true" : "false");
 }
 
-void GenDCmdArgument::to_string(NanoTimeArgument n, char* buf, size_t len) {
+void GenDCmdArgument::to_string(NanoTimeArgument n, char* buf, size_t len) const {
   jio_snprintf(buf, len, INT64_FORMAT, n._nanotime);
 }
 
-void GenDCmdArgument::to_string(MemorySizeArgument m, char* buf, size_t len) {
+void GenDCmdArgument::to_string(MemorySizeArgument m, char* buf, size_t len) const {
   jio_snprintf(buf, len, INT64_FORMAT, m._size);
 }
 
-void GenDCmdArgument::to_string(char* c, char* buf, size_t len) {
+void GenDCmdArgument::to_string(char* c, char* buf, size_t len) const {
   jio_snprintf(buf, len, "%s", (c != NULL) ? c : "");
 }
 
-void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) {
+void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) const {
   int length = f->array()->length();
   size_t written = 0;
   buf[0] = 0;

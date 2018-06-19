@@ -90,11 +90,11 @@ class JvmtiTagHashmapEntry : public CHeapObj<mtInternal> {
 
   // accessor methods
   inline oop* object_addr() { return &_object; }
-  inline oop object()       { return RootAccess<ON_PHANTOM_OOP_REF>::oop_load(object_addr()); }
+  inline oop object()       { return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(object_addr()); }
   // Peek at the object without keeping it alive. The returned object must be
   // kept alive using a normal access if it leaks out of a thread transition from VM.
   inline oop object_peek()  {
-    return RootAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(object_addr());
+    return NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(object_addr());
   }
   inline jlong tag() const  { return _tag; }
 

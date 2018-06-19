@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,17 +64,23 @@
  */
 package test.java.time.format;
 
+import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.chrono.JapaneseChronology;
+import java.time.chrono.JapaneseEra;
 import java.time.chrono.MinguoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.time.LocalDate;
+import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
 
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
 
@@ -113,6 +119,29 @@ public class TestDateTimeFormatterBuilderWithLocale {
         String test = f.format(temporal);
         assertEquals(test, expected);
     }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="mapTextLookup")
+    Object[][] data_mapTextLookup() {
+        return new Object[][] {
+            {IsoChronology.INSTANCE.date(1, 1, 1), Locale.ENGLISH},
+            {JapaneseChronology.INSTANCE.date(JapaneseEra.HEISEI, 1, 1, 8), Locale.ENGLISH},
+            {MinguoChronology.INSTANCE.date(1, 1, 1), Locale.ENGLISH},
+            {ThaiBuddhistChronology.INSTANCE.date(1, 1, 1), Locale.ENGLISH},
+        };
+    }
+
+    @Test(dataProvider="mapTextLookup")
+    public void test_appendText_mapTextLookup(ChronoLocalDate date, Locale locale) {
+        final String new1st = "1st";
+        Map<Long, String> yearMap = new HashMap<>();
+        yearMap.put(1L, new1st);
+        builder.appendText(ChronoField.YEAR_OF_ERA, yearMap);
+
+        String actual = date.format(builder.toFormatter(locale));
+        assertEquals(actual, new1st);
+    }
+
 
     //-----------------------------------------------------------------------
     @DataProvider(name="localePatterns")

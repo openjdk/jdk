@@ -54,6 +54,7 @@ import java.util.LinkedList;
  * Define the structure and ordering of "bands" in a packed file.
  * @author John Rose
  */
+@SuppressWarnings({"removal"})
 abstract
 class BandStructure {
     static final int MAX_EFFORT = 9;

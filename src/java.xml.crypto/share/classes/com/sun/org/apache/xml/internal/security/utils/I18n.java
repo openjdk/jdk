@@ -29,7 +29,6 @@ import java.util.ResourceBundle;
 /**
  * The Internationalization (I18N) pack.
  *
- * @author Christian Geuer-Pollmann
  */
 public class I18n {
 
@@ -57,13 +56,13 @@ public class I18n {
      * Method translate
      *
      * translates a message ID into an internationalized String, see alse
-     * <CODE>XMLSecurityException.getExceptionMEssage()</CODE>. The strings are
-     * stored in the <CODE>ResourceBundle</CODE>, which is identified in
-     * <CODE>exceptionMessagesResourceBundleBase</CODE>
+     * {@code XMLSecurityException.getExceptionMEssage()}. The strings are
+     * stored in the {@code ResourceBundle}, which is identified in
+     * {@code exceptionMessagesResourceBundleBase}
      *
      * @param message
-     * @param args is an <CODE>Object[]</CODE> array of strings which are inserted into
-     * the String which is retrieved from the <CODE>ResouceBundle</CODE>
+     * @param args is an {@code Object[]} array of strings which are inserted into
+     * the String which is retrieved from the {@code ResouceBundle}
      * @return message translated
      */
     public static String translate(String message, Object[] args) {
@@ -74,7 +73,7 @@ public class I18n {
      * Method translate
      *
      * translates a message ID into an internationalized String, see also
-     * <CODE>XMLSecurityException.getExceptionMessage()</CODE>
+     * {@code XMLSecurityException.getExceptionMessage()}
      *
      * @param message
      * @return message translated
@@ -153,7 +152,7 @@ public class I18n {
      * @param languageCode
      * @param countryCode
      */
-    public synchronized static void init(String languageCode, String countryCode) {
+    public static synchronized void init(String languageCode, String countryCode) {
         if (alreadyInitialized) {
             return;
         }
@@ -163,6 +162,19 @@ public class I18n {
                 Constants.exceptionMessagesResourceBundleBase,
                 new Locale(languageCode, countryCode)
             );
+        alreadyInitialized = true;
+    }
+
+    /**
+     * Method init
+     * @param resourceBundle
+     */
+    public static synchronized void init(ResourceBundle resourceBundle) {
+        if (alreadyInitialized) {
+            return;
+        }
+
+        I18n.resourceBundle = resourceBundle;
         alreadyInitialized = true;
     }
 }

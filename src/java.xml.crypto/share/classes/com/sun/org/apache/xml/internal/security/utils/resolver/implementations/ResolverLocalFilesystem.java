@@ -22,9 +22,11 @@
  */
 package com.sun.org.apache.xml.internal.security.utils.resolver.implementations;
 
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
@@ -38,9 +40,8 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
 
     private static final int FILE_URI_LENGTH = "file:/".length();
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(ResolverLocalFilesystem.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(ResolverLocalFilesystem.class);
 
     @Override
     public boolean engineIsThreadSafe() {
@@ -48,7 +49,7 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public XMLSignatureInput engineResolveURI(ResourceResolverContext context)
@@ -59,14 +60,15 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
 
             String fileName =
                 ResolverLocalFilesystem.translateUriToFilename(uriNew.toString());
-            FileInputStream inputStream = new FileInputStream(fileName);
+            InputStream inputStream = Files.newInputStream(Paths.get(fileName));
             XMLSignatureInput result = new XMLSignatureInput(inputStream);
+            result.setSecureValidation(context.secureValidation);
 
             result.setSourceURI(uriNew.toString());
 
             return result;
         } catch (Exception e) {
-            throw new ResourceResolverException("generic.EmptyMessage", e, context.attr, context.baseUri);
+            throw new ResourceResolverException(e, context.uriToResolve, context.baseUri, "generic.EmptyMessage");
         }
     }
 
@@ -106,38 +108,30 @@ public class ResolverLocalFilesystem extends ResourceResolverSpi {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public boolean engineCanResolveURI(ResourceResolverContext context) {
         if (context.uriToResolve == null) {
             return false;
         }
 
-        if (context.uriToResolve.equals("") || (context.uriToResolve.charAt(0)=='#') ||
+        if (context.uriToResolve.equals("") || context.uriToResolve.charAt(0) == '#' ||
             context.uriToResolve.startsWith("http:")) {
             return false;
         }
 
         try {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "I was asked whether I can resolve " + context.uriToResolve);
-            }
+            LOG.debug("I was asked whether I can resolve {}", context.uriToResolve);
 
             if (context.uriToResolve.startsWith("file:") || context.baseUri.startsWith("file:")) {
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, "I state that I can resolve " + context.uriToResolve);
-                }
+                LOG.debug("I state that I can resolve {}", context.uriToResolve);
                 return true;
             }
         } catch (Exception e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-            }
+            LOG.debug(e.getMessage(), e);
         }
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "But I can't");
-        }
+        LOG.debug("But I can't");
 
         return false;
     }

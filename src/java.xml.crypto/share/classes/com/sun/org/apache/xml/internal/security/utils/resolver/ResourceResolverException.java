@@ -23,21 +23,19 @@
 package com.sun.org.apache.xml.internal.security.utils.resolver;
 
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
-import org.w3c.dom.Attr;
 
 /**
  * This Exception is thrown if something related to the
  * {@link com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolver} goes wrong.
  *
- * @author $Author: coheigea $
  */
 public class ResourceResolverException extends XMLSecurityException {
 
     private static final long serialVersionUID = 1L;
 
-    private Attr uri = null;
+    private String uri;
 
-    private String baseURI = null;
+    private String baseURI;
 
     /**
      * Constructor ResourceResolverException
@@ -46,7 +44,7 @@ public class ResourceResolverException extends XMLSecurityException {
      * @param uri
      * @param baseURI
      */
-    public ResourceResolverException(String msgID, Attr uri, String baseURI) {
+    public ResourceResolverException(String msgID, String uri, String baseURI) {
         super(msgID);
 
         this.uri = uri;
@@ -61,7 +59,7 @@ public class ResourceResolverException extends XMLSecurityException {
      * @param uri
      * @param baseURI
      */
-    public ResourceResolverException(String msgID, Object exArgs[], Attr uri,
+    public ResourceResolverException(String msgID, Object exArgs[], String uri,
                                      String baseURI) {
         super(msgID, exArgs);
 
@@ -72,42 +70,54 @@ public class ResourceResolverException extends XMLSecurityException {
     /**
      * Constructor ResourceResolverException
      *
-     * @param msgID
      * @param originalException
      * @param uri
      * @param baseURI
+     * @param msgID
      */
-    public ResourceResolverException(String msgID, Exception originalException,
-                                     Attr uri, String baseURI) {
-        super(msgID, originalException);
+    public ResourceResolverException(Exception originalException,
+                                     String uri, String baseURI, String msgID) {
+        super(originalException, msgID);
 
         this.uri = uri;
         this.baseURI = baseURI;
+    }
+
+    @Deprecated
+    public ResourceResolverException(String msgID, Exception originalException,
+                                     String uri, String baseURI) {
+        this(originalException, uri, baseURI, msgID);
     }
 
     /**
      * Constructor ResourceResolverException
      *
-     * @param msgID
-     * @param exArgs
      * @param originalException
      * @param uri
      * @param baseURI
+     * @param msgID
+     * @param exArgs
      */
-    public ResourceResolverException(String msgID, Object exArgs[],
-                                     Exception originalException, Attr uri,
-                                     String baseURI) {
-        super(msgID, exArgs, originalException);
+    public ResourceResolverException(Exception originalException, String uri,
+                                     String baseURI, String msgID, Object exArgs[]) {
+        super(originalException, msgID, exArgs);
 
         this.uri = uri;
         this.baseURI = baseURI;
+    }
+
+    @Deprecated
+    public ResourceResolverException(String msgID, Object exArgs[],
+                                     Exception originalException, String uri,
+                                     String baseURI) {
+        this(originalException, uri, baseURI, msgID, exArgs);
     }
 
     /**
      *
      * @param uri
      */
-    public void setURI(Attr uri) {
+    public void setURI(String uri) {
         this.uri = uri;
     }
 
@@ -115,7 +125,7 @@ public class ResourceResolverException extends XMLSecurityException {
      *
      * @return the uri
      */
-    public Attr getURI() {
+    public String getURI() {
         return this.uri;
     }
 

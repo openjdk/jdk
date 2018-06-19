@@ -55,14 +55,14 @@ final class HotSpotInvocationPlugins extends InvocationPlugins {
     }
 
     @Override
-    public void register(InvocationPlugin plugin, Type declaringClass, String name, Type... argumentTypes) {
+    protected void register(InvocationPlugin plugin, boolean isOptional, boolean allowOverwrite, Type declaringClass, String name, Type... argumentTypes) {
         if (!config.usePopCountInstruction) {
             if (name.equals("bitCount")) {
                 assert declaringClass.equals(Integer.class) || declaringClass.equals(Long.class);
                 return;
             }
         }
-        super.register(plugin, declaringClass, name, argumentTypes);
+        super.register(plugin, isOptional, allowOverwrite, declaringClass, name, argumentTypes);
     }
 
     @Override

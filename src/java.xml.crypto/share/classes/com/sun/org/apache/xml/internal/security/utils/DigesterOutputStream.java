@@ -27,12 +27,11 @@ import java.io.ByteArrayOutputStream;
 import com.sun.org.apache.xml.internal.security.algorithms.MessageDigestAlgorithm;
 
 /**
- * @author raul
  *
  */
 public class DigesterOutputStream extends ByteArrayOutputStream {
-    private static final java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(DigesterOutputStream.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(DigesterOutputStream.class);
 
     final MessageDigestAlgorithm mda;
 
@@ -43,25 +42,25 @@ public class DigesterOutputStream extends ByteArrayOutputStream {
         this.mda = mda;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public void write(byte[] arg0) {
         write(arg0, 0, arg0.length);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public void write(int arg0) {
         mda.update((byte)arg0);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public void write(byte[] arg0, int arg1, int arg2) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Pre-digested input:");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Pre-digested input:");
             StringBuilder sb = new StringBuilder(arg2);
             for (int i = arg1; i < (arg1 + arg2); i++) {
                 sb.append((char)arg0[i]);
             }
-            log.log(java.util.logging.Level.FINE, sb.toString());
+            LOG.debug(sb.toString());
         }
         mda.update(arg0, arg1, arg2);
     }

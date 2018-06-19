@@ -43,6 +43,9 @@ import org.graalvm.compiler.nodes.PiNode;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.calc.IsNullNode;
+import org.graalvm.compiler.nodes.calc.NarrowNode;
+import org.graalvm.compiler.nodes.calc.SignExtendNode;
+import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
 import org.graalvm.compiler.nodes.type.StampTool;
 
 import jdk.vm.ci.code.BailoutException;
@@ -312,4 +315,25 @@ public interface GraphBuilderContext extends GraphBuilderTool {
         return null;
     }
 
+    /**
+     * Adds masking to a given subword value according to a given {@Link JavaKind}, such that the
+     * masked value falls in the range of the given kind. In the cases where the given kind is not a
+     * subword kind, the input value is returned immediately.
+     *
+     * @param value the value to be masked
+     * @param kind the kind that specifies the range of the masked value
+     * @return the masked value
+     */
+    default ValueNode maskSubWordValue(ValueNode value, JavaKind kind) {
+        if (kind == kind.getStackKind()) {
+            return value;
+        }
+        // Subword value
+        ValueNode narrow = append(NarrowNode.create(value, kind.getBitCount(), NodeView.DEFAULT));
+        if (kind.isUnsigned()) {
+            return append(ZeroExtendNode.create(narrow, 32, NodeView.DEFAULT));
+        } else {
+            return append(SignExtendNode.create(narrow, 32, NodeView.DEFAULT));
+        }
+    }
 }

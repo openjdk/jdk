@@ -406,9 +406,9 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     public Content valueTagOutput(VariableElement field, String constantVal, boolean includeLink) {
-        return includeLink ?
-            htmlWriter.getDocLink(LinkInfoImpl.Kind.VALUE_TAG, field,
-                constantVal, false) : new RawHtml(constantVal);
+        return includeLink
+                ? htmlWriter.getDocLink(LinkInfoImpl.Kind.VALUE_TAG, field, constantVal, false)
+                : new StringContent(constantVal);
     }
 
     /**

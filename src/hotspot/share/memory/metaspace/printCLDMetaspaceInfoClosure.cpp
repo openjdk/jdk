@@ -88,7 +88,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
     Klass* k = cld->class_loader_klass();
     if (k != NULL) {
       class_name = k->external_name();
-      Symbol* s = cld->class_loader_name();
+      Symbol* s = cld->name();
       if (s != NULL) {
         name = s->as_C_string();
       }

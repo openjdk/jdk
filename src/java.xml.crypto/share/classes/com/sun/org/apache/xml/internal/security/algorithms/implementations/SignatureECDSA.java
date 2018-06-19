@@ -33,34 +33,31 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Base64;
 
 import com.sun.org.apache.xml.internal.security.algorithms.JCEMapper;
 import com.sun.org.apache.xml.internal.security.algorithms.SignatureAlgorithmSpi;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 
 /**
  *
- * @author $Author: raul $
- * @author Alex Dupre
  */
 public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(SignatureECDSA.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(SignatureECDSA.class);
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public abstract String engineGetURI();
 
     /** Field algorithm */
-    private java.security.Signature signatureAlgorithm = null;
+    private Signature signatureAlgorithm;
 
     /**
      * Converts an ASN.1 ECDSA value to a XML Signature ECDSA Value.
      *
-     * The JAVA JCE ECDSA Signature algorithm creates ASN.1 encoded (r,s) value
+     * The JAVA JCE ECDSA Signature algorithm creates ASN.1 encoded (r, s) value
      * pairs; the XML Signature requires the core BigInteger values.
      *
      * @param asn1Bytes
@@ -71,51 +68,13 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
      * @see <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4050.txt">3.3. ECDSA Signatures</A>
      */
     public static byte[] convertASN1toXMLDSIG(byte asn1Bytes[]) throws IOException {
-
-        if (asn1Bytes.length < 8 || asn1Bytes[0] != 48) {
-            throw new IOException("Invalid ASN.1 format of ECDSA signature");
-        }
-        int offset;
-        if (asn1Bytes[1] > 0) {
-            offset = 2;
-        } else if (asn1Bytes[1] == (byte) 0x81) {
-            offset = 3;
-        } else {
-            throw new IOException("Invalid ASN.1 format of ECDSA signature");
-        }
-
-        byte rLength = asn1Bytes[offset + 1];
-        int i;
-
-        for (i = rLength; (i > 0) && (asn1Bytes[(offset + 2 + rLength) - i] == 0); i--);
-
-        byte sLength = asn1Bytes[offset + 2 + rLength + 1];
-        int j;
-
-        for (j = sLength;
-            (j > 0) && (asn1Bytes[(offset + 2 + rLength + 2 + sLength) - j] == 0); j--);
-
-        int rawLen = Math.max(i, j);
-
-        if ((asn1Bytes[offset - 1] & 0xff) != asn1Bytes.length - offset
-            || (asn1Bytes[offset - 1] & 0xff) != 2 + rLength + 2 + sLength
-            || asn1Bytes[offset] != 2
-            || asn1Bytes[offset + 2 + rLength] != 2) {
-            throw new IOException("Invalid ASN.1 format of ECDSA signature");
-        }
-        byte xmldsigBytes[] = new byte[2*rawLen];
-
-        System.arraycopy(asn1Bytes, (offset + 2 + rLength) - i, xmldsigBytes, rawLen - i, i);
-        System.arraycopy(asn1Bytes, (offset + 2 + rLength + 2 + sLength) - j, xmldsigBytes,
-                         2*rawLen - j, j);
-
-        return xmldsigBytes;
+        return ECDSAUtils.convertASN1toXMLDSIG(asn1Bytes);
     }
 
     /**
      * Converts a XML Signature ECDSA Value to an ASN.1 DSA value.
      *
-     * The JAVA JCE ECDSA Signature algorithm creates ASN.1 encoded (r,s) value
+     * The JAVA JCE ECDSA Signature algorithm creates ASN.1 encoded (r, s) value
      * pairs; the XML Signature requires the core BigInteger values.
      *
      * @param xmldsigBytes
@@ -126,58 +85,7 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
      * @see <A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc4050.txt">3.3. ECDSA Signatures</A>
      */
     public static byte[] convertXMLDSIGtoASN1(byte xmldsigBytes[]) throws IOException {
-
-        int rawLen = xmldsigBytes.length/2;
-
-        int i;
-
-        for (i = rawLen; (i > 0) && (xmldsigBytes[rawLen - i] == 0); i--);
-
-        int j = i;
-
-        if (xmldsigBytes[rawLen - i] < 0) {
-            j += 1;
-        }
-
-        int k;
-
-        for (k = rawLen; (k > 0) && (xmldsigBytes[2*rawLen - k] == 0); k--);
-
-        int l = k;
-
-        if (xmldsigBytes[2*rawLen - k] < 0) {
-            l += 1;
-        }
-
-        int len = 2 + j + 2 + l;
-        if (len > 255) {
-            throw new IOException("Invalid XMLDSIG format of ECDSA signature");
-        }
-        int offset;
-        byte asn1Bytes[];
-        if (len < 128) {
-            asn1Bytes = new byte[2 + 2 + j + 2 + l];
-            offset = 1;
-        } else {
-            asn1Bytes = new byte[3 + 2 + j + 2 + l];
-            asn1Bytes[1] = (byte) 0x81;
-            offset = 2;
-        }
-        asn1Bytes[0] = 48;
-        asn1Bytes[offset++] = (byte) len;
-        asn1Bytes[offset++] = 2;
-        asn1Bytes[offset++] = (byte) j;
-
-        System.arraycopy(xmldsigBytes, rawLen - i, asn1Bytes, (offset + j) - i, i);
-
-        offset += j;
-
-        asn1Bytes[offset++] = 2;
-        asn1Bytes[offset++] = (byte) l;
-
-        System.arraycopy(xmldsigBytes, 2*rawLen - k, asn1Bytes, (offset + l) - k, k);
-
-        return asn1Bytes;
+        return ECDSAUtils.convertXMLDSIGtoASN1(xmldsigBytes);
     }
 
     /**
@@ -189,15 +97,13 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
 
         String algorithmID = JCEMapper.translateURItoJCEID(this.engineGetURI());
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Created SignatureECDSA using " + algorithmID);
-        }
+        LOG.debug("Created SignatureECDSA using {}", algorithmID);
         String provider = JCEMapper.getProviderId();
         try {
             if (provider == null) {
                 this.signatureAlgorithm = Signature.getInstance(algorithmID);
             } else {
-                this.signatureAlgorithm = Signature.getInstance(algorithmID,provider);
+                this.signatureAlgorithm = Signature.getInstance(algorithmID, provider);
             }
         } catch (java.security.NoSuchAlgorithmException ex) {
             Object[] exArgs = { algorithmID, ex.getLocalizedMessage() };
@@ -210,38 +116,41 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineSetParameter(AlgorithmParameterSpec params)
         throws XMLSignatureException {
         try {
             this.signatureAlgorithm.setParameter(params);
         } catch (InvalidAlgorithmParameterException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected boolean engineVerify(byte[] signature) throws XMLSignatureException {
         try {
             byte[] jcebytes = SignatureECDSA.convertXMLDSIGtoASN1(signature);
 
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "Called ECDSA.verify() on " + Base64.encode(signature));
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Called ECDSA.verify() on " + Base64.getMimeEncoder().encodeToString(signature));
             }
 
             return this.signatureAlgorithm.verify(jcebytes);
         } catch (SignatureException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         } catch (IOException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineInitVerify(Key publicKey) throws XMLSignatureException {
 
         if (!(publicKey instanceof PublicKey)) {
-            String supplied = publicKey.getClass().getName();
+            String supplied = null;
+            if (publicKey != null) {
+                supplied = publicKey.getClass().getName();
+            }
             String needed = PublicKey.class.getName();
             Object exArgs[] = { supplied, needed };
 
@@ -259,33 +168,34 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
             } catch (Exception e) {
                 // this shouldn't occur, but if it does, restore previous
                 // Signature
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, "Exception when reinstantiating Signature:" + e);
-                }
+                LOG.debug("Exception when reinstantiating Signature: {}", e);
                 this.signatureAlgorithm = sig;
             }
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected byte[] engineSign() throws XMLSignatureException {
         try {
             byte jcebytes[] = this.signatureAlgorithm.sign();
 
             return SignatureECDSA.convertASN1toXMLDSIG(jcebytes);
         } catch (SignatureException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         } catch (IOException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineInitSign(Key privateKey, SecureRandom secureRandom)
         throws XMLSignatureException {
         if (!(privateKey instanceof PrivateKey)) {
-            String supplied = privateKey.getClass().getName();
+            String supplied = null;
+            if (privateKey != null) {
+                supplied = privateKey.getClass().getName();
+            }
             String needed = PrivateKey.class.getName();
             Object exArgs[] = { supplied, needed };
 
@@ -293,73 +203,65 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
         }
 
         try {
-            this.signatureAlgorithm.initSign((PrivateKey) privateKey, secureRandom);
+            if (secureRandom == null) {
+                this.signatureAlgorithm.initSign((PrivateKey) privateKey);
+            } else {
+                this.signatureAlgorithm.initSign((PrivateKey) privateKey, secureRandom);
+            }
         } catch (InvalidKeyException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineInitSign(Key privateKey) throws XMLSignatureException {
-        if (!(privateKey instanceof PrivateKey)) {
-            String supplied = privateKey.getClass().getName();
-            String needed = PrivateKey.class.getName();
-            Object exArgs[] = { supplied, needed };
-
-            throw new XMLSignatureException("algorithms.WrongKeyForThisOperation", exArgs);
-        }
-
-        try {
-            this.signatureAlgorithm.initSign((PrivateKey) privateKey);
-        } catch (InvalidKeyException ex) {
-            throw new XMLSignatureException("empty", ex);
-        }
+        engineInitSign(privateKey, (SecureRandom)null);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineUpdate(byte[] input) throws XMLSignatureException {
         try {
             this.signatureAlgorithm.update(input);
         } catch (SignatureException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineUpdate(byte input) throws XMLSignatureException {
         try {
             this.signatureAlgorithm.update(input);
         } catch (SignatureException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineUpdate(byte buf[], int offset, int len) throws XMLSignatureException {
         try {
             this.signatureAlgorithm.update(buf, offset, len);
         } catch (SignatureException ex) {
-            throw new XMLSignatureException("empty", ex);
+            throw new XMLSignatureException(ex);
         }
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected String engineGetJCEAlgorithmString() {
         return this.signatureAlgorithm.getAlgorithm();
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected String engineGetJCEProviderName() {
         return this.signatureAlgorithm.getProvider().getName();
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineSetHMACOutputLength(int HMACOutputLength)
         throws XMLSignatureException {
         throw new XMLSignatureException("algorithms.HMACOutputLengthOnlyForHMAC");
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected void engineInitSign(
         Key signingKey, AlgorithmParameterSpec algorithmParameterSpec
     ) throws XMLSignatureException {
@@ -367,13 +269,12 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
     }
 
     /**
-     * Class SignatureRSASHA1
+     * Class SignatureECDSASHA1
      *
-     * @author $Author: marcx $
      */
     public static class SignatureECDSASHA1 extends SignatureECDSA {
         /**
-         * Constructor SignatureRSASHA1
+         * Constructor SignatureECDSASHA1
          *
          * @throws XMLSignatureException
          */
@@ -381,21 +282,40 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
             super();
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA1;
         }
     }
 
     /**
-     * Class SignatureRSASHA256
+     * Class SignatureECDSASHA224
+     */
+    public static class SignatureECDSASHA224 extends SignatureECDSA {
+
+        /**
+         * Constructor SignatureECDSASHA224
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureECDSASHA224() throws XMLSignatureException {
+            super();
+        }
+
+        /** {@inheritDoc} */
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA224;
+        }
+    }
+
+    /**
+     * Class SignatureECDSASHA256
      *
-     * @author Alex Dupre
      */
     public static class SignatureECDSASHA256 extends SignatureECDSA {
 
         /**
-         * Constructor SignatureRSASHA256
+         * Constructor SignatureECDSASHA256
          *
          * @throws XMLSignatureException
          */
@@ -403,21 +323,20 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
             super();
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA256;
         }
     }
 
     /**
-     * Class SignatureRSASHA384
+     * Class SignatureECDSASHA384
      *
-     * @author Alex Dupre
      */
     public static class SignatureECDSASHA384 extends SignatureECDSA {
 
         /**
-         * Constructor SignatureRSASHA384
+         * Constructor SignatureECDSASHA384
          *
          * @throws XMLSignatureException
          */
@@ -425,21 +344,20 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
             super();
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA384;
         }
     }
 
     /**
-     * Class SignatureRSASHA512
+     * Class SignatureECDSASHA512
      *
-     * @author Alex Dupre
      */
     public static class SignatureECDSASHA512 extends SignatureECDSA {
 
         /**
-         * Constructor SignatureRSASHA512
+         * Constructor SignatureECDSASHA512
          *
          * @throws XMLSignatureException
          */
@@ -447,9 +365,29 @@ public abstract class SignatureECDSA extends SignatureAlgorithmSpi {
             super();
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public String engineGetURI() {
             return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA512;
+        }
+    }
+
+    /**
+     * Class SignatureECDSARIPEMD160
+     */
+    public static class SignatureECDSARIPEMD160 extends SignatureECDSA {
+
+        /**
+         * Constructor SignatureECDSARIPEMD160
+         *
+         * @throws XMLSignatureException
+         */
+        public SignatureECDSARIPEMD160() throws XMLSignatureException {
+            super();
+        }
+
+        /** {@inheritDoc} */
+        public String engineGetURI() {
+            return XMLSignature.ALGO_ID_SIGNATURE_ECDSA_RIPEMD160;
         }
     }
 

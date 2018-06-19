@@ -158,8 +158,8 @@ public class RawLoadNode extends UnsafeAccessNode implements Lowerable, Virtuali
     }
 
     @Override
-    protected ValueNode cloneAsFieldAccess(Assumptions assumptions, ResolvedJavaField field) {
-        return LoadFieldNode.create(assumptions, object(), field);
+    protected ValueNode cloneAsFieldAccess(Assumptions assumptions, ResolvedJavaField field, boolean volatileAccess) {
+        return LoadFieldNode.create(assumptions, object(), field, volatileAccess);
     }
 
     @Override

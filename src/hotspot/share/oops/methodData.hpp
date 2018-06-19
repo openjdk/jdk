@@ -139,7 +139,7 @@ public:
     //
     // The trap_state is collected only if ProfileTraps is true.
     trap_bits = 1+31,  // 31: enough to distinguish [0..Reason_RECORDED_LIMIT].
-    trap_mask = right_n_bits(trap_bits),
+    trap_mask = -1,
     first_flag = 0
   };
 
@@ -1976,7 +1976,7 @@ public:
 
   // Whole-method sticky bits and flags
   enum {
-    _trap_hist_limit    = 23 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
+    _trap_hist_limit    = 24 JVMCI_ONLY(+5),   // decoupled from Deoptimization::Reason_LIMIT
     _trap_hist_mask     = max_jubyte,
     _extra_data_count   = 4     // extra DataLayout headers, for trap history
   }; // Public flag values

@@ -32,7 +32,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- * @author $Author: coheigea $
  */
 public class XMLX509SubjectName extends SignatureElementProxy implements XMLX509DataContent {
 
@@ -40,12 +39,12 @@ public class XMLX509SubjectName extends SignatureElementProxy implements XMLX509
      * Constructor X509SubjectName
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public XMLX509SubjectName(Element element, String BaseURI)
+    public XMLX509SubjectName(Element element, String baseURI)
         throws XMLSecurityException {
-        super(element, BaseURI);
+        super(element, baseURI);
     }
 
     /**
@@ -80,7 +79,7 @@ public class XMLX509SubjectName extends SignatureElementProxy implements XMLX509
         return RFC2253Parser.normalize(this.getTextFromTextChild());
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public boolean equals(Object obj) {
         if (!(obj instanceof XMLX509SubjectName)) {
             return false;
@@ -99,7 +98,7 @@ public class XMLX509SubjectName extends SignatureElementProxy implements XMLX509
         return result;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_X509SUBJECTNAME;
     }

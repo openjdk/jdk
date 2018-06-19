@@ -38,12 +38,12 @@ public abstract class XPathFactory {
             if (funcTableClass != null) {
                 xalanInstalled = true;
             }
-        } catch (Exception e) {
+        } catch (Exception e) { //NOPMD
             //ignore
         }
     }
 
-    protected synchronized static boolean isXalanInstalled() {
+    protected static synchronized boolean isXalanInstalled() {
         return xalanInstalled;
     }
 

@@ -33,8 +33,8 @@ public interface NodeFilter {
      * Tells if a node must be output in c14n.
      * @param n
      * @return 1 if the node should be output.
-     *         0 if node must not be output,
-     *         -1 if the node and all it's child must not be output.
+     *            0 if node must not be output,
+     *           -1 if the node and all it's child must not be output.
      *
      */
     int isNodeInclude(Node n);
@@ -47,8 +47,8 @@ public interface NodeFilter {
      * @param n
      * @param level the relative level in the tree
      * @return 1 if the node should be output.
-     *         0 if node must not be output,
-     *         -1 if the node and all it's child must not be output.
+     *            0 if node must not be output,
+     *           -1 if the node and all it's child must not be output.
      */
     int isNodeIncludeDO(Node n, int level);
 

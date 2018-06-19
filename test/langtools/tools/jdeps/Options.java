@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8168386
+ * @bug 8168386 8205116
  * @summary Test option validation
  * @modules jdk.jdeps
  * @library lib
@@ -88,5 +88,19 @@ public class Options {
         JdepsRunner jdeps = new JdepsRunner(args);
         assertTrue(jdeps.run(true) != 0);
         return jdeps;
+    }
+
+    @Test
+    public void testSystemOption() {
+        JdepsRunner jdeps;
+
+        // valid path
+        jdeps = new JdepsRunner("--check", "java.base", "--system", System.getProperty("java.home"));
+        assertTrue(jdeps.run(true) == 0);
+
+        // invalid path
+        jdeps = new JdepsRunner("--check", "java.base", "--system", "bad");
+        assertTrue(jdeps.run(true) != 0);
+        jdeps.outputContains("invalid path: bad");
     }
 }

@@ -66,7 +66,7 @@ public class TransformXPath2Filter extends TransformSpi {
     /**
      * Method engineGetURI
      *
-     * @inheritDoc
+     * {@inheritDoc}
      */
     protected String engineGetURI() {
         return implementedTransformURI;
@@ -74,7 +74,7 @@ public class TransformXPath2Filter extends TransformSpi {
 
     /**
      * Method enginePerformTransform
-     * @inheritDoc
+     * {@inheritDoc}
      * @param input
      *
      * @throws TransformationException
@@ -83,9 +83,9 @@ public class TransformXPath2Filter extends TransformSpi {
         XMLSignatureInput input, OutputStream os, Transform transformObject
     ) throws TransformationException {
         try {
-            List<NodeList> unionNodes = new ArrayList<NodeList>();
-            List<NodeList> subtractNodes = new ArrayList<NodeList>();
-            List<NodeList> intersectNodes = new ArrayList<NodeList>();
+            List<NodeList> unionNodes = new ArrayList<>();
+            List<NodeList> subtractNodes = new ArrayList<>();
+            List<NodeList> intersectNodes = new ArrayList<>();
 
             Element[] xpathElements =
                 XMLUtils.selectNodes(
@@ -139,21 +139,21 @@ public class TransformXPath2Filter extends TransformSpi {
             input.setNodeSet(true);
             return input;
         } catch (TransformerException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (DOMException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (CanonicalizationException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (InvalidCanonicalizerException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (XMLSecurityException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (SAXException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (IOException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         } catch (ParserConfigurationException ex) {
-            throw new TransformationException("empty", ex);
+            throw new TransformationException(ex);
         }
     }
 }
@@ -208,7 +208,7 @@ class XPath2NodeFilter implements NodeFilter {
     public int isNodeIncludeDO(Node n, int level) {
         int result = 1;
         if (hasSubtractFilter) {
-            if ((inSubtract == -1) || (level <= inSubtract)) {
+            if (inSubtract == -1 || level <= inSubtract) {
                 if (inList(n, subtractNodes)) {
                     inSubtract = level;
                 } else {
@@ -220,7 +220,7 @@ class XPath2NodeFilter implements NodeFilter {
             }
         }
         if (result != -1 && hasIntersectFilter
-            && ((inIntersect == -1) || (level <= inIntersect))) {
+            && (inIntersect == -1 || level <= inIntersect)) {
             if (!inList(n, intersectNodes)) {
                 inIntersect = -1;
                 result = 0;
@@ -236,13 +236,13 @@ class XPath2NodeFilter implements NodeFilter {
             return 1;
         }
         if (hasUnionFilter) {
-            if ((inUnion == -1) && inList(n, unionNodes)) {
+            if (inUnion == -1 && inList(n, unionNodes)) {
                 inUnion = level;
             }
             if (inUnion != -1) {
                 return 1;
             }
-            result=0;
+            result = 0;
         }
 
         return result;
@@ -282,7 +282,7 @@ class XPath2NodeFilter implements NodeFilter {
     }
 
     private static Set<Node> convertNodeListToSet(List<NodeList> l) {
-        Set<Node> result = new HashSet<Node>();
+        Set<Node> result = new HashSet<>();
         for (NodeList rootNodes : l) {
             int length = rootNodes.getLength();
 

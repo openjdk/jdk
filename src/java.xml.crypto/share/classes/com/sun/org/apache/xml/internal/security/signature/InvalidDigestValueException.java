@@ -27,7 +27,6 @@ package com.sun.org.apache.xml.internal.security.signature;
  * Additional human readable info is passed to the constructor -- this being the benefit
  * of raising an exception or returning a value.
  *
- * @author Christian Geuer-Pollmann
  */
 public class InvalidDigestValueException extends XMLSignatureException {
 
@@ -66,21 +65,31 @@ public class InvalidDigestValueException extends XMLSignatureException {
     /**
      * Constructor InvalidDigestValueException
      *
-     * @param msgID
      * @param originalException
+     * @param msgID
      */
+    public InvalidDigestValueException(Exception originalException, String msgID) {
+        super(originalException, msgID);
+    }
+
+    @Deprecated
     public InvalidDigestValueException(String msgID, Exception originalException) {
-        super(msgID, originalException);
+        this(originalException, msgID);
     }
 
     /**
      * Constructor InvalidDigestValueException
      *
+     * @param originalException
      * @param msgID
      * @param exArgs
-     * @param originalException
      */
-    public InvalidDigestValueException(String msgID, Object exArgs[], Exception originalException) {
-        super(msgID, exArgs, originalException);
+    public InvalidDigestValueException(Exception originalException, String msgID, Object exArgs[]) {
+        super(originalException, msgID, exArgs);
+    }
+
+    @Deprecated
+    public InvalidDigestValueException(String msgID, Object[] exArgs, Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 }

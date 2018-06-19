@@ -2,6 +2,24 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations;
 
 import java.security.PrivateKey;
@@ -21,28 +39,24 @@ import org.w3c.dom.Element;
 
 /**
  * KeyResolverSpi implementation which resolves public keys from a
- * <code>dsig11:DEREncodedKeyValue</code> element.
+ * {@code dsig11:DEREncodedKeyValue} element.
  *
- * @author Brent Putman (putmanb@georgetown.edu)
  */
 public class DEREncodedKeyValueResolver extends KeyResolverSpi {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(DEREncodedKeyValueResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(DEREncodedKeyValueResolver.class);
 
-    /** {@inheritDoc}. */
+    /** {{@inheritDoc}}. */
     public boolean engineCanResolve(Element element, String baseURI, StorageResolver storage) {
         return XMLUtils.elementIsInSignature11Space(element, Constants._TAG_DERENCODEDKEYVALUE);
     }
 
-    /** {@inheritDoc}. */
+    /** {{@inheritDoc}}. */
     public PublicKey engineLookupAndResolvePublicKey(Element element, String baseURI, StorageResolver storage)
         throws KeyResolverException {
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName());
-        }
+        LOG.debug("Can I resolve {}", element.getTagName());
 
         if (!engineCanResolve(element, baseURI, storage)) {
             return null;
@@ -52,27 +66,25 @@ public class DEREncodedKeyValueResolver extends KeyResolverSpi {
             DEREncodedKeyValue derKeyValue = new DEREncodedKeyValue(element, baseURI);
             return derKeyValue.getPublicKey();
         } catch (XMLSecurityException e) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "XMLSecurityException", e);
-            }
+            LOG.debug("XMLSecurityException", e);
         }
 
         return null;
     }
 
-    /** {@inheritDoc}. */
+    /** {{@inheritDoc}}. */
     public X509Certificate engineLookupResolveX509Certificate(Element element, String baseURI, StorageResolver storage)
         throws KeyResolverException {
         return null;
     }
 
-    /** {@inheritDoc}. */
+    /** {{@inheritDoc}}. */
     public SecretKey engineLookupAndResolveSecretKey(Element element, String baseURI, StorageResolver storage)
         throws KeyResolverException {
         return null;
     }
 
-    /** {@inheritDoc}. */
+    /** {{@inheritDoc}}. */
     public PrivateKey engineLookupAndResolvePrivateKey(Element element, String baseURI, StorageResolver storage)
         throws KeyResolverException {
         return null;

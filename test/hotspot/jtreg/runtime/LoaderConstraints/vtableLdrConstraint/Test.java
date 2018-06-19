@@ -35,23 +35,29 @@
 
 public class Test {
 
-    static String expectedErrorMessage1 =
+    // Break expected error messages into 2 parts since the loader name includes its identity
+    // hash which is unique and can't be compared against.
+    static String expectedErrorMessage1_part1 =
         "loader constraint violation for class test.Task: " +
         "when selecting overriding method test.Task.m()Ltest/Foo; " +
-        "the class loader \"<unnamed>\" (instance of PreemptingClassLoader, " +
-        "child of \"app\" jdk.internal.loader.ClassLoaders$AppClassLoader) " +
+        "the class loader PreemptingClassLoader @";
+    static String expectedErrorMessage1_part2 =
+        " (instance of PreemptingClassLoader, " +
+        "child of 'app' jdk.internal.loader.ClassLoaders$AppClassLoader) " +
         "of the selected method's type test.Task, " +
-        "and the class loader \"app\" (instance of jdk.internal.loader.ClassLoaders$AppClassLoader) " +
+        "and the class loader 'app' (instance of jdk.internal.loader.ClassLoaders$AppClassLoader) " +
         "for its super type test.J " +
         "have different Class objects for the type test.Foo used in the signature";
 
-    static String expectedErrorMessage2 =
+    static String expectedErrorMessage2_part1 =
         "loader constraint violation for class test.Task: " +
         "when selecting overriding method test.Task.m()Ltest/Foo; " +
-        "the class loader \"VtableLdrCnstrnt_Test_Loader\" (instance of PreemptingClassLoader, " +
-        "child of \"app\" jdk.internal.loader.ClassLoaders$AppClassLoader) " +
+        "the class loader 'VtableLdrCnstrnt_Test_Loader' @";
+    static String expectedErrorMessage2_part2 =
+        " (instance of PreemptingClassLoader, " +
+        "child of 'app' jdk.internal.loader.ClassLoaders$AppClassLoader) " +
         "of the selected method's type test.Task, " +
-        "and the class loader \"app\" (instance of jdk.internal.loader.ClassLoaders$AppClassLoader) " +
+        "and the class loader 'app' (instance of jdk.internal.loader.ClassLoaders$AppClassLoader) " +
         "for its super type test.J " +
         "have different Class objects for the type test.Foo used in the signature";
 
@@ -62,7 +68,9 @@ public class Test {
     // overrides "J.m()LFoo;".  But, Task's class Foo and super type J's class Foo
     // are different.  So, a LinkageError exception should be thrown because the
     // loader constraint check will fail.
-    public static void test(String loaderName, String expectedErrorMessage) throws Exception {
+    public static void test(String loaderName,
+                            String expectedErrorMessage_part1,
+                            String expectedErrorMessage_part2) throws Exception {
         Class<?> c = test.Foo.class; // Forces standard class loader to load Foo.
         String[] classNames = {"test.Task", "test.Foo", "test.I"};
         ClassLoader l = new PreemptingClassLoader(loaderName, classNames);
@@ -72,8 +80,9 @@ public class Test {
             throw new RuntimeException("Expected LinkageError exception not thrown");
         } catch (LinkageError e) {
             String errorMsg = e.getMessage();
-            if (!errorMsg.equals(expectedErrorMessage)) {
-                System.out.println("Expected: " + expectedErrorMessage + "\n" +
+            if (!errorMsg.contains(expectedErrorMessage_part1) ||
+                !errorMsg.contains(expectedErrorMessage_part2)) {
+                System.out.println("Expected: " + expectedErrorMessage_part1 + "<id>" + expectedErrorMessage_part2 + "\n" +
                                    "but got:  " + errorMsg);
                 throw new RuntimeException("Wrong LinkageError exception thrown: " + errorMsg);
             }
@@ -82,8 +91,8 @@ public class Test {
     }
 
     public static void main(String args[]) throws Exception {
-        test(null, expectedErrorMessage1);
-        test("VtableLdrCnstrnt_Test_Loader", expectedErrorMessage2);
+        test(null, expectedErrorMessage1_part1, expectedErrorMessage1_part2);
+        test("VtableLdrCnstrnt_Test_Loader", expectedErrorMessage2_part1, expectedErrorMessage2_part2);
     }
 }
 

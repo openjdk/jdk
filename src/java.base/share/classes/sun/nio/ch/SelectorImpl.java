@@ -36,8 +36,10 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 
 
 /**
@@ -51,11 +53,14 @@ abstract class SelectorImpl
     private final Set<SelectionKey> keys;
 
     // The set of keys with data ready for an operation
-    protected final Set<SelectionKey> selectedKeys;
+    private final Set<SelectionKey> selectedKeys;
 
     // Public views of the key sets
     private final Set<SelectionKey> publicKeys;             // Immutable
     private final Set<SelectionKey> publicSelectedKeys;     // Removal allowed, but not addition
+
+    // used to check for reentrancy
+    private boolean inSelect;
 
     protected SelectorImpl(SelectorProvider sp) {
         super(sp);
@@ -83,13 +88,6 @@ abstract class SelectorImpl
     }
 
     /**
-     * Returns the public view of the selected-key set
-     */
-    protected final Set<SelectionKey> nioSelectedKeys() {
-        return publicSelectedKeys;
-    }
-
-    /**
      * Marks the beginning of a select operation that might block
      */
     protected final void begin(boolean blocking) {
@@ -106,16 +104,27 @@ abstract class SelectorImpl
     /**
      * Selects the keys for channels that are ready for I/O operations.
      *
+     * @param action  the action to perform, can be null
      * @param timeout timeout in milliseconds to wait, 0 to not wait, -1 to
      *                wait indefinitely
      */
-    protected abstract int doSelect(long timeout) throws IOException;
+    protected abstract int doSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException;
 
-    private int lockAndDoSelect(long timeout) throws IOException {
+    private int lockAndDoSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
         synchronized (this) {
             ensureOpen();
-            synchronized (publicSelectedKeys) {
-                return doSelect(timeout);
+            if (inSelect)
+                throw new IllegalStateException("select in progress");
+            inSelect = true;
+            try {
+                synchronized (publicSelectedKeys) {
+                    return doSelect(action, timeout);
+                }
+            } finally {
+                inSelect = false;
             }
         }
     }
@@ -124,17 +133,39 @@ abstract class SelectorImpl
     public final int select(long timeout) throws IOException {
         if (timeout < 0)
             throw new IllegalArgumentException("Negative timeout");
-        return lockAndDoSelect((timeout == 0) ? -1 : timeout);
+        return lockAndDoSelect(null, (timeout == 0) ? -1 : timeout);
     }
 
     @Override
     public final int select() throws IOException {
-        return lockAndDoSelect(-1);
+        return lockAndDoSelect(null, -1);
     }
 
     @Override
     public final int selectNow() throws IOException {
-        return lockAndDoSelect(0);
+        return lockAndDoSelect(null, 0);
+    }
+
+    @Override
+    public final int select(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
+        Objects.requireNonNull(action);
+        if (timeout < 0)
+            throw new IllegalArgumentException("Negative timeout");
+        return lockAndDoSelect(action, (timeout == 0) ? -1 : timeout);
+    }
+
+    @Override
+    public final int select(Consumer<SelectionKey> action) throws IOException {
+        Objects.requireNonNull(action);
+        return lockAndDoSelect(action, -1);
+    }
+
+    @Override
+    public final int selectNow(Consumer<SelectionKey> action) throws IOException {
+        Objects.requireNonNull(action);
+        return lockAndDoSelect(action, 0);
     }
 
     /**
@@ -237,6 +268,39 @@ abstract class SelectorImpl
                 }
             }
         }
+    }
+
+    /**
+     * Invoked by selection operations to handle ready events. If an action
+     * is specified then it is invoked to handle the key, otherwise the key
+     * is added to the selected-key set (or updated when it is already in the
+     * set).
+     */
+    protected final int processReadyEvents(int rOps,
+                                           SelectionKeyImpl ski,
+                                           Consumer<SelectionKey> action) {
+        if (action != null) {
+            ski.translateAndSetReadyOps(rOps);
+            if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
+                action.accept(ski);
+                ensureOpen();
+                return 1;
+            }
+        } else {
+            assert Thread.holdsLock(publicSelectedKeys);
+            if (selectedKeys.contains(ski)) {
+                if (ski.translateAndUpdateReadyOps(rOps)) {
+                    return 1;
+                }
+            } else {
+                ski.translateAndSetReadyOps(rOps);
+                if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
+                    selectedKeys.add(ski);
+                    return 1;
+                }
+            }
+        }
+        return 0;
     }
 
     /**

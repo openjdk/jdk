@@ -74,7 +74,7 @@ public abstract class AbstractProcessor extends javax.annotation.processing.Abst
     /**
      * Gets the {@link TypeMirror} for a given class name.
      *
-     * @rturn {@code null} if the class cannot be resolved
+     * @return {@code null} if the class cannot be resolved
      */
     public TypeMirror getTypeOrNull(String className) {
         TypeElement element = getTypeElementOrNull(className);

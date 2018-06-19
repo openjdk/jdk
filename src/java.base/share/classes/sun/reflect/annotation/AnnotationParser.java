@@ -26,10 +26,11 @@
 package sun.reflect.annotation;
 
 import java.lang.annotation.*;
-import java.util.*;
-import java.nio.ByteBuffer;
-import java.nio.BufferUnderflowException;
 import java.lang.reflect.*;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.function.Supplier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import jdk.internal.reflect.ConstantPool;
@@ -714,48 +715,16 @@ public class AnnotationParser {
                                           ByteBuffer buf,
                                           ConstantPool constPool,
                                           Class<?> container) {
-        Object[] result = new Class<?>[length];
-        Object exceptionProxy = null;
-
-        for (int i = 0; i < length; i++) {
-            int tag = buf.get();
-            if (tag == 'c') {
-                Object value = parseClassValue(buf, constPool, container);
-                if (value instanceof ExceptionProxy) {
-                    if (exceptionProxy == null) exceptionProxy = (ExceptionProxy) value;
-                } else {
-                    result[i] = value;
-                }
-            } else {
-                skipMemberValue(tag, buf);
-                if (exceptionProxy == null) exceptionProxy = exceptionProxy(tag);
-            }
-        }
-        return (exceptionProxy != null) ? exceptionProxy : result;
+        return parseArrayElements(new Class<?>[length],
+                buf, 'c', () -> parseClassValue(buf, constPool, container));
     }
 
     private static Object parseEnumArray(int length, Class<? extends Enum<?>> enumType,
                                          ByteBuffer buf,
                                          ConstantPool constPool,
                                          Class<?> container) {
-        Object[] result = (Object[]) Array.newInstance(enumType, length);
-        Object exceptionProxy = null;
-
-        for (int i = 0; i < length; i++) {
-            int tag = buf.get();
-            if (tag == 'e') {
-                Object value = parseEnumValue(enumType, buf, constPool, container);
-                if (value instanceof ExceptionProxy) {
-                    if (exceptionProxy == null) exceptionProxy = (ExceptionProxy) value;
-                } else {
-                    result[i] = value;
-                }
-            } else {
-                skipMemberValue(tag, buf);
-                if (exceptionProxy == null) exceptionProxy = exceptionProxy(tag);
-            }
-        }
-        return (exceptionProxy != null) ? exceptionProxy : result;
+        return parseArrayElements((Object[]) Array.newInstance(enumType, length),
+                buf, 'e', () -> parseEnumValue(enumType, buf, constPool, container));
     }
 
     private static Object parseAnnotationArray(int length,
@@ -763,13 +732,19 @@ public class AnnotationParser {
                                                ByteBuffer buf,
                                                ConstantPool constPool,
                                                Class<?> container) {
-        Object[] result = (Object[]) Array.newInstance(annotationType, length);
-        Object exceptionProxy = null;
+        return parseArrayElements((Object[]) Array.newInstance(annotationType, length),
+                buf, '@', () -> parseAnnotation(buf, constPool, container, true));
+    }
 
-        for (int i = 0; i < length; i++) {
+    private static Object parseArrayElements(Object[] result,
+                                             ByteBuffer buf,
+                                             int expectedTag,
+                                             Supplier<Object> parseElement) {
+        Object exceptionProxy = null;
+        for (int i = 0; i < result.length; i++) {
             int tag = buf.get();
-            if (tag == '@') {
-                Object value = parseAnnotation(buf, constPool, container, true);
+            if (tag == expectedTag) {
+                Object value = parseElement.get();
                 if (value instanceof ExceptionProxy) {
                     if (exceptionProxy == null) exceptionProxy = (ExceptionProxy) value;
                 } else {

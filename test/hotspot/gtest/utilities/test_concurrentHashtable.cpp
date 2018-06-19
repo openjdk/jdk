@@ -211,7 +211,7 @@ static void cht_getinsert_bulkdelete_task(Thread* thr) {
   // Removes all odd values.
   SimpleTestTable::BulkDeleteTask bdt(cht);
   if (bdt.prepare(thr)) {
-    while(bdt.doTask(thr, getinsert_bulkdelete_eval, getinsert_bulkdelete_del)) {
+    while(bdt.do_task(thr, getinsert_bulkdelete_eval, getinsert_bulkdelete_del)) {
       bdt.pause(thr);
       EXPECT_TRUE(bdt.cont(thr)) << "Uncontended continue should work.";
     }
@@ -362,7 +362,7 @@ static void cht_task_grow(Thread* thr) {
 
   SimpleTestTable::GrowTask gt(cht);
   EXPECT_TRUE(gt.prepare(thr)) << "Growing uncontended should not fail.";
-  while(gt.doTask(thr)) { /* grow */  }
+  while(gt.do_task(thr)) { /* grow */  }
   gt.done(thr);
 
   EXPECT_TRUE(cht->get_copy(thr, stl) == val) << "Getting an item after grow failed.";
@@ -952,4 +952,74 @@ public:
 TEST_VM(ConcurrentHashTable, concurrent_get_insert_bulk_delete) {
   GI_BD_InserterThread::_shrink = false;
   mt_test_doer<RunnerGI_BD_InserterThread>();
+}
+
+//#############################################################################################
+
+class MT_BD_Thread : public JavaTestThread {
+  TestTable::BulkDeleteTask* _bd;
+  public:
+  MT_BD_Thread(Semaphore* post, TestTable::BulkDeleteTask* bd)
+    : JavaTestThread(post), _bd(bd){}
+  virtual ~MT_BD_Thread() {}
+  void main_run() {
+    MyDel del;
+    while(_bd->do_task(this, *this, del));
+  }
+
+  bool operator()(uintptr_t* val) {
+    return true;
+  }
+
+  struct MyDel {
+    void operator()(uintptr_t* val) {
+    }
+  };
+};
+
+class Driver_BD_Thread : public JavaTestThread {
+public:
+  Semaphore _done;
+  Driver_BD_Thread(Semaphore* post) : JavaTestThread(post) {
+  };
+  virtual ~Driver_BD_Thread(){}
+
+  void main_run() {
+    Semaphore done(0);
+    TestTable* cht = new TestTable(16, 16, 2);
+    for (uintptr_t v = 1; v < 99999; v++ ) {
+      TestLookup tl(v);
+      EXPECT_TRUE(cht->insert(this, tl, v)) << "Inserting an unique value should work.";
+    }
+    TestTable::BulkDeleteTask bdt(cht, true /* mt */ );
+    EXPECT_TRUE(bdt.prepare(this)) << "Uncontended prepare must work.";
+
+    MT_BD_Thread* tt[4];
+    for (int i = 0; i < 4; i++) {
+      tt[i] = new MT_BD_Thread(&done, &bdt);
+      tt[i]->doit();
+    }
+
+    for (uintptr_t v = 1; v < 99999; v++ ) {
+      TestLookup tl(v);
+      cht->get_copy(this, tl);
+    }
+
+    for (int i = 0; i < 4; i++) {
+      done.wait();
+    }
+
+    bdt.done(this);
+
+    cht->do_scan(this, *this);
+  }
+
+  bool operator()(uintptr_t* val) {
+    EXPECT_TRUE(false) << "No items should left";
+    return true;
+  }
+};
+
+TEST_VM(ConcurrentHashTable, concurrent_mt_bulk_delete) {
+  mt_test_doer<Driver_BD_Thread>();
 }

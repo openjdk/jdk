@@ -27,15 +27,14 @@ import com.sun.org.apache.xml.internal.security.transforms.TransformParam;
 import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.SignatureElementProxy;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.w3c.dom.Text;
 
 /**
  * This Object serves both as namespace prefix resolver and as container for
- * the <CODE>ds:XPath</CODE> Element. It implements the {@link org.w3c.dom.Element} interface
+ * the {@code ds:XPath} Element. It implements the {@link org.w3c.dom.Element} interface
  * and can be used directly in a DOM tree.
  *
- * @author Christian Geuer-Pollmann
  */
 public class XPathContainer extends SignatureElementProxy implements TransformParam {
 
@@ -49,33 +48,32 @@ public class XPathContainer extends SignatureElementProxy implements TransformPa
     }
 
     /**
-     * Sets the TEXT value of the <CODE>ds:XPath</CODE> Element.
+     * Sets the TEXT value of the {@code ds:XPath} Element.
      *
      * @param xpath
      */
     public void setXPath(String xpath) {
-        if (this.constructionElement.getChildNodes() != null) {
-            NodeList nl = this.constructionElement.getChildNodes();
-
-            for (int i = 0; i < nl.getLength(); i++) {
-                this.constructionElement.removeChild(nl.item(i));
-            }
+        Node childNode = getElement().getFirstChild();
+        while (childNode != null) {
+            Node nodeToBeRemoved = childNode;
+            childNode = childNode.getNextSibling();
+            getElement().removeChild(nodeToBeRemoved);
         }
 
-        Text xpathText = this.doc.createTextNode(xpath);
-        this.constructionElement.appendChild(xpathText);
+        Text xpathText = createText(xpath);
+        appendSelf(xpathText);
     }
 
     /**
-     * Returns the TEXT value of the <CODE>ds:XPath</CODE> Element.
+     * Returns the TEXT value of the {@code ds:XPath} Element.
      *
-     * @return the TEXT value of the <CODE>ds:XPath</CODE> Element.
+     * @return the TEXT value of the {@code ds:XPath} Element.
      */
     public String getXPath() {
         return this.getTextFromTextChild();
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_XPATH;
     }

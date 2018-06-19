@@ -48,7 +48,7 @@ WeakHandle<T> WeakHandle<T>::create(Handle obj) {
     vm_exit_out_of_memory(sizeof(oop*), OOM_MALLOC_ERROR, "Unable to create new weak oop handle in OopStorage");
   }
   // Create WeakHandle with address returned and store oop into it.
-  RootAccess<ON_PHANTOM_OOP_REF>::oop_store(oop_addr, obj());
+  NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(oop_addr, obj());
   return WeakHandle(oop_addr);
 }
 
@@ -58,7 +58,7 @@ void WeakHandle<T>::release() const {
   if (_obj != NULL) {
     // Clear the WeakHandle.  For race in creating ClassLoaderData, we can release this
     // WeakHandle before it is cleared by GC.
-    RootAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, (oop)NULL);
+    NativeAccess<ON_PHANTOM_OOP_REF>::oop_store(_obj, (oop)NULL);
     get_storage()->release(_obj);
   }
 }

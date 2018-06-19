@@ -61,24 +61,34 @@ public class ContentHandlerAlreadyRegisteredException extends XMLSecurityExcepti
     /**
      * Constructor ContentHandlerAlreadyRegisteredException
      *
-     * @param msgID
      * @param originalException
+     * @param msgID
      */
+    public ContentHandlerAlreadyRegisteredException(Exception originalException, String msgID) {
+        super(originalException, msgID);
+    }
+
+    @Deprecated
     public ContentHandlerAlreadyRegisteredException(String msgID, Exception originalException) {
-        super(msgID, originalException);
+        this(originalException, msgID);
     }
 
     /**
      * Constructor ContentHandlerAlreadyRegisteredException
      *
+     * @param originalException
      * @param msgID
      * @param exArgs
-     * @param originalException
      */
     public ContentHandlerAlreadyRegisteredException(
-        String msgID, Object exArgs[], Exception originalException
+        Exception originalException, String msgID, Object exArgs[]
     ) {
-        super(msgID, exArgs, originalException);
+        super(originalException, msgID, exArgs);
+    }
+
+    @Deprecated
+    public ContentHandlerAlreadyRegisteredException(String msgID, Object[] exArgs, Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 
 }

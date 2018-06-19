@@ -54,7 +54,6 @@ class HandshakeState {
   HandshakeOperation* volatile _operation;
 
   Semaphore _semaphore;
-  bool _vmthread_holds_semaphore;
   bool _thread_in_process_handshake;
 
   bool claim_handshake_for_vmthread();

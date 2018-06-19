@@ -29,12 +29,12 @@
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   Register dst, Address src, Register tmp1, Register tmp2, Register tmp3) {
-  bool on_heap = (decorators & IN_HEAP) != 0;
-  bool on_root = (decorators & IN_ROOT) != 0;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool in_native = (decorators & IN_NATIVE) != 0;
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {
-    if (on_heap) {
+    if (in_heap) {
 #ifdef AARCH64
       if (UseCompressedOops) {
         __ ldr_w(dst, src);
@@ -45,7 +45,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
         __ ldr(dst, src);
       }
     } else {
-      assert(on_root, "why else?");
+      assert(in_native, "why else?");
       __ ldr(dst, src);
     }
     break;
@@ -57,12 +57,12 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                    Address obj, Register val, Register tmp1, Register tmp2, Register tmp3, bool is_null) {
-  bool on_heap = (decorators & IN_HEAP) != 0;
-  bool on_root = (decorators & IN_ROOT) != 0;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool in_native = (decorators & IN_NATIVE) != 0;
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {
-    if (on_heap) {
+    if (in_heap) {
 #ifdef AARCH64
       if (UseCompressedOops) {
         assert(!dst.uses(src), "not enough registers");
@@ -76,7 +76,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
         __ str(val, obj);
       }
     } else {
-      assert(on_root, "why else?");
+      assert(in_native, "why else?");
       __ str(val, obj);
     }
     break;

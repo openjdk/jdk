@@ -40,8 +40,13 @@ final class GraalHotSpotVMConfigVersioned extends HotSpotVMConfigAccess {
         super(store);
     }
 
+    private boolean initInlineNotify() {
+        String syncKnobs = getFlag("SyncKnobs", String.class, "");
+        return syncKnobs == null || !syncKnobs.contains("InlineNotify=0");
+    }
+
     // JSK-8132287
-    final boolean inlineNotify = !getFlag("SyncKnobs", String.class, "").contains("InlineNotify=0");
+    final boolean inlineNotify = initInlineNotify();
 
     // JDK-8073583
     final boolean useCRC32CIntrinsics = getFlag("UseCRC32CIntrinsics", Boolean.class);

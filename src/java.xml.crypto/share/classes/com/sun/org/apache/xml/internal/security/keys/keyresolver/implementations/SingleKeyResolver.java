@@ -2,6 +2,24 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations;
 
 import java.security.PrivateKey;
@@ -18,11 +36,9 @@ import org.w3c.dom.Element;
 /**
  * Resolves a single Key based on the KeyName.
  */
-public class SingleKeyResolver extends KeyResolverSpi
-{
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(SingleKeyResolver.class.getName());
+public class SingleKeyResolver extends KeyResolverSpi {
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(SingleKeyResolver.class);
 
     private String keyName;
     private PublicKey publicKey;
@@ -63,7 +79,7 @@ public class SingleKeyResolver extends KeyResolverSpi
      * This method returns whether the KeyResolverSpi is able to perform the requested action.
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @param storage
      * @return whether the KeyResolverSpi is able to perform the requested action.
      */
@@ -83,9 +99,7 @@ public class SingleKeyResolver extends KeyResolverSpi
     public PublicKey engineLookupAndResolvePublicKey(
         Element element, String baseURI, StorageResolver storage
     ) throws KeyResolverException {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName() + "?");
-        }
+        LOG.debug("Can I resolve {}?", element.getTagName());
 
         if (publicKey != null
             && XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYNAME)) {
@@ -95,13 +109,13 @@ public class SingleKeyResolver extends KeyResolverSpi
             }
         }
 
-        log.log(java.util.logging.Level.FINE, "I can't");
+        LOG.debug("I can't");
         return null;
     }
 
     /**
      * Method engineResolveX509Certificate
-     * @inheritDoc
+     * {@inheritDoc}
      * @param element
      * @param baseURI
      * @param storage
@@ -126,9 +140,7 @@ public class SingleKeyResolver extends KeyResolverSpi
     public SecretKey engineResolveSecretKey(
         Element element, String baseURI, StorageResolver storage
     ) throws KeyResolverException {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName() + "?");
-        }
+        LOG.debug("Can I resolve {}?", element.getTagName());
 
         if (secretKey != null
             && XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYNAME)) {
@@ -138,13 +150,13 @@ public class SingleKeyResolver extends KeyResolverSpi
             }
         }
 
-        log.log(java.util.logging.Level.FINE, "I can't");
+        LOG.debug("I can't");
         return null;
     }
 
     /**
      * Method engineResolvePrivateKey
-     * @inheritDoc
+     * {@inheritDoc}
      * @param element
      * @param baseURI
      * @param storage
@@ -154,9 +166,7 @@ public class SingleKeyResolver extends KeyResolverSpi
     public PrivateKey engineLookupAndResolvePrivateKey(
         Element element, String baseURI, StorageResolver storage
     ) throws KeyResolverException {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName() + "?");
-        }
+        LOG.debug("Can I resolve {}?", element.getTagName());
 
         if (privateKey != null
             && XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_KEYNAME)) {
@@ -166,7 +176,7 @@ public class SingleKeyResolver extends KeyResolverSpi
             }
         }
 
-        log.log(java.util.logging.Level.FINE, "I can't");
+        LOG.debug("I can't");
         return null;
     }
 }

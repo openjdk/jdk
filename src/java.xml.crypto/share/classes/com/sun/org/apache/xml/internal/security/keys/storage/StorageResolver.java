@@ -38,12 +38,11 @@ import com.sun.org.apache.xml.internal.security.keys.storage.implementations.Sin
  */
 public class StorageResolver {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(StorageResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(StorageResolver.class);
 
     /** Field storageResolvers */
-    private List<StorageResolverSpi> storageResolvers = null;
+    private List<StorageResolverSpi> storageResolvers;
 
     /**
      * Constructor StorageResolver
@@ -67,7 +66,7 @@ public class StorageResolver {
      */
     public void add(StorageResolverSpi resolver) {
         if (storageResolvers == null) {
-            storageResolvers = new ArrayList<StorageResolverSpi>();
+            storageResolvers = new ArrayList<>();
         }
         this.storageResolvers.add(resolver);
     }
@@ -90,7 +89,7 @@ public class StorageResolver {
         try {
             this.add(new KeyStoreResolver(keyStore));
         } catch (StorageResolverException ex) {
-            log.log(java.util.logging.Level.SEVERE, "Could not add KeyStore because of: ", ex);
+            LOG.error("Could not add KeyStore because of: ", ex);
         }
     }
 
@@ -142,7 +141,7 @@ public class StorageResolver {
             currentResolver = findNextResolver();
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public boolean hasNext() {
             if (currentResolver == null) {
                 return false;
@@ -153,10 +152,10 @@ public class StorageResolver {
             }
 
             currentResolver = findNextResolver();
-            return (currentResolver != null);
+            return currentResolver != null;
         }
 
-        /** @inheritDoc */
+        /** {@inheritDoc} */
         public Certificate next() {
             if (hasNext()) {
                 return currentResolver.next();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,12 @@ public class LoaderConstraintsTest {
         pb = exec("-XX:+TraceLoaderConstraints");
         out = new OutputAnalyzer(pb.start());
         out.getOutput();
-        out.shouldContain("[class,loader,constraints] adding new constraint for name: java/lang/Class, loader[0]: jdk/internal/loader/ClassLoaders$AppClassLoader, loader[1]: <bootloader>");
+        out.shouldContain("[class,loader,constraints] adding new constraint for name: java/lang/Class, loader[0]: 'app', loader[1]: 'bootstrap'");
 
         // -Xlog:class+loader+constraints=info
         pb = exec("-Xlog:class+loader+constraints=info");
         out = new OutputAnalyzer(pb.start());
-        out.shouldContain("[class,loader,constraints] adding new constraint for name: java/lang/Class, loader[0]: jdk/internal/loader/ClassLoaders$AppClassLoader, loader[1]: <bootloader>");
+        out.shouldContain("[class,loader,constraints] adding new constraint for name: java/lang/Class, loader[0]: 'app', loader[1]: 'bootstrap'");
 
         // -XX:-TraceLoaderConstraints
         pb = exec("-XX:-TraceLoaderConstraints");

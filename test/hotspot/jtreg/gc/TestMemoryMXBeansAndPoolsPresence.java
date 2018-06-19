@@ -86,7 +86,7 @@ public class TestMemoryMXBeansAndPoolsPresence {
     public static void main(String[] args) {
         switch (args[0]) {
             case "G1":
-                test(new GCBeanDescription("G1 Young Generation", new String[] {"G1 Eden Space", "G1 Survivor Space"}),
+                test(new GCBeanDescription("G1 Young Generation", new String[] {"G1 Eden Space", "G1 Survivor Space", "G1 Old Gen"}),
                      new GCBeanDescription("G1 Old Generation",   new String[] {"G1 Eden Space", "G1 Survivor Space", "G1 Old Gen"}));
                 break;
             case "CMS":

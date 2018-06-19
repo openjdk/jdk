@@ -24,8 +24,7 @@ package org.graalvm.compiler.core.test;
 
 import java.util.ArrayList;
 import java.util.List;
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -33,37 +32,15 @@ import org.junit.runners.Parameterized.Parameters;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
+
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 @RunWith(Parameterized.class)
-public class SubWordReturnTest extends GraalCompilerTest {
+public class SubWordReturnTest extends CustomizedBytecodePatternTest {
 
     private final JavaKind kind;
     private final int value;
-
-    private final String generatedClassName;
-    private final String generatedClassNameInternal;
-
-    private final String testMethodName;
-
-    /**
-     * The {@link AsmLoader} generates a class looking like this for the types byte, short, int and
-     * char.
-     */
-    static class ByteGetter {
-
-        // private static int intField = 1000000;
-
-        private static byte get() {
-            // GETSTATIC intField
-            // IRETURN
-            return 0;
-        }
-
-        public static int testByteSnippet() {
-            return get();
-        }
-    }
 
     @Parameters(name = "{0}, {1}")
     public static List<Object[]> data() {
@@ -80,64 +57,58 @@ public class SubWordReturnTest extends GraalCompilerTest {
     public SubWordReturnTest(JavaKind kind, int value) {
         this.kind = kind;
         this.value = value;
-
-        this.generatedClassName = SubWordReturnTest.class.getName() + "$" + kind.toString() + "Getter";
-        this.generatedClassNameInternal = generatedClassName.replace('.', '/');
-        this.testMethodName = "test" + kind.name() + "Snippet";
     }
 
     @Test
-    public void test() throws ClassNotFoundException {
-        Class<?> testClass = new AsmLoader(SubWordReturnTest.class.getClassLoader()).findClass(generatedClassName);
-        ResolvedJavaMethod method = getResolvedJavaMethod(testClass, testMethodName);
+    public void testSubWordReturn() throws ClassNotFoundException {
+        Class<?> testClass = getClass(SubWordReturnTest.class.getName() + "$" + kind.toString() + "Getter");
+        ResolvedJavaMethod method = getResolvedJavaMethod(testClass, "testSnippet");
         test(method, null);
     }
 
-    class AsmLoader extends ClassLoader implements Opcodes {
+    /**
+     * {@link #generateClass} generates a class looking like this for the types boolean, byte,
+     * short, and char.
+     */
+    static class ByteGetter {
 
-        Class<?> loaded;
+        // private static int intField = 1000000;
 
-        AsmLoader(ClassLoader parent) {
-            super(parent);
+        private static byte get() {
+            // GETSTATIC intField
+            // IRETURN
+            return 0;
         }
 
-        @Override
-        protected Class<?> findClass(String name) throws ClassNotFoundException {
-            if (name.equals(generatedClassName)) {
-                if (loaded == null) {
-                    byte[] gen = generateClass();
-                    loaded = defineClass(name, gen, 0, gen.length);
-                }
-                return loaded;
-            } else {
-                return super.findClass(name);
-            }
+        public static int testByteSnippet() {
+            return get();
         }
+    }
 
-        private byte[] generateClass() {
-            ClassWriter cw = new ClassWriter(0);
-            cw.visit(52, ACC_SUPER | ACC_PUBLIC, generatedClassNameInternal, null, "java/lang/Object", null);
+    @Override
+    protected byte[] generateClass(String internalClassName) {
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(52, ACC_SUPER | ACC_PUBLIC, internalClassName, null, "java/lang/Object", null);
 
-            FieldVisitor intField = cw.visitField(ACC_PRIVATE | ACC_STATIC, "intField", "I", null, value);
-            intField.visitEnd();
+        FieldVisitor intField = cw.visitField(ACC_PRIVATE | ACC_STATIC, "intField", "I", null, value);
+        intField.visitEnd();
 
-            MethodVisitor get = cw.visitMethod(ACC_PRIVATE | ACC_STATIC, "get", "()" + kind.getTypeChar(), null, null);
-            get.visitCode();
-            get.visitFieldInsn(GETSTATIC, generatedClassNameInternal, "intField", "I");
-            get.visitInsn(IRETURN);
-            get.visitMaxs(1, 0);
-            get.visitEnd();
+        MethodVisitor get = cw.visitMethod(ACC_PRIVATE | ACC_STATIC, "get", "()" + kind.getTypeChar(), null, null);
+        get.visitCode();
+        get.visitFieldInsn(GETSTATIC, internalClassName, "intField", "I");
+        get.visitInsn(IRETURN);
+        get.visitMaxs(1, 0);
+        get.visitEnd();
 
-            MethodVisitor snippet = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, testMethodName, "()I", null, null);
-            snippet.visitCode();
-            snippet.visitMethodInsn(INVOKESTATIC, generatedClassNameInternal, "get", "()" + kind.getTypeChar(), false);
-            snippet.visitInsn(IRETURN);
-            snippet.visitMaxs(1, 0);
-            snippet.visitEnd();
+        MethodVisitor snippet = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "testSnippet", "()I", null, null);
+        snippet.visitCode();
+        snippet.visitMethodInsn(INVOKESTATIC, internalClassName, "get", "()" + kind.getTypeChar(), false);
+        snippet.visitInsn(IRETURN);
+        snippet.visitMaxs(1, 0);
+        snippet.visitEnd();
 
-            cw.visitEnd();
-            return cw.toByteArray();
-        }
+        cw.visitEnd();
+        return cw.toByteArray();
     }
 
 }

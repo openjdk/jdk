@@ -41,7 +41,7 @@ bool C2Access::needs_cpu_membar() const {
   bool mismatched = (_decorators & C2_MISMATCHED) != 0;
   bool is_unordered = (_decorators & MO_UNORDERED) != 0;
   bool anonymous = (_decorators & C2_UNSAFE_ACCESS) != 0;
-  bool on_heap = (_decorators & IN_HEAP) != 0;
+  bool in_heap = (_decorators & IN_HEAP) != 0;
 
   bool is_write = (_decorators & C2_WRITE_ACCESS) != 0;
   bool is_read = (_decorators & C2_READ_ACCESS) != 0;
@@ -58,7 +58,7 @@ bool C2Access::needs_cpu_membar() const {
     // the barriers get omitted and the unsafe reference begins to "pollute"
     // the alias analysis of the rest of the graph, either Compile::can_alias
     // or Compile::must_alias will throw a diagnostic assert.)
-    if (!on_heap || !is_unordered || (mismatched && !_addr.type()->isa_aryptr())) {
+    if (!in_heap || !is_unordered || (mismatched && !_addr.type()->isa_aryptr())) {
       return true;
     }
   }
@@ -74,8 +74,8 @@ Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) cons
   bool unaligned = (decorators & C2_UNALIGNED) != 0;
   bool requires_atomic_access = (decorators & MO_UNORDERED) == 0;
 
-  bool in_root = (decorators & IN_ROOT) != 0;
-  assert(!in_root, "not supported yet");
+  bool in_native = (decorators & IN_NATIVE) != 0;
+  assert(!in_native, "not supported yet");
 
   if (access.type() == T_DOUBLE) {
     Node* new_val = kit->dstore_rounding(val.node());
@@ -103,8 +103,8 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   bool control_dependent = (decorators & C2_CONTROL_DEPENDENT_LOAD) != 0;
   bool pinned = (decorators & C2_PINNED_LOAD) != 0;
 
-  bool in_root = (decorators & IN_ROOT) != 0;
-  assert(!in_root, "not supported yet");
+  bool in_native = (decorators & IN_NATIVE) != 0;
+  assert(!in_native, "not supported yet");
 
   MemNode::MemOrd mo = access.mem_node_mo();
   LoadNode::ControlDependency dep = pinned ? LoadNode::Pinned : LoadNode::DependsOnlyOnTest;

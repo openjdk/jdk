@@ -221,7 +221,12 @@ public final class FrameStateBuilder implements SideEffectsState {
                 stamp = plugins.getOverridingStamp(tool, type, false);
             }
             if (stamp == null) {
-                stamp = StampFactory.forDeclaredType(assumptions, type, false);
+                // GR-714: subword inputs cannot be trusted
+                if (kind.getStackKind() != kind) {
+                    stamp = StampPair.createSingle(StampFactory.forKind(JavaKind.Int));
+                } else {
+                    stamp = StampFactory.forDeclaredType(assumptions, type, false);
+                }
             }
 
             FloatingNode param = null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,7 @@ import java.util.*;
 import javax.crypto.SecretKey;
 import javax.xml.crypto.*;
 import javax.xml.crypto.dsig.*;
-import javax.xml.crypto.dom.*;
 import javax.xml.crypto.dsig.keyinfo.*;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.DocumentBuilder;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-import org.w3c.dom.traversal.*;
 import sun.security.util.DerValue;
 import sun.security.x509.X500Name;
 
@@ -167,26 +160,11 @@ class KeySelectors {
         }
 
         static boolean algEquals(String algURI, String algName) {
-            if (algName.equalsIgnoreCase("DSA") &&
-                algURI.equals(SignatureMethod.DSA_SHA1) ||
-                algURI.equals("http://www.w3.org/2009/xmldsig11#dsa-sha256")) {
-                return true;
-            } else if (algName.equalsIgnoreCase("RSA") &&
-                (algURI.equals(SignatureMethod.RSA_SHA1) ||
-                 algURI.equals
-                    ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha256") ||
-                 algURI.equals
-                    ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha384") ||
-                 algURI.equals
-                    ("http://www.w3.org/2001/04/xmldsig-more#rsa-sha512"))) {
-                return true;
-            } else if (algName.equalsIgnoreCase("EC") &&
-                (algURI.equals
-                    ("http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha1"))) {
-                return true;
-            } else {
-                return false;
-            }
+            algName = algName.toUpperCase(Locale.ROOT);
+            return algName.equals("DSA") && algURI.contains("#dsa-")
+                    || algName.equals("RSA")
+                            && (algURI.contains("#rsa-") || algURI.contains("-rsa-MGF1"))
+                    || algName.equals("EC") && algURI.contains("#ecdsa-");
         }
     }
 

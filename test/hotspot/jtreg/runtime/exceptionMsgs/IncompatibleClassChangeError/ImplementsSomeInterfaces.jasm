@@ -22,9 +22,7 @@
  * questions.
  */
 
-
-
-
+package test;
 
 class ImplementsSomeInterfaces extends AbstractICCE0 {
 
@@ -32,7 +30,7 @@ class ImplementsSomeInterfaces extends AbstractICCE0 {
         stack 1 locals 1
     {
         aload_0;
-        invokespecial Method AbstractICCE0."<init>":"()V";
+        invokespecial Method test/AbstractICCE0."<init>":"()V";
         return;
     }
 

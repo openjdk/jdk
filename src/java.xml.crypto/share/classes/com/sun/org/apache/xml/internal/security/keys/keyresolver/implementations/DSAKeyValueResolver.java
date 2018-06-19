@@ -35,21 +35,20 @@ import org.w3c.dom.Element;
 
 public class DSAKeyValueResolver extends KeyResolverSpi {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(DSAKeyValueResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(DSAKeyValueResolver.class);
 
 
     /**
      * Method engineResolvePublicKey
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @param storage
      * @return null if no {@link PublicKey} could be obtained
      */
     public PublicKey engineLookupAndResolvePublicKey(
-        Element element, String BaseURI, StorageResolver storage
+        Element element, String baseURI, StorageResolver storage
     ) {
         if (element == null) {
             return null;
@@ -71,14 +70,12 @@ public class DSAKeyValueResolver extends KeyResolverSpi {
         }
 
         try {
-            DSAKeyValue dsaKeyValue = new DSAKeyValue(dsaKeyElement, BaseURI);
+            DSAKeyValue dsaKeyValue = new DSAKeyValue(dsaKeyElement, baseURI);
             PublicKey pk = dsaKeyValue.getPublicKey();
 
             return pk;
         } catch (XMLSecurityException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, ex.getMessage(), ex);
-            }
+            LOG.debug(ex.getMessage(), ex);
             //do nothing
         }
 
@@ -86,16 +83,16 @@ public class DSAKeyValueResolver extends KeyResolverSpi {
     }
 
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public X509Certificate engineLookupResolveX509Certificate(
-        Element element, String BaseURI, StorageResolver storage
+        Element element, String baseURI, StorageResolver storage
     ) {
         return null;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public javax.crypto.SecretKey engineLookupAndResolveSecretKey(
-        Element element, String BaseURI, StorageResolver storage
+        Element element, String baseURI, StorageResolver storage
     ) {
         return null;
     }

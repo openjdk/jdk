@@ -456,7 +456,7 @@ void StringTable::grow(JavaThread* jt) {
   log_trace(stringtable)("Started to grow");
   {
     TraceTime timer("Grow", TRACETIME_LOG(Debug, stringtable, perf));
-    while (gt.doTask(jt)) {
+    while (gt.do_task(jt)) {
       gt.pause(jt);
       {
         ThreadBlockInVM tbivm(jt);
@@ -502,7 +502,7 @@ void StringTable::clean_dead_entries(JavaThread* jt) {
   bool interrupted = false;
   {
     TraceTime timer("Clean", TRACETIME_LOG(Debug, stringtable, perf));
-    while(bdt.doTask(jt, stdc, stdd)) {
+    while(bdt.do_task(jt, stdc, stdd)) {
       bdt.pause(jt);
       {
         ThreadBlockInVM tbivm(jt);

@@ -34,7 +34,9 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/management.hpp"
 
-CmdLine::CmdLine(const char* line, size_t len, bool no_command_name) {
+CmdLine::CmdLine(const char* line, size_t len, bool no_command_name)
+  : _cmd(line), _cmd_len(0), _args(NULL), _args_len(0)
+{
   assert(line != NULL, "Command line string should not be NULL");
   const char* line_end;
   const char* cmd_end;
@@ -251,7 +253,7 @@ void DCmdParser::check(TRAPS) {
   }
 }
 
-void DCmdParser::print_help(outputStream* out, const char* cmd_name) {
+void DCmdParser::print_help(outputStream* out, const char* cmd_name) const {
   out->print("Syntax : %s %s", cmd_name, _options == NULL ? "" : "[options]");
   GenDCmdArgument* arg = _arguments_list;
   while (arg != NULL) {
@@ -323,7 +325,7 @@ void DCmdParser::cleanup() {
   }
 }
 
-int DCmdParser::num_arguments() {
+int DCmdParser::num_arguments() const {
   GenDCmdArgument* arg = _arguments_list;
   int count = 0;
   while (arg != NULL) {
@@ -338,7 +340,7 @@ int DCmdParser::num_arguments() {
   return count;
 }
 
-GrowableArray<const char *>* DCmdParser::argument_name_array() {
+GrowableArray<const char *>* DCmdParser::argument_name_array() const {
   int count = num_arguments();
   GrowableArray<const char *>* array = new GrowableArray<const char *>(count);
   GenDCmdArgument* arg = _arguments_list;
@@ -354,7 +356,7 @@ GrowableArray<const char *>* DCmdParser::argument_name_array() {
   return array;
 }
 
-GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() {
+GrowableArray<DCmdArgumentInfo*>* DCmdParser::argument_info_array() const {
   int count = num_arguments();
   GrowableArray<DCmdArgumentInfo*>* array = new GrowableArray<DCmdArgumentInfo *>(count);
   int idx = 0;
@@ -399,6 +401,7 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
       break;
     }
     if (line.is_executable()) {
+      ResourceMark rm;
       DCmd* command = DCmdFactory::create_local_DCmd(source, line, out, CHECK);
       assert(command != NULL, "command error must be handled before this line");
       DCmdMark mark(command);
@@ -413,7 +416,7 @@ void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {
   _dcmdparser.parse(line, delim, CHECK);
 }
 
-void DCmdWithParser::print_help(const char* name) {
+void DCmdWithParser::print_help(const char* name) const {
   _dcmdparser.print_help(output(), name);
 }
 
@@ -425,11 +428,11 @@ void DCmdWithParser::cleanup() {
   _dcmdparser.cleanup();
 }
 
-GrowableArray<const char*>* DCmdWithParser::argument_name_array() {
+GrowableArray<const char*>* DCmdWithParser::argument_name_array() const {
   return _dcmdparser.argument_name_array();
 }
 
-GrowableArray<DCmdArgumentInfo*>* DCmdWithParser::argument_info_array() {
+GrowableArray<DCmdArgumentInfo*>* DCmdWithParser::argument_info_array() const {
   return _dcmdparser.argument_info_array();
 }
 
@@ -517,20 +520,6 @@ int DCmdFactory::register_DCmdFactory(DCmdFactory* factory) {
     DCmdFactory::push_jmx_notification_request();
   }
   return 0; // Actually, there's no checks for duplicates
-}
-
-DCmd* DCmdFactory::create_global_DCmd(DCmdSource source, CmdLine &line,
-                                      outputStream* out, TRAPS) {
-  DCmdFactory* f = factory(source, line.cmd_addr(), line.cmd_len());
-  if (f != NULL) {
-    if (f->is_enabled()) {
-      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
-                     f->disabled_message());
-    }
-    return f->create_Cheap_instance(out);
-  }
-  THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
-             "Unknown diagnostic command");
 }
 
 DCmd* DCmdFactory::create_local_DCmd(DCmdSource source, CmdLine &line,

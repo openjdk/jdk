@@ -471,7 +471,7 @@ class InstanceKlass: public Klass {
  private:
   // Check prohibited package ("java/" only loadable by boot or platform loaders)
   static void check_prohibited_package(Symbol* class_name,
-                                       Handle class_loader,
+                                       ClassLoaderData* loader_data,
                                        TRAPS);
  public:
   // tell if two classes have the same enclosing class (at package level)

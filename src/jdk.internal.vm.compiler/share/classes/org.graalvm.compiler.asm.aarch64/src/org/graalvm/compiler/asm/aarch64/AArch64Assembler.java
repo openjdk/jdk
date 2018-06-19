@@ -102,6 +102,7 @@ import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.STR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.STXR;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.SUB;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.SUBS;
+import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.SWP;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.TBZ;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.TBNZ;
 import static org.graalvm.compiler.asm.aarch64.AArch64Assembler.Instruction.UBFM;
@@ -519,6 +520,7 @@ public abstract class AArch64Assembler extends Assembler {
 
         CAS(0x08A07C00),
         LDADD(0x38200000),
+        SWP(0x38208000),
 
         ADR(0x00000000),
         ADRP(0x80000000),
@@ -1385,6 +1387,30 @@ public abstract class AArch64Assembler extends Assembler {
     }
 
     private void loadAndAddInstruction(Instruction instr, Register rs, Register rt, Register rn, int log2TransferSize, boolean acquire, boolean release) {
+        assert log2TransferSize >= 0 && log2TransferSize < 4;
+        assert rt.getRegisterCategory().equals(CPU) && rs.getRegisterCategory().equals(CPU) && !rs.equals(rt);
+        int transferSizeEncoding = log2TransferSize << LoadStoreTransferSizeOffset;
+        emitInt(transferSizeEncoding | instr.encoding | rs2(rs) | rn(rn) | rt(rt) | (acquire ? 1 : 0) << LDADDAcquireOffset | (release ? 1 : 0) << LDADDReleaseOffset);
+    }
+
+    /**
+     * Atomic swap. This reads a value from an address rn, stores the value in rt, and then stores
+     * the value in rs back at address rn.
+     *
+     * @param size size of operand to read from memory. Must be 8, 16, 32, or 64.
+     * @param rs general purpose register to be stored. May not be null.
+     * @param rt general purpose register to be loaded. May not be null.
+     * @param rn general purpose register or stack pointer holding an address from which to load.
+     * @param acquire boolean value signifying if the load should use acquire semantics.
+     * @param release boolean value signifying if the store should use release semantics.
+     */
+    public void swp(int size, Register rs, Register rt, Register rn, boolean acquire, boolean release) {
+        assert size == 8 || size == 16 || size == 32 || size == 64;
+        int transferSize = NumUtil.log2Ceil(size / 8);
+        swapInstruction(SWP, rs, rt, rn, transferSize, acquire, release);
+    }
+
+    private void swapInstruction(Instruction instr, Register rs, Register rt, Register rn, int log2TransferSize, boolean acquire, boolean release) {
         assert log2TransferSize >= 0 && log2TransferSize < 4;
         assert rt.getRegisterCategory().equals(CPU) && rs.getRegisterCategory().equals(CPU) && !rs.equals(rt);
         int transferSizeEncoding = log2TransferSize << LoadStoreTransferSizeOffset;

@@ -32,9 +32,10 @@ import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
-import com.sun.org.apache.xml.internal.security.utils.Base64;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverContext;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverException;
 import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverSpi;
@@ -61,9 +62,8 @@ import com.sun.org.apache.xml.internal.security.utils.resolver.ResourceResolverS
  */
 public class ResolverDirectHTTP extends ResourceResolverSpi {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(ResolverDirectHTTP.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(ResolverDirectHTTP.class);
 
     /** Field properties[] */
     private static final String properties[] = {
@@ -96,26 +96,17 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
     }
 
     /**
-     * Method resolve
-     *
-     * @param uri
-     * @param baseURI
-     *
-     * @throws ResourceResolverException
-     * @return
-     * $todo$ calculate the correct URI from the attribute and the baseURI
+     * {@inheritDoc}
      */
     @Override
     public XMLSignatureInput engineResolveURI(ResourceResolverContext context)
         throws ResourceResolverException {
-        InputStream inputStream = null;
-        try {
 
+        try {
             // calculate new URI
             URI uriNew = getNewURI(context.uriToResolve, context.baseUri);
             URL url = uriNew.toURL();
-            URLConnection urlConnection;
-            urlConnection = openConnection(url);
+            URLConnection urlConnection = openConnection(url);
 
             // check if Basic authentication is required
             String auth = urlConnection.getHeaderField("WWW-Authenticate");
@@ -127,11 +118,11 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
                 String pass =
                     engineGetProperty(ResolverDirectHTTP.properties[ResolverDirectHTTP.HttpBasicPass]);
 
-                if ((user != null) && (pass != null)) {
+                if (user != null && pass != null) {
                     urlConnection = openConnection(url);
 
                     String password = user + ":" + pass;
-                    String encodedPassword = Base64.encode(password.getBytes("ISO-8859-1"));
+                    String encodedPassword = Base64.getMimeEncoder().encodeToString(password.getBytes(StandardCharsets.ISO_8859_1));
 
                     // set authentication property in the http header
                     urlConnection.setRequestProperty("Authorization",
@@ -140,45 +131,36 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
             }
 
             String mimeType = urlConnection.getHeaderField("Content-Type");
-            inputStream = urlConnection.getInputStream();
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            byte buf[] = new byte[4096];
-            int read = 0;
-            int summarized = 0;
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                InputStream inputStream = urlConnection.getInputStream()) {
+                byte[] buf = new byte[4096];
+                int read = 0;
+                int summarized = 0;
 
-            while ((read = inputStream.read(buf)) >= 0) {
-                baos.write(buf, 0, read);
-                summarized += read;
-            }
-
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "Fetched " + summarized + " bytes from URI " + uriNew.toString());
-            }
-
-            XMLSignatureInput result = new XMLSignatureInput(baos.toByteArray());
-
-            result.setSourceURI(uriNew.toString());
-            result.setMIMEType(mimeType);
-
-            return result;
-        } catch (URISyntaxException ex) {
-            throw new ResourceResolverException("generic.EmptyMessage", ex, context.attr, context.baseUri);
-        } catch (MalformedURLException ex) {
-            throw new ResourceResolverException("generic.EmptyMessage", ex, context.attr, context.baseUri);
-        } catch (IOException ex) {
-            throw new ResourceResolverException("generic.EmptyMessage", ex, context.attr, context.baseUri);
-        } catch (IllegalArgumentException e) {
-            throw new ResourceResolverException("generic.EmptyMessage", e, context.attr, context.baseUri);
-        } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    if (log.isLoggable(java.util.logging.Level.FINE)) {
-                        log.log(java.util.logging.Level.FINE, e.getMessage(), e);
-                    }
+                while ((read = inputStream.read(buf)) >= 0) {
+                    baos.write(buf, 0, read);
+                    summarized += read;
                 }
+
+                LOG.debug("Fetched {} bytes from URI {}", summarized, uriNew.toString());
+
+                XMLSignatureInput result = new XMLSignatureInput(baos.toByteArray());
+                result.setSecureValidation(context.secureValidation);
+
+                result.setSourceURI(uriNew.toString());
+                result.setMIMEType(mimeType);
+
+                return result;
             }
+
+        } catch (URISyntaxException ex) {
+            throw new ResourceResolverException(ex, context.uriToResolve, context.baseUri, "generic.EmptyMessage");
+        } catch (MalformedURLException ex) {
+            throw new ResourceResolverException(ex, context.uriToResolve, context.baseUri, "generic.EmptyMessage");
+        } catch (IOException ex) {
+            throw new ResourceResolverException(ex, context.uriToResolve, context.baseUri, "generic.EmptyMessage");
+        } catch (IllegalArgumentException e) {
+            throw new ResourceResolverException(e, context.uriToResolve, context.baseUri, "generic.EmptyMessage");
         }
     }
 
@@ -194,7 +176,7 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
                 engineGetProperty(ResolverDirectHTTP.properties[ResolverDirectHTTP.HttpProxyPass]);
 
         Proxy proxy = null;
-        if ((proxyHostProp != null) && (proxyPortProp != null)) {
+        if (proxyHostProp != null && proxyPortProp != null) {
             int port = Integer.parseInt(proxyPortProp);
             proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHostProp, port));
         }
@@ -203,9 +185,9 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
         if (proxy != null) {
             urlConnection = url.openConnection(proxy);
 
-            if ((proxyUser != null) && (proxyPass != null)) {
+            if (proxyUser != null && proxyPass != null) {
                 String password = proxyUser + ":" + proxyPass;
-                String authString = "Basic " + Base64.encode(password.getBytes("ISO-8859-1"));
+                String authString = "Basic " + Base64.getMimeEncoder().encodeToString(password.getBytes(StandardCharsets.ISO_8859_1));
 
                 urlConnection.setRequestProperty("Proxy-Authorization", authString);
             }
@@ -219,46 +201,35 @@ public class ResolverDirectHTTP extends ResourceResolverSpi {
     /**
      * We resolve http URIs <I>without</I> fragment...
      *
-     * @param uri
-     * @param baseURI
+     * @param context
      * @return true if can be resolved
      */
     public boolean engineCanResolveURI(ResourceResolverContext context) {
         if (context.uriToResolve == null) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "quick fail, uri == null");
-            }
+            LOG.debug("quick fail, uri == null");
             return false;
         }
 
-        if (context.uriToResolve.equals("") || (context.uriToResolve.charAt(0)=='#')) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "quick fail for empty URIs and local ones");
-            }
+        if (context.uriToResolve.equals("") || context.uriToResolve.charAt(0) == '#') {
+            LOG.debug("quick fail for empty URIs and local ones");
             return false;
         }
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "I was asked whether I can resolve " + context.uriToResolve);
-        }
+        LOG.debug("I was asked whether I can resolve {}", context.uriToResolve);
 
         if (context.uriToResolve.startsWith("http:") ||
-            (context.baseUri != null && context.baseUri.startsWith("http:") )) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "I state that I can resolve " + context.uriToResolve);
-            }
+            context.baseUri != null && context.baseUri.startsWith("http:")) {
+            LOG.debug("I state that I can resolve {}", context.uriToResolve);
             return true;
         }
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "I state that I can't resolve " + context.uriToResolve);
-        }
+        LOG.debug("I state that I can't resolve {}", context.uriToResolve);
 
         return false;
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     public String[] engineGetPropertyKeys() {
         return ResolverDirectHTTP.properties.clone();

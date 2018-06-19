@@ -122,6 +122,10 @@ void G1Arguments::initialize() {
     FLAG_SET_DEFAULT(GCPauseIntervalMillis, MaxGCPauseMillis + 1);
   }
 
+  if (FLAG_IS_DEFAULT(ParallelRefProcEnabled) && ParallelGCThreads > 1) {
+    FLAG_SET_DEFAULT(ParallelRefProcEnabled, true);
+  }
+
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
 
   // By default do not let the target stack size to be more than 1/4 of the entries

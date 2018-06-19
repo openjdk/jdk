@@ -344,8 +344,7 @@ public class Platform {
         boolean isLinux = Platform.isLinux();
         boolean is64 = Platform.is64bit();
         boolean isSolaris = Platform.isSolaris();
-        boolean isAix = Platform.isAix();
 
-        return (is64 && (isLinux || isSolaris || isAix));
+        return (is64 && (isLinux || isSolaris));
     }
 }

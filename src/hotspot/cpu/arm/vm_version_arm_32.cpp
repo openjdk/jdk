@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,18 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 extern "C" address check_vfp3_32_fault_instr;
 extern "C" address check_vfp_fault_instr;
 extern "C" address check_simd_fault_instr;
+
+void VM_Version::early_initialize() {
+
+  // Make sure that _arm_arch is initialized so that any calls to OrderAccess will
+  // use proper dmb instruction
+  get_os_cpu_info();
+
+  _kuser_helper_version = *(int*)KUSER_HELPER_VERSION_ADDR;
+  // armv7 has the ldrexd instruction that can be used to implement cx8
+  // armv5 with linux >= 3.1 can use kernel helper routine
+  _supports_cx8 = (supports_ldrexd() || supports_kuser_cmpxchg64());
+}
 
 void VM_Version::initialize() {
   ResourceMark rm;
@@ -216,10 +228,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  get_os_cpu_info();
-
-  _kuser_helper_version = *(int*)KUSER_HELPER_VERSION_ADDR;
-
 #ifdef COMPILER2
   // C2 is only supported on v7+ VFP at this time
   if (_arm_arch < 7 || !has_vfp()) {
@@ -227,9 +235,6 @@ void VM_Version::initialize() {
   }
 #endif
 
-  // armv7 has the ldrexd instruction that can be used to implement cx8
-  // armv5 with linux >= 3.1 can use kernel helper routine
-  _supports_cx8 = (supports_ldrexd() || supports_kuser_cmpxchg64());
   // ARM doesn't have special instructions for these but ldrex/ldrexd
   // enable shorter instruction sequences that the ones based on cas.
   _supports_atomic_getset4 = supports_ldrex();
