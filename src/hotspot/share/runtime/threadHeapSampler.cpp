@@ -47,7 +47,7 @@ static uint64_t next_random(uint64_t rnd) {
   const uint64_t PrngMult = 0x5DEECE66DLL;
   const uint64_t PrngAdd = 0xB;
   const uint64_t PrngModPower = 48;
-  const uint64_t PrngModMask = right_n_bits(PrngModPower);
+  const uint64_t PrngModMask = ((uint64_t)1 << PrngModPower) - 1;
   //assert(IS_SAFE_SIZE_MUL(PrngMult, rnd), "Overflow on multiplication.");
   //assert(IS_SAFE_SIZE_ADD(PrngMult * rnd, PrngAdd), "Overflow on addition.");
   return (PrngMult * rnd + PrngAdd) & PrngModMask;
