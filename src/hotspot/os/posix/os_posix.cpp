@@ -1334,6 +1334,13 @@ char* os::Posix::realpath(const char* filename, char* outbuf, size_t outbuflen) 
 
 }
 
+int os::stat(const char *path, struct stat *sbuf) {
+  return ::stat(path, sbuf);
+}
+
+char * os::native_path(char *path) {
+  return path;
+}
 
 // Check minimum allowable stack sizes for thread creation and to initialize
 // the java system classes, including StackOverflowError - depends on page
