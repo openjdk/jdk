@@ -137,11 +137,45 @@ void IdealLoopTree::compute_trip_count(PhaseIdealLoop* phase) {
 //------------------------------compute_profile_trip_cnt----------------------------
 // Compute loop trip count from profile data as
 //    (backedge_count + loop_exit_count) / loop_exit_count
-void IdealLoopTree::compute_profile_trip_cnt( PhaseIdealLoop *phase ) {
-  if (!_head->is_CountedLoop()) {
+
+float IdealLoopTree::compute_profile_trip_cnt_helper(Node* n) {
+  if (n->is_If()) {
+    IfNode *iff = n->as_If();
+    if (iff->_fcnt != COUNT_UNKNOWN && iff->_prob != PROB_UNKNOWN) {
+      Node *exit = is_loop_exit(iff);
+      if (exit) {
+        float exit_prob = iff->_prob;
+        if (exit->Opcode() == Op_IfFalse) exit_prob = 1.0 - exit_prob;
+        if (exit_prob > PROB_MIN) {
+          float exit_cnt = iff->_fcnt * exit_prob;
+          return exit_cnt;
+        }
+      }
+    }
+  }
+  if (n->is_Jump()) {
+    JumpNode *jmp = n->as_Jump();
+    if (jmp->_fcnt != COUNT_UNKNOWN) {
+      float* probs = jmp->_probs;
+      float exit_prob = 0;
+      PhaseIdealLoop *phase = _phase;
+      for (DUIterator_Fast imax, i = jmp->fast_outs(imax); i < imax; i++) {
+        JumpProjNode* u = jmp->fast_out(i)->as_JumpProj();
+        if (!is_member(_phase->get_loop(u))) {
+          exit_prob += probs[u->_con];
+        }
+      }
+      return exit_prob * jmp->_fcnt;
+    }
+  }
+  return 0;
+}
+
+void IdealLoopTree::compute_profile_trip_cnt(PhaseIdealLoop *phase) {
+  if (!_head->is_Loop()) {
     return;
   }
-  CountedLoopNode* head = _head->as_CountedLoop();
+  LoopNode* head = _head->as_Loop();
   if (head->profile_trip_cnt() != COUNT_UNKNOWN) {
     return; // Already computed
   }
@@ -153,7 +187,8 @@ void IdealLoopTree::compute_profile_trip_cnt( PhaseIdealLoop *phase ) {
         back->in(0) &&
         back->in(0)->is_If() &&
         back->in(0)->as_If()->_fcnt != COUNT_UNKNOWN &&
-        back->in(0)->as_If()->_prob != PROB_UNKNOWN) {
+        back->in(0)->as_If()->_prob != PROB_UNKNOWN &&
+        (back->Opcode() == Op_IfTrue ? 1-back->in(0)->as_If()->_prob : back->in(0)->as_If()->_prob) > PROB_MIN) {
       break;
     }
     back = phase->idom(back);
@@ -162,26 +197,34 @@ void IdealLoopTree::compute_profile_trip_cnt( PhaseIdealLoop *phase ) {
     assert((back->Opcode() == Op_IfTrue || back->Opcode() == Op_IfFalse) &&
            back->in(0), "if-projection exists");
     IfNode* back_if = back->in(0)->as_If();
-    float loop_back_cnt = back_if->_fcnt * back_if->_prob;
+    float loop_back_cnt = back_if->_fcnt * (back->Opcode() == Op_IfTrue ? back_if->_prob : (1 - back_if->_prob));
 
     // Now compute a loop exit count
     float loop_exit_cnt = 0.0f;
-    for( uint i = 0; i < _body.size(); i++ ) {
-      Node *n = _body[i];
-      if( n->is_If() ) {
-        IfNode *iff = n->as_If();
-        if( iff->_fcnt != COUNT_UNKNOWN && iff->_prob != PROB_UNKNOWN ) {
-          Node *exit = is_loop_exit(iff);
-          if( exit ) {
-            float exit_prob = iff->_prob;
-            if (exit->Opcode() == Op_IfFalse) exit_prob = 1.0 - exit_prob;
-            if (exit_prob > PROB_MIN) {
-              float exit_cnt = iff->_fcnt * exit_prob;
-              loop_exit_cnt += exit_cnt;
+    if (_child == NULL) {
+      for( uint i = 0; i < _body.size(); i++ ) {
+        Node *n = _body[i];
+        loop_exit_cnt += compute_profile_trip_cnt_helper(n);
+      }
+    } else {
+      ResourceMark rm;
+      Unique_Node_List wq;
+      wq.push(back);
+      for (uint i = 0; i < wq.size(); i++) {
+        Node *n = wq.at(i);
+        assert(n->is_CFG(), "only control nodes");
+        if (n != head) {
+          if (n->is_Region()) {
+            for (uint j = 1; j < n->req(); j++) {
+              wq.push(n->in(j));
             }
+          } else {
+            loop_exit_cnt += compute_profile_trip_cnt_helper(n);
+            wq.push(n->in(0));
           }
         }
       }
+
     }
     if (loop_exit_cnt > 0.0f) {
       trip_cnt = (loop_back_cnt + loop_exit_cnt) / loop_exit_cnt;
@@ -189,6 +232,8 @@ void IdealLoopTree::compute_profile_trip_cnt( PhaseIdealLoop *phase ) {
       // No exit count so use
       trip_cnt = loop_back_cnt;
     }
+  } else {
+    head->mark_profile_trip_failed();
   }
 #ifndef PRODUCT
   if (TraceProfileTripCount) {
@@ -1014,11 +1059,139 @@ Node* PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) 
 // loop is never executed). When that happens, range check
 // CastII/ConvI2L nodes cause some data paths to die. For consistency,
 // the control paths must die too but the range checks were removed by
-// predication. The range checks that we add here guarantee that they
-// do.
-void PhaseIdealLoop::duplicate_predicates(CountedLoopNode* pre_head, Node* min_taken, Node* castii,
-                                          IdealLoopTree* outer_loop, LoopNode* outer_main_head,
-                                          uint dd_main_head) {
+// predication. The range checks that we add here guarantee that they do.
+void PhaseIdealLoop::duplicate_predicates_helper(Node* predicate, Node* castii, IdealLoopTree* outer_loop,
+                                                 LoopNode* outer_main_head, uint dd_main_head) {
+  if (predicate != NULL) {
+    IfNode* iff = predicate->in(0)->as_If();
+    ProjNode* uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
+    Node* rgn = uncommon_proj->unique_ctrl_out();
+    assert(rgn->is_Region() || rgn->is_Call(), "must be a region or call uct");
+    assert(iff->in(1)->in(1)->Opcode() == Op_Opaque1, "unexpected predicate shape");
+    predicate = iff->in(0);
+    Node* current_proj = outer_main_head->in(LoopNode::EntryControl);
+    Node* prev_proj = current_proj;
+    while (predicate != NULL && predicate->is_Proj() && predicate->in(0)->is_If()) {
+      iff = predicate->in(0)->as_If();
+      uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
+      if (uncommon_proj->unique_ctrl_out() != rgn)
+        break;
+      if (iff->in(1)->Opcode() == Op_Opaque4) {
+        // Clone the predicate twice and initialize one with the initial
+        // value of the loop induction variable. Leave the other predicate
+        // to be initialized when increasing the stride during loop unrolling.
+        prev_proj = update_skeleton_predicate(iff, castii, predicate, uncommon_proj, current_proj, outer_loop, prev_proj);
+        Node* value = new Opaque1Node(C, castii);
+        register_new_node(value, current_proj);
+        prev_proj = update_skeleton_predicate(iff, value, predicate, uncommon_proj, current_proj, outer_loop, prev_proj);
+        // Remove the skeleton predicate from the pre-loop
+        _igvn.replace_input_of(iff, 1, _igvn.intcon(1));
+      }
+      predicate = predicate->in(0)->in(0);
+    }
+    _igvn.replace_input_of(outer_main_head, LoopNode::EntryControl, prev_proj);
+    set_idom(outer_main_head, prev_proj, dd_main_head);
+  }
+}
+
+Node* PhaseIdealLoop::update_skeleton_predicate(Node* iff, Node* value, Node* predicate, Node* uncommon_proj,
+                                                Node* current_proj, IdealLoopTree* outer_loop, Node* prev_proj) {
+  bool clone = (outer_loop != NULL); // Clone the predicate?
+  Node_Stack to_clone(2);
+  to_clone.push(iff->in(1), 1);
+  uint current = C->unique();
+  Node* result = NULL;
+  // Look for the opaque node to replace with the new value
+  // and clone everything in between. We keep the Opaque4 node
+  // so the duplicated predicates are eliminated once loop
+  // opts are over: they are here only to keep the IR graph
+  // consistent.
+  do {
+    Node* n = to_clone.node();
+    uint i = to_clone.index();
+    Node* m = n->in(i);
+    int op = m->Opcode();
+    if (m->is_Bool() ||
+        m->is_Cmp() ||
+        op == Op_AndL ||
+        op == Op_OrL ||
+        op == Op_RShiftL ||
+        op == Op_LShiftL ||
+        op == Op_AddL ||
+        op == Op_AddI ||
+        op == Op_MulL ||
+        op == Op_MulI ||
+        op == Op_SubL ||
+        op == Op_SubI ||
+        op == Op_ConvI2L) {
+        to_clone.push(m, 1);
+        continue;
+    }
+    if (op == Op_Opaque1) {
+      if (!clone) {
+        // Update the input of the Opaque1Node and exit
+        _igvn.replace_input_of(m, 1, value);
+        return prev_proj;
+      }
+      if (n->_idx < current) {
+        n = n->clone();
+      }
+      n->set_req(i, value);
+      register_new_node(n, current_proj);
+      to_clone.set_node(n);
+    }
+    for (;;) {
+      Node* cur = to_clone.node();
+      uint j = to_clone.index();
+      if (j+1 < cur->req()) {
+        to_clone.set_index(j+1);
+        break;
+      }
+      to_clone.pop();
+      if (to_clone.size() == 0) {
+        result = cur;
+        break;
+      }
+      Node* next = to_clone.node();
+      j = to_clone.index();
+      if (clone && cur->_idx >= current) {
+        if (next->_idx < current) {
+          next = next->clone();
+          register_new_node(next, current_proj);
+          to_clone.set_node(next);
+        }
+        assert(next->in(j) != cur, "input should have been cloned");
+        next->set_req(j, cur);
+      }
+    }
+  } while (result == NULL);
+  if (!clone) {
+    return NULL;
+  }
+  assert(result->_idx >= current, "new node expected");
+
+  Node* proj = predicate->clone();
+  Node* other_proj = uncommon_proj->clone();
+  Node* new_iff = iff->clone();
+  new_iff->set_req(1, result);
+  proj->set_req(0, new_iff);
+  other_proj->set_req(0, new_iff);
+  Node *frame = new ParmNode(C->start(), TypeFunc::FramePtr);
+  register_new_node(frame, C->start());
+  // It's impossible for the predicate to fail at runtime. Use an Halt node.
+  Node* halt = new HaltNode(other_proj, frame);
+  C->root()->add_req(halt);
+  new_iff->set_req(0, prev_proj);
+
+  register_control(new_iff, outer_loop->_parent, prev_proj);
+  register_control(proj, outer_loop->_parent, new_iff);
+  register_control(other_proj, _ltree_root, new_iff);
+  register_control(halt, _ltree_root, other_proj);
+  return proj;
+}
+
+void PhaseIdealLoop::duplicate_predicates(CountedLoopNode* pre_head, Node* castii, IdealLoopTree* outer_loop,
+                                          LoopNode* outer_main_head, uint dd_main_head) {
   if (UseLoopPredicate) {
     Node* entry = pre_head->in(LoopNode::EntryControl);
     Node* predicate = NULL;
@@ -1026,112 +1199,16 @@ void PhaseIdealLoop::duplicate_predicates(CountedLoopNode* pre_head, Node* min_t
     if (predicate != NULL) {
       entry = entry->in(0)->in(0);
     }
-    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
-    if (predicate != NULL) {
-      IfNode* iff = entry->in(0)->as_If();
-      ProjNode* uncommon_proj = iff->proj_out(1 - entry->as_Proj()->_con);
-      Node* rgn = uncommon_proj->unique_ctrl_out();
-      assert(rgn->is_Region() || rgn->is_Call(), "must be a region or call uct");
-      assert(iff->in(1)->in(1)->Opcode() == Op_Opaque1, "unexpected predicate shape");
-      entry = entry->in(0)->in(0);
-      Node* prev_proj = min_taken;
-      while (entry != NULL && entry->is_Proj() && entry->in(0)->is_If()) {
-        uncommon_proj = entry->in(0)->as_If()->proj_out(1 - entry->as_Proj()->_con);
-        if (uncommon_proj->unique_ctrl_out() != rgn)
-          break;
-        iff = entry->in(0)->as_If();
-        if (iff->in(1)->Opcode() == Op_Opaque4) {
-          Node_Stack to_clone(2);
-          to_clone.push(iff->in(1), 1);
-          uint current = C->unique();
-          Node* result = NULL;
-          // Look for the opaque node to replace with the init value
-          // and clone everything in between. We keep the Opaque4 node
-          // so the duplicated predicates are eliminated once loop
-          // opts are over: they are here only to keep the IR graph
-          // consistent.
-          do {
-            Node* n = to_clone.node();
-            uint i = to_clone.index();
-            Node* m = n->in(i);
-            int op = m->Opcode();
-            if (m->is_Bool() ||
-                m->is_Cmp() ||
-                op == Op_AndL ||
-                op == Op_OrL ||
-                op == Op_RShiftL ||
-                op == Op_LShiftL ||
-                op == Op_AddL ||
-                op == Op_AddI ||
-                op == Op_MulL ||
-                op == Op_MulI ||
-                op == Op_SubL ||
-                op == Op_SubI ||
-                op == Op_ConvI2L) {
-              to_clone.push(m, 1);
-              continue;
-            }
-            if (op == Op_Opaque1) {
-              if (n->_idx < current) {
-                n = n->clone();
-              }
-              n->set_req(i, castii);
-              register_new_node(n, min_taken);
-              to_clone.set_node(n);
-            }
-            for (;;) {
-              Node* cur = to_clone.node();
-              uint j = to_clone.index();
-              if (j+1 < cur->req()) {
-                to_clone.set_index(j+1);
-                break;
-              }
-              to_clone.pop();
-              if (to_clone.size() == 0) {
-                result = cur;
-                break;
-              }
-              Node* next = to_clone.node();
-              j = to_clone.index();
-              if (cur->_idx >= current) {
-                if (next->_idx < current) {
-                  next = next->clone();
-                  register_new_node(next, min_taken);
-                  to_clone.set_node(next);
-                }
-                assert(next->in(j) != cur, "input should have been cloned");
-                next->set_req(j, cur);
-              }
-            }
-          } while (result == NULL);
-          assert(result->_idx >= current, "new node expected");
-
-          Node* proj = entry->clone();
-          Node* other_proj = uncommon_proj->clone();
-          Node* new_iff = iff->clone();
-          new_iff->set_req(1, result);
-          proj->set_req(0, new_iff);
-          other_proj->set_req(0, new_iff);
-          Node *frame = new ParmNode(C->start(), TypeFunc::FramePtr);
-          register_new_node(frame, C->start());
-          // It's impossible for the predicate to fail at runtime. Use
-          // an Halt node.
-          Node* halt = new HaltNode(other_proj, frame);
-          C->root()->add_req(halt);
-          new_iff->set_req(0, prev_proj);
-
-          register_control(new_iff, outer_loop->_parent, prev_proj);
-          register_control(proj, outer_loop->_parent, new_iff);
-          register_control(other_proj, _ltree_root, new_iff);
-          register_control(halt, _ltree_root, other_proj);
-
-          prev_proj = proj;
-        }
-        entry = entry->in(0)->in(0);
+    Node* profile_predicate = NULL;
+    if (UseProfiledLoopPredicate) {
+      profile_predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate);
+      if (profile_predicate != NULL) {
+        entry = skip_loop_predicates(entry);
       }
-      _igvn.replace_input_of(outer_main_head, LoopNode::EntryControl, prev_proj);
-      set_idom(outer_main_head, prev_proj, dd_main_head);
     }
+    predicate = find_predicate_insertion_point(entry, Deoptimization::Reason_predicate);
+    duplicate_predicates_helper(predicate, castii, outer_loop, outer_main_head, dd_main_head);
+    duplicate_predicates_helper(profile_predicate, castii, outer_loop, outer_main_head, dd_main_head);
   }
 }
 
@@ -1278,7 +1355,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // CastII for the main loop:
   Node* castii = cast_incr_before_loop( pre_incr, min_taken, main_head );
   assert(castii != NULL, "no castII inserted");
-  duplicate_predicates(pre_head, min_taken, castii, outer_loop, outer_main_head, dd_main_head);
+  duplicate_predicates(pre_head, castii, outer_loop, outer_main_head, dd_main_head);
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
@@ -1621,6 +1698,30 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
   // Verify that unroll policy result is still valid.
   assert(old_trip_count > 1 &&
       (!adjust_min_trip || stride_p <= (1<<3)*loop_head->unrolled_count()), "sanity");
+
+  if (UseLoopPredicate) {
+    // Search for skeleton predicates and update them according to the new stride
+    Node* entry = ctrl;
+    while (entry != NULL && entry->is_Proj() && entry->in(0)->is_If()) {
+      IfNode* iff = entry->in(0)->as_If();
+      ProjNode* proj = iff->proj_out(1 - entry->as_Proj()->_con);
+      if (proj->unique_ctrl_out()->Opcode() != Op_Halt) {
+        break;
+      }
+      if (iff->in(1)->Opcode() == Op_Opaque4) {
+        // Compute the value of the loop induction variable at the end of the
+        // first iteration of the unrolled loop: init + new_stride_con - init_inc
+        int init_inc = stride_con/loop_head->unrolled_count();
+        assert(init_inc != 0, "invalid loop increment");
+        int new_stride_con = stride_con * 2;
+        Node* max_value = _igvn.intcon(new_stride_con - init_inc);
+        max_value = new AddINode(init, max_value);
+        register_new_node(max_value, get_ctrl(iff->in(1)));
+        update_skeleton_predicate(iff, max_value);
+      }
+      entry = entry->in(0)->in(0);
+    }
+  }
 
   // Adjust loop limit to keep valid iterations number after unroll.
   // Use (limit - stride) instead of (((limit - init)/stride) & (-2))*stride
@@ -2815,7 +2916,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   }
   if (needs_guard) {
     // Check for an obvious zero trip guard.
-    Node* inctrl = PhaseIdealLoop::skip_loop_predicates(cl->skip_predicates());
+    Node* inctrl = PhaseIdealLoop::skip_all_loop_predicates(cl->skip_predicates());
     if (inctrl->Opcode() == Op_IfTrue || inctrl->Opcode() == Op_IfFalse) {
       bool maybe_swapped = (inctrl->Opcode() == Op_IfFalse);
       // The test should look like just the backedge of a CountedLoop

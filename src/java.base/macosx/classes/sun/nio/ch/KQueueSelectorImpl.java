@@ -27,6 +27,7 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayDeque;
@@ -34,6 +35,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static sun.nio.ch.KQueue.EVFILT_READ;
 import static sun.nio.ch.KQueue.EVFILT_WRITE;
@@ -100,7 +102,9 @@ class KQueueSelectorImpl extends SelectorImpl {
     }
 
     @Override
-    protected int doSelect(long timeout) throws IOException {
+    protected int doSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
 
         long to = Math.min(timeout, Integer.MAX_VALUE);  // max kqueue timeout
@@ -132,7 +136,7 @@ class KQueueSelectorImpl extends SelectorImpl {
             end(blocking);
         }
         processDeregisterQueue();
-        return updateSelectedKeys(numEntries);
+        return processEvents(numEntries, action);
     }
 
     /**
@@ -180,13 +184,13 @@ class KQueueSelectorImpl extends SelectorImpl {
     }
 
     /**
-     * Update the keys of file descriptors that were polled and add them to
-     * the selected-key set.
+     * Process the polled events.
      * If the interrupt fd has been selected, drain it and clear the interrupt.
      */
-    private int updateSelectedKeys(int numEntries) throws IOException {
+    private int processEvents(int numEntries, Consumer<SelectionKey> action)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(nioSelectedKeys());
 
         int numKeysUpdated = 0;
         boolean interrupted = false;
@@ -214,22 +218,10 @@ class KQueueSelectorImpl extends SelectorImpl {
                     } else if (filter == EVFILT_WRITE) {
                         rOps |= Net.POLLOUT;
                     }
-
-                    if (selectedKeys.contains(ski)) {
-                        if (ski.translateAndUpdateReadyOps(rOps)) {
-                            // file descriptor may be polled more than once per poll
-                            if (ski.lastPolled != pollCount) {
-                                numKeysUpdated++;
-                                ski.lastPolled = pollCount;
-                            }
-                        }
-                    } else {
-                        ski.translateAndSetReadyOps(rOps);
-                        if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
-                            selectedKeys.add(ski);
-                            numKeysUpdated++;
-                            ski.lastPolled = pollCount;
-                        }
+                    int updated = processReadyEvents(rOps, ski, action);
+                    if (updated > 0 && ski.lastPolled != pollCount) {
+                        numKeysUpdated++;
+                        ski.lastPolled = pollCount;
                     }
                 }
             }

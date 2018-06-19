@@ -49,6 +49,7 @@
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
@@ -851,7 +852,8 @@ void PSParallelCompact::post_initialize() {
                            true,                // mt discovery
                            ParallelGCThreads,   // mt discovery degree
                            true,                // atomic_discovery
-                           &_is_alive_closure); // non-header is alive closure
+                           &_is_alive_closure,  // non-header is alive closure
+                           false);              // disable adjusting number of processing threads
   _counters = new CollectorCounters("PSParallelCompact", 1);
 
   // Initialize static fields in ParCompactionManager.

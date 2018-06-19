@@ -307,6 +307,12 @@
   product(bool, ParallelRefProcBalancingEnabled, true,                      \
           "Enable balancing of reference processing queues")                \
                                                                             \
+  experimental(size_t, ReferencesPerThread, 1000,                           \
+               "Ergonomically start one thread for this amount of "         \
+               "references for reference processing if "                    \
+               "ParallelRefProcEnabled is true. Specify 0 to disable and "  \
+               "use all threads.")                                          \
+                                                                            \
   product(uintx, InitiatingHeapOccupancyPercent, 45,                        \
           "The percent occupancy (IHOP) of the current old generation "     \
           "capacity above which a concurrent mark cycle will be initiated " \

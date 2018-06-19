@@ -2170,6 +2170,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "array_check",
   "intrinsic" JVMCI_ONLY("_or_type_checked_inlining"),
   "bimorphic" JVMCI_ONLY("_or_optimized_type_check"),
+  "profile_predicate",
   "unloaded",
   "uninitialized",
   "unreached",

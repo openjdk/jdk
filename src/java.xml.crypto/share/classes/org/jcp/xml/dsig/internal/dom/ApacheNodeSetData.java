@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: ApacheNodeSetData.java 1203890 2011-11-18 22:47:56Z mullan $
+ * $Id: ApacheNodeSetData.java 1496478 2013-06-25 14:01:16Z mullan $
  */
 package org.jcp.xml.dsig.internal.dom;
 

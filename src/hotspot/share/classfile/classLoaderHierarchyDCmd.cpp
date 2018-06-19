@@ -157,7 +157,7 @@ class LoaderTreeNode : public ResourceObj {
 
     // Retrieve information.
     const Klass* const loader_klass = _cld->class_loader_klass();
-    const Symbol* const loader_name = _cld->class_loader_name();
+    const Symbol* const loader_name = _cld->name();
 
     branchtracker.print(st);
 

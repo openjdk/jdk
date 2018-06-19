@@ -176,8 +176,6 @@ public class HtmlDocletWriter {
 
     HtmlTree fixedNavDiv = new HtmlTree(HtmlTag.DIV);
 
-    final static Pattern IMPROPER_HTML_CHARS = Pattern.compile(".*[&<>].*");
-
     /**
      * The window title of this file.
      */
@@ -910,15 +908,7 @@ public class HtmlDocletWriter {
      */
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
             CharSequence label, boolean strong, boolean isProperty) {
-        return getDocLink(context, typeElement, element, new StringContent(check(label)), strong, isProperty);
-    }
-
-    CharSequence check(CharSequence s) {
-        Matcher m = IMPROPER_HTML_CHARS.matcher(s);
-        if (m.matches()) {
-            throw new IllegalArgumentException(s.toString());
-        }
-        return s;
+        return getDocLink(context, typeElement, element, new StringContent(label), strong, isProperty);
     }
 
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,

@@ -28,6 +28,7 @@ package sun.nio.ch;
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayDeque;
@@ -36,6 +37,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * A multi-threaded implementation of Selector for Windows.
@@ -139,7 +141,9 @@ class WindowsSelectorImpl extends SelectorImpl {
     }
 
     @Override
-    protected int doSelect(long timeout) throws IOException {
+    protected int doSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
         this.timeout = timeout; // set selector timeout
         processUpdateQueue();
@@ -173,7 +177,7 @@ class WindowsSelectorImpl extends SelectorImpl {
         // Done with poll(). Set wakeupSocket to nonsignaled  for the next run.
         finishLock.checkForException();
         processDeregisterQueue();
-        int updated = updateSelectedKeys();
+        int updated = updateSelectedKeys(action);
         // Done with poll(). Set wakeupSocket to nonsignaled  for the next run.
         resetWakeupSocket();
         return updated;
@@ -349,16 +353,16 @@ class WindowsSelectorImpl extends SelectorImpl {
         private native int poll0(long pollAddress, int numfds,
              int[] readFds, int[] writeFds, int[] exceptFds, long timeout);
 
-        private int processSelectedKeys(long updateCount) {
+        private int processSelectedKeys(long updateCount, Consumer<SelectionKey> action) {
             int numKeysUpdated = 0;
-            numKeysUpdated += processFDSet(updateCount, readFds,
+            numKeysUpdated += processFDSet(updateCount, action, readFds,
                                            Net.POLLIN,
                                            false);
-            numKeysUpdated += processFDSet(updateCount, writeFds,
+            numKeysUpdated += processFDSet(updateCount, action, writeFds,
                                            Net.POLLCONN |
                                            Net.POLLOUT,
                                            false);
-            numKeysUpdated += processFDSet(updateCount, exceptFds,
+            numKeysUpdated += processFDSet(updateCount, action, exceptFds,
                                            Net.POLLIN |
                                            Net.POLLCONN |
                                            Net.POLLOUT,
@@ -372,7 +376,9 @@ class WindowsSelectorImpl extends SelectorImpl {
          *
          * me.updateCount <= updateCount
          */
-        private int processFDSet(long updateCount, int[] fds, int rOps,
+        private int processFDSet(long updateCount,
+                                 Consumer<SelectionKey> action,
+                                 int[] fds, int rOps,
                                  boolean isExceptFds)
         {
             int numKeysUpdated = 0;
@@ -401,20 +407,10 @@ class WindowsSelectorImpl extends SelectorImpl {
                     continue;
                 }
 
-                if (selectedKeys.contains(sk)) { // Key in selected set
-                    if (sk.translateAndUpdateReadyOps(rOps)) {
-                        if (me.updateCount != updateCount) {
-                            me.updateCount = updateCount;
-                            numKeysUpdated++;
-                        }
-                    }
-                } else { // Key is not in selected set yet
-                    sk.translateAndSetReadyOps(rOps);
-                    if ((sk.nioReadyOps() & sk.nioInterestOps()) != 0) {
-                        selectedKeys.add(sk);
-                        me.updateCount = updateCount;
-                        numKeysUpdated++;
-                    }
+                int updated = processReadyEvents(rOps, sk, action);
+                if (updated > 0 && me.updateCount != updateCount) {
+                    me.updateCount = updateCount;
+                    numKeysUpdated++;
                 }
             }
             return numKeysUpdated;
@@ -509,12 +505,12 @@ class WindowsSelectorImpl extends SelectorImpl {
 
     // Update ops of the corresponding Channels. Add the ready keys to the
     // ready queue.
-    private int updateSelectedKeys() {
+    private int updateSelectedKeys(Consumer<SelectionKey> action) {
         updateCount++;
         int numKeysUpdated = 0;
-        numKeysUpdated += subSelector.processSelectedKeys(updateCount);
+        numKeysUpdated += subSelector.processSelectedKeys(updateCount, action);
         for (SelectThread t: threads) {
-            numKeysUpdated += t.subSelector.processSelectedKeys(updateCount);
+            numKeysUpdated += t.subSelector.processSelectedKeys(updateCount, action);
         }
         return numKeysUpdated;
     }

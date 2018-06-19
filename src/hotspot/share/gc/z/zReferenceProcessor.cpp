@@ -105,19 +105,21 @@ oop ZReferenceProcessor::reference_referent(oop obj) const {
   return *reference_referent_addr(obj);
 }
 
-bool ZReferenceProcessor::is_referent_alive_or_null(oop obj, ReferenceType type) const {
-  volatile oop* const p = reference_referent_addr(obj);
+bool ZReferenceProcessor::is_referent_strongly_alive_or_null(oop obj, ReferenceType type) const {
+  // Check if the referent is strongly alive or null, in which case we don't want to
+  // discover the reference. It can only be null if the application called
+  // Reference.enqueue() or Reference.clear().
+  //
+  // PhantomReferences with finalizable marked referents should technically not have
+  // to be discovered. However, InstanceRefKlass::oop_oop_iterate_ref_processing()
+  // does not know about the finalizable mark concept, and will therefore mark
+  // referents in non-discovered PhantomReferences as strongly live. To prevent
+  // this, we always discover PhantomReferences with finalizable marked referents.
+  // They will automatically be dropped during the reference processing phase.
 
-  // Check if the referent is alive or null, in which case we don't want to discover
-  // the reference. It can only be null if the application called Reference.enqueue()
-  // or Reference.clear().
-  if (type == REF_PHANTOM) {
-    const oop o = ZBarrier::weak_load_barrier_on_phantom_oop_field(p);
-    return o == NULL || ZHeap::heap()->is_object_live(ZOop::to_address(o));
-  } else {
-    const oop o = ZBarrier::weak_load_barrier_on_weak_oop_field(p);
-    return o == NULL || ZHeap::heap()->is_object_strongly_live(ZOop::to_address(o));
-  }
+  volatile oop* const p = reference_referent_addr(obj);
+  const oop o = ZBarrier::weak_load_barrier_on_oop_field(p);
+  return o == NULL || ZHeap::heap()->is_object_strongly_live(ZOop::to_address(o));
 }
 
 bool ZReferenceProcessor::is_referent_softly_alive(oop obj, ReferenceType type) const {
@@ -191,7 +193,7 @@ bool ZReferenceProcessor::discover_reference(oop obj, ReferenceType type) {
   _encountered_count.get()[type]++;
 
   if (is_reference_inactive(obj) ||
-      is_referent_alive_or_null(obj, type) ||
+      is_referent_strongly_alive_or_null(obj, type) ||
       is_referent_softly_alive(obj, type)) {
     // Not discovered
     return false;

@@ -24,12 +24,14 @@ package org.graalvm.compiler.nodes.calc;
 
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 
+import jdk.vm.ci.code.CodeUtil;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.Narrow;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable.IntegerConvertOp.SignExtend;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.PrimitiveStamp;
+import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.lir.gen.ArithmeticLIRGeneratorTool;
@@ -107,7 +109,28 @@ public final class SignExtendNode extends IntegerConvertNode<SignExtend, Narrow>
                 return ZeroExtendNode.create(forValue, inputBits, resultBits, view, true);
             }
         }
-
+        if (forValue instanceof NarrowNode) {
+            NarrowNode narrow = (NarrowNode) forValue;
+            Stamp inputStamp = narrow.getValue().stamp(view);
+            if (inputStamp instanceof IntegerStamp) {
+                IntegerStamp istamp = (IntegerStamp) inputStamp;
+                long mask = CodeUtil.mask(PrimitiveStamp.getBits(narrow.stamp(view)) - 1);
+                if (~mask <= istamp.lowerBound() && istamp.upperBound() <= mask) {
+                    // The original value cannot change because of the narrow and sign extend.
+                    if (istamp.getBits() < resultBits) {
+                        // Need to keep the sign extend, skip the narrow.
+                        return create(narrow.getValue(), resultBits, view);
+                    } else if (istamp.getBits() > resultBits) {
+                        // Need to keep the narrow, skip the sign extend.
+                        return NarrowNode.create(narrow.getValue(), resultBits, view);
+                    } else {
+                        assert istamp.getBits() == resultBits;
+                        // Just return the original value.
+                        return narrow.getValue();
+                    }
+                }
+            }
+        }
         return self != null ? self : new SignExtendNode(forValue, inputBits, resultBits);
     }
 

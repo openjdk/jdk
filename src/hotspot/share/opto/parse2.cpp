@@ -1649,6 +1649,18 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
   return (seems_never_taken(prob) && seems_stable_comparison());
 }
 
+void Parse::maybe_add_predicate_after_if(Block* path) {
+  if (path->is_SEL_head() && path->preds_parsed() == 0) {
+    // Add predicates at bci of if dominating the loop so traps can be
+    // recorded on the if's profile data
+    int bc_depth = repush_if_args();
+    add_predicate();
+    dec_sp(bc_depth);
+    path->set_has_predicates();
+  }
+}
+
+
 //----------------------------adjust_map_after_if------------------------------
 // Adjust the JVM state to reflect the result of taking this path.
 // Basically, it means inspecting the CmpNode controlling this
@@ -1657,8 +1669,14 @@ bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
 // as graph nodes in the current abstract interpretation map.
 void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
                                 Block* path, Block* other_path) {
-  if (stopped() || !c->is_Cmp() || btest == BoolTest::illegal)
+  if (!c->is_Cmp()) {
+    maybe_add_predicate_after_if(path);
+    return;
+  }
+
+  if (stopped() || btest == BoolTest::illegal) {
     return;                             // nothing to do
+  }
 
   bool is_fallthrough = (path == successor_for_bci(iter().next_bci()));
 
@@ -1690,10 +1708,13 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
       have_con = false;
     }
   }
-  if (!have_con)                        // remaining adjustments need a con
+  if (!have_con) {                        // remaining adjustments need a con
+    maybe_add_predicate_after_if(path);
     return;
+  }
 
   sharpen_type_after_if(btest, con, tcon, val, tval);
+  maybe_add_predicate_after_if(path);
 }
 
 

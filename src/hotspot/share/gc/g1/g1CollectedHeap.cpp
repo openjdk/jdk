@@ -1737,7 +1737,7 @@ void G1CollectedHeap::initialize_serviceability() {
 
   _memory_manager.add_pool(_eden_pool);
   _memory_manager.add_pool(_survivor_pool);
-
+  _memory_manager.add_pool(_old_pool, false /* always_affected_by_gc */);
 }
 
 void G1CollectedHeap::stop() {
@@ -1815,7 +1815,8 @@ void G1CollectedHeap::ref_processing_init() {
                            (ParallelGCThreads > 1) || (ConcGCThreads > 1), // mt discovery
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
                            false,                                          // Reference discovery is not atomic
-                           &_is_alive_closure_cm);                         // is alive closure
+                           &_is_alive_closure_cm,                          // is alive closure
+                           true);                                          // allow changes to number of processing threads
 
   // STW ref processor
   _ref_processor_stw =
@@ -1825,7 +1826,8 @@ void G1CollectedHeap::ref_processing_init() {
                            (ParallelGCThreads > 1),              // mt discovery
                            ParallelGCThreads,                    // degree of mt discovery
                            true,                                 // Reference discovery is atomic
-                           &_is_alive_closure_stw);              // is alive closure
+                           &_is_alive_closure_stw,               // is alive closure
+                           true);                                // allow changes to number of processing threads
 }
 
 CollectorPolicy* G1CollectedHeap::collector_policy() const {
@@ -2831,7 +2833,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
-    TraceMemoryManagerStats tms(&_memory_manager, gc_cause());
+    TraceMemoryManagerStats tms(&_memory_manager, gc_cause(),
+                                collector_state()->yc_type() == Mixed /* allMemoryPoolsAffected */);
 
     G1HeapTransition heap_transition(this);
     size_t heap_used_bytes_before_gc = used();
@@ -3791,25 +3794,22 @@ private:
   G1ParScanThreadStateSet*  _pss;
   RefToScanQueueSet*        _queues;
   WorkGang*                 _workers;
-  uint                      _active_workers;
 
 public:
   G1STWRefProcTaskExecutor(G1CollectedHeap* g1h,
                            G1ParScanThreadStateSet* per_thread_states,
                            WorkGang* workers,
-                           RefToScanQueueSet *task_queues,
-                           uint n_workers) :
+                           RefToScanQueueSet *task_queues) :
     _g1h(g1h),
     _pss(per_thread_states),
     _queues(task_queues),
-    _workers(workers),
-    _active_workers(n_workers)
+    _workers(workers)
   {
-    g1h->ref_processor_stw()->set_active_mt_degree(n_workers);
+    g1h->ref_processor_stw()->set_active_mt_degree(workers->active_workers());
   }
 
   // Executes the given task using concurrent marking worker threads.
-  virtual void execute(ProcessTask& task);
+  virtual void execute(ProcessTask& task, uint ergo_workers);
 };
 
 // Gang task for possibly parallel reference processing
@@ -3843,7 +3843,7 @@ public:
 
     G1STWIsAliveClosure is_alive(_g1h);
 
-    G1ParScanThreadState*          pss = _pss->state_for_worker(worker_id);
+    G1ParScanThreadState* pss = _pss->state_for_worker(worker_id);
     pss->set_ref_discoverer(NULL);
 
     // Keep alive closure.
@@ -3865,13 +3865,16 @@ public:
 // Driver routine for parallel reference processing.
 // Creates an instance of the ref processing gang
 // task and has the worker threads execute it.
-void G1STWRefProcTaskExecutor::execute(ProcessTask& proc_task) {
+void G1STWRefProcTaskExecutor::execute(ProcessTask& proc_task, uint ergo_workers) {
   assert(_workers != NULL, "Need parallel worker threads.");
 
-  ParallelTaskTerminator terminator(_active_workers, _queues);
+  assert(_workers->active_workers() >= ergo_workers,
+         "Ergonomically chosen workers (%u) should be less than or equal to active workers (%u)",
+         ergo_workers, _workers->active_workers());
+  ParallelTaskTerminator terminator(ergo_workers, _queues);
   G1STWRefProcTaskProxy proc_task_proxy(proc_task, _g1h, _pss, _queues, &terminator);
 
-  _workers->run_task(&proc_task_proxy);
+  _workers->run_task(&proc_task_proxy, ergo_workers);
 }
 
 // End of weak reference support closures
@@ -3922,7 +3925,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
            "Mismatch between the number of GC workers %u and the maximum number of Reference process queues %u",
            no_of_gc_workers,  rp->max_num_queues());
 
-    G1STWRefProcTaskExecutor par_task_executor(this, per_thread_states, workers(), _task_queues, no_of_gc_workers);
+    G1STWRefProcTaskExecutor par_task_executor(this, per_thread_states, workers(), _task_queues);
     stats = rp->process_discovered_references(&is_alive,
                                               &keep_alive,
                                               &drain_queue,

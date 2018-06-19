@@ -57,7 +57,7 @@ void ZVerifyHeapOopClosure::do_oop(narrowOop* p) {
 void ZVerifyRootOopClosure::do_oop(oop* p) {
   guarantee(!ZHeap::heap()->is_in((uintptr_t)p), "oop* " PTR_FORMAT " in heap", p2i(p));
 
-  const oop obj = RootAccess<>::oop_load(p);
+  const oop obj = NativeAccess<>::oop_load(p);
   z_verify_loaded_object(p, obj);
 }
 

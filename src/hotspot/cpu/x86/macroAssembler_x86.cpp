@@ -5266,7 +5266,7 @@ void MacroAssembler::resolve_jobject(Register value,
   testptr(value, JNIHandles::weak_tag_mask); // Test for jweak tag.
   jcc(Assembler::zero, not_weak);
   // Resolve jweak.
-  access_load_at(T_OBJECT, IN_ROOT | ON_PHANTOM_OOP_REF,
+  access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
                  value, Address(value, -JNIHandles::weak_tag_value), tmp, thread);
   verify_oop(value);
   jmp(done);

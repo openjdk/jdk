@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id$
@@ -54,6 +54,7 @@ public class DOMSubTreeData implements NodeSetData<Node> {
         this.excludeComments = excludeComments;
     }
 
+    @Override
     public Iterator<Node> iterator() {
         return new DelayedNodeIterator(root, excludeComments);
     }
@@ -81,6 +82,7 @@ public class DOMSubTreeData implements NodeSetData<Node> {
             this.withComments = !excludeComments;
         }
 
+        @Override
         public boolean hasNext() {
             if (nodeSet == null) {
                 nodeSet = dereferenceSameDocumentURI(root);
@@ -89,6 +91,7 @@ public class DOMSubTreeData implements NodeSetData<Node> {
             return li.hasNext();
         }
 
+        @Override
         public Node next() {
             if (nodeSet == null) {
                 nodeSet = dereferenceSameDocumentURI(root);
@@ -101,6 +104,7 @@ public class DOMSubTreeData implements NodeSetData<Node> {
             }
         }
 
+        @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
@@ -109,15 +113,15 @@ public class DOMSubTreeData implements NodeSetData<Node> {
          * Dereferences a same-document URI fragment.
          *
          * @param node the node (document or element) referenced by the
-         *        URI fragment. If null, returns an empty set.
+         *     URI fragment. If null, returns an empty set.
          * @return a set of nodes (minus any comment nodes)
          */
         private List<Node> dereferenceSameDocumentURI(Node node) {
-            List<Node> nodeSet = new ArrayList<Node>();
+            List<Node> nodes = new ArrayList<>();
             if (node != null) {
-                nodeSetMinusCommentNodes(node, nodeSet, null);
+                nodeSetMinusCommentNodes(node, nodes, null);
             }
-            return nodeSet;
+            return nodes;
         }
 
         /**

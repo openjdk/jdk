@@ -601,10 +601,10 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
 
   bool mismatched = (decorators & C2_MISMATCHED) != 0;
   bool unknown = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool on_heap = (decorators & IN_HEAP) != 0;
+  bool in_heap = (decorators & IN_HEAP) != 0;
   bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
   bool is_unordered = (decorators & MO_UNORDERED) != 0;
-  bool need_cpu_mem_bar = !is_unordered || mismatched || !on_heap;
+  bool need_cpu_mem_bar = !is_unordered || mismatched || !in_heap;
 
   Node* offset = adr->is_AddP() ? adr->in(AddPNode::Offset) : kit->top();
   Node* load = CardTableBarrierSetC2::load_at_resolved(access, val_type);
@@ -615,7 +615,7 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   // SATB log buffer using the pre-barrier mechanism.
   // Also we need to add memory barrier to prevent commoning reads
   // from this field across safepoint since GC can change its value.
-  bool need_read_barrier = on_heap && (on_weak ||
+  bool need_read_barrier = in_heap && (on_weak ||
                                        (unknown && offset != kit->top() && obj != kit->top()));
 
   if (!access.is_oop() || !need_read_barrier) {

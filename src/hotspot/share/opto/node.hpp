@@ -73,6 +73,7 @@ class EncodePKlassNode;
 class FastLockNode;
 class FastUnlockNode;
 class IfNode;
+class IfProjNode;
 class IfFalseNode;
 class IfTrueNode;
 class InitializeNode;
@@ -676,8 +677,9 @@ public:
     DEFINE_CLASS_ID(Proj,  Node, 3)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
       DEFINE_CLASS_ID(JumpProj,  Proj, 1)
-      DEFINE_CLASS_ID(IfTrue,    Proj, 2)
-      DEFINE_CLASS_ID(IfFalse,   Proj, 3)
+      DEFINE_CLASS_ID(IfProj,    Proj, 2)
+        DEFINE_CLASS_ID(IfTrue,    IfProj, 0)
+        DEFINE_CLASS_ID(IfFalse,   IfProj, 1)
       DEFINE_CLASS_ID(Parm,      Proj, 4)
       DEFINE_CLASS_ID(MachProj,  Proj, 5)
 
@@ -818,6 +820,7 @@ public:
   DEFINE_CLASS_QUERY(FastUnlock)
   DEFINE_CLASS_QUERY(If)
   DEFINE_CLASS_QUERY(RangeCheck)
+  DEFINE_CLASS_QUERY(IfProj)
   DEFINE_CLASS_QUERY(IfFalse)
   DEFINE_CLASS_QUERY(IfTrue)
   DEFINE_CLASS_QUERY(Initialize)

@@ -131,15 +131,31 @@ oop TypeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
 void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS) {
   assert(s->is_typeArray(), "must be type array");
 
-  // Check destination
-  if (!d->is_typeArray() || element_type() != TypeArrayKlass::cast(d->klass())->element_type()) {
-    THROW(vmSymbols::java_lang_ArrayStoreException());
+  // Check destination type.
+  if (!d->is_typeArray()) {
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    if (d->is_objArray()) {
+      ss.print("arraycopy: type mismatch: can not copy %s[] into object array[]",
+               type2name_tab[ArrayKlass::cast(s->klass())->element_type()]);
+    } else {
+      ss.print("arraycopy: destination type %s is not an array", d->klass()->external_name());
+    }
+    THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
+  }
+  if (element_type() != TypeArrayKlass::cast(d->klass())->element_type()) {
+    ResourceMark rm(THREAD);
+    stringStream ss;
+    ss.print("arraycopy: type mismatch: can not copy %s[] into %s[]",
+             type2name_tab[ArrayKlass::cast(s->klass())->element_type()],
+             type2name_tab[ArrayKlass::cast(d->klass())->element_type()]);
+    THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
   }
 
-  // Check is all offsets and lengths are non negative
+  // Check if all offsets and lengths are non negative.
   if (src_pos < 0 || dst_pos < 0 || length < 0) {
     // Pass specific exception reason.
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     stringStream ss;
     if (src_pos < 0) {
       ss.print("arraycopy: source index %d out of bounds for %s[%d]",
@@ -156,7 +172,7 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
   if ((((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length()) ||
       (((unsigned int) length + (unsigned int) dst_pos) > (unsigned int) d->length())) {
     // Pass specific exception reason.
-    ResourceMark rm;
+    ResourceMark rm(THREAD);
     stringStream ss;
     if (((unsigned int) length + (unsigned int) src_pos) > (unsigned int) s->length()) {
       ss.print("arraycopy: last source index %u out of bounds for %s[%d]",

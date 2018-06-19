@@ -50,10 +50,11 @@ public:
   void execute(STWGCTimer* timer, G1FullGCTracer* tracer);
 
   // Executes the given task using concurrent marking worker threads.
-  virtual void execute(ProcessTask& task);
+  virtual void execute(ProcessTask& task, uint ergo_workers);
 
 private:
   void run_task(AbstractGangTask* task);
+  void run_task(AbstractGangTask* task, uint workers);
 
   class G1RefProcTaskProxy : public AbstractGangTask {
     typedef AbstractRefProcTaskExecutor::ProcessTask ProcessTask;

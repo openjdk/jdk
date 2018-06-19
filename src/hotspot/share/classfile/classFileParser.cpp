@@ -955,7 +955,9 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
 
       if (!interf->is_interface()) {
         THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
-                   "Implementing class");
+                  err_msg("Class %s can not implement %s, because it is not an interface",
+                          _class_name->as_klass_external_name(),
+                          interf->class_loader_and_module_name()));
       }
 
       if (InstanceKlass::cast(interf)->has_nonstatic_concrete_methods()) {
@@ -4509,7 +4511,7 @@ static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
           vmSymbols::java_lang_IllegalAccessError(),
           "class %s loaded by %s cannot access jdk/internal/reflect superclass %s",
           this_klass->external_name(),
-          this_klass->class_loader_data()->loader_name(),
+          this_klass->class_loader_data()->loader_name_and_id(),
           super->external_name());
         return;
       }

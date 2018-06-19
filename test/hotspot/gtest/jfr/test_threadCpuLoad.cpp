@@ -32,42 +32,15 @@
 // with the ones that should pick up the mocks removed. Those should be included
 // later after the mocks have been defined.
 
-#include "jvm.h"
-#include "classfile/classLoaderStats.hpp"
-#include "classfile/javaClasses.hpp"
-#include "code/codeCache.hpp"
-#include "compiler/compileBroker.hpp"
-#include "gc/g1/g1HeapRegionEventSender.hpp"
-#include "gc/shared/gcConfiguration.hpp"
-#include "gc/shared/gcTrace.hpp"
-#include "gc/shared/objectCountEventSender.hpp"
-#include "gc/shared/vmGCOperations.hpp"
-#include "jfr/jfrEvents.hpp"
-#include "jfr/periodic/jfrModuleEvent.hpp"
-#include "jfr/periodic/jfrOSInterface.hpp"
-#include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
-#include "jfr/periodic/jfrThreadDumpEvent.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
-#include "jfr/support/jfrThreadId.hpp"
-#include "jfr/utilities/jfrTime.hpp"
 #include "logging/log.hpp"
-#include "memory/heapInspection.hpp"
-#include "memory/resourceArea.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/arguments.hpp"
-#include "runtime/flags/jvmFlag.hpp"
-#include "runtime/globals.hpp"
-#include "runtime/os.hpp"
-#include "runtime/os_perf.hpp"
-#include "runtime/thread.inline.hpp"
-#include "runtime/threadSMR.hpp"
-#include "runtime/sweeper.hpp"
-#include "runtime/vmThread.hpp"
-#include "services/classLoadingService.hpp"
-#include "services/management.hpp"
-#include "services/threadService.hpp"
-#include "utilities/exceptions.hpp"
+#include "jfr/jfrEvents.hpp"
+#include "jfr/support/jfrThreadId.hpp"
+#include "jfr/support/jfrThreadLocal.hpp"
+#include "jfr/utilities/jfrTime.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.inline.hpp"
+#include "runtime/threadSMR.inline.hpp"
 
 #include "unittest.hpp"
 
@@ -103,6 +76,18 @@ namespace {
   jlong MockOs::user_cpu_time;
   jlong MockOs::system_cpu_time;
 
+  class MockJavaThread : public ::JavaThread {
+  public:
+    MockJavaThread() : ::JavaThread() {}
+  };
+
+  class MockJavaThreadIteratorWithHandle
+  {
+  public:
+    MockJavaThread* next() { return NULL; }
+    int length() { return 0; }
+  };
+
 // Reincluding source files in the anonymous namespace unfortunately seems to
 // behave strangely with precompiled headers (only when using gcc though)
 #ifndef DONT_USE_PRECOMPILED_HEADER
@@ -111,23 +96,27 @@ namespace {
 
 #define os MockOs
 #define EventThreadCPULoad MockEventThreadCPULoad
+#define JavaThread MockJavaThread
+#define JavaThreadIteratorWithHandle MockJavaThreadIteratorWithHandle
 
-#include "jfrfiles/jfrPeriodic.hpp"
-#include "jfr/periodic/jfrPeriodic.cpp"
+#include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
+#include "jfr/periodic/jfrThreadCPULoadEvent.cpp"
 
 #undef os
 #undef EventThreadCPULoad
+#undef JavaThread
+#undef JavaThreadIteratorWithHandle
 
 } // anonymous namespace
 
 class JfrTestThreadCPULoadSingle : public ::testing::Test {
 protected:
-  JavaThread* thread;
+  MockJavaThread* thread;
   JfrThreadLocal* thread_data;
   MockEventThreadCPULoad event;
 
   void SetUp() {
-    thread = new JavaThread();
+    thread = new MockJavaThread();
     thread_data = thread->jfr_thread_local();
     thread_data->set_wallclock_time(0);
     thread_data->set_user_time(0);
@@ -137,9 +126,15 @@ protected:
   void TearDown() {
     delete thread;
   }
+
+  // Fix for gcc compilation warning about unused functions
+  bool TouchUnused() {
+    return (&JfrThreadCPULoadEvent::send_events &&
+            &JfrThreadCPULoadEvent::send_event_for_thread);
+  }
 };
 
-TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_SingleCpu) {
+TEST_VM_F(JfrTestThreadCPULoadSingle, SingleCpu) {
   MockOs::user_cpu_time = 100 * NANOSECS_PER_MILLISEC;
   MockOs::system_cpu_time = 100 * NANOSECS_PER_MILLISEC;
   EXPECT_TRUE(JfrThreadCPULoadEvent::update_event(event, thread, 400 * NANOSECS_PER_MILLISEC, 1));
@@ -147,7 +142,7 @@ TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_SingleCpu) {
   EXPECT_FLOAT_EQ(0.25, event.system);
 }
 
-TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_MultipleCpus) {
+TEST_VM_F(JfrTestThreadCPULoadSingle, MultipleCpus) {
   MockOs::user_cpu_time = 100 * NANOSECS_PER_MILLISEC;
   MockOs::system_cpu_time = 100 * NANOSECS_PER_MILLISEC;
   EXPECT_TRUE(JfrThreadCPULoadEvent::update_event(event, thread, 400 * NANOSECS_PER_MILLISEC, 2));
@@ -155,13 +150,13 @@ TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_MultipleCpus) {
   EXPECT_FLOAT_EQ(0.125, event.system);
 }
 
-TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_BelowThreshold) {
+TEST_VM_F(JfrTestThreadCPULoadSingle, BelowThreshold) {
   MockOs::user_cpu_time = 100;
   MockOs::system_cpu_time = 100;
   EXPECT_FALSE(JfrThreadCPULoadEvent::update_event(event, thread, 400 * NANOSECS_PER_MILLISEC, 2));
 }
 
-TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_UserAboveMaximum) {
+TEST_VM_F(JfrTestThreadCPULoadSingle, UserAboveMaximum) {
 
   // First call will not report above 100%
   MockOs::user_cpu_time = 200 * NANOSECS_PER_MILLISEC;
@@ -176,7 +171,7 @@ TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_UserAboveMaximum) {
   EXPECT_FLOAT_EQ(0, event.system);
 }
 
-TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_SystemAboveMaximum) {
+TEST_VM_F(JfrTestThreadCPULoadSingle, SystemAboveMaximum) {
 
   // First call will not report above 100%
   MockOs::user_cpu_time = 100 * NANOSECS_PER_MILLISEC;
@@ -191,7 +186,7 @@ TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_SystemAboveMaximum) {
   EXPECT_FLOAT_EQ(0.25, event.system);
 }
 
-TEST_VM_F(JfrTestThreadCPULoadSingle, DISABLED_SystemTimeDecreasing) {
+TEST_VM_F(JfrTestThreadCPULoadSingle, SystemTimeDecreasing) {
 
   // As seen in an actual run - caused by different resolution for total and user time
   // Total time    User time    (Calculated system time)

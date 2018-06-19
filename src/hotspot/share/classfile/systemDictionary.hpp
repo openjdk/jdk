@@ -570,10 +570,6 @@ public:
                                                      Handle *method_type_result,
                                                      TRAPS);
 
-  // Utility for printing loader "name" as part of tracing constraints
-  static const char* loader_name(const oop loader);
-  static const char* loader_name(const ClassLoaderData* loader_data);
-
   // Record the error when the first attempt to resolve a reference from a constant
   // pool entry to a class fails.
   static void add_resolution_error(const constantPoolHandle& pool, int which, Symbol* error,

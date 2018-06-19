@@ -35,9 +35,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- * Provides content model support for the <code>dsig11:DEREncodedKeyvalue</code> element.
+ * Provides content model support for the {@code dsig11:DEREncodedKeyvalue} element.
  *
- * @author Brent Putman (putmanb@georgetown.edu)
  */
 public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyInfoContent {
 
@@ -48,11 +47,11 @@ public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyIn
      * Constructor DEREncodedKeyValue
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public DEREncodedKeyValue(Element element, String BaseURI) throws XMLSecurityException {
-        super(element, BaseURI);
+    public DEREncodedKeyValue(Element element, String baseURI) throws XMLSecurityException {
+        super(element, baseURI);
     }
 
     /**
@@ -72,7 +71,7 @@ public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyIn
      * Constructor DEREncodedKeyValue
      *
      * @param doc
-     * @param base64EncodedKey
+     * @param encodedKey
      */
     public DEREncodedKeyValue(Document doc, byte[] encodedKey) {
         super(doc);
@@ -81,29 +80,24 @@ public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyIn
     }
 
     /**
-     * Sets the <code>Id</code> attribute
+     * Sets the {@code Id} attribute
      *
-     * @param Id ID
+     * @param id ID
      */
     public void setId(String id) {
-        if (id != null) {
-            this.constructionElement.setAttributeNS(null, Constants._ATT_ID, id);
-            this.constructionElement.setIdAttributeNS(null, Constants._ATT_ID, true);
-        } else {
-            this.constructionElement.removeAttributeNS(null, Constants._ATT_ID);
-        }
+        setLocalIdAttribute(Constants._ATT_ID, id);
     }
 
     /**
-     * Returns the <code>Id</code> attribute
+     * Returns the {@code Id} attribute
      *
-     * @return the <code>Id</code> attribute
+     * @return the {@code Id} attribute
      */
     public String getId() {
-        return this.constructionElement.getAttributeNS(null, Constants._ATT_ID);
+        return getLocalAttribute(Constants._ATT_ID);
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_DERENCODEDKEYVALUE;
     }
@@ -126,9 +120,9 @@ public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyIn
                 if (publicKey != null) {
                     return publicKey;
                 }
-            } catch (NoSuchAlgorithmException e) {
+            } catch (NoSuchAlgorithmException e) { //NOPMD
                 // Do nothing, try the next type
-            } catch (InvalidKeySpecException e) {
+            } catch (InvalidKeySpecException e) { //NOPMD
                 // Do nothing, try the next type
             }
         }
@@ -148,10 +142,10 @@ public class DEREncodedKeyValue extends Signature11ElementProxy implements KeyIn
             return keySpec.getEncoded();
         } catch (NoSuchAlgorithmException e) {
             Object exArgs[] = { publicKey.getAlgorithm(), publicKey.getFormat(), publicKey.getClass().getName() };
-            throw new XMLSecurityException("DEREncodedKeyValue.UnsupportedPublicKey", exArgs, e);
+            throw new XMLSecurityException(e, "DEREncodedKeyValue.UnsupportedPublicKey", exArgs);
         } catch (InvalidKeySpecException e) {
             Object exArgs[] = { publicKey.getAlgorithm(), publicKey.getFormat(), publicKey.getClass().getName() };
-            throw new XMLSecurityException("DEREncodedKeyValue.UnsupportedPublicKey", exArgs, e);
+            throw new XMLSecurityException(e, "DEREncodedKeyValue.UnsupportedPublicKey", exArgs);
         }
     }
 

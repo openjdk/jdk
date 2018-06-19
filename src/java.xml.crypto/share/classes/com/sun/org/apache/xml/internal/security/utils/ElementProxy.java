@@ -24,9 +24,9 @@ package com.sun.org.apache.xml.internal.security.utils;
 
 import java.math.BigInteger;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Base64;
 import java.util.Map;
 
-import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
@@ -41,17 +41,19 @@ import org.w3c.dom.Text;
  */
 public abstract class ElementProxy {
 
-    protected static final java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(ElementProxy.class.getName());
+    protected static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(ElementProxy.class);
 
-    /** Field constructionElement */
-    protected Element constructionElement = null;
+    /**
+     * What XML element does this ElementProxy instance wrap?
+     */
+    private Element wrappedElement;
 
     /** Field baseURI */
-    protected String baseURI = null;
+    protected String baseURI;
 
     /** Field doc */
-    protected Document doc = null;
+    private Document wrappedDoc;
 
     /** Field prefixMappings */
     private static Map<String, String> prefixMappings = new ConcurrentHashMap<String, String>();
@@ -73,30 +75,26 @@ public abstract class ElementProxy {
             throw new RuntimeException("Document is null");
         }
 
-        this.doc = doc;
-        this.constructionElement =
-            createElementForFamilyLocal(this.doc, this.getBaseNamespace(), this.getBaseLocalName());
+        this.wrappedDoc = doc;
+        this.wrappedElement = createElementForFamilyLocal(this.getBaseNamespace(), this.getBaseLocalName());
     }
 
     /**
      * Constructor ElementProxy
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public ElementProxy(Element element, String BaseURI) throws XMLSecurityException {
+    public ElementProxy(Element element, String baseURI) throws XMLSecurityException {
         if (element == null) {
             throw new XMLSecurityException("ElementProxy.nullElement");
         }
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "setElement(\"" + element.getTagName() + "\", \"" + BaseURI + "\")");
-        }
+        LOG.debug("setElement(\"{}\", \"{}\")", element.getTagName(), baseURI);
 
-        this.doc = element.getOwnerDocument();
-        this.constructionElement = element;
-        this.baseURI = BaseURI;
+        setElement(element);
+        this.baseURI = baseURI;
 
         this.guaranteeThatElementInCorrectSpace();
     }
@@ -117,15 +115,16 @@ public abstract class ElementProxy {
 
 
     protected Element createElementForFamilyLocal(
-        Document doc, String namespace, String localName
+        String namespace, String localName
     ) {
+        Document doc = getDocument();
         Element result = null;
         if (namespace == null) {
             result = doc.createElementNS(null, localName);
         } else {
             String baseName = this.getBaseNamespace();
             String prefix = ElementProxy.getDefaultPrefix(baseName);
-            if ((prefix == null) || (prefix.length() == 0)) {
+            if (prefix == null || prefix.length() == 0) {
                 result = doc.createElementNS(namespace, localName);
                 result.setAttributeNS(Constants.NamespaceSpecNS, "xmlns", namespace);
             } else {
@@ -141,7 +140,7 @@ public abstract class ElementProxy {
      * This method creates an Element in a given namespace with a given localname.
      * It uses the {@link ElementProxy#getDefaultPrefix} method to decide whether
      * a particular prefix is bound to that namespace.
-     * <BR />
+     * <p></p>
      * This method was refactored out of the constructor.
      *
      * @param doc
@@ -156,7 +155,7 @@ public abstract class ElementProxy {
         if (namespace == null) {
             result = doc.createElementNS(null, localName);
         } else {
-            if ((prefix == null) || (prefix.length() == 0)) {
+            if (prefix == null || prefix.length() == 0) {
                 result = doc.createElementNS(namespace, localName);
                 result.setAttributeNS(Constants.NamespaceSpecNS, "xmlns", namespace);
             } else {
@@ -172,23 +171,19 @@ public abstract class ElementProxy {
      * Method setElement
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public void setElement(Element element, String BaseURI) throws XMLSecurityException {
+    public void setElement(Element element, String baseURI) throws XMLSecurityException {
         if (element == null) {
             throw new XMLSecurityException("ElementProxy.nullElement");
         }
 
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "setElement(" + element.getTagName() + ", \"" + BaseURI + "\"");
-        }
+        LOG.debug("setElement({}, \"{}\")", element.getTagName(), baseURI);
 
-        this.doc = element.getOwnerDocument();
-        this.constructionElement = element;
-        this.baseURI = BaseURI;
+        setElement(element);
+        this.baseURI = baseURI;
     }
-
 
     /**
      * Returns the Element which was constructed by the Object.
@@ -196,7 +191,7 @@ public abstract class ElementProxy {
      * @return the Element which was constructed by the Object.
      */
     public final Element getElement() {
-        return this.constructionElement;
+        return this.wrappedElement;
     }
 
     /**
@@ -208,11 +203,15 @@ public abstract class ElementProxy {
 
         HelperNodeList nl = new HelperNodeList();
 
-        nl.appendChild(this.doc.createTextNode("\n"));
-        nl.appendChild(this.getElement());
-        nl.appendChild(this.doc.createTextNode("\n"));
+        nl.appendChild(createText("\n"));
+        nl.appendChild(getElement());
+        nl.appendChild(createText("\n"));
 
         return nl;
+    }
+
+    protected Text createText(String text) {
+        return this.wrappedDoc.createTextNode(text);
     }
 
     /**
@@ -221,7 +220,10 @@ public abstract class ElementProxy {
      * @return the Document where this element is contained.
      */
     public Document getDocument() {
-        return this.doc;
+        if (wrappedDoc == null) {
+            wrappedDoc = XMLUtils.getOwnerDocument(wrappedElement);
+        }
+        return wrappedDoc;
     }
 
     /**
@@ -243,8 +245,8 @@ public abstract class ElementProxy {
         String expectedLocalName = this.getBaseLocalName();
         String expectedNamespaceUri = this.getBaseNamespace();
 
-        String actualLocalName = this.constructionElement.getLocalName();
-        String actualNamespaceUri = this.constructionElement.getNamespaceURI();
+        String actualLocalName = getElement().getLocalName();
+        String actualNamespaceUri = getElement().getNamespaceURI();
 
         if(!expectedNamespaceUri.equals(actualNamespaceUri)
             && !expectedLocalName.equals(actualLocalName)) {
@@ -262,12 +264,23 @@ public abstract class ElementProxy {
      */
     public void addBigIntegerElement(BigInteger bi, String localname) {
         if (bi != null) {
-            Element e = XMLUtils.createElementInSignatureSpace(this.doc, localname);
+            Element e = XMLUtils.createElementInSignatureSpace(getDocument(), localname);
 
-            Base64.fillElementWithBigInteger(e, bi);
-            this.constructionElement.appendChild(e);
-            XMLUtils.addReturnToElement(this.constructionElement);
+            byte[] bytes = XMLUtils.getBytes(bi, bi.bitLength());
+            String encodedInt = Base64.getMimeEncoder().encodeToString(bytes);
+
+            Document doc = e.getOwnerDocument();
+            Text text = doc.createTextNode(encodedInt);
+
+            e.appendChild(text);
+
+            appendSelf(e);
+            addReturnToSelf();
         }
+    }
+
+    protected void addReturnToSelf() {
+        XMLUtils.addReturnToElement(getElement());
     }
 
     /**
@@ -278,11 +291,14 @@ public abstract class ElementProxy {
      */
     public void addBase64Element(byte[] bytes, String localname) {
         if (bytes != null) {
-            Element e = Base64.encodeToElement(this.doc, localname, bytes);
+            Element el = XMLUtils.createElementInSignatureSpace(getDocument(), localname);
+            Text text = getDocument().createTextNode(Base64.getMimeEncoder().encodeToString(bytes));
 
-            this.constructionElement.appendChild(e);
+            el.appendChild(text);
+
+            appendSelf(el);
             if (!XMLUtils.ignoreLineBreaks()) {
-                this.constructionElement.appendChild(this.doc.createTextNode("\n"));
+                appendSelf(createText("\n"));
             }
         }
     }
@@ -294,12 +310,12 @@ public abstract class ElementProxy {
      * @param localname
      */
     public void addTextElement(String text, String localname) {
-        Element e = XMLUtils.createElementInSignatureSpace(this.doc, localname);
-        Text t = this.doc.createTextNode(text);
+        Element e = XMLUtils.createElementInSignatureSpace(getDocument(), localname);
+        Text t = createText(text);
 
-        e.appendChild(t);
-        this.constructionElement.appendChild(e);
-        XMLUtils.addReturnToElement(this.constructionElement);
+        appendOther(e, t);
+        appendSelf(e);
+        addReturnToSelf();
     }
 
     /**
@@ -310,10 +326,22 @@ public abstract class ElementProxy {
     public void addBase64Text(byte[] bytes) {
         if (bytes != null) {
             Text t = XMLUtils.ignoreLineBreaks()
-                ? this.doc.createTextNode(Base64.encode(bytes))
-                : this.doc.createTextNode("\n" + Base64.encode(bytes) + "\n");
-            this.constructionElement.appendChild(t);
+                ? createText(Base64.getMimeEncoder().encodeToString(bytes))
+                : createText("\n" + Base64.getMimeEncoder().encodeToString(bytes) + "\n");
+            appendSelf(t);
         }
+    }
+
+    protected void appendSelf(ElementProxy toAppend) {
+        getElement().appendChild(toAppend.getElement());
+    }
+
+    protected void appendSelf(Node toAppend) {
+        getElement().appendChild(toAppend);
+    }
+
+    protected void appendOther(Element parent, Node toAppend) {
+        parent.appendChild(toAppend);
     }
 
     /**
@@ -323,9 +351,9 @@ public abstract class ElementProxy {
      */
     public void addText(String text) {
         if (text != null) {
-            Text t = this.doc.createTextNode(text);
+            Text t = createText(text);
 
-            this.constructionElement.appendChild(t);
+            appendSelf(t);
         }
     }
 
@@ -335,35 +363,15 @@ public abstract class ElementProxy {
      * @param localname
      * @param namespace
      * @return The biginteger contained in the given element
-     * @throws Base64DecodingException
      */
     public BigInteger getBigIntegerFromChildElement(
         String localname, String namespace
-    ) throws Base64DecodingException {
-        return Base64.decodeBigIntegerFromText(
+    ) {
+        return new BigInteger(1, Base64.getMimeDecoder().decode(
             XMLUtils.selectNodeText(
-                this.constructionElement.getFirstChild(), namespace, localname, 0
-            )
-        );
-    }
-
-    /**
-     * Method getBytesFromChildElement
-     * @deprecated
-     * @param localname
-     * @param namespace
-     * @return the bytes
-     * @throws XMLSecurityException
-     */
-    @Deprecated
-    public byte[] getBytesFromChildElement(String localname, String namespace)
-        throws XMLSecurityException {
-        Element e =
-            XMLUtils.selectNode(
-                this.constructionElement.getFirstChild(), namespace, localname, 0
-            );
-
-        return Base64.decode(e);
+                getFirstChild(), namespace, localname, 0
+            ).getNodeValue()
+        ));
     }
 
     /**
@@ -375,7 +383,7 @@ public abstract class ElementProxy {
      */
     public String getTextFromChildElement(String localname, String namespace) {
         return XMLUtils.selectNode(
-                this.constructionElement.getFirstChild(),
+                getFirstChild(),
                 namespace,
                 localname,
                 0).getTextContent();
@@ -388,7 +396,7 @@ public abstract class ElementProxy {
      * @throws XMLSecurityException
      */
     public byte[] getBytesFromTextChild() throws XMLSecurityException {
-        return Base64.decode(XMLUtils.getFullTextChildrenFromElement(this.constructionElement));
+        return Base64.getMimeDecoder().decode(getTextFromTextChild());
     }
 
     /**
@@ -398,7 +406,7 @@ public abstract class ElementProxy {
      *    element
      */
     public String getTextFromTextChild() {
-        return XMLUtils.getFullTextChildrenFromElement(this.constructionElement);
+        return XMLUtils.getFullTextChildrenFromElement(getElement());
     }
 
     /**
@@ -410,7 +418,7 @@ public abstract class ElementProxy {
      */
     public int length(String namespace, String localname) {
         int number = 0;
-        Node sibling = this.constructionElement.getFirstChild();
+        Node sibling = getFirstChild();
         while (sibling != null) {
             if (localname.equals(sibling.getLocalName())
                 && namespace.equals(sibling.getNamespaceURI())) {
@@ -438,9 +446,9 @@ public abstract class ElementProxy {
         throws XMLSecurityException {
         String ns;
 
-        if ((prefix == null) || (prefix.length() == 0)) {
+        if (prefix == null || prefix.length() == 0) {
             throw new XMLSecurityException("defaultNamespaceCannotBeSetHere");
-        } else if (prefix.equals("xmlns")) {
+        } else if ("xmlns".equals(prefix)) {
             throw new XMLSecurityException("defaultNamespaceCannotBeSetHere");
         } else if (prefix.startsWith("xmlns:")) {
             ns = prefix;//"xmlns:" + prefix.substring("xmlns:".length());
@@ -448,18 +456,18 @@ public abstract class ElementProxy {
             ns = "xmlns:" + prefix;
         }
 
-        Attr a = this.constructionElement.getAttributeNodeNS(Constants.NamespaceSpecNS, ns);
+        Attr a = getElement().getAttributeNodeNS(Constants.NamespaceSpecNS, ns);
 
         if (a != null) {
             if (!a.getNodeValue().equals(uri)) {
-                Object exArgs[] = { ns, this.constructionElement.getAttributeNS(null, ns) };
+                Object exArgs[] = { ns, getElement().getAttributeNS(null, ns) };
 
                 throw new XMLSecurityException("namespacePrefixAlreadyUsedByOtherURI", exArgs);
             }
             return;
         }
 
-        this.constructionElement.setAttributeNS(Constants.NamespaceSpecNS, ns, uri);
+        getElement().setAttributeNS(Constants.NamespaceSpecNS, ns, uri);
     }
 
     /**
@@ -474,6 +482,11 @@ public abstract class ElementProxy {
     public static void setDefaultPrefix(String namespace, String prefix)
         throws XMLSecurityException {
         JavaUtils.checkRegisterPermission();
+        setNamespacePrefix(namespace, prefix);
+    }
+
+    private static void setNamespacePrefix(String namespace, String prefix)
+        throws XMLSecurityException {
         if (prefixMappings.containsValue(prefix)) {
             String storedPrefix = prefixMappings.get(namespace);
             if (!storedPrefix.equals(prefix)) {
@@ -496,14 +509,14 @@ public abstract class ElementProxy {
      * This method registers the default prefixes.
      */
     public static void registerDefaultPrefixes() throws XMLSecurityException {
-        setDefaultPrefix("http://www.w3.org/2000/09/xmldsig#", "ds");
-        setDefaultPrefix("http://www.w3.org/2001/04/xmlenc#", "xenc");
-        setDefaultPrefix("http://www.w3.org/2009/xmlenc11#", "xenc11");
-        setDefaultPrefix("http://www.xmlsecurity.org/experimental#", "experimental");
-        setDefaultPrefix("http://www.w3.org/2002/04/xmldsig-filter2", "dsig-xpath-old");
-        setDefaultPrefix("http://www.w3.org/2002/06/xmldsig-filter2", "dsig-xpath");
-        setDefaultPrefix("http://www.w3.org/2001/10/xml-exc-c14n#", "ec");
-        setDefaultPrefix(
+        setNamespacePrefix("http://www.w3.org/2000/09/xmldsig#", "ds");
+        setNamespacePrefix("http://www.w3.org/2001/04/xmlenc#", "xenc");
+        setNamespacePrefix("http://www.w3.org/2009/xmlenc11#", "xenc11");
+        setNamespacePrefix("http://www.xmlsecurity.org/experimental#", "experimental");
+        setNamespacePrefix("http://www.w3.org/2002/04/xmldsig-filter2", "dsig-xpath-old");
+        setNamespacePrefix("http://www.w3.org/2002/06/xmldsig-filter2", "dsig-xpath");
+        setNamespacePrefix("http://www.w3.org/2001/10/xml-exc-c14n#", "ec");
+        setNamespacePrefix(
             "http://www.nue.et-inf.uni-siegen.de/~geuer-pollmann/#xpathFilter", "xx"
         );
     }
@@ -516,6 +529,53 @@ public abstract class ElementProxy {
      */
     public static String getDefaultPrefix(String namespace) {
         return prefixMappings.get(namespace);
+    }
+
+    /**
+     * New value for the wrapped XML element that this object is a proxy for.
+     *
+     * @param elem  New element
+     *
+     * @see #getElement()
+     */
+    protected void setElement(Element elem) {
+        wrappedElement = elem;
+    }
+
+    /**
+     * Set a new value for the wrapped document that this object is a proxy for.
+     *
+     * @param doc New document object being wrapped.
+     *
+     * @see #getDocument()
+     */
+    protected void setDocument(Document doc) {
+        wrappedDoc = doc;
+    }
+
+    protected String getLocalAttribute(String attrName) {
+        return getElement().getAttributeNS(null, attrName);
+    }
+
+    protected void setLocalAttribute(String attrName, String value) {
+        getElement().setAttributeNS(null, attrName, value);
+    }
+
+    protected void setLocalIdAttribute(String attrName, String value) {
+
+        if (value != null) {
+            Attr attr = getDocument().createAttributeNS(null, attrName);
+            attr.setValue(value);
+            getElement().setAttributeNodeNS(attr);
+            getElement().setIdAttributeNode(attr, true);
+        }
+        else {
+            getElement().removeAttributeNS(null, attrName);
+        }
+    }
+
+    protected Node getFirstChild() {
+        return getElement().getFirstChild();
     }
 
 }

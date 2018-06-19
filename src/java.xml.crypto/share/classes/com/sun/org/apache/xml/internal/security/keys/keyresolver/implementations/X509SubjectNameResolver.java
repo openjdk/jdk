@@ -39,16 +39,15 @@ import org.w3c.dom.Element;
 
 public class X509SubjectNameResolver extends KeyResolverSpi {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(X509SubjectNameResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(X509SubjectNameResolver.class);
 
 
     /**
      * Method engineResolvePublicKey
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @param storage
      * @return null if no {@link PublicKey} could be obtained
      * @throws KeyResolverException
@@ -69,7 +68,7 @@ public class X509SubjectNameResolver extends KeyResolverSpi {
 
     /**
      * Method engineResolveX509Certificate
-     * @inheritDoc
+     * {@inheritDoc}
      * @param element
      * @param baseURI
      * @param storage
@@ -79,26 +78,19 @@ public class X509SubjectNameResolver extends KeyResolverSpi {
     public X509Certificate engineLookupResolveX509Certificate(
         Element element, String baseURI, StorageResolver storage
     ) throws KeyResolverException {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName() + "?");
-        }
+        LOG.debug("Can I resolve {}?", element.getTagName());
         Element[] x509childNodes = null;
         XMLX509SubjectName x509childObject[] = null;
 
         if (!XMLUtils.elementIsInSignatureSpace(element, Constants._TAG_X509DATA)) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "I can't");
-            }
+            LOG.debug("I can't");
             return null;
         }
         x509childNodes =
             XMLUtils.selectDsNodes(element.getFirstChild(), Constants._TAG_X509SUBJECTNAME);
 
-        if (!((x509childNodes != null)
-            && (x509childNodes.length > 0))) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "I can't");
-            }
+        if (!(x509childNodes != null && x509childNodes.length > 0)) {
+            LOG.debug("I can't");
             return null;
         }
 
@@ -108,9 +100,7 @@ public class X509SubjectNameResolver extends KeyResolverSpi {
                 KeyResolverException ex =
                     new KeyResolverException("KeyResolver.needStorageResolver", exArgs);
 
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, "", ex);
-                }
+                LOG.debug("", ex);
 
                 throw ex;
             }
@@ -127,42 +117,31 @@ public class X509SubjectNameResolver extends KeyResolverSpi {
                 XMLX509SubjectName certSN =
                     new XMLX509SubjectName(element.getOwnerDocument(), cert);
 
-                if (log.isLoggable(java.util.logging.Level.FINE)) {
-                    log.log(java.util.logging.Level.FINE, "Found Certificate SN: " + certSN.getSubjectName());
-                }
+                LOG.debug("Found Certificate SN: {}", certSN.getSubjectName());
 
                 for (int i = 0; i < x509childObject.length; i++) {
-                    if (log.isLoggable(java.util.logging.Level.FINE)) {
-                        log.log(java.util.logging.Level.FINE, "Found Element SN:     "
-                              + x509childObject[i].getSubjectName());
-                    }
+                    LOG.debug("Found Element SN:     {}", x509childObject[i].getSubjectName());
 
                     if (certSN.equals(x509childObject[i])) {
-                        if (log.isLoggable(java.util.logging.Level.FINE)) {
-                            log.log(java.util.logging.Level.FINE, "match !!! ");
-                        }
+                        LOG.debug("match !!! ");
 
                         return cert;
                     }
-                    if (log.isLoggable(java.util.logging.Level.FINE)) {
-                        log.log(java.util.logging.Level.FINE, "no match...");
-                    }
+                    LOG.debug("no match...");
                 }
             }
 
             return null;
         } catch (XMLSecurityException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "XMLSecurityException", ex);
-            }
+            LOG.debug("XMLSecurityException", ex);
 
-            throw new KeyResolverException("generic.EmptyMessage", ex);
+            throw new KeyResolverException(ex);
         }
     }
 
     /**
      * Method engineResolveSecretKey
-     * @inheritDoc
+     * {@inheritDoc}
      * @param element
      * @param baseURI
      * @param storage

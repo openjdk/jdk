@@ -140,7 +140,7 @@ private:
 //
 
 class RefProcTaskExecutor: public AbstractRefProcTaskExecutor {
-  virtual void execute(ProcessTask& task);
+  virtual void execute(ProcessTask& task, uint ergo_workers);
 };
 
 

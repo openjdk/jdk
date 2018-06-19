@@ -31,18 +31,20 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @compile IncompatibleClassChangeErrorTest.java
- * @compile ImplementsSomeInterfaces.jasm ICC_B.jasm
+ * @compile ImplementsSomeInterfaces.jasm ICC2_B.jasm ICC3_B.jasm ICC4_B.jasm
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:CompileThreshold=1000 -XX:-BackgroundCompilation -XX:-Inline
- *                   -XX:CompileCommand=exclude,IncompatibleClassChangeErrorTest::test_iccInt
- *                   IncompatibleClassChangeErrorTest
+ *                   -XX:CompileCommand=exclude,test.IncompatibleClassChangeErrorTest::test_iccInt
+ *                   test.IncompatibleClassChangeErrorTest
  */
+
+package test;
 
 import sun.hotspot.WhiteBox;
 import compiler.whitebox.CompilerWhiteBoxTest;
 import java.lang.reflect.Method;
 
-// This test assembles an errorneous installation of classes.
+// This test assembles an erroneous installation of classes.
 // First, compile the test by @compile. This results in a legal set
 // of classes.
 // Then, with jasm, generate incompatible classes that overwrite
@@ -56,10 +58,10 @@ public class IncompatibleClassChangeErrorTest {
     private static boolean enableChecks = true;
 
     private static String expectedErrorMessageInterpreted =
-        "Class ImplementsSomeInterfaces " +
-        "does not implement the requested interface InterfaceICCE1";
+        "Class test.ImplementsSomeInterfaces " +
+        "does not implement the requested interface test.InterfaceICCE1";
     private static String expectedErrorMessageCompiled =
-        "Class ICC_B does not implement the requested interface ICC_iB";
+        "Class test.ICC2_B does not implement the requested interface test.ICC2_iB";
         // old message: "vtable stub"
 
 
@@ -93,9 +95,9 @@ public class IncompatibleClassChangeErrorTest {
 
         // Compile
         if (!compile(IncompatibleClassChangeErrorTest.class, "test_icc_compiled_itable_stub") ||
-            !compile(ICC_C.class, "b") ||
-            !compile(ICC_D.class, "b") ||
-            !compile(ICC_E.class, "b")) {
+            !compile(ICC2_C.class, "b") ||
+            !compile(ICC2_D.class, "b") ||
+            !compile(ICC2_E.class, "b")) {
           return false;
         }
 
@@ -118,6 +120,9 @@ public class IncompatibleClassChangeErrorTest {
                 System.out.println("Expected: " + expectedErrorMessageInterpreted + "\n" +
                                    "but got:  " + errorMsg);
                 throw new RuntimeException("Wrong error message of IncompatibleClassChangeError.");
+            }
+            if (enableChecks) {
+                System.out.println("Test 1 passed with message: " + errorMsg);
             }
             caught_icc = true;
         } catch (Throwable e) {
@@ -142,10 +147,10 @@ public class IncompatibleClassChangeErrorTest {
     public static void test_icc_compiled_itable_stub() {
         // Allocated the objects we need and call a valid method.
         boolean caught_icc = false;
-        ICC_B b = new ICC_B();
-        ICC_C c = new ICC_C();
-        ICC_D d = new ICC_D();
-        ICC_E e = new ICC_E();
+        ICC2_B b = new ICC2_B();
+        ICC2_C c = new ICC2_C();
+        ICC2_D d = new ICC2_D();
+        ICC2_E e = new ICC2_E();
         b.a();
         c.a();
         d.a();
@@ -155,7 +160,7 @@ public class IncompatibleClassChangeErrorTest {
             final int iterations = 10;
             // Test: calls b.b() in the last iteration.
             for (int i = 0; i < iterations; i++) {
-                ICC_iB a = b;
+                ICC2_iB a = b;
                 if (i % 3 == 0 && i < iterations - 1) {
                     a = c;
                 }
@@ -194,7 +199,7 @@ public class IncompatibleClassChangeErrorTest {
                 throw new RuntimeException("Wrong error message of IncompatibleClassChangeError.");
             }
             if (enableChecks) {
-                System.out.println("Passed with message: " + errorMsg);
+                System.out.println("Test 2 passed with message: " + errorMsg);
             }
         } catch (Throwable exc) {
             throw exc; // new RuntimeException("Caught unexpected exception: " + exc);
@@ -206,12 +211,54 @@ public class IncompatibleClassChangeErrorTest {
         }
     }
 
+    private static String expectedErrorMessage3 =
+        "Class test.ICC3_B can not implement test.ICC3_A, because it is not an interface";
+
+    public static void test3_implementsClass() throws Exception {
+        try {
+            new ICC3_B();
+            throw new RuntimeException("Expected IncompatibleClassChangeError was not thrown.");
+        } catch (IncompatibleClassChangeError e) {
+            String errorMsg = e.getMessage();
+            if (!errorMsg.equals(expectedErrorMessage3)) {
+                System.out.println("Expected: " + expectedErrorMessage3 + "\n" +
+                                   "but got:  " + errorMsg);
+                throw new RuntimeException("Wrong error message of IncompatibleClassChangeError.");
+            }
+            System.out.println("Test 3 passed with message: " + errorMsg);
+        } catch (Throwable e) {
+            throw new RuntimeException("Caught unexpected exception: " + e);
+        }
+    }
+
+    private static String expectedErrorMessage4 =
+        "class test.ICC4_B has interface test.ICC4_iA as super class";
+
+    public static void test4_extendsInterface() throws Exception {
+        try {
+            new ICC4_B();
+            throw new RuntimeException("Expected IncompatibleClassChangeError was not thrown.");
+        } catch (IncompatibleClassChangeError e) {
+            String errorMsg = e.getMessage();
+            if (!errorMsg.equals(expectedErrorMessage4)) {
+                System.out.println("Expected: " + expectedErrorMessage4 + "\n" +
+                                   "but got:  " + errorMsg);
+                throw new RuntimeException("Wrong error message of IncompatibleClassChangeError.");
+            }
+            System.out.println("Test 4 passed with message: " + errorMsg);
+        } catch (Throwable e) {
+            throw new RuntimeException("Caught unexpected exception: " + e);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         if (!setup_test()) {
             return;
         }
         test_iccInt();
         test_icc_compiled_itable_stub();
+        test3_implementsClass();
+        test4_extendsInterface();
     }
 }
 
@@ -305,20 +352,20 @@ class ImplementsSomeInterfaces extends
 //         C D E \
 //                B (bad class, missing interface implementation)
 
-interface ICC_iA {
+interface ICC2_iA {
     public void a();
 }
 
-interface ICC_iB {
+interface ICC2_iB {
     public void b();
 }
 
-// This is the errorneous class. A variant of it not
-// implementing ICC_iB is copied into the test before
+// This is the erroneous class. A variant of it not
+// implementing ICC2_iB is copied into the test before
 // it is run.
-class ICC_B implements ICC_iA,
+class ICC2_B implements ICC2_iA,
                        // This interface is missing in the .jasm implementation.
-                       ICC_iB {
+                       ICC2_iB {
     public void a() {
         System.out.print("B.a() ");
     }
@@ -328,7 +375,7 @@ class ICC_B implements ICC_iA,
     }
 }
 
-class ICC_C implements ICC_iA, ICC_iB {
+class ICC2_C implements ICC2_iA, ICC2_iB {
     public void a() {
         System.out.print("C.a() ");
     }
@@ -338,7 +385,7 @@ class ICC_C implements ICC_iA, ICC_iB {
     }
 }
 
-class ICC_D implements ICC_iA, ICC_iB {
+class ICC2_D implements ICC2_iA, ICC2_iB {
     public void a() {
         System.out.print("D.a() ");
     }
@@ -348,7 +395,7 @@ class ICC_D implements ICC_iA, ICC_iB {
     }
 }
 
-class ICC_E implements ICC_iA, ICC_iB {
+class ICC2_E implements ICC2_iA, ICC2_iB {
     public void a() {
         System.out.print("E.a() ");
     }
@@ -356,4 +403,32 @@ class ICC_E implements ICC_iA, ICC_iB {
     public void b() {
         System.out.print("E.b() ");
     }
+}
+
+// Helper classes to test error where class appears in implements statement.
+//
+// Class hierachy:
+//
+//       A  Some Class.
+//       |
+//       B  erroneous class. Correct B extends A, incorrect B (from jasm) implements A.
+
+class ICC3_A {
+}
+
+class ICC3_B extends ICC3_A {
+}
+
+// Helper classes to test error where interface appears in extends statement.
+//
+// Class hierachy:
+//
+//       A  Some Interface.
+//       |
+//       B  erroneous class. Correct B implements A, incorrect B (from jasm) extends A.
+
+interface ICC4_iA {
+}
+
+class ICC4_B implements ICC4_iA {
 }

@@ -35,6 +35,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static sun.nio.ch.SolarisEventPort.PORT_SOURCE_FD;
 import static sun.nio.ch.SolarisEventPort.PORT_SOURCE_USER;
@@ -97,7 +98,9 @@ class EventPortSelectorImpl
     }
 
     @Override
-    protected int doSelect(long timeout) throws IOException {
+    protected int doSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
 
         long to = timeout;
@@ -129,7 +132,7 @@ class EventPortSelectorImpl
             end(blocking);
         }
         processDeregisterQueue();
-        return processPortEvents(numEvents);
+        return processPortEvents(numEvents, action);
     }
 
     /**
@@ -166,19 +169,21 @@ class EventPortSelectorImpl
     }
 
     /**
-     * Process the port events. This method updates the keys of file descriptors
-     * that were polled. It also re-queues the key so that the file descriptor
-     * is re-associated at the next select operation.
-     *
-     * @return the number of selection keys updated.
+     * Process the polled events and re-queue the selected keys so the file
+     * descriptors are re-associated at the next select operation.
      */
-    private int processPortEvents(int numEvents) throws IOException {
+    private int processPortEvents(int numEvents, Consumer<SelectionKey> action)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(nioSelectedKeys());
 
         int numKeysUpdated = 0;
         boolean interrupted = false;
 
+        // Process the polled events while holding the update lock. This allows
+        // keys to be queued for ready file descriptors so they can be
+        // re-associated at the next select. The selected-key can be updated
+        // in this pass.
         synchronized (updateLock) {
             for (int i = 0; i < numEvents; i++) {
                 short source = getSource(i);
@@ -186,27 +191,36 @@ class EventPortSelectorImpl
                     int fd = getDescriptor(i);
                     SelectionKeyImpl ski = fdToKey.get(fd);
                     if (ski != null) {
-                        int rOps = getEventOps(i);
-                        if (selectedKeys.contains(ski)) {
-                            if (ski.translateAndUpdateReadyOps(rOps)) {
-                                numKeysUpdated++;
-                            }
-                        } else {
-                            ski.translateAndSetReadyOps(rOps);
-                            if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
-                                selectedKeys.add(ski);
-                                numKeysUpdated++;
-                            }
-                        }
-
-                        // re-queue key so it re-associated at next select
                         ski.registeredEvents(0);
                         updateKeys.addLast(ski);
+
+                        // update selected-key set if no action specified
+                        if (action == null) {
+                            int rOps = getEventOps(i);
+                            numKeysUpdated += processReadyEvents(rOps, ski, null);
+                        }
+
                     }
                 } else if (source == PORT_SOURCE_USER) {
                     interrupted = true;
                 } else {
                     assert false;
+                }
+            }
+        }
+
+        // if an action specified then iterate over the polled events again so
+        // that the action is performed without holding the update lock.
+        if (action != null) {
+            for (int i = 0; i < numEvents; i++) {
+                short source = getSource(i);
+                if (source == PORT_SOURCE_FD) {
+                    int fd = getDescriptor(i);
+                    SelectionKeyImpl ski = fdToKey.get(fd);
+                    if (ski != null) {
+                        int rOps = getEventOps(i);
+                        numKeysUpdated += processReadyEvents(rOps, ski, action);
+                    }
                 }
             }
         }

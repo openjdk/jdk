@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,13 @@ private:
   size_t      _args_len;
 public:
   CmdLine(const char* line, size_t len, bool no_command_name);
-  const char* args_addr() const { return _args; }
-  size_t args_len() const { return _args_len; }
-  const char* cmd_addr() const { return _cmd; }
-  size_t cmd_len() const { return _cmd_len; }
-  bool is_empty() { return _cmd_len == 0; }
-  bool is_executable() { return is_empty() || _cmd[0] != '#'; }
-  bool is_stop() { return !is_empty() && strncmp("stop", _cmd, _cmd_len) == 0; }
+  const char* args_addr() const   { return _args; }
+  size_t args_len() const         { return _args_len; }
+  const char* cmd_addr() const    { return _cmd; }
+  size_t cmd_len() const          { return _cmd_len; }
+  bool is_empty() const           { return _cmd_len == 0; }
+  bool is_executable() const      { return is_empty() || _cmd[0] != '#'; }
+  bool is_stop() const            { return !is_empty() && strncmp("stop", _cmd, _cmd_len) == 0; }
 };
 
 // Iterator class taking a character string in input and returning a CmdLine
@@ -75,19 +75,16 @@ public:
 class DCmdIter : public StackObj {
   friend class DCmd;
 private:
-  const char* _str;
-  char        _delim;
-  size_t      _len;
+  const char* const _str;
+  const char        _delim;
+  const size_t      _len;
   size_t      _cursor;
 public:
 
-  DCmdIter(const char* str, char delim) {
-    _str = str;
-    _delim = delim;
-    _len = strlen(str);
-    _cursor = 0;
-  }
-  bool has_next() { return _cursor < _len; }
+  DCmdIter(const char* str, char delim)
+   : _str(str), _delim(delim), _len(::strlen(str)),
+     _cursor(0) {}
+  bool has_next() const { return _cursor < _len; }
   CmdLine next() {
     assert(_cursor <= _len, "Cannot iterate more");
     size_t n = _cursor;
@@ -102,58 +99,51 @@ public:
 
 // Iterator class to iterate over diagnostic command arguments
 class DCmdArgIter : public ResourceObj {
-  const char* _buffer;
-  size_t      _len;
+  const char* const _buffer;
+  const size_t      _len;
   size_t      _cursor;
   const char* _key_addr;
   size_t      _key_len;
   const char* _value_addr;
   size_t      _value_len;
-  char        _delim;
+  const char  _delim;
 public:
-  DCmdArgIter(const char* buf, size_t len, char delim) {
-    _buffer = buf;
-    _len = len;
-    _delim = delim;
-    _cursor = 0;
-  }
+  DCmdArgIter(const char* buf, size_t len, char delim)
+    : _buffer(buf), _len(len), _cursor(0), _key_addr(NULL),
+      _key_len(0), _value_addr(NULL), _value_len(0), _delim(delim) {}
+
   bool next(TRAPS);
-  const char* key_addr() { return _key_addr; }
-  size_t key_length() { return _key_len; }
-  const char* value_addr() { return _value_addr; }
-  size_t value_length() { return _value_len; }
+  const char* key_addr() const    { return _key_addr; }
+  size_t key_length() const       { return _key_len; }
+  const char* value_addr() const  { return _value_addr; }
+  size_t value_length() const     { return _value_len; }
 };
 
 // A DCmdInfo instance provides a description of a diagnostic command. It is
 // used to export the description to the JMX interface of the framework.
 class DCmdInfo : public ResourceObj {
 protected:
-  const char* _name;           /* Name of the diagnostic command */
-  const char* _description;    /* Short description */
-  const char* _impact;         /* Impact on the JVM */
-  JavaPermission _permission;  /* Java Permission required to execute this command if any */
-  int         _num_arguments;  /* Number of supported options or arguments */
-  bool        _is_enabled;     /* True if the diagnostic command can be invoked, false otherwise */
+  const char* const _name;           /* Name of the diagnostic command */
+  const char* const _description;    /* Short description */
+  const char* const _impact;         /* Impact on the JVM */
+  const JavaPermission _permission;  /* Java Permission required to execute this command if any */
+  const int         _num_arguments;  /* Number of supported options or arguments */
+  const bool        _is_enabled;     /* True if the diagnostic command can be invoked, false otherwise */
 public:
   DCmdInfo(const char* name,
           const char* description,
           const char* impact,
           JavaPermission permission,
           int num_arguments,
-          bool enabled) {
-    this->_name = name;
-    this->_description = description;
-    this->_impact = impact;
-    this->_permission = permission;
-    this->_num_arguments = num_arguments;
-    this->_is_enabled = enabled;
-  }
-  const char* name() const { return _name; }
-  const char* description() const { return _description; }
-  const char* impact() const { return _impact; }
-  JavaPermission permission() const { return _permission; }
-  int num_arguments() const { return _num_arguments; }
-  bool is_enabled() const { return _is_enabled; }
+          bool enabled)
+  : _name(name), _description(description), _impact(impact), _permission(permission),
+    _num_arguments(num_arguments), _is_enabled(enabled) {}
+  const char* name() const          { return _name; }
+  const char* description() const   { return _description; }
+  const char* impact() const        { return _impact; }
+  const JavaPermission& permission() const { return _permission; }
+  int num_arguments() const         { return _num_arguments; }
+  bool is_enabled() const           { return _is_enabled; }
 
   static bool by_name(void* name, DCmdInfo* info);
 };
@@ -163,51 +153,32 @@ public:
 // framework.
 class DCmdArgumentInfo : public ResourceObj {
 protected:
-  const char* _name;            /* Option/Argument name*/
-  const char* _description;     /* Short description */
-  const char* _type;            /* Type: STRING, BOOLEAN, etc. */
-  const char* _default_string;  /* Default value in a parsable string */
-  bool        _mandatory;       /* True if the option/argument is mandatory */
-  bool        _option;          /* True if it is an option, false if it is an argument */
+  const char* const _name;            /* Option/Argument name*/
+  const char* const _description;     /* Short description */
+  const char* const _type;            /* Type: STRING, BOOLEAN, etc. */
+  const char* const _default_string;  /* Default value in a parsable string */
+  const bool        _mandatory;       /* True if the option/argument is mandatory */
+  const bool        _option;          /* True if it is an option, false if it is an argument */
                                 /* (see diagnosticFramework.hpp for option/argument definitions) */
-  bool        _multiple;        /* True is the option can be specified several time */
-  int         _position;        /* Expected position for this argument (this field is */
+  const bool        _multiple;        /* True is the option can be specified several time */
+  const int         _position;        /* Expected position for this argument (this field is */
                                 /* meaningless for options) */
 public:
   DCmdArgumentInfo(const char* name, const char* description, const char* type,
                    const char* default_string, bool mandatory, bool option,
-                   bool multiple) {
-    this->_name = name;
-    this->_description = description;
-    this->_type = type;
-    this->_default_string = default_string;
-    this->_option = option;
-    this->_mandatory = mandatory;
-    this->_option = option;
-    this->_multiple = multiple;
-    this->_position = -1;
-  }
-  DCmdArgumentInfo(const char* name, const char* description, const char* type,
-                   const char* default_string, bool mandatory, bool option,
-                   bool multiple, int position) {
-    this->_name = name;
-    this->_description = description;
-    this->_type = type;
-    this->_default_string = default_string;
-    this->_option = option;
-    this->_mandatory = mandatory;
-    this->_option = option;
-    this->_multiple = multiple;
-    this->_position = position;
-  }
-  const char* name() const { return _name; }
+                   bool multiple, int position = -1)
+    : _name(name), _description(description), _type(type),
+      _default_string(default_string), _mandatory(mandatory), _option(option),
+      _multiple(multiple), _position(position) {}
+
+  const char* name() const        { return _name; }
   const char* description() const { return _description; }
-  const char* type() const { return _type; }
+  const char* type() const        { return _type; }
   const char* default_string() const { return _default_string; }
-  bool is_mandatory() const { return _mandatory; }
-  bool is_option() const { return _option; }
-  bool is_multiple() const { return _multiple; }
-  int position() const { return _position; }
+  bool is_mandatory() const       { return _mandatory; }
+  bool is_option() const          { return _option; }
+  bool is_multiple() const        { return _multiple; }
+  int position() const            { return _position; }
 };
 
 // The DCmdParser class can be used to create an argument parser for a
@@ -233,25 +204,21 @@ class DCmdParser {
 private:
   GenDCmdArgument* _options;
   GenDCmdArgument* _arguments_list;
-  char             _delim;
 public:
-  DCmdParser() {
-    _options = NULL;
-    _arguments_list = NULL;
-    _delim = ' ';
-  }
+  DCmdParser()
+    : _options(NULL), _arguments_list(NULL) {}
   void add_dcmd_option(GenDCmdArgument* arg);
   void add_dcmd_argument(GenDCmdArgument* arg);
   GenDCmdArgument* lookup_dcmd_option(const char* name, size_t len);
-  GenDCmdArgument* arguments_list() { return _arguments_list; };
+  GenDCmdArgument* arguments_list() const { return _arguments_list; };
   void check(TRAPS);
   void parse(CmdLine* line, char delim, TRAPS);
-  void print_help(outputStream* out, const char* cmd_name);
+  void print_help(outputStream* out, const char* cmd_name) const;
   void reset(TRAPS);
   void cleanup();
-  int num_arguments();
-  GrowableArray<const char*>* argument_name_array();
-  GrowableArray<DCmdArgumentInfo*>* argument_info_array();
+  int num_arguments() const;
+  GrowableArray<const char*>* argument_name_array() const;
+  GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
 };
 
 // The DCmd class is the parent class of all diagnostic commands
@@ -270,17 +237,18 @@ public:
 // thread that will access the instance.
 class DCmd : public ResourceObj {
 protected:
-  outputStream* _output;
-  bool          _is_heap_allocated;
+  outputStream* const _output;
+  const bool          _is_heap_allocated;
 public:
-  DCmd(outputStream* output, bool heap_allocated) {
-    _output = output;
-    _is_heap_allocated = heap_allocated;
-  }
+  DCmd(outputStream* output, bool heap_allocated)
+   : _output(output), _is_heap_allocated(heap_allocated) {}
 
-  static const char* name() { return "No Name";}
-  static const char* description() { return "No Help";}
+  // Child classes: please always provide these methods:
+  //  static const char* name()             { return "<command name>";}
+  //  static const char* description()      { return "<command help>";}
+
   static const char* disabled_message() { return "Diagnostic command currently disabled"; }
+
   // The impact() method returns a description of the intrusiveness of the diagnostic
   // command on the Java Virtual Machine behavior. The rational for this method is that some
   // diagnostic commands can seriously disrupt the behavior of the Java Virtual Machine
@@ -291,7 +259,8 @@ public:
   // where the impact level is selected among this list: {Low, Medium, High}. The optional
   // longer description can provide more specific details like the fact that Thread Dump
   // impact depends on the heap size.
-  static const char* impact() { return "Low: No impact"; }
+  static const char* impact()       { return "Low: No impact"; }
+
   // The permission() method returns the description of Java Permission. This
   // permission is required when the diagnostic command is invoked via the
   // DiagnosticCommandMBean. The rationale for this permission check is that
@@ -305,10 +274,10 @@ public:
     JavaPermission p = {NULL, NULL, NULL};
     return p;
   }
-  static int num_arguments() { return 0; }
-  outputStream* output() { return _output; }
-  bool is_heap_allocated()  { return _is_heap_allocated; }
-  virtual void print_help(const char* name) {
+  static int num_arguments()        { return 0; }
+  outputStream* output() const      { return _output; }
+  bool is_heap_allocated() const    { return _is_heap_allocated; }
+  virtual void print_help(const char* name) const {
     output()->print_cr("Syntax: %s", name);
   }
   virtual void parse(CmdLine* line, char delim, TRAPS) {
@@ -324,11 +293,11 @@ public:
   virtual void cleanup() { }
 
   // support for the JMX interface
-  virtual GrowableArray<const char*>* argument_name_array() {
+  virtual GrowableArray<const char*>* argument_name_array() const {
     GrowableArray<const char*>* array = new GrowableArray<const char*>(0);
     return array;
   }
-  virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() {
+  virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() const {
     GrowableArray<DCmdArgumentInfo*>* array = new GrowableArray<DCmdArgumentInfo*>(0);
     return array;
   }
@@ -343,25 +312,21 @@ protected:
   DCmdParser _dcmdparser;
 public:
   DCmdWithParser (outputStream *output, bool heap=false) : DCmd(output, heap) { }
-  static const char* name() { return "No Name";}
-  static const char* description() { return "No Help";}
   static const char* disabled_message() { return "Diagnostic command currently disabled"; }
-  static const char* impact() { return "Low: No impact"; }
-  static const JavaPermission permission() {JavaPermission p = {NULL, NULL, NULL}; return p; }
-  static int num_arguments() { return 0; }
+  static const char* impact()         { return "Low: No impact"; }
   virtual void parse(CmdLine *line, char delim, TRAPS);
   virtual void execute(DCmdSource source, TRAPS) { }
   virtual void reset(TRAPS);
   virtual void cleanup();
-  virtual void print_help(const char* name);
-  virtual GrowableArray<const char*>* argument_name_array();
-  virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array();
+  virtual void print_help(const char* name) const;
+  virtual GrowableArray<const char*>* argument_name_array() const;
+  virtual GrowableArray<DCmdArgumentInfo*>* argument_info_array() const;
 };
 
 class DCmdMark : public StackObj {
-  DCmd* _ref;
+  DCmd* const _ref;
 public:
-  DCmdMark(DCmd* cmd) { _ref = cmd; }
+  DCmdMark(DCmd* cmd) : _ref(cmd) {}
   ~DCmdMark() {
     if (_ref != NULL) {
       _ref->cleanup();
@@ -382,37 +347,31 @@ private:
   static Mutex*       _dcmdFactory_lock;
   static bool         _send_jmx_notification;
   static bool         _has_pending_jmx_notification;
+  static DCmdFactory* _DCmdFactoryList;
+
   // Pointer to the next factory in the singly-linked list of registered
   // diagnostic commands
   DCmdFactory*        _next;
   // When disabled, a diagnostic command cannot be executed. Any attempt to
   // execute it will result in the printing of the disabled message without
   // instantiating the command.
-  bool                _enabled;
+  const bool          _enabled;
   // When hidden, a diagnostic command doesn't appear in the list of commands
   // provided by the 'help' command.
-  bool                _hidden;
-  uint32_t            _export_flags;
-  int                 _num_arguments;
-  static DCmdFactory* _DCmdFactoryList;
+  const bool          _hidden;
+  const uint32_t      _export_flags;
+  const int           _num_arguments;
+
 public:
-  DCmdFactory(int num_arguments, uint32_t flags, bool enabled, bool hidden) {
-    _next = NULL;
-    _enabled = enabled;
-    _hidden = hidden;
-    _export_flags = flags;
-    _num_arguments = num_arguments;
-  }
-  bool is_enabled() const { return _enabled; }
-  void set_enabled(bool b) { _enabled = b; }
-  bool is_hidden() const { return _hidden; }
-  void set_hidden(bool b) { _hidden = b; }
-  uint32_t export_flags() { return _export_flags; }
-  void set_export_flags(uint32_t f) { _export_flags = f; }
-  int num_arguments() { return _num_arguments; }
-  DCmdFactory* next() { return _next; }
-  virtual DCmd* create_Cheap_instance(outputStream* output) = 0;
-  virtual DCmd* create_resource_instance(outputStream* output) = 0;
+  DCmdFactory(int num_arguments, uint32_t flags, bool enabled, bool hidden)
+    : _next(NULL), _enabled(enabled), _hidden(hidden),
+      _export_flags(flags), _num_arguments(num_arguments) {}
+  bool is_enabled() const       { return _enabled; }
+  bool is_hidden() const        { return _hidden; }
+  uint32_t export_flags() const { return _export_flags; }
+  int num_arguments() const     { return _num_arguments; }
+  DCmdFactory* next() const     { return _next; }
+  virtual DCmd* create_resource_instance(outputStream* output) const = 0;
   virtual const char* name() const = 0;
   virtual const char* description() const = 0;
   virtual const char* impact() const = 0;
@@ -424,8 +383,6 @@ public:
   // enabled flag to false.
   static int register_DCmdFactory(DCmdFactory* factory);
   static DCmdFactory* factory(DCmdSource source, const char* cmd, size_t len);
-  // Returns a C-heap allocated diagnostic command for the given command line
-  static DCmd* create_global_DCmd(DCmdSource source, CmdLine &line, outputStream* out, TRAPS);
   // Returns a resourceArea allocated diagnostic command for the given command line
   static DCmd* create_local_DCmd(DCmdSource source, CmdLine &line, outputStream* out, TRAPS);
   static GrowableArray<const char*>* DCmd_list(DCmdSource source);
@@ -449,27 +406,23 @@ template <class DCmdClass> class DCmdFactoryImpl : public DCmdFactory {
 public:
   DCmdFactoryImpl(uint32_t flags, bool enabled, bool hidden) :
     DCmdFactory(DCmdClass::num_arguments(), flags, enabled, hidden) { }
-  // Returns a C-heap allocated instance
-  virtual DCmd* create_Cheap_instance(outputStream* output) {
-    return new (ResourceObj::C_HEAP, mtInternal) DCmdClass(output, true);
-  }
   // Returns a resourceArea allocated instance
-  virtual DCmd* create_resource_instance(outputStream* output) {
+  DCmd* create_resource_instance(outputStream* output) const {
     return new DCmdClass(output, false);
   }
-  virtual const char* name() const {
+  const char* name() const {
     return DCmdClass::name();
   }
-  virtual const char* description() const {
+  const char* description() const {
     return DCmdClass::description();
   }
-  virtual const char* impact() const {
+  const char* impact() const {
     return DCmdClass::impact();
   }
-  virtual const JavaPermission permission() const {
+  const JavaPermission permission() const {
     return DCmdClass::permission();
   }
-  virtual const char* disabled_message() const {
+  const char* disabled_message() const {
      return DCmdClass::disabled_message();
   }
 };

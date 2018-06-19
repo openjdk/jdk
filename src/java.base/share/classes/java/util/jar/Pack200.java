@@ -101,7 +101,10 @@ import sun.security.action.GetPropertyAction;
  * @author John Rose
  * @author Kumar Srinivasan
  * @since 1.5
+ * @deprecated This class is deprecated, and is planned for removal in a future
+ *             release.
  */
+@Deprecated(since="11", forRemoval=true)
 public abstract class Pack200 {
     private Pack200() {} //prevent instantiation
 
@@ -225,7 +228,10 @@ public abstract class Pack200 {
      * to be thrown.
      *
      * @since 1.5
+     * @deprecated This interface is deprecated, and is planned for removal in a
+     *             future release.
      */
+    @Deprecated(since="11", forRemoval=true)
     public interface Packer {
         /**
          * This property is a numeral giving the estimated target size N
@@ -584,7 +590,10 @@ public abstract class Pack200 {
      * <p>
      * This version of the unpacker is compatible with all previous versions.
      * @since 1.5
+     * @deprecated This interface is deprecated, and is planned for removal in a
+     *             future release.
      */
+    @Deprecated(since="11", forRemoval=true)
     public interface Unpacker {
 
         /** The string "keep", a possible value for certain properties.

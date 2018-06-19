@@ -29,7 +29,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- * @author $Author: coheigea $
  */
 public class KeyName extends SignatureElementProxy implements KeyInfoContent {
 
@@ -37,11 +36,11 @@ public class KeyName extends SignatureElementProxy implements KeyInfoContent {
      * Constructor KeyName
      *
      * @param element
-     * @param BaseURI
+     * @param baseURI
      * @throws XMLSecurityException
      */
-    public KeyName(Element element, String BaseURI) throws XMLSecurityException {
-        super(element, BaseURI);
+    public KeyName(Element element, String baseURI) throws XMLSecurityException {
+        super(element, baseURI);
     }
 
     /**
@@ -65,7 +64,7 @@ public class KeyName extends SignatureElementProxy implements KeyInfoContent {
         return this.getTextFromTextChild();
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public String getBaseLocalName() {
         return Constants._TAG_KEYNAME;
     }

@@ -23,7 +23,8 @@
 package com.sun.org.apache.xml.internal.security.c14n.implementations;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.io.OutputStream;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -33,9 +34,9 @@ import com.sun.org.apache.xml.internal.security.c14n.CanonicalizationException;
 import com.sun.org.apache.xml.internal.security.c14n.helper.C14nHelper;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.transforms.params.InclusiveNamespaces;
-import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
 import org.w3c.dom.Attr;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -45,31 +46,25 @@ import org.xml.sax.SAXException;
 /**
  * Implements &quot; <A
  * HREF="http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/">Exclusive XML
- * Canonicalization, Version 1.0 </A>&quot; <BR />
+ * Canonicalization, Version 1.0 </A>&quot; <p></p>
  * Credits: During restructuring of the Canonicalizer framework, Ren??
  * Kollmorgen from Software AG submitted an implementation of ExclC14n which
  * fitted into the old architecture and which based heavily on my old (and slow)
  * implementation of "Canonical XML". A big "thank you" to Ren?? for this.
- * <BR />
+ * <p></p>
  * <i>THIS </i> implementation is a complete rewrite of the algorithm.
  *
- * @author Christian Geuer-Pollmann <geuerp@apache.org>
- * @version $Revision: 1147448 $
- * @see <a href="http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/ Exclusive#">
- *          XML Canonicalization, Version 1.0</a>
+ * @see <a href="http://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/">
+ *          Exclusive XML Canonicalization, Version 1.0</a>
  */
 public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
 
-    private static final String XML_LANG_URI = Constants.XML_LANG_SPACE_SpecNS;
-    private static final String XMLNS_URI = Constants.NamespaceSpecNS;
-
     /**
-      * This Set contains the names (Strings like "xmlns" or "xmlns:foo") of
-      * the inclusive namespaces.
-      */
+     * This Set contains the names (Strings like "xmlns" or "xmlns:foo") of
+     * the inclusive namespaces.
+     */
     private SortedSet<String> inclusiveNSSet;
-
-    private final SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
+    private boolean propagateDefaultNamespace = false;
 
     /**
      * Constructor Canonicalizer20010315Excl
@@ -82,7 +77,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
 
     /**
      * Method engineCanonicalizeSubTree
-     * @inheritDoc
+     * {@inheritDoc}
      * @param rootNode
      *
      * @throws CanonicalizationException
@@ -94,7 +89,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
 
     /**
      * Method engineCanonicalizeSubTree
-     *  @inheritDoc
+     *  {@inheritDoc}
      * @param rootNode
      * @param inclusiveNamespaces
      *
@@ -103,6 +98,22 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
     public byte[] engineCanonicalizeSubTree(
         Node rootNode, String inclusiveNamespaces
     ) throws CanonicalizationException {
+        return engineCanonicalizeSubTree(rootNode, inclusiveNamespaces, null);
+    }
+
+    /**
+     * Method engineCanonicalizeSubTree
+     *  {@inheritDoc}
+     * @param rootNode
+     * @param inclusiveNamespaces
+     * @param propagateDefaultNamespace If true the default namespace will be propagated to the c14n-ized root element
+     *
+     * @throws CanonicalizationException
+     */
+    public byte[] engineCanonicalizeSubTree(
+            Node rootNode, String inclusiveNamespaces, boolean propagateDefaultNamespace
+    ) throws CanonicalizationException {
+        this.propagateDefaultNamespace = propagateDefaultNamespace;
         return engineCanonicalizeSubTree(rootNode, inclusiveNamespaces, null);
     }
 
@@ -137,7 +148,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
 
     /**
      * Method engineCanonicalizeXPathNodeSet
-     * @inheritDoc
+     * {@inheritDoc}
      * @param xpathNodeSet
      * @param inclusiveNamespaces
      * @throws CanonicalizationException
@@ -150,11 +161,11 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
     }
 
     @Override
-    protected Iterator<Attr> handleAttributesSubtree(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException {
+    protected void outputAttributesSubtree(Element element, NameSpaceSymbTable ns,
+                                           Map<String, byte[]> cache)
+        throws CanonicalizationException, DOMException, IOException {
         // result will contain the attrs which have to be output
-        final SortedSet<Attr> result = this.result;
-        result.clear();
+        SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
 
         // The prefix visibly utilized (in the attribute or in the name) in
         // the element
@@ -193,6 +204,13 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                 }
             }
         }
+        if (propagateDefaultNamespace && ns.getLevel() == 1 &&
+                inclusiveNSSet.contains(XMLNS) &&
+                ns.getMappingWithoutRendered(XMLNS) == null) {
+                ns.removeMapping(XMLNS);
+                ns.addMapping(
+                    XMLNS, "", getNullNode(element.getOwnerDocument()));
+        }
         String prefix = null;
         if (element.getNamespaceURI() != null
             && !(element.getPrefix() == null || element.getPrefix().length() == 0)) {
@@ -209,20 +227,22 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
             }
         }
 
-        return result.iterator();
+        OutputStream writer = getWriter();
+        //we output all Attrs which are available
+        for (Attr attr : result) {
+            outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
+        }
     }
 
     /**
-     * @inheritDoc
-     * @param element
-     * @throws CanonicalizationException
+     * {@inheritDoc}
      */
     @Override
-    protected final Iterator<Attr> handleAttributes(Element element, NameSpaceSymbTable ns)
-        throws CanonicalizationException {
+    protected void outputAttributes(Element element, NameSpaceSymbTable ns,
+                                    Map<String, byte[]> cache)
+        throws CanonicalizationException, DOMException, IOException {
         // result will contain the attrs which have to be output
-        final SortedSet<Attr> result = this.result;
-        result.clear();
+        SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
 
         // The prefix visibly utilized (in the attribute or in the name) in
         // the element
@@ -312,7 +332,11 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
             }
         }
 
-        return result.iterator();
+        OutputStream writer = getWriter();
+        //we output all Attrs which are available
+        for (Attr attr : result) {
+            outputAttrToWriter(attr.getNodeName(), attr.getNodeValue(), writer, cache);
+        }
     }
 
     protected void circumventBugIfNeeded(XMLSignatureInput input)

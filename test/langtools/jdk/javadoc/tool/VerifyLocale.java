@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,24 @@
 
 /*
  * @test
- * @bug 8035473
+ * @bug 8035473 8149565
  * @summary Verify that init method works correctly.
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
- * @ignore 8149565
  */
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
 import javax.lang.model.SourceVersion;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.DocumentationTool;
+import javax.tools.DocumentationTool.DocumentationTask;
+import javax.tools.JavaFileObject;
+import javax.tools.ToolProvider;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.Reporter;
@@ -49,30 +55,54 @@ public class VerifyLocale implements Doclet {
     Reporter reporter;
 
     public static void main(String[] args) {
-        String thisFile = "" +
-            new java.io.File(System.getProperty("test.src", "."),
-                             "VerifyLocale.java");
+        DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
+        Path thisFile =
+            Paths.get(System.getProperty("test.src", ".")).resolve("VerifyLocale.java");
+        JavaFileObject fo = tool.getStandardFileManager(null, null, null)
+                .getJavaFileObjects(thisFile).iterator().next();
+
+        int skipCount = 0;
+        int testCount = 0;
 
         for (Locale loc : Locale.getAvailableLocales()) {
+
             language = loc.getLanguage();
             country = loc.getCountry();
             variant = loc.getVariant();
-            if (!language.equals("")) {
-                String[] command_line = {
-                    // jumble the options in some weird order
-                    "-doclet", "VerifyLocale",
-                    "-locale", language + (country.equals("") ? "" : ("_" + country + (variant.equals("") ? "" : "_" + variant))),
-                    "-docletpath", System.getProperty("test.classes", "."),
-                    thisFile
-                };
-                if (jdk.javadoc.internal.tool.Main.execute(command_line) != 0)
-                    throw new Error("Javadoc encountered warnings or errors.");
+            System.err.printf("test locale: %s [%s,%s,%s] %s%n",
+                loc, language, country, variant, loc.toLanguageTag());
+
+            // skip locales for which the round-trip fails
+            if (!loc.equals(Locale.forLanguageTag(loc.toLanguageTag()))) {
+                System.err.println("skipped " + loc + "!");
+                System.err.println();
+                skipCount++;
+                continue;
             }
+
+            if (!language.equals("")) {
+                List<String> options = List.of("-locale", loc.toLanguageTag());
+                System.err.println("test options: " + options);
+                DocumentationTask t = tool.getTask(null, null, null,
+                        VerifyLocale.class, options, List.of(fo));
+                if (!t.call())
+                    throw new Error("Javadoc encountered warnings or errors.");
+                testCount++;
+            }
+            System.err.println();
         }
+        System.err.println("Skipped " + skipCount + " locales");
+        System.err.println("Tested " + testCount + " locales");
     }
 
     public boolean run(DocletEnvironment root) {
-        reporter.print(Kind.NOTE, "just a test: Locale is: " + locale.getDisplayName());
+        reporter.print(Kind.NOTE, String.format("doclet locale is: %s [%s,%s,%s] %s (%s)",
+                locale,
+                locale.getLanguage(),
+                locale.getCountry(),
+                locale.getVariant(),
+                locale.toLanguageTag(),
+                locale.getDisplayName()));
         return language.equals(locale.getLanguage())
                && country.equals(locale.getCountry())
                && variant.equals(locale.getVariant());

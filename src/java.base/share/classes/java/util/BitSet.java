@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1277,12 +1277,33 @@ public class BitSet implements Cloneable, java.io.Serializable {
 
                 int hi = getFence();
                 int i = index;
-                int v = wordIndex(hi - 1);
                 index = -1;
-                while (i >= 0 && i < hi) {
-                    action.accept(i);
-                    i = nextSetBit(i + 1, v);
+
+                if (i >= 0 && i < hi) {
+                    action.accept(i++);
+
+                    int u = wordIndex(i);      // next lower word bound
+                    int v = wordIndex(hi - 1); // upper word bound
+
+                    words_loop:
+                    for (; u <= v && i <= hi; u++, i = u << ADDRESS_BITS_PER_WORD) {
+                        long word = words[u] & (WORD_MASK << i);
+                        while (word != 0) {
+                            i = (u << ADDRESS_BITS_PER_WORD) + Long.numberOfTrailingZeros(word);
+                            if (i >= hi) {
+                                // Break out of outer loop to ensure check of
+                                // Integer.MAX_VALUE bit set
+                                break words_loop;
+                            }
+
+                            // Flip the set bit
+                            word &= ~(1L << i);
+
+                            action.accept(i);
+                        }
+                    }
                 }
+
                 // Check if there is a final bit set for Integer.MAX_VALUE
                 if (i == Integer.MAX_VALUE && hi == Integer.MAX_VALUE) {
                     action.accept(Integer.MAX_VALUE);

@@ -66,7 +66,7 @@ public class JDKXPathAPI implements XPathAPI {
                 try {
                     xpf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
                 } catch (XPathFactoryConfigurationException ex) {
-                    throw new TransformerException("empty", ex);
+                    throw new TransformerException(ex);
                 }
             }
             XPath xpath = xpf.newXPath();
@@ -75,13 +75,13 @@ public class JDKXPathAPI implements XPathAPI {
             try {
                 xpathExpression = xpath.compile(xpathStr);
             } catch (XPathExpressionException ex) {
-                throw new TransformerException("empty", ex);
+                throw new TransformerException(ex);
             }
         }
         try {
             return (NodeList)xpathExpression.evaluate(contextNode, XPathConstants.NODESET);
         } catch (XPathExpressionException ex) {
-            throw new TransformerException("empty", ex);
+            throw new TransformerException(ex);
         }
     }
 
@@ -100,7 +100,7 @@ public class JDKXPathAPI implements XPathAPI {
                 try {
                     xpf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
                 } catch (XPathFactoryConfigurationException ex) {
-                    throw new TransformerException("empty", ex);
+                    throw new TransformerException(ex);
                 }
             }
             XPath xpath = xpf.newXPath();
@@ -109,14 +109,13 @@ public class JDKXPathAPI implements XPathAPI {
             try {
                 xpathExpression = xpath.compile(xpathStr);
             } catch (XPathExpressionException ex) {
-                throw new TransformerException("empty", ex);
+                throw new TransformerException(ex);
             }
         }
         try {
-            Boolean result = (Boolean)xpathExpression.evaluate(contextNode, XPathConstants.BOOLEAN);
-            return result.booleanValue();
+            return (Boolean)xpathExpression.evaluate(contextNode, XPathConstants.BOOLEAN);
         } catch (XPathExpressionException ex) {
-            throw new TransformerException("empty", ex);
+            throw new TransformerException(ex);
         }
     }
 

@@ -40,7 +40,7 @@ public final class Log {
 
     public static final ForeignCallDescriptor LOG_PRIMITIVE = new ForeignCallDescriptor("logPrimitive", void.class, int.class, long.class, boolean.class);
     public static final ForeignCallDescriptor LOG_OBJECT = new ForeignCallDescriptor("logObject", void.class, Object.class, boolean.class, boolean.class);
-    public static final ForeignCallDescriptor LOG_PRINTF = new ForeignCallDescriptor("logPrintf", void.class, Object.class, long.class, long.class, long.class);
+    public static final ForeignCallDescriptor LOG_PRINTF = new ForeignCallDescriptor("logPrintf", void.class, String.class, long.class, long.class, long.class);
 
     @NodeIntrinsic(ForeignCallNode.class)
     private static native void log(@ConstantNodeParameter ForeignCallDescriptor logObject, Object object, boolean asString, boolean newline);

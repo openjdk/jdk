@@ -29,7 +29,7 @@
 #include "oops/oopHandle.hpp"
 
 inline oop OopHandle::resolve() const {
-  return (_obj == NULL) ? (oop)NULL : RootAccess<IN_CONCURRENT_ROOT>::oop_load(_obj);
+  return (_obj == NULL) ? (oop)NULL : NativeAccess<IN_CONCURRENT_ROOT>::oop_load(_obj);
 }
 
 #endif //  SHARE_VM_OOPS_OOPHANDLE_INLINE_HPP

@@ -27,7 +27,6 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 /**
  * Class CanonicalizationException
  *
- * @author Christian Geuer-Pollmann
  */
 public class CanonicalizationException extends XMLSecurityException {
 
@@ -42,6 +41,10 @@ public class CanonicalizationException extends XMLSecurityException {
      */
     public CanonicalizationException() {
         super();
+    }
+
+    public CanonicalizationException(Exception ex) {
+        super(ex);
     }
 
     /**
@@ -66,23 +69,33 @@ public class CanonicalizationException extends XMLSecurityException {
     /**
      * Constructor CanonicalizationException
      *
-     * @param msgID
      * @param originalException
+     * @param msgID
      */
+    public CanonicalizationException(Exception originalException, String msgID) {
+        super(originalException, msgID);
+    }
+
+    @Deprecated
     public CanonicalizationException(String msgID, Exception originalException) {
-        super(msgID, originalException);
+        this(originalException, msgID);
     }
 
     /**
      * Constructor CanonicalizationException
      *
+     * @param originalException
      * @param msgID
      * @param exArgs
-     * @param originalException
      */
     public CanonicalizationException(
-        String msgID, Object exArgs[], Exception originalException
+        Exception originalException, String msgID, Object exArgs[]
     ) {
-        super(msgID, exArgs, originalException);
+        super(originalException, msgID, exArgs);
+    }
+
+    @Deprecated
+    public CanonicalizationException(String msgID, Object exArgs[], Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 }

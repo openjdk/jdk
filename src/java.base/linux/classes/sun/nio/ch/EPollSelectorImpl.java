@@ -27,6 +27,7 @@ package sun.nio.ch;
 
 import java.io.IOException;
 import java.nio.channels.ClosedSelectorException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayDeque;
@@ -34,6 +35,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 import static sun.nio.ch.EPoll.EPOLLIN;
 import static sun.nio.ch.EPoll.EPOLL_CTL_ADD;
@@ -97,7 +99,9 @@ class EPollSelectorImpl extends SelectorImpl {
     }
 
     @Override
-    protected int doSelect(long timeout) throws IOException {
+    protected int doSelect(Consumer<SelectionKey> action, long timeout)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
 
         // epoll_wait timeout is int
@@ -130,7 +134,7 @@ class EPollSelectorImpl extends SelectorImpl {
             end(blocking);
         }
         processDeregisterQueue();
-        return updateSelectedKeys(numEntries);
+        return processEvents(numEntries, action);
     }
 
     /**
@@ -171,13 +175,13 @@ class EPollSelectorImpl extends SelectorImpl {
     }
 
     /**
-     * Update the keys of file descriptors that were polled and add them to
-     * the selected-key set.
+     * Process the polled events.
      * If the interrupt fd has been selected, drain it and clear the interrupt.
      */
-    private int updateSelectedKeys(int numEntries) throws IOException {
+    private int processEvents(int numEntries, Consumer<SelectionKey> action)
+        throws IOException
+    {
         assert Thread.holdsLock(this);
-        assert Thread.holdsLock(nioSelectedKeys());
 
         boolean interrupted = false;
         int numKeysUpdated = 0;
@@ -190,17 +194,7 @@ class EPollSelectorImpl extends SelectorImpl {
                 SelectionKeyImpl ski = fdToKey.get(fd);
                 if (ski != null) {
                     int rOps = EPoll.getEvents(event);
-                    if (selectedKeys.contains(ski)) {
-                        if (ski.translateAndUpdateReadyOps(rOps)) {
-                            numKeysUpdated++;
-                        }
-                    } else {
-                        ski.translateAndSetReadyOps(rOps);
-                        if ((ski.nioReadyOps() & ski.nioInterestOps()) != 0) {
-                            selectedKeys.add(ski);
-                            numKeysUpdated++;
-                        }
-                    }
+                    numKeysUpdated += processReadyEvents(rOps, ski, action);
                 }
             }
         }

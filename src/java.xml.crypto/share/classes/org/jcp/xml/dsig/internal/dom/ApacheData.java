@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: ApacheData.java 1333869 2012-05-04 10:42:44Z coheigea $
+ * $Id: ApacheData.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -34,7 +34,6 @@ import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 /**
  * XMLSignatureInput Data wrapper.
  *
- * @author Sean Mullan
  */
 public interface ApacheData extends Data {
 

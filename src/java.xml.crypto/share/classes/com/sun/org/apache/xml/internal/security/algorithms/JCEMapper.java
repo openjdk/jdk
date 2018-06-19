@@ -25,7 +25,6 @@ package com.sun.org.apache.xml.internal.security.algorithms;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.sun.org.apache.xml.internal.security.encryption.XMLCipher;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignature;
 import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.w3c.dom.Element;
@@ -36,14 +35,13 @@ import org.w3c.dom.Element;
  */
 public class JCEMapper {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(JCEMapper.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(JCEMapper.class);
 
     private static Map<String, Algorithm> algorithmsMap =
         new ConcurrentHashMap<String, Algorithm>();
 
-    private static String providerName = null;
+    private static String providerName;
 
     /**
      * Method register
@@ -62,6 +60,7 @@ public class JCEMapper {
      * This method registers the default algorithms.
      */
     public static void registerDefaultAlgorithms() {
+        // Digest algorithms
         algorithmsMap.put(
             MessageDigestAlgorithm.ALGO_ID_DIGEST_NOT_RECOMMENDED_MD5,
             new Algorithm("", "MD5", "MessageDigest")
@@ -73,6 +72,10 @@ public class JCEMapper {
         algorithmsMap.put(
             MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA1,
             new Algorithm("", "SHA-1", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA224,
+            new Algorithm("", "SHA-224", "MessageDigest")
         );
         algorithmsMap.put(
             MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA256,
@@ -87,136 +90,149 @@ public class JCEMapper {
             new Algorithm("", "SHA-512", "MessageDigest")
         );
         algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_WHIRLPOOL,
+            new Algorithm("", "WHIRLPOOL", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA3_224,
+            new Algorithm("", "SHA3-224", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA3_256,
+            new Algorithm("", "SHA3-256", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA3_384,
+            new Algorithm("", "SHA3-384", "MessageDigest")
+        );
+        algorithmsMap.put(
+            MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA3_512,
+            new Algorithm("", "SHA3-512", "MessageDigest")
+        );
+        // Signature algorithms
+        algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_DSA,
-            new Algorithm("", "SHA1withDSA", "Signature")
+            new Algorithm("DSA", "SHA1withDSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_DSA_SHA256,
-            new Algorithm("", "SHA256withDSA", "Signature")
+            new Algorithm("DSA", "SHA256withDSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_NOT_RECOMMENDED_RSA_MD5,
-            new Algorithm("", "MD5withRSA", "Signature")
+            new Algorithm("RSA", "MD5withRSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_RSA_RIPEMD160,
-            new Algorithm("", "RIPEMD160withRSA", "Signature")
+            new Algorithm("RSA", "RIPEMD160withRSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1,
-            new Algorithm("", "SHA1withRSA", "Signature")
+            new Algorithm("RSA", "SHA1withRSA", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA224,
+            new Algorithm("RSA", "SHA224withRSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256,
-            new Algorithm("", "SHA256withRSA", "Signature")
+            new Algorithm("RSA", "SHA256withRSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA384,
-            new Algorithm("", "SHA384withRSA", "Signature")
+            new Algorithm("RSA", "SHA384withRSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512,
-            new Algorithm("", "SHA512withRSA", "Signature")
+            new Algorithm("RSA", "SHA512withRSA", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA1_MGF1,
+            new Algorithm("RSA", "SHA1withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA224_MGF1,
+            new Algorithm("RSA", "SHA224withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA256_MGF1,
+            new Algorithm("RSA", "SHA256withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA384_MGF1,
+            new Algorithm("RSA", "SHA384withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA512_MGF1,
+            new Algorithm("RSA", "SHA512withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_224_MGF1,
+             new Algorithm("RSA", "SHA3-224withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_256_MGF1,
+             new Algorithm("RSA", "SHA3-256withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_384_MGF1,
+             new Algorithm("RSA", "SHA3-384withRSAandMGF1", "Signature")
+        );
+        algorithmsMap.put(
+             XMLSignature.ALGO_ID_SIGNATURE_RSA_SHA3_512_MGF1,
+             new Algorithm("RSA", "SHA3-512withRSAandMGF1", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA1,
-            new Algorithm("", "SHA1withECDSA", "Signature")
+            new Algorithm("EC", "SHA1withECDSA", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA224,
+            new Algorithm("EC", "SHA224withECDSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA256,
-            new Algorithm("", "SHA256withECDSA", "Signature")
+            new Algorithm("EC", "SHA256withECDSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA384,
-            new Algorithm("", "SHA384withECDSA", "Signature")
+            new Algorithm("EC", "SHA384withECDSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_SIGNATURE_ECDSA_SHA512,
-            new Algorithm("", "SHA512withECDSA", "Signature")
+            new Algorithm("EC", "SHA512withECDSA", "Signature")
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_SIGNATURE_ECDSA_RIPEMD160,
+            new Algorithm("EC", "RIPEMD160withECDSA", "Signature")
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_MAC_HMAC_NOT_RECOMMENDED_MD5,
-            new Algorithm("", "HmacMD5", "Mac")
+            new Algorithm("", "HmacMD5", "Mac", 0, 0)
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_MAC_HMAC_RIPEMD160,
-            new Algorithm("", "HMACRIPEMD160", "Mac")
+            new Algorithm("", "HMACRIPEMD160", "Mac", 0, 0)
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_MAC_HMAC_SHA1,
-            new Algorithm("", "HmacSHA1", "Mac")
+            new Algorithm("", "HmacSHA1", "Mac", 0, 0)
+        );
+        algorithmsMap.put(
+            XMLSignature.ALGO_ID_MAC_HMAC_SHA224,
+            new Algorithm("", "HmacSHA224", "Mac", 0, 0)
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_MAC_HMAC_SHA256,
-            new Algorithm("", "HmacSHA256", "Mac")
+            new Algorithm("", "HmacSHA256", "Mac", 0, 0)
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_MAC_HMAC_SHA384,
-            new Algorithm("", "HmacSHA384", "Mac")
+            new Algorithm("", "HmacSHA384", "Mac", 0, 0)
         );
         algorithmsMap.put(
             XMLSignature.ALGO_ID_MAC_HMAC_SHA512,
-            new Algorithm("", "HmacSHA512", "Mac")
-        );
-        algorithmsMap.put(
-            XMLCipher.TRIPLEDES,
-            new Algorithm("DESede", "DESede/CBC/ISO10126Padding", "BlockEncryption", 192)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_128,
-            new Algorithm("AES", "AES/CBC/ISO10126Padding", "BlockEncryption", 128)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_192,
-            new Algorithm("AES", "AES/CBC/ISO10126Padding", "BlockEncryption", 192)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_256,
-            new Algorithm("AES", "AES/CBC/ISO10126Padding", "BlockEncryption", 256)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_128_GCM,
-            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 128)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_192_GCM,
-            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 192)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_256_GCM,
-            new Algorithm("AES", "AES/GCM/NoPadding", "BlockEncryption", 256)
-        );
-        algorithmsMap.put(
-            XMLCipher.RSA_v1dot5,
-            new Algorithm("RSA", "RSA/ECB/PKCS1Padding", "KeyTransport")
-        );
-        algorithmsMap.put(
-            XMLCipher.RSA_OAEP,
-            new Algorithm("RSA", "RSA/ECB/OAEPPadding", "KeyTransport")
-        );
-        algorithmsMap.put(
-            XMLCipher.RSA_OAEP_11,
-            new Algorithm("RSA", "RSA/ECB/OAEPPadding", "KeyTransport")
-        );
-        algorithmsMap.put(
-            XMLCipher.DIFFIE_HELLMAN,
-            new Algorithm("", "", "KeyAgreement")
-        );
-        algorithmsMap.put(
-            XMLCipher.TRIPLEDES_KeyWrap,
-            new Algorithm("DESede", "DESedeWrap", "SymmetricKeyWrap", 192)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_128_KeyWrap,
-            new Algorithm("AES", "AESWrap", "SymmetricKeyWrap", 128)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_192_KeyWrap,
-            new Algorithm("AES", "AESWrap", "SymmetricKeyWrap", 192)
-        );
-        algorithmsMap.put(
-            XMLCipher.AES_256_KeyWrap,
-            new Algorithm("AES", "AESWrap", "SymmetricKeyWrap", 256)
+            new Algorithm("", "HmacSHA512", "Mac", 0, 0)
         );
     }
 
@@ -227,11 +243,7 @@ public class JCEMapper {
      * @return the JCE standard name corresponding to the given URI
      */
     public static String translateURItoJCEID(String algorithmURI) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Request for URI " + algorithmURI);
-        }
-
-        Algorithm algorithm = algorithmsMap.get(algorithmURI);
+        Algorithm algorithm = getAlgorithm(algorithmURI);
         if (algorithm != null) {
             return algorithm.jceName;
         }
@@ -244,11 +256,7 @@ public class JCEMapper {
      * @return the class name that implements this algorithm
      */
     public static String getAlgorithmClassFromURI(String algorithmURI) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Request for URI " + algorithmURI);
-        }
-
-        Algorithm algorithm = algorithmsMap.get(algorithmURI);
+        Algorithm algorithm = getAlgorithm(algorithmURI);
         if (algorithm != null) {
             return algorithm.algorithmClass;
         }
@@ -262,12 +270,17 @@ public class JCEMapper {
      * @return The length of the key used in the algorithm
      */
     public static int getKeyLengthFromURI(String algorithmURI) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Request for URI " + algorithmURI);
-        }
-        Algorithm algorithm = algorithmsMap.get(algorithmURI);
+        Algorithm algorithm = getAlgorithm(algorithmURI);
         if (algorithm != null) {
             return algorithm.keyLength;
+        }
+        return 0;
+    }
+
+    public static int getIVLengthFromURI(String algorithmURI) {
+        Algorithm algorithm = getAlgorithm(algorithmURI);
+        if (algorithm != null) {
+            return algorithm.ivLength;
         }
         return 0;
     }
@@ -279,12 +292,38 @@ public class JCEMapper {
      * @return The KeyAlgorithm for the given URI.
      */
     public static String getJCEKeyAlgorithmFromURI(String algorithmURI) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Request for URI " + algorithmURI);
-        }
-        Algorithm algorithm = algorithmsMap.get(algorithmURI);
+        Algorithm algorithm = getAlgorithm(algorithmURI);
+         if (algorithm != null) {
+             return algorithm.requiredKey;
+         }
+        return null;
+    }
+
+    /**
+     * Method getJCEProviderFromURI
+     *
+     * @param algorithmURI
+     * @return The JCEProvider for the given URI.
+     */
+    public static String getJCEProviderFromURI(String algorithmURI) {
+        Algorithm algorithm = getAlgorithm(algorithmURI);
         if (algorithm != null) {
-            return algorithm.requiredKey;
+            return algorithm.jceProvider;
+        }
+        return null;
+    }
+
+    /**
+     * Method getAlgorithm
+     *
+     * @param algorithmURI
+     * @return The Algorithm object for the given URI.
+     */
+    private static Algorithm getAlgorithm(String algorithmURI) {
+        LOG.debug("Request for URI {}", algorithmURI);
+
+        if (algorithmURI != null) {
+            return algorithmsMap.get(algorithmURI);
         }
         return null;
     }
@@ -301,7 +340,7 @@ public class JCEMapper {
      * Sets the default Provider for obtaining the security algorithms
      * @param provider the default providerId.
      * @throws SecurityException if a security manager is installed and the
-     *    caller does not have permission to set the JCE provider
+     *    caller does not have permission to register the JCE algorithm
      */
     public static void setProviderId(String provider) {
         JavaUtils.checkRegisterPermission();
@@ -317,40 +356,54 @@ public class JCEMapper {
         final String jceName;
         final String algorithmClass;
         final int keyLength;
+        final int ivLength;
+        final String jceProvider;
 
         /**
          * Gets data from element
          * @param el
          */
         public Algorithm(Element el) {
-            requiredKey = el.getAttribute("RequiredKey");
-            jceName = el.getAttribute("JCEName");
-            algorithmClass = el.getAttribute("AlgorithmClass");
+            requiredKey = el.getAttributeNS(null, "RequiredKey");
+            jceName = el.getAttributeNS(null, "JCEName");
+            algorithmClass = el.getAttributeNS(null, "AlgorithmClass");
+            jceProvider = el.getAttributeNS(null, "JCEProvider");
             if (el.hasAttribute("KeyLength")) {
-                keyLength = Integer.parseInt(el.getAttribute("KeyLength"));
+                keyLength = Integer.parseInt(el.getAttributeNS(null, "KeyLength"));
             } else {
                 keyLength = 0;
+            }
+            if (el.hasAttribute("IVLength")) {
+                ivLength = Integer.parseInt(el.getAttributeNS(null, "IVLength"));
+            } else {
+                ivLength = 0;
             }
         }
 
         public Algorithm(String requiredKey, String jceName) {
-            this(requiredKey, jceName, null, 0);
+            this(requiredKey, jceName, null, 0, 0);
         }
 
         public Algorithm(String requiredKey, String jceName, String algorithmClass) {
-            this(requiredKey, jceName, algorithmClass, 0);
+            this(requiredKey, jceName, algorithmClass, 0, 0);
         }
 
         public Algorithm(String requiredKey, String jceName, int keyLength) {
-            this(requiredKey, jceName, null, keyLength);
+            this(requiredKey, jceName, null, keyLength, 0);
         }
 
-        public Algorithm(String requiredKey, String jceName, String algorithmClass, int keyLength) {
+        public Algorithm(String requiredKey, String jceName, String algorithmClass, int keyLength, int ivLength) {
+            this(requiredKey, jceName, algorithmClass, keyLength, ivLength, null);
+        }
+
+        public Algorithm(String requiredKey, String jceName,
+                         String algorithmClass, int keyLength, int ivLength, String jceProvider) {
             this.requiredKey = requiredKey;
             this.jceName = jceName;
             this.algorithmClass = algorithmClass;
             this.keyLength = keyLength;
+            this.ivLength = ivLength;
+            this.jceProvider = jceProvider;
         }
     }
-
 }

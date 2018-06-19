@@ -37,15 +37,15 @@ void BarrierSetAssembler::arraycopy_epilogue(MacroAssembler* masm, DecoratorSet 
 
 void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                   const Address& addr, Register dst, Register tmp1, Register tmp2, Label *L_handle_null) {
-  bool on_heap  = (decorators & IN_HEAP) != 0;
-  bool on_root  = (decorators & IN_ROOT) != 0;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool in_native = (decorators & IN_NATIVE) != 0;
   bool not_null = (decorators & OOP_NOT_NULL) != 0;
-  assert(on_heap || on_root, "where?");
+  assert(in_heap || in_native, "where?");
 
   switch (type) {
   case T_ARRAY:
   case T_OBJECT: {
-    if (UseCompressedOops && on_heap) {
+    if (UseCompressedOops && in_heap) {
       __ z_llgf(dst, addr);
       if (L_handle_null != NULL) { // Label provided.
         __ compareU32_and_branch(dst, (intptr_t)0, Assembler::bcondEqual, *L_handle_null);
@@ -67,16 +67,16 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 
 void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                    const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3) {
-  bool on_heap  = (decorators & IN_HEAP) != 0;
-  bool on_root  = (decorators & IN_ROOT) != 0;
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool in_native = (decorators & IN_NATIVE) != 0;
   bool not_null = (decorators & OOP_NOT_NULL) != 0;
-  assert(on_heap || on_root, "where?");
+  assert(in_heap || in_native, "where?");
   assert_different_registers(val, tmp1, tmp2);
 
   switch (type) {
   case T_ARRAY:
   case T_OBJECT: {
-    if (UseCompressedOops && on_heap) {
+    if (UseCompressedOops && in_heap) {
       if (val == noreg) {
         __ clear_mem(addr, 4);
       } else if (Universe::narrow_oop_mode() == Universe::UnscaledNarrowOop) {

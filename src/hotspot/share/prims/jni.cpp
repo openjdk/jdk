@@ -2630,7 +2630,17 @@ JNI_ENTRY(void, jni_SetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize
     if (v == NULL || v->is_a(ObjArrayKlass::cast(a->klass())->element_klass())) {
       a->obj_at_put(index, v);
     } else {
-      THROW(vmSymbols::java_lang_ArrayStoreException());
+      ResourceMark rm(THREAD);
+      stringStream ss;
+      Klass *bottom_kl = ObjArrayKlass::cast(a->klass())->bottom_klass();
+      ss.print("type mismatch: can not store %s to %s[%d]",
+               v->klass()->external_name(),
+               bottom_kl->is_typeArray_klass() ? type2name_tab[ArrayKlass::cast(bottom_kl)->element_type()] : bottom_kl->external_name(),
+               index);
+      for (int dims = ArrayKlass::cast(a->klass())->dimension(); dims > 1; --dims) {
+        ss.print("[]");
+      }
+      THROW_MSG(vmSymbols::java_lang_ArrayStoreException(), ss.as_string());
     }
   } else {
     char buf[jintAsStringSize];

@@ -32,10 +32,9 @@ import com.sun.org.apache.xml.internal.security.transforms.TransformSpi;
 import com.sun.org.apache.xml.internal.security.transforms.Transforms;
 
 /**
- * Implements the <CODE>http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments</CODE>
+ * Implements the {@code http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments}
  * transform.
  *
- * @author Christian Geuer-Pollmann
  */
 public class TransformC14NWithComments extends TransformSpi {
 
@@ -43,17 +42,18 @@ public class TransformC14NWithComments extends TransformSpi {
     public static final String implementedTransformURI =
         Transforms.TRANSFORM_C14N_WITH_COMMENTS;
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected String engineGetURI() {
         return implementedTransformURI;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     protected XMLSignatureInput enginePerformTransform(
         XMLSignatureInput input, OutputStream os, Transform transformObject
     ) throws CanonicalizationException {
 
         Canonicalizer20010315WithComments c14n = new Canonicalizer20010315WithComments();
+        c14n.setSecureValidation(secureValidation);
         if (os != null) {
             c14n.setWriter(os);
         }
@@ -61,6 +61,7 @@ public class TransformC14NWithComments extends TransformSpi {
         byte[] result = null;
         result = c14n.engineCanonicalize(input);
         XMLSignatureInput output = new XMLSignatureInput(result);
+        output.setSecureValidation(secureValidation);
         if (os != null) {
             output.setOutputStream(os);
         }

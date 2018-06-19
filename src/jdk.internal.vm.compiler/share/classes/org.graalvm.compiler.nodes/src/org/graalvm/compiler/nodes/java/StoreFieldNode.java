@@ -71,12 +71,16 @@ public final class StoreFieldNode extends AccessFieldNode implements StateSplit,
     }
 
     public StoreFieldNode(ValueNode object, ResolvedJavaField field, ValueNode value) {
-        super(TYPE, StampFactory.forVoid(), object, field);
+        this(object, field, value, field.isVolatile());
+    }
+
+    public StoreFieldNode(ValueNode object, ResolvedJavaField field, ValueNode value, boolean volatileAccess) {
+        super(TYPE, StampFactory.forVoid(), object, field, volatileAccess);
         this.value = value;
     }
 
-    public StoreFieldNode(ValueNode object, ResolvedJavaField field, ValueNode value, FrameState stateAfter) {
-        super(TYPE, StampFactory.forVoid(), object, field);
+    public StoreFieldNode(ValueNode object, ResolvedJavaField field, ValueNode value, FrameState stateAfter, boolean volatileAccess) {
+        super(TYPE, StampFactory.forVoid(), object, field, volatileAccess);
         this.value = value;
         this.stateAfter = stateAfter;
     }
@@ -100,7 +104,7 @@ public final class StoreFieldNode extends AccessFieldNode implements StateSplit,
 
     @Override
     public NodeCycles estimatedNodeCycles() {
-        if (field.isVolatile()) {
+        if (isVolatile()) {
             return CYCLES_8;
         }
         return super.estimatedNodeCycles();

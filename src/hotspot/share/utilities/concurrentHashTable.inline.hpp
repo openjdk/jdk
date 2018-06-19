@@ -484,11 +484,12 @@ template <typename VALUE, typename CONFIG, MEMFLAGS F>
 template <typename EVALUATE_FUNC, typename DELETE_FUNC>
 inline void ConcurrentHashTable<VALUE, CONFIG, F>::
   do_bulk_delete_locked_for(Thread* thread, size_t start_idx, size_t stop_idx,
-                            EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f)
+                            EVALUATE_FUNC& eval_f, DELETE_FUNC& del_f, bool is_mt)
 {
   // Here we have resize lock so table is SMR safe, and there is no new
   // table. Can do this in parallel if we want.
-  assert(_resize_lock_owner == thread, "Re-size lock not held");
+  assert((is_mt && _resize_lock_owner != NULL) ||
+         (!is_mt && _resize_lock_owner == thread), "Re-size lock not held");
   Node* ndel[BULK_DELETE_LIMIT];
   InternalTable* table = get_table();
   assert(start_idx < stop_idx, "Must be");
@@ -516,7 +517,11 @@ inline void ConcurrentHashTable<VALUE, CONFIG, F>::
     bucket->lock();
     size_t nd = delete_check_nodes(bucket, eval_f, BULK_DELETE_LIMIT, ndel);
     bucket->unlock();
-    write_synchonize_on_visible_epoch(thread);
+    if (is_mt) {
+      GlobalCounter::write_synchronize();
+    } else {
+      write_synchonize_on_visible_epoch(thread);
+    }
     for (size_t node_it = 0; node_it < nd; node_it++) {
       del_f(ndel[node_it]->value());
       Node::destroy_node(ndel[node_it]);
@@ -1198,7 +1203,7 @@ inline bool ConcurrentHashTable<VALUE, CONFIG, F>::
   if (!try_resize_lock(thread)) {
     return false;
   }
-  assert(_new_table == NULL, "Must be NULL");
+  assert(_new_table == NULL || _new_table == POISON_PTR, "Must be NULL");
   for (size_t bucket_it = 0; bucket_it < _table->_size; bucket_it++) {
     Bucket* bucket = _table->get_bucket(bucket_it);
     assert(!bucket->have_redirect() && !bucket->is_locked(), "Table must be uncontended");

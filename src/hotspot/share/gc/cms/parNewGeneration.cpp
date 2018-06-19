@@ -42,6 +42,7 @@
 #include "gc/shared/plab.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
+#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -792,14 +793,17 @@ void ParNewRefProcTaskProxy::work(uint worker_id) {
              par_scan_state.evacuate_followers_closure());
 }
 
-void ParNewRefProcTaskExecutor::execute(ProcessTask& task) {
+void ParNewRefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers) {
   CMSHeap* gch = CMSHeap::heap();
   WorkGang* workers = gch->workers();
   assert(workers != NULL, "Need parallel worker threads.");
+  assert(workers->active_workers() == ergo_workers,
+         "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
+         ergo_workers, workers->active_workers());
   _state_set.reset(workers->active_workers(), _young_gen.promotion_failed());
   ParNewRefProcTaskProxy rp_task(task, _young_gen, _old_gen,
                                  _young_gen.reserved().end(), _state_set);
-  workers->run_task(&rp_task);
+  workers->run_task(&rp_task, workers->active_workers());
   _state_set.reset(0 /* bad value in debug if not reset */,
                    _young_gen.promotion_failed());
 }
@@ -812,7 +816,7 @@ void ParNewRefProcTaskExecutor::set_single_threaded_mode() {
 
 ScanClosureWithParBarrier::
 ScanClosureWithParBarrier(ParNewGeneration* g, bool gc_barrier) :
-  ScanClosure(g, gc_barrier)
+  OopsInClassLoaderDataOrGenClosure(g), _g(g), _boundary(g->reserved().end()), _gc_barrier(gc_barrier)
 { }
 
 template <typename OopClosureType1, typename OopClosureType2>
@@ -1449,7 +1453,8 @@ void ParNewGeneration::ref_processor_init() {
                              refs_discovery_is_mt(),     // mt discovery
                              ParallelGCThreads,          // mt discovery degree
                              refs_discovery_is_atomic(), // atomic_discovery
-                             NULL);                      // is_alive_non_header
+                             NULL,                       // is_alive_non_header
+                             false);                     // disable adjusting number of processing threads
   }
 }
 

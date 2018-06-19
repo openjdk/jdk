@@ -36,18 +36,15 @@ import org.w3c.dom.Element;
 
 public class RSAKeyValueResolver extends KeyResolverSpi {
 
-    /** {@link org.apache.commons.logging} logging facility */
-    private static java.util.logging.Logger log =
-        java.util.logging.Logger.getLogger(RSAKeyValueResolver.class.getName());
+    private static final com.sun.org.slf4j.internal.Logger LOG =
+        com.sun.org.slf4j.internal.LoggerFactory.getLogger(RSAKeyValueResolver.class);
 
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public PublicKey engineLookupAndResolvePublicKey(
-        Element element, String BaseURI, StorageResolver storage
+        Element element, String baseURI, StorageResolver storage
     ) {
-        if (log.isLoggable(java.util.logging.Level.FINE)) {
-            log.log(java.util.logging.Level.FINE, "Can I resolve " + element.getTagName());
-        }
+        LOG.debug("Can I resolve {}", element.getTagName());
         if (element == null) {
             return null;
         }
@@ -68,28 +65,26 @@ public class RSAKeyValueResolver extends KeyResolverSpi {
         }
 
         try {
-            RSAKeyValue rsaKeyValue = new RSAKeyValue(rsaKeyElement, BaseURI);
+            RSAKeyValue rsaKeyValue = new RSAKeyValue(rsaKeyElement, baseURI);
 
             return rsaKeyValue.getPublicKey();
         } catch (XMLSecurityException ex) {
-            if (log.isLoggable(java.util.logging.Level.FINE)) {
-                log.log(java.util.logging.Level.FINE, "XMLSecurityException", ex);
-            }
+            LOG.debug("XMLSecurityException", ex);
         }
 
         return null;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public X509Certificate engineLookupResolveX509Certificate(
-        Element element, String BaseURI, StorageResolver storage
+        Element element, String baseURI, StorageResolver storage
     ) {
         return null;
     }
 
-    /** @inheritDoc */
+    /** {@inheritDoc} */
     public javax.crypto.SecretKey engineLookupAndResolveSecretKey(
-        Element element, String BaseURI, StorageResolver storage
+        Element element, String baseURI, StorageResolver storage
     ) {
         return null;
     }

@@ -21,10 +21,10 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * $Id: DOMExcC14NMethod.java 1197150 2011-11-03 14:34:57Z coheigea $
+ * $Id: DOMExcC14NMethod.java 1788465 2017-03-24 15:10:51Z coheigea $
  */
 package org.jcp.xml.dsig.internal.dom;
 
@@ -37,8 +37,8 @@ import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.*;
-import org.w3c.dom.Element;
 
+import org.w3c.dom.Element;
 import com.sun.org.apache.xml.internal.security.c14n.Canonicalizer;
 import com.sun.org.apache.xml.internal.security.c14n.InvalidCanonicalizerException;
 
@@ -47,10 +47,10 @@ import com.sun.org.apache.xml.internal.security.c14n.InvalidCanonicalizerExcepti
  * Canonical XML algorithm (with or without comments).
  * Uses Apache XML-Sec Canonicalizer.
  *
- * @author Sean Mullan
  */
 public final class DOMExcC14NMethod extends ApacheCanonicalizer {
 
+    @Override
     public void init(TransformParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
@@ -63,6 +63,7 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
         }
     }
 
+    @Override
     public void init(XMLStructure parent, XMLCryptoContext context)
         throws InvalidAlgorithmParameterException
     {
@@ -81,7 +82,7 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
         this.inclusiveNamespaces = prefixListAttr;
         int begin = 0;
         int end = prefixListAttr.indexOf(' ');
-        List<String> prefixList = new ArrayList<String>();
+        List<String> prefixList = new ArrayList<>();
         while (end != -1) {
             prefixList.add(prefixListAttr.substring(begin, end));
             begin = end + 1;
@@ -93,6 +94,12 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
         this.params = new ExcC14NParameterSpec(prefixList);
     }
 
+    @SuppressWarnings("unchecked")
+    public List<String> getParameterSpecPrefixList(ExcC14NParameterSpec paramSpec) {
+        return paramSpec.getPrefixList();
+    }
+
+    @Override
     public void marshalParams(XMLStructure parent, XMLCryptoContext context)
         throws MarshalException
     {
@@ -102,39 +109,32 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
             return;
         }
 
-        String prefix = DOMUtils.getNSPrefix(context,
-                                             CanonicalizationMethod.EXCLUSIVE);
-        Element eElem = DOMUtils.createElement(ownerDoc,
-                                               "InclusiveNamespaces",
-                                               CanonicalizationMethod.EXCLUSIVE,
-                                               prefix);
-        if (prefix == null || prefix.length() == 0) {
-            eElem.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns",
-                                 CanonicalizationMethod.EXCLUSIVE);
-        } else {
-            eElem.setAttributeNS("http://www.w3.org/2000/xmlns/",
-                                   "xmlns:" + prefix,
-                                   CanonicalizationMethod.EXCLUSIVE);
-        }
+        XmlWriterToTree xwriter = new XmlWriterToTree(Marshaller.getMarshallers(), transformElem);
+
+        String prefix =
+            DOMUtils.getNSPrefix(context, CanonicalizationMethod.EXCLUSIVE);
+        xwriter.writeStartElement(prefix, "InclusiveNamespaces", CanonicalizationMethod.EXCLUSIVE);
+        xwriter.writeNamespace(prefix, CanonicalizationMethod.EXCLUSIVE);
 
         ExcC14NParameterSpec params = (ExcC14NParameterSpec)spec;
         StringBuilder prefixListAttr = new StringBuilder("");
-        List<String> prefixList = params.getPrefixList();
+        List<String> prefixList = getParameterSpecPrefixList(params);
         for (int i = 0, size = prefixList.size(); i < size; i++) {
             prefixListAttr.append(prefixList.get(i));
             if (i < size - 1) {
                 prefixListAttr.append(" ");
             }
         }
-        DOMUtils.setAttribute(eElem, "PrefixList", prefixListAttr.toString());
+        xwriter.writeAttribute("", "", "PrefixList", prefixListAttr.toString());
         this.inclusiveNamespaces = prefixListAttr.toString();
-        transformElem.appendChild(eElem);
+        xwriter.writeEndElement(); // "InclusiveNamespaces"
     }
 
     public String getParamsNSURI() {
         return CanonicalizationMethod.EXCLUSIVE;
     }
 
+    @Override
     public Data transform(Data data, XMLCryptoContext xc)
         throws TransformException
     {
@@ -147,6 +147,8 @@ public final class DOMExcC14NMethod extends ApacheCanonicalizer {
                 try {
                     apacheCanonicalizer = Canonicalizer.getInstance
                         (CanonicalizationMethod.EXCLUSIVE);
+                    boolean secVal = Utils.secureValidation(xc);
+                    apacheCanonicalizer.setSecureValidation(secVal);
                 } catch (InvalidCanonicalizerException ice) {
                     throw new TransformException
                         ("Couldn't find Canonicalizer for: " +

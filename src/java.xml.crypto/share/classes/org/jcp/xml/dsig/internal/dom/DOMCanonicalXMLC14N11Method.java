@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id$
@@ -41,7 +41,6 @@ import com.sun.org.apache.xml.internal.security.c14n.InvalidCanonicalizerExcepti
  * DOM-based implementation of CanonicalizationMethod for Canonical XML 1.1
  * (with or without comments). Uses Apache XML-Sec Canonicalizer.
  *
- * @author Sean Mullan
  */
 public final class DOMCanonicalXMLC14N11Method extends ApacheCanonicalizer {
 
@@ -49,6 +48,7 @@ public final class DOMCanonicalXMLC14N11Method extends ApacheCanonicalizer {
     public static final String C14N_11_WITH_COMMENTS
         = "http://www.w3.org/2006/12/xml-c14n11#WithComments";
 
+    @Override
     public void init(TransformParameterSpec params)
         throws InvalidAlgorithmParameterException {
         if (params != null) {
@@ -57,6 +57,7 @@ public final class DOMCanonicalXMLC14N11Method extends ApacheCanonicalizer {
         }
     }
 
+    @Override
     public Data transform(Data data, XMLCryptoContext xc)
         throws TransformException {
 
@@ -68,6 +69,8 @@ public final class DOMCanonicalXMLC14N11Method extends ApacheCanonicalizer {
             if (subTree.excludeComments()) {
                 try {
                     apacheCanonicalizer = Canonicalizer.getInstance(C14N_11);
+                    boolean secVal = Utils.secureValidation(xc);
+                    apacheCanonicalizer.setSecureValidation(secVal);
                 } catch (InvalidCanonicalizerException ice) {
                     throw new TransformException
                         ("Couldn't find Canonicalizer for: " +

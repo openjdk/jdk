@@ -191,6 +191,12 @@ inline oop ZBarrier::load_barrier_on_phantom_oop_field_preloaded(volatile oop* p
 //
 // Weak load barrier
 //
+inline oop ZBarrier::weak_load_barrier_on_oop_field(volatile oop* p) {
+  assert(!ZResurrection::is_blocked(), "Should not be called during resurrection blocked phase");
+  const oop o = *p;
+  return weak_load_barrier_on_oop_field_preloaded(p, o);
+}
+
 inline oop ZBarrier::weak_load_barrier_on_oop_field_preloaded(volatile oop* p, oop o) {
   return weak_barrier<is_weak_good_or_null_fast_path, weak_load_barrier_on_oop_slow_path>(p, o);
 }

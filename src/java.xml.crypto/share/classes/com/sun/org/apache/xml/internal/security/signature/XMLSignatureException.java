@@ -28,7 +28,6 @@ import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
  * All XML Signature related exceptions inherit herefrom.
  *
  * @see MissingResourceFailureException InvalidDigestValueException InvalidSignatureValueException
- * @author Christian Geuer-Pollmann
  */
 public class XMLSignatureException extends XMLSecurityException {
 
@@ -43,6 +42,10 @@ public class XMLSignatureException extends XMLSecurityException {
      */
     public XMLSignatureException() {
         super();
+    }
+
+    public XMLSignatureException(Exception ex) {
+        super(ex);
     }
 
     /**
@@ -67,21 +70,31 @@ public class XMLSignatureException extends XMLSecurityException {
     /**
      * Constructor XMLSignatureException
      *
-     * @param msgID
      * @param originalException
+     * @param msgID
      */
+    public XMLSignatureException(Exception originalException, String msgID) {
+        super(originalException, msgID);
+    }
+
+    @Deprecated
     public XMLSignatureException(String msgID, Exception originalException) {
-        super(msgID, originalException);
+        this(originalException, msgID);
     }
 
     /**
      * Constructor XMLSignatureException
      *
+     * @param originalException
      * @param msgID
      * @param exArgs
-     * @param originalException
      */
-    public XMLSignatureException(String msgID, Object exArgs[], Exception originalException) {
-        super(msgID, exArgs, originalException);
+    public XMLSignatureException(Exception originalException, String msgID, Object exArgs[]) {
+        super(originalException, msgID, exArgs);
+    }
+
+    @Deprecated
+    public XMLSignatureException(String msgID, Object[] exArgs, Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 }

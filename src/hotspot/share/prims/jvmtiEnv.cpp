@@ -657,7 +657,11 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
 
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
+#if INCLUDE_CDS
     ClassLoaderExt::append_boot_classpath(zip_entry);
+#else
+    ClassLoader::add_to_boot_append_entries(zip_entry);
+#endif
     return JVMTI_ERROR_NONE;
   } else {
     return JVMTI_ERROR_WRONG_PHASE;

@@ -641,6 +641,26 @@ public class AArch64MacroAssembler extends AArch64Assembler {
     }
 
     /**
+     * dst = src + immediate.
+     *
+     * @param size register size. Has to be 32 or 64.
+     * @param dst general purpose register. May not be null or zero-register.
+     * @param src general purpose register. May not be null or zero-register.
+     * @param immediate 64-bit signed int
+     */
+    public void add(int size, Register dst, Register src, long immediate) {
+        if (NumUtil.isInt(immediate)) {
+            add(size, dst, src, (int) immediate);
+        } else {
+            assert (!dst.equals(zr) && !src.equals(zr));
+            assert !dst.equals(src);
+            assert size == 64;
+            mov(dst, immediate);
+            add(size, src, dst, dst);
+        }
+    }
+
+    /**
      * dst = src + aimm and sets condition flags.
      *
      * @param size register size. Has to be 32 or 64.

@@ -146,10 +146,13 @@ void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
 // RefProcTaskExecutor
 //
 
-void RefProcTaskExecutor::execute(ProcessTask& task)
+void RefProcTaskExecutor::execute(ProcessTask& task, uint ergo_workers)
 {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   uint active_gc_threads = heap->gc_task_manager()->active_workers();
+  assert(active_gc_threads == ergo_workers,
+         "Ergonomically chosen workers (%u) must be equal to active workers (%u)",
+         ergo_workers, active_gc_threads);
   OopTaskQueueSet* qset = ParCompactionManager::stack_array();
   ParallelTaskTerminator terminator(active_gc_threads, qset);
   GCTaskQueue* q = GCTaskQueue::create();

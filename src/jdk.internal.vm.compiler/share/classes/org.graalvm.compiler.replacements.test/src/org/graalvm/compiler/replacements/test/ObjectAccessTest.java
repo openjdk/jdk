@@ -28,6 +28,8 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ReturnNode;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.StructuredGraph.AllowAssumptions;
+import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.ConvertNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.extended.JavaReadNode;
 import org.graalvm.compiler.nodes.extended.JavaWriteNode;
@@ -74,21 +76,21 @@ public class ObjectAccessTest extends SnippetsTest {
     @Test
     public void testWrite1() {
         for (JavaKind kind : KINDS) {
-            assertWrite(parseEager("write" + kind.name() + "1", AllowAssumptions.YES), true, ID);
+            assertWrite(parseEager("write" + kind.name() + "1", AllowAssumptions.YES), kind, true, ID);
         }
     }
 
     @Test
     public void testWrite2() {
         for (JavaKind kind : KINDS) {
-            assertWrite(parseEager("write" + kind.name() + "2", AllowAssumptions.YES), true, ID);
+            assertWrite(parseEager("write" + kind.name() + "2", AllowAssumptions.YES), kind, true, ID);
         }
     }
 
     @Test
     public void testWrite3() {
         for (JavaKind kind : KINDS) {
-            assertWrite(parseEager("write" + kind.name() + "3", AllowAssumptions.YES), true, LocationIdentity.any());
+            assertWrite(parseEager("write" + kind.name() + "3", AllowAssumptions.YES), kind, true, LocationIdentity.any());
         }
     }
 
@@ -113,10 +115,15 @@ public class ObjectAccessTest extends SnippetsTest {
         Assert.assertEquals(read, ret.result());
     }
 
-    private static void assertWrite(StructuredGraph graph, boolean indexConvert, LocationIdentity locationIdentity) {
+    private static void assertWrite(StructuredGraph graph, JavaKind kind, boolean indexConvert, LocationIdentity locationIdentity) {
         JavaWriteNode write = (JavaWriteNode) graph.start().next();
-        Assert.assertEquals(graph.getParameter(2), write.value());
-
+        ValueNode valueNode = write.value();
+        if (kind != kind.getStackKind()) {
+            while (valueNode instanceof ConvertNode) {
+                valueNode = ((ConvertNode) valueNode).getValue();
+            }
+        }
+        Assert.assertEquals(graph.getParameter(2), valueNode);
         OffsetAddressNode address = (OffsetAddressNode) write.getAddress();
         Assert.assertEquals(graph.getParameter(0), address.getBase());
         Assert.assertEquals(BytecodeFrame.AFTER_BCI, write.stateAfter().bci);

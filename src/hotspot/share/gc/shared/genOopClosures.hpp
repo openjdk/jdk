@@ -101,7 +101,7 @@ class OopsInClassLoaderDataOrGenClosure: public OopsInGenClosure {
 // This closure will perform barrier store calls for ALL
 // pointers in scanned oops.
 class ScanClosure: public OopsInClassLoaderDataOrGenClosure {
- protected:
+ private:
   DefNewGeneration* _g;
   HeapWord*         _boundary;
   bool              _gc_barrier;

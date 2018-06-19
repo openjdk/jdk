@@ -1,21 +1,3 @@
-import static java.io.File.createTempFile;
-import static java.lang.Long.parseLong;
-import static java.lang.System.getProperty;
-import static java.nio.file.Files.readAllBytes;
-import static java.util.Arrays.stream;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static jdk.test.lib.process.ProcessTools.createJavaProcessBuilder;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.Collection;
-import java.util.stream.Stream;
-
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -38,6 +20,26 @@ import java.util.stream.Stream;
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import static java.io.File.createTempFile;
+import static java.lang.Long.parseLong;
+import static java.lang.System.getProperty;
+import static java.nio.file.Files.readAllBytes;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static jdk.test.lib.process.ProcessTools.createJavaProcessBuilder;
+import static jdk.test.lib.Platform.isWindows;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 /*
  * @test TestInheritFD
@@ -78,6 +80,12 @@ public class TestInheritFD {
         String logPath = createTempFile("logging", LOG_SUFFIX).getName();
         File commFile = createTempFile("communication", ".txt");
 
+        if (!isWindows() && !lsofCommand().isPresent()) {
+            System.out.println("Could not find lsof like command");
+            System.out.println("Exit test case as successful though it could not verify anything");
+            return;
+        }
+
         ProcessBuilder pb = createJavaProcessBuilder(
             "-Xlog:gc:\"" + logPath + "\"",
             "-Dtest.jdk=" + getProperty("test.jdk"),
@@ -113,7 +121,7 @@ public class TestInheritFD {
             pb.inheritIO(); // in future, redirect information from third VM to first VM
             pb.start();
 
-            if (getProperty("os.name").toLowerCase().contains("win") == false) {
+            if (!isWindows()) {
                 System.out.println("(Second VM) Open file descriptors:\n" + outputContainingFilenames().stream().collect(joining("\n")));
             }
         }
@@ -127,7 +135,7 @@ public class TestInheritFD {
                 long parentPid = parseLong(args[1]);
                 fakeLeakyJVM(false); // for debugging of test case
 
-                if (getProperty("os.name").toLowerCase().contains("win")) {
+                if (isWindows()) {
                     windows(logFile, parentPid);
                 } else {
                     Collection<String> output = outputContainingFilenames();
@@ -161,19 +169,24 @@ public class TestInheritFD {
         }
     }
 
+    static Optional<String[]> lsofCommandCache = stream(new String[][]{
+            {"/usr/bin/lsof", "-p"},
+            {"/usr/sbin/lsof", "-p"},
+            {"/bin/lsof", "-p"},
+            {"/sbin/lsof", "-p"},
+            {"/usr/local/bin/lsof", "-p"},
+            {"/usr/bin/pfiles", "-F"}}) // Solaris
+        .filter(args -> new File(args[0]).exists())
+        .findFirst();
+
+    static Optional<String[]> lsofCommand() {
+        return lsofCommandCache;
+    }
+
     static Collection<String> outputContainingFilenames() {
         long pid = ProcessHandle.current().pid();
-        String[] command = stream(new String[][]{
-                {"/usr/bin/lsof", "-p"},
-                {"/usr/sbin/lsof", "-p"},
-                {"/bin/lsof", "-p"},
-                {"/sbin/lsof", "-p"},
-                {"/usr/local/bin/lsof", "-p"},
-                {"/usr/bin/pfiles", "-F"}}) // Solaris
-            .filter(args -> new File(args[0]).exists())
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("could not find lsof-like command"));
 
+        String[] command = lsofCommand().orElseThrow(() -> new RuntimeException("lsof like command not found"));
         System.out.println("using command: " + command[0] + " " + command[1]);
         return run(command[0], command[1], "" + pid).collect(toList());
     }
@@ -192,3 +205,4 @@ public class TestInheritFD {
         System.out.println(f.renameTo(f) ? RETAINS_FD : LEAKS_FD); // this parts communicates a closed file descriptor by printing "VM RESULT => RETAINS FD"
     }
 }
+

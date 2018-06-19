@@ -26,7 +26,6 @@ package com.sun.org.apache.xml.internal.security.signature;
  * Raised if testing the signature value over <i>DigestValue</i> fails because of invalid signature.
  *
  * @see InvalidDigestValueException  MissingKeyFailureException  MissingResourceFailureException
- * @author Christian Geuer-Pollmann
  */
 public class InvalidSignatureValueException extends XMLSignatureException {
 
@@ -65,21 +64,31 @@ public class InvalidSignatureValueException extends XMLSignatureException {
     /**
      * Constructor InvalidSignatureValueException
      *
-     * @param msgID
      * @param originalException
+     * @param msgID
      */
+    public InvalidSignatureValueException(Exception originalException, String msgID) {
+        super(originalException, msgID);
+    }
+
+    @Deprecated
     public InvalidSignatureValueException(String msgID, Exception originalException) {
-        super(msgID, originalException);
+        this(originalException, msgID);
     }
 
     /**
      * Constructor InvalidSignatureValueException
      *
+     * @param originalException
      * @param msgID
      * @param exArgs
-     * @param originalException
      */
-    public InvalidSignatureValueException(String msgID, Object exArgs[], Exception originalException) {
-        super(msgID, exArgs, originalException);
+    public InvalidSignatureValueException(Exception originalException, String msgID, Object exArgs[]) {
+        super(originalException, msgID, exArgs);
+    }
+
+    @Deprecated
+    public InvalidSignatureValueException(String msgID, Object[] exArgs, Exception originalException) {
+        this(originalException, msgID, exArgs);
     }
 }

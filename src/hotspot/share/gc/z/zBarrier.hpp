@@ -83,6 +83,7 @@ public:
   static  oop load_barrier_on_phantom_oop_field_preloaded(volatile oop* p, oop o);
 
   // Weak load barrier
+  static oop weak_load_barrier_on_oop_field(volatile oop* p);
   static oop weak_load_barrier_on_oop_field_preloaded(volatile oop* p, oop o);
   static oop weak_load_barrier_on_weak_oop(oop o);
   static oop weak_load_barrier_on_weak_oop_field(volatile oop* p);

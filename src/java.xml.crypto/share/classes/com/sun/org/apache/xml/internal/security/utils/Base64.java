@@ -39,12 +39,10 @@ import org.w3c.dom.Text;
  * Optimized code. (raw version taken from oreilly.jonathan.util,
  * and currently org.apache.xerces.ds.util.Base64)
  *
- * @author Raul Benito(Of the xerces copy, and little adaptations).
- * @author Anli Shundi
- * @author Christian Geuer-Pollmann
  * @see <A HREF="ftp://ftp.isi.edu/in-notes/rfc2045.txt">RFC 2045</A>
  * @see com.sun.org.apache.xml.internal.security.transforms.implementations.TransformBase64Decode
  */
+@Deprecated
 public class Base64 {
 
     /** Field BASE64DEFAULTLENGTH */
@@ -105,9 +103,9 @@ public class Base64 {
      * <b>N.B.:</B> <code>{@link BigInteger}<code>'s toByteArray
      * returns eventually longer arrays because of the leading sign-bit.
      *
-     * @param big <code>BigInteger<code> to be converted
-     * @param bitlen <code>int<code> the desired length in bits of the representation
-     * @return a byte array with <code>bitlen</code> bits of <code>big</code>
+     * @param big {@code BigInteger} to be converted
+     * @param bitlen {@code int} the desired length in bits of the representation
+     * @return a byte array with {@code bitlen} bits of {@code big}
      */
     static final byte[] getBytes(BigInteger big, int bitlen) {
 
@@ -120,8 +118,8 @@ public class Base64 {
 
         byte[] bigBytes = big.toByteArray();
 
-        if (((big.bitLength() % 8) != 0)
-            && (((big.bitLength() / 8) + 1) == (bitlen / 8))) {
+        if (big.bitLength() % 8 != 0
+            && big.bitLength() / 8 + 1 == bitlen / 8) {
             return bigBytes;
         }
 
@@ -129,7 +127,7 @@ public class Base64 {
         int startSrc = 0;    // no need to skip anything
         int bigLen = bigBytes.length;    //valid length of the string
 
-        if ((big.bitLength() % 8) == 0) {    // correct values
+        if (big.bitLength() % 8 == 0) {    // correct values
             startSrc = 1;    // skip sign bit
 
             bigLen--;    // valid length of the string
@@ -144,7 +142,7 @@ public class Base64 {
     }
 
     /**
-     * Encode in Base64 the given <code>{@link BigInteger}<code>.
+     * Encode in Base64 the given {@code {@link BigInteger}}.
      *
      * @param big
      * @return String with Base64 encoding
@@ -154,17 +152,17 @@ public class Base64 {
     }
 
     /**
-     * Returns a byte-array representation of a <code>{@link BigInteger}<code>.
+     * Returns a byte-array representation of a {@code {@link BigInteger}}.
      * No sign-bit is output.
      *
-     * <b>N.B.:</B> <code>{@link BigInteger}<code>'s toByteArray
+     * <b>N.B.:</B> {@code {@link BigInteger}}'s toByteArray
      * returns eventually longer arrays because of the leading sign-bit.
      *
-     * @param big <code>BigInteger<code> to be converted
-     * @param bitlen <code>int<code> the desired length in bits of the representation
-     * @return a byte array with <code>bitlen</code> bits of <code>big</code>
+     * @param big {@code BigInteger} to be converted
+     * @param bitlen {@code int} the desired length in bits of the representation
+     * @return a byte array with {@code bitlen} bits of {@code big}
      */
-    public static final  byte[] encode(BigInteger big, int bitlen) {
+    public static final byte[] encode(BigInteger big, int bitlen) {
 
         //round bitlen
         bitlen = ((bitlen + 7) >> 3) << 3;
@@ -175,8 +173,8 @@ public class Base64 {
 
         byte[] bigBytes = big.toByteArray();
 
-        if (((big.bitLength() % 8) != 0)
-            && (((big.bitLength() / 8) + 1) == (bitlen / 8))) {
+        if (big.bitLength() % 8 != 0
+            && big.bitLength() / 8 + 1 == bitlen / 8) {
             return bigBytes;
         }
 
@@ -184,7 +182,7 @@ public class Base64 {
         int startSrc = 0;    // no need to skip anything
         int bigLen = bigBytes.length;    //valid length of the string
 
-        if ((big.bitLength() % 8) == 0) {    // correct values
+        if (big.bitLength() % 8 == 0) {    // correct values
             startSrc = 1;    // skip sign bit
 
             bigLen--;    // valid length of the string
@@ -211,15 +209,14 @@ public class Base64 {
     }
 
     /**
-     * Method decodeBigIntegerFromText
-     *
-     * @param text
-     * @return the biginter obtained from the text node
+     * Decode a base 64 string into a {@link BigInteger}
+     * @param base64str Base 64 encoded string.
+     * @return a decoded BigInteger
      * @throws Base64DecodingException
      */
-    public static final BigInteger decodeBigIntegerFromText(Text text)
-        throws Base64DecodingException {
-        return new BigInteger(1, Base64.decode(text.getData()));
+    public static BigInteger decodeBigIntegerFromString(String base64str)
+            throws Base64DecodingException {
+        return new BigInteger(1, Base64.decode(base64str));
     }
 
     /**
@@ -246,8 +243,8 @@ public class Base64 {
     /**
      * Method decode
      *
-     * Takes the <CODE>Text</CODE> children of the Element and interprets
-     * them as input for the <CODE>Base64.decode()</CODE> function.
+     * Takes the {@code Text} children of the Element and interprets
+     * them as input for the {@code Base64.decode()} function.
      *
      * @param element
      * @return the byte obtained of the decoding the element
@@ -305,8 +302,8 @@ public class Base64 {
      * Encode a byte array and fold lines at the standard 76th character unless
      * ignore line breaks property is set.
      *
-     * @param binaryData <code>byte[]<code> to be base64 encoded
-     * @return the <code>String<code> with encoded data
+     * @param binaryData {@code byte[]} to be base64 encoded
+     * @return the {@code String} with encoded data
      */
     public static final String encode(byte[] binaryData) {
         return XMLUtils.ignoreLineBreaks()
@@ -328,11 +325,9 @@ public class Base64 {
         throws IOException, Base64DecodingException {
 
         byte[] retBytes = null;
-        UnsyncByteArrayOutputStream baos = null;
+        UnsyncByteArrayOutputStream baos = new UnsyncByteArrayOutputStream();
         try {
-            baos = new UnsyncByteArrayOutputStream();
             String line;
-
             while (null != (line = reader.readLine())) {
                 byte[] bytes = decode(line);
                 baos.write(bytes);
@@ -345,12 +340,12 @@ public class Base64 {
         return retBytes;
     }
 
-    protected static final boolean isWhiteSpace(byte octect) {
-        return (octect == 0x20 || octect == 0xd || octect == 0xa || octect == 0x9);
+    protected static final boolean isWhiteSpace(byte octet) {
+        return octet == 0x20 || octet == 0xd || octet == 0xa || octet == 0x9;
     }
 
-    protected static final boolean isPad(byte octect) {
-        return (octect == PAD);
+    protected static final boolean isPad(byte octet) {
+        return octet == PAD;
     }
 
     /**
@@ -363,11 +358,11 @@ public class Base64 {
      * Encode a byte array in Base64 format and return an optionally
      * wrapped line.
      *
-     * @param binaryData <code>byte[]</code> data to be encoded
-     * @param length <code>int<code> length of wrapped lines; No wrapping if less than 4.
-     * @return a <code>String</code> with encoded data
+     * @param binaryData {@code byte[]} data to be encoded
+     * @param length {@code int} length of wrapped lines; No wrapping if less than 4.
+     * @return a {@code String} with encoded data
      */
-    public static final String  encode(byte[] binaryData,int length) {
+    public static final String  encode(byte[] binaryData, int length) {
         if (length < 4) {
             length = Integer.MAX_VALUE;
         }
@@ -381,14 +376,14 @@ public class Base64 {
             return "";
         }
 
-        long fewerThan24bits = lengthDataBits % TWENTYFOURBITGROUP;
+        long fewerThan24bits = lengthDataBits % ((long) TWENTYFOURBITGROUP);
         int numberTriplets = (int) (lengthDataBits / TWENTYFOURBITGROUP);
         int numberQuartet = fewerThan24bits != 0L ? numberTriplets + 1 : numberTriplets;
         int quartesPerLine = length / 4;
         int numberLines = (numberQuartet - 1) / quartesPerLine;
         char encodedData[] = null;
 
-        encodedData = new char[numberQuartet * 4 + numberLines];
+        encodedData = new char[numberQuartet * 4 + numberLines * 2];
 
         byte k = 0, l = 0, b1 = 0, b2 = 0, b3 = 0;
         int encodedIndex = 0;
@@ -401,8 +396,8 @@ public class Base64 {
                 b2 = binaryData[dataIndex++];
                 b3 = binaryData[dataIndex++];
 
-                l  = (byte)(b2 & 0x0f);
-                k  = (byte)(b1 & 0x03);
+                l = (byte)(b2 & 0x0f);
+                k = (byte)(b1 & 0x03);
 
                 byte val1 = ((b1 & SIGN) == 0) ? (byte)(b1 >> 2): (byte)((b1) >> 2 ^ 0xc0);
 
@@ -417,6 +412,7 @@ public class Base64 {
 
                 i++;
             }
+            encodedData[encodedIndex++] = 0xd;
             encodedData[encodedIndex++] = 0xa;
         }
 
@@ -425,8 +421,8 @@ public class Base64 {
             b2 = binaryData[dataIndex++];
             b3 = binaryData[dataIndex++];
 
-            l  = (byte)(b2 & 0x0f);
-            k  = (byte)(b1 & 0x03);
+            l = (byte)(b2 & 0x0f);
+            k = (byte)(b1 & 0x03);
 
             byte val1 = ((b1 & SIGN) == 0) ? (byte)(b1 >> 2) : (byte)((b1) >> 2 ^ 0xc0);
 
@@ -510,7 +506,7 @@ public class Base64 {
             //should be divisible by four
         }
 
-        int numberQuadruple = (len / FOURBYTE);
+        int numberQuadruple = len / FOURBYTE;
 
         if (numberQuadruple == 0) {
             return new byte[0];
@@ -529,7 +525,7 @@ public class Base64 {
         //first last bits.
         b1 = base64Alphabet[base64Data[dataIndex++]];
         b2 = base64Alphabet[base64Data[dataIndex++]];
-        if ((b1==-1) || (b2==-1)) {
+        if (b1 == -1 || b2 == -1) {
              //if found "no data" just return null
             throw new Base64DecodingException("decoding.general");
         }
@@ -538,7 +534,7 @@ public class Base64 {
         byte d3, d4;
         b3 = base64Alphabet[d3 = base64Data[dataIndex++]];
         b4 = base64Alphabet[d4 = base64Data[dataIndex++]];
-        if ((b3 == -1) || (b4 == -1) ) {
+        if (b3 == -1 || b4 == -1) {
             //Check if they are PAD characters
             if (isPad(d3) && isPad(d4)) {               //Two PAD e.g. 3c[Pad][Pad]
                 if ((b2 & 0xf) != 0) { //last 4 bits should be zero
@@ -573,10 +569,7 @@ public class Base64 {
             b3 = base64Alphabet[base64Data[dataIndex++]];
             b4 = base64Alphabet[base64Data[dataIndex++]];
 
-            if ((b1 == -1) ||
-                (b2 == -1) ||
-                (b3 == -1) ||
-                (b4 == -1)) {
+            if (b1 == -1 || b2 == -1 || b3 == -1 || b4 == -1) {
                 //if found "no data" just return null
                 throw new Base64DecodingException("decoding.general");
             }
@@ -600,7 +593,7 @@ public class Base64 {
         throws Base64DecodingException, IOException {
         byte[] bytes = new byte[base64Data.length()];
         int len = getBytesInternal(base64Data, bytes);
-        decode(bytes,os,len);
+        decode(bytes, os, len);
     }
 
     /**
@@ -613,7 +606,7 @@ public class Base64 {
      */
     public static final void decode(byte[] base64Data, OutputStream os)
         throws Base64DecodingException, IOException {
-        decode(base64Data,os,-1);
+        decode(base64Data, os, -1);
     }
 
     protected static final void decode(byte[] base64Data, OutputStream os, int len)
@@ -628,7 +621,7 @@ public class Base64 {
             //should be divisible by four
         }
 
-        int numberQuadruple = (len / FOURBYTE);
+        int numberQuadruple = len / FOURBYTE;
 
         if (numberQuadruple == 0) {
             return;
@@ -641,28 +634,25 @@ public class Base64 {
         int dataIndex = 0;
 
         //the begin
-        for (i=numberQuadruple - 1; i > 0; i--) {
+        for (i = numberQuadruple - 1; i > 0; i--) {
             b1 = base64Alphabet[base64Data[dataIndex++]];
             b2 = base64Alphabet[base64Data[dataIndex++]];
             b3 = base64Alphabet[base64Data[dataIndex++]];
             b4 = base64Alphabet[base64Data[dataIndex++]];
-            if ((b1 == -1) ||
-                (b2 == -1) ||
-                (b3 == -1) ||
-                (b4 == -1) ) {
+            if (b1 == -1 || b2 == -1 || b3 == -1 || b4 == -1) {
                 //if found "no data" just return null
                 throw new Base64DecodingException("decoding.general");
             }
 
             os.write((byte)(b1 << 2 | b2 >> 4));
             os.write((byte)(((b2 & 0xf) << 4 ) | ((b3 >> 2) & 0xf)));
-            os.write( (byte)(b3 << 6 | b4));
+            os.write((byte)(b3 << 6 | b4));
         }
         b1 = base64Alphabet[base64Data[dataIndex++]];
         b2 = base64Alphabet[base64Data[dataIndex++]];
 
         //  first last bits.
-        if ((b1 == -1) || (b2 == -1) ) {
+        if (b1 == -1 || b2 == -1) {
             //if found "no data" just return null
             throw new Base64DecodingException("decoding.general");
         }
@@ -670,7 +660,7 @@ public class Base64 {
         byte d3, d4;
         b3 = base64Alphabet[d3 = base64Data[dataIndex++]];
         b4 = base64Alphabet[d4 = base64Data[dataIndex++]];
-        if ((b3 == -1 ) || (b4 == -1) ) { //Check if they are PAD characters
+        if (b3 == -1 || b4 == -1) { //Check if they are PAD characters
             if (isPad(d3) && isPad(d4)) {               //Two PAD e.g. 3c[Pad][Pad]
                 if ((b2 & 0xf) != 0) { //last 4 bits should be zero
                     throw new Base64DecodingException("decoding.general");
@@ -707,7 +697,7 @@ public class Base64 {
         //byte decodedData[] = null;
         byte b1 = 0, b2 = 0, b3 = 0, b4 = 0;
 
-        int index=0;
+        int index = 0;
         byte[] data = new byte[4];
         int read;
         //the begin
@@ -748,7 +738,7 @@ public class Base64 {
         b2 = base64Alphabet[d2];
         b3 = base64Alphabet[d3];
         b4 = base64Alphabet[d4];
-        if ((b3 == -1) || (b4 == -1)) { //Check if they are PAD characters
+        if (b3 == -1 || b4 == -1) { //Check if they are PAD characters
             if (isPad(d3) && isPad(d4)) {               //Two PAD e.g. 3c[Pad][Pad]
                 if ((b2 & 0xf) != 0) { //last 4 bits should be zero
                     throw new Base64DecodingException("decoding.general");
@@ -777,7 +767,7 @@ public class Base64 {
      * remove WhiteSpace from MIME containing encoded Base64 data.
      *
      * @param data  the byte array of base64 data (with WS)
-     * @return      the new length
+     * @return the new length
      */
     protected static final int removeWhiteSpace(byte[] data) {
         if (data == null) {
