@@ -132,7 +132,7 @@ static void setTag(JNIEnv *env,
   obj_class = (*env)->GetObjectClass(env, obj);
 
   err = (*jvmti)->GetTag(jvmti, obj_class, &haba);
-  class_tag = (MyTag*)haba;
+  class_tag = (MyTag*)(intptr_t)haba;
   if (err != JVMTI_ERROR_NONE) {
     printf("Error (GetTag): %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
@@ -144,7 +144,7 @@ static void setTag(JNIEnv *env,
 
   new_tag = newTag(kind, class_tag, size, name);
 
-  err = (*jvmti)->SetTag(jvmti, obj, (jlong)new_tag);
+  err = (*jvmti)->SetTag(jvmti, obj, (intptr_t)new_tag);
   if (err != JVMTI_ERROR_NONE) {
     printf("Error (SetTag): %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
@@ -293,8 +293,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 jvmtiIterationControl JNICALL
 heapMarkCallback(jlong class_tag, jlong size, jlong* tag_ptr, void* user_data) {
-  const MyTag* const tag = newTag(rmark, (const MyTag*)class_tag, size, NULL);
-  *tag_ptr = (jlong)tag;
+  const MyTag* const tag = newTag(rmark, (const MyTag*)(intptr_t)class_tag, size, NULL);
+  *tag_ptr = (intptr_t)tag;
 
   if (user_data != &dummy_user_data && user_data_error_flag == JNI_FALSE) {
     user_data_error_flag = JNI_TRUE;
@@ -312,12 +312,12 @@ heapRootCallback(jvmtiHeapRootKind root_kind,
 
   if (0 == *tag_ptr) {
     /* new tag */
-    MyTag* tag = newTag(kind, (MyTag*)class_tag, size, NULL);
+    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, NULL);
     addRef(fakeRoot, HEAP_ROOT_REF_KIND_BASE+root_kind, tag);
-    *tag_ptr = (jlong)tag;
+    *tag_ptr = (intptr_t)tag;
   } else {
     /* existing tag */
-    addRef(fakeRoot, HEAP_ROOT_REF_KIND_BASE+root_kind, (MyTag*)*tag_ptr);
+    addRef(fakeRoot, HEAP_ROOT_REF_KIND_BASE+root_kind, (MyTag*)(intptr_t)*tag_ptr);
   }
 
   if (user_data != &dummy_user_data && user_data_error_flag == JNI_FALSE) {
@@ -338,12 +338,12 @@ stackReferenceCallback(jvmtiHeapRootKind root_kind,
 
   if (0 == *tag_ptr) {
     /* new tag */
-    MyTag* tag = newTag(kind, (MyTag*)class_tag, size, NULL);
+    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, NULL);
     addRef(fakeRoot, HEAP_ROOT_REF_KIND_BASE+root_kind, tag);
-    *tag_ptr = (jlong)tag;
+    *tag_ptr = (intptr_t)tag;
   } else {
     /* existing tag */
-    addRef(fakeRoot, HEAP_ROOT_REF_KIND_BASE+root_kind, (MyTag*)*tag_ptr);
+    addRef(fakeRoot, HEAP_ROOT_REF_KIND_BASE+root_kind, (MyTag*)(intptr_t)*tag_ptr);
   }
   if (user_data != &dummy_user_data && user_data_error_flag == JNI_FALSE) {
     user_data_error_flag = JNI_TRUE;
@@ -364,17 +364,17 @@ objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
   if (0 == referrer_tag) {
     referrer = missed;
   } else {
-    referrer = (MyTag *)referrer_tag;
+    referrer = (MyTag *)(intptr_t)referrer_tag;
   }
 
   if (0 == *tag_ptr) {
     /* new tag */
-    MyTag* tag = newTag(kind, (MyTag*)class_tag, size, NULL);
+    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, NULL);
     addRef(referrer, reference_kind, tag);
-    *tag_ptr = (jlong) tag;
+    *tag_ptr = (intptr_t) tag;
   } else {
     /* existing tag */
-    MyTag* tag = (MyTag*)*tag_ptr;
+    MyTag* tag = (MyTag*)(intptr_t)*tag_ptr;
     addRef(referrer, reference_kind, tag);
   }
   if (user_data != &dummy_user_data && user_data_error_flag == JNI_FALSE) {
