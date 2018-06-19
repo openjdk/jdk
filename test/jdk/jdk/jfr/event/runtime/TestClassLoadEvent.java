@@ -47,7 +47,7 @@ import jdk.test.lib.jfr.TestClassLoader;
 public final class TestClassLoadEvent {
 
     private final static String TEST_CLASS_NAME = "jdk.jfr.event.runtime.TestClasses";
-    private final static String BOOT_CLASS_LOADER_NAME = "boot";
+    private final static String BOOT_CLASS_LOADER_NAME = "bootstrap";
     private final static String SEARCH_CLASS_NAME = "java.lang.Object";
     private final static String SEARCH_PACKAGE_NAME = "java/lang";
     private final static String SEARCH_MODULE_NAME = "java.base";

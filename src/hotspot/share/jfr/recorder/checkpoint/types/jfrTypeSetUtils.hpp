@@ -295,9 +295,6 @@ class JfrSymbolId : public JfrCHeapObj {
   bool has_cstring_entries() const { return _cstring_table->has_entries(); }
 };
 
-// external name (synthetic) for the primordial "boot" class loader instance
-const char* const boot_class_loader_name = "boot";
-
 /**
  * When processing a set of artifacts, there will be a need
  * to track transitive dependencies originating with each artifact.

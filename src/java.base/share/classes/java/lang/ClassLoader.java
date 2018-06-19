@@ -59,6 +59,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
@@ -246,6 +247,9 @@ public abstract class ClassLoader {
     // the unnamed module for this ClassLoader
     private final Module unnamedModule;
 
+    // a string for exception message printing
+    private final String nameAndId;
+
     /**
      * Encapsulates the set of parallel capable loader types.
      */
@@ -381,6 +385,24 @@ public abstract class ClassLoader {
             package2certs = new Hashtable<>();
             assertionLock = this;
         }
+        this.nameAndId = nameAndId(this);
+    }
+
+    /**
+     * If the defining loader has a name explicitly set then
+     *       '<loader-name>' @<id>
+     * If the defining loader has no name then
+     *       <qualified-class-name> @<id>
+     * If it's built-in loader then omit `@<id>` as there is only one instance.
+     */
+    private static String nameAndId(ClassLoader ld) {
+        String nid = ld.getName() != null ? "\'" + ld.getName() + "\'"
+                                          : ld.getClass().getName();
+        if (!(ld instanceof BuiltinClassLoader)) {
+            String id = Integer.toHexString(System.identityHashCode(ld));
+            nid = nid + " @" + id;
+        }
+        return nid;
     }
 
     /**

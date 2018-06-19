@@ -108,7 +108,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
                      probe->name()->as_C_string());
           for (int i = 0; i < probe->num_loaders(); i++) {
             lt.print("    [%d]: %s", i,
-                          probe->loader_data(i)->loader_name());
+                          probe->loader_data(i)->loader_name_and_id());
           }
         }
       }
@@ -119,7 +119,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
           if (lt.is_enabled()) {
             ResourceMark rm;
             lt.print("purging loader %s from constraint for name %s",
-                     probe->loader_data(n)->loader_name(),
+                     probe->loader_data(n)->loader_name_and_id(),
                      probe->name()->as_C_string()
                      );
           }
@@ -135,7 +135,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
             lt.print("new loader list:");
             for (int i = 0; i < probe->num_loaders(); i++) {
               lt.print("    [%d]: %s", i,
-                            probe->loader_data(i)->loader_name());
+                            probe->loader_data(i)->loader_name_and_id());
             }
           }
 
@@ -177,8 +177,8 @@ void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
     lt.print("Failed to add constraint for name: %s, loader[0]: %s,"
                 " loader[1]: %s, Reason: %s",
                   class_name->as_C_string(),
-                  SystemDictionary::loader_name(class_loader1()),
-                  SystemDictionary::loader_name(class_loader2()),
+                  ClassLoaderData::class_loader_data(class_loader1())->loader_name_and_id(),
+                  ClassLoaderData::class_loader_data(class_loader2())->loader_name_and_id(),
                   reason);
   }
 }
@@ -247,8 +247,8 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
       lt.print("adding new constraint for name: %s, loader[0]: %s,"
                     " loader[1]: %s",
                     class_name->as_C_string(),
-                    SystemDictionary::loader_name(class_loader1()),
-                    SystemDictionary::loader_name(class_loader2())
+                    ClassLoaderData::class_loader_data(class_loader1())->loader_name_and_id(),
+                    ClassLoaderData::class_loader_data(class_loader2())->loader_name_and_id()
                     );
     }
   } else if (*pp1 == *pp2) {
@@ -260,7 +260,7 @@ bool LoaderConstraintTable::add_entry(Symbol* class_name,
         lt.print("setting class object in existing constraint for"
                       " name: %s and loader %s",
                       class_name->as_C_string(),
-                      SystemDictionary::loader_name(class_loader1())
+                      ClassLoaderData::class_loader_data(class_loader1())->loader_name_and_id()
                       );
       }
     } else {
@@ -291,7 +291,7 @@ bool LoaderConstraintTable::check_or_update(InstanceKlass* k,
       lt.print("constraint check failed for name %s, loader %s: "
                  "the presented class object differs from that stored",
                  name->as_C_string(),
-                 SystemDictionary::loader_name(loader()));
+                 ClassLoaderData::class_loader_data(loader())->loader_name_and_id());
     }
     return false;
   } else {
@@ -302,7 +302,7 @@ bool LoaderConstraintTable::check_or_update(InstanceKlass* k,
         lt.print("updating constraint for name %s, loader %s, "
                    "by setting class object",
                    name->as_C_string(),
-                   SystemDictionary::loader_name(loader()));
+                   ClassLoaderData::class_loader_data(loader())->loader_name_and_id());
       }
     }
     return true;
@@ -353,7 +353,7 @@ void LoaderConstraintTable::extend_loader_constraint(LoaderConstraintEntry* p,
     lt.print("extending constraint for name %s by adding loader[%d]: %s %s",
                p->name()->as_C_string(),
                num,
-               SystemDictionary::loader_name(loader()),
+               ClassLoaderData::class_loader_data(loader())->loader_name_and_id(),
                (p->klass() == NULL ? " and setting class object" : "")
                );
   }
@@ -396,7 +396,7 @@ void LoaderConstraintTable::merge_loader_constraints(
 
     for (int i = 0; i < p1->num_loaders(); i++) {
       lt.print("    [%d]: %s", i,
-                    p1->loader_data(i)->loader_name());
+                    p1->loader_data(i)->loader_name_and_id());
     }
     if (p1->klass() == NULL) {
       lt.print("... and setting class object");

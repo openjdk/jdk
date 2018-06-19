@@ -128,7 +128,7 @@ void CLDScanClosure::do_cld(ClassLoaderData* cld) {
   NOT_PRODUCT(ResourceMark rm);
   log_develop_trace(gc, scavenge)("CLDScanClosure::do_cld " PTR_FORMAT ", %s, dirty: %s",
                                   p2i(cld),
-                                  cld->loader_name(),
+                                  cld->loader_name_and_id(),
                                   cld->has_modified_oops() ? "true" : "false");
 
   // If the cld has not been dirtied we know that there's

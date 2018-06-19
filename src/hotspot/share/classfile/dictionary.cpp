@@ -641,6 +641,6 @@ void Dictionary::verify() {
 
   ResourceMark rm;
   stringStream tempst;
-  tempst.print("System Dictionary for %s", cld->loader_name());
+  tempst.print("System Dictionary for %s class loader", cld->loader_name_and_id());
   verify_table<DictionaryEntry>(tempst.as_string());
 }

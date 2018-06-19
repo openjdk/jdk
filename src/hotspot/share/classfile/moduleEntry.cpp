@@ -260,7 +260,7 @@ ModuleEntry* ModuleEntry::create_unnamed_module(ClassLoaderData* cld) {
   ResourceMark rm;
   guarantee(java_lang_Module::is_instance(module),
             "The unnamed module for ClassLoader %s, is null or not an instance of java.lang.Module. The class loader has not been initialized correctly.",
-            cld->loader_name());
+            cld->loader_name_and_id());
 
   ModuleEntry* unnamed_module = new_unnamed_module_entry(Handle(Thread::current(), module), cld);
 
@@ -522,7 +522,7 @@ void ModuleEntry::print(outputStream* st) {
                p2i(this),
                name() == NULL ? UNNAMED_MODULE : name()->as_C_string(),
                p2i(module()),
-               loader_data()->loader_name(),
+               loader_data()->loader_name_and_id(),
                version() != NULL ? version()->as_C_string() : "NULL",
                location() != NULL ? location()->as_C_string() : "NULL",
                BOOL_TO_STR(!can_read_all_unnamed()), p2i(next()));

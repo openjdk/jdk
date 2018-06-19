@@ -4511,7 +4511,7 @@ static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
           vmSymbols::java_lang_IllegalAccessError(),
           "class %s loaded by %s cannot access jdk/internal/reflect superclass %s",
           this_klass->external_name(),
-          this_klass->class_loader_data()->loader_name(),
+          this_klass->class_loader_data()->loader_name_and_id(),
           super->external_name());
         return;
       }

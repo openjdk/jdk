@@ -3993,6 +3993,7 @@ bool java_lang_ClassLoader::offsets_computed = false;
 int  java_lang_ClassLoader::_loader_data_offset = -1;
 int  java_lang_ClassLoader::parallelCapable_offset = -1;
 int  java_lang_ClassLoader::name_offset = -1;
+int  java_lang_ClassLoader::nameAndId_offset = -1;
 int  java_lang_ClassLoader::unnamedModule_offset = -1;
 
 ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
@@ -4008,6 +4009,7 @@ ClassLoaderData* java_lang_ClassLoader::cmpxchg_loader_data(ClassLoaderData* new
 #define CLASSLOADER_FIELDS_DO(macro) \
   macro(parallelCapable_offset, k1, "parallelLockMap",      concurrenthashmap_signature, false); \
   macro(name_offset,            k1, vmSymbols::name_name(), string_signature, false); \
+  macro(nameAndId_offset,       k1, "nameAndId",            string_signature, false); \
   macro(unnamedModule_offset,   k1, "unnamedModule",        module_signature, false); \
   macro(parent_offset,          k1, "parent",               classloader_signature, false)
 
@@ -4033,9 +4035,22 @@ oop java_lang_ClassLoader::parent(oop loader) {
   return loader->obj_field(parent_offset);
 }
 
+// Returns the name field of this class loader.  If the name field has not
+// been set, null will be returned.
 oop java_lang_ClassLoader::name(oop loader) {
   assert(is_instance(loader), "loader must be oop");
   return loader->obj_field(name_offset);
+}
+
+// Returns the nameAndId field of this class loader. The format is
+// as follows:
+//   If the defining loader has a name explicitly set then '<loader-name>' @<id>
+//   If the defining loader has no name then <qualified-class-name> @<id>
+//   If built-in loader, then omit '@<id>' as there is only one instance.
+// Use ClassLoader::loader_name_id() to obtain this String as a char*.
+oop java_lang_ClassLoader::nameAndId(oop loader) {
+  assert(is_instance(loader), "loader must be oop");
+  return loader->obj_field(nameAndId_offset);
 }
 
 bool java_lang_ClassLoader::isAncestor(oop loader, oop cl) {
@@ -4111,39 +4126,28 @@ oop java_lang_ClassLoader::unnamedModule(oop loader) {
 
 // Caller needs ResourceMark.
 const char* java_lang_ClassLoader::describe_external(const oop loader) {
+  ClassLoaderData *cld = ClassLoaderData::class_loader_data(loader);
+  const char* name = cld->loader_name_and_id();
+
+  // bootstrap loader
   if (loader == NULL) {
-    return "<bootstrap>";
+    return name;
   }
 
   bool well_known_loader = SystemDictionary::is_system_class_loader(loader) ||
                            SystemDictionary::is_platform_class_loader(loader);
 
-  const char* name = NULL;
-  oop nameOop = java_lang_ClassLoader::name(loader);
-  if (nameOop != NULL) {
-    name = java_lang_String::as_utf8_string(nameOop);
-  }
-  if (name == NULL) {
-    // Use placeholder for missing name to have fixed message format.
-    name = "<unnamed>";
-  }
-
   stringStream ss;
-  ss.print("\"%s\" (instance of %s", name, loader->klass()->external_name());
+  ss.print("%s (instance of %s", name, loader->klass()->external_name());
   if (!well_known_loader) {
-    const char* parentName = NULL;
     oop pl = java_lang_ClassLoader::parent(loader);
+    ClassLoaderData *pl_cld = ClassLoaderData::class_loader_data(pl);
+    const char* parentName = pl_cld->loader_name_and_id();
     if (pl != NULL) {
-      oop parentNameOop = java_lang_ClassLoader::name(pl);
-      if (parentNameOop != NULL) {
-        parentName = java_lang_String::as_utf8_string(parentNameOop);
-      }
-      if (parentName == NULL) {
-        parentName = "<unnamed>";
-      }
-      ss.print(", child of \"%s\" %s", parentName, pl->klass()->external_name());
+      ss.print(", child of %s %s", parentName, pl->klass()->external_name());
     } else {
-      ss.print(", child of <bootstrap>");
+      // bootstrap loader
+      ss.print(", child of %s", parentName);
     }
   }
   ss.print(")");

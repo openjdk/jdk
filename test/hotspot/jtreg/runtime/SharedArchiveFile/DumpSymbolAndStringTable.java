@@ -60,7 +60,7 @@ public class DumpSymbolAndStringTable {
         pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.systemdictionary"});
         output = CDSTestUtils.executeAndLog(pb, "jcmd-systemdictionary");
         try {
-            output.shouldContain("System Dictionary for jdk/internal/loader/ClassLoaders$AppClassLoader statistics:");
+            output.shouldContain("System Dictionary for 'app' class loader statistics:");
             output.shouldContain("Number of buckets");
             output.shouldContain("Number of entries");
             output.shouldContain("Maximum bucket size");

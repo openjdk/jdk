@@ -37,23 +37,28 @@ public class Test {
 
     // Check that all names have external formatting ('.' and not '/' in package names).
     // Check for parent of class loader.
-    static String expectedErrorMessage1 =
-        "loader \"<unnamed>\" (instance of PreemptingClassLoader, " +
-        "child of \"app\" jdk.internal.loader.ClassLoaders$AppClassLoader) " +
+    // Break each expectedErrorMessage into 2 parts due to the class loader name containing
+    // the unique @<id> identity hash which cannot be compared against.
+    static String expectedErrorMessage1_part1 = "loader PreemptingClassLoader @";
+    static String expectedErrorMessage1_part2 =
+        " (instance of PreemptingClassLoader, " +
+        "child of 'app' jdk.internal.loader.ClassLoaders$AppClassLoader) " +
         "attempted duplicate class definition for test.Foo.";
 
     // Check that all names have external formatting ('.' and not '/' in package names).
     // Check for name and parent of class loader.
-    static String expectedErrorMessage2 =
-        "loader \"DuplicateLE_Test_Loader\" (instance of PreemptingClassLoader, " +
-        "child of \"app\" jdk.internal.loader.ClassLoaders$AppClassLoader) " +
+    static String expectedErrorMessage2_part1 = "loader 'DuplicateLE_Test_Loader' @";
+    static String expectedErrorMessage2_part2 =
+        " (instance of PreemptingClassLoader, " +
+        "child of 'app' jdk.internal.loader.ClassLoaders$AppClassLoader) " +
         "attempted duplicate class definition for test.Foo.";
 
     // Check that all names have external formatting ('.' and not '/' in package names).
     // Check for name and parent of class loader. Type should be mentioned as 'interface'.
-    static String expectedErrorMessage3 =
-        "loader \"DuplicateLE_Test_Loader_IF\" (instance of PreemptingClassLoader, " +
-        "child of \"app\" jdk.internal.loader.ClassLoaders$AppClassLoader) " +
+    static String expectedErrorMessage3_part1 = "loader 'DuplicateLE_Test_Loader_IF' @";
+    static String expectedErrorMessage3_part2 =
+        " (instance of PreemptingClassLoader, " +
+        "child of 'app' jdk.internal.loader.ClassLoaders$AppClassLoader) " +
         "attempted duplicate interface definition for test.J.";
 
     // Test that the error message is correct when a loader constraint error is
@@ -63,7 +68,8 @@ public class Test {
     // overrides "J.m()LFoo;".  But, Task's class Foo and super type J's class Foo
     // are different.  So, a LinkageError exception should be thrown because the
     // loader constraint check will fail.
-    public static void test(String loaderName, String expectedErrorMessage, String testType) throws Exception {
+    public static void test(String loaderName, String expectedErrorMessage_part1,
+                            String expectedErrorMessage_part2, String testType) throws Exception {
         String[] classNames = {testType};
         ClassLoader l = new PreemptingClassLoader(loaderName, classNames, false);
         l.loadClass(testType);
@@ -72,8 +78,9 @@ public class Test {
             throw new RuntimeException("Expected LinkageError exception not thrown");
         } catch (LinkageError e) {
             String errorMsg = e.getMessage();
-            if (!errorMsg.equals(expectedErrorMessage)) {
-                System.out.println("Expected: " + expectedErrorMessage + "\n" +
+            if (!errorMsg.contains(expectedErrorMessage_part1) ||
+                !errorMsg.contains(expectedErrorMessage_part2)) {
+                System.out.println("Expected: " + expectedErrorMessage_part1 + "<id>" + expectedErrorMessage_part2 + "\n" +
                                    "but got:  " + errorMsg);
                 throw new RuntimeException("Wrong LinkageError exception thrown: " + errorMsg);
             }
@@ -82,9 +89,9 @@ public class Test {
     }
 
     public static void main(String args[]) throws Exception {
-        test(null, expectedErrorMessage1, "test.Foo");
-        test("DuplicateLE_Test_Loader", expectedErrorMessage2, "test.Foo");
-        test("DuplicateLE_Test_Loader_IF", expectedErrorMessage3, "test.J");
+        test(null, expectedErrorMessage1_part1, expectedErrorMessage1_part2, "test.Foo");
+        test("DuplicateLE_Test_Loader", expectedErrorMessage2_part1, expectedErrorMessage2_part2, "test.Foo");
+        test("DuplicateLE_Test_Loader_IF", expectedErrorMessage3_part1, expectedErrorMessage3_part2, "test.J");
     }
 }
 
