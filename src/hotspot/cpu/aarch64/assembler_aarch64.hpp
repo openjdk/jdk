@@ -2354,15 +2354,6 @@ public:
     ushll(Vd, Ta, Vn, Tb, shift);
   }
 
-  void uzp1(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm,  SIMD_Arrangement T, int op = 0){
-    starti;
-    f(0, 31), f((T & 0x1), 30), f(0b001110, 29, 24), f((T >> 1), 23, 22), f(0, 21);
-    rf(Vm, 16), f(0, 15), f(op, 14), f(0b0110, 13, 10), rf(Vn, 5), rf(Vd, 0);
-  }
-  void uzp2(FloatRegister Vd, FloatRegister Vn, FloatRegister Vm,  SIMD_Arrangement T){
-    uzp1(Vd, Vn, Vm, T, 1);
-  }
-
   // Move from general purpose register
   //   mov  Vd.T[index], Rn
   void mov(FloatRegister Vd, SIMD_Arrangement T, int index, Register Xn) {
