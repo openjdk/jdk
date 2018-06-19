@@ -138,6 +138,7 @@ ZServiceabilityMemoryUsageTracker::~ZServiceabilityMemoryUsageTracker() {
 ZServiceabilityManagerStatsTracer::ZServiceabilityManagerStatsTracer(bool is_gc_begin, bool is_gc_end) :
     _stats(ZHeap::heap()->serviceability_memory_manager(),
            ZCollectedHeap::heap()->gc_cause() /* cause */,
+           true        /* allMemoryPoolsAffected */,
            is_gc_begin /* recordGCBeginTime */,
            is_gc_begin /* recordPreGCUsage */,
            true        /* recordPeakUsage */,
