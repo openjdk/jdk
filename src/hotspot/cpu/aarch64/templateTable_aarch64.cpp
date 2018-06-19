@@ -3562,7 +3562,6 @@ void TemplateTable::_new() {
     // r3: instance size in bytes
     if (allow_shared_alloc) {
       __ eden_allocate(r0, r3, 0, r10, slow_case);
-      __ incr_allocated_bytes(rthread, r3, 0, rscratch1);
     }
   }
 

@@ -2440,24 +2440,6 @@ ATOMIC_XCHG(xchgalw, swpal, ldaxrw, stlxrw, Assembler::word)
 
 #undef ATOMIC_XCHG
 
-void MacroAssembler::incr_allocated_bytes(Register thread,
-                                          Register var_size_in_bytes,
-                                          int con_size_in_bytes,
-                                          Register t1) {
-  if (!thread->is_valid()) {
-    thread = rthread;
-  }
-  assert(t1->is_valid(), "need temp reg");
-
-  ldr(t1, Address(thread, in_bytes(JavaThread::allocated_bytes_offset())));
-  if (var_size_in_bytes->is_valid()) {
-    add(t1, t1, var_size_in_bytes);
-  } else {
-    add(t1, t1, con_size_in_bytes);
-  }
-  str(t1, Address(thread, in_bytes(JavaThread::allocated_bytes_offset())));
-}
-
 #ifndef PRODUCT
 extern "C" void findpc(intptr_t x);
 #endif
@@ -4085,30 +4067,18 @@ void MacroAssembler::tlab_allocate(Register obj,
                                    Register t1,
                                    Register t2,
                                    Label& slow_case) {
-  assert_different_registers(obj, t2);
-  assert_different_registers(obj, var_size_in_bytes);
-  Register end = t2;
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+}
 
-  // verify_tlab();
-
-  ldr(obj, Address(rthread, JavaThread::tlab_top_offset()));
-  if (var_size_in_bytes == noreg) {
-    lea(end, Address(obj, con_size_in_bytes));
-  } else {
-    lea(end, Address(obj, var_size_in_bytes));
-  }
-  ldr(rscratch1, Address(rthread, JavaThread::tlab_end_offset()));
-  cmp(end, rscratch1);
-  br(Assembler::HI, slow_case);
-
-  // update the tlab top pointer
-  str(end, Address(rthread, JavaThread::tlab_top_offset()));
-
-  // recover var_size_in_bytes if necessary
-  if (var_size_in_bytes == end) {
-    sub(var_size_in_bytes, var_size_in_bytes, obj);
-  }
-  // verify_tlab();
+// Defines obj, preserves var_size_in_bytes
+void MacroAssembler::eden_allocate(Register obj,
+                                   Register var_size_in_bytes,
+                                   int con_size_in_bytes,
+                                   Register t1,
+                                   Label& slow_case) {
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->eden_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
 }
 
 // Zero words; len is in bytes
@@ -4171,61 +4141,6 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register t1) {
   bind(entry);
   add(t1, t1, unroll * wordSize);
   cbnz(len, loop);
-}
-
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register t1,
-                                   Label& slow_case) {
-  assert_different_registers(obj, var_size_in_bytes, t1);
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    b(slow_case);
-  } else {
-    Register end = t1;
-    Register heap_end = rscratch2;
-    Label retry;
-    bind(retry);
-    {
-      unsigned long offset;
-      adrp(rscratch1, ExternalAddress((address) Universe::heap()->end_addr()), offset);
-      ldr(heap_end, Address(rscratch1, offset));
-    }
-
-    ExternalAddress heap_top((address) Universe::heap()->top_addr());
-
-    // Get the current top of the heap
-    {
-      unsigned long offset;
-      adrp(rscratch1, heap_top, offset);
-      // Use add() here after ARDP, rather than lea().
-      // lea() does not generate anything if its offset is zero.
-      // However, relocs expect to find either an ADD or a load/store
-      // insn after an ADRP.  add() always generates an ADD insn, even
-      // for add(Rn, Rn, 0).
-      add(rscratch1, rscratch1, offset);
-      ldaxr(obj, rscratch1);
-    }
-
-    // Adjust it my the size of our new object
-    if (var_size_in_bytes == noreg) {
-      lea(end, Address(obj, con_size_in_bytes));
-    } else {
-      lea(end, Address(obj, var_size_in_bytes));
-    }
-
-    // if end < obj then we wrapped around high memory
-    cmp(end, obj);
-    br(Assembler::LO, slow_case);
-
-    cmp(end, heap_end);
-    br(Assembler::HI, slow_case);
-
-    // If heap_top hasn't been changed by some other thread, update it.
-    stlxr(rscratch2, end, rscratch1);
-    cbnzw(rscratch2, retry);
-  }
 }
 
 void MacroAssembler::verify_tlab() {
