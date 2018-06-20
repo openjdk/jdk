@@ -91,6 +91,10 @@ void ZArguments::initialize() {
   FLAG_SET_DEFAULT(VerifyDuringStartup, false);
   FLAG_SET_DEFAULT(VerifyBeforeExit, false);
 
+  // Verification before heap iteration not (yet) supported, for the
+  // same reason we need fixup_partial_loads
+  FLAG_SET_DEFAULT(VerifyBeforeIteration, false);
+
   // Verification of stacks not (yet) supported, for the same reason
   // we need fixup_partial_loads
   DEBUG_ONLY(FLAG_SET_DEFAULT(VerifyStack, false));
