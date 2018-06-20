@@ -383,7 +383,6 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     for (i = 0; i < THREADS_COUNT; i++) {
         if (NSK_CPP_STUB3(IsSameObject, jni, threadsList[i], thread)) {
                 NSK_DISPLAY0("SUCCESS: expected THREAD_START event\n");
-            eventsStart++;
 
             /* suspend thread */
             NSK_DISPLAY3("  suspend starting thread #%d (%s): %p\n",
@@ -394,6 +393,7 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
+            eventsStart++;
 
             break;
         }
@@ -418,7 +418,6 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     for (i = 0; i < THREADS_COUNT; i++) {
         if (NSK_CPP_STUB3(IsSameObject, jni, threadsList[i], thread)) {
                 NSK_DISPLAY0("SUCCESS: expected THREAD_END event\n");
-            eventsEnd++;
 
             /* suspend thread */
             NSK_DISPLAY3("  suspend finishing thread #%d (%s): %p\n",
@@ -429,6 +428,7 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
+            eventsEnd++;
 
             break;
         }
