@@ -41,16 +41,16 @@ import java.util.Optional;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
 
-class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
+public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     private final HttpHeaders userHeaders;
-    private final HttpHeadersImpl systemHeaders;
+    private final HttpHeadersBuilder systemHeadersBuilder;
     private final URI uri;
     private volatile Proxy proxy; // ensure safe publishing
     private final InetSocketAddress authority; // only used when URI not specified
@@ -78,8 +78,8 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     public HttpRequestImpl(HttpRequestBuilderImpl builder) {
         String method = builder.method();
         this.method = method == null ? "GET" : method;
-        this.userHeaders = ImmutableHeaders.of(builder.headers().map(), ALLOWED_HEADERS);
-        this.systemHeaders = new HttpHeadersImpl();
+        this.userHeaders = HttpHeaders.of(builder.headersBuilder().map(), ALLOWED_HEADERS);
+        this.systemHeadersBuilder = new HttpHeadersBuilder();
         this.uri = builder.uri();
         assert uri != null;
         this.proxy = null;
@@ -106,21 +106,23 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                 "uri must be non null");
         Duration timeout = request.timeout().orElse(null);
         this.method = method == null ? "GET" : method;
-        this.userHeaders = ImmutableHeaders.validate(request.headers());
+        this.userHeaders = HttpHeaders.of(request.headers().map(), Utils.VALIDATE_USER_HEADER);
         if (request instanceof HttpRequestImpl) {
             // all cases exception WebSocket should have a new system headers
             this.isWebSocket = ((HttpRequestImpl) request).isWebSocket;
             if (isWebSocket) {
-                this.systemHeaders = ((HttpRequestImpl) request).systemHeaders;
+                this.systemHeadersBuilder = ((HttpRequestImpl)request).systemHeadersBuilder;
             } else {
-                this.systemHeaders = new HttpHeadersImpl();
+                this.systemHeadersBuilder = new HttpHeadersBuilder();
             }
         } else {
             HttpRequestBuilderImpl.checkURI(requestURI);
             checkTimeout(timeout);
-            this.systemHeaders = new HttpHeadersImpl();
+            this.systemHeadersBuilder = new HttpHeadersBuilder();
         }
-        this.systemHeaders.setHeader("User-Agent", USER_AGENT);
+        if (!userHeaders.firstValue("User-Agent").isPresent()) {
+            this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
+        }
         this.uri = requestURI;
         if (isWebSocket) {
             // WebSocket determines and sets the proxy itself
@@ -169,8 +171,10 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.method = method == null? "GET" : method;
         this.userHeaders = other.userHeaders;
         this.isWebSocket = other.isWebSocket;
-        this.systemHeaders = new HttpHeadersImpl();
-        this.systemHeaders.setHeader("User-Agent", USER_AGENT);
+        this.systemHeadersBuilder = new HttpHeadersBuilder();
+        if (!userHeaders.firstValue("User-Agent").isPresent()) {
+            this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
+        }
         this.uri = uri;
         this.proxy = other.proxy;
         this.expectContinue = other.expectContinue;
@@ -189,8 +193,8 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         // to the connection pool (we might need to revisit this constructor later)
         assert "CONNECT".equalsIgnoreCase(method);
         this.method = method;
-        this.systemHeaders = new HttpHeadersImpl();
-        this.userHeaders = ImmutableHeaders.of(headers);
+        this.systemHeadersBuilder = new HttpHeadersBuilder();
+        this.userHeaders = headers;
         this.uri = URI.create("socket://" + authority.getHostString() + ":"
                               + Integer.toString(authority.getPort()) + "/");
         this.proxy = null;
@@ -218,14 +222,14 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
      * parent.
      */
     static HttpRequestImpl createPushRequest(HttpRequestImpl parent,
-                                             HttpHeadersImpl headers)
+                                             HttpHeaders headers)
         throws IOException
     {
         return new HttpRequestImpl(parent, headers);
     }
 
     // only used for push requests
-    private HttpRequestImpl(HttpRequestImpl parent, HttpHeadersImpl headers)
+    private HttpRequestImpl(HttpRequestImpl parent, HttpHeaders headers)
         throws IOException
     {
         this.method = headers.firstValue(":method")
@@ -240,8 +244,8 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         sb.append(scheme).append("://").append(authority).append(path);
         this.uri = URI.create(sb.toString());
         this.proxy = null;
-        this.userHeaders = ImmutableHeaders.of(headers.map(), ALLOWED_HEADERS);
-        this.systemHeaders = parent.systemHeaders;
+        this.userHeaders = HttpHeaders.of(headers.map(), ALLOWED_HEADERS);
+        this.systemHeadersBuilder = parent.systemHeadersBuilder;
         this.expectContinue = parent.expectContinue;
         this.secure = parent.secure;
         this.requestPublisher = parent.requestPublisher;
@@ -264,9 +268,9 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     InetSocketAddress authority() { return authority; }
 
     void setH2Upgrade(Http2ClientImpl h2client) {
-        systemHeaders.setHeader("Connection", "Upgrade, HTTP2-Settings");
-        systemHeaders.setHeader("Upgrade", "h2c");
-        systemHeaders.setHeader("HTTP2-Settings", h2client.getSettingsString());
+        systemHeadersBuilder.setHeader("Connection", "Upgrade, HTTP2-Settings");
+        systemHeadersBuilder.setHeader("Upgrade", "h2c");
+        systemHeadersBuilder.setHeader("HTTP2-Settings", h2client.getSettingsString());
     }
 
     @Override
@@ -332,18 +336,18 @@ class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     HttpHeaders getUserHeaders() { return userHeaders; }
 
-    HttpHeadersImpl getSystemHeaders() { return systemHeaders; }
+    HttpHeadersBuilder getSystemHeadersBuilder() { return systemHeadersBuilder; }
 
     @Override
     public Optional<HttpClient.Version> version() { return version; }
 
     void addSystemHeader(String name, String value) {
-        systemHeaders.addHeader(name, value);
+        systemHeadersBuilder.addHeader(name, value);
     }
 
     @Override
     public void setSystemHeader(String name, String value) {
-        systemHeaders.setHeader(name, value);
+        systemHeadersBuilder.setHeader(name, value);
     }
 
     InetSocketAddress getAddress() {

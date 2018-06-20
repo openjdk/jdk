@@ -53,6 +53,8 @@ final class ConnectionPool {
 
     static final long KEEP_ALIVE = Utils.getIntegerNetProperty(
             "jdk.httpclient.keepalive.timeout", 1200); // seconds
+    static final long MAX_POOL_SIZE = Utils.getIntegerNetProperty(
+            "jdk.httpclient.connectionPoolSize", 0); // unbounded
     final Logger debug = Utils.getDebugLogger(this::dbgString, Utils.DEBUG);
 
     // Pools of idle connections
@@ -160,12 +162,17 @@ final class ConnectionPool {
         CleanupTrigger cleanup = registerCleanupTrigger(conn);
 
         // it's possible that cleanup may have been called.
+        HttpConnection toClose = null;
         synchronized(this) {
             if (cleanup.isDone()) {
                 return;
             } else if (stopped) {
                 conn.close();
                 return;
+            }
+            if (MAX_POOL_SIZE > 0 && expiryList.size() >= MAX_POOL_SIZE) {
+                toClose = expiryList.removeOldest();
+                if (toClose != null) removeFromPool(toClose);
             }
             if (conn instanceof PlainHttpConnection) {
                 putConnection(conn, plainPool);
@@ -174,6 +181,13 @@ final class ConnectionPool {
                 putConnection(conn, sslPool);
             }
             expiryList.add(conn, now, keepAlive);
+        }
+        if (toClose != null) {
+            if (debug.on()) {
+                debug.log("Maximum pool size reached: removing oldest connection %s",
+                          toClose.dbgString());
+            }
+            close(toClose);
         }
         //System.out.println("Return to pool: " + conn);
     }
@@ -314,6 +328,8 @@ final class ConnectionPool {
         private final LinkedList<ExpiryEntry> list = new LinkedList<>();
         private volatile boolean mayContainEntries;
 
+        int size() { return list.size(); }
+
         // A loosely accurate boolean whose value is computed
         // at the end of each operation performed on ExpiryList;
         // Does not require synchronizing on the ConnectionPool.
@@ -327,6 +343,13 @@ final class ConnectionPool {
         Optional<Instant> nextExpiryDeadline() {
             if (list.isEmpty()) return Optional.empty();
             else return Optional.of(list.getLast().expiry);
+        }
+
+        // should only be called while holding a synchronization
+        // lock on the ConnectionPool
+        HttpConnection removeOldest() {
+            ExpiryEntry entry = list.pollLast();
+            return entry == null ? null : entry.connection;
         }
 
         // should only be called while holding a synchronization
@@ -419,17 +442,38 @@ final class ConnectionPool {
         }
     }
 
+    // Remove a connection from the pool.
+    // should only be called while holding a synchronization
+    // lock on the ConnectionPool
+    private void removeFromPool(HttpConnection c) {
+        assert Thread.holdsLock(this);
+        if (c instanceof PlainHttpConnection) {
+            removeFromPool(c, plainPool);
+        } else {
+            assert c.isSecure();
+            removeFromPool(c, sslPool);
+        }
+    }
+
+    // Used by tests
+    synchronized boolean contains(HttpConnection c) {
+        final CacheKey key = c.cacheKey();
+        List<HttpConnection> list;
+        if ((list = plainPool.get(key)) != null) {
+            if (list.contains(c)) return true;
+        }
+        if ((list = sslPool.get(key)) != null) {
+            if (list.contains(c)) return true;
+        }
+        return false;
+    }
+
     void cleanup(HttpConnection c, Throwable error) {
         if (debug.on())
             debug.log("%s : ConnectionPool.cleanup(%s)",
                     String.valueOf(c.getConnectionFlow()), error);
         synchronized(this) {
-            if (c instanceof PlainHttpConnection) {
-                removeFromPool(c, plainPool);
-            } else {
-                assert c.isSecure();
-                removeFromPool(c, sslPool);
-            }
+            removeFromPool(c);
             expiryList.remove(c);
         }
         c.close();

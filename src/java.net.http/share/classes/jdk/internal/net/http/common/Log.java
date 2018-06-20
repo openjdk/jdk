@@ -43,7 +43,7 @@ import javax.net.ssl.SSLParameters;
 /**
  * -Djava.net.HttpClient.log=
  *          errors,requests,headers,
- *          frames[:control:data:window:all..],content,ssl,trace
+ *          frames[:control:data:window:all..],content,ssl,trace,channel
  *
  * Any of errors, requests, headers or content are optional.
  *
@@ -65,6 +65,7 @@ public abstract class Log implements System.Logger {
     public static final int FRAMES = 0x10;
     public static final int SSL = 0x20;
     public static final int TRACE = 0x40;
+    public static final int CHANNEL = 0x80;
     static int logging;
 
     // Frame types: "control", "data", "window", "all"
@@ -99,11 +100,15 @@ public abstract class Log implements System.Logger {
                     case "ssl":
                         logging |= SSL;
                         break;
+                    case "channel":
+                        logging |= CHANNEL;
+                        break;
                     case "trace":
                         logging |= TRACE;
                         break;
                     case "all":
-                        logging |= CONTENT|HEADERS|REQUESTS|FRAMES|ERRORS|TRACE|SSL;
+                        logging |= CONTENT|HEADERS|REQUESTS|FRAMES|ERRORS|TRACE|SSL| CHANNEL;
+                        frametypes |= ALL;
                         break;
                     default:
                         // ignore bad values
@@ -166,6 +171,10 @@ public abstract class Log implements System.Logger {
         return (logging & FRAMES) != 0;
     }
 
+    public static boolean channel() {
+        return (logging & CHANNEL) != 0;
+    }
+
     public static void logError(String s, Object... s1) {
         if (errors()) {
             logger.log(Level.INFO, "ERROR: " + s, s1);
@@ -191,9 +200,21 @@ public abstract class Log implements System.Logger {
         }
     }
 
+    public static void logChannel(String s, Object... s1) {
+        if (channel()) {
+            logger.log(Level.INFO, "CHANNEL: " + s, s1);
+        }
+    }
+
+    public static void logChannel(Supplier<String> msgSupplier) {
+        if (channel()) {
+            logger.log(Level.INFO, "CHANNEL: " + msgSupplier.get());
+        }
+    }
+
     public static void logTrace(String s, Object... s1) {
         if (trace()) {
-            String format = "TRACE: " + s;
+            String format = "MISC: " + s;
             logger.log(Level.INFO, format, s1);
         }
     }

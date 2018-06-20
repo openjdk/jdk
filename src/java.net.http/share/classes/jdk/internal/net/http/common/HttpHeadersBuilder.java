@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,63 +27,59 @@ package jdk.internal.net.http.common;
 
 import java.net.http.HttpHeaders;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import static jdk.internal.net.http.common.Utils.ACCEPT_ALL;
 
-/**
- * Implementation of HttpHeaders.
- *
- * The public HttpHeaders API provides a read-only view, while the
- * non-HttpHeaders members allow for implementation specific mutation, e.g.
- * during creation, etc.
- */
-public class HttpHeadersImpl extends HttpHeaders {
+/** A mutable builder for collecting and building HTTP headers. */
+public class HttpHeadersBuilder {
 
-    private final TreeMap<String, List<String>> headers;
+    private final TreeMap<String, List<String>> headersMap;
 
-    public HttpHeadersImpl() {
-        headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    public HttpHeadersBuilder() {
+        headersMap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 
-    @Override
-    public Map<String, List<String>> map() {
-        return Collections.unmodifiableMap(headersMap());
-    }
-
-    // non-HttpHeaders private mutators
-
-    public HttpHeadersImpl deepCopy() {
-        HttpHeadersImpl h1 = newDeepCopy();
-        for (Map.Entry<String, List<String>> entry : headersMap().entrySet()) {
+    public HttpHeadersBuilder structuralCopy() {
+        HttpHeadersBuilder builder = new HttpHeadersBuilder();
+        for (Map.Entry<String, List<String>> entry : headersMap.entrySet()) {
             List<String> valuesCopy = new ArrayList<>(entry.getValue());
-            h1.headersMap().put(entry.getKey(), valuesCopy);
+            builder.headersMap.put(entry.getKey(), valuesCopy);
         }
-        return h1;
+        return builder;
     }
 
     public void addHeader(String name, String value) {
-        headersMap().computeIfAbsent(name, k -> new ArrayList<>(1))
-                    .add(value);
+        headersMap.computeIfAbsent(name, k -> new ArrayList<>(1))
+                  .add(value);
     }
 
     public void setHeader(String name, String value) {
         // headers typically have one value
         List<String> values = new ArrayList<>(1);
         values.add(value);
-        headersMap().put(name, values);
+        headersMap.put(name, values);
     }
 
     public void clear() {
-        headersMap().clear();
+        headersMap.clear();
     }
 
-    protected HttpHeadersImpl newDeepCopy() {
-        return new HttpHeadersImpl();
+    public Map<String, List<String>> map() {
+        return headersMap;
     }
 
-    protected Map<String, List<String>> headersMap() {
-        return headers;
+    public HttpHeaders build() {
+        return HttpHeaders.of(headersMap, ACCEPT_ALL);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString()).append(" { ");
+        sb.append(map());
+        sb.append(" }");
+        return sb.toString();
     }
 }

@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.function.Supplier;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 public class Http2RedirectHandler implements Http2Handler {
 
@@ -44,8 +44,8 @@ public class Http2RedirectHandler implements Http2Handler {
             System.err.printf("RedirectHandler request to %s from %s\n",
                 t.getRequestURI().toString(), t.getRemoteAddress().toString());
             System.err.println("Redirecting to: " + location);
-            HttpHeadersImpl map1 = t.getResponseHeaders();
-            map1.addHeader("Location", location);
+            HttpHeadersBuilder headersBuilder = t.getResponseHeaders();
+            headersBuilder.addHeader("Location", location);
             t.sendResponseHeaders(301, 1024);
             byte[] bb = new byte[1024];
             OutputStream os = t.getResponseBody();

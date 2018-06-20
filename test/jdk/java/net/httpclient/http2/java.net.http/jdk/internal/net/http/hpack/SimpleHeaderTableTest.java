@@ -47,7 +47,7 @@ public class SimpleHeaderTableTest {
     // https://tools.ietf.org/html/rfc7541#appendix-A
     //
     // @formatter:off
-    private static final String SPEC =
+    private static final String SPECIFICATION =
        "          | 1     | :authority                  |               |\n" +
        "          | 2     | :method                     | GET           |\n" +
        "          | 3     | :method                     | POST          |\n" +
@@ -125,7 +125,8 @@ public class SimpleHeaderTableTest {
         Map<Integer, HeaderField> staticHeaderFields = createStaticEntries();
         staticHeaderFields.forEach((index, expectedHeaderField) -> {
             SimpleHeaderTable.HeaderField actualHeaderField = table.get(index);
-            assertEquals(actualHeaderField, expectedHeaderField);
+            assertEquals(actualHeaderField.name, expectedHeaderField.name);
+            assertEquals(actualHeaderField.value, expectedHeaderField.value);
         });
     }
 
@@ -318,7 +319,7 @@ public class SimpleHeaderTableTest {
     static Map<Integer, HeaderField> createStaticEntries() {
         Pattern line = Pattern.compile(
                 "\\|\\s*(?<index>\\d+?)\\s*\\|\\s*(?<name>.+?)\\s*\\|\\s*(?<value>.*?)\\s*\\|");
-        Matcher m = line.matcher(SPEC);
+        Matcher m = line.matcher(SPECIFICATION);
         Map<Integer, HeaderField> result = new HashMap<>();
         while (m.find()) {
             int index = Integer.parseInt(m.group("index"));

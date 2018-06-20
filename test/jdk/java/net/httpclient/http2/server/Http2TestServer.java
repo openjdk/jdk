@@ -53,6 +53,7 @@ public class Http2TestServer implements AutoCloseable {
     final SSLContext sslContext;
     final String serverName;
     final HashMap<InetSocketAddress,Http2TestServerConnection> connections;
+    final Properties properties;
 
     private static ThreadFactory defaultThreadFac =
         (Runnable r) -> {
@@ -67,11 +68,11 @@ public class Http2TestServer implements AutoCloseable {
     }
 
     public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
-        this(serverName, secure, port, getDefaultExecutor(), 50, null);
+        this(serverName, secure, port, getDefaultExecutor(), 50, null, null);
     }
 
     public Http2TestServer(boolean secure, int port) throws Exception {
-        this(null, secure, port, getDefaultExecutor(), 50, null);
+        this(null, secure, port, getDefaultExecutor(), 50, null, null);
     }
 
     public InetSocketAddress getAddress() {
@@ -85,19 +86,19 @@ public class Http2TestServer implements AutoCloseable {
 
     public Http2TestServer(boolean secure,
                            SSLContext context) throws Exception {
-        this(null, secure, 0, null, 50, context);
+        this(null, secure, 0, null, 50, null, context);
     }
 
     public Http2TestServer(String serverName, boolean secure,
                            SSLContext context) throws Exception {
-        this(serverName, secure, 0, null, 50, context);
+        this(serverName, secure, 0, null, 50, null, context);
     }
 
     public Http2TestServer(boolean secure,
                            int port,
                            ExecutorService exec,
                            SSLContext context) throws Exception {
-        this(null, secure, port, exec, 50, context);
+        this(null, secure, port, exec, 50, null, context);
     }
 
     public Http2TestServer(String serverName,
@@ -107,7 +108,7 @@ public class Http2TestServer implements AutoCloseable {
                            SSLContext context)
         throws Exception
     {
-        this(serverName, secure, port, exec, 50, context);
+        this(serverName, secure, port, exec, 50, null, context);
     }
 
     /**
@@ -120,6 +121,7 @@ public class Http2TestServer implements AutoCloseable {
      * @param port listen port
      * @param exec executor service (cached thread pool is used if null)
      * @param backlog the server socket backlog
+     * @param properties additional configuration properties
      * @param context the SSLContext used when secure is true
      */
     public Http2TestServer(String serverName,
@@ -127,19 +129,25 @@ public class Http2TestServer implements AutoCloseable {
                            int port,
                            ExecutorService exec,
                            int backlog,
+                           Properties properties,
                            SSLContext context)
         throws Exception
     {
         this.serverName = serverName;
         if (secure) {
+           if (context != null)
+               this.sslContext = context;
+           else
+               this.sslContext = SSLContext.getDefault();
             server = initSecure(port, backlog);
         } else {
+            this.sslContext = context;
             server = initPlaintext(port, backlog);
         }
         this.secure = secure;
         this.exec = exec == null ? getDefaultExecutor() : exec;
         this.handlers = Collections.synchronizedMap(new HashMap<>());
-        this.sslContext = context;
+        this.properties = properties;
         this.connections = new HashMap<>();
     }
 
@@ -206,15 +214,12 @@ public class Http2TestServer implements AutoCloseable {
 
     final ServerSocket initSecure(int port, int backlog) throws Exception {
         ServerSocketFactory fac;
-        if (sslContext != null) {
-            fac = sslContext.getServerSocketFactory();
-        } else {
-            fac = SSLServerSocketFactory.getDefault();
-        }
+        SSLParameters sslp = null;
+        fac = sslContext.getServerSocketFactory();
+        sslp = sslContext.getSupportedSSLParameters();
         SSLServerSocket se = (SSLServerSocket) fac.createServerSocket();
         se.setReuseAddress(false);
         se.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), backlog);
-        SSLParameters sslp = se.getSSLParameters();
         sslp.setApplicationProtocols(new String[]{"h2"});
         sslp.setEndpointIdentificationAlgorithm("HTTPS");
         se.setSSLParameters(sslp);
@@ -264,7 +269,6 @@ public class Http2TestServer implements AutoCloseable {
                             socket.close();
                         }
                         System.err.println("TestServer: start exception: " + e);
-                        //throw e;
                     }
                 }
             } catch (SecurityException se) {
@@ -285,7 +289,7 @@ public class Http2TestServer implements AutoCloseable {
                                                          Socket socket,
                                                          Http2TestExchangeSupplier exchangeSupplier)
             throws IOException {
-        return new Http2TestServerConnection(http2TestServer, socket, exchangeSupplier);
+        return new Http2TestServerConnection(http2TestServer, socket, exchangeSupplier, properties);
     }
 
     @Override

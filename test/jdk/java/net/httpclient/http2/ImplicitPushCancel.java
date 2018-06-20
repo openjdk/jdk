@@ -40,18 +40,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.net.http.HttpResponse.PushPromiseHandler;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpResponse.BodyHandlers;
-import java.net.http.HttpResponse.PushPromiseHandler;
-import jdk.internal.net.http.common.HttpHeadersImpl;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -177,7 +177,7 @@ public class ImplicitPushCancel {
             for (Map.Entry<String,String> promise : promises.entrySet()) {
                 URI uri = requestURI.resolve(promise.getKey());
                 InputStream is = new ByteArrayInputStream(promise.getValue().getBytes(UTF_8));
-                HttpHeadersImpl headers = new HttpHeadersImpl();
+                HttpHeaders headers = HttpHeaders.of(Collections.emptyMap(), (x, y) -> true);
                 exchange.serverPush(uri, headers, is);
             }
             System.err.println("Server: All pushes sent");

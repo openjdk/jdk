@@ -307,6 +307,7 @@ final class Exchange<T> {
                                                     Function<ExchangeImpl<T>,CompletableFuture<Response>> andThen) {
         t = Utils.getCompletionCause(t);
         if (t instanceof ProxyAuthenticationRequired) {
+            if (debug.on()) debug.log("checkFor407: ProxyAuthenticationRequired: building synthetic response");
             bodyIgnored = MinimalFuture.completedFuture(null);
             Response proxyResponse = ((ProxyAuthenticationRequired)t).proxyResponse;
             HttpConnection c = ex == null ? null : ex.connection();
@@ -315,8 +316,10 @@ final class Exchange<T> {
                     proxyResponse.version, true);
             return MinimalFuture.completedFuture(syntheticResponse);
         } else if (t != null) {
+            if (debug.on()) debug.log("checkFor407: no response - %s", t);
             return MinimalFuture.failedFuture(t);
         } else {
+            if (debug.on()) debug.log("checkFor407: all clear");
             return andThen.apply(ex);
         }
     }
@@ -332,6 +335,7 @@ final class Exchange<T> {
             int rcode = r1.statusCode();
             if (rcode == 100) {
                 Log.logTrace("Received 100-Continue: sending body");
+                if (debug.on()) debug.log("Received 100-Continue for %s", r1);
                 CompletableFuture<Response> cf =
                         exchImpl.sendBodyAsync()
                                 .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
@@ -341,6 +345,7 @@ final class Exchange<T> {
             } else {
                 Log.logTrace("Expectation failed: Received {0}",
                         rcode);
+                if (debug.on()) debug.log("Expect-Continue failed (%d) for: %s", rcode, r1);
                 if (upgrading && rcode == 101) {
                     IOException failed = new IOException(
                             "Unable to handle 101 while waiting for 100");
@@ -357,6 +362,7 @@ final class Exchange<T> {
     // send the request body and proceed.
     private CompletableFuture<Response> sendRequestBody(ExchangeImpl<T> ex) {
         assert !request.expectContinue();
+        if (debug.on()) debug.log("sendRequestBody");
         CompletableFuture<Response> cf = ex.sendBodyAsync()
                 .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
         cf = wrapForUpgrade(cf);

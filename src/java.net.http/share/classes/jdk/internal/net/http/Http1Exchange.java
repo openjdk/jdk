@@ -26,7 +26,6 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodySubscriber;
@@ -46,6 +45,7 @@ import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Utils;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static jdk.internal.net.http.common.Utils.wrapWithExtraDetail;
 
 /**
  * Encapsulates one HTTP/1.1 request/response exchange.
@@ -134,6 +134,9 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
             subscription.request(n);
         }
 
+        /** A current-state message suitable for inclusion in an exception detail message. */
+        abstract String currentStateMessage();
+
         final boolean isSubscribed() {
             return subscription != null;
         }
@@ -159,6 +162,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 @Override public void onNext(ByteBuffer item) { error(); }
                 @Override public void onError(Throwable throwable) { error(); }
                 @Override public void onComplete() { error(); }
+                @Override String currentStateMessage() { return null; }
                 private void error() {
                     throw new InternalError("should not reach here");
                 }
@@ -193,35 +197,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         }
         this.requestAction = new Http1Request(request, this);
         this.asyncReceiver = new Http1AsyncReceiver(executor, this);
-        asyncReceiver.subscribe(new InitialErrorReceiver());
-    }
-
-    /** An initial receiver that handles no data, but cancels the request if
-     * it receives an error. Will be replaced when reading response body. */
-    final class InitialErrorReceiver implements Http1AsyncReceiver.Http1AsyncDelegate {
-        volatile AbstractSubscription s;
-        @Override
-        public boolean tryAsyncReceive(ByteBuffer ref) {
-            return false;  // no data has been processed, leave it in the queue
-        }
-
-        @Override
-        public void onReadError(Throwable ex) {
-            cancelImpl(ex);
-        }
-
-        @Override
-        public void onSubscribe(AbstractSubscription s) {
-            this.s = s;
-        }
-
-        @Override
-        public AbstractSubscription subscription() {
-            return s;
-        }
-
-        @Override
-        public void close(Throwable error) {}
     }
 
     @Override
@@ -244,16 +219,16 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         // create the response before sending the request headers, so that
         // the response can set the appropriate receivers.
         if (debug.on()) debug.log("Sending headers only");
-        if (response == null) {
-            response = new Http1Response<>(connection, this, asyncReceiver);
-        }
-
-        if (debug.on()) debug.log("response created in advance");
         // If the first attempt to read something triggers EOF, or
         // IOException("channel reset by peer"), we're going to retry.
         // Instruct the asyncReceiver to throw ConnectionExpiredException
         // to force a retry.
         asyncReceiver.setRetryOnError(true);
+        if (response == null) {
+            response = new Http1Response<>(connection, this, asyncReceiver);
+        }
+
+        if (debug.on()) debug.log("response created in advance");
 
         CompletableFuture<Void> connectCF;
         if (!connection.connected()) {
@@ -296,6 +271,8 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                         return cf;
                     } catch (Throwable t) {
                         if (debug.on()) debug.log("Failed to send headers: %s", t);
+                        headersSentCF.completeExceptionally(t);
+                        bodySentCF.completeExceptionally(t);
                         connection.close();
                         cf.completeExceptionally(t);
                         return cf;
@@ -303,28 +280,52 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 .thenCompose(unused -> headersSentCF);
     }
 
+    private void cancelIfFailed(Flow.Subscription s) {
+        asyncReceiver.whenFinished.whenCompleteAsync((r,t) -> {
+            if (debug.on()) debug.log("asyncReceiver finished (failed=%s)", t);
+            if (t != null) {
+                s.cancel();
+                // Don't complete exceptionally here as 't'
+                // might not be the right exception: it will
+                // not have been decorated yet.
+                // t is an exception raised by the read side,
+                // an EOFException or Broken Pipe...
+                // We are cancelling the BodyPublisher subscription
+                // and completing bodySentCF to allow the next step
+                // to flow and call readHeaderAsync, which will
+                // get the right exception from the asyncReceiver.
+                bodySentCF.complete(this);
+            }
+        }, executor);
+    }
+
     @Override
     CompletableFuture<ExchangeImpl<T>> sendBodyAsync() {
         assert headersSentCF.isDone();
+        if (debug.on()) debug.log("sendBodyAsync");
         try {
             bodySubscriber = requestAction.continueRequest();
+            if (debug.on()) debug.log("bodySubscriber is %s",
+                    bodySubscriber == null ? null : bodySubscriber.getClass());
             if (bodySubscriber == null) {
                 bodySubscriber = Http1BodySubscriber.completeSubscriber(debug);
                 appendToOutgoing(Http1BodySubscriber.COMPLETED);
             } else {
                 // start
                 bodySubscriber.whenSubscribed
+                        .thenAccept((s) -> cancelIfFailed(s))
                         .thenAccept((s) -> requestMoreBody());
             }
         } catch (Throwable t) {
             cancelImpl(t);
             bodySentCF.completeExceptionally(t);
         }
-        return bodySentCF;
+        return Utils.wrapForDebug(debug, "sendBodyAsync", bodySentCF);
     }
 
     @Override
     CompletableFuture<Response> getResponseAsync(Executor executor) {
+        if (debug.on()) debug.log("reading headers");
         CompletableFuture<Response> cf = response.readHeadersAsync(executor);
         Throwable cause;
         synchronized (lock) {
@@ -348,7 +349,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 debug.log(acknowledged ? ("completed response with " + cause)
                           : ("response already completed, ignoring " + cause));
         }
-        return cf;
+        return Utils.wrapForDebug(debug, "getResponseAsync", cf);
     }
 
     @Override
@@ -421,7 +422,6 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                     && response != null && response.finished()) {
                 return;
             }
-            connection.close();   // TODO: ensure non-blocking if holding the lock
             writePublisher.writeScheduler.stop();
             if (operations.isEmpty()) {
                 Log.logTrace("Http1Exchange: request [{0}/timeout={1}ms] no pending operation."
@@ -444,27 +444,31 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 operations.clear();
             }
         }
-        Log.logError("Http1Exchange.cancel: count=" + count);
-        if (toComplete != null) {
-            // We might be in the selector thread in case of timeout, when
-            // the SelectorManager calls purgeTimeoutsAndReturnNextDeadline()
-            // There may or may not be other places that reach here
-            // from the SelectorManager thread, so just make sure we
-            // don't complete any CF from within the selector manager
-            // thread.
-            Executor exec = client.isSelectorThread()
-                            ? executor
-                            : this::runInline;
-            Throwable x = error;
-            while (!toComplete.isEmpty()) {
-                CompletableFuture<?> cf = toComplete.poll();
-                exec.execute(() -> {
-                    if (cf.completeExceptionally(x)) {
-                        if (debug.on())
-                            debug.log("%s: completed cf with %s", request.uri(), x);
-                    }
-                });
+        try {
+            Log.logError("Http1Exchange.cancel: count=" + count);
+            if (toComplete != null) {
+                // We might be in the selector thread in case of timeout, when
+                // the SelectorManager calls purgeTimeoutsAndReturnNextDeadline()
+                // There may or may not be other places that reach here
+                // from the SelectorManager thread, so just make sure we
+                // don't complete any CF from within the selector manager
+                // thread.
+                Executor exec = client.isSelectorThread()
+                        ? executor
+                        : this::runInline;
+                Throwable x = error;
+                while (!toComplete.isEmpty()) {
+                    CompletableFuture<?> cf = toComplete.poll();
+                    exec.execute(() -> {
+                        if (cf.completeExceptionally(x)) {
+                            if (debug.on())
+                                debug.log("%s: completed cf with %s", request.uri(), x);
+                        }
+                    });
+                }
             }
+        } finally {
+            connection.close();
         }
     }
 
@@ -511,7 +515,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     private void requestMoreBody() {
         try {
-            if (debug.on()) debug.log("requesting more body from the subscriber");
+            if (debug.on()) debug.log("requesting more request body from the subscriber");
             bodySubscriber.request(1);
         } catch (Throwable t) {
             if (debug.on()) debug.log("Subscription::request failed", t);
@@ -527,46 +531,62 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         final Executor exec = client.theExecutor();
         final DataPair dp = outgoing.pollFirst();
 
+        if (writePublisher.cancelled) {
+            if (debug.on()) debug.log("cancelling upstream publisher");
+            if (bodySubscriber != null) {
+                exec.execute(bodySubscriber::cancelSubscription);
+            } else if (debug.on()) {
+                debug.log("bodySubscriber is null");
+            }
+            headersSentCF.completeAsync(() -> this, exec);
+            bodySentCF.completeAsync(() -> this, exec);
+            return null;
+        }
+
         if (dp == null)  // publisher has not published anything yet
             return null;
 
-        synchronized (lock) {
-            if (dp.throwable != null) {
+        if (dp.throwable != null) {
+            synchronized (lock) {
                 state = State.ERROR;
-                exec.execute(() -> {
-                    headersSentCF.completeExceptionally(dp.throwable);
-                    bodySentCF.completeExceptionally(dp.throwable);
-                    connection.close();
-                });
-                return dp;
             }
-
-            switch (state) {
-                case HEADERS:
-                    state = State.BODY;
-                    // completeAsync, since dependent tasks should run in another thread
-                    if (debug.on()) debug.log("initiating completion of headersSentCF");
-                    headersSentCF.completeAsync(() -> this, exec);
-                    break;
-                case BODY:
-                    if (dp.data == Http1BodySubscriber.COMPLETED) {
-                        state = State.COMPLETING;
-                        if (debug.on()) debug.log("initiating completion of bodySentCF");
-                        bodySentCF.completeAsync(() -> this, exec);
-                    } else {
-                        exec.execute(this::requestMoreBody);
-                    }
-                    break;
-                case INITIAL:
-                case ERROR:
-                case COMPLETING:
-                case COMPLETED:
-                default:
-                    assert false : "Unexpected state:" + state;
-            }
-
+            exec.execute(() -> {
+                headersSentCF.completeExceptionally(dp.throwable);
+                bodySentCF.completeExceptionally(dp.throwable);
+                connection.close();
+            });
             return dp;
         }
+
+        switch (state) {
+            case HEADERS:
+                synchronized (lock) {
+                    state = State.BODY;
+                }
+                // completeAsync, since dependent tasks should run in another thread
+                if (debug.on()) debug.log("initiating completion of headersSentCF");
+                headersSentCF.completeAsync(() -> this, exec);
+                break;
+            case BODY:
+                if (dp.data == Http1BodySubscriber.COMPLETED) {
+                    synchronized (lock) {
+                        state = State.COMPLETING;
+                    }
+                    if (debug.on()) debug.log("initiating completion of bodySentCF");
+                    bodySentCF.completeAsync(() -> this, exec);
+                } else {
+                    exec.execute(this::requestMoreBody);
+                }
+                break;
+            case INITIAL:
+            case ERROR:
+            case COMPLETING:
+            case COMPLETED:
+            default:
+                assert false : "Unexpected state:" + state;
+        }
+
+        return dp;
     }
 
     /** A Publisher of HTTP/1.1 headers and request body. */
@@ -608,6 +628,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
             public void run() {
                 assert state != State.COMPLETED : "Unexpected state:" + state;
                 if (debug.on()) debug.log("WriteTask");
+
+                if (cancelled) {
+                    if (debug.on()) debug.log("handling cancellation");
+                    writeScheduler.stop();
+                    getOutgoing();
+                    return;
+                }
+
                 if (subscriber == null) {
                     if (debug.on()) debug.log("no subscriber yet");
                     return;
@@ -615,6 +643,8 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 if (debug.on()) debug.log(() -> "hasOutgoing = " + hasOutgoing());
                 while (hasOutgoing() && demand.tryDecrement()) {
                     DataPair dp = getOutgoing();
+                    if (dp == null)
+                        break;
 
                     if (dp.throwable != null) {
                         if (debug.on()) debug.log("onError");
@@ -661,7 +691,7 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 if (cancelled)
                     return;  //no-op
                 cancelled = true;
-                writeScheduler.stop();
+                writeScheduler.runOrSchedule(client.theExecutor());
             }
         }
     }

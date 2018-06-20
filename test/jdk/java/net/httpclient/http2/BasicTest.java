@@ -222,7 +222,7 @@ public class BasicTest {
         httpsServer.addHandler((t -> {
             SSLSession s = t.getSSLSession();
             String prot = s.getProtocol();
-            if (prot.equals("TLSv1.2")) {
+            if (prot.equals("TLSv1.2") || prot.equals("TLSv1.3")) {
                 t.sendResponseHeaders(200, -1);
             } else {
                 System.err.printf("Protocols =%s\n", prot);

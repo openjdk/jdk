@@ -32,6 +32,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.WebSocketHandshakeException;
+
+import jdk.internal.net.http.HttpRequestBuilderImpl;
+import jdk.internal.net.http.HttpRequestImpl;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Pair;
 import jdk.internal.net.http.common.Utils;
@@ -104,7 +107,7 @@ public class OpeningHandshake {
         }
     }
 
-    private final HttpRequest request;
+    private final HttpRequestImpl request;
     private final Collection<String> subprotocols;
     private final String nonce;
 
@@ -114,7 +117,7 @@ public class OpeningHandshake {
         checkPermissions(b, proxy);
         this.client = b.getClient();
         URI httpURI = createRequestURI(b.getUri());
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(httpURI);
+        HttpRequestBuilderImpl requestBuilder = new HttpRequestBuilderImpl(httpURI);
         Duration connectTimeout = b.getConnectTimeout();
         if (connectTimeout != null) {
             requestBuilder.timeout(connectTimeout);
@@ -127,7 +130,7 @@ public class OpeningHandshake {
         }
         this.subprotocols = createRequestSubprotocols(b.getSubprotocols());
         if (!this.subprotocols.isEmpty()) {
-            String p = this.subprotocols.stream().collect(Collectors.joining(", "));
+            String p = String.join(", ", this.subprotocols);
             requestBuilder.header(HEADER_PROTOCOL, p);
         }
         requestBuilder.header(HEADER_VERSION, VERSION);
@@ -137,12 +140,12 @@ public class OpeningHandshake {
         // to upgrade from HTTP/2 to WebSocket (as of August 2016):
         //
         //     https://tools.ietf.org/html/draft-hirano-httpbis-websocket-over-http2-00
-        this.request = requestBuilder.version(Version.HTTP_1_1).GET().build();
-        WebSocketRequest r = (WebSocketRequest) this.request;
-        r.isWebSocket(true);
-        r.setSystemHeader(HEADER_UPGRADE, "websocket");
-        r.setSystemHeader(HEADER_CONNECTION, "Upgrade");
-        r.setProxy(proxy);
+        requestBuilder.version(Version.HTTP_1_1).GET();
+        request = requestBuilder.buildForWebSocket();
+        request.isWebSocket(true);
+        request.setSystemHeader(HEADER_UPGRADE, "websocket");
+        request.setSystemHeader(HEADER_CONNECTION, "Upgrade");
+        request.setProxy(proxy);
     }
 
     private static Collection<String> createRequestSubprotocols(

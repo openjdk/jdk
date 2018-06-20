@@ -41,6 +41,7 @@ import java.util.function.Supplier;
 import jdk.internal.net.http.common.BufferSupplier;
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.FlowTube;
+import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.SequentialScheduler;
 import jdk.internal.net.http.common.SequentialScheduler.DeferredCompleter;
@@ -149,6 +150,10 @@ final class SocketTube implements FlowTube {
     void signalClosed() {
         // Ensures that the subscriber will be terminated and that future
         // subscribers will be notified when the connection is closed.
+        if (Log.channel()) {
+            Log.logChannel("Connection close signalled: connection closed locally ({0})",
+                    channelDescr());
+        }
         readPublisher.subscriptionImpl.signalError(
                 new IOException("connection closed locally"));
     }
@@ -364,6 +369,10 @@ final class SocketTube implements FlowTube {
         void startSubscription() {
             try {
                 if (debug.on()) debug.log("write: starting subscription");
+                if (Log.channel()) {
+                    Log.logChannel("Start requesting bytes for writing to channel: {0}",
+                            channelDescr());
+                }
                 assert client.isSelectorThread();
                 // make sure read registrations are handled before;
                 readPublisher.subscriptionImpl.handlePending();
@@ -409,6 +418,10 @@ final class SocketTube implements FlowTube {
 
         void signalError(Throwable error) {
             debug.log(() -> "write error: " + error);
+            if (Log.channel()) {
+                Log.logChannel("Failed to write to channel ({0}: {1})",
+                        channelDescr(), error);
+            }
             completed = true;
             readPublisher.signalError(error);
         }
@@ -455,6 +468,7 @@ final class SocketTube implements FlowTube {
 
             @Override
             public void cancel() {
+                if (debug.on()) debug.log("write: cancel");
                 dropSubscription();
                 upstreamSubscription.cancel();
             }
@@ -557,6 +571,10 @@ final class SocketTube implements FlowTube {
             if (debug.on()) debug.log("error signalled " + error);
             if (!errorRef.compareAndSet(null, error)) {
                 return;
+            }
+            if (Log.channel()) {
+                Log.logChannel("Error signalled on channel {0}: {1}",
+                        channelDescr(), error);
             }
             subscriptionImpl.handleError();
         }
@@ -665,6 +683,7 @@ final class SocketTube implements FlowTube {
             final void handleSubscribeEvent() {
                 assert client.isSelectorThread();
                 debug.log("subscribe event raised");
+                if (Log.channel()) Log.logChannel("Start reading from {0}", channelDescr());
                 readScheduler.runOrSchedule();
                 if (readScheduler.isStopped() || completed) {
                     // if already completed or stopped we can handle any
@@ -702,6 +721,10 @@ final class SocketTube implements FlowTube {
             @Override
             public final void cancel() {
                 pauseReadEvent();
+                if (Log.channel()) {
+                    Log.logChannel("Read subscription cancelled for channel {0}",
+                            channelDescr());
+                }
                 readScheduler.stop();
             }
 
@@ -726,6 +749,10 @@ final class SocketTube implements FlowTube {
                     return;
                 }
                 if (debug.on()) debug.log("got read error: " + error);
+                if (Log.channel()) {
+                    Log.logChannel("Read error signalled on channel {0}: {1}",
+                            channelDescr(), error);
+                }
                 readScheduler.runOrSchedule();
             }
 
@@ -772,6 +799,10 @@ final class SocketTube implements FlowTube {
                             if (debug.on())
                                 debug.log("Sending error " + error
                                           + " to subscriber " + subscriber);
+                            if (Log.channel()) {
+                                Log.logChannel("Raising error with subscriber for {0}: {1}",
+                                        channelDescr(), error);
+                            }
                             current.errorRef.compareAndSet(null, error);
                             current.signalCompletion();
                             readScheduler.stop();
@@ -788,6 +819,10 @@ final class SocketTube implements FlowTube {
                                 if (bytes == EOF) {
                                     if (!completed) {
                                         if (debug.on()) debug.log("got read EOF");
+                                        if (Log.channel()) {
+                                            Log.logChannel("EOF read from channel: {0}",
+                                                        channelDescr());
+                                        }
                                         completed = true;
                                         // safe to pause here because we're finished
                                         // anyway.
@@ -849,6 +884,12 @@ final class SocketTube implements FlowTube {
                     if (debug.on()) debug.log("Unexpected exception in read loop", t);
                     signalError(t);
                 } finally {
+                    if (readScheduler.isStopped()) {
+                        if (debug.on()) debug.log("Read scheduler stopped");
+                        if (Log.channel()) {
+                            Log.logChannel("Stopped reading from channel {0}", channelDescr());
+                        }
+                    }
                     handlePending();
                 }
             }
@@ -1237,5 +1278,9 @@ final class SocketTube implements FlowTube {
 
     final String dbgString() {
         return "SocketTube("+id+")";
+    }
+
+    final String channelDescr() {
+        return String.valueOf(channel);
     }
 }

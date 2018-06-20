@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.net.InetSocketAddress;
+import java.net.http.HttpHeaders;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import javax.net.ssl.SSLSession;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 public interface Http2TestExchange {
 
-    HttpHeadersImpl getRequestHeaders();
+    HttpHeaders getRequestHeaders();
 
-    HttpHeadersImpl getResponseHeaders();
+    HttpHeadersBuilder getResponseHeaders();
 
     URI getRequestURI();
 
@@ -61,7 +61,7 @@ public interface Http2TestExchange {
 
     boolean serverPushAllowed();
 
-    void serverPush(URI uri, HttpHeadersImpl headers, InputStream content);
+    void serverPush(URI uri, HttpHeaders headers, InputStream content);
 
     /**
      * Send a PING on this exchanges connection, and completes the returned CF

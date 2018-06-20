@@ -28,6 +28,7 @@ import jdk.internal.net.http.hpack.HPACK.Logger;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static jdk.internal.net.http.hpack.HPACK.Logger.Level.EXTRA;
@@ -66,7 +67,8 @@ public final class Decoder {
     private final Logger logger;
     private static final AtomicLong DECODERS_IDS = new AtomicLong();
 
-    private static final State[] states = new State[256];
+    /* An immutable list of states */
+    private static final List<State> states;
 
     static {
         // To be able to do a quick lookup, each of 256 possibilities are mapped
@@ -78,21 +80,23 @@ public final class Decoder {
         // I do it mainly for better debugging (to not go each time step by step
         // through if...else tree). As for performance win for the decoding, I
         // believe is negligible.
-        for (int i = 0; i < states.length; i++) {
+        State[] s = new State[256];
+        for (int i = 0; i < s.length; i++) {
             if ((i & 0b1000_0000) == 0b1000_0000) {
-                states[i] = State.INDEXED;
+                s[i] = State.INDEXED;
             } else if ((i & 0b1100_0000) == 0b0100_0000) {
-                states[i] = State.LITERAL_WITH_INDEXING;
+                s[i] = State.LITERAL_WITH_INDEXING;
             } else if ((i & 0b1110_0000) == 0b0010_0000) {
-                states[i] = State.SIZE_UPDATE;
+                s[i] = State.SIZE_UPDATE;
             } else if ((i & 0b1111_0000) == 0b0001_0000) {
-                states[i] = State.LITERAL_NEVER_INDEXED;
+                s[i] = State.LITERAL_NEVER_INDEXED;
             } else if ((i & 0b1111_0000) == 0b0000_0000) {
-                states[i] = State.LITERAL;
+                s[i] = State.LITERAL;
             } else {
                 throw new InternalError(String.valueOf(i));
             }
         }
+        states = List.of(s);
     }
 
     private final long id;
@@ -278,7 +282,7 @@ public final class Decoder {
 
     private void resumeReady(ByteBuffer input) {
         int b = input.get(input.position()) & 0xff; // absolute read
-        State s = states[b];
+        State s = states.get(b);
         if (logger.isLoggable(EXTRA)) {
             logger.log(EXTRA, () -> format("next binary representation %s (first byte 0x%02x)",
                                            s, b));
@@ -388,15 +392,17 @@ public final class Decoder {
         try {
             if (firstValueIndex) {
                 if (logger.isLoggable(NORMAL)) {
-                    logger.log(NORMAL, () -> format("literal without indexing ('%s', '%s')",
-                                                    intValue, value));
+                    logger.log(NORMAL, () -> format(
+                            "literal without indexing (%s, '%s', huffman=%b)",
+                            intValue, value, valueHuffmanEncoded));
                 }
                 SimpleHeaderTable.HeaderField f = getHeaderFieldAt(intValue);
                 action.onLiteral(intValue, f.name, value, valueHuffmanEncoded);
             } else {
                 if (logger.isLoggable(NORMAL)) {
-                    logger.log(NORMAL, () -> format("literal without indexing ('%s', '%s')",
-                                                    name, value));
+                    logger.log(NORMAL, () -> format(
+                            "literal without indexing ('%s', huffman=%b, '%s', huffman=%b)",
+                            name, nameHuffmanEncoded, value, valueHuffmanEncoded));
                 }
                 action.onLiteral(name, nameHuffmanEncoded, value, valueHuffmanEncoded);
             }
@@ -445,8 +451,9 @@ public final class Decoder {
             String v = value.toString();
             if (firstValueIndex) {
                 if (logger.isLoggable(NORMAL)) {
-                    logger.log(NORMAL, () -> format("literal with incremental indexing ('%s', '%s')",
-                                                    intValue, value));
+                    logger.log(NORMAL, () -> format(
+                            "literal with incremental indexing (%s, '%s', huffman=%b)",
+                            intValue, value, valueHuffmanEncoded));
                 }
                 SimpleHeaderTable.HeaderField f = getHeaderFieldAt(intValue);
                 n = f.name;
@@ -454,8 +461,9 @@ public final class Decoder {
             } else {
                 n = name.toString();
                 if (logger.isLoggable(NORMAL)) {
-                    logger.log(NORMAL, () -> format("literal with incremental indexing ('%s', '%s')",
-                                                    n, value));
+                    logger.log(NORMAL, () -> format(
+                            "literal with incremental indexing ('%s', huffman=%b, '%s', huffman=%b)",
+                            n, nameHuffmanEncoded, value, valueHuffmanEncoded));
                 }
                 action.onLiteralWithIndexing(n, nameHuffmanEncoded, v, valueHuffmanEncoded);
             }
@@ -496,15 +504,17 @@ public final class Decoder {
         try {
             if (firstValueIndex) {
                 if (logger.isLoggable(NORMAL)) {
-                    logger.log(NORMAL, () -> format("literal never indexed ('%s', '%s')",
-                                                    intValue, value));
+                    logger.log(NORMAL, () -> format(
+                            "literal never indexed (%s, '%s', huffman=%b)",
+                            intValue, value, valueHuffmanEncoded));
                 }
                 SimpleHeaderTable.HeaderField f = getHeaderFieldAt(intValue);
                 action.onLiteralNeverIndexed(intValue, f.name, value, valueHuffmanEncoded);
             } else {
                 if (logger.isLoggable(NORMAL)) {
-                    logger.log(NORMAL, () -> format("literal never indexed ('%s', '%s')",
-                                                    name, value));
+                    logger.log(NORMAL, () -> format(
+                            "literal never indexed ('%s', huffman=%b, '%s', huffman=%b)",
+                            name, nameHuffmanEncoded, value, valueHuffmanEncoded));
                 }
                 action.onLiteralNeverIndexed(name, nameHuffmanEncoded, value, valueHuffmanEncoded);
             }

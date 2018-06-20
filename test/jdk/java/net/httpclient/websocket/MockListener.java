@@ -39,11 +39,15 @@ public class MockListener implements WebSocket.Listener {
     private final Predicate<? super Invocation> collectUntil;
 
     public MockListener() {
-        this(i -> i instanceof OnClose || i instanceof OnError);
+        this(1, MockListener::closeOrError);
+    }
+
+    public MockListener(long bufferSize) {
+        this(bufferSize, MockListener::closeOrError);
     }
 
     public MockListener(Predicate<? super Invocation> collectUntil) {
-        this(2, collectUntil);
+        this(1, collectUntil);
     }
 
     /*
@@ -57,6 +61,10 @@ public class MockListener implements WebSocket.Listener {
         Objects.requireNonNull(collectUntil);
         this.bufferSize = bufferSize;
         this.collectUntil = collectUntil;
+    }
+
+    private static boolean closeOrError(Invocation i) {
+        return i instanceof OnClose || i instanceof OnError;
     }
 
     @Override
@@ -73,7 +81,9 @@ public class MockListener implements WebSocket.Listener {
     }
 
     protected void onOpen0(WebSocket webSocket) {
-        replenish(webSocket);
+        count = bufferSize - bufferSize / 2;
+        System.out.printf("request(%d)%n", bufferSize);
+        webSocket.request(bufferSize);
     }
 
     @Override
@@ -209,8 +219,9 @@ public class MockListener implements WebSocket.Listener {
     protected void replenish(WebSocket webSocket) {
         if (--count <= 0) {
             count = bufferSize - bufferSize / 2;
+            webSocket.request(count);
+            System.out.printf("request(%d)%n", count);
         }
-        webSocket.request(count);
     }
 
     public abstract static class Invocation {

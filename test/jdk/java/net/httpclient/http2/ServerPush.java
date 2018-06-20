@@ -53,7 +53,6 @@ import org.testng.annotations.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.*;
 
-
 public class ServerPush {
 
     static final int LOOPS = 13;

@@ -89,10 +89,12 @@ public abstract class HttpRequest {
      * <p> Instances of {@code HttpRequest.Builder} are created by calling {@link
      * HttpRequest#newBuilder(URI)} or {@link HttpRequest#newBuilder()}.
      *
-     * <p> Each of the setter methods modifies the state of the builder
-     * and returns the same instance. The methods are not synchronized and
-     * should not be called from multiple threads without external
-     * synchronization. The {@link #build() build} method returns a new
+     * <p> The builder can be used to configure per-request state, such as: the
+     * request URI, the request method (default is GET unless explicitly set),
+     * specific request headers, etc. Each of the setter methods modifies the
+     * state of the builder and returns the same instance. The methods are not
+     * synchronized and should not be called from multiple threads without
+     * external synchronization. The {@link #build() build} method returns a new
      * {@code HttpRequest} each time it is invoked. Once built an {@code
      * HttpRequest} is immutable, and can be sent multiple times.
      *

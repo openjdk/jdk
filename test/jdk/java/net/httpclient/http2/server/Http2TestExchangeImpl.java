@@ -26,17 +26,19 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.InetSocketAddress;
+import java.net.http.HttpHeaders;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import javax.net.ssl.SSLSession;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
 
 public class Http2TestExchangeImpl implements Http2TestExchange {
 
-    final HttpHeadersImpl reqheaders;
-    final HttpHeadersImpl rspheaders;
+    final HttpHeaders reqheaders;
+    final HttpHeadersBuilder rspheadersBuilder;
     final URI uri;
     final String method;
     final InputStream is;
@@ -52,8 +54,8 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
 
     Http2TestExchangeImpl(int streamid,
                           String method,
-                          HttpHeadersImpl reqheaders,
-                          HttpHeadersImpl rspheaders,
+                          HttpHeaders reqheaders,
+                          HttpHeadersBuilder rspheadersBuilder,
                           URI uri,
                           InputStream is,
                           SSLSession sslSession,
@@ -61,7 +63,7 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
                           Http2TestServerConnection conn,
                           boolean pushAllowed) {
         this.reqheaders = reqheaders;
-        this.rspheaders = rspheaders;
+        this.rspheadersBuilder = rspheadersBuilder;
         this.uri = uri;
         this.method = method;
         this.is = is;
@@ -74,7 +76,7 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     }
 
     @Override
-    public HttpHeadersImpl getRequestHeaders() {
+    public HttpHeaders getRequestHeaders() {
         return reqheaders;
     }
 
@@ -84,8 +86,8 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     }
 
     @Override
-    public HttpHeadersImpl getResponseHeaders() {
-        return rspheaders;
+    public HttpHeadersBuilder getResponseHeaders() {
+        return rspheadersBuilder;
     }
 
     @Override
@@ -129,13 +131,14 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         this.responseLength = responseLength;
         if (responseLength > 0 || responseLength < 0) {
                 long clen = responseLength > 0 ? responseLength : 0;
-            rspheaders.setHeader("Content-length", Long.toString(clen));
+            rspheadersBuilder.setHeader("Content-length", Long.toString(clen));
         }
 
-        rspheaders.setHeader(":status", Integer.toString(rCode));
+        rspheadersBuilder.setHeader(":status", Integer.toString(rCode));
+        HttpHeaders headers = rspheadersBuilder.build();
 
         Http2TestServerConnection.ResponseHeaders response
-                = new Http2TestServerConnection.ResponseHeaders(rspheaders);
+                = new Http2TestServerConnection.ResponseHeaders(headers);
         response.streamid(streamid);
         response.setFlag(HeaderFrame.END_HEADERS);
 
@@ -175,13 +178,19 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
     }
 
     @Override
-    public void serverPush(URI uri, HttpHeadersImpl headers, InputStream content) {
-        OutgoingPushPromise pp = new OutgoingPushPromise(
-                streamid, uri, headers, content);
-        headers.setHeader(":method", "GET");
-        headers.setHeader(":scheme", uri.getScheme());
-        headers.setHeader(":authority", uri.getAuthority());
-        headers.setHeader(":path", uri.getPath());
+    public void serverPush(URI uri, HttpHeaders headers, InputStream content) {
+        HttpHeadersBuilder headersBuilder = new HttpHeadersBuilder();
+        headersBuilder.setHeader(":method", "GET");
+        headersBuilder.setHeader(":scheme", uri.getScheme());
+        headersBuilder.setHeader(":authority", uri.getAuthority());
+        headersBuilder.setHeader(":path", uri.getPath());
+        for (Map.Entry<String,List<String>> entry : headers.map().entrySet()) {
+            for (String value : entry.getValue())
+                headersBuilder.addHeader(entry.getKey(), value);
+        }
+        HttpHeaders combinedHeaders = headersBuilder.build();
+        OutgoingPushPromise pp = new OutgoingPushPromise(streamid, uri, combinedHeaders, content);
+
         try {
             conn.outputQ.put(pp);
             // writeLoop will spin up thread to read the InputStream

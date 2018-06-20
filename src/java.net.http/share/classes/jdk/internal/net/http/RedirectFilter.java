@@ -43,6 +43,13 @@ class RedirectFilter implements HeaderFilter {
     static final int DEFAULT_MAX_REDIRECTS = 5;
     URI uri;
 
+    /*
+     * NOT_MODIFIED status code results from a conditional GET where
+     * the server does not (must not) return a response body because
+     * the condition specified in the request disallows it
+     */
+    static final int HTTP_NOT_MODIFIED = 304;
+
     static final int max_redirects = Utils.getIntegerNetProperty(
             "jdk.httpclient.redirects.retrylimit", DEFAULT_MAX_REDIRECTS
     );
@@ -91,6 +98,10 @@ class RedirectFilter implements HeaderFilter {
         if (rcode == 200 || policy == HttpClient.Redirect.NEVER) {
             return null;
         }
+
+        if (rcode == HTTP_NOT_MODIFIED)
+            return null;
+
         if (rcode >= 300 && rcode <= 399) {
             URI redir = getRedirectedURI(r.headers());
             String newMethod = redirectedMethod(rcode, method);

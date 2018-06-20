@@ -227,8 +227,8 @@ class ExchangeImpl {
             contentLen = -1;
         }
 
-        if (isHeadRequest()) {
-            /* HEAD requests should not set a content length by passing it
+        if (isHeadRequest() || rCode == 304) {
+            /* HEAD requests or 304 responses should not set a content length by passing it
              * through this API, but should instead manually set the required
              * headers.*/
             if (contentLen >= 0) {
@@ -239,7 +239,7 @@ class ExchangeImpl {
             }
             noContentToSend = true;
             contentLen = 0;
-        } else { /* not a HEAD request */
+        } else { /* not a HEAD request or 304 response */
             if (contentLen == 0) {
                 if (http10) {
                     o.setWrappedStream (new UndefLengthOutputStream (this, ros));

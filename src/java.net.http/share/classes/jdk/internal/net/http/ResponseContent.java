@@ -26,7 +26,6 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,9 +33,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
-
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
+import static java.lang.String.format;
 
 /**
  * Implements chunked/fixed transfer encodings of HTTP/1.1 responses.
@@ -95,6 +94,9 @@ class ResponseContent {
 
     interface BodyParser extends Consumer<ByteBuffer> {
         void onSubscribe(AbstractSubscription sub);
+        // A current-state message suitable for inclusion in an exception
+        // detail message.
+        String currentStateMessage();
     }
 
     // Returns a parser that will take care of parsing the received byte
@@ -142,6 +144,11 @@ class ResponseContent {
             if (debug.on())
                 debug.log("onSubscribe: "  + pusher.getClass().getName());
             pusher.onSubscribe(this.sub = sub);
+        }
+
+        @Override
+        public String currentStateMessage() {
+            return format("chunked transfer encoding, state: %s", state);
         }
 
         @Override
@@ -422,6 +429,12 @@ class ResponseContent {
                     onComplete.accept(t);
                 }
             }
+        }
+
+        @Override
+        public String currentStateMessage() {
+            return format("fixed content-length: %d, bytes received: %d",
+                          contentLength, contentLength - remaining);
         }
 
         @Override
