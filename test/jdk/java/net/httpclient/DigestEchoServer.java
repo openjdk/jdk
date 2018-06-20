@@ -170,7 +170,7 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         }
     }
 
-    private static String toString(HttpTestHeaders headers) {
+    private static String toString(HttpTestRequestHeaders headers) {
         return headers.entrySet().stream()
                 .map((e) -> e.getKey() + ": " + e.getValue())
                 .collect(Collectors.joining("\n"));
@@ -847,9 +847,9 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         }
 
         public static String computeDigest(boolean isRequest,
-                                            String reqMethod,
-                                            char[] password,
-                                            DigestResponse params)
+                                           String reqMethod,
+                                           char[] password,
+                                           DigestResponse params)
             throws NoSuchAlgorithmException
         {
 
@@ -970,11 +970,13 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
 
         @Override
         protected void requestAuthentication(HttpTestExchange he)
-            throws IOException {
-            he.getResponseHeaders().addHeader(getAuthenticate(),
-                 "Basic realm=\"" + auth.getRealm() + "\"");
-            System.out.println(type + ": Requesting Basic Authentication "
-                 + he.getResponseHeaders().firstValue(getAuthenticate()));
+            throws IOException
+        {
+            String headerName = getAuthenticate();
+            String headerValue = "Basic realm=\"" + auth.getRealm() + "\"";
+            he.getResponseHeaders().addHeader(headerName, headerValue);
+            System.out.println(type + ": Requesting Basic Authentication, "
+                               + headerName + " : "+ headerValue);
         }
 
         @Override
@@ -1061,14 +1063,13 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
             } else {
                 throw new InternalError(String.valueOf(v));
             }
-            he.getResponseHeaders().addHeader(getAuthenticate(),
-                 "Digest realm=\"" + auth.getRealm() + "\","
-                 + separator + "qop=\"auth\","
-                 + separator + "nonce=\"" + ns +"\"");
-            System.out.println(type + ": Requesting Digest Authentication "
-                 + he.getResponseHeaders()
-                    .firstValue(getAuthenticate())
-                    .orElse("null"));
+            String headerName = getAuthenticate();
+            String headerValue = "Digest realm=\"" + auth.getRealm() + "\","
+                    + separator + "qop=\"auth\","
+                    + separator + "nonce=\"" + ns +"\"";
+            he.getResponseHeaders().addHeader(headerName, headerValue);
+            System.out.println(type + ": Requesting Digest Authentication, "
+                               + headerName + " : " + headerValue);
         }
 
         @Override

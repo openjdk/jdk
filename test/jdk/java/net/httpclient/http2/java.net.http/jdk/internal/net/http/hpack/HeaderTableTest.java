@@ -26,9 +26,12 @@ import jdk.internal.net.http.hpack.SimpleHeaderTable.HeaderField;
 import org.testng.annotations.Test;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.AssertJUnit.assertTrue;
 
 public class HeaderTableTest extends SimpleHeaderTableTest {
 
@@ -42,41 +45,39 @@ public class HeaderTableTest extends SimpleHeaderTableTest {
         HeaderTable table = createHeaderTable(0);
         Map<Integer, HeaderField> staticHeaderFields = createStaticEntries();
 
-        Map<String, Integer> minimalIndexes = new HashMap<>();
+        Map<String, Set<Integer>> indexes = new HashMap<>();
 
         for (Map.Entry<Integer, HeaderField> e : staticHeaderFields.entrySet()) {
             Integer idx = e.getKey();
-            String hName = e.getValue().name;
-            Integer midx = minimalIndexes.get(hName);
-            if (midx == null) {
-                minimalIndexes.put(hName, idx);
-            } else {
-                minimalIndexes.put(hName, Math.min(idx, midx));
-            }
+            String name = e.getValue().name;
+            indexes.merge(name, Set.of(idx), (v1, v2) -> {
+                HashSet<Integer> s = new HashSet<>();
+                s.addAll(v1);
+                s.addAll(v2);
+                return s;
+            });
         }
 
-        staticHeaderFields.entrySet().forEach(
-                e -> {
-                    // lookup
-                    HeaderField actualHeaderField = table.get(e.getKey());
-                    HeaderField expectedHeaderField = e.getValue();
-                    assertEquals(actualHeaderField, expectedHeaderField);
+        staticHeaderFields.forEach((key, expectedHeaderField) -> {
+            // lookup
+            HeaderField actualHeaderField = table.get(key);
+            assertEquals(actualHeaderField.name, expectedHeaderField.name);
+            assertEquals(actualHeaderField.value, expectedHeaderField.value);
 
-                    // reverse lookup (name, value)
-                    String hName = expectedHeaderField.name;
-                    String hValue = expectedHeaderField.value;
-                    int expectedIndex = e.getKey();
-                    int actualIndex = table.indexOf(hName, hValue);
+            // reverse lookup (name, value)
+            String hName = expectedHeaderField.name;
+            String hValue = expectedHeaderField.value;
+            int expectedIndex = key;
+            int actualIndex = table.indexOf(hName, hValue);
 
-                    assertEquals(actualIndex, expectedIndex);
+            assertEquals(actualIndex, expectedIndex);
 
-                    // reverse lookup (name)
-                    int expectedMinimalIndex = minimalIndexes.get(hName);
-                    int actualMinimalIndex = table.indexOf(hName, "blah-blah");
+            // reverse lookup (name)
+            Set<Integer> expectedIndexes = indexes.get(hName);
+            int actualMinimalIndex = table.indexOf(hName, "blah-blah");
 
-                    assertEquals(-actualMinimalIndex, expectedMinimalIndex);
-                }
-        );
+            assertTrue(expectedIndexes.contains(-actualMinimalIndex));
+        });
     }
 
     @Test

@@ -24,19 +24,26 @@
 /*
  * @test
  * @summary Demonstrates how to achieve testing without network connections
- * @build FixedHttpHeaders DelegatingHttpClient FixedHttpResponse FixedResponseHttpClient
+ * @build DelegatingHttpClient FixedHttpResponse FixedResponseHttpClient
  * @run testng/othervm OfflineTesting
  */
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiPredicate;
 import org.testng.annotations.Test;
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Objects.requireNonNull;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
@@ -49,8 +56,8 @@ public class OfflineTesting {
         return FixedResponseHttpClient.createClientFrom(
                 HttpClient.newBuilder(),
                 200,
-                FixedHttpHeaders.of("Server",  "nginx",
-                                    "Content-Type", "text/html"),
+                headersOf("Server", "nginx",
+                          "Content-Type", "text/html"),
                 "A response message");
     }
 
@@ -94,11 +101,11 @@ public class OfflineTesting {
         HttpClient client = FixedResponseHttpClient.createClientFrom(
                 HttpClient.newBuilder(),
                 404,
-                FixedHttpHeaders.of("Connection",  "keep-alive",
-                                    "Content-Length", "162",
-                                    "Content-Type", "text/html",
-                                    "Date", "Mon, 15 Jan 2018 15:01:16 GMT",
-                                    "Server", "nginx"),
+                headersOf("Connection",  "keep-alive",
+                          "Content-Length", "162",
+                          "Content-Type", "text/html",
+                          "Date", "Mon, 15 Jan 2018 15:01:16 GMT",
+                          "Server", "nginx"),
                 "<html>\n" +
                 "<head><title>404 Not Found</title></head>\n" +
                 "<body bgcolor=\"white\">\n" +
@@ -126,7 +133,7 @@ public class OfflineTesting {
         HttpClient client = FixedResponseHttpClient.createEchoClient(
                 HttpClient.newBuilder(),
                 200,
-                FixedHttpHeaders.of("Connection",  "keep-alive"));
+                headersOf("Connection",  "keep-alive"));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://openjdk.java.net/echo"))
@@ -146,7 +153,7 @@ public class OfflineTesting {
         HttpClient client = FixedResponseHttpClient.createEchoClient(
                 HttpClient.newBuilder(),
                 200,
-                FixedHttpHeaders.of("Connection",  "keep-alive"));
+                headersOf("Connection",  "keep-alive"));
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://openjdk.java.net/echo"))
@@ -157,5 +164,27 @@ public class OfflineTesting {
         System.out.println("response: " + response);
         assertEquals(response.statusCode(), 200);
         assertEquals(response.body(), "Hello chegar!!");
+    }
+
+    // ---
+
+    public static IllegalArgumentException newIAE(String message, Object... args) {
+        return new IllegalArgumentException(format(message, args));
+    }
+
+    static final BiPredicate<String,String> ACCEPT_ALL = (x, y) -> true;
+
+    static HttpHeaders headersOf(String... params) {
+        Map<String,List<String>> map = new HashMap<>();
+        requireNonNull(params);
+        if (params.length == 0 || params.length % 2 != 0) {
+            throw newIAE("wrong number, %d, of parameters", params.length);
+        }
+        for (int i = 0; i < params.length; i += 2) {
+            String name  = params[i];
+            String value = params[i + 1];
+            map.put(name, List.of(value));
+        }
+        return HttpHeaders.of(map, ACCEPT_ALL);
     }
 }

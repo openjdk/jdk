@@ -22,6 +22,7 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -30,6 +31,7 @@ import java.net.http.HttpResponse;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 
 /*
  * @test
@@ -112,6 +114,7 @@ public class CertificateTest {
         Exception exception = null;
         System.out.println("Making request to " + uri_s);
         HttpClient client = HttpClient.newBuilder()
+                .proxy(NO_PROXY)
                 .sslContext(ctx)
                 .sslParameters(params)
                 .build();
@@ -128,7 +131,9 @@ public class CertificateTest {
                 error = "Test failed: good: status should be 200";
             else if (!expectSuccess)
                 error = "Test failed: bad: status should not be 200";
-        } catch (SSLException e) {
+        } catch (IOException e) {
+            // there must be an SSLException as the exception or cause
+            checkExceptionOrCause(SSLException.class, e);
             System.err.println("Caught Exception " + e + ". expectSuccess = " + expectSuccess);
             exception = e;
             if (expectSuccess)
@@ -136,5 +141,17 @@ public class CertificateTest {
         }
         if (error != null)
             throw new RuntimeException(error, exception);
+    }
+
+    static void checkExceptionOrCause(Class<? extends Throwable> clazz, Throwable t) {
+        final Throwable original = t;
+        do {
+            if (clazz.isInstance(t)) {
+                System.out.println("Found expected exception/cause: " + t);
+                return; // found
+            }
+        } while ((t = t.getCause()) != null);
+        original.printStackTrace(System.out);
+        throw new RuntimeException("Expected " + clazz + "in " + original);
     }
 }

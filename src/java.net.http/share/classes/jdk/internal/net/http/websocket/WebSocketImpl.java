@@ -34,7 +34,6 @@ import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.OpeningHandshake.Result;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.lang.ref.Reference;
 import java.net.ProtocolException;
 import java.net.URI;
@@ -88,7 +87,7 @@ public final class WebSocketImpl implements WebSocket {
         PING,
         PONG,
         CLOSE,
-        ERROR;
+        ERROR
     }
 
     private final AtomicReference<ByteBuffer> lastAutomaticPong = new AtomicReference<>();

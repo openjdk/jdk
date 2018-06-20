@@ -35,13 +35,12 @@ public final class ConnectionExpiredException extends IOException {
     private static final long serialVersionUID = 0;
 
     /**
-     * Constructs a {@code ConnectionExpiredException} with the specified detail
-     * message and cause.
+     * Constructs a {@code ConnectionExpiredException} with a detail message of
+     * "subscription is finished" and the given cause.
      *
-     * @param   s     the detail message
      * @param   cause the throwable cause
      */
-    public ConnectionExpiredException(String s, Throwable cause) {
-        super(s, cause);
+    public ConnectionExpiredException(Throwable cause) {
+        super("subscription is finished", cause);
     }
 }

@@ -23,7 +23,7 @@
 
 package jdk.internal.net.http;
 
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.testng.annotations.AfterClass;
@@ -35,17 +35,19 @@ import java.net.PasswordAuthentication;
 import java.net.ProxySelector;
 import java.net.URI;
 import java.net.URL;
-import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.security.AccessController;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.net.http.HttpClient.Version;
+import java.util.function.BiPredicate;
 
 import static java.lang.String.format;
 import static java.lang.System.out;
@@ -163,6 +165,8 @@ public class AuthenticationFilterTest {
         });
     }
 
+    static final BiPredicate<String,String> ACCEPT_ALL = (x, y) -> true;
+
     private void doTestAuthentication(String uri, Version v, String proxy) throws Exception {
         int colon = proxy == null ? -1 : proxy.lastIndexOf(":");
         ProxySelector ps = proxy == null ? NO_PROXY
@@ -197,8 +201,9 @@ public class AuthenticationFilterTest {
         Exchange<?> exchange = new Exchange<>(req, multi);
         out.println("\nSimulating unauthenticated request to " + uri);
         filter.request(req, multi);
-        assertFalse(req.getSystemHeaders().firstValue(authorization(true)).isPresent());
-        assertFalse(req.getSystemHeaders().firstValue(authorization(false)).isPresent());
+        HttpHeaders hdrs = req.getSystemHeadersBuilder().build();
+        assertFalse(hdrs.firstValue(authorization(true)).isPresent());
+        assertFalse(hdrs.firstValue(authorization(false)).isPresent());
         assertEquals(authenticator.COUNTER.get(), 0);
 
         // Creates the Response to the first request, and call filter.response
@@ -207,9 +212,10 @@ public class AuthenticationFilterTest {
         // credentials, and will also cache the credentials in the multi exchange.
         // The credentials shouldn't be put in the cache until the 200 response
         // for that request arrives.
-        HttpHeadersImpl headers = new HttpHeadersImpl();
-        headers.addHeader(authenticate(proxy!=null),
-                "Basic realm=\"earth\"");
+        HttpHeadersBuilder headersBuilder = new HttpHeadersBuilder();
+        headersBuilder.addHeader(authenticate(proxy!=null),
+                                "Basic realm=\"earth\"");
+        HttpHeaders headers = headersBuilder.build();
         Response response = new Response(req, exchange, headers, null, unauthorized, v);
         out.println("Simulating " + unauthorized
                 + " response from " + uri);
@@ -218,7 +224,7 @@ public class AuthenticationFilterTest {
         out.println("Checking filter's response to "
                 + unauthorized + " from " + uri);
         assertTrue(next != null, "next should not be null");
-        String[] up = check(reqURI, next.getSystemHeaders(), proxy);
+        String[] up = check(reqURI, next.getSystemHeadersBuilder().build(), proxy);
         assertEquals(authenticator.COUNTER.get(), 1);
 
         // Now simulate a new successful exchange to get the credentials in the cache
@@ -230,10 +236,12 @@ public class AuthenticationFilterTest {
         exchange = new Exchange<>(next, multi);
         filter.request(next, multi);
         out.println("Checking credentials in request header after filter for " + uri);
-        check(reqURI, next.getSystemHeaders(), proxy);
-        check(next.uri(), next.getSystemHeaders(), proxy);
+        hdrs = next.getSystemHeadersBuilder().build();
+        check(reqURI, hdrs, proxy);
+        check(next.uri(), hdrs, proxy);
         out.println("Simulating  successful response 200 from " + uri);
-        response = new Response(next, exchange, new HttpHeadersImpl(), null, 200, v);
+        HttpHeaders h = HttpHeaders.of(Collections.emptyMap(), ACCEPT_ALL);
+        response = new Response(next, exchange,h, null, 200, v);
         next = filter.response(response);
         assertTrue(next == null, "next should be null");
         assertEquals(authenticator.COUNTER.get(), 1);
@@ -263,7 +271,7 @@ public class AuthenticationFilterTest {
         filter.request(req2, multi2);
         out.println("Check that filter has added credentials from cache for " + reqURI2
                 + " with proxy " + req2.proxy());
-        String[] up2 = check(reqURI, req2.getSystemHeaders(), proxy);
+        String[] up2 = check(reqURI, req2.getSystemHeadersBuilder().build(), proxy);
         assertTrue(Arrays.deepEquals(up, up2), format("%s:%s != %s:%s", up2[0], up2[1], up[0], up[1]));
         assertEquals(authenticator.COUNTER.get(), 1);
 
@@ -293,24 +301,25 @@ public class AuthenticationFilterTest {
                 HttpResponse.BodyHandlers.replacing(null),
                 null, AccessController.getContext());
         filter.request(req3, multi3);
+        HttpHeaders h3 = req3.getSystemHeadersBuilder().build();
         if (proxy == null) {
             out.println("Check that filter has not added proxy credentials from cache for " + reqURI3);
-            assert !req3.getSystemHeaders().firstValue(authorization(true)).isPresent()
+            assert !h3.firstValue(authorization(true)).isPresent()
                     : format("Unexpected proxy credentials found: %s",
-                    java.util.stream.Stream.of(getAuthorization(req3.getSystemHeaders(), true))
+                    java.util.stream.Stream.of(getAuthorization(req3.getSystemHeadersBuilder().build(), true))
                             .collect(joining(":")));
-            assertFalse(req3.getSystemHeaders().firstValue(authorization(true)).isPresent());
+            assertFalse(h3.firstValue(authorization(true)).isPresent());
         } else {
             out.println("Check that filter has added proxy credentials from cache for " + reqURI3);
-            String[] up3 = check(reqURI, req3.getSystemHeaders(), proxy);
+            String[] up3 = check(reqURI, h3, proxy);
             assertTrue(Arrays.deepEquals(up, up3), format("%s:%s != %s:%s", up3[0], up3[1], up[0], up[1]));
         }
         out.println("Check that filter has not added server credentials from cache for " + reqURI3);
-        assert !req3.getSystemHeaders().firstValue(authorization(false)).isPresent()
+        assert !h3.firstValue(authorization(false)).isPresent()
                 : format("Unexpected server credentials found: %s",
-                java.util.stream.Stream.of(getAuthorization(req3.getSystemHeaders(), false))
+                java.util.stream.Stream.of(getAuthorization(h3, false))
                         .collect(joining(":")));
-        assertFalse(req3.getSystemHeaders().firstValue(authorization(false)).isPresent());
+        assertFalse(h3.firstValue(authorization(false)).isPresent());
         assertEquals(authenticator.COUNTER.get(), 1);
 
         // Now we will verify that credentials for proxies are not used for servers and
@@ -341,23 +350,24 @@ public class AuthenticationFilterTest {
         filter.request(req4, multi4);
         out.println("Check that filter has not added proxy credentials from cache for "
                 + reqURI4 + " (proxy: " + req4.proxy()  + ")");
-        assert !req4.getSystemHeaders().firstValue(authorization(true)).isPresent()
+        HttpHeaders h4 = req4.getSystemHeadersBuilder().build();
+        assert !h4.firstValue(authorization(true)).isPresent()
                 : format("Unexpected proxy credentials found: %s",
-                java.util.stream.Stream.of(getAuthorization(req4.getSystemHeaders(), true))
+                java.util.stream.Stream.of(getAuthorization(h4, true))
                         .collect(joining(":")));
-        assertFalse(req4.getSystemHeaders().firstValue(authorization(true)).isPresent());
+        assertFalse(h4.firstValue(authorization(true)).isPresent());
         if (proxy != null) {
             out.println("Check that filter has not added server credentials from cache for "
                     + reqURI4 + " (proxy: " + req4.proxy()  + ")");
-            assert !req4.getSystemHeaders().firstValue(authorization(false)).isPresent()
+            assert !h4.firstValue(authorization(false)).isPresent()
                     : format("Unexpected server credentials found: %s",
-                    java.util.stream.Stream.of(getAuthorization(req4.getSystemHeaders(), false))
+                    java.util.stream.Stream.of(getAuthorization(h4, false))
                             .collect(joining(":")));
-            assertFalse(req4.getSystemHeaders().firstValue(authorization(false)).isPresent());
+            assertFalse(h4.firstValue(authorization(false)).isPresent());
         } else {
             out.println("Check that filter has added server credentials from cache for "
                     + reqURI4 + " (proxy: " + req4.proxy()  + ")");
-            String[] up4 = check(reqURI, req4.getSystemHeaders(), proxy);
+            String[] up4 = check(reqURI, h4, proxy);
             assertTrue(Arrays.deepEquals(up, up4),  format("%s:%s != %s:%s", up4[0], up4[1], up[0], up[1]));
         }
         assertEquals(authenticator.COUNTER.get(), 1);
@@ -381,24 +391,26 @@ public class AuthenticationFilterTest {
             filter.request(req5, multi5);
             out.println("Check that filter has not added server credentials from cache for "
                     + reqURI + " (proxy: " + req5.proxy()  + ")");
-            assert !req5.getSystemHeaders().firstValue(authorization(false)).isPresent()
+            HttpHeaders h5 = req5.getSystemHeadersBuilder().build();
+            assert !h5.firstValue(authorization(false)).isPresent()
                     : format("Unexpected server credentials found: %s",
-                    java.util.stream.Stream.of(getAuthorization(req5.getSystemHeaders(), false))
+                    java.util.stream.Stream.of(getAuthorization(h5, false))
                             .collect(joining(":")));
-            assertFalse(req5.getSystemHeaders().firstValue(authorization(false)).isPresent());
+            assertFalse(h5.firstValue(authorization(false)).isPresent());
             out.println("Check that filter has not added proxy credentials from cache for "
                     + reqURI + " (proxy: " + req5.proxy()  + ")");
-            assert !req5.getSystemHeaders().firstValue(authorization(true)).isPresent()
+            assert !h5.firstValue(authorization(true)).isPresent()
                     : format("Unexpected proxy credentials found: %s",
-                    java.util.stream.Stream.of(getAuthorization(req5.getSystemHeaders(), true))
+                    java.util.stream.Stream.of(getAuthorization(h5, true))
                             .collect(joining(":")));
-            assertFalse(req5.getSystemHeaders().firstValue(authorization(true)).isPresent());
+            assertFalse(h5.firstValue(authorization(true)).isPresent());
             assertEquals(authenticator.COUNTER.get(), 1);
 
             // Now simulate a 401 response from the server
-            HttpHeadersImpl headers5 = new HttpHeadersImpl();
-            headers5.addHeader(authenticate(false),
-                    "Basic realm=\"earth\"");
+            HttpHeadersBuilder headers5Builder = new HttpHeadersBuilder();
+            headers5Builder.addHeader(authenticate(false),
+                               "Basic realm=\"earth\"");
+            HttpHeaders headers5 = headers5Builder.build();
             unauthorized = 401;
             Response response5 = new Response(req5, exchange5, headers5, null, unauthorized, v);
             out.println("Simulating " + unauthorized
@@ -409,12 +421,13 @@ public class AuthenticationFilterTest {
             out.println("Checking filter's response to "
                     + unauthorized + " from " + uri);
             assertTrue(next5 != null, "next5 should not be null");
-            String[] up5 = check(reqURI, next5.getSystemHeaders(), null);
+            String[] up5 = check(reqURI, next5.getSystemHeadersBuilder().build(), null);
 
             // now simulate a 200 response from the server
             exchange5 = new Exchange<>(next5, multi5);
             filter.request(next5, multi5);
-            response5 = new Response(next5, exchange5, new HttpHeadersImpl(), null, 200, v);
+            h = HttpHeaders.of(Map.of(), ACCEPT_ALL);
+            response5 = new Response(next5, exchange5, h, null, 200, v);
             filter.response(response5);
             assertEquals(authenticator.COUNTER.get(), 2);
 
@@ -432,10 +445,11 @@ public class AuthenticationFilterTest {
             filter.request(req6, multi6);
             out.println("Check that filter has added server credentials from cache for "
                     + reqURI + " (proxy: " + req6.proxy()  + ")");
-            check(reqURI, req6.getSystemHeaders(), null);
+            HttpHeaders h6 = req6.getSystemHeadersBuilder().build();
+            check(reqURI, h6, null);
             out.println("Check that filter has added proxy credentials from cache for "
                     + reqURI + " (proxy: " + req6.proxy()  + ")");
-            String[] up6 = check(reqURI, req6.getSystemHeaders(), proxy);
+            String[] up6 = check(reqURI, h6, proxy);
             assertTrue(Arrays.deepEquals(up, up6), format("%s:%s != %s:%s", up6[0], up6[1], up[0], up[1]));
             assertEquals(authenticator.COUNTER.get(), 2);
         }
@@ -456,18 +470,19 @@ public class AuthenticationFilterTest {
             out.println("Check that filter has not added server credentials from cache for "
                     + reqURI7 + " (proxy: " + req7.proxy()  + ") [resolved uri: "
                     + reqURI7.resolve(".") + " should not match " + reqURI.resolve(".") + "]");
-            assert !req7.getSystemHeaders().firstValue(authorization(false)).isPresent()
+            HttpHeaders h7 = req7.getSystemHeadersBuilder().build();
+            assert !h7.firstValue(authorization(false)).isPresent()
                     : format("Unexpected server credentials found: %s",
-                    java.util.stream.Stream.of(getAuthorization(req7.getSystemHeaders(), false))
+                    java.util.stream.Stream.of(getAuthorization(h7, false))
                             .collect(joining(":")));
-            assertFalse(req7.getSystemHeaders().firstValue(authorization(false)).isPresent());
+            assertFalse(h7.firstValue(authorization(false)).isPresent());
             out.println("Check that filter has not added proxy credentials from cache for "
                     + reqURI7 + " (proxy: " + req7.proxy()  + ")");
-            assert !req7.getSystemHeaders().firstValue(authorization(true)).isPresent()
+            assert !h7.firstValue(authorization(true)).isPresent()
                     : format("Unexpected proxy credentials found: %s",
-                    java.util.stream.Stream.of(getAuthorization(req7.getSystemHeaders(), true))
+                    java.util.stream.Stream.of(getAuthorization(h7, true))
                             .collect(joining(":")));
-            assertFalse(req7.getSystemHeaders().firstValue(authorization(true)).isPresent());
+            assertFalse(h7.firstValue(authorization(true)).isPresent());
             assertEquals(authenticator.COUNTER.get(), 1);
 
         }

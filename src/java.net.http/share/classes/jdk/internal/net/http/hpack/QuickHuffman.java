@@ -25,19 +25,21 @@
 
 package jdk.internal.net.http.hpack;
 
+import jdk.internal.net.http.hpack.HPACK.BufferUpdateConsumer;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Objects;
 
+import static jdk.internal.net.http.hpack.HPACK.bytesForBits;
+
 public final class QuickHuffman {
 
     /*
-     * Huffman codes for encoding.
-     *
-     * EOS will never be matched, since there is no symbol for it, thus no need
-     * to store it in the array. Thus, the length of the array is 256, not 257.
-     * Code information for each character is encoded as follows:
+     * Mapping of characters to their code information. Code information
+     * consists of a code value and a code length. Both components are packed in
+     * a single long as follows:
      *
      *     MSB                             LSB
      *     +----------------+----------------+
@@ -46,9 +48,14 @@ public final class QuickHuffman {
      *     |<----- 32 ----->|<----- 32 ----->|
      *     |<------------- 64 -------------->|
      *
-     * The leftmost 32 bits hold the code value. This value is aligned left
-     * (or MSB). The rightmost 32 bits hold the length of the code value.
-     * This length is aligned right (or LSB).
+     * The leftmost 32 bits hold the code value. This value is aligned left (or
+     * MSB). The rightmost 32 bits hold the code length. This length is aligned
+     * right (or LSB). Such structure is possible thanks to codes being up to 30
+     * bits long and their lengths being up to 5 bits long (length = 5..30).
+     * This allows both components to fit into long and, thus, better locality.
+     *
+     * Input strings never contain EOS. Thus there's no need to provide EOS
+     * mapping. Hence, the length of the array is 256, not 257.
      */
     private static final long[] codes = new long[256];
 
@@ -62,16 +69,19 @@ public final class QuickHuffman {
 
     private static final int EOS_LENGTH = 30;
     private static final int EOS_LSB = 0x3fffffff;
-    private static final long EOS_MSB = EOS_LSB << (64 - EOS_LENGTH);
+    // EOS_LSB is casted to long before the shift, to allow long shift (6 bits)
+    // instead of int shift (5 bits):
+    private static final long EOS_MSB = ((long) EOS_LSB) << (64 - EOS_LENGTH);
 
     /*
-     * Huffman codes for decoding.
+     * Huffman trie.
      *
-     * Root node contains 257 descendant nodes, including EOS.
+     * The root node leads to 257 descendant leaf nodes, of which 256 nodes
+     * correspond to characters and 1 node correspond to EOS.
      */
-    private static final Node root;
+    private static final Node root = buildTrie();
 
-    static {
+    private static Node buildTrie() {
         TemporaryNode tmpRoot = new TemporaryNode();
         addChar(tmpRoot,   0, 0x1ff8,     13);
         addChar(tmpRoot,   1, 0x7fffd8,   23);
@@ -333,8 +343,8 @@ public final class QuickHuffman {
 
         // The difference in performance can always be checked by not using
         // the immutable trie:
-        //     root = tmpRoot;
-        root = ImmutableNode.copyOf(tmpRoot);
+        //     return tmpRoot;
+        return ImmutableNode.copyOf(tmpRoot);
     }
 
     private QuickHuffman() { }
@@ -605,6 +615,12 @@ public final class QuickHuffman {
 
     static final class Reader implements Huffman.Reader {
 
+        private final BufferUpdateConsumer UPDATER =
+                (buf, bufLen) -> {
+                    buffer = buf;
+                    bufferLen = bufLen;
+                };
+
         private Node curr = root;  // current position in the trie
         private long buffer;       // bits left from the previous match (aligned to the left, or MSB)
         private int bufferLen;     // number of bits in the buffer
@@ -616,53 +632,9 @@ public final class QuickHuffman {
                          Appendable destination,
                          boolean isLast) throws IOException
         {
-            read(source, destination, true, isLast);
-        }
-
-        @Override
-        public void reset() {
-            curr = root;
-            len = 0;
-            buffer = 0;
-            bufferLen = 0;
-            done = false;
-        }
-
-        @SuppressWarnings("fallthrough")
-        void read(ByteBuffer source,
-                  Appendable destination,
-                  boolean reportEOS, /* reportEOS is exposed for tests */
-                  boolean isLast) throws IOException
-        {
             while (!done) {
-                // read as much as possible (up to 8 bytes)
                 int remaining = source.remaining();
-                int nBytes = Math.min((64 - bufferLen) >> 3, remaining);
-                switch (nBytes) {
-                    case 0:
-                        break;
-                    case 3:
-                        readByte(source);
-                    case 2:
-                        readByte(source);
-                    case 1:
-                        readByte(source);
-                        break;
-                    case 7:
-                        readByte(source);
-                    case 6:
-                        readByte(source);
-                    case 5:
-                        readByte(source);
-                    case 4:
-                        readInt(source);
-                        break;
-                    case 8:
-                        readLong(source);
-                        break;
-                    default:
-                        throw new InternalError(String.valueOf(nBytes));
-                }
+                int nBytes = HPACK.read(source, buffer, bufferLen, UPDATER);
                 // write as much as possible
                 while (true) {
                     if (bufferLen < 8) {
@@ -671,7 +643,7 @@ public final class QuickHuffman {
                         } else if (!isLast) { // exit the method to accept more input
                             return;
                         } else if (bufferLen > 0) { // no more data is expected, pad
-                            // (this padding may be done more than once)
+                                                    // (this padding may be done more than once)
                             buffer |= ((0xff00000000000000L >>> bufferLen)
                                     & 0xff00000000000000L);
                             // do not update bufferLen, since all those ones are
@@ -692,7 +664,7 @@ public final class QuickHuffman {
                             throw new IOException(
                                     "Not a EOS prefix padding or unexpected end of data");
                         }
-                        if (reportEOS && node.isEOSPath()) {
+                        if (node.isEOSPath()) {
                             throw new IOException("Encountered EOS");
                         }
                         destination.append(node.getSymbol());
@@ -715,26 +687,23 @@ public final class QuickHuffman {
             }
         }
 
-        private void readLong(ByteBuffer source) {
-            buffer = source.getLong();
-            bufferLen = 64;
-        }
-
-        private void readInt(ByteBuffer source) {
-            long b;
-            b = source.getInt() & 0x00000000ffffffffL;
-            buffer |= (b << (32 - bufferLen));
-            bufferLen += 32;
-        }
-
-        private void readByte(ByteBuffer source) {
-            long b = source.get() & 0x00000000000000ffL;
-            buffer |= (b << (56 - bufferLen));
-            bufferLen += 8;
+        @Override
+        public void reset() {
+            curr = root;
+            len = 0;
+            buffer = 0;
+            bufferLen = 0;
+            done = false;
         }
     }
 
     static final class Writer implements Huffman.Writer {
+
+        private final BufferUpdateConsumer UPDATER =
+                (buf, bufLen) -> {
+                    buffer = buf;
+                    bufferLen = bufLen;
+                };
 
         private CharSequence source;
         private boolean padded;
@@ -752,43 +721,44 @@ public final class QuickHuffman {
             return this;
         }
 
-        @SuppressWarnings("fallthrough")
         @Override
         public boolean write(ByteBuffer destination) {
             while (true) {
-                while (bufferLen < 32 && pos < end) {
-                    char c = source.charAt(pos++);
-                    buffer |= (codeValueOf(c) >>> bufferLen); // append
-                    bufferLen += codeLengthOf(c);
+                while (true) { // stuff codes into long
+                    if (pos >= end) {
+                        break;
+                    }
+                    char c = source.charAt(pos);
+                    if (c > 255) {
+                        throw new IllegalArgumentException("char=" + ((int) c));
+                    }
+                    long len = codeLengthOf(c);
+                    if (bufferLen + len <= 64) {
+                        buffer |= (codeValueOf(c) >>> bufferLen); // append
+                        bufferLen += len;
+                        pos++;
+                    } else {
+                        break;
+                    }
                 }
                 if (bufferLen == 0) {
                     return true;
                 }
-                if (pos >= end && !padded) { // no more chars, pad
+                if (pos >= end && !padded) { // no more input chars are expected, pad
                     padded = true;
-                    buffer |= (EOS_MSB >>> bufferLen);
-                    bufferLen = bytesForBits(bufferLen) << 3;
+                    // A long shift to 64 will result in the same long, not
+                    // necessarily 0L. In which case padding will be performed
+                    // incorrectly. If bufferLen is equal to 64, the shift (and
+                    // padding) in not performed.
+                    // (see https://docs.oracle.com/javase/specs/jls/se10/html/jls-15.html#jls-15.19)
+                    if (bufferLen != 64) {
+                        buffer |= (EOS_MSB >>> bufferLen);
+                        bufferLen = bytesForBits(bufferLen) << 3;
+                    }
                 }
-                // The number of bytes that can be written at once
-                // (calculating in bytes, not bits, since
-                //  destination.remaining() * 8 might overflow)
-
-                int nBytes = Math.min(bytesForBits(bufferLen), destination.remaining()); // ceil?
-                switch (nBytes) {
-                    case 0:
-                        return false;
-                    case 1:
-                    case 2:
-                    case 3:
-                        destination.put((byte) (buffer >>> 56));
-                        buffer <<= 8;
-                        bufferLen -= 8;
-                        break;
-                    default:
-                        destination.putInt((int) (buffer >>> 32));
-                        buffer <<= 32;
-                        bufferLen -= 32;
-                        break;
+                int nBytes = HPACK.write(buffer, bufferLen, UPDATER, destination);
+                if (nBytes == 0) {
+                    return false;
                 }
             }
         }
@@ -813,14 +783,5 @@ public final class QuickHuffman {
             }
             return bytesForBits(len);
         }
-    }
-
-    /*
-     * Returns the number of bytes the given number of bits constitute.
-     */
-    private static int bytesForBits(int n) {
-        assert (n / 8 + (n % 8 != 0 ? 1 : 0)) == (n + 7) / 8
-                && (n + 7) / 8 == ((n + 7) >> 3) : n;
-        return (n + 7) >> 3;
     }
 }

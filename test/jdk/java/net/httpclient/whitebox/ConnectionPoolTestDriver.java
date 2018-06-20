@@ -31,5 +31,8 @@
   *         java.management
  * @run main/othervm
  *       --add-reads java.net.http=java.management
- *       java.net.http/jdk.internal.net.http.ConnectionPoolTest
+ *       java.net.http/jdk.internal.net.http.ConnectionPoolTest testCacheCleaners
+ * @run main/othervm
+ *       --add-reads java.net.http=java.management
+ *       java.net.http/jdk.internal.net.http.ConnectionPoolTest testPoolSize
  */

@@ -87,6 +87,11 @@ public class BlowupOutputQueue extends PendingOperations {
             listener = new MockListener() {
 
                 @Override
+                protected void onOpen0(WebSocket webSocket) {
+                    /* do nothing */
+                }
+
+                @Override
                 protected void replenish(WebSocket webSocket) {
                     /* do nothing */
                 }

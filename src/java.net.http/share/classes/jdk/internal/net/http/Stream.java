@@ -25,9 +25,9 @@
 
 package jdk.internal.net.http;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
 import java.net.http.HttpClient;
@@ -114,8 +115,8 @@ class Stream<T> extends ExchangeImpl<T> {
     final Http2Connection connection;
     final HttpRequestImpl request;
     final HeadersConsumer rspHeadersConsumer;
-    final HttpHeadersImpl responseHeaders;
-    final HttpHeadersImpl requestPseudoHeaders;
+    final HttpHeadersBuilder responseHeadersBuilder;
+    final HttpHeaders requestPseudoHeaders;
     volatile HttpResponse.BodySubscriber<T> responseSubscriber;
     final HttpRequest.BodyPublisher requestPublisher;
     volatile RequestSubscriber requestSubscriber;
@@ -132,6 +133,8 @@ class Stream<T> extends ExchangeImpl<T> {
     private volatile boolean remotelyClosed;
     private volatile boolean closed;
     private volatile boolean endStreamSent;
+
+    final AtomicBoolean deRegistered = new AtomicBoolean(false);
 
     // state flags
     private boolean requestSent, responseReceived;
@@ -171,7 +174,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 Http2Frame frame = inputQ.peek();
                 if (frame instanceof ResetFrame) {
                     inputQ.remove();
-                    handleReset((ResetFrame)frame);
+                    handleReset((ResetFrame)frame, subscriber);
                     return;
                 }
                 DataFrame df = (DataFrame)frame;
@@ -185,6 +188,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     Log.logTrace("responseSubscriber.onComplete");
                     if (debug.on()) debug.log("incoming: onComplete");
                     sched.stop();
+                    connection.decrementStreamsCount(streamid);
                     subscriber.onComplete();
                     onCompleteCalled = true;
                     setEndStreamReceived();
@@ -198,6 +202,7 @@ class Stream<T> extends ExchangeImpl<T> {
                         Log.logTrace("responseSubscriber.onComplete");
                         if (debug.on()) debug.log("incoming: onComplete");
                         sched.stop();
+                        connection.decrementStreamsCount(streamid);
                         subscriber.onComplete();
                         onCompleteCalled = true;
                         setEndStreamReceived();
@@ -251,6 +256,10 @@ class Stream<T> extends ExchangeImpl<T> {
         return true; // end of stream
     }
 
+    boolean deRegister() {
+        return deRegistered.compareAndSet(false, true);
+    }
+
     @Override
     CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler,
                                        boolean returnConnectionToPool,
@@ -258,6 +267,7 @@ class Stream<T> extends ExchangeImpl<T> {
     {
         try {
             Log.logTrace("Reading body on stream {0}", streamid);
+            debug.log("Getting BodySubscriber for: " + response);
             BodySubscriber<T> bodySubscriber = handler.apply(new ResponseInfoImpl(response));
             CompletableFuture<T> cf = receiveData(bodySubscriber, executor);
 
@@ -337,10 +347,9 @@ class Stream<T> extends ExchangeImpl<T> {
         this.windowController = windowController;
         this.request = e.request();
         this.requestPublisher = request.requestPublisher;  // may be null
-        responseHeaders = new HttpHeadersImpl();
-        rspHeadersConsumer = new HeadersConsumer();
-        this.requestPseudoHeaders = new HttpHeadersImpl();
-        // NEW
+        this.responseHeadersBuilder = new HttpHeadersBuilder();
+        this.rspHeadersConsumer = new HeadersConsumer();
+        this.requestPseudoHeaders = createPseudoHeaders(request);
         this.windowUpdater = new StreamWindowUpdateSender(connection);
     }
 
@@ -391,6 +400,7 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     protected void handleResponse() throws IOException {
+        HttpHeaders responseHeaders = responseHeadersBuilder.build();
         responseCode = (int)responseHeaders
                 .firstValueAsLong(":status")
                 .orElseThrow(() -> new IOException("no statuscode in response"));
@@ -424,25 +434,57 @@ class Stream<T> extends ExchangeImpl<T> {
         } else if (closed) {
             Log.logTrace("Ignoring RST_STREAM frame received on closed stream {0}", streamid);
         } else {
-            // put it in the input queue in order to read all
-            // pending data frames first. Indeed, a server may send
-            // RST_STREAM after sending END_STREAM, in which case we should
-            // ignore it. However, we won't know if we have received END_STREAM
-            // or not until all pending data frames are read.
-            receiveResetFrame(frame);
-            // RST_STREAM was pushed to the queue. It will be handled by
-            // asyncReceive after all pending data frames have been
-            // processed.
-            Log.logTrace("RST_STREAM pushed in queue for stream {0}", streamid);
+            Flow.Subscriber<?> subscriber =
+                    responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
+            if (response == null && subscriber == null) {
+                // we haven't receive the headers yet, and won't receive any!
+                // handle reset now.
+                handleReset(frame, subscriber);
+            } else {
+                // put it in the input queue in order to read all
+                // pending data frames first. Indeed, a server may send
+                // RST_STREAM after sending END_STREAM, in which case we should
+                // ignore it. However, we won't know if we have received END_STREAM
+                // or not until all pending data frames are read.
+                receiveResetFrame(frame);
+                // RST_STREAM was pushed to the queue. It will be handled by
+                // asyncReceive after all pending data frames have been
+                // processed.
+                Log.logTrace("RST_STREAM pushed in queue for stream {0}", streamid);
+            }
         }
     }
 
-    void handleReset(ResetFrame frame) {
+    void handleReset(ResetFrame frame, Flow.Subscriber<?> subscriber) {
         Log.logTrace("Handling RST_STREAM on stream {0}", streamid);
         if (!closed) {
-            close();
-            int error = frame.getErrorCode();
-            completeResponseExceptionally(new IOException(ErrorFrame.stringForCode(error)));
+            synchronized (this) {
+                if (closed) {
+                    if (debug.on()) debug.log("Stream already closed: ignoring RESET");
+                    return;
+                }
+                closed = true;
+            }
+            try {
+                int error = frame.getErrorCode();
+                IOException e = new IOException("Received RST_STREAM: "
+                        + ErrorFrame.stringForCode(error));
+                if (errorRef.compareAndSet(null, e)) {
+                    if (subscriber != null) {
+                        subscriber.onError(e);
+                    }
+                }
+                completeResponseExceptionally(e);
+                if (!requestBodyCF.isDone()) {
+                    requestBodyCF.completeExceptionally(errorRef.get()); // we may be sending the body..
+                }
+                if (responseBodyCF != null) {
+                    responseBodyCF.completeExceptionally(errorRef.get());
+                }
+            } finally {
+                connection.decrementStreamsCount(streamid);
+                connection.closeStream(streamid);
+            }
         } else {
             Log.logTrace("Ignoring RST_STREAM frame received on closed stream {0}", streamid);
         }
@@ -535,13 +577,12 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     private OutgoingHeaders<Stream<T>> headerFrame(long contentLength) {
-        HttpHeadersImpl h = request.getSystemHeaders();
+        HttpHeadersBuilder h = request.getSystemHeadersBuilder();
         if (contentLength > 0) {
             h.setHeader("content-length", Long.toString(contentLength));
         }
-        setPseudoHeaderFields();
-        HttpHeaders sysh = filter(h);
-        HttpHeaders userh = filter(request.getUserHeaders());
+        HttpHeaders sysh = filterHeaders(h.build());
+        HttpHeaders userh = filterHeaders(request.getUserHeaders());
         OutgoingHeaders<Stream<T>> f = new OutgoingHeaders<>(sysh, userh, this);
         if (contentLength == 0) {
             f.setFlag(HeadersFrame.END_STREAM);
@@ -565,7 +606,7 @@ class Stream<T> extends ExchangeImpl<T> {
     // If nothing needs filtering then we can just use the
     // original headers.
     private boolean needsFiltering(HttpHeaders headers,
-                                   BiPredicate<String, List<String>> filter) {
+                                   BiPredicate<String, String> filter) {
         if (filter == Utils.PROXY_TUNNEL_FILTER || filter == Utils.PROXY_FILTER) {
             // we're either connecting or proxying
             // slight optimization: we only need to filter out
@@ -583,18 +624,17 @@ class Stream<T> extends ExchangeImpl<T> {
         }
     }
 
-    private HttpHeaders filter(HttpHeaders headers) {
+    private HttpHeaders filterHeaders(HttpHeaders headers) {
         HttpConnection conn = connection();
-        BiPredicate<String, List<String>> filter =
-                conn.headerFilter(request);
+        BiPredicate<String, String> filter = conn.headerFilter(request);
         if (needsFiltering(headers, filter)) {
-            return ImmutableHeaders.of(headers.map(), filter);
+            return HttpHeaders.of(headers.map(), filter);
         }
         return headers;
     }
 
-    private void setPseudoHeaderFields() {
-        HttpHeadersImpl hdrs = requestPseudoHeaders;
+    private static HttpHeaders createPseudoHeaders(HttpRequest request) {
+        HttpHeadersBuilder hdrs = new HttpHeadersBuilder();
         String method = request.method();
         hdrs.setHeader(":method", method);
         URI uri = request.uri();
@@ -615,9 +655,10 @@ class Stream<T> extends ExchangeImpl<T> {
             path += "?" + query;
         }
         hdrs.setHeader(":path", Utils.encode(path));
+        return hdrs.build();
     }
 
-    HttpHeadersImpl getRequestPseudoHeaders() {
+    HttpHeaders getRequestPseudoHeaders() {
         return requestPseudoHeaders;
     }
 
@@ -657,6 +698,7 @@ class Stream<T> extends ExchangeImpl<T> {
         if (streamid > 0) {
             if (debug.on()) debug.log("Released stream %d", streamid);
             // remove this stream from the Http2Connection map.
+            connection.decrementStreamsCount(streamid);
             connection.closeStream(streamid);
         } else {
             if (debug.on()) debug.log("Can't release stream %d", streamid);
@@ -945,14 +987,18 @@ class Stream<T> extends ExchangeImpl<T> {
                 if (!cf.isDone()) {
                     Log.logTrace("Completing response (streamid={0}): {1}",
                                  streamid, cf);
-                    cf.complete(resp);
+                    if (debug.on())
+                        debug.log("Completing responseCF(%d) with response headers", i);
                     response_cfs.remove(cf);
+                    cf.complete(resp);
                     return;
                 } // else we found the previous response: just leave it alone.
             }
             cf = MinimalFuture.completedFuture(resp);
             Log.logTrace("Created completed future (streamid={0}): {1}",
                          streamid, cf);
+            if (debug.on())
+                debug.log("Adding completed responseCF(0) with response headers");
             response_cfs.add(cf);
         }
     }
@@ -983,8 +1029,8 @@ class Stream<T> extends ExchangeImpl<T> {
             for (int i = 0; i < response_cfs.size(); i++) {
                 CompletableFuture<Response> cf = response_cfs.get(i);
                 if (!cf.isDone()) {
-                    cf.completeExceptionally(t);
                     response_cfs.remove(i);
+                    cf.completeExceptionally(t);
                     return;
                 }
             }
@@ -1033,6 +1079,15 @@ class Stream<T> extends ExchangeImpl<T> {
         cancelImpl(cause);
     }
 
+    void connectionClosing(Throwable cause) {
+        Flow.Subscriber<?> subscriber =
+                responseSubscriber == null ? pendingResponseSubscriber : responseSubscriber;
+        errorRef.compareAndSet(null, cause);
+        if (subscriber != null && !sched.isStopped() && !inputQ.isEmpty()) {
+            sched.runOrSchedule();
+        } else cancelImpl(cause);
+    }
+
     // This method sends a RST_STREAM frame
     void cancelImpl(Throwable e) {
         errorRef.compareAndSet(null, e);
@@ -1062,7 +1117,14 @@ class Stream<T> extends ExchangeImpl<T> {
         try {
             // will send a RST_STREAM frame
             if (streamid != 0) {
-                connection.resetStream(streamid, ResetFrame.CANCEL);
+                connection.decrementStreamsCount(streamid);
+                e = Utils.getCompletionCause(e);
+                if (e instanceof EOFException) {
+                    // read EOF: no need to try & send reset
+                    connection.closeStream(streamid);
+                } else {
+                    connection.resetStream(streamid, ResetFrame.CANCEL);
+                }
             }
         } catch (IOException ex) {
             Log.logError(ex);
@@ -1184,6 +1246,7 @@ class Stream<T> extends ExchangeImpl<T> {
         // create and return the PushResponseImpl
         @Override
         protected void handleResponse() {
+            HttpHeaders responseHeaders = responseHeadersBuilder.build();
             responseCode = (int)responseHeaders
                 .firstValueAsLong(":status")
                 .orElse(-1);
@@ -1252,17 +1315,18 @@ class Stream<T> extends ExchangeImpl<T> {
 
         void reset() {
             super.reset();
-            responseHeaders.clear();
+            responseHeadersBuilder.clear();
+            debug.log("Response builder cleared, ready to receive new headers.");
         }
 
         @Override
         public void onDecoded(CharSequence name, CharSequence value)
-                throws UncheckedIOException
+            throws UncheckedIOException
         {
             String n = name.toString();
             String v = value.toString();
             super.onDecoded(n, v);
-            responseHeaders.addHeader(n, v);
+            responseHeadersBuilder.addHeader(n, v);
             if (Log.headers() && Log.trace()) {
                 Log.logTrace("RECEIVED HEADER (streamid={0}): {1}: {2}",
                              streamid, n, v);

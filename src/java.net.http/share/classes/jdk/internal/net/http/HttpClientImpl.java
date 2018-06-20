@@ -28,11 +28,14 @@ package jdk.internal.net.http;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.net.Authenticator;
+import java.net.ConnectException;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
+import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
@@ -56,13 +59,14 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Stream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -121,6 +125,34 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
     }
 
+    /**
+     * A DelegatingExecutor is an executor that delegates tasks to
+     * a wrapped executor when it detects that the current thread
+     * is the SelectorManager thread. If the current thread is not
+     * the selector manager thread the given task is executed inline.
+     */
+    final static class DelegatingExecutor implements Executor {
+        private final BooleanSupplier isInSelectorThread;
+        private final Executor delegate;
+        DelegatingExecutor(BooleanSupplier isInSelectorThread, Executor delegate) {
+            this.isInSelectorThread = isInSelectorThread;
+            this.delegate = delegate;
+        }
+
+        Executor delegate() {
+            return delegate;
+        }
+
+        @Override
+        public void execute(Runnable command) {
+            if (isInSelectorThread.getAsBoolean()) {
+                delegate.execute(command);
+            } else {
+                command.run();
+            }
+        }
+    }
+
     private final CookieHandler cookieHandler;
     private final Redirect followRedirects;
     private final Optional<ProxySelector> userProxySelector;
@@ -128,7 +160,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     private final Authenticator authenticator;
     private final Version version;
     private final ConnectionPool connections;
-    private final Executor executor;
+    private final DelegatingExecutor delegatingExecutor;
     private final boolean isDefaultExecutor;
     // Security parameters
     private final SSLContext sslContext;
@@ -240,12 +272,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             ex = Executors.newCachedThreadPool(new DefaultThreadFactory(id));
             isDefaultExecutor = true;
         } else {
-            ex = builder.executor;
             isDefaultExecutor = false;
         }
+        delegatingExecutor = new DelegatingExecutor(this::isSelectorThread, ex);
         facadeRef = new WeakReference<>(facadeFactory.createFacade(this));
         client2 = new Http2ClientImpl(this);
-        executor = ex;
         cookieHandler = builder.cookieHandler;
         followRedirects = builder.followRedirects == null ?
                 Redirect.NEVER : builder.followRedirects;
@@ -489,20 +520,37 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     send(HttpRequest req, BodyHandler<T> responseHandler)
         throws IOException, InterruptedException
     {
+        CompletableFuture<HttpResponse<T>> cf = null;
         try {
-            return sendAsync(req, responseHandler, null).get();
+            cf = sendAsync(req, responseHandler, null, null);
+            return cf.get();
+        } catch (InterruptedException ie) {
+            if (cf != null )
+                cf.cancel(true);
+            throw ie;
         } catch (ExecutionException e) {
-            Throwable t = e.getCause();
-            if (t instanceof Error)
-                throw (Error)t;
-            if (t instanceof RuntimeException)
-                throw (RuntimeException)t;
-            else if (t instanceof IOException)
-                throw Utils.getIOException(t);
-            else
-                throw new InternalError("Unexpected exception", t);
+            final Throwable throwable = e.getCause();
+            final String msg = throwable.getMessage();
+
+            if (throwable instanceof IllegalArgumentException) {
+                throw new IllegalArgumentException(msg, throwable);
+            } else if (throwable instanceof SecurityException) {
+                throw new SecurityException(msg, throwable);
+            } else if (throwable instanceof HttpTimeoutException) {
+                throw new HttpTimeoutException(msg);
+            } else if (throwable instanceof ConnectException) {
+                ConnectException ce = new ConnectException(msg);
+                ce.initCause(throwable);
+                throw ce;
+            } else if (throwable instanceof IOException) {
+                throw new IOException(msg, throwable);
+            } else {
+                throw new IOException(msg, throwable);
+            }
         }
     }
+
+    private static final Executor ASYNC_POOL = new CompletableFuture<Void>().defaultExecutor();
 
     @Override
     public <T> CompletableFuture<HttpResponse<T>>
@@ -511,13 +559,20 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return sendAsync(userRequest, responseHandler, null);
     }
 
-
     @Override
     public <T> CompletableFuture<HttpResponse<T>>
     sendAsync(HttpRequest userRequest,
               BodyHandler<T> responseHandler,
-              PushPromiseHandler<T> pushPromiseHandler)
-    {
+              PushPromiseHandler<T> pushPromiseHandler) {
+        return sendAsync(userRequest, responseHandler, pushPromiseHandler, delegatingExecutor.delegate);
+    }
+
+    private <T> CompletableFuture<HttpResponse<T>>
+    sendAsync(HttpRequest userRequest,
+              BodyHandler<T> responseHandler,
+              PushPromiseHandler<T> pushPromiseHandler,
+              Executor exchangeExecutor)    {
+
         Objects.requireNonNull(userRequest);
         Objects.requireNonNull(responseHandler);
 
@@ -536,9 +591,17 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             if (debugelapsed.on())
                 debugelapsed.log("ClientImpl (async) send %s", userRequest);
 
-            Executor executor = acc == null
-                    ? this.executor
-                    : new PrivilegedExecutor(this.executor, acc);
+            // When using sendAsync(...) we explicitly pass the
+            // executor's delegate as exchange executor to force
+            // asynchronous scheduling of the exchange.
+            // When using send(...) we don't specify any executor
+            // and default to using the client's delegating executor
+            // which only spawns asynchronous tasks if it detects
+            // that the current thread is the selector manager
+            // thread. This will cause everything to execute inline
+            // until we need to schedule some event with the selector.
+            Executor executor = exchangeExecutor == null
+                    ? this.delegatingExecutor : exchangeExecutor;
 
             MultiExchange<T> mex = new MultiExchange<>(userRequest,
                                                             requestImpl,
@@ -547,15 +610,18 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                                                             pushPromiseHandler,
                                                             acc);
             CompletableFuture<HttpResponse<T>> res =
-                    mex.responseAsync().whenComplete((b,t) -> unreference());
+                    mex.responseAsync(executor).whenComplete((b,t) -> unreference());
             if (DEBUGELAPSED) {
                 res = res.whenComplete(
                         (b,t) -> debugCompleted("ClientImpl (async)", start, userRequest));
             }
 
-            // makes sure that any dependent actions happen in the executor
-            res = res.whenCompleteAsync((r, t) -> { /* do nothing */}, executor);
-
+            // makes sure that any dependent actions happen in the CF default
+            // executor. This is only needed for sendAsync(...), when
+            // exchangeExecutor is non-null.
+            if (exchangeExecutor != null) {
+                res = res.whenCompleteAsync((r, t) -> { /* do nothing */}, ASYNC_POOL);
+            }
             return res;
         } catch(Throwable t) {
             unreference();
@@ -654,6 +720,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         }
 
         synchronized void shutdown() {
+            Log.logTrace("{0}: shutting down", getName());
             if (debug.on()) debug.log("SelectorManager shutting down");
             closed = true;
             try {
@@ -670,6 +737,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             List<AsyncEvent> readyList = new ArrayList<>();
             List<Runnable> resetList = new ArrayList<>();
             try {
+                if (Log.channel()) Log.logChannel(getName() + ": starting");
                 while (!Thread.currentThread().isInterrupted()) {
                     synchronized (this) {
                         assert errorList.isEmpty();
@@ -706,7 +774,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                                     throw new IOException("Channel closed");
                                 }
                             } catch (IOException e) {
-                                Log.logTrace("HttpClientImpl: " + e);
+                                Log.logTrace("{0}: {1}", getName(), e);
                                 if (debug.on())
                                     debug.log("Got " + e.getClass().getName()
                                               + " while handling registration events");
@@ -738,7 +806,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     // Check whether client is still alive, and if not,
                     // gracefully stop this thread
                     if (!owner.isReferenced()) {
-                        Log.logTrace("HttpClient no longer referenced. Exiting...");
+                        Log.logTrace("{0}: {1}",
+                                getName(),
+                                "HttpClient no longer referenced. Exiting...");
                         return;
                     }
 
@@ -780,7 +850,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                         // Check whether client is still alive, and if not,
                         // gracefully stop this thread
                         if (!owner.isReferenced()) {
-                            Log.logTrace("HttpClient no longer referenced. Exiting...");
+                            Log.logTrace("{0}: {1}",
+                                    getName(),
+                                    "HttpClient no longer referenced. Exiting...");
                             return;
                         }
                         owner.purgeTimeoutsAndReturnNextDeadline();
@@ -831,17 +903,18 @@ final class HttpClientImpl extends HttpClient implements Trackable {
 
                 }
             } catch (Throwable e) {
-                //e.printStackTrace();
                 if (!closed) {
                     // This terminates thread. So, better just print stack trace
                     String err = Utils.stackTrace(e);
-                    Log.logError("HttpClientImpl: fatal error: " + err);
+                    Log.logError("{0}: {1}: {2}", getName(),
+                            "HttpClientImpl shutting down due to fatal error", err);
                 }
                 if (debug.on()) debug.log("shutting down", e);
                 if (Utils.ASSERTIONSENABLED && !debug.on()) {
                     e.printStackTrace(System.err); // always print the stack
                 }
             } finally {
+                if (Log.channel()) Log.logChannel(getName() + ": stopping");
                 shutdown();
             }
         }
@@ -1013,13 +1086,15 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         return Optional.ofNullable(authenticator);
     }
 
-    /*package-private*/ final Executor theExecutor() {
-        return executor;
+    /*package-private*/ final DelegatingExecutor theExecutor() {
+        return delegatingExecutor;
     }
 
     @Override
     public final Optional<Executor> executor() {
-        return isDefaultExecutor ? Optional.empty() : Optional.of(executor);
+        return isDefaultExecutor
+                ? Optional.empty()
+                : Optional.of(delegatingExecutor.delegate());
     }
 
     ConnectionPool connectionPool() {

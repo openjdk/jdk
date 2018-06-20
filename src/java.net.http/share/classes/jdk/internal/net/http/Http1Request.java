@@ -26,7 +26,6 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -39,11 +38,12 @@ import java.util.function.BiPredicate;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import jdk.internal.net.http.Http1Exchange.Http1BodySubscriber;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
@@ -52,7 +52,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 class Http1Request {
 
     private static final String COOKIE_HEADER = "Cookie";
-    private static final BiPredicate<String,List<String>> NOCOOKIES =
+    private static final BiPredicate<String,String> NOCOOKIES =
             (k,v) -> !COOKIE_HEADER.equalsIgnoreCase(k);
 
     private final HttpRequestImpl request;
@@ -60,7 +60,7 @@ class Http1Request {
     private final HttpConnection connection;
     private final HttpRequest.BodyPublisher requestPublisher;
     private final HttpHeaders userHeaders;
-    private final HttpHeadersImpl systemHeaders;
+    private final HttpHeadersBuilder systemHeadersBuilder;
     private volatile boolean streaming;
     private volatile long contentLength;
 
@@ -73,7 +73,7 @@ class Http1Request {
         this.connection = http1Exchange.connection();
         this.requestPublisher = request.requestPublisher;  // may be null
         this.userHeaders = request.getUserHeaders();
-        this.systemHeaders = request.getSystemHeaders();
+        this.systemHeadersBuilder = request.getSystemHeadersBuilder();
     }
 
     private void logHeaders(String completeHeaders) {
@@ -92,12 +92,13 @@ class Http1Request {
 
 
     private void collectHeaders0(StringBuilder sb) {
-        BiPredicate<String,List<String>> filter =
+        BiPredicate<String,String> filter =
                 connection.headerFilter(request);
 
         // Filter out 'Cookie:' headers, we will collect them at the end.
-        BiPredicate<String,List<String>> nocookies =
-                NOCOOKIES.and(filter);
+        BiPredicate<String,String> nocookies = NOCOOKIES.and(filter);
+
+        HttpHeaders systemHeaders = systemHeadersBuilder.build();
 
         // If we're sending this request through a tunnel,
         // then don't send any preemptive proxy-* headers that
@@ -112,8 +113,7 @@ class Http1Request {
 
         // Gather all 'Cookie:' headers and concatenate their
         // values in a single line.
-        collectCookies(sb, COOKIE_HEADER,
-                systemHeaders, userHeaders, filter);
+        collectCookies(sb, systemHeaders, userHeaders);
 
         // terminate headers
         sb.append('\r').append('\n');
@@ -142,20 +142,16 @@ class Http1Request {
     // any illegal character for header field values.
     //
     private void collectCookies(StringBuilder sb,
-                                String key,
                                 HttpHeaders system,
-                                HttpHeaders user,
-                                BiPredicate<String, List<String>> filter) {
-        List<String> systemList = system.allValues(key);
-        if (systemList != null && !filter.test(key, systemList)) systemList = null;
-        List<String> userList = user.allValues(key);
-        if (userList != null && !filter.test(key, userList)) userList = null;
+                                HttpHeaders user) {
+        List<String> systemList = system.allValues(COOKIE_HEADER);
+        List<String> userList = user.allValues(COOKIE_HEADER);
         boolean found = false;
         if (systemList != null) {
             for (String cookie : systemList) {
                 if (!found) {
                     found = true;
-                    sb.append(key).append(':').append(' ');
+                    sb.append(COOKIE_HEADER).append(':').append(' ');
                 } else {
                     sb.append(';').append(' ');
                 }
@@ -166,7 +162,7 @@ class Http1Request {
             for (String cookie : userList) {
                 if (!found) {
                     found = true;
-                    sb.append(key).append(':').append(' ');
+                    sb.append(COOKIE_HEADER).append(':').append(' ');
                 } else {
                     sb.append(';').append(' ');
                 }
@@ -176,13 +172,15 @@ class Http1Request {
         if (found) sb.append('\r').append('\n');
     }
 
-    private void collectHeaders1(StringBuilder sb, HttpHeaders headers,
-                                 BiPredicate<String, List<String>> filter) {
+    private void collectHeaders1(StringBuilder sb,
+                                 HttpHeaders headers,
+                                 BiPredicate<String,String> filter) {
         for (Map.Entry<String,List<String>> entry : headers.map().entrySet()) {
             String key = entry.getKey();
             List<String> values = entry.getValue();
-            if (!filter.test(key, values)) continue;
             for (String value : values) {
+                if (!filter.test(key, value))
+                    continue;
                 sb.append(key).append(':').append(' ')
                         .append(value)
                         .append('\r').append('\n');
@@ -279,7 +277,7 @@ class Http1Request {
 
         URI uri = request.uri();
         if (uri != null) {
-            systemHeaders.setHeader("Host", hostString());
+            systemHeadersBuilder.setHeader("Host", hostString());
         }
         if (requestPublisher == null) {
             // Not a user request, or maybe a method, e.g. GET, with no body.
@@ -289,13 +287,13 @@ class Http1Request {
         }
 
         if (contentLength == 0) {
-            systemHeaders.setHeader("Content-Length", "0");
+            systemHeadersBuilder.setHeader("Content-Length", "0");
         } else if (contentLength > 0) {
-            systemHeaders.setHeader("Content-Length", Long.toString(contentLength));
+            systemHeadersBuilder.setHeader("Content-Length", Long.toString(contentLength));
             streaming = false;
         } else {
             streaming = true;
-            systemHeaders.setHeader("Transfer-encoding", "chunked");
+            systemHeadersBuilder.setHeader("Transfer-encoding", "chunked");
         }
         collectHeaders0(sb);
         String hs = sb.toString();
@@ -347,6 +345,11 @@ class Http1Request {
                 l.add(ByteBuffer.wrap(CRLF));
                 http1Exchange.appendToOutgoing(l);
             }
+        }
+
+        @Override
+        public String currentStateMessage() {
+            return "streaming request body " + (complete ? "complete" : "incomplete");
         }
 
         @Override
@@ -414,6 +417,12 @@ class Http1Request {
                     http1Exchange.appendToOutgoing(List.of(item));
                 }
             }
+        }
+
+        @Override
+        public String currentStateMessage() {
+            return format("fixed content-length: %d, bytes sent: %d",
+                           contentLength, contentWritten);
         }
 
         @Override

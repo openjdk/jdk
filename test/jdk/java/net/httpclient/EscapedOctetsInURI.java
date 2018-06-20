@@ -201,7 +201,7 @@ public class EscapedOctetsInURI {
         http2TestServer.addHandler(new HttpASCIIUriStringHandler(), "/http2");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2";
 
-        https2TestServer = new Http2TestServer("localhost", true, 0);
+        https2TestServer = new Http2TestServer("localhost", true, sslContext);
         https2TestServer.addHandler(new HttpASCIIUriStringHandler(), "/https2");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 

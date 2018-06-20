@@ -47,6 +47,7 @@ import jdk.internal.net.http.websocket.RawChannel;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 import org.testng.annotations.Test;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.testng.Assert.assertEquals;
 
 /*
@@ -104,6 +105,7 @@ public class RawChannelTest {
             // tell the server we have read the initial bytes, so
             // that it makes sure there is something for us to
             // read next in case the initialBytes have already drained the
+
             // channel dry.
             initialReadStall.countDown();
 
@@ -210,11 +212,19 @@ public class RawChannelTest {
         HttpRequest req = HttpRequest.newBuilder(uri).build();
         // Switch on isWebSocket flag to prevent the connection from
         // being returned to the pool.
-        ((WebSocketRequest)req).isWebSocket(true);
         HttpClient client = HttpClient.newHttpClient();
+        HttpClientImpl clientImpl = ((HttpClientFacade)client).impl;
+        HttpRequestImpl requestImpl = new HttpRequestImpl(req, null);
+        requestImpl.isWebSocket(true);
         try {
-            HttpResponse<?> r = client.send(req, discarding());
-            r.body();
+            MultiExchange<Void> mex = new MultiExchange<>(req,
+                    requestImpl,
+                    clientImpl,
+                    discarding(),
+                    null,
+                    null);
+            HttpResponse<?> r = mex.responseAsync(clientImpl.theExecutor())
+                                   .get(30, SECONDS);
             return ((HttpResponseImpl) r).rawChannel();
         } finally {
            // Need to hold onto the client until the RawChannel is
