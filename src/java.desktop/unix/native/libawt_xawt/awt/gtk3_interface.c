@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,6 +547,7 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
 
         fp_g_path_get_dirname = dl_symbol("g_path_get_dirname");
 
+        fp_gdk_threads_init = dl_symbol("gdk_threads_init");
         fp_gdk_threads_enter = dl_symbol("gdk_threads_enter");
         fp_gdk_threads_leave = dl_symbol("gdk_threads_leave");
 
@@ -626,10 +627,16 @@ GtkApi* gtk3_load(JNIEnv *env, const char* lib_name)
     AWT_LOCK();
     handler = XSetErrorHandler(NULL);
     io_handler = XSetIOErrorHandler(NULL);
+
+    //According the GTK documentation, gdk_threads_init() should be
+    //called before gtk_init() or gtk_init_check()
+    fp_gdk_threads_init();
     result = (*fp_gtk_init_check)(NULL, NULL);
+
     XSetErrorHandler(handler);
     XSetIOErrorHandler(io_handler);
     AWT_UNLOCK();
+
     /* Initialize widget array. */
     for (i = 0; i < _GTK_WIDGET_TYPE_SIZE; i++)
     {
