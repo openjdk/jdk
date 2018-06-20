@@ -549,6 +549,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     WARNING_CFLAGS="-W3"
     WARNING_CFLAGS_JDK="-wd4800"
+    WARNING_CFLAGS_JVM="-wd4800"
   fi
 
   # Set some additional per-OS defines.
