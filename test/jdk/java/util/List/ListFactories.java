@@ -48,7 +48,7 @@ import static org.testng.Assert.fail;
 
 /*
  * @test
- * @bug 8048330
+ * @bug 8048330 8203184
  * @summary Test convenience static factory methods on List.
  * @run testng ListFactories
  */
@@ -328,6 +328,24 @@ public class ListFactories {
 
         assertNotSame(orig, copy1);
         assertSame(copy1, copy2);
+    }
+
+    @Test
+    public void copyOfSubList() {
+        List<Integer> orig = List.of(0, 1, 2, 3);
+        List<Integer> sub = orig.subList(0, 3);
+        List<Integer> copy = List.copyOf(sub);
+
+        assertNotSame(sub, copy);
+    }
+
+    @Test
+    public void copyOfSubSubList() {
+        List<Integer> orig = List.of(0, 1, 2, 3);
+        List<Integer> sub = orig.subList(0, 3).subList(0, 2);
+        List<Integer> copy = List.copyOf(sub);
+
+        assertNotSame(sub, copy);
     }
 
     @Test(expectedExceptions=NullPointerException.class)

@@ -1057,12 +1057,7 @@ public interface List<E> extends Collection<E> {
      * @throws NullPointerException if coll is null, or if it contains any nulls
      * @since 10
      */
-    @SuppressWarnings("unchecked")
     static <E> List<E> copyOf(Collection<? extends E> coll) {
-        if (coll instanceof ImmutableCollections.AbstractImmutableList) {
-            return (List<E>)coll;
-        } else {
-            return (List<E>)List.of(coll.toArray());
-        }
+        return ImmutableCollections.listCopy(coll);
     }
 }
