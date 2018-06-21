@@ -33,6 +33,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.IntStream;
@@ -1028,12 +1029,13 @@ public class Collections {
             this.c = c;
         }
 
-        public int size()                   {return c.size();}
-        public boolean isEmpty()            {return c.isEmpty();}
-        public boolean contains(Object o)   {return c.contains(o);}
-        public Object[] toArray()           {return c.toArray();}
-        public <T> T[] toArray(T[] a)       {return c.toArray(a);}
-        public String toString()            {return c.toString();}
+        public int size()                          {return c.size();}
+        public boolean isEmpty()                   {return c.isEmpty();}
+        public boolean contains(Object o)          {return c.contains(o);}
+        public Object[] toArray()                  {return c.toArray();}
+        public <T> T[] toArray(T[] a)              {return c.toArray(a);}
+        public <T> T[] toArray(IntFunction<T[]> f) {return c.toArray(f);}
+        public String toString()                   {return c.toString();}
 
         public Iterator<E> iterator() {
             return new Iterator<E>() {
@@ -2019,6 +2021,9 @@ public class Collections {
         }
         public <T> T[] toArray(T[] a) {
             synchronized (mutex) {return c.toArray(a);}
+        }
+        public <T> T[] toArray(IntFunction<T[]> f) {
+            synchronized (mutex) {return c.toArray(f);}
         }
 
         public Iterator<E> iterator() {
@@ -3049,14 +3054,15 @@ public class Collections {
             this.type = Objects.requireNonNull(type, "type");
         }
 
-        public int size()                 { return c.size(); }
-        public boolean isEmpty()          { return c.isEmpty(); }
-        public boolean contains(Object o) { return c.contains(o); }
-        public Object[] toArray()         { return c.toArray(); }
-        public <T> T[] toArray(T[] a)     { return c.toArray(a); }
-        public String toString()          { return c.toString(); }
-        public boolean remove(Object o)   { return c.remove(o); }
-        public void clear()               {        c.clear(); }
+        public int size()                          { return c.size(); }
+        public boolean isEmpty()                   { return c.isEmpty(); }
+        public boolean contains(Object o)          { return c.contains(o); }
+        public Object[] toArray()                  { return c.toArray(); }
+        public <T> T[] toArray(T[] a)              { return c.toArray(a); }
+        public <T> T[] toArray(IntFunction<T[]> f) { return c.toArray(f); }
+        public String toString()                   { return c.toString(); }
+        public boolean remove(Object o)            { return c.remove(o); }
+        public void clear()                        {        c.clear(); }
 
         public boolean containsAll(Collection<?> coll) {
             return c.containsAll(coll);
@@ -5559,25 +5565,26 @@ public class Collections {
         implements Queue<E>, Serializable {
         private static final long serialVersionUID = 1802017725587941708L;
         private final Deque<E> q;
-        AsLIFOQueue(Deque<E> q)           { this.q = q; }
-        public boolean add(E e)           { q.addFirst(e); return true; }
-        public boolean offer(E e)         { return q.offerFirst(e); }
-        public E poll()                   { return q.pollFirst(); }
-        public E remove()                 { return q.removeFirst(); }
-        public E peek()                   { return q.peekFirst(); }
-        public E element()                { return q.getFirst(); }
-        public void clear()               {        q.clear(); }
-        public int size()                 { return q.size(); }
-        public boolean isEmpty()          { return q.isEmpty(); }
-        public boolean contains(Object o) { return q.contains(o); }
-        public boolean remove(Object o)   { return q.remove(o); }
-        public Iterator<E> iterator()     { return q.iterator(); }
-        public Object[] toArray()         { return q.toArray(); }
-        public <T> T[] toArray(T[] a)     { return q.toArray(a); }
-        public String toString()          { return q.toString(); }
-        public boolean containsAll(Collection<?> c) {return q.containsAll(c);}
-        public boolean removeAll(Collection<?> c)   {return q.removeAll(c);}
-        public boolean retainAll(Collection<?> c)   {return q.retainAll(c);}
+        AsLIFOQueue(Deque<E> q)                     { this.q = q; }
+        public boolean add(E e)                     { q.addFirst(e); return true; }
+        public boolean offer(E e)                   { return q.offerFirst(e); }
+        public E poll()                             { return q.pollFirst(); }
+        public E remove()                           { return q.removeFirst(); }
+        public E peek()                             { return q.peekFirst(); }
+        public E element()                          { return q.getFirst(); }
+        public void clear()                         {        q.clear(); }
+        public int size()                           { return q.size(); }
+        public boolean isEmpty()                    { return q.isEmpty(); }
+        public boolean contains(Object o)           { return q.contains(o); }
+        public boolean remove(Object o)             { return q.remove(o); }
+        public Iterator<E> iterator()               { return q.iterator(); }
+        public Object[] toArray()                   { return q.toArray(); }
+        public <T> T[] toArray(T[] a)               { return q.toArray(a); }
+        public <T> T[] toArray(IntFunction<T[]> f)  { return q.toArray(f); }
+        public String toString()                    { return q.toString(); }
+        public boolean containsAll(Collection<?> c) { return q.containsAll(c); }
+        public boolean removeAll(Collection<?> c)   { return q.removeAll(c); }
+        public boolean retainAll(Collection<?> c)   { return q.retainAll(c); }
         // We use inherited addAll; forwarding addAll would be wrong
 
         // Override default methods in Collection

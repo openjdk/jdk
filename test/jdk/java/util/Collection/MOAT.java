@@ -415,6 +415,7 @@ public class MOAT {
         equal(c.toString(),"[]");
         equal(c.toArray().length, 0);
         equal(c.toArray(new Object[0]).length, 0);
+        equal(c.toArray(Object[]::new).length, 0);
         check(c.toArray(new Object[]{42})[0] == null);
 
         Object[] a = new Object[1]; a[0] = Boolean.TRUE;
@@ -688,6 +689,13 @@ public class MOAT {
                 int i = 0; for (Integer j : c) check(a[i++] == j);
                 check((size <= c.size()) || (a[c.size()] == null));
                 check(a.getClass() == Integer[].class);
+            }
+
+            {
+                Integer[] a = c.toArray(Integer[]::new);
+                equal(c.size(), a.length);
+                check(a.getClass() == Integer[].class);
+                check(Arrays.equals(c.toArray(new Integer[0]), a));
             }
 
             check(c.equals(c));
