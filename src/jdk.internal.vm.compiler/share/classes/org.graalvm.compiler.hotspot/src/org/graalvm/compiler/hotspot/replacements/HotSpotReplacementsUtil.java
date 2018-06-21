@@ -1022,4 +1022,9 @@ public class HotSpotReplacementsUtil {
     public static final LocationIdentity METASPACE_ARRAY_LENGTH_LOCATION = NamedLocationIdentity.immutable("MetaspaceArrayLength");
 
     public static final LocationIdentity SECONDARY_SUPERS_ELEMENT_LOCATION = NamedLocationIdentity.immutable("SecondarySupersElement");
+
+    @Fold
+    public static boolean useFastTLABRefill(@InjectedParameter GraalHotSpotVMConfig config) {
+        return config.useFastTLABRefill;
+    }
 }
