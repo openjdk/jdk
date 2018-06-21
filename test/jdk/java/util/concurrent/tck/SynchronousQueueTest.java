@@ -464,7 +464,7 @@ public class SynchronousQueueTest extends JSR166TestCase {
     public void testToArray_null(boolean fair) {
         final SynchronousQueue q = new SynchronousQueue(fair);
         try {
-            Object[] o = q.toArray(null);
+            Object[] o = q.toArray((Object[])null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }

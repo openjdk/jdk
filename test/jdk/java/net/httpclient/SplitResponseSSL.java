@@ -30,10 +30,5 @@
  * @run main/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=all
- *      SplitResponseSSL SSL
+ *      SplitResponse HTTPS connection:CLOSE mode:SYNC
  */
-public class SplitResponseSSL {
-    public static void main(String[] args) throws Exception {
-        SplitResponse.main(args);
-    }
-}

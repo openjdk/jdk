@@ -64,7 +64,7 @@ class Response {
              int statusCode,
              HttpClient.Version version,
              boolean isConnectResponse) {
-        this.headers = ImmutableHeaders.of(headers);
+        this.headers = headers;
         this.request = req;
         this.version = version;
         this.exchange = exchange;

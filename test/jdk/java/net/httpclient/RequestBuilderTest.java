@@ -209,6 +209,7 @@ public class RequestBuilderTest {
         for (HttpRequest r : requests) {
             assertEquals(r.headers().map().size(), 1);
             assertTrue(r.headers().firstValue("A").isPresent());
+            assertTrue(r.headers().firstValue("a").isPresent());
             assertEquals(r.headers().firstValue("A").get(), "B");
             assertEquals(r.headers().allValues("A"), List.of("B"));
             assertEquals(r.headers().allValues("C").size(), 0);
@@ -309,6 +310,30 @@ public class RequestBuilderTest {
             assertThrows(UOE, () -> r.headers().allValues("A").add("Z"));
             assertThrows(UOE, () -> r.headers().allValues("A").addAll(List.of("Z")));
             assertThrows(UOE, () -> r.headers().allValues("A").add(1, "Z"));
+        }
+
+        // case-insensitivity
+        requests = List.of(
+                newBuilder(uri)
+                        .header("Accept-Encoding", "gzip, deflate").build(),
+                newBuilder(uri)
+                        .header("accept-encoding", "gzip, deflate").build(),
+                newBuilder(uri)
+                        .header("AccePt-EncodINg", "gzip, deflate").build(),
+                newBuilder(uri)
+                        .header("AcCEpt-EncoDIng", "gzip, deflate").build()
+        );
+        for (HttpRequest r : requests) {
+            for (String name : List.of("Accept-Encoding", "accept-encoding",
+                                       "aCCept-EnCODing", "accepT-encodinG")) {
+                assertTrue(r.headers().firstValue(name).isPresent());
+                assertTrue(r.headers().allValues(name).contains("gzip, deflate"));
+                assertEquals(r.headers().firstValue(name).get(), "gzip, deflate");
+                assertEquals(r.headers().allValues(name).size(), 1);
+                assertEquals(r.headers().map().size(), 1);
+                assertEquals(r.headers().map().get(name).size(), 1);
+                assertEquals(r.headers().map().get(name).get(0), "gzip, deflate");
+            }
         }
     }
 

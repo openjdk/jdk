@@ -42,20 +42,24 @@
  * Hypertext Transfer Protocol (HTTP/1.1)</a>, and
  * <a href="https://tools.ietf.org/html/rfc6455">The WebSocket Protocol</a>.
  *
- * <p> Asynchronous tasks and dependent actions of returned {@link
- * java.util.concurrent.CompletableFuture} instances are executed on the threads
- * supplied by the client's {@link java.util.concurrent.Executor}, where
- * practical.
+ * <p> In general, asynchronous tasks execute in either the thread invoking
+ * the operation, e.g. {@linkplain HttpClient#send(HttpRequest, BodyHandler)
+ * sending} an HTTP request, or by the threads supplied by the client's {@link
+ * HttpClient#executor() executor}. Dependent tasks, those that are triggered by
+ * returned CompletionStages or CompletableFutures, that do not explicitly
+ * specify an executor, execute in the same {@link
+ * CompletableFuture#defaultExecutor() default executor} as that of {@code
+ * CompletableFuture}, or the invoking thread if the operation completes before
+ * the dependent task is registered.
  *
  * <p> {@code CompletableFuture}s returned by this API will throw {@link
- * java.lang.UnsupportedOperationException} for their {@link
- * java.util.concurrent.CompletableFuture#obtrudeValue(Object) obtrudeValue}
- * and {@link java.util.concurrent.CompletableFuture#obtrudeException(Throwable)
- * obtrudeException} methods. Invoking the {@link
- * java.util.concurrent.CompletableFuture#cancel cancel} method on a {@code
- * CompletableFuture} returned by this API will not interrupt the underlying
- * operation, but may be useful to complete, exceptionally, dependent stages
- * that have not already completed.
+ * UnsupportedOperationException} for their {@link
+ * CompletableFuture#obtrudeValue(Object) obtrudeValue}
+ * and {@link CompletableFuture#obtrudeException(Throwable)
+ * obtrudeException} methods. Invoking the {@link CompletableFuture#cancel
+ * cancel} method on a {@code CompletableFuture} returned by this API may not
+ * interrupt the underlying operation, but may be useful to complete,
+ * exceptionally, dependent stages that have not already completed.
  *
  * <p> Unless otherwise stated, {@code null} parameter values will cause methods
  * of all classes in this package to throw {@code NullPointerException}.
@@ -63,3 +67,9 @@
  * @since 11
  */
 package java.net.http;
+
+import java.lang.UnsupportedOperationException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse.BodyHandler;
+import java.util.concurrent.CompletableFuture;

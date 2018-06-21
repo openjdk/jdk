@@ -1116,7 +1116,7 @@ WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
 WB_END
 
 WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
-  uintx result;
+  size_t result;
   if (GetVMFlag <size_t> (thread, env, name, &result, &JVMFlag::size_tAt)) {
     ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
     return longBox(thread, env, result);

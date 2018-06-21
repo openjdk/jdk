@@ -110,14 +110,14 @@ public class SettingsFrame extends Http2Frame {
         return TYPE;
     }
 
-    public int getParameter(int paramID) {
+    public synchronized int getParameter(int paramID) {
         if (paramID > MAX_PARAM) {
             throw new IllegalArgumentException("illegal parameter");
         }
         return parameters[paramID - 1];
     }
 
-    public SettingsFrame setParameter(int paramID, int value) {
+    public synchronized SettingsFrame setParameter(int paramID, int value) {
         if (paramID > MAX_PARAM) {
             throw new IllegalArgumentException("illegal parameter");
         }
@@ -166,7 +166,7 @@ public class SettingsFrame extends Http2Frame {
         // TODO: check these values
         f.setParameter(ENABLE_PUSH, 1);
         f.setParameter(HEADER_TABLE_SIZE, 4 * K);
-        f.setParameter(MAX_CONCURRENT_STREAMS, 35);
+        f.setParameter(MAX_CONCURRENT_STREAMS, 100);
         f.setParameter(INITIAL_WINDOW_SIZE, 64 * K - 1);
         f.setParameter(MAX_FRAME_SIZE, 16 * K);
         return f;

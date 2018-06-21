@@ -712,7 +712,7 @@ public class ConcurrentLinkedDequeTest extends JSR166TestCase {
     public void testToArray_NullArg() {
         ConcurrentLinkedDeque q = populatedDeque(SIZE);
         try {
-            q.toArray(null);
+            q.toArray((Object[])null);
             shouldThrow();
         } catch (NullPointerException success) {}
     }

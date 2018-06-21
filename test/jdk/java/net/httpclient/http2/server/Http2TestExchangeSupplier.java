@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 import javax.net.ssl.SSLSession;
 import java.io.InputStream;
 import java.net.URI;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import java.net.http.HttpHeaders;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 /**
  * A supplier of Http2TestExchanges. If the default Http2TestExchange impl is
@@ -39,8 +40,8 @@ public interface Http2TestExchangeSupplier {
 
     Http2TestExchange get(int streamid,
                           String method,
-                          HttpHeadersImpl reqheaders,
-                          HttpHeadersImpl rspheaders,
+                          HttpHeaders reqheaders,
+                          HttpHeadersBuilder rspheadersBuilder,
                           URI uri,
                           InputStream is,
                           SSLSession sslSession,

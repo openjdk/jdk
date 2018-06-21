@@ -26,6 +26,7 @@ package jdk.internal.net.http.hpack;
 
 import jdk.internal.net.http.hpack.HPACK.Logger;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import static jdk.internal.net.http.common.Utils.pow2Size;
@@ -41,8 +42,9 @@ import static java.lang.String.format;
  */
 class SimpleHeaderTable {
 
-    protected static final HeaderField[] staticTable = {
-            null, // To make index 1-based, instead of 0-based
+    /* An immutable list of static header fields */
+    protected static final List<HeaderField> staticTable = List.of(
+            new HeaderField(""), // A dummy to make the list index 1-based, instead of 0-based
             new HeaderField(":authority"),
             new HeaderField(":method", "GET"),
             new HeaderField(":method", "POST"),
@@ -103,10 +105,9 @@ class SimpleHeaderTable {
             new HeaderField("user-agent"),
             new HeaderField("vary"),
             new HeaderField("via"),
-            new HeaderField("www-authenticate")
-    };
+            new HeaderField("www-authenticate"));
 
-    protected static final int STATIC_TABLE_LENGTH = staticTable.length - 1;
+    protected static final int STATIC_TABLE_LENGTH = staticTable.size() - 1;
     protected static final int ENTRY_SIZE = 32;
 
     private final Logger logger;
@@ -134,7 +135,7 @@ class SimpleHeaderTable {
     HeaderField get(int index) {
         checkIndex(index);
         if (index <= STATIC_TABLE_LENGTH) {
-            return staticTable[index];
+            return staticTable.get(index);
         } else {
             return buffer.get(index - STATIC_TABLE_LENGTH - 1);
         }
@@ -262,23 +263,6 @@ class SimpleHeaderTable {
         @Override
         public String toString() {
             return value.isEmpty() ? name : name + ": " + value;
-        }
-
-        @Override // TODO: remove since used only for testing
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            HeaderField that = (HeaderField) o;
-            return name.equals(that.name) && value.equals(that.value);
-        }
-
-        @Override // TODO: remove since used only for testing
-        public int hashCode() {
-            return 31 * name.hashCode() + value.hashCode();
         }
     }
 

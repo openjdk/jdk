@@ -661,7 +661,7 @@ public class LineBodyHandlerTest implements HttpServerAdapters {
         http2TestServer.addHandler(new HttpTestEchoHandler(), "/http2/echo");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/echo";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, 0));
+        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
         https2TestServer.addHandler(new HttpTestEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 

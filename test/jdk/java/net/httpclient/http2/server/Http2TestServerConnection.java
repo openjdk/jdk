@@ -33,14 +33,14 @@ import java.net.URI;
 import java.net.InetAddress;
 import javax.net.ssl.*;
 import java.net.URISyntaxException;
+import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.*;
 import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
@@ -71,6 +71,7 @@ public class Http2TestServerConnection {
     final SettingsFrame serverSettings;
     final ExecutorService exec;
     final boolean secure;
+    final Properties properties;
     volatile boolean stopping;
     volatile int nextPushStreamId = 2;
     ConcurrentLinkedQueue<PingRequest> pings = new ConcurrentLinkedQueue<>();
@@ -118,7 +119,8 @@ public class Http2TestServerConnection {
 
     Http2TestServerConnection(Http2TestServer server,
                               Socket socket,
-                              Http2TestExchangeSupplier exchangeSupplier)
+                              Http2TestExchangeSupplier exchangeSupplier,
+                              Properties properties)
         throws IOException
     {
         if (socket instanceof SSLSocket) {
@@ -132,13 +134,46 @@ public class Http2TestServerConnection {
         this.outputQ = new Queue<>(sentinel);
         this.random = new Random();
         this.socket = socket;
+        this.properties = properties;
         this.socket.setTcpNoDelay(true);
-        this.serverSettings = SettingsFrame.getDefaultSettings();
+        this.serverSettings = getServerSettingProperties();
         this.exec = server.exec;
         this.secure = server.secure;
         this.pushStreams = new HashSet<>();
         is = new BufferedInputStream(socket.getInputStream());
         os = new BufferedOutputStream(socket.getOutputStream());
+    }
+
+    static final String propPrefix = "http2server.settings.";
+
+    static final String[][] propIDs = {
+        {"header_table_size", Integer.toString(SettingsFrame.HEADER_TABLE_SIZE)},
+        {"enable_push", Integer.toString(SettingsFrame.ENABLE_PUSH)},
+        {"max_concurrent_streams", Integer.toString(SettingsFrame.MAX_CONCURRENT_STREAMS)},
+        {"initial_window_size", Integer.toString(SettingsFrame.INITIAL_WINDOW_SIZE)},
+        {"max_frame_size", Integer.toString(SettingsFrame.MAX_FRAME_SIZE)},
+        {"max_header_list_size", Integer.toString(SettingsFrame.MAX_HEADER_LIST_SIZE)}
+    };
+
+    private SettingsFrame getServerSettingProperties() {
+        SettingsFrame s = SettingsFrame.getDefaultSettings();
+        if (properties == null)
+            return s;
+        for (int i=0; i<propIDs.length; i++) {
+            String key = propIDs[i][0];
+            String numS = propIDs[i][1];
+            String prop = properties.getProperty(propPrefix + key);
+            if (prop != null) {
+                try {
+                    System.err.println("TestServer: setting " + key + " property to: " +
+                        prop);
+                    int num = Integer.parseInt(numS);
+                    System.err.println("TestServer: num = " + num);
+                    s.setParameter(num, Integer.parseInt(prop));
+                } catch (NumberFormatException e) {/* ignore errors */}
+            }
+        }
+        return s;
     }
 
     /**
@@ -420,11 +455,11 @@ public class Http2TestServerConnection {
         outputQ.put(wup);
     }
 
-    HttpHeadersImpl decodeHeaders(List<HeaderFrame> frames) throws IOException {
-        HttpHeadersImpl headers = createNewResponseHeaders();
+    HttpHeaders decodeHeaders(List<HeaderFrame> frames) throws IOException {
+        HttpHeadersBuilder headersBuilder = createNewHeadersBuilder();
 
         DecodingCallback cb = (name, value) -> {
-            headers.addHeader(name.toString(), value.toString());
+            headersBuilder.addHeader(name.toString(), value.toString());
         };
 
         for (HeaderFrame frame : frames) {
@@ -434,7 +469,7 @@ public class Http2TestServerConnection {
             }
         }
         hpackIn.decode(EMPTY_BUFFER, true, cb);
-        return headers;
+        return headersBuilder.build();
     }
 
     String getRequestLine(String request) {
@@ -451,8 +486,8 @@ public class Http2TestServerConnection {
         return request.substring(start,end);
     }
 
-    void addHeaders(String headers, HttpHeadersImpl hdrs) {
-        String[] hh = headers.split(CRLF);
+    static void addHeaders(String headersString, HttpHeadersBuilder headersBuilder) {
+        String[] hh = headersString.split(CRLF);
         for (String header : hh) {
             int colon = header.indexOf(':');
             if (colon == -1)
@@ -461,14 +496,14 @@ public class Http2TestServerConnection {
             String value = header.substring(colon+1);
             while (value.startsWith(" "))
                 value = value.substring(1);
-            hdrs.addHeader(name, value);
+            headersBuilder.addHeader(name, value);
         }
     }
 
     // First stream (1) comes from a plaintext HTTP/1.1 request
     @SuppressWarnings({"rawtypes","unchecked"})
     void createPrimordialStream(Http1InitialRequest request) throws IOException {
-        HttpHeadersImpl headers = createNewResponseHeaders();
+        HttpHeadersBuilder headersBuilder = createNewHeadersBuilder();
         String requestLine = getRequestLine(request.headers);
         String[] tokens = requestLine.split(" ");
         if (!tokens[2].equals("HTTP/1.1")) {
@@ -485,18 +520,19 @@ public class Http2TestServerConnection {
             throw new IOException("missing Host");
         }
 
-        headers.setHeader(":method", tokens[0]);
-        headers.setHeader(":scheme", "http"); // always in this case
-        headers.setHeader(":authority", host);
+        headersBuilder.setHeader(":method", tokens[0]);
+        headersBuilder.setHeader(":scheme", "http"); // always in this case
+        headersBuilder.setHeader(":authority", host);
         String path = uri.getRawPath();
         if (uri.getRawQuery() != null)
             path = path + "?" + uri.getRawQuery();
-        headers.setHeader(":path", path);
+        headersBuilder.setHeader(":path", path);
 
         Queue q = new Queue(sentinel);
         byte[] body = getRequestBody(request);
-        addHeaders(getHeaders(request.headers), headers);
-        headers.setHeader("Content-length", Integer.toString(body.length));
+        addHeaders(getHeaders(request.headers), headersBuilder);
+        headersBuilder.setHeader("Content-length", Integer.toString(body.length));
+        HttpHeaders headers = headersBuilder.build();
 
         addRequestBodyToQueue(body, q);
         streams.put(1, q);
@@ -534,7 +570,7 @@ public class Http2TestServerConnection {
             }
         }
         boolean endStreamReceived = endStream;
-        HttpHeadersImpl headers = decodeHeaders(frames);
+        HttpHeaders headers = decodeHeaders(frames);
 
         // Strict to assert Client correctness. Not all servers are as strict,
         // but some are known to be.
@@ -558,7 +594,7 @@ public class Http2TestServerConnection {
     // for this stream/request delivered on Q
 
     @SuppressWarnings({"rawtypes","unchecked"})
-    void handleRequest(HttpHeadersImpl headers,
+    void handleRequest(HttpHeaders headers,
                        Queue queue,
                        int streamid,
                        boolean endStreamReceived)
@@ -572,7 +608,6 @@ public class Http2TestServerConnection {
         String authority = headers.firstValue(":authority").orElse("");
         //System.out.println("authority = " + authority);
         System.err.printf("TestServer: %s %s\n", method, path);
-        HttpHeadersImpl rspheaders = createNewResponseHeaders();
         int winsize = clientSettings.getParameter(
                 SettingsFrame.INITIAL_WINDOW_SIZE);
         //System.err.println ("Stream window size = " + winsize);
@@ -592,8 +627,9 @@ public class Http2TestServerConnection {
             String us = scheme + "://" + authority + path;
             URI uri = new URI(us);
             boolean pushAllowed = clientSettings.getParameter(SettingsFrame.ENABLE_PUSH) == 1;
+            HttpHeadersBuilder rspheadersBuilder = createNewHeadersBuilder();
             Http2TestExchange exchange = exchangeSupplier.get(streamid, method,
-                    headers, rspheaders, uri, bis, getSSLSession(),
+                    headers, rspheadersBuilder, uri, bis, getSSLSession(),
                     bos, this, pushAllowed);
 
             // give to user
@@ -620,8 +656,8 @@ public class Http2TestServerConnection {
         }
     }
 
-    protected HttpHeadersImpl createNewResponseHeaders() {
-        return new HttpHeadersImpl();
+    protected HttpHeadersBuilder createNewHeadersBuilder() {
+        return new HttpHeadersBuilder();
     }
 
     private SSLSession getSSLSession() {
@@ -710,7 +746,8 @@ public class Http2TestServerConnection {
         }
     }
 
-    List<ByteBuffer> encodeHeaders(HttpHeadersImpl headers) {
+    /** Encodes an group of headers, without any ordering guarantees. */
+    List<ByteBuffer> encodeHeaders(HttpHeaders headers) {
         List<ByteBuffer> buffers = new LinkedList<>();
 
         ByteBuffer buf = getBuffer();
@@ -729,6 +766,30 @@ public class Http2TestServerConnection {
                     }
                 } while (!encoded);
             }
+        }
+        buf.flip();
+        buffers.add(buf);
+        return buffers;
+    }
+
+    /** Encodes an ordered list of headers. */
+    List<ByteBuffer> encodeHeadersOrdered(List<Map.Entry<String,String>> headers) {
+        List<ByteBuffer> buffers = new LinkedList<>();
+
+        ByteBuffer buf = getBuffer();
+        boolean encoded;
+        for (Map.Entry<String, String> entry : headers) {
+            String value = entry.getValue();
+            String key = entry.getKey().toLowerCase();
+            do {
+                hpackOut.header(key, value);
+                encoded = hpackOut.encode(buf);
+                if (!encoded) {
+                    buf.flip();
+                    buffers.add(buf);
+                    buf = getBuffer();
+                }
+            } while (!encoded);
         }
         buf.flip();
         buffers.add(buf);
@@ -812,9 +873,9 @@ public class Http2TestServerConnection {
     // returns a minimal response with status 200
     // that is the response to the push promise just sent
     private ResponseHeaders getPushResponse(int streamid) {
-        HttpHeadersImpl h = createNewResponseHeaders();
-        h.addHeader(":status", "200");
-        ResponseHeaders oh = new ResponseHeaders(h);
+        HttpHeadersBuilder hb = createNewHeadersBuilder();
+        hb.addHeader(":status", "200");
+        ResponseHeaders oh = new ResponseHeaders(hb.build());
         oh.streamid(streamid);
         oh.setFlag(HeaderFrame.END_HEADERS);
         return oh;
@@ -1047,9 +1108,9 @@ public class Http2TestServerConnection {
     // for the hashmap.
 
     static class ResponseHeaders extends Http2Frame {
-        HttpHeadersImpl headers;
+        HttpHeaders headers;
 
-        ResponseHeaders(HttpHeadersImpl headers) {
+        ResponseHeaders(HttpHeaders headers) {
             super(0, 0);
             this.headers = headers;
         }

@@ -21,22 +21,22 @@
  * questions.
  */
 
-import java.io.*;
-import java.net.*;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.http.HttpHeaders;
 import jdk.internal.net.http.frame.Http2Frame;
 
 // will be converted to a PushPromiseFrame in the writeLoop
 // a thread is then created to produce the DataFrames from the InputStream
 class OutgoingPushPromise extends Http2Frame {
-    final HttpHeadersImpl headers;
+    final HttpHeaders headers;
     final URI uri;
     final InputStream is;
     final int parentStream; // not the pushed streamid
 
     public OutgoingPushPromise(int parentStream,
                                URI uri,
-                               HttpHeadersImpl headers,
+                               HttpHeaders headers,
                                InputStream is) {
         super(0,0);
         this.uri = uri;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ void G1CMObjArrayProcessor::push_array_slice(HeapWord* what) {
 }
 
 size_t G1CMObjArrayProcessor::process_array_slice(objArrayOop obj, HeapWord* start_from, size_t remaining) {
-  size_t words_to_scan = MIN2(remaining, ObjArrayMarkingStride);
+  size_t words_to_scan = MIN2(remaining, (size_t)ObjArrayMarkingStride);
 
   if (remaining > ObjArrayMarkingStride) {
     push_array_slice(start_from + ObjArrayMarkingStride);

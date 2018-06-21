@@ -32,6 +32,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import sun.net.www.MessageHeader;
 import org.testng.annotations.Test;
@@ -132,6 +134,11 @@ public class Http1HeaderParserTest {
               "Connection: keep-alive\r\n\r\n"
             };
         Arrays.stream(basic).forEach(responses::add);
+        // add some tests where some of the CRLF are replaced
+        // by a single LF
+        Arrays.stream(basic)
+                .map(Http1HeaderParserTest::mixedCRLF)
+                .forEach(responses::add);
 
         String[] foldingTemplate =
            {  "HTTP/1.1 200 OK\r\n" +
@@ -187,6 +194,12 @@ public class Http1HeaderParserTest {
             for (String template : foldingTemplate)
                 responses.add(template.replace("$NEWLINE", newLineChar));
         }
+        // add some tests where some of the CRLF are replaced
+        // by a single LF
+        for (String newLineChar : new String[] { "\n", "\r", "\r\n" }) {
+            for (String template : foldingTemplate)
+                responses.add(mixedCRLF(template).replace("$NEWLINE", newLineChar));
+        }
 
         String[] bad = // much of this is to retain parity with legacy MessageHeaders
            { "HTTP/1.1 200 OK\r\n" +
@@ -237,20 +250,77 @@ public class Http1HeaderParserTest {
         return responses.stream().map(p -> new Object[] { p }).toArray(Object[][]::new);
     }
 
+    static final AtomicInteger index = new AtomicInteger();
+    static final AtomicInteger limit = new AtomicInteger(1);
+    static final AtomicBoolean useCRLF = new AtomicBoolean();
+    // A small method to replace part of the CRLF present in a string
+    // with simple LF. The method uses a deterministic algorithm based
+    // on current values of static index/limit/useCRLF counters.
+    // These counters are used to produce a stream of substitutes that
+    // looks like this:
+    // LF CRLF LF LF CRLF CRLF LF LF LF CRLF CRLF CRLF (then repeat from start)
+    static final String mixedCRLF(String headers) {
+        int next;
+        int start = 0;
+        int last = headers.lastIndexOf("\r\n");
+        String prev = "";
+        StringBuilder res = new StringBuilder();
+        while ((next = headers.indexOf("\r\n", start)) > 0) {
+            res.append(headers.substring(start, next));
+            if ("\n".equals(prev) && next == last) {
+                // for some reason the legacy MessageHeader parser will
+                // not consume the final LF if the headers are terminated
+                // by <LF><CRLF> instead of <CRLF><CRLF>. It consume
+                // <LF><CR> but leaves the last <LF> in the stream.
+                // Here we just make sure to avoid using <LF><CRLF>
+                // as that would cause the legacy parser to consume
+                // 1 byte less than the Http1HeadersParser - which
+                // does consume the last <LF>, as it should.
+                // if this is the last CRLF and the previous one
+                // was replaced by LF then use LF.
+                res.append(prev);
+            } else {
+                prev = useCRLF.get() ? "\r\n" : "\n";
+                res.append(prev);
+            }
+            // skip CRLF
+            start = next + 2;
+
+            // The idea is to substitute some of the CRLF with LF.
+            // Rather than doing this randomly, always use the following
+            // sequence:
+            // LF CRLF LF LF CRLF CRLF LF LF LF CRLF CRLF CRLF
+            index.incrementAndGet();
+            if (index.get() == limit.get()) {
+                index.set(0);
+                if (useCRLF.get()) limit.incrementAndGet();
+                if (limit.get() > 3) limit.set(1);
+                useCRLF.set(!useCRLF.get());
+            }
+        }
+        res.append(headers.substring(start));
+        return res.toString();
+    }
+
+
     @Test(dataProvider = "responses")
     public void verifyHeaders(String respString) throws Exception {
+        System.out.println("\ntesting:\n\t" + respString
+                .replace("\r\n", "<CRLF>")
+                .replace("\r", "<CR>")
+                .replace("\n","<LF>")
+                .replace("LF>", "LF>\n\t"));
         byte[] bytes = respString.getBytes(US_ASCII);
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         MessageHeader m = new MessageHeader(bais);
         Map<String,List<String>> messageHeaderMap = m.getHeaders();
-        int available = bais.available();
+        int availableBytes = bais.available();
 
         Http1HeaderParser decoder = new Http1HeaderParser();
         ByteBuffer b = ByteBuffer.wrap(bytes);
         decoder.parse(b);
+        System.out.printf("Http1HeaderParser parsed %d bytes out of %d%n", b.position(), bytes.length);
         Map<String,List<String>> decoderMap1 = decoder.headers().map();
-        assertEquals(available, b.remaining(),
-                     "stream available not equal to remaining");
 
         // assert status-line
         String statusLine1 = messageHeaderMap.get(null).get(0);
@@ -273,6 +343,9 @@ public class Http1HeaderParserTest {
         assertHeadersEqual(messageHeaderMap, decoderMap1,
                           "messageHeaderMap not equal to decoderMap1");
 
+        assertEquals(availableBytes, b.remaining(),
+                String.format("stream available (%d) not equal to remaining (%d)",
+                        availableBytes, b.remaining()));
         // byte at a time
         decoder = new Http1HeaderParser();
         List<ByteBuffer> buffers = IntStream.range(0, bytes.length)
@@ -280,9 +353,10 @@ public class Http1HeaderParserTest {
                 .collect(toList());
         while (decoder.parse(buffers.remove(0)) != true);
         Map<String,List<String>> decoderMap2 = decoder.headers().map();
-        assertEquals(available, buffers.size(),
+        assertEquals(availableBytes, buffers.size(),
                      "stream available not equals to remaining buffers");
         assertEquals(decoderMap1, decoderMap2, "decoder maps not equal");
+
     }
 
     @DataProvider(name = "errors")

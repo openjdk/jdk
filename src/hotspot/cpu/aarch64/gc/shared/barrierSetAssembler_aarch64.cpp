@@ -24,7 +24,9 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/thread.hpp"
 
 #define __ masm->
 
@@ -121,3 +123,109 @@ void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Re
   __ andr(obj, obj, ~JNIHandles::weak_tag_mask);
   __ ldr(obj, Address(obj, 0));             // *obj
 }
+
+// Defines obj, preserves var_size_in_bytes, okay for t2 == var_size_in_bytes.
+void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
+                                        Register var_size_in_bytes,
+                                        int con_size_in_bytes,
+                                        Register t1,
+                                        Register t2,
+                                        Label& slow_case) {
+  assert_different_registers(obj, t2);
+  assert_different_registers(obj, var_size_in_bytes);
+  Register end = t2;
+
+  // verify_tlab();
+
+  __ ldr(obj, Address(rthread, JavaThread::tlab_top_offset()));
+  if (var_size_in_bytes == noreg) {
+    __ lea(end, Address(obj, con_size_in_bytes));
+  } else {
+    __ lea(end, Address(obj, var_size_in_bytes));
+  }
+  __ ldr(rscratch1, Address(rthread, JavaThread::tlab_end_offset()));
+  __ cmp(end, rscratch1);
+  __ br(Assembler::HI, slow_case);
+
+  // update the tlab top pointer
+  __ str(end, Address(rthread, JavaThread::tlab_top_offset()));
+
+  // recover var_size_in_bytes if necessary
+  if (var_size_in_bytes == end) {
+    __ sub(var_size_in_bytes, var_size_in_bytes, obj);
+  }
+  // verify_tlab();
+}
+
+// Defines obj, preserves var_size_in_bytes
+void BarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register obj,
+                                        Register var_size_in_bytes,
+                                        int con_size_in_bytes,
+                                        Register t1,
+                                        Label& slow_case) {
+  assert_different_registers(obj, var_size_in_bytes, t1);
+  if (!Universe::heap()->supports_inline_contig_alloc()) {
+    __ b(slow_case);
+  } else {
+    Register end = t1;
+    Register heap_end = rscratch2;
+    Label retry;
+    __ bind(retry);
+    {
+      unsigned long offset;
+      __ adrp(rscratch1, ExternalAddress((address) Universe::heap()->end_addr()), offset);
+      __ ldr(heap_end, Address(rscratch1, offset));
+    }
+
+    ExternalAddress heap_top((address) Universe::heap()->top_addr());
+
+    // Get the current top of the heap
+    {
+      unsigned long offset;
+      __ adrp(rscratch1, heap_top, offset);
+      // Use add() here after ARDP, rather than lea().
+      // lea() does not generate anything if its offset is zero.
+      // However, relocs expect to find either an ADD or a load/store
+      // insn after an ADRP.  add() always generates an ADD insn, even
+      // for add(Rn, Rn, 0).
+      __ add(rscratch1, rscratch1, offset);
+      __ ldaxr(obj, rscratch1);
+    }
+
+    // Adjust it my the size of our new object
+    if (var_size_in_bytes == noreg) {
+      __ lea(end, Address(obj, con_size_in_bytes));
+    } else {
+      __ lea(end, Address(obj, var_size_in_bytes));
+    }
+
+    // if end < obj then we wrapped around high memory
+    __ cmp(end, obj);
+    __ br(Assembler::LO, slow_case);
+
+    __ cmp(end, heap_end);
+    __ br(Assembler::HI, slow_case);
+
+    // If heap_top hasn't been changed by some other thread, update it.
+    __ stlxr(rscratch2, end, rscratch1);
+    __ cbnzw(rscratch2, retry);
+
+    incr_allocated_bytes(masm, var_size_in_bytes, con_size_in_bytes, t1);
+  }
+}
+
+void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
+                                               Register var_size_in_bytes,
+                                               int con_size_in_bytes,
+                                               Register t1) {
+  assert(t1->is_valid(), "need temp reg");
+
+  __ ldr(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
+  if (var_size_in_bytes->is_valid()) {
+    __ add(t1, t1, var_size_in_bytes);
+  } else {
+    __ add(t1, t1, con_size_in_bytes);
+  }
+  __ str(t1, Address(rthread, in_bytes(JavaThread::allocated_bytes_offset())));
+}
+

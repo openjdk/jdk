@@ -3023,8 +3023,8 @@ void MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratch, 
   mov(Rscratch, SP);
   sub(Rscratch, Rmark, Rscratch);
   ands(Rscratch, Rscratch, imm);
-  b(done, ne); // exit with failure
-  str(Rscratch, Address(Rbox, BasicLock::displaced_header_offset_in_bytes())); // set to zero
+  // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8153107)
+  str(Rscratch, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
   b(done);
 
 #else
@@ -3034,7 +3034,8 @@ void MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratch, 
   sub(Rscratch, Rmark, SP, eq);
   movs(Rscratch, AsmOperand(Rscratch, lsr, exact_log2(os::vm_page_size())), eq);
   // If still 'eq' then recursive locking OK
-  str(Rscratch, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()), eq); // set to zero
+  // set to zero if recursive lock, set to non zero otherwise (see discussion in JDK-8153107)
+  str(Rscratch, Address(Rbox, BasicLock::displaced_header_offset_in_bytes()));
   b(done);
 #endif
 

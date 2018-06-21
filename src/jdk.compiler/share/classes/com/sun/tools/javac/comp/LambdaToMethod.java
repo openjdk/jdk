@@ -655,9 +655,8 @@ public class LambdaToMethod extends TreeTranslator {
                 return make.Block(0, stats.toList());
             } else {
                 //non-void to non-void conversion:
-                // return (TYPE)BODY;
-                JCExpression retExpr = transTypes.coerce(attrEnv, expr, restype);
-                return make.at(retExpr).Block(0, List.of(make.Return(retExpr)));
+                // return BODY;
+                return make.at(expr).Block(0, List.of(make.Return(expr)));
             }
         } finally {
             make.at(prevPos);
@@ -692,11 +691,6 @@ public class LambdaToMethod extends TreeTranslator {
                     VarSymbol loc = makeSyntheticVar(0, names.fromString("$loc"), tree.expr.type, lambdaMethodDecl.sym);
                     JCVariableDecl varDef = make.VarDef(loc, tree.expr);
                     result = make.Block(0, List.of(varDef, make.Return(null)));
-                } else if (!isTarget_void || !isLambda_void) {
-                    //non-void to non-void conversion:
-                    // return (TYPE)RET-EXPR;
-                    tree.expr = transTypes.coerce(attrEnv, tree.expr, restype);
-                    result = tree;
                 } else {
                     result = tree;
                 }

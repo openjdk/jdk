@@ -3842,7 +3842,7 @@ public class Resolve {
 
         @Override
         JCDiagnostic getDiagnostic(DiagnosticType dkind, DiagnosticPosition pos, Symbol location, Type site, Name name, List<Type> argtypes, List<Type> typeargtypes) {
-            return diags.create(dkind, log.currentSource(), pos, "illegal.ref.to.var.type", name);
+            return diags.create(dkind, log.currentSource(), pos, "illegal.ref.to.var.type");
         }
     }
 

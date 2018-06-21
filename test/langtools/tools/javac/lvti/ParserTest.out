@@ -1,9 +1,9 @@
-ParserTest.java:14:18: compiler.err.var.not.allowed: var
-ParserTest.java:16:22: compiler.err.var.not.allowed: var
-ParserTest.java:20:19: compiler.err.var.not.allowed: var
-ParserTest.java:24:14: compiler.err.var.not.allowed: var
-ParserTest.java:28:20: compiler.err.var.not.allowed: var
-ParserTest.java:36:27: compiler.err.var.not.allowed: var
+ParserTest.java:14:18: compiler.err.var.not.allowed
+ParserTest.java:16:22: compiler.err.var.not.allowed
+ParserTest.java:20:19: compiler.err.var.not.allowed
+ParserTest.java:24:14: compiler.err.var.not.allowed
+ParserTest.java:28:20: compiler.err.var.not.allowed
+ParserTest.java:36:27: compiler.err.var.not.allowed
 ParserTest.java:38:5: compiler.err.var.not.allowed.here
 ParserTest.java:41:15: compiler.err.var.not.allowed.array
 ParserTest.java:42:13: compiler.err.var.not.allowed.array
@@ -11,7 +11,7 @@ ParserTest.java:43:17: compiler.err.var.not.allowed.array
 ParserTest.java:44:13: compiler.err.var.not.allowed.array
 ParserTest.java:45:15: compiler.err.var.not.allowed.array
 ParserTest.java:46:13: compiler.err.var.not.allowed.array
-ParserTest.java:49:13: compiler.err.var.not.allowed.compound
+ParserTest.java:49:24: compiler.err.var.not.allowed.compound
 ParserTest.java:54:5: compiler.err.var.not.allowed.here
 ParserTest.java:58:16: compiler.err.var.not.allowed.here
 ParserTest.java:59:14: compiler.err.var.not.allowed.here

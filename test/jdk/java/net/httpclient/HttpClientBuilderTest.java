@@ -275,16 +275,7 @@ public class HttpClientBuilderTest {
         @Override public boolean expectContinue() { return false; }
         @Override public URI uri() { return URI.create("http://foo.com/"); }
         @Override public Optional<Version> version() { return Optional.empty(); }
-        private final FixedHttpHeaders headers = new FixedHttpHeaders();
-        @Override public HttpHeaders headers() { return headers; }
-        public class FixedHttpHeaders extends HttpHeaders {
-            private final Map<String, List<String>> map =
-                    new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-            @Override
-            public Map<String, List<String>> map() {
-                return map;
-            }
-        }
+        @Override public HttpHeaders headers() { return HttpHeaders.of(Map.of(), (x, y) -> true); }
     }
 
     // ---

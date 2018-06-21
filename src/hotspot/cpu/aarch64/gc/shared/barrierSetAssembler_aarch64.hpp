@@ -30,6 +30,11 @@
 #include "oops/access.hpp"
 
 class BarrierSetAssembler: public CHeapObj<mtGC> {
+private:
+  void incr_allocated_bytes(MacroAssembler* masm,
+                            Register var_size_in_bytes, int con_size_in_bytes,
+                            Register t1 = noreg);
+
 public:
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
                                   Register addr, Register count, RegSet saved_regs) {}
@@ -46,6 +51,22 @@ public:
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
+  virtual void tlab_allocate(MacroAssembler* masm,
+    Register obj,                      // result: pointer to object after successful allocation
+    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
+    int      con_size_in_bytes,        // object size in bytes if   known at compile time
+    Register t1,                       // temp register
+    Register t2,                       // temp register
+    Label&   slow_case                 // continuation point if fast allocation fails
+  );
+
+  void eden_allocate(MacroAssembler* masm,
+    Register obj,                      // result: pointer to object after successful allocation
+    Register var_size_in_bytes,        // object size in bytes if unknown at compile time; invalid otherwise
+    int      con_size_in_bytes,        // object size in bytes if   known at compile time
+    Register t1,                       // temp register
+    Label&   slow_case                 // continuation point if fast allocation fails
+  );
   virtual void barrier_stubs_init() {}
 };
 

@@ -212,7 +212,7 @@ public class RedirectMethodChange implements HttpServerAdapters {
         http2TestServer.addHandler(handler, "/http2/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/test/rmt";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, 0));
+        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
         targetURI = "https://" + https2TestServer.serverAuthority() + "/https2/redirect/rmt";
         handler = new RedirMethodChgeHandler(targetURI);
         https2TestServer.addHandler(handler, "/https2/");
@@ -283,14 +283,14 @@ public class RedirectMethodChange implements HttpServerAdapters {
             }
 
             if (newtest) {
-                HttpTestHeaders hdrs = he.getRequestHeaders();
+                HttpTestRequestHeaders hdrs = he.getRequestHeaders();
                 String value = hdrs.firstValue("X-Redirect-Code").get();
                 int redirectCode = Integer.parseInt(value);
                 expectedMethod = hdrs.firstValue("X-Expect-Method").get();
                 if (!readAndCheckBody(he))
                     return;
-                hdrs = he.getResponseHeaders();
-                hdrs.addHeader("Location", targetURL);
+                HttpTestResponseHeaders headersbuilder = he.getResponseHeaders();
+                headersbuilder.addHeader("Location", targetURL);
                 he.sendResponseHeaders(redirectCode, 0);
                 inTest = true;
             } else {

@@ -28,7 +28,6 @@ import jdk.internal.net.http.hpack.HPACK.Logger;
 
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
@@ -104,16 +103,24 @@ final class HeaderTable extends SimpleHeaderTable {
     // Long.MAX_VALUE :-)
     //
 
-    private static final Map<String, LinkedHashMap<String, Integer>> staticIndexes;
+    /* An immutable map of static header fields' indexes */
+    private static final Map<String, Map<String, Integer>> staticIndexes;
 
     static {
-        staticIndexes = new HashMap<>(STATIC_TABLE_LENGTH); // TODO: Map.of
+        Map<String, Map<String, Integer>> map
+                = new HashMap<>(STATIC_TABLE_LENGTH);
         for (int i = 1; i <= STATIC_TABLE_LENGTH; i++) {
-            HeaderField f = staticTable[i];
-            Map<String, Integer> values = staticIndexes
-                    .computeIfAbsent(f.name, k -> new LinkedHashMap<>());
+            HeaderField f = staticTable.get(i);
+            Map<String, Integer> values
+                    = map.computeIfAbsent(f.name, k -> new HashMap<>());
             values.put(f.value, i);
         }
+        // create an immutable deep copy
+        Map<String, Map<String, Integer>> copy = new HashMap<>(map.size());
+        for (Map.Entry<String, Map<String, Integer>> e : map.entrySet()) {
+            copy.put(e.getKey(), Map.copyOf(e.getValue()));
+        }
+        staticIndexes = Map.copyOf(copy);
     }
 
     //                name  ->    (value ->    [index])

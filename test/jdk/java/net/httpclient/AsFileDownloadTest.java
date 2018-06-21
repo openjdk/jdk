@@ -53,6 +53,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
@@ -63,9 +64,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.Locale;
+import java.util.Map;
 import javax.net.ssl.SSLContext;
 import jdk.testlibrary.SimpleSSLContext;
 import jdk.test.lib.util.FileUtils;
@@ -188,6 +188,10 @@ public class AsFileDownloadTest {
         assertEquals(response.headers().firstValue("Content-Disposition").get(),
                      contentDispositionValue);
         assertEquals(fileContents, "May the luck of the Irish be with you!");
+
+        // additional checks unrelated to file download
+        caseInsensitivityOfHeaders(request.headers());
+        caseInsensitivityOfHeaders(response.headers());
     }
 
     // --- Negative
@@ -299,7 +303,7 @@ public class AsFileDownloadTest {
         http2TestServer.addHandler(new Http2FileDispoHandler(), "/http2/afdt");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/afdt";
 
-        https2TestServer = new Http2TestServer("localhost", true, 0);
+        https2TestServer = new Http2TestServer("localhost", true, sslContext);
         https2TestServer.addHandler(new Http2FileDispoHandler(), "/https2/afdt");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/afdt";
 
@@ -370,6 +374,32 @@ public class AsFileDownloadTest {
                 t.sendResponseHeaders(200, bytes.length);
                 os.write(bytes);
             }
+        }
+    }
+
+    // ---
+
+    // Asserts case-insensitivity of headers (nothing to do with file
+    // download, just convenient as we have a couple of header instances. )
+    static void caseInsensitivityOfHeaders(HttpHeaders headers) {
+        try {
+            for (Map.Entry<String, List<String>> entry : headers.map().entrySet()) {
+                String headerName = entry.getKey();
+                List<String> headerValue = entry.getValue();
+
+                for (String name : List.of(headerName.toUpperCase(Locale.ROOT),
+                                           headerName.toLowerCase(Locale.ROOT))) {
+                    assertTrue(headers.firstValue(name).isPresent());
+                    assertEquals(headers.firstValue(name).get(), headerValue.get(0));
+                    assertEquals(headers.allValues(name).size(), headerValue.size());
+                    assertEquals(headers.allValues(name), headerValue);
+                    assertEquals(headers.map().get(name).size(), headerValue.size());
+                    assertEquals(headers.map().get(name), headerValue);
+                }
+            }
+        } catch (Throwable t) {
+            System.out.println("failure in caseInsensitivityOfHeaders with:" + headers);
+            throw t;
         }
     }
 }

@@ -30,8 +30,3 @@ JNIEXPORT void JNICALL
   (*env)->SetObjectArrayElement(env, array, index, element);
 }
 
-JNIEXPORT void JNICALL
-  Java_ArrayStoreExceptionTest_doNativeArrayStore2(JNIEnv *env, jclass klass,
-                                                   jobject array, jobject element, jint index) {
-  (*env)->SetObjectArrayElement(env, (jobjectArray)array, index, element);
-}

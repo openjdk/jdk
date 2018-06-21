@@ -27,11 +27,11 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 import java.net.InetAddress;
 import java.io.ByteArrayInputStream;
 import java.net.http.HttpClient.Version;
-import jdk.internal.net.http.common.HttpHeadersImpl;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +41,7 @@ import java.io.UncheckedIOException;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.http.HttpHeaders;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -95,26 +96,26 @@ public interface HttpServerAdapters {
     }
 
     /**
-     * A version agnostic adapter class for HTTP Headers.
+     * A version agnostic adapter class for HTTP request Headers.
      */
-    public static abstract class HttpTestHeaders {
+    public static abstract class HttpTestRequestHeaders {
         public abstract Optional<String> firstValue(String name);
-        public abstract void addHeader(String name, String value);
         public abstract Set<String> keySet();
         public abstract Set<Map.Entry<String, List<String>>> entrySet();
         public abstract List<String> get(String name);
         public abstract boolean containsKey(String name);
 
-        public static HttpTestHeaders of(Headers headers) {
-            return new Http1TestHeaders(headers);
-        }
-        public static HttpTestHeaders of(HttpHeadersImpl headers) {
-            return new Http2TestHeaders(headers);
+        public static HttpTestRequestHeaders of(Headers headers) {
+            return new Http1TestRequestHeaders(headers);
         }
 
-        private final static class Http1TestHeaders extends HttpTestHeaders {
+        public static HttpTestRequestHeaders of(HttpHeaders headers) {
+            return new Http2TestRequestHeaders(headers);
+        }
+
+        private static final class Http1TestRequestHeaders extends HttpTestRequestHeaders {
             private final Headers headers;
-            Http1TestHeaders(Headers h) { this.headers = h; }
+            Http1TestRequestHeaders(Headers h) { this.headers = h; }
             @Override
             public Optional<String> firstValue(String name) {
                 if (headers.containsKey(name)) {
@@ -122,11 +123,6 @@ public interface HttpServerAdapters {
                 }
                 return Optional.empty();
             }
-            @Override
-            public void addHeader(String name, String value) {
-                headers.add(name, value);
-            }
-
             @Override
             public Set<String> keySet() { return headers.keySet(); }
             @Override
@@ -142,17 +138,14 @@ public interface HttpServerAdapters {
                 return headers.containsKey(name);
             }
         }
-        private final static class Http2TestHeaders extends HttpTestHeaders {
-            private final HttpHeadersImpl headers;
-            Http2TestHeaders(HttpHeadersImpl h) { this.headers = h; }
+        private static final class Http2TestRequestHeaders extends HttpTestRequestHeaders {
+            private final HttpHeaders headers;
+            Http2TestRequestHeaders(HttpHeaders h) { this.headers = h; }
             @Override
             public Optional<String> firstValue(String name) {
                 return headers.firstValue(name);
             }
             @Override
-            public void addHeader(String name, String value) {
-                headers.addHeader(name, value);
-            }
             public Set<String> keySet() { return headers.map().keySet(); }
             @Override
             public Set<Map.Entry<String, List<String>>> entrySet() {
@@ -170,6 +163,37 @@ public interface HttpServerAdapters {
     }
 
     /**
+     * A version agnostic adapter class for HTTP response Headers.
+     */
+    public static abstract class HttpTestResponseHeaders {
+        public abstract void addHeader(String name, String value);
+
+        public static HttpTestResponseHeaders of(Headers headers) {
+            return new Http1TestResponseHeaders(headers);
+        }
+        public static HttpTestResponseHeaders of(HttpHeadersBuilder headersBuilder) {
+            return new Http2TestResponseHeaders(headersBuilder);
+        }
+
+        private final static class Http1TestResponseHeaders extends HttpTestResponseHeaders {
+            private final Headers headers;
+            Http1TestResponseHeaders(Headers h) { this.headers = h; }
+            @Override
+            public void addHeader(String name, String value) {
+                headers.add(name, value);
+            }
+        }
+        private final static class Http2TestResponseHeaders extends HttpTestResponseHeaders {
+            private final HttpHeadersBuilder headersBuilder;
+            Http2TestResponseHeaders(HttpHeadersBuilder hb) { this.headersBuilder = hb; }
+            @Override
+            public void addHeader(String name, String value) {
+                headersBuilder.addHeader(name, value);
+            }
+        }
+    }
+
+    /**
      * A version agnostic adapter class for HTTP Server Exchange.
      */
     public static abstract class HttpTestExchange {
@@ -177,17 +201,17 @@ public interface HttpServerAdapters {
         public abstract Version getExchangeVersion();
         public abstract InputStream   getRequestBody();
         public abstract OutputStream  getResponseBody();
-        public abstract HttpTestHeaders getRequestHeaders();
-        public abstract HttpTestHeaders getResponseHeaders();
+        public abstract HttpTestRequestHeaders getRequestHeaders();
+        public abstract HttpTestResponseHeaders getResponseHeaders();
         public abstract void sendResponseHeaders(int code, int contentLength) throws IOException;
         public abstract URI getRequestURI();
         public abstract String getRequestMethod();
         public abstract void close();
-        public void serverPush(URI uri, HttpTestHeaders headers, byte[] body) {
+        public void serverPush(URI uri, HttpHeaders headers, byte[] body) {
             ByteArrayInputStream bais = new ByteArrayInputStream(body);
             serverPush(uri, headers, bais);
         }
-        public void serverPush(URI uri, HttpTestHeaders headers, InputStream body) {
+        public void serverPush(URI uri, HttpHeaders headers, InputStream body) {
             throw new UnsupportedOperationException("serverPush with " + getExchangeVersion());
         }
         public boolean serverPushAllowed() {
@@ -221,12 +245,12 @@ public interface HttpServerAdapters {
                 return exchange.getResponseBody();
             }
             @Override
-            public HttpTestHeaders getRequestHeaders() {
-                return HttpTestHeaders.of(exchange.getRequestHeaders());
+            public HttpTestRequestHeaders getRequestHeaders() {
+                return HttpTestRequestHeaders.of(exchange.getRequestHeaders());
             }
             @Override
-            public HttpTestHeaders getResponseHeaders() {
-                return HttpTestHeaders.of(exchange.getResponseHeaders());
+            public HttpTestResponseHeaders getResponseHeaders() {
+                return HttpTestResponseHeaders.of(exchange.getResponseHeaders());
             }
             @Override
             public void sendResponseHeaders(int code, int contentLength) throws IOException {
@@ -268,12 +292,13 @@ public interface HttpServerAdapters {
                 return exchange.getResponseBody();
             }
             @Override
-            public HttpTestHeaders getRequestHeaders() {
-                return HttpTestHeaders.of(exchange.getRequestHeaders());
+            public HttpTestRequestHeaders getRequestHeaders() {
+                return HttpTestRequestHeaders.of(exchange.getRequestHeaders());
             }
+
             @Override
-            public HttpTestHeaders getResponseHeaders() {
-                return HttpTestHeaders.of(exchange.getResponseHeaders());
+            public HttpTestResponseHeaders getResponseHeaders() {
+                return HttpTestResponseHeaders.of(exchange.getResponseHeaders());
             }
             @Override
             public void sendResponseHeaders(int code, int contentLength) throws IOException {
@@ -286,20 +311,8 @@ public interface HttpServerAdapters {
                 return exchange.serverPushAllowed();
             }
             @Override
-            public void serverPush(URI uri, HttpTestHeaders headers, InputStream body) {
-                HttpHeadersImpl headersImpl;
-                if (headers instanceof HttpTestHeaders.Http2TestHeaders) {
-                    headersImpl = ((HttpTestHeaders.Http2TestHeaders)headers).headers.deepCopy();
-                } else {
-                    headersImpl = new HttpHeadersImpl();
-                    for (Map.Entry<String, List<String>> e : headers.entrySet()) {
-                        String name = e.getKey();
-                        for (String v : e.getValue()) {
-                            headersImpl.addHeader(name, v);
-                        }
-                    }
-                }
-                exchange.serverPush(uri, headersImpl, body);
+            public void serverPush(URI uri, HttpHeaders headers, InputStream body) {
+                exchange.serverPush(uri, headers, body);
             }
             void doFilter(Filter.Chain filter) throws IOException {
                 throw new IOException("cannot use HTTP/1.1 filter with HTTP/2 server");
@@ -363,7 +376,7 @@ public interface HttpServerAdapters {
     }
 
     public static boolean expectException(HttpTestExchange e) {
-        HttpTestHeaders h = e.getRequestHeaders();
+        HttpTestRequestHeaders h = e.getRequestHeaders();
         Optional<String> expectException = h.firstValue("X-expect-exception");
         if (expectException.isPresent()) {
             return expectException.get().equalsIgnoreCase("true");

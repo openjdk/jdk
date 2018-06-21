@@ -57,7 +57,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * and can be used to send multiple requests.
  *
  * <p> An {@code HttpClient} provides configuration information, and resource
- * sharing, for all requests send through it.
+ * sharing, for all requests sent through it.
  *
  * <p> A {@link BodyHandler BodyHandler} must be supplied for each {@link
  * HttpRequest} sent. The {@code BodyHandler} determines how to handle the
@@ -232,11 +232,10 @@ public abstract class HttpClient {
          *
          * <p> If this method is not invoked prior to {@linkplain #build()
          * building}, a default executor is created for each newly built {@code
-         * HttpClient}. The default executor uses a {@linkplain
-         * Executors#newCachedThreadPool(ThreadFactory) cached thread pool},
-         * with a custom thread factory.
+         * HttpClient}.
          *
-         * @implNote If a security manager has been installed, the thread
+         * @implNote The default executor uses a thread pool, with a custom
+         * thread factory. If a security manager has been installed, the thread
          * factory creates threads that run with an access control context that
          * has no permissions.
          *
@@ -451,7 +450,7 @@ public abstract class HttpClient {
      * then the response, containing the  {@code 3XX} response code, is returned,
      * where it can be handled manually.
      *
-     * <p> {@code Redirect} policy is set via the {@linkplain
+     * <p> {@code Redirect} policy is set through the {@linkplain
      * HttpClient.Builder#followRedirects(Redirect) Builder.followRedirects}
      * method.
      *

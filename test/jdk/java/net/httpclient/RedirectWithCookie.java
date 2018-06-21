@@ -167,7 +167,7 @@ public class RedirectWithCookie implements HttpServerAdapters {
         http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
         http2TestServer.addHandler(new CookieRedirectHandler(), "/http2/cookie/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/cookie/redirect";
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, 0));
+        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
         https2TestServer.addHandler(new CookieRedirectHandler(), "/https2/cookie/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/cookie/redirect";
 

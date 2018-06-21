@@ -32,9 +32,9 @@ import java.util.Optional;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.net.http.common.Utils.isValidName;
 import static jdk.internal.net.http.common.Utils.isValidValue;
@@ -42,7 +42,7 @@ import static jdk.internal.net.http.common.Utils.newIAE;
 
 public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
-    private HttpHeadersImpl userHeaders;
+    private HttpHeadersBuilder headersBuilder;
     private URI uri;
     private String method;
     private boolean expectContinue;
@@ -54,13 +54,13 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         requireNonNull(uri, "uri must be non-null");
         checkURI(uri);
         this.uri = uri;
-        this.userHeaders = new HttpHeadersImpl();
+        this.headersBuilder = new HttpHeadersBuilder();
         this.method = "GET"; // default, as per spec
         this.version = Optional.empty();
     }
 
     public HttpRequestBuilderImpl() {
-        this.userHeaders = new HttpHeadersImpl();
+        this.headersBuilder = new HttpHeadersBuilder();
         this.method = "GET"; // default, as per spec
         this.version = Optional.empty();
     }
@@ -90,7 +90,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     public HttpRequestBuilderImpl copy() {
         HttpRequestBuilderImpl b = new HttpRequestBuilderImpl();
         b.uri = this.uri;
-        b.userHeaders = this.userHeaders.deepCopy();
+        b.headersBuilder = this.headersBuilder.structuralCopy();
         b.method = this.method;
         b.expectContinue = this.expectContinue;
         b.bodyPublisher = bodyPublisher;
@@ -106,7 +106,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         if (!isValidName(name)) {
             throw newIAE("invalid header name: \"%s\"", name);
         }
-        if (!Utils.ALLOWED_HEADERS.test(name)) {
+        if (!Utils.ALLOWED_HEADERS.test(name, null)) {
             throw newIAE("restricted header name: \"%s\"", name);
         }
         if (!isValidValue(value)) {
@@ -117,14 +117,14 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     @Override
     public HttpRequestBuilderImpl setHeader(String name, String value) {
         checkNameAndValue(name, value);
-        userHeaders.setHeader(name, value);
+        headersBuilder.setHeader(name, value);
         return this;
     }
 
     @Override
     public HttpRequestBuilderImpl header(String name, String value) {
         checkNameAndValue(name, value);
-        userHeaders.addHeader(name, value);
+        headersBuilder.addHeader(name, value);
         return this;
     }
 
@@ -155,7 +155,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         return this;
     }
 
-    HttpHeadersImpl headers() {  return userHeaders; }
+    HttpHeadersBuilder headersBuilder() {  return headersBuilder; }
 
     URI uri() { return uri; }
 
@@ -213,6 +213,13 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest build() {
+        if (uri == null)
+            throw new IllegalStateException("uri is null");
+        assert method != null;
+        return new ImmutableHttpRequest(this);
+    }
+
+    public HttpRequestImpl buildForWebSocket() {
         if (uri == null)
             throw new IllegalStateException("uri is null");
         assert method != null;

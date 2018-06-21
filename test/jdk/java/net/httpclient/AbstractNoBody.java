@@ -57,7 +57,7 @@ public abstract class AbstractNoBody {
     String https2URI_chunk;
 
     static final String SIMPLE_STRING = "Hello world. Goodbye world";
-    static final int ITERATION_COUNT = 10;
+    static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = Executors.newFixedThreadPool(ITERATION_COUNT * 2);
     static final ExecutorService serverExecutor = Executors.newFixedThreadPool(ITERATION_COUNT * 4);

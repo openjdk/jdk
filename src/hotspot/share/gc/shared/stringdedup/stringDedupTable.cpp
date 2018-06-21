@@ -654,7 +654,7 @@ void StringDedupTable::print_statistics() {
             STRDEDUP_BYTES_PARAM(_table->_size * sizeof(StringDedupEntry*) + (_table->_entries + _entry_cache->size()) * sizeof(StringDedupEntry)));
   log.debug("    Size: " SIZE_FORMAT ", Min: " SIZE_FORMAT ", Max: " SIZE_FORMAT, _table->_size, _min_size, _max_size);
   log.debug("    Entries: " UINTX_FORMAT ", Load: " STRDEDUP_PERCENT_FORMAT_NS ", Cached: " UINTX_FORMAT ", Added: " UINTX_FORMAT ", Removed: " UINTX_FORMAT,
-            _table->_entries, percent_of(_table->_entries, _table->_size), _entry_cache->size(), _entries_added, _entries_removed);
+            _table->_entries, percent_of((size_t)_table->_entries, _table->_size), _entry_cache->size(), _entries_added, _entries_removed);
   log.debug("    Resize Count: " UINTX_FORMAT ", Shrink Threshold: " UINTX_FORMAT "(" STRDEDUP_PERCENT_FORMAT_NS "), Grow Threshold: " UINTX_FORMAT "(" STRDEDUP_PERCENT_FORMAT_NS ")",
             _resize_count, _table->_shrink_threshold, _shrink_load_factor * 100.0, _table->_grow_threshold, _grow_load_factor * 100.0);
   log.debug("    Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: 0x%x", _rehash_count, _rehash_threshold, _table->_hash_seed);

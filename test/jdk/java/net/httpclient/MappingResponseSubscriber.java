@@ -88,7 +88,7 @@ public class MappingResponseSubscriber {
     String https2URI_fixed;
     String https2URI_chunk;
 
-    static final int ITERATION_COUNT = 10;
+    static final int ITERATION_COUNT = 3;
     // a shared executor helps reduce the amount of threads created by the test
     static final Executor executor = Executors.newCachedThreadPool();
 
@@ -224,7 +224,7 @@ public class MappingResponseSubscriber {
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/fixed";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/chunk";
 
-        https2TestServer = new Http2TestServer("localhost", true, 0);
+        https2TestServer = new Http2TestServer("localhost", true, sslContext);
         https2TestServer.addHandler(h2_fixedLengthHandler, "/https2/fixed");
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/chunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed";

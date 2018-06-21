@@ -166,9 +166,10 @@ public class BootAppendTests {
                            APP_CLASS, BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
 
             String MATCH_PATTERN = ".class.load. javax.annotation.processing.FilerException source:.*bootAppend.jar*";
-            OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
-            out.shouldHaveExitValue(0)
-                       .shouldNotMatch(MATCH_PATTERN);
+            CDSTestUtils.run(opts)
+                .assertNormalExit(out -> {
+                    out.shouldNotMatch(MATCH_PATTERN);
+                });
         }
     }
 

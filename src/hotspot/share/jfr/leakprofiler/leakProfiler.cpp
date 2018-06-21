@@ -42,6 +42,11 @@ ObjectSampler* LeakProfiler::_object_sampler = NULL;
 
 static volatile jbyte suspended = 0;
 bool LeakProfiler::start(jint sample_count) {
+  if (UseZGC) {
+    log_warning(jfr)("LeakProfiler is currently not supported in combination with ZGC");
+    return false;
+  }
+
   if (_object_sampler != NULL) {
     // already started
     return true;

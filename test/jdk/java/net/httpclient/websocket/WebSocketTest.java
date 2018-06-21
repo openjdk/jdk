@@ -25,11 +25,11 @@
  * @test
  * @build DummyWebSocketServer
  * @run testng/othervm
- *      -Djdk.internal.httpclient.websocket.debug=true
  *       WebSocketTest
  */
 
 import org.testng.annotations.AfterTest;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
@@ -41,7 +41,10 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.newBuilder;
 import static java.net.http.WebSocket.NORMAL_CLOSURE;
@@ -195,6 +198,126 @@ public class WebSocketTest {
         assertFails(IOE, webSocket.sendPong(ByteBuffer.allocate(124)));
         assertFails(IOE, webSocket.sendPong(ByteBuffer.allocate(1)));
         assertFails(IOE, webSocket.sendPong(ByteBuffer.allocate(0)));
+    }
+
+    @DataProvider(name = "sequence")
+    public Object[][] data1() {
+        int[] CLOSE = {
+                0x81, 0x00, // ""
+                0x82, 0x00, // []
+                0x89, 0x00, // <PING>
+                0x8a, 0x00, // <PONG>
+                0x88, 0x00, // <CLOSE>
+        };
+        int[] ERROR = {
+                0x81, 0x00, // ""
+                0x82, 0x00, // []
+                0x89, 0x00, // <PING>
+                0x8a, 0x00, // <PONG>
+                0x8b, 0x00, // 0xB control frame (causes an error)
+        };
+        return new Object[][]{
+                {CLOSE, 1},
+                {CLOSE, 3},
+                {CLOSE, 4},
+                {CLOSE, Long.MAX_VALUE},
+                {ERROR, 1},
+                {ERROR, 3},
+                {ERROR, 4},
+                {ERROR, Long.MAX_VALUE},
+        };
+    }
+
+    @Test(dataProvider = "sequence")
+    public void listenerSequentialOrder(int[] binary, long requestSize)
+            throws IOException
+    {
+
+        server = Support.serverWithCannedData(binary);
+        server.open();
+
+        CompletableFuture<Void> violation = new CompletableFuture<>();
+
+        MockListener listener = new MockListener(requestSize) {
+
+            final AtomicBoolean guard = new AtomicBoolean();
+
+            private <T> T checkRunExclusively(Supplier<T> action) {
+                if (guard.getAndSet(true)) {
+                    violation.completeExceptionally(new RuntimeException());
+                }
+                try {
+                    return action.get();
+                } finally {
+                    if (!guard.getAndSet(false)) {
+                        violation.completeExceptionally(new RuntimeException());
+                    }
+                }
+            }
+
+            @Override
+            public void onOpen(WebSocket webSocket) {
+                checkRunExclusively(() -> {
+                    super.onOpen(webSocket);
+                    return null;
+                });
+            }
+
+            @Override
+            public CompletionStage<?> onText(WebSocket webSocket,
+                                             CharSequence data,
+                                             boolean last) {
+                return checkRunExclusively(
+                        () -> super.onText(webSocket, data, last));
+            }
+
+            @Override
+            public CompletionStage<?> onBinary(WebSocket webSocket,
+                                               ByteBuffer data,
+                                               boolean last) {
+                return checkRunExclusively(
+                        () -> super.onBinary(webSocket, data, last));
+            }
+
+            @Override
+            public CompletionStage<?> onPing(WebSocket webSocket,
+                                             ByteBuffer message) {
+                return checkRunExclusively(
+                        () -> super.onPing(webSocket, message));
+            }
+
+            @Override
+            public CompletionStage<?> onPong(WebSocket webSocket,
+                                             ByteBuffer message) {
+                return checkRunExclusively(
+                        () -> super.onPong(webSocket, message));
+            }
+
+            @Override
+            public CompletionStage<?> onClose(WebSocket webSocket,
+                                              int statusCode,
+                                              String reason) {
+                return checkRunExclusively(
+                        () -> super.onClose(webSocket, statusCode, reason));
+            }
+
+            @Override
+            public void onError(WebSocket webSocket, Throwable error) {
+                checkRunExclusively(() -> {
+                    super.onError(webSocket, error);
+                    return null;
+                });
+            }
+        };
+
+        webSocket = newBuilder().proxy(NO_PROXY).build().newWebSocketBuilder()
+                .buildAsync(server.getURI(), listener)
+                .join();
+
+
+        listener.invocations();
+        violation.complete(null); // won't affect if completed exceptionally
+        violation.join();
     }
 
     @Test

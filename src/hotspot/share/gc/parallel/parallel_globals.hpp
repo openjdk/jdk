@@ -52,12 +52,12 @@
           "Use maximum compaction in the Parallel Old garbage collector "   \
           "for a system GC")                                                \
                                                                             \
-  product(uintx, ParallelOldDeadWoodLimiterMean, 50,                        \
+  product(size_t, ParallelOldDeadWoodLimiterMean, 50,                        \
           "The mean used by the parallel compact dead wood "                \
           "limiter (a number between 0-100)")                               \
           range(0, 100)                                                     \
                                                                             \
-  product(uintx, ParallelOldDeadWoodLimiterStdDev, 80,                      \
+  product(size_t, ParallelOldDeadWoodLimiterStdDev, 80,                      \
           "The standard deviation used by the parallel compact dead wood "  \
           "limiter (a number between 0-100)")                               \
           range(0, 100)                                                     \

@@ -34,7 +34,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Base64;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
 import java.util.WeakHashMap;
 import java.net.http.HttpHeaders;
@@ -59,9 +58,9 @@ class AuthenticationFilter implements HeaderFilter {
     static final int UNAUTHORIZED = 401;
     static final int PROXY_UNAUTHORIZED = 407;
 
-    private static final List<String> BASIC_DUMMY =
-            List.of("Basic " + Base64.getEncoder()
-                    .encodeToString("o:o".getBytes(ISO_8859_1)));
+    private static final String BASIC_DUMMY =
+            "Basic " + Base64.getEncoder()
+                    .encodeToString("o:o".getBytes(ISO_8859_1));
 
     // A public no-arg constructor is required by FilterFactory
     public AuthenticationFilter() {}
@@ -182,14 +181,12 @@ class AuthenticationFilter implements HeaderFilter {
         String value = "Basic " + s;
         if (proxy) {
             if (r.isConnect()) {
-                if (!Utils.PROXY_TUNNEL_FILTER
-                        .test(hdrname, List.of(value))) {
+                if (!Utils.PROXY_TUNNEL_FILTER.test(hdrname, value)) {
                     Log.logError("{0} disabled", hdrname);
                     return;
                 }
             } else if (r.proxy() != null) {
-                if (!Utils.PROXY_FILTER
-                        .test(hdrname, List.of(value))) {
+                if (!Utils.PROXY_FILTER.test(hdrname, value)) {
                     Log.logError("{0} disabled", hdrname);
                     return;
                 }
@@ -261,9 +258,16 @@ class AuthenticationFilter implements HeaderFilter {
 
         boolean proxy = status == PROXY_UNAUTHORIZED;
         String authname = proxy ? "Proxy-Authenticate" : "WWW-Authenticate";
-        String authval = hdrs.firstValue(authname).orElseThrow(() -> {
-            return new IOException("Invalid auth header");
-        });
+        String authval = hdrs.firstValue(authname).orElse(null);
+        if (authval == null) {
+            if (exchange.client().authenticator().isPresent()) {
+                throw new IOException(authname + " header missing for response code " + status);
+            } else {
+                // No authenticator? let the caller deal with this.
+                return null;
+            }
+        }
+
         HeaderParser parser = new HeaderParser(authval);
         String scheme = parser.findKey(0);
 
