@@ -22,11 +22,11 @@
  */
 
 import java.io.*;
+import java.net.http.HttpHeaders;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 
 public class Http2EchoHandler implements Http2Handler {
     static final Path CWD = Paths.get(".");
@@ -40,10 +40,10 @@ public class Http2EchoHandler implements Http2Handler {
             System.err.printf("EchoHandler received request to %s from %s\n",
                               t.getRequestURI(), t.getRemoteAddress());
             InputStream is = t.getRequestBody();
-            HttpHeadersImpl map = t.getRequestHeaders();
-            HttpHeadersImpl map1 = t.getResponseHeaders();
-            map1.addHeader("X-Hello", "world");
-            map1.addHeader("X-Bye", "universe");
+            HttpHeaders map = t.getRequestHeaders();
+            HttpHeadersBuilder headersBuilder = t.getResponseHeaders();
+            headersBuilder.addHeader("X-Hello", "world");
+            headersBuilder.addHeader("X-Bye", "universe");
             String fixedrequest = map.firstValue("XFixed").orElse(null);
             File outfile = Files.createTempFile(CWD, "foo", "bar").toFile();
             //System.err.println ("QQQ = " + outfile.toString());

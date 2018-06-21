@@ -2959,40 +2959,6 @@ void MacroAssembler::empty_FPU_stack() {
 #endif // !LP64 || C1 || !C2 || INCLUDE_JVMCI
 
 
-// Defines obj, preserves var_size_in_bytes
-void MacroAssembler::eden_allocate(Register obj,
-                                   Register var_size_in_bytes,
-                                   int con_size_in_bytes,
-                                   Register t1,
-                                   Label& slow_case) {
-  assert(obj == rax, "obj must be in rax, for cmpxchg");
-  assert_different_registers(obj, var_size_in_bytes, t1);
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    jmp(slow_case);
-  } else {
-    Register end = t1;
-    Label retry;
-    bind(retry);
-    ExternalAddress heap_top((address) Universe::heap()->top_addr());
-    movptr(obj, heap_top);
-    if (var_size_in_bytes == noreg) {
-      lea(end, Address(obj, con_size_in_bytes));
-    } else {
-      lea(end, Address(obj, var_size_in_bytes, Address::times_1));
-    }
-    // if end < obj then we wrapped around => object too long => slow case
-    cmpptr(end, obj);
-    jcc(Assembler::below, slow_case);
-    cmpptr(end, ExternalAddress((address) Universe::heap()->end_addr()));
-    jcc(Assembler::above, slow_case);
-    // Compare obj with the top addr, and if still equal, store the new top addr in
-    // end at the address of the top addr pointer. Sets ZF if was equal, and clears
-    // it otherwise. Use lock prefix for atomicity on MPs.
-    locked_cmpxchgptr(end, heap_top);
-    jcc(Assembler::notEqual, retry);
-  }
-}
-
 void MacroAssembler::enter() {
   push(rbp);
   mov(rbp, rsp);
@@ -5310,38 +5276,24 @@ void MacroAssembler::testptr(Register dst, Register src) {
 }
 
 // Defines obj, preserves var_size_in_bytes, okay for t2 == var_size_in_bytes.
-void MacroAssembler::tlab_allocate(Register obj,
+void MacroAssembler::tlab_allocate(Register thread, Register obj,
                                    Register var_size_in_bytes,
                                    int con_size_in_bytes,
                                    Register t1,
                                    Register t2,
                                    Label& slow_case) {
-  assert_different_registers(obj, t1, t2);
-  assert_different_registers(obj, var_size_in_bytes, t1);
-  Register end = t2;
-  Register thread = NOT_LP64(t1) LP64_ONLY(r15_thread);
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->tlab_allocate(this, thread, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
+}
 
-  verify_tlab();
-
-  NOT_LP64(get_thread(thread));
-
-  movptr(obj, Address(thread, JavaThread::tlab_top_offset()));
-  if (var_size_in_bytes == noreg) {
-    lea(end, Address(obj, con_size_in_bytes));
-  } else {
-    lea(end, Address(obj, var_size_in_bytes, Address::times_1));
-  }
-  cmpptr(end, Address(thread, JavaThread::tlab_end_offset()));
-  jcc(Assembler::above, slow_case);
-
-  // update the tlab top pointer
-  movptr(Address(thread, JavaThread::tlab_top_offset()), end);
-
-  // recover var_size_in_bytes if necessary
-  if (var_size_in_bytes == end) {
-    subptr(var_size_in_bytes, obj);
-  }
-  verify_tlab();
+// Defines obj, preserves var_size_in_bytes
+void MacroAssembler::eden_allocate(Register thread, Register obj,
+                                   Register var_size_in_bytes,
+                                   int con_size_in_bytes,
+                                   Register t1,
+                                   Label& slow_case) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->eden_allocate(this, thread, obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
 }
 
 // Preserves the contents of address, destroys the contents length_in_bytes and temp.
@@ -5398,36 +5350,6 @@ void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int
   }
 
   bind(done);
-}
-
-void MacroAssembler::incr_allocated_bytes(Register thread,
-                                          Register var_size_in_bytes,
-                                          int con_size_in_bytes,
-                                          Register t1) {
-  if (!thread->is_valid()) {
-#ifdef _LP64
-    thread = r15_thread;
-#else
-    assert(t1->is_valid(), "need temp reg");
-    thread = t1;
-    get_thread(thread);
-#endif
-  }
-
-#ifdef _LP64
-  if (var_size_in_bytes->is_valid()) {
-    addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
-  } else {
-    addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
-  }
-#else
-  if (var_size_in_bytes->is_valid()) {
-    addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
-  } else {
-    addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
-  }
-  adcl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())+4), 0);
-#endif
 }
 
 // Look up the method for a megamorphic invokeinterface call.

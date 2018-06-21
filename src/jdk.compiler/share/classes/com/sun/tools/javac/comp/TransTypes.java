@@ -476,11 +476,11 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
-    JCTree currentMethod = null;
+    Type returnType = null;
     public void visitMethodDef(JCMethodDecl tree) {
-        JCTree previousMethod = currentMethod;
+        Type prevRetType = returnType;
         try {
-            currentMethod = tree;
+            returnType = erasure(tree.type).getReturnType();
             tree.restype = translate(tree.restype, null);
             tree.typarams = List.nil();
             tree.params = translateVarDefs(tree.params);
@@ -490,7 +490,7 @@ public class TransTypes extends TreeTranslator {
             tree.type = erasure(tree.type);
             result = tree;
         } finally {
-            currentMethod = previousMethod;
+            returnType = prevRetType;
         }
     }
 
@@ -533,11 +533,11 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitLambda(JCLambda tree) {
-        JCTree prevMethod = currentMethod;
+        Type prevRetType = returnType;
         try {
-            currentMethod = null;
+            returnType = erasure(tree.getDescriptorType(types)).getReturnType();
             tree.params = translate(tree.params);
-            tree.body = translate(tree.body, tree.body.type==null? null : erasure(tree.body.type));
+            tree.body = translate(tree.body, tree.body.type == null || returnType.hasTag(VOID) ? null : returnType);
             if (!tree.type.isIntersection()) {
                 tree.type = erasure(tree.type);
             } else {
@@ -546,7 +546,7 @@ public class TransTypes extends TreeTranslator {
             result = tree;
         }
         finally {
-            currentMethod = prevMethod;
+            returnType = prevRetType;
         }
     }
 
@@ -601,7 +601,8 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitReturn(JCReturn tree) {
-        tree.expr = translate(tree.expr, currentMethod != null ? types.erasure(currentMethod.type).getReturnType() : null);
+        if (!returnType.hasTag(VOID))
+            tree.expr = translate(tree.expr, returnType);
         result = tree;
     }
 

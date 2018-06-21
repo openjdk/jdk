@@ -33,7 +33,8 @@
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm
- *        -Djdk.httpclient.HttpClient.log=headers EncodedCharsInURI
+ *        -Djdk.internal.httpclient.debug=true
+ *        -Djdk.httpclient.HttpClient.log=headers,errors EncodedCharsInURI
  */
 //*        -Djdk.internal.httpclient.debug=true
 
@@ -48,21 +49,14 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.net.ServerSocketFactory;
-import javax.net.SocketFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLServerSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -71,8 +65,6 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
@@ -87,6 +79,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static java.lang.String.format;
 import static java.lang.System.in;
 import static java.lang.System.out;
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.testng.Assert.assertEquals;
@@ -292,7 +285,7 @@ public class EncodedCharsInURI implements HttpServerAdapters {
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/fixed/x";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/chunk/x";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, 0));
+        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
         https2TestServer.addHandler(h2_fixedLengthHandler, "/https2/fixed");
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/chunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed/x";
@@ -402,9 +395,6 @@ public class EncodedCharsInURI implements HttpServerAdapters {
                     Socket targetConnection = null;
                     InputStream  ccis = clientConnection.getInputStream();
                     OutputStream ccos = clientConnection.getOutputStream();
-                    Writer w = new OutputStreamWriter(
-                            clientConnection.getOutputStream(), "UTF-8");
-                    PrintWriter pw = new PrintWriter(w);
                     System.out.println(now() + getName() + ": Reading request line");
                     String requestLine = readLine(ccis);
                     System.out.println(now() + getName() + ": Request line: " + requestLine);
@@ -459,11 +449,13 @@ public class EncodedCharsInURI implements HttpServerAdapters {
                     // Then send the 200 OK response to the client
                     System.out.println(now() + getName() + ": Sending "
                             + response);
-                    pw.print(response);
-                    pw.flush();
+                    ccos.write(response.toString().getBytes(UTF_8));
+                    ccos.flush();
+                    System.out.println(now() + getName() + ": sent response headers");
                     ccos.write(b);
                     ccos.flush();
                     ccos.close();
+                    System.out.println(now() + getName() + ": sent " + b.length + " body bytes");
                     connections.remove(clientConnection);
                     clientConnection.close();
                 }

@@ -58,7 +58,7 @@ import org.testng.annotations.Test;
  */
 public class ErrorTest {
 
-    static final String[] CIPHER_SUITES = new String[]{ "TLS_KRB5_WITH_3DES_EDE_CBC_SHA" };
+    static final String[] CIPHER_SUITES = new String[]{ "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384" };
 
     static final String SIMPLE_STRING = "Hello world Goodbye world";
 

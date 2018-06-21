@@ -53,6 +53,8 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
@@ -75,6 +77,7 @@ public class InvalidSSLContextTest {
     public void testSync(Version version) throws Exception {
         // client-side uses a different context to that of the server-side
         HttpClient client = HttpClient.newBuilder()
+                .proxy(NO_PROXY)
                 .sslContext(SSLContext.getDefault())
                 .build();
 
@@ -85,8 +88,9 @@ public class InvalidSSLContextTest {
         try {
             HttpResponse<?> response = client.send(request, BodyHandlers.discarding());
             Assert.fail("UNEXPECTED response" + response);
-        } catch (SSLException sslex) {
-            System.out.println("Caught expected: " + sslex);
+        } catch (IOException ex) {
+            System.out.println("Caught expected: " + ex);
+            assertExceptionOrCause(SSLException.class, ex);
         }
     }
 
@@ -94,6 +98,7 @@ public class InvalidSSLContextTest {
     public void testAsync(Version version) throws Exception {
         // client-side uses a different context to that of the server-side
         HttpClient client = HttpClient.newBuilder()
+                .proxy(NO_PROXY)
                 .sslContext(SSLContext.getDefault())
                 .build();
 
@@ -117,21 +122,26 @@ public class InvalidSSLContextTest {
                 if (cause == null) {
                     Assert.fail("Unexpected null cause: " + error);
                 }
-                assertException(clazz, cause);
+                assertExceptionOrCause(clazz, cause);
             } else {
-                assertException(clazz, error);
+                assertExceptionOrCause(clazz, error);
             }
             return null;
         }).join();
     }
 
-    static void assertException(Class<? extends Throwable> clazz, Throwable t) {
+    static void assertExceptionOrCause(Class<? extends Throwable> clazz, Throwable t) {
         if (t == null) {
             Assert.fail("Expected " + clazz + ", caught nothing");
         }
-        if (!clazz.isInstance(t)) {
-            Assert.fail("Expected " + clazz + ", caught " + t);
-        }
+        final Throwable original = t;
+        do {
+            if (clazz.isInstance(t)) {
+                return; // found
+            }
+        } while ((t = t.getCause()) != null);
+        original.printStackTrace(System.out);
+        Assert.fail("Expected " + clazz + "in " + original);
     }
 
     @BeforeTest
@@ -163,7 +173,7 @@ public class InvalidSSLContextTest {
                         s.startHandshake();
                         s.close();
                         Assert.fail("SERVER: UNEXPECTED ");
-                    } catch (SSLHandshakeException he) {
+                    } catch (SSLException he) {
                         System.out.println("SERVER: caught expected " + he);
                     } catch (IOException e) {
                         System.out.println("SERVER: caught: " + e);

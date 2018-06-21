@@ -88,10 +88,6 @@ inline int os::fsync(int fd) {
   return ::fsync(fd);
 }
 
-inline char* os::native_path(char *path) {
-  return path;
-}
-
 inline int os::ftruncate(int fd, jlong length) {
   return ::ftruncate64(fd, length);
 }

@@ -87,10 +87,28 @@ bool JfrRecorder::on_vm_init() {
 
 static JfrStartFlightRecordingDCmd* _startup_recording = NULL;
 
+static void release_startup_recording() {
+  if (_startup_recording != NULL) {
+    delete _startup_recording;
+    _startup_recording = NULL;
+  }
+}
+
+static void teardown_startup_support() {
+  release_startup_recording();
+  JfrOptionSet::release_startup_recordings();
+}
+
+
 // Parsing options here to detect errors as soon as possible
-static bool parse_startup_recording(TRAPS) {
-  assert(StartFlightRecording != NULL, "invariant");
-  CmdLine cmdline(StartFlightRecording, strlen(StartFlightRecording), true);
+static bool parse_recording_options(const char* options, TRAPS) {
+  assert(options != NULL, "invariant");
+  if (_startup_recording != NULL) {
+    delete _startup_recording;
+  }
+  CmdLine cmdline(options, strlen(options), true);
+  _startup_recording = new (ResourceObj::C_HEAP, mtTracing) JfrStartFlightRecordingDCmd(tty, true);
+  assert(_startup_recording != NULL, "invariant");
   _startup_recording->parse(&cmdline, ',', THREAD);
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, tty);
@@ -100,29 +118,59 @@ static bool parse_startup_recording(TRAPS) {
   return true;
 }
 
-static bool initialize_startup_recording(TRAPS) {
-  if (StartFlightRecording != NULL) {
-    _startup_recording = new (ResourceObj::C_HEAP, mtTracing) JfrStartFlightRecordingDCmd(tty, true);
-    return _startup_recording != NULL && parse_startup_recording(THREAD);
+static bool validate_recording_options(TRAPS) {
+  const GrowableArray<const char*>* startup_options = JfrOptionSet::startup_recordings();
+  if (startup_options == NULL) {
+    return true;
+  }
+  const int length = startup_options->length();
+  assert(length >= 1, "invariant");
+  for (int i = 0; i < length; ++i) {
+    if (!parse_recording_options(startup_options->at(i), THREAD)) {
+      return false;
+    }
   }
   return true;
 }
 
-static bool startup_recording(TRAPS) {
-  if (_startup_recording == NULL) {
-    return true;
-  }
-  log_trace(jfr, system)("Starting up Jfr startup recording");
+static bool launch_recording(TRAPS) {
+  assert(_startup_recording != NULL, "invariant");
+  log_trace(jfr, system)("Starting a recording");
   _startup_recording->execute(DCmd_Source_Internal, Thread::current());
-  delete _startup_recording;
-  _startup_recording = NULL;
   if (HAS_PENDING_EXCEPTION) {
-    log_debug(jfr, system)("Exception while starting Jfr startup recording");
+    log_debug(jfr, system)("Exception while starting a recording");
     CLEAR_PENDING_EXCEPTION;
     return false;
   }
-  log_trace(jfr, system)("Finished starting Jfr startup recording");
+  log_trace(jfr, system)("Finished starting a recording");
   return true;
+}
+
+static bool launch_recordings(const GrowableArray<const char*>* startup_options, TRAPS) {
+  assert(startup_options != NULL, "invariant");
+  const int length = startup_options->length();
+  assert(length >= 1, "invariant");
+  if (length == 1) {
+    // already parsed and ready, launch it
+    return launch_recording(THREAD);
+  }
+  for (int i = 0; i < length; ++i) {
+    parse_recording_options(startup_options->at(i), THREAD);
+    if (!launch_recording(THREAD)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool startup_recordings(TRAPS) {
+  const GrowableArray<const char*>* startup_options = JfrOptionSet::startup_recordings();
+  if (startup_options == NULL) {
+    return true;
+  }
+  const bool ret = launch_recordings(startup_options, THREAD);
+  teardown_startup_support();
+  return ret;
 }
 
 static void log_jdk_jfr_module_resolution_error(TRAPS) {
@@ -141,7 +189,7 @@ bool JfrRecorder::on_vm_start() {
   if (!register_jfr_dcmds()) {
     return false;
   }
-  if (!initialize_startup_recording(thread)) {
+  if (!validate_recording_options(thread)) {
     return false;
   }
   if (in_graph) {
@@ -159,7 +207,7 @@ bool JfrRecorder::on_vm_start() {
     log_jdk_jfr_module_resolution_error(thread);
     return false;
   }
-  return startup_recording(thread);
+  return startup_recordings(thread);
 }
 
 static bool _created = false;

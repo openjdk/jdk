@@ -203,7 +203,7 @@ bool ParScanThreadState::take_from_overflow_stack() {
   const size_t num_overflow_elems = of_stack->size();
   const size_t space_available = queue->max_elems() - queue->size();
   const size_t num_take_elems = MIN3(space_available / 4,
-                                     ParGCDesiredObjsFromOverflowList,
+                                     (size_t)ParGCDesiredObjsFromOverflowList,
                                      num_overflow_elems);
   // Transfer the most recent num_take_elems from the overflow
   // stack to our work queue.

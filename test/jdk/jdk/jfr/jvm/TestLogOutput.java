@@ -42,7 +42,7 @@ public class TestLogOutput {
     public static void main(String[] args) throws Exception {
         final String fileName = "jfr_trace.txt";
         final List<String>findWhat = new ArrayList<>();
-        findWhat.add("Starting up Jfr startup recording");
+        findWhat.add("Starting a recording");
         findWhat.add("Flight Recorder initialized");
         boolean passed = false;
         List<String> matches = new ArrayList<String>(findWhat);

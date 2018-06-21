@@ -47,6 +47,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.xml.PropertiesDefaultHandler;
 
 /**
@@ -140,7 +141,9 @@ class Properties extends Hashtable<Object,Object> {
     /**
      * use serialVersionUID from JDK 1.1.X for interoperability
      */
-     private static final long serialVersionUID = 4112578634029874840L;
+    private static final long serialVersionUID = 4112578634029874840L;
+
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
      * A property list that contains default values for any keys not
@@ -148,7 +151,7 @@ class Properties extends Hashtable<Object,Object> {
      *
      * @serial
      */
-    protected Properties defaults;
+    protected volatile Properties defaults;
 
     /**
      * Properties does not store values in its inherited Hashtable, but instead
@@ -156,7 +159,7 @@ class Properties extends Hashtable<Object,Object> {
      * simple read operations.  Writes and bulk operations remain synchronized,
      * as in Hashtable.
      */
-    private transient ConcurrentHashMap<Object, Object> map;
+    private transient volatile ConcurrentHashMap<Object, Object> map;
 
     /**
      * Creates an empty property list with no default values.
@@ -200,6 +203,9 @@ class Properties extends Hashtable<Object,Object> {
         super((Void) null);
         map = new ConcurrentHashMap<>(initialCapacity);
         this.defaults = defaults;
+
+        // Ensure writes can't be reordered
+        UNSAFE.storeFence();
     }
 
     /**
@@ -1097,7 +1103,8 @@ class Properties extends Hashtable<Object,Object> {
     public String getProperty(String key) {
         Object oval = map.get(key);
         String sval = (oval instanceof String) ? (String)oval : null;
-        return ((sval == null) && (defaults != null)) ? defaults.getProperty(key) : sval;
+        Properties defaults;
+        return ((sval == null) && ((defaults = this.defaults) != null)) ? defaults.getProperty(key) : sval;
     }
 
     /**
@@ -1483,6 +1490,7 @@ class Properties extends Hashtable<Object,Object> {
 
     @Override
     void writeHashtable(ObjectOutputStream s) throws IOException {
+        var map = this.map;
         List<Object> entryStack = new ArrayList<>(map.size() * 2); // an estimate
 
         for (Map.Entry<Object, Object> entry : map.entrySet()) {
@@ -1537,7 +1545,7 @@ class Properties extends Hashtable<Object,Object> {
                      .checkArray(s, Map.Entry[].class, HashMap.tableSizeFor((int)(elements / 0.75)));
 
         // create CHM of appropriate capacity
-        map = new ConcurrentHashMap<>(elements);
+        var map = new ConcurrentHashMap<>(elements);
 
         // Read all the key/value objects
         for (; elements > 0; elements--) {
@@ -1545,5 +1553,6 @@ class Properties extends Hashtable<Object,Object> {
             Object value = s.readObject();
             map.put(key, value);
         }
+        this.map = map;
     }
 }

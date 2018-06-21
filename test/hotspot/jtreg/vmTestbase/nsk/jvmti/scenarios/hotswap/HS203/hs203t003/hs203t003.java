@@ -77,29 +77,32 @@ public class hs203t003 extends RedefineAgent {
     }
 
 
-    public boolean  agentMethod() {
+    public boolean agentMethod() {
         boolean passed = false;
         MyThread mt = new MyThread();
-                try {
+        try {
             mt.start();
             // check if we can can pop the thread.
-            // we can not do redefine / pop frame on run method.
-            while(!MyThread.resume.get());
-                        Thread.sleep(10000);
+            // we can not do redefine/pop frame on run method.
+            while (!MyThread.resume.get());
             // sleep for some few secs to get redefined.
-            popThreadFrame(mt);
-            // pop the frame.
-            resumeThread(mt);
-            // resume the thread.
+            while (!isRedefined()) {
+                if (!agentStatus()) {
+                    System.out.println("Failed to redefine class");
+                    return passed;
+                }
+                Thread.sleep(100);
+            }
+            popThreadFrame(mt); // pop the frame.
+            resumeThread(mt);   // resume the thread.
             mt.join();
             // wait till the other thread completes its execution.
-            System.out.println(" Thread state after poping / redefining = "+mt.threadState);
+            System.out.println("Thread state after popping/redefining = "
+                               + mt.threadState);
         } catch(Exception ie) {
             ie.printStackTrace();
         }
-        if ( ( mt.threadState < 1000 ) &&
-                ( redefineAttempted() && isRedefined())  &&
-                agentStatus() ) {
+        if ((mt.threadState < 1000) && agentStatus()) {
             passed = true;
         }
         return passed;

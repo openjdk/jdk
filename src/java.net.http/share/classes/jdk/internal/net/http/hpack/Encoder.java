@@ -105,8 +105,8 @@ public class Encoder {
 
     private static final AtomicLong ENCODERS_IDS = new AtomicLong();
 
-    // TODO: enum: no huffman/smart huffman/always huffman
-    private static final boolean DEFAULT_HUFFMAN = true;
+    /* Used to calculate the number of bytes required for Huffman encoding */
+    private final QuickHuffman.Writer huffmanWriter = new QuickHuffman.Writer();
 
     private final Logger logger;
     private final long id;
@@ -241,19 +241,28 @@ public class Encoder {
         int index = t.indexOf(name, value);
         if (index > 0) {
             indexed(index);
-        } else if (index < 0) {
-            if (sensitive) {
-                literalNeverIndexed(-index, value, DEFAULT_HUFFMAN);
-            } else {
-                literal(-index, value, DEFAULT_HUFFMAN);
-            }
         } else {
-            if (sensitive) {
-                literalNeverIndexed(name, DEFAULT_HUFFMAN, value, DEFAULT_HUFFMAN);
+            boolean huffmanValue = isHuffmanBetterFor(value);
+            if (index < 0) {
+                if (sensitive) {
+                    literalNeverIndexed(-index, value, huffmanValue);
+                } else {
+                    literal(-index, value, huffmanValue);
+                }
             } else {
-                literal(name, DEFAULT_HUFFMAN, value, DEFAULT_HUFFMAN);
+                boolean huffmanName = isHuffmanBetterFor(name);
+                if (sensitive) {
+                    literalNeverIndexed(name, huffmanName, value, huffmanValue);
+                } else {
+                    literal(name, huffmanName, value, huffmanValue);
+                }
             }
         }
+    }
+
+    private boolean isHuffmanBetterFor(CharSequence value) {
+        // prefer Huffman encoding only if it is strictly smaller than Latin-1
+        return huffmanWriter.lengthOf(value) < value.length();
     }
 
     /**
@@ -299,7 +308,7 @@ public class Encoder {
         if (calculated < 0 || calculated > capacity) {
             throw new IllegalArgumentException(
                     format("0 <= calculated <= capacity: calculated=%s, capacity=%s",
-                            calculated, capacity));
+                           calculated, capacity));
         }
         capacityUpdate = true;
         // maxCapacity needs to be updated unconditionally, so the encoder
@@ -416,8 +425,9 @@ public class Encoder {
                                  boolean useHuffman)
             throws IndexOutOfBoundsException {
         if (logger.isLoggable(EXTRA)) {
-            logger.log(EXTRA, () -> format("literal without indexing ('%s', '%s')",
-                                           index, value));
+            logger.log(EXTRA, () -> format(
+                    "literal without indexing (%s, '%s', huffman=%b)",
+                    index, value, useHuffman));
         }
         checkEncoding();
         encoding = true;
@@ -428,10 +438,12 @@ public class Encoder {
     protected final void literal(CharSequence name,
                                  boolean nameHuffman,
                                  CharSequence value,
-                                 boolean valueHuffman) {
+                                 boolean valueHuffman)
+    {
         if (logger.isLoggable(EXTRA)) {
-            logger.log(EXTRA, () -> format("literal without indexing ('%s', '%s')",
-                                           name, value));
+            logger.log(EXTRA, () -> format(
+                    "literal without indexing ('%s', huffman=%b, '%s', huffman=%b)",
+                    name, nameHuffman, value, valueHuffman));
         }
         checkEncoding();
         encoding = true;
@@ -442,10 +454,12 @@ public class Encoder {
     protected final void literalNeverIndexed(int index,
                                              CharSequence value,
                                              boolean valueHuffman)
-            throws IndexOutOfBoundsException {
+            throws IndexOutOfBoundsException
+    {
         if (logger.isLoggable(EXTRA)) {
-            logger.log(EXTRA, () -> format("literal never indexed ('%s', '%s')",
-                                           index, value));
+            logger.log(EXTRA, () -> format(
+                    "literal never indexed (%s, '%s', huffman=%b)",
+                    index, value, valueHuffman));
         }
         checkEncoding();
         encoding = true;
@@ -458,8 +472,9 @@ public class Encoder {
                                              CharSequence value,
                                              boolean valueHuffman) {
         if (logger.isLoggable(EXTRA)) {
-            logger.log(EXTRA, () -> format("literal never indexed ('%s', '%s')",
-                                           name, value));
+            logger.log(EXTRA, () -> format(
+                    "literal never indexed ('%s', huffman=%b, '%s', huffman=%b)",
+                    name, nameHuffman, value, valueHuffman));
         }
         checkEncoding();
         encoding = true;
@@ -472,8 +487,9 @@ public class Encoder {
                                              boolean valueHuffman)
             throws IndexOutOfBoundsException {
         if (logger.isLoggable(EXTRA)) {
-            logger.log(EXTRA, () -> format("literal with incremental indexing ('%s', '%s')",
-                                           index, value));
+            logger.log(EXTRA, () -> format(
+                    "literal with incremental indexing (%s, '%s', huffman=%b)",
+                    index, value, valueHuffman));
         }
         checkEncoding();
         encoding = true;
@@ -485,9 +501,10 @@ public class Encoder {
                                              boolean nameHuffman,
                                              CharSequence value,
                                              boolean valueHuffman) {
-        if (logger.isLoggable(EXTRA)) { // TODO: include huffman info?
-            logger.log(EXTRA, () -> format("literal with incremental indexing ('%s', '%s')",
-                                           name, value));
+        if (logger.isLoggable(EXTRA)) {
+            logger.log(EXTRA, () -> format(
+                    "literal with incremental indexing ('%s', huffman=%b, '%s', huffman=%b)",
+                    name, nameHuffman, value, valueHuffman));
         }
         checkEncoding();
         encoding = true;
@@ -506,7 +523,7 @@ public class Encoder {
         if (capacity > this.maxCapacity) {
             throw new IllegalArgumentException(
                     format("capacity <= maxCapacity: capacity=%s, maxCapacity=%s",
-                            capacity, maxCapacity));
+                           capacity, maxCapacity));
         }
         writer = sizeUpdateWriter.maxHeaderTableSize(capacity);
     }

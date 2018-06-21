@@ -4013,7 +4013,7 @@ void TemplateTable::_new() {
 #endif // _LP64
 
   if (UseTLAB) {
-    __ tlab_allocate(rax, rdx, 0, rcx, rbx, slow_case);
+    __ tlab_allocate(thread, rax, rdx, 0, rcx, rbx, slow_case);
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ jmp(initialize_header);
@@ -4025,10 +4025,7 @@ void TemplateTable::_new() {
     // Allocation in the shared Eden, if allowed.
     //
     // rdx: instance size in bytes
-    if (allow_shared_alloc) {
-      __ eden_allocate(rax, rdx, 0, rbx, slow_case);
-      __ incr_allocated_bytes(thread, rdx, 0);
-    }
+    __ eden_allocate(thread, rax, rdx, 0, rbx, slow_case);
   }
 
   // If UseTLAB or allow_shared_alloc are true, the object is created above and

@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.net.http.HttpHeaders;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
 
@@ -50,7 +50,7 @@ class CookieFilter implements HeaderFilter {
             Map<String,List<String>> cookies = cookieHandler.get(r.uri(), userheaders);
 
             // add the returned cookies
-            HttpHeadersImpl systemHeaders = r.getSystemHeaders();
+            HttpHeadersBuilder systemHeadersBuilder = r.getSystemHeadersBuilder();
             if (cookies.isEmpty()) {
                 Log.logTrace("Request: no cookie to add for {0}", r.uri());
             } else {
@@ -65,7 +65,7 @@ class CookieFilter implements HeaderFilter {
                 if (values == null || values.isEmpty()) continue;
                 for (String val : values) {
                     if (Utils.isValidValue(val)) {
-                        systemHeaders.addHeader(hdrname, val);
+                        systemHeadersBuilder.addHeader(hdrname, val);
                     }
                 }
             }

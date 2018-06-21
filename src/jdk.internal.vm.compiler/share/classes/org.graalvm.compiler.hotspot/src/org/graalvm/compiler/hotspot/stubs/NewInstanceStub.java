@@ -54,6 +54,7 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.tlabSlowAllocationsOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.tlabStats;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useCMSIncrementalMode;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useFastTLABRefill;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useG1GC;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useTLAB;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.wordSize;
@@ -148,7 +149,7 @@ public class NewInstanceStub extends SnippetStub {
          */
         Word thread = registerAsWord(threadRegister);
         boolean inlineContiguousAllocationSupported = GraalHotSpotVMConfigNode.inlineContiguousAllocationSupported();
-        if (!forceSlowPath(options) && inlineContiguousAllocationSupported && !useCMSIncrementalMode(INJECTED_VMCONFIG)) {
+        if (useFastTLABRefill(INJECTED_VMCONFIG) && !forceSlowPath(options) && inlineContiguousAllocationSupported && !useCMSIncrementalMode(INJECTED_VMCONFIG)) {
             if (isInstanceKlassFullyInitialized(hub)) {
                 int sizeInBytes = readLayoutHelper(hub);
                 Word memory = refillAllocate(thread, intArrayHub, sizeInBytes, logging(options));

@@ -166,7 +166,6 @@ void C1_MacroAssembler::try_allocate(Register obj, Register var_size_in_bytes, i
     tlab_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
   } else {
     eden_allocate(obj, var_size_in_bytes, con_size_in_bytes, t1, slow_case);
-    incr_allocated_bytes(noreg, var_size_in_bytes, con_size_in_bytes, t1);
   }
 }
 

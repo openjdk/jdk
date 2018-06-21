@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiPredicate;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 
 /**
@@ -41,19 +42,10 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
  */
 public class HeadersTest {
 
+    static final BiPredicate<String,String> ACCEPT_ALL = (x, y) -> true;
+
     static final URI TEST_URI = URI.create("http://www.foo.com/");
     static final HttpClient client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-
-    static final class HttpHeadersStub extends HttpHeaders {
-        Map<String, List<String>> map;
-        HttpHeadersStub(Map<String, List<String>> map) {
-            this.map = map;
-        }
-        @Override
-        public Map<String, List<String>> map() {
-            return map;
-        }
-    }
 
     static void bad(String name) throws Exception {
         HttpRequest.Builder builder = HttpRequest.newBuilder(TEST_URI);
@@ -85,7 +77,7 @@ public class HeadersTest {
                 }
                 @Override public HttpHeaders headers() {
                     Map<String, List<String>> map = Map.of(name, List.of("foo"));
-                    return new HttpHeadersStub(map);
+                    return HttpHeaders.of(map, ACCEPT_ALL);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -127,7 +119,7 @@ public class HeadersTest {
                 }
                 @Override public HttpHeaders headers() {
                     Map<String, List<String>> map = Map.of("x-bad", List.of(value));
-                    return new HttpHeadersStub(map);
+                    return HttpHeaders.of(map, ACCEPT_ALL);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -170,7 +162,7 @@ public class HeadersTest {
                 @Override public HttpHeaders headers() {
                     Map<String, List<String>> map = new HashMap<>();
                     map.put(null, List.of("foo"));
-                    return new HttpHeadersStub(map);
+                    return HttpHeaders.of(map, ACCEPT_ALL);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -211,7 +203,7 @@ public class HeadersTest {
                 @Override public HttpHeaders headers() {
                     Map<String, List<String>> map = new HashMap<>();
                     map.put("x-bar", null);
-                    return new HttpHeadersStub(map);
+                    return HttpHeaders.of(map, ACCEPT_ALL);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -243,11 +235,10 @@ public class HeadersTest {
                     List<String> values = new ArrayList<>();
                     values.add("foo");
                     values.add(null);
-                    return new HttpHeadersStub(Map.of("x-bar", values));
+                    return HttpHeaders.of(Map.of("x-bar", values), ACCEPT_ALL);
                 }
             };
-            client
-                    .send(req, HttpResponse.BodyHandlers.ofString());
+            client.send(req, HttpResponse.BodyHandlers.ofString());
             throw new RuntimeException("Expected NPE for null header value");
         } catch (NullPointerException expected) {
             System.out.println("Got expected NPE: " + expected);
@@ -276,7 +267,7 @@ public class HeadersTest {
                     return Optional.empty();
                 }
                 @Override public HttpHeaders headers() {
-                    return new HttpHeadersStub(null);
+                    return HttpHeaders.of(null, ACCEPT_ALL);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -370,7 +361,7 @@ public class HeadersTest {
                 }
                 @Override public HttpHeaders headers() {
                     Map<String, List<String>> map = Map.of("x-good", List.of("foo"));
-                    return new HttpHeadersStub(map);
+                    return HttpHeaders.of(map, ACCEPT_ALL);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -416,7 +407,7 @@ public class HeadersTest {
                 }
                 @Override public HttpHeaders headers() {
                     Map<String, List<String>> map = Map.of("x-good", List.of("foo"));
-                    return new HttpHeadersStub(map);
+                    return HttpHeaders.of(map, ACCEPT_ALL);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -472,7 +463,7 @@ public class HeadersTest {
                     @Override
                     public HttpHeaders headers() {
                         Map<String, List<String>> map = Map.of("x-good", List.of("foo"));
-                        return new HttpHeadersStub(map);
+                        return HttpHeaders.of(map, ACCEPT_ALL);
                     }
                 };
                 client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -526,7 +517,7 @@ public class HeadersTest {
                 @Override
                 public HttpHeaders headers() {
                     Map<String, List<String>> map = Map.of("x-good", List.of("foo"));
-                    return new HttpHeadersStub(map);
+                    return HttpHeaders.of(map, ACCEPT_ALL);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());
@@ -538,12 +529,10 @@ public class HeadersTest {
 
     public static void main(String[] args) throws Exception {
         bad("bad:header");
-        bad("Foo\n");
         good("X-Foo!");
         good("Bar~");
         good("x");
         bad(" ");
-        bad("Bar\r\n");
         good("Hello#world");
         good("Qwer#ert");
         badValue("blah\r\n blah");

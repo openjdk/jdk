@@ -30,7 +30,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import org.testng.annotations.Test;
 import jdk.internal.net.http.websocket.RawChannel;
@@ -150,11 +149,11 @@ public class SelectorTest {
     static RawChannel getARawChannel(int port) throws Exception {
         URI uri = URI.create("http://localhost:" + port + "/");
         out.println("client connecting to " + uri.toString());
-        HttpRequest req = HttpRequest.newBuilder(uri).build();
+        HttpRequestImpl req = new HttpRequestBuilderImpl(uri).buildForWebSocket();
         // Otherwise HttpClient will think this is an ordinary connection and
         // thus all ordinary procedures apply to it, e.g. it must be put into
         // the cache
-        ((HttpRequestImpl) req).isWebSocket(true);
+        req.isWebSocket(true);
         HttpResponse<?> r = defaultClient().send(req, discarding());
         r.body();
         return ((HttpResponseImpl) r).rawChannel();

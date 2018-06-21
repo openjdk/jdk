@@ -46,7 +46,8 @@ import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import java.util.*;
 import java.util.concurrent.*;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import java.util.function.BiPredicate;
+
 import org.testng.annotations.Test;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -242,14 +243,16 @@ public class ServerPushWithDiffTypes {
             }
         }
 
+        static final BiPredicate<String,String> ACCEPT_ALL = (x, y) -> true;
+
         private void pushPromises(Http2TestExchange exchange) throws IOException {
             URI requestURI = exchange.getRequestURI();
             for (Map.Entry<String,String> promise : promises.entrySet()) {
                 URI uri = requestURI.resolve(promise.getKey());
                 InputStream is = new ByteArrayInputStream(promise.getValue().getBytes(UTF_8));
-                HttpHeadersImpl headers = new HttpHeadersImpl();
+                Map<String,List<String>> map = Map.of("X-Promise", List.of(promise.getKey()));
+                HttpHeaders headers = HttpHeaders.of(map, ACCEPT_ALL);
                 // TODO: add some check on headers, maybe
-                headers.addHeader("X-Promise", promise.getKey());
                 exchange.serverPush(uri, headers, is);
             }
             System.err.println("Server: All pushes sent");

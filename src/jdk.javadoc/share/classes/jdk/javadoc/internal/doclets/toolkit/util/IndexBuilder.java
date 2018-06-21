@@ -164,12 +164,12 @@ public class IndexBuilder {
      * @param te TypeElement whose members will be added to the indexmap.
      */
     protected void putMembersInIndexMap(TypeElement te) {
-        adjustIndexMap(utils.getAnnotationFields(te));
-        adjustIndexMap(utils.getFields(te));
         VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
+        adjustIndexMap(vmt.getMembers(ANNOTATION_TYPE_FIELDS));
+        adjustIndexMap(vmt.getMembers(FIELDS));
         adjustIndexMap(vmt.getMembers(METHODS));
-        adjustIndexMap(utils.getConstructors(te));
-        adjustIndexMap(utils.getEnumConstants(te));
+        adjustIndexMap(vmt.getMembers(CONSTRUCTORS));
+        adjustIndexMap(vmt.getMembers(ENUM_CONSTANTS));
     }
 
 

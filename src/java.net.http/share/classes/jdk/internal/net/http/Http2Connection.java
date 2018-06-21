@@ -28,7 +28,6 @@ package jdk.internal.net.http;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -54,7 +53,7 @@ import java.net.http.HttpHeaders;
 import jdk.internal.net.http.HttpConnection.HttpPublisher;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.FlowTube.TubeSubscriber;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
@@ -81,7 +80,6 @@ import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static jdk.internal.net.http.frame.SettingsFrame.*;
-
 
 /**
  * An Http2Connection. Encapsulates the socket(channel) and any SSLEngine used
@@ -259,6 +257,8 @@ class Http2Connection  {
     // assigning a stream to a connection.
     private int lastReservedClientStreamid = 1;
     private int lastReservedServerStreamid = 0;
+    private int numReservedClientStreams = 0; // count of current streams
+    private int numReservedServerStreams = 0; // count of current streams
     private final Encoder hpackOut;
     private final Decoder hpackIn;
     final SettingsFrame clientSettings;
@@ -273,7 +273,7 @@ class Http2Connection  {
      */
     private final WindowController windowController = new WindowController();
     private final FramesController framesController = new FramesController();
-    private final Http2TubeSubscriber subscriber = new Http2TubeSubscriber();
+    private final Http2TubeSubscriber subscriber;
     final ConnectionWindowUpdateSender windowUpdater;
     private volatile Throwable cause;
     private volatile Supplier<ByteBuffer> initial;
@@ -290,6 +290,7 @@ class Http2Connection  {
                             String key) {
         this.connection = connection;
         this.client2 = client2;
+        this.subscriber = new Http2TubeSubscriber(client2.client());
         this.nextstreamid = nextstreamid;
         this.key = key;
         this.clientSettings = this.client2.getClientSettings();
@@ -310,7 +311,7 @@ class Http2Connection  {
 
     /**
      * Case 1) Create from upgraded HTTP/1.1 connection.
-     * Is ready to use. Can be SSL. exchange is the Exchange
+     * Is ready to use. Can't be SSL. exchange is the Exchange
      * that initiated the connection, whose response will be delivered
      * on a Stream.
      */
@@ -324,6 +325,7 @@ class Http2Connection  {
                 client2,
                 3, // stream 1 is registered during the upgrade
                 keyFor(connection));
+        reserveStream(true);
         Log.logTrace("Connection send window size {0} ", windowController.connectionWindowSize());
 
         Stream<?> initialStream = createStream(exchange);
@@ -407,7 +409,8 @@ class Http2Connection  {
     // call these before assigning a request/stream to a connection
     // if false returned then a new Http2Connection is required
     // if true, the the stream may be assigned to this connection
-    synchronized boolean reserveStream(boolean clientInitiated) {
+    // for server push, if false returned, then the stream should be cancelled
+    synchronized boolean reserveStream(boolean clientInitiated) throws IOException {
         if (finalStream) {
             return false;
         }
@@ -424,6 +427,19 @@ class Http2Connection  {
             lastReservedClientStreamid+=2;
         else
             lastReservedServerStreamid+=2;
+
+        assert numReservedClientStreams >= 0;
+        assert numReservedServerStreams >= 0;
+        if (clientInitiated && numReservedClientStreams >= getMaxConcurrentClientStreams()) {
+            throw new IOException("too many concurrent streams");
+        } else if (clientInitiated) {
+            numReservedClientStreams++;
+        }
+        if (!clientInitiated && numReservedServerStreams >= getMaxConcurrentServerStreams()) {
+            return false;
+        } else if (!clientInitiated) {
+            numReservedServerStreams++;
+        }
         return true;
     }
 
@@ -564,6 +580,14 @@ class Http2Connection  {
         return serverSettings.getParameter(INITIAL_WINDOW_SIZE);
     }
 
+    final int getMaxConcurrentClientStreams() {
+        return serverSettings.getParameter(MAX_CONCURRENT_STREAMS);
+    }
+
+    final int getMaxConcurrentServerStreams() {
+        return clientSettings.getParameter(MAX_CONCURRENT_STREAMS);
+    }
+
     void close() {
         Log.logTrace("Closing HTTP/2 connection: to {0}", connection.address());
         GoAwayFrame f = new GoAwayFrame(0,
@@ -637,13 +661,19 @@ class Http2Connection  {
             if (closed == true) return;
             closed = true;
         }
-        Log.logError(t);
+        if (Log.errors()) {
+            if (!(t instanceof EOFException) || isActive()) {
+                Log.logError(t);
+            } else if (t != null) {
+                Log.logError("Shutting down connection: {0}", t.getMessage());
+            }
+        }
         Throwable initialCause = this.cause;
         if (initialCause == null) this.cause = t;
         client2.deleteConnection(this);
         List<Stream<?>> c = new LinkedList<>(streams.values());
         for (Stream<?> s : c) {
-            s.cancelImpl(t);
+            s.connectionClosing(t);
         }
         connection.close();
     }
@@ -766,7 +796,7 @@ class Http2Connection  {
             nextPushStream += 2;
         }
 
-        HttpHeadersImpl headers = decoder.headers();
+        HttpHeaders headers = decoder.headers();
         HttpRequestImpl pushReq = HttpRequestImpl.createPushRequest(parentReq, headers);
         Exchange<T> pushExch = new Exchange<>(pushReq, parent.exchange.multi);
         Stream.PushedStream<T> pushStream = createPushStream(parent, pushExch);
@@ -797,16 +827,44 @@ class Http2Connection  {
     }
 
     void resetStream(int streamid, int code) throws IOException {
-        Log.logError(
-            "Resetting stream {0,number,integer} with error code {1,number,integer}",
-            streamid, code);
-        ResetFrame frame = new ResetFrame(streamid, code);
-        sendFrame(frame);
-        closeStream(streamid);
+        try {
+            if (connection.channel().isOpen()) {
+                // no need to try & send a reset frame if the
+                // connection channel is already closed.
+                Log.logError(
+                        "Resetting stream {0,number,integer} with error code {1,number,integer}",
+                        streamid, code);
+                ResetFrame frame = new ResetFrame(streamid, code);
+                sendFrame(frame);
+            } else if (debug.on()) {
+                debug.log("Channel already closed, no need to reset stream %d",
+                          streamid);
+            }
+        } finally {
+            decrementStreamsCount(streamid);
+            closeStream(streamid);
+        }
+    }
+
+    // reduce count of streams by 1 if stream still exists
+    synchronized void decrementStreamsCount(int streamid) {
+        Stream<?> s = streams.get(streamid);
+        if (s == null || !s.deRegister())
+            return;
+        if (streamid % 2 == 1) {
+            numReservedClientStreams--;
+            assert numReservedClientStreams >= 0 :
+                    "negative client stream count for stream=" + streamid;
+        } else {
+            numReservedServerStreams--;
+            assert numReservedServerStreams >= 0 :
+                    "negative server stream count for stream=" + streamid;
+        }
     }
 
     void closeStream(int streamid) {
         if (debug.on()) debug.log("Closed stream %d", streamid);
+        boolean isClient = (streamid % 2) == 1;
         Stream<?> s = streams.remove(streamid);
         if (s != null) {
             // decrement the reference count on the HttpClientImpl
@@ -1148,14 +1206,19 @@ class Http2Connection  {
      * A simple tube subscriber for reading from the connection flow.
      */
     final class Http2TubeSubscriber implements TubeSubscriber {
-        volatile Flow.Subscription subscription;
-        volatile boolean completed;
-        volatile boolean dropped;
-        volatile Throwable error;
-        final ConcurrentLinkedQueue<ByteBuffer> queue
+        private volatile Flow.Subscription subscription;
+        private volatile boolean completed;
+        private volatile boolean dropped;
+        private volatile Throwable error;
+        private final ConcurrentLinkedQueue<ByteBuffer> queue
                 = new ConcurrentLinkedQueue<>();
-        final SequentialScheduler scheduler =
+        private final SequentialScheduler scheduler =
                 SequentialScheduler.synchronizedScheduler(this::processQueue);
+        private final HttpClientImpl client;
+
+        Http2TubeSubscriber(HttpClientImpl client) {
+            this.client = Objects.requireNonNull(client);
+        }
 
         final void processQueue() {
             try {
@@ -1177,6 +1240,12 @@ class Http2Connection  {
                     Http2Connection.this.shutdown(x);
                 }
             }
+        }
+
+        private final void runOrSchedule() {
+            if (client.isSelectorThread()) {
+                scheduler.runOrSchedule(client.theExecutor());
+            } else scheduler.runOrSchedule();
         }
 
         @Override
@@ -1202,7 +1271,7 @@ class Http2Connection  {
             if (debug.on()) debug.log(() -> "onNext: got " + Utils.remaining(item)
                     + " bytes in " + item.size() + " buffers");
             queue.addAll(item);
-            scheduler.runOrSchedule(client().theExecutor());
+            runOrSchedule();
         }
 
         @Override
@@ -1210,15 +1279,18 @@ class Http2Connection  {
             if (debug.on()) debug.log(() -> "onError: " + throwable);
             error = throwable;
             completed = true;
-            scheduler.runOrSchedule(client().theExecutor());
+            runOrSchedule();
         }
 
         @Override
         public void onComplete() {
-            if (debug.on()) debug.log("EOF");
-            error = new EOFException("EOF reached while reading");
+            String msg = isActive()
+                    ? "EOF reached while reading"
+                    : "Idle connection closed by HTTP/2 peer";
+            if (debug.on()) debug.log(msg);
+            error = new EOFException(msg);
             completed = true;
-            scheduler.runOrSchedule(client().theExecutor());
+            runOrSchedule();
         }
 
         @Override
@@ -1228,6 +1300,10 @@ class Http2Connection  {
             // then we might not need the 'dropped' boolean?
             dropped = true;
         }
+    }
+
+    synchronized boolean isActive() {
+        return numReservedClientStreams > 0 || numReservedServerStreams > 0;
     }
 
     @Override
@@ -1242,10 +1318,10 @@ class Http2Connection  {
 
     static class HeaderDecoder extends ValidatingHeadersConsumer {
 
-        HttpHeadersImpl headers;
+        HttpHeadersBuilder headersBuilder;
 
         HeaderDecoder() {
-            this.headers = new HttpHeadersImpl();
+            this.headersBuilder = new HttpHeadersBuilder();
         }
 
         @Override
@@ -1253,11 +1329,11 @@ class Http2Connection  {
             String n = name.toString();
             String v = value.toString();
             super.onDecoded(n, v);
-            headers.addHeader(n, v);
+            headersBuilder.addHeader(n, v);
         }
 
-        HttpHeadersImpl headers() {
-            return headers;
+        HttpHeaders headers() {
+            return headersBuilder.build();
         }
     }
 

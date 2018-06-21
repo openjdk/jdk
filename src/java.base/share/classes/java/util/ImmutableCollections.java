@@ -83,6 +83,16 @@ class ImmutableCollections {
 
     // ---------- List Implementations ----------
 
+    // make a copy, short-circuiting based on implementation class
+    @SuppressWarnings("unchecked")
+    static <E> List<E> listCopy(Collection<? extends E> coll) {
+        if (coll instanceof AbstractImmutableList && coll.getClass() != SubList.class) {
+            return (List<E>)coll;
+        } else {
+            return (List<E>)List.of(coll.toArray());
+        }
+    }
+
     @SuppressWarnings("unchecked")
     static <E> List<E> emptyList() {
         return (List<E>) ListN.EMPTY_LIST;

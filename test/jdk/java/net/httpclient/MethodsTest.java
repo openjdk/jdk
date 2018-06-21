@@ -21,8 +21,6 @@
  * questions.
  */
 
-import jdk.internal.net.http.common.HttpHeadersImpl;
-
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -30,9 +28,9 @@ import java.net.http.HttpRequest;
 import java.net.URI;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-
 
 /**
  * @test
@@ -75,7 +73,7 @@ public class MethodsTest {
                     return Optional.empty();
                 }
                 @Override public HttpHeaders headers() {
-                    return new HttpHeadersImpl();
+                    return HttpHeaders.of(Map.of(), (x, y) -> true);
                 }
             };
             client.send(req, HttpResponse.BodyHandlers.ofString());

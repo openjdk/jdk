@@ -76,7 +76,7 @@ public class TestUseRTMXendForLockBusy {
         OutputAnalyzer outputAnalyzer = RTMTestBase.executeRTMTest(
                 test,
                 CommandLineOptionTest.prepareBooleanFlag("UseRTMForStackLocks",
-                        inflateMonitor),
+                        !inflateMonitor),
                 CommandLineOptionTest.prepareBooleanFlag(
                         "UseRTMXendForLockBusy",
                         useXend),

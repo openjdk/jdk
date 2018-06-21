@@ -830,13 +830,13 @@ public interface HttpResponse<T> {
      * BodySubscriber} provides implementations of many common body subscribers.
      *
      * <p> The object acts as a {@link Flow.Subscriber}&lt;{@link List}&lt;{@link
-     * ByteBuffer}&gt;&gt; to the HTTP client implementation, which publishes
-     * unmodifiable lists of read-only ByteBuffers containing the response body.
-     * The Flow of data, as well as the order of ByteBuffers in the Flow lists,
-     * is a strictly ordered representation of the response body. Both the Lists
-     * and the ByteBuffers, once passed to the subscriber, are no longer used by
-     * the HTTP client. The subscriber converts the incoming buffers of data to
-     * some higher-level Java type {@code T}.
+     * ByteBuffer}&gt;&gt; to the HTTP Client implementation, which publishes
+     * lists of ByteBuffers containing the response body. The Flow of data, as
+     * well as the order of ByteBuffers in the Flow lists, is a strictly ordered
+     * representation of the response body. Both the Lists and the ByteBuffers,
+     * once passed to the subscriber, are no longer used by the HTTP Client. The
+     * subscriber converts the incoming buffers of data to some higher-level
+     * Java type {@code T}.
      *
      * <p> The {@link #getBody()} method returns a
      * {@link CompletionStage}&lt;{@code T}&gt; that provides the response body
@@ -858,6 +858,9 @@ public interface HttpResponse<T> {
      * do so. Calling {@code cancel} before exhausting the response body data
      * may cause the underlying HTTP connection to be closed and prevent it
      * from being reused for subsequent operations.
+     *
+     * @implNote The flow of data containing the response body is immutable.
+     * Specifically, it is a flow of unmodifiable lists of read-only ByteBuffers.
      *
      * @param <T> the response body type
      * @see BodySubscribers
@@ -888,20 +891,20 @@ public interface HttpResponse<T> {
      *
      * <pre>{@code    // Streams the response body to a File
      *   HttpResponse<byte[]> response = client
-     *     .send(request, (statusCode, responseHeaders) -> BodySubscribers.ofByteArray());
+     *     .send(request, responseInfo -> BodySubscribers.ofByteArray());
      *
      *   // Accumulates the response body and returns it as a byte[]
      *   HttpResponse<byte[]> response = client
-     *     .send(request, (statusCode, responseHeaders) -> BodySubscribers.ofByteArray());
+     *     .send(request, responseInfo -> BodySubscribers.ofByteArray());
      *
      *   // Discards the response body
      *   HttpResponse<Void> response = client
-     *     .send(request, (statusCode, responseHeaders) -> BodySubscribers.discarding());
+     *     .send(request, responseInfo -> BodySubscribers.discarding());
      *
      *   // Accumulates the response body as a String then maps it to its bytes
      *   HttpResponse<byte[]> response = client
-     *     .send(request, (sc, hdrs) ->
-     *        BodySubscribers.mapping(BodySubscribers.ofString(), String::getBytes));
+     *     .send(request, responseInfo ->
+     *        BodySubscribers.mapping(BodySubscribers.ofString(UTF_8), String::getBytes));
      * }</pre>
      *
      * @since 11

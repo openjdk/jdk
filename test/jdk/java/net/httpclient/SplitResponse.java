@@ -24,6 +24,11 @@
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
 import javax.net.ServerSocketFactory;
@@ -32,6 +37,8 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.stream.Stream;
+
 import jdk.testlibrary.SimpleSSLContext;
 import static java.lang.System.out;
 import static java.lang.String.format;
@@ -44,7 +51,10 @@ import static java.net.http.HttpResponse.BodyHandlers.ofString;
  * @library /lib/testlibrary
  * @build jdk.testlibrary.SimpleSSLContext
  * @build MockServer
- * @run main/othervm -Djdk.internal.httpclient.debug=true -Djdk.httpclient.HttpClient.log=all SplitResponse
+ * @run main/othervm
+ *     -Djdk.internal.httpclient.debug=true
+ *     -Djdk.httpclient.HttpClient.log=all
+ *     SplitResponse HTTP connection:CLOSE mode:SYNC
  */
 
 /**
@@ -106,20 +116,56 @@ public class SplitResponse {
         return client;
     }
 
+    enum Protocol {
+        HTTP, HTTPS
+    }
+    enum Connection {
+        KEEP_ALIVE,
+        CLOSE
+    }
+    enum Mode {
+        SYNC, ASYNC
+    }
+
+
     public static void main(String[] args) throws Exception {
         boolean useSSL = false;
-        if (args != null && args.length == 1) {
-            useSSL = "SSL".equals(args[0]);
+        if (args != null && args.length >= 1) {
+            useSSL = Protocol.valueOf(args[0]).equals(Protocol.HTTPS);
+        } else {
+            args = new String[] {"HTTP", "connection:KEEP_ALIVE:CLOSE", "mode:SYNC:ASYNC"};
         }
+
+        LinkedHashSet<Mode> modes = new LinkedHashSet<>();
+        LinkedHashSet<Connection> keepAlive = new LinkedHashSet<>();
+        Stream.of(args).skip(1).forEach(s -> {
+            if (s.startsWith("connection:")) {
+                Stream.of(s.split(":")).skip(1).forEach(c -> {
+                    keepAlive.add(Connection.valueOf(c));
+                });
+            } else if (s.startsWith("mode:")) {
+                Stream.of(s.split(":")).skip(1).forEach(m -> {
+                    modes.add(Mode.valueOf(m));
+                });
+            } else {
+                System.err.println("Illegal argument: " + s);
+                System.err.println("Allowed syntax is: HTTP|HTTPS [connection:KEEP_ALIVE[:CLOSE]] [mode:SYNC[:ASYNC]");
+                throw new IllegalArgumentException(s);
+            }
+        });
+
+        if (keepAlive.isEmpty()) keepAlive.addAll(EnumSet.allOf(Connection.class));
+        if (modes.isEmpty()) modes.addAll(EnumSet.allOf(Mode.class));
+
         SplitResponse sp = new SplitResponse(useSSL);
 
         for (Version version : Version.values()) {
-            for (boolean serverKeepalive : new boolean[]{ true, false }) {
+            for (Connection serverKeepalive : keepAlive) {
                 // Note: the mock server doesn't support Keep-Alive, but
                 // pretending that it might exercises code paths in and out of
                 // the connection pool, and retry logic
-                for (boolean async : new boolean[]{ true, false }) {
-                    sp.test(version, serverKeepalive, async);
+                for (Mode mode : modes) {
+                    sp.test(version,serverKeepalive == Connection.KEEP_ALIVE,mode == Mode.ASYNC);
                 }
             }
         }

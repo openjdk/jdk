@@ -63,18 +63,6 @@ public class ArrayStoreExceptionTest {
         }
     }
 
-    static native void doNativeArrayStore2(Object src, Object dst, int index);
-
-    static void testNativeASMessages2(Object array, Object elem, int index, String message)
-        throws Exception {
-        try {
-            doNativeArrayStore2(array, elem, index);
-            Asserts.fail("Expected ArrayStoreException not thrown");
-        } catch (ArrayIndexOutOfBoundsException e) {
-            Asserts.assertEquals(e.getMessage(), message);
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         try {
             boolean[]    za1 = new boolean[3];
@@ -192,8 +180,6 @@ public class ArrayStoreExceptionTest {
                                  "type mismatch: can not store java.lang.String to int[1][]");
             testNativeASMessages(ia4, "This is not a date", 2,
                                  "type mismatch: can not store java.lang.String to int[2][][]");
-
-            testNativeASMessages2("This is not an array", "This is not a date", 2, "2");
 
         } catch (java.lang.RuntimeException e) {
             throw e;

@@ -136,7 +136,7 @@ public class StreamingBody implements HttpServerAdapters {
         http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
         http2TestServer.addHandler(new MessageHandler(), "/http2/streamingbody/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/streamingbody/y";
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, 0));
+        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
         https2TestServer.addHandler(new MessageHandler(), "/https2/streamingbody/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/streamingbody/z";
 

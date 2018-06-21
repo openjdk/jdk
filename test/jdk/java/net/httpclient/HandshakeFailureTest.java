@@ -23,6 +23,7 @@
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLSocket;
 import java.io.DataInputStream;
@@ -45,7 +46,7 @@ import static java.net.http.HttpResponse.BodyHandlers.discarding;
 
 /**
  * @test
- * @run main/othervm HandshakeFailureTest
+ * @run main/othervm -Djdk.internal.httpclient.debug=true HandshakeFailureTest
  * @summary Verify SSLHandshakeException is received when the handshake fails,
  * either because the server closes ( EOF ) the connection during handshaking
  * or no cipher suite ( or similar ) can be negotiated.
@@ -80,9 +81,17 @@ public class HandshakeFailureTest {
         }
     }
 
+    static HttpClient getClient() {
+        SSLParameters params = new SSLParameters();
+        params.setProtocols(new String[] {"TLSv1.2"});
+        return HttpClient.newBuilder()
+                .sslParameters(params)
+                .build();
+    }
+
     void testSyncSameClient(URI uri, Version version) throws Exception {
         out.printf("%n--- testSyncSameClient %s ---%n", version);
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient client = getClient();
         for (int i = 0; i < TIMES; i++) {
             out.printf("iteration %d%n", i);
             HttpRequest request = HttpRequest.newBuilder(uri)
@@ -92,8 +101,9 @@ public class HandshakeFailureTest {
                 HttpResponse<Void> response = client.send(request, discarding());
                 String msg = String.format("UNEXPECTED response=%s%n", response);
                 throw new RuntimeException(msg);
-            } catch (SSLHandshakeException expected) {
+            } catch (IOException expected) {
                 out.printf("Client: caught expected exception: %s%n", expected);
+                checkExceptionOrCause(SSLHandshakeException.class, expected);
             }
         }
     }
@@ -103,7 +113,7 @@ public class HandshakeFailureTest {
         for (int i = 0; i < TIMES; i++) {
             out.printf("iteration %d%n", i);
             // a new client each time
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = getClient();
             HttpRequest request = HttpRequest.newBuilder(uri)
                                              .version(version)
                                              .build();
@@ -111,15 +121,16 @@ public class HandshakeFailureTest {
                 HttpResponse<Void> response = client.send(request, discarding());
                 String msg = String.format("UNEXPECTED response=%s%n", response);
                 throw new RuntimeException(msg);
-            } catch (SSLHandshakeException expected) {
+            } catch (IOException expected) {
                 out.printf("Client: caught expected exception: %s%n", expected);
+                checkExceptionOrCause(SSLHandshakeException.class, expected);
             }
         }
     }
 
     void testAsyncSameClient(URI uri, Version version) throws Exception {
         out.printf("%n--- testAsyncSameClient %s ---%n", version);
-        HttpClient client = HttpClient.newHttpClient();
+        HttpClient client = getClient();
         for (int i = 0; i < TIMES; i++) {
             out.printf("iteration %d%n", i);
             HttpRequest request = HttpRequest.newBuilder(uri)
@@ -132,12 +143,9 @@ public class HandshakeFailureTest {
                 String msg = String.format("UNEXPECTED response=%s%n", response);
                 throw new RuntimeException(msg);
             } catch (CompletionException ce) {
-                if (ce.getCause() instanceof SSLHandshakeException) {
-                    out.printf("Client: caught expected exception: %s%n", ce.getCause());
-                } else {
-                    out.printf("Client: caught UNEXPECTED exception: %s%n", ce.getCause());
-                    throw ce;
-                }
+                Throwable expected = ce.getCause();
+                out.printf("Client: caught expected exception: %s%n", expected);
+                checkExceptionOrCause(SSLHandshakeException.class, expected);
             }
         }
     }
@@ -147,7 +155,7 @@ public class HandshakeFailureTest {
         for (int i = 0; i < TIMES; i++) {
             out.printf("iteration %d%n", i);
             // a new client each time
-            HttpClient client = HttpClient.newHttpClient();
+            HttpClient client = getClient();
             HttpRequest request = HttpRequest.newBuilder(uri)
                                              .version(version)
                                              .build();
@@ -158,14 +166,24 @@ public class HandshakeFailureTest {
                 String msg = String.format("UNEXPECTED response=%s%n", response);
                 throw new RuntimeException(msg);
             } catch (CompletionException ce) {
-                if (ce.getCause() instanceof SSLHandshakeException) {
-                    out.printf("Client: caught expected exception: %s%n", ce.getCause());
-                } else {
-                    out.printf("Client: caught UNEXPECTED exception: %s%n", ce.getCause());
-                    throw ce;
-                }
+                ce.printStackTrace(out);
+                Throwable expected = ce.getCause();
+                out.printf("Client: caught expected exception: %s%n", expected);
+                checkExceptionOrCause(SSLHandshakeException.class, expected);
             }
         }
+    }
+
+    static void checkExceptionOrCause(Class<? extends Throwable> clazz, Throwable t) {
+        final Throwable original = t;
+        do {
+            if (clazz.isInstance(t)) {
+                System.out.println("Found expected exception/cause: " + t);
+                return; // found
+            }
+        } while ((t = t.getCause()) != null);
+        original.printStackTrace(System.out);
+        throw new RuntimeException("Expected " + clazz + "in " + original);
     }
 
     /** Common supertype for PlainServer and SSLServer. */

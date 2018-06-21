@@ -22,24 +22,39 @@
  */
 package jdk.internal.net.http.hpack;
 
+import jdk.internal.net.http.hpack.Huffman.Reader;
+import jdk.internal.net.http.hpack.Huffman.Writer;
 import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
-import java.util.Stack;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static java.lang.Integer.parseInt;
-import static org.testng.Assert.*;
+import static jdk.internal.net.http.hpack.HPACK.bytesForBits;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public final class HuffmanTest {
+
+    /*
+     * Implementations of Huffman.Reader and Huffman.Writer under test.
+     * Change them here.
+     */
+    private static final Supplier<Reader> READER = QuickHuffman.Reader::new;
+    private static final Supplier<Writer> WRITER = QuickHuffman.Writer::new;
 
     //
     // https://tools.ietf.org/html/rfc7541#appendix-B
     //
-    private static final String SPEC =
+    private static final String SPECIFICATION =
             // @formatter:off
      "                          code as bits                 as hex   len\n" +
      "        sym              aligned to MSB                aligned   in\n" +
@@ -303,137 +318,213 @@ public final class HuffmanTest {
      "   EOS (256)  |11111111|11111111|11111111|111111      3fffffff  [30]";
     // @formatter:on
 
-    @Test
-    public void read_table() throws IOException {
-        Pattern line = Pattern.compile(
-                "\\(\\s*(?<ascii>\\d+)\\s*\\)\\s*(?<binary>(\\|(0|1)+)+)\\s*" +
-                        "(?<hex>[0-9a-zA-Z]+)\\s*\\[\\s*(?<len>\\d+)\\s*\\]");
-        Matcher m = line.matcher(SPEC);
-        int i = 0;
-        while (m.find()) {
-            String ascii = m.group("ascii");
-            String binary = m.group("binary").replaceAll("\\|", "");
-            String hex = m.group("hex");
-            String len = m.group("len");
+    private static final Code EOS = new Code((char) 256, 0x3fffffff, 30);
+    private final SortedMap<Character, Code> CODES = readSpecification();
 
-            // Several sanity checks for the data read from the table, just to
-            // make sure what we read makes sense
-            assertEquals(parseInt(len), binary.length());
-            assertEquals(parseInt(binary, 2), parseInt(hex, 16));
+    private static final class Code {
 
-            int expected = parseInt(ascii);
+        final char sym;
+        final int hex;
+        final int len;
 
-            // TODO: find actual eos, do not hardcode it!
-            byte[] bytes = intToBytes(0x3fffffff, 30,
-                    parseInt(hex, 16), parseInt(len));
-
-            StringBuilder actual = new StringBuilder();
-            NaiveHuffman.Reader t = new NaiveHuffman.Reader();
-            t.read(ByteBuffer.wrap(bytes), actual, false, true);
-
-            // What has been read MUST represent a single symbol
-            assertEquals(actual.length(), 1, "ascii: " + ascii);
-
-            // It's a lot more visual to compare char as codes rather than
-            // characters (as some of them might not be visible)
-            assertEquals(actual.charAt(0), expected);
-            i++;
-
-            // maybe not report EOS but rather throw an expected exception?
+        public Code(char sym, int hex, int len) {
+            this.sym = sym;
+            this.hex = hex;
+            this.len = len;
         }
-        assertEquals(i, 257); // 256 + EOS
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Code code = (Code) o;
+            return sym == code.sym &&
+                    hex == code.hex &&
+                    len == code.len;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(sym, hex, len);
+        }
+    }
+
+    private SortedMap<Character, Code> readSpecification() {
+        Pattern line = Pattern.compile(
+                "\\(\\s*(?<sym>\\d+)\\s*\\)\\s*(?<bits>(\\|([01])+)+)\\s*" +
+                        "(?<hex>[0-9a-zA-Z]+)\\s*\\[\\s*(?<len>\\d+)\\s*\\]");
+        Matcher m = line.matcher(SPECIFICATION);
+        SortedMap<Character, Code> map = new TreeMap<>();
+        while (m.find()) {
+            String symString = m.group("sym");
+            String binaryString = m.group("bits").replaceAll("\\|", "");
+            String hexString = m.group("hex");
+            String lenString = m.group("len");
+            // several sanity checks for the data read from the table, just to
+            // make sure what we read makes sense:
+            int sym = Integer.parseInt(symString);
+            if (sym < 0 || sym > 65535) {
+                throw new IllegalArgumentException();
+            }
+            int binary = Integer.parseInt(binaryString, 2);
+            int len = Integer.parseInt(lenString);
+            if (binaryString.length() != len) {
+                throw new IllegalArgumentException();
+            }
+            int hex = Integer.parseInt(hexString, 16);
+            if (hex != binary) {
+                throw new IllegalArgumentException();
+            }
+            if (map.put((char) sym, new Code((char) sym, hex, len)) != null) {
+                // a mapping for sym already exists
+                throw new IllegalStateException();
+            }
+        }
+        if (map.size() != 257) {
+            throw new IllegalArgumentException();
+        }
+        return map;
+    }
+
+    /*
+     * Encodes manually each symbol (character) from the specification and
+     * checks that Huffman.Reader decodes the result back to the initial
+     * character. This verifies that Huffman.Reader is implemented according to
+     * RFC 7541.
+     */
+    @Test
+    public void decodingConsistentWithSpecification() throws IOException {
+        Reader reader = READER.get();
+        for (Code code : CODES.values()) {
+            if (code.equals(EOS)) {
+                continue; // skip EOS
+            }
+            ByteBuffer input = encode(code);
+            StringBuilder output = new StringBuilder(1);
+            reader.read(input, output, true);
+            reader.reset();
+
+            // compare chars using their decimal representation (as some chars
+            // might not be printable/visible)
+            int expected = code.sym;
+            int actual = (int) output.charAt(0);
+            assertEquals(output.length(), 1); // exactly 1 character
+            assertEquals(actual, expected);
+        }
+    }
+
+    @Test
+    public void decodeEOS1() {
+        Reader reader = READER.get();
+        TestHelper.assertVoidThrows(
+                IOException.class,
+                () -> reader.read(encode(EOS), new StringBuilder(), true));
+    }
+
+    @Test
+    public void decodeEOS2() {
+        Reader reader = READER.get();
+        TestHelper.assertVoidThrows(
+                IOException.class,
+                () -> reader.read(encode(EOS), new StringBuilder(), false));
     }
 
     //
     // https://tools.ietf.org/html/rfc7541#appendix-C.4.1
     //
     @Test
-    public void read_1() {
-        read("f1e3 c2e5 f23a 6ba0 ab90 f4ff", "www.example.com");
+    public void read01() {
+        readExhaustively("f1e3 c2e5 f23a 6ba0 ab90 f4ff", "www.example.com");
     }
 
     @Test
-    public void write_1() {
-        write("www.example.com", "f1e3 c2e5 f23a 6ba0 ab90 f4ff");
+    public void write01() {
+        writeExhaustively("www.example.com", "f1e3 c2e5 f23a 6ba0 ab90 f4ff");
     }
 
     //
     // https://tools.ietf.org/html/rfc7541#appendix-C.4.2
     //
     @Test
-    public void read_2() {
-        read("a8eb 1064 9cbf", "no-cache");
+    public void read02() {
+        readExhaustively("a8eb 1064 9cbf", "no-cache");
     }
 
     @Test
-    public void write_2() {
-        write("no-cache", "a8eb 1064 9cbf");
-    }
-
-    //
-    // https://tools.ietf.org/html/rfc7541#appendix-C.4.3
-    //
-    @Test
-    public void read_3() {
-        read("25a8 49e9 5ba9 7d7f", "custom-key");
-    }
-
-    @Test
-    public void write_3() {
-        write("custom-key", "25a8 49e9 5ba9 7d7f");
+    public void write02() {
+        writeExhaustively("no-cache", "a8eb 1064 9cbf");
     }
 
     //
     // https://tools.ietf.org/html/rfc7541#appendix-C.4.3
     //
     @Test
-    public void read_4() {
-        read("25a8 49e9 5bb8 e8b4 bf", "custom-value");
+    public void read03() {
+        readExhaustively("25a8 49e9 5ba9 7d7f", "custom-key");
     }
 
     @Test
-    public void write_4() {
-        write("custom-value", "25a8 49e9 5bb8 e8b4 bf");
-    }
-
-    //
-    // https://tools.ietf.org/html/rfc7541#appendix-C.6.1
-    //
-    @Test
-    public void read_5() {
-        read("6402", "302");
-    }
-
-    @Test
-    public void write_5() {
-        write("302", "6402");
+    public void write03() {
+        writeExhaustively("custom-key", "25a8 49e9 5ba9 7d7f");
     }
 
     //
-    // https://tools.ietf.org/html/rfc7541#appendix-C.6.1
+    // https://tools.ietf.org/html/rfc7541#appendix-C.4.3
     //
     @Test
-    public void read_6() {
-        read("aec3 771a 4b", "private");
+    public void read04() {
+        readExhaustively("25a8 49e9 5bb8 e8b4 bf", "custom-value");
     }
 
     @Test
-    public void write_6() {
-        write("private", "aec3 771a 4b");
+    public void write04() {
+        writeExhaustively("custom-value", "25a8 49e9 5bb8 e8b4 bf");
     }
 
     //
     // https://tools.ietf.org/html/rfc7541#appendix-C.6.1
     //
     @Test
-    public void read_7() {
-        read("d07a be94 1054 d444 a820 0595 040b 8166 e082 a62d 1bff",
+    public void read05() {
+        readExhaustively("6402", "302");
+    }
+
+    @Test
+    public void write05() {
+        writeExhaustively("302", "6402");
+    }
+
+    //
+    // https://tools.ietf.org/html/rfc7541#appendix-C.6.1
+    //
+    @Test
+    public void read06() {
+        readExhaustively("aec3 771a 4b", "private");
+    }
+
+    @Test
+    public void write06() {
+        writeExhaustively("private", "aec3 771a 4b");
+    }
+
+    //
+    // https://tools.ietf.org/html/rfc7541#appendix-C.6.1
+    //
+    @Test
+    public void read07() {
+        readExhaustively(
+                "d07a be94 1054 d444 a820 0595 040b 8166 e082 a62d 1bff",
                 "Mon, 21 Oct 2013 20:13:21 GMT");
     }
 
     @Test
-    public void write_7() {
-        write("Mon, 21 Oct 2013 20:13:21 GMT",
+    public void write07() {
+        writeExhaustively(
+                "Mon, 21 Oct 2013 20:13:21 GMT",
                 "d07a be94 1054 d444 a820 0595 040b 8166 e082 a62d 1bff");
     }
 
@@ -441,42 +532,44 @@ public final class HuffmanTest {
     // https://tools.ietf.org/html/rfc7541#appendix-C.6.1
     //
     @Test
-    public void read_8() {
-        read("9d29 ad17 1863 c78f 0b97 c8e9 ae82 ae43 d3",
-                "https://www.example.com");
+    public void read08() {
+        readExhaustively("9d29 ad17 1863 c78f 0b97 c8e9 ae82 ae43 d3",
+                         "https://www.example.com");
     }
 
     @Test
-    public void write_8() {
-        write("https://www.example.com",
-                "9d29 ad17 1863 c78f 0b97 c8e9 ae82 ae43 d3");
+    public void write08() {
+        writeExhaustively("https://www.example.com",
+                          "9d29 ad17 1863 c78f 0b97 c8e9 ae82 ae43 d3");
     }
 
     //
     // https://tools.ietf.org/html/rfc7541#appendix-C.6.2
     //
     @Test
-    public void read_9() {
-        read("640e ff", "307");
+    public void read09() {
+        readExhaustively("640e ff", "307");
     }
 
     @Test
-    public void write_9() {
-        write("307", "640e ff");
+    public void write09() {
+        writeExhaustively("307", "640e ff");
     }
 
     //
     // https://tools.ietf.org/html/rfc7541#appendix-C.6.3
     //
     @Test
-    public void read_10() {
-        read("d07a be94 1054 d444 a820 0595 040b 8166 e084 a62d 1bff",
+    public void read10() {
+        readExhaustively(
+                "d07a be94 1054 d444 a820 0595 040b 8166 e084 a62d 1bff",
                 "Mon, 21 Oct 2013 20:13:22 GMT");
     }
 
     @Test
-    public void write_10() {
-        write("Mon, 21 Oct 2013 20:13:22 GMT",
+    public void write10() {
+        writeExhaustively(
+                "Mon, 21 Oct 2013 20:13:22 GMT",
                 "d07a be94 1054 d444 a820 0595 040b 8166 e084 a62d 1bff");
     }
 
@@ -484,78 +577,179 @@ public final class HuffmanTest {
     // https://tools.ietf.org/html/rfc7541#appendix-C.6.3
     //
     @Test
-    public void read_11() {
-        read("9bd9 ab", "gzip");
+    public void read11() {
+        readExhaustively("9bd9 ab", "gzip");
     }
 
     @Test
-    public void write_11() {
-        write("gzip", "9bd9 ab");
+    public void write11() {
+        writeExhaustively("gzip", "9bd9 ab");
     }
 
     //
     // https://tools.ietf.org/html/rfc7541#appendix-C.6.3
     //
     @Test
-    public void read_12() {
-        read("94e7 821d d7f2 e6c7 b335 dfdf cd5b 3960 " +
-             "d5af 2708 7f36 72c1 ab27 0fb5 291f 9587 " +
-             "3160 65c0 03ed 4ee5 b106 3d50 07",
+    public void read12() {
+        // The number of possibilities here grow as 2^(n-1). There are 45 bytes
+        // in this input. So it would require 2^44 decoding operations. If we
+        // spend 1 microsecond per operation, it would take approximately
+        //
+        //     ((10^15 * 10^(-6)) / 86400) / 365, or about 32 years
+        //
+        // Conclusion: too big to be read exhaustively
+        read("94e7 821d d7f2 e6c7 b335 dfdf cd5b 3960 "
+                     + "d5af 2708 7f36 72c1 ab27 0fb5 291f 9587 "
+                     + "3160 65c0 03ed 4ee5 b106 3d50 07",
              "foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1");
     }
 
     @Test
-    public void read_13() {
-        read("6274 a6b4 0989 4de4 b27f 80",
-             "/https2/fixed?0");
+    public void write12() {
+        write("foo=ASDJKHQKBZXOQWEOPIUAXQWEOIU; max-age=3600; version=1",
+              "94e7 821d d7f2 e6c7 b335 dfdf cd5b 3960 "
+                      + "d5af 2708 7f36 72c1 ab27 0fb5 291f 9587 "
+                      + "3160 65c0 03ed 4ee5 b106 3d50 07");
     }
 
     @Test
-    public void test_trie_has_no_empty_nodes() {
-        NaiveHuffman.Node root = NaiveHuffman.INSTANCE.getRoot();
-        Stack<NaiveHuffman.Node> backlog = new Stack<>();
-        backlog.push(root);
-        while (!backlog.isEmpty()) {
-            NaiveHuffman.Node n = backlog.pop();
-            // The only type of nodes we couldn't possibly catch during
-            // construction is an empty node: no children and no char
-            if (n.left != null) {
-                backlog.push(n.left);
+    public void read13() {
+        readExhaustively("6274 a6b4 0989 4de4 b27f 80",
+                         "/https2/fixed?0");
+    }
+
+    @Test
+    public void roundTrip() throws IOException {
+
+        class Helper {
+            // Maps code's length to a character that is encoded with a code of
+            // that length. Which of the characters with the same code's length
+            // is picked is undefined.
+            private Map<Integer, Character> chars = new HashMap<>();
+            {
+                for (Map.Entry<Character, Code> e : CODES.entrySet()) {
+                    chars.putIfAbsent(e.getValue().len, e.getKey());
+                }
             }
-            if (n.right != null) {
-                backlog.push(n.right);
+
+            private CharSequence charsOfLength(int... lengths) {
+                StringBuilder b = new StringBuilder(lengths.length);
+                for (int length : lengths) {
+                    Character c = chars.get(length);
+                    if (c == null) {
+                        throw new IllegalArgumentException(
+                                "No code has length " + length);
+                    }
+                    b.append(c);
+                }
+                return b.toString();
             }
-            assertFalse(!n.charIsSet && n.left == null && n.right == null,
-                    "Empty node in the trie");
+
+            private void identity(CharSequence str) throws IOException {
+                Writer w = WRITER.get();
+                StringBuilder b = new StringBuilder(str.length());
+                int size = w.lengthOf(str);
+                ByteBuffer buffer = ByteBuffer.allocate(size);
+                w.from(str, 0, str.length()).write(buffer);
+                Reader r = READER.get();
+                r.read(buffer.flip(), b, true);
+                assertEquals(b.toString(), str);
+            }
+
+            private void roundTrip(int... lengths) throws IOException {
+                identity(charsOfLength(lengths));
+            }
         }
+
+        // The idea is to build a number of input strings that are encoded
+        // without the need for padding. The sizes of the encoded forms,
+        // therefore, must be 8, 16, 24, 32, 48, 56, 64 and 72 bits. Then check
+        // that they are encoded and then decoded into the same strings.
+
+        Helper h = new Helper();
+
+        // --  8 bit code --
+
+        h.roundTrip( 8);
+
+        // -- 16 bit code --
+
+        h.roundTrip( 5, 11);
+        h.roundTrip( 5,  5,  6);
+
+        // -- 24 bit code --
+
+        h.roundTrip(24);
+        h.roundTrip( 5, 19);
+        h.roundTrip( 5,  5, 14);
+        h.roundTrip( 5,  5,  6,  8);
+
+        // -- 32 bit code --
+
+        h.roundTrip( 5, 27);
+        h.roundTrip( 5,  5, 22);
+        h.roundTrip( 5,  5,  7, 15);
+        h.roundTrip( 5,  5,  5,  5, 12);
+        h.roundTrip( 5,  5,  5,  5,  5,  7);
+
+        // -- 48 bit code --
+
+        h.roundTrip(20, 28);
+        h.roundTrip( 5, 13, 30);
+        h.roundTrip( 5,  5,  8, 30);
+        h.roundTrip( 5,  5,  5,  5, 28);
+        h.roundTrip( 5,  5,  5,  5,  5, 23);
+        h.roundTrip( 5,  5,  5,  5,  5,  8, 15);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5, 13);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  8);
+
+        // -- 56 bit code --
+
+        h.roundTrip(26, 30);
+        h.roundTrip( 5, 21, 30);
+        h.roundTrip( 5,  5, 19, 27);
+        h.roundTrip( 5,  5,  5, 11, 30);
+        h.roundTrip( 5,  5,  5,  5,  6, 30);
+        h.roundTrip( 5,  5,  5,  5,  5,  5, 26);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5, 21);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  6, 15);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5, 11);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  6);
+
+        // -- 64 bit code --
+
+        h.roundTrip( 6, 28, 30);
+        h.roundTrip( 5,  5, 24, 30);
+        h.roundTrip( 5,  5,  5, 19, 30);
+        h.roundTrip( 5,  5,  5,  5, 14, 30);
+        h.roundTrip( 5,  5,  5,  5,  5, 11, 28);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  6, 28);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5, 24);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5, 19);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5,  5, 14);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  6,  8);
+
+        // -- 72 bit code --
+
+        h.roundTrip(12, 30, 30);
+        h.roundTrip( 5,  7, 30, 30);
+        h.roundTrip( 5,  5,  5, 27, 30);
+        h.roundTrip( 5,  5,  5,  5, 22, 30);
+        h.roundTrip( 5,  5,  5,  5,  5, 19, 28);
+        h.roundTrip( 5,  5,  5,  5,  5,  5, 12, 30);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  7, 30);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5, 27);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5,  5, 22);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  7, 15);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5, 12);
+        h.roundTrip( 5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5,  7);
     }
 
     @Test
-    public void test_trie_has_257_nodes() {
-        int count = 0;
-        NaiveHuffman.Node root = NaiveHuffman.INSTANCE.getRoot();
-        Stack<NaiveHuffman.Node> backlog = new Stack<>();
-        backlog.push(root);
-        while (!backlog.isEmpty()) {
-            NaiveHuffman.Node n = backlog.pop();
-            if (n.left != null) {
-                backlog.push(n.left);
-            }
-            if (n.right != null) {
-                backlog.push(n.right);
-            }
-            if (n.isLeaf()) {
-                count++;
-            }
-        }
-        assertEquals(count, 257);
-    }
-
-    @Test
-    public void cant_encode_outside_byte() {
+    public void cannotEncodeOutsideByte() {
         TestHelper.Block<Object> coding =
-                () -> new NaiveHuffman.Writer()
-                        .from(((char) 256) + "", 0, 1)
+                () -> WRITER.get()
+                        .from(String.valueOf((char) 256), 0, 1)
                         .write(ByteBuffer.allocate(1));
         RuntimeException e =
                 TestHelper.assertVoidThrows(RuntimeException.class, coding);
@@ -565,25 +759,58 @@ public final class HuffmanTest {
     private static void read(String hexdump, String decoded) {
         ByteBuffer source = SpecHelper.toBytes(hexdump);
         Appendable actual = new StringBuilder();
+        Reader reader = READER.get();
         try {
-            new QuickHuffman.Reader().read(source, actual, true);
+            reader.read(source, actual, true);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
         assertEquals(actual.toString(), decoded);
     }
 
+    private static void readExhaustively(String hexdump, String decoded) {
+        ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
+        Reader reader = READER.get();
+        ByteBuffer source = SpecHelper.toBytes(hexdump);
+        StringBuilder actual = new StringBuilder();
+        BuffersTestingKit.forEachSplit(source, buffers -> {
+            try {
+                for (ByteBuffer b : buffers) {
+                    reader.read(b, actual, false);
+                }
+                reader.read(EMPTY_BUFFER, actual, true);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            assertEquals(actual.toString(), decoded);
+            reader.reset();
+            actual.setLength(0);
+        });
+    }
+
     private static void write(String decoded, String hexdump) {
-        Huffman.Writer writer = new QuickHuffman.Writer();
+        Writer writer = WRITER.get();
         int n = writer.lengthOf(decoded);
-        ByteBuffer destination = ByteBuffer.allocate(n); // Extra margin (1) to test having more bytes in the destination than needed is ok
+        ByteBuffer destination = ByteBuffer.allocateDirect(n);
+        writer.from(decoded, 0, decoded.length());
+        boolean written = writer.write(destination);
+        assertTrue(written);
+        String actual = SpecHelper.toHexdump(destination.flip());
+        assertEquals(actual, hexdump);
+        writer.reset();
+    }
+
+    private static void writeExhaustively(String decoded, String hexdump) {
+        Writer writer = WRITER.get();
+        int n = writer.lengthOf(decoded);
+        ByteBuffer destination = ByteBuffer.allocate(n);
         BuffersTestingKit.forEachSplit(destination, byteBuffers -> {
             writer.from(decoded, 0, decoded.length());
             boolean written = false;
             for (ByteBuffer b : byteBuffers) {
                 int pos = b.position();
                 written = writer.write(b);
-                b.position(pos);
+                b.position(pos); // "flip" to the saved position, for reading
             }
             assertTrue(written);
             ByteBuffer concated = BuffersTestingKit.concat(byteBuffers);
@@ -593,45 +820,20 @@ public final class HuffmanTest {
         });
     }
 
-    //
-    // It's not very pretty, yes I know that
-    //
-    //      hex:
-    //
-    //      |31|30|...|N-1|...|01|00|
-    //                  \        /
-    //                  codeLength
-    //
-    //      hex <<= 32 - codeLength; (align to MSB):
-    //
-    //      |31|30|...|32-N|...|01|00|
-    //        \        /
-    //        codeLength
-    //
-    //      EOS:
-    //
-    //      |31|30|...|M-1|...|01|00|
-    //                   \        /
-    //                   eosLength
-    //
-    //      eos <<= 32 - eosLength; (align to MSB):
-    //
-    //      pad with MSBs of EOS:
-    //
-    //      |31|30|...|32-N|32-N-1|...|01|00|
-    //                     |    32|...|
-    //
-    //      Finally, split into byte[]
-    //
-    private byte[] intToBytes(int eos, int eosLength, int hex, int codeLength) {
-        hex <<= 32 - codeLength;
-        eos >>= codeLength - (32 - eosLength);
-        hex |= eos;
-        int n = (int) Math.ceil(codeLength / 8.0);
+    /*
+     * Encodes a single character. This representation is padded, thus ready to
+     * be decoded.
+     */
+    private static ByteBuffer encode(Code code) {
+        int EOS_MSB = EOS.hex << (32 - EOS.len);
+        int padding = EOS_MSB >>> code.len;
+        int hexMSB = code.hex << (32 - code.len);
+        int c = hexMSB | padding;
+        int n = bytesForBits(code.len);
         byte[] result = new byte[n];
         for (int i = 0; i < n; i++) {
-            result[i] = (byte) (hex >> (32 - 8 * (i + 1)));
+            result[i] = (byte) (c >> (32 - 8 * (i + 1)));
         }
-        return result;
+        return ByteBuffer.wrap(result);
     }
 }

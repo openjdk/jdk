@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 size_t PLAB::min_size() {
   // Make sure that we return something that is larger than AlignmentReserve
-  return align_object_size(MAX2(MinTLABSize / HeapWordSize, (uintx)oopDesc::header_size())) + AlignmentReserve;
+  return align_object_size(MAX2(MinTLABSize / HeapWordSize, (size_t)oopDesc::header_size())) + AlignmentReserve;
 }
 
 size_t PLAB::max_size() {

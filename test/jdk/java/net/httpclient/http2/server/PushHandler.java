@@ -23,10 +23,15 @@
 
 import java.io.*;
 import java.net.*;
+import java.net.http.HttpHeaders;
 import java.nio.file.*;
-import jdk.internal.net.http.common.HttpHeadersImpl;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiPredicate;
 
 public class PushHandler implements Http2Handler {
+
+    static final BiPredicate<String,String> ACCEPT_ALL = (x, y) -> true;
 
     final Path tempFile;
     final int loops;
@@ -50,8 +55,8 @@ public class PushHandler implements Http2Handler {
                 for (int i=0; i<loops; i++) {
                     InputStream is = new FileInputStream(tempFile.toFile());
                     URI u = requestURI.resolve("/x/y/z/" + Integer.toString(i));
-                    HttpHeadersImpl h = new HttpHeadersImpl();
-                    h.addHeader("X-foo", "bar");
+                    HttpHeaders h = HttpHeaders.of(Map.of("X-foo", List.of("bar")),
+                                                   ACCEPT_ALL);
                     ee.serverPush(u, h, is);
                 }
                 System.err.println ("Server: sent all pushes");

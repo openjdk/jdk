@@ -30,19 +30,23 @@ import sun.net.util.IPAddressUtil;
 import sun.net.www.HeaderParser;
 
 import javax.net.ssl.ExtendedSSLSession;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.System.Logger.Level;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLPermission;
 import java.net.http.HttpHeaders;
+import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
@@ -58,9 +62,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -119,6 +125,8 @@ public final class Utils {
             "jdk.httpclient.bufsize", DEFAULT_BUFSIZE
     );
 
+    public static final BiPredicate<String,String> ACCEPT_ALL = (x,y) -> true;
+
     private static final Set<String> DISALLOWED_HEADERS_SET;
 
     static {
@@ -131,24 +139,21 @@ public final class Utils {
         DISALLOWED_HEADERS_SET = Collections.unmodifiableSet(treeSet);
     }
 
-    public static final Predicate<String>
-            ALLOWED_HEADERS = header -> !DISALLOWED_HEADERS_SET.contains(header);
+    public static final BiPredicate<String, String>
+            ALLOWED_HEADERS = (header, unused) -> !DISALLOWED_HEADERS_SET.contains(header);
 
-    public static final BiPredicate<String, List<String>> VALIDATE_USER_HEADER =
-            (name, lv) -> {
-                requireNonNull(name, "header name");
-                requireNonNull(lv, "header values");
+    public static final BiPredicate<String, String> VALIDATE_USER_HEADER =
+            (name, value) -> {
+                assert name != null : "null header name";
+                assert value != null : "null header value";
                 if (!isValidName(name)) {
                     throw newIAE("invalid header name: \"%s\"", name);
                 }
-                if (!Utils.ALLOWED_HEADERS.test(name)) {
+                if (!Utils.ALLOWED_HEADERS.test(name, null)) {
                     throw newIAE("restricted header name: \"%s\"", name);
                 }
-                for (String value : lv) {
-                    requireNonNull(value, "header value");
-                    if (!isValidValue(value)) {
-                        throw newIAE("invalid header value for %s: \"%s\"", name, value);
-                    }
+                if (!isValidValue(value)) {
+                    throw newIAE("invalid header value for %s: \"%s\"", name, value);
                 }
                 return true;
             };
@@ -180,9 +185,20 @@ public final class Utils {
                                 .collect(Collectors.toUnmodifiableSet());
     }
 
+    public static <T> CompletableFuture<T> wrapForDebug(Logger logger, String name, CompletableFuture<T> cf) {
+        if (logger.on()) {
+            return cf.handle((r,t) -> {
+                logger.log("%s completed %s", name, t == null ? "successfully" : t );
+                return cf;
+            }).thenCompose(Function.identity());
+        } else {
+            return cf;
+        }
+    }
+
     private static final String WSPACES = " \t\r\n";
     private static final boolean isAllowedForProxy(String name,
-                                                   List<String> value,
+                                                   String value,
                                                    Set<String> disabledSchemes,
                                                    Predicate<String> allowedKeys) {
         if (!allowedKeys.test(name)) return false;
@@ -191,20 +207,18 @@ public final class Utils {
             if (value.isEmpty()) return false;
             for (String scheme : disabledSchemes) {
                 int slen = scheme.length();
-                for (String v : value) {
-                    int vlen = v.length();
-                    if (vlen == slen) {
-                        if (v.equalsIgnoreCase(scheme)) {
+                int vlen = value.length();
+                if (vlen == slen) {
+                    if (value.equalsIgnoreCase(scheme)) {
+                        return false;
+                    }
+                } else if (vlen > slen) {
+                    if (value.substring(0,slen).equalsIgnoreCase(scheme)) {
+                        int c = value.codePointAt(slen);
+                        if (WSPACES.indexOf(c) > -1
+                                || Character.isSpaceChar(c)
+                                || Character.isWhitespace(c)) {
                             return false;
-                        }
-                    } else if (vlen > slen) {
-                        if (v.substring(0,slen).equalsIgnoreCase(scheme)) {
-                            int c = v.codePointAt(slen);
-                            if (WSPACES.indexOf(c) > -1
-                                    || Character.isSpaceChar(c)
-                                    || Character.isWhitespace(c)) {
-                                return false;
-                            }
                         }
                     }
                 }
@@ -213,13 +227,13 @@ public final class Utils {
         return true;
     }
 
-    public static final BiPredicate<String, List<String>> PROXY_TUNNEL_FILTER =
+    public static final BiPredicate<String, String> PROXY_TUNNEL_FILTER =
             (s,v) -> isAllowedForProxy(s, v, PROXY_AUTH_TUNNEL_DISABLED_SCHEMES,
                     IS_PROXY_HEADER);
-    public static final BiPredicate<String, List<String>> PROXY_FILTER =
+    public static final BiPredicate<String, String> PROXY_FILTER =
             (s,v) -> isAllowedForProxy(s, v, PROXY_AUTH_DISABLED_SCHEMES,
                     ALL_HEADERS);
-    public static final BiPredicate<String, List<String>> NO_PROXY_HEADERS_FILTER =
+    public static final BiPredicate<String, String> NO_PROXY_HEADERS_FILTER =
             (n,v) -> Utils.NO_PROXY_HEADER.test(n);
 
 
@@ -254,6 +268,35 @@ public final class Utils {
             return getIOException(cause);
         }
         return new IOException(t);
+    }
+
+    /**
+     * Adds a more specific exception detail message, based on the given
+     * exception type and the message supplier. This is primarily to present
+     * more descriptive messages in IOExceptions that may be visible to calling
+     * code.
+     *
+     * @return a possibly new exception that has as its detail message, the
+     *         message from the messageSupplier, and the given throwable as its
+     *         cause. Otherwise returns the given throwable
+     */
+    public static Throwable wrapWithExtraDetail(Throwable t,
+                                                Supplier<String> messageSupplier) {
+        if (!(t instanceof IOException))
+            return t;
+
+        String msg = messageSupplier.get();
+        if (msg == null)
+            return t;
+
+        if (t instanceof ConnectionExpiredException) {
+            IOException ioe = new IOException(msg, t.getCause());
+            t = new ConnectionExpiredException(ioe);
+        } else {
+            IOException ioe = new IOException(msg, t);
+            t = ioe;
+        }
+        return t;
     }
 
     private Utils() { }
@@ -529,6 +572,16 @@ public final class Utils {
 
     public static ByteBuffer copy(ByteBuffer src) {
         ByteBuffer dst = ByteBuffer.allocate(src.remaining());
+        dst.put(src);
+        dst.flip();
+        return dst;
+    }
+
+    public static ByteBuffer copyAligned(ByteBuffer src) {
+        int len = src.remaining();
+        int size = ((len + 7) >> 3) << 3;
+        assert size >= len;
+        ByteBuffer dst = ByteBuffer.allocate(size);
         dst.put(src);
         dst.flip();
         return dst;
@@ -899,6 +952,20 @@ public final class Utils {
             address = new InetSocketAddress(address.getHostString(), address.getPort());
         }
         return address;
+    }
+
+    public static Throwable toConnectException(Throwable e) {
+        if (e == null) return null;
+        e = getCompletionCause(e);
+        if (e instanceof ConnectException) return e;
+        if (e instanceof SecurityException) return e;
+        if (e instanceof SSLException) return e;
+        if (e instanceof Error) return e;
+        if (e instanceof HttpTimeoutException) return e;
+        Throwable cause = e;
+        e = new ConnectException(e.getMessage());
+        e.initCause(cause);
+        return e;
     }
 
     /**

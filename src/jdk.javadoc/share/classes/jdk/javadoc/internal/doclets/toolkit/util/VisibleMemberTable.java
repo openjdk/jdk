@@ -676,7 +676,6 @@ public class VisibleMemberTable {
                         addMember(e, Kind.METHODS);
                         break;
                     case CONSTRUCTOR:
-                        if (!utils.isEnum(te))
                             addMember(e, Kind.CONSTRUCTORS);
                         break;
                     case ENUM_CONSTANT:

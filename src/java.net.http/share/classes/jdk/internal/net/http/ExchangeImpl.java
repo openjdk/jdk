@@ -32,8 +32,8 @@ import java.util.function.Function;
 import java.net.http.HttpResponse;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
-import static java.net.http.HttpClient.Version.HTTP_1_1;
 import jdk.internal.net.http.common.Utils;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
 
 /**
  * Splits request so that headers and body can be sent separately with optional

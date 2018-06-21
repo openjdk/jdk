@@ -28,7 +28,7 @@ package java.net.http;
 import java.io.IOException;
 
 /**
- * An exception used to signal the opening handshake failed.
+ * Thrown when the opening handshake has failed.
  *
  * @since 11
  */
@@ -54,6 +54,10 @@ public final class WebSocketHandshakeException extends IOException {
      *
      * <p> The value may be unavailable ({@code null}) if this exception has
      * been serialized and then deserialized.
+     *
+     * @apiNote The primary purpose of this method is to allow programmatic
+     * examination of the reasons behind the failure of the opening handshake.
+     * Some of these reasons might allow recovery.
      *
      * @return server response
      */

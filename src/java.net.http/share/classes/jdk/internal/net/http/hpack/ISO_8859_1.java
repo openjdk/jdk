@@ -46,29 +46,58 @@ final class ISO_8859_1 {
 
     public static final class Reader {
 
+        private final HPACK.BufferUpdateConsumer UPDATER =
+                (buf, bufLen) -> {
+                    buffer = buf;
+                    bufferLen = bufLen;
+                };
+
+        private long buffer;
+        private int bufferLen;
+
         public void read(ByteBuffer source, Appendable destination)
-                throws IOException {
-            for (int i = 0, len = source.remaining(); i < len; i++) {
-                char c = (char) (source.get() & 0xff);
-                try {
-                    destination.append(c);
-                } catch (IOException e) {
-                    throw new IOException(
-                            "Error appending to the destination", e);
+                throws IOException
+        {
+            while (true) {
+                int nBytes = HPACK.read(source, buffer, bufferLen, UPDATER);
+                if (nBytes == 0) {
+                    return;
+                }
+                assert bufferLen % 8 == 0 : bufferLen;
+                while (bufferLen > 0) {
+                    char c = (char) (buffer >>> 56);
+                    try {
+                        destination.append(c);
+                    } catch (IOException e) {
+                        throw new IOException(
+                                "Error appending to the destination", e);
+                    }
+                    buffer <<= 8;
+                    bufferLen -= 8;
                 }
             }
         }
 
         public Reader reset() {
+            buffer = 0;
+            bufferLen = 0;
             return this;
         }
     }
 
     public static final class Writer {
 
+        private final HPACK.BufferUpdateConsumer UPDATER =
+                (buf, bufLen) -> {
+                    buffer = buf;
+                    bufferLen = bufLen;
+                };
+
         private CharSequence source;
         private int pos;
         private int end;
+        private long buffer;
+        private int bufferLen;
 
         public Writer configure(CharSequence source, int start, int end) {
             this.source = source;
@@ -78,25 +107,39 @@ final class ISO_8859_1 {
         }
 
         public boolean write(ByteBuffer destination) {
-            for (; pos < end; pos++) {
-                char c = source.charAt(pos);
-                if (c > '\u00FF') {
-                    throw new IllegalArgumentException(
-                            "Illegal ISO-8859-1 char: " + (int) c);
+            while (true) {
+                while (true) { // stuff codes into long
+                    if (pos >= end) {
+                        break;
+                    }
+                    char c = source.charAt(pos);
+                    if (c > 255) {
+                        throw new IllegalArgumentException(Integer.toString((int) c));
+                    }
+                    if (bufferLen <= 56) {
+                        buffer |= (((long) c) << (56 - bufferLen)); // append
+                        bufferLen += 8;
+                        pos++;
+                    } else {
+                        break;
+                    }
                 }
-                if (destination.hasRemaining()) {
-                    destination.put((byte) c);
-                } else {
+                if (bufferLen == 0) {
+                    return true;
+                }
+                int nBytes = HPACK.write(buffer, bufferLen, UPDATER, destination);
+                if (nBytes == 0) {
                     return false;
                 }
             }
-            return true;
         }
 
         public Writer reset() {
             source = null;
             pos = -1;
             end = -1;
+            buffer = 0;
+            bufferLen = 0;
             return this;
         }
     }

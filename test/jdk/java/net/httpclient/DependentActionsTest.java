@@ -27,7 +27,7 @@
  *          completes are executed either asynchronously in an executor when the
  *          CF later completes, or in the user thread that joins.
  * @library /lib/testlibrary http2/server
- * @build jdk.testlibrary.SimpleSSLContext HttpServerAdapters ThrowingPublishers
+ * @build jdk.testlibrary.SimpleSSLContext HttpServerAdapters DependentActionsTest
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
@@ -82,12 +82,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.lang.System.out;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -374,13 +376,13 @@ public class DependentActionsTest implements HttpServerAdapters {
     }
 
     final List<String> extractStream(HttpResponse<Stream<String>> resp) {
-        return resp.body().collect(Collectors.toList());
+        return resp.body().collect(toList());
     }
 
     final List<String> extractInputStream(HttpResponse<InputStream> resp) {
         try (InputStream is = resp.body()) {
             return new BufferedReader(new InputStreamReader(is))
-                    .lines().collect(Collectors.toList());
+                    .lines().collect(toList());
         } catch (IOException x) {
             throw new CompletionException(x);
         }
@@ -399,43 +401,27 @@ public class DependentActionsTest implements HttpServerAdapters {
                 .findFirst();
     }
 
+    static final Predicate<StackFrame> DAT = sfe ->
+            sfe.getClassName().startsWith("DependentActionsTest");
+    static final Predicate<StackFrame> JUC = sfe ->
+            sfe.getClassName().startsWith("java.util.concurrent");
+    static final Predicate<StackFrame> JLT = sfe ->
+            sfe.getClassName().startsWith("java.lang.Thread");
+    static final Predicate<StackFrame> NotDATorJUCorJLT = Predicate.not(DAT.or(JUC).or(JLT));
+
+
     <T> void checkThreadAndStack(Thread thread,
                                  AtomicReference<RuntimeException> failed,
                                  T result,
                                  Throwable error) {
-        if (Thread.currentThread() == thread) {
-            //failed.set(new RuntimeException("Dependant action was executed in " + thread));
-            List<StackFrame> httpStack = WALKER.walk(s -> s.filter(f -> f.getDeclaringClass()
-                    .getModule().equals(HttpClient.class.getModule()))
-                    .collect(Collectors.toList()));
-            if (!httpStack.isEmpty()) {
-                System.out.println("Found unexpected trace: ");
-                httpStack.forEach(f -> System.out.printf("\t%s%n", f));
-                failed.set(new RuntimeException("Dependant action has unexpected frame in " +
-                        Thread.currentThread() + ": " + httpStack.get(0)));
+        //failed.set(new RuntimeException("Dependant action was executed in " + thread));
+        List<StackFrame> otherFrames = WALKER.walk(s -> s.filter(NotDATorJUCorJLT).collect(toList()));
+        if (!otherFrames.isEmpty()) {
+            System.out.println("Found unexpected trace: ");
+            otherFrames.forEach(f -> System.out.printf("\t%s%n", f));
+            failed.set(new RuntimeException("Dependant action has unexpected frame in " +
+                       Thread.currentThread() + ": " + otherFrames.get(0)));
 
-            }
-            return;
-        } else if (System.getSecurityManager() != null) {
-            Optional<StackFrame> sf = WALKER.walk(s -> findFrame(s, "PrivilegedRunnable"));
-            if (!sf.isPresent()) {
-                failed.set(new RuntimeException("Dependant action does not have expected frame in "
-                        + Thread.currentThread()));
-                return;
-            } else {
-                System.out.println("Found expected frame: " + sf.get());
-            }
-        } else {
-            List<StackFrame> httpStack = WALKER.walk(s -> s.filter(f -> f.getDeclaringClass()
-                    .getModule().equals(HttpClient.class.getModule()))
-                    .collect(Collectors.toList()));
-            if (!httpStack.isEmpty()) {
-                System.out.println("Found unexpected trace: ");
-                httpStack.forEach(f -> System.out.printf("\t%s%n", f));
-                failed.set(new RuntimeException("Dependant action has unexpected frame in " +
-                        Thread.currentThread() + ": " + httpStack.get(0)));
-
-            }
         }
     }
 
@@ -620,7 +606,7 @@ public class DependentActionsTest implements HttpServerAdapters {
         http2URI_fixed = "http://" + http2TestServer.serverAuthority() + "/http2/fixed/x";
         http2URI_chunk = "http://" + http2TestServer.serverAuthority() + "/http2/chunk/x";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, 0));
+        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
         https2TestServer.addHandler(h2_fixedLengthHandler, "/https2/fixed");
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/chunk");
         https2URI_fixed = "https://" + https2TestServer.serverAuthority() + "/https2/fixed/x";

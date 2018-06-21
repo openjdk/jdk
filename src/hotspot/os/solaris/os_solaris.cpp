@@ -1667,16 +1667,6 @@ void* os::get_default_process_handle() {
   return (void*)::dlopen(NULL, RTLD_LAZY);
 }
 
-int os::stat(const char *path, struct stat *sbuf) {
-  char pathbuf[MAX_PATH];
-  if (strlen(path) > MAX_PATH - 1) {
-    errno = ENAMETOOLONG;
-    return -1;
-  }
-  os::native_path(strcpy(pathbuf, path));
-  return ::stat(pathbuf, sbuf);
-}
-
 static inline time_t get_mtime(const char* filename) {
   struct stat st;
   int ret = os::stat(filename, &st);
@@ -4472,10 +4462,6 @@ jlong os::seek_to_file_offset(int fd, jlong offset) {
 
 jlong os::lseek(int fd, jlong offset, int whence) {
   return (jlong) ::lseek64(fd, offset, whence);
-}
-
-char * os::native_path(char *path) {
-  return path;
 }
 
 int os::ftruncate(int fd, jlong length) {

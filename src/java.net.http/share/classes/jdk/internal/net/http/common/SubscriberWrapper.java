@@ -260,6 +260,8 @@ public abstract class SubscriberWrapper
             try {
                 run1();
             } catch (Throwable t) {
+                if (debug.on())
+                    debug.log("DownstreamPusher threw: " + t);
                 errorCommon(t);
             }
         }
@@ -292,6 +294,7 @@ public abstract class SubscriberWrapper
                 pushScheduler.stop();
                 outputQ.clear();
                 downstreamSubscriber.onError(error);
+                cf.completeExceptionally(error);
                 return;
             }
 
@@ -383,9 +386,8 @@ public abstract class SubscriberWrapper
                 (throwable = new AssertionError("null throwable")) != null;
         if (errorRef.compareAndSet(null, throwable)) {
             if (debug.on()) debug.log("error", throwable);
-            pushScheduler.runOrSchedule();
             upstreamCompleted = true;
-            cf.completeExceptionally(throwable);
+            pushScheduler.runOrSchedule();
             return true;
         }
         return false;
