@@ -123,6 +123,7 @@ vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8160008 generic-all
 
 vmTestbase/nsk/jvmti/ClearBreakpoint/clrbrk001/TestDescription.java 8016181 generic-all
 vmTestbase/nsk/jvmti/FieldModification/fieldmod001/TestDescription.java 8016181 generic-all
+vmTestbase/nsk/jvmti/RedefineClasses/StressRedefineWithoutBytecodeCorruption/TestDescription.java 8202896 linux-x64
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java 7013634 generic-all
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted003/TestDescription.java 6606767 generic-all
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 7013634,6606767 generic-all
