@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,29 +20,4 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/**
- * @test
- * @bug 8186145
- * @requires vm.jvmci
- * @library /test/lib
- * @build TestValidateModules jdk.test.lib.process.*
- * @run main TestValidateModules
- * @summary Ensure java --validate-modules works with --XX:+EnableJVMCI
- */
-
-import jdk.test.lib.process.ProcessTools;
-
-public class TestValidateModules {
-    public static void main(String... args) throws Exception {
-        ProcessTools.executeTestJava("-XX:+UnlockExperimentalVMOptions",
-                                     "-XX:+EnableJVMCI",
-                                     "--validate-modules",
-                                     "--list-modules")
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .stdoutShouldContain("java.base")
-                .stdoutShouldContain("jdk.internal.vm.ci")
-                .shouldHaveExitValue(0);
-    }
-}
+module hello { }

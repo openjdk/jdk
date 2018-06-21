@@ -136,7 +136,7 @@ public final class ModuleBootstrap {
     /**
      * Initialize the module system, returning the boot layer.
      *
-     * @see java.lang.System#initPhase2()
+     * @see java.lang.System#initPhase2(boolean, boolean)
      */
     public static ModuleLayer boot() throws Exception {
 
@@ -213,11 +213,13 @@ public final class ModuleBootstrap {
         Counters.add("jdk.module.boot.2.defineBaseTime", t2);
 
 
-        // Step 2a: If --validate-modules is specified then the VM needs to
-        // start with only system modules, all other options are ignored.
+        // Step 2a: Scan all modules when --validate-modules specified
 
         if (getAndRemoveProperty("jdk.module.validation") != null) {
-            return createBootLayerForValidation();
+            int errors = ModulePathValidator.scanAllModules(System.out);
+            if (errors > 0) {
+                fail("Validation of module path failed");
+            }
         }
 
 
@@ -417,26 +419,6 @@ public final class ModuleBootstrap {
         Counters.publish();
 
         return bootLayer;
-    }
-
-    /**
-     * Create a boot module layer for validation that resolves all
-     * system modules.
-     */
-    private static ModuleLayer createBootLayerForValidation() {
-        Set<String> allSystem = ModuleFinder.ofSystem().findAll()
-            .stream()
-            .map(ModuleReference::descriptor)
-            .map(ModuleDescriptor::name)
-            .collect(Collectors.toSet());
-
-        Configuration cf = SharedSecrets.getJavaLangModuleAccess()
-            .resolveAndBind(ModuleFinder.ofSystem(),
-                            allSystem,
-                            null);
-
-        Function<String, ClassLoader> clf = ModuleLoaderMap.mappingFunction(cf);
-        return ModuleLayer.empty().defineModules(cf, clf);
     }
 
     /**

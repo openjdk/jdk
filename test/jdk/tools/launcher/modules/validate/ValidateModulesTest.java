@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /**
  * @test
+ * @bug 8178380 8194937
  * @modules java.xml
- * @library /lib/testlibrary
- * @build ValidateModulesTest JarUtils jdk.testlibrary.*
+ * @library src /lib/testlibrary
+ * @build ValidateModulesTest hello/* JarUtils jdk.testlibrary.*
  * @run testng ValidateModulesTest
  * @summary Basic test for java --validate-modules
  */
@@ -45,13 +46,40 @@ import static org.testng.Assert.*;
 public class ValidateModulesTest {
 
     /**
-     * Test that the system modules validate.
+     * Basic test --validate-modules when there are no errors.
      */
-    public void testSystemModules() throws Exception {
-        run("--validate-modules")
-                .stdoutShouldContain("java.base")
-                .stdoutShouldContain("java.xml")
-                .shouldHaveExitValue(0);
+    public void testNoErrors() throws Exception {
+        String modulePath = System.getProperty("test.module.path");
+
+        test("--validate-modules");
+
+        test("--validate-modules", "-version")
+                .shouldContain("Runtime Environment");
+
+        test("--validate-modules", "--list-modules")
+                .shouldContain("java.base");
+
+        test("--validate-modules", "-d", "java.base")
+                .shouldContain("exports java.lang");
+
+        test("-p", modulePath, "-m", "hello/p.Main")
+                .shouldContain("Hello world");
+
+        test("-p", modulePath, "--validate-modules", "-m", "hello/p.Main")
+                .shouldNotContain("Hello world");
+
+        test("-p", modulePath, "--validate-modules", "--list-modules")
+                .shouldContain("hello");
+
+        test("-p", modulePath, "--validate-modules", "-d", "hello")
+                .shouldContain("hello")
+                .shouldContain("contains p");
+
+        testExpectingError("--validate-modules", "--add-modules", "BAD")
+                .shouldContain("Module BAD not found");
+
+        testExpectingError("--validate-modules", "-m", "BAD")
+                .shouldContain("Module BAD not found");
     }
 
     /**
@@ -68,12 +96,9 @@ public class ValidateModulesTest {
         Path lib = Files.createDirectory(tmpdir.resolve("lib"));
         JarUtils.createJarFile(lib.resolve("xml.jar"), classes);
 
-        int exitValue = run("-p", lib.toString(), "--validate-modules")
+        testExpectingError("-p", lib.toString(), "--validate-modules")
                 .shouldContain("xml automatic")
-                .shouldContain("conflicts with module java.xml")
-                .getExitValue();
-        assertTrue(exitValue != 0);
-
+                .shouldContain("conflicts with module java.xml");
     }
 
     /**
@@ -89,10 +114,8 @@ public class ValidateModulesTest {
         JarUtils.createJarFile(lib.resolve("foo-1.0.jar"), classes);
         JarUtils.createJarFile(lib.resolve("foo-2.0.jar"), classes);
 
-        int exitValue = run("-p", lib.toString(), "--validate-modules")
-                .shouldContain("contains same module")
-                .getExitValue();
-        assertTrue(exitValue != 0);
+        testExpectingError("-p", lib.toString(), "--validate-modules")
+                .shouldContain("contains same module");
     }
 
     /**
@@ -110,18 +133,30 @@ public class ValidateModulesTest {
         Path lib2 = Files.createDirectory(tmpdir.resolve("lib2"));
         JarUtils.createJarFile(lib2.resolve("foo-2.0.jar"), classes);
 
-        run("-p", lib1 + File.pathSeparator + lib2, "--validate-modules")
-                .shouldContain("shadowed by")
-                .shouldHaveExitValue(0);
+        test("-p", lib1 + File.pathSeparator + lib2, "--validate-modules")
+                .shouldContain("shadowed by");
     }
 
     /**
-     * Runs the java launcher with the given arguments.
+     * Runs the java launcher with the given arguments, expecting a 0 exit code
      */
-    private OutputAnalyzer run(String... args) throws Exception {
-        return ProcessTools.executeTestJava(args)
+    private OutputAnalyzer test(String... args) throws Exception {
+        OutputAnalyzer analyzer = ProcessTools.executeTestJava(args)
                 .outputTo(System.out)
                 .errorTo(System.out);
+        assertTrue(analyzer.getExitValue() == 0);
+        return analyzer;
+    }
+
+    /**
+     * Runs the java launcher with the given arguments, expecting a non-0 exit code
+     */
+    private OutputAnalyzer testExpectingError(String... args) throws Exception {
+        OutputAnalyzer analyzer = ProcessTools.executeTestJava(args)
+                .outputTo(System.out)
+                .errorTo(System.out);
+        assertTrue(analyzer.getExitValue() != 0);
+        return analyzer;
     }
 
     /**

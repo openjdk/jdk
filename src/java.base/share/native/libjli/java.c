@@ -441,20 +441,17 @@ JavaMain(void * _args)
         LEAVE();
     }
 
-    // validate modules on the module path, then exit
-    if (validateModules) {
-        jboolean okay = ValidateModules(env);
-        CHECK_EXCEPTION_LEAVE(1);
-        if (!okay) ret = 1;
-        LEAVE();
-    }
-
     if (printVersion || showVersion) {
         PrintJavaVersion(env, showVersion);
         CHECK_EXCEPTION_LEAVE(0);
         if (printVersion) {
             LEAVE();
         }
+    }
+
+    // modules have been validated at startup so exit
+    if (validateModules) {
+        LEAVE();
     }
 
     /* If the user specified neither a class name nor a JAR file */
@@ -1953,20 +1950,6 @@ DescribeModule(JNIEnv *env, char *optString)
             "describeModule", "(Ljava/lang/String;)V"));
     NULL_CHECK(joptString = (*env)->NewStringUTF(env, optString));
     (*env)->CallStaticVoidMethod(env, cls, describeModuleID, joptString);
-}
-
-/**
- * Validate modules
- */
-static jboolean
-ValidateModules(JNIEnv *env)
-{
-    jmethodID validateModulesID;
-    jclass cls = GetLauncherHelperClass(env);
-    NULL_CHECK_RETURN_VALUE(cls, JNI_FALSE);
-    validateModulesID = (*env)->GetStaticMethodID(env, cls, "validateModules", "()Z");
-    NULL_CHECK_RETURN_VALUE(cls, JNI_FALSE);
-    return (*env)->CallStaticBooleanMethod(env, cls, validateModulesID);
 }
 
 /*
