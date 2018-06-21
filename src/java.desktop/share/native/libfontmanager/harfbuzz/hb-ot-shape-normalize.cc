@@ -119,7 +119,7 @@ skip_char (hb_buffer_t *buffer)
 static inline unsigned int
 decompose (const hb_ot_shape_normalize_context_t *c, bool shortest, hb_codepoint_t ab)
 {
-  hb_codepoint_t a, b, a_glyph, b_glyph;
+  hb_codepoint_t a = 0, b = 0, a_glyph = 0, b_glyph = 0;
   hb_buffer_t * const buffer = c->buffer;
   hb_font_t * const font = c->font;
 
@@ -164,7 +164,7 @@ decompose_current_character (const hb_ot_shape_normalize_context_t *c, bool shor
 {
   hb_buffer_t * const buffer = c->buffer;
   hb_codepoint_t u = buffer->cur().codepoint;
-  hb_codepoint_t glyph;
+  hb_codepoint_t glyph = 0;
 
   if (shortest && c->font->get_nominal_glyph (u, &glyph))
   {
@@ -218,7 +218,7 @@ handle_variation_selector_cluster (const hb_ot_shape_normalize_context_t *c, uns
   /* TODO Currently if there's a variation-selector we give-up, it's just too hard. */
   hb_buffer_t * const buffer = c->buffer;
   hb_font_t * const font = c->font;
-  for (; buffer->idx < end - 1 && !buffer->in_error;) {
+  for (; buffer->idx < end - 1 && buffer->successful;) {
     if (unlikely (buffer->unicode->is_variation_selector (buffer->cur(+1).codepoint))) {
       /* The next two lines are some ugly lines... But work. */
       if (font->get_variation_glyph (buffer->cur().codepoint, buffer->cur(+1).codepoint, &buffer->cur().glyph_index()))
@@ -254,13 +254,13 @@ static inline void
 decompose_multi_char_cluster (const hb_ot_shape_normalize_context_t *c, unsigned int end, bool short_circuit)
 {
   hb_buffer_t * const buffer = c->buffer;
-  for (unsigned int i = buffer->idx; i < end && !buffer->in_error; i++)
+  for (unsigned int i = buffer->idx; i < end && buffer->successful; i++)
     if (unlikely (buffer->unicode->is_variation_selector (buffer->info[i].codepoint))) {
       handle_variation_selector_cluster (c, end, short_circuit);
       return;
     }
 
-  while (buffer->idx < end && !buffer->in_error)
+  while (buffer->idx < end && buffer->successful)
     decompose_current_character (c, short_circuit);
 }
 
@@ -320,7 +320,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
 
   buffer->clear_output ();
   count = buffer->len;
-  for (buffer->idx = 0; buffer->idx < count && !buffer->in_error;)
+  for (buffer->idx = 0; buffer->idx < count && buffer->successful;)
   {
     unsigned int end;
     for (end = buffer->idx + 1; end < count; end++)
@@ -373,7 +373,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
   count = buffer->len;
   unsigned int starter = 0;
   buffer->next_glyph ();
-  while (buffer->idx < count && !buffer->in_error)
+  while (buffer->idx < count && buffer->successful)
   {
     hb_codepoint_t composed, glyph;
     if (/* We don't try to compose a non-mark character with it's preceding starter.
@@ -396,7 +396,7 @@ _hb_ot_shape_normalize (const hb_ot_shape_plan_t *plan,
       {
         /* Composes. */
         buffer->next_glyph (); /* Copy to out-buffer. */
-        if (unlikely (buffer->in_error))
+        if (unlikely (!buffer->successful))
           return;
         buffer->merge_out_clusters (starter, buffer->out_len);
         buffer->out_len--; /* Remove the second composable. */

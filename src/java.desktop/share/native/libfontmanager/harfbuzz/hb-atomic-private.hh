@@ -63,7 +63,6 @@ static inline void _HBMemoryBarrier (void) {
 }
 
 typedef LONG hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
 #define hb_atomic_int_impl_add(AI, V)           InterlockedExchangeAdd (&(AI), (V))
 
 #define hb_atomic_ptr_impl_get(P)               (_HBMemoryBarrier (), (void *) *(P))
@@ -73,7 +72,6 @@ typedef LONG hb_atomic_int_impl_t;
 #elif !defined(HB_NO_MT) && defined(HAVE_INTEL_ATOMIC_PRIMITIVES)
 
 typedef int hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
 #define hb_atomic_int_impl_add(AI, V)           __sync_fetch_and_add (&(AI), (V))
 
 #define hb_atomic_ptr_impl_get(P)               (void *) (__sync_synchronize (), *(P))
@@ -86,7 +84,6 @@ typedef int hb_atomic_int_impl_t;
 #include <mbarrier.h>
 
 typedef unsigned int hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
 #define hb_atomic_int_impl_add(AI, V)           ( ({__machine_rw_barrier ();}), atomic_add_int_nv (&(AI), (V)) - (V))
 
 #define hb_atomic_ptr_impl_get(P)               ( ({__machine_rw_barrier ();}), (void *) *(P))
@@ -104,7 +101,6 @@ typedef unsigned int hb_atomic_int_impl_t;
 
 
 typedef int32_t hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
 #define hb_atomic_int_impl_add(AI, V)           (OSAtomicAdd32Barrier ((V), &(AI)) - (V))
 
 #define hb_atomic_ptr_impl_get(P)               (OSMemoryBarrier (), (void *) *(P))
@@ -138,7 +134,6 @@ static inline int _hb_compare_and_swaplp(volatile long* P, long O, long N) {
 }
 
 typedef int hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
 #define hb_atomic_int_impl_add(AI, V)           _hb_fetch_and_add (&(AI), (V))
 
 #define hb_atomic_ptr_impl_get(P)               (__sync(), (void *) *(P))
@@ -149,7 +144,6 @@ typedef int hb_atomic_int_impl_t;
 #define HB_ATOMIC_INT_NIL 1 /* Warn that fallback implementation is in use. */
 
 typedef volatile int hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
 #define hb_atomic_int_impl_add(AI, V)           (((AI) += (V)) - (V))
 
 #define hb_atomic_ptr_impl_get(P)               ((void *) *(P))
@@ -159,7 +153,6 @@ typedef volatile int hb_atomic_int_impl_t;
 #else /* HB_NO_MT */
 
 typedef int hb_atomic_int_impl_t;
-#define HB_ATOMIC_INT_IMPL_INIT(V)              (V)
 #define hb_atomic_int_impl_add(AI, V)           (((AI) += (V)) - (V))
 
 #define hb_atomic_ptr_impl_get(P)               ((void *) *(P))
@@ -169,7 +162,7 @@ typedef int hb_atomic_int_impl_t;
 #endif
 
 
-#define HB_ATOMIC_INT_INIT(V)           {HB_ATOMIC_INT_IMPL_INIT(V)}
+#define HB_ATOMIC_INT_INIT(V)          {V}
 
 struct hb_atomic_int_t
 {

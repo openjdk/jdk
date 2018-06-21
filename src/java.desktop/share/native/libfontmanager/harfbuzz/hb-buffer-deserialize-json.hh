@@ -503,7 +503,7 @@ _resume:
 #line 43 "hb-buffer-deserialize-json.rl"
         {
         buffer->add_info (info);
-        if (buffer->in_error)
+        if (unlikely (!buffer->successful))
           return false;
         buffer->pos[buffer->len - 1] = pos;
         *end_ptr = p;
@@ -554,7 +554,7 @@ _resume:
 #line 43 "hb-buffer-deserialize-json.rl"
         {
         buffer->add_info (info);
-        if (buffer->in_error)
+        if (unlikely (!buffer->successful))
           return false;
         buffer->pos[buffer->len - 1] = pos;
         *end_ptr = p;
@@ -566,7 +566,7 @@ _resume:
 #line 43 "hb-buffer-deserialize-json.rl"
         {
         buffer->add_info (info);
-        if (buffer->in_error)
+        if (unlikely (!buffer->successful))
           return false;
         buffer->pos[buffer->len - 1] = pos;
         *end_ptr = p;
@@ -578,7 +578,7 @@ _resume:
 #line 43 "hb-buffer-deserialize-json.rl"
         {
         buffer->add_info (info);
-        if (buffer->in_error)
+        if (unlikely (!buffer->successful))
           return false;
         buffer->pos[buffer->len - 1] = pos;
         *end_ptr = p;
@@ -590,7 +590,7 @@ _resume:
 #line 43 "hb-buffer-deserialize-json.rl"
         {
         buffer->add_info (info);
-        if (buffer->in_error)
+        if (unlikely (!buffer->successful))
           return false;
         buffer->pos[buffer->len - 1] = pos;
         *end_ptr = p;
@@ -602,7 +602,7 @@ _resume:
 #line 43 "hb-buffer-deserialize-json.rl"
         {
         buffer->add_info (info);
-        if (buffer->in_error)
+        if (unlikely (!buffer->successful))
           return false;
         buffer->pos[buffer->len - 1] = pos;
         *end_ptr = p;
@@ -614,7 +614,7 @@ _resume:
 #line 43 "hb-buffer-deserialize-json.rl"
         {
         buffer->add_info (info);
-        if (buffer->in_error)
+        if (unlikely (!buffer->successful))
           return false;
         buffer->pos[buffer->len - 1] = pos;
         *end_ptr = p;

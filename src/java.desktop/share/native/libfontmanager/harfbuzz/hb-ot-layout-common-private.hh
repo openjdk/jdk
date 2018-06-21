@@ -165,7 +165,7 @@ struct RangeRecord
   public:
   DEFINE_SIZE_STATIC (6);
 };
-DEFINE_NULL_DATA (RangeRecord, "\000\001");
+DEFINE_NULL_DATA (OT, RangeRecord, "\000\001");
 
 
 struct IndexArray : ArrayOf<Index>
@@ -225,7 +225,7 @@ struct LangSys
   public:
   DEFINE_SIZE_ARRAY (6, featureIndex);
 };
-DEFINE_NULL_DATA (LangSys, "\0\0\xFF\xFF");
+DEFINE_NULL_DATA (OT, LangSys, "\0\0\xFF\xFF");
 
 
 struct Script
@@ -270,7 +270,7 @@ struct Script
 typedef RecordListOf<Script> ScriptList;
 
 
-/* http://www.microsoft.com/typography/otspec/features_pt.htm#size */
+/* https://docs.microsoft.com/en-us/typography/opentype/spec/features_pt#size */
 struct FeatureParamsSize
 {
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -292,7 +292,7 @@ struct FeatureParamsSize
      *
      * The specification for this feature tag is in the "OpenType Layout Tag
      * Registry". You can see a copy of this at:
-     * http://partners.adobe.com/public/developer/opentype/index_tag8.html#size
+     * https://docs.microsoft.com/en-us/typography/opentype/spec/features_pt#tag-size
      *
      * Here is one set of rules to determine if the 'size' feature is built
      * correctly, or as by the older versions of MakeOTF. You may be able to do
@@ -382,7 +382,7 @@ struct FeatureParamsSize
   DEFINE_SIZE_STATIC (10);
 };
 
-/* http://www.microsoft.com/typography/otspec/features_pt.htm#ssxx */
+/* https://docs.microsoft.com/en-us/typography/opentype/spec/features_pt#ssxx */
 struct FeatureParamsStylisticSet
 {
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -398,7 +398,7 @@ struct FeatureParamsStylisticSet
                                  * added to the end of this Feature Parameters
                                  * table in the future. */
 
-  HBUINT16      uiNameID;       /* The 'name' table name ID that specifies a
+  NameID        uiNameID;       /* The 'name' table name ID that specifies a
                                  * string (or strings, for multiple languages)
                                  * for a user-interface label for this
                                  * feature.  The values of uiLabelNameId and
@@ -416,7 +416,7 @@ struct FeatureParamsStylisticSet
   DEFINE_SIZE_STATIC (4);
 };
 
-/* http://www.microsoft.com/typography/otspec/features_ae.htm#cv01-cv99 */
+/* https://docs.microsoft.com/en-us/typography/opentype/spec/features_ae#cv01-cv99 */
 struct FeatureParamsCharacterVariants
 {
   inline bool sanitize (hb_sanitize_context_t *c) const
@@ -427,29 +427,29 @@ struct FeatureParamsCharacterVariants
   }
 
   HBUINT16      format;                 /* Format number is set to 0. */
-  HBUINT16      featUILableNameID;      /* The ‘name’ table name ID that
+  NameID        featUILableNameID;      /* The ‘name’ table name ID that
                                          * specifies a string (or strings,
                                          * for multiple languages) for a
                                          * user-interface label for this
                                          * feature. (May be nullptr.) */
-  HBUINT16      featUITooltipTextNameID;/* The ‘name’ table name ID that
+  NameID        featUITooltipTextNameID;/* The ‘name’ table name ID that
                                          * specifies a string (or strings,
                                          * for multiple languages) that an
                                          * application can use for tooltip
                                          * text for this feature. (May be
                                          * nullptr.) */
-  HBUINT16      sampleTextNameID;       /* The ‘name’ table name ID that
+  NameID        sampleTextNameID;       /* The ‘name’ table name ID that
                                          * specifies sample text that
                                          * illustrates the effect of this
                                          * feature. (May be nullptr.) */
   HBUINT16      numNamedParameters;     /* Number of named parameters. (May
                                          * be zero.) */
-  HBUINT16      firstParamUILabelNameID;/* The first ‘name’ table name ID
+  NameID        firstParamUILabelNameID;/* The first ‘name’ table name ID
                                          * used to specify strings for
                                          * user-interface labels for the
                                          * feature parameters. (Must be zero
                                          * if numParameters is zero.) */
-  ArrayOf<UINT24>
+  ArrayOf<HBUINT24>
                 characters;             /* Array of the Unicode Scalar Value
                                          * of the characters for which this
                                          * feature provides glyph variants.
@@ -716,7 +716,7 @@ struct CoverageFormat1
 
   template <typename set_t>
   inline bool add_coverage (set_t *glyphs) const {
-    return glyphs->add_sorted_array (glyphArray.array, glyphArray.len);
+    return glyphs->add_sorted_array (glyphArray.arrayZ, glyphArray.len);
   }
 
   public:
@@ -1272,7 +1272,7 @@ struct VarRegionList
     if (unlikely (region_index >= regionCount))
       return 0.;
 
-    const VarRegionAxis *axes = axesZ + (region_index * axisCount);
+    const VarRegionAxis *axes = axesZ.arrayZ + (region_index * axisCount);
 
     float v = 1.;
     unsigned int count = axisCount;
@@ -1280,7 +1280,7 @@ struct VarRegionList
     {
       int coord = i < coord_len ? coords[i] : 0;
       float factor = axes[i].evaluate (coord);
-      if (factor == 0.)
+      if (factor == 0.f)
         return 0.;
       v *= factor;
     }
@@ -1291,14 +1291,14 @@ struct VarRegionList
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
-                  c->check_array (axesZ, axesZ[0].static_size,
-                                  (unsigned int) axisCount * (unsigned int) regionCount));
+                  axesZ.sanitize (c, (unsigned int) axisCount * (unsigned int) regionCount));
   }
 
   protected:
   HBUINT16      axisCount;
   HBUINT16      regionCount;
-  VarRegionAxis axesZ[VAR];
+  UnsizedArrayOf<VarRegionAxis>
+                axesZ;
   public:
   DEFINE_SIZE_ARRAY (4, axesZ);
 };
@@ -1330,13 +1330,13 @@ struct VarData
    const HBINT16 *scursor = reinterpret_cast<const HBINT16 *> (row);
    for (; i < scount; i++)
    {
-     float scalar = regions.evaluate (regionIndices.array[i], coords, coord_count);
+     float scalar = regions.evaluate (regionIndices.arrayZ[i], coords, coord_count);
      delta += scalar * *scursor++;
    }
    const HBINT8 *bcursor = reinterpret_cast<const HBINT8 *> (scursor);
    for (; i < count; i++)
    {
-     float scalar = regions.evaluate (regionIndices.array[i], coords, coord_count);
+     float scalar = regions.evaluate (regionIndices.arrayZ[i], coords, coord_count);
      delta += scalar * *bcursor++;
    }
 
@@ -1357,7 +1357,7 @@ struct VarData
   HBUINT16              itemCount;
   HBUINT16              shortCount;
   ArrayOf<HBUINT16>     regionIndices;
-  HBUINT8                       bytesX[VAR];
+  HBUINT8               bytesX[VAR];
   public:
   DEFINE_SIZE_ARRAY2 (6, regionIndices, bytesX);
 };
@@ -1465,7 +1465,7 @@ struct ConditionSet
   {
     unsigned int count = conditions.len;
     for (unsigned int i = 0; i < count; i++)
-      if (!(this+conditions.array[i]).evaluate (coords, coord_len))
+      if (!(this+conditions.arrayZ[i]).evaluate (coords, coord_len))
         return false;
     return true;
   }
@@ -1506,7 +1506,7 @@ struct FeatureTableSubstitution
     unsigned int count = substitutions.len;
     for (unsigned int i = 0; i < count; i++)
     {
-      const FeatureTableSubstitutionRecord &record = substitutions.array[i];
+      const FeatureTableSubstitutionRecord &record = substitutions.arrayZ[i];
       if (record.featureIndex == feature_index)
         return &(this+record.feature);
     }
@@ -1559,7 +1559,7 @@ struct FeatureVariations
     unsigned int count = varRecords.len;
     for (unsigned int i = 0; i < count; i++)
     {
-      const FeatureVariationRecord &record = varRecords.array[i];
+      const FeatureVariationRecord &record = varRecords.arrayZ[i];
       if ((this+record.conditions).evaluate (coords, coord_len))
       {
         *index = i;

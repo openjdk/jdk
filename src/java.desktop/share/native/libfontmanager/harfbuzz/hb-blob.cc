@@ -1,5 +1,6 @@
 /*
  * Copyright © 2009  Red Hat, Inc.
+ * Copyright © 2018  Ebrahim Byagowi
  *
  *  This is part of HarfBuzz, a text shaping library.
  *
@@ -31,8 +32,7 @@
 
 #include "hb-private.hh"
 #include "hb-debug.hh"
-
-#include "hb-object-private.hh"
+#include "hb-blob-private.hh"
 
 #ifdef HAVE_SYS_MMAN_H
 #ifdef HAVE_UNISTD_H
@@ -43,34 +43,8 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <stdlib.h>
 
-
-struct hb_blob_t {
-  hb_object_header_t header;
-  ASSERT_POD ();
-
-  bool immutable;
-
-  const char *data;
-  unsigned int length;
-  hb_memory_mode_t mode;
-
-  void *user_data;
-  hb_destroy_func_t destroy;
-};
-
-
-static bool _try_writable (hb_blob_t *blob);
-
-static void
-_hb_blob_destroy_user_data (hb_blob_t *blob)
-{
-  if (blob->destroy) {
-    blob->destroy (blob->user_data);
-    blob->user_data = nullptr;
-    blob->destroy = nullptr;
-  }
-}
 
 /**
  * hb_blob_create: (skip)
@@ -114,7 +88,7 @@ hb_blob_create (const char        *data,
 
   if (blob->mode == HB_MEMORY_MODE_DUPLICATE) {
     blob->mode = HB_MEMORY_MODE_READONLY;
-    if (!_try_writable (blob)) {
+    if (!blob->try_make_writable ()) {
       hb_blob_destroy (blob);
       return hb_blob_get_empty ();
     }
@@ -260,7 +234,7 @@ hb_blob_destroy (hb_blob_t *blob)
 {
   if (!hb_object_destroy (blob)) return;
 
-  _hb_blob_destroy_user_data (blob);
+  blob->fini_shallow ();
 
   free (blob);
 }
@@ -395,7 +369,7 @@ hb_blob_get_data (hb_blob_t *blob, unsigned int *length)
 char *
 hb_blob_get_data_writable (hb_blob_t *blob, unsigned int *length)
 {
-  if (!_try_writable (blob)) {
+  if (!blob->try_make_writable ()) {
     if (length)
       *length = 0;
 
@@ -409,8 +383,8 @@ hb_blob_get_data_writable (hb_blob_t *blob, unsigned int *length)
 }
 
 
-static hb_bool_t
-_try_make_writable_inplace_unix (hb_blob_t *blob)
+bool
+hb_blob_t::try_make_writable_inplace_unix (void)
 {
 #if defined(HAVE_SYS_MMAN_H) && defined(HAVE_MPROTECT)
   uintptr_t pagesize = -1, mask, length;
@@ -425,25 +399,25 @@ _try_make_writable_inplace_unix (hb_blob_t *blob)
 #endif
 
   if ((uintptr_t) -1L == pagesize) {
-    DEBUG_MSG_FUNC (BLOB, blob, "failed to get pagesize: %s", strerror (errno));
+    DEBUG_MSG_FUNC (BLOB, this, "failed to get pagesize: %s", strerror (errno));
     return false;
   }
-  DEBUG_MSG_FUNC (BLOB, blob, "pagesize is %lu", (unsigned long) pagesize);
+  DEBUG_MSG_FUNC (BLOB, this, "pagesize is %lu", (unsigned long) pagesize);
 
   mask = ~(pagesize-1);
-  addr = (const char *) (((uintptr_t) blob->data) & mask);
-  length = (const char *) (((uintptr_t) blob->data + blob->length + pagesize-1) & mask)  - addr;
-  DEBUG_MSG_FUNC (BLOB, blob,
+  addr = (const char *) (((uintptr_t) this->data) & mask);
+  length = (const char *) (((uintptr_t) this->data + this->length + pagesize-1) & mask)  - addr;
+  DEBUG_MSG_FUNC (BLOB, this,
                   "calling mprotect on [%p..%p] (%lu bytes)",
                   addr, addr+length, (unsigned long) length);
   if (-1 == mprotect ((void *) addr, length, PROT_READ | PROT_WRITE)) {
-    DEBUG_MSG_FUNC (BLOB, blob, "mprotect failed: %s", strerror (errno));
+    DEBUG_MSG_FUNC (BLOB, this, "mprotect failed: %s", strerror (errno));
     return false;
   }
 
-  blob->mode = HB_MEMORY_MODE_WRITABLE;
+  this->mode = HB_MEMORY_MODE_WRITABLE;
 
-  DEBUG_MSG_FUNC (BLOB, blob,
+  DEBUG_MSG_FUNC (BLOB, this,
                   "successfully made [%p..%p] (%lu bytes) writable\n",
                   addr, addr+length, (unsigned long) length);
   return true;
@@ -452,53 +426,185 @@ _try_make_writable_inplace_unix (hb_blob_t *blob)
 #endif
 }
 
-static bool
-_try_writable_inplace (hb_blob_t *blob)
+bool
+hb_blob_t::try_make_writable_inplace (void)
 {
-  DEBUG_MSG_FUNC (BLOB, blob, "making writable inplace\n");
+  DEBUG_MSG_FUNC (BLOB, this, "making writable inplace\n");
 
-  if (_try_make_writable_inplace_unix (blob))
+  if (this->try_make_writable_inplace_unix ())
     return true;
 
-  DEBUG_MSG_FUNC (BLOB, blob, "making writable -> FAILED\n");
+  DEBUG_MSG_FUNC (BLOB, this, "making writable -> FAILED\n");
 
   /* Failed to make writable inplace, mark that */
-  blob->mode = HB_MEMORY_MODE_READONLY;
+  this->mode = HB_MEMORY_MODE_READONLY;
   return false;
 }
 
-static bool
-_try_writable (hb_blob_t *blob)
+bool
+hb_blob_t::try_make_writable (void)
 {
-  if (blob->immutable)
+  if (this->immutable)
     return false;
 
-  if (blob->mode == HB_MEMORY_MODE_WRITABLE)
+  if (this->mode == HB_MEMORY_MODE_WRITABLE)
     return true;
 
-  if (blob->mode == HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE && _try_writable_inplace (blob))
+  if (this->mode == HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE && this->try_make_writable_inplace ())
     return true;
 
-  if (blob->mode == HB_MEMORY_MODE_WRITABLE)
+  if (this->mode == HB_MEMORY_MODE_WRITABLE)
     return true;
 
 
-  DEBUG_MSG_FUNC (BLOB, blob, "current data is -> %p\n", blob->data);
+  DEBUG_MSG_FUNC (BLOB, this, "current data is -> %p\n", this->data);
 
   char *new_data;
 
-  new_data = (char *) malloc (blob->length);
+  new_data = (char *) malloc (this->length);
   if (unlikely (!new_data))
     return false;
 
-  DEBUG_MSG_FUNC (BLOB, blob, "dupped successfully -> %p\n", blob->data);
+  DEBUG_MSG_FUNC (BLOB, this, "dupped successfully -> %p\n", this->data);
 
-  memcpy (new_data, blob->data, blob->length);
-  _hb_blob_destroy_user_data (blob);
-  blob->mode = HB_MEMORY_MODE_WRITABLE;
-  blob->data = new_data;
-  blob->user_data = new_data;
-  blob->destroy = free;
+  memcpy (new_data, this->data, this->length);
+  this->destroy_user_data ();
+  this->mode = HB_MEMORY_MODE_WRITABLE;
+  this->data = new_data;
+  this->user_data = new_data;
+  this->destroy = free;
 
   return true;
+}
+
+/*
+ * Mmap
+ */
+
+#ifdef HAVE_MMAP
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <fcntl.h>
+#endif
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+# include <windows.h>
+#endif
+
+#ifndef _O_BINARY
+# define _O_BINARY 0
+#endif
+
+#ifndef MAP_NORESERVE
+# define MAP_NORESERVE 0
+#endif
+
+struct hb_mapped_file_t
+{
+  char *contents;
+  unsigned long length;
+#if defined(_WIN32) || defined(__CYGWIN__)
+  HANDLE mapping;
+#endif
+};
+
+static void
+_hb_mapped_file_destroy (hb_mapped_file_t *file)
+{
+#ifdef HAVE_MMAP
+  munmap (file->contents, file->length);
+#elif defined(_WIN32) || defined(__CYGWIN__)
+  UnmapViewOfFile (file->contents);
+  CloseHandle (file->mapping);
+#else
+  free (file->contents);
+#endif
+
+  free (file);
+}
+
+/**
+ * hb_blob_create_from_file:
+ * @file_name: font filename.
+ *
+ * Returns: A hb_blob_t pointer with the content of the file
+ *
+ * Since: 1.7.7
+ **/
+hb_blob_t *
+hb_blob_create_from_file (const char *file_name)
+{
+  // Adopted from glib's gmappedfile.c with Matthias Clasen and
+  // Allison Lortie permission but changed a lot to suit our need.
+  bool writable = false;
+  hb_memory_mode_t mm = HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE;
+  hb_mapped_file_t *file = (hb_mapped_file_t *) calloc (1, sizeof (hb_mapped_file_t));
+  if (unlikely (!file)) return hb_blob_get_empty ();
+
+#ifdef HAVE_MMAP
+  int fd = open (file_name, (writable ? O_RDWR : O_RDONLY) | _O_BINARY, 0);
+# define CLOSE close
+  if (unlikely (fd == -1)) goto fail_without_close;
+
+  struct stat st;
+  if (unlikely (fstat (fd, &st) == -1)) goto fail;
+
+  // See https://github.com/GNOME/glib/blob/f9faac7/glib/gmappedfile.c#L139-L142
+  if (unlikely (st.st_size == 0 && S_ISREG (st.st_mode))) goto fail;
+
+  file->length = (unsigned long) st.st_size;
+  file->contents = (char *) mmap (nullptr, file->length,
+                                  writable ? PROT_READ|PROT_WRITE : PROT_READ,
+                                  MAP_PRIVATE | MAP_NORESERVE, fd, 0);
+
+  if (unlikely (file->contents == MAP_FAILED)) goto fail;
+
+#elif defined(_WIN32) || defined(__CYGWIN__)
+  HANDLE fd = CreateFile (file_name,
+                          writable ? GENERIC_READ|GENERIC_WRITE : GENERIC_READ,
+                          FILE_SHARE_READ, nullptr, OPEN_EXISTING,
+                          FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr);
+# define CLOSE CloseHandle
+
+  if (unlikely (fd == INVALID_HANDLE_VALUE)) goto fail_without_close;
+
+  file->length = (unsigned long) GetFileSize (fd, nullptr);
+  file->mapping = CreateFileMapping (fd, nullptr,
+                                     writable ? PAGE_WRITECOPY : PAGE_READONLY,
+                                     0, 0, nullptr);
+  if (unlikely (file->mapping == nullptr)) goto fail;
+
+  file->contents = (char *) MapViewOfFile (file->mapping,
+                                           writable ? FILE_MAP_COPY : FILE_MAP_READ,
+                                           0, 0, 0);
+  if (unlikely (file->contents == nullptr)) goto fail;
+
+#else
+  mm = HB_MEMORY_MODE_WRITABLE;
+
+  FILE *fd = fopen (file_name, "rb");
+# define CLOSE fclose
+  if (unlikely (!fd)) goto fail_without_close;
+
+  fseek (fd, 0, SEEK_END);
+  file->length = ftell (fd);
+  rewind (fd);
+  file->contents = (char *) malloc (file->length);
+  if (unlikely (!file->contents)) goto fail;
+
+  if (unlikely (fread (file->contents, 1, file->length, fd) != file->length))
+    goto fail;
+
+#endif
+
+  CLOSE (fd);
+  return hb_blob_create (file->contents, file->length, mm, (void *) file,
+                         (hb_destroy_func_t) _hb_mapped_file_destroy);
+
+fail:
+  CLOSE (fd);
+#undef CLOSE
+fail_without_close:
+  free (file);
+  return hb_blob_get_empty ();
 }

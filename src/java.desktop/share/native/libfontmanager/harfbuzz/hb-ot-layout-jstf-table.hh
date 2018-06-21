@@ -189,7 +189,8 @@ struct JstfScript
 
 
 /*
- * JSTF -- The Justification Table
+ * JSTF -- Justification
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/jstf
  */
 
 struct JSTF

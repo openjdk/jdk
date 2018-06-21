@@ -262,7 +262,7 @@ struct AnchorFormat2
     hb_font_t *font = c->font;
     unsigned int x_ppem = font->x_ppem;
     unsigned int y_ppem = font->y_ppem;
-    hb_position_t cx, cy;
+    hb_position_t cx = 0, cy = 0;
     hb_bool_t ret;
 
     ret = (x_ppem || y_ppem) &&
@@ -1497,7 +1497,8 @@ struct PosLookup : Lookup
 typedef OffsetListOf<PosLookup> PosLookupList;
 
 /*
- * GPOS -- The Glyph Positioning Table
+ * GPOS -- Glyph Positioning
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/gpos
  */
 
 struct GPOS : GSUBGPOS

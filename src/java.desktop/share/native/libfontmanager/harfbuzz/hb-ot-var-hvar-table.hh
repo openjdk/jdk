@@ -89,10 +89,11 @@ struct DeltaSetIndexMap
 
 
 /*
- * HVAR -- The Horizontal Metrics Variations Table
- * VVAR -- The Vertical Metrics Variations Table
+ * HVAR -- Horizontal Metrics Variations
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/hvar
+ * VVAR -- Vertical Metrics Variations
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/vvar
  */
-
 #define HB_OT_TAG_HVAR HB_TAG('H','V','A','R')
 #define HB_OT_TAG_VVAR HB_TAG('V','V','A','R')
 

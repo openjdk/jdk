@@ -529,7 +529,7 @@ endif
 
 #### Begin harfbuzz configuration
 
-HARFBUZZ_CFLAGS := -DHAVE_OT -DHAVE_FALLBACK -DHAVE_UCDN
+HARFBUZZ_CFLAGS := -DHAVE_OT -DHAVE_FALLBACK -DHAVE_UCDN -DHAVE_ROUND
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
   HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
@@ -589,8 +589,6 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   # Turn off all warnings for sunFont.c. This is needed because the specific warning
   # about discarding 'const' qualifier cannot be turned off individually.
   BUILD_LIBFONTMANAGER_sunFont.c_CFLAGS := -w
-  # Turn off aliasing with GCC for ExtensionSubtables.cpp
-  BUILD_LIBFONTMANAGER_ExtensionSubtables.cpp_CXXFLAGS := -fno-strict-aliasing
 endif
 
 # LDFLAGS clarification:
@@ -609,7 +607,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
     WARNINGS_AS_ERRORS_xlc := false, \
     DISABLED_WARNINGS_gcc := sign-compare int-to-pointer-cast \
-        type-limits missing-field-initializers implicit-fallthrough, \
+        type-limits missing-field-initializers implicit-fallthrough strict-aliasing, \
     DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
         maybe-uninitialized, \
     DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \

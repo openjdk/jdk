@@ -421,7 +421,7 @@ retry:
 /*
  * Stretch feature: "stch".
  * See example here:
- * https://www.microsoft.com/typography/OpenTypeDev/syriac/intro.htm
+ * https://docs.microsoft.com/en-us/typography/script-development/syriac
  * We implement this in a generic way, such that the Arabic subtending
  * marks can use it as well.
  */
@@ -611,7 +611,7 @@ postprocess_glyphs_arabic (const hb_ot_shape_plan_t *plan,
   HB_BUFFER_DEALLOCATE_VAR (buffer, arabic_shaping_action);
 }
 
-/* http://www.unicode.org/reports/tr53/tr53-1.pdf */
+/* https://unicode.org/reports/tr53/tr53-1.pdf */
 
 static hb_codepoint_t
 modifier_combining_marks[] =

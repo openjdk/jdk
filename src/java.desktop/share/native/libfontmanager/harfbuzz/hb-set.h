@@ -82,8 +82,6 @@ HB_EXTERN hb_bool_t
 hb_set_has (const hb_set_t *set,
             hb_codepoint_t  codepoint);
 
-/* Right now limited to 16-bit integers.  Eventually will do full codepoint range, sans -1
- * which we will use as a sentinel. */
 HB_EXTERN void
 hb_set_add (hb_set_t       *set,
             hb_codepoint_t  codepoint);
@@ -105,6 +103,10 @@ hb_set_del_range (hb_set_t       *set,
 HB_EXTERN hb_bool_t
 hb_set_is_equal (const hb_set_t *set,
                  const hb_set_t *other);
+
+HB_EXTERN hb_bool_t
+hb_set_is_subset (const hb_set_t *set,
+                  const hb_set_t *larger_set);
 
 HB_EXTERN void
 hb_set_set (hb_set_t       *set,

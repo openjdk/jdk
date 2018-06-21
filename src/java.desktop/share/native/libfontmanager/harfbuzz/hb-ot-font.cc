@@ -143,7 +143,7 @@ hb_ot_get_glyph_h_kerning (hb_font_t *font,
 }
 
 static hb_bool_t
-hb_ot_get_glyph_extents (hb_font_t *font HB_UNUSED,
+hb_ot_get_glyph_extents (hb_font_t *font,
                          void *font_data,
                          hb_codepoint_t glyph,
                          hb_glyph_extents_t *extents,
@@ -184,7 +184,7 @@ hb_ot_get_glyph_from_name (hb_font_t *font HB_UNUSED,
 }
 
 static hb_bool_t
-hb_ot_get_font_h_extents (hb_font_t *font HB_UNUSED,
+hb_ot_get_font_h_extents (hb_font_t *font,
                           void *font_data,
                           hb_font_extents_t *metrics,
                           void *user_data HB_UNUSED)
@@ -198,7 +198,7 @@ hb_ot_get_font_h_extents (hb_font_t *font HB_UNUSED,
 }
 
 static hb_bool_t
-hb_ot_get_font_v_extents (hb_font_t *font HB_UNUSED,
+hb_ot_get_font_v_extents (hb_font_t *font,
                           void *font_data,
                           hb_font_extents_t *metrics,
                           void *user_data HB_UNUSED)
@@ -217,7 +217,12 @@ static hb_font_funcs_t *static_ot_funcs = nullptr;
 static
 void free_static_ot_funcs (void)
 {
-  hb_font_funcs_destroy (static_ot_funcs);
+retry:
+  hb_font_funcs_t *ot_funcs = (hb_font_funcs_t *) hb_atomic_ptr_get (&static_ot_funcs);
+  if (!hb_atomic_ptr_cmpexch (&static_ot_funcs, ot_funcs, nullptr))
+    goto retry;
+
+  hb_font_funcs_destroy (ot_funcs);
 }
 #endif
 

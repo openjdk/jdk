@@ -1,4 +1,5 @@
 /*
+ * Copyright © 2009  Red Hat, Inc.
  * Copyright © 2018  Google, Inc.
  *
  *  This is part of HarfBuzz, a text shaping library.
@@ -21,43 +22,67 @@
  * ON AN "AS IS" BASIS, AND THE COPYRIGHT HOLDER HAS NO OBLIGATION TO
  * PROVIDE MAINTENANCE, SUPPORT, UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
  *
- * Google Author(s): Garret Rieger, Roderick Sheeter
+ * Red Hat Author(s): Behdad Esfahbod
+ * Google Author(s): Behdad Esfahbod
  */
 
-#ifndef HB_SUBSET_PRIVATE_HH
-#define HB_SUBSET_PRIVATE_HH
-
+#ifndef HB_BLOB_PRIVATE_HH
+#define HB_BLOB_PRIVATE_HH
 
 #include "hb-private.hh"
 
-#include "hb-subset.h"
+#include "hb-object-private.hh"
 
-#include "hb-font-private.hh"
 
-typedef struct hb_subset_face_data_t hb_subset_face_data_t;
+/*
+ * hb_blob_t
+ */
 
-struct hb_subset_input_t {
+struct hb_blob_t
+{
+  inline void fini_shallow (void)
+  {
+    destroy_user_data ();
+  }
+
+  inline void destroy_user_data (void)
+  {
+    if (destroy)
+    {
+      destroy (user_data);
+      user_data = nullptr;
+      destroy = nullptr;
+    }
+  }
+
+  HB_INTERNAL bool try_make_writable (void);
+  HB_INTERNAL bool try_make_writable_inplace (void);
+  HB_INTERNAL bool try_make_writable_inplace_unix (void);
+
+  inline void lock (void)
+  {
+    hb_blob_make_immutable (this);
+  }
+
+  template <typename Type>
+  inline const Type* as (void) const
+  {
+    return unlikely (!data) ? &Null(Type) : reinterpret_cast<const Type *> (data);
+  }
+
+  public:
   hb_object_header_t header;
   ASSERT_POD ();
 
-  hb_set_t *unicodes;
-  hb_set_t *glyphs;
+  bool immutable;
 
-  hb_bool_t drop_hints;
-  hb_bool_t drop_ot_layout;
-  /* TODO
-   *
-   * features
-   * lookups
-   * nameIDs
-   * ...
-   */
+  const char *data;
+  unsigned int length;
+  hb_memory_mode_t mode;
+
+  void *user_data;
+  hb_destroy_func_t destroy;
 };
 
-HB_INTERNAL hb_face_t *
-hb_subset_face_create (void);
 
-HB_INTERNAL hb_bool_t
-hb_subset_face_add_table (hb_face_t *face, hb_tag_t tag, hb_blob_t *blob);
-
-#endif /* HB_SUBSET_PRIVATE_HH */
+#endif /* HB_BLOB_PRIVATE_HH */

@@ -29,17 +29,18 @@
 
 #include "hb-open-type-private.hh"
 
+/*
+ * hhea -- Horizontal Header
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/hhea
+ * vhea -- Vertical Header
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/vhea
+ */
+#define HB_OT_TAG_hhea HB_TAG('h','h','e','a')
+#define HB_OT_TAG_vhea HB_TAG('v','h','e','a')
+
 
 namespace OT {
 
-
-/*
- * hhea -- The Horizontal Header Table
- * vhea -- The Vertical Header Table
- */
-
-#define HB_OT_TAG_hhea HB_TAG('h','h','e','a')
-#define HB_OT_TAG_vhea HB_TAG('v','h','e','a')
 
 template <typename T>
 struct _hea

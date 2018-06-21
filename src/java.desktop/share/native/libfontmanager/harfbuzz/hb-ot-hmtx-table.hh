@@ -31,18 +31,19 @@
 #include "hb-ot-hhea-table.hh"
 #include "hb-ot-os2-table.hh"
 #include "hb-ot-var-hvar-table.hh"
+#include "hb-subset-plan.hh"
+
+/*
+ * hmtx -- Horizontal Metrics
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/hmtx
+ * vmtx -- Vertical Metrics
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/vmtx
+ */
+#define HB_OT_TAG_hmtx HB_TAG('h','m','t','x')
+#define HB_OT_TAG_vmtx HB_TAG('v','m','t','x')
 
 
 namespace OT {
-
-
-/*
- * hmtx -- The Horizontal Metrics Table
- * vmtx -- The Vertical Metrics Table
- */
-
-#define HB_OT_TAG_hmtx HB_TAG('h','m','t','x')
-#define HB_OT_TAG_vmtx HB_TAG('v','m','t','x')
 
 
 struct LongMetric
@@ -80,7 +81,7 @@ struct hmtxvmtx
     H *table = (H *) hb_blob_get_data (dest_blob, &length);
     table->numberOfLongMetrics.set (num_hmetrics);
 
-    bool result = hb_subset_plan_add_table (plan, H::tableTag, dest_blob);
+    bool result = plan->add_table (H::tableTag, dest_blob);
     hb_blob_destroy (dest_blob);
 
     return result;
@@ -93,7 +94,7 @@ struct hmtxvmtx
 
     /* All the trailing glyphs with the same advance can use one LongMetric
      * and just keep LSB */
-    hb_prealloced_array_t<hb_codepoint_t> &gids = plan->gids_to_retain_sorted;
+    hb_vector_t<hb_codepoint_t> &gids = plan->glyphs;
     unsigned int num_advances = gids.len;
     unsigned int last_advance = _mtx.get_advance (gids[num_advances - 1]);
     while (num_advances > 1
@@ -118,6 +119,8 @@ struct hmtxvmtx
     LongMetric * old_metrics = (LongMetric *) source_table;
     FWORD *lsbs = (FWORD *) (old_metrics + _mtx.num_advances);
     char * dest_pos = (char *) dest;
+
+    bool failed = false;
     for (unsigned int i = 0; i < gids.len; i++)
     {
       /* the last metric or the one for gids[i] */
@@ -138,6 +141,13 @@ struct hmtxvmtx
       }
       else
       {
+        if (gids[i] >= _mtx.num_metrics)
+        {
+          DEBUG_MSG(SUBSET, nullptr, "gid %d is >= number of source metrics %d",
+                    gids[i], _mtx.num_metrics);
+          failed = true;
+          break;
+        }
         FWORD src_lsb = *(lsbs + gids[i] - _mtx.num_advances);
         if (i < num_advances)
         {
@@ -157,7 +167,7 @@ struct hmtxvmtx
     _mtx.fini ();
 
     // Amend header num hmetrics
-    if (unlikely (!subset_update_header (plan, num_advances)))
+    if (failed || unlikely (!subset_update_header (plan, num_advances)))
     {
       free (dest);
       return false;
@@ -168,7 +178,7 @@ struct hmtxvmtx
                                         HB_MEMORY_MODE_READONLY,
                                         dest,
                                         free);
-    bool success = hb_subset_plan_add_table (plan, T::tableTag, result);
+    bool success = plan->add_table (T::tableTag, result);
     hb_blob_destroy (result);
     return success;
   }
@@ -186,7 +196,7 @@ struct hmtxvmtx
       if (T::os2Tag)
       {
         hb_blob_t *os2_blob = Sanitizer<os2> ().sanitize (face->reference_table (T::os2Tag));
-        const os2 *os2_table = Sanitizer<os2>::lock_instance (os2_blob);
+        const os2 *os2_table = os2_blob->as<os2> ();
 #define USE_TYPO_METRICS (1u<<7)
         if (0 != (os2_table->fsSelection & USE_TYPO_METRICS))
         {
@@ -199,7 +209,7 @@ struct hmtxvmtx
       }
 
       hb_blob_t *_hea_blob = Sanitizer<H> ().sanitize (face->reference_table (H::tableTag));
-      const H *_hea_table = Sanitizer<H>::lock_instance (_hea_blob);
+      const H *_hea_table = _hea_blob->as<H> ();
       num_advances = _hea_table->numberOfLongMetrics;
       if (!got_font_extents)
       {
@@ -228,10 +238,10 @@ struct hmtxvmtx
         hb_blob_destroy (blob);
         blob = hb_blob_get_empty ();
       }
-      table = Sanitizer<hmtxvmtx>::lock_instance (blob);
+      table = blob->as<hmtxvmtx> ();
 
       var_blob = Sanitizer<HVARVVAR> ().sanitize (face->reference_table (T::variationsTag));
-      var_table = Sanitizer<HVARVVAR>::lock_instance (var_blob);
+      var_table = var_blob->as<HVARVVAR> ();
     }
 
     inline void fini (void)

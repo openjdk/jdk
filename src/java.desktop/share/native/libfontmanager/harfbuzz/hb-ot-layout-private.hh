@@ -105,12 +105,12 @@ HB_INTERNAL void
 hb_ot_layout_position_start (hb_font_t    *font,
                              hb_buffer_t  *buffer);
 
-/* Should be called after all the position_lookup's are done, to finish advances. */
+/* Should be called after all the position_lookup's are done, to fini advances. */
 HB_INTERNAL void
 hb_ot_layout_position_finish_advances (hb_font_t    *font,
                                        hb_buffer_t  *buffer);
 
-/* Should be called after hb_ot_layout_position_finish_advances, to finish offsets. */
+/* Should be called after hb_ot_layout_position_finish_advances, to fini offsets. */
 HB_INTERNAL void
 hb_ot_layout_position_finish_offsets (hb_font_t    *font,
                                       hb_buffer_t  *buffer);
@@ -172,16 +172,10 @@ struct hb_ot_layout_t
   const struct OT::GPOS *gpos;
 
   /* TODO Move the following out of this struct. */
-  OT::hb_lazy_table_loader_t<struct OT::BASE> base;
-  OT::hb_lazy_table_loader_t<struct OT::COLR> colr;
-  OT::hb_lazy_table_loader_t<struct OT::CPAL> cpal;
-  OT::hb_lazy_table_loader_t<struct OT::MATH> math;
-  OT::hb_lazy_table_loader_t<struct OT::fvar> fvar;
-  OT::hb_lazy_table_loader_t<struct OT::avar> avar;
-  OT::hb_lazy_table_loader_t<struct AAT::ankr> ankr;
-  OT::hb_lazy_table_loader_t<struct AAT::kerx> kerx;
-  OT::hb_lazy_table_loader_t<struct AAT::morx> morx;
-  OT::hb_lazy_table_loader_t<struct AAT::trak> trak;
+  OT::hb_table_lazy_loader_t<struct OT::BASE> base;
+  OT::hb_table_lazy_loader_t<struct OT::MATH> math;
+  OT::hb_table_lazy_loader_t<struct OT::fvar> fvar;
+  OT::hb_table_lazy_loader_t<struct OT::avar> avar;
 
   unsigned int gsub_lookup_count;
   unsigned int gpos_lookup_count;
@@ -309,7 +303,7 @@ _hb_glyph_info_set_unicode_props (hb_glyph_info_t *info, hb_buffer_t *buffer)
        * processing on. */
 
       /* Only Mn and Mc can have non-zero ccc:
-       * http://www.unicode.org/policies/stability_policy.html#Property_Value
+       * https://unicode.org/policies/stability_policy.html#Property_Value
        * """
        * Canonical_Combining_Class, General_Category
        * All characters other than those with General_Category property values

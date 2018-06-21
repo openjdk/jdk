@@ -38,8 +38,8 @@ namespace OT {
 
 /*
  * loca -- Index to Location
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/loca
  */
-
 #define HB_OT_TAG_loca HB_TAG('l','o','c','a')
 
 
@@ -56,15 +56,15 @@ struct loca
   }
 
   protected:
-  HBUINT8               dataX[VAR];             /* Location data. */
-  DEFINE_SIZE_ARRAY (0, dataX);
+  HBUINT8               dataZ[VAR];             /* Location data. */
+  DEFINE_SIZE_ARRAY (0, dataZ);
 };
 
 
 /*
  * glyf -- TrueType Glyph Data
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/glyf
  */
-
 #define HB_OT_TAG_glyf HB_TAG('g','l','y','f')
 
 
@@ -88,9 +88,9 @@ struct glyf
     bool success = true;
     bool use_short_loca = false;
     if (hb_subset_glyf_and_loca (plan, &use_short_loca, &glyf_prime, &loca_prime)) {
-      success = success && hb_subset_plan_add_table (plan, HB_OT_TAG_glyf, glyf_prime);
-      success = success && hb_subset_plan_add_table (plan, HB_OT_TAG_loca, loca_prime);
-      success = success && _add_head_and_set_loca_version (plan->source, use_short_loca, plan->dest);
+      success = success && plan->add_table (HB_OT_TAG_glyf, glyf_prime);
+      success = success && plan->add_table (HB_OT_TAG_loca, loca_prime);
+      success = success && _add_head_and_set_loca_version (plan, use_short_loca);
     } else {
       success = false;
     }
@@ -101,9 +101,9 @@ struct glyf
   }
 
   static bool
-  _add_head_and_set_loca_version (hb_face_t *source, bool use_short_loca, hb_face_t *dest)
+  _add_head_and_set_loca_version (hb_subset_plan_t *plan, bool use_short_loca)
   {
-    hb_blob_t *head_blob = OT::Sanitizer<OT::head>().sanitize (hb_face_reference_table (source, HB_OT_TAG_head));
+    hb_blob_t *head_blob = OT::Sanitizer<OT::head>().sanitize (hb_face_reference_table (plan->source, HB_OT_TAG_head));
     hb_blob_t *head_prime_blob = hb_blob_copy_writable_or_fail (head_blob);
     hb_blob_destroy (head_blob);
 
@@ -112,7 +112,7 @@ struct glyf
 
     OT::head *head_prime = (OT::head *) hb_blob_get_data_writable (head_prime_blob, nullptr);
     head_prime->indexToLocFormat.set (use_short_loca ? 0 : 1);
-    bool success = hb_subset_face_add_table (dest, HB_OT_TAG_head, head_prime_blob);
+    bool success = plan->add_table (HB_OT_TAG_head, head_prime_blob);
 
     hb_blob_destroy (head_prime_blob);
     return success;
@@ -134,18 +134,20 @@ struct glyf
 
   struct CompositeGlyphHeader
   {
-    static const uint16_t ARG_1_AND_2_ARE_WORDS =      0x0001;
-    static const uint16_t ARGS_ARE_XY_VALUES =         0x0002;
-    static const uint16_t ROUND_XY_TO_GRID =           0x0004;
-    static const uint16_t WE_HAVE_A_SCALE =            0x0008;
-    static const uint16_t MORE_COMPONENTS =            0x0020;
-    static const uint16_t WE_HAVE_AN_X_AND_Y_SCALE =   0x0040;
-    static const uint16_t WE_HAVE_A_TWO_BY_TWO =       0x0080;
-    static const uint16_t WE_HAVE_INSTRUCTIONS =       0x0100;
-    static const uint16_t USE_MY_METRICS =             0x0200;
-    static const uint16_t OVERLAP_COMPOUND =           0x0400;
-    static const uint16_t SCALED_COMPONENT_OFFSET =    0x0800;
-    static const uint16_t UNSCALED_COMPONENT_OFFSET =  0x1000;
+    enum composite_glyph_flag_t {
+      ARG_1_AND_2_ARE_WORDS =      0x0001,
+      ARGS_ARE_XY_VALUES =         0x0002,
+      ROUND_XY_TO_GRID =           0x0004,
+      WE_HAVE_A_SCALE =            0x0008,
+      MORE_COMPONENTS =            0x0020,
+      WE_HAVE_AN_X_AND_Y_SCALE =   0x0040,
+      WE_HAVE_A_TWO_BY_TWO =       0x0080,
+      WE_HAVE_INSTRUCTIONS =       0x0100,
+      USE_MY_METRICS =             0x0200,
+      OVERLAP_COMPOUND =           0x0400,
+      SCALED_COMPONENT_OFFSET =    0x0800,
+      UNSCALED_COMPONENT_OFFSET =  0x1000
+    };
 
     HBUINT16 flags;
     HBUINT16 glyphIndex;
@@ -232,11 +234,13 @@ struct glyf
   {
     inline void init (hb_face_t *face)
     {
+      memset (this, 0, sizeof (accelerator_t));
+
       hb_blob_t *head_blob = Sanitizer<head>().sanitize (face->reference_table (HB_OT_TAG_head));
-      const head *head_table = Sanitizer<head>::lock_instance (head_blob);
-      if ((unsigned int) head_table->indexToLocFormat > 1 || head_table->glyphDataFormat != 0)
+      const head *head_table = head_blob->as<head> ();
+      if (head_table == &Null(head) || (unsigned int) head_table->indexToLocFormat > 1 || head_table->glyphDataFormat != 0)
       {
-        /* Unknown format.  Leave num_glyphs=0, that takes care of disabling us. */
+        /* head table is not present, or in an unknown format.  Leave num_glyphs=0, that takes care of disabling us. */
         hb_blob_destroy (head_blob);
         return;
       }
@@ -244,9 +248,9 @@ struct glyf
       hb_blob_destroy (head_blob);
 
       loca_blob = Sanitizer<loca>().sanitize (face->reference_table (HB_OT_TAG_loca));
-      loca_table = Sanitizer<loca>::lock_instance (loca_blob);
+      loca_table = loca_blob->as<loca> ();
       glyf_blob = Sanitizer<glyf>().sanitize (face->reference_table (HB_OT_TAG_glyf));
-      glyf_table = Sanitizer<glyf>::lock_instance (glyf_blob);
+      glyf_table = glyf_blob->as<glyf> ();
 
       num_glyphs = MAX (1u, hb_blob_get_length (loca_blob) / (short_offset ? 2 : 4)) - 1;
       glyf_len = hb_blob_get_length (glyf_blob);
@@ -266,6 +270,9 @@ struct glyf
     inline bool get_composite (hb_codepoint_t glyph,
                                CompositeGlyphHeader::Iterator *composite /* OUT */) const
     {
+      if (this->glyf_table == &Null(glyf) || !num_glyphs)
+        return false;
+
       unsigned int start_offset, end_offset;
       if (!get_offsets (glyph, &start_offset, &end_offset))
         return false; /* glyph not found */
@@ -275,16 +282,18 @@ struct glyf
                                                  composite);
     }
 
+    enum simple_glyph_flag_t {
+      FLAG_X_SHORT = 0x02,
+      FLAG_Y_SHORT = 0x04,
+      FLAG_REPEAT = 0x08,
+      FLAG_X_SAME = 0x10,
+      FLAG_Y_SAME = 0x20
+    };
+
     /* based on FontTools _g_l_y_f.py::trim */
     inline bool remove_padding(unsigned int start_offset,
                                unsigned int *end_offset) const
     {
-      static const int FLAG_X_SHORT = 0x02;
-      static const int FLAG_Y_SHORT = 0x04;
-      static const int FLAG_REPEAT = 0x08;
-      static const int FLAG_X_SAME = 0x10;
-      static const int FLAG_Y_SAME = 0x20;
-
       if (*end_offset - start_offset < GlyphHeader::static_size)
         return true;
 
@@ -368,13 +377,13 @@ struct glyf
 
       if (short_offset)
       {
-        const HBUINT16 *offsets = (const HBUINT16 *) loca_table->dataX;
+        const HBUINT16 *offsets = (const HBUINT16 *) loca_table->dataZ;
         *start_offset = 2 * offsets[glyph];
         *end_offset   = 2 * offsets[glyph + 1];
       }
       else
       {
-        const HBUINT32 *offsets = (const HBUINT32 *) loca_table->dataX;
+        const HBUINT32 *offsets = (const HBUINT32 *) loca_table->dataZ;
 
         *start_offset = offsets[glyph];
         *end_offset   = offsets[glyph + 1];
@@ -411,7 +420,7 @@ struct glyf
         } while (composite_it.move_to_next());
 
         if ( (uint16_t) last->flags & CompositeGlyphHeader::WE_HAVE_INSTRUCTIONS)
-          *instruction_start = ((char *) last - (char *) glyf_table->dataX) + last->get_size();
+          *instruction_start = ((char *) last - (char *) glyf_table->dataZ) + last->get_size();
         else
           *instruction_start = end_offset;
         *instruction_end = end_offset;
@@ -424,9 +433,23 @@ struct glyf
       else
       {
         unsigned int instruction_length_offset = start_offset + GlyphHeader::static_size + 2 * num_contours;
+        if (unlikely (instruction_length_offset + 2 > end_offset))
+        {
+          DEBUG_MSG(SUBSET, nullptr, "Glyph size is too short, missing field instructionLength.");
+          return false;
+        }
+
         const HBUINT16 &instruction_length = StructAtOffset<HBUINT16> (glyf_table, instruction_length_offset);
-        *instruction_start = instruction_length_offset + 2;
-        *instruction_end = *instruction_start + (uint16_t) instruction_length;
+        unsigned int start = instruction_length_offset + 2;
+        unsigned int end = start + (uint16_t) instruction_length;
+        if (unlikely (end > end_offset)) // Out of bounds of the current glyph
+        {
+          DEBUG_MSG(SUBSET, nullptr, "The instructions array overruns the glyph's boundaries.");
+          return false;
+        }
+
+        *instruction_start = start;
+        *instruction_end = end;
       }
       return true;
     }
@@ -462,9 +485,9 @@ struct glyf
   };
 
   protected:
-  HBUINT8               dataX[VAR];             /* Glyphs data. */
+  HBUINT8               dataZ[VAR];             /* Glyphs data. */
 
-  DEFINE_SIZE_ARRAY (0, dataX);
+  DEFINE_SIZE_ARRAY (0, dataZ);
 };
 
 } /* namespace OT */

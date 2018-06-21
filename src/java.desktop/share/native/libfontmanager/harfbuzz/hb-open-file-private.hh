@@ -100,7 +100,7 @@ typedef struct OffsetTable
       else
         *table_count = MIN<unsigned int> (*table_count, tables.len - start_offset);
 
-      const TableRecord *sub_tables = tables.array + start_offset;
+      const TableRecord *sub_tables = tables.arrayZ + start_offset;
       unsigned int count = *table_count;
       for (unsigned int i = 0; i < count; i++)
         table_tags[i] = sub_tables[i].tag;
@@ -148,7 +148,7 @@ typedef struct OffsetTable
     /* Write OffsetTables, alloc for and write actual table blobs. */
     for (unsigned int i = 0; i < table_count; i++)
     {
-      TableRecord &rec = tables.array[i];
+      TableRecord &rec = tables.arrayZ[i];
       hb_blob_t *blob = blobs[i];
       rec.tag.set (tags[i]);
       rec.length.set (hb_blob_get_length (blob));
@@ -188,7 +188,7 @@ typedef struct OffsetTable
       checksum.set_for_data (this, dir_end - (const char *) this);
       for (unsigned int i = 0; i < table_count; i++)
       {
-        TableRecord &rec = tables.array[i];
+        TableRecord &rec = tables.arrayZ[i];
         checksum.set (checksum + rec.checkSum);
       }
 
@@ -234,7 +234,7 @@ struct TTCHeaderVersion1
   Tag           ttcTag;         /* TrueType Collection ID string: 'ttcf' */
   FixedVersion<>version;        /* Version of the TTC Header (1.0),
                                  * 0x00010000u */
-  ArrayOf<LOffsetTo<OffsetTable>, HBUINT32>
+  LArrayOf<LOffsetTo<OffsetTable> >
                 table;          /* Array of offsets to the OffsetTable for each font
                                  * from the beginning of the file */
   public:
@@ -295,11 +295,13 @@ struct OpenTypeFontFile
 {
   static const hb_tag_t tableTag        = HB_TAG ('_','_','_','_'); /* Sanitizer needs this. */
 
-  static const hb_tag_t CFFTag          = HB_TAG ('O','T','T','O'); /* OpenType with Postscript outlines */
-  static const hb_tag_t TrueTypeTag     = HB_TAG ( 0 , 1 , 0 , 0 ); /* OpenType with TrueType outlines */
-  static const hb_tag_t TTCTag          = HB_TAG ('t','t','c','f'); /* TrueType Collection */
-  static const hb_tag_t TrueTag         = HB_TAG ('t','r','u','e'); /* Obsolete Apple TrueType */
-  static const hb_tag_t Typ1Tag         = HB_TAG ('t','y','p','1'); /* Obsolete Apple Type1 font in SFNT container */
+  enum {
+    CFFTag              = HB_TAG ('O','T','T','O'), /* OpenType with Postscript outlines */
+    TrueTypeTag = HB_TAG ( 0 , 1 , 0 , 0 ), /* OpenType with TrueType outlines */
+    TTCTag              = HB_TAG ('t','t','c','f'), /* TrueType Collection */
+    TrueTag             = HB_TAG ('t','r','u','e'), /* Obsolete Apple TrueType */
+    Typ1Tag             = HB_TAG ('t','y','p','1')  /* Obsolete Apple Type1 font in SFNT container */
+  };
 
   inline hb_tag_t get_tag (void) const { return u.tag; }
 

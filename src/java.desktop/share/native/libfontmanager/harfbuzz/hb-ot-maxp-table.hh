@@ -34,7 +34,8 @@ namespace OT {
 
 
 /*
- * maxp -- The Maximum Profile Table
+ * maxp -- Maximum Profile
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/maxp
  */
 
 #define HB_OT_TAG_maxp HB_TAG('m','a','x','p')
@@ -108,11 +109,11 @@ struct maxp
     }
     OT::maxp *maxp_prime = (OT::maxp *) hb_blob_get_data (maxp_prime_blob, nullptr);
 
-    maxp_prime->set_num_glyphs (plan->gids_to_retain_sorted.len);
+    maxp_prime->set_num_glyphs (plan->glyphs.len);
     if (plan->drop_hints)
       drop_hint_fields (plan, maxp_prime);
 
-    bool result = hb_subset_plan_add_table(plan, HB_OT_TAG_maxp, maxp_prime_blob);
+    bool result = plan->add_table (HB_OT_TAG_maxp, maxp_prime_blob);
     hb_blob_destroy (maxp_prime_blob);
     return result;
   }

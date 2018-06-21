@@ -1,5 +1,5 @@
 /*
- * Copyright © 2011  Google, Inc.
+ * Copyright © 2018  Google, Inc.
  *
  *  This is part of HarfBuzz, a text shaping library.
  *
@@ -24,43 +24,9 @@
  * Google Author(s): Behdad Esfahbod
  */
 
-#ifndef HB_H_IN
-#error "Include <hb.h> instead."
+#include "hb-private.hh"
+
+#ifndef HB_NO_VISIBILITY
+void * const _hb_NullPool[HB_NULL_POOL_SIZE / sizeof (void *)] = {};
+/*thread_local*/ void * _hb_CrapPool[HB_NULL_POOL_SIZE / sizeof (void *)] = {};
 #endif
-
-#ifndef HB_VERSION_H
-#define HB_VERSION_H
-
-#include "hb-common.h"
-
-HB_BEGIN_DECLS
-
-
-#define HB_VERSION_MAJOR 1
-#define HB_VERSION_MINOR 8
-#define HB_VERSION_MICRO 1
-
-#define HB_VERSION_STRING "1.8.1"
-
-#define HB_VERSION_ATLEAST(major,minor,micro) \
-        ((major)*10000+(minor)*100+(micro) <= \
-         HB_VERSION_MAJOR*10000+HB_VERSION_MINOR*100+HB_VERSION_MICRO)
-
-
-HB_EXTERN void
-hb_version (unsigned int *major,
-            unsigned int *minor,
-            unsigned int *micro);
-
-HB_EXTERN const char *
-hb_version_string (void);
-
-HB_EXTERN hb_bool_t
-hb_version_atleast (unsigned int major,
-                    unsigned int minor,
-                    unsigned int micro);
-
-
-HB_END_DECLS
-
-#endif /* HB_VERSION_H */

@@ -202,8 +202,8 @@ HB_UNICODE_FUNCS_IMPLEMENT_CALLBACKS_SIMPLE
   }
 
   /* Space estimates based on:
-   * http://www.unicode.org/charts/PDF/U2000.pdf
-   * https://www.microsoft.com/typography/developers/fdsspec/spaces.aspx
+   * https://unicode.org/charts/PDF/U2000.pdf
+   * https://docs.microsoft.com/en-us/typography/develop/character-design-standards/whitespace
    */
   enum space_t {
     NOT_SPACE = 0,
@@ -276,10 +276,10 @@ extern HB_INTERNAL const hb_unicode_funcs_t _hb_unicode_funcs_nil;
  * We permute the "fixed-position" classes 10-26 into the order
  * described in the SBL Hebrew manual:
  *
- * http://www.sbl-site.org/Fonts/SBLHebrewUserManual1.5x.pdf
+ * https://www.sbl-site.org/Fonts/SBLHebrewUserManual1.5x.pdf
  *
  * (as recommended by:
- *  http://forum.fontlab.com/archive-old-microsoft-volt-group/vista-and-diacritic-ordering-t6751.0.html)
+ *  https://forum.fontlab.com/archive-old-microsoft-volt-group/vista-and-diacritic-ordering/msg22823/)
  *
  * More details here:
  * https://bugzilla.mozilla.org/show_bug.cgi?id=662055
@@ -306,8 +306,8 @@ extern HB_INTERNAL const hb_unicode_funcs_t _hb_unicode_funcs_nil;
  * Arabic
  *
  * Modify to move Shadda (ccc=33) before other marks.  See:
- * http://unicode.org/faq/normalization.html#8
- * http://unicode.org/faq/normalization.html#9
+ * https://unicode.org/faq/normalization.html#8
+ * https://unicode.org/faq/normalization.html#9
  */
 #define HB_MODIFIED_COMBINING_CLASS_CCC27 28 /* fathatan */
 #define HB_MODIFIED_COMBINING_CLASS_CCC28 29 /* dammatan */
