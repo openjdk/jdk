@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -301,8 +301,13 @@ public abstract class AsynchronousFileChannel
     public static AsynchronousFileChannel open(Path file, OpenOption... options)
         throws IOException
     {
-        Set<OpenOption> set = new HashSet<>(options.length);
-        Collections.addAll(set, options);
+        Set<OpenOption> set;
+        if (options.length == 0) {
+            set = Collections.emptySet();
+        } else {
+            set = new HashSet<>();
+            Collections.addAll(set, options);
+        }
         return open(file, set, null, NO_ATTRIBUTES);
     }
 
