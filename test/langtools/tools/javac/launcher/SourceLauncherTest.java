@@ -121,7 +121,7 @@ public class SourceLauncherTest extends TestRunner {
     @Test
     public void testHelloWorldWithShebang(Path base) throws IOException {
         tb.writeJavaFiles(base,
-            "#!/usr/bin/java --source 11\n" +
+            "#!/usr/bin/java --source " + thisVersion + "\n" +
             "import java.util.Arrays;\n" +
             "class HelloWorld {\n" +
             "    public static void main(String... args) {\n" +
@@ -205,7 +205,7 @@ public class SourceLauncherTest extends TestRunner {
     @Test
     public void testHelloWorldWithShebangJava(Path base) throws IOException {
         tb.writeJavaFiles(base,
-            "#!/usr/bin/java --source 11\n" +
+            "#!/usr/bin/java --source " + thisVersion + "\n" +
             "import java.util.Arrays;\n" +
             "class HelloWorld {\n" +
             "    public static void main(String... args) {\n" +
@@ -215,10 +215,10 @@ public class SourceLauncherTest extends TestRunner {
         Path file = base.resolve("HelloWorld.java");
         testError(file,
             file + ":1: error: illegal character: '#'\n" +
-            "#!/usr/bin/java --source 11\n" +
+            "#!/usr/bin/java --source " + thisVersion + "\n" +
             "^\n" +
             file + ":1: error: class, interface, or enum expected\n" +
-            "#!/usr/bin/java --source 11\n" +
+            "#!/usr/bin/java --source " + thisVersion + "\n" +
             "  ^\n" +
             "2 errors\n",
             "error: compilation failed");
@@ -305,7 +305,7 @@ public class SourceLauncherTest extends TestRunner {
     @Test
     public void testBadShebang(Path base) throws IOException {
         tb.writeJavaFiles(base,
-            "#/usr/bin/java --source 11\n" +
+            "#/usr/bin/java --source " + thisVersion + "\n" +
             "import java.util.Arrays;\n" +
             "class HelloWorld {\n" +
             "    public static void main(String... args) {\n" +
@@ -315,10 +315,10 @@ public class SourceLauncherTest extends TestRunner {
         Path file = base.resolve("HelloWorld.java");
         testError(file,
             file + ":1: error: illegal character: '#'\n" +
-            "#/usr/bin/java --source 11\n" +
+            "#/usr/bin/java --source " + thisVersion + "\n" +
             "^\n" +
             file + ":1: error: class, interface, or enum expected\n" +
-            "#/usr/bin/java --source 11\n" +
+            "#/usr/bin/java --source " + thisVersion + "\n" +
             "  ^\n" +
             "2 errors\n",
             "error: compilation failed");
