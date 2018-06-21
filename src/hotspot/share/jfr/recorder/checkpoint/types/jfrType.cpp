@@ -63,12 +63,6 @@
 #include "gc/z/zStat.hpp"
 #endif
 
-// implementation for the static registration function exposed in the api
-bool JfrSerializer::register_serializer(JfrTypeId id, bool require_safepoint, bool permit_cache, JfrSerializer* cs) {
-  assert(cs != NULL, "invariant");
-  return JfrCheckpointManager::register_serializer(id, require_safepoint, permit_cache, cs);
-}
-
 class JfrCheckpointThreadCountClosure : public ThreadClosure {
 private:
   u4 _total_threads;
@@ -357,8 +351,6 @@ void ZStatisticsCounterTypeConstant::serialize(JfrCheckpointWriter& writer) {
     writer.write_key(counter->id());
     writer.write(counter->name());
   }
-#else
-  writer.write_count(0);
 #endif
 }
 
@@ -369,7 +361,5 @@ void ZStatisticsSamplerTypeConstant::serialize(JfrCheckpointWriter& writer) {
     writer.write_key(sampler->id());
     writer.write(sampler->name());
   }
-#else
-  writer.write_count(0);
 #endif
 }
