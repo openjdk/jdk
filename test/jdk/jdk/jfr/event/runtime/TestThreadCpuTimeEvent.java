@@ -160,26 +160,48 @@ public class TestThreadCpuTimeEvent {
         return totalTime;
     }
 
+    static List<RecordedEvent> generateEvents(int minimumEventCount, CyclicBarrier barrier) throws Throwable {
+        int retryCount = 0;
+
+        while (true) {
+            Recording recording = new Recording();
+
+            // Default period is once per chunk
+            recording.enable(EventNames.ThreadCPULoad).withPeriod(Duration.ofMillis(eventPeriodMillis));
+            recording.start();
+
+            // Run a single pass
+            barrier.await();
+            barrier.await();
+
+            recording.stop();
+            List<RecordedEvent> events = Events.fromRecording(recording);
+
+            long numEvents = events.stream()
+                    .filter(e -> e.getThread().getJavaName().equals(cpuConsumerThreadName))
+                    .count();
+
+            // If the JFR periodicals thread is really starved, we may not get enough events.
+            // In that case, we simply retry the operation.
+            if (numEvents < minimumEventCount) {
+                System.out.println("Not enough events recorded, trying again...");
+                if (retryCount++ > 10) {
+                    Asserts.fail("Retry count exceeded");
+                    throw new RuntimeException();
+                }
+            } else {
+                return events;
+            }
+        }
+    }
+
     static void testSimple() throws Throwable {
-        Recording recording = new Recording();
-
-        // Default period is once per chunk
-        recording.enable(EventNames.ThreadCPULoad).withPeriod(Duration.ofMillis(eventPeriodMillis));
-        recording.start();
-
         Duration testRunTime = Duration.ofMillis(eventPeriodMillis * cpuConsumerRunFactor);
         CyclicBarrier barrier = new CyclicBarrier(2);
         CpuConsumingThread thread = new CpuConsumingThread(testRunTime, barrier);
-
-        // Run a single pass
         thread.start();
-        barrier.await();
-        barrier.await();
 
-        recording.stop();
-        List<RecordedEvent> events = Events.fromRecording(recording);
-
-        Events.hasEvents(events);
+        List<RecordedEvent> events = generateEvents(1, barrier);
         verifyPerThreadInvariant(events, cpuConsumerThreadName);
 
         thread.interrupt();
@@ -187,23 +209,12 @@ public class TestThreadCpuTimeEvent {
     }
 
     static void testCompareWithMXBean() throws Throwable {
-        Recording recording = new Recording();
-
-        recording.enable(EventNames.ThreadCPULoad).withPeriod(Duration.ofMillis(eventPeriodMillis));
-        recording.start();
-
         Duration testRunTime = Duration.ofMillis(eventPeriodMillis * cpuConsumerRunFactor);
         CyclicBarrier barrier = new CyclicBarrier(2);
         CpuConsumingThread thread = new CpuConsumingThread(testRunTime, barrier);
-
-        // Run a single pass
         thread.start();
-        barrier.await();
-        barrier.await();
 
-        recording.stop();
-        List<RecordedEvent> beforeEvents = Events.fromRecording(recording);
-
+        List<RecordedEvent> beforeEvents = generateEvents(2, barrier);
         verifyPerThreadInvariant(beforeEvents, cpuConsumerThreadName);
 
         // Run a second single pass
