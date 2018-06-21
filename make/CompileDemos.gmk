@@ -295,7 +295,7 @@ $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%: $(DEMO_SHARE_SRC)/nbproject/%
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   TARGETS += $(patsubst $(DEMO_SHARE_SRC)/nbproject/%, \
     $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%, \
-    $(call CacheFind, $(DEMO_SHARE_SRC)/nbproject)))
+    $(call CacheFind, $(DEMO_SHARE_SRC)/nbproject))
 else
   TARGETS += $(patsubst $(DEMO_SHARE_SRC)/nbproject/%, \
     $(SUPPORT_OUTPUTDIR)/demos/image/nbproject/%, \
