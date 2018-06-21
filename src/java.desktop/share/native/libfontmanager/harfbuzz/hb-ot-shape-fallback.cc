@@ -548,7 +548,7 @@ _hb_ot_shape_fallback_spaces (const hb_ot_shape_plan_t *plan,
 
         case t::SPACE_NARROW:
           /* Half-space?
-           * Unicode doc http://www.unicode.org/charts/PDF/U2000.pdf says ~1/4 or 1/5 of EM.
+           * Unicode doc https://unicode.org/charts/PDF/U2000.pdf says ~1/4 or 1/5 of EM.
            * However, in my testing, many fonts have their regular space being about that
            * size.  To me, a percentage of the space width makes more sense.  Half is as
            * good as any. */

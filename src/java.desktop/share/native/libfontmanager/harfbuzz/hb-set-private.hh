@@ -158,21 +158,13 @@ struct hb_set_t
     }
 
     typedef unsigned long long elt_t;
-    static const unsigned int PAGE_BITS = 1024;
+    static const unsigned int PAGE_BITS = 512;
     static_assert ((PAGE_BITS & ((PAGE_BITS) - 1)) == 0, "");
 
     static inline unsigned int elt_get_min (const elt_t &elt) { return _hb_ctz (elt); }
     static inline unsigned int elt_get_max (const elt_t &elt) { return _hb_bit_storage (elt) - 1; }
 
-#if 0 && HAVE_VECTOR_SIZE
-    /* The vectorized version does not work with clang as non-const
-     * elt() errs "non-const reference cannot bind to vector element". */
-    typedef elt_t vector_t __attribute__((vector_size (PAGE_BITS / 8)));
-#else
     typedef hb_vector_size_t<elt_t, PAGE_BITS / 8> vector_t;
-#endif
-
-    vector_t v;
 
     static const unsigned int ELT_BITS = sizeof (elt_t) * 8;
     static const unsigned int ELT_MASK = ELT_BITS - 1;
@@ -183,34 +175,47 @@ struct hb_set_t
     elt_t &elt (hb_codepoint_t g) { return v[(g & MASK) / ELT_BITS]; }
     elt_t const &elt (hb_codepoint_t g) const { return v[(g & MASK) / ELT_BITS]; }
     elt_t mask (hb_codepoint_t g) const { return elt_t (1) << (g & ELT_MASK); }
+
+    vector_t v;
   };
   static_assert (page_t::PAGE_BITS == sizeof (page_t) * 8, "");
 
   hb_object_header_t header;
-  ASSERT_POD ();
-  bool in_error;
-  hb_prealloced_array_t<page_map_t, 8> page_map;
-  hb_prealloced_array_t<page_t, 1> pages;
+  bool successful; /* Allocations successful */
+  mutable unsigned int population;
+  hb_vector_t<page_map_t, 1> page_map;
+  hb_vector_t<page_t, 1> pages;
 
-  inline void init (void)
+  inline void init_shallow (void)
   {
-    in_error = false;
+    successful = true;
+    population = 0;
     page_map.init ();
     pages.init ();
   }
-  inline void finish (void)
+  inline void init (void)
   {
-    page_map.finish ();
-    pages.finish ();
+    hb_object_init (this);
+    init_shallow ();
+  }
+  inline void fini_shallow (void)
+  {
+    page_map.fini ();
+    pages.fini ();
+  }
+  inline void fini (void)
+  {
+    hb_object_fini (this);
+    fini_shallow ();
   }
 
   inline bool resize (unsigned int count)
   {
-    if (unlikely (in_error)) return false;
+    if (unlikely (!successful)) return false;
     if (!pages.resize (count) || !page_map.resize (count))
     {
       pages.resize (page_map.len);
-      in_error = true;
+      successful = false;
       return false;
     }
     return true;
@@ -219,7 +224,8 @@ struct hb_set_t
   inline void clear (void) {
     if (unlikely (hb_object_is_inert (this)))
       return;
-    in_error = false;
+    successful = true;
+    population = 0;
     page_map.resize (0);
     pages.resize (0);
   }
@@ -231,17 +237,21 @@ struct hb_set_t
     return true;
   }
 
+  inline void dirty (void) { population = (unsigned int) -1; }
+
   inline void add (hb_codepoint_t g)
   {
-    if (unlikely (in_error)) return;
+    if (unlikely (!successful)) return;
     if (unlikely (g == INVALID)) return;
+    dirty ();
     page_t *page = page_for_insert (g); if (unlikely (!page)) return;
     page->add (g);
   }
   inline bool add_range (hb_codepoint_t a, hb_codepoint_t b)
   {
-    if (unlikely (in_error)) return true; /* https://github.com/harfbuzz/harfbuzz/issues/657 */
+    if (unlikely (!successful)) return true; /* https://github.com/harfbuzz/harfbuzz/issues/657 */
     if (unlikely (a > b || a == INVALID || b == INVALID)) return false;
+    dirty ();
     unsigned int ma = get_major (a);
     unsigned int mb = get_major (b);
     if (ma == mb)
@@ -269,8 +279,9 @@ struct hb_set_t
   template <typename T>
   inline void add_array (const T *array, unsigned int count, unsigned int stride=sizeof(T))
   {
-    if (unlikely (in_error)) return;
+    if (unlikely (!successful)) return;
     if (!count) return;
+    dirty ();
     hb_codepoint_t g = *array;
     while (count)
     {
@@ -294,8 +305,9 @@ struct hb_set_t
   template <typename T>
   inline bool add_sorted_array (const T *array, unsigned int count, unsigned int stride=sizeof(T))
   {
-    if (unlikely (in_error)) return true; /* https://github.com/harfbuzz/harfbuzz/issues/657 */
+    if (unlikely (!successful)) return true; /* https://github.com/harfbuzz/harfbuzz/issues/657 */
     if (!count) return true;
+    dirty ();
     hb_codepoint_t g = *array;
     hb_codepoint_t last_g = g;
     while (count)
@@ -321,16 +333,19 @@ struct hb_set_t
 
   inline void del (hb_codepoint_t g)
   {
-    if (unlikely (in_error)) return;
+    /* TODO perform op even if !successful. */
+    if (unlikely (!successful)) return;
     page_t *p = page_for (g);
     if (!p)
       return;
+    dirty ();
     p->del (g);
   }
   inline void del_range (hb_codepoint_t a, hb_codepoint_t b)
   {
+    /* TODO perform op even if !successful. */
     /* TODO Optimize, like add_range(). */
-    if (unlikely (in_error)) return;
+    if (unlikely (!successful)) return;
     for (unsigned int i = a; i < b + 1; i++)
       del (i);
   }
@@ -349,17 +364,20 @@ struct hb_set_t
   }
   inline void set (const hb_set_t *other)
   {
-    if (unlikely (in_error)) return;
+    if (unlikely (!successful)) return;
     unsigned int count = other->pages.len;
     if (!resize (count))
       return;
-
-    memcpy (pages.array, other->pages.array, count * sizeof (pages.array[0]));
-    memcpy (page_map.array, other->page_map.array, count * sizeof (page_map.array[0]));
+    population = other->population;
+    memcpy (pages.arrayZ, other->pages.arrayZ, count * sizeof (pages.arrayZ[0]));
+    memcpy (page_map.arrayZ, other->page_map.arrayZ, count * sizeof (page_map.arrayZ[0]));
   }
 
   inline bool is_equal (const hb_set_t *other) const
   {
+    if (get_population () != other->get_population ())
+      return false;
+
     unsigned int na = pages.len;
     unsigned int nb = other->pages.len;
 
@@ -382,16 +400,31 @@ struct hb_set_t
     return true;
   }
 
+  inline bool is_subset (const hb_set_t *larger_set) const
+  {
+    if (get_population () > larger_set->get_population ())
+      return false;
+
+    hb_codepoint_t c = INVALID;
+    while (next (&c))
+      if (!larger_set->has (c))
+        return false;
+
+    return true;
+  }
+
   template <class Op>
   inline void process (const hb_set_t *other)
   {
-    if (unlikely (in_error)) return;
+    if (unlikely (!successful)) return;
+
+    dirty ();
 
     unsigned int na = pages.len;
     unsigned int nb = other->pages.len;
     unsigned int next_page = na;
 
-    unsigned int count = 0;
+    unsigned int count = 0, newCount = 0;
     unsigned int a = 0, b = 0;
     for (; a < na && b < nb; )
     {
@@ -419,8 +452,10 @@ struct hb_set_t
     if (Op::passthru_right)
       count += nb - b;
 
-    if (!resize (count))
-      return;
+    if (count > pages.len)
+      if (!resize (count))
+        return;
+    newCount = count;
 
     /* Process in-place backward. */
     a = na;
@@ -473,6 +508,8 @@ struct hb_set_t
         page_at (count).v = other->page_at (b).v;
       }
     assert (!count);
+    if (pages.len > newCount)
+      resize (newCount);
   }
 
   inline void union_ (const hb_set_t *other)
@@ -592,10 +629,15 @@ struct hb_set_t
 
   inline unsigned int get_population (void) const
   {
+    if (population != (unsigned int) -1)
+      return population;
+
     unsigned int pop = 0;
     unsigned int count = pages.len;
     for (unsigned int i = 0; i < count; i++)
       pop += pages[i].get_population ();
+
+    population = pop;
     return pop;
   }
   inline hb_codepoint_t get_min (void) const

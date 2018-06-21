@@ -51,7 +51,12 @@ static const char **static_shaper_list;
 static
 void free_static_shaper_list (void)
 {
-  free (static_shaper_list);
+retry:
+  const char **shaper_list = (const char **) hb_atomic_ptr_get (&static_shaper_list);
+  if (!hb_atomic_ptr_cmpexch (&static_shaper_list, shaper_list, nullptr))
+    goto retry;
+
+  free (shaper_list);
 }
 #endif
 

@@ -42,7 +42,7 @@
 #define INDIC_TABLE_ELEMENT_TYPE uint16_t
 
 /* Cateories used in the OpenType spec:
- * https://www.microsoft.com/typography/otfntdev/devanot/shaping.aspx
+ * https://docs.microsoft.com/en-us/typography/script-development/devanagari
  */
 /* Note: This enum is duplicated in the -machine.rl source file.
  * Not sure how to avoid duplication. */

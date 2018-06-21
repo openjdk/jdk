@@ -49,7 +49,7 @@ hb_bsearch_r (const void *key, const void *base,
     else
       return (void *) p;
   }
-  return NULL;
+  return nullptr;
 }
 
 

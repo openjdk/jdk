@@ -101,7 +101,7 @@ struct hb_buffer_t {
   hb_buffer_content_type_t content_type;
   hb_segment_properties_t props; /* Script, language, direction */
 
-  bool in_error; /* Allocation failed */
+  bool successful; /* Allocations successful */
   bool have_output; /* Whether we have an output buffer going on */
   bool have_positions; /* Whether we have positions */
 

@@ -277,6 +277,12 @@ hb_ot_layout_lookup_substitute_closure (hb_face_t    *face,
                                         hb_set_t     *glyphs
                                         /*TODO , hb_bool_t  inclusive */);
 
+HB_EXTERN void
+hb_ot_layout_lookups_substitute_closure (hb_face_t      *face,
+                                         const hb_set_t *lookups,
+                                         hb_set_t       *glyphs);
+
+
 #ifdef HB_NOT_IMPLEMENTED
 /* Note: You better have GDEF when using this API, or marks won't do much. */
 HB_EXTERN hb_bool_t
@@ -307,7 +313,7 @@ Xhb_ot_layout_lookup_position (hb_font_t            *font,
 #endif
 
 /* Optical 'size' feature info.  Returns true if found.
- * http://www.microsoft.com/typography/otspec/features_pt.htm#size */
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/features_pt#size */
 HB_EXTERN hb_bool_t
 hb_ot_layout_get_size_params (hb_face_t    *face,
                               unsigned int *design_size,       /* OUT.  May be NULL */

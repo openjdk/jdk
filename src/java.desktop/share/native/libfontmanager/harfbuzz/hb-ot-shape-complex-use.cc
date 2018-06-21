@@ -35,7 +35,7 @@
 
 /*
  * Universal Shaping Engine.
- * https://www.microsoft.com/typography/OpenTypeDev/USE/intro.htm
+ * https://docs.microsoft.com/en-us/typography/script-development/use
  */
 
 static const hb_tag_t
@@ -511,7 +511,7 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
 
   buffer->idx = 0;
   unsigned int last_syllable = 0;
-  while (buffer->idx < buffer->len && !buffer->in_error)
+  while (buffer->idx < buffer->len && buffer->successful)
   {
     unsigned int syllable = buffer->cur().syllable();
     syllable_type_t syllable_type = (syllable_type_t) (syllable & 0x0F);
@@ -526,7 +526,7 @@ insert_dotted_circles (const hb_ot_shape_plan_t *plan HB_UNUSED,
       /* TODO Set glyph_props? */
 
       /* Insert dottedcircle after possible Repha. */
-      while (buffer->idx < buffer->len && !buffer->in_error &&
+      while (buffer->idx < buffer->len && buffer->successful &&
              last_syllable == buffer->cur().syllable() &&
              buffer->cur().use_category() == USE_R)
         buffer->next_glyph ();

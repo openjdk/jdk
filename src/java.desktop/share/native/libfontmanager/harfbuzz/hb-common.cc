@@ -225,7 +225,7 @@ struct hb_language_item_t {
 
   inline hb_language_item_t & operator = (const char *s) {
     /* If a custom allocated is used calling strdup() pairs
-    badly with a call to the custom free() in finish() below.
+    badly with a call to the custom free() in fini() below.
     Therefore don't call strdup(), implement its behavior.
     */
     size_t len = strlen(s) + 1;
@@ -240,7 +240,7 @@ struct hb_language_item_t {
     return *this;
   }
 
-  void finish (void) { free ((void *) lang); }
+  void fini (void) { free ((void *) lang); }
 };
 
 
@@ -252,11 +252,16 @@ static hb_language_item_t *langs;
 static void
 free_langs (void)
 {
-  while (langs) {
-    hb_language_item_t *next = langs->next;
-    langs->finish ();
-    free (langs);
-    langs = next;
+retry:
+  hb_language_item_t *first_lang = (hb_language_item_t *) hb_atomic_ptr_get (&langs);
+  if (!hb_atomic_ptr_cmpexch (&langs, first_lang, nullptr))
+    goto retry;
+
+  while (first_lang) {
+    hb_language_item_t *next = first_lang->next;
+    first_lang->fini ();
+    free (first_lang);
+    first_lang = next;
   }
 }
 #endif
@@ -284,7 +289,7 @@ retry:
   }
 
   if (!hb_atomic_ptr_cmpexch (&langs, first_lang, lang)) {
-    lang->finish ();
+    lang->fini ();
     free (lang);
     goto retry;
   }
@@ -407,7 +412,7 @@ hb_script_from_iso15924_tag (hb_tag_t tag)
     case HB_TAG('Q','a','a','i'): return HB_SCRIPT_INHERITED;
     case HB_TAG('Q','a','a','c'): return HB_SCRIPT_COPTIC;
 
-    /* Script variants from http://unicode.org/iso15924/ */
+    /* Script variants from https://unicode.org/iso15924/ */
     case HB_TAG('C','y','r','s'): return HB_SCRIPT_CYRILLIC;
     case HB_TAG('L','a','t','f'): return HB_SCRIPT_LATIN;
     case HB_TAG('L','a','t','g'): return HB_SCRIPT_LATIN;
@@ -475,7 +480,7 @@ hb_script_to_iso15924_tag (hb_script_t script)
 hb_direction_t
 hb_script_get_horizontal_direction (hb_script_t script)
 {
-  /* http://goo.gl/x9ilM */
+  /* https://docs.google.com/spreadsheets/d/1Y90M0Ie3MUJ6UVCRDOypOtijlMDLNNyyLk36T6iMu0o */
   switch ((hb_tag_t) script)
   {
     /* Unicode-1.1 additions */
@@ -530,7 +535,18 @@ hb_script_get_horizontal_direction (hb_script_t script)
     /* Unicode-9.0 additions */
     case HB_SCRIPT_ADLAM:
 
+    /* Unicode-11.0 additions */
+    case HB_SCRIPT_HANIFI_ROHINGYA:
+    case HB_SCRIPT_OLD_SOGDIAN:
+    case HB_SCRIPT_SOGDIAN:
+
       return HB_DIRECTION_RTL;
+
+
+    /* https://github.com/harfbuzz/harfbuzz/issues/1000 */
+    case HB_SCRIPT_OLD_ITALIC:
+
+      return HB_DIRECTION_INVALID;
   }
 
   return HB_DIRECTION_LTR;
@@ -719,8 +735,14 @@ static HB_LOCALE_T C_locale;
 static void
 free_C_locale (void)
 {
-  if (C_locale)
-    HB_FREE_LOCALE (C_locale);
+retry:
+  HB_LOCALE_T locale = (HB_LOCALE_T) hb_atomic_ptr_get (&C_locale);
+
+  if (!hb_atomic_ptr_cmpexch (&C_locale, locale, nullptr))
+    goto retry;
+
+  if (locale)
+    HB_FREE_LOCALE (locale);
 }
 #endif
 

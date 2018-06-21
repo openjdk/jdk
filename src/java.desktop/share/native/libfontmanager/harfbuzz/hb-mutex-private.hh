@@ -134,7 +134,7 @@ struct hb_mutex_t
   inline void init   (void) { hb_mutex_impl_init   (&m); }
   inline void lock   (void) { hb_mutex_impl_lock   (&m); }
   inline void unlock (void) { hb_mutex_impl_unlock (&m); }
-  inline void finish (void) { hb_mutex_impl_finish (&m); }
+  inline void fini (void) { hb_mutex_impl_finish (&m); }
 };
 
 

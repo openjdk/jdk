@@ -44,8 +44,13 @@ static const hb_shaper_pair_t *static_shapers;
 static
 void free_static_shapers (void)
 {
-  if (unlikely (static_shapers != all_shapers))
-    free ((void *) static_shapers);
+retry:
+  hb_shaper_pair_t *shapers = (hb_shaper_pair_t *) hb_atomic_ptr_get (&static_shapers);
+  if (!hb_atomic_ptr_cmpexch (&static_shapers, shapers, nullptr))
+    goto retry;
+
+  if (unlikely (shapers != all_shapers))
+    free ((void *) shapers);
 }
 #endif
 

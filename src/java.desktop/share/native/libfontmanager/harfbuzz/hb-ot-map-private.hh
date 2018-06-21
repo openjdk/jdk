@@ -78,8 +78,26 @@ struct hb_ot_map_t
     pause_func_t pause_func;
   };
 
+  inline void init (void)
+  {
+    memset (this, 0, sizeof (*this));
 
-  hb_ot_map_t (void) { memset (this, 0, sizeof (*this)); }
+    features.init ();
+    for (unsigned int table_index = 0; table_index < 2; table_index++)
+    {
+      lookups[table_index].init ();
+      stages[table_index].init ();
+    }
+  }
+  inline void fini (void)
+  {
+    features.fini ();
+    for (unsigned int table_index = 0; table_index < 2; table_index++)
+    {
+      lookups[table_index].fini ();
+      stages[table_index].fini ();
+    }
+  }
 
   inline hb_mask_t get_global_mask (void) const { return global_mask; }
 
@@ -130,15 +148,6 @@ struct hb_ot_map_t
   HB_INTERNAL void substitute (const struct hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const;
   HB_INTERNAL void position (const struct hb_ot_shape_plan_t *plan, hb_font_t *font, hb_buffer_t *buffer) const;
 
-  inline void finish (void) {
-    features.finish ();
-    for (unsigned int table_index = 0; table_index < 2; table_index++)
-    {
-      lookups[table_index].finish ();
-      stages[table_index].finish ();
-    }
-  }
-
   public:
   hb_tag_t chosen_script[2];
   bool found_script[2];
@@ -147,9 +156,9 @@ struct hb_ot_map_t
 
   hb_mask_t global_mask;
 
-  hb_prealloced_array_t<feature_map_t, 8> features;
-  hb_prealloced_array_t<lookup_map_t, 32> lookups[2]; /* GSUB/GPOS */
-  hb_prealloced_array_t<stage_map_t, 4> stages[2]; /* GSUB/GPOS */
+  hb_vector_t<feature_map_t, 8> features;
+  hb_vector_t<lookup_map_t, 32> lookups[2]; /* GSUB/GPOS */
+  hb_vector_t<stage_map_t, 4> stages[2]; /* GSUB/GPOS */
 };
 
 enum hb_ot_map_feature_flags_t {
@@ -172,6 +181,8 @@ struct hb_ot_map_builder_t
   HB_INTERNAL hb_ot_map_builder_t (hb_face_t *face_,
                                    const hb_segment_properties_t *props_);
 
+  HB_INTERNAL ~hb_ot_map_builder_t (void);
+
   HB_INTERNAL void add_feature (hb_tag_t tag, unsigned int value,
                                 hb_ot_map_feature_flags_t flags);
 
@@ -186,14 +197,6 @@ struct hb_ot_map_builder_t
   HB_INTERNAL void compile (hb_ot_map_t  &m,
                             const int    *coords,
                             unsigned int  num_coords);
-
-  inline void finish (void) {
-    feature_infos.finish ();
-    for (unsigned int table_index = 0; table_index < 2; table_index++)
-    {
-      stages[table_index].finish ();
-    }
-  }
 
   private:
 
@@ -241,8 +244,8 @@ struct hb_ot_map_builder_t
   private:
 
   unsigned int current_stage[2]; /* GSUB/GPOS */
-  hb_prealloced_array_t<feature_info_t, 32> feature_infos;
-  hb_prealloced_array_t<stage_info_t, 8> stages[2]; /* GSUB/GPOS */
+  hb_vector_t<feature_info_t, 32> feature_infos;
+  hb_vector_t<stage_info_t, 8> stages[2]; /* GSUB/GPOS */
 };
 
 

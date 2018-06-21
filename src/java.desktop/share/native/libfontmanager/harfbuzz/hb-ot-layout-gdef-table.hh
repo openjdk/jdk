@@ -333,7 +333,8 @@ struct MarkGlyphSets
 
 
 /*
- * GDEF -- The Glyph Definition Table
+ * GDEF -- Glyph Definition
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/gdef
  */
 
 struct GDEF

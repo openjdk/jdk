@@ -127,7 +127,7 @@ hb_font_get_variation_glyph_parent (hb_font_t *font,
 
 
 static hb_position_t
-hb_font_get_glyph_h_advance_nil (hb_font_t *font HB_UNUSED,
+hb_font_get_glyph_h_advance_nil (hb_font_t *font,
                                  void *font_data HB_UNUSED,
                                  hb_codepoint_t glyph,
                                  void *user_data HB_UNUSED)
@@ -144,7 +144,7 @@ hb_font_get_glyph_h_advance_parent (hb_font_t *font,
 }
 
 static hb_position_t
-hb_font_get_glyph_v_advance_nil (hb_font_t *font HB_UNUSED,
+hb_font_get_glyph_v_advance_nil (hb_font_t *font,
                                  void *font_data HB_UNUSED,
                                  hb_codepoint_t glyph,
                                  void *user_data HB_UNUSED)

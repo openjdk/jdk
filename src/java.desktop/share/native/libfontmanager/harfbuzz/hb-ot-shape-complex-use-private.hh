@@ -38,7 +38,7 @@
 #define USE_TABLE_ELEMENT_TYPE uint8_t
 
 /* Cateories used in the Universal Shaping Engine spec:
- * https://www.microsoft.com/typography/OpenTypeDev/USE/intro.htm
+ * https://docs.microsoft.com/en-us/typography/script-development/use
  */
 /* Note: This enum is duplicated in the -machine.rl source file.
  * Not sure how to avoid duplication. */

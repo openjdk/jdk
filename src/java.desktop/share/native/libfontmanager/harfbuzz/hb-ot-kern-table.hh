@@ -29,14 +29,16 @@
 
 #include "hb-open-type-private.hh"
 
-namespace OT {
-
-
 /*
  * kern -- Kerning
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/kern
+ * https://developer.apple.com/fonts/TrueType-Reference-Manual/RM06/Chap6kern.html
  */
-
 #define HB_OT_TAG_kern HB_TAG('k','e','r','n')
+
+
+namespace OT {
+
 
 struct hb_glyph_pair_t
 {
@@ -205,7 +207,7 @@ struct KernSubTableWrapper
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (thiz()) &&
-                  thiz()->length >= thiz()->min_size &&
+                  thiz()->length >= T::min_size &&
                   c->check_array (thiz(), 1, thiz()->length) &&
                   thiz()->subtable.sanitize (c, thiz()->format));
   }
@@ -361,8 +363,8 @@ struct kern
     inline void init (hb_face_t *face)
     {
       blob = Sanitizer<kern>().sanitize (face->reference_table (HB_OT_TAG_kern));
-      table = Sanitizer<kern>::lock_instance (blob);
-      table_length = hb_blob_get_length (blob);
+      table = blob->as<kern> ();
+      table_length = blob->length;
     }
     inline void fini (void)
     {

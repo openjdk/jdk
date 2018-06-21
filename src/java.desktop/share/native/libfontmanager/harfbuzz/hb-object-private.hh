@@ -41,9 +41,9 @@
 
 /* reference_count */
 
-#define HB_REFERENCE_COUNT_INERT_VALUE -1
+#define HB_REFERENCE_COUNT_INERT_VALUE 0
 #define HB_REFERENCE_COUNT_POISON_VALUE -0x0000DEAD
-#define HB_REFERENCE_COUNT_INIT {HB_ATOMIC_INT_INIT(HB_REFERENCE_COUNT_INERT_VALUE)}
+#define HB_REFERENCE_COUNT_INIT {HB_ATOMIC_INT_INIT (HB_REFERENCE_COUNT_INERT_VALUE)}
 
 struct hb_reference_count_t
 {
@@ -53,7 +53,7 @@ struct hb_reference_count_t
   inline int get_unsafe (void) const { return ref_count.get_unsafe (); }
   inline int inc (void) { return ref_count.inc (); }
   inline int dec (void) { return ref_count.dec (); }
-  inline void finish (void) { ref_count.set_unsafe (HB_REFERENCE_COUNT_POISON_VALUE); }
+  inline void fini (void) { ref_count.set_unsafe (HB_REFERENCE_COUNT_POISON_VALUE); }
 
   inline bool is_inert (void) const { return ref_count.get_unsafe () == HB_REFERENCE_COUNT_INERT_VALUE; }
   inline bool is_valid (void) const { return ref_count.get_unsafe () > 0; }
@@ -62,7 +62,6 @@ struct hb_reference_count_t
 
 /* user_data */
 
-#define HB_USER_DATA_ARRAY_INIT {HB_MUTEX_INIT, HB_LOCKABLE_SET_INIT}
 struct hb_user_data_array_t
 {
   struct hb_user_data_item_t {
@@ -73,7 +72,7 @@ struct hb_user_data_array_t
     inline bool operator == (hb_user_data_key_t *other_key) const { return key == other_key; }
     inline bool operator == (hb_user_data_item_t &other) const { return key == other.key; }
 
-    void finish (void) { if (destroy) destroy (data); }
+    void fini (void) { if (destroy) destroy (data); }
   };
 
   hb_mutex_t lock;
@@ -88,7 +87,7 @@ struct hb_user_data_array_t
 
   HB_INTERNAL void *get (hb_user_data_key_t *key);
 
-  inline void finish (void) { items.finish (lock); lock.finish (); }
+  inline void fini (void) { items.fini (lock); lock.fini (); }
 };
 
 
@@ -97,9 +96,9 @@ struct hb_user_data_array_t
 struct hb_object_header_t
 {
   hb_reference_count_t ref_count;
-  hb_user_data_array_t user_data;
+  hb_user_data_array_t *user_data;
 
-#define HB_OBJECT_HEADER_STATIC {HB_REFERENCE_COUNT_INIT, HB_USER_DATA_ARRAY_INIT}
+#define HB_OBJECT_HEADER_STATIC {HB_REFERENCE_COUNT_INIT, nullptr}
 
   private:
   ASSERT_POD ();
@@ -133,7 +132,7 @@ template <typename Type>
 static inline void hb_object_init (Type *obj)
 {
   obj->header.ref_count.init (1);
-  obj->header.user_data.init ();
+  obj->header.user_data = nullptr;
 }
 template <typename Type>
 static inline bool hb_object_is_inert (const Type *obj)
@@ -165,9 +164,18 @@ static inline bool hb_object_destroy (Type *obj)
   if (obj->header.ref_count.dec () != 1)
     return false;
 
-  obj->header.ref_count.finish (); /* Do this before user_data */
-  obj->header.user_data.finish ();
+  hb_object_fini (obj);
   return true;
+}
+template <typename Type>
+static inline void hb_object_fini (Type *obj)
+{
+  obj->header.ref_count.fini (); /* Do this before user_data */
+  if (obj->header.user_data)
+  {
+    obj->header.user_data->fini ();
+    free (obj->header.user_data);
+  }
 }
 template <typename Type>
 static inline bool hb_object_set_user_data (Type               *obj,
@@ -179,17 +187,34 @@ static inline bool hb_object_set_user_data (Type               *obj,
   if (unlikely (!obj || hb_object_is_inert (obj)))
     return false;
   assert (hb_object_is_valid (obj));
-  return obj->header.user_data.set (key, data, destroy, replace);
+
+retry:
+  hb_user_data_array_t *user_data = (hb_user_data_array_t *) hb_atomic_ptr_get (&obj->header.user_data);
+  if (unlikely (!user_data))
+  {
+    user_data = (hb_user_data_array_t *) calloc (sizeof (hb_user_data_array_t), 1);
+    if (unlikely (!user_data))
+      return false;
+    user_data->init ();
+    if (unlikely (!hb_atomic_ptr_cmpexch (&obj->header.user_data, nullptr, user_data)))
+    {
+      user_data->fini ();
+      free (user_data);
+      goto retry;
+    }
+  }
+
+  return user_data->set (key, data, destroy, replace);
 }
 
 template <typename Type>
 static inline void *hb_object_get_user_data (Type               *obj,
                                              hb_user_data_key_t *key)
 {
-  if (unlikely (!obj || hb_object_is_inert (obj)))
+  if (unlikely (!obj || hb_object_is_inert (obj) || !obj->header.user_data))
     return nullptr;
   assert (hb_object_is_valid (obj));
-  return obj->header.user_data.get (key);
+  return obj->header.user_data->get (key);
 }
 
 

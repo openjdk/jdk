@@ -34,9 +34,9 @@ namespace OT {
 
 
 /*
- * name -- The Naming Table
+ * name -- Naming
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/name
  */
-
 #define HB_OT_TAG_name HB_TAG('n','a','m','e')
 
 

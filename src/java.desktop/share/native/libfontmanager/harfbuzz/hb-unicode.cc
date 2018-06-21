@@ -64,7 +64,7 @@ hb_unicode_general_category_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
 
 static hb_codepoint_t
 hb_unicode_mirroring_nil (hb_unicode_funcs_t *ufuncs    HB_UNUSED,
-                          hb_codepoint_t      unicode   HB_UNUSED,
+                          hb_codepoint_t      unicode,
                           void               *user_data HB_UNUSED)
 {
   return unicode;

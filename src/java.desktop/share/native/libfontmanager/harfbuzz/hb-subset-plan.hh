@@ -30,31 +30,68 @@
 #include "hb-private.hh"
 
 #include "hb-subset.h"
+#include "hb-subset-private.hh"
 
 #include "hb-object-private.hh"
+#include "hb-map-private.hh"
 
-struct hb_subset_plan_t {
+struct hb_subset_plan_t
+{
   hb_object_header_t header;
   ASSERT_POD ();
 
   hb_bool_t drop_hints;
+  hb_bool_t drop_ot_layout;
 
-  // TODO(Q1) actual map, drop this crap
-  // Look at me ma, I'm a poor mans map codepoint : new gid
-  // codepoints is sorted and aligned with gids_to_retain.
-
-  // These first two lists provide a mapping from cp -> gid
-  // As a result it does not list the full set of glyphs to retain.
-  hb_prealloced_array_t<hb_codepoint_t> codepoints;
-  hb_prealloced_array_t<hb_codepoint_t> gids_to_retain;
+  // For each cp that we'd like to retain maps to the corresponding gid.
+  hb_set_t *unicodes;
 
   // This list contains the complete set of glyphs to retain and may contain
   // more glyphs then the lists above.
-  hb_prealloced_array_t<hb_codepoint_t> gids_to_retain_sorted;
+  hb_vector_t<hb_codepoint_t> glyphs;
+
+  hb_map_t *codepoint_to_glyph;
+  hb_map_t *glyph_map;
 
   // Plan is only good for a specific source/dest so keep them with it
   hb_face_t *source;
   hb_face_t *dest;
+
+  inline hb_bool_t
+  new_gid_for_codepoint (hb_codepoint_t codepoint,
+                         hb_codepoint_t *new_gid) const
+  {
+    hb_codepoint_t old_gid = codepoint_to_glyph->get (codepoint);
+    if (old_gid == HB_MAP_VALUE_INVALID)
+      return false;
+
+    return new_gid_for_old_gid (old_gid, new_gid);
+  }
+
+  inline hb_bool_t
+  new_gid_for_old_gid (hb_codepoint_t old_gid,
+                      hb_codepoint_t *new_gid) const
+  {
+    hb_codepoint_t gid = glyph_map->get (old_gid);
+    if (gid == HB_MAP_VALUE_INVALID)
+      return false;
+
+    *new_gid = gid;
+    return true;
+  }
+
+  inline hb_bool_t
+  add_table (hb_tag_t tag,
+             hb_blob_t *contents)
+  {
+    hb_blob_t *source_blob = source->reference_table (tag);
+    DEBUG_MSG(SUBSET, nullptr, "add table %c%c%c%c, dest %d bytes, source %d bytes",
+              HB_UNTAG(tag),
+              hb_blob_get_length (contents),
+              hb_blob_get_length (source_blob));
+    hb_blob_destroy (source_blob);
+    return hb_subset_face_add_table(dest, tag, contents);
+  }
 };
 
 typedef struct hb_subset_plan_t hb_subset_plan_t;
@@ -63,21 +100,6 @@ HB_INTERNAL hb_subset_plan_t *
 hb_subset_plan_create (hb_face_t           *face,
                        hb_subset_profile_t *profile,
                        hb_subset_input_t   *input);
-
-HB_INTERNAL hb_bool_t
-hb_subset_plan_new_gid_for_old_id(hb_subset_plan_t *plan,
-                                  hb_codepoint_t old_gid,
-                                  hb_codepoint_t *new_gid /* OUT */);
-
-HB_INTERNAL hb_bool_t
-hb_subset_plan_new_gid_for_codepoint(hb_subset_plan_t *plan,
-                                     hb_codepoint_t codepont,
-                                     hb_codepoint_t *new_gid /* OUT */);
-
-HB_INTERNAL hb_bool_t
-hb_subset_plan_add_table(hb_subset_plan_t *plan,
-                         hb_tag_t tag,
-                         hb_blob_t *contents);
 
 HB_INTERNAL void
 hb_subset_plan_destroy (hb_subset_plan_t *plan);

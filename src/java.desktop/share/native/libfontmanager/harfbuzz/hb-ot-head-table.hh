@@ -31,15 +31,15 @@
 
 #include "hb-open-type-private.hh"
 
+/*
+ * head -- Font Header
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/head
+ */
+#define HB_OT_TAG_head HB_TAG('h','e','a','d')
+
 
 namespace OT {
 
-
-/*
- * head -- Font Header
- */
-
-#define HB_OT_TAG_head HB_TAG('h','e','a','d')
 
 struct head
 {

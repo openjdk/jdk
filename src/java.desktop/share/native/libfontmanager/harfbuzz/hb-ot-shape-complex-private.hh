@@ -205,6 +205,10 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     /* Unicode-9.0 additions */
     case HB_SCRIPT_ADLAM:
 
+    /* Unicode-11.0 additions */
+    case HB_SCRIPT_HANIFI_ROHINGYA:
+    case HB_SCRIPT_SOGDIAN:
+
       /* For Arabic script, use the Arabic shaper even if no OT script tag was found.
        * This is because we do fallback shaping for Arabic script (and not others).
        * But note that Arabic shaping is applicable only to horizontal layout; for
@@ -379,6 +383,11 @@ hb_ot_shape_complex_categorize (const hb_ot_shape_planner_t *planner)
     case HB_SCRIPT_MASARAM_GONDI:
     case HB_SCRIPT_SOYOMBO:
     case HB_SCRIPT_ZANABAZAR_SQUARE:
+
+    /* Unicode-11.0 additions */
+    case HB_SCRIPT_DOGRA:
+    case HB_SCRIPT_GUNJALA_GONDI:
+    case HB_SCRIPT_MAKASAR:
 
       /* If the designer designed the font for the 'DFLT' script,
        * (or we ended up arbitrarily pick 'latn'), use the default shaper.

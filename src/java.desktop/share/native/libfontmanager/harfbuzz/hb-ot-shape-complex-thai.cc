@@ -260,7 +260,7 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
 {
   /* This function implements the shaping logic documented here:
    *
-   *   http://linux.thai.net/~thep/th-otf/shaping.html
+   *   https://linux.thai.net/~thep/th-otf/shaping.html
    *
    * The first shaping rule listed there is needed even if the font has Thai
    * OpenType tables.  The rest do fallback positioning based on PUA codepoints.
@@ -315,7 +315,7 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
 
   buffer->clear_output ();
   unsigned int count = buffer->len;
-  for (buffer->idx = 0; buffer->idx < count && !buffer->in_error;)
+  for (buffer->idx = 0; buffer->idx < count && buffer->successful;)
   {
     hb_codepoint_t u = buffer->cur().codepoint;
     if (likely (!IS_SARA_AM (u))) {
@@ -327,7 +327,7 @@ preprocess_text_thai (const hb_ot_shape_plan_t *plan,
     hb_codepoint_t decomposed[2] = {hb_codepoint_t (NIKHAHIT_FROM_SARA_AM (u)),
                                     hb_codepoint_t (SARA_AA_FROM_SARA_AM (u))};
     buffer->replace_glyphs (1, 2, decomposed);
-    if (unlikely (buffer->in_error))
+    if (unlikely (!buffer->successful))
       return;
 
     /* Make Nikhahit be recognized as a ccc=0 mark when zeroing widths. */

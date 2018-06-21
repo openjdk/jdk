@@ -51,9 +51,9 @@ struct VariationValueRecord
 
 
 /*
- * MVAR -- Metrics Variations Table
+ * MVAR -- Metrics Variations
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/mvar
  */
-
 #define HB_OT_TAG_MVAR HB_TAG('M','V','A','R')
 
 struct MVAR

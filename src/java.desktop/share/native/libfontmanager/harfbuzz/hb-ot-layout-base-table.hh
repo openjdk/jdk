@@ -36,7 +36,8 @@ namespace OT {
 #define NOT_INDEXED   ((unsigned int) -1)
 
 /*
- * BASE -- The BASE Table
+ * BASE -- Baseline
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/base
  */
 
 struct BaseCoordFormat1

@@ -29,6 +29,14 @@
 
 #include "hb-open-type-private.hh"
 
+/*
+ * fvar -- Font Variations
+ * https://docs.microsoft.com/en-us/typography/opentype/spec/fvar
+ */
+
+#define HB_OT_TAG_fvar HB_TAG('f','v','a','r')
+
+
 namespace OT {
 
 
@@ -42,11 +50,11 @@ struct InstanceRecord
   }
 
   protected:
-  HBUINT16      subfamilyNameID;/* The name ID for entries in the 'name' table
+  NameID        subfamilyNameID;/* The name ID for entries in the 'name' table
                                  * that provide subfamily names for this instance. */
   HBUINT16      reserved;       /* Reserved for future use — set to 0. */
   Fixed         coordinates[VAR];/* The coordinates array for this instance. */
-  //HBUINT16    postScriptNameIDX;/*Optional. The name ID for entries in the 'name'
+  //NameID      postScriptNameIDX;/*Optional. The name ID for entries in the 'name'
   //                              * table that provide PostScript names for this
   //                              * instance. */
 
@@ -68,19 +76,12 @@ struct AxisRecord
   Fixed         defaultValue;   /* The default coordinate value for the axis. */
   Fixed         maxValue;       /* The maximum coordinate value for the axis. */
   HBUINT16      reserved;       /* Reserved for future use — set to 0. */
-  HBUINT16      axisNameID;     /* The name ID for entries in the 'name' table that
+  NameID        axisNameID;     /* The name ID for entries in the 'name' table that
                                  * provide a display name for this axis. */
 
   public:
   DEFINE_SIZE_STATIC (20);
 };
-
-
-/*
- * fvar — Font Variations Table
- */
-
-#define HB_OT_TAG_fvar HB_TAG('f','v','a','r')
 
 struct fvar
 {
