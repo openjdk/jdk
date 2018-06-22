@@ -269,7 +269,7 @@ void JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nmethod *nm,
       ScopeDesc *sd  = &sc0;
       while( !sd->is_top() ) { sd = sd->sender(); }
       int bci = sd->bci();
-      if (bci != InvocationEntryBci) {
+      if (bci >= 0) {
         assert(map_length < pcds_in_method, "checking");
         map[map_length].start_address = (const void*)pcd->real_pc(nm);
         map[map_length].location = bci;
