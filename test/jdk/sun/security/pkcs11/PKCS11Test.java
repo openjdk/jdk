@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
@@ -576,21 +577,8 @@ public abstract class PKCS11Test {
             }
 
             curve = kcProp.substring(begin, end);
-            ECParameterSpec e = getECParameterSpec(p, curve);
-            System.out.print("\t "+ curve + ": ");
-            try {
-                KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", p);
-                kpg.initialize(e);
-                kpg.generateKeyPair();
-                results.add(e);
-                System.out.println("Supported");
-            } catch (ProviderException ex) {
-                System.out.println("Unsupported: PKCS11: " +
-                        ex.getCause().getMessage());
-            } catch (InvalidAlgorithmParameterException ex) {
-                System.out.println("Unsupported: Key Length: " +
-                        ex.getMessage());
-            }
+            getSupportedECParameterSpec(curve, p)
+                .ifPresent(spec -> results.add(spec));
         }
 
         if (results.size() == 0) {
@@ -598,6 +586,27 @@ public abstract class PKCS11Test {
         }
 
         return results;
+    }
+
+    static Optional<ECParameterSpec> getSupportedECParameterSpec(String curve,
+            Provider p) throws Exception {
+        ECParameterSpec e = getECParameterSpec(p, curve);
+        System.out.print("\t "+ curve + ": ");
+        try {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", p);
+            kpg.initialize(e);
+            kpg.generateKeyPair();
+            System.out.println("Supported");
+            return Optional.of(e);
+        } catch (ProviderException ex) {
+            System.out.println("Unsupported: PKCS11: " +
+                    ex.getCause().getMessage());
+            return Optional.empty();
+        } catch (InvalidAlgorithmParameterException ex) {
+            System.out.println("Unsupported: Key Length: " +
+                    ex.getMessage());
+            return Optional.empty();
+        }
     }
 
     private static ECParameterSpec getECParameterSpec(Provider p, String name)
