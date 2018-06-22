@@ -5408,65 +5408,103 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
                       FloatRegister Vtmp1, FloatRegister Vtmp2,
                       FloatRegister Vtmp3, FloatRegister Vtmp4)
 {
-    Label DONE, NEXT_32, LOOP_8, NEXT_8, LOOP_1, NEXT_1;
-    Register tmp1 = rscratch1;
+    Label DONE, SET_RESULT, NEXT_32, NEXT_32_PRFM, LOOP_8, NEXT_8, LOOP_1, NEXT_1,
+        NEXT_32_START, NEXT_32_PRFM_START;
+    Register tmp1 = rscratch1, tmp2 = rscratch2;
 
       mov(result, len); // Save initial len
 
 #ifndef BUILTIN_SIM
-      subs(len, len, 32);
-      br(LT, LOOP_8);
-
-// The following code uses the SIMD 'uqxtn' and 'uqxtn2' instructions
-// to convert chars to bytes. These set the 'QC' bit in the FPSR if
-// any char could not fit in a byte, so clear the FPSR so we can test it.
-      clear_fpsr();
-
-    BIND(NEXT_32);
-      ld1(Vtmp1, Vtmp2, Vtmp3, Vtmp4, T8H, src);
-      uqxtn(Vtmp1, T8B, Vtmp1, T8H);  // uqxtn  - write bottom half
-      uqxtn(Vtmp1, T16B, Vtmp2, T8H); // uqxtn2 - write top half
-      uqxtn(Vtmp2, T8B, Vtmp3, T8H);
-      uqxtn(Vtmp2, T16B, Vtmp4, T8H); // uqxtn2
-      get_fpsr(tmp1);
-      cbnzw(tmp1, LOOP_8);
-      st1(Vtmp1, Vtmp2, T16B, post(dst, 32));
-      subs(len, len, 32);
+      cmp(len, 8); // handle shortest strings first
+      br(LT, LOOP_1);
+      cmp(len, 32);
+      br(LT, NEXT_8);
+      // The following code uses the SIMD 'uzp1' and 'uzp2' instructions
+      // to convert chars to bytes
+      if (SoftwarePrefetchHintDistance >= 0) {
+        ld1(Vtmp1, Vtmp2, Vtmp3, Vtmp4, T8H, src);
+        cmp(len, SoftwarePrefetchHintDistance/2 + 16);
+        br(LE, NEXT_32_START);
+        b(NEXT_32_PRFM_START);
+        BIND(NEXT_32_PRFM);
+          ld1(Vtmp1, Vtmp2, Vtmp3, Vtmp4, T8H, src);
+        BIND(NEXT_32_PRFM_START);
+          prfm(Address(src, SoftwarePrefetchHintDistance));
+          orr(v4, T16B, Vtmp1, Vtmp2);
+          orr(v5, T16B, Vtmp3, Vtmp4);
+          uzp1(Vtmp1, T16B, Vtmp1, Vtmp2);
+          uzp1(Vtmp3, T16B, Vtmp3, Vtmp4);
+          stpq(Vtmp1, Vtmp3, dst);
+          uzp2(v5, T16B, v4, v5); // high bytes
+          umov(tmp2, v5, D, 1);
+          fmovd(tmp1, v5);
+          orr(tmp1, tmp1, tmp2);
+          cbnz(tmp1, LOOP_8);
+          sub(len, len, 32);
+          add(dst, dst, 32);
+          add(src, src, 64);
+          cmp(len, SoftwarePrefetchHintDistance/2 + 16);
+          br(GE, NEXT_32_PRFM);
+          cmp(len, 32);
+          br(LT, LOOP_8);
+        BIND(NEXT_32);
+          ld1(Vtmp1, Vtmp2, Vtmp3, Vtmp4, T8H, src);
+        BIND(NEXT_32_START);
+      } else {
+        BIND(NEXT_32);
+          ld1(Vtmp1, Vtmp2, Vtmp3, Vtmp4, T8H, src);
+      }
+      prfm(Address(src, SoftwarePrefetchHintDistance));
+      uzp1(v4, T16B, Vtmp1, Vtmp2);
+      uzp1(v5, T16B, Vtmp3, Vtmp4);
+      stpq(v4, v5, dst);
+      orr(Vtmp1, T16B, Vtmp1, Vtmp2);
+      orr(Vtmp3, T16B, Vtmp3, Vtmp4);
+      uzp2(Vtmp1, T16B, Vtmp1, Vtmp3); // high bytes
+      umov(tmp2, Vtmp1, D, 1);
+      fmovd(tmp1, Vtmp1);
+      orr(tmp1, tmp1, tmp2);
+      cbnz(tmp1, LOOP_8);
+      sub(len, len, 32);
+      add(dst, dst, 32);
       add(src, src, 64);
+      cmp(len, 32);
       br(GE, NEXT_32);
+      cbz(len, DONE);
 
     BIND(LOOP_8);
-      adds(len, len, 32-8);
+      cmp(len, 8);
       br(LT, LOOP_1);
-      clear_fpsr(); // QC may be set from loop above, clear again
     BIND(NEXT_8);
       ld1(Vtmp1, T8H, src);
-      uqxtn(Vtmp1, T8B, Vtmp1, T8H);
-      get_fpsr(tmp1);
-      cbnzw(tmp1, LOOP_1);
-      st1(Vtmp1, T8B, post(dst, 8));
-      subs(len, len, 8);
+      uzp1(Vtmp2, T16B, Vtmp1, Vtmp1); // low bytes
+      uzp2(Vtmp3, T16B, Vtmp1, Vtmp1); // high bytes
+      strd(Vtmp2, dst);
+      fmovd(tmp1, Vtmp3);
+      cbnz(tmp1, NEXT_1);
+
+      sub(len, len, 8);
+      add(dst, dst, 8);
       add(src, src, 16);
+      cmp(len, 8);
       br(GE, NEXT_8);
 
     BIND(LOOP_1);
-      adds(len, len, 8);
-      br(LE, DONE);
-#else
-      cbz(len, DONE);
 #endif
+    cbz(len, DONE);
     BIND(NEXT_1);
       ldrh(tmp1, Address(post(src, 2)));
-      tst(tmp1, 0xff00);
-      br(NE, DONE);
       strb(tmp1, Address(post(dst, 1)));
+      tst(tmp1, 0xff00);
+      br(NE, SET_RESULT);
       subs(len, len, 1);
       br(GT, NEXT_1);
 
-    BIND(DONE);
+    BIND(SET_RESULT);
       sub(result, result, len); // Return index where we stopped
                                 // Return len == 0 if we processed all
                                 // characters
+    BIND(DONE);
 }
 
 
