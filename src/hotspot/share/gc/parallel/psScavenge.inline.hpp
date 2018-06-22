@@ -48,7 +48,7 @@ template <class T> inline bool PSScavenge::should_scavenge(T* p) {
 template <class T>
 inline bool PSScavenge::should_scavenge(T* p, MutableSpace* to_space) {
   if (should_scavenge(p)) {
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     // Skip objects copied to to_space since the scavenge started.
     HeapWord* const addr = (HeapWord*)obj;
     return addr < to_space_top_before_gc() || addr >= to_space->end();
@@ -109,7 +109,7 @@ class PSScavengeFromCLDClosure: public OopClosure {
       } else {
         new_obj = _pm->copy_to_survivor_space</*promote_immediately=*/false>(o);
       }
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
       if (PSScavenge::is_obj_in_young(new_obj)) {
         do_cld_barrier();

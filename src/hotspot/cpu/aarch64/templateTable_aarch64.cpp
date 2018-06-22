@@ -761,7 +761,7 @@ void TemplateTable::iaload()
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_INT) >> 2);
-  __ access_load_at(T_INT, IN_HEAP | IN_HEAP_ARRAY, r0, Address(r0, r1, Address::uxtw(2)), noreg, noreg);
+  __ access_load_at(T_INT, IN_HEAP | IS_ARRAY, r0, Address(r0, r1, Address::uxtw(2)), noreg, noreg);
 }
 
 void TemplateTable::laload()
@@ -773,7 +773,7 @@ void TemplateTable::laload()
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_LONG) >> 3);
-  __ access_load_at(T_LONG, IN_HEAP | IN_HEAP_ARRAY, r0, Address(r0, r1, Address::uxtw(3)), noreg, noreg);
+  __ access_load_at(T_LONG, IN_HEAP | IS_ARRAY, r0, Address(r0, r1, Address::uxtw(3)), noreg, noreg);
 }
 
 void TemplateTable::faload()
@@ -785,7 +785,7 @@ void TemplateTable::faload()
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_FLOAT) >> 2);
-  __ access_load_at(T_FLOAT, IN_HEAP | IN_HEAP_ARRAY, r0, Address(r0, r1, Address::uxtw(2)), noreg, noreg);
+  __ access_load_at(T_FLOAT, IN_HEAP | IS_ARRAY, r0, Address(r0, r1, Address::uxtw(2)), noreg, noreg);
 }
 
 void TemplateTable::daload()
@@ -797,7 +797,7 @@ void TemplateTable::daload()
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_DOUBLE) >> 3);
-  __ access_load_at(T_DOUBLE, IN_HEAP | IN_HEAP_ARRAY, r0, Address(r0, r1, Address::uxtw(3)), noreg, noreg);
+  __ access_load_at(T_DOUBLE, IN_HEAP | IS_ARRAY, r0, Address(r0, r1, Address::uxtw(3)), noreg, noreg);
 }
 
 void TemplateTable::aaload()
@@ -812,7 +812,7 @@ void TemplateTable::aaload()
   do_oop_load(_masm,
               Address(r0, r1, Address::uxtw(LogBytesPerHeapOop)),
               r0,
-              IN_HEAP_ARRAY);
+              IS_ARRAY);
 }
 
 void TemplateTable::baload()
@@ -824,7 +824,7 @@ void TemplateTable::baload()
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_BYTE) >> 0);
-  __ access_load_at(T_BYTE, IN_HEAP | IN_HEAP_ARRAY, r0, Address(r0, r1, Address::uxtw(0)), noreg, noreg);
+  __ access_load_at(T_BYTE, IN_HEAP | IS_ARRAY, r0, Address(r0, r1, Address::uxtw(0)), noreg, noreg);
 }
 
 void TemplateTable::caload()
@@ -836,7 +836,7 @@ void TemplateTable::caload()
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_CHAR) >> 1);
-  __ access_load_at(T_CHAR, IN_HEAP | IN_HEAP_ARRAY, r0, Address(r0, r1, Address::uxtw(1)), noreg, noreg);
+  __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, r0, Address(r0, r1, Address::uxtw(1)), noreg, noreg);
 }
 
 // iload followed by caload frequent pair
@@ -853,7 +853,7 @@ void TemplateTable::fast_icaload()
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_CHAR) >> 1);
-  __ access_load_at(T_CHAR, IN_HEAP | IN_HEAP_ARRAY, r0, Address(r0, r1, Address::uxtw(1)), noreg, noreg);
+  __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, r0, Address(r0, r1, Address::uxtw(1)), noreg, noreg);
 }
 
 void TemplateTable::saload()
@@ -865,7 +865,7 @@ void TemplateTable::saload()
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_SHORT) >> 1);
-  __ access_load_at(T_SHORT, IN_HEAP | IN_HEAP_ARRAY, r0, Address(r0, r1, Address::uxtw(1)), noreg, noreg);
+  __ access_load_at(T_SHORT, IN_HEAP | IS_ARRAY, r0, Address(r0, r1, Address::uxtw(1)), noreg, noreg);
 }
 
 void TemplateTable::iload(int n)
@@ -1059,7 +1059,7 @@ void TemplateTable::iastore() {
   // r3: array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_INT) >> 2);
-  __ access_store_at(T_INT, IN_HEAP | IN_HEAP_ARRAY, Address(r3, r1, Address::uxtw(2)), r0, noreg, noreg);
+  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(2)), r0, noreg, noreg);
 }
 
 void TemplateTable::lastore() {
@@ -1071,7 +1071,7 @@ void TemplateTable::lastore() {
   // r3: array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_LONG) >> 3);
-  __ access_store_at(T_LONG, IN_HEAP | IN_HEAP_ARRAY, Address(r3, r1, Address::uxtw(3)), r0, noreg, noreg);
+  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(3)), r0, noreg, noreg);
 }
 
 void TemplateTable::fastore() {
@@ -1083,7 +1083,7 @@ void TemplateTable::fastore() {
   // r3:  array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_FLOAT) >> 2);
-  __ access_store_at(T_FLOAT, IN_HEAP | IN_HEAP_ARRAY, Address(r3, r1, Address::uxtw(2)), noreg /* ftos */, noreg, noreg);
+  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(2)), noreg /* ftos */, noreg, noreg);
 }
 
 void TemplateTable::dastore() {
@@ -1095,7 +1095,7 @@ void TemplateTable::dastore() {
   // r3:  array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_DOUBLE) >> 3);
-  __ access_store_at(T_DOUBLE, IN_HEAP | IN_HEAP_ARRAY, Address(r3, r1, Address::uxtw(3)), noreg /* dtos */, noreg, noreg);
+  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(3)), noreg /* dtos */, noreg, noreg);
 }
 
 void TemplateTable::aastore() {
@@ -1136,7 +1136,7 @@ void TemplateTable::aastore() {
   // Get the value we will store
   __ ldr(r0, at_tos());
   // Now store using the appropriate barrier
-  do_oop_store(_masm, element_address, r0, IN_HEAP_ARRAY);
+  do_oop_store(_masm, element_address, r0, IS_ARRAY);
   __ b(done);
 
   // Have a NULL in r0, r3=array, r2=index.  Store NULL at ary[idx]
@@ -1144,7 +1144,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(r2);
 
   // Store a NULL
-  do_oop_store(_masm, element_address, noreg, IN_HEAP_ARRAY);
+  do_oop_store(_masm, element_address, noreg, IS_ARRAY);
 
   // Pop stack arguments
   __ bind(done);
@@ -1172,7 +1172,7 @@ void TemplateTable::bastore()
   __ bind(L_skip);
 
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_BYTE) >> 0);
-  __ access_store_at(T_BYTE, IN_HEAP | IN_HEAP_ARRAY, Address(r3, r1, Address::uxtw(0)), r0, noreg, noreg);
+  __ access_store_at(T_BYTE, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(0)), r0, noreg, noreg);
 }
 
 void TemplateTable::castore()
@@ -1185,7 +1185,7 @@ void TemplateTable::castore()
   // r3: array
   index_check(r3, r1); // prefer index in r1
   __ add(r1, r1, arrayOopDesc::base_offset_in_bytes(T_CHAR) >> 1);
-  __ access_store_at(T_CHAR, IN_HEAP | IN_HEAP_ARRAY, Address(r3, r1, Address::uxtw(1)), r0, noreg, noreg);
+  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY, Address(r3, r1, Address::uxtw(1)), r0, noreg, noreg);
 }
 
 void TemplateTable::sastore()

@@ -4051,7 +4051,7 @@ void MacroAssembler::compare_heap_oop(Register Rop1, Address mem, bool maybeNULL
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
                                      const Address& addr, Register val,
                                      Register tmp1, Register tmp2, Register tmp3) {
-  assert((decorators & ~(AS_RAW | IN_HEAP | IN_HEAP_ARRAY | IN_NATIVE | OOP_NOT_NULL |
+  assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_UNKNOWN_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);
@@ -4070,7 +4070,7 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
 void MacroAssembler::access_load_at(BasicType type, DecoratorSet decorators,
                                     const Address& addr, Register dst,
                                     Register tmp1, Register tmp2, Label *is_null) {
-  assert((decorators & ~(AS_RAW | IN_HEAP | IN_HEAP_ARRAY | IN_NATIVE | OOP_NOT_NULL |
+  assert((decorators & ~(AS_RAW | IN_HEAP | IN_NATIVE | IS_ARRAY | IS_NOT_NULL |
                          ON_PHANTOM_OOP_REF | ON_WEAK_OOP_REF)) == 0, "unsupported decorator");
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
   decorators = AccessInternal::decorator_fixup(decorators);

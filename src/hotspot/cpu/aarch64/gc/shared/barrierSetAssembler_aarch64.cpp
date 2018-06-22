@@ -37,14 +37,14 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
-  bool oop_not_null = (decorators & OOP_NOT_NULL) != 0;
+  bool is_not_null = (decorators & IS_NOT_NULL) != 0;
   switch (type) {
   case T_OBJECT:
   case T_ARRAY: {
     if (in_heap) {
       if (UseCompressedOops) {
         __ ldrw(dst, src);
-        if (oop_not_null) {
+        if (is_not_null) {
           __ decode_heap_oop_not_null(dst);
         } else {
           __ decode_heap_oop(dst);

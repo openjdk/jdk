@@ -102,7 +102,7 @@ oop_arraycopy_in_heap(arrayOop src_obj, size_t src_offset_in_bytes, T* src_raw,
   if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
     // Optimized covariant case
     bs->write_ref_array_pre(dst_raw, length,
-                            HasDecorator<decorators, AS_DEST_NOT_INITIALIZED>::value);
+                            HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value);
     Raw::oop_arraycopy(NULL, 0, src_raw, NULL, 0, dst_raw, length);
     bs->write_ref_array((HeapWord*)dst_raw, length);
   } else {

@@ -34,7 +34,7 @@
 
 template <DecoratorSet decorators, typename T>
 inline void G1BarrierSet::write_ref_field_pre(T* field) {
-  if (HasDecorator<decorators, AS_DEST_NOT_INITIALIZED>::value ||
+  if (HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value ||
       HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
     return;
   }

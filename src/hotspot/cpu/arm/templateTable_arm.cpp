@@ -943,7 +943,7 @@ void TemplateTable::aaload() {
   const Register Rindex = R0_tos;
 
   index_check(Rarray, Rindex);
-  do_oop_load(_masm, R0_tos, get_array_elem_addr(T_OBJECT, Rarray, Rindex, Rtemp), IN_HEAP_ARRAY);
+  do_oop_load(_masm, R0_tos, get_array_elem_addr(T_OBJECT, Rarray, Rindex, Rtemp), IS_ARRAY);
 }
 
 
@@ -1328,7 +1328,7 @@ void TemplateTable::aastore() {
   __ add(Raddr_1, Raddr_1, AsmOperand(Rindex_4, lsl, LogBytesPerHeapOop));
 
   // Now store using the appropriate barrier
-  do_oop_store(_masm, Raddr_1, Rvalue_2, Rtemp, R0_tmp, R3_tmp, false, IN_HEAP_ARRAY);
+  do_oop_store(_masm, Raddr_1, Rvalue_2, Rtemp, R0_tmp, R3_tmp, false, IS_ARRAY);
   __ b(done);
 
   __ bind(throw_array_store);
@@ -1344,7 +1344,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(R0_tmp);
 
   // Store a NULL
-  do_oop_store(_masm, Address::indexed_oop(Raddr_1, Rindex_4), Rvalue_2, Rtemp, R0_tmp, R3_tmp, true, IN_HEAP_ARRAY);
+  do_oop_store(_masm, Address::indexed_oop(Raddr_1, Rindex_4), Rvalue_2, Rtemp, R0_tmp, R3_tmp, true, IS_ARRAY);
 
   // Pop stack arguments
   __ bind(done);

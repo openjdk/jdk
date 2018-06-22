@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
     if (new_obj != NULL) {
       assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
              "should be in object space");
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
   }
 }

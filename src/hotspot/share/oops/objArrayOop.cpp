@@ -37,7 +37,7 @@ oop objArrayOopDesc::atomic_compare_exchange_oop(int index, oop exchange_value,
   } else {
     offs = objArrayOopDesc::obj_at_offset<oop>(index);
   }
-  return HeapAccess<IN_HEAP_ARRAY>::oop_atomic_cmpxchg_at(exchange_value, as_oop(), offs, compare_value);
+  return HeapAccess<IS_ARRAY>::oop_atomic_cmpxchg_at(exchange_value, as_oop(), offs, compare_value);
 }
 
 Klass* objArrayOopDesc::element_klass() {

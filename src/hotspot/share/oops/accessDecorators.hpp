@@ -143,8 +143,6 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_VOLATILE | MO_RELAXED |
 //  - Accesses on narrowOop* translate to encoded/decoded memory accesses without runtime checks
 //  - Accesses on HeapWord* translate to a runtime check choosing one of the above
 //  - Accesses on other types translate to raw memory accesses without runtime checks
-// * AS_DEST_NOT_INITIALIZED: This property can be important to e.g. SATB barriers by
-//   marking that the previous value is uninitialized nonsense rather than a real value.
 // * AS_NO_KEEPALIVE: The barrier is used only on oop references and will not keep any involved objects
 //   alive, regardless of the type of reference being accessed. It will however perform the memory access
 //   in a consistent way w.r.t. e.g. concurrent compaction, so that the right field is being accessed,
@@ -155,11 +153,9 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_VOLATILE | MO_RELAXED |
 //   Note that primitive accesses will only be resolved on the barrier set if the appropriate build-time
 //   decorator for enabling primitive barriers is enabled for the build.
 const DecoratorSet AS_RAW                  = UCONST64(1) << 12;
-const DecoratorSet AS_DEST_NOT_INITIALIZED = UCONST64(1) << 13;
 const DecoratorSet AS_NO_KEEPALIVE         = UCONST64(1) << 14;
 const DecoratorSet AS_NORMAL               = UCONST64(1) << 15;
-const DecoratorSet AS_DECORATOR_MASK       = AS_RAW | AS_DEST_NOT_INITIALIZED |
-                                             AS_NO_KEEPALIVE | AS_NORMAL;
+const DecoratorSet AS_DECORATOR_MASK       = AS_RAW | AS_NO_KEEPALIVE | AS_NORMAL;
 
 // === Reference Strength Decorators ===
 // These decorators only apply to accesses on oop-like types (oop/narrowOop).
@@ -182,23 +178,24 @@ const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
 // The location is important to the GC as it may imply different actions. The following decorators are used:
 // * IN_HEAP: The access is performed in the heap. Many barriers such as card marking will
 //   be omitted if this decorator is not set.
-// * IN_HEAP_ARRAY: The access is performed on a heap allocated array. This is sometimes a special case
-//   for some GCs, and implies that it is an IN_HEAP.
 // * IN_NATIVE: The access is performed in an off-heap data structure pointing into the Java heap.
 // * IN_CONCURRENT_ROOT: The access is performed in an off-heap data structure pointing into the Java heap,
 //   but is notably not scanned during safepoints. This is sometimes a special case for some GCs and
 //   implies that it is also an IN_NATIVE.
 const DecoratorSet IN_HEAP            = UCONST64(1) << 20;
-const DecoratorSet IN_HEAP_ARRAY      = UCONST64(1) << 21;
 const DecoratorSet IN_NATIVE          = UCONST64(1) << 22;
 const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 23;
-const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_HEAP_ARRAY |
-                                        IN_NATIVE | IN_CONCURRENT_ROOT;
+const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_NATIVE | IN_CONCURRENT_ROOT;
 
-// == Value Decorators ==
-// * OOP_NOT_NULL: This property can make certain barriers faster such as compressing oops.
-const DecoratorSet OOP_NOT_NULL       = UCONST64(1) << 25;
-const DecoratorSet OOP_DECORATOR_MASK = OOP_NOT_NULL;
+// == Boolean Flag Decorators ==
+// * IS_ARRAY: The access is performed on a heap allocated array. This is sometimes a special case
+//   for some GCs.
+// * IS_DEST_UNINITIALIZED: This property can be important to e.g. SATB barriers by
+//   marking that the previous value is uninitialized nonsense rather than a real value.
+// * IS_NOT_NULL: This property can make certain barriers faster such as compressing oops.
+const DecoratorSet IS_ARRAY              = UCONST64(1) << 21;
+const DecoratorSet IS_DEST_UNINITIALIZED = UCONST64(1) << 13;
+const DecoratorSet IS_NOT_NULL           = UCONST64(1) << 25;
 
 // == Arraycopy Decorators ==
 // * ARRAYCOPY_CHECKCAST: This property means that the class of the objects in source
@@ -238,11 +235,8 @@ namespace AccessInternal {
     // If no barrier strength has been picked, normal will be used
     static const DecoratorSet barrier_strength_default = memory_ordering_default |
       ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : INTERNAL_EMPTY);
-    // Heap array accesses imply it is a heap access
-    static const DecoratorSet heap_array_is_in_heap = barrier_strength_default |
-      ((IN_HEAP_ARRAY & barrier_strength_default) != 0 ? IN_HEAP : INTERNAL_EMPTY);
-    static const DecoratorSet conc_root_is_root = heap_array_is_in_heap |
-      ((IN_CONCURRENT_ROOT & heap_array_is_in_heap) != 0 ? IN_NATIVE : INTERNAL_EMPTY);
+    static const DecoratorSet conc_root_is_root = barrier_strength_default |
+      ((IN_CONCURRENT_ROOT & barrier_strength_default) != 0 ? IN_NATIVE : INTERNAL_EMPTY);
     static const DecoratorSet value = conc_root_is_root | BT_BUILDTIME_DECORATORS;
   };
 
@@ -259,11 +253,8 @@ namespace AccessInternal {
     // If no barrier strength has been picked, normal will be used
     DecoratorSet barrier_strength_default = memory_ordering_default |
       ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : INTERNAL_EMPTY);
-    // Heap array accesses imply it is a heap access
-    DecoratorSet heap_array_is_in_heap = barrier_strength_default |
-      ((IN_HEAP_ARRAY & barrier_strength_default) != 0 ? IN_HEAP : INTERNAL_EMPTY);
-    DecoratorSet conc_root_is_root = heap_array_is_in_heap |
-      ((IN_CONCURRENT_ROOT & heap_array_is_in_heap) != 0 ? IN_NATIVE : INTERNAL_EMPTY);
+    DecoratorSet conc_root_is_root = barrier_strength_default |
+      ((IN_CONCURRENT_ROOT & barrier_strength_default) != 0 ? IN_NATIVE : INTERNAL_EMPTY);
     DecoratorSet value = conc_root_is_root | BT_BUILDTIME_DECORATORS;
     return value;
   }

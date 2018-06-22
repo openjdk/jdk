@@ -93,7 +93,7 @@ template <class T> inline void ScanClosure::do_oop_work(T* p) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
       oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
 
     if (is_scanning_a_cld()) {
@@ -119,7 +119,7 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
       oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
       if (is_scanning_a_cld()) {
         do_cld_barrier();
       } else if (_gc_barrier) {
@@ -153,13 +153,13 @@ void FilteringClosure::do_oop_nv(narrowOop* p) { FilteringClosure::do_oop_work(p
 // Note similarity to ScanClosure; the difference is that
 // the barrier set is taken care of outside this closure.
 template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
-  oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
   // weak references are sometimes scanned twice; must check
   // that to-space doesn't already contain this object
   if ((HeapWord*)obj < _boundary && !_g->to()->is_in_reserved(obj)) {
     oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                       : _g->copy_to_survivor_space(obj);
-    RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+    RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
   }
 }
 
