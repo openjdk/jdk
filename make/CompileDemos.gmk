@@ -264,6 +264,12 @@ $(eval $(call SetupBuildDemo, Notepad, \
     DEMO_SUBDIR := jfc, \
 ))
 
+$(eval $(call SetupBuildDemo, Stylepad, \
+    DEMO_SUBDIR := jfc, \
+    EXTRA_SRC_DIR := $(DEMO_SHARE_SRC)/jfc/Notepad, \
+    EXCLUDE_FILES := $(DEMO_SHARE_SRC)/jfc/Notepad/README.txt, \
+))
+
 $(eval $(call SetupBuildDemo, SampleTree, \
     DEMO_SUBDIR := jfc, \
 ))
