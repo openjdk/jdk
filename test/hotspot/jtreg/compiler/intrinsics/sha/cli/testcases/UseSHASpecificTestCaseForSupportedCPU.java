@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,15 +33,13 @@ import jdk.test.lib.cli.predicate.AndPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
 
 /**
- * UseSHA specific test case targeted to SPARC and AArch64 CPUs which
- * support any sha* instruction.
+ * UseSHA specific test case targeted to CPUs which support any sha* instruction.
  */
 public class UseSHASpecificTestCaseForSupportedCPU
         extends SHAOptionsBase.TestCase {
     public UseSHASpecificTestCaseForSupportedCPU(String optionName) {
-        super(SHAOptionsBase.USE_SHA_OPTION, new AndPredicate(
-                new OrPredicate(Platform::isSparc, Platform::isAArch64),
-                IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE));
+        super(SHAOptionsBase.USE_SHA_OPTION,
+              IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE);
 
         Asserts.assertEQ(optionName, SHAOptionsBase.USE_SHA_OPTION,
                 String.format("Test case should be used for '%s' option only.",
