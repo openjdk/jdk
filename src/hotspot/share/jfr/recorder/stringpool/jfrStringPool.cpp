@@ -151,7 +151,7 @@ class StringPoolWriteOp  {
   StringPoolWriteOp(JfrChunkWriter& writer, Thread* thread) : _writer(writer), _thread(thread), _strings_processed(0) {}
   bool write(Type* buffer, const u1* data, size_t size) {
     buffer->acquire(_thread); // blocking
-    const u4 nof_strings_used = (const u4)buffer->string_count();
+    const uint64_t nof_strings_used = buffer->string_count();
     assert(nof_strings_used > 0, "invariant");
     buffer->set_string_top(buffer->string_top() + nof_strings_used);
     // "size processed" for string pool buffers is the number of processed string elements
@@ -208,10 +208,10 @@ class StringPoolBufferDiscarder {
       return true;
     }
     buffer->set_top(current_top + unflushed_size);
-    const u4 nof_strings_used = buffer->string_count();
+    const uint64_t nof_strings_used = buffer->string_count();
     buffer->set_string_top(buffer->string_top() + nof_strings_used);
     // "size processed" for string pool buffers is the number of string elements
-    _processed += nof_strings_used;
+    _processed += (size_t)nof_strings_used;
     buffer->release();
     return true;
   }

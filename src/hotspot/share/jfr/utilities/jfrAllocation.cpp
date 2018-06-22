@@ -53,8 +53,8 @@ static volatile jlong _live_set_bytes = 0;
 
 static void add(size_t alloc_size) {
   if (!JfrRecorder::is_created()) {
-    const jlong total_allocated = atomic_add_jlong(alloc_size, &_allocated_bytes);
-    const jlong current_live_set = atomic_add_jlong(alloc_size, &_live_set_bytes);
+    const jlong total_allocated = atomic_add_jlong((jlong)alloc_size, &_allocated_bytes);
+    const jlong current_live_set = atomic_add_jlong((jlong)alloc_size, &_live_set_bytes);
     log_trace(jfr, system)("Allocation: [" SIZE_FORMAT "] bytes", alloc_size);
     log_trace(jfr, system)("Total alloc [" JLONG_FORMAT "] bytes", total_allocated);
     log_trace(jfr, system)("Liveset:    [" JLONG_FORMAT "] bytes", current_live_set);
@@ -63,11 +63,11 @@ static void add(size_t alloc_size) {
 
 static void subtract(size_t dealloc_size) {
   if (!JfrRecorder::is_created()) {
-    const size_t total_deallocated = atomic_add_jlong(dealloc_size, &_deallocated_bytes);
-    const size_t current_live_set = atomic_add_jlong(dealloc_size * -1, &_live_set_bytes);
+    const jlong total_deallocated = atomic_add_jlong((jlong)dealloc_size, &_deallocated_bytes);
+    const jlong current_live_set = atomic_add_jlong(((jlong)dealloc_size * -1), &_live_set_bytes);
     log_trace(jfr, system)("Deallocation: [" SIZE_FORMAT "] bytes", dealloc_size);
-    log_trace(jfr, system)("Total dealloc [" SIZE_FORMAT "] bytes", total_deallocated);
-    log_trace(jfr, system)("Liveset:      [" SIZE_FORMAT "] bytes", current_live_set);
+    log_trace(jfr, system)("Total dealloc [" JLONG_FORMAT "] bytes", total_deallocated);
+    log_trace(jfr, system)("Liveset:      [" JLONG_FORMAT "] bytes", current_live_set);
   }
 }
 
