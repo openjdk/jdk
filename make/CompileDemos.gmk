@@ -69,55 +69,6 @@ $(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
 ))
 
 ################################################################################
-# Build applet demos.
-
-# Setup make rules for building a demo applet.
-#
-# Parameter 1 is the name of the rule. This name is used as variable prefix,
-# and the targets generated are listed in a variable by that name. It is also
-# used to locate the name of the applet subdir, and to determine the name
-# of the output directory.
-#
-# Remaining parameters are named arguments. These include:
-# SRC_DIR   Alternative source directory to use for the demos.
-# DISABLE_SJAVAC   Passed to SetupJavaCompilation
-
-SetupBuildAppletDemo = $(NamedParamsMacroTemplate)
-define SetupBuildAppletDemoBody
-  ifeq ($$($1_SRC_DIR), )
-    $1_SRC_DIR := $(DEMO_SHARE_SRC)/applets
-  endif
-
-  $$(eval $$(call SetupJavaCompilation, BUILD_DEMO_APPLET_$1, \
-      SETUP := GENERATE_USINGJDKBYTECODE, \
-      SRC := $$($1_SRC_DIR)/$1, \
-      BIN := $(SUPPORT_OUTPUTDIR)/demos/image/applets/$1, \
-      COPY := .html .java .xyz .obj .au .gif, \
-      DISABLE_SJAVAC := $$($1_DISABLE_SJAVAC), \
-  ))
-
-  $1 := $$(BUILD_DEMO_APPLET_$1)
-
-  TARGETS += $$($1)
-endef
-
-ifneq ($(OPENJDK_TARGET_OS), solaris)
-  $(eval $(call SetupBuildAppletDemo, ArcTest))
-  $(eval $(call SetupBuildAppletDemo, BarChart))
-  $(eval $(call SetupBuildAppletDemo, Blink))
-  $(eval $(call SetupBuildAppletDemo, CardTest))
-  $(eval $(call SetupBuildAppletDemo, Clock))
-  $(eval $(call SetupBuildAppletDemo, DitherTest))
-  $(eval $(call SetupBuildAppletDemo, DrawTest))
-  $(eval $(call SetupBuildAppletDemo, Fractal))
-  $(eval $(call SetupBuildAppletDemo, GraphicsTest))
-  $(eval $(call SetupBuildAppletDemo, NervousText))
-  $(eval $(call SetupBuildAppletDemo, SimpleGraph))
-  $(eval $(call SetupBuildAppletDemo, SortDemo))
-  $(eval $(call SetupBuildAppletDemo, SpreadSheet))
-endif
-
-################################################################################
 # Build normal demos.
 
 COPY_TO_JAR := .html .txt .properties .js .gif .jpg .theme .data .opt .c .h \
@@ -219,21 +170,6 @@ $(CODEPOINT_METAINF_SERVICE_FILE): $(DEMO_SHARE_SRC)/jfc/CodePointIM/$(CODEPOINT
 	$(call install-file)
 
 $(BUILD_DEMO_CodePointIM_JAR): $(CODEPOINT_METAINF_SERVICE_FILE)
-
-ifneq ($(OPENJDK_TARGET_OS), solaris)
-  $(eval $(call SetupBuildDemo, MoleculeViewer, \
-      DEMO_SUBDIR := applets, \
-      MAIN_CLASS := XYZChemModel, \
-      EXTRA_COPY_TO_IMAGE := *.java, \
-  ))
-
-  $(eval $(call SetupBuildDemo, WireFrame, \
-      DEMO_SUBDIR := applets, \
-      MAIN_CLASS := ThreeD, \
-      EXTRA_COPY_TO_IMAGE := *.java, \
-  ))
-
-endif
 
 $(eval $(call SetupBuildDemo, FileChooserDemo, \
     DEMO_SUBDIR := jfc, \
