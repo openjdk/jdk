@@ -135,15 +135,13 @@ public class NoAbortForBadClassFile extends TestRunner {
 
         permutations(files, Collections.emptyList(), result);
 
+        int testNum = 0;
+
         for (List<Path> order : result) {
             for (Path missing : order) {
-                Path test = base.resolve("test");
+                Path test = base.resolve(String.valueOf(testNum++)).resolve("test");
 
-                if (Files.exists(test)) {
-                    tb.cleanDirectory(test);
-                } else {
-                    tb.createDirectories(test);
-                }
+                tb.createDirectories(test);
 
                 for (Path p : order) {
                     Files.copy(p, test.resolve(p.getFileName()));
