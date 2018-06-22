@@ -1638,12 +1638,14 @@ void mvnw(Register Rd, Register Rm,
 #undef INSN
 
   // Conditional compare (both kinds)
-  void conditional_compare(unsigned op, int o2, int o3,
+  void conditional_compare(unsigned op, int o1, int o2, int o3,
                            Register Rn, unsigned imm5, unsigned nzcv,
                            unsigned cond) {
+    starti;
     f(op, 31, 29);
     f(0b11010010, 28, 21);
     f(cond, 15, 12);
+    f(o1, 11);
     f(o2, 10);
     f(o3, 4);
     f(nzcv, 3, 0);
@@ -1652,15 +1654,12 @@ void mvnw(Register Rd, Register Rm,
 
 #define INSN(NAME, op)                                                  \
   void NAME(Register Rn, Register Rm, int imm, Condition cond) {        \
-    starti;                                                             \
-    f(0, 11);                                                           \
-    conditional_compare(op, 0, 0, Rn, (uintptr_t)Rm, imm, cond);        \
+    int regNumber = (Rm == zr ? 31 : (uintptr_t)Rm);                    \
+    conditional_compare(op, 0, 0, 0, Rn, regNumber, imm, cond);         \
   }                                                                     \
                                                                         \
-  void NAME(Register Rn, int imm5, int imm, Condition cond) {   \
-    starti;                                                             \
-    f(1, 11);                                                           \
-    conditional_compare(op, 0, 0, Rn, imm5, imm, cond);                 \
+  void NAME(Register Rn, int imm5, int imm, Condition cond) {           \
+    conditional_compare(op, 1, 0, 0, Rn, imm5, imm, cond);              \
   }
 
   INSN(ccmnw, 0b001);
