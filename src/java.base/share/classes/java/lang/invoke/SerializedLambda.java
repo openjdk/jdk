@@ -53,6 +53,12 @@ import java.util.Objects;
  * that the properties of the {@code SerializedLambda} are consistent with a
  * lambda actually captured by that class.
  *
+ * <p>The identity of a function object produced by deserializing the serialized
+ * form is unpredictable, and therefore identity-sensitive operations (such as
+ * reference equality, object locking, and {@code System.identityHashCode()} may
+ * produce different results in different implementations, or even upon
+ * different deserializations in the same implementation.
+ *
  * @see LambdaMetafactory
  * @since 1.8
  */
