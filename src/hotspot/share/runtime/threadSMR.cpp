@@ -1067,8 +1067,15 @@ void ThreadsSMRSupport::print_info_on(const Thread* thread, outputStream* st) {
 
 // Print Threads class SMR info.
 void ThreadsSMRSupport::print_info_on(outputStream* st) {
-  // Only grab the Threads_lock if we don't already own it
-  // and if we are not reporting an error.
+  // Only grab the Threads_lock if we don't already own it and if we
+  // are not reporting an error.
+  // Note: Not grabbing the Threads_lock during error reporting is
+  // dangerous because the data structures we want to print can be
+  // freed concurrently. However, grabbing the Threads_lock during
+  // error reporting can be equally dangerous since this thread might
+  // block during error reporting or a nested error could leave the
+  // Threads_lock held. The classic no win scenario.
+  //
   MutexLockerEx ml((Threads_lock->owned_by_self() || VMError::is_error_reported()) ? NULL : Threads_lock);
 
   st->print_cr("Threads class SMR info:");
