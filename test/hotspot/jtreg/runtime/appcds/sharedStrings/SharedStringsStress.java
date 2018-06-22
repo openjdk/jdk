@@ -55,11 +55,7 @@ public class SharedStringsStress {
             out.close();
         }
 
-        // Set NewSize to 8m due to dumping could fail in hs-tier6 testing with
-        // the vm options: -XX:+UnlockCommercialFeatures -XX:+UseDeterministicG1GC
-        // resulting in vm initialization error:
-        // "GC triggered before VM initialization completed. Try increasing NewSize, current value 1331K."
-        OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"), "-XX:NewSize=8m",
+        OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"),
                                                     "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile);
         TestCommon.checkDump(dumpOutput);
         OutputAnalyzer execOutput = TestCommon.exec(appJar, "HelloString");
