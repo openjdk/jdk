@@ -156,9 +156,9 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register st
 
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                 const Address& dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
-  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool precise = on_array || on_anonymous;
+  bool precise = is_array || on_anonymous;
 
   BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
 

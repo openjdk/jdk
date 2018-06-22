@@ -1300,9 +1300,9 @@ class StubGenerator: public StubCodeGenerator {
     unsigned int start_off = __ offset();  // Remember stub start address (is rtn value).
     unsigned int size      = UseCompressedOops ? 4 : 8;
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_DISJOINT;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
-      decorators |= AS_DEST_NOT_INITIALIZED;
+      decorators |= IS_DEST_UNINITIALIZED;
     }
     if (aligned) {
       decorators |= ARRAYCOPY_ALIGNED;
@@ -1392,9 +1392,9 @@ class StubGenerator: public StubCodeGenerator {
     // Branch to disjoint_copy (if applicable) before pre_barrier to avoid double pre_barrier.
     array_overlap_test(nooverlap_target, shift);  // Branch away to nooverlap_target if disjoint.
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
     if (dest_uninitialized) {
-      decorators |= AS_DEST_NOT_INITIALIZED;
+      decorators |= IS_DEST_UNINITIALIZED;
     }
     if (aligned) {
       decorators |= ARRAYCOPY_ALIGNED;

@@ -697,7 +697,7 @@ void TemplateTable::aaload() {
               arrayOopDesc::base_offset_in_bytes(T_OBJECT),
               Otos_i,
               G3_scratch,
-              IN_HEAP_ARRAY);
+              IS_ARRAY);
   __ verify_oop(Otos_i);
 }
 
@@ -997,13 +997,13 @@ void TemplateTable::aastore() {
 
   // Store is OK.
   __ bind(store_ok);
-  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i, G3_scratch, IN_HEAP_ARRAY);
+  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), Otos_i, G3_scratch, IS_ARRAY);
 
   __ ba(done);
   __ delayed()->inc(Lesp, 3* Interpreter::stackElementSize); // adj sp (pops array, index and value)
 
   __ bind(is_null);
-  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), G0, G4_scratch, IN_HEAP_ARRAY);
+  do_oop_store(_masm, O1, noreg, arrayOopDesc::base_offset_in_bytes(T_OBJECT), G0, G4_scratch, IS_ARRAY);
 
   __ profile_null_seen(G3_scratch);
   __ inc(Lesp, 3* Interpreter::stackElementSize);     // adj sp (pops array, index and value)

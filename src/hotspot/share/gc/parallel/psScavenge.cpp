@@ -97,7 +97,7 @@ public:
   }
 
   template <class T> void do_oop_work(T* p) {
-    assert (oopDesc::is_oop(RawAccess<OOP_NOT_NULL>::oop_load(p)),
+    assert (oopDesc::is_oop(RawAccess<IS_NOT_NULL>::oop_load(p)),
             "expected an oop while scanning weak refs");
 
     // Weak refs may be visited more than once.

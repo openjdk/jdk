@@ -39,7 +39,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
                                   const Address& addr, Register dst, Register tmp1, Register tmp2, Label *L_handle_null) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
-  bool not_null = (decorators & OOP_NOT_NULL) != 0;
+  bool not_null = (decorators & IS_NOT_NULL) != 0;
   assert(in_heap || in_native, "where?");
 
   switch (type) {
@@ -69,7 +69,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
                                    const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
-  bool not_null = (decorators & OOP_NOT_NULL) != 0;
+  bool not_null = (decorators & IS_NOT_NULL) != 0;
   assert(in_heap || in_native, "where?");
   assert_different_registers(val, tmp1, tmp2);
 

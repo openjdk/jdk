@@ -2046,7 +2046,7 @@ void MacroAssembler::check_method_handle_type(Register mtype_reg, Register mh_re
   assert_different_registers(mtype_reg, mh_reg, temp_reg);
   // Compare method type against that of the receiver.
   load_heap_oop(temp_reg, delayed_value(java_lang_invoke_MethodHandle::type_offset_in_bytes, temp_reg), mh_reg,
-                noreg, noreg, false, OOP_NOT_NULL);
+                noreg, noreg, false, IS_NOT_NULL);
   cmpd(CCR0, temp_reg, mtype_reg);
   bne(CCR0, wrong_method_type);
 }

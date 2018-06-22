@@ -2945,7 +2945,7 @@ class StubGenerator: public StubCodeGenerator {
     __ push(LR);
 #endif // AARCH64
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
     if (disjoint) {
       decorators |= ARRAYCOPY_DISJOINT;
     }
@@ -3217,7 +3217,7 @@ class StubGenerator: public StubCodeGenerator {
     pushed+=1;
 #endif // AARCH64
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_CHECKCAST;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_CHECKCAST;
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->arraycopy_prologue(_masm, decorators, true, to, count, callee_saved_regs);

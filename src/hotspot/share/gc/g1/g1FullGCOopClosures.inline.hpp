@@ -78,7 +78,7 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
 
   // Forwarded, just update.
   assert(Universe::heap()->is_in_reserved(forwardee), "should be in object space");
-  RawAccess<OOP_NOT_NULL>::oop_store(p, forwardee);
+  RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
 }
 
 inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_nv(p); }

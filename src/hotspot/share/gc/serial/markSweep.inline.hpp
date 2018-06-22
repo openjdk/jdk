@@ -54,7 +54,7 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     if (new_obj != NULL) {
       assert(Universe::heap()->is_in_reserved(new_obj),
              "should be in object space");
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
   }
 }

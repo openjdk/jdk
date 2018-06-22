@@ -44,7 +44,7 @@
 void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                             Register from, Register to, Register count,
                                                             Register preserve1, Register preserve2) {
-  bool dest_uninitialized = (decorators & AS_DEST_NOT_INITIALIZED) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
   // With G1, don't generate the call if we statically know that the target in uninitialized
   if (!dest_uninitialized) {
     int spill_slots = 3;
@@ -107,7 +107,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 
 void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators, Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
                                                  Register tmp1, Register tmp2, bool needs_frame) {
-  bool not_null  = (decorators & OOP_NOT_NULL) != 0,
+  bool not_null  = (decorators & IS_NOT_NULL) != 0,
        preloaded = obj == noreg;
   Register nv_save = noreg;
 
@@ -205,7 +205,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators, Register store_addr, Register new_val,
                                                   Register tmp1, Register tmp2, Register tmp3) {
-  bool not_null = (decorators & OOP_NOT_NULL) != 0;
+  bool not_null = (decorators & IS_NOT_NULL) != 0;
 
   Label runtime, filtered;
   assert_different_registers(store_addr, new_val, tmp1, tmp2);
@@ -279,9 +279,9 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                        Register base, RegisterOrConstant ind_or_offs, Register val,
                                        Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
-  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool precise = on_array || on_anonymous;
+  bool precise = is_array || on_anonymous;
   // Load and record the previous value.
   g1_write_barrier_pre(masm, decorators, base, ind_or_offs,
                        tmp1, tmp2, tmp3, needs_frame);
@@ -318,7 +318,7 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
     // these parameters the pre-barrier does not generate
     // the load of the previous value
     // We only reach here if value is not null.
-    g1_write_barrier_pre(masm, decorators | OOP_NOT_NULL, noreg /* obj */, (intptr_t)0, dst /* pre_val */,
+    g1_write_barrier_pre(masm, decorators | IS_NOT_NULL, noreg /* obj */, (intptr_t)0, dst /* pre_val */,
                          tmp1, tmp2, needs_frame);
   }
   __ bind(done);

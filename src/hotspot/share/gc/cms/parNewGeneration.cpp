@@ -684,7 +684,7 @@ template <class T>
 void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop_work(T* p) {
 #ifdef ASSERT
   {
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     // We never expect to see a null reference being processed
     // as a weak reference.
     assert(oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
@@ -694,7 +694,7 @@ void /*ParNewGeneration::*/ParKeepAliveClosure::do_oop_work(T* p) {
   _par_cl->do_oop_nv(p);
 
   if (CMSHeap::heap()->is_in_reserved(p)) {
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);;
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);;
     _rs->write_ref_field_gc_par(p, obj);
   }
 }
@@ -710,7 +710,7 @@ template <class T>
 void /*ParNewGeneration::*/KeepAliveClosure::do_oop_work(T* p) {
 #ifdef ASSERT
   {
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     // We never expect to see a null reference being processed
     // as a weak reference.
     assert(oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
@@ -720,7 +720,7 @@ void /*ParNewGeneration::*/KeepAliveClosure::do_oop_work(T* p) {
   _cl->do_oop_nv(p);
 
   if (CMSHeap::heap()->is_in_reserved(p)) {
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     _rs->write_ref_field_gc_par(p, obj);
   }
 }
@@ -737,7 +737,7 @@ template <class T> void ScanClosureWithParBarrier::do_oop_work(T* p) {
       oop new_obj = obj->is_forwarded()
                       ? obj->forwardee()
                       : _g->DefNewGeneration::copy_to_survivor_space(obj);
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
     if (_gc_barrier) {
       // If p points to a younger generation, mark the card.

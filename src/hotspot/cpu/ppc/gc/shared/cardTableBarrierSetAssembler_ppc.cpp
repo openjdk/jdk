@@ -93,9 +93,9 @@ void CardTableBarrierSetAssembler::card_write_barrier_post(MacroAssembler* masm,
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                 Register base, RegisterOrConstant ind_or_offs, Register val,
                                                 Register tmp1, Register tmp2, Register tmp3, bool needs_frame) {
-  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool precise = on_array || on_anonymous;
+  bool precise = is_array || on_anonymous;
 
   BarrierSetAssembler::store_at(masm, decorators, type, base, ind_or_offs, val, tmp1, tmp2, tmp3, needs_frame);
 

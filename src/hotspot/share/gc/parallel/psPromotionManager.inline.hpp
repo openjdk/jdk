@@ -50,14 +50,14 @@ inline void PSPromotionManager::push_depth(T* p) {
 template <class T>
 inline void PSPromotionManager::claim_or_forward_internal_depth(T* p) {
   if (p != NULL) { // XXX: error if p != NULL here
-    oop o = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
     if (o->is_forwarded()) {
       o = o->forwardee();
       // Card mark
       if (PSScavenge::is_obj_in_young(o)) {
         PSScavenge::card_table()->inline_write_ref_field_gc(p, o);
       }
-      RawAccess<OOP_NOT_NULL>::oop_store(p, o);
+      RawAccess<IS_NOT_NULL>::oop_store(p, o);
     } else {
       push_depth(p);
     }
@@ -281,7 +281,7 @@ template <class T, bool promote_immediately>
 inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
   assert(should_scavenge(p, true), "revisiting object?");
 
-  oop o = RawAccess<OOP_NOT_NULL>::oop_load(p);
+  oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   oop new_obj = o->is_forwarded()
         ? o->forwardee()
         : copy_to_survivor_space<promote_immediately>(o);
@@ -294,7 +294,7 @@ inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
                       new_obj->klass()->internal_name(), p2i((void *)o), p2i((void *)new_obj), new_obj->size());
   }
 
-  RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+  RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
 
   // We cannot mark without test, as some code passes us pointers
   // that are outside the heap. These pointers are either from roots

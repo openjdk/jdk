@@ -103,7 +103,7 @@ class CheckForPreciseMarks : public OopClosure {
 
  protected:
   template <class T> void do_oop_work(T* p) {
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     if (_young_gen->is_in_reserved(obj)) {
       assert(_card_table->addr_is_marked_precise(p), "Found unmarked precise oop");
       _card_table->set_card_newgen(p);

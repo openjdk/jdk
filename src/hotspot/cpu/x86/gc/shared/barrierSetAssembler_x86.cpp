@@ -35,7 +35,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
                                   Register dst, Address src, Register tmp1, Register tmp_thread) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
-  bool oop_not_null = (decorators & OOP_NOT_NULL) != 0;
+  bool is_not_null = (decorators & IS_NOT_NULL) != 0;
   bool atomic = (decorators & MO_RELAXED) != 0;
 
   switch (type) {
@@ -45,7 +45,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
 #ifdef _LP64
       if (UseCompressedOops) {
         __ movl(dst, src);
-        if (oop_not_null) {
+        if (is_not_null) {
           __ decode_heap_oop_not_null(dst);
         } else {
           __ decode_heap_oop(dst);
@@ -100,7 +100,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
                                    Address dst, Register val, Register tmp1, Register tmp2) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
-  bool oop_not_null = (decorators & OOP_NOT_NULL) != 0;
+  bool is_not_null = (decorators & IS_NOT_NULL) != 0;
   bool atomic = (decorators & MO_RELAXED) != 0;
 
   switch (type) {
@@ -108,7 +108,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   case T_ARRAY: {
     if (in_heap) {
       if (val == noreg) {
-        assert(!oop_not_null, "inconsistent access");
+        assert(!is_not_null, "inconsistent access");
 #ifdef _LP64
         if (UseCompressedOops) {
           __ movl(dst, (int32_t)NULL_WORD);
@@ -122,7 +122,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
 #ifdef _LP64
         if (UseCompressedOops) {
           assert(!dst.uses(val), "not enough registers");
-          if (oop_not_null) {
+          if (is_not_null) {
             __ encode_heap_oop_not_null(val);
           } else {
             __ encode_heap_oop(val);
