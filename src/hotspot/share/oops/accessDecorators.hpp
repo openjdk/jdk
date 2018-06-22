@@ -212,8 +212,15 @@ const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYC
                                                     ARRAYCOPY_DISJOINT | ARRAYCOPY_ARRAYOF |
                                                     ARRAYCOPY_ATOMIC | ARRAYCOPY_ALIGNED;
 
+// == Resolve barrier decorators ==
+// * ACCESS_READ: Indicate that the resolved object is accessed read-only. This allows the GC
+//   backend to use weaker and more efficient barriers.
+// * ACCESS_WRITE: Indicate that the resolved object is used for write access.
+const DecoratorSet ACCESS_READ                    = UCONST64(1) << 29;
+const DecoratorSet ACCESS_WRITE                   = UCONST64(1) << 30;
+
 // Keep track of the last decorator.
-const DecoratorSet DECORATOR_LAST = UCONST64(1) << 28;
+const DecoratorSet DECORATOR_LAST = UCONST64(1) << 30;
 
 namespace AccessInternal {
   // This class adds implied decorators that follow according to decorator rules.
