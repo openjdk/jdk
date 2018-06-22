@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,13 @@
 /*
  * @test ReservedStackTestCompiler
  * @summary Run ReservedStackTest with dedicated compilers C1 and C2.
+ *
  * @requires vm.flavor == "server" & !vm.emulatedClient
+ * @requires vm.opt.DeoptimizeAlot == null | vm.opt.DeoptimizeAlot == false
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
+ *
  * @run main/othervm -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  * @run main/othervm -XX:-TieredCompilation                         -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  */
