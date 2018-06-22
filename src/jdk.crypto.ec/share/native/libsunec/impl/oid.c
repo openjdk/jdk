@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -62,6 +62,10 @@
 #define ANSI_X962_CURVE_OID     ANSI_X962_OID, 0x03
 #define ANSI_X962_GF2m_OID      ANSI_X962_CURVE_OID, 0x00
 #define ANSI_X962_GFp_OID       ANSI_X962_CURVE_OID, 0x01
+
+#define TELETRUST_ALGO_OID             0x2b, 0x24, 0x03
+#define ECC_BRAINPOOL                  TELETRUST_ALGO_OID, 0x03, 0x02, 0x08
+#define ECC_BRAINPOOL_EC_V1            ECC_BRAINPOOL, 0x01, 0x01
 
 #define CONST_OID static const unsigned char
 
@@ -133,6 +137,22 @@ CONST_OID ansiX962c2pnb304w1[] = { ANSI_X962_GF2m_OID, 0x11 };
 CONST_OID ansiX962c2tnb359v1[] = { ANSI_X962_GF2m_OID, 0x12 };
 CONST_OID ansiX962c2pnb368w1[] = { ANSI_X962_GF2m_OID, 0x13 };
 CONST_OID ansiX962c2tnb431r1[] = { ANSI_X962_GF2m_OID, 0x14 };
+
+/* TeleTrusT ECC Brainpool prime curve OIDs */
+CONST_OID brainpoolP160r1[] = { ECC_BRAINPOOL_EC_V1, 0x01 };
+CONST_OID brainpoolP160t1[] = { ECC_BRAINPOOL_EC_V1, 0x02 };
+CONST_OID brainpoolP192r1[] = { ECC_BRAINPOOL_EC_V1, 0x03 };
+CONST_OID brainpoolP192t1[] = { ECC_BRAINPOOL_EC_V1, 0x04 };
+CONST_OID brainpoolP224r1[] = { ECC_BRAINPOOL_EC_V1, 0x05 };
+CONST_OID brainpoolP224t1[] = { ECC_BRAINPOOL_EC_V1, 0x06 };
+CONST_OID brainpoolP256r1[] = { ECC_BRAINPOOL_EC_V1, 0x07 };
+CONST_OID brainpoolP256t1[] = { ECC_BRAINPOOL_EC_V1, 0x08 };
+CONST_OID brainpoolP320r1[] = { ECC_BRAINPOOL_EC_V1, 0x09 };
+CONST_OID brainpoolP320t1[] = { ECC_BRAINPOOL_EC_V1, 0x0a };
+CONST_OID brainpoolP384r1[] = { ECC_BRAINPOOL_EC_V1, 0x0b };
+CONST_OID brainpoolP384t1[] = { ECC_BRAINPOOL_EC_V1, 0x0c };
+CONST_OID brainpoolP512r1[] = { ECC_BRAINPOOL_EC_V1, 0x0d };
+CONST_OID brainpoolP512t1[] = { ECC_BRAINPOOL_EC_V1, 0x0e };
 
 #define OI(x) { siDEROID, (unsigned char *)x, sizeof x }
 #ifndef SECOID_NO_STRINGS
@@ -409,30 +429,98 @@ static SECOidData ANSI_oids[] = {
         INVALID_CERT_EXTENSION )
 };
 
+static SECOidData BRAINPOOL_oids[] = {
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+
+    /* RFC 5639 Brainpool named elliptic curves */
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    OD( brainpoolP256r1, ECCurve_BrainpoolP256r1,
+        "brainpoolP256r1 domain parameter set",
+        CKM_INVALID_MECHANISM,
+        INVALID_CERT_EXTENSION ),
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    OD( brainpoolP320r1, ECCurve_BrainpoolP320r1,
+        "brainpoolP320r1 domain parameter set",
+        CKM_INVALID_MECHANISM,
+        INVALID_CERT_EXTENSION ),
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    OD( brainpoolP384r1, ECCurve_BrainpoolP384r1,
+        "brainpoolP384r1 domain parameter set",
+        CKM_INVALID_MECHANISM,
+        INVALID_CERT_EXTENSION ),
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM, INVALID_CERT_EXTENSION },
+    OD( brainpoolP512r1, ECCurve_BrainpoolP512r1,
+        "brainpoolP512r1 domain parameter set",
+        CKM_INVALID_MECHANISM,
+        INVALID_CERT_EXTENSION ),
+    { { siDEROID, NULL, 0 }, ECCurve_noName,
+        "Unknown OID", CKM_INVALID_MECHANISM,
+        INVALID_CERT_EXTENSION }
+};
+
+int
+oideql(unsigned char *reqoid, unsigned char *foundoid, size_t reqlen, size_t foundlen)
+{
+    if (!reqoid || !foundoid) {
+        return 0;
+    }
+
+    if (reqlen != foundlen) {
+        return 0;
+    }
+
+    return memcmp(reqoid, foundoid, reqlen) == 0;
+}
+
 SECOidData *
 SECOID_FindOID(const SECItem *oid)
 {
     SECOidData *po;
     SECOidData *ret = NULL;
+    int reqlen = oid->len;
 
-    if (oid->len == 8) {
+    if (reqlen == 8) {
         if (oid->data[6] == 0x00) {
-                /* XXX bounds check */
-                po = &ANSI_oids[oid->data[7]];
-                if (memcmp(oid->data, po->oid.data, 8) == 0)
-                        ret = po;
+            /* XXX bounds check */
+            po = &ANSI_oids[oid->data[7]];
+            if (oideql(oid->data, po->oid.data, reqlen, po->oid.len)) {
+                ret = po;
+            }
         }
         if (oid->data[6] == 0x01) {
-                /* XXX bounds check */
-                po = &ANSI_prime_oids[oid->data[7]];
-                if (memcmp(oid->data, po->oid.data, 8) == 0)
-                        ret = po;
+            /* XXX bounds check */
+            po = &ANSI_prime_oids[oid->data[7]];
+            if (oideql(oid->data, po->oid.data, reqlen, po->oid.len)) {
+                ret = po;
+            }
         }
-    } else if (oid->len == 5) {
+    } else if (reqlen == 5) {
         /* XXX bounds check */
         po = &SECG_oids[oid->data[4]];
-        if (memcmp(oid->data, po->oid.data, 5) == 0)
-                ret = po;
+        if (oideql(oid->data, po->oid.data, reqlen, po->oid.len)) {
+            ret = po;
+        }
+    } else if (reqlen == 9) {
+        /* XXX bounds check */
+        po = &BRAINPOOL_oids[oid->data[8]];
+        if (oideql(oid->data, po->oid.data, reqlen, po->oid.len)) {
+           ret = po;
+        }
     }
     return(ret);
 }

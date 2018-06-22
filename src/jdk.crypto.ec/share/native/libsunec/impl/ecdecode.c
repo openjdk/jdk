@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -172,7 +172,8 @@ EC_FillParams(PRArenaPool *arena, const SECItem *encodedParams,
 #endif
 
     if ((encodedParams->len != ANSI_X962_CURVE_OID_TOTAL_LEN) &&
-        (encodedParams->len != SECG_CURVE_OID_TOTAL_LEN)) {
+        (encodedParams->len != SECG_CURVE_OID_TOTAL_LEN) &&
+        (encodedParams->len != BRAINPOOL_CURVE_OID_TOTAL_LEN)) {
             PORT_SetError(SEC_ERROR_UNSUPPORTED_ELLIPTIC_CURVE);
             return SECFailure;
     };
@@ -562,6 +563,30 @@ EC_FillParams(PRArenaPool *arena, const SECItem *encodedParams,
          * (the NIST P-521 curve)
          */
         CHECK_SEC_OK( gf_populate_params(ECCurve_SECG_PRIME_521R1, ec_field_GFp,
+            params, kmflag) );
+        break;
+
+    case ECCurve_BrainpoolP256r1:
+        /* Populate params for brainpoolP256r1 */
+        CHECK_SEC_OK( gf_populate_params(ECCurve_BrainpoolP256r1, ec_field_GFp,
+            params, kmflag) );
+        break;
+
+    case ECCurve_BrainpoolP320r1:
+        /* Populate params for brainpoolP320r1 */
+        CHECK_SEC_OK( gf_populate_params(ECCurve_BrainpoolP320r1, ec_field_GFp,
+            params, kmflag) );
+        break;
+
+    case ECCurve_BrainpoolP384r1:
+        /* Populate params for brainpoolP384r1 */
+        CHECK_SEC_OK( gf_populate_params(ECCurve_BrainpoolP384r1, ec_field_GFp,
+            params, kmflag) );
+        break;
+
+    case ECCurve_BrainpoolP512r1:
+        /* Populate params for brainpoolP512r1 */
+        CHECK_SEC_OK( gf_populate_params(ECCurve_BrainpoolP512r1, ec_field_GFp,
             params, kmflag) );
         break;
 

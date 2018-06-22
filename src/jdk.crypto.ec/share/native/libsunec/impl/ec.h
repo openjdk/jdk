@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -47,5 +47,6 @@
 
 #define ANSI_X962_CURVE_OID_TOTAL_LEN    10
 #define SECG_CURVE_OID_TOTAL_LEN          7
+#define BRAINPOOL_CURVE_OID_TOTAL_LEN    11
 
 #endif /* __ec_h_ */
