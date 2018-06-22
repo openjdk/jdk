@@ -25,6 +25,8 @@
  *
  * @test
  * @modules java.base/java.io:open
+ * @library /test/lib
+ * @build jdk.test.lib.util.FileUtils UnreferencedFISClosesFd
  * @bug 6524062
  * @summary Test to ensure that FIS.finalize() invokes the close() method as per
  * the specification.
@@ -41,17 +43,14 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sun.management.UnixOperatingSystemMXBean;
+
+import jdk.test.lib.util.FileUtils;
 
 /**
  * Tests for FIS unreferenced.
@@ -146,8 +145,8 @@ public class UnreferencedFISClosesFd {
 
         String name = inFile.getPath();
 
+        FileUtils.listFileDescriptors(System.out);
         long fdCount0 = getFdCount();
-        System.out.printf("initial count of open file descriptors: %d%n", fdCount0);
 
         int failCount = 0;
         failCount += test(new FileInputStream(name), CleanupType.CLEANER);
@@ -166,11 +165,10 @@ public class UnreferencedFISClosesFd {
 
         // Check the final count of open file descriptors
         long fdCount = getFdCount();
-        System.out.printf("final count of open file descriptors: %d%n", fdCount);
         if (fdCount != fdCount0) {
-            listProcFD();
-            throw new AssertionError("raw fd count wrong: expected: " + fdCount0
-                    + ", actual: " + fdCount);
+            System.out.printf("initial count of open file descriptors: %d%n", fdCount0);
+            System.out.printf("final count of open file descriptors: %d%n", fdCount);
+            FileUtils.listFileDescriptors(System.out);
         }
     }
 
@@ -273,28 +271,5 @@ public class UnreferencedFISClosesFd {
             return 1;
         }
         return 0;
-    }
-
-    /**
-     * Method to list the open file descriptors (if supported by the 'lsof' command).
-     */
-    static void listProcFD() {
-        List<String> lsofDirs = List.of("/usr/bin", "/usr/sbin");
-        Optional<Path> lsof = lsofDirs.stream()
-                .map(s -> Paths.get(s, "lsof"))
-                .filter(f -> Files.isExecutable(f))
-                .findFirst();
-        lsof.ifPresent(exe -> {
-            try {
-                System.out.printf("Open File Descriptors:%n");
-                long pid = ProcessHandle.current().pid();
-                ProcessBuilder pb = new ProcessBuilder(exe.toString(), "-p", Integer.toString((int) pid));
-                pb.inheritIO();
-                Process p = pb.start();
-                p.waitFor(10, TimeUnit.SECONDS);
-            } catch (IOException | InterruptedException ie) {
-                ie.printStackTrace();
-            }
-        });
     }
 }
