@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,6 @@ void emit_writeable_double(const char* name, JVMFlagWriteable::WriteableType typ
 
 // Generate code to call emit_writeable_xxx function
 #define EMIT_WRITEABLE_PRODUCT_FLAG(type, name, value, doc)      ); emit_writeable_##type(#name
-#define EMIT_WRITEABLE_COMMERCIAL_FLAG(type, name, value, doc)   ); emit_writeable_##type(#name
 #define EMIT_WRITEABLE_DIAGNOSTIC_FLAG(type, name, value, doc)   ); emit_writeable_##type(#name
 #define EMIT_WRITEABLE_EXPERIMENTAL_FLAG(type, name, value, doc) ); emit_writeable_##type(#name
 #define EMIT_WRITEABLE_MANAGEABLE_FLAG(type, name, value, doc)   ); emit_writeable_##type(#name

@@ -326,10 +326,6 @@ bool JVMFlag::is_read_write() const {
   return (_flags & KIND_READ_WRITE) != 0;
 }
 
-bool JVMFlag::is_commercial() const {
-  return (_flags & KIND_COMMERCIAL) != 0;
-}
-
 /**
  * Returns if this flag is a constant in the binary.  Right now this is
  * true for notproduct and develop flags in product builds.
@@ -642,7 +638,6 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) {
     { KIND_MANAGEABLE, "manageable" },
     { KIND_DIAGNOSTIC, "diagnostic" },
     { KIND_EXPERIMENTAL, "experimental" },
-    { KIND_COMMERCIAL, "commercial" },
     { KIND_NOT_PRODUCT, "notproduct" },
     { KIND_DEVELOP, "develop" },
     { KIND_LP64_PRODUCT, "lp64_product" },
@@ -911,7 +906,7 @@ JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, 
       if (!(current->is_unlocked() || current->is_unlocker())) {
         if (!allow_locked) {
           // disable use of locked flags, e.g. diagnostic, experimental,
-          // commercial... until they are explicitly unlocked
+          // etc. until they are explicitly unlocked
           return NULL;
         }
       }

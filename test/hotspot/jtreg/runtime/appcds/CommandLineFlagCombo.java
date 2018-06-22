@@ -68,22 +68,10 @@ public class CommandLineFlagCombo {
             if (skipTestCase(testEntry))
                 continue;
 
-            OutputAnalyzer dumpOutput;
-
-            if (testEntry.equals("-XX:+FlightRecorder")) {
-                dumpOutput = TestCommon.dump(appJar, classList, "-XX:+UnlockCommercialFeatures", testEntry);
-            } else {
-                dumpOutput = TestCommon.dump(appJar, classList, testEntry);
-            }
-
+            OutputAnalyzer dumpOutput = TestCommon.dump(appJar, classList, testEntry);
             TestCommon.checkDump(dumpOutput, "Loading classes to share");
 
-            OutputAnalyzer execOutput;
-            if (testEntry.equals("-XX:+FlightRecorder")) {
-                execOutput = TestCommon.exec(appJar, "-XX:+UnlockCommercialFeatures", testEntry, "Hello");
-            } else {
-                execOutput = TestCommon.exec(appJar, testEntry, "Hello");
-            }
+            OutputAnalyzer execOutput = TestCommon.exec(appJar, testEntry, "Hello");
             TestCommon.checkExec(execOutput, "Hello World");
         }
 
@@ -121,11 +109,6 @@ public class CommandLineFlagCombo {
             }
         }
 
-        if (!BuildHelper.isCommercialBuild() && testEntry.equals("-XX:+FlightRecorder"))
-        {
-            System.out.println("Test case not applicable on non-commercial builds");
-            return true;
-        }
         if (Compiler.isGraalEnabled() && testEntry.equals("-XX:+UseConcMarkSweepGC"))
         {
             System.out.println("Graal does not support CMS");

@@ -637,10 +637,9 @@ abstract public class Debugee extends DebugeeProcess {
 
     public boolean isJFR_active() {
         String opts = argumentHandler.getLaunchOptions();
-        int unlockPos = opts.indexOf("-XX:+UnlockCommercialFeatures");
         int jfrPos = opts.indexOf("-XX:+FlightRecorder");
 
-        if (unlockPos >= 0 && jfrPos >= 0 && jfrPos > unlockPos)
+        if (jfrPos >= 0)
             return true;
         else
             return false;

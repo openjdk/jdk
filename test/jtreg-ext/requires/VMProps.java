@@ -176,16 +176,13 @@ public class VMProps implements Callable<Map<String, String>> {
      * @return "true" if Flight Recorder is enabled, "false" if is disabled.
      */
     protected String vmFlightRecorder() {
-        Boolean isUnlockedCommercialFatures = WB.getBooleanVMFlag("UnlockCommercialFeatures");
         Boolean isFlightRecorder = WB.getBooleanVMFlag("FlightRecorder");
         String startFROptions = WB.getStringVMFlag("StartFlightRecording");
-        if (isUnlockedCommercialFatures != null && isUnlockedCommercialFatures) {
-            if (isFlightRecorder != null && isFlightRecorder) {
-                return "true";
-            }
-            if (startFROptions != null && !startFROptions.isEmpty()) {
-                return "true";
-            }
+        if (isFlightRecorder != null && isFlightRecorder) {
+            return "true";
+        }
+        if (startFROptions != null && !startFROptions.isEmpty()) {
+            return "true";
         }
         return "false";
     }

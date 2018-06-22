@@ -488,7 +488,7 @@ void Arguments::init_version_specific_system_properties() {
  *
  * Recommended approach for removing options:
  *
- * To remove options commonly used by customers (e.g. product, commercial -XX options), use
+ * To remove options commonly used by customers (e.g. product -XX options), use
  * the 3-step model adding major release numbers to the deprecate, obsolete and expire columns.
  *
  * To remove internal options (e.g. diagnostic, experimental, develop options), use
