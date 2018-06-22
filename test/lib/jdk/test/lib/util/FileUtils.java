@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,25 @@ package jdk.test.lib.util;
 import jdk.test.lib.Platform;
 
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
+import java.time.Duration;
 import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
 
 /**
  * Common library for various test file utility functions.
@@ -226,5 +234,43 @@ public final class FileUtils {
             }
         }
         return areFileSystemsAccessible;
+    }
+
+    /**
+     * List the open file descriptors (if supported by the 'lsof' command).
+     * @param ps a printStream to send the output to
+     * @throws UncheckedIOException if an error occurs
+     */
+    public static void listFileDescriptors(PrintStream ps) {
+        List<String> lsofDirs = List.of("/usr/bin", "/usr/sbin");
+        Optional<Path> lsof = lsofDirs.stream()
+                .map(s -> Paths.get(s, "lsof"))
+                .filter(f -> Files.isExecutable(f))
+                .findFirst();
+        lsof.ifPresent(exe -> {
+            try {
+                ps.printf("Open File Descriptors:%n");
+                long pid = ProcessHandle.current().pid();
+                ProcessBuilder pb = new ProcessBuilder(exe.toString(), "-p", Integer.toString((int) pid));
+                pb.redirectErrorStream(true);   // combine stderr and stdout
+                pb.redirectOutput(Redirect.PIPE);
+
+                Process p = pb.start();
+                Instant start = Instant.now();
+                p.getInputStream().transferTo(ps);
+
+                try {
+                    int timeout = 10;
+                    if (!p.waitFor(timeout, TimeUnit.SECONDS)) {
+                        System.out.printf("waitFor timed out: %d%n", timeout);
+                    }
+                } catch (InterruptedException ie) {
+                    throw new IOException("interrupted", ie);
+                }
+                ps.println();
+            } catch (IOException ioe) {
+                throw new UncheckedIOException("error listing file descriptors", ioe);
+            }
+        });
     }
 }

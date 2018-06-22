@@ -24,6 +24,7 @@
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -32,13 +33,19 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.HashSet;
 
 import com.sun.management.UnixOperatingSystemMXBean;
 
+import jdk.test.lib.util.FileUtils;
+
 /**
  * @test
  * @bug 8080225
+ * @library /test/lib
+ * @build jdk.test.lib.util.FileUtils UnreferencedRAFClosesFd
  * @modules java.base/java.io:open
  * @summary Test to ensure that an unclosed and unreferenced RandomAccessFile closes the fd
  * @run main/othervm UnreferencedRAFClosesFd
@@ -54,8 +61,8 @@ public class UnreferencedRAFClosesFd {
         inFile.createNewFile();
         inFile.deleteOnExit();
 
+        FileUtils.listFileDescriptors(System.out);
         long fdCount0 = getFdCount();
-        System.out.printf("initial count of open file descriptors: %d%n", fdCount0);
 
         String name = inFile.getPath();
         RandomAccessFile raf;
@@ -101,10 +108,10 @@ public class UnreferencedRAFClosesFd {
 
         // Check the final count of open file descriptors
         long fdCount = getFdCount();
-        System.out.printf("final count of open file descriptors: %d%n", fdCount);
         if (fdCount != fdCount0) {
-            throw new AssertionError("raw fd count wrong: expected: " + fdCount0
-                    + ", actual: " + fdCount);
+            System.out.printf("initial count of open file descriptors: %d%n", fdCount0);
+            System.out.printf("final count of open file descriptors: %d%n", fdCount);
+            FileUtils.listFileDescriptors(System.out);
         }
     }
 
