@@ -4928,9 +4928,8 @@ void MacroAssembler::has_negatives(Register ary1, Register len, Register result)
 
 void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
                                    Register tmp4, Register tmp5, Register result,
-                                   Register cnt1, int elem_size)
-{
-  Label DONE;
+                                   Register cnt1, int elem_size) {
+  Label DONE, SAME;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
   Register cnt2 = tmp2;  // cnt2 only used in array length compare
@@ -4952,21 +4951,21 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     BLOCK_COMMENT(comment);
   }
 #endif
+
+  // if (a1 == a2)
+  //     return true;
+  cmpoop(a1, a2); // May have read barriers for a1 and a2.
+  br(EQ, SAME);
+
   if (UseSimpleArrayEquals) {
-    Label NEXT_WORD, SHORT, SAME, TAIL03, TAIL01, A_MIGHT_BE_NULL, A_IS_NOT_NULL;
-    // if (a1==a2)
-    //     return true;
-    // if (a==null || a2==null)
+    Label NEXT_WORD, SHORT, TAIL03, TAIL01, A_MIGHT_BE_NULL, A_IS_NOT_NULL;
+    // if (a1 == null || a2 == null)
     //     return false;
     // a1 & a2 == 0 means (some-pointer is null) or
     // (very-rare-or-even-probably-impossible-pointer-values)
     // so, we can save one branch in most cases
-    cmpoop(a1, a2);
-    br(EQ, SAME);
-    eor(rscratch1, a1, a2);
     tst(a1, a2);
     mov(result, false);
-    cbz(rscratch1, SAME);
     br(EQ, A_MIGHT_BE_NULL);
     // if (a1.length != a2.length)
     //      return false;
@@ -5032,22 +5031,18 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
         cbnzw(tmp5, DONE);
       }
     }
-    bind(SAME);
-    mov(result, true);
   } else {
-    Label NEXT_DWORD, A_IS_NULL, SHORT, TAIL, TAIL2, STUB, EARLY_OUT,
-        CSET_EQ, LAST_CHECK, LEN_IS_ZERO, SAME;
-    cbz(a1, A_IS_NULL);
-    ldrw(cnt1, Address(a1, length_offset));
-    cbz(a2, A_IS_NULL);
-    ldrw(cnt2, Address(a2, length_offset));
+    Label NEXT_DWORD, SHORT, TAIL, TAIL2, STUB, EARLY_OUT,
+        CSET_EQ, LAST_CHECK;
     mov(result, false);
+    cbz(a1, DONE);
+    ldrw(cnt1, Address(a1, length_offset));
+    cbz(a2, DONE);
+    ldrw(cnt2, Address(a2, length_offset));
     // on most CPUs a2 is still "locked"(surprisingly) in ldrw and it's
     // faster to perform another branch before comparing a1 and a2
     cmp(cnt1, elem_per_word);
     br(LE, SHORT); // short or same
-    cmpoop(a1, a2);
-    br(EQ, SAME);
     ldr(tmp3, Address(pre(a1, base_offset)));
     cmp(cnt1, stubBytesThreshold);
     br(GE, STUB);
@@ -5099,23 +5094,15 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     trampoline_call(stub);
     b(DONE);
 
-    bind(SAME);
-    mov(result, true);
-    b(DONE);
-    bind(A_IS_NULL);
-    // a1 or a2 is null. if a2 == a2 then return true. else return false
-    cmp(a1, a2);
-    b(CSET_EQ);
     bind(EARLY_OUT);
     // (a1 != null && a2 == null) || (a1 != null && a2 != null && a1 == a2)
     // so, if a2 == null => return false(0), else return true, so we can return a2
     mov(result, a2);
     b(DONE);
-    bind(LEN_IS_ZERO);
-    cmp(cnt2, zr);
-    b(CSET_EQ);
     bind(SHORT);
-    cbz(cnt1, LEN_IS_ZERO);
+    cmp(cnt2, cnt1);
+    br(NE, DONE);
+    cbz(cnt1, SAME);
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
     ldr(tmp3, Address(a1, base_offset));
     ldr(tmp4, Address(a2, base_offset));
@@ -5125,8 +5112,11 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     cmp(tmp5, zr);
     bind(CSET_EQ);
     cset(result, EQ);
+    b(DONE);
   }
 
+  bind(SAME);
+  mov(result, true);
   // That's it.
   bind(DONE);
 
