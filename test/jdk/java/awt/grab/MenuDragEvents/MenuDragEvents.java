@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,13 @@
  * questions.
  */
 /*
-  test
-  @bug 6390326
+  @test
+  @bug 6390326 8204946
+  @key headful
   @summary REGRESSION: Broken mouse behaviour of menus partially outside the main window.
-  @author oleg.sukhodolsky: area=awt-drab
-  @run applet AutomaticAppletTest.html
+  @run main MenuDragEvents
 */
 
-/**
- * MenuDragEvents.java
- *
- * summary: REGRESSION: Broken mouse behaviour of menus partially outside the main window.
- */
-
-import java.applet.Applet;
 import java.awt.AWTEvent;
 import java.awt.AWTException;
 import java.awt.BorderLayout;
@@ -58,7 +51,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.MenuDragMouseEvent;
 import javax.swing.event.MenuDragMouseListener;
 
-public class MenuDragEvents extends Applet
+public class MenuDragEvents
 {
     //Declare things used in the test, like buttons and labels here
     boolean mouseDragged = false;
@@ -66,22 +59,13 @@ public class MenuDragEvents extends Applet
     boolean mouseReleased = false;
     boolean actionReceived = false;
 
-    public void init()
+    public static void main(String[] args) {
+        MenuDragEvents test = new MenuDragEvents();
+        test.doTest();
+    }
+
+    public void doTest ()
     {
-        // Set up the environment -- set the layout manager, add
-        // buttons, etc.
-
-        setLayout (new BorderLayout ());
-
-    }//End  init()
-
-    public void start ()
-    {
-        //Get things going.  Request focus, set size, et cetera
-        setSize (200,200);
-        setVisible(true);
-        validate();
-
         Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
                 public void eventDispatched(AWTEvent event) {
                     int id = event.getID();
@@ -130,6 +114,7 @@ public class MenuDragEvents extends Applet
             });
 
         JFrame frame = new JFrame("Menu");
+        frame.setLayout (new BorderLayout ());
         frame.setJMenuBar(mb);
         frame.setSize(200, 200);
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
@@ -172,7 +157,10 @@ public class MenuDragEvents extends Applet
         }
 
         System.out.println("Test passed");
-    }// start()
+
+        // dispose off the frame
+        frame.dispose();
+    }// doTest()
 
     void dragMouse(Robot r, Point from, Point to) {
         final int n_step = 10;
