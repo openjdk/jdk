@@ -37,6 +37,7 @@ import java.util.Set;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
 import sun.net.ResourceManager;
+import sun.net.util.SocketExceptions;
 
 /**
  * Default Socket Implementation. This implementation does
@@ -415,7 +416,7 @@ abstract class AbstractPlainSocketImpl extends SocketImpl {
             }
         } catch (IOException e) {
             close();
-            throw e;
+            throw SocketExceptions.of(e, new InetSocketAddress(address, port));
         }
     }
 

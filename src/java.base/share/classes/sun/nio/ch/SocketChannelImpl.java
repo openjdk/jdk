@@ -54,6 +54,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.NetHooks;
 import sun.net.ext.ExtendedSocketOptions;
+import sun.net.util.SocketExceptions;
 import static sun.net.ext.ExtendedSocketOptions.SOCK_STREAM;
 
 /**
@@ -706,7 +707,7 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            throw ioe;
+            throw SocketExceptions.of(ioe, isa);
         }
     }
 
@@ -792,7 +793,7 @@ class SocketChannelImpl
         } catch (IOException ioe) {
             // connect failed, close the channel
             close();
-            throw ioe;
+            throw SocketExceptions.of(ioe, remoteAddress);
         }
     }
 

@@ -35,6 +35,7 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import jdk.internal.misc.Unsafe;
+import sun.net.util.SocketExceptions;
 
 /**
  * Windows implementation of AsynchronousSocketChannel using overlapped I/O.
@@ -253,7 +254,8 @@ class WindowsAsynchronousSocketChannelImpl
 
             if (exc != null) {
                 closeChannel();
-                result.setFailure(toIOException(exc));
+                exc = SocketExceptions.of(toIOException(exc), remote);
+                result.setFailure(exc);
             }
             Invoker.invoke(result);
         }
@@ -278,7 +280,9 @@ class WindowsAsynchronousSocketChannelImpl
             // can't close channel while in begin/end block
             if (exc != null) {
                 closeChannel();
-                result.setFailure(toIOException(exc));
+                IOException ee = toIOException(exc);
+                ee = SocketExceptions.of(ee, remote);
+                result.setFailure(ee);
             }
 
             if (canInvokeDirect) {
@@ -293,11 +297,13 @@ class WindowsAsynchronousSocketChannelImpl
          */
         @Override
         public void failed(int error, IOException x) {
+            x = SocketExceptions.of(x, remote);
             if (isOpen()) {
                 closeChannel();
                 result.setFailure(x);
             } else {
-                result.setFailure(new AsynchronousCloseException());
+                x = SocketExceptions.of(new AsynchronousCloseException(), remote);
+                result.setFailure(x);
             }
             Invoker.invoke(result);
         }
