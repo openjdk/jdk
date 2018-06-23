@@ -280,11 +280,10 @@ public final class ModuleBootstrap {
 
             // If there is no initial module specified then assume that the initial
             // module is the unnamed module of the application class loader. This
-            // is implemented by resolving "java.se" and all (non-java.*) modules
-            // that export an API. If "java.se" is not observable then all java.*
-            // modules are resolved. Modules that have the DO_NOT_RESOLVE_BY_DEFAULT
-            // bit set in their ModuleResolution attribute flags are excluded from
-            // the default set of roots.
+            // is implemented by resolving all observable modules that export an
+            // API. Modules that have the DO_NOT_RESOLVE_BY_DEFAULT bit set in
+            // their ModuleResolution attribute flags are excluded from the
+            // default set of roots.
             if (mainModule == null || addAllDefaultModules) {
                 roots.addAll(DefaultRoots.compute(systemModuleFinder, finder));
             }
