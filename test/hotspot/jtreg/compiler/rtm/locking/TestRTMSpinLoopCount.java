@@ -47,6 +47,7 @@ import compiler.testlibrary.rtm.RTMTestBase;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.Platform;
 
 import java.util.List;
 
@@ -59,11 +60,18 @@ public class TestRTMSpinLoopCount {
     private static final int RTM_RETRY_COUNT = 1000;
     private static final boolean INFLATE_MONITOR = true;
     private static final long MAX_ABORTS = RTM_RETRY_COUNT + 1L;
-    private static final int[] SPIN_LOOP_COUNTS
-            = new int[] { 0, 100, 1_000, 10_000, 100_000 };
+    private static int[] SPIN_LOOP_COUNTS;
 
     protected void runTestCases() throws Throwable {
+
+        if (Platform.isPPC()) {
+            SPIN_LOOP_COUNTS = new int[] { 0, 10, 100, 1_000, 10_000 };
+        } else {
+            SPIN_LOOP_COUNTS = new int[] { 0, 100, 1_000, 10_000, 100_000 };
+        }
+
         long[] aborts = new long[TestRTMSpinLoopCount.SPIN_LOOP_COUNTS.length];
+
         for (int i = 0; i < TestRTMSpinLoopCount.SPIN_LOOP_COUNTS.length; i++) {
             aborts[i] = getAbortsCountOnLockBusy(
                     TestRTMSpinLoopCount.SPIN_LOOP_COUNTS[i]);
