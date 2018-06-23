@@ -714,16 +714,13 @@ void initialize_assert_poison() {
   }
 }
 
-static bool store_context(const void* context) {
-  if (memcpy(&g_stored_assertion_context, context, sizeof(ucontext_t)) == false) {
-    return false;
-  }
+static void store_context(const void* context) {
+  memcpy(&g_stored_assertion_context, context, sizeof(ucontext_t));
 #if defined(__linux) && defined(PPC64)
   // on Linux ppc64, ucontext_t contains pointers into itself which have to be patched up
   //  after copying the context (see comment in sys/ucontext.h):
   *((void**) &g_stored_assertion_context.uc_mcontext.regs) = &(g_stored_assertion_context.uc_mcontext.gp_regs);
 #endif
-  return true;
 }
 
 bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address) {
@@ -734,9 +731,8 @@ bool handle_assert_poison_fault(const void* ucVoid, const void* faulting_address
     if (ucVoid) {
       const intx my_tid = os::current_thread_id();
       if (Atomic::cmpxchg(my_tid, &g_asserting_thread, (intx)0) == 0) {
-        if (store_context(ucVoid)) {
-          g_assertion_context = &g_stored_assertion_context;
-        }
+        store_context(ucVoid);
+        g_assertion_context = &g_stored_assertion_context;
       }
     }
     return true;
