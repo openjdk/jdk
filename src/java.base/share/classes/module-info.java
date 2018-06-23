@@ -242,6 +242,7 @@ module java.base {
     exports sun.nio.ch to
         java.management,
         jdk.crypto.cryptoki,
+        jdk.net,
         jdk.sctp,
         jdk.unsupported;
     exports sun.nio.cs to
