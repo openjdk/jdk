@@ -13507,9 +13507,8 @@ myInit() {
   <event label="VM Object Allocation"
 	 id="VMObjectAlloc" const="JVMTI_EVENT_VM_OBJECT_ALLOC" num="84">
     <description>
-      Sent when a method causes the virtual machine to allocate an
-      Object visible to Java programming language code and the
-      allocation is not detectable by other intrumentation mechanisms.
+      Sent when a method causes the virtual machine to directly allocate an
+      Object visible to Java programming language code.
       Generally object allocation should be detected by instrumenting
       the bytecodes of allocating methods.
       Object allocation generated in native code by JNI function
@@ -13520,6 +13519,12 @@ myInit() {
       VM. These methods should send this event.
       Virtual machines which are incapable of bytecode instrumentation
       for some or all of their methods can send this event.
+
+      Note that the <internallink
+      id="SampledObjectAlloc">SampledObjectAlloc</internallink>
+      event is triggered on all Java object allocations, including those
+      caused by bytecode method execution, JNI method execution, and
+      directly by VM methods.
       <p/>
       Typical examples where this event might be sent:
       <ul>
