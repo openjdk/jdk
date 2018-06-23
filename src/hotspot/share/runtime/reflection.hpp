@@ -90,12 +90,13 @@ class Reflection: public AllStatic {
                                           const InstanceKlass* new_class,
                                           const VerifyClassAccessResults result);
 
-  static bool     verify_field_access(const Klass* current_class,
-                                      const Klass* resolved_class,
-                                      const Klass* field_class,
-                                      AccessFlags access,
-                                      bool classloader_only,
-                                      bool protected_restriction = false);
+  static bool     verify_member_access(const Klass* current_class,
+                                       const Klass* resolved_class,
+                                       const Klass* member_class,
+                                       AccessFlags access,
+                                       bool classloader_only,
+                                       bool protected_restriction,
+                                       TRAPS);
   static bool     is_same_class_package(const Klass* class1, const Klass* class2);
 
   // inner class reflection

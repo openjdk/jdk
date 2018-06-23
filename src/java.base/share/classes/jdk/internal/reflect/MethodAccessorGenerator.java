@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -629,14 +629,10 @@ class MethodAccessorGenerator extends AccessorGenerator {
                                     typeSizeInStackSlots(returnType));
             } else {
                 if (isInterface()) {
-                    if (isPrivate()) {
-                        cb.opc_invokespecial(targetMethodRef, count, 0);
-                    } else {
-                        cb.opc_invokeinterface(targetMethodRef,
-                                               count,
-                                               count,
-                                               typeSizeInStackSlots(returnType));
-                    }
+                    cb.opc_invokeinterface(targetMethodRef,
+                                           count,
+                                           count,
+                                           typeSizeInStackSlots(returnType));
                 } else {
                     cb.opc_invokevirtual(targetMethodRef,
                                          count,

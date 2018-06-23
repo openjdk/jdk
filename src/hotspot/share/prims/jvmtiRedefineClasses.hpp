@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -469,6 +469,7 @@ class VM_RedefineClasses: public VM_Operation {
     AnnotationArray* type_annotations_typeArray, int &byte_i_ref, TRAPS);
   bool rewrite_cp_refs_in_fields_annotations(
     InstanceKlass* scratch_class, TRAPS);
+  bool rewrite_cp_refs_in_nest_attributes(InstanceKlass* scratch_class);
   void rewrite_cp_refs_in_method(methodHandle method,
     methodHandle * new_method_p, TRAPS);
   bool rewrite_cp_refs_in_methods(InstanceKlass* scratch_class, TRAPS);

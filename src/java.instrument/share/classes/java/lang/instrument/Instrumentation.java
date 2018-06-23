@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,10 +219,14 @@ public interface Instrumentation {
      * Instances of the retransformed class are not affected.
      *
      * <P>
-     * The retransformation may change method bodies, the constant pool and attributes.
+     * The retransformation may change method bodies, the constant pool and
+     * attributes (unless explicitly prohibited).
      * The retransformation must not add, remove or rename fields or methods, change the
-     * signatures of methods, or change inheritance.  These restrictions maybe be
-     * lifted in future versions.  The class file bytes are not checked, verified and installed
+     * signatures of methods, or change inheritance.
+     * The retransformation must not change the <code>NestHost</code> or
+     * <code>NestMembers</code> attributes.
+     * These restrictions may be lifted in future versions.
+     * The class file bytes are not checked, verified and installed
      * until after the transformations have been applied, if the resultant bytes are in
      * error this method will throw an exception.
      *
@@ -306,10 +310,14 @@ public interface Instrumentation {
      * Instances of the redefined class are not affected.
      *
      * <P>
-     * The redefinition may change method bodies, the constant pool and attributes.
+     * The redefinition may change method bodies, the constant pool and attributes
+     * (unless explicitly prohibited).
      * The redefinition must not add, remove or rename fields or methods, change the
-     * signatures of methods, or change inheritance.  These restrictions maybe be
-     * lifted in future versions.  The class file bytes are not checked, verified and installed
+     * signatures of methods, or change inheritance.
+     * The redefinition must not change the <code>NestHost</code> or
+     * <code>NestMembers</code> attributes.
+     * These restrictions may be lifted in future versions.
+     * The class file bytes are not checked, verified and installed
      * until after the transformations have been applied, if the resultant bytes are in
      * error this method will throw an exception.
      *

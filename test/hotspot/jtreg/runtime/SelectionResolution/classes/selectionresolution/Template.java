@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4394,6 +4394,15 @@ public class Template {
                          builder.objectref = C1;
                      });
 
+    // NOTE: The selection changes in JVMS 11 mean that private class methods
+    // are never selected to satisfy an interface method invocation, and so no
+    // IllegalAccessError is subsequently thrown. Because of this all the
+    // "private" cases below are commented out. At some point in the future
+    // these should be factored out and moved to a test that expects success
+    // but it is not that simple as the commented out cases result in 2600
+    // testcases being excluded, but only ~150 failing cases were seen. Though
+    // it is not clear from the test if a single failure can result in further
+    // testcases being skipped.
     public static final Template IfaceMethodrefSelectionOverrideNonPublic =
         new Template("IfaceMethodrefSelection",
                      /* Case 1: Objectref overrides.
@@ -4401,22 +4410,22 @@ public class Template {
                       * I[](*) = mref
                       * C[I](priv) = oref = expected
                       */
-                     (final SelectionResolutionTestCase.Builder builder) -> {
-                         final ClassData.Package pck =
-                             builder.classdata.get(builder.methodref).packageId;
-                         final ClassData oldexpected =
-                             builder.classdata.get(builder.expected);
-                         final MethodData meth =
-                             new MethodData(MethodData.Access.PRIVATE,
-                                            MethodData.Context.INSTANCE);
-                         final ClassData withDef =
-                             new ClassData(pck, meth);
-                         final int I = builder.methodref;
-                         final int C = builder.addClass(withDef);
-                         builder.hier.addInherit(C, I);
-                         builder.objectref = C;
-                         builder.expected = C;
-                     },
+                     // (final SelectionResolutionTestCase.Builder builder) -> {
+                     //     final ClassData.Package pck =
+                     //         builder.classdata.get(builder.methodref).packageId;
+                     //     final ClassData oldexpected =
+                     //         builder.classdata.get(builder.expected);
+                     //     final MethodData meth =
+                     //         new MethodData(MethodData.Access.PRIVATE,
+                     //                        MethodData.Context.INSTANCE);
+                     //     final ClassData withDef =
+                     //         new ClassData(pck, meth);
+                     //     final int I = builder.methodref;
+                     //     final int C = builder.addClass(withDef);
+                     //     builder.hier.addInherit(C, I);
+                     //     builder.objectref = C;
+                     //     builder.expected = C;
+                     // },
                      /* Case 2: Objectref overrides.
                       *
                       * I[](*) = mref
@@ -4466,27 +4475,27 @@ public class Template {
                       * C2[I2](priv) = expected, I1[I2]()
                       * C1[I1,C2]() = oref
                       */
-                     (final SelectionResolutionTestCase.Builder builder) -> {
-                         final ClassData.Package pck =
-                             builder.classdata.get(builder.expected).packageId;
-                         final ClassData oldexpected =
-                             builder.classdata.get(builder.expected);
-                         final MethodData meth =
-                             new MethodData(MethodData.Access.PRIVATE,
-                                            MethodData.Context.INSTANCE);
-                         final ClassData withDef =
-                             new ClassData(pck, meth);
-                         final int I2 = builder.methodref;
-                         final int I1 = builder.addInterface(emptyClass(pck));
-                         final int C2 = builder.addClass(withDef);
-                         final int C1 = builder.addClass(emptyClass(pck));
-                         builder.hier.addInherit(C1, I1);
-                         builder.hier.addInherit(C1, C2);
-                         builder.hier.addInherit(I1, I2);
-                         builder.hier.addInherit(C2, I2);
-                         builder.objectref = C1;
-                         builder.expected = C2;
-                     },
+                     // (final SelectionResolutionTestCase.Builder builder) -> {
+                     //     final ClassData.Package pck =
+                     //         builder.classdata.get(builder.expected).packageId;
+                     //     final ClassData oldexpected =
+                     //         builder.classdata.get(builder.expected);
+                     //     final MethodData meth =
+                     //         new MethodData(MethodData.Access.PRIVATE,
+                     //                        MethodData.Context.INSTANCE);
+                     //     final ClassData withDef =
+                     //         new ClassData(pck, meth);
+                     //     final int I2 = builder.methodref;
+                     //     final int I1 = builder.addInterface(emptyClass(pck));
+                     //     final int C2 = builder.addClass(withDef);
+                     //     final int C1 = builder.addClass(emptyClass(pck));
+                     //     builder.hier.addInherit(C1, I1);
+                     //     builder.hier.addInherit(C1, C2);
+                     //     builder.hier.addInherit(I1, I2);
+                     //     builder.hier.addInherit(C2, I2);
+                     //     builder.objectref = C1;
+                     //     builder.expected = C2;
+                     // },
                      /* Case 5: Diamond, with superclass, expected at top,
                       * class overriding with package private.
                       *
@@ -4549,24 +4558,24 @@ public class Template {
                       * C2[](priv) = expected, I1[](*) = mref
                       * C1[I1,C2]() = oref
                       */
-                     (final SelectionResolutionTestCase.Builder builder) -> {
-                         final ClassData.Package pck =
-                             builder.classdata.get(builder.expected).packageId;
-                        final ClassData oldexpected =
-                            builder.classdata.get(builder.expected);
-                         final MethodData meth =
-                             new MethodData(MethodData.Access.PRIVATE,
-                                            MethodData.Context.INSTANCE);
-                        final ClassData withDef =
-                            new ClassData(pck, meth);
-                         final int I1 = builder.methodref;
-                         final int C2 = builder.addClass(withDef);
-                         final int C1 = builder.addClass(emptyClass(pck));
-                         builder.hier.addInherit(C1, I1);
-                         builder.hier.addInherit(C1, C2);
-                         builder.objectref = C1;
-                         builder.expected = C2;
-                     },
+                     // (final SelectionResolutionTestCase.Builder builder) -> {
+                     //     final ClassData.Package pck =
+                     //         builder.classdata.get(builder.expected).packageId;
+                     //    final ClassData oldexpected =
+                     //        builder.classdata.get(builder.expected);
+                     //     final MethodData meth =
+                     //         new MethodData(MethodData.Access.PRIVATE,
+                     //                        MethodData.Context.INSTANCE);
+                     //    final ClassData withDef =
+                     //        new ClassData(pck, meth);
+                     //     final int I1 = builder.methodref;
+                     //     final int C2 = builder.addClass(withDef);
+                     //     final int C1 = builder.addClass(emptyClass(pck));
+                     //     builder.hier.addInherit(C1, I1);
+                     //     builder.hier.addInherit(C1, C2);
+                     //     builder.objectref = C1;
+                     //     builder.expected = C2;
+                     // },
                      /* Case 8: Y, with superclass, overlaping, expected
                       * at top, class overrides
                       *
@@ -4622,26 +4631,26 @@ public class Template {
                       * C2[I2](priv) = expected, I1[](*) = mref
                       * C1[I1,C2]() = oref
                       */
-                     (final SelectionResolutionTestCase.Builder builder) -> {
-                         final ClassData.Package pck =
-                             builder.classdata.get(builder.expected).packageId;
-                         final ClassData oldexpected =
-                             builder.classdata.get(builder.expected);
-                         final MethodData meth =
-                             new MethodData(MethodData.Access.PRIVATE,
-                                            MethodData.Context.INSTANCE);
-                         final ClassData withDef =
-                             new ClassData(pck, meth);
-                         final int I2 = builder.expected;
-                         final int I1 = builder.methodref;
-                         final int C2 = builder.addClass(withDef);
-                         final int C1 = builder.addClass(emptyClass(pck));
-                         builder.hier.addInherit(C1, I1);
-                         builder.hier.addInherit(C1, C2);
-                         builder.hier.addInherit(C2, I2);
-                         builder.objectref = C1;
-                         builder.expected = C2;
-                     },
+                     // (final SelectionResolutionTestCase.Builder builder) -> {
+                     //     final ClassData.Package pck =
+                     //         builder.classdata.get(builder.expected).packageId;
+                     //     final ClassData oldexpected =
+                     //         builder.classdata.get(builder.expected);
+                     //     final MethodData meth =
+                     //         new MethodData(MethodData.Access.PRIVATE,
+                     //                        MethodData.Context.INSTANCE);
+                     //     final ClassData withDef =
+                     //         new ClassData(pck, meth);
+                     //     final int I2 = builder.expected;
+                     //     final int I1 = builder.methodref;
+                     //     final int C2 = builder.addClass(withDef);
+                     //     final int C1 = builder.addClass(emptyClass(pck));
+                     //     builder.hier.addInherit(C1, I1);
+                     //     builder.hier.addInherit(C1, C2);
+                     //     builder.hier.addInherit(C2, I2);
+                     //     builder.objectref = C1;
+                     //     builder.expected = C2;
+                     // },
                      /* Case 11: Diamond, with superclass, overlaping, expected
                       * at top, class overrides
                       *
@@ -4702,25 +4711,25 @@ public class Template {
                       * C2[I](priv) = expected
                       * C1[C2]() = oref
                       */
-                     (final SelectionResolutionTestCase.Builder builder) -> {
-                         final ClassData.Package pck =
-                             builder.classdata.get(builder.expected).packageId;
-                         final ClassData oldexpected =
-                             builder.classdata.get(builder.expected);
-                         final MethodData meth =
-                             new MethodData(MethodData.Access.PRIVATE,
-                                            MethodData.Context.INSTANCE);
-                         final ClassData withDef =
-                             new ClassData(pck, meth);
-                         final int I = builder.methodref;
-                         final int C2 = builder.addClass(withDef);
-                         final int C1 = builder.addClass(emptyClass(pck));
-                         builder.hier.addInherit(C1, I);
-                         builder.hier.addInherit(C1, C2);
-                         builder.hier.addInherit(C2, I);
-                         builder.expected = C2;
-                         builder.objectref = C1;
-                     },
+                     // (final SelectionResolutionTestCase.Builder builder) -> {
+                     //     final ClassData.Package pck =
+                     //         builder.classdata.get(builder.expected).packageId;
+                     //     final ClassData oldexpected =
+                     //         builder.classdata.get(builder.expected);
+                     //     final MethodData meth =
+                     //         new MethodData(MethodData.Access.PRIVATE,
+                     //                        MethodData.Context.INSTANCE);
+                     //     final ClassData withDef =
+                     //         new ClassData(pck, meth);
+                     //     final int I = builder.methodref;
+                     //     final int C2 = builder.addClass(withDef);
+                     //     final int C1 = builder.addClass(emptyClass(pck));
+                     //     builder.hier.addInherit(C1, I);
+                     //     builder.hier.addInherit(C1, C2);
+                     //     builder.hier.addInherit(C2, I);
+                     //     builder.expected = C2;
+                     //     builder.objectref = C1;
+                     // },
                      /* Case 14: Superclass overrides.
                       *
                       * I[](*) = mref

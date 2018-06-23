@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,19 +38,22 @@ import static jdk.test.lib.Asserts.*;
 /*
  * Proof of concept test for the test utility class RedefineClassHelper
  */
+
+// package access top-level class to avoid problem with RedefineClassHelper
+// and nested types.
+class RedefineClassTest_A {
+    public int Method() {
+        return 1;
+    }
+}
+
 public class RedefineClassTest {
 
-    public static String newClass = "class RedefineClassTest$A { public int Method() { return 2; } }";
+    public static String newClass = "class RedefineClassTest_A { public int Method() { return 2; } }";
     public static void main(String[] args) throws Exception {
-        A a = new A();
+        RedefineClassTest_A a = new RedefineClassTest_A();
         assertTrue(a.Method() == 1);
-        RedefineClassHelper.redefineClass(A.class, newClass);
+        RedefineClassHelper.redefineClass(RedefineClassTest_A.class, newClass);
         assertTrue(a.Method() == 2);
-    }
-
-    static class A {
-        public int Method() {
-            return 1;
-        }
     }
 }

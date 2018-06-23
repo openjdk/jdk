@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8179531
+ * @bug 8179531 8010319
  * @summary Check that ClassLoader.getResource works as expected in the JShell agent.
  * @modules jdk.jshell
  * @build KullaTesting TestingInputStream
@@ -80,7 +80,7 @@ public class GetResourceTest extends KullaTesting {
                    null,
                    DiagCheck.DIAG_OK,
                    DiagCheck.DIAG_OK,
-                   ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                   ste(MAIN_SNIPPET, VALID, VALID, true, null),
                    ste(testMethod, VALID, OVERWRITTEN, false, MAIN_SNIPPET));
         assertEval("test()", "true");
     }

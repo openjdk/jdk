@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,10 +219,11 @@ public interface VirtualMachine extends Mirror {
      * this exception
      *   <UL>
      *   <LI>changing the schema (the fields)
-     *   <LI>changing the hierarchy (subclasses, interfaces)
+     *   <LI>changing the hierarchy (superclasses, interfaces)
      *   <LI>deleting a method
      *   <LI>changing class modifiers
      *   <LI>changing method modifiers
+     *   <LI>changing the {@code NestHost} or {@code NestMembers} class attributes
      *   </UL>
      * </UL>
      *
@@ -595,8 +596,9 @@ public interface VirtualMachine extends Mirror {
     boolean canAddMethod();
 
     /**
-     * Determines if the target VM supports unrestricted
-     * changes when performing class redefinition.
+     * Determines if the target VM supports
+     * changes when performing class redefinition that are
+     * otherwise restricted by {@link #redefineClasses}.
      * @see #redefineClasses
      *
      * @return <code>true</code> if the feature is supported,

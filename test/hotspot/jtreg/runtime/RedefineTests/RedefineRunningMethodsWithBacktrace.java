@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8087315
+ * @bug 8087315 8010319
  * @summary Get old method's stack trace elements after GC
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -36,16 +36,58 @@
 
 import static jdk.test.lib.Asserts.*;
 
+// package access top-level class to avoid problem with RedefineClassHelper
+// and nested types.
+
+class RedefineRunningMethodsWithBacktrace_B {
+    static int count1 = 0;
+    static int count2 = 0;
+    public static volatile boolean stop = false;
+    static void localSleep() {
+        try {
+            Thread.sleep(10);//sleep for 10 ms
+        } catch(InterruptedException ie) {
+        }
+    }
+
+    public static void infinite() {
+        while (!stop) { count1++; localSleep(); }
+    }
+    public static void throwable() {
+        // add some stuff to the original constant pool
+        String s1 = new String ("string1");
+        String s2 = new String ("string2");
+        String s3 = new String ("string3");
+        String s4 = new String ("string4");
+        String s5 = new String ("string5");
+        String s6 = new String ("string6");
+        String s7 = new String ("string7");
+        String s8 = new String ("string8");
+        String s9 = new String ("string9");
+        String s10 = new String ("string10");
+        String s11 = new String ("string11");
+        String s12 = new String ("string12");
+        String s13 = new String ("string13");
+        String s14 = new String ("string14");
+        String s15 = new String ("string15");
+        String s16 = new String ("string16");
+        String s17 = new String ("string17");
+        String s18 = new String ("string18");
+        String s19 = new String ("string19");
+        throw new RuntimeException("throwable called");
+    }
+}
+
 public class RedefineRunningMethodsWithBacktrace {
 
     public static String newB =
-                "class RedefineRunningMethodsWithBacktrace$B {" +
+                "class RedefineRunningMethodsWithBacktrace_B {" +
                 "   static int count1 = 0;" +
                 "   static int count2 = 0;" +
                 "   public static volatile boolean stop = false;" +
                 "  static void localSleep() { " +
                 "    try{ " +
-                "      Thread.currentThread().sleep(10);" +
+                "      Thread.sleep(10);" +
                 "    } catch(InterruptedException ie) { " +
                 "    } " +
                 " } " +
@@ -58,13 +100,13 @@ public class RedefineRunningMethodsWithBacktrace {
                 "}";
 
     public static String evenNewerB =
-                "class RedefineRunningMethodsWithBacktrace$B {" +
+                "class RedefineRunningMethodsWithBacktrace_B {" +
                 "   static int count1 = 0;" +
                 "   static int count2 = 0;" +
                 "   public static volatile boolean stop = false;" +
                 "  static void localSleep() { " +
                 "    try{ " +
-                "      Thread.currentThread().sleep(1);" +
+                "      Thread.sleep(1);" +
                 "    } catch(InterruptedException ie) { " +
                 "    } " +
                 " } " +
@@ -73,45 +115,6 @@ public class RedefineRunningMethodsWithBacktrace {
                 "       throw new RuntimeException(\"throwable called\");" +
                 "   }" +
                 "}";
-
-    static class B {
-        static int count1 = 0;
-        static int count2 = 0;
-        public static volatile boolean stop = false;
-        static void localSleep() {
-            try {
-                Thread.currentThread().sleep(10);//sleep for 10 ms
-            } catch(InterruptedException ie) {
-            }
-        }
-
-        public static void infinite() {
-            while (!stop) { count1++; localSleep(); }
-        }
-        public static void throwable() {
-            // add some stuff to the original constant pool
-            String s1 = new String ("string1");
-            String s2 = new String ("string2");
-            String s3 = new String ("string3");
-            String s4 = new String ("string4");
-            String s5 = new String ("string5");
-            String s6 = new String ("string6");
-            String s7 = new String ("string7");
-            String s8 = new String ("string8");
-            String s9 = new String ("string9");
-            String s10 = new String ("string10");
-            String s11 = new String ("string11");
-            String s12 = new String ("string12");
-            String s13 = new String ("string13");
-            String s14 = new String ("string14");
-            String s15 = new String ("string15");
-            String s16 = new String ("string16");
-            String s17 = new String ("string17");
-            String s18 = new String ("string18");
-            String s19 = new String ("string19");
-            throw new RuntimeException("throwable called");
-        }
-    }
 
     private static void touchRedefinedMethodInBacktrace(Throwable throwable) {
         System.out.println("touchRedefinedMethodInBacktrace: ");
@@ -133,7 +136,7 @@ public class RedefineRunningMethodsWithBacktrace {
     private static Throwable getThrowableInB() {
         Throwable t = null;
         try {
-            B.throwable();
+            RedefineRunningMethodsWithBacktrace_B.throwable();
         } catch (Exception e) {
             t = e;
             // Don't print here because Throwable will cache the constructed stacktrace
@@ -147,32 +150,32 @@ public class RedefineRunningMethodsWithBacktrace {
 
         new Thread() {
             public void run() {
-                B.infinite();
+                RedefineRunningMethodsWithBacktrace_B.infinite();
             }
         }.start();
 
         Throwable t1 = getThrowableInB();
 
-        RedefineClassHelper.redefineClass(B.class, newB);
+        RedefineClassHelper.redefineClass(RedefineRunningMethodsWithBacktrace_B.class, newB);
 
         System.gc();
 
         Throwable t2 = getThrowableInB();
 
-        B.infinite();
+        RedefineRunningMethodsWithBacktrace_B.infinite();
 
         for (int i = 0; i < 20 ; i++) {
             String s = new String("some garbage");
             System.gc();
         }
 
-        RedefineClassHelper.redefineClass(B.class, evenNewerB);
+        RedefineClassHelper.redefineClass(RedefineRunningMethodsWithBacktrace_B.class, evenNewerB);
         System.gc();
 
         Throwable t3 = getThrowableInB();
 
         for (int i = 0; i < 20 ; i++) {
-            B.infinite();
+            RedefineRunningMethodsWithBacktrace_B.infinite();
             String s = new String("some garbage");
             System.gc();
         }
@@ -182,10 +185,10 @@ public class RedefineRunningMethodsWithBacktrace {
         touchRedefinedMethodInBacktrace(t3);
 
         // purge should clean everything up.
-        B.stop = true;
+        RedefineRunningMethodsWithBacktrace_B.stop = true;
 
         for (int i = 0; i < 20 ; i++) {
-            B.infinite();
+            RedefineRunningMethodsWithBacktrace_B.infinite();
             String s = new String("some garbage");
             System.gc();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,20 +31,29 @@
  *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build InnerClassesTestBase
- * @run main InnerClassesTest
+ * @run main InnerClassesTest true
+ * @run main InnerClassesTest false
  */
 
+import java.util.Arrays;
 import java.util.List;
 
 public class InnerClassesTest extends InnerClassesTestBase {
 
+    final boolean expectSyntheticClass;
+
+    public InnerClassesTest(boolean expectSyntheticClass) {
+        this.expectSyntheticClass = expectSyntheticClass;
+    }
+
     public static void main(String[] args) throws TestFailedException {
-        new InnerClassesTest().test("InnerClassesSrc");
+        boolean expectSyntheticClass = Boolean.parseBoolean(args[0]);
+        new InnerClassesTest(expectSyntheticClass).test("InnerClassesSrc");
     }
 
     private List<TestCase> generateClasses() {
         setInnerClassType(ClassType.CLASS);
-        setHasSyntheticClass(true);
+        setHasSyntheticClass(expectSyntheticClass);
         return super.generateTestCases();
     }
 
@@ -81,5 +90,12 @@ public class InnerClassesTest extends InnerClassesTestBase {
         sources.addAll(generateInterfaces());
         sources.addAll(generateAnnotations());
         return sources;
+    }
+
+    @Override
+    protected List<String> getCompileOptions() {
+        return !expectSyntheticClass ?
+                super.getCompileOptions() :
+                Arrays.asList("-source", "10", "-target", "10");
     }
 }

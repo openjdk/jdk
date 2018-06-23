@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @bug 8200167
+ * @bug 8200167 8010319
  * @summary Test direct and MethodHandle access to interface methods using invokespecial semantics
- * @compile SpecialInterfaceCall.java
+ * @comment This must be compiled so invokespecial is used
+ * @compile -XDdisableVirtualizedPrivateInvoke SpecialInterfaceCall.java
  * @compile SpecialInterfaceCallI4.jasm
  * @run main/othervm -Xint SpecialInterfaceCall
  * @run main/othervm -Xbatch -XX:+TieredCompilation -XX:TieredStopAtLevel=1 SpecialInterfaceCall

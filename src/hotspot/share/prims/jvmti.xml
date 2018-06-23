@@ -358,7 +358,7 @@
  ]>
 
 <specification label="JVM(TM) Tool Interface"
-        majorversion="9"
+        majorversion="11"
         minorversion="0"
         microversion="0">
   <title subtitle="Version">
@@ -7631,9 +7631,12 @@ class C2 extends C1 implements I2 {
         <eventlink id="ClassFileLoadHook"/> event
         will be sent.
         <p/>
-        The retransformation may change method bodies, the constant pool and attributes.
+        The retransformation may change method bodies, the constant pool and attributes
+        (unless explicitly prohibited).
         The retransformation must not add, remove or rename fields or methods, change the
         signatures of methods, change modifiers, or change inheritance.
+        The retransformation must not change the <code>NestHost</code> or
+        <code>NestMembers</code> attributes.
         These restrictions may be lifted in future versions.
         See the error return description below for information on error codes
         returned if an unsupported retransformation is attempted.
@@ -7703,6 +7706,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_DELETED">
           A retransformed class file does not declare a method
           declared in the old class version.
+        </error>
+        <error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED">
+          A retransformed class file has unsupported differences in class attributes.
         </error>
         <error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_MODIFIERS_CHANGED">
           A retransformed class file has different class modifiers.
@@ -7778,9 +7784,12 @@ class C2 extends C1 implements I2 {
         <eventlink id="ClassFileLoadHook">Class File Load Hook</eventlink>
         will be sent (if enabled), but no other <jvmti/> events will be sent.
         <p/>
-        The redefinition may change method bodies, the constant pool and attributes.
+        The redefinition may change method bodies, the constant pool and attributes
+        (unless explicitly prohibited).
         The redefinition must not add, remove or rename fields or methods, change the
         signatures of methods, change modifiers, or change inheritance.
+        The retransformation must not change the <code>NestHost</code> or
+        <code>NestMembers</code> attributes.
         These restrictions may be lifted in future versions.
 	See the error return description below for information on error codes
 	returned if an unsupported redefinition is attempted.
@@ -7855,6 +7864,9 @@ class C2 extends C1 implements I2 {
 	  A new class version does not declare a method
 	  declared in the old class version.
 	</error>
+        <error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED">
+          A new class version has unsupported differences in class attributes.
+        </error>
 	<error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_MODIFIERS_CHANGED">
 	  A new class version has different modifiers.
 	</error>
@@ -11788,6 +11800,9 @@ myInit() {
       A method in the new class version has different modifiers
       than its counterpart in the old class version.
     </errorid>
+    <errorid id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED" num="72">
+      A new class version has unsupported differences in class attributes.
+    </errorid>
   </errorcategory>
 </errorsection>
 
@@ -14926,6 +14941,13 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update for GetCurrentThread function:
        - The function may return NULL in the start phase if the
          can_generate_early_vmstart capability is enabled.
+  </change>
+  <change date="7 February 2018" version="11.0.0">
+      Minor update for new class file NestHost and NestMembers attributes:
+        - Specify that RedefineClasses and RetransformClasses are not allowed
+          to change the class file NestHost and NestMembers attributes.
+        - Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
+          that can be returned by RedefineClasses and RetransformClasses.
   </change>
 </changehistory>
 
