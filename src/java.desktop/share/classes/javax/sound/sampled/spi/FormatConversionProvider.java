@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package javax.sound.sampled.spi;
 
-import java.util.stream.Stream;
+import java.util.Arrays;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -82,7 +82,8 @@ public abstract class FormatConversionProvider {
      * @throws NullPointerException if {@code sourceEncoding} is {@code null}
      */
     public boolean isSourceEncodingSupported(final Encoding sourceEncoding) {
-        return Stream.of(getSourceEncodings()).anyMatch(sourceEncoding::equals);
+        return Arrays.stream(getSourceEncodings())
+                     .anyMatch(sourceEncoding::equals);
     }
 
     /**
@@ -96,7 +97,8 @@ public abstract class FormatConversionProvider {
      * @throws NullPointerException if {@code targetEncoding} is {@code null}
      */
     public boolean isTargetEncodingSupported(final Encoding targetEncoding) {
-        return Stream.of(getTargetEncodings()).anyMatch(targetEncoding::equals);
+        return Arrays.stream(getTargetEncodings())
+                     .anyMatch(targetEncoding::equals);
     }
 
     /**
@@ -123,7 +125,7 @@ public abstract class FormatConversionProvider {
      */
     public boolean isConversionSupported(final Encoding targetEncoding,
                                          final AudioFormat sourceFormat) {
-        return Stream.of(getTargetEncodings(sourceFormat))
+        return Arrays.stream(getTargetEncodings(sourceFormat))
                      .anyMatch(targetEncoding::equals);
     }
 
@@ -155,7 +157,7 @@ public abstract class FormatConversionProvider {
     public boolean isConversionSupported(final AudioFormat targetFormat,
                                          final AudioFormat sourceFormat) {
         final Encoding targetEncoding = targetFormat.getEncoding();
-        return Stream.of(getTargetFormats(targetEncoding, sourceFormat))
+        return Arrays.stream(getTargetFormats(targetEncoding, sourceFormat))
                      .anyMatch(targetFormat::matches);
     }
 

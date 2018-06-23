@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package javax.sound.sampled.spi;
 
-import java.util.Objects;
+import java.util.Arrays;
 
 import javax.sound.sampled.Mixer;
 
@@ -54,17 +54,8 @@ public abstract class MixerProvider {
      * @throws NullPointerException if {@code info} is {@code null}
      * @see #getMixerInfo()
      */
-    public boolean isMixerSupported(Mixer.Info info) {
-        Objects.requireNonNull(info);
-
-        Mixer.Info infos[] = getMixerInfo();
-
-        for(int i=0; i<infos.length; i++){
-            if( info.equals( infos[i] ) ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isMixerSupported(final Mixer.Info info) {
+        return Arrays.stream(getMixerInfo()).anyMatch(info::equals);
     }
 
     /**

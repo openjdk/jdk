@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,6 @@ public class AudioFormat {
      * @see Encoding#ALAW
      */
     public Encoding getEncoding() {
-
         return encoding;
     }
 
@@ -288,7 +287,6 @@ public class AudioFormat {
      * @see AudioSystem#NOT_SPECIFIED
      */
     public float getSampleRate() {
-
         return sampleRate;
     }
 
@@ -309,7 +307,6 @@ public class AudioFormat {
      * @see AudioSystem#NOT_SPECIFIED
      */
     public int getSampleSizeInBits() {
-
         return sampleSizeInBits;
     }
 
@@ -326,7 +323,6 @@ public class AudioFormat {
      * @see AudioSystem#NOT_SPECIFIED
      */
     public int getChannels() {
-
         return channels;
     }
 
@@ -345,7 +341,6 @@ public class AudioFormat {
      * @see AudioSystem#NOT_SPECIFIED
      */
     public int getFrameSize() {
-
         return frameSize;
     }
 
@@ -365,7 +360,6 @@ public class AudioFormat {
      * @see AudioSystem#NOT_SPECIFIED
      */
     public float getFrameRate() {
-
         return frameRate;
     }
 
@@ -378,7 +372,6 @@ public class AudioFormat {
      *         {@code false} if little-endian
      */
     public boolean isBigEndian() {
-
         return bigEndian;
     }
 

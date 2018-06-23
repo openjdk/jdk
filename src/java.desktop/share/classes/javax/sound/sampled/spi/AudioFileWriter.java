@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.sound.sampled.spi;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Objects;
+import java.util.Arrays;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -63,17 +63,8 @@ public abstract class AudioFileWriter {
      *         {@code false}
      * @throws NullPointerException if {@code fileType} is {@code null}
      */
-    public boolean isFileTypeSupported(Type fileType) {
-        Objects.requireNonNull(fileType);
-
-        Type types[] = getAudioFileTypes();
-
-        for(int i=0; i<types.length; i++) {
-            if( fileType.equals( types[i] ) ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isFileTypeSupported(final Type fileType) {
+        return Arrays.stream(getAudioFileTypes()).anyMatch(fileType::equals);
     }
 
     /**
@@ -99,16 +90,10 @@ public abstract class AudioFileWriter {
      * @throws NullPointerException if {@code fileType} or {@code stream} are
      *         {@code null}
      */
-    public boolean isFileTypeSupported(Type fileType, AudioInputStream stream) {
-        Objects.requireNonNull(fileType);
-        Type types[] = getAudioFileTypes( stream );
-
-        for(int i=0; i<types.length; i++) {
-            if( fileType.equals( types[i] ) ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isFileTypeSupported(final Type fileType,
+                                       final AudioInputStream stream) {
+        return Arrays.stream(getAudioFileTypes(stream))
+                     .anyMatch(fileType::equals);
     }
 
     /**

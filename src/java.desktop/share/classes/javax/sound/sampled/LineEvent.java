@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,6 @@ public class LineEvent extends EventObject {
      * @return the line responsible for this event
      */
     public final Line getLine() {
-
         return (Line)getSource();
     }
 
@@ -111,7 +110,6 @@ public class LineEvent extends EventObject {
      *         {@link Type#START}, or {@link Type#STOP})
      */
     public final Type getType() {
-
         return type;
     }
 
@@ -137,7 +135,6 @@ public class LineEvent extends EventObject {
      * which is a reasonable definition....
      */
     public final long getFramePosition() {
-
         return position;
     }
 
