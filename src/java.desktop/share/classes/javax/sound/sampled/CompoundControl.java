@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,7 @@ public abstract class CompoundControl extends Control {
      * @return the set of member controls
      */
     public Control[] getMemberControls() {
-        Control[] localArray = new Control[controls.length];
-
-        for (int i = 0; i < controls.length; i++) {
-            localArray[i] = controls[i];
-        }
-
-        return localArray;
+        return controls.clone();
     }
 
     /**

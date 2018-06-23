@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.sound.midi.spi;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Arrays;
 
 import javax.sound.midi.Sequence;
 
@@ -69,15 +70,9 @@ public abstract class MidiFileWriter {
      * @return {@code true} if the file type is supported, otherwise
      *         {@code false}
      */
-    public boolean isFileTypeSupported(int fileType) {
-
-        int types[] = getMidiFileTypes();
-        for(int i=0; i<types.length; i++) {
-            if( fileType == types[i] ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isFileTypeSupported(final int fileType) {
+        return Arrays.stream(getMidiFileTypes())
+                     .anyMatch(type -> fileType == type);
     }
 
     /**
@@ -90,15 +85,10 @@ public abstract class MidiFileWriter {
      *         otherwise {@code false}
      * @throws NullPointerException if {@code sequence} is {@code null}
      */
-    public boolean isFileTypeSupported(int fileType, Sequence sequence) {
-
-        int types[] = getMidiFileTypes( sequence );
-        for(int i=0; i<types.length; i++) {
-            if( fileType == types[i] ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isFileTypeSupported(final int fileType,
+                                       final Sequence sequence) {
+        return Arrays.stream(getMidiFileTypes(sequence))
+                     .anyMatch(type -> fileType == type);
     }
 
     /**

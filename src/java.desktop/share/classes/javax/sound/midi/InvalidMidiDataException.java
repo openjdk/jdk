@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,6 @@ public class InvalidMidiDataException extends Exception {
      * error detail message.
      */
     public InvalidMidiDataException() {
-
         super();
     }
 
@@ -59,8 +58,7 @@ public class InvalidMidiDataException extends Exception {
      *
      * @param  message the string to display as an error detail message
      */
-    public InvalidMidiDataException(String message) {
-
+    public InvalidMidiDataException(final String message) {
         super(message);
     }
 }

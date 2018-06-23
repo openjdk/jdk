@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,14 +107,7 @@ public abstract class EnumControl extends Control {
      * @return the set of possible values
      */
     public Object[] getValues() {
-
-        Object[] localArray = new Object[values.length];
-
-        for (int i = 0; i < values.length; i++) {
-            localArray[i] = values[i];
-        }
-
-        return localArray;
+        return values.clone();
     }
 
     /**
@@ -164,7 +157,7 @@ public abstract class EnumControl extends Control {
          * {@link EnumControl#getValues} on an enumerated control of type
          * {@code REVERB}.)
          */
-        public static final Type REVERB         = new Type("Reverb");
+        public static final Type REVERB = new Type("Reverb");
 
         /**
          * Constructs a new enumerated control type.
