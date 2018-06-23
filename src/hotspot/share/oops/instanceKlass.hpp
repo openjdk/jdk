@@ -165,6 +165,19 @@ class InstanceKlass: public Klass {
   // number_of_inner_classes * 4 + enclosing_method_attribute_size.
   Array<jushort>* _inner_classes;
 
+  // The NestMembers attribute. An array of shorts, where each is a
+  // class info index for the class that is a nest member. This data
+  // has not been validated.
+  Array<jushort>* _nest_members;
+
+  // The NestHost attribute. The class info index for the class
+  // that is the nest-host of this class. This data has not been validated.
+  jushort _nest_host_index;
+
+  // Resolved nest-host klass: either true nest-host or self if we are not nested.
+  // By always being set it makes nest-member access checks simpler.
+  InstanceKlass* _nest_host;
+
   // the source debug extension for this klass, NULL if not specified.
   // Specified as UTF-8 string without terminating zero byte in the classfile,
   // it is stored in the instanceklass as a NULL-terminated UTF-8 string
@@ -435,6 +448,24 @@ class InstanceKlass: public Klass {
   Array<u2>* inner_classes() const       { return _inner_classes; }
   void set_inner_classes(Array<u2>* f)   { _inner_classes = f; }
 
+  // nest members
+  Array<u2>* nest_members() const     { return _nest_members; }
+  void set_nest_members(Array<u2>* m) { _nest_members = m; }
+
+  // nest-host index
+  jushort nest_host_index() const { return _nest_host_index; }
+  void set_nest_host_index(u2 i)  { _nest_host_index = i; }
+
+private:
+  // Called to verify that k is a member of this nest - does not look at k's nest-host
+  bool has_nest_member(InstanceKlass* k, TRAPS) const;
+public:
+  // Returns nest-host class, resolving and validating it if needed
+  // Returns NULL if an exception occurs during loading, or validation fails
+  InstanceKlass* nest_host(Symbol* validationException, TRAPS);
+  // Check if this klass is a nestmate of k - resolves this nest-host and k's
+  bool has_nestmate_access_to(InstanceKlass* k, TRAPS);
+
   enum InnerClassAttributeOffset {
     // From http://mirror.eng/products/jdk/1.1/docs/guide/innerclasses/spec/innerclasses.doc10.html#18814
     inner_class_inner_class_info_offset = 0,
@@ -554,10 +585,12 @@ class InstanceKlass: public Klass {
                              const Symbol* signature);
 
   // find a local method, but skip static methods
-  Method* find_instance_method(const Symbol* name, const Symbol* signature) const;
+  Method* find_instance_method(const Symbol* name, const Symbol* signature,
+                               PrivateLookupMode private_mode = find_private) const;
   static Method* find_instance_method(const Array<Method*>* methods,
                                       const Symbol* name,
-                                      const Symbol* signature);
+                                      const Symbol* signature,
+                                      PrivateLookupMode private_mode = find_private);
 
   // find a local method (returns NULL if not found)
   Method* find_local_method(const Symbol* name,
@@ -585,7 +618,8 @@ class InstanceKlass: public Klass {
   // lookup operation (returns NULL if not found)
   Method* uncached_lookup_method(const Symbol* name,
                                  const Symbol* signature,
-                                 OverpassLookupMode overpass_mode) const;
+                                 OverpassLookupMode overpass_mode,
+                                 PrivateLookupMode private_mode = find_private) const;
 
   // lookup a method in all the interfaces that this class implements
   // (returns NULL if not found)

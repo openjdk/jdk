@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,8 @@ public class Names {
     public final Name MethodParameters;
     public final Name Module;
     public final Name ModuleResolution;
+    public final Name NestHost;
+    public final Name NestMembers;
     public final Name RuntimeInvisibleAnnotations;
     public final Name RuntimeInvisibleParameterAnnotations;
     public final Name RuntimeInvisibleTypeAnnotations;
@@ -315,6 +317,8 @@ public class Names {
         MethodParameters = fromString("MethodParameters");
         Module = fromString("Module");
         ModuleResolution = fromString("ModuleResolution");
+        NestHost = fromString("NestHost");
+        NestMembers = fromString("NestMembers");
         RuntimeInvisibleAnnotations = fromString("RuntimeInvisibleAnnotations");
         RuntimeInvisibleParameterAnnotations = fromString("RuntimeInvisibleParameterAnnotations");
         RuntimeInvisibleTypeAnnotations = fromString("RuntimeInvisibleTypeAnnotations");

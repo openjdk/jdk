@@ -58,6 +58,8 @@
  */
 package jdk.internal.org.objectweb.asm;
 
+import java.util.Arrays;
+
 /**
  * A non standard class, field, method or code attribute.
  *
@@ -281,4 +283,72 @@ public class Attribute {
             attr = attr.next;
         }
     }
+
+    //The stuff below is temporary - once proper support for nestmate attribute has been added, it can be safely removed.
+    //see also changes in ClassReader.accept.
+
+    public static class NestMembers extends Attribute {
+        public NestMembers() {
+            super("NestMembers");
+        }
+
+        byte[] bytes;
+        String[] classes;
+
+        @Override
+        protected Attribute read(ClassReader cr, int off, int len, char[] buf, int codeOff, Label[] labels) {
+            int offset = off;
+            NestMembers a = new NestMembers();
+            int size = cr.readShort(off);
+            a.classes = new String[size];
+            off += 2;
+            for (int i = 0; i < size ; i++) {
+                a.classes[i] = cr.readClass(off, buf);
+                off += 2;
+            }
+            a.bytes = Arrays.copyOfRange(cr.b, offset, offset + len);
+            return a;
+        }
+
+        @Override
+        protected ByteVector write(ClassWriter cw, byte[] code, int len, int maxStack, int maxLocals) {
+            ByteVector v = new ByteVector(bytes.length);
+            v.putShort(classes.length);
+            for (String s : classes) {
+                v.putShort(cw.newClass(s));
+            }
+            return v;
+        }
+    }
+
+    public static class NestHost extends Attribute {
+
+        byte[] bytes;
+        String clazz;
+
+        public NestHost() {
+            super("NestHost");
+        }
+
+        @Override
+        protected Attribute read(ClassReader cr, int off, int len, char[] buf, int codeOff, Label[] labels) {
+            int offset = off;
+            NestHost a = new NestHost();
+            a.clazz = cr.readClass(off, buf);
+            a.bytes = Arrays.copyOfRange(cr.b, offset, offset + len);
+            return a;
+        }
+
+        @Override
+        protected ByteVector write(ClassWriter cw, byte[] code, int len, int maxStack, int maxLocals) {
+            ByteVector v = new ByteVector(bytes.length);
+            v.putShort(cw.newClass(clazz));
+            return v;
+        }
+    }
+
+    static final Attribute[] DEFAULT_ATTRIBUTE_PROTOS = new Attribute[] {
+        new NestMembers(),
+        new NestHost()
+    };
 }

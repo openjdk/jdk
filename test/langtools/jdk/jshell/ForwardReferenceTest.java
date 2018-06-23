@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /*
- * @test 8173232
+ * @test 8173232 8010319
  * @summary Test of forward referencing of snippets.
  * @build KullaTesting TestingInputStream
  * @run testng ForwardReferenceTest
@@ -315,7 +315,7 @@ public class ForwardReferenceTest extends KullaTesting {
         Snippet f = methodKey(assertEval("void f() { class A {} g(); }", added(RECOVERABLE_DEFINED)));
         assertEval("void g() {}",
                 added(VALID),
-                ste(f, RECOVERABLE_DEFINED, VALID, false, null));
+                ste(f, RECOVERABLE_DEFINED, VALID, true, null));
         assertEval("f();", "");
     }
 }

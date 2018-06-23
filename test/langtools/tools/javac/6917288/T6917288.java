@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,14 @@ public class T6917288 {
             return;
         }
 
-        check(classesDir, "Test.class", "Test$Inner.class", "Test$1.class");
+        switch (k) {
+            case ALWAYS:
+            case TRUE:
+                check(classesDir, "Test.class", "Test$Inner.class", "Test$1.class");
+                break;
+            default:
+                check(classesDir, "Test.class", "Test$Inner.class");
+        }
     }
 
     /**

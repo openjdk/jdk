@@ -58,7 +58,8 @@ class DirectMethodHandle extends MethodHandle {
         if (!member.isResolved())  throw new InternalError();
 
         if (member.getDeclaringClass().isInterface() &&
-                member.isMethod() && !member.isAbstract()) {
+            member.getReferenceKind() == REF_invokeInterface &&
+            member.isMethod() && !member.isAbstract()) {
             // Check for corner case: invokeinterface of Object method
             MemberName m = new MemberName(Object.class, member.getName(), member.getMethodType(), member.getReferenceKind());
             m = MemberName.getFactory().resolveOrNull(m.getReferenceKind(), m, null);
@@ -80,22 +81,28 @@ class DirectMethodHandle extends MethodHandle {
             mtype = mtype.insertParameterTypes(0, refc);
         }
         if (!member.isField()) {
+            // refKind reflects the original type of lookup via findSpecial or
+            // findVirtual etc.
             switch (refKind) {
                 case REF_invokeSpecial: {
                     member = member.asSpecial();
-                    LambdaForm lform = preparedLambdaForm(member, callerClass);
-                    Class<?> checkClass = refc;  // Class to use for receiver type check
-                    if (callerClass != null) {
-                        checkClass = callerClass;  // potentially strengthen to caller class
+                    // if caller is an interface we need to adapt to get the
+                    // receiver check inserted
+                    if (callerClass == null) {
+                        throw new InternalError("callerClass must not be null for REF_invokeSpecial");
                     }
-                    return new Special(mtype, lform, member, checkClass);
+                    LambdaForm lform = preparedLambdaForm(member, callerClass.isInterface());
+                    return new Special(mtype, lform, member, callerClass);
                 }
                 case REF_invokeInterface: {
-                    LambdaForm lform = preparedLambdaForm(member, callerClass);
+                    // for interfaces we always need the receiver typecheck,
+                    // so we always pass 'true' to ensure we adapt if needed
+                    // to include the REF_invokeSpecial case
+                    LambdaForm lform = preparedLambdaForm(member, true);
                     return new Interface(mtype, lform, member, refc);
                 }
                 default: {
-                    LambdaForm lform = preparedLambdaForm(member, callerClass);
+                    LambdaForm lform = preparedLambdaForm(member);
                     return new DirectMethodHandle(mtype, lform, member);
                 }
             }
@@ -165,11 +172,16 @@ class DirectMethodHandle extends MethodHandle {
      * Cache and share this structure among all methods with
      * the same basicType and refKind.
      */
-    private static LambdaForm preparedLambdaForm(MemberName m, Class<?> callerClass) {
+    private static LambdaForm preparedLambdaForm(MemberName m, boolean adaptToSpecialIfc) {
         assert(m.isInvocable()) : m;  // call preparedFieldLambdaForm instead
         MethodType mtype = m.getInvocationType().basicType();
         assert(!m.isMethodHandleInvoke()) : m;
         int which;
+        // MemberName.getReferenceKind represents the JVM optimized form of the call
+        // as distinct from the "kind" passed to DMH.make which represents the original
+        // bytecode-equivalent request. Specifically private/final methods that use a direct
+        // call have getReferenceKind adapted to REF_invokeSpecial, even though the actual
+        // invocation mode may be invokevirtual or invokeinterface.
         switch (m.getReferenceKind()) {
         case REF_invokeVirtual:    which = LF_INVVIRTUAL;    break;
         case REF_invokeStatic:     which = LF_INVSTATIC;     break;
@@ -183,7 +195,7 @@ class DirectMethodHandle extends MethodHandle {
             preparedLambdaForm(mtype, which);
             which = LF_INVSTATIC_INIT;
         }
-        if (which == LF_INVSPECIAL && callerClass != null && callerClass.isInterface()) {
+        if (which == LF_INVSPECIAL && adaptToSpecialIfc) {
             which = LF_INVSPECIAL_IFC;
         }
         LambdaForm lform = preparedLambdaForm(mtype, which);
@@ -195,7 +207,7 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     private static LambdaForm preparedLambdaForm(MemberName m) {
-        return preparedLambdaForm(m, null);
+        return preparedLambdaForm(m, false);
     }
 
     private static LambdaForm preparedLambdaForm(MethodType mtype, int which) {

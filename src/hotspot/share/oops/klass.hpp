@@ -467,7 +467,9 @@ protected:
   // lookup operation for MethodLookupCache
   friend class MethodLookupCache;
   virtual Klass* find_field(Symbol* name, Symbol* signature, fieldDescriptor* fd) const;
-  virtual Method* uncached_lookup_method(const Symbol* name, const Symbol* signature, OverpassLookupMode overpass_mode) const;
+  virtual Method* uncached_lookup_method(const Symbol* name, const Symbol* signature,
+                                         OverpassLookupMode overpass_mode,
+                                         PrivateLookupMode = find_private) const;
  public:
   Method* lookup_method(const Symbol* name, const Symbol* signature) const {
     return uncached_lookup_method(name, signature, find_overpass);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 #include "FrameID.h"
 
 static char *versionName = "Java Debug Wire Protocol (Reference Implementation)";
-static int majorVersion = 9;  /* JDWP major version */
+static int majorVersion = 11;  /* JDWP major version */
 static int minorVersion = 0;  /* JDWP minor version */
 
 static jboolean
