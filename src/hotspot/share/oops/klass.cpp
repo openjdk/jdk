@@ -168,7 +168,9 @@ Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   return NULL;
 }
 
-Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signature, OverpassLookupMode overpass_mode) const {
+Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signature,
+                                      OverpassLookupMode overpass_mode,
+                                      PrivateLookupMode private_mode) const {
 #ifdef ASSERT
   tty->print_cr("Error: uncached_lookup_method called on a klass oop."
                 " Likely error: reflection method does not correctly"

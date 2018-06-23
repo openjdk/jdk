@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178870
+ * @bug 8178870 8010319
  * @summary Redefine class with CFLH twice to test deleting the cached_class_file
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -34,27 +34,30 @@
  * @run main/othervm/native -Xlog:redefine+class+load+exceptions -agentlib:RedefineDoubleDelete -javaagent:redefineagent.jar RedefineDoubleDelete
  */
 
+// package access top-level class to avoid problem with RedefineClassHelper
+// and nested types.
+
+// The ClassFileLoadHook for this class turns foo into faa and prints out faa.
+class RedefineDoubleDelete_B {
+    int faa() { System.out.println("foo"); return 1; }
+}
+
 public class RedefineDoubleDelete {
 
     // Class gets a redefinition error because it adds a data member
     public static String newB =
-                "class RedefineDoubleDelete$B {" +
+                "class RedefineDoubleDelete_B {" +
                 "   int count1 = 0;" +
                 "}";
 
     public static String newerB =
-                "class RedefineDoubleDelete$B { " +
+                "class RedefineDoubleDelete_B { " +
                 "   int faa() { System.out.println(\"baa\"); return 2; }" +
                 "}";
 
-    // The ClassFileLoadHook for this class turns foo into faa and prints out faa.
-    static class B {
-      int faa() { System.out.println("foo"); return 1; }
-    }
-
     public static void main(String args[]) throws Exception {
 
-        B b = new B();
+        RedefineDoubleDelete_B b = new RedefineDoubleDelete_B();
         int val = b.faa();
         if (val != 1) {
             throw new RuntimeException("return value wrong " + val);
@@ -62,12 +65,12 @@ public class RedefineDoubleDelete {
 
         // Redefine B twice to get cached_class_file in both B scratch classes
         try {
-            RedefineClassHelper.redefineClass(B.class, newB);
+            RedefineClassHelper.redefineClass(RedefineDoubleDelete_B.class, newB);
         } catch (java.lang.UnsupportedOperationException e) {
             // this is expected
         }
         try {
-            RedefineClassHelper.redefineClass(B.class, newB);
+            RedefineClassHelper.redefineClass(RedefineDoubleDelete_B.class, newB);
         } catch (java.lang.UnsupportedOperationException e) {
             // this is expected
         }
@@ -76,7 +79,7 @@ public class RedefineDoubleDelete {
         System.gc();
 
         // Redefine with a compatible class
-        RedefineClassHelper.redefineClass(B.class, newerB);
+        RedefineClassHelper.redefineClass(RedefineDoubleDelete_B.class, newerB);
         val = b.faa();
         if (val != 2) {
             throw new RuntimeException("return value wrong " + val);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build AccessToPrivateSiblingsTest SyntheticTestDriver ExpectedClass ExpectedClasses
- * @run main SyntheticTestDriver AccessToPrivateSiblingsTest 1
+ * @run main SyntheticTestDriver AccessToPrivateSiblingsTest
  */
 
 /**
@@ -50,19 +50,16 @@
 @ExpectedClass(className = "AccessToPrivateSiblingsTest$Inner1",
         expectedMethods = {"function()", "<init>(AccessToPrivateSiblingsTest)"},
         expectedFields = "var",
-        expectedNumberOfSyntheticMethods = 4,
         expectedNumberOfSyntheticFields = 1)
 @ExpectedClass(className = "AccessToPrivateSiblingsTest$Inner2",
         expectedMethods = "<init>(AccessToPrivateSiblingsTest)",
         expectedNumberOfSyntheticFields = 1)
 @ExpectedClass(className = "AccessToPrivateSiblingsTest$Inner3",
         expectedMethods = {"<init>()", "function()", "staticFunction()", "<clinit>()"},
-        expectedFields = {"var", "staticVar"},
-        expectedNumberOfSyntheticMethods = 4)
+        expectedFields = {"var", "staticVar"})
 @ExpectedClass(className = "AccessToPrivateSiblingsTest$Inner4",
         expectedMethods = {"<init>()", "function()", "staticFunction()"},
-        expectedFields = {"var", "staticVar"},
-        expectedNumberOfSyntheticMethods = 4)
+        expectedFields = {"var", "staticVar"})
 public class AccessToPrivateSiblingsTest {
 
     private class Inner1 {

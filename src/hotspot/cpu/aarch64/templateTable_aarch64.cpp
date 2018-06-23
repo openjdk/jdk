@@ -3362,22 +3362,45 @@ void TemplateTable::invokeinterface(int byte_no) {
   // r2: receiver
   // r3: flags
 
+  // First check for Object case, then private interface method,
+  // then regular interface method.
+
   // Special case of invokeinterface called for virtual method of
-  // java.lang.Object.  See cpCacheOop.cpp for details.
-  // This code isn't produced by javac, but could be produced by
-  // another compliant java compiler.
-  Label notMethod;
-  __ tbz(r3, ConstantPoolCacheEntry::is_forced_virtual_shift, notMethod);
+  // java.lang.Object.  See cpCache.cpp for details.
+  Label notObjectMethod;
+  __ tbz(r3, ConstantPoolCacheEntry::is_forced_virtual_shift, notObjectMethod);
 
   invokevirtual_helper(rmethod, r2, r3);
-  __ bind(notMethod);
+  __ bind(notObjectMethod);
+
+  Label no_such_interface;
+
+  // Check for private method invocation - indicated by vfinal
+  Label notVFinal;
+  __ tbz(r3, ConstantPoolCacheEntry::is_vfinal_shift, notVFinal);
+
+  // Get receiver klass into r3 - also a null check
+  __ null_check(r2, oopDesc::klass_offset_in_bytes());
+  __ load_klass(r3, r2);
+
+  Label subtype;
+  __ check_klass_subtype(r3, r0, r4, subtype);
+  // If we get here the typecheck failed
+  __ b(no_such_interface);
+  __ bind(subtype);
+
+  __ profile_final_call(r0);
+  __ profile_arguments_type(r0, rmethod, r4, true);
+  __ jump_from_interpreted(rmethod, r0);
+
+  __ bind(notVFinal);
 
   // Get receiver klass into r3 - also a null check
   __ restore_locals();
   __ null_check(r2, oopDesc::klass_offset_in_bytes());
   __ load_klass(r3, r2);
 
-  Label no_such_interface, no_such_method;
+  Label no_such_method;
 
   // Preserve method for throw_AbstractMethodErrorVerbose.
   __ mov(r16, rmethod);

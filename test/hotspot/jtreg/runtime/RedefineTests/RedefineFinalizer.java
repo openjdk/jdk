@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6904403
+ * @bug 6904403 8010319
  * @summary Don't assert if we redefine finalize method
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -41,27 +41,31 @@
  *
  * when redefining finalizer method
  */
+
+
+// package access top-level class to avoid problem with RedefineClassHelper
+// and nested types.
+class RedefineFinalizer_B {
+    protected void finalize() {
+        // should be empty
+    }
+}
+
 public class RedefineFinalizer {
 
     public static String newB =
-                "class RedefineFinalizer$B {" +
+                "class RedefineFinalizer_B {" +
                 "   protected void finalize() { " +
                 "       System.out.println(\"Finalizer called\");" +
                 "   }" +
                 "}";
 
     public static void main(String[] args) throws Exception {
-        RedefineClassHelper.redefineClass(B.class, newB);
+        RedefineClassHelper.redefineClass(RedefineFinalizer_B.class, newB);
 
         A a = new A();
     }
 
-    static class A extends B {
-    }
-
-    static class B {
-        protected void finalize() {
-            // should be empty
-        }
+    static class A extends RedefineFinalizer_B {
     }
 }

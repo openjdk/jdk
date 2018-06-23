@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8145239 8129559 8080354 8189248
+ * @bug 8145239 8129559 8080354 8189248 8010319
  * @summary Tests for EvaluationState.classes
  * @build KullaTesting TestingInputStream ExpectedDiagnostic
  * @run testng ClassesTest
@@ -308,7 +308,7 @@ public class ClassesTest extends KullaTesting {
     public void testInnerClassesCrash() {
         Snippet a = classKey(assertEval("class A { class B extends A {} }"));
         Snippet a2 = classKey(assertEval("class A { interface I1 extends I2 {} interface I2 {} }",
-                ste(MAIN_SNIPPET, VALID, VALID, false, null),
+                ste(MAIN_SNIPPET, VALID, VALID, true, null),
                 ste(a, VALID, OVERWRITTEN, false, MAIN_SNIPPET)));
         assertEval("class A { A a = new A() {}; }",
                 ste(MAIN_SNIPPET, VALID, VALID, true, null),

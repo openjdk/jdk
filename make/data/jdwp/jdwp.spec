@@ -395,8 +395,8 @@ JDWP "Java(tm) Debug Wire Protocol"
                      "Can the VM add methods when redefining "
                      "classes?")
             (boolean canUnrestrictedlyRedefineClasses
-                     "Can the VM redefine classes"
-                     "in arbitrary ways?")
+                     "Can the VM redefine classes "
+                     "in ways that are normally restricted?")
             (boolean canPopFrames
                      "Can the VM pop stack frames?")
             (boolean canUseInstanceFilters
@@ -460,12 +460,23 @@ JDWP "Java(tm) Debug Wire Protocol"
         "<a href=\"#JDWP_StackFrame_PopFrames\">PopFrames</a> command can be used "
         "to pop frames with obsolete methods."
         "<p>"
+        "Unless the canUnrestrictedlyRedefineClasses capability is present the following "
+        "redefinitions are restricted: "
+        "<ul>"
+        "<li>changing the schema (the fields)</li>"
+        "<li>changing the hierarchy (superclasses, interfaces)</li>"
+        "<li>deleting a method</li>"
+        "<li>changing class modifiers</li>"
+        "<li>changing method modifiers</li>"
+        "<li>changing the <code>NestHost</code> or <code>NestMembers</code> class attributes</li>"
+        "</ul>"
+        "<p>"
         "Requires canRedefineClasses capability - see "
         "<a href=\"#JDWP_VirtualMachine_CapabilitiesNew\">CapabilitiesNew</a>. "
         "In addition to the canRedefineClasses capability, the target VM must "
         "have the canAddMethod capability to add methods when redefining classes, "
-        "or the canUnrestrictedlyRedefineClasses to redefine classes in arbitrary "
-        "ways."
+        "or the canUnrestrictedlyRedefineClasses capability to redefine classes in ways "
+        "that are normally restricted."
         (Out
             (Repeat classes "Number of reference types that follow."
                 (Group ClassDef
@@ -496,6 +507,7 @@ JDWP "Java(tm) Debug Wire Protocol"
             (Error DELETE_METHOD_NOT_IMPLEMENTED)
             (Error CLASS_MODIFIERS_CHANGE_NOT_IMPLEMENTED)
             (Error METHOD_MODIFIERS_CHANGE_NOT_IMPLEMENTED)
+            (Error CLASS_ATTRIBUTE_CHANGE_NOT_IMPLEMENTED)
             (Error VM_DEAD)
         )
     )
@@ -3148,12 +3160,16 @@ JDWP "Java(tm) Debug Wire Protocol"
                                           "different from the name in the old class object.")
     (Constant CLASS_MODIFIERS_CHANGE_NOT_IMPLEMENTED
                                      =70  "The new class version has different modifiers and "
-                                          "and canUnrestrictedlyRedefineClasses is false.")
+                                          "canUnrestrictedlyRedefineClasses is false.")
     (Constant METHOD_MODIFIERS_CHANGE_NOT_IMPLEMENTED
                                      =71  "A method in the new class version has "
                                           "different modifiers "
                                           "than its counterpart in the old class version and "
-                                          "and canUnrestrictedlyRedefineClasses is false.")
+                                          "canUnrestrictedlyRedefineClasses is false.")
+    (Constant CLASS_ATTRIBUTE_CHANGE_NOT_IMPLEMENTED
+                                     =72  "The new class version has different NestHost or "
+                                          "NestMembers class attribute and "
+                                          "canUnrestrictedlyRedefineClasses is false.")
     (Constant NOT_IMPLEMENTED        =99  "The functionality is not implemented in "
                                           "this virtual machine.")
     (Constant NULL_POINTER           =100 "Invalid pointer.")

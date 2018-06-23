@@ -2524,11 +2524,9 @@ run:
         istate->set_msg(call_method);
 
         // Special case of invokeinterface called for virtual method of
-        // java.lang.Object.  See cpCacheOop.cpp for details.
-        // This code isn't produced by javac, but could be produced by
-        // another compliant java compiler.
+        // java.lang.Object.  See cpCache.cpp for details.
+        Method* callee = NULL;
         if (cache->is_forced_virtual()) {
-          Method* callee;
           CHECK_NULL(STACK_OBJECT(-(cache->parameter_size())));
           if (cache->is_vfinal()) {
             callee = cache->f2_as_vfinal_method();
@@ -2545,6 +2543,29 @@ run:
             // Profile 'special case of invokeinterface' virtual call.
             BI_PROFILE_UPDATE_VIRTUALCALL(rcvrKlass);
           }
+        } else if (cache->is_vfinal()) {
+          // private interface method invocations
+          //
+          // Ensure receiver class actually implements
+          // the resolved interface class. The link resolver
+          // does this, but only for the first time this
+          // interface is being called.
+          int parms = cache->parameter_size();
+          oop rcvr = STACK_OBJECT(-parms);
+          CHECK_NULL(rcvr);
+          Klass* recv_klass = rcvr->klass();
+          Klass* resolved_klass = cache->f1_as_klass();
+          if (!recv_klass->is_subtype_of(resolved_klass)) {
+            ResourceMark rm(THREAD);
+            char buf[200];
+            jio_snprintf(buf, sizeof(buf), "Class %s does not implement the requested interface %s",
+              recv_klass->external_name(),
+              resolved_klass->external_name());
+            VM_JAVA_ERROR(vmSymbols::java_lang_IncompatibleClassChangeError(), buf, note_no_trap);
+          }
+          callee = cache->f2_as_vfinal_method();
+        }
+        if (callee != NULL) {
           istate->set_callee(callee);
           istate->set_callee_entry_point(callee->from_interpreted_entry());
 #ifdef VM_JVMTI
@@ -2557,7 +2578,6 @@ run:
         }
 
         // this could definitely be cleaned up QQQ
-        Method* callee;
         Method *interface_method = cache->f2_as_interface_method();
         InstanceKlass* iclass = interface_method->method_holder();
 
