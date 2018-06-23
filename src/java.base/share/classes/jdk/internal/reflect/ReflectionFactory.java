@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -453,11 +453,11 @@ public class ReflectionFactory {
             }
             return false;
         } else {
-            // accessible if the parent is public and any constructor
-            // is protected or public
-            if ((superCl.getModifiers() & Modifier.PUBLIC) == 0) {
+            // sanity check to ensure the parent is protected or public
+            if ((superCl.getModifiers() & (Modifier.PROTECTED | Modifier.PUBLIC)) == 0) {
                 return false;
             }
+            // accessible if any constructor is protected or public
             for (Constructor<?> ctor : superCl.getDeclaredConstructors()) {
                 if ((ctor.getModifiers() & (Modifier.PROTECTED | Modifier.PUBLIC)) != 0) {
                     return true;
