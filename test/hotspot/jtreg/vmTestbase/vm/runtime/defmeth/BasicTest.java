@@ -81,7 +81,7 @@ public class BasicTest extends DefMethTest {
             expectedClass = IllegalArgumentException.class;
         } else if (factory.getExecutionMode().equals("INVOKE_WITH_ARGS")) {
             // Notes from JDK-8029926 which details reasons behind CCE.
-        // The code below demonstrates the use of a MethodHandle
+            // The code below demonstrates the use of a MethodHandle
             // of kind REF_invokeInterface pointing to method I.m.
             // Because 'invoke' is called, this MethodHandle is effectively
             // wrapped in the type adaptations necessary to accept a C
@@ -157,38 +157,38 @@ public class BasicTest extends DefMethTest {
     }
 
     /*
-     * Default method override w/ non-public concrete method
+     * Default method override attempt w/ non-public concrete method.
+     * Private methods never override any other method.
      *
-     * interface I { void m() default {} }
-     * class C implements I {
-     *   [private/package-private/protected]
-     *   void m() {}
+     * interface I { int m() default { returns 1; } }
+     * class C/D/E implements I {
+     *   [private/protected/package-private]
+     *   int m() { returns 2;}
      * }
      *
      */
-    @KnownFailure(modes = {INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY}) // NPE, instead of IAE
     public void testNonPublicOverride() {
         TestBuilder b = factory.getBuilder();
 
         Interface I = b.intf("I")
-                .defaultMethod("m","()V").emptyBody().build()
+                .defaultMethod("m", "()I").returns(1).build()
             .build();
 
         ConcreteClass C = b.clazz("C").implement(I)
-                .concreteMethod("m", "()V").private_().emptyBody().build()
+            .concreteMethod("m", "()I").private_().returns(2).build()
             .build();
 
         ConcreteClass D = b.clazz("D").implement(I)
-                .concreteMethod("m", "()V").protected_().emptyBody().build()
+                .concreteMethod("m", "()I").protected_().returns(2).build()
             .build();
 
          ConcreteClass E = b.clazz("E").implement(I)
-                .concreteMethod("m", "()V").package_private().emptyBody().build()
+                .concreteMethod("m", "()I").package_private().returns(2).build()
             .build();
 
-        b.test().callSite(I, C, "m", "()V").throws_(IllegalAccessError.class).done()
-         .test().callSite(I, D, "m", "()V").throws_(IllegalAccessError.class).done()
-         .test().callSite(I, E, "m", "()V").throws_(IllegalAccessError.class).done()
+         b.test().callSite(I, C, "m", "()I").returns(1).done()
+          .test().callSite(I, D, "m", "()I").throws_(IllegalAccessError.class).done()
+          .test().callSite(I, E, "m", "()I").throws_(IllegalAccessError.class).done()
 
         .run();
     }

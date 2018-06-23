@@ -48,11 +48,28 @@ public class PrivateMethodsTest extends DefMethTest {
     // to even see an interface private method
     // Throw ICCE if method resolution returns interface private method
 
+    // Spec change JDK 11 - invokeinterface can be used for private interface
+    // methods and is now the preferred invocation bytecode - so no ICCE.
+    // Private methods are skipped during selection unless the resolved method
+    // is private.
+    // This change is not dependent on the classfile version.
+
+    // Note on reflection testing:
+    //   Reflection is only used for the initial callsite, which is not always
+    //   the method of interest. For example where a default method m() calls
+    //   the private interface method privateM(). It is the latter call we are
+    //   really testing, but it is the call of the default method that occurs
+    //   via reflection.
+    //   In private cases reflection triggers a NoSuchMethodException instead of the
+    //   expected IllegalAccessError. This indicates it is getDeclaredMethod() that is
+    //   failing rather than the actual invoke(). Which in turn suggests the wrong class
+    //   is being used, or that getMethod() is being used instead of getDeclaredMethod().
+
     /*
      * testPrivateInvokeVirtual
      *
      * interface I {
-     *   default private int privateM() { return 1; }
+     *           private int privateM() { return 1; }
      *   default public  int m()        { return (I)this.privateM(); } // invokevirtual
      * }
      * class C implements I {}
@@ -85,13 +102,13 @@ public class PrivateMethodsTest extends DefMethTest {
      * testPrivateInvokeIntf
      *
      * interface I {
-     *   default private int privateM() { return 1; }
+     *           private int privateM() { return 1; }
      *   default public  int m()        { return (I)this.privateM(); } // invokeinterface
      * }
      * class C implements I {}
      *
-     * TEST: I o = new C(); o.m()I throws IncompatibleClassChangeError
-     * TEST: C o = new C(); o.m()I throws IncompatibleClassChangeError
+     * TEST: I o = new C(); o.m()I returns 1
+     * TEST: C o = new C(); o.m()I returns 1
      */
     public void testPrivateInvokeIntf() {
         TestBuilder b = factory.getBuilder();
@@ -105,8 +122,8 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
-         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
+        b.test().callSite(I, C, "m", "()I").returns(1).done()
+         .test().callSite(C, C, "m", "()I").returns(1).done()
 
         .run();
     }
@@ -115,13 +132,13 @@ public class PrivateMethodsTest extends DefMethTest {
      * testPrivateInvokeStatic
      *
      * interface I {
-     *   default private int privateM() { return 1; }
+     *           private int privateM() { return 1; }
      *   default public  int m()        { return I.privateM(); } // invokestatic
      * }
      * class C implements I {}
      *
-     * TEST: I o = new C(); o.m()I throws LinkageError
-     * TEST: C o = new C(); o.m()I throws LinkageError
+     * TEST: I o = new C(); o.m()I throws IncompatibleClassChangeError
+     * TEST: C o = new C(); o.m()I throws IncompatibleClassChangeError
      */
     public void testPrivateInvokeStatic() {
         TestBuilder b = factory.getBuilder();
@@ -135,8 +152,8 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(I).build();
 
-        b.test().callSite(I, C, "m", "()I").throws_(LinkageError.class).done()
-         .test().callSite(C, C, "m", "()I").throws_(LinkageError.class).done()
+        b.test().callSite(I, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
+         .test().callSite(C, C, "m", "()I").throws_(IncompatibleClassChangeError.class).done()
 
         .run();
     }
@@ -146,8 +163,8 @@ public class PrivateMethodsTest extends DefMethTest {
      * testPrivateCallSameClass
      *
      * interface I {
-     *   default private privateM()I { return 1; }
-     *   default public int m() { return I.super.privateM(); }
+     *           private privateM()I { return 1; }
+     *   default public int m() { return I.super.privateM(); } // invokespecial
      * }
      * class C implements I {}
      *
@@ -178,7 +195,7 @@ public class PrivateMethodsTest extends DefMethTest {
      * Attempt to call from subinterface fails
 
      * interface I {
-     *   default private privateM()I { return 1; }
+     *   private privateM()I { return 1; }
      * }
      * J, K, L use invokespecial
      * interface J extends I {
@@ -248,7 +265,7 @@ public class PrivateMethodsTest extends DefMethTest {
      * Attempt to call from subclass fails
      *
      * interface I {
-     *   default private privateM()I { return 1; }
+     *   private privateM()I { return 1; }
      * }
      * class C implements I {
      *   public int m() { return I.super.privateM(); }
@@ -260,9 +277,9 @@ public class PrivateMethodsTest extends DefMethTest {
      *   public int m() { return C.super.privateM(); }
      * }
      *
-     * TEST: { C o = new C(); o.m()I throws LinkageError }
-     * TEST: { D o = new D(); o.m()I throws LinkageError }
-     * TEST: { E o = new E(); o.m()I throws NoSuchMethodError; }
+     * TEST: { C o = new C(); o.m()I throws IllegalAccessError (or VerifyError) }
+     * TEST: { D o = new D(); o.m()I throws VerifyError }
+     * TEST: { E o = new E(); o.m()I throws NoSuchMethodError (or VerifyError); }
      */
     @NotApplicableFor(modes = { REDEFINITION }) // Can't redefine a class that gets error during loading
     public void testPrivateCallImplClass() {
@@ -289,16 +306,19 @@ public class PrivateMethodsTest extends DefMethTest {
             .build();
 
         Class eeExpectedClass;
+        Class ccExpectedClass;
         if (factory.getVer() >= 52) {
             eeExpectedClass = NoSuchMethodError.class;
+            ccExpectedClass = IllegalAccessError.class;
         } else {
             // The test gets a VerifyError in this case due to an
             // invokespecial IMR bytecode.  This was not allowed
             // until class file version 52.  (See 8030249.)
             eeExpectedClass = VerifyError.class;
+            ccExpectedClass = VerifyError.class;
         }
-        b.test().callSite(C, C, "m", "()I").throws_(LinkageError.class).done()
-         .test().callSite(D, D, "m", "()I").throws_(LinkageError.class).done()
+        b.test().callSite(C, C, "m", "()I").throws_(ccExpectedClass).done()
+         .test().callSite(D, D, "m", "()I").throws_(VerifyError.class).done()
          .test().callSite(E, E, "m", "()I").throws_(eeExpectedClass).done()
 
         .run();
@@ -308,18 +328,18 @@ public class PrivateMethodsTest extends DefMethTest {
     //   method overriding
 
     /*
-     * testPrivateDefault
+     * testPrivate
      *
      * interface I {
-     *   default private int m() { return 1; }
+     *   private int m() { return 1; }
      * }
      * class C implements I {}
      *
      * TEST: { I o = new C(); o.m()I throws IllegalAccessError; }
      *                 -mode reflect throws NoSuchMethodException
-     * TEST: { C o = new C(); o.m()I throws java/lang/NoSuchMethodError; }
+     * TEST: { C o = new C(); o.m()I throws NoSuchMethodError; }
      */
-    public void testPrivateDefault() {
+    public void testPrivate() {
         TestBuilder b = factory.getBuilder();
 
         Interface I = b.intf("I")
@@ -343,10 +363,10 @@ public class PrivateMethodsTest extends DefMethTest {
     }
 
     /*
-     * testPrivateDefaultVsConcrete
+     * testPrivateVsConcrete
      *
      * interface I {
-     *   default private int m() { return 1; }
+     *   private int m() { return 1; }
      * }
      * class C implements I {
      *   public int m() { return 2; }
@@ -356,7 +376,7 @@ public class PrivateMethodsTest extends DefMethTest {
      *                 -mode reflect throws NoSuchMethodException
      * TEST: { C o = new C(); o.m()I  == 2; }
      */
-    public void testPrivateDefaultVsConcrete() {
+    public void testPrivateVsConcrete() {
         TestBuilder b = factory.getBuilder();
 
         Interface I = b.intf("I")
@@ -385,7 +405,7 @@ public class PrivateMethodsTest extends DefMethTest {
      * testPublicOverridePrivate
      *
      * interface I {
-     *   default private int m() { return 1; }
+     *   private int m() { return 1; }
      * }
      * interface J extends I {
      *   default public int m() { return 2; }
@@ -433,21 +453,13 @@ public class PrivateMethodsTest extends DefMethTest {
      *   default public int m() { return 1; }
      * }
      * interface J extends I {
-     *   default private int m() { return 2; }
+     *   private int m() { return 2; }
      * }
      * class C implements J {}
      *
      * TEST: { I o = new C(); o.m()I  == 1; }
      * TEST: { J o = new C(); o.m()I  == IllegalAccessError; } II J.m priv
      * TEST: { C o = new C(); o.m()I  == 1; }
-     */
-    /*
-
-        REFLECTION:
-  Test2_J_C_m                   : FAILED
-    nsk.share.TestFailure: Caught exception as expected, but its type is wrong:
-      expected: java.lang.IllegalAccessError;
-      actual: java.lang.NoSuchMethodException.
      */
     public void testPrivateOverrideDefault() {
         TestBuilder b = factory.getBuilder();
@@ -475,7 +487,7 @@ public class PrivateMethodsTest extends DefMethTest {
      * testPrivateReabstract
      *
      * interface I {
-     *   default private int m() { return 1; }
+     *   private int m() { return 1; }
      * }
      * interface J extends I {
      *   abstract public int m();
@@ -522,22 +534,13 @@ public class PrivateMethodsTest extends DefMethTest {
      *   abstract public int m();
      * }
      * interface J extends I {
-     *   default private int m() { return 1; }
+     *   private int m() { return 1; }
      * }
      * class C implements J {}
      *
      * TEST: { I o = new C(); o.m()I throws AbstractMethodError }
-     * TEST: { J o = new C(); o.m()I throws IncompatibleClassChangeError }
+     * TEST: { J o = new C(); o.m()I throws IllegalAccessError }
      * TEST: { C o = new C(); o.m()I throws AbstractMethodError }
-     */
-    /*
-         REFLECTION:
-  Test1_I_C_m                   : FAILED
-    nsk.share.TestFailure: No exception was thrown: java.lang.AbstractMethodError
-  Test2_J_C_m                   : FAILED
-    nsk.share.TestFailure: No exception was thrown: java.lang.AbstractMethodError
-  Test3_C_C_m                   : FAILED
-    nsk.share.TestFailure: No exception was thrown: java.lang.AbstractMethodError
      */
     public void testPrivateOverrideAbstract() {
         TestBuilder b = factory.getBuilder();
@@ -553,24 +556,17 @@ public class PrivateMethodsTest extends DefMethTest {
 
         ConcreteClass C = b.clazz("C").implement(J).build();
 
-        Class expectedClass;
-        if (factory.getExecutionMode().equals("REFLECTION")) {
-            expectedClass = IllegalAccessException.class;
-        } else {
-            expectedClass = IncompatibleClassChangeError.class;
-        }
-
         b.test().callSite(I, C, "m", "()I").throws_(AbstractMethodError.class).done()
-         .test().privateCallSite(J, C, "m", "()I").throws_(expectedClass).done()
+         .test().privateCallSite(J, C, "m", "()I").throws_(IllegalAccessError.class).done()
          .test().callSite(C, C, "m", "()I").throws_(AbstractMethodError.class).done()
          .run();
     }
 
     /*
-     * testPrivateInheritedDefault
+     * testPrivateInherited
      *
      * interface I {
-     *   default private int m() { return 1; }
+     *   private int m() { return 1; }
      * }
      * class B implements I {}
      * class C extends B {}
@@ -580,7 +576,7 @@ public class PrivateMethodsTest extends DefMethTest {
      * TEST: { B o = new C(); o.m()I throws NoSuchMethodError }
      * TEST: { C o = new C(); o.m()I throws NoSuchMethodError }
      */
-    public void testPrivateInheritedDefault() {
+    public void testPrivateInherited() {
         TestBuilder b = factory.getBuilder();
 
         Interface I = b.intf("I")
@@ -607,10 +603,10 @@ public class PrivateMethodsTest extends DefMethTest {
     }
 
     /*
-     * testPrivateDefaultVsConcreteInherited
+     * testPrivateVsConcreteInherited
      *
      * interface I {
-     *    default private int m() { return 1; }
+     *    private int m() { return 1; }
      * }
      * class B {
      *   public int m() { return 2; }
@@ -622,7 +618,7 @@ public class PrivateMethodsTest extends DefMethTest {
      * TEST: { B o = new C(); o.m()I  == 2; }
      * TEST: { C o = new C(); o.m()I  == 2; }
      */
-    public void testPrivateDefaultVsConcreteInherited() {
+    public void testPrivateVsConcreteInherited() {
         TestBuilder b = factory.getBuilder();
 
         Interface I = b.intf("I")
@@ -653,10 +649,10 @@ public class PrivateMethodsTest extends DefMethTest {
     /*
      * testPrivateConflict
      *
-     * Conflicting default methods
+     * Conflicting methods
      *
      * interface I {
-     *   default private int m() { return 1; }
+     *   private int m() { return 1; }
      * }
      * interface J {
      *   default public int m() { return 2; }

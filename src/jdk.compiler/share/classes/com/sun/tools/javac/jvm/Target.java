@@ -167,4 +167,17 @@ public enum Target {
     public boolean allApiModulesAreRoots() {
         return compareTo(JDK1_11) >= 0;
     }
+
+    /** Does the target VM support nestmate access?
+     */
+    public boolean hasNestmateAccess() {
+        return compareTo(JDK1_11) >= 0;
+    }
+
+    /** Does the target VM support virtual private invocations?
+     */
+    public boolean hasVirtualPrivateInvoke() {
+        return compareTo(JDK1_11) >= 0;
+    }
+
 }

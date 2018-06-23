@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,15 +65,17 @@ static JNINativeMethod methods[] = {
     {"getDeclaredMethods0","(Z)[" MHD,      (void *)&JVM_GetClassDeclaredMethods},
     {"getDeclaredConstructors0","(Z)[" CTR, (void *)&JVM_GetClassDeclaredConstructors},
     {"getProtectionDomain0", "()" PD,       (void *)&JVM_GetProtectionDomain},
-    {"getDeclaredClasses0",  "()[" CLS,      (void *)&JVM_GetDeclaredClasses},
+    {"getDeclaredClasses0",  "()[" CLS,     (void *)&JVM_GetDeclaredClasses},
     {"getDeclaringClass0",   "()" CLS,      (void *)&JVM_GetDeclaringClass},
     {"getSimpleBinaryName0", "()" STR,      (void *)&JVM_GetSimpleBinaryName},
     {"getGenericSignature0", "()" STR,      (void *)&JVM_GetClassSignature},
-    {"getRawAnnotations",      "()" BA,        (void *)&JVM_GetClassAnnotations},
+    {"getRawAnnotations",      "()" BA,     (void *)&JVM_GetClassAnnotations},
     {"getConstantPool",     "()" CPL,       (void *)&JVM_GetClassConstantPool},
-    {"desiredAssertionStatus0","("CLS")Z",(void *)&JVM_DesiredAssertionStatus},
+    {"desiredAssertionStatus0","("CLS")Z",  (void *)&JVM_DesiredAssertionStatus},
     {"getEnclosingMethod0", "()[" OBJ,      (void *)&JVM_GetEnclosingMethodInfo},
     {"getRawTypeAnnotations", "()" BA,      (void *)&JVM_GetClassTypeAnnotations},
+    {"getNestHost0",         "()" CLS,      (void *)&JVM_GetNestHost},
+    {"getNestMembers0",      "()[" CLS,     (void *)&JVM_GetNestMembers},
 };
 
 #undef OBJ

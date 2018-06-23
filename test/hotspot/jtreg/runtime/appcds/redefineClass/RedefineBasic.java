@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,21 @@
 
 import sun.hotspot.WhiteBox;
 
+// package access top-level class to avoid problem with RedefineClassHelper
+// and nested types.
+class RedefineBasic_B {
+    public static void okToCallBeforeRedefine() {
+        System.out.println("okToCallBeforeRedefine");
+    }
+    public static void okToCallAfterRedefine() {
+        throw new RuntimeException("okToCallAfterRedefine is called before redefinition, test failed");
+    }
+}
+
 public class RedefineBasic {
 
     public static String newB =
-        " class RedefineBasic$B { " +
+        " class RedefineBasic_B { " +
         " public static void okToCallBeforeRedefine() { " +
         "    throw new RuntimeException(\"newB: okToCallBeforeRedefine is " +
         "    called after redefinition, test failed\"); }" +
@@ -36,23 +47,14 @@ public class RedefineBasic {
         " } ";
 
 
-    static class B {
-        public static void okToCallBeforeRedefine() {
-            System.out.println("okToCallBeforeRedefine");
-        }
-        public static void okToCallAfterRedefine() {
-            throw new RuntimeException(
-            "okToCallAfterRedefine is called before redefinition, test failed");
-        }
-    }
 
-    static class SubclassOfB extends B {
+    static class SubclassOfB extends RedefineBasic_B {
         public static void testAfterRedefine() {
-            B.okToCallAfterRedefine();
+            RedefineBasic_B.okToCallAfterRedefine();
         }
     }
 
-    class Subclass2OfB extends B {
+    class Subclass2OfB extends RedefineBasic_B {
         public void testAfterRedefine() {
             super.okToCallAfterRedefine();
         }
@@ -74,17 +76,17 @@ public class RedefineBasic {
         WhiteBox wb = WhiteBox.getWhiteBox();
 
         verifyClassIsShared(wb, RedefineBasic.class);
-        verifyClassIsShared(wb, B.class);
+        verifyClassIsShared(wb, RedefineBasic_B.class);
         verifyClassIsShared(wb, SubclassOfB.class);
         verifyClassIsShared(wb, Subclass2OfB.class);
 
         // (1) Test case: verify that original B works as expected
         // and that redefined B is shared and works as expected,
         // with new behavior
-        B.okToCallBeforeRedefine();
-        RedefineClassHelper.redefineClass(B.class, newB);
-        verifyClassIsShared(wb, B.class);
-        B.okToCallAfterRedefine();
+        RedefineBasic_B.okToCallBeforeRedefine();
+        RedefineClassHelper.redefineClass(RedefineBasic_B.class, newB);
+        verifyClassIsShared(wb, RedefineBasic_B.class);
+        RedefineBasic_B.okToCallAfterRedefine();
 
         // Static subclass of the super:
         // 1. Make sure it is still shared

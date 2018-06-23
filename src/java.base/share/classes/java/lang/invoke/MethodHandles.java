@@ -469,15 +469,20 @@ public class MethodHandles {
      * methods as if they were normal methods, but the JVM bytecode verifier rejects them.
      * A lookup of such an internal method will produce a {@code NoSuchMethodException}.
      * <p>
-     * In some cases, access between nested classes is obtained by the Java compiler by creating
-     * an wrapper method to access a private method of another class
-     * in the same top-level declaration.
+     * If the relationship between nested types is expressed directly through the
+     * {@code NestHost} and {@code NestMembers} attributes
+     * (see the Java Virtual Machine Specification, sections 4.7.28 and 4.7.29),
+     * then the associated {@code Lookup} object provides direct access to
+     * the lookup class and all of its nestmates
+     * (see {@link java.lang.Class#getNestHost Class.getNestHost}).
+     * Otherwise, access between nested classes is obtained by the Java compiler creating
+     * a wrapper method to access a private method of another class in the same nest.
      * For example, a nested class {@code C.D}
      * can access private members within other related classes such as
      * {@code C}, {@code C.D.E}, or {@code C.B},
      * but the Java compiler may need to generate wrapper methods in
      * those related classes.  In such cases, a {@code Lookup} object on
-     * {@code C.E} would be unable to those private members.
+     * {@code C.E} would be unable to access those private members.
      * A workaround for this limitation is the {@link Lookup#in Lookup.in} method,
      * which can transform a lookup on {@code C.E} into one on any of those other
      * classes, without special elevation of privilege.
@@ -499,11 +504,12 @@ public class MethodHandles {
      * <em>Discussion of private access:</em>
      * We say that a lookup has <em>private access</em>
      * if its {@linkplain #lookupModes lookup modes}
-     * include the possibility of accessing {@code private} members.
+     * include the possibility of accessing {@code private} members
+     * (which includes the private members of nestmates).
      * As documented in the relevant methods elsewhere,
      * only lookups with private access possess the following capabilities:
      * <ul style="font-size:smaller;">
-     * <li>access private fields, methods, and constructors of the lookup class
+     * <li>access private fields, methods, and constructors of the lookup class and its nestmates
      * <li>create method handles which invoke <a href="MethodHandles.Lookup.html#callsens">caller sensitive</a> methods,
      *     such as {@code Class.forName}
      * <li>create method handles which {@link Lookup#findSpecial emulate invokespecial} instructions
@@ -728,9 +734,7 @@ public class MethodHandles {
          *  <p>
          *  A freshly-created lookup object
          *  on the {@linkplain java.lang.invoke.MethodHandles#lookup() caller's class} has
-         *  all possible bits set, except {@code UNCONDITIONAL}. The lookup can be used to
-         *  access all members of the caller's class, all public types in the caller's module,
-         *  and all public types in packages exported by other modules to the caller's module.
+         *  all possible bits set, except {@code UNCONDITIONAL}.
          *  A lookup object on a new lookup class
          *  {@linkplain java.lang.invoke.MethodHandles.Lookup#in created from a previous lookup object}
          *  may have some mode bits set to zero.
@@ -1106,8 +1110,9 @@ assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
          * The method and all its argument types must be accessible to the lookup object.
          * <p>
          * When called, the handle will treat the first argument as a receiver
-         * and dispatch on the receiver's type to determine which method
+         * and, for non-private methods, dispatch on the receiver's type to determine which method
          * implementation to enter.
+         * For private methods the named method in {@code refc} will be invoked on the receiver.
          * (The dispatching action is identical with that performed by an
          * {@code invokevirtual} or {@code invokeinterface} instruction.)
          * <p>
@@ -1171,7 +1176,6 @@ assertEquals("", (String) MH_newString.invokeExact());
          * @throws NoSuchMethodException if the method does not exist
          * @throws IllegalAccessException if access checking fails,
          *                                or if the method is {@code static},
-         *                                or if the method is {@code private} method of interface,
          *                                or if the method's variable arity modifier bit
          *                                is set and {@code asVarargsCollector} fails
          * @exception SecurityException if a security manager is present and it
@@ -2225,17 +2229,13 @@ return mh1;
             return "member is private to package";
         }
 
-        private static final boolean ALLOW_NESTMATE_ACCESS = false;
-
         private void checkSpecialCaller(Class<?> specialCaller, Class<?> refc) throws IllegalAccessException {
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
             if (!hasPrivateAccess()
                 || (specialCaller != lookupClass()
                        // ensure non-abstract methods in superinterfaces can be special-invoked
-                    && !(refc != null && refc.isInterface() && refc.isAssignableFrom(specialCaller))
-                    && !(ALLOW_NESTMATE_ACCESS &&
-                         VerifyAccess.isSamePackageMember(specialCaller, lookupClass()))))
+                    && !(refc != null && refc.isInterface() && refc.isAssignableFrom(specialCaller))))
                 throw new MemberName(specialCaller).
                     makeAccessException("no private access for invokespecial", this);
         }
@@ -2246,9 +2246,7 @@ return mh1;
             if (!method.isProtected() || method.isStatic()
                 || allowedModes == TRUSTED
                 || method.getDeclaringClass() == lookupClass()
-                || VerifyAccess.isSamePackage(method.getDeclaringClass(), lookupClass())
-                || (ALLOW_NESTMATE_ACCESS &&
-                    VerifyAccess.isSamePackageMember(method.getDeclaringClass(), lookupClass())))
+                || VerifyAccess.isSamePackage(method.getDeclaringClass(), lookupClass()))
                 return false;
             return true;
         }
@@ -2288,6 +2286,7 @@ return mh1;
         private MethodHandle getDirectMethodCommon(byte refKind, Class<?> refc, MemberName method,
                                                    boolean checkSecurity,
                                                    boolean doRestrict, Class<?> boundCallerClass) throws IllegalAccessException {
+
             checkMethod(refKind, refc, method);
             // Optionally check with the security manager; this isn't needed for unreflect* calls.
             if (checkSecurity)
@@ -2300,6 +2299,7 @@ return mh1;
                 refc != lookupClass().getSuperclass() &&
                 refc.isAssignableFrom(lookupClass())) {
                 assert(!method.getName().equals("<init>"));  // not this code path
+
                 // Per JVMS 6.5, desc. of invokespecial instruction:
                 // If the method is in a superclass of the LC,
                 // and if our original search was above LC.super,

@@ -3202,27 +3202,55 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   prepare_invoke(byte_no, Rinterface, Rret, Rmethod, O0_recv, O1_flags);
 
-  // get receiver klass
+  // First check for Object case, then private interface method,
+  // then regular interface method.
+
+  // get receiver klass - this is also a null check
   __ null_check(O0_recv, oopDesc::klass_offset_in_bytes());
   __ load_klass(O0_recv, O2_Klass);
 
   // Special case of invokeinterface called for virtual method of
-  // java.lang.Object.  See cpCacheOop.cpp for details.
-  // This code isn't produced by javac, but could be produced by
-  // another compliant java compiler.
-  Label notMethod;
+  // java.lang.Object.  See cpCache.cpp for details.
+  Label notObjectMethod;
   __ set((1 << ConstantPoolCacheEntry::is_forced_virtual_shift), Rscratch);
   __ btst(O1_flags, Rscratch);
-  __ br(Assembler::zero, false, Assembler::pt, notMethod);
+  __ br(Assembler::zero, false, Assembler::pt, notObjectMethod);
   __ delayed()->nop();
 
   invokeinterface_object_method(O2_Klass, Rinterface, Rret, O1_flags);
 
-  __ bind(notMethod);
-
-  Register Rtemp = O1_flags;
+  __ bind(notObjectMethod);
 
   Label L_no_such_interface;
+
+  // Check for private method invocation - indicated by vfinal
+  Label notVFinal;
+  {
+    __ set((1 << ConstantPoolCacheEntry::is_vfinal_shift), Rscratch);
+    __ btst(O1_flags, Rscratch);
+    __ br(Assembler::zero, false, Assembler::pt, notVFinal);
+    __ delayed()->nop();
+
+    Label subtype;
+    Register Rtemp = O1_flags;
+    __ check_klass_subtype(O2_Klass, Rinterface, Rscratch, Rtemp, subtype);
+    // If we get here the typecheck failed
+    __ ba(L_no_such_interface);
+    __ delayed()->nop();
+    __ bind(subtype);
+
+    // do the call
+    Register Rcall = Rinterface;
+    __ mov(Rmethod, G5_method);
+    assert_different_registers(Rcall, G5_method, Gargs, Rret);
+
+    __ profile_arguments_type(G5_method, Rcall, Gargs, true);
+    __ profile_final_call(Rscratch);
+    __ call_from_interpreter(Rcall, Gargs, Rret);
+  }
+  __ bind(notVFinal);
+
+  Register Rtemp = O1_flags;
 
   // Receiver subtype check against REFC.
   __ lookup_interface_method(// inputs: rec. class, interface, itable index

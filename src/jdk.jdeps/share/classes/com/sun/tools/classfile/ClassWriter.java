@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,6 +529,12 @@ public class ClassWriter {
         }
 
         @Override
+        public Void visitNestHost(NestHost_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.top_index);
+            return null;
+        }
+
+        @Override
         public Void visitMethodParameters(MethodParameters_attribute attr, ClassOutputStream out) {
             out.writeByte(attr.method_parameter_table.length);
             for (MethodParameters_attribute.Entry e : attr.method_parameter_table) {
@@ -623,6 +629,15 @@ public class ClassWriter {
         @Override
         public Void visitModuleTarget(ModuleTarget_attribute attr, ClassOutputStream out) {
             out.writeShort(attr.target_platform_index);
+            return null;
+        }
+
+        @Override
+        public Void visitNestMembers(NestMembers_attribute attr, ClassOutputStream out) {
+            out.writeShort(attr.members_indexes.length);
+            for (int i : attr.members_indexes) {
+                out.writeShort(i);
+            }
             return null;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,6 +395,9 @@ class VirtualMachineImpl extends MirrorImpl
             case JDWP.Error.METHOD_MODIFIERS_CHANGE_NOT_IMPLEMENTED :
                 throw new UnsupportedOperationException(
                     "changes to method modifiers not implemented");
+            case JDWP.Error.CLASS_ATTRIBUTE_CHANGE_NOT_IMPLEMENTED :
+                throw new UnsupportedOperationException(
+                    "changes to class attribute not implemented");
             case JDWP.Error.NAMES_DONT_MATCH :
                 throw new NoClassDefFoundError(
                     "class names do not match");

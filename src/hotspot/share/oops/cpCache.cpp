@@ -174,17 +174,37 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
 
   int byte_no = -1;
   bool change_to_virtual = false;
-
+  InstanceKlass* holder = NULL;  // have to declare this outside the switch
   switch (invoke_code) {
     case Bytecodes::_invokeinterface:
-      // We get here from InterpreterRuntime::resolve_invoke when an invokeinterface
-      // instruction somehow links to a non-interface method (in Object).
-      // In that case, the method has no itable index and must be invoked as a virtual.
-      // Set a flag to keep track of this corner case.
-      assert(method->is_public(), "Calling non-public method in Object with invokeinterface");
-      change_to_virtual = true;
+      holder = method->method_holder();
+      // check for private interface method invocations
+      if (vtable_index == Method::nonvirtual_vtable_index && holder->is_interface() ) {
+        assert(method->is_private(), "unexpected non-private method");
+        assert(method->can_be_statically_bound(), "unexpected non-statically-bound method");
+        // set_f2_as_vfinal_method checks if is_vfinal flag is true.
+        set_method_flags(as_TosState(method->result_type()),
+                         (                             1      << is_vfinal_shift) |
+                         ((method->is_final_method() ? 1 : 0) << is_final_shift),
+                         method()->size_of_parameters());
+        set_f2_as_vfinal_method(method());
+        byte_no = 2;
+        set_f1(holder); // interface klass*
+        break;
+      }
+      else {
+        // We get here from InterpreterRuntime::resolve_invoke when an invokeinterface
+        // instruction links to a non-interface method (in Object). This can happen when
+        // an interface redeclares an Object method (like CharSequence declaring toString())
+        // or when invokeinterface is used explicitly.
+        // In that case, the method has no itable index and must be invoked as a virtual.
+        // Set a flag to keep track of this corner case.
+        assert(holder->is_interface() || holder == SystemDictionary::Object_klass(), "unexpected holder class");
+        assert(method->is_public(), "Calling non-public method in Object with invokeinterface");
+        change_to_virtual = true;
 
-      // ...and fall through as if we were handling invokevirtual:
+        // ...and fall through as if we were handling invokevirtual:
+      }
     case Bytecodes::_invokevirtual:
       {
         if (!is_vtable_call) {
@@ -237,7 +257,7 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
     // is executed.
     if (invoke_code != Bytecodes::_invokespecial || !sender_is_interface ||
         method->name() == vmSymbols::object_initializer_name()) {
-    set_bytecode_1(invoke_code);
+      set_bytecode_1(invoke_code);
     }
   } else if (byte_no == 2)  {
     if (change_to_virtual) {
@@ -257,7 +277,18 @@ void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_co
       // We set bytecode_2() to _invokevirtual.
       // See also interpreterRuntime.cpp. (8/25/2000)
     } else {
-      assert(invoke_code == Bytecodes::_invokevirtual, "");
+      assert(invoke_code == Bytecodes::_invokevirtual ||
+             (invoke_code == Bytecodes::_invokeinterface &&
+              ((method->is_private() ||
+                (method->is_final() && method->method_holder() == SystemDictionary::Object_klass())))),
+             "unexpected invocation mode");
+      if (invoke_code == Bytecodes::_invokeinterface &&
+          (method->is_private() || method->is_final())) {
+        // We set bytecode_1() to _invokeinterface, because that is the
+        // bytecode # used by the interpreter to see if it is resolved.
+        // We set bytecode_2() to _invokevirtual.
+        set_bytecode_1(invoke_code);
+      }
     }
     // set up for invokevirtual, even if linking for invokeinterface also:
     set_bytecode_2(Bytecodes::_invokevirtual);

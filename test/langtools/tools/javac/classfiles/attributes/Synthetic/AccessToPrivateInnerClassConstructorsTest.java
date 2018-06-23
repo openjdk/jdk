@@ -31,7 +31,7 @@
  * @library /tools/lib /tools/javac/lib ../lib
  * @build toolbox.ToolBox InMemoryFileManager TestResult
  * @build AccessToPrivateInnerClassConstructorsTest SyntheticTestDriver ExpectedClass ExpectedClasses
- * @run main SyntheticTestDriver AccessToPrivateInnerClassConstructorsTest 1
+ * @run main SyntheticTestDriver AccessToPrivateInnerClassConstructorsTest 0
  * @run main AccessToPrivateInnerClassConstructorsTest
  */
 
@@ -45,7 +45,7 @@
                 "<init>(AccessToPrivateInnerClassConstructorsTest, " +
                        "AccessToPrivateInnerClassConstructorsTest$1)"},
         expectedNumberOfSyntheticFields = 1,
-        expectedNumberOfSyntheticMethods = 2)
+        expectedNumberOfSyntheticMethods = 0)
 @ExpectedClass(className = "AccessToPrivateInnerClassConstructorsTest$1Local",
         expectedMethods = {"<init>(AccessToPrivateInnerClassConstructorsTest)"},
         expectedNumberOfSyntheticFields = 1)

@@ -4276,24 +4276,40 @@ void TemplateTable::invokeinterface(int byte_no) {
   const Register Rinterf = R5_tmp;
   const Register Rindex  = R4_tmp;
   const Register Rflags  = R3_tmp;
-  const Register Rklass  = R3_tmp;
+  const Register Rklass  = R2_tmp; // Note! Same register with Rrecv
 
   prepare_invoke(byte_no, Rinterf, Rmethod, Rrecv, Rflags);
 
-  // Special case of invokeinterface called for virtual method of
-  // java.lang.Object.  See cpCacheOop.cpp for details.
-  // This code isn't produced by javac, but could be produced by
-  // another compliant java compiler.
-  Label notMethod;
-  __ tbz(Rflags, ConstantPoolCacheEntry::is_forced_virtual_shift, notMethod);
+  // First check for Object case, then private interface method,
+  // then regular interface method.
 
+  // Special case of invokeinterface called for virtual method of
+  // java.lang.Object.  See cpCache.cpp for details.
+  Label notObjectMethod;
+  __ tbz(Rflags, ConstantPoolCacheEntry::is_forced_virtual_shift, notObjectMethod);
   invokevirtual_helper(Rmethod, Rrecv, Rflags);
-  __ bind(notMethod);
+  __ bind(notObjectMethod);
 
   // Get receiver klass into Rklass - also a null check
   __ load_klass(Rklass, Rrecv);
 
+  // Check for private method invocation - indicated by vfinal
   Label no_such_interface;
+
+  Label notVFinal;
+  __ tbz(Rflags, ConstantPoolCacheEntry::is_vfinal_shift, notVFinal);
+
+  Label subtype;
+  __ check_klass_subtype(Rklass, Rinterf, R1_tmp, R3_tmp, noreg, subtype);
+  // If we get here the typecheck failed
+  __ b(no_such_interface);
+  __ bind(subtype);
+
+  // do the call
+  __ profile_final_call(R0_tmp);
+  __ jump_from_interpreted(Rmethod);
+
+  __ bind(notVFinal);
 
   // Receiver subtype check against REFC.
   __ lookup_interface_method(// inputs: rec. class, interface

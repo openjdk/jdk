@@ -3792,30 +3792,61 @@ void TemplateTable::invokeinterface(int byte_no) {
   prepare_invoke(byte_no, rax, rbx,  // get f1 Klass*, f2 Method*
                  rcx, rdx); // recv, flags
 
-  // rax: reference klass (from f1)
+  // rax: reference klass (from f1) if interface method
   // rbx: method (from f2)
   // rcx: receiver
   // rdx: flags
 
+  // First check for Object case, then private interface method,
+  // then regular interface method.
+
   // Special case of invokeinterface called for virtual method of
-  // java.lang.Object.  See cpCacheOop.cpp for details.
-  // This code isn't produced by javac, but could be produced by
-  // another compliant java compiler.
-  Label notMethod;
+  // java.lang.Object.  See cpCache.cpp for details.
+  Label notObjectMethod;
   __ movl(rlocals, rdx);
   __ andl(rlocals, (1 << ConstantPoolCacheEntry::is_forced_virtual_shift));
-
-  __ jcc(Assembler::zero, notMethod);
-
+  __ jcc(Assembler::zero, notObjectMethod);
   invokevirtual_helper(rbx, rcx, rdx);
-  __ bind(notMethod);
+  // no return from above
+  __ bind(notObjectMethod);
+
+  Label no_such_interface; // for receiver subtype check
+  Register recvKlass; // used for exception processing
+
+  // Check for private method invocation - indicated by vfinal
+  Label notVFinal;
+  __ movl(rlocals, rdx);
+  __ andl(rlocals, (1 << ConstantPoolCacheEntry::is_vfinal_shift));
+  __ jcc(Assembler::zero, notVFinal);
+
+  // Get receiver klass into rlocals - also a null check
+  __ null_check(rcx, oopDesc::klass_offset_in_bytes());
+  __ load_klass(rlocals, rcx);
+
+  Label subtype;
+  __ check_klass_subtype(rlocals, rax, rbcp, subtype);
+  // If we get here the typecheck failed
+  recvKlass = rdx;
+  __ mov(recvKlass, rlocals); // shuffle receiver class for exception use
+  __ jmp(no_such_interface);
+
+  __ bind(subtype);
+
+  // do the call - rbx is actually the method to call
+
+  __ profile_final_call(rdx);
+  __ profile_arguments_type(rdx, rbx, rbcp, true);
+
+  __ jump_from_interpreted(rbx, rdx);
+  // no return from above
+  __ bind(notVFinal);
 
   // Get receiver klass into rdx - also a null check
   __ restore_locals();  // restore r14
   __ null_check(rcx, oopDesc::klass_offset_in_bytes());
   __ load_klass(rdx, rcx);
 
-  Label no_such_interface, no_such_method;
+  Label no_such_method;
 
   // Preserve method for throw_AbstractMethodErrorVerbose.
   __ mov(rcx, rbx);
@@ -3877,12 +3908,12 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
   // Pass arguments for generating a verbose error message.
 #ifdef _LP64
-  Register recvKlass = c_rarg1;
+  recvKlass = c_rarg1;
   Register method    = c_rarg2;
   if (recvKlass != rdx) { __ movq(recvKlass, rdx); }
   if (method != rcx)    { __ movq(method, rcx);    }
 #else
-  Register recvKlass = rdx;
+  recvKlass = rdx;
   Register method    = rcx;
 #endif
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose),
