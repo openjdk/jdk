@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,15 @@ import static javax.swing.UIManager.getInstalledLookAndFeels;
  * @test
  * @key headful
  * @bug 5036022
- * @author Sergey Bylokhov
  */
-public class WrongEditorTextFieldFont implements Runnable {
+public class FontSetByUser implements Runnable {
 
     private static final Font USERS_FONT = new Font("dialog", Font.BOLD, 41);
 
     public static void main(final String[] args) throws Exception {
         for (final UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
             SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            SwingUtilities.invokeAndWait(new WrongEditorTextFieldFont());
+            SwingUtilities.invokeAndWait(new FontSetByUser());
         }
     }
 

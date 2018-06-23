@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,74 +21,59 @@
  * questions.
  */
 
-/*
- * @test
- * @key headful
- * @bug 6421058
- * @summary Verify font of the text field is changed to the font of
- *          JSpinner if the font of text field was NOT set by the user
- * @run main bug6421058
- */
-
+import java.awt.EventQueue;
 import java.awt.Font;
-import javax.swing.JFrame;
+
+import javax.swing.JFormattedTextField;
 import javax.swing.JSpinner;
 import javax.swing.JSpinner.DefaultEditor;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.plaf.UIResource;
+
 import static javax.swing.UIManager.getInstalledLookAndFeels;
 
-public class bug6421058 implements Runnable {
+/**
+ * @test
+ * @key headful
+ * @bug 8205144
+ * @summary Verify font of the text field is changed to the font of
+ *          JSpinner if the font of text field was NOT set by the user and look
+ *          and feel tried to set it to default font of the TextUI
+ */
+public final class FontSetByLaF {
 
     public static void main(final String[] args) throws Exception {
         for (final UIManager.LookAndFeelInfo laf : getInstalledLookAndFeels()) {
-            SwingUtilities.invokeAndWait(() -> setLookAndFeel(laf));
-            SwingUtilities.invokeAndWait(new bug6421058());
-        }
-    }
+            EventQueue.invokeAndWait(() -> setLookAndFeel(laf));
+            EventQueue.invokeAndWait(() -> {
 
-    @Override
-    public void run() {
-        final JFrame mainFrame = new JFrame();
-        try {
-            testDefaultFont(mainFrame);
-        } finally {
-            mainFrame.dispose();
-        }
-    }
+                JSpinner spinner = new JSpinner();
+                DefaultEditor editor = (DefaultEditor) spinner.getEditor();
+                JFormattedTextField textField = editor.getTextField();
 
-    private static void testDefaultFont(final JFrame frame) {
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                Font before = textField.getFont();
+                SwingUtilities.updateComponentTreeUI(spinner);
+                Font after = textField.getFont();
 
-        JSpinner spinner = new JSpinner();
-        frame.add(spinner);
-        frame.setSize(300, 100);
-        frame.setVisible(true);
-
-        final DefaultEditor editor = (DefaultEditor) spinner.getEditor();
-        final Font editorFont = editor.getTextField().getFont();
-
-        /*
-         * Validate that the font of the text field is changed to the
-         * font of JSpinner if the font of text field was not set by the
-         * user.
-         */
-
-        if (!(editorFont instanceof UIResource)) {
-            throw new RuntimeException("Font must be UIResource");
-        }
-        if (!editorFont.equals(spinner.getFont())) {
-            throw new RuntimeException("Wrong FONT");
+                if (!before.equals(after)) {
+                    System.err.println("Before: " + before);
+                    System.err.println("After: " + after);
+                    throw new RuntimeException();
+                }
+            });
         }
     }
 
     private static void setLookAndFeel(final UIManager.LookAndFeelInfo laf) {
         try {
             UIManager.setLookAndFeel(laf.getClassName());
+            System.err.println("LookAndFeel: " + laf.getClassName());
+        } catch (final UnsupportedLookAndFeelException ignored) {
+            System.err.println(
+                    "Unsupported LookAndFeel: " + laf.getClassName());
         } catch (ClassNotFoundException | InstantiationException |
-                UnsupportedLookAndFeelException | IllegalAccessException e) {
+                IllegalAccessException e) {
             throw new RuntimeException(e);
         }
     }

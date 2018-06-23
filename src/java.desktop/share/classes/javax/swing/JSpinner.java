@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.awt.*;
 import java.awt.event.*;
 
 import javax.swing.event.*;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.UIResource;
 import javax.swing.text.*;
 import javax.swing.plaf.SpinnerUI;
 
@@ -743,20 +745,32 @@ public class JSpinner extends JComponent implements Accessible
 
             Object source = e.getSource();
             String name = e.getPropertyName();
-            if ((source instanceof JFormattedTextField) && "value".equals(name)) {
-                Object lastValue = spinner.getValue();
+            if (source instanceof JFormattedTextField) {
+                if ("value".equals(name)) {
+                    Object lastValue = spinner.getValue();
 
-                // Try to set the new value
-                try {
-                    spinner.setValue(getTextField().getValue());
-                } catch (IllegalArgumentException iae) {
-                    // SpinnerModel didn't like new value, reset
+                    // Try to set the new value
                     try {
-                        ((JFormattedTextField)source).setValue(lastValue);
-                    } catch (IllegalArgumentException iae2) {
-                        // Still bogus, nothing else we can do, the
-                        // SpinnerModel and JFormattedTextField are now out
-                        // of sync.
+                        spinner.setValue(getTextField().getValue());
+                    } catch (IllegalArgumentException iae) {
+                        // SpinnerModel didn't like new value, reset
+                        try {
+                            ((JFormattedTextField)source).setValue(lastValue);
+                        } catch (IllegalArgumentException iae2) {
+                            // Still bogus, nothing else we can do, the
+                            // SpinnerModel and JFormattedTextField are now out
+                            // of sync.
+                        }
+                    }
+                } else if ("font".equals(name)) {
+                    Object newfont = e.getNewValue();
+                    if (newfont instanceof UIResource) {
+                        // The text field font must match the JSpinner font if
+                        // the text field font was not set by the user
+                        Font font = spinner.getFont();
+                        if (!newfont.equals(font)) {
+                            getTextField().setFont(new FontUIResource(font));
+                        }
                     }
                 }
             }
