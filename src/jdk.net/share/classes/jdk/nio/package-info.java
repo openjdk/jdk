@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,9 @@
  */
 
 /**
- * Defines the JDK-specific Networking API.
+ * Defines JDK-specific {@link java.nio.channels.Channel channel} APIs.
  *
- * @moduleGraph
- * @since 9
+ * @since 11
  */
-module jdk.net {
-    exports jdk.net;
-    exports jdk.nio;
-}
 
+package jdk.nio;
