@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,20 +58,6 @@ public class NullPaper {
 
    private static void init()
     {
-        //*** Create instructions for the user here ***
-
-        String[] instructions =
-        {
-         "This test should throw a NullPointerException. ",
-         "If the NullPointerException is correctly thrown ",
-         "by the call to setPaper() then the test succeeds. ",
-         "If no exception is thrown by setPaper() or if an ",
-         "exception other than NullPointerException is thrown ",
-         "then the test fails."
-       };
-      Sysout.createDialog( );
-      Sysout.printInstructions( instructions );
-
     boolean settingNullWorked = false;
 
     try {
@@ -167,8 +153,8 @@ public class NullPaper {
 
    public static synchronized void pass()
     {
-      Sysout.println( "The test passed." );
-      Sysout.println( "The test is over, hit  Ctl-C to stop Java VM" );
+      System.out.println( "The test passed." );
+      System.out.println( "The test is over, hit  Ctl-C to stop Java VM" );
       //first check if this is executing in main thread
       if ( mainThread == Thread.currentThread() )
        {
@@ -193,8 +179,8 @@ public class NullPaper {
 
    public static synchronized void fail( String whyFailed )
     {
-      Sysout.println( "The test failed: " + whyFailed );
-      Sysout.println( "The test is over, hit  Ctl-C to stop Java VM" );
+      System.out.println( "The test failed: " + whyFailed );
+      System.out.println( "The test is over, hit  Ctl-C to stop Java VM" );
       //check if this called from main thread
       if ( mainThread == Thread.currentThread() )
        {
@@ -215,210 +201,3 @@ public class NullPaper {
 class TestPassedException extends RuntimeException
  {
  }
-
-//*********** End Standard Test Machinery Section **********
-
-
-//************ Begin classes defined for the test ****************
-
-// make listeners in a class defined here, and instantiate them in init()
-
-/* Example of a class which may be written as part of a test
-class NewClass implements anInterface
- {
-   static int newVar = 0;
-
-   public void eventDispatched(AWTEvent e)
-    {
-      //Counting events to see if we get enough
-      eventCount++;
-
-      if( eventCount == 20 )
-       {
-         //got enough events, so pass
-
-         NullPaper.pass();
-       }
-      else if( tries == 20 )
-       {
-         //tried too many times without getting enough events so fail
-
-         NullPaper.fail();
-       }
-
-    }// eventDispatched()
-
- }// NewClass class
-
-*/
-
-
-//************** End classes defined for the test *******************
-
-
-
-
-/****************************************************
- Standard Test Machinery
- DO NOT modify anything below -- it's a standard
-  chunk of code whose purpose is to make user
-  interaction uniform, and thereby make it simpler
-  to read and understand someone else's test.
- ****************************************************/
-
-/**
- This is part of the standard test machinery.
- It creates a dialog (with the instructions), and is the interface
-  for sending text messages to the user.
- To print the instructions, send an array of strings to Sysout.createDialog
-  WithInstructions method.  Put one line of instructions per array entry.
- To display a message for the tester to see, simply call Sysout.println
-  with the string to be displayed.
- This mimics System.out.println but works within the test harness as well
-  as standalone.
- */
-
-class Sysout
- {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
- }// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog implements ActionListener
- {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-   Panel  buttonP = new Panel();
-   Button passB = new Button( "pass" );
-   Button failB = new Button( "fail" );
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      passB = new Button( "pass" );
-      passB.setActionCommand( "pass" );
-      passB.addActionListener( this );
-      buttonP.add( "East", passB );
-
-      failB = new Button( "fail" );
-      failB.setActionCommand( "fail" );
-      failB.addActionListener( this );
-      buttonP.add( "West", failB );
-
-      add( "South", buttonP );
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
-   //catch presses of the passed and failed buttons.
-   //simply call the standard pass() or fail() static methods of
-   //NullPaper
-   public void actionPerformed( ActionEvent e )
-    {
-      if( e.getActionCommand() == "pass" )
-       {
-         NullPaper.pass();
-       }
-      else
-       {
-         NullPaper.fail();
-       }
-    }
-
- }// TestDialog  class
