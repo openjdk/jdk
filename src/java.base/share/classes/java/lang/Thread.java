@@ -840,7 +840,7 @@ class Thread implements Runnable {
      * a chance to clean up before it actually exits.
      */
     private void exit() {
-        if (TerminatingThreadLocal.REGISTRY.isPresent()) {
+        if (threadLocals != null && TerminatingThreadLocal.REGISTRY.isPresent()) {
             TerminatingThreadLocal.threadTerminated();
         }
         if (group != null) {
