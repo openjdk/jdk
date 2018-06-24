@@ -778,7 +778,7 @@ Agent_OnUnload_L(JavaVM *vm)</example>
 
   <intro id="bci" label="Bytecode Instrumentation">
     This interface does not include some events that one might expect in an interface with
-    profiling support.  Some examples include object allocation events and full speed
+    profiling support.  Some examples include full speed
     method enter and exit events.  The interface instead provides support for
     <i>bytecode instrumentation</i>, the ability to alter the Java virtual machine
     bytecode instructions which comprise the target program.  Typically, these alterations
@@ -3454,7 +3454,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	  <jint/>
 	  <description>
             For <datalink id="JVMTI_HEAP_REFERENCE_FIELD"/>, the
-            referrer object is not a class or an inteface.
+            referrer object is not a class or an interface.
             In this case, <code>index</code> is the index of the field
             in the class of the referrer object.
             This class is referred to below as <i>C</i>.
@@ -8525,10 +8525,10 @@ class C2 extends C1 implements I2 {
 	For the method indicated by <code>method</code>,
 	return the beginning and ending addresses through
 	<code>start_location_ptr</code> and <code>end_location_ptr</code>. In a
-	conventional byte code indexing scheme,
+	conventional bytecode indexing scheme,
 	<code>start_location_ptr</code> will always point to zero
 	and <code>end_location_ptr</code>
-	will always point to the byte code count minus one.
+	will always point to the bytecode count minus one.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -8661,8 +8661,8 @@ class C2 extends C1 implements I2 {
       <synopsis>Get Bytecodes</synopsis>
       <description>
 	For the method indicated by <code>method</code>,
-	return the byte codes that implement the method. The number of
-	bytecodes is returned via <code>bytecode_count_ptr</code>. The byte codes
+	return the bytecodes that implement the method. The number of
+	bytecodes is returned via <code>bytecode_count_ptr</code>. The bytecodes
 	themselves are returned via <code>bytecodes_ptr</code>.
       </description>
       <origin>jvmdi</origin>
@@ -8685,13 +8685,13 @@ class C2 extends C1 implements I2 {
 	<param id="bytecode_count_ptr">
 	  <outptr><jint/></outptr>
 	  <description>
-	    On return, points to the length of the byte code array
+	    On return, points to the length of the bytecode array
 	  </description>
 	</param>
 	<param id="bytecodes_ptr">
 	  <allocbuf outcount="bytecode_count_ptr"><uchar/></allocbuf>
 	  <description>
-	    On return, points to the pointer to the byte code array
+	    On return, points to the pointer to the bytecode array
 	  </description>
 	</param>
       </parameters>
@@ -8935,7 +8935,7 @@ method(wrapped_foo) -> nativeImplementation(foo)</example>
          layer of agents) this function allows each transformation
          to have its own prefix.
          The prefixes are applied in the order supplied and are
-         processed in the same manor as described for the
+         processed in the same manner as described for the
          application of prefixes from multiple <jvmti/> environments
          in <functionlink id="SetNativeMethodPrefix"/>.
          <p/>
@@ -13011,7 +13011,7 @@ myInit() {
       Agents that create more than one JVM TI environment, where the
       capability is added to some but not all environments, may observe the
       start phase beginning earlier in the JVM TI environments that possess
-      the capabilty.
+      the capability.
       <p/>
       In the case of VM start-up failure, this event will not be sent.
     </description>
