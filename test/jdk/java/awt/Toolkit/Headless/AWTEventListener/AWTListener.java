@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,11 @@ public class AWTListener {
                 public void eventDispatched(AWTEvent event) { }
             };
 
-        Sysout.println("Test: listener to add = " +orig);
+        System.out.println("Test: listener to add = " +orig);
         toolkit.addAWTEventListener(orig, AWTEvent.CONTAINER_EVENT_MASK);
 
         for (AWTEventListener l: toolkit.getAWTEventListeners()){
-            Sysout.println("Test: listener = " +l+" ");
+            System.out.println("Test: listener = " +l+" ");
         }
 
         if ( toolkit.getAWTEventListeners().length == 0 ) {
@@ -60,12 +60,12 @@ public class AWTListener {
         }
 
         for (AWTEventListener l: toolkit.getAWTEventListeners(AWTEvent.CONTAINER_EVENT_MASK)){
-            Sysout.println("Test: listener = " +l);
+            System.out.println("Test: listener = " +l);
          }
 
         if ( toolkit.getAWTEventListeners(AWTEvent.CONTAINER_EVENT_MASK).length == 0 ) {
             throw new RuntimeException("Case 2. An empty array returned unexpectedly");
         }
-        Sysout.println("Test PASSED");
+        System.out.println("Test PASSED");
     }
 }

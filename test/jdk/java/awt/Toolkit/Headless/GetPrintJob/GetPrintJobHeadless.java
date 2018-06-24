@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class GetPrintJobHeadless {
         } catch (NullPointerException e) {
             stage1Passed = true;
             e.printStackTrace();
-            Sysout.println("Stage 1 passed. getPrintJob(null, String, property) has thrown NPE.");
+            System.out.println("Stage 1 passed. getPrintJob(null, String, property) has thrown NPE.");
         }
         if (!stage1Passed) {
             throw new RuntimeException("getPrintJob() should have thrown NPE but didn't.");
@@ -62,12 +62,12 @@ public class GetPrintJobHeadless {
         } catch (NullPointerException e) {
             stage2Passed = true;
             e.printStackTrace();
-            Sysout.println("Stage 2 passed. getPrintJob(null, String, jobAttrs, pageAttr) has thrown  NPE.");
+            System.out.println("Stage 2 passed. getPrintJob(null, String, jobAttrs, pageAttr) has thrown  NPE.");
         }
         if (!stage2Passed) {
             throw new RuntimeException("getPrintJob() should have thrown NPE but didn't.");
         }
 
-        Sysout.println("Test PASSED");
+        System.out.println("Test PASSED");
     }
 }

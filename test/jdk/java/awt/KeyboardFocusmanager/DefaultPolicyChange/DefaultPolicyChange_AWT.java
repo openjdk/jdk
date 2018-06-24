@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,19 +49,19 @@ public class DefaultPolicyChange_AWT {
         Window window = new Window(frame);
 
         FocusTraversalPolicy resultFTP = window.getFocusTraversalPolicy();
-        Sysout.println("FocusTraversalPolicy on window = " + resultFTP);
+        System.out.println("FocusTraversalPolicy on window = " + resultFTP);
         /**
          * Note: this call doesn't affect already created components as they have
          * their policy initialized. Only new components will use this policy as
          * their default policy.
          **/
-        Sysout.println("Now will set another policy.");
+        System.out.println("Now will set another policy.");
         currentKFM.setDefaultFocusTraversalPolicy(newFTP);
         resultFTP = window.getFocusTraversalPolicy();
         if (!resultFTP.equals(defaultFTP)) {
-            Sysout.println("Failure! FocusTraversalPolicy should not change");
-            Sysout.println("Was: " + defaultFTP);
-            Sysout.println("Become: " + resultFTP);
+            System.out.println("Failure! FocusTraversalPolicy should not change");
+            System.out.println("Was: " + defaultFTP);
+            System.out.println("Become: " + resultFTP);
             throw new RuntimeException("Failure! FocusTraversalPolicy should not change");
         }
     }

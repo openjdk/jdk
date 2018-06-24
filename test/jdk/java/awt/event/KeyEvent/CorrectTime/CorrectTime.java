@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class CorrectTime extends Frame implements KeyListener {
         long eventTime = e.getWhen();
         long currTime = System.currentTimeMillis();
         long diff = currTime - eventTime;
-        Sysout.println(k + " diff is " + diff + ", event is "+ e);
+        System.out.println(k + " diff is " + diff + ", event is "+ e);
         if (diff < 0 ||
             diff > REASONABLE_PATH_TIME)
         {

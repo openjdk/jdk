@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@ public class EventTimeInFuture {
                                 frame.getLocationOnScreen().y - frame.getHeight()/5);
         Point end = new Point(frame.getLocationOnScreen().x + frame.getWidth() * 6 / 5,
                               frame.getLocationOnScreen().y + frame.getHeight() * 6 / 5);
-        Sysout.println("start = " + start);
-        Sysout.println("end = " + end);
+        System.out.println("start = " + start);
+        System.out.println("end = " + end);
         Util.mouseMove(robot, start, end);
 
         // Start drag inside toplevel.
@@ -87,7 +87,7 @@ class SensibleFrame extends Frame implements MouseListener,
         long currTime = System.currentTimeMillis();
         long diff = currTime - eventTime;
 
-        Sysout.println(k + " diff is " + diff + ", event is "+ e);
+        System.out.println(k + " diff is " + diff + ", event is "+ e);
 
         if (diff < 0){
             AbstractTest.fail(k + " diff is " + diff + ", event = "+e);

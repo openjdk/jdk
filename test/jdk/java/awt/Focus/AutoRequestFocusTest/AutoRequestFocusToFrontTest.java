@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,6 @@ public class AutoRequestFocusToFrontTest extends Applet {
         // the environment -- set the layout manager, add buttons,
         // etc.
         this.setLayout (new BorderLayout ());
-        Sysout.createDialogWithInstructions(new String[]
-            {"This is an automatic test. Simply wait until it is done."
-            });
         toolkitClassName = Toolkit.getDefaultToolkit().getClass().getName();
     }
 
@@ -245,7 +242,7 @@ public class AutoRequestFocusToFrontTest extends Applet {
         Test.test("Test stage 7 in progress", frameButton);
 
 
-        Sysout.println("Test passed.");
+        System.out.println("Test passed.");
     }
 
     static class Test {
@@ -270,7 +267,7 @@ public class AutoRequestFocusToFrontTest extends Applet {
          * @param shouldFocusChange true for modal dialogs
          */
         static void test(String msg, final Button testButton, boolean shouldFocusChange) {
-            Sysout.println(msg);
+            System.out.println(msg);
 
             showWindows(testWindow, showWindows, true);
 
@@ -319,7 +316,7 @@ public class AutoRequestFocusToFrontTest extends Applet {
 
                 if (!performed) {
                     // For the case when the robot failed to trigger ACTION_EVENT.
-                    Sysout.println("(ACTION_EVENT was not generated. One more attemp.)");
+                    System.out.println("(ACTION_EVENT was not generated. One more attemp.)");
                     performed = Util.trackActionPerformed(testButton, new Runnable() {
                             public void run() {
                                 Util.clickOnComp(testButton, robot);
@@ -435,139 +432,3 @@ class TestFailedException extends RuntimeException {
     }
 }
 
-/****************************************************
- Standard Test Machinery
- DO NOT modify anything below -- it's a standard
-  chunk of code whose purpose is to make user
-  interaction uniform, and thereby make it simpler
-  to read and understand someone else's test.
- ****************************************************/
-
-/**
- This is part of the standard test machinery.
- It creates a dialog (with the instructions), and is the interface
-  for sending text messages to the user.
- To print the instructions, send an array of strings to Sysout.createDialog
-  WithInstructions method.  Put one line of instructions per array entry.
- To display a message for the tester to see, simply call Sysout.println
-  with the string to be displayed.
- This mimics System.out.println but works within the test harness as well
-  as standalone.
- */
-
-class Sysout
-{
-    static TestDialog dialog;
-
-    public static void createDialogWithInstructions( String[] instructions )
-    {
-        dialog = new TestDialog( new Frame(), "Instructions" );
-        dialog.printInstructions( instructions );
-//        dialog.setVisible(true);
-        println( "Any messages for the tester will display here." );
-    }
-
-    public static void createDialog( )
-    {
-        dialog = new TestDialog( new Frame(), "Instructions" );
-        String[] defInstr = { "Instructions will appear here. ", "" } ;
-        dialog.printInstructions( defInstr );
-//        dialog.setVisible(true);
-        println( "Any messages for the tester will display here." );
-    }
-
-
-    public static void printInstructions( String[] instructions )
-    {
-        dialog.printInstructions( instructions );
-    }
-
-
-    public static void println( String messageIn )
-    {
-        dialog.displayMessage( messageIn );
-    }
-
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog
-{
-
-    TextArea instructionsText;
-    TextArea messageText;
-    int maxStringLength = 80;
-
-    //DO NOT call this directly, go through Sysout
-    public TestDialog( Frame frame, String name )
-    {
-        super( frame, name );
-        int scrollBoth = TextArea.SCROLLBARS_BOTH;
-        instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-        add( "North", instructionsText );
-
-        messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-        add("Center", messageText);
-
-        pack();
-
-//        setVisible(true);
-    }// TestDialog()
-
-    //DO NOT call this directly, go through Sysout
-    public void printInstructions( String[] instructions )
-    {
-        //Clear out any current instructions
-        instructionsText.setText( "" );
-
-        //Go down array of instruction strings
-
-        String printStr, remainingStr;
-        for( int i=0; i < instructions.length; i++ )
-        {
-            //chop up each into pieces maxSringLength long
-            remainingStr = instructions[ i ];
-            while( remainingStr.length() > 0 )
-            {
-                //if longer than max then chop off first max chars to print
-                if( remainingStr.length() >= maxStringLength )
-                {
-                    //Try to chop on a word boundary
-                    int posOfSpace = remainingStr.
-                        lastIndexOf( ' ', maxStringLength - 1 );
-
-                    if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-                    printStr = remainingStr.substring( 0, posOfSpace + 1 );
-                    remainingStr = remainingStr.substring( posOfSpace + 1 );
-                }
-                //else just print
-                else
-                {
-                    printStr = remainingStr;
-                    remainingStr = "";
-                }
-
-                instructionsText.append( printStr + "\n" );
-
-            }// while
-
-        }// for
-
-    }//printInstructions()
-
-    //DO NOT call this directly, go through Sysout
-    public void displayMessage( String messageIn )
-    {
-        messageText.append( messageIn + "\n" );
-        System.out.println(messageIn);
-    }
-
-}// TestDialog  class
