@@ -71,9 +71,20 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
-  // unextended sp must be within the stack and above or equal sp
-  bool unextended_sp_safe = (unextended_sp < thread->stack_base()) &&
-                            (unextended_sp >= sp);
+  // When we are running interpreted code the machine stack pointer, SP, is
+  // set low enough so that the Java expression stack can grow and shrink
+  // without ever exceeding the machine stack bounds.  So, ESP >= SP.
+
+  // When we call out of an interpreted method, SP is incremented so that
+  // the space between SP and ESP is removed.  The SP saved in the callee's
+  // frame is the SP *before* this increment.  So, when we walk a stack of
+  // interpreter frames the sender's SP saved in a frame might be less than
+  // the SP at the point of call.
+
+  // So unextended sp must be within the stack but we need not to check
+  // that unextended sp >= sp
+
+  bool unextended_sp_safe = (unextended_sp < thread->stack_base());
 
   if (!unextended_sp_safe) {
     return false;
