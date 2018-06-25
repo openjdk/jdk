@@ -51,7 +51,7 @@ public class TestConstructorHierarchy {
             throw new Error("Unexpected construction of ExternalSuper");
         }
         catch (IllegalAccessError iae) {
-            if (iae.getMessage().contains("tried to access method ExternalSuper.<init>()V from class TestConstructorHierarchy")) {
+            if (iae.getMessage().contains("class TestConstructorHierarchy tried to access method ExternalSuper.<init>()V")) {
                 System.out.println("Got expected exception constructing ExternalSuper: " + iae);
             }
             else throw new Error("Unexpected IllegalAccessError: " + iae);
@@ -61,7 +61,7 @@ public class TestConstructorHierarchy {
             throw new Error("Unexpected construction of NestedA and supers");
         }
         catch (IllegalAccessError iae) {
-            if (iae.getMessage().contains("tried to access method ExternalSuper.<init>()V from class TestConstructorHierarchy$NestedA")) {
+            if (iae.getMessage().contains("class TestConstructorHierarchy$NestedA tried to access method ExternalSuper.<init>()V")) {
                 System.out.println("Got expected exception constructing NestedA: " + iae);
             }
             else throw new Error("Unexpected IllegalAccessError: " + iae);
@@ -71,7 +71,7 @@ public class TestConstructorHierarchy {
             throw new Error("Unexpected construction of ExternalSub");
         }
         catch (IllegalAccessError iae) {
-            if (iae.getMessage().contains("tried to access method TestConstructorHierarchy$NestedA.<init>()V from class ExternalSub")) {
+            if (iae.getMessage().contains("class ExternalSub tried to access method TestConstructorHierarchy$NestedA.<init>()V")) {
                 System.out.println("Got expected exception constructing ExternalSub: " + iae);
             }
             else throw new Error("Unexpected IllegalAccessError: " + iae);
