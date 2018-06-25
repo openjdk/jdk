@@ -93,6 +93,32 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         }
     }
 
+    private char getGlyphFromCMAP(int charCode, int variationSelector) {
+        if (variationSelector == 0) {
+            return getGlyphFromCMAP(charCode);
+        }
+        try {
+            char glyphCode = cmap.getVariationGlyph(charCode,
+                                                    variationSelector);
+            if (glyphCode < numGlyphs ||
+                glyphCode >= FileFontStrike.INVISIBLE_GLYPHS) {
+                return glyphCode;
+            } else {
+                if (FontUtilities.isLogging()) {
+                    FontUtilities.getLogger().warning
+                        (font + " out of range glyph id=" +
+                         Integer.toHexString((int)glyphCode) +
+                         " for char " + Integer.toHexString(charCode) +
+                         " for vs " + Integer.toHexString(variationSelector));
+                }
+                return (char)missingGlyph;
+            }
+        } catch (Exception e) {
+             handleBadCMAP();
+             return (char) missingGlyph;
+        }
+    }
+
     private void handleBadCMAP() {
         if (FontUtilities.isLogging()) {
             FontUtilities.getLogger().severe("Null Cmap for " + font +
@@ -130,6 +156,18 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
             unicode = remapJAIntChar(unicode);
         }
         int glyph = getGlyphFromCMAP(unicode);
+        if (font.checkUseNatives() && glyph < font.glyphToCharMap.length) {
+            font.glyphToCharMap[glyph] = (char)unicode;
+        }
+        return glyph;
+    }
+
+    @Override
+    public int charToVariationGlyph(int unicode, int variationSelector) {
+        if (needsJAremapping) {
+            unicode = remapJAIntChar(unicode);
+        }
+        int glyph = getGlyphFromCMAP(unicode, variationSelector);
         if (font.checkUseNatives() && glyph < font.glyphToCharMap.length) {
             font.glyphToCharMap[glyph] = (char)unicode;
         }
@@ -221,7 +259,8 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
             if (code < FontUtilities.MIN_LAYOUT_CHARCODE) {
                 continue;
             }
-            else if (FontUtilities.isComplexCharCode(code)) {
+            else if (FontUtilities.isComplexCharCode(code) ||
+                     CharToGlyphMapper.isVariationSelector(code)) {
                 return true;
             }
             else if (code >= 0x10000) {

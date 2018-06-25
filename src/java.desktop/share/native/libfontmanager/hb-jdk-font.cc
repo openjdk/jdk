@@ -48,10 +48,18 @@ hb_jdk_get_glyph (hb_font_t *font HB_UNUSED,
     JDKFontInfo *jdkFontInfo = (JDKFontInfo*)font_data;
     JNIEnv* env = jdkFontInfo->env;
     jobject font2D = jdkFontInfo->font2D;
-    hb_codepoint_t u = (variation_selector==0) ? unicode : variation_selector;
-
-    *glyph = (hb_codepoint_t)
-          env->CallIntMethod(font2D, sunFontIDs.f2dCharToGlyphMID, u);
+    if (variation_selector == 0) {
+        *glyph = (hb_codepoint_t)env->CallIntMethod(
+                     font2D, sunFontIDs.f2dCharToGlyphMID, unicode);
+    } else {
+        *glyph = (hb_codepoint_t)env->CallIntMethod(
+                     font2D, sunFontIDs.f2dCharToVariationGlyphMID, 
+                     unicode, variation_selector);
+    }
+    if (env->ExceptionOccurred())
+    {
+        env->ExceptionClear();
+    }
     if ((int)*glyph < 0) {
         *glyph = 0;
     }

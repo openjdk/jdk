@@ -140,6 +140,7 @@ abstract class CMap {
      * Using this saves running character coverters repeatedly.
      */
     char[] xlat;
+    UVS uvs = null;
 
     static CMap initialize(TrueTypeFont font) {
 
@@ -149,6 +150,7 @@ abstract class CMap {
 
         int three0=0, three1=0, three2=0, three3=0, three4=0, three5=0,
             three6=0, three10=0;
+        int zero5 = 0; // for Unicode Variation Sequences
         boolean threeStar = false;
 
         ByteBuffer cmapBuffer = font.getTableBuffer(TrueTypeFont.cmapTag);
@@ -172,6 +174,12 @@ abstract class CMap {
                 case 5:  three5  = offset; break; // Wansung
                 case 6:  three6  = offset; break; // Johab
                 case 10: three10 = offset; break; // MS Unicode surrogates
+                }
+            } else if (platformID == 0) {
+                encodingID = cmapBuffer.getShort();
+                offset     = cmapBuffer.getInt();
+                if (encodingID == 5) {
+                    zero5 = offset;
                 }
             }
         }
@@ -261,6 +269,10 @@ abstract class CMap {
              * rejecting the font entirely?
              */
             cmap = createCMap(cmapBuffer, cmapBuffer.getInt(8), null);
+        }
+        // For Unicode Variation Sequences
+        if (cmap != null && zero5 != 0) {
+            cmap.createUVS(cmapBuffer, zero5);
         }
         return cmap;
     }
@@ -422,6 +434,25 @@ abstract class CMap {
         default: throw new RuntimeException("Cmap format unimplemented: " +
                                             (int)buffer.getChar(offset));
         }
+    }
+
+    private void createUVS(ByteBuffer buffer, int offset) {
+        int subtableFormat = buffer.getChar(offset);
+        if (subtableFormat == 14) {
+            long subtableLength = buffer.getInt(offset + 2) & INTMASK;
+            if (offset + subtableLength > buffer.capacity()) {
+                if (FontUtilities.isLogging()) {
+                    FontUtilities.getLogger()
+                            .warning("Cmap UVS subtable overflows buffer.");
+                }
+            }
+            try {
+                this.uvs = new UVS(buffer, offset);
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+        return;
     }
 
 /*
@@ -1058,5 +1089,88 @@ abstract class CMap {
             }
         }
         return -1;
+    }
+
+    static class UVS {
+        int numSelectors;
+        int[] selector;
+
+        //for Non-Default UVS Table
+        int[] numUVSMapping;
+        int[][] unicodeValue;
+        char[][] glyphID;
+
+        UVS(ByteBuffer buffer, int offset) {
+            numSelectors = buffer.getInt(offset+6);
+            selector = new int[numSelectors];
+            numUVSMapping = new int[numSelectors];
+            unicodeValue = new int[numSelectors][];
+            glyphID = new char[numSelectors][];
+
+            for (int i = 0; i < numSelectors; i++) {
+                buffer.position(offset + 10 + i * 11);
+                selector[i] = (buffer.get() & 0xff) << 16; //UINT24
+                selector[i] += (buffer.get() & 0xff) << 8;
+                selector[i] += buffer.get() & 0xff;
+
+                //skip Default UVS Table
+
+                //for Non-Default UVS Table
+                int tableOffset = buffer.getInt(offset + 10 + i * 11 + 7);
+                if (tableOffset == 0) {
+                    numUVSMapping[i] = 0;
+                } else if (tableOffset > 0) {
+                    buffer.position(offset+tableOffset);
+                    numUVSMapping[i] = buffer.getInt() & INTMASK;
+                    unicodeValue[i] = new int[numUVSMapping[i]];
+                    glyphID[i] = new char[numUVSMapping[i]];
+
+                    for (int j = 0; j < numUVSMapping[i]; j++) {
+                        int temp = (buffer.get() & 0xff) << 16; //UINT24
+                        temp += (buffer.get() & 0xff) << 8;
+                        temp += buffer.get() & 0xff;
+                        unicodeValue[i][j] = temp;
+                        glyphID[i][j] = buffer.getChar();
+                    }
+                }
+            }
+        }
+
+        static final int VS_NOGLYPH = 0;
+        private int getGlyph(int charCode, int variationSelector) {
+            int targetSelector = -1;
+            for (int i = 0; i < numSelectors; i++) {
+                if (selector[i] == variationSelector) {
+                    targetSelector = i;
+                    break;
+                }
+            }
+            if (targetSelector == -1) {
+                return VS_NOGLYPH;
+            }
+            if (numUVSMapping[targetSelector] > 0) {
+                int index = java.util.Arrays.binarySearch(
+                                unicodeValue[targetSelector], charCode);
+                if (index >= 0) {
+                    return glyphID[targetSelector][index];
+                }
+            }
+            return VS_NOGLYPH;
+        }
+    }
+
+    char getVariationGlyph(int charCode, int variationSelector) {
+        char glyph = 0;
+        if (uvs == null) {
+            glyph = getGlyph(charCode);
+        } else {
+            int result = uvs.getGlyph(charCode, variationSelector);
+            if (result > 0) {
+                glyph = (char)(result & 0xFFFF);
+            } else {
+                glyph = getGlyph(charCode);
+            }
+        }
+        return glyph;
     }
 }

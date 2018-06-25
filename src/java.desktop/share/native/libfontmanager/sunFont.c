@@ -144,6 +144,8 @@ static void initFontIDs(JNIEnv *env) {
      CHECK_NULL(tmpClass = (*env)->FindClass(env, "sun/font/Font2D"));
      CHECK_NULL(sunFontIDs.f2dCharToGlyphMID =
          (*env)->GetMethodID(env, tmpClass, "charToGlyph", "(I)I"));
+     CHECK_NULL(sunFontIDs.f2dCharToVariationGlyphMID =
+         (*env)->GetMethodID(env, tmpClass, "charToVariationGlyph", "(II)I"));
      CHECK_NULL(sunFontIDs.getMapperMID =
          (*env)->GetMethodID(env, tmpClass, "getMapper",
                              "()Lsun/font/CharToGlyphMapper;"));
