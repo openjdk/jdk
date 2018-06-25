@@ -53,8 +53,42 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
     private PrintService defaultPrintService;
     private String[] printers; /* excludes the default printer */
     private PrintService[] printServices; /* includes the default printer */
+    private static boolean pollServices = true;
+    private static final int DEFAULT_MINREFRESH = 240;  // 4 minutes
+    private static int minRefreshTime = DEFAULT_MINREFRESH;
 
     static {
+        /* The system property "sun.java2d.print.polling"
+         * can be used to force the printing code to poll or not poll
+         * for PrintServices.
+         */
+        String pollStr = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction("sun.java2d.print.polling"));
+
+        if (pollStr != null) {
+            if (pollStr.equalsIgnoreCase("false")) {
+                pollServices = false;
+            }
+        }
+
+        /* The system property "sun.java2d.print.minRefreshTime"
+         * can be used to specify minimum refresh time (in seconds)
+         * for polling PrintServices.  The default is 240.
+         */
+        String refreshTimeStr = java.security.AccessController.doPrivileged(
+            new sun.security.action.GetPropertyAction(
+                "sun.java2d.print.minRefreshTime"));
+
+        if (refreshTimeStr != null) {
+            try {
+                minRefreshTime = (Integer.valueOf(refreshTimeStr)).intValue();
+            } catch (NumberFormatException e) {
+            }
+            if (minRefreshTime < DEFAULT_MINREFRESH) {
+                minRefreshTime = DEFAULT_MINREFRESH;
+            }
+        }
+
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
@@ -96,11 +130,19 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
             if (osName != null && osName.startsWith("Windows 98")) {
                 return;
             }
-            // start the printer listener thread
+            // start the local printer listener thread
             Thread thr = new Thread(null, new PrinterChangeListener(),
                                     "PrinterListener", 0, false);
             thr.setDaemon(true);
             thr.start();
+
+            if (pollServices) {
+                // start the remote printer listener thread
+                Thread remThr = new Thread(null, new RemotePrinterChangeListener(),
+                                        "RemotePrinterListener", 0, false);
+                remThr.setDaemon(true);
+                remThr.start();
+            }
         } /* else condition ought to never happen! */
     }
 
@@ -316,7 +358,6 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         }
         return defaultPrintService;
     }
-
     class PrinterChangeListener implements Runnable {
         long chgObj;
         PrinterChangeListener() {
@@ -343,9 +384,74 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         }
     }
 
+    /* Windows provides *PrinterChangeNotification* functions that provides
+       information about printer status changes of the local printers but not
+       network printers.
+       Alternatively, Windows provides a way thro' which one can get the
+       network printer status changes by using WMI, RegistryKeyChange combination,
+       which is a slightly complex mechanism.
+       The Windows WMI offers an async and sync method to read thro' registry
+       via the WQL query. The async method is considered dangerous as it leaves
+       open a channel until we close it. But the async method has the advantage of
+       being notified of a change in registry by calling callback without polling for it.
+       The sync method uses the polling mechanism to notify.
+       RegistryValueChange cannot be used in combination with WMI to get registry
+       value change notification because of an error that may be generated because the
+       scope of the query would be too big to handle(at times).
+       Hence an alternative mechanism is choosen via the EnumPrinters by polling for the
+       count of printer status changes(add\remove) and based on it update the printers
+       list.
+    */
+    class RemotePrinterChangeListener implements Runnable {
+        private String[] prevRemotePrinters;
+
+        RemotePrinterChangeListener() {
+            prevRemotePrinters = getRemotePrintersNames();
+        }
+
+        boolean doCompare(String[] str1, String[] str2) {
+            if (str1.length != str2.length) {
+                return true;
+            } else {
+                for (int i = 0;i < str1.length;i++) {
+                    for (int j = 0;j < str2.length;j++) {
+                        if (!str1[i].equals(str2[j])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                String[] currentRemotePrinters = getRemotePrintersNames();
+                if (doCompare(prevRemotePrinters, currentRemotePrinters)) {
+
+                    // updated the printers data
+                    // printers list now contains both local and network printer data
+                    refreshServices();
+
+                    // store the current data for next comparison
+                    prevRemotePrinters = currentRemotePrinters;
+                }
+
+                try {
+                    Thread.sleep(minRefreshTime * 1000);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+        }
+    }
+
     private native String getDefaultPrinterName();
     private native String[] getAllPrinterNames();
     private native long notifyFirstPrinterChange(String printer);
     private native void notifyClosePrinterChange(long chgObj);
     private native int notifyPrinterChange(long chgObj);
+    private native String[] getRemotePrintersNames();
 }
