@@ -2569,8 +2569,28 @@ void MacroAssembler::rtm_profiling(Register abort_status_Reg, Register temp_Reg,
 void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register abort_status_Reg,
                                              Label& retryLabel, Label* checkRetry) {
   Label doneRetry;
+
+  // Don't retry if failure is persistent.
+  // The persistent bit is set when a (A) Disallowed operation is performed in
+  // transactional state, like for instance trying to write the TFHAR after a
+  // transaction is started; or when there is (B) a Nesting Overflow (too many
+  // nested transactions); or when (C) the Footprint overflows (too many
+  // addressess touched in TM state so there is no more space in the footprint
+  // area to track them); or in case of (D) a Self-Induced Conflict, i.e. a
+  // store is performed to a given address in TM state, then once in suspended
+  // state the same address is accessed. Failure (A) is very unlikely to occur
+  // in the JVM. Failure (D) will never occur because Suspended state is never
+  // used in the JVM. Thus mostly (B) a Nesting Overflow or (C) a Footprint
+  // Overflow will set the persistent bit.
   rldicr_(R0, abort_status_Reg, tm_failure_persistent, 0);
   bne(CCR0, doneRetry);
+
+  // Don't retry if transaction was deliberately aborted, i.e. caused by a
+  // tabort instruction.
+  rldicr_(R0, abort_status_Reg, tm_tabort, 0);
+  bne(CCR0, doneRetry);
+
+  // Retry if transaction aborted due to a conflict with another thread.
   if (checkRetry) { bind(*checkRetry); }
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);
