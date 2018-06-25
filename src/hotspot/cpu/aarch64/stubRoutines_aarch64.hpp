@@ -70,6 +70,9 @@ class aarch64 {
   static address _compare_long_string_LU;
   static address _compare_long_string_UL;
   static address _compare_long_string_UU;
+  static address _string_indexof_linear_ll;
+  static address _string_indexof_linear_uu;
+  static address _string_indexof_linear_ul;
   static bool _completed;
 
  public:
@@ -154,6 +157,18 @@ class aarch64 {
 
   static address compare_long_string_UU() {
       return _compare_long_string_UU;
+  }
+
+  static address string_indexof_linear_ul() {
+      return _string_indexof_linear_ul;
+  }
+
+  static address string_indexof_linear_ll() {
+      return _string_indexof_linear_ll;
+  }
+
+  static address string_indexof_linear_uu() {
+      return _string_indexof_linear_uu;
   }
 
   static bool complete() {

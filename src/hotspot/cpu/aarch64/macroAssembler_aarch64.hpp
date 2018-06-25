@@ -1247,6 +1247,7 @@ public:
                       Register cnt1, Register cnt2,
                       Register tmp1, Register tmp2,
                       Register tmp3, Register tmp4,
+                      Register tmp5, Register tmp6,
                       int int_cnt1, Register result, int ae);
   void string_indexof_char(Register str1, Register cnt1,
                            Register ch, Register result,
