@@ -4624,6 +4624,68 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::aarch64::_string_indexof_linear_ul = generate_string_indexof_linear(true, false);
   }
 
+  void inflate_and_store_2_fp_registers(bool generatePrfm,
+      FloatRegister src1, FloatRegister src2) {
+    Register dst = r1;
+    __ zip1(v1, __ T16B, src1, v0);
+    __ zip2(v2, __ T16B, src1, v0);
+    if (generatePrfm) {
+      __ prfm(Address(dst, SoftwarePrefetchHintDistance), PSTL1STRM);
+    }
+    __ zip1(v3, __ T16B, src2, v0);
+    __ zip2(v4, __ T16B, src2, v0);
+    __ st1(v1, v2, v3, v4, __ T16B, Address(__ post(dst, 64)));
+  }
+
+  // R0 = src
+  // R1 = dst
+  // R2 = len
+  // R3 = len >> 3
+  // V0 = 0
+  // v1 = loaded 8 bytes
+  address generate_large_byte_array_inflate() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "large_byte_array_inflate");
+    address entry = __ pc();
+    Label LOOP, LOOP_START, LOOP_PRFM, LOOP_PRFM_START, DONE;
+    Register src = r0, dst = r1, len = r2, octetCounter = r3;
+    const int large_loop_threshold = MAX(64, SoftwarePrefetchHintDistance)/8 + 4;
+
+    // do one more 8-byte read to have address 16-byte aligned in most cases
+    // also use single store instruction
+    __ ldrd(v2, __ post(src, 8));
+    __ sub(octetCounter, octetCounter, 2);
+    __ zip1(v1, __ T16B, v1, v0);
+    __ zip1(v2, __ T16B, v2, v0);
+    __ st1(v1, v2, __ T16B, __ post(dst, 32));
+    __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
+    __ cmp(octetCounter, large_loop_threshold);
+    __ br(__ LE, LOOP_START);
+    __ b(LOOP_PRFM_START);
+    __ bind(LOOP_PRFM);
+      __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
+    __ bind(LOOP_PRFM_START);
+      __ prfm(Address(src, SoftwarePrefetchHintDistance));
+      __ sub(octetCounter, octetCounter, 8);
+      __ cmp(octetCounter, large_loop_threshold);
+      inflate_and_store_2_fp_registers(true, v3, v4);
+      inflate_and_store_2_fp_registers(true, v5, v6);
+      __ br(__ GT, LOOP_PRFM);
+      __ cmp(octetCounter, 8);
+      __ br(__ LT, DONE);
+    __ bind(LOOP);
+      __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
+      __ bind(LOOP_START);
+      __ sub(octetCounter, octetCounter, 8);
+      __ cmp(octetCounter, 8);
+      inflate_and_store_2_fp_registers(false, v3, v4);
+      inflate_and_store_2_fp_registers(false, v5, v6);
+      __ br(__ GE, LOOP);
+    __ bind(DONE);
+      __ ret(lr);
+    return entry;
+  }
+
   /**
    *  Arguments:
    *
@@ -5726,6 +5788,9 @@ class StubGenerator: public StubCodeGenerator {
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
+
+    // byte_array_inflate stub for large arrays.
+    StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
 
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();

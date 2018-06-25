@@ -16168,7 +16168,7 @@ instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
 
 // fast byte[] to char[] inflation
 instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len,
-                        vRegD tmp1, vRegD tmp2, vRegD tmp3, iRegP_R3 tmp4, rFlagsReg cr)
+                        vRegD_V0 tmp1, vRegD_V1 tmp2, vRegD_V2 tmp3, iRegP_R3 tmp4, rFlagsReg cr)
 %{
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
