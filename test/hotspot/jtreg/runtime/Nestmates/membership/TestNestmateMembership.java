@@ -670,9 +670,8 @@ public class TestNestmateMembership {
 
     static void test_NoHostInvoke() throws Throwable {
         System.out.println("Testing for missing nest-host attribute");
-        String msg = "tried to access method " +
-            "TestNestmateMembership$TargetNoHost.m()V from class " +
-            "TestNestmateMembership$Caller";
+        String msg = "class TestNestmateMembership$Caller tried to access " +
+            "method TestNestmateMembership$TargetNoHost.m()V";
         try {
             Caller.invokeTargetNoHost();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -698,8 +697,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "tried to access method TestNestmateMembership$Target.m()V" +
-            " from class TestNestmateMembership$CallerNoHost";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access " +
+            "method TestNestmateMembership$Target.m()V";
         try {
             CallerNoHost.invokeTarget();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -707,8 +706,8 @@ public class TestNestmateMembership {
         catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "tried to access method TestNestmateMembership$TargetNoHost.m()V" +
-            " from class TestNestmateMembership$CallerNoHost";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access method " +
+            "TestNestmateMembership$TargetNoHost.m()V";
         try {
             CallerNoHost.invokeTargetNoHost();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -950,8 +949,8 @@ public class TestNestmateMembership {
 
     static void test_NoHostConstruct() throws Throwable {
         System.out.println("Testing for missing nest-host attribute");
-        String msg = "tried to access method TestNestmateMembership$TargetNoHost.<init>()V" +
-            " from class TestNestmateMembership$Caller";
+        String msg = "class TestNestmateMembership$Caller tried to access method " +
+            "TestNestmateMembership$TargetNoHost.<init>()V";
         try {
             Caller.newTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -977,8 +976,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "tried to access method TestNestmateMembership$Target.<init>()V" +
-            " from class TestNestmateMembership$CallerNoHost";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access method " +
+            "TestNestmateMembership$Target.<init>()V";
         try {
             CallerNoHost.newTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -986,8 +985,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "tried to access method TestNestmateMembership$TargetNoHost.<init>()V" +
-            " from class TestNestmateMembership$CallerNoHost";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access method " +
+            "TestNestmateMembership$TargetNoHost.<init>()V";
         try {
             CallerNoHost.newTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
