@@ -1129,7 +1129,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
                 final int len = items.length;
                 // how far takeIndex has advanced since the previous
                 // operation of this iterator
-                long dequeues = (cycles - prevCycles) * len
+                long dequeues = (long) (cycles - prevCycles) * len
                     + (takeIndex - prevTakeIndex);
 
                 // Check indices for invalidation

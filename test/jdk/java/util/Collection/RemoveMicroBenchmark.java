@@ -284,7 +284,7 @@ public class RemoveMicroBenchmark {
     }
 
     @SafeVarargs @SuppressWarnings("varargs")
-    private <T> Stream<T> concatStreams(Stream<T> ... streams) {
+    private static <T> Stream<T> concatStreams(Stream<T> ... streams) {
         return Stream.of(streams).flatMap(s -> s);
     }
 

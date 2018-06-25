@@ -4415,7 +4415,7 @@ public class CompletableFutureTest extends JSR166TestCase {
             f.complete(null);
 
             f = new CompletableFuture<>();
-            CompletableFuture.anyOf(new CompletableFuture<?>[] { f, incomplete });
+            CompletableFuture.anyOf(f, incomplete);
             f.complete(null);
         }
 
@@ -4433,7 +4433,7 @@ public class CompletableFutureTest extends JSR166TestCase {
             f.complete(null);
 
             f = new CompletableFuture<>();
-            CompletableFuture.anyOf(new CompletableFuture<?>[] { incomplete, f });
+            CompletableFuture.anyOf(incomplete, f);
             f.complete(null);
         }
     }

@@ -432,9 +432,11 @@ public class TreeSubSetTest extends JSR166TestCase {
      */
     public void testToArray() {
         NavigableSet q = populatedSet(SIZE);
-        Object[] o = q.toArray();
-        for (int i = 0; i < o.length; i++)
-            assertSame(o[i], q.pollFirst());
+        Object[] a = q.toArray();
+        assertSame(Object[].class, a.getClass());
+        for (Object o : a)
+            assertSame(o, q.pollFirst());
+        assertTrue(q.isEmpty());
     }
 
     /**
@@ -445,8 +447,9 @@ public class TreeSubSetTest extends JSR166TestCase {
         Integer[] ints = new Integer[SIZE];
         Integer[] array = q.toArray(ints);
         assertSame(ints, array);
-        for (int i = 0; i < ints.length; i++)
-            assertSame(ints[i], q.pollFirst());
+        for (Integer o : ints)
+            assertSame(o, q.pollFirst());
+        assertTrue(q.isEmpty());
     }
 
     /**
