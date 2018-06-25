@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,23 @@
 package sun.security.ssl;
 
 import java.io.*;
-import java.nio.channels.SocketChannel;
 import java.net.*;
+import java.nio.channels.SocketChannel;
 import java.util.Set;
-
 import javax.net.ssl.*;
 
 /**
- * Abstract base class for SSLSocketImpl. Its purpose is to house code with
- * no SSL related logic (or no logic at all). This makes SSLSocketImpl shorter
- * and easier to read. It contains a few constants and static methods plus
- * overridden java.net.Socket methods.
+ * Abstract base class for SSLSocketImpl.
+ *
+ * Its purpose is to house code with no SSL related logic (or no logic at all).
+ * This makes SSLSocketImpl shorter and easier to read. It contains a few
+ * constants and static methods plus overridden java.net.Socket methods.
  *
  * Methods are defined final to ensure that they are not accidentally
  * overridden in SSLSocketImpl.
  *
  * @see javax.net.ssl.SSLSocket
  * @see SSLSocketImpl
- *
  */
 abstract class BaseSSLSocketImpl extends SSLSocket {
 
@@ -92,7 +91,7 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
                                 "com.sun.net.ssl.requireCloseNotify";
 
     static final boolean requireCloseNotify =
-                                Debug.getBooleanProperty(PROP_NAME, false);
+                                Utilities.getBooleanProperty(PROP_NAME, false);
 
     //
     // MISC SOCKET METHODS

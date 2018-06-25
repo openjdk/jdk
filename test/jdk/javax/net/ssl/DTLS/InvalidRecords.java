@@ -55,7 +55,7 @@ public class InvalidRecords extends DTLSOverDatagram {
 
     @Override
     DatagramPacket createHandshakePacket(byte[] ba, SocketAddress socketAddr) {
-        if (needInvalidRecords && (ba.length >= 60) &&
+        if ((ba.length >= 60) &&
                 (ba[0x00] == (byte)0x16) && (ba[0x0D] == (byte)0x01) &&
                 (ba[0x3B] == (byte)0x00) && (ba[0x3C] > 0)) {
 
@@ -63,6 +63,16 @@ public class InvalidRecords extends DTLSOverDatagram {
             // ba[0x0D]: handshake type
             // ba[0x3B]: length of session ID
             // ba[0x3C]: length of cookie
+
+            if (!needInvalidRecords) {
+                // The 2nd ClientHello with cookie.  The 1st one should be
+                // rejected as expected.
+                //
+                // This may happen if the last few bytes of the packet are
+                // for supported_version extension.
+                throw new RuntimeException(
+                    "the crashed handshake message was rejected as expected");
+            }
 
             // ClientHello with cookie
             needInvalidRecords = false;

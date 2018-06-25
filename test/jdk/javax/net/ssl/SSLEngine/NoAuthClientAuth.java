@@ -21,15 +21,19 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4495742
  * @summary Demonstrate SSLEngine switch from no client auth to client auth.
- * @run main/othervm NoAuthClientAuth
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
- *
+ * @run main/othervm NoAuthClientAuth SSLv3
+ * @run main/othervm NoAuthClientAuth TLSv1
+ * @run main/othervm NoAuthClientAuth TLSv1.1
+ * @run main/othervm NoAuthClientAuth TLSv1.2
  * @author Brad R. Wetmore
  */
 
@@ -78,6 +82,7 @@ import java.io.*;
 import java.security.*;
 import java.nio.*;
 
+// Note that this test case depends on JSSE provider implementation details.
 public class NoAuthClientAuth {
 
     /*
@@ -94,7 +99,7 @@ public class NoAuthClientAuth {
      * including specific handshake messages, and might be best examined
      * after gaining some familiarity with this application.
      */
-    private static boolean debug = false;
+    private static boolean debug = true;
 
     private SSLContext sslc;
 
@@ -128,14 +133,20 @@ public class NoAuthClientAuth {
     private static String trustFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +
                 "/" + trustStoreFile;
+    // the specified protocol
+    private static String tlsProtocol;
 
     /*
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
+
+        tlsProtocol = args[0];
 
         NoAuthClientAuth test = new NoAuthClientAuth();
         test.runTest();
@@ -243,8 +254,8 @@ public class NoAuthClientAuth {
                     for (java.security.cert.Certificate c : certs) {
                         System.out.println(c);
                     }
-                    log("Closing server.");
-                    serverEngine.closeOutbound();
+//                    log("Closing server.");
+//                    serverEngine.closeOutbound();
                 } // nothing.
             }
 
@@ -253,18 +264,30 @@ public class NoAuthClientAuth {
 
             log("----");
 
-            clientResult = clientEngine.unwrap(sTOc, clientIn);
-            log("client unwrap: ", clientResult);
-            runDelegatedTasks(clientResult, clientEngine);
-            clientIn.clear();
+            if (!clientEngine.isInboundDone()) {
+                clientResult = clientEngine.unwrap(sTOc, clientIn);
+                log("client unwrap: ", clientResult);
+                runDelegatedTasks(clientResult, clientEngine);
+                clientIn.clear();
+                sTOc.compact();
+            } else {
+                sTOc.clear();
+            }
 
-            serverResult = serverEngine.unwrap(cTOs, serverIn);
-            log("server unwrap: ", serverResult);
-            runDelegatedTasks(serverResult, serverEngine);
-            serverIn.clear();
+            if (!serverEngine.isInboundDone()) {
+                serverResult = serverEngine.unwrap(cTOs, serverIn);
+                log("server unwrap: ", serverResult);
+                runDelegatedTasks(serverResult, serverEngine);
+                serverIn.clear();
+                cTOs.compact();
+            } else {
+                cTOs.clear();
+            }
 
-            cTOs.compact();
-            sTOc.compact();
+            if (hsCompleted == 2) {
+                  log("Closing server.");
+                  serverEngine.closeOutbound();
+            }
         }
     }
 
@@ -286,6 +309,7 @@ public class NoAuthClientAuth {
          */
         clientEngine = sslc.createSSLEngine("client", 80);
         clientEngine.setUseClientMode(true);
+        clientEngine.setEnabledProtocols(new String[] { tlsProtocol });
     }
 
     /*

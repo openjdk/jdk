@@ -30,6 +30,7 @@
  * @test
  * @bug 7174244
  * @summary NPE in Krb5ProxyImpl.getServerKeys()
+ * @ignore the dependent implementation details are changed
  * @run main/othervm CipherSuitesInOrder
  */
 

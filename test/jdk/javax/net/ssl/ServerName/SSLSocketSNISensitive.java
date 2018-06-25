@@ -54,7 +54,8 @@ import java.security.spec.*;
 import java.security.interfaces.*;
 import java.util.Base64;
 
-
+// Note: this test case works only on TLS 1.2 and prior versions because of
+// the use of MD5withRSA signed certificate.
 public class SSLSocketSNISensitive {
 
     /*
@@ -415,7 +416,7 @@ public class SSLSocketSNISensitive {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmAlgorithm);
         tmf.init(ks);
 
-        SSLContext ctx = SSLContext.getInstance("TLS");
+        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
         kmf.init(ks, passphrase);
 

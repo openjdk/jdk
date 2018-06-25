@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,27 @@
  * @run main/othervm DefaultEnabledProtocols
  */
 
-import javax.net.*;
-import javax.net.ssl.*;
-import java.util.Arrays;
 import java.security.Security;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.net.SocketFactory;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
 
 public class DefaultEnabledProtocols {
-    static enum ContextVersion {
+    enum ContextVersion {
         TLS_CV_01("SSL",
-                new String[] {"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"}),
+                new String[] {"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
         TLS_CV_02("TLS",
-                new String[] {"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"}),
+                new String[] {"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
         TLS_CV_03("SSLv3",
                 new String[] {"SSLv3", "TLSv1"}),
         TLS_CV_04("TLSv1",
@@ -50,13 +60,15 @@ public class DefaultEnabledProtocols {
                 new String[] {"SSLv3", "TLSv1", "TLSv1.1"}),
         TLS_CV_06("TLSv1.2",
                 new String[] {"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"}),
-        TLS_CV_07("Default",
-                new String[] {"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"});
+        TLS_CV_07("TLSv1.3",
+                new String[] {"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"}),
+        TLS_CV_08("Default",
+                new String[] {"SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"});
 
         final String contextVersion;
         final String[] enabledProtocols;
         final static String[] supportedProtocols = new String[] {
-                "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2"};
+                "SSLv2Hello", "SSLv3", "TLSv1", "TLSv1.1", "TLSv1.2", "TLSv1.3"};
 
         ContextVersion(String contextVersion, String[] enabledProtocols) {
             this.contextVersion = contextVersion;
@@ -71,15 +83,31 @@ public class DefaultEnabledProtocols {
             success = false;
         }
 
-        if (!Arrays.equals(target, expected)) {
+        if (!protocolEquals(target, expected)) {
             System.out.println("\tError: Expected to get protocols " +
                     Arrays.toString(expected));
-            System.out.println("\tError: The actual protocols " +
-                    Arrays.toString(target));
             success = false;
         }
+        System.out.println("\t  Protocols found " + Arrays.toString(target));
 
         return success;
+    }
+
+    private static boolean protocolEquals(
+            String[] actualProtocols,
+            String[] expectedProtocols) {
+        if (actualProtocols.length != expectedProtocols.length) {
+            return false;
+        }
+
+        Set<String> set = new HashSet<>(Arrays.asList(expectedProtocols));
+        for (String actual : actualProtocols) {
+            if (set.add(actual)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static boolean checkCipherSuites(String[] target) {

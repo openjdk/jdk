@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,11 @@
 
 package sun.security.ssl;
 
-import java.lang.ref.WeakReference;
 import java.io.*;
-import java.util.*;
-
+import java.lang.ref.WeakReference;
 import java.security.*;
 import java.security.cert.*;
-import java.security.cert.Certificate;
-
+import java.util.*;
 import sun.security.action.*;
 import sun.security.validator.TrustStoreUtil;
 
@@ -41,7 +38,6 @@ import sun.security.validator.TrustStoreUtil;
  * effectively.
  */
 final class TrustStoreManager {
-    private static final Debug debug = Debug.getInstance("ssl");
 
     // A singleton service to manage the default trusted KeyStores effectively.
     private static final TrustAnchorManager tam = new TrustAnchorManager();
@@ -112,8 +108,8 @@ final class TrustStoreManager {
             this.storeFile = storeFile;
             this.lastModified = lastModified;
 
-            if (debug != null && Debug.isOn("trustmanager")) {
-                System.out.println(
+            if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                SSLLogger.fine(
                     "trustStore is: " + storeName + "\n" +
                     "trustStore type is: " + storeType + "\n" +
                     "trustStore provider is: " + storeProvider + "\n" +
@@ -125,8 +121,10 @@ final class TrustStoreManager {
          * Create an instance of TrustStoreDescriptor for the default
          * trusted KeyStore.
          */
+        @SuppressWarnings("Convert2Lambda")
         static TrustStoreDescriptor createInstance() {
-             return AccessController.doPrivileged(new PrivilegedAction<>() {
+             return AccessController.doPrivileged(
+                    new PrivilegedAction<TrustStoreDescriptor>() {
 
                 @Override
                 public TrustStoreDescriptor run() {
@@ -158,11 +156,11 @@ final class TrustStoreManager {
                             }
 
                             // Not break, the file is inaccessible.
-                            if (debug != null &&
-                                    Debug.isOn("trustmanager")) {
-                                System.out.println(
-                                    "Inaccessible trust store: " +
-                                    storePropName);
+                            if (SSLLogger.isOn &&
+                                    SSLLogger.isOn("trustmanager")) {
+                                SSLLogger.fine(
+                                        "Inaccessible trust store: " +
+                                        storePropName);
                             }
                         }
                     } else {
@@ -267,8 +265,8 @@ final class TrustStoreManager {
             }
 
             // Reload a new key store.
-            if ((debug != null) && Debug.isOn("trustmanager")) {
-                System.out.println("Reload the trust store");
+            if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                SSLLogger.fine("Reload the trust store");
             }
 
             ks = loadKeyStore(descriptor);
@@ -309,20 +307,20 @@ final class TrustStoreManager {
 
             // Reload the trust store if needed.
             if (ks == null) {
-                if ((debug != null) && Debug.isOn("trustmanager")) {
-                    System.out.println("Reload the trust store");
+                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                    SSLLogger.fine("Reload the trust store");
                 }
                 ks = loadKeyStore(descriptor);
             }
 
             // Reload trust certs from the key store.
-            if ((debug != null) && Debug.isOn("trustmanager")) {
-                System.out.println("Reload trust certs");
+            if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                SSLLogger.fine("Reload trust certs");
             }
 
             certs = loadTrustedCerts(ks);
-            if ((debug != null) && Debug.isOn("trustmanager")) {
-                System.out.println("Reloaded " + certs.size() + " trust certs");
+            if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                SSLLogger.fine("Reloaded " + certs.size() + " trust certs");
             }
 
             // Note that as ks is a local variable, it is not
@@ -333,7 +331,7 @@ final class TrustStoreManager {
         }
 
         /**
-         * Load the KeyStore as described in the specified descriptor.
+         * Load the the KeyStore as described in the specified descriptor.
          */
         private static KeyStore loadKeyStore(
                 TrustStoreDescriptor descriptor) throws Exception {
@@ -341,8 +339,8 @@ final class TrustStoreManager {
                     descriptor.storeFile == null) {
 
                 // No file available, no KeyStore available.
-                if (debug != null && Debug.isOn("trustmanager")) {
-                    System.out.println("No available key store");
+                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                    SSLLogger.fine("No available key store");
                 }
 
                 return null;
@@ -367,8 +365,8 @@ final class TrustStoreManager {
                     ks.load(fis, password);
                 } catch (FileNotFoundException fnfe) {
                     // No file available, no KeyStore available.
-                    if (debug != null && Debug.isOn("trustmanager")) {
-                        System.out.println(
+                    if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                        SSLLogger.fine(
                             "Not available key store: " + descriptor.storeName);
                     }
 

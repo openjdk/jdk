@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,6 @@
 // SunJSSE does not support dynamic system properties, no way to re-use
 // system properties in samevm/agentvm mode.
 //
-// The test may timeout occasionally on heavy loaded system because
-// there are lot of TLS transactions involved. Frequent timeout(s) should
-// be analyzed further.
-//
 
 /*
  * @test
@@ -40,11 +36,15 @@
 
 import javax.net.ssl.*;
 import java.io.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-public class AsyncSSLSocketClose implements Runnable
-{
+public class AsyncSSLSocketClose implements Runnable {
     SSLSocket socket;
     SSLServerSocket ss;
+
+    // Is the socket ready to close?
+    private final CountDownLatch closeCondition = new CountDownLatch(1);
 
     // Where do we find the keystores?
     static String pathToStores = "../../../../javax/net/ssl/etc";
@@ -52,7 +52,7 @@ public class AsyncSSLSocketClose implements Runnable
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;
@@ -68,58 +68,68 @@ public class AsyncSSLSocketClose implements Runnable
         new AsyncSSLSocketClose();
     }
 
-    public AsyncSSLSocketClose() {
-        try {
-            SSLServerSocketFactory sslssf =
+    public AsyncSSLSocketClose() throws Exception {
+        SSLServerSocketFactory sslssf =
                 (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
-            ss = (SSLServerSocket) sslssf.createServerSocket(0);
+        ss = (SSLServerSocket) sslssf.createServerSocket(0);
 
-            SSLSocketFactory sslsf =
-                (SSLSocketFactory)SSLSocketFactory.getDefault();
-            socket = (SSLSocket)sslsf.createSocket("localhost",
-                                                        ss.getLocalPort());
-            SSLSocket serverSoc = (SSLSocket) ss.accept();
-            ss.close();
+        SSLSocketFactory sslsf =
+            (SSLSocketFactory)SSLSocketFactory.getDefault();
+        socket = (SSLSocket)sslsf.createSocket("localhost", ss.getLocalPort());
+        SSLSocket serverSoc = (SSLSocket)ss.accept();
+        ss.close();
 
-            (new Thread(this)).start();
-            serverSoc.startHandshake();
+        (new Thread(this)).start();
+        serverSoc.startHandshake();
 
-            try {
-                Thread.sleep(5000);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            socket.setSoLinger(true, 10);
-            System.out.println("Calling Socket.close");
-            socket.close();
-            System.out.println("ssl socket get closed");
-            System.out.flush();
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        boolean closeIsReady = closeCondition.await(90L, TimeUnit.SECONDS);
+        if (!closeIsReady) {
+            System.out.println(
+                    "Ignore, the closure is not ready yet in 90 seconds.");
+            return;
         }
 
+        socket.setSoLinger(true, 10);
+        System.out.println("Calling Socket.close");
+        socket.close();
+        System.out.println("ssl socket get closed");
+        System.out.flush();
     }
 
     // block in write
     public void run() {
-        try {
-            byte[] ba = new byte[1024];
-            for (int i=0; i<ba.length; i++)
-                ba[i] = 0x7A;
+        byte[] ba = new byte[1024];
+        for (int i = 0; i < ba.length; i++) {
+            ba[i] = 0x7A;
+        }
 
+        try {
             OutputStream os = socket.getOutputStream();
             int count = 0;
+
+            // 1st round write
+            count += ba.length;
+            System.out.println(count + " bytes to be written");
+            os.write(ba);
+            System.out.println(count + " bytes written");
+
+            // Signal, ready to close.
+            closeCondition.countDown();
+
+            // write more
             while (true) {
                 count += ba.length;
                 System.out.println(count + " bytes to be written");
                 os.write(ba);
                 System.out.println(count + " bytes written");
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            if (socket.isClosed() || socket.isOutputShutdown()) {
+                System.out.println("interrupted, the socket is closed");
+            } else {
+                throw new RuntimeException("interrupted?", e);
+            }
         }
     }
-
 }
+

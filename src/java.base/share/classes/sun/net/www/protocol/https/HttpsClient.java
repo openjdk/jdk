@@ -608,26 +608,17 @@ final class HttpsClient extends HttpClient
             HostnameChecker checker = HostnameChecker.getInstance(
                                                 HostnameChecker.TYPE_TLS);
 
-            // Use ciphersuite to determine whether Kerberos is present.
-            if (cipher.startsWith("TLS_KRB5")) {
-                if (!HostnameChecker.match(host, getPeerPrincipal())) {
-                    throw new SSLPeerUnverifiedException("Hostname checker" +
-                                " failed for Kerberos");
-                }
-            } else { // X.509
+            // get the subject's certificate
+            peerCerts = session.getPeerCertificates();
 
-                // get the subject's certificate
-                peerCerts = session.getPeerCertificates();
-
-                X509Certificate peerCert;
-                if (peerCerts[0] instanceof
-                        java.security.cert.X509Certificate) {
-                    peerCert = (java.security.cert.X509Certificate)peerCerts[0];
-                } else {
-                    throw new SSLPeerUnverifiedException("");
-                }
-                checker.match(host, peerCert);
+            X509Certificate peerCert;
+            if (peerCerts[0] instanceof
+                    java.security.cert.X509Certificate) {
+                peerCert = (java.security.cert.X509Certificate)peerCerts[0];
+            } else {
+                throw new SSLPeerUnverifiedException("");
             }
+            checker.match(host, peerCert);
 
             // if it doesn't throw an exception, we passed. Return.
             return;

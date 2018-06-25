@@ -107,10 +107,9 @@ public class EngineEnforceUseClientMode {
                 "wrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
             System.out.println("Caught the correct exception.");
-            ssle3.wrap(appOut1, oneToTwo);
             oneToTwo.flip();
             if (oneToTwo.hasRemaining()) {
-                throw new Exception("wrap1 generated data");
+                throw new Exception("wrap generated data");
             }
             oneToTwo.clear();
         }
@@ -122,12 +121,11 @@ public class EngineEnforceUseClientMode {
                 "unwrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
             System.out.println("Caught the correct exception.");
-            ssle4.wrap(appOut1, oneToTwo);
-            oneToTwo.flip();
-            if (oneToTwo.hasRemaining()) {
-                throw new Exception("wrap2 generated data");
+            appIn1.flip();
+            if (appIn1.hasRemaining()) {
+                throw new Exception("unwrap generated data");
             }
-            oneToTwo.clear();
+            appIn1.clear();
         }
 
         try {
@@ -137,12 +135,6 @@ public class EngineEnforceUseClientMode {
                 "unwrap():  Didn't catch the exception properly");
         } catch (IllegalStateException e) {
             System.out.println("Caught the correct exception.");
-            ssle5.wrap(appOut1, oneToTwo);
-            oneToTwo.flip();
-            if (oneToTwo.hasRemaining()) {
-                throw new Exception("wrap3 generated data");
-            }
-            oneToTwo.clear();
         }
 
         boolean dataDone = false;
@@ -200,7 +192,7 @@ public class EngineEnforceUseClientMode {
 
                 System.out.println("Try changing modes...");
                 try {
-                    ssle2.setUseClientMode(false);
+                    ssle2.setUseClientMode(true);
                     throw new RuntimeException(
                         "setUseClientMode():  " +
                         "Didn't catch the exception properly");
@@ -311,8 +303,10 @@ public class EngineEnforceUseClientMode {
             log("Data transferred cleanly");
         }
 
-        a.clear();
-        b.clear();
+        a.position(a.limit());
+        b.position(b.limit());
+        a.limit(a.capacity());
+        b.limit(b.capacity());
     }
 
     private static void log(String str) {

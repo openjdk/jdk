@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -29,7 +28,6 @@ import java.util.concurrent.*;
 
 import java.security.*;
 import java.security.cert.*;
-import java.security.cert.Certificate;
 
 import javax.net.ssl.*;
 
@@ -103,11 +101,11 @@ public class CipherTest {
 
     public static class TestParameters {
 
-        String cipherSuite;
-        String protocol;
+        CipherSuite cipherSuite;
+        Protocol protocol;
         String clientAuth;
 
-        TestParameters(String cipherSuite, String protocol,
+        TestParameters(CipherSuite cipherSuite, Protocol protocol,
                 String clientAuth) {
             this.cipherSuite = cipherSuite;
             this.protocol = protocol;
@@ -115,7 +113,7 @@ public class CipherTest {
         }
 
         boolean isEnabled() {
-            return TLSCipherStatus.isEnabled(cipherSuite, protocol);
+            return cipherSuite.supportedByProtocol(protocol);
         }
 
         public String toString() {
@@ -124,134 +122,6 @@ public class CipherTest {
                 s += " with " + clientAuth + " client authentication";
             }
             return s;
-        }
-
-        static enum TLSCipherStatus {
-            // cipher suites supported since TLS 1.2
-            CS_01("TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384", 0x0303, 0xFFFF),
-            CS_02("TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",   0x0303, 0xFFFF),
-            CS_03("TLS_RSA_WITH_AES_256_CBC_SHA256",         0x0303, 0xFFFF),
-            CS_04("TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",  0x0303, 0xFFFF),
-            CS_05("TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",    0x0303, 0xFFFF),
-            CS_06("TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",     0x0303, 0xFFFF),
-            CS_07("TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",     0x0303, 0xFFFF),
-
-            CS_08("TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256", 0x0303, 0xFFFF),
-            CS_09("TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",   0x0303, 0xFFFF),
-            CS_10("TLS_RSA_WITH_AES_128_CBC_SHA256",         0x0303, 0xFFFF),
-            CS_11("TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",  0x0303, 0xFFFF),
-            CS_12("TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",    0x0303, 0xFFFF),
-            CS_13("TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",     0x0303, 0xFFFF),
-            CS_14("TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",     0x0303, 0xFFFF),
-
-            CS_15("TLS_DH_anon_WITH_AES_256_CBC_SHA256",     0x0303, 0xFFFF),
-            CS_16("TLS_DH_anon_WITH_AES_128_CBC_SHA256",     0x0303, 0xFFFF),
-            CS_17("TLS_RSA_WITH_NULL_SHA256",                0x0303, 0xFFFF),
-
-            CS_20("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", 0x0303, 0xFFFF),
-            CS_21("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", 0x0303, 0xFFFF),
-            CS_22("TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",   0x0303, 0xFFFF),
-            CS_23("TLS_RSA_WITH_AES_256_GCM_SHA384",         0x0303, 0xFFFF),
-            CS_24("TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",  0x0303, 0xFFFF),
-            CS_25("TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",    0x0303, 0xFFFF),
-            CS_26("TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",     0x0303, 0xFFFF),
-            CS_27("TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",     0x0303, 0xFFFF),
-
-            CS_28("TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",   0x0303, 0xFFFF),
-            CS_29("TLS_RSA_WITH_AES_128_GCM_SHA256",         0x0303, 0xFFFF),
-            CS_30("TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",  0x0303, 0xFFFF),
-            CS_31("TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",    0x0303, 0xFFFF),
-            CS_32("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",     0x0303, 0xFFFF),
-            CS_33("TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",     0x0303, 0xFFFF),
-
-            CS_34("TLS_DH_anon_WITH_AES_256_GCM_SHA384",     0x0303, 0xFFFF),
-            CS_35("TLS_DH_anon_WITH_AES_128_GCM_SHA256",     0x0303, 0xFFFF),
-
-            // cipher suites obsoleted since TLS 1.2
-            CS_50("SSL_RSA_WITH_DES_CBC_SHA",                0x0000, 0x0303),
-            CS_51("SSL_DHE_RSA_WITH_DES_CBC_SHA",            0x0000, 0x0303),
-            CS_52("SSL_DHE_DSS_WITH_DES_CBC_SHA",            0x0000, 0x0303),
-            CS_53("SSL_DH_anon_WITH_DES_CBC_SHA",            0x0000, 0x0303),
-            CS_54("TLS_KRB5_WITH_DES_CBC_SHA",               0x0000, 0x0303),
-            CS_55("TLS_KRB5_WITH_DES_CBC_MD5",               0x0000, 0x0303),
-
-            // cipher suites obsoleted since TLS 1.1
-            CS_60("SSL_RSA_EXPORT_WITH_RC4_40_MD5",          0x0000, 0x0302),
-            CS_61("SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",      0x0000, 0x0302),
-            CS_62("SSL_RSA_EXPORT_WITH_DES40_CBC_SHA",       0x0000, 0x0302),
-            CS_63("SSL_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",   0x0000, 0x0302),
-            CS_64("SSL_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",   0x0000, 0x0302),
-            CS_65("SSL_DH_anon_EXPORT_WITH_DES40_CBC_SHA",   0x0000, 0x0302),
-            CS_66("TLS_KRB5_EXPORT_WITH_RC4_40_SHA",         0x0000, 0x0302),
-            CS_67("TLS_KRB5_EXPORT_WITH_RC4_40_MD5",         0x0000, 0x0302),
-            CS_68("TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",     0x0000, 0x0302),
-            CS_69("TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",     0x0000, 0x0302),
-
-            // ignore TLS_EMPTY_RENEGOTIATION_INFO_SCSV always
-            CS_99("TLS_EMPTY_RENEGOTIATION_INFO_SCSV",       0xFFFF, 0x0000);
-
-            // the cipher suite name
-            final String cipherSuite;
-
-            // supported since protocol version
-            final int supportedSince;
-
-            // obsoleted since protocol version
-            final int obsoletedSince;
-
-            TLSCipherStatus(String cipherSuite,
-                    int supportedSince, int obsoletedSince) {
-                this.cipherSuite = cipherSuite;
-                this.supportedSince = supportedSince;
-                this.obsoletedSince = obsoletedSince;
-            }
-
-            static boolean isEnabled(String cipherSuite, String protocol) {
-                int versionNumber = toVersionNumber(protocol);
-
-                if (versionNumber < 0) {
-                    return true;  // unlikely to happen
-                }
-
-                for (TLSCipherStatus status : TLSCipherStatus.values()) {
-                    if (cipherSuite.equals(status.cipherSuite)) {
-                        if ((versionNumber < status.supportedSince) ||
-                            (versionNumber >= status.obsoletedSince)) {
-                            return false;
-                        }
-
-                        return true;
-                    }
-                }
-
-                return true;
-            }
-
-            private static int toVersionNumber(String protocol) {
-                int versionNumber = -1;
-
-                switch (protocol) {
-                    case "SSLv2Hello":
-                        versionNumber = 0x0002;
-                        break;
-                    case "SSLv3":
-                        versionNumber = 0x0300;
-                        break;
-                    case "TLSv1":
-                        versionNumber = 0x0301;
-                        break;
-                    case "TLSv1.1":
-                        versionNumber = 0x0302;
-                        break;
-                    case "TLSv1.2":
-                        versionNumber = 0x0303;
-                        break;
-                    default:
-                        // unlikely to happen
-                }
-
-                return versionNumber;
-            }
         }
     }
 
@@ -269,11 +139,23 @@ public class CipherTest {
         String[] clientAuths = {null, "RSA", "DSA"};
         tests = new ArrayList<TestParameters>(
             cipherSuites.length * protocols.length * clientAuths.length);
-        for (int i = 0; i < cipherSuites.length; i++) {
-            String cipherSuite = cipherSuites[i];
+        for (int j = 0; j < protocols.length; j++) {
+            String protocol = protocols[j];
+            if (protocol.equals(Protocol.SSLV2HELLO.name)) {
+                System.out.println("Skipping SSLv2Hello protocol");
+                continue;
+            }
 
-            for (int j = 0; j < protocols.length; j++) {
-                String protocol = protocols[j];
+            for (int i = 0; i < cipherSuites.length; i++) {
+                String cipherSuite = cipherSuites[i];
+
+                // skip kerberos cipher suites and TLS_EMPTY_RENEGOTIATION_INFO_SCSV
+                if (cipherSuite.startsWith("TLS_KRB5") || cipherSuite.equals(
+                        CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV.name())) {
+                    System.out.println("Skipping unsupported test for " +
+                                        cipherSuite + " of " + protocol);
+                    continue;
+                }
 
                 if (!peerFactory.isSupported(cipherSuite, protocol)) {
                     continue;
@@ -281,13 +163,16 @@ public class CipherTest {
 
                 for (int k = 0; k < clientAuths.length; k++) {
                     String clientAuth = clientAuths[k];
-                    if ((clientAuth != null) &&
-                            (cipherSuite.indexOf("DH_anon") != -1)) {
-                        // no client with anonymous ciphersuites
+                    // no client with anonymous cipher suites;
+                    // TLS 1.3 doesn't support DSA
+                    if ((clientAuth != null && cipherSuite.contains("DH_anon"))
+                            || ("DSA".equals(clientAuth) && "TLSv1.3".equals(protocol))) {
                         continue;
                     }
-                    tests.add(new TestParameters(cipherSuite, protocol,
-                        clientAuth));
+                    tests.add(new TestParameters(
+                            CipherSuite.cipherSuite(cipherSuite),
+                            Protocol.protocol(protocol),
+                            clientAuth));
                 }
             }
         }
@@ -356,7 +241,7 @@ public class CipherTest {
                     // no more tests
                     break;
                 }
-                if (params.isEnabled() == false) {
+                if (!params.isEnabled()) {
                     System.out.println("Skipping disabled test " + params);
                     continue;
                 }
@@ -422,7 +307,7 @@ public class CipherTest {
         }
         PATH = new File(System.getProperty("test.src", "."), relPath);
         CipherTest.peerFactory = peerFactory;
-        System.out.print(
+        System.out.println(
             "Initializing test '" + peerFactory.getName() + "'...");
         secureRandom = new SecureRandom();
         secureRandom.nextInt();
@@ -455,27 +340,12 @@ public class CipherTest {
         abstract Server newServer(CipherTest cipherTest) throws Exception;
 
         boolean isSupported(String cipherSuite, String protocol) {
-            // skip kerberos cipher suites
-            if (cipherSuite.startsWith("TLS_KRB5")) {
-                System.out.println("Skipping unsupported test for " +
-                                    cipherSuite + " of " + protocol);
-                return false;
-            }
-
-            // skip SSLv2Hello protocol
-            if (protocol.equals("SSLv2Hello")) {
-                System.out.println("Skipping unsupported test for " +
-                                    cipherSuite + " of " + protocol);
-                return false;
-            }
-
             // ignore exportable cipher suite for TLSv1.1
-            if (protocol.equals("TLSv1.1")) {
-                if (cipherSuite.indexOf("_EXPORT_WITH") != -1) {
+            if (protocol.equals("TLSv1.1")
+                    && (cipherSuite.indexOf("_EXPORT_WITH") != -1)) {
                     System.out.println("Skipping obsoleted test for " +
                                         cipherSuite + " of " + protocol);
                     return false;
-                }
             }
 
             // ignore obsoleted cipher suite for the specified protocol

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,119 +26,315 @@
 package sun.security.ssl;
 
 import java.io.IOException;
-import javax.net.ssl.SSLProtocolException;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
+import java.util.Arrays;
+import static sun.security.ssl.ClientHello.ClientHelloMessage;
 
-import sun.security.ssl.HandshakeMessage.ClientHello;
-
-/*
- * HelloVerifyRequest cookie manager
+/**
+ *  (D)TLS handshake cookie manager
  */
-final class HelloCookieManager {
-    // the cookie secret life time
-    private static long COOKIE_TIMING_WINDOW = 3600000;     // in milliseconds
-    private static int  COOKIE_MAX_LENGTH_DTLS10 = 32;      // 32 bytes
-    private static int  COOKIE_MAX_LENGTH_DTLS12 = 0xFF;    // 2^8 -1 bytes
+abstract class HelloCookieManager {
 
-    private final SecureRandom          secureRandom;
-    private final MessageDigest         cookieDigest;
+    static class Builder {
 
-    private int                         cookieVersion;      // allow to wrap
-    private long                        secretLifetime;
-    private byte[]                      cookieSecret;
+        final SecureRandom secureRandom;
 
-    private int                         prevCookieVersion;
-    private byte[]                      prevCookieSecret;
+        private volatile D10HelloCookieManager d10HelloCookieManager;
+        private volatile D13HelloCookieManager d13HelloCookieManager;
+        private volatile T13HelloCookieManager t13HelloCookieManager;
 
-    HelloCookieManager(SecureRandom secureRandom) {
-        this.secureRandom = secureRandom;
-        this.cookieDigest = JsseJce.getMessageDigest("SHA-256");
+        Builder(SecureRandom secureRandom) {
+            this.secureRandom = secureRandom;
+        }
 
-        this.cookieVersion = secureRandom.nextInt();
-        this.secretLifetime = 0;
-        this.cookieSecret = null;
+        HelloCookieManager valueOf(ProtocolVersion protocolVersion) {
+            if (protocolVersion.isDTLS) {
+                if (protocolVersion.useTLS13PlusSpec()) {
+                    if (d13HelloCookieManager != null) {
+                        return d13HelloCookieManager;
+                    }
 
-        this.prevCookieVersion = 0;
-        this.prevCookieSecret = null;
-    }
+                    synchronized (this) {
+                        if (d13HelloCookieManager == null) {
+                            d13HelloCookieManager =
+                                    new D13HelloCookieManager(secureRandom);
+                        }
+                    }
 
-    // Used by server side to generate cookies in HelloVerifyRequest message.
-    synchronized byte[] getCookie(ClientHello clientHelloMsg) {
-        if (secretLifetime < System.currentTimeMillis()) {
-            if (cookieSecret != null) {
-                prevCookieVersion = cookieVersion;
-                prevCookieSecret = cookieSecret.clone();
+                    return d13HelloCookieManager;
+                } else {
+                    if (d10HelloCookieManager != null) {
+                        return d10HelloCookieManager;
+                    }
+
+                    synchronized (this) {
+                        if (d10HelloCookieManager == null) {
+                            d10HelloCookieManager =
+                                    new D10HelloCookieManager(secureRandom);
+                        }
+                    }
+
+                    return d10HelloCookieManager;
+                }
             } else {
-                cookieSecret = new byte[32];
+                if (protocolVersion.useTLS13PlusSpec()) {
+                    if (t13HelloCookieManager != null) {
+                        return t13HelloCookieManager;
+                    }
+
+                    synchronized (this) {
+                        if (t13HelloCookieManager == null) {
+                            t13HelloCookieManager =
+                                    new T13HelloCookieManager(secureRandom);
+                        }
+                    }
+
+                    return t13HelloCookieManager;
+                }
             }
 
-            cookieVersion++;
-            secureRandom.nextBytes(cookieSecret);
-            secretLifetime = System.currentTimeMillis() + COOKIE_TIMING_WINDOW;
+            return null;
         }
-
-        clientHelloMsg.updateHelloCookie(cookieDigest);
-        byte[] cookie = cookieDigest.digest(cookieSecret);      // 32 bytes
-        cookie[0] = (byte)((cookieVersion >> 24) & 0xFF);
-        cookie[1] = (byte)((cookieVersion >> 16) & 0xFF);
-        cookie[2] = (byte)((cookieVersion >> 8) & 0xFF);
-        cookie[3] = (byte)(cookieVersion & 0xFF);
-
-        return cookie;
     }
 
-    // Used by server side to check the cookie in ClientHello message.
-    synchronized boolean isValid(ClientHello clientHelloMsg) {
-        byte[] cookie = clientHelloMsg.cookie;
+    abstract byte[] createCookie(ServerHandshakeContext context,
+                ClientHelloMessage clientHello) throws IOException;
 
-        // no cookie exchange or not a valid cookie length
-        if ((cookie == null) || (cookie.length != 32)) {
-            return false;
+    abstract boolean isCookieValid(ServerHandshakeContext context,
+            ClientHelloMessage clientHello, byte[] cookie) throws IOException;
+
+    // DTLS 1.0/1.2
+    private static final
+            class D10HelloCookieManager extends HelloCookieManager {
+
+        final SecureRandom secureRandom;
+        private int         cookieVersion;  // allow to wrap, version + sequence
+        private byte[]      cookieSecret;
+        private byte[]      legacySecret;
+
+        D10HelloCookieManager(SecureRandom secureRandom) {
+            this.secureRandom = secureRandom;
+
+            this.cookieVersion = secureRandom.nextInt();
+            this.cookieSecret = new byte[32];
+            this.legacySecret = new byte[32];
+
+            secureRandom.nextBytes(cookieSecret);
+            System.arraycopy(cookieSecret, 0, legacySecret, 0, 32);
         }
 
-        int version = ((cookie[0] & 0xFF) << 24) |
-                      ((cookie[1] & 0xFF) << 16) |
-                      ((cookie[2] & 0xFF) << 8) |
-                       (cookie[3] & 0xFF);
+        @Override
+        byte[] createCookie(ServerHandshakeContext context,
+                ClientHelloMessage clientHello) throws IOException {
+            int version;
+            byte[] secret;
 
-        byte[] secret;
-        if (version == cookieVersion) {
-            secret = cookieSecret;
-        } else if (version == prevCookieVersion) {
-            secret = prevCookieSecret;
-        } else {
-            return false;       // may be out of the timing window
+            synchronized (this) {
+                version = cookieVersion;
+                secret = cookieSecret;
+
+                // the cookie secret usage limit is 2^24
+                if ((cookieVersion & 0xFFFFFF) == 0) {  // reset the secret
+                    System.arraycopy(cookieSecret, 0, legacySecret, 0, 32);
+                    secureRandom.nextBytes(cookieSecret);
+                }
+
+                cookieVersion++;
+            }
+
+            MessageDigest md = JsseJce.getMessageDigest("SHA-256");
+            byte[] helloBytes = clientHello.getHelloCookieBytes();
+            md.update(helloBytes);
+            byte[] cookie = md.digest(secret);      // 32 bytes
+            cookie[0] = (byte)((version >> 24) & 0xFF);
+
+            return cookie;
         }
 
-        clientHelloMsg.updateHelloCookie(cookieDigest);
-        byte[] target = cookieDigest.digest(secret);            // 32 bytes
-
-        for (int i = 4; i < 32; i++) {
-            if (cookie[i] != target[i]) {
+        @Override
+        boolean isCookieValid(ServerHandshakeContext context,
+            ClientHelloMessage clientHello, byte[] cookie) throws IOException {
+            // no cookie exchange or not a valid cookie length
+            if ((cookie == null) || (cookie.length != 32)) {
                 return false;
             }
-        }
 
-        return true;
+            byte[] secret;
+            synchronized (this) {
+                if (((cookieVersion >> 24) & 0xFF) == cookie[0]) {
+                    secret = cookieSecret;
+                } else {
+                    secret = legacySecret;  // including out of window cookies
+                }
+            }
+
+            MessageDigest md = JsseJce.getMessageDigest("SHA-256");
+            byte[] helloBytes = clientHello.getHelloCookieBytes();
+            md.update(helloBytes);
+            byte[] target = md.digest(secret);      // 32 bytes
+            target[0] = cookie[0];
+
+            return Arrays.equals(target, cookie);
+        }
     }
 
-    // Used by client side to check the cookie in HelloVerifyRequest message.
-    static void checkCookie(ProtocolVersion protocolVersion,
-            byte[] cookie) throws IOException {
-        if (cookie != null && cookie.length != 0) {
-            int limit = COOKIE_MAX_LENGTH_DTLS12;
-            if (protocolVersion.v == ProtocolVersion.DTLS10.v) {
-                limit = COOKIE_MAX_LENGTH_DTLS10;
-            }
-
-            if (cookie.length > COOKIE_MAX_LENGTH_DTLS10) {
-                throw new SSLProtocolException(
-                        "Invalid HelloVerifyRequest.cookie (length = " +
-                         cookie.length + " bytes)");
-            }
+    private static final
+            class D13HelloCookieManager extends HelloCookieManager {
+        D13HelloCookieManager(SecureRandom secureRandom) {
         }
 
-        // Otherwise, no cookie exchange.
+        @Override
+        byte[] createCookie(ServerHandshakeContext context,
+                ClientHelloMessage clientHello) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        boolean isCookieValid(ServerHandshakeContext context,
+            ClientHelloMessage clientHello, byte[] cookie) throws IOException {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
+
+    private static final
+            class T13HelloCookieManager extends HelloCookieManager {
+
+        final SecureRandom secureRandom;
+        private int             cookieVersion;      // version + sequence
+        private final byte[]    cookieSecret;
+        private final byte[]    legacySecret;
+
+        T13HelloCookieManager(SecureRandom secureRandom) {
+            this.secureRandom = secureRandom;
+            this.cookieVersion = secureRandom.nextInt();
+            this.cookieSecret = new byte[64];
+            this.legacySecret = new byte[64];
+
+            secureRandom.nextBytes(cookieSecret);
+            System.arraycopy(cookieSecret, 0, legacySecret, 0, 64);
+        }
+
+        @Override
+        byte[] createCookie(ServerHandshakeContext context,
+                ClientHelloMessage clientHello) throws IOException {
+            int version;
+            byte[] secret;
+
+            synchronized (this) {
+                version = cookieVersion;
+                secret = cookieSecret;
+
+                // the cookie secret usage limit is 2^24
+                if ((cookieVersion & 0xFFFFFF) == 0) {  // reset the secret
+                    System.arraycopy(cookieSecret, 0, legacySecret, 0, 64);
+                    secureRandom.nextBytes(cookieSecret);
+                }
+
+                cookieVersion++;        // allow wrapped version number
+            }
+
+            MessageDigest md = JsseJce.getMessageDigest(
+                    context.negotiatedCipherSuite.hashAlg.name);
+            byte[] headerBytes = clientHello.getHeaderBytes();
+            md.update(headerBytes);
+            byte[] headerCookie = md.digest(secret);
+
+            // hash of ClientHello handshake message
+            context.handshakeHash.update();
+            byte[] clientHelloHash = context.handshakeHash.digest();
+
+            // version and cipher suite
+            //
+            // Store the negotiated cipher suite in the cookie as well.
+            // cookie[0]/[1]: cipher suite
+            // cookie[2]: cookie version
+            // + (hash length): Mac(ClientHello header)
+            // + (hash length): Hash(ClientHello)
+            byte[] prefix = new byte[] {
+                    (byte)((context.negotiatedCipherSuite.id >> 8) & 0xFF),
+                    (byte)(context.negotiatedCipherSuite.id & 0xFF),
+                    (byte)((version >> 24) & 0xFF)
+                };
+
+            byte[] cookie = Arrays.copyOf(prefix,
+                prefix.length + headerCookie.length + clientHelloHash.length);
+            System.arraycopy(headerCookie, 0, cookie,
+                prefix.length, headerCookie.length);
+            System.arraycopy(clientHelloHash, 0, cookie,
+                prefix.length + headerCookie.length, clientHelloHash.length);
+
+            return cookie;
+        }
+
+        @Override
+        boolean isCookieValid(ServerHandshakeContext context,
+            ClientHelloMessage clientHello, byte[] cookie) throws IOException {
+            // no cookie exchange or not a valid cookie length
+            if ((cookie == null) || (cookie.length <= 32)) {    // 32: roughly
+                return false;
+            }
+
+            int csId = ((cookie[0] & 0xFF) << 8) | (cookie[1] & 0xFF);
+            CipherSuite cs = CipherSuite.valueOf(csId);
+            if (cs == null || cs.hashAlg == null || cs.hashAlg.hashLength == 0) {
+                return false;
+            }
+
+            int hashLen = cs.hashAlg.hashLength;
+            if (cookie.length != (3 + hashLen * 2)) {
+                return false;
+            }
+
+            byte[] prevHeadCookie =
+                    Arrays.copyOfRange(cookie, 3, 3 + hashLen);
+            byte[] prevClientHelloHash =
+                    Arrays.copyOfRange(cookie, 3 + hashLen, cookie.length);
+
+            byte[] secret;
+            synchronized (this) {
+                if ((byte)((cookieVersion >> 24) & 0xFF) == cookie[2]) {
+                    secret = cookieSecret;
+                } else {
+                    secret = legacySecret;  // including out of window cookies
+                }
+            }
+
+            MessageDigest md = JsseJce.getMessageDigest(cs.hashAlg.name);
+            byte[] headerBytes = clientHello.getHeaderBytes();
+            md.update(headerBytes);
+            byte[] headerCookie = md.digest(secret);
+
+            if (!Arrays.equals(headerCookie, prevHeadCookie)) {
+                return false;
+            }
+
+            // Use the ClientHello hash in the cookie for transtript
+            // hash calculation for stateless HelloRetryRequest.
+            //
+            // Transcript-Hash(ClientHello1, HelloRetryRequest, ... Mn) =
+            //   Hash(message_hash ||    /* Handshake type */
+            //     00 00 Hash.length ||  /* Handshake message length (bytes) */
+            //     Hash(ClientHello1) || /* Hash of ClientHello1 */
+            //     HelloRetryRequest || ... || Mn)
+
+            // Reproduce HelloRetryRequest handshake message
+            byte[] hrrMessage =
+                    ServerHello.hrrReproducer.produce(context, clientHello);
+            context.handshakeHash.push(hrrMessage);
+
+            // Construct the 1st ClientHello message for transcript hash
+            byte[] hashedClientHello = new byte[4 + hashLen];
+            hashedClientHello[0] = SSLHandshake.MESSAGE_HASH.id;
+            hashedClientHello[1] = (byte)0x00;
+            hashedClientHello[2] = (byte)0x00;
+            hashedClientHello[3] = (byte)(hashLen & 0xFF);
+            System.arraycopy(prevClientHelloHash, 0,
+                    hashedClientHello, 4, hashLen);
+
+            context.handshakeHash.push(hashedClientHello);
+
+            return true;
+        }
     }
 }

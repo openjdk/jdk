@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,16 @@
 
 package sun.security.ssl;
 
-import java.util.*;
 import java.math.BigInteger;
-
 import java.security.*;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.*;
-
+import java.util.*;
 import javax.crypto.*;
-
-// explicit import to override the Provider class in this package
-import java.security.Provider;
-
-// need internal Sun classes for FIPS tricks
-import sun.security.jca.Providers;
 import sun.security.jca.ProviderList;
-
-import sun.security.util.ECUtil;
-
+import sun.security.jca.Providers;
 import static sun.security.ssl.SunJSSE.cryptoProvider;
+import sun.security.util.ECUtil;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
@@ -53,17 +44,10 @@ import static sun.security.util.SecurityConstants.PROVIDER_VER;
  * @author  Andreas Sterbenz
  */
 final class JsseJce {
+    static final boolean ALLOW_ECC =
+            Utilities.getBooleanProperty("com.sun.net.ssl.enableECC", true);
 
     private static final ProviderList fipsProviderList;
-
-    // Flag indicating whether Kerberos crypto is available.
-    // If true, then all the Kerberos-based crypto we need is available.
-    private static final boolean kerberosAvailable;
-    static {
-        ClientKeyExchangeService p =
-                ClientKeyExchangeService.find("KRB5");
-        kerberosAvailable = (p != null);
-    }
 
     static {
         // force FIPS flag initialization
@@ -116,37 +100,45 @@ final class JsseJce {
      * Can be used for encryption, decryption, signing, verifying.
      */
     static final String CIPHER_RSA_PKCS1 = "RSA/ECB/PKCS1Padding";
+
     /**
      * JCE transformation string for the stream cipher RC4.
      */
     static final String CIPHER_RC4 = "RC4";
+
     /**
      * JCE transformation string for DES in CBC mode without padding.
      */
     static final String CIPHER_DES = "DES/CBC/NoPadding";
+
     /**
      * JCE transformation string for (3-key) Triple DES in CBC mode
      * without padding.
      */
     static final String CIPHER_3DES = "DESede/CBC/NoPadding";
+
     /**
      * JCE transformation string for AES in CBC mode
      * without padding.
      */
     static final String CIPHER_AES = "AES/CBC/NoPadding";
+
     /**
      * JCE transformation string for AES in GCM mode
      * without padding.
      */
     static final String CIPHER_AES_GCM = "AES/GCM/NoPadding";
+
     /**
      * JCA identifier string for DSA, i.e. a DSA with SHA-1.
      */
     static final String SIGNATURE_DSA = "DSA";
+
     /**
      * JCA identifier string for ECDSA, i.e. a ECDSA with SHA-1.
      */
     static final String SIGNATURE_ECDSA = "SHA1withECDSA";
+
     /**
      * JCA identifier string for Raw DSA, i.e. a DSA signature without
      * hashing where the application provides the SHA-1 hash of the data.
@@ -154,17 +146,20 @@ final class JsseJce {
      * for compatibility.
      */
     static final String SIGNATURE_RAWDSA = "RawDSA";
+
     /**
      * JCA identifier string for Raw ECDSA, i.e. a DSA signature without
      * hashing where the application provides the SHA-1 hash of the data.
      */
     static final String SIGNATURE_RAWECDSA = "NONEwithECDSA";
+
     /**
      * JCA identifier string for Raw RSA, i.e. a RSA PKCS#1 v1.5 signature
      * without hashing where the application provides the hash of the data.
      * Used for RSA client authentication with a 36 byte hash.
      */
     static final String SIGNATURE_RAWRSA = "NONEwithRSA";
+
     /**
      * JCA identifier string for the SSL/TLS style RSA Signature. I.e.
      * an signature using RSA with PKCS#1 v1.5 padding signing a
@@ -178,10 +173,6 @@ final class JsseJce {
 
     static boolean isEcAvailable() {
         return EcAvailability.isAvailable;
-    }
-
-    static boolean isKerberosAvailable() {
-        return kerberosAvailable;
     }
 
     /**
@@ -299,7 +290,8 @@ final class JsseJce {
         for (Provider.Service s : cryptoProvider.getServices()) {
             if (s.getType().equals("SecureRandom")) {
                 try {
-                    return SecureRandom.getInstance(s.getAlgorithm(), cryptoProvider);
+                    return SecureRandom.getInstance(
+                            s.getAlgorithm(), cryptoProvider);
                 } catch (NoSuchAlgorithmException ee) {
                     // ignore
                 }
@@ -394,7 +386,7 @@ final class JsseJce {
     // See Effective Java Second Edition: Item 71.
     private static class EcAvailability {
         // Is EC crypto available?
-        private final static boolean isAvailable;
+        private static final boolean isAvailable;
 
         static {
             boolean mediator = true;

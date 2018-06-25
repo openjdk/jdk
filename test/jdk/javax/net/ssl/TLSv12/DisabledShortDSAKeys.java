@@ -289,8 +289,14 @@ public class DisabledShortDSAKeys {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        if (debug)
+        Security.setProperty("jdk.certpath.disabledAlgorithms",
+                "DSA keySize < 1024");
+        Security.setProperty("jdk.tls.disabledAlgorithms",
+                "DSA keySize < 1024");
+
+        if (debug) {
             System.setProperty("javax.net.debug", "all");
+        }
 
         /*
          * Get the customized arguments.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,88 +23,299 @@
  * questions.
  */
 
-
 package sun.security.ssl;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.security.CryptoPrimitive;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.text.MessageFormat;
+import java.util.EnumSet;
+import java.util.Locale;
+import javax.crypto.SecretKey;
+import javax.crypto.interfaces.DHPublicKey;
+import javax.crypto.spec.DHParameterSpec;
+import javax.crypto.spec.DHPublicKeySpec;
 import javax.net.ssl.SSLHandshakeException;
+import sun.security.ssl.DHKeyExchange.DHECredentials;
+import sun.security.ssl.DHKeyExchange.DHEPossession;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
+import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
+import sun.security.util.HexDumpEncoder;
 
-/*
- * Message used by clients to send their Diffie-Hellman public
- * keys to servers.
- *
- * @author David Brownell
+/**
+ * Pack of the "ClientKeyExchange" handshake message.
  */
-final class DHClientKeyExchange extends HandshakeMessage {
+final class DHClientKeyExchange {
+    static final DHClientKeyExchangeConsumer dhHandshakeConsumer =
+            new DHClientKeyExchangeConsumer();
+    static final DHClientKeyExchangeProducer dhHandshakeProducer =
+            new DHClientKeyExchangeProducer();
 
-    @Override
-    int messageType() {
-        return ht_client_key_exchange;
-    }
-
-    /*
-     * This value may be empty if it was included in the
-     * client's certificate ...
+    /**
+     * The DiffieHellman ClientKeyExchange handshake message.
+     *
+     * If the client has sent a certificate which contains a suitable
+     * DiffieHellman key (for fixed_dh client authentication), then the
+     * client public value is implicit and does not need to be sent again.
+     * In this case, the client key exchange message will be sent, but it
+     * MUST be empty.
+     *
+     * Currently, we don't support cipher suite that requires implicit public
+     * key of client.
      */
-    private byte[] dh_Yc;               // 1 to 2^16 -1 bytes
+    private static final
+            class DHClientKeyExchangeMessage extends HandshakeMessage {
+        private byte[] y;        // 1 to 2^16 - 1 bytes
 
-    BigInteger getClientPublicKey() {
-        return dh_Yc == null ? null : new BigInteger(1, dh_Yc);
-    }
+        DHClientKeyExchangeMessage(
+                HandshakeContext handshakeContext) throws IOException {
+            super(handshakeContext);
+            // This happens in client side only.
+            ClientHandshakeContext chc =
+                    (ClientHandshakeContext)handshakeContext;
 
-    /*
-     * Either pass the client's public key explicitly (because it's
-     * using DHE or DH_anon), or implicitly (the public key was in the
-     * certificate).
-     */
-    DHClientKeyExchange(BigInteger publicKey) {
-        dh_Yc = toByteArray(publicKey);
-    }
+            DHEPossession dhePossession = null;
+            for (SSLPossession possession : chc.handshakePossessions) {
+                if (possession instanceof DHEPossession) {
+                    dhePossession = (DHEPossession)possession;
+                    break;
+                }
+            }
 
-    DHClientKeyExchange() {
-        dh_Yc = null;
-    }
+            if (dhePossession == null) {
+                // unlikely
+                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "No DHE credentials negotiated for client key exchange");
+            }
 
-    /*
-     * Get the client's public key either explicitly or implicitly.
-     * (It's ugly to have an empty record be sent in the latter case,
-     * but that's what the protocol spec requires.)
-     */
-    DHClientKeyExchange(HandshakeInStream input) throws IOException {
-        if (input.available() >= 2) {
-            dh_Yc = input.getBytes16();
-        } else {
-            // currently, we don't support cipher suites that requires
-            // implicit public key of client.
-            throw new SSLHandshakeException(
-                    "Unsupported implicit client DiffieHellman public key");
+            DHPublicKey publicKey = dhePossession.publicKey;
+            DHParameterSpec params = publicKey.getParams();
+            this.y = Utilities.toByteArray(publicKey.getY());
+        }
+
+        DHClientKeyExchangeMessage(HandshakeContext handshakeContext,
+                ByteBuffer m) throws IOException {
+            super(handshakeContext);
+            // This happens in server side only.
+            ServerHandshakeContext shc =
+                    (ServerHandshakeContext)handshakeContext;
+
+            if (m.remaining() < 3) {
+                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "Invalid DH ClientKeyExchange message: insufficient data");
+            }
+
+            this.y = Record.getBytes16(m);
+
+            if (m.hasRemaining()) {
+                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "Invalid DH ClientKeyExchange message: unknown extra data");
+            }
+        }
+
+        @Override
+        public SSLHandshake handshakeType() {
+            return SSLHandshake.CLIENT_KEY_EXCHANGE;
+        }
+
+        @Override
+        public int messageLength() {
+            return y.length + 2;    // 2: length filed
+        }
+
+        @Override
+        public void send(HandshakeOutStream hos) throws IOException {
+            hos.putBytes16(y);
+        }
+
+        @Override
+        public String toString() {
+            MessageFormat messageFormat = new MessageFormat(
+                "\"DH ClientKeyExchange\": '{'\n" +
+                "  \"parameters\": '{'\n" +
+                "    \"dh_Yc\": '{'\n" +
+                "{0}\n" +
+                "    '}',\n" +
+                "  '}'\n" +
+                "'}'",
+                Locale.ENGLISH);
+
+            HexDumpEncoder hexEncoder = new HexDumpEncoder();
+            Object[] messageFields = {
+                Utilities.indent(
+                        hexEncoder.encodeBuffer(y), "      "),
+            };
+            return messageFormat.format(messageFields);
         }
     }
 
-    @Override
-    int messageLength() {
-        if (dh_Yc == null) {
-            return 0;
-        } else {
-            return dh_Yc.length + 2;
+    /**
+     * The DiffieHellman "ClientKeyExchange" handshake message producer.
+     */
+    private static final
+            class DHClientKeyExchangeProducer implements HandshakeProducer {
+        // Prevent instantiation of this class.
+        private DHClientKeyExchangeProducer() {
+            // blank
+        }
+
+        @Override
+        public byte[] produce(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in client side only.
+            ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+            DHECredentials dheCredentials = null;
+            for (SSLCredentials cd : chc.handshakeCredentials) {
+                if (cd instanceof DHECredentials) {
+                    dheCredentials = (DHECredentials)cd;
+                    break;
+                }
+            }
+
+            if (dheCredentials == null) {
+                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "No DHE credentials negotiated for client key exchange");
+            }
+
+
+            DHEPossession dhePossession = new DHEPossession(
+                    dheCredentials, chc.sslContext.getSecureRandom());
+            chc.handshakePossessions.add(dhePossession);
+            DHClientKeyExchangeMessage ckem =
+                    new DHClientKeyExchangeMessage(chc);
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine(
+                    "Produced DH ClientKeyExchange handshake message", ckem);
+            }
+
+            // Output the handshake message.
+            ckem.write(chc.handshakeOutput);
+            chc.handshakeOutput.flush();
+
+            // update the states
+            SSLKeyExchange ke = SSLKeyExchange.valueOf(
+                    chc.negotiatedCipherSuite.keyExchange,
+                    chc.negotiatedProtocol);
+            if (ke == null) {
+                // unlikely
+                chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                        "Not supported key exchange type");
+            } else {
+                SSLKeyDerivation masterKD = ke.createKeyDerivation(chc);
+                SecretKey masterSecret =
+                        masterKD.deriveKey("MasterSecret", null);
+                chc.handshakeSession.setMasterSecret(masterSecret);
+
+                SSLTrafficKeyDerivation kd =
+                        SSLTrafficKeyDerivation.valueOf(chc.negotiatedProtocol);
+                if (kd == null) {
+                    // unlikely
+                    chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                            "Not supported key derivation: " +
+                            chc.negotiatedProtocol);
+                } else {
+                    chc.handshakeKeyDerivation =
+                        kd.createKeyDerivation(chc, masterSecret);
+                }
+            }
+
+            // The handshake message has been delivered.
+            return null;
         }
     }
 
-    @Override
-    void send(HandshakeOutStream s) throws IOException {
-        if (dh_Yc != null && dh_Yc.length != 0) {
-            s.putBytes16(dh_Yc);
+    /**
+     * The DiffieHellman "ClientKeyExchange" handshake message consumer.
+     */
+    private static final
+            class DHClientKeyExchangeConsumer implements SSLConsumer {
+        // Prevent instantiation of this class.
+        private DHClientKeyExchangeConsumer() {
+            // blank
         }
-    }
 
-    @Override
-    void print(PrintStream s) throws IOException {
-        s.println("*** ClientKeyExchange, DH");
+        @Override
+        public void consume(ConnectionContext context,
+                ByteBuffer message) throws IOException {
+            // The consuming happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-        if (debug != null && Debug.isOn("verbose")) {
-            Debug.println(s, "DH Public key", dh_Yc);
+            DHEPossession dhePossession = null;
+            for (SSLPossession possession : shc.handshakePossessions) {
+                if (possession instanceof DHEPossession) {
+                    dhePossession = (DHEPossession)possession;
+                    break;
+                }
+            }
+
+            if (dhePossession == null) {
+                // unlikely
+                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "No expected DHE possessions for client key exchange");
+            }
+
+            SSLKeyExchange ke = SSLKeyExchange.valueOf(
+                    shc.negotiatedCipherSuite.keyExchange,
+                    shc.negotiatedProtocol);
+            if (ke == null) {
+                // unlikely
+                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                        "Not supported key exchange type");
+            }
+
+            DHClientKeyExchangeMessage ckem =
+                    new DHClientKeyExchangeMessage(shc, message);
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine(
+                    "Consuming DH ClientKeyExchange handshake message", ckem);
+            }
+
+            // create the credentials
+            try {
+                DHParameterSpec params = dhePossession.publicKey.getParams();
+                DHPublicKeySpec spec = new DHPublicKeySpec(
+                        new BigInteger(1, ckem.y),
+                        params.getP(), params.getG());
+                KeyFactory kf = JsseJce.getKeyFactory("DiffieHellman");
+                DHPublicKey peerPublicKey =
+                        (DHPublicKey)kf.generatePublic(spec);
+
+                // check constraints of peer DHPublicKey
+                if (!shc.algorithmConstraints.permits(
+                        EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
+                        peerPublicKey)) {
+                    throw new SSLHandshakeException(
+                        "DHPublicKey does not comply to algorithm constraints");
+                }
+
+                NamedGroup namedGroup = NamedGroup.valueOf(params);
+                shc.handshakeCredentials.add(
+                        new DHECredentials(peerPublicKey, namedGroup));
+            } catch (GeneralSecurityException | java.io.IOException e) {
+                throw (SSLHandshakeException)(new SSLHandshakeException(
+                        "Could not generate DHPublicKey").initCause(e));
+            }
+
+            // update the states
+            SSLKeyDerivation masterKD = ke.createKeyDerivation(shc);
+            SecretKey masterSecret =
+                    masterKD.deriveKey("MasterSecret", null);
+            shc.handshakeSession.setMasterSecret(masterSecret);
+
+            SSLTrafficKeyDerivation kd =
+                    SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);
+            if (kd == null) {
+                // unlikely
+                shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                    "Not supported key derivation: " + shc.negotiatedProtocol);
+            } else {
+                shc.handshakeKeyDerivation =
+                    kd.createKeyDerivation(shc, masterSecret);
+            }
         }
     }
 }

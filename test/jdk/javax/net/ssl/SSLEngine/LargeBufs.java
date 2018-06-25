@@ -45,7 +45,7 @@ import java.util.Random;
 
 public class LargeBufs {
 
-    private static boolean debug = false;
+    private static boolean debug = true;
 
     private SSLContext sslc;
     static private SSLEngine ssle1;     // client
@@ -297,6 +297,11 @@ public class LargeBufs {
         } else {
             log("Data transferred cleanly");
         }
+
+        a.position(a.limit());
+        b.position(b.limit());
+        a.limit(a.capacity());
+        b.limit(b.capacity());
     }
 
     private static void log(String str) {

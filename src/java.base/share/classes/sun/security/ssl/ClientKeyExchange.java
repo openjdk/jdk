@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,36 +25,89 @@
 
 package sun.security.ssl;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.security.Principal;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
 /**
- * Models a non-certificate based ClientKeyExchange
+ * Pack of the "ClientKeyExchange" handshake message.
  */
-public abstract class ClientKeyExchange extends HandshakeMessage {
+final class ClientKeyExchange {
+    static final SSLConsumer handshakeConsumer =
+            new ClientKeyExchangeConsumer();
+    static final HandshakeProducer handshakeProducer =
+            new ClientKeyExchangeProducer();
 
-    public ClientKeyExchange() {
+
+    /**
+     * The "ClientKeyExchange" handshake message producer.
+     */
+    private static final
+            class ClientKeyExchangeProducer implements HandshakeProducer {
+        // Prevent instantiation of this class.
+        private ClientKeyExchangeProducer() {
+            // blank
+        }
+
+        @Override
+        public byte[] produce(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in client side only.
+            ClientHandshakeContext chc = (ClientHandshakeContext)context;
+            SSLKeyExchange ke = SSLKeyExchange.valueOf(
+                        chc.negotiatedCipherSuite.keyExchange,
+                        chc.negotiatedProtocol);
+            if (ke != null) {
+                for (Map.Entry<Byte, HandshakeProducer> hp :
+                        ke.getHandshakeProducers(chc)) {
+                    if (hp.getKey() == SSLHandshake.CLIENT_KEY_EXCHANGE.id) {
+                        return hp.getValue().produce(context, message);
+                    }
+                }
+            }
+
+            // not consumer defined.
+            chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected ClientKeyExchange handshake message.");
+            return null;    // make the compiler happe
+        }
     }
 
-    @Override
-    int messageType() {
-        return ht_client_key_exchange;
+    /**
+     * The "ClientKeyExchange" handshake message consumer.
+     */
+    private static final
+            class ClientKeyExchangeConsumer implements SSLConsumer {
+        // Prevent instantiation of this class.
+        private ClientKeyExchangeConsumer() {
+            // blank
+        }
+
+        @Override
+        public void consume(ConnectionContext context,
+                ByteBuffer message) throws IOException {
+            // The consuming happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+            // clean up this consumer
+            shc.handshakeConsumers.remove(SSLHandshake.CLIENT_KEY_EXCHANGE.id);
+            SSLKeyExchange ke = SSLKeyExchange.valueOf(
+                    shc.negotiatedCipherSuite.keyExchange,
+                    shc.negotiatedProtocol);
+            if (ke != null) {
+                for (Map.Entry<Byte, SSLConsumer> hc :
+                        ke.getHandshakeConsumers(shc)) {
+                    if (hc.getKey() == SSLHandshake.CLIENT_KEY_EXCHANGE.id) {
+                        hc.getValue().consume(context, message);
+                        return;
+                    }
+                }
+            }
+
+            // not consumer defined.
+            shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "Unexpected ClientKeyExchange handshake message.");
+        }
     }
-
-    @Override
-    public abstract int messageLength();
-
-    @Override
-    public abstract void send(HandshakeOutStream s) throws IOException;
-
-    @Override
-    public abstract void print(PrintStream s) throws IOException;
-
-    public abstract SecretKey clientKeyExchange();
-
-    public abstract Principal getPeerPrincipal();
-
-    public abstract Principal getLocalPrincipal();
 }
+
