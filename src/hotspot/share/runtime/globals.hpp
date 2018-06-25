@@ -854,12 +854,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "When true prevents OS-level spurious, or premature, wakeups "    \
           "from Object.wait (Ignored for Windows)")                         \
                                                                             \
-  experimental(intx, NativeMonitorTimeout, -1, "(Unstable)")                \
-                                                                            \
-  experimental(intx, NativeMonitorFlags, 0, "(Unstable)")                   \
-                                                                            \
-  experimental(intx, NativeMonitorSpinLimit, 20, "(Unstable)")              \
-                                                                            \
   develop(bool, UsePthreads, false,                                         \
           "Use pthread-based instead of libthread-based synchronization "   \
           "(SPARC only)")                                                   \
