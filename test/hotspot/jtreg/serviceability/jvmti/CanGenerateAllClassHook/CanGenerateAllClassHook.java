@@ -27,6 +27,7 @@
  * @summary Tests that jvmtiEnv::GetPotentialCapabilities reports
  *          can_generate_all_class_hook_events capability with CDS (-Xshare:on)
  *          at ONLOAD and LIVE phases
+ * @requires vm.cds
  * @library /test/lib
  * @compile CanGenerateAllClassHook.java
  * @run main/othervm/native CanGenerateAllClassHook
