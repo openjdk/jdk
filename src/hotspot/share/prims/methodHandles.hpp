@@ -143,6 +143,7 @@ class MethodHandles: AllStatic {
   static bool is_signature_polymorphic_name(Klass* klass, Symbol* name) {
     return signature_polymorphic_name_id(klass, name) != vmIntrinsics::_none;
   }
+  static bool is_signature_polymorphic_public_name(Klass* klass, Symbol* name);
 
   static Bytecodes::Code signature_polymorphic_intrinsic_bytecode(vmIntrinsics::ID id);
 
