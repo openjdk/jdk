@@ -2293,6 +2293,42 @@ public:
 
 #undef INSN
 
+#define INSN(NAME, op1, op2) \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index = 0) { \
+    starti;                                                                                            \
+    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                                   \
+    assert(index >= 0 && ((T == T2D && index <= 1) || (T != T2D && index <= 3)), "invalid index");     \
+    f(0, 31), f((int)T & 1, 30), f(op1, 29); f(0b011111, 28, 23);                                      \
+    f(T == T2D ? 1 : 0, 22), f(T == T2D ? 0 : index & 1, 21), rf(Vm, 16);                              \
+    f(op2, 15, 12), f(T == T2D ? index : (index >> 1), 11), f(0, 10);                                  \
+    rf(Vn, 5), rf(Vd, 0);                                                                              \
+  }
+
+  // FMLA/FMLS - Vector - Scalar
+  INSN(fmlavs, 0, 0b0001);
+  INSN(fmlsvs, 0, 0b0001);
+  // FMULX - Vector - Scalar
+  INSN(fmulxvs, 1, 0b1001);
+
+#undef INSN
+
+  // Floating-point Reciprocal Estimate
+  void frecpe(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {
+    assert(type == D || type == S, "Wrong type for frecpe");
+    starti;
+    f(0b010111101, 31, 23);
+    f(type == D ? 1 : 0, 22);
+    f(0b100001110110, 21, 10);
+    rf(Vn, 5), rf(Vd, 0);
+  }
+
+  // (double) {a, b} -> (a + b)
+  void faddpd(FloatRegister Vd, FloatRegister Vn) {
+    starti;
+    f(0b0111111001110000110110, 31, 10);
+    rf(Vn, 5), rf(Vd, 0);
+  }
+
   void ins(FloatRegister Vd, SIMD_RegVariant T, FloatRegister Vn, int didx, int sidx) {
     starti;
     assert(T != Q, "invalid register variant");
