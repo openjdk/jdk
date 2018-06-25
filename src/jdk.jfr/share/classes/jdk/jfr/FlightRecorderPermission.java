@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import jdk.jfr.internal.PlatformEventType;
+import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
@@ -184,6 +185,11 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
         @Override
         public boolean isUnsigned(ValueDescriptor v) {
             return v.isUnsigned();
+        }
+
+        @Override
+        public PlatformRecorder getPlatformRecorder() {
+            return FlightRecorder.getFlightRecorder().getInternal();
         }
     }
 

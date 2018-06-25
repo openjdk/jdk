@@ -43,6 +43,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +56,7 @@ import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorderPermission;
+import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.handlers.EventHandler;
 import jdk.jfr.internal.settings.PeriodSetting;
@@ -484,13 +486,6 @@ public final class Utils {
         return Collections.unmodifiableList(list);
     }
 
-    public static void updateSettingPathToGcRoots(Map<String, String> settings, Boolean pathToGcRoots) {
-        if (pathToGcRoots != null) {
-            settings.put(Type.EVENT_NAME_PREFIX + "OldObjectSample#cutoff", pathToGcRoots ? "infinity" : "0 ns" );
-        }
-    }
-
-
     public static String upgradeLegacyJDKEvent(String eventName) {
         if (eventName.length() <= LEGACY_EVENT_NAME_PREFIX.length()) {
             return eventName;
@@ -502,5 +497,12 @@ public final class Utils {
             }
         }
         return eventName;
+    }
+
+    public static String makeFilename(Recording recording) {
+        String pid = JVM.getJVM().getPid();
+        String date = Repository.REPO_DATE_FORMAT.format(LocalDateTime.now());
+        String idText = recording == null ? "" :  "-id-" + Long.toString(recording.getId());
+        return "hotspot-" + "pid-" + pid + idText + "-" + date + ".jfr";
     }
 }

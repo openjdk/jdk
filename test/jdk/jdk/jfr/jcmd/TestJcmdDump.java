@@ -26,8 +26,16 @@
 package jdk.jfr.jcmd;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
 
-import jdk.test.lib.jfr.FileHelper;
+import jdk.jfr.Event;
+import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordingFile;
+import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /*
@@ -35,24 +43,129 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary The test verifies JFR.dump command
  * @key jfr
  * @library /test/lib /test/jdk
- * @run main/othervm jdk.jfr.jcmd.TestJcmdDump
+ * @run main/othervm -XX:FlightRecorderOptions:maxchunksize=1M jdk.jfr.jcmd.TestJcmdDump
  */
 public class TestJcmdDump {
 
+    static class StoppedEvent extends Event {
+    }
+    static class RunningEvent extends Event {
+    }
+
+    private static final String[] names = { null, "r1" };
+    private static final boolean booleanValues[] = { true, false };
+
     public static void main(String[] args) throws Exception {
-        String name = "TestJcmdDump";
-        File recording = new File(name + ".jfr");
 
+        // Create a stopped recording in the repository to complicate things
+        Recording r = new Recording();
+        r.start();
+        StoppedEvent de = new StoppedEvent();
+        de.commit();
+        r.stop();
 
-        OutputAnalyzer output = JcmdHelper.jcmd("JFR.start", "name=" + name);
-        JcmdAsserts.assertRecordingHasStarted(output);
-        JcmdHelper.waitUntilRunning(name);
+        // The implementation of JFR.dump touch code that can't be executed using the
+        // Java API. It is therefore important to try all combinations. The
+        // implementation is non-trivial and depends on the combination
+        for (String name : names) {
+            for (boolean disk : booleanValues) {
+                try (Recording r1 = new Recording(); Recording r2 = new Recording()) {
+                    System.out.println();
+                    System.out.println();
+                    System.out.println("Starting recordings with disk=" + disk);
+                    r1.setToDisk(disk);
+                    // To complicate things, only enable OldObjectSample for one recording
+                    r1.enable(EventNames.OldObjectSample).withoutStackTrace();
+                    r1.setName("r1");
+                    r2.setToDisk(disk);
+                    r2.setName("r2");
+                    r1.start();
+                    r2.start();
 
-        output = JcmdHelper.jcmd("JFR.dump",
-                "name=" + name,
-                "filename=" + recording.getAbsolutePath());
-        JcmdAsserts.assertRecordingDumpedToFile(output, name, recording);
-        JcmdHelper.stopAndCheck(name);
-        FileHelper.verifyRecording(recording);
+                    // Expect no path to GC roots
+                    jfrDump(Boolean.FALSE, name, disk, rootCount -> rootCount == 0);
+                    // Expect path to GC roots
+                    jfrDump(null, name, disk, rootCount -> rootCount == 0);
+                    // Expect at least one path to a GC root
+                    jfrDump(Boolean.TRUE, name, disk, rootCount -> rootCount > 0);
+                }
+            }
+        }
+        r.close(); // release recording data from the stopped recording
+    }
+
+    private static void jfrDump(Boolean pathToGCRoots, String name, boolean disk, Predicate<Integer> successPredicate) throws Exception {
+        List<Object> leakList = new ArrayList<>();
+        leakList.add(new Object[1000_0000]);
+        System.gc();
+        while (true) {
+            RunningEvent re = new RunningEvent();
+            re.commit();
+            leakList.add(new Object[1000_0000]);
+            leakList.add(new Object[1000_0000]);
+            leakList.add(new Object[1000_0000]);
+            System.gc(); // This will shorten time for object to be emitted.
+            File recording = new File("TestJCMdDump.jfr");
+            String[] params = buildParameters(pathToGCRoots, name, recording);
+            OutputAnalyzer output = JcmdHelper.jcmd(params);
+            JcmdAsserts.assertRecordingDumpedToFile(output, recording);
+            int rootCount = 0;
+            int oldObjectCount = 0;
+            int stoppedEventCount = 0;
+            int runningEventCount = 0;
+            for (RecordedEvent e : RecordingFile.readAllEvents(recording.toPath())) {
+                if (e.getEventType().getName().equals(EventNames.OldObjectSample)) {
+                    if (e.getValue("root") != null) {
+                        rootCount++;
+                    }
+                    oldObjectCount++;
+                }
+                if (e.getEventType().getName().equals(StoppedEvent.class.getName())) {
+                    stoppedEventCount++;
+                }
+                if (e.getEventType().getName().equals(RunningEvent.class.getName())) {
+                    runningEventCount++;
+                }
+            }
+            System.out.println("Name: " + name);
+            System.out.println("Disk: " + disk);
+            System.out.println("Path to GC roots: " + pathToGCRoots);
+            System.out.println("Old Objects: " + oldObjectCount);
+            System.out.println("Root objects: "+ rootCount);
+            System.out.println("Stopped events: "+ stoppedEventCount);
+            System.out.println("Running events: "+ runningEventCount);
+
+            System.out.println();
+            if (runningEventCount == 0) {
+                throw new Exception("Missing event from running recording");
+            }
+            if (name == null && stoppedEventCount == 0) {
+                throw new Exception("Missing event from stopped recording");
+            }
+            if (name != null && stoppedEventCount > 0) {
+                throw new Exception("Stopped event should not be part of dump");
+            }
+            if (oldObjectCount != 0 && successPredicate.test(rootCount)) {
+                return;
+            }
+            System.out.println();
+            System.out.println();
+            System.out.println();
+            System.out.println("************* Retrying! **************");
+            Files.delete(recording.toPath());
+        }
+    }
+
+    private static String[] buildParameters(Boolean pathToGCRoots, String name, File recording) {
+        List<String> params = new ArrayList<>();
+        params.add("JFR.dump");
+        params.add("filename=" + recording.getAbsolutePath());
+        if (pathToGCRoots != null) { // if path-to-gc-roots is omitted, default is used (disabled).
+            params.add("path-to-gc-roots=" + pathToGCRoots);
+        }
+        if (name != null) { // if name is omitted, all recordings will be dumped
+            params.add("name=" + name);
+        }
+        return params.toArray(new String[0]);
     }
 }

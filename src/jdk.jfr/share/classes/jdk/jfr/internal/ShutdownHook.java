@@ -26,12 +26,10 @@
 package jdk.jfr.internal;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.time.LocalDateTime;
 
 import jdk.jfr.RecordingState;
 
@@ -67,9 +65,10 @@ final class ShutdownHook implements Runnable {
             WriteableUserPath dest = recording.getDestination();
             if (dest == null) {
                 dest = makeDumpOnExitPath(recording);
+                recording.setDestination(dest);
             }
             if (dest != null) {
-                recording.stop("Dump on exit", dest);
+                recording.stop("Dump on exit");
             }
         } catch (Exception e) {
             Logger.log(LogTag.JFR, LogLevel.DEBUG, () -> "Could not dump recording " + recording.getName() + " on exit.");
@@ -78,23 +77,21 @@ final class ShutdownHook implements Runnable {
 
     private WriteableUserPath makeDumpOnExitPath(PlatformRecording recording) {
         try {
-            String pid = JVM.getJVM().getPid();
-            String dfText = Repository.REPO_DATE_FORMAT.format(LocalDateTime.now());
-            String name = "hotspot-" + "pid-" + pid + "-id-" + recording.getId() + "-" + dfText + ".jfr";
+            String name = Utils.makeFilename(recording.getRecording());
             AccessControlContext acc = recording.getNoDestinationDumpOnExitAccessControlContext();
             return AccessController.doPrivileged(new PrivilegedExceptionAction<WriteableUserPath>() {
                 @Override
                 public WriteableUserPath run() throws Exception {
-                    return new WriteableUserPath(Paths.get(".", name));
+                    return new WriteableUserPath(recording.getDumpOnExitDirectory().toPath().resolve(name));
                 }
             }, acc);
         } catch (PrivilegedActionException e) {
             Throwable t = e.getCause();
             if (t instanceof SecurityException) {
-                Logger.log(LogTag.JFR, LogLevel.WARN, "Not allowed to create dump path for recording " + recording.getId() + " on exit. " + e.getMessage());
+                Logger.log(LogTag.JFR, LogLevel.WARN, "Not allowed to create dump path for recording " + recording.getId() + " on exit.");
             }
             if (t instanceof IOException) {
-                Logger.log(LogTag.JFR, LogLevel.WARN, "Could not dump " + recording.getId() + " on exit. " + e.getMessage());
+                Logger.log(LogTag.JFR, LogLevel.WARN, "Could not dump " + recording.getId() + " on exit.");
             }
             return null;
         }

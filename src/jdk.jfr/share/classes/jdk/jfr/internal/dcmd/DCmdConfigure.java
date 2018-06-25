@@ -70,6 +70,19 @@ final class DCmdConfigure extends AbstractDCmd {
             Boolean sampleThreads
 
     ) throws DCmdException {
+        if (LogTag.JFR_DCMD.shouldLog(LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdConfigure: repositorypath=" + repositoryPath +
+                    ", dumppath=" + dumpPath +
+                    ", stackdepth=" + stackDepth +
+                    ", globalbuffercount=" + globalBufferCount +
+                    ", globalbuffersize=" + globalBufferSize +
+                    ", thread_buffer_size" + threadBufferSize +
+                    ", memorysize" + memorySize +
+                    ", maxchunksize=" + maxChunkSize +
+                    ", samplethreads" + sampleThreads);
+        }
+
+
         boolean updated = false;
         if (repositoryPath != null) {
             try {

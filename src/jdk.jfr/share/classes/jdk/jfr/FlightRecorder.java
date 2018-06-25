@@ -34,7 +34,6 @@ import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 import jdk.jfr.internal.JVM;
@@ -77,8 +76,8 @@ public final class FlightRecorder {
      */
     public List<Recording> getRecordings() {
         List<Recording> recs = new ArrayList<>();
-        for (PlatformRecording internal : internal.getRecordings()) {
-            recs.add(internal.getRecording());
+        for (PlatformRecording r : internal.getRecordings()) {
+            recs.add(r.getRecording());
         }
         return Collections.unmodifiableList(recs);
     }
@@ -112,7 +111,10 @@ public final class FlightRecorder {
      * @return a snapshot of all available recording data, not {@code null}
      */
     public Recording takeSnapshot() {
-        return internal.newSnapshot();
+        Recording snapshot = new Recording();
+        snapshot.setName("Snapshot");
+        internal.fillWithRecordedData(snapshot.getInternal(), null);
+        return snapshot;
     }
 
     /**
@@ -345,9 +347,7 @@ public final class FlightRecorder {
         return initialized;
     }
 
-    // package private
-    PlatformRecording newInternalRecording(Map<String, String> settings) {
-        return internal.newRecording(settings);
+    PlatformRecorder getInternal() {
+        return internal;
     }
-
 }
