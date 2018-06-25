@@ -40,10 +40,9 @@ import java.awt.peer.DesktopPeer;
 import java.io.File;
 import java.io.FilePermission;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
+import java.util.Objects;
 
 import javax.swing.JMenuBar;
 
@@ -505,13 +504,6 @@ public class Desktop {
      * {@code URIs} of the specified type is invoked. The application
      * is determined from the protocol and path of the {@code URI}, as
      * defined by the {@code URI} class.
-     * <p>
-     * If the calling thread does not have the necessary permissions,
-     * and this is invoked from within an applet,
-     * {@code AppletContext.showDocument()} is used. Similarly, if the calling
-     * does not have the necessary permissions, and this is invoked from within
-     * a Java Web Started application, {@code BasicService.showDocument()}
-     * is used.
      *
      * @param uri the URI to be displayed in the user default browser
      * @throws NullPointerException if {@code uri} is {@code null}
@@ -524,46 +516,16 @@ public class Desktop {
      * denies the
      * {@code AWTPermission("showWindowWithoutWarningBanner")}
      * permission, or the calling thread is not allowed to create a
-     * subprocess; and not invoked from within an applet or Java Web Started
-     * application
-     * @throws IllegalArgumentException if the necessary permissions
-     * are not available and the URI can not be converted to a {@code URL}
+     * subprocess
      * @see java.net.URI
      * @see java.awt.AWTPermission
-     * @see java.applet.AppletContext
      */
     public void browse(URI uri) throws IOException {
-        SecurityException securityException = null;
-        try {
-            checkAWTPermission();
-            checkExec();
-        } catch (SecurityException e) {
-            securityException = e;
-        }
+        checkAWTPermission();
+        checkExec();
         checkActionSupport(Action.BROWSE);
-        if (uri == null) {
-            throw new NullPointerException();
-        }
-        if (securityException == null) {
-            peer.browse(uri);
-            return;
-        }
-
-        // Calling thread doesn't have necessary privileges.
-        // Delegate to DesktopBrowse so that it can work in
-        // applet/webstart.
-        URL url = null;
-        try {
-            url = uri.toURL();
-        } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Unable to convert URI to URL", e);
-        }
-        sun.awt.DesktopBrowse db = sun.awt.DesktopBrowse.getInstance();
-        if (db == null) {
-            // Not in webstart/applet, throw the exception.
-            throw securityException;
-        }
-        db.browse(url);
+        Objects.requireNonNull(uri);
+        peer.browse(uri);
     }
 
     /**
