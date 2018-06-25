@@ -1212,8 +1212,8 @@ public:
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
-                      Register tmp1,
-                      FloatRegister vtmp, FloatRegister vtmpZ, int ae);
+                      Register tmp1, Register tmp2, FloatRegister vtmp1,
+                      FloatRegister vtmp2, FloatRegister vtmp3, int ae);
 
   void has_negatives(Register ary1, Register len, Register result);
 

@@ -4733,12 +4733,13 @@ void MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
 // Compare strings.
 void MacroAssembler::string_compare(Register str1, Register str2,
-                                    Register cnt1, Register cnt2, Register result,
-                                    Register tmp1,
-                                    FloatRegister vtmp, FloatRegister vtmpZ, int ae) {
-  Label LENGTH_DIFF, DONE, SHORT_LOOP, SHORT_STRING,
-    NEXT_WORD, DIFFERENCE;
+    Register cnt1, Register cnt2, Register result, Register tmp1, Register tmp2,
+    FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3, int ae) {
+  Label DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, TAIL, STUB,
+      DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
+      SHORT_LOOP_START, TAIL_CHECK;
 
+  const int STUB_THRESHOLD = 64 + 8;
   bool isLL = ae == StrIntrinsicNode::LL;
   bool isLU = ae == StrIntrinsicNode::LU;
   bool isUL = ae == StrIntrinsicNode::UL;
@@ -4750,7 +4751,9 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   int str2_chr_shift = str2_isL ? 0 : 1;
   int str1_chr_size = str1_isL ? 1 : 2;
   int str2_chr_size = str2_isL ? 1 : 2;
+  int minCharsInWord = isLL ? wordSize : wordSize/2;
 
+  FloatRegister vtmpZ = vtmp1, vtmp = vtmp2;
   chr_insn str1_load_chr = str1_isL ? (chr_insn)&MacroAssembler::ldrb :
                                       (chr_insn)&MacroAssembler::ldrh;
   chr_insn str2_load_chr = str2_isL ? (chr_insn)&MacroAssembler::ldrb :
@@ -4766,73 +4769,116 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   if (!str2_isL) asrw(cnt2, cnt2, 1);
 
   // Compute the minimum of the string lengths and save the difference.
-  subsw(tmp1, cnt1, cnt2);
+  subsw(result, cnt1, cnt2);
   cselw(cnt2, cnt1, cnt2, Assembler::LE); // min
 
   // A very short string
-  cmpw(cnt2, isLL ? 8:4);
+  cmpw(cnt2, minCharsInWord);
   br(Assembler::LT, SHORT_STRING);
 
-  // Check if the strings start at the same location.
-  cmp(str1, str2);
-  br(Assembler::EQ, LENGTH_DIFF);
-
   // Compare longwords
+  // load first parts of strings and finish initialization while loading
   {
-    subw(cnt2, cnt2, isLL ? 8:4); // The last longword is a special case
-
-    // Move both string pointers to the last longword of their
-    // strings, negate the remaining count, and convert it to bytes.
-    lea(str1, Address(str1, cnt2, Address::uxtw(str1_chr_shift)));
-    lea(str2, Address(str2, cnt2, Address::uxtw(str2_chr_shift)));
-    if (isLU || isUL) {
-      sub(cnt1, zr, cnt2, LSL, str1_chr_shift);
+    if (str1_isL == str2_isL) { // LL or UU
+      ldr(tmp1, Address(str1));
+      cmp(str1, str2);
+      br(Assembler::EQ, DONE);
+      ldr(tmp2, Address(str2));
+      cmp(cnt2, STUB_THRESHOLD);
+      br(GE, STUB);
+      subsw(cnt2, cnt2, minCharsInWord);
+      br(EQ, TAIL_CHECK);
+      lea(str2, Address(str2, cnt2, Address::uxtw(str2_chr_shift)));
+      lea(str1, Address(str1, cnt2, Address::uxtw(str1_chr_shift)));
+      sub(cnt2, zr, cnt2, LSL, str2_chr_shift);
+    } else if (isLU) {
+      ldrs(vtmp, Address(str1));
+      cmp(str1, str2);
+      br(Assembler::EQ, DONE);
+      ldr(tmp2, Address(str2));
+      cmp(cnt2, STUB_THRESHOLD);
+      br(GE, STUB);
+      subsw(cnt2, cnt2, 4);
+      br(EQ, TAIL_CHECK);
       eor(vtmpZ, T16B, vtmpZ, vtmpZ);
-    }
-    sub(cnt2, zr, cnt2, LSL, str2_chr_shift);
-
-    // Loop, loading longwords and comparing them into rscratch2.
-    bind(NEXT_WORD);
-    if (isLU) {
-      ldrs(vtmp, Address(str1, cnt1));
+      lea(str1, Address(str1, cnt2, Address::uxtw(str1_chr_shift)));
+      lea(str2, Address(str2, cnt2, Address::uxtw(str2_chr_shift)));
       zip1(vtmp, T8B, vtmp, vtmpZ);
-      umov(result, vtmp, D, 0);
-    } else {
-      ldr(result, Address(str1, isUL ? cnt1:cnt2));
-    }
-    if (isUL) {
-      ldrs(vtmp, Address(str2, cnt2));
+      sub(cnt1, zr, cnt2, LSL, str1_chr_shift);
+      sub(cnt2, zr, cnt2, LSL, str2_chr_shift);
+      add(cnt1, cnt1, 4);
+      fmovd(tmp1, vtmp);
+    } else { // UL case
+      ldr(tmp1, Address(str1));
+      cmp(str1, str2);
+      br(Assembler::EQ, DONE);
+      ldrs(vtmp, Address(str2));
+      cmp(cnt2, STUB_THRESHOLD);
+      br(GE, STUB);
+      subsw(cnt2, cnt2, 4);
+      br(EQ, TAIL_CHECK);
+      lea(str1, Address(str1, cnt2, Address::uxtw(str1_chr_shift)));
+      eor(vtmpZ, T16B, vtmpZ, vtmpZ);
+      lea(str2, Address(str2, cnt2, Address::uxtw(str2_chr_shift)));
+      sub(cnt1, zr, cnt2, LSL, str1_chr_shift);
       zip1(vtmp, T8B, vtmp, vtmpZ);
-      umov(rscratch1, vtmp, D, 0);
-    } else {
-      ldr(rscratch1, Address(str2, cnt2));
+      sub(cnt2, zr, cnt2, LSL, str2_chr_shift);
+      add(cnt1, cnt1, 8);
+      fmovd(tmp2, vtmp);
     }
-    adds(cnt2, cnt2, isUL ? 4:8);
-    if (isLU || isUL) add(cnt1, cnt1, isLU ? 4:8);
-    eor(rscratch2, result, rscratch1);
+    adds(cnt2, cnt2, isUL ? 4 : 8);
+    br(GE, TAIL);
+    eor(rscratch2, tmp1, tmp2);
     cbnz(rscratch2, DIFFERENCE);
-    br(Assembler::LT, NEXT_WORD);
+    // main loop
+    bind(NEXT_WORD);
+    if (str1_isL == str2_isL) {
+      ldr(tmp1, Address(str1, cnt2));
+      ldr(tmp2, Address(str2, cnt2));
+      adds(cnt2, cnt2, 8);
+    } else if (isLU) {
+      ldrs(vtmp, Address(str1, cnt1));
+      ldr(tmp2, Address(str2, cnt2));
+      add(cnt1, cnt1, 4);
+      zip1(vtmp, T8B, vtmp, vtmpZ);
+      fmovd(tmp1, vtmp);
+      adds(cnt2, cnt2, 8);
+    } else { // UL
+      ldrs(vtmp, Address(str2, cnt2));
+      ldr(tmp1, Address(str1, cnt1));
+      zip1(vtmp, T8B, vtmp, vtmpZ);
+      add(cnt1, cnt1, 8);
+      fmovd(tmp2, vtmp);
+      adds(cnt2, cnt2, 4);
+    }
+    br(GE, TAIL);
 
+    eor(rscratch2, tmp1, tmp2);
+    cbz(rscratch2, NEXT_WORD);
+    b(DIFFERENCE);
+    bind(TAIL);
+    eor(rscratch2, tmp1, tmp2);
+    cbnz(rscratch2, DIFFERENCE);
     // Last longword.  In the case where length == 4 we compare the
     // same longword twice, but that's still faster than another
     // conditional branch.
-
-    if (isLU) {
+    if (str1_isL == str2_isL) {
+      ldr(tmp1, Address(str1));
+      ldr(tmp2, Address(str2));
+    } else if (isLU) {
       ldrs(vtmp, Address(str1));
+      ldr(tmp2, Address(str2));
       zip1(vtmp, T8B, vtmp, vtmpZ);
-      umov(result, vtmp, D, 0);
-    } else {
-      ldr(result, Address(str1));
-    }
-    if (isUL) {
+      fmovd(tmp1, vtmp);
+    } else { // UL
       ldrs(vtmp, Address(str2));
+      ldr(tmp1, Address(str1));
       zip1(vtmp, T8B, vtmp, vtmpZ);
-      umov(rscratch1, vtmp, D, 0);
-    } else {
-      ldr(rscratch1, Address(str2));
+      fmovd(tmp2, vtmp);
     }
-    eor(rscratch2, result, rscratch1);
-    cbz(rscratch2, LENGTH_DIFF);
+    bind(TAIL_CHECK);
+    eor(rscratch2, tmp1, tmp2);
+    cbz(rscratch2, DONE);
 
     // Find the first different characters in the longwords and
     // compute their difference.
@@ -4840,31 +4886,78 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     rev(rscratch2, rscratch2);
     clz(rscratch2, rscratch2);
     andr(rscratch2, rscratch2, isLL ? -8 : -16);
-    lsrv(result, result, rscratch2);
-    (this->*ext_chr)(result, result);
-    lsrv(rscratch1, rscratch1, rscratch2);
-    (this->*ext_chr)(rscratch1, rscratch1);
-    subw(result, result, rscratch1);
+    lsrv(tmp1, tmp1, rscratch2);
+    (this->*ext_chr)(tmp1, tmp1);
+    lsrv(tmp2, tmp2, rscratch2);
+    (this->*ext_chr)(tmp2, tmp2);
+    subw(result, tmp1, tmp2);
     b(DONE);
   }
 
+  bind(STUB);
+    RuntimeAddress stub = NULL;
+    switch(ae) {
+      case StrIntrinsicNode::LL:
+        stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_LL());
+        break;
+      case StrIntrinsicNode::UU:
+        stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_UU());
+        break;
+      case StrIntrinsicNode::LU:
+        stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_LU());
+        break;
+      case StrIntrinsicNode::UL:
+        stub = RuntimeAddress(StubRoutines::aarch64::compare_long_string_UL());
+        break;
+      default:
+        ShouldNotReachHere();
+     }
+    assert(stub.target() != NULL, "compare_long_string stub has not been generated");
+    trampoline_call(stub);
+    b(DONE);
+
   bind(SHORT_STRING);
   // Is the minimum length zero?
-  cbz(cnt2, LENGTH_DIFF);
-
-  bind(SHORT_LOOP);
-  (this->*str1_load_chr)(result, Address(post(str1, str1_chr_size)));
+  cbz(cnt2, DONE);
+  // arrange code to do most branches while loading and loading next characters
+  // while comparing previous
+  (this->*str1_load_chr)(tmp1, Address(post(str1, str1_chr_size)));
+  subs(cnt2, cnt2, 1);
+  br(EQ, SHORT_LAST_INIT);
   (this->*str2_load_chr)(cnt1, Address(post(str2, str2_chr_size)));
-  subw(result, result, cnt1);
-  cbnz(result, DONE);
-  sub(cnt2, cnt2, 1);
-  cbnz(cnt2, SHORT_LOOP);
+  b(SHORT_LOOP_START);
+  bind(SHORT_LOOP);
+  subs(cnt2, cnt2, 1);
+  br(EQ, SHORT_LAST);
+  bind(SHORT_LOOP_START);
+  (this->*str1_load_chr)(tmp2, Address(post(str1, str1_chr_size)));
+  (this->*str2_load_chr)(rscratch1, Address(post(str2, str2_chr_size)));
+  cmp(tmp1, cnt1);
+  br(NE, SHORT_LOOP_TAIL);
+  subs(cnt2, cnt2, 1);
+  br(EQ, SHORT_LAST2);
+  (this->*str1_load_chr)(tmp1, Address(post(str1, str1_chr_size)));
+  (this->*str2_load_chr)(cnt1, Address(post(str2, str2_chr_size)));
+  cmp(tmp2, rscratch1);
+  br(EQ, SHORT_LOOP);
+  sub(result, tmp2, rscratch1);
+  b(DONE);
+  bind(SHORT_LOOP_TAIL);
+  sub(result, tmp1, cnt1);
+  b(DONE);
+  bind(SHORT_LAST2);
+  cmp(tmp2, rscratch1);
+  br(EQ, DONE);
+  sub(result, tmp2, rscratch1);
 
-  // Strings are equal up to min length.  Return the length difference.
-  bind(LENGTH_DIFF);
-  mov(result, tmp1);
+  b(DONE);
+  bind(SHORT_LAST_INIT);
+  (this->*str2_load_chr)(cnt1, Address(post(str2, str2_chr_size)));
+  bind(SHORT_LAST);
+  cmp(tmp1, cnt1);
+  br(EQ, DONE);
+  sub(result, tmp1, cnt1);
 
-  // That's it
   bind(DONE);
 
   BLOCK_COMMENT("} string_compare");

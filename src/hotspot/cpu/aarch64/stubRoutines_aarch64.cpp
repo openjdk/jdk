@@ -48,6 +48,10 @@ address StubRoutines::aarch64::_zero_blocks = NULL;
 address StubRoutines::aarch64::_has_negatives = NULL;
 address StubRoutines::aarch64::_has_negatives_long = NULL;
 address StubRoutines::aarch64::_large_array_equals = NULL;
+address StubRoutines::aarch64::_compare_long_string_LL = NULL;
+address StubRoutines::aarch64::_compare_long_string_UU = NULL;
+address StubRoutines::aarch64::_compare_long_string_LU = NULL;
+address StubRoutines::aarch64::_compare_long_string_UL = NULL;
 bool StubRoutines::aarch64::_completed = false;
 
 /**
