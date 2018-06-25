@@ -2452,9 +2452,15 @@ return mh1;
                 checkSymbolicClass(defc);
                 return mh;
             }
-            // Treat MethodHandle.invoke and invokeExact specially.
             if (defc == MethodHandle.class && refKind == REF_invokeVirtual) {
+                // Treat MethodHandle.invoke and invokeExact specially.
                 mh = findVirtualForMH(member.getName(), member.getMethodType());
+                if (mh != null) {
+                    return mh;
+                }
+            } else if (defc == VarHandle.class && refKind == REF_invokeVirtual) {
+                // Treat signature-polymorphic methods on VarHandle specially.
+                mh = findVirtualForVH(member.getName(), member.getMethodType());
                 if (mh != null) {
                     return mh;
                 }

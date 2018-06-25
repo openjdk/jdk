@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8087223
+ * @bug 8087223 8195650
  * @summary Adding constantTag to keep method call consistent with it.
  * @modules java.base/jdk.internal.org.objectweb.asm
  *          java.base/jdk.internal.misc
@@ -46,9 +46,9 @@ public class BadMethodHandles {
         ClassWriter cw = new ClassWriter(0);
         cw.visit(52, ACC_PUBLIC | ACC_SUPER, "BadInterfaceMethodref", null, "java/lang/Object", null);
         Handle handle1 =
-            new Handle(Opcodes.H_INVOKEINTERFACE, "BadInterfaceMethodref", "m", "()V");
+            new Handle(Opcodes.H_INVOKEINTERFACE, "BadInterfaceMethodref", "m", "()V", true);
         Handle handle2 =
-            new Handle(Opcodes.H_INVOKEINTERFACE, "BadInterfaceMethodref", "staticM", "()V");
+            new Handle(Opcodes.H_INVOKEINTERFACE, "BadInterfaceMethodref", "staticM", "()V", true);
 
         {
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -137,9 +137,9 @@ public class BadMethodHandles {
         ClassWriter cw = new ClassWriter(0);
         cw.visit(52, ACC_PUBLIC | ACC_SUPER,  "BadMethodref", null, "java/lang/Object", new String[]{"IBad"});
         Handle handle1 =
-            new Handle(Opcodes.H_INVOKEINTERFACE, "BadMethodref", "m", "()V");
+            new Handle(Opcodes.H_INVOKEINTERFACE, "BadMethodref", "m", "()V", true);
         Handle handle2 =
-            new Handle(Opcodes.H_INVOKEINTERFACE, "BadMethodref", "staticM", "()V");
+            new Handle(Opcodes.H_INVOKEINTERFACE, "BadMethodref", "staticM", "()V", true);
 
         {
             MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -176,6 +176,37 @@ public class BadMethodHandles {
         cw.visitEnd();
         return cw.toByteArray();
     }
+
+    static byte[] dumpInvokeBasic() {
+        ClassWriter cw = new ClassWriter(0);
+        cw.visit(52, ACC_PUBLIC | ACC_SUPER,  "InvokeBasicref", null, "java/lang/Object", null);
+        Handle handle =
+                new Handle(Opcodes.H_INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeBasic", "([Ljava/lang/Object;)Ljava/lang/Object;", false);
+
+        {
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
+        }
+
+        {
+            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "runInvokeBasicM", "()V", null, null);
+            mv.visitCode();
+            mv.visitLdcInsn(handle);
+            mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invoke", "()V", false);
+            mv.visitInsn(RETURN);
+            mv.visitMaxs(1, 1);
+            mv.visitEnd();
+        }
+
+        cw.visitEnd();
+        return cw.toByteArray();
+    }
+
     static class CL extends ClassLoader {
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
@@ -184,6 +215,7 @@ public class BadMethodHandles {
             case "BadInterfaceMethodref": classBytes = dumpBadInterfaceMethodref(); break;
             case "BadMethodref"         : classBytes = dumpBadMethodref(); break;
             case "IBad"                 : classBytes = dumpIBad(); break;
+            case "InvokeBasicref"       : classBytes = dumpInvokeBasic(); break;
             default                     : throw new ClassNotFoundException(name);
             }
             return defineClass(name, classBytes, 0, classBytes.length);
@@ -199,6 +231,9 @@ public class BadMethodHandles {
         }
         try (FileOutputStream fos = new FileOutputStream("BadMethodref.class")) {
           fos.write(dumpBadMethodref());
+        }
+        try (FileOutputStream fos = new FileOutputStream("InvokeBasicref.class")) {
+            fos.write(dumpInvokeBasic());
         }
 
         Class<?> cls = (new CL()).loadClass("BadInterfaceMethodref");
@@ -249,5 +284,30 @@ public class BadMethodHandles {
             throw new Exception("BadMethodRef Failed to catch IncompatibleClassChangeError");
          }
 
+        System.out.println("Test InvokeBasicref:");
+        cls = (new CL()).loadClass("InvokeBasicref");
+        success = 0;
+        methods = new String[] {"runInvokeBasicM"};
+        for (String name : methods) {
+            try {
+                System.out.printf("invoke %s: \n", name);
+                cls.getMethod(name).invoke(cls.newInstance());
+                System.out.println("FAILED - ICCE should be thrown");
+            } catch (Throwable e) {
+                e.printStackTrace();
+                if (e instanceof InvocationTargetException && e.getCause() != null &&
+                    e.getCause() instanceof IncompatibleClassChangeError) {
+                    System.out.println("PASSED - expected ICCE thrown");
+                    success++;
+                    continue;
+                } else {
+                    System.out.println("FAILED with wrong exception" + e);
+                    throw e;
+                }
+            }
+        }
+        if (success != methods.length) {
+            throw new Exception("InvokeBasicref Failed to catch IncompatibleClassChangeError");
+        }
     }
 }
