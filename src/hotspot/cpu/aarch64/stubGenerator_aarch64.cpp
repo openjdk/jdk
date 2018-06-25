@@ -5068,9 +5068,17 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
 
-    StubRoutines::_dlog = generate_dlog();
-    StubRoutines::_dsin = generate_dsin_dcos(/* isCos = */ false);
-    StubRoutines::_dcos = generate_dsin_dcos(/* isCos = */ true);
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
+      StubRoutines::_dlog = generate_dlog();
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin)) {
+      StubRoutines::_dsin = generate_dsin_dcos(/* isCos = */ false);
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
+      StubRoutines::_dcos = generate_dsin_dcos(/* isCos = */ true);
+    }
   }
 
   void generate_all() {

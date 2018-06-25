@@ -247,26 +247,54 @@ void TemplateInterpreterGenerator::generate_transcendental_entry(AbstractInterpr
   address fn;
   switch (kind) {
   case Interpreter::java_lang_math_sin :
-    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
+    if (StubRoutines::dsin() == NULL) {
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
+    } else {
+      fn = CAST_FROM_FN_PTR(address, StubRoutines::dsin());
+    }
     break;
   case Interpreter::java_lang_math_cos :
-    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
+    if (StubRoutines::dcos() == NULL) {
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
+    } else {
+      fn = CAST_FROM_FN_PTR(address, StubRoutines::dcos());
+    }
     break;
   case Interpreter::java_lang_math_tan :
-    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
+    if (StubRoutines::dtan() == NULL) {
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
+    } else {
+      fn = CAST_FROM_FN_PTR(address, StubRoutines::dtan());
+    }
     break;
   case Interpreter::java_lang_math_log :
-    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
+    if (StubRoutines::dlog() == NULL) {
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
+    } else {
+      fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog());
+    }
     break;
   case Interpreter::java_lang_math_log10 :
-    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
+    if (StubRoutines::dlog10() == NULL) {
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
+    } else {
+      fn = CAST_FROM_FN_PTR(address, StubRoutines::dlog10());
+    }
     break;
   case Interpreter::java_lang_math_exp :
-    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
+    if (StubRoutines::dexp() == NULL) {
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
+    } else {
+      fn = CAST_FROM_FN_PTR(address, StubRoutines::dexp());
+    }
     break;
   case Interpreter::java_lang_math_pow :
     fpargs = 2;
-    fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
+    if (StubRoutines::dpow() == NULL) {
+      fn = CAST_FROM_FN_PTR(address, SharedRuntime::dpow);
+    } else {
+      fn = CAST_FROM_FN_PTR(address, StubRoutines::dpow());
+    }
     break;
   default:
     ShouldNotReachHere();
