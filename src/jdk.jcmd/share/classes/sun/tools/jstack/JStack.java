@@ -48,6 +48,7 @@ public class JStack {
         checkForUnsupportedOptions(args);
 
         boolean locks = false;
+        boolean extended = false;
 
         // Parse the options (arguments starting with "-" )
         int optionCount = 0;
@@ -67,7 +68,11 @@ public class JStack {
                 if (arg.equals("-l")) {
                     locks = true;
                 } else {
-                    usage(1);
+                    if (arg.equals("-e")) {
+                        extended = true;
+                    } else {
+                        usage(1);
+                    }
                 }
             }
             optionCount++;
@@ -81,12 +86,14 @@ public class JStack {
 
         // pass -l to thread dump operation to get extra lock info
         String pidArg = args[optionCount];
-        String params[];
-        if (locks) {
-            params = new String[] { "-l" };
-        } else {
-            params = new String[0];
+        String params[]= new String[] { "" };
+        if (extended) {
+            params[0] += "-e ";
         }
+        if (locks) {
+            params[0] += "-l";
+        }
+
         ProcessArgumentMatcher ap = new ProcessArgumentMatcher(pidArg);
         Collection<String> pids = ap.getVirtualMachinePids(JStack.class);
 
@@ -170,11 +177,12 @@ public class JStack {
     // print usage message
     private static void usage(int exit) {
         System.err.println("Usage:");
-        System.err.println("    jstack [-l] <pid>");
+        System.err.println("    jstack [-l][-e] <pid>");
         System.err.println("        (to connect to running process)");
         System.err.println("");
         System.err.println("Options:");
         System.err.println("    -l  long listing. Prints additional information about locks");
+        System.err.println("    -e  extended listing. Prints additional information about threads");
         System.err.println("    -? -h --help -help to print this help message");
         System.exit(exit);
     }
