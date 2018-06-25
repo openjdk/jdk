@@ -612,13 +612,15 @@ int ClassStatsDCmd::num_arguments() {
 
 ThreadDumpDCmd::ThreadDumpDCmd(outputStream* output, bool heap) :
                                DCmdWithParser(output, heap),
-  _locks("-l", "print java.util.concurrent locks", "BOOLEAN", false, "false") {
+  _locks("-l", "print java.util.concurrent locks", "BOOLEAN", false, "false"),
+  _extended("-e", "print extended thread information", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_locks);
+  _dcmdparser.add_dcmd_option(&_extended);
 }
 
 void ThreadDumpDCmd::execute(DCmdSource source, TRAPS) {
   // thread stacks
-  VM_PrintThreads op1(output(), _locks.value());
+  VM_PrintThreads op1(output(), _locks.value(), _extended.value());
   VMThread::execute(&op1);
 
   // JNI global handles

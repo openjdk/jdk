@@ -446,6 +446,7 @@ public:
 class ThreadDumpDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<bool> _locks;
+  DCmdArgument<bool> _extended;
 public:
   ThreadDumpDCmd(outputStream* output, bool heap);
   static const char* name() { return "Thread.print"; }

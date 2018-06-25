@@ -372,10 +372,17 @@ class VM_PrintThreads: public VM_Operation {
  private:
   outputStream* _out;
   bool _print_concurrent_locks;
+  bool _print_extended_info;
  public:
-  VM_PrintThreads()                                                { _out = tty; _print_concurrent_locks = PrintConcurrentLocks; }
-  VM_PrintThreads(outputStream* out, bool print_concurrent_locks)  { _out = out; _print_concurrent_locks = print_concurrent_locks; }
-  VMOp_Type type() const                                           {  return VMOp_PrintThreads; }
+  VM_PrintThreads()
+    : _out(tty), _print_concurrent_locks(PrintConcurrentLocks), _print_extended_info(false)
+  {}
+  VM_PrintThreads(outputStream* out, bool print_concurrent_locks, bool print_extended_info)
+    : _out(out), _print_concurrent_locks(print_concurrent_locks), _print_extended_info(print_extended_info)
+  {}
+  VMOp_Type type() const {
+    return VMOp_PrintThreads;
+  }
   void doit();
   bool doit_prologue();
   void doit_epilogue();

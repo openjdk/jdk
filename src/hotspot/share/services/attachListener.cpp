@@ -168,12 +168,20 @@ static jint data_dump(AttachOperation* op, outputStream* out) {
 //
 static jint thread_dump(AttachOperation* op, outputStream* out) {
   bool print_concurrent_locks = false;
-  if (op->arg(0) != NULL && strcmp(op->arg(0), "-l") == 0) {
-    print_concurrent_locks = true;
+  bool print_extended_info = false;
+  if (op->arg(0) != NULL) {
+    for (int i = 0; op->arg(0)[i] != 0; ++i) {
+      if (op->arg(0)[i] == 'l') {
+        print_concurrent_locks = true;
+      }
+      if (op->arg(0)[i] == 'e') {
+        print_extended_info = true;
+      }
+    }
   }
 
   // thread stacks
-  VM_PrintThreads op1(out, print_concurrent_locks);
+  VM_PrintThreads op1(out, print_concurrent_locks, print_extended_info);
   VMThread::execute(&op1);
 
   // JNI global handles
