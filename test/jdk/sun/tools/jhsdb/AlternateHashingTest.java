@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,11 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug 8030750
  * @summary Test alternate hashing of strings in Serviceability Agent.
+ * @requires vm.hasSAandCanAttach
  * @library /test/lib
  * @library /lib/testlibrary
  * @compile AlternateHashingTest.java
@@ -110,13 +111,6 @@ public class AlternateHashingTest {
     }
 
     public static void main(String[] args) throws Exception {
-
-        if (!Platform.shouldSAAttach()) {
-            // Silently skip the test if we don't have enough permissions to attach
-            System.err.println("Error! Insufficient permissions to attach - test skipped.");
-            return;
-        }
-
 
         testAltHashing();
 

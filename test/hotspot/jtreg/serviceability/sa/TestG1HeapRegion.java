@@ -36,10 +36,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test
  * @library /test/lib
- * @requires os.family != "mac"
+ * @requires vm.hasSAandCanAttach & os.family != "mac"
  * @requires vm.gc.G1
  * @modules jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.gc.g1
@@ -88,12 +88,6 @@ public class TestG1HeapRegion {
     }
 
     public static void main (String... args) throws Exception {
-        if (!Platform.shouldSAAttach()) {
-            System.out.println(
-               "SA attach not expected to work - test skipped.");
-            return;
-        }
-
         if (args == null || args.length == 0) {
             try {
                 List<String> vmArgs = new ArrayList<String>();

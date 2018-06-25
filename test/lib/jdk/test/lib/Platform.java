@@ -252,16 +252,29 @@ public class Platform {
     }
 
     /**
-     * Return a boolean for whether we expect to be able to attach
-     * the SA to our own processes on this system.
+     * Return a boolean for whether SA and jhsdb are ported/available
+     * on this platform.
      */
-    public static boolean shouldSAAttach() throws IOException {
+    public static boolean hasSA() {
         if (isAix()) {
             return false; // SA not implemented.
         } else if (isLinux()) {
             if (isS390x()) {
                 return false; // SA not implemented.
             }
+        }
+        // Other platforms expected to work:
+        return true;
+    }
+
+    /**
+     * Return a boolean for whether we expect to be able to attach
+     * the SA to our own processes on this system.  This requires
+     * that SA is ported/available on this platform.
+     */
+    public static boolean shouldSAAttach() throws IOException {
+        if (!hasSA()) return false;
+        if (isLinux()) {
             return canPtraceAttachLinux();
         } else if (isOSX()) {
             return canAttachOSX();

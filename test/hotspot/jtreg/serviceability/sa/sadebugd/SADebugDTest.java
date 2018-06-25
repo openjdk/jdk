@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,17 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @summary Checks that the jshdb debugd utility sucessfully starts
  *          and tries to attach to a running process
+ * @requires vm.hasSAandCanAttach
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *
  * @run main/othervm SADebugDTest
  */
+
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
 import java.io.InputStreamReader;
@@ -38,7 +40,6 @@ import java.io.Reader;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import static jdk.test.lib.Asserts.assertTrue;
-import static jdk.test.lib.Platform.shouldSAAttach;
 import static jdk.test.lib.process.ProcessTools.startProcess;
 
 public class SADebugDTest {
@@ -54,11 +55,6 @@ public class SADebugDTest {
     private static final String JHSDB = JAVA_BIN_DIR + "jhsdb";
 
     public static void main(String[] args) throws Exception {
-
-        if (!shouldSAAttach()) {
-            log("Not possible to attach the SA. Skipping the test");
-            return;
-        }
 
         long ourPid = ProcessHandle.current().pid();
 

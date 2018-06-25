@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,10 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-/*
+/**
  * @test
  * @summary Test deadlock detection
+ * @requires vm.hasSAandCanAttach
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.management
@@ -68,14 +69,6 @@ public class DeadlockDetectionTest {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Starting DeadlockDetectionTest");
-
-        if (!Platform.shouldSAAttach()) {
-            // Silently skip the test if we don't have enough permissions to attach
-            // Not all conditions checked by function is relevant to SA but it's worth
-            // to check
-            System.err.println("Error! Insufficient permissions to attach.");
-            return;
-        }
 
         if (Platform.isOSX()) {
             // Coredump stackwalking is not implemented for Darwin

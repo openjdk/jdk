@@ -40,6 +40,7 @@ requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
 requires.properties= \
     sun.arch.data.model \
     vm.simpleArch \
+    vm.bits \
     vm.flightRecorder \
     vm.gc.G1 \
     vm.gc.Serial \
@@ -51,6 +52,8 @@ requires.properties= \
     vm.emulatedClient \
     vm.cpu.features \
     vm.debug \
+    vm.hasSA \
+    vm.hasSAandCanAttach \
     vm.rtm.cpu \
     vm.rtm.os \
     vm.aot \

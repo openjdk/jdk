@@ -26,10 +26,11 @@ import java.util.List;
 import java.util.Map;
 import jdk.test.lib.apps.LingeredApp;
 
-/*
+/**
  * @test
  * @bug 8175384
  * @summary Test clhsdb 'printall' command
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm/timeout=2400 -Xmx1g ClhsdbPrintAll
  */

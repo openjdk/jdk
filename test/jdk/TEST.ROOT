@@ -40,6 +40,8 @@ requires.properties= \
     vm.gc.Z \
     vm.graal.enabled \
     vm.cds \
+    vm.hasSA \
+    vm.hasSAandCanAttach \
     docker.support \
     release.implementor
 
