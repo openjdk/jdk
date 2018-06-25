@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,16 @@
  * questions.
  */
 
-
 package sun.security.ssl;
 
 import java.net.Socket;
-import javax.net.ssl.SSLSession;
-
-import java.util.*;
 import java.security.*;
 import java.security.cert.*;
+import java.util.*;
 import javax.net.ssl.*;
-
-import sun.security.validator.*;
 import sun.security.util.AnchorCertificates;
 import sun.security.util.HostnameChecker;
+import sun.security.validator.*;
 
 /**
  * This class implements the SunJSSE X.509 trust manager using the internal
@@ -67,8 +63,6 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
     // the different extension checks. They are initialized lazily on demand.
     private volatile Validator clientValidator, serverValidator;
 
-    private static final Debug debug = Debug.getInstance("ssl");
-
     X509TrustManagerImpl(String validatorType,
             Collection<X509Certificate> trustedCerts) {
 
@@ -81,8 +75,9 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
         this.trustedCerts = trustedCerts;
 
-        if (debug != null && Debug.isOn("trustmanager")) {
-            showTrustedCerts();
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("adding as trusted certificates",
+                    (Object[])trustedCerts.toArray(new X509Certificate[0]));
         }
     }
 
@@ -97,8 +92,9 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         trustedCerts = v.getTrustedCertificates();
         serverValidator = v;
 
-        if (debug != null && Debug.isOn("trustmanager")) {
-            showTrustedCerts();
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("adding as trusted certificates",
+                    (Object[])trustedCerts.toArray(new X509Certificate[0]));
         }
     }
 
@@ -202,11 +198,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             }
 
             // create the algorithm constraints
-            ProtocolVersion protocolVersion =
-                ProtocolVersion.valueOf(session.getProtocol());
             boolean isExtSession = (session instanceof ExtendedSSLSession);
-            AlgorithmConstraints constraints = null;
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v && isExtSession) {
+            AlgorithmConstraints constraints;
+            if (isExtSession &&
+                    ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
                 ExtendedSSLSession extSession = (ExtendedSSLSession)session;
                 String[] localSupportedSignAlgs =
                         extSession.getLocalSupportedSignatureAlgorithms();
@@ -228,8 +223,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
             // check if EE certificate chains to a public root CA (as
             // pre-installed in cacerts)
-            boolean chainsToPublicCA =
-                AnchorCertificates.contains(trustedChain[trustedChain.length-1]);
+            boolean chainsToPublicCA = AnchorCertificates.contains(
+                    trustedChain[trustedChain.length-1]);
 
             // check endpoint identity
             String identityAlg = sslSocket.getSSLParameters().
@@ -242,9 +237,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             trustedChain = validate(v, chain, Collections.emptyList(),
                     null, isClient ? null : authType);
         }
-        if (debug != null && Debug.isOn("trustmanager")) {
-            System.out.println("Found trusted certificate:");
-            System.out.println(trustedChain[trustedChain.length - 1]);
+
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("Found trusted certificate",
+                    trustedChain[trustedChain.length - 1]);
         }
     }
 
@@ -260,11 +256,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             }
 
             // create the algorithm constraints
-            ProtocolVersion protocolVersion =
-                ProtocolVersion.valueOf(session.getProtocol());
             boolean isExtSession = (session instanceof ExtendedSSLSession);
-            AlgorithmConstraints constraints = null;
-            if (protocolVersion.v >= ProtocolVersion.TLS12.v && isExtSession) {
+            AlgorithmConstraints constraints;
+            if (isExtSession &&
+                    ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
                 ExtendedSSLSession extSession = (ExtendedSSLSession)session;
                 String[] localSupportedSignAlgs =
                         extSession.getLocalSupportedSignatureAlgorithms();
@@ -286,8 +281,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
 
             // check if EE certificate chains to a public root CA (as
             // pre-installed in cacerts)
-            boolean chainsToPublicCA =
-                AnchorCertificates.contains(trustedChain[trustedChain.length-1]);
+            boolean chainsToPublicCA = AnchorCertificates.contains(
+                    trustedChain[trustedChain.length-1]);
 
             // check endpoint identity
             String identityAlg = engine.getSSLParameters().
@@ -300,27 +295,10 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
             trustedChain = validate(v, chain, Collections.emptyList(),
                     null, isClient ? null : authType);
         }
-        if (debug != null && Debug.isOn("trustmanager")) {
-            System.out.println("Found trusted certificate:");
-            System.out.println(trustedChain[trustedChain.length - 1]);
-        }
-    }
 
-    private void showTrustedCerts() {
-        for (X509Certificate cert : trustedCerts) {
-            System.out.println("adding as trusted cert:");
-            System.out.println("  Subject: "
-                                    + cert.getSubjectX500Principal());
-            System.out.println("  Issuer:  "
-                                    + cert.getIssuerX500Principal());
-            System.out.println("  Algorithm: "
-                                    + cert.getPublicKey().getAlgorithm()
-                                    + "; Serial number: 0x"
-                                    + cert.getSerialNumber().toString(16));
-            System.out.println("  Valid from "
-                                    + cert.getNotBefore() + " until "
-                                    + cert.getNotAfter());
-            System.out.println();
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+            SSLLogger.fine("Found trusted certificate",
+                    trustedChain[trustedChain.length - 1]);
         }
     }
 
@@ -364,8 +342,8 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
                     hostname = new SNIHostName(sniName.getEncoded());
                 } catch (IllegalArgumentException iae) {
                     // unlikely to happen, just in case ...
-                    if ((debug != null) && Debug.isOn("trustmanager")) {
-                        System.out.println("Illegal server name: " + sniName);
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,trustmanager")) {
+                        SSLLogger.fine("Illegal server name: " + sniName);
                     }
                 }
             }
@@ -491,3 +469,4 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         }
     }
 }
+

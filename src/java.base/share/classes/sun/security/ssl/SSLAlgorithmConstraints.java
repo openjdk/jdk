@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,13 @@
 package sun.security.ssl;
 
 import java.security.AlgorithmConstraints;
-import java.security.CryptoPrimitive;
 import java.security.AlgorithmParameters;
-
-import javax.net.ssl.*;
-
+import java.security.CryptoPrimitive;
 import java.security.Key;
-
 import java.util.Set;
-
+import javax.net.ssl.*;
 import sun.security.util.DisabledAlgorithmConstraints;
 import static sun.security.util.DisabledAlgorithmConstraints.*;
-import sun.security.ssl.CipherSuite.*;
 
 /**
  * Algorithm constraints for disabled algorithms property
@@ -55,10 +50,10 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             new DisabledAlgorithmConstraints(PROPERTY_CERTPATH_DISABLED_ALGS,
                     new SSLAlgorithmDecomposer(true));
 
-    private AlgorithmConstraints userAlgConstraints = null;
-    private AlgorithmConstraints peerAlgConstraints = null;
+    private final AlgorithmConstraints userSpecifiedConstraints;
+    private final AlgorithmConstraints peerSpecifiedConstraints;
 
-    private boolean enabledX509DisabledAlgConstraints = true;
+    private final boolean enabledX509DisabledAlgConstraints;
 
     // the default algorithm constraints
     static final AlgorithmConstraints DEFAULT =
@@ -68,60 +63,86 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     static final AlgorithmConstraints DEFAULT_SSL_ONLY =
                         new SSLAlgorithmConstraints((SSLSocket)null, false);
 
-    SSLAlgorithmConstraints(AlgorithmConstraints algorithmConstraints) {
-        userAlgConstraints = algorithmConstraints;
+    SSLAlgorithmConstraints(AlgorithmConstraints userSpecifiedConstraints) {
+        this.userSpecifiedConstraints = userSpecifiedConstraints;
+        this.peerSpecifiedConstraints = null;
+        this.enabledX509DisabledAlgConstraints = true;
     }
 
     SSLAlgorithmConstraints(SSLSocket socket,
             boolean withDefaultCertPathConstraints) {
+        AlgorithmConstraints configuredConstraints = null;
         if (socket != null) {
-            userAlgConstraints =
-                socket.getSSLParameters().getAlgorithmConstraints();
+            HandshakeContext hc =
+                    ((SSLSocketImpl)socket).conContext.handshakeContext;
+            if (hc != null) {
+                configuredConstraints = hc.sslConfig.algorithmConstraints;
+            } else {
+                configuredConstraints = null;
+            }
         }
-
-        if (!withDefaultCertPathConstraints) {
-            enabledX509DisabledAlgConstraints = false;
-        }
+        this.userSpecifiedConstraints = configuredConstraints;
+        this.peerSpecifiedConstraints = null;
+        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
     }
 
     SSLAlgorithmConstraints(SSLEngine engine,
             boolean withDefaultCertPathConstraints) {
+        AlgorithmConstraints configuredConstraints = null;
         if (engine != null) {
-            userAlgConstraints =
-                engine.getSSLParameters().getAlgorithmConstraints();
+            HandshakeContext hc =
+                    ((SSLEngineImpl)engine).conContext.handshakeContext;
+            if (hc != null) {
+                configuredConstraints = hc.sslConfig.algorithmConstraints;
+            } else {
+                configuredConstraints = null;
+            }
         }
-
-        if (!withDefaultCertPathConstraints) {
-            enabledX509DisabledAlgConstraints = false;
-        }
+        this.userSpecifiedConstraints = configuredConstraints;
+        this.peerSpecifiedConstraints = null;
+        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
     }
 
     SSLAlgorithmConstraints(SSLSocket socket, String[] supportedAlgorithms,
             boolean withDefaultCertPathConstraints) {
+        AlgorithmConstraints configuredConstraints = null;
+        AlgorithmConstraints negotiatedConstraints = null;
         if (socket != null) {
-            userAlgConstraints =
-                socket.getSSLParameters().getAlgorithmConstraints();
-            peerAlgConstraints =
+            HandshakeContext hc =
+                    ((SSLSocketImpl)socket).conContext.handshakeContext;
+            if (hc != null) {
+                configuredConstraints = hc.sslConfig.algorithmConstraints;
+            } else {
+                configuredConstraints = null;
+            }
+
+            negotiatedConstraints =
                 new SupportedSignatureAlgorithmConstraints(supportedAlgorithms);
         }
-
-        if (!withDefaultCertPathConstraints) {
-            enabledX509DisabledAlgConstraints = false;
-        }
+        this.userSpecifiedConstraints = configuredConstraints;
+        this.peerSpecifiedConstraints = negotiatedConstraints;
+        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
     }
 
     SSLAlgorithmConstraints(SSLEngine engine, String[] supportedAlgorithms,
             boolean withDefaultCertPathConstraints) {
+        AlgorithmConstraints configuredConstraints = null;
+        AlgorithmConstraints negotiatedConstraints = null;
         if (engine != null) {
-            userAlgConstraints =
-                engine.getSSLParameters().getAlgorithmConstraints();
-            peerAlgConstraints =
+            HandshakeContext hc =
+                    ((SSLEngineImpl)engine).conContext.handshakeContext;
+            if (hc != null) {
+                configuredConstraints = hc.sslConfig.algorithmConstraints;
+            } else {
+                configuredConstraints = null;
+            }
+
+            negotiatedConstraints =
                 new SupportedSignatureAlgorithmConstraints(supportedAlgorithms);
         }
-
-        if (!withDefaultCertPathConstraints) {
-            enabledX509DisabledAlgConstraints = false;
-        }
+        this.userSpecifiedConstraints = configuredConstraints;
+        this.peerSpecifiedConstraints = negotiatedConstraints;
+        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
     }
 
     @Override
@@ -130,13 +151,13 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
         boolean permitted = true;
 
-        if (peerAlgConstraints != null) {
-            permitted = peerAlgConstraints.permits(
+        if (peerSpecifiedConstraints != null) {
+            permitted = peerSpecifiedConstraints.permits(
                                     primitives, algorithm, parameters);
         }
 
-        if (permitted && userAlgConstraints != null) {
-            permitted = userAlgConstraints.permits(
+        if (permitted && userSpecifiedConstraints != null) {
+            permitted = userSpecifiedConstraints.permits(
                                     primitives, algorithm, parameters);
         }
 
@@ -158,12 +179,12 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
         boolean permitted = true;
 
-        if (peerAlgConstraints != null) {
-            permitted = peerAlgConstraints.permits(primitives, key);
+        if (peerSpecifiedConstraints != null) {
+            permitted = peerSpecifiedConstraints.permits(primitives, key);
         }
 
-        if (permitted && userAlgConstraints != null) {
-            permitted = userAlgConstraints.permits(primitives, key);
+        if (permitted && userSpecifiedConstraints != null) {
+            permitted = userSpecifiedConstraints.permits(primitives, key);
         }
 
         if (permitted) {
@@ -183,13 +204,13 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
         boolean permitted = true;
 
-        if (peerAlgConstraints != null) {
-            permitted = peerAlgConstraints.permits(
+        if (peerSpecifiedConstraints != null) {
+            permitted = peerSpecifiedConstraints.permits(
                                     primitives, algorithm, key, parameters);
         }
 
-        if (permitted && userAlgConstraints != null) {
-            permitted = userAlgConstraints.permits(
+        if (permitted && userSpecifiedConstraints != null) {
+            permitted = userSpecifiedConstraints.permits(
                                     primitives, algorithm, key, parameters);
         }
 

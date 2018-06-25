@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,19 @@
 
 package sun.security.ssl;
 
-import java.security.*;
 import java.math.BigInteger;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.util.Map;
-import java.util.HashMap;
+import java.security.*;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.crypto.spec.DHParameterSpec;
 
 /**
  * Predefined default DH ephemeral parameters.
  */
 final class PredefinedDHParameterSpecs {
-    private final static boolean debugIsOn =
-            (Debug.getInstance("ssl") != null) && Debug.isOn("sslctx");
 
     //
     // Default DH ephemeral parameters
@@ -209,15 +207,15 @@ final class PredefinedDHParameterSpecs {
     // a measure of the uncertainty that prime modulus p is not a prime
     //
     // see BigInteger.isProbablePrime(int certainty)
-    private final static int PRIME_CERTAINTY = 120;
+    private static final int PRIME_CERTAINTY = 120;
 
     // the known security property, jdk.tls.server.defaultDHEParameters
-    private final static String PROPERTY_NAME =
+    private static final String PROPERTY_NAME =
             "jdk.tls.server.defaultDHEParameters";
 
     private static final Pattern spacesPattern = Pattern.compile("\\s+");
 
-    private final static Pattern syntaxPattern = Pattern.compile(
+    private static final Pattern syntaxPattern = Pattern.compile(
             "(\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})" +
             "(,\\{[0-9A-Fa-f]+,[0-9A-Fa-f]+\\})*");
 
@@ -225,10 +223,10 @@ final class PredefinedDHParameterSpecs {
             "\\{([0-9A-Fa-f]+),([0-9A-Fa-f]+)\\}");
 
     // cache of predefined default DH ephemeral parameters
-    final static Map<Integer, DHParameterSpec> definedParams;
+    static final Map<Integer, DHParameterSpec> definedParams;
 
     // cache of Finite Field DH Ephemeral parameters (RFC 7919/FFDHE)
-    final static Map<Integer, DHParameterSpec> ffdheParams;
+    static final Map<Integer, DHParameterSpec> ffdheParams;
 
     static {
         String property = AccessController.doPrivileged(
@@ -252,8 +250,9 @@ final class PredefinedDHParameterSpecs {
             Matcher spacesMatcher = spacesPattern.matcher(property);
             property = spacesMatcher.replaceAll("");
 
-            if (debugIsOn) {
-                System.out.println("The Security Property " +
+            if (SSLLogger.isOn && SSLLogger.isOn("sslctx")) {
+                SSLLogger.fine(
+                        "The Security Property " +
                         PROPERTY_NAME + ": " + property);
             }
         }
@@ -267,8 +266,8 @@ final class PredefinedDHParameterSpecs {
                     String primeModulus = paramsFinder.group(1);
                     BigInteger p = new BigInteger(primeModulus, 16);
                     if (!p.isProbablePrime(PRIME_CERTAINTY)) {
-                        if (debugIsOn) {
-                            System.out.println(
+                        if (SSLLogger.isOn && SSLLogger.isOn("sslctx")) {
+                            SSLLogger.fine(
                                 "Prime modulus p in Security Property, " +
                                 PROPERTY_NAME + ", is not a prime: " +
                                 primeModulus);
@@ -284,8 +283,8 @@ final class PredefinedDHParameterSpecs {
                     int primeLen = p.bitLength();
                     defaultParams.put(primeLen, spec);
                 }
-            } else if (debugIsOn) {
-                System.out.println("Invalid Security Property, " +
+            } else if (SSLLogger.isOn && SSLLogger.isOn("sslctx")) {
+                SSLLogger.fine("Invalid Security Property, " +
                         PROPERTY_NAME + ", definition");
             }
         }

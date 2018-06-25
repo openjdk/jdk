@@ -113,27 +113,19 @@ class VerifierWrapper implements javax.net.ssl.HostnameVerifier {
      * In com.sun.net.ssl.HostnameVerifier the method is defined
      * as verify(String urlHostname, String certHostname).
      * This means we need to extract the hostname from the X.509 certificate
-     * or from the Kerberos principal name, in this wrapper.
+     * in this wrapper.
      */
     public boolean verify(String hostname, javax.net.ssl.SSLSession session) {
         try {
-            String serverName;
-            // Use ciphersuite to determine whether Kerberos is active.
-            if (session.getCipherSuite().startsWith("TLS_KRB5")) {
-                serverName =
-                    HostnameChecker.getServerName(getPeerPrincipal(session));
-
-            } else { // X.509
-                Certificate[] serverChain = session.getPeerCertificates();
-                if ((serverChain == null) || (serverChain.length == 0)) {
-                    return false;
-                }
-                if (serverChain[0] instanceof X509Certificate == false) {
-                    return false;
-                }
-                X509Certificate serverCert = (X509Certificate)serverChain[0];
-                serverName = getServername(serverCert);
+            Certificate[] serverChain = session.getPeerCertificates();
+            if ((serverChain == null) || (serverChain.length == 0)) {
+                return false;
             }
+            if (serverChain[0] instanceof X509Certificate == false) {
+                return false;
+            }
+            X509Certificate serverCert = (X509Certificate)serverChain[0];
+            String serverName = getServername(serverCert);
             if (serverName == null) {
                 return false;
             }
@@ -141,23 +133,6 @@ class VerifierWrapper implements javax.net.ssl.HostnameVerifier {
         } catch (javax.net.ssl.SSLPeerUnverifiedException e) {
             return false;
         }
-    }
-
-    /*
-     * Get the peer principal from the session
-     */
-    private Principal getPeerPrincipal(javax.net.ssl.SSLSession session)
-        throws javax.net.ssl.SSLPeerUnverifiedException
-    {
-        Principal principal;
-        try {
-            principal = session.getPeerPrincipal();
-        } catch (AbstractMethodError e) {
-            // if the provider does not support it, return null, since
-            // we need it only for Kerberos.
-            principal = null;
-        }
-        return principal;
     }
 
     /*

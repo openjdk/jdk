@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,27 @@
 
 package sun.security.ssl;
 
-import java.io.*;
-import java.nio.*;
-import java.util.Arrays;
-
-import javax.net.ssl.SSLException;
-import sun.security.util.HexDumpEncoder;
-
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import sun.security.ssl.SSLCipher.SSLWriteCipher;
 
 /**
- * {@code OutputRecord} takes care of the management of SSL/TLS/DTLS output
- * records, including buffering, encryption, handshake messages marshal, etc.
+ * {@code OutputRecord} takes care of the management of SSL/(D)TLS
+ * output records, including buffering, encryption, handshake
+ * messages marshal, etc.
  *
  * @author David Brownell
  */
-abstract class OutputRecord extends ByteArrayOutputStream
-            implements Record, Closeable {
+abstract class OutputRecord
+        extends ByteArrayOutputStream implements Record, Closeable {
+    SSLWriteCipher              writeCipher;
+    // Needed for KeyUpdate, used after Handshake.Finished
+    TransportContext            tc;
 
-    /* Class and subclass dynamic debugging support */
-    static final Debug          debug = Debug.getInstance("ssl");
-
-    Authenticator               writeAuthenticator;
-    CipherBox                   writeCipher;
-
-    HandshakeHash               handshakeHash;
+    final HandshakeHash         handshakeHash;
     boolean                     firstMessage;
 
     // current protocol version, sent as record version
@@ -75,15 +72,17 @@ abstract class OutputRecord extends ByteArrayOutputStream
      * Mappings from V3 cipher suite encodings to their pure V2 equivalents.
      * This is taken from the SSL V3 specification, Appendix E.
      */
-    private static int[] V3toV2CipherMap1 =
+    private static final int[] V3toV2CipherMap1 =
         {-1, -1, -1, 0x02, 0x01, -1, 0x04, 0x05, -1, 0x06, 0x07};
-    private static int[] V3toV2CipherMap3 =
+    private static final int[] V3toV2CipherMap3 =
         {-1, -1, -1, 0x80, 0x80, -1, 0x80, 0x80, -1, 0x40, 0xC0};
 
-    OutputRecord() {
-        this.writeCipher = CipherBox.NULL;
+    OutputRecord(HandshakeHash handshakeHash, SSLWriteCipher writeCipher) {
+        this.writeCipher = writeCipher;
         this.firstMessage = true;
         this.fragmentSize = Record.maxDataSize;
+
+        this.handshakeHash = handshakeHash;
 
         // Please set packetSize and protocolVersion in the implementation.
     }
@@ -100,15 +99,6 @@ abstract class OutputRecord extends ByteArrayOutputStream
     }
 
     /*
-     * For handshaking, we need to be able to hash every byte above the
-     * record marking layer.  This is where we're guaranteed to see those
-     * bytes, so this is where we can hash them.
-     */
-    void setHandshakeHash(HandshakeHash handshakeHash) {
-        this.handshakeHash = handshakeHash;
-    }
-
-    /*
      * Return true iff the record is empty -- to avoid doing the work
      * of sending empty records over the network.
      */
@@ -117,8 +107,8 @@ abstract class OutputRecord extends ByteArrayOutputStream
     }
 
     boolean seqNumIsHuge() {
-        return (writeAuthenticator != null) &&
-                        writeAuthenticator.seqNumIsHuge();
+        return (writeCipher.authenticator != null) &&
+                        writeCipher.authenticator.seqNumIsHuge();
     }
 
     // SSLEngine and SSLSocket
@@ -132,8 +122,10 @@ abstract class OutputRecord extends ByteArrayOutputStream
     abstract void encodeChangeCipherSpec() throws IOException;
 
     // apply to SSLEngine only
-    Ciphertext encode(ByteBuffer[] sources, int offset, int length,
-            ByteBuffer destination) throws IOException {
+    Ciphertext encode(
+        ByteBuffer[] srcs, int srcsOffset, int srcsLength,
+        ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
+
         throw new UnsupportedOperationException();
     }
 
@@ -143,7 +135,8 @@ abstract class OutputRecord extends ByteArrayOutputStream
     }
 
     // apply to SSLSocket only
-    void deliver(byte[] source, int offset, int length) throws IOException {
+    void deliver(
+            byte[] source, int offset, int length) throws IOException {
         throw new UnsupportedOperationException();
     }
 
@@ -152,15 +145,11 @@ abstract class OutputRecord extends ByteArrayOutputStream
         throw new UnsupportedOperationException();
     }
 
-    // apply to SSLEngine only
-    Ciphertext acquireCiphertext(ByteBuffer destination) throws IOException {
-        throw new UnsupportedOperationException();
-    }
-
-    void changeWriteCiphers(Authenticator writeAuthenticator,
-            CipherBox writeCipher) throws IOException {
-
-        encodeChangeCipherSpec();
+    void changeWriteCiphers(SSLWriteCipher writeCipher,
+            boolean useChangeCipherSpec) throws IOException {
+        if (useChangeCipherSpec) {
+            encodeChangeCipherSpec();
+        }
 
         /*
          * Dispose of any intermediate state in the underlying cipher.
@@ -172,7 +161,6 @@ abstract class OutputRecord extends ByteArrayOutputStream
          */
         writeCipher.dispose();
 
-        this.writeAuthenticator = writeAuthenticator;
         this.writeCipher = writeCipher;
         this.isFirstAppOutputRecord = true;
     }
@@ -195,6 +183,11 @@ abstract class OutputRecord extends ByteArrayOutputStream
     }
 
     // apply to DTLS SSLEngine
+    void finishHandshake() {
+        // blank
+    }
+
+    // apply to DTLS SSLEngine
     void launchRetransmission() {
         // blank
     }
@@ -207,6 +200,10 @@ abstract class OutputRecord extends ByteArrayOutputStream
         }
     }
 
+    synchronized boolean isClosed() {
+        return isClosed;
+    }
+
     //
     // shared helpers
     //
@@ -216,72 +213,47 @@ abstract class OutputRecord extends ByteArrayOutputStream
     // To be consistent with the spec of SSLEngine.wrap() methods, the
     // destination ByteBuffer's position is updated to reflect the amount
     // of data produced.  The limit remains the same.
-    static long encrypt(Authenticator authenticator,
-            CipherBox encCipher, byte contentType, ByteBuffer destination,
+    static long encrypt(
+            SSLWriteCipher encCipher, byte contentType, ByteBuffer destination,
             int headerOffset, int dstLim, int headerSize,
-            ProtocolVersion protocolVersion, boolean isDTLS) {
-
-        byte[] sequenceNumber = null;
-        int dstContent = destination.position();
-
-        // Acquire the current sequence number before using.
+            ProtocolVersion protocolVersion) {
+        boolean isDTLS = protocolVersion.isDTLS;
         if (isDTLS) {
-            sequenceNumber = authenticator.sequenceNumber();
-        }
-
-        // The sequence number may be shared for different purpose.
-        boolean sharedSequenceNumber = false;
-
-        // "flip" but skip over header again, add MAC & encrypt
-        if (authenticator instanceof MAC) {
-            MAC signer = (MAC)authenticator;
-            if (signer.MAClen() != 0) {
-                byte[] hash = signer.compute(contentType, destination, false);
-
-                /*
-                 * position was advanced to limit in MAC compute above.
-                 *
-                 * Mark next area as writable (above layers should have
-                 * established that we have plenty of room), then write
-                 * out the hash.
-                 */
-                destination.limit(destination.limit() + hash.length);
-                destination.put(hash);
-
-                // reset the position and limit
-                destination.limit(destination.position());
-                destination.position(dstContent);
-
-                // The signer has used and increased the sequence number.
-                if (isDTLS) {
-                    sharedSequenceNumber = true;
-                }
-            }
-        }
-
-        if (!encCipher.isNullCipher()) {
-            if (protocolVersion.useTLS11PlusSpec() &&
-                    (encCipher.isCBCMode() || encCipher.isAEADMode())) {
-                byte[] nonce = encCipher.createExplicitNonce(
-                        authenticator, contentType, destination.remaining());
-                destination.position(headerOffset + headerSize);
-                destination.put(nonce);
-            }
-            if (!encCipher.isAEADMode()) {
-                // The explicit IV in TLS 1.1 and later can be encrypted.
-                destination.position(headerOffset + headerSize);
-            }   // Otherwise, DON'T encrypt the nonce_explicit for AEAD mode
-
-            // Encrypt may pad, so again the limit may be changed.
-            encCipher.encrypt(destination, dstLim);
-
-            // The cipher has used and increased the sequence number.
-            if (isDTLS && encCipher.isAEADMode()) {
-                sharedSequenceNumber = true;
+            if (protocolVersion.useTLS13PlusSpec()) {
+                return d13Encrypt(encCipher,
+                        contentType, destination, headerOffset,
+                        dstLim, headerSize, protocolVersion);
+            } else {
+                return d10Encrypt(encCipher,
+                        contentType, destination, headerOffset,
+                        dstLim, headerSize, protocolVersion);
             }
         } else {
-            destination.position(destination.limit());
+            if (protocolVersion.useTLS13PlusSpec()) {
+                return t13Encrypt(encCipher,
+                        contentType, destination, headerOffset,
+                        dstLim, headerSize, protocolVersion);
+            } else {
+                return t10Encrypt(encCipher,
+                        contentType, destination, headerOffset,
+                        dstLim, headerSize, protocolVersion);
+            }
         }
+    }
+
+    static long d13Encrypt(
+            SSLWriteCipher encCipher, byte contentType, ByteBuffer destination,
+            int headerOffset, int dstLim, int headerSize,
+            ProtocolVersion protocolVersion) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private static long d10Encrypt(
+            SSLWriteCipher encCipher, byte contentType, ByteBuffer destination,
+            int headerOffset, int dstLim, int headerSize,
+            ProtocolVersion protocolVersion) {
+        byte[] sequenceNumber = encCipher.authenticator.sequenceNumber();
+        encCipher.encrypt(contentType, destination);
 
         // Finish out the record header.
         int fragLen = destination.limit() - headerOffset - headerSize;
@@ -289,30 +261,83 @@ abstract class OutputRecord extends ByteArrayOutputStream
         destination.put(headerOffset, contentType);         // content type
         destination.put(headerOffset + 1, protocolVersion.major);
         destination.put(headerOffset + 2, protocolVersion.minor);
-        if (!isDTLS) {
-            // fragment length
-            destination.put(headerOffset + 3, (byte)(fragLen >> 8));
-            destination.put(headerOffset + 4, (byte)fragLen);
-        } else {
-            // epoch and sequence_number
-            destination.put(headerOffset + 3, sequenceNumber[0]);
-            destination.put(headerOffset + 4, sequenceNumber[1]);
-            destination.put(headerOffset + 5, sequenceNumber[2]);
-            destination.put(headerOffset + 6, sequenceNumber[3]);
-            destination.put(headerOffset + 7, sequenceNumber[4]);
-            destination.put(headerOffset + 8, sequenceNumber[5]);
-            destination.put(headerOffset + 9, sequenceNumber[6]);
-            destination.put(headerOffset + 10, sequenceNumber[7]);
 
-            // fragment length
-            destination.put(headerOffset + 11, (byte)(fragLen >> 8));
-            destination.put(headerOffset + 12, (byte)fragLen);
+        // epoch and sequence_number
+        destination.put(headerOffset + 3, sequenceNumber[0]);
+        destination.put(headerOffset + 4, sequenceNumber[1]);
+        destination.put(headerOffset + 5, sequenceNumber[2]);
+        destination.put(headerOffset + 6, sequenceNumber[3]);
+        destination.put(headerOffset + 7, sequenceNumber[4]);
+        destination.put(headerOffset + 8, sequenceNumber[5]);
+        destination.put(headerOffset + 9, sequenceNumber[6]);
+        destination.put(headerOffset + 10, sequenceNumber[7]);
 
-            // Increase the sequence number for next use if it is not shared.
-            if (!sharedSequenceNumber) {
-                authenticator.increaseSequenceNumber();
-            }
+        // fragment length
+        destination.put(headerOffset + 11, (byte)(fragLen >> 8));
+        destination.put(headerOffset + 12, (byte)fragLen);
+
+        // Update destination position to reflect the amount of data produced.
+        destination.position(destination.limit());
+
+        return Authenticator.toLong(sequenceNumber);
+    }
+
+    static long t13Encrypt(
+            SSLWriteCipher encCipher, byte contentType, ByteBuffer destination,
+            int headerOffset, int dstLim, int headerSize,
+            ProtocolVersion protocolVersion) {
+        if (!encCipher.isNullCipher()) {
+            // inner plaintext, using zero length padding.
+            int endOfPt = destination.limit();
+            destination.limit(endOfPt + 1);
+            destination.put(endOfPt, contentType);
         }
+
+        // use the right TLSCiphertext.opaque_type and legacy_record_version
+        ProtocolVersion pv = protocolVersion;
+        if (!encCipher.isNullCipher()) {
+            pv = ProtocolVersion.TLS12;
+            contentType = ContentType.APPLICATION_DATA.id;
+        } else if (protocolVersion.useTLS13PlusSpec()) {
+            pv = ProtocolVersion.TLS12;
+        }
+
+        byte[] sequenceNumber = encCipher.authenticator.sequenceNumber();
+        encCipher.encrypt(contentType, destination);
+
+        // Finish out the record header.
+        int fragLen = destination.limit() - headerOffset - headerSize;
+        destination.put(headerOffset, contentType);
+        destination.put(headerOffset + 1, pv.major);
+        destination.put(headerOffset + 2, pv.minor);
+
+        // fragment length
+        destination.put(headerOffset + 3, (byte)(fragLen >> 8));
+        destination.put(headerOffset + 4, (byte)fragLen);
+
+        // Update destination position to reflect the amount of data produced.
+        destination.position(destination.limit());
+
+        return Authenticator.toLong(sequenceNumber);
+    }
+
+    static long t10Encrypt(
+            SSLWriteCipher encCipher, byte contentType, ByteBuffer destination,
+            int headerOffset, int dstLim, int headerSize,
+            ProtocolVersion protocolVersion) {
+        byte[] sequenceNumber = encCipher.authenticator.sequenceNumber();
+        encCipher.encrypt(contentType, destination);
+
+        // Finish out the record header.
+        int fragLen = destination.limit() - headerOffset - headerSize;
+
+        destination.put(headerOffset, contentType);         // content type
+        destination.put(headerOffset + 1, protocolVersion.major);
+        destination.put(headerOffset + 2, protocolVersion.minor);
+
+        // fragment length
+        destination.put(headerOffset + 3, (byte)(fragLen >> 8));
+        destination.put(headerOffset + 4, (byte)fragLen);
 
         // Update destination position to reflect the amount of data produced.
         destination.position(destination.limit());
@@ -324,55 +349,78 @@ abstract class OutputRecord extends ByteArrayOutputStream
     //
     // Uses the internal expandable buf variable and the current
     // protocolVersion variable.
-    void encrypt(Authenticator authenticator,
-            CipherBox encCipher, byte contentType, int headerSize) {
-
-        int position = headerSize + writeCipher.getExplicitNonceSize();
-
-        // "flip" but skip over header again, add MAC & encrypt
-        int macLen = 0;
-        if (authenticator instanceof MAC) {
-            MAC signer = (MAC)authenticator;
-            macLen = signer.MAClen();
-            if (macLen != 0) {
-                byte[] hash = signer.compute(contentType,
-                        buf, position, (count - position), false);
-
-                write(hash, 0, hash.length);
-            }
+    long encrypt(
+            SSLWriteCipher encCipher, byte contentType, int headerSize) {
+        if (protocolVersion.useTLS13PlusSpec()) {
+            return t13Encrypt(encCipher, contentType, headerSize);
+        } else {
+            return t10Encrypt(encCipher, contentType, headerSize);
         }
+    }
 
+    private static final class T13PaddingHolder {
+        private static final byte[] zeros = new byte[16];
+    }
+
+    long t13Encrypt(
+            SSLWriteCipher encCipher, byte contentType, int headerSize) {
         if (!encCipher.isNullCipher()) {
-            // Requires explicit IV/nonce for CBC/AEAD cipher suites for
-            // TLS 1.1 or later.
-            if (protocolVersion.useTLS11PlusSpec() &&
-                    (encCipher.isCBCMode() || encCipher.isAEADMode())) {
-
-                byte[] nonce = encCipher.createExplicitNonce(
-                        authenticator, contentType, (count - position));
-                int noncePos = position - nonce.length;
-                System.arraycopy(nonce, 0, buf, noncePos, nonce.length);
-            }
-
-            if (!encCipher.isAEADMode()) {
-                // The explicit IV in TLS 1.1 and later can be encrypted.
-                position = headerSize;
-            }   // Otherwise, DON'T encrypt the nonce_explicit for AEAD mode
-
-            // increase buf capacity if necessary
-            int fragSize = count - position;
-            int packetSize =
-                    encCipher.calculatePacketSize(fragSize, macLen, headerSize);
-            if (packetSize > (buf.length - position)) {
-                byte[] newBuf = new byte[position + packetSize];
-                System.arraycopy(buf, 0, newBuf, 0, count);
-                buf = newBuf;
-            }
-
-            // Encrypt may pad, so again the count may be changed.
-            count = position +
-                    encCipher.encrypt(buf, position, (count - position));
+            // inner plaintext
+            write(contentType);
+            write(T13PaddingHolder.zeros, 0, T13PaddingHolder.zeros.length);
         }
+
+        byte[] sequenceNumber = encCipher.authenticator.sequenceNumber();
+        int position = headerSize;
+        int contentLen = count - position;
+
+        // ensure the capacity
+        int packetSize = encCipher.calculatePacketSize(contentLen, headerSize);
+        if (packetSize > buf.length) {
+            byte[] newBuf = new byte[packetSize];
+            System.arraycopy(buf, 0, newBuf, 0, count);
+            buf = newBuf;
+        }
+
+        // use the right TLSCiphertext.opaque_type and legacy_record_version
+        ProtocolVersion pv = protocolVersion;
+        if (!encCipher.isNullCipher()) {
+            pv = ProtocolVersion.TLS12;
+            contentType = ContentType.APPLICATION_DATA.id;
+        } else {
+            pv = ProtocolVersion.TLS12;
+        }
+
+        ByteBuffer destination = ByteBuffer.wrap(buf, position, contentLen);
+        count = headerSize + encCipher.encrypt(contentType, destination);
+
+        // Fill out the header, write it and the message.
+        int fragLen = count - headerSize;
+
+        buf[0] = contentType;
+        buf[1] = pv.major;
+        buf[2] = pv.minor;
+        buf[3] = (byte)((fragLen >> 8) & 0xFF);
+        buf[4] = (byte)(fragLen & 0xFF);
+
+        return Authenticator.toLong(sequenceNumber);
+    }
+
+    long t10Encrypt(
+            SSLWriteCipher encCipher, byte contentType, int headerSize) {
+        byte[] sequenceNumber = encCipher.authenticator.sequenceNumber();
+        int position = headerSize + writeCipher.getExplicitNonceSize();
+        int contentLen = count - position;
+
+        // ensure the capacity
+        int packetSize = encCipher.calculatePacketSize(contentLen, headerSize);
+        if (packetSize > buf.length) {
+            byte[] newBuf = new byte[packetSize];
+            System.arraycopy(buf, 0, newBuf, 0, count);
+            buf = newBuf;
+        }
+        ByteBuffer destination = ByteBuffer.wrap(buf, position, contentLen);
+        count = headerSize + encCipher.encrypt(contentType, destination);
 
         // Fill out the header, write it and the message.
         int fragLen = count - headerSize;
@@ -381,11 +429,12 @@ abstract class OutputRecord extends ByteArrayOutputStream
         buf[2] = protocolVersion.minor;
         buf[3] = (byte)((fragLen >> 8) & 0xFF);
         buf[4] = (byte)(fragLen & 0xFF);
+
+        return Authenticator.toLong(sequenceNumber);
     }
 
     static ByteBuffer encodeV2ClientHello(
             byte[] fragment, int offset, int length) throws IOException {
-
         int v3SessIdLenOffset = offset + 34;      //  2: client_version
                                                   // 32: random
 
@@ -449,7 +498,7 @@ abstract class OutputRecord extends ByteArrayOutputStream
         dstBuf.position(0);
         dstBuf.put((byte)(0x80 | ((msgLen >>> 8) & 0xFF)));  // pos: 0
         dstBuf.put((byte)(msgLen & 0xFF));                   // pos: 1
-        dstBuf.put(HandshakeMessage.ht_client_hello);        // pos: 2
+        dstBuf.put(SSLHandshake.CLIENT_HELLO.id);            // pos: 2
         dstBuf.put(fragment[offset]);         // major version, pos: 3
         dstBuf.put(fragment[offset + 1]);     // minor version, pos: 4
         dstBuf.put((byte)(v2CSLen >>> 8));                   // pos: 5

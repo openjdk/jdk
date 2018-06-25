@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,16 @@
 
 package sun.security.ssl;
 
-import java.util.*;
 import java.io.*;
 import java.security.*;
 import java.security.cert.*;
+import java.util.*;
 import javax.net.ssl.*;
-
-import sun.security.validator.Validator;
 import sun.security.validator.TrustStoreUtil;
+import sun.security.validator.Validator;
 
 abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
 
-    private static final Debug debug = Debug.getInstance("ssl");
     private X509TrustManager trustManager = null;
     private boolean isInitialized = false;
 
@@ -51,26 +49,26 @@ abstract class TrustManagerFactoryImpl extends TrustManagerFactorySpi {
                 trustManager = getInstance(TrustStoreManager.getTrustedCerts());
             } catch (SecurityException se) {
                 // eat security exceptions but report other throwables
-                if (debug != null && Debug.isOn("trustmanager")) {
-                    System.out.println(
-                        "SunX509: skip default keystore: " + se);
+                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                    SSLLogger.fine(
+                            "SunX509: skip default keystore", se);
                 }
             } catch (Error err) {
-                if (debug != null && Debug.isOn("trustmanager")) {
-                    System.out.println(
-                        "SunX509: skip default keystore: " + err);
+                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                    SSLLogger.fine(
+                        "SunX509: skip default keystore", err);
                 }
                 throw err;
             } catch (RuntimeException re) {
-                if (debug != null && Debug.isOn("trustmanager")) {
-                    System.out.println(
-                        "SunX509: skip default keystore: " + re);
+                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                    SSLLogger.fine(
+                        "SunX509: skip default keystor", re);
                 }
                 throw re;
             } catch (Exception e) {
-                if (debug != null && Debug.isOn("trustmanager")) {
-                    System.out.println(
-                        "SunX509: skip default keystore: " + e);
+                if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                    SSLLogger.fine(
+                        "SunX509: skip default keystore", e);
                 }
                 throw new KeyStoreException(
                     "problem accessing trust store", e);

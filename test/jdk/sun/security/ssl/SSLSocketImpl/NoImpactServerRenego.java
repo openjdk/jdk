@@ -28,12 +28,19 @@
  * @test
  * @bug 7188658
  * @summary Add possibility to disable client initiated renegotiation
- * @run main/othervm
- *      -Djdk.tls.rejectClientInitiatedRenegotiation=true NoImpactServerRenego
+ * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
+ *      NoImpactServerRenego SSLv3
+ * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
+ *      NoImpactServerRenego TLSv1
+ * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
+ *      NoImpactServerRenego TLSv1.1
+ * @run main/othervm  -Djdk.tls.rejectClientInitiatedRenegotiation=true
+ *      NoImpactServerRenego TLSv1.2
  */
 
 import java.io.*;
 import java.net.*;
+import java.security.Security;
 import javax.net.ssl.*;
 
 public class NoImpactServerRenego implements
@@ -157,6 +164,7 @@ public class NoImpactServerRenego implements
             (SSLSocketFactory) SSLSocketFactory.getDefault();
         SSLSocket sslSocket = (SSLSocket)
             sslsf.createSocket("localhost", serverPort);
+        sslSocket.setEnabledProtocols(new String[] { tlsProtocol });
 
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
@@ -187,6 +195,9 @@ public class NoImpactServerRenego implements
     volatile Exception serverException = null;
     volatile Exception clientException = null;
 
+    // the specified protocol
+    private static String tlsProtocol;
+
     public static void main(String[] args) throws Exception {
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
@@ -200,8 +211,13 @@ public class NoImpactServerRenego implements
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
-        if (debug)
+        if (debug) {
             System.setProperty("javax.net.debug", "all");
+        }
+
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
+        tlsProtocol = args[0];
 
         /*
          * Start the tests.

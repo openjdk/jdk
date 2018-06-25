@@ -1,7 +1,7 @@
 #! /bin/sh
 
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ esac
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
     ${TESTSRC}${FS}DebugReportsOneExtraByte.java
 
-STRING='main, WRITE: TLSv1 Application Data, length = 8'
+STRING='WRITE: TLS10 application_data, length = 8'
 
 echo "Examining debug output for the string:"
 echo "${STRING}"

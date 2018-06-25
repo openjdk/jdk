@@ -70,11 +70,16 @@ public class StapleEnableProps {
      */
     private static final boolean debug = false;
 
-    // These two ByteBuffer references will be used to hang onto ClientHello
+    // These four ByteBuffer references will be used to hang onto ClientHello
     // messages with and without the status_request[_v2] extensions.  These
-    // will be used in the server-side stapling tests.
-    private static ByteBuffer cHelloStaple;
-    private static ByteBuffer cHelloNoStaple;
+    // will be used in the server-side stapling tests.  There are two sets,
+    // one for 1.2 and earlier versions of the protocol and one for 1.3
+    // and later versions, since the handshake and extension sets differ
+    // between the two sets.
+    private static ByteBuffer cHello12Staple;
+    private static ByteBuffer cHello12NoStaple;
+    private static ByteBuffer cHello13Staple;
+    private static ByteBuffer cHello13NoStaple;
 
     // The following items are used to set up the keystores.
     private static final String passwd = "passphrase";
@@ -94,6 +99,11 @@ public class StapleEnableProps {
     private static SimpleOCSPServer intOcsp;    // Intermediate CA OCSP server
     private static int intOcspPort;             // Port for intermediate OCSP
 
+    // Extra configuration parameters and constants
+    static final String[] TLS13ONLY = new String[] { "TLSv1.3" };
+    static final String[] TLS12MAX =
+            new String[] { "TLSv1.2", "TLSv1.1", "TLSv1" };
+
     // A few helpful TLS definitions to make it easier
     private static final int HELLO_EXT_STATUS_REQ = 5;
     private static final int HELLO_EXT_STATUS_REQ_V2 = 17;
@@ -103,7 +113,7 @@ public class StapleEnableProps {
      */
     public static void main(String args[]) throws Exception {
         if (debug) {
-            System.setProperty("javax.net.debug", "ssl");
+            System.setProperty("javax.net.debug", "ssl:handshake,verbose");
         }
 
         // Create the PKI we will use for the test and start the OCSP servers
@@ -128,6 +138,7 @@ public class StapleEnableProps {
         System.out.println("=========================================");
         System.out.println("Client Test 1: " +
                 "jdk.tls.client.enableStatusRequestExtension = true");
+        System.out.println("Version = TLS 1.2");
         System.out.println("=========================================");
 
         System.setProperty("jdk.tls.client.enableStatusRequestExtension",
@@ -136,6 +147,7 @@ public class StapleEnableProps {
         ctxStaple.init(null, tmf.getTrustManagers(), null);
         SSLEngine engine = ctxStaple.createSSLEngine();
         engine.setUseClientMode(true);
+        engine.setEnabledProtocols(TLS12MAX);
         SSLSession session = engine.getSession();
         ByteBuffer clientOut = ByteBuffer.wrap("I'm a Client".getBytes());
         ByteBuffer cTOs =
@@ -151,12 +163,13 @@ public class StapleEnableProps {
         cTOs.flip();
         System.out.println(dumpHexBytes(cTOs));
         checkClientHello(cTOs, true, true);
-        cHelloStaple = cTOs;
+        cHello12Staple = cTOs;
 
         // Test with the property set to false
         System.out.println("=========================================");
         System.out.println("Client Test 2: " +
                 "jdk.tls.client.enableStatusRequestExtension = false");
+        System.out.println("Version = TLS 1.2");
         System.out.println("=========================================");
 
         System.setProperty("jdk.tls.client.enableStatusRequestExtension",
@@ -165,6 +178,7 @@ public class StapleEnableProps {
         ctxNoStaple.init(null, tmf.getTrustManagers(), null);
         engine = ctxNoStaple.createSSLEngine();
         engine.setUseClientMode(true);
+        engine.setEnabledProtocols(TLS12MAX);
         session = engine.getSession();
         cTOs = ByteBuffer.allocateDirect(session.getPacketBufferSize());
 
@@ -178,7 +192,95 @@ public class StapleEnableProps {
         cTOs.flip();
         System.out.println(dumpHexBytes(cTOs));
         checkClientHello(cTOs, false, false);
-        cHelloNoStaple = cTOs;
+        cHello12NoStaple = cTOs;
+
+        // Turn the property back on to true and test using TLS 1.3
+        System.out.println("=========================================");
+        System.out.println("Client Test 3: " +
+                "jdk.tls.client.enableStatusRequestExtension = true");
+        System.out.println("Version = TLS 1.3");
+        System.out.println("=========================================");
+
+        System.setProperty("jdk.tls.client.enableStatusRequestExtension",
+                "true");
+        ctxStaple = SSLContext.getInstance("TLS");
+        ctxStaple.init(null, tmf.getTrustManagers(), null);
+        engine = ctxStaple.createSSLEngine();
+        engine.setUseClientMode(true);
+        engine.setEnabledProtocols(TLS13ONLY);
+        session = engine.getSession();
+        cTOs = ByteBuffer.allocateDirect(session.getPacketBufferSize());
+
+        // Create and check the ClientHello message
+        clientResult = engine.wrap(clientOut, cTOs);
+        log("client wrap: ", clientResult);
+        if (clientResult.getStatus() != SSLEngineResult.Status.OK) {
+            throw new SSLException("Client wrap got status: " +
+                    clientResult.getStatus());
+        }
+        cTOs.flip();
+        System.out.println(dumpHexBytes(cTOs));
+        checkClientHello(cTOs, true, false);
+        cHello13Staple = cTOs;
+
+        // Turn the property off again and test in a TLS 1.3 handshake
+        System.out.println("=========================================");
+        System.out.println("Client Test 4: " +
+                "jdk.tls.client.enableStatusRequestExtension = false");
+        System.out.println("Version = TLS 1.3");
+        System.out.println("=========================================");
+
+        System.setProperty("jdk.tls.client.enableStatusRequestExtension",
+                "false");
+        ctxNoStaple = SSLContext.getInstance("TLS");
+        ctxNoStaple.init(null, tmf.getTrustManagers(), null);
+        engine = ctxNoStaple.createSSLEngine();
+        engine.setUseClientMode(true);
+        engine.setEnabledProtocols(TLS13ONLY);
+        session = engine.getSession();
+        cTOs = ByteBuffer.allocateDirect(session.getPacketBufferSize());
+
+        // Create and check the ClientHello message
+        clientResult = engine.wrap(clientOut, cTOs);
+        log("client wrap: ", clientResult);
+        if (clientResult.getStatus() != SSLEngineResult.Status.OK) {
+            throw new SSLException("Client wrap got status: " +
+                    clientResult.getStatus());
+        }
+        cTOs.flip();
+        System.out.println(dumpHexBytes(cTOs));
+        checkClientHello(cTOs, false, false);
+        cHello13NoStaple = cTOs;
+
+        // A TLS 1.3-capable hello, one that is not strictly limited to
+        // the TLS 1.3 protocol should have both status_request and
+        // status_request_v2
+        System.out.println("=========================================");
+        System.out.println("Client Test 5: " +
+                "jdk.tls.client.enableStatusRequestExtension = true");
+        System.out.println("Version = TLS 1.3 capable [default hello]");
+        System.out.println("=========================================");
+
+        System.setProperty("jdk.tls.client.enableStatusRequestExtension",
+                "true");
+        ctxStaple = SSLContext.getInstance("TLS");
+        ctxStaple.init(null, tmf.getTrustManagers(), null);
+        engine = ctxStaple.createSSLEngine();
+        engine.setUseClientMode(true);
+        // Note: Unlike the other tests, there is no explicit protocol setting
+        session = engine.getSession();
+        cTOs = ByteBuffer.allocateDirect(session.getPacketBufferSize());
+
+        // Create and check the ClientHello message
+        clientResult = engine.wrap(clientOut, cTOs);
+        log("client wrap: ", clientResult);
+        if (clientResult.getStatus() != SSLEngineResult.Status.OK) {
+            throw new SSLException("Client wrap got status: " +
+                    clientResult.getStatus());
+        }
+        cTOs.flip();
+        System.out.println(dumpHexBytes(cTOs));
+        checkClientHello(cTOs, true, true);
     }
 
     private static void testServerProp() throws Exception {
@@ -189,6 +291,7 @@ public class StapleEnableProps {
         System.out.println("=========================================");
         System.out.println("Server Test 1: " +
                 "jdk.tls.server.enableStatusRequestExtension = true");
+        System.out.println("Version = TLS 1.2");
         System.out.println("=========================================");
 
         System.setProperty("jdk.tls.server.enableStatusRequestExtension",
@@ -197,6 +300,7 @@ public class StapleEnableProps {
         ctxStaple.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         SSLEngine engine = ctxStaple.createSSLEngine();
         engine.setUseClientMode(false);
+        engine.setEnabledProtocols(TLS12MAX);
         SSLSession session = engine.getSession();
         ByteBuffer serverOut = ByteBuffer.wrap("I'm a Server".getBytes());
         ByteBuffer serverIn =
@@ -205,7 +309,7 @@ public class StapleEnableProps {
                 ByteBuffer.allocateDirect(session.getPacketBufferSize());
 
         // Consume the client hello
-        serverResult = engine.unwrap(cHelloStaple, serverIn);
+        serverResult = engine.unwrap(cHello12Staple, serverIn);
         log("server unwrap: ", serverResult);
         if (serverResult.getStatus() != SSLEngineResult.Status.OK) {
             throw new SSLException("Server unwrap got status: " +
@@ -234,12 +338,13 @@ public class StapleEnableProps {
         checkServerHello(sTOc, false, true);
 
         // Flip the client hello so we can reuse it in the next test.
-        cHelloStaple.flip();
+        cHello12Staple.flip();
 
         // Test with the server-side enable property set to false
         System.out.println("=========================================");
         System.out.println("Server Test 2: " +
                 "jdk.tls.server.enableStatusRequestExtension = false");
+        System.out.println("Version = TLS 1.2");
         System.out.println("=========================================");
 
         System.setProperty("jdk.tls.server.enableStatusRequestExtension",
@@ -248,12 +353,13 @@ public class StapleEnableProps {
         ctxNoStaple.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         engine = ctxNoStaple.createSSLEngine();
         engine.setUseClientMode(false);
+        engine.setEnabledProtocols(TLS12MAX);
         session = engine.getSession();
         serverIn = ByteBuffer.allocate(session.getApplicationBufferSize() + 50);
         sTOc = ByteBuffer.allocateDirect(session.getPacketBufferSize());
 
         // Consume the client hello
-        serverResult = engine.unwrap(cHelloStaple, serverIn);
+        serverResult = engine.unwrap(cHello12Staple, serverIn);
         log("server unwrap: ", serverResult);
         if (serverResult.getStatus() != SSLEngineResult.Status.OK) {
             throw new SSLException("Server unwrap got status: " +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @bug 6405536
  * @summary Verify that all ciphersuites work (incl. ECC using NSS crypto)
  * @author Andreas Sterbenz
- * @library ..
+ * @library .. ../../../../javax/net/ssl/TLSCommon
  * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,9 +175,9 @@ public class ReadTimeout {
 
                 throw new Exception(
                         "system property timeout configuration does not work");
-            } catch (SocketTimeoutException stex) {
+            } catch (SSLException | SocketTimeoutException ex) {
                 System.out.println("Got expected timeout exception for " +
-                        "system property timeout configuration: " + stex);
+                        "system property timeout configuration: " + getCause(ex));
             } finally {
                 done();
                 http.disconnect();
@@ -196,9 +196,9 @@ public class ReadTimeout {
 
                 throw new Exception(
                         "HttpsURLConnection.setReadTimeout() does not work");
-            } catch (SocketTimeoutException stex) {
+            } catch (SSLException | SocketTimeoutException ex) {
                 System.out.println("Got expected timeout exception for " +
-                        "HttpsURLConnection.setReadTimeout(): " + stex);
+                        "HttpsURLConnection.setReadTimeout(): " + getCause(ex));
             } finally {
                 done();
                 http.disconnect();
@@ -206,6 +206,20 @@ public class ReadTimeout {
         } finally {
             HttpsURLConnection.setDefaultHostnameVerifier(reservedHV);
         }
+    }
+
+    private Exception getCause(Exception ex) {
+        Exception cause = null;
+        if (ex instanceof SSLException) {
+            cause = (Exception) ex.getCause();
+            if (!(cause instanceof SocketTimeoutException)) {
+                throw new RuntimeException("Unexpected cause", cause);
+            }
+        } else {
+            cause = ex;
+        }
+
+        return cause;
     }
 
     static class NameVerifier implements HostnameVerifier {

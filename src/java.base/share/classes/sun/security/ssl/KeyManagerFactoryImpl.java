@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,9 +91,11 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
                 keyManager = new X509KeyManagerImpl(
                         Collections.<Builder>emptyList());
             } else {
-                if (SunJSSE.isFIPS() && (ks.getProvider() != SunJSSE.cryptoProvider)) {
-                    throw new KeyStoreException("FIPS mode: KeyStore must be "
-                        + "from provider " + SunJSSE.cryptoProvider.getName());
+                if (SunJSSE.isFIPS() &&
+                        (ks.getProvider() != SunJSSE.cryptoProvider)) {
+                    throw new KeyStoreException(
+                        "FIPS mode: KeyStore must be " +
+                        "from provider " + SunJSSE.cryptoProvider.getName());
                 }
                 try {
                     Builder builder = Builder.newInstance(ks,
@@ -114,7 +116,6 @@ abstract class KeyManagerFactoryImpl extends KeyManagerFactorySpi {
                 "Parameters must be instance of KeyStoreBuilderParameters");
             }
             if (SunJSSE.isFIPS()) {
-                // XXX should be fixed
                 throw new InvalidAlgorithmParameterException
                     ("FIPS mode: KeyStoreBuilderParameters not supported");
             }

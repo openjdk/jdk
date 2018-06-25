@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,258 +26,561 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-
+import java.util.Objects;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLProtocolException;
 import javax.net.ssl.StandardConstants;
+import static sun.security.ssl.SSLExtension.CH_SERVER_NAME;
+import static sun.security.ssl.SSLExtension.EE_SERVER_NAME;
+import sun.security.ssl.SSLExtension.ExtensionConsumer;
+import static sun.security.ssl.SSLExtension.SH_SERVER_NAME;
+import sun.security.ssl.SSLExtension.SSLExtensionSpec;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
-/*
- * [RFC 4366/6066] To facilitate secure connections to servers that host
- * multiple 'virtual' servers at a single underlying network address, clients
- * MAY include an extension of type "server_name" in the (extended) client
- * hello.  The "extension_data" field of this extension SHALL contain
- * "ServerNameList" where:
- *
- *     struct {
- *         NameType name_type;
- *         select (name_type) {
- *             case host_name: HostName;
- *         } name;
- *     } ServerName;
- *
- *     enum {
- *         host_name(0), (255)
- *     } NameType;
- *
- *     opaque HostName<1..2^16-1>;
- *
- *     struct {
- *         ServerName server_name_list<1..2^16-1>
- *     } ServerNameList;
+/**
+ * Pack of the "server_name" extensions [RFC 4366/6066].
  */
-final class ServerNameExtension extends HelloExtension {
+final class ServerNameExtension {
+    static final HandshakeProducer chNetworkProducer =
+            new CHServerNameProducer();
+    static final ExtensionConsumer chOnLoadConsumer =
+            new CHServerNameConsumer();
+    static final SSLStringizer chStringizer =
+            new CHServerNamesStringizer();
 
-    // For backward compatibility, all future data structures associated with
-    // new NameTypes MUST begin with a 16-bit length field.
-    static final int NAME_HEADER_LENGTH = 3;    // NameType: 1 byte
-                                                // Name length: 2 bytes
-    private Map<Integer, SNIServerName> sniMap;
-    private int listLength;     // ServerNameList length
+    static final HandshakeProducer shNetworkProducer =
+            new SHServerNameProducer();
+    static final ExtensionConsumer shOnLoadConsumer =
+            new SHServerNameConsumer();
+    static final SSLStringizer shStringizer =
+            new SHServerNamesStringizer();
 
-    // constructor for ServerHello
-    ServerNameExtension() throws IOException {
-        super(ExtensionType.EXT_SERVER_NAME);
+    static final HandshakeProducer eeNetworkProducer =
+            new EEServerNameProducer();
+    static final ExtensionConsumer eeOnLoadConsumer =
+            new EEServerNameConsumer();
 
-        listLength = 0;
-        sniMap = Collections.<Integer, SNIServerName>emptyMap();
-    }
+    /**
+     * The "server_name" extension.
+     *
+     * See RFC 4366/6066 for the specification of the extension.
+     */
+    static final class CHServerNamesSpec implements SSLExtensionSpec {
+        // For backward compatibility, all future data structures associated
+        // with new NameTypes MUST begin with a 16-bit length field.
+        static final int NAME_HEADER_LENGTH = 3;    //  1: NameType
+                                                    // +2: Name length
+        final List<SNIServerName> serverNames;
 
-    // constructor for ClientHello
-    ServerNameExtension(List<SNIServerName> serverNames)
-            throws IOException {
-        super(ExtensionType.EXT_SERVER_NAME);
-
-        listLength = 0;
-        sniMap = new LinkedHashMap<>();
-        for (SNIServerName serverName : serverNames) {
-            // check for duplicated server name type
-            if (sniMap.put(serverName.getType(), serverName) != null) {
-                // unlikely to happen, but in case ...
-                throw new RuntimeException(
-                    "Duplicated server name of type " + serverName.getType());
-            }
-
-            listLength += serverName.getEncoded().length + NAME_HEADER_LENGTH;
+        private CHServerNamesSpec(List<SNIServerName> serverNames) {
+            this.serverNames =
+                    Collections.<SNIServerName>unmodifiableList(serverNames);
         }
 
-        // This constructor is used for ClientHello only.  Empty list is
-        // not allowed in client mode.
-        if (listLength == 0) {
-            throw new RuntimeException("The ServerNameList cannot be empty");
-        }
-    }
-
-    // constructor for ServerHello for parsing SNI extension
-    ServerNameExtension(HandshakeInStream s, int len)
-            throws IOException {
-        super(ExtensionType.EXT_SERVER_NAME);
-
-        int remains = len;
-        if (len >= 2) {    // "server_name" extension in ClientHello
-            listLength = s.getInt16();     // ServerNameList length
-            if (listLength == 0 || listLength + 2 != len) {
+        private CHServerNamesSpec(ByteBuffer buffer) throws IOException {
+            if (buffer.remaining() < 2) {
                 throw new SSLProtocolException(
-                        "Invalid " + type + " extension");
+                    "Invalid server_name extension: insufficient data");
             }
 
-            remains -= 2;
-            sniMap = new LinkedHashMap<>();
-            while (remains > 0) {
-                int code = s.getInt8();       // NameType
+            int sniLen = Record.getInt16(buffer);
+            if ((sniLen == 0) || sniLen != buffer.remaining()) {
+                throw new SSLProtocolException(
+                    "Invalid server_name extension: incomplete data");
+            }
+
+            Map<Integer, SNIServerName> sniMap = new LinkedHashMap<>();
+            while (buffer.hasRemaining()) {
+                int nameType = Record.getInt8(buffer);
+                SNIServerName serverName;
 
                 // HostName (length read in getBytes16);
-                byte[] encoded = s.getBytes16();
-                SNIServerName serverName;
-                switch (code) {
-                    case StandardConstants.SNI_HOST_NAME:
-                        if (encoded.length == 0) {
-                            throw new SSLProtocolException(
-                                "Empty HostName in server name indication");
-                        }
-                        try {
-                            serverName = new SNIHostName(encoded);
-                        } catch (IllegalArgumentException iae) {
-                            SSLProtocolException spe = new SSLProtocolException(
-                                "Illegal server name, type=host_name(" +
-                                code + "), name=" +
-                                (new String(encoded, StandardCharsets.UTF_8)) +
-                                ", value=" + Debug.toString(encoded));
-                            spe.initCause(iae);
-                            throw spe;
-                        }
-                        break;
-                    default:
-                        try {
-                            serverName = new UnknownServerName(code, encoded);
-                        } catch (IllegalArgumentException iae) {
-                            SSLProtocolException spe = new SSLProtocolException(
-                                "Illegal server name, type=(" + code +
-                                "), value=" + Debug.toString(encoded));
-                            spe.initCause(iae);
-                            throw spe;
-                        }
+                //
+                // [RFC 6066] The data structure associated with the host_name
+                // NameType is a variable-length vector that begins with a
+                // 16-bit length.  For backward compatibility, all future data
+                // structures associated with new NameTypes MUST begin with a
+                // 16-bit length field.  TLS MAY treat provided server names as
+                // opaque data and pass the names and types to the application.
+                byte[] encoded = Record.getBytes16(buffer);
+                if (nameType == StandardConstants.SNI_HOST_NAME) {
+                    if (encoded.length == 0) {
+                        throw new SSLProtocolException(
+                            "Empty HostName in server_name extension");
+                    }
+
+                    try {
+                        serverName = new SNIHostName(encoded);
+                    } catch (IllegalArgumentException iae) {
+                        SSLProtocolException spe = new SSLProtocolException(
+                            "Illegal server name, type=host_name(" +
+                            nameType + "), name=" +
+                            (new String(encoded, StandardCharsets.UTF_8)) +
+                            ", value={" +
+                            Utilities.toHexString(encoded) + "}");
+                        throw (SSLProtocolException)spe.initCause(iae);
+                    }
+                } else {
+                    try {
+                        serverName = new UnknownServerName(nameType, encoded);
+                    } catch (IllegalArgumentException iae) {
+                        SSLProtocolException spe = new SSLProtocolException(
+                            "Illegal server name, type=(" + nameType +
+                            "), value={" +
+                            Utilities.toHexString(encoded) + "}");
+                        throw (SSLProtocolException)spe.initCause(iae);
+                    }
                 }
+
                 // check for duplicated server name type
                 if (sniMap.put(serverName.getType(), serverName) != null) {
                     throw new SSLProtocolException(
                             "Duplicated server name of type " +
                             serverName.getType());
                 }
-
-                remains -= encoded.length + NAME_HEADER_LENGTH;
             }
-        } else if (len == 0) {     // "server_name" extension in ServerHello
-            listLength = 0;
-            sniMap = Collections.<Integer, SNIServerName>emptyMap();
+
+            this.serverNames = new ArrayList<>(sniMap.values());
         }
 
-        if (remains != 0) {
-            throw new SSLProtocolException("Invalid server_name extension");
+        @Override
+        public String toString() {
+            if (serverNames == null || serverNames.isEmpty()) {
+                return "<no server name indicator specified>";
+            } else {
+                StringBuilder builder = new StringBuilder(512);
+                for (SNIServerName sn : serverNames) {
+                    builder.append(sn.toString());
+                    builder.append("\n");
+                }
+
+                return builder.toString();
+            }
+        }
+
+        private static class UnknownServerName extends SNIServerName {
+            UnknownServerName(int code, byte[] encoded) {
+                super(code, encoded);
+            }
         }
     }
 
-    List<SNIServerName> getServerNames() {
-        if (sniMap != null && !sniMap.isEmpty()) {
-            return Collections.<SNIServerName>unmodifiableList(
-                                        new ArrayList<>(sniMap.values()));
+    private static final class CHServerNamesStringizer implements SSLStringizer {
+        @Override
+        public String toString(ByteBuffer buffer) {
+            try {
+                return (new CHServerNamesSpec(buffer)).toString();
+            } catch (IOException ioe) {
+                // For debug logging only, so please swallow exceptions.
+                return ioe.getMessage();
+            }
         }
-
-        return Collections.<SNIServerName>emptyList();
     }
 
-    /*
-     * Is the extension recognized by the corresponding matcher?
-     *
-     * This method is used to check whether the server name indication can
-     * be recognized by the server name matchers.
-     *
-     * Per RFC 6066, if the server understood the ClientHello extension but
-     * does not recognize the server name, the server SHOULD take one of two
-     * actions: either abort the handshake by sending a fatal-level
-     * unrecognized_name(112) alert or continue the handshake.
-     *
-     * If there is an instance of SNIMatcher defined for a particular name
-     * type, it must be used to perform match operations on the server name.
+    /**
+     * Network data producer of a "server_name" extension in the
+     * ClientHello handshake message.
      */
-    boolean isMatched(Collection<SNIMatcher> matchers) {
-        if (sniMap != null && !sniMap.isEmpty()) {
-            for (SNIMatcher matcher : matchers) {
-                SNIServerName sniName = sniMap.get(matcher.getType());
-                if (sniName != null && (!matcher.matches(sniName))) {
-                    return false;
+    private static final
+            class CHServerNameProducer implements HandshakeProducer {
+        // Prevent instantiation of this class.
+        private CHServerNameProducer() {
+            // blank
+        }
+
+        @Override
+        public byte[] produce(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in client side only.
+            ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+            // Is it a supported and enabled extension?
+            if (!chc.sslConfig.isAvailable(CH_SERVER_NAME)) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.warning(
+                        "Ignore unavailable server_name extension");
+                }
+                return null;
+            }
+
+            // Produce the extension.
+            List<SNIServerName> serverNames;
+            if (chc.isResumption && (chc.resumingSession != null)) {
+                serverNames =
+                        chc.resumingSession.getRequestedServerNames();
+            } else {
+                serverNames = chc.sslConfig.serverNames;
+            }   // Shall we use host too?
+
+            // Empty server name list is not allowed in client mode.
+            if ((serverNames != null) && !serverNames.isEmpty()) {
+                int sniLen = 0;
+                for (SNIServerName sniName : serverNames) {
+                    // For backward compatibility, all future data structures
+                    // associated with new NameTypes MUST begin with a 16-bit
+                    // length field.  The header length of server name is 3
+                    // bytes, including 1 byte NameType, and 2 bytes length
+                    // of the name.
+                    sniLen += CHServerNamesSpec.NAME_HEADER_LENGTH;
+                    sniLen += sniName.getEncoded().length;
+                }
+
+                byte[] extData = new byte[sniLen + 2];
+                ByteBuffer m = ByteBuffer.wrap(extData);
+                Record.putInt16(m, sniLen);
+                for (SNIServerName sniName : serverNames) {
+                    Record.putInt8(m, sniName.getType());
+                    Record.putBytes16(m, sniName.getEncoded());
+                }
+
+                // Update the context.
+                chc.requestedServerNames = serverNames;
+                chc.handshakeExtensions.put(CH_SERVER_NAME,
+                        new CHServerNamesSpec(serverNames));
+
+                return extData;
+            }
+
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.warning("Unable to indicate server name");
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Network data consumer of a "server_name" extension in the
+     * ClientHello handshake message.
+     */
+    private static final
+            class CHServerNameConsumer implements ExtensionConsumer {
+        // Prevent instantiation of this class.
+        private CHServerNameConsumer() {
+            // blank
+        }
+
+        @Override
+        public void consume(ConnectionContext context,
+            HandshakeMessage message, ByteBuffer buffer) throws IOException {
+            // The consuming happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // Is it a supported and enabled extension?
+            if (!shc.sslConfig.isAvailable(CH_SERVER_NAME)) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine(
+                        "Ignore unavailable extension: " + CH_SERVER_NAME.name);
+                }
+                return;     // ignore the extension
+            }
+
+            // Parse the extension.
+            CHServerNamesSpec spec;
+            try {
+                spec = new CHServerNamesSpec(buffer);
+            } catch (IOException ioe) {
+                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
+                return;     // fatal() always throws, make the compiler happy.
+            }
+
+            // Update the context.
+            shc.handshakeExtensions.put(CH_SERVER_NAME, spec);
+
+            // Does the server match the server name request?
+            SNIServerName sni = null;
+            if (!shc.sslConfig.sniMatchers.isEmpty()) {
+                sni = chooseSni(shc.sslConfig.sniMatchers, spec.serverNames);
+                if (sni != null) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.fine(
+                                "server name indication (" +
+                                sni + ") is accepted");
+                    }
+                } else {
+                    // We do not reject client without SNI extension currently.
+                    shc.conContext.fatal(Alert.UNRECOGNIZED_NAME,
+                            "Unrecognized server name indication");
+                }
+            } else {
+                // Note: Servers MAY require clients to send a valid
+                // "server_name" extension and respond to a ClientHello
+                // lacking a "server_name" extension by terminating the
+                // connection with a "missing_extension" alert.
+                //
+                // We do not reject client without SNI extension currently.
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine(
+                            "no server name matchers, " +
+                            "ignore server name indication");
                 }
             }
-        }
 
-        return true;
-    }
-
-    /*
-     * Is the extension is identical to a server name list?
-     *
-     * This method is used to check the server name indication during session
-     * resumption.
-     *
-     * Per RFC 6066, when the server is deciding whether or not to accept a
-     * request to resume a session, the contents of a server_name extension
-     * MAY be used in the lookup of the session in the session cache.  The
-     * client SHOULD include the same server_name extension in the session
-     * resumption request as it did in the full handshake that established
-     * the session.  A server that implements this extension MUST NOT accept
-     * the request to resume the session if the server_name extension contains
-     * a different name.  Instead, it proceeds with a full handshake to
-     * establish a new session.  When resuming a session, the server MUST NOT
-     * include a server_name extension in the server hello.
-     */
-    boolean isIdentical(List<SNIServerName> other) {
-        if (other.size() == sniMap.size()) {
-            for(SNIServerName sniInOther : other) {
-                SNIServerName sniName = sniMap.get(sniInOther.getType());
-                if (sniName == null || !sniInOther.equals(sniName)) {
-                    return false;
+            // Impact on session resumption.
+            //
+            // Does the resuming session have the same principal?
+            if (shc.isResumption && shc.resumingSession != null) {
+                // A server that implements this extension MUST NOT accept
+                // the request to resume the session if the server_name
+                // extension contains a different name.
+                //
+                // May only need to check that the session SNI is one of
+                // the requested server names.
+                if (!Objects.equals(
+                        sni, shc.resumingSession.serverNameIndication)) {
+                    shc.isResumption = false;
+                    shc.resumingSession = null;
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.fine(
+                                "abort session resumption, " +
+                                "different server name indication used");
+                    }
                 }
             }
 
-            return true;
+            shc.requestedServerNames = spec.serverNames;
+            shc.negotiatedServerName = sni;
         }
 
-        return false;
+        private static SNIServerName chooseSni(Collection<SNIMatcher> matchers,
+                List<SNIServerName> sniNames) {
+            if (sniNames != null && !sniNames.isEmpty()) {
+                for (SNIMatcher matcher : matchers) {
+                    int matcherType = matcher.getType();
+                    for (SNIServerName sniName : sniNames) {
+                        if (sniName.getType() == matcherType) {
+                            if (matcher.matches(sniName)) {
+                                return sniName;
+                            }
+
+                            // no duplicated entry in the server names list.
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
     }
 
-    @Override
-    int length() {
-        return listLength == 0 ? 4 : 6 + listLength;
+    /**
+     * The "server_name" extension in the ServerHello handshake message.
+     *
+     * The "extension_data" field of this extension shall be empty.
+     */
+    static final class SHServerNamesSpec implements SSLExtensionSpec {
+        static final SHServerNamesSpec DEFAULT = new SHServerNamesSpec();
+
+        private SHServerNamesSpec() {
+            // blank
+        }
+
+        private SHServerNamesSpec(ByteBuffer buffer) throws IOException {
+            if (buffer.remaining() != 0) {
+                throw new SSLProtocolException(
+                    "Invalid ServerHello server_name extension: not empty");
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "<empty extension_data field>";
+        }
     }
 
-    @Override
-    void send(HandshakeOutStream s) throws IOException {
-        s.putInt16(type.id);
-        if (listLength == 0) {
-            s.putInt16(listLength);     // in ServerHello, empty extension_data
-        } else {
-            s.putInt16(listLength + 2); // length of extension_data
-            s.putInt16(listLength);     // length of ServerNameList
-
-            for (SNIServerName sniName : sniMap.values()) {
-                s.putInt8(sniName.getType());         // server name type
-                s.putBytes16(sniName.getEncoded());   // server name value
+    private static final class SHServerNamesStringizer implements SSLStringizer {
+        @Override
+        public String toString(ByteBuffer buffer) {
+            try {
+                return (new SHServerNamesSpec(buffer)).toString();
+            } catch (IOException ioe) {
+                // For debug logging only, so please swallow exceptions.
+                return ioe.getMessage();
             }
         }
     }
 
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (SNIServerName sniName : sniMap.values()) {
-            sb.append("[" + sniName + "]");
+    /**
+     * Network data producer of a "server_name" extension in the
+     * ServerHello handshake message.
+     */
+    private static final
+            class SHServerNameProducer implements HandshakeProducer {
+        // Prevent instantiation of this class.
+        private SHServerNameProducer() {
+            // blank
         }
 
-        return "Extension " + type + ", server_name: " + sb;
-    }
+        @Override
+        public byte[] produce(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-    private static class UnknownServerName extends SNIServerName {
-        UnknownServerName(int code, byte[] encoded) {
-            super(code, encoded);
+            // In response to "server_name" extension request only
+            CHServerNamesSpec spec = (CHServerNamesSpec)
+                    shc.handshakeExtensions.get(CH_SERVER_NAME);
+            if (spec == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.finest(
+                        "Ignore unavailable extension: " + SH_SERVER_NAME.name);
+                }
+                return null;        // ignore the extension
+            }
+
+            // When resuming a session, the server MUST NOT include a
+            // server_name extension in the server hello.
+            if (shc.isResumption || shc.negotiatedServerName == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.finest(
+                        "No expected server name indication response");
+                }
+                return null;        // ignore the extension
+            }
+
+            // Produce the extension and update the context.
+            shc.handshakeExtensions.put(
+                    SH_SERVER_NAME, SHServerNamesSpec.DEFAULT);
+
+            return (new byte[0]);   // the empty extension_data
         }
     }
 
+    /**
+     * Network data consumer of a "server_name" extension in the
+     * ServerHello handshake message.
+     */
+    private static final
+            class SHServerNameConsumer implements ExtensionConsumer {
+        // Prevent instantiation of this class.
+        private SHServerNameConsumer() {
+            // blank
+        }
+
+        @Override
+        public void consume(ConnectionContext context,
+            HandshakeMessage message, ByteBuffer buffer) throws IOException {
+            // The consuming happens in client side only.
+            ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+            // In response to "server_name" extension request only
+            CHServerNamesSpec spec = (CHServerNamesSpec)
+                    chc.handshakeExtensions.get(CH_SERVER_NAME);
+            if (spec == null) {
+                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                    "Unexpected ServerHello server_name extension");
+            }
+
+            // Parse the extension.
+            if (buffer.remaining() != 0) {
+                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                    "Invalid ServerHello server_name extension");
+            }
+
+            // Update the context.
+            chc.handshakeExtensions.put(
+                    SH_SERVER_NAME, SHServerNamesSpec.DEFAULT);
+            // The negotiated server name is unknown in client side. Just
+            // use the first request name as the value is not actually used
+            // in the current implementation.
+            chc.negotiatedServerName = spec.serverNames.get(0);
+        }
+    }
+
+    /**
+     * Network data producer of a "server_name" extension in the
+     * EncryptedExtensions handshake message.
+     */
+    private static final
+            class EEServerNameProducer implements HandshakeProducer {
+        // Prevent instantiation of this class.
+        private EEServerNameProducer() {
+            // blank
+        }
+
+        @Override
+        public byte[] produce(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // In response to "server_name" extension request only
+            CHServerNamesSpec spec = (CHServerNamesSpec)
+                    shc.handshakeExtensions.get(CH_SERVER_NAME);
+            if (spec == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.finest(
+                        "Ignore unavailable extension: " + EE_SERVER_NAME.name);
+                }
+                return null;        // ignore the extension
+            }
+
+            // When resuming a session, the server MUST NOT include a
+            // server_name extension in the server hello.
+            if (shc.isResumption || shc.negotiatedServerName == null) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.finest(
+                        "No expected server name indication response");
+                }
+                return null;        // ignore the extension
+            }
+
+            // Produce the extension and update the context.
+            shc.handshakeExtensions.put(
+                    EE_SERVER_NAME, SHServerNamesSpec.DEFAULT);
+
+            return (new byte[0]);   // the empty extension_data
+        }
+    }
+
+    /**
+     * Network data consumer of a "server_name" extension in the
+     * EncryptedExtensions handshake message.
+     */
+    private static final
+            class EEServerNameConsumer implements ExtensionConsumer {
+        // Prevent instantiation of this class.
+        private EEServerNameConsumer() {
+            // blank
+        }
+
+        @Override
+        public void consume(ConnectionContext context,
+            HandshakeMessage message, ByteBuffer buffer) throws IOException {
+            // The consuming happens in client side only.
+            ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+            // In response to "server_name" extension request only
+            CHServerNamesSpec spec = (CHServerNamesSpec)
+                    chc.handshakeExtensions.get(CH_SERVER_NAME);
+            if (spec == null) {
+                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                    "Unexpected EncryptedExtensions server_name extension");
+            }
+
+            // Parse the extension.
+            if (buffer.remaining() != 0) {
+                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                    "Invalid EncryptedExtensions server_name extension");
+            }
+
+            // Update the context.
+            chc.handshakeExtensions.put(
+                    EE_SERVER_NAME, SHServerNamesSpec.DEFAULT);
+            // The negotiated server name is unknown in client side. Just
+            // use the first request name as the value is not actually used
+            // in the current implementation.
+            chc.negotiatedServerName = spec.serverNames.get(0);
+        }
+    }
 }

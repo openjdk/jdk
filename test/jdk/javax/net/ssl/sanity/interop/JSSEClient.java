@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,16 @@
  * questions.
  */
 
-
-import java.io.*;
-import java.net.*;
-import java.util.*;
-
-import java.security.*;
-import java.security.cert.*;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.cert.Certificate;
 
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 
 class JSSEClient extends CipherTest.Client {
 
@@ -47,12 +47,15 @@ class JSSEClient extends CipherTest.Client {
         SSLSocket socket = null;
         try {
             keyManager.setAuthType(params.clientAuth);
-            sslContext.init(new KeyManager[] {keyManager}, new TrustManager[] {cipherTest.trustManager}, cipherTest.secureRandom);
+            sslContext.init(
+                    new KeyManager[] { keyManager },
+                    new TrustManager[] { CipherTest.trustManager },
+                    CipherTest.secureRandom);
             SSLSocketFactory factory = (SSLSocketFactory)sslContext.getSocketFactory();
-            socket = (SSLSocket)factory.createSocket("127.0.0.1", cipherTest.serverPort);
-            socket.setSoTimeout(cipherTest.TIMEOUT);
-            socket.setEnabledCipherSuites(new String[] {params.cipherSuite});
-            socket.setEnabledProtocols(new String[] {params.protocol});
+            socket = (SSLSocket)factory.createSocket("127.0.0.1", CipherTest.serverPort);
+            socket.setSoTimeout(CipherTest.TIMEOUT);
+            socket.setEnabledCipherSuites(new String[] { params.cipherSuite.name() });
+            socket.setEnabledProtocols(new String[] { params.protocol.name });
             InputStream in = socket.getInputStream();
             OutputStream out = socket.getOutputStream();
             sendRequest(in, out);
@@ -60,12 +63,14 @@ class JSSEClient extends CipherTest.Client {
             SSLSession session = socket.getSession();
             session.invalidate();
             String cipherSuite = session.getCipherSuite();
-            if (params.cipherSuite.equals(cipherSuite) == false) {
-                throw new Exception("Negotiated ciphersuite mismatch: " + cipherSuite + " != " + params.cipherSuite);
+            if (!params.cipherSuite.name().equals(cipherSuite)) {
+                throw new Exception("Negotiated ciphersuite mismatch: "
+                        + cipherSuite + " != " + params.cipherSuite);
             }
             String protocol = session.getProtocol();
-            if (params.protocol.equals(protocol) == false) {
-                throw new Exception("Negotiated protocol mismatch: " + protocol + " != " + params.protocol);
+            if (!params.protocol.name.equals(protocol)) {
+                throw new Exception("Negotiated protocol mismatch: " + protocol
+                        + " != " + params.protocol);
             }
             if (cipherSuite.indexOf("DH_anon") == -1) {
                 session.getPeerCertificates();
