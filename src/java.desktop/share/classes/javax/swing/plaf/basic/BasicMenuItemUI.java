@@ -434,6 +434,7 @@ public class BasicMenuItemUI extends MenuItemUI
         return null;
     }
 
+    @SuppressWarnings("deprecation")
     void updateAcceleratorBinding() {
         KeyStroke accelerator = menuItem.getAccelerator();
         InputMap windowInputMap = SwingUtilities.getUIInputMap(
@@ -450,6 +451,45 @@ public class BasicMenuItemUI extends MenuItemUI
                            JComponent.WHEN_IN_FOCUSED_WINDOW, windowInputMap);
             }
             windowInputMap.put(accelerator, "doClick");
+
+            int modifiers = accelerator.getModifiers();
+            if (((modifiers & InputEvent.ALT_DOWN_MASK) != 0) &&
+                    ((modifiers & InputEvent.ALT_GRAPH_DOWN_MASK) != 0)) {
+                //When both ALT and ALT_GRAPH are set, add the ALT only
+                // modifier keystroke which is used for left ALT key.
+                // Unsetting the ALT_GRAPH will do that as ALT is already set
+                modifiers &= ~InputEvent.ALT_GRAPH_DOWN_MASK;
+                modifiers &= ~InputEvent.ALT_GRAPH_MASK;
+                KeyStroke keyStroke = KeyStroke.getKeyStroke(accelerator.getKeyCode(),
+                        modifiers, accelerator.isOnKeyRelease());
+                windowInputMap.put(keyStroke, "doClick");
+            } else if (((modifiers & InputEvent.ALT_DOWN_MASK) != 0) && (
+                    (modifiers & InputEvent.ALT_GRAPH_DOWN_MASK) == 0)) {
+                //When only ALT modifier is set, add the ALT + ALT_GRAPH
+                // modifier keystroke which is used for right ALT key
+                modifiers |= InputEvent.ALT_GRAPH_DOWN_MASK;
+                KeyStroke keyStroke = KeyStroke.getKeyStroke(accelerator.getKeyCode(),
+                        modifiers, accelerator.isOnKeyRelease());
+                windowInputMap.put(keyStroke, "doClick");
+            } else if ((modifiers & InputEvent.ALT_GRAPH_DOWN_MASK) != 0) {
+                //When only ALT_GRAPH is set, remove the ALT_GRAPH only
+                // modifier and add the ALT and ALT+ALT_GRAPH modifiers
+                // keystroke which are used for left ALT key and right ALT
+                // respectively
+                modifiers &= ~InputEvent.ALT_GRAPH_DOWN_MASK;
+                modifiers &= ~InputEvent.ALT_GRAPH_MASK;
+
+                modifiers |= InputEvent.ALT_DOWN_MASK;
+                KeyStroke keyStroke = KeyStroke.getKeyStroke(accelerator.getKeyCode(),
+                        modifiers, accelerator.isOnKeyRelease());
+                windowInputMap.put(keyStroke, "doClick");
+
+                //Add ALT+ALT_GRAPH modifier which is used for right ALT key
+                modifiers |= InputEvent.ALT_GRAPH_DOWN_MASK;
+                keyStroke = KeyStroke.getKeyStroke(accelerator.getKeyCode(),
+                        modifiers, accelerator.isOnKeyRelease());
+                windowInputMap.put(keyStroke, "doClick");
+            }
         }
     }
 

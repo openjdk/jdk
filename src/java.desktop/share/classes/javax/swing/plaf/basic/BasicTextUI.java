@@ -42,6 +42,8 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.synth.SynthUI;
 import sun.swing.DefaultLookup;
 import sun.awt.AppContext;
+import sun.swing.SwingUtilities2;
+
 import javax.swing.plaf.basic.DragRecognitionSupport.BeforeDrag;
 
 /**
@@ -511,6 +513,10 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                 km.clear();
                 if (accelerator != '\0') {
                     km.put(KeyStroke.getKeyStroke(accelerator, BasicLookAndFeel.getFocusAcceleratorKeyMask()), "requestFocus");
+                    km.put(KeyStroke.getKeyStroke(accelerator,
+                            SwingUtilities2.setAltGraphMask(
+                            BasicLookAndFeel.getFocusAcceleratorKeyMask())),
+                            "requestFocus");
                 }
             }
         }
