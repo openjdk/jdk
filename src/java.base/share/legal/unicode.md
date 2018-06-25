@@ -1,6 +1,6 @@
-## International Components for Unicode (ICU4J) v60.2
+## The Unicode Standard, Unicode Character Database, Version 10.0.0
 
-### ICU4J License
+### Unicode Character Database
 
 ```
 
