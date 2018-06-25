@@ -560,7 +560,8 @@ protected:
   //     and the package separators as '/'.
   virtual const char* signature_name() const;
 
-  const char* class_loader_and_module_name() const;
+  const char* joint_in_module_of_loader(const Klass* class2, bool include_parent_loader = false) const;
+  const char* class_in_module_of_loader(bool use_are = false, bool include_parent_loader = false) const;
 
   // Returns "interface", "abstract class" or "class".
   const char* external_kind() const;

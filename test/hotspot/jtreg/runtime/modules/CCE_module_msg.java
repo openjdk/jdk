@@ -48,6 +48,7 @@ public class CCE_module_msg {
     public static void main(String[] args) throws Throwable {
         // Should not display version
         invalidObjectToDerived();
+        invalidOriginalInnerToDerived();
         invalidTimeToDerived();
         invalidHeadersToDerived();
         // Should display version
@@ -66,8 +67,25 @@ public class CCE_module_msg {
             }
             throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
         } catch (ClassCastException cce) {
-            System.out.println(cce.getMessage());
-            if (!cce.getMessage().contains("java.base/java.lang.Object cannot be cast to Derived")) {
+            System.out.println(cce.toString());
+            if (!cce.getMessage().contains("class java.lang.Object cannot be cast to class Derived (java.lang.Object is in module java.base of loader 'bootstrap'; Derived is in unnamed module of loader 'app')")) {
+                throw new RuntimeException("Wrong message: " + cce.getMessage());
+            }
+        }
+    }
+
+    public static void invalidOriginalInnerToDerived() {
+        OriginalInner instance = new OriginalInner();
+        int left = 23;
+        int right = 42;
+        try {
+            for (int i = 0; i < 1; i += 1) {
+                left = ((Derived) (java.lang.Object)instance).method(left, right);
+            }
+            throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
+        } catch (ClassCastException cce) {
+            System.out.println(cce.toString());
+            if (!cce.getMessage().contains("class OriginalInner cannot be cast to class Derived (OriginalInner and Derived are in unnamed module of loader 'app')")) {
                 throw new RuntimeException("Wrong message: " + cce.getMessage());
             }
         }
@@ -84,8 +102,8 @@ public class CCE_module_msg {
             }
             throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
         } catch (ClassCastException cce) {
-            System.out.println(cce.getMessage());
-            if (!cce.getMessage().contains("java.sql/java.sql.Time cannot be cast to Derived")) {
+            System.out.println(cce.toString());
+            if (!cce.getMessage().contains("class java.sql.Time cannot be cast to class Derived (java.sql.Time is in module java.sql of loader 'platform'; Derived is in unnamed module of loader 'app')")) {
                 throw new RuntimeException("Wrong message: " + cce.getMessage());
             }
         }
@@ -102,8 +120,8 @@ public class CCE_module_msg {
             }
             throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
         } catch (ClassCastException cce) {
-            System.out.println(cce.getMessage());
-            if (!cce.getMessage().contains("jdk.httpserver/com.sun.net.httpserver.Headers cannot be cast to Derived")) {
+            System.out.println(cce.toString());
+            if (!cce.getMessage().contains("class com.sun.net.httpserver.Headers cannot be cast to class Derived (com.sun.net.httpserver.Headers is in module jdk.httpserver of loader 'platform'; Derived is in unnamed module of loader 'app')")) {
                 throw new RuntimeException("Wrong message: " + cce.getMessage());
             }
         }
@@ -132,10 +150,9 @@ public class CCE_module_msg {
             throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
         } catch (ClassCastException cce) {
             String exception = cce.getMessage();
-            System.out.println(exception);
-            if (exception.contains("module_two/p2.c2") ||
-                !(exception.contains("module_two@") &&
-                  exception.contains("/p2.c2 cannot be cast to java.base/java.lang.String"))) {
+            System.out.println(cce.toString());
+            if (!exception.contains("class p2.c2 cannot be cast to class java.lang.String (p2.c2 is in module module_two@") ||
+                !exception.contains(" of loader 'app'; java.lang.String is in module java.base of loader 'bootstrap')")) {
                 throw new RuntimeException("Wrong message: " + exception);
             }
         }
@@ -160,11 +177,18 @@ public class CCE_module_msg {
             throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
         } catch (ClassCastException cce) {
             String exception = cce.getMessage();
-            System.out.println(exception);
-            if (!exception.contains("MyClassLoader//p4.c4 cannot be cast to java.base/java.lang.String")) {
+            System.out.println(cce.toString());
+            if (!exception.contains("class p4.c4 cannot be cast to class java.lang.String (p4.c4 is in unnamed module of loader 'MyClassLoader' @") ||
+                !exception.contains("; java.lang.String is in module java.base of loader 'bootstrap')")) {
                 throw new RuntimeException("Wrong message: " + exception);
             }
         }
+    }
+}
+
+class OriginalInner extends java.lang.Object {
+    public int method(int left, int right) {
+        return right;
     }
 }
 

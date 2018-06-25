@@ -592,14 +592,18 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
   // from nest-host resolution, have been allowed to propagate.
   if (!can_access) {
     ResourceMark rm(THREAD);
+    bool same_module = (sel_klass->module() == ref_klass->module());
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_IllegalAccessError(),
-      "tried to access method %s.%s%s from class %s",
+      "class %s tried to access method %s.%s%s (%s%s%s)",
+      ref_klass->external_name(),
       sel_klass->external_name(),
       sel_method->name()->as_C_string(),
       sel_method->signature()->as_C_string(),
-      ref_klass->external_name()
+      (same_module) ? ref_klass->joint_in_module_of_loader(sel_klass) : ref_klass->class_in_module_of_loader(),
+      (same_module) ? "" : "; ",
+      (same_module) ? "" : sel_klass->class_in_module_of_loader()
     );
     return;
   }
