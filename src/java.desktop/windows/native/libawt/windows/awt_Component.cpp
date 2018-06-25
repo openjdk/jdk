@@ -3537,14 +3537,9 @@ UINT AwtComponent::WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops,
     BOOL shiftIsDown = FALSE;
     if (modifiers) {
         shiftIsDown = modifiers & java_awt_event_InputEvent_SHIFT_DOWN_MASK;
-        BOOL altIsDown = modifiers & java_awt_event_InputEvent_ALT_DOWN_MASK;
+        BOOL altIsDown = ((modifiers & java_awt_event_InputEvent_ALT_DOWN_MASK) ||
+                            (modifiers & java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK));
         BOOL ctrlIsDown = modifiers & java_awt_event_InputEvent_CTRL_DOWN_MASK;
-
-        // Windows treats AltGr as Ctrl+Alt
-        if (modifiers & java_awt_event_InputEvent_ALT_GRAPH_DOWN_MASK) {
-            altIsDown = TRUE;
-            ctrlIsDown = TRUE;
-        }
 
         if (shiftIsDown) {
             keyboardState[VK_SHIFT] |= KEY_STATE_DOWN;

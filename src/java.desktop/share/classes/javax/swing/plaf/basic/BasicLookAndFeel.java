@@ -1093,7 +1093,9 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "Menu.submenuPopupOffsetX", 0,
             "Menu.submenuPopupOffsetY", 0,
             "Menu.shortcutKeys", new int[]{
-                SwingUtilities2.getSystemMnemonicKeyMask()
+                SwingUtilities2.getSystemMnemonicKeyMask(),
+                SwingUtilities2.setAltGraphMask(
+                        SwingUtilities2.getSystemMnemonicKeyMask())
             },
             "Menu.crossMenuMnemonic", Boolean.TRUE,
             // Menu.cancelMode affects the cancel menu action behaviour;

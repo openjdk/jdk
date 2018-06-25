@@ -636,7 +636,9 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "Menu.submenuPopupOffsetX", -2,
             "Menu.submenuPopupOffsetY", 3,
             "Menu.shortcutKeys", new int[]{
-                SwingUtilities2.getSystemMnemonicKeyMask(), metaMask
+                SwingUtilities2.getSystemMnemonicKeyMask(), metaMask,
+                SwingUtilities2.setAltGraphMask(
+                        SwingUtilities2.getSystemMnemonicKeyMask())
             },
             "Menu.cancelMode", "hideMenuTree",
 
