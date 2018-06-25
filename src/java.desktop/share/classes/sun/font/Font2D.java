@@ -524,6 +524,10 @@ public abstract class Font2D {
         return getMapper().charToGlyph(wchar);
     }
 
+    public int charToVariationGlyph(int wchar, int variationSelector) {
+        return getMapper().charToVariationGlyph(wchar, variationSelector);
+    }
+
     public int getMissingGlyphCode() {
         return getMapper().getMissingGlyphCode();
     }
