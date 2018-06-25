@@ -3990,6 +3990,17 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  address generate_dlog() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "dlog");
+    address entry = __ pc();
+    FloatRegister vtmp0 = v0, vtmp1 = v1, vtmp2 = v2, vtmp3 = v3, vtmp4 = v4,
+        vtmp5 = v5, tmpC1 = v16, tmpC2 = v17, tmpC3 = v18, tmpC4 = v19;
+    Register tmp1 = r0, tmp2 = r1, tmp3 = r2, tmp4 = r3, tmp5 = r4;
+    __ fast_log(vtmp0, vtmp1, vtmp2, vtmp3, vtmp4, vtmp5, tmpC1, tmpC2, tmpC3,
+        tmpC4, tmp1, tmp2, tmp3, tmp4, tmp5);
+    return entry;
+  }
 
   /**
    *  Arguments:
@@ -5044,6 +5055,8 @@ class StubGenerator: public StubCodeGenerator {
     if (UseCRC32CIntrinsics) {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
+
+    StubRoutines::_dlog = generate_dlog();
   }
 
   void generate_all() {

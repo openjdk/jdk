@@ -1251,6 +1251,11 @@ public:
   void string_indexof_char(Register str1, Register cnt1,
                            Register ch, Register result,
                            Register tmp1, Register tmp2, Register tmp3);
+  void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
+                FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
+                FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
+                FloatRegister tmpC4, Register tmp1, Register tmp2,
+                Register tmp3, Register tmp4, Register tmp5);
 private:
   void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
                        Register src1, Register src2);
