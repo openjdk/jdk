@@ -32,18 +32,15 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test
+ * @requires vm.hasSAandCanAttach
  * @library /test/lib
  * @run main JhsdbThreadInfoTest
  */
 public class JhsdbThreadInfoTest {
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.shouldSAAttach()) {
-            System.out.println("SA attach not expected to work - test skipped.");
-            return;
-        }
 
         LingeredApp app = null;
 

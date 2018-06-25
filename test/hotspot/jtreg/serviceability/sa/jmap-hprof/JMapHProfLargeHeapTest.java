@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,10 +37,11 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-/*
+/**
  * @test
  * @bug 6313383
  * @key regression
+ * @requires vm.hasSAandCanAttach
  * @summary Regression test for hprof export issue due to large heaps (>2G)
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -58,10 +59,6 @@ public class JMapHProfLargeHeapTest {
     private static final long G = 1024L * M;
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.shouldSAAttach()) {
-            System.out.println("SA attach not expected to work - test skipped.");
-            return;
-        }
 
         // All heap dumps should create 1.0.2 file format
         testHProfFileFormat("-Xmx1g", 22 * M, HPROF_HEADER_1_0_2);

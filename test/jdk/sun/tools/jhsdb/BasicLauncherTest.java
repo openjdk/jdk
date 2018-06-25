@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,12 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @summary Basic test for jhsdb launcher
  * @library /test/lib
  * @library /lib/testlibrary
+ * @requires vm.hasSAandCanAttach
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.apps.*
  * @run main BasicLauncherTest
@@ -199,12 +200,6 @@ public class BasicLauncherTest {
     }
 
     public static void main(String[] args) throws Exception {
-
-        if (!Platform.shouldSAAttach()) {
-            // Silently skip the test if we don't have enough permissions to attach
-            System.err.println("Error! Insufficient permissions to attach.");
-            return;
-        }
 
         launchCLHSDB();
 

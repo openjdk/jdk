@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,10 @@ import jdk.test.lib.Asserts;
 import java.io.*;
 import java.util.*;
 
-/*
+/**
  * @test
  * @library /test/lib
+ * @requires vm.hasSAandCanAttach
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
@@ -173,11 +174,6 @@ public class TestInstanceKlassSize {
     }
 
     public static void main(String[] args) throws Exception {
-
-        if (!Platform.shouldSAAttach()) {
-            System.out.println("SA attach not expected to work - test skipped.");
-            return;
-        }
 
         if (args == null || args.length == 0) {
             System.out.println ("No args run. Starting with args now.");

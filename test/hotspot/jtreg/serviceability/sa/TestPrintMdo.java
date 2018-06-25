@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,9 +36,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @library /test/lib
+ * @requires vm.hasSAandCanAttach
  * @requires vm.flavor == "server" & !vm.emulatedClient & !(vm.opt.TieredStopAtLevel == 1)
  * @build jdk.test.lib.apps.*
  * @run main/othervm TestPrintMdo
@@ -147,12 +148,6 @@ public class TestPrintMdo {
     public static void main (String... args) throws Exception {
 
         LingeredApp app = null;
-
-        if (!Platform.shouldSAAttach()) {
-            System.out.println(
-               "SA attach not expected to work - test skipped.");
-            return;
-        }
 
         try {
             List<String> vmArgs = new ArrayList<String>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,11 +42,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @library /test/lib
  * @bug 8171084
- * @requires (vm.bits == "64" & os.maxMemory > 8g)
+ * @requires vm.hasSAandCanAttach & (vm.bits == "64" & os.maxMemory > 8g)
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *          jdk.hotspot.agent/sun.jvm.hotspot.utilities
@@ -88,12 +88,6 @@ public class TestHeapDumpForLargeArray {
     public static void main (String... args) throws Exception {
 
         String heapDumpFileName = "LargeArrayHeapDump.bin";
-
-        if (!Platform.shouldSAAttach()) {
-            System.out.println(
-               "SA attach not expected to work - test skipped.");
-            return;
-        }
 
         File heapDumpFile = new File(heapDumpFileName);
         if (heapDumpFile.exists()) {

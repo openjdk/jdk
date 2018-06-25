@@ -28,10 +28,11 @@ import java.util.ArrayList;
 
 import jdk.test.lib.apps.LingeredApp;
 
-/*
+/**
  * @test
  * @bug 8193124
  * @summary Test the clhsdb 'findpc' command
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm ClhsdbFindPC
  */

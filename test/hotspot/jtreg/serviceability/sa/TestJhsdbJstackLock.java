@@ -37,8 +37,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test
+ * @requires vm.hasSAandCanAttach
  * @library /test/lib
  * @run main/othervm TestJhsdbJstackLock
  */
@@ -48,11 +49,6 @@ public class TestJhsdbJstackLock {
     public static void main (String... args) throws Exception {
 
         LingeredApp app = null;
-
-        if (!Platform.shouldSAAttach()) {
-            System.out.println("SA attach not expected to work - test skipped.");
-            return;
-        }
 
         try {
             List<String> vmArgs = new ArrayList<String>(Utils.getVmOptions());
