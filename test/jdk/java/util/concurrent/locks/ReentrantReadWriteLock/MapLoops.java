@@ -104,7 +104,8 @@ public class MapLoops {
         // warmup
         System.out.println("Warmup...");
         for (int k = 0; k < 2; ++k) {
-            Map<Integer, Integer> map = (Map<Integer,Integer>)mapClass.newInstance();
+            Map<Integer, Integer> map = (Map<Integer, Integer>)
+                mapClass.getDeclaredConstructor().newInstance();
             LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
             CyclicBarrier barrier = new CyclicBarrier(1, timer);
             new Runner(map, key, barrier, rnd.split()).run();
@@ -113,7 +114,8 @@ public class MapLoops {
 
         for (int i = 1; i <= maxThreads; i += (i+1) >>> 1) {
             System.out.print("Threads: " + i + "\t:");
-            Map<Integer, Integer> map = (Map<Integer,Integer>)mapClass.newInstance();
+            Map<Integer, Integer> map = (Map<Integer, Integer>)
+                mapClass.getDeclaredConstructor().newInstance();
             LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
             CyclicBarrier barrier = new CyclicBarrier(i+1, timer);
             for (int k = 0; k < i; ++k)
