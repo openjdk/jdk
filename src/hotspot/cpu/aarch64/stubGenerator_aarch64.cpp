@@ -4014,6 +4014,317 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  // code for comparing 16 bytes of strings with same encoding
+  void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
+    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, tmp1 = r10, tmp2 = r11;
+    __ ldr(rscratch1, Address(__ post(str1, 8)));
+    __ eor(rscratch2, tmp1, tmp2);
+    __ ldr(cnt1, Address(__ post(str2, 8)));
+    __ cbnz(rscratch2, DIFF1);
+    __ ldr(tmp1, Address(__ post(str1, 8)));
+    __ eor(rscratch2, rscratch1, cnt1);
+    __ ldr(tmp2, Address(__ post(str2, 8)));
+    __ cbnz(rscratch2, DIFF2);
+  }
+
+  // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
+  void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
+      Label &DIFF2) {
+    Register cnt1 = r2, tmp1 = r10, tmp2 = r11, tmp3 = r12;
+    FloatRegister vtmp = v1, vtmpZ = v0, vtmp3 = v2;
+
+    __ ldrq(vtmp, Address(__ post(tmp2, 16)));
+    __ ldr(tmpU, Address(__ post(cnt1, 8)));
+    __ zip1(vtmp3, __ T16B, vtmp, vtmpZ);
+    // now we have 32 bytes of characters (converted to U) in vtmp:vtmp3
+
+    __ fmovd(tmpL, vtmp3);
+    __ eor(rscratch2, tmp3, tmpL);
+    __ cbnz(rscratch2, DIFF2);
+
+    __ ldr(tmp3, Address(__ post(cnt1, 8)));
+    __ umov(tmpL, vtmp3, __ D, 1);
+    __ eor(rscratch2, tmpU, tmpL);
+    __ cbnz(rscratch2, DIFF1);
+
+    __ zip2(vtmp, __ T16B, vtmp, vtmpZ);
+    __ ldr(tmpU, Address(__ post(cnt1, 8)));
+    __ fmovd(tmpL, vtmp);
+    __ eor(rscratch2, tmp3, tmpL);
+    __ cbnz(rscratch2, DIFF2);
+
+    __ ldr(tmp3, Address(__ post(cnt1, 8)));
+    __ umov(tmpL, vtmp, __ D, 1);
+    __ eor(rscratch2, tmpU, tmpL);
+    __ cbnz(rscratch2, DIFF1);
+  }
+
+  // r0  = result
+  // r1  = str1
+  // r2  = cnt1
+  // r3  = str2
+  // r4  = cnt2
+  // r10 = tmp1
+  // r11 = tmp2
+  address generate_compare_long_string_different_encoding(bool isLU) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", isLU
+        ? "compare_long_string_different_encoding LU"
+        : "compare_long_string_different_encoding UL");
+    address entry = __ pc();
+    Label SMALL_LOOP, TAIL, TAIL_LOAD_16, LOAD_LAST, DIFF1, DIFF2,
+        DONE, CALCULATE_DIFFERENCE, LARGE_LOOP_PREFETCH, SMALL_LOOP_ENTER,
+        LARGE_LOOP_PREFETCH_REPEAT1, LARGE_LOOP_PREFETCH_REPEAT2;
+    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
+        tmp1 = r10, tmp2 = r11, tmp3 = r12, tmp4 = r14;
+    FloatRegister vtmpZ = v0, vtmp = v1, vtmp3 = v2;
+    RegSet spilled_regs = RegSet::of(tmp3, tmp4);
+
+    int prefetchLoopExitCondition = MAX(32, SoftwarePrefetchHintDistance/2);
+
+    __ eor(vtmpZ, __ T16B, vtmpZ, vtmpZ);
+    // cnt2 == amount of characters left to compare
+    // Check already loaded first 4 symbols(vtmp and tmp2(LU)/tmp1(UL))
+    __ zip1(vtmp, __ T8B, vtmp, vtmpZ);
+    __ add(str1, str1, isLU ? wordSize/2 : wordSize);
+    __ add(str2, str2, isLU ? wordSize : wordSize/2);
+    __ fmovd(isLU ? tmp1 : tmp2, vtmp);
+    __ subw(cnt2, cnt2, 8); // Already loaded 4 symbols. Last 4 is special case.
+    __ add(str1, str1, cnt2, __ LSL, isLU ? 0 : 1);
+    __ eor(rscratch2, tmp1, tmp2);
+    __ add(str2, str2, cnt2, __ LSL, isLU ? 1 : 0);
+    __ mov(rscratch1, tmp2);
+    __ cbnz(rscratch2, CALCULATE_DIFFERENCE);
+    Register strU = isLU ? str2 : str1,
+             strL = isLU ? str1 : str2,
+             tmpU = isLU ? rscratch1 : tmp1, // where to keep U for comparison
+             tmpL = isLU ? tmp1 : rscratch1; // where to keep L for comparison
+    __ push(spilled_regs, sp);
+    __ sub(tmp2, strL, cnt2); // strL pointer to load from
+    __ sub(cnt1, strU, cnt2, __ LSL, 1); // strU pointer to load from
+
+    __ ldr(tmp3, Address(__ post(cnt1, 8)));
+
+    if (SoftwarePrefetchHintDistance >= 0) {
+      __ cmp(cnt2, prefetchLoopExitCondition);
+      __ br(__ LT, SMALL_LOOP);
+      __ bind(LARGE_LOOP_PREFETCH);
+        __ prfm(Address(tmp2, SoftwarePrefetchHintDistance));
+        __ mov(tmp4, 2);
+        __ prfm(Address(cnt1, SoftwarePrefetchHintDistance));
+        __ bind(LARGE_LOOP_PREFETCH_REPEAT1);
+          compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
+          __ subs(tmp4, tmp4, 1);
+          __ br(__ GT, LARGE_LOOP_PREFETCH_REPEAT1);
+          __ prfm(Address(cnt1, SoftwarePrefetchHintDistance));
+          __ mov(tmp4, 2);
+        __ bind(LARGE_LOOP_PREFETCH_REPEAT2);
+          compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
+          __ subs(tmp4, tmp4, 1);
+          __ br(__ GT, LARGE_LOOP_PREFETCH_REPEAT2);
+          __ sub(cnt2, cnt2, 64);
+          __ cmp(cnt2, prefetchLoopExitCondition);
+          __ br(__ GE, LARGE_LOOP_PREFETCH);
+    }
+    __ cbz(cnt2, LOAD_LAST); // no characters left except last load
+    __ subs(cnt2, cnt2, 16);
+    __ br(__ LT, TAIL);
+    __ b(SMALL_LOOP_ENTER);
+    __ bind(SMALL_LOOP); // smaller loop
+      __ subs(cnt2, cnt2, 16);
+    __ bind(SMALL_LOOP_ENTER);
+      compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
+      __ br(__ GE, SMALL_LOOP);
+      __ cbz(cnt2, LOAD_LAST);
+    __ bind(TAIL); // 1..15 characters left
+      __ cmp(cnt2, -8);
+      __ br(__ GT, TAIL_LOAD_16);
+      __ ldrd(vtmp, Address(tmp2));
+      __ zip1(vtmp3, __ T8B, vtmp, vtmpZ);
+
+      __ ldr(tmpU, Address(__ post(cnt1, 8)));
+      __ fmovd(tmpL, vtmp3);
+      __ eor(rscratch2, tmp3, tmpL);
+      __ cbnz(rscratch2, DIFF2);
+      __ umov(tmpL, vtmp3, __ D, 1);
+      __ eor(rscratch2, tmpU, tmpL);
+      __ cbnz(rscratch2, DIFF1);
+      __ b(LOAD_LAST);
+    __ bind(TAIL_LOAD_16);
+      __ ldrq(vtmp, Address(tmp2));
+      __ ldr(tmpU, Address(__ post(cnt1, 8)));
+      __ zip1(vtmp3, __ T16B, vtmp, vtmpZ);
+      __ zip2(vtmp, __ T16B, vtmp, vtmpZ);
+      __ fmovd(tmpL, vtmp3);
+      __ eor(rscratch2, tmp3, tmpL);
+      __ cbnz(rscratch2, DIFF2);
+
+      __ ldr(tmp3, Address(__ post(cnt1, 8)));
+      __ umov(tmpL, vtmp3, __ D, 1);
+      __ eor(rscratch2, tmpU, tmpL);
+      __ cbnz(rscratch2, DIFF1);
+
+      __ ldr(tmpU, Address(__ post(cnt1, 8)));
+      __ fmovd(tmpL, vtmp);
+      __ eor(rscratch2, tmp3, tmpL);
+      __ cbnz(rscratch2, DIFF2);
+
+      __ umov(tmpL, vtmp, __ D, 1);
+      __ eor(rscratch2, tmpU, tmpL);
+      __ cbnz(rscratch2, DIFF1);
+      __ b(LOAD_LAST);
+    __ bind(DIFF2);
+      __ mov(tmpU, tmp3);
+    __ bind(DIFF1);
+      __ pop(spilled_regs, sp);
+      __ b(CALCULATE_DIFFERENCE);
+    __ bind(LOAD_LAST);
+      __ pop(spilled_regs, sp);
+
+      __ ldrs(vtmp, Address(strL));
+      __ ldr(tmpU, Address(strU));
+      __ zip1(vtmp, __ T8B, vtmp, vtmpZ);
+      __ fmovd(tmpL, vtmp);
+
+      __ eor(rscratch2, tmpU, tmpL);
+      __ cbz(rscratch2, DONE);
+
+    // Find the first different characters in the longwords and
+    // compute their difference.
+    __ bind(CALCULATE_DIFFERENCE);
+      __ rev(rscratch2, rscratch2);
+      __ clz(rscratch2, rscratch2);
+      __ andr(rscratch2, rscratch2, -16);
+      __ lsrv(tmp1, tmp1, rscratch2);
+      __ uxthw(tmp1, tmp1);
+      __ lsrv(rscratch1, rscratch1, rscratch2);
+      __ uxthw(rscratch1, rscratch1);
+      __ subw(result, tmp1, rscratch1);
+    __ bind(DONE);
+      __ ret(lr);
+    return entry;
+  }
+
+  // r0  = result
+  // r1  = str1
+  // r2  = cnt1
+  // r3  = str2
+  // r4  = cnt2
+  // r10 = tmp1
+  // r11 = tmp2
+  address generate_compare_long_string_same_encoding(bool isLL) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", isLL
+        ? "compare_long_string_same_encoding LL"
+        : "compare_long_string_same_encoding UU");
+    address entry = __ pc();
+    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
+        tmp1 = r10, tmp2 = r11;
+    Label SMALL_LOOP, LARGE_LOOP_PREFETCH, CHECK_LAST, DIFF2, TAIL,
+        LENGTH_DIFF, DIFF, LAST_CHECK_AND_LENGTH_DIFF,
+        DIFF_LAST_POSITION, DIFF_LAST_POSITION2;
+    // exit from large loop when less than 64 bytes left to read or we're about
+    // to prefetch memory behind array border
+    int largeLoopExitCondition = MAX(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
+    // cnt1/cnt2 contains amount of characters to compare. cnt1 can be re-used
+    // update cnt2 counter with already loaded 8 bytes
+    __ sub(cnt2, cnt2, wordSize/(isLL ? 1 : 2));
+    // update pointers, because of previous read
+    __ add(str1, str1, wordSize);
+    __ add(str2, str2, wordSize);
+    if (SoftwarePrefetchHintDistance >= 0) {
+      __ bind(LARGE_LOOP_PREFETCH);
+        __ prfm(Address(str1, SoftwarePrefetchHintDistance));
+        __ prfm(Address(str2, SoftwarePrefetchHintDistance));
+        compare_string_16_bytes_same(DIFF, DIFF2);
+        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ sub(cnt2, cnt2, isLL ? 64 : 32);
+        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ cmp(cnt2, largeLoopExitCondition);
+        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ br(__ GT, LARGE_LOOP_PREFETCH);
+        __ cbz(cnt2, LAST_CHECK_AND_LENGTH_DIFF); // no more chars left?
+        // less than 16 bytes left?
+        __ subs(cnt2, cnt2, isLL ? 16 : 8);
+        __ br(__ LT, TAIL);
+    }
+    __ bind(SMALL_LOOP);
+      compare_string_16_bytes_same(DIFF, DIFF2);
+      __ subs(cnt2, cnt2, isLL ? 16 : 8);
+      __ br(__ GE, SMALL_LOOP);
+    __ bind(TAIL);
+      __ adds(cnt2, cnt2, isLL ? 16 : 8);
+      __ br(__ EQ, LAST_CHECK_AND_LENGTH_DIFF);
+      __ subs(cnt2, cnt2, isLL ? 8 : 4);
+      __ br(__ LE, CHECK_LAST);
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbnz(rscratch2, DIFF);
+      __ ldr(tmp1, Address(__ post(str1, 8)));
+      __ ldr(tmp2, Address(__ post(str2, 8)));
+      __ sub(cnt2, cnt2, isLL ? 8 : 4);
+    __ bind(CHECK_LAST);
+      if (!isLL) {
+        __ add(cnt2, cnt2, cnt2); // now in bytes
+      }
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbnz(rscratch2, DIFF);
+      __ ldr(rscratch1, Address(str1, cnt2));
+      __ ldr(cnt1, Address(str2, cnt2));
+      __ eor(rscratch2, rscratch1, cnt1);
+      __ cbz(rscratch2, LENGTH_DIFF);
+      // Find the first different characters in the longwords and
+      // compute their difference.
+    __ bind(DIFF2);
+      __ rev(rscratch2, rscratch2);
+      __ clz(rscratch2, rscratch2);
+      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
+      __ lsrv(rscratch1, rscratch1, rscratch2);
+      if (isLL) {
+        __ lsrv(cnt1, cnt1, rscratch2);
+        __ uxtbw(rscratch1, rscratch1);
+        __ uxtbw(cnt1, cnt1);
+      } else {
+        __ lsrv(cnt1, cnt1, rscratch2);
+        __ uxthw(rscratch1, rscratch1);
+        __ uxthw(cnt1, cnt1);
+      }
+      __ subw(result, rscratch1, cnt1);
+      __ b(LENGTH_DIFF);
+    __ bind(DIFF);
+      __ rev(rscratch2, rscratch2);
+      __ clz(rscratch2, rscratch2);
+      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
+      __ lsrv(tmp1, tmp1, rscratch2);
+      if (isLL) {
+        __ lsrv(tmp2, tmp2, rscratch2);
+        __ uxtbw(tmp1, tmp1);
+        __ uxtbw(tmp2, tmp2);
+      } else {
+        __ lsrv(tmp2, tmp2, rscratch2);
+        __ uxthw(tmp1, tmp1);
+        __ uxthw(tmp2, tmp2);
+      }
+      __ subw(result, tmp1, tmp2);
+      __ b(LENGTH_DIFF);
+    __ bind(LAST_CHECK_AND_LENGTH_DIFF);
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbnz(rscratch2, DIFF);
+    __ bind(LENGTH_DIFF);
+      __ ret(lr);
+    return entry;
+  }
+
+  void generate_compare_long_strings() {
+      StubRoutines::aarch64::_compare_long_string_LL
+          = generate_compare_long_string_same_encoding(true);
+      StubRoutines::aarch64::_compare_long_string_UU
+          = generate_compare_long_string_same_encoding(false);
+      StubRoutines::aarch64::_compare_long_string_LU
+          = generate_compare_long_string_different_encoding(true);
+      StubRoutines::aarch64::_compare_long_string_UL
+          = generate_compare_long_string_different_encoding(false);
+  }
+
   /**
    *  Arguments:
    *
@@ -5112,6 +5423,8 @@ class StubGenerator: public StubCodeGenerator {
     if (!UseSimpleArrayEquals) {
       StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
     }
+
+    generate_compare_long_strings();
 
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
