@@ -687,11 +687,6 @@ public:
     return is_anonymous() ? java_mirror() : class_loader();
   }
 
-  // Load the klass's holder as a phantom. This is useful when a weak Klass
-  // pointer has been "peeked" and then must be kept alive before it may
-  // be used safely.
-  oop holder_phantom() const;
-
   bool is_contended() const                {
     return (_misc_flags & _misc_is_contended) != 0;
   }

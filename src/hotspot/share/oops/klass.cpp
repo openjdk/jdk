@@ -388,6 +388,10 @@ void Klass::append_to_sibling_list() {
   debug_only(verify();)
 }
 
+oop Klass::holder_phantom() const {
+  return class_loader_data()->holder_phantom();
+}
+
 void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses) {
   if (!ClassUnloading || !unloading_occurred) {
     return;
