@@ -39,6 +39,7 @@ typedef struct FontManagerNativeIDs {
     jmethodID getTableBytesMID;
     jmethodID canDisplayMID;
     jmethodID f2dCharToGlyphMID;
+    jmethodID f2dCharToVariationGlyphMID;
 
     /* sun/font/CharToGlyphMapper methods */
     jmethodID charToGlyphMID;
