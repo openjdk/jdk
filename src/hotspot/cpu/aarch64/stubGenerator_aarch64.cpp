@@ -3990,6 +3990,18 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  address generate_dsin_dcos(bool isCos) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", isCos ? "libmDcos" : "libmDsin");
+    address start = __ pc();
+    __ generate_dsin_dcos(isCos, (address)StubRoutines::aarch64::_npio2_hw,
+        (address)StubRoutines::aarch64::_two_over_pi,
+        (address)StubRoutines::aarch64::_pio2,
+        (address)StubRoutines::aarch64::_dsin_coef,
+        (address)StubRoutines::aarch64::_dcos_coef);
+    return start;
+  }
+
   address generate_dlog() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "dlog");
@@ -5057,6 +5069,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     StubRoutines::_dlog = generate_dlog();
+    StubRoutines::_dsin = generate_dsin_dcos(/* isCos = */ false);
+    StubRoutines::_dcos = generate_dsin_dcos(/* isCos = */ true);
   }
 
   void generate_all() {

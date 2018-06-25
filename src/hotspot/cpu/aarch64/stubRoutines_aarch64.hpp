@@ -41,7 +41,7 @@ static bool    returns_to_call_stub(address return_pc)   {
 
 enum platform_dependent_constants {
   code_size1 = 19000,          // simply increase if too small (assembler will crash if too small)
-  code_size2 = 22000           // simply increase if too small (assembler will crash if too small)
+  code_size2 = 28000           // simply increase if too small (assembler will crash if too small)
 };
 
 class aarch64 {
@@ -146,7 +146,13 @@ class aarch64 {
 
 private:
   static juint    _crc_table[];
-
+  // begin trigonometric tables block. See comments in .cpp file
+  static juint    _npio2_hw[];
+  static jdouble   _two_over_pi[];
+  static jdouble   _pio2[];
+  static jdouble   _dsin_coef[];
+  static jdouble  _dcos_coef[];
+  // end trigonometric tables block
 };
 
 #endif // CPU_AARCH64_VM_STUBROUTINES_AARCH64_HPP

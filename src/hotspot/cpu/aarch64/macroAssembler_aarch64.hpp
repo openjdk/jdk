@@ -1256,7 +1256,15 @@ public:
                 FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
                 FloatRegister tmpC4, Register tmp1, Register tmp2,
                 Register tmp3, Register tmp4, Register tmp5);
-private:
+  void generate_dsin_dcos(bool isCos, address npio2_hw, address two_over_pi,
+      address pio2, address dsin_coef, address dcos_coef);
+ private:
+  // begin trigonometric functions support block
+  void generate__ieee754_rem_pio2(address npio2_hw, address two_over_pi, address pio2);
+  void generate__kernel_rem_pio2(address two_over_pi, address pio2);
+  void generate_kernel_sin(FloatRegister x, bool iyIsOne, address dsin_coef);
+  void generate_kernel_cos(FloatRegister x, address dcos_coef);
+  // end trigonometric functions support block
   void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
                        Register src1, Register src2);
   void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2) {
