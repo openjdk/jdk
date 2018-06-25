@@ -2024,6 +2024,57 @@ public:
       fmovd(Vn, zr);
   }
 
+   // Floating-point rounding
+   // type: half-precision = 11
+   //       single         = 00
+   //       double         = 01
+   // rmode: A = Away     = 100
+   //        I = current  = 111
+   //        M = MinusInf = 010
+   //        N = eveN     = 000
+   //        P = PlusInf  = 001
+   //        X = eXact    = 110
+   //        Z = Zero     = 011
+  void float_round(unsigned type, unsigned rmode, FloatRegister Rd, FloatRegister Rn) {
+    starti;
+    f(0b00011110, 31, 24);
+    f(type, 23, 22);
+    f(0b1001, 21, 18);
+    f(rmode, 17, 15);
+    f(0b10000, 14, 10);
+    rf(Rn, 5), rf(Rd, 0);
+  }
+#define INSN(NAME, type, rmode)                   \
+  void NAME(FloatRegister Vd, FloatRegister Vn) { \
+    float_round(type, rmode, Vd, Vn);             \
+  }
+
+public:
+  INSN(frintah, 0b11, 0b100);
+  INSN(frintih, 0b11, 0b111);
+  INSN(frintmh, 0b11, 0b010);
+  INSN(frintnh, 0b11, 0b000);
+  INSN(frintph, 0b11, 0b001);
+  INSN(frintxh, 0b11, 0b110);
+  INSN(frintzh, 0b11, 0b011);
+
+  INSN(frintas, 0b00, 0b100);
+  INSN(frintis, 0b00, 0b111);
+  INSN(frintms, 0b00, 0b010);
+  INSN(frintns, 0b00, 0b000);
+  INSN(frintps, 0b00, 0b001);
+  INSN(frintxs, 0b00, 0b110);
+  INSN(frintzs, 0b00, 0b011);
+
+  INSN(frintad, 0b01, 0b100);
+  INSN(frintid, 0b01, 0b111);
+  INSN(frintmd, 0b01, 0b010);
+  INSN(frintnd, 0b01, 0b000);
+  INSN(frintpd, 0b01, 0b001);
+  INSN(frintxd, 0b01, 0b110);
+  INSN(frintzd, 0b01, 0b011);
+#undef INSN
+
 /* SIMD extensions
  *
  * We just use FloatRegister in the following. They are exactly the same

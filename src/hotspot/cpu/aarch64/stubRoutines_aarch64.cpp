@@ -278,3 +278,87 @@ juint StubRoutines::aarch64::_crc_table[] ATTRIBUTE_ALIGNED(4096) =
     0x02D578EDUL, 0x7DAEED62UL,         // word swap
     0xD502ED78UL, 0xAE7D62EDUL,         // byte swap of word swap
 };
+
+juint StubRoutines::aarch64::_npio2_hw[] __attribute__ ((aligned(64))) = {
+    // first, various coefficient values: 0.5, invpio2, pio2_1, pio2_1t, pio2_2,
+    // pio2_2t, pio2_3, pio2_3t
+    // This is a small optimization wich keeping double[8] values in int[] table
+    // to have less address calculation instructions
+    //
+    // invpio2:  53 bits of 2/pi (enough for cases when trigonometric argument is small)
+    // pio2_1:   first  33 bit of pi/2
+    // pio2_1t:  pi/2 - pio2_1
+    // pio2_2:   second 33 bit of pi/2
+    // pio2_2t:  pi/2 - (pio2_1+pio2_2)
+    // pio2_3:   third  33 bit of pi/2
+    // pio2_3t:  pi/2 - (pio2_1+pio2_2+pio2_3)
+    0x00000000, 0x3fe00000, // 0.5
+    0x6DC9C883, 0x3FE45F30, // invpio2 = 6.36619772367581382433e-01
+    0x54400000, 0x3FF921FB, // pio2_1 = 1.57079632673412561417e+00
+    0x1A626331, 0x3DD0B461, // pio2_1t = 6.07710050650619224932e-11
+    0x1A600000, 0x3DD0B461, // pio2_2 = 6.07710050630396597660e-11
+    0x2E037073, 0x3BA3198A, // pio2_2t = 2.02226624879595063154e-21
+    0x2E000000, 0x3BA3198A, // pio2_3 = 2.02226624871116645580e-21
+    0x252049C1, 0x397B839A, // pio2_3t = 8.47842766036889956997e-32
+    // now, npio2_hw itself
+    0x3FF921FB, 0x400921FB, 0x4012D97C, 0x401921FB, 0x401F6A7A, 0x4022D97C,
+    0x4025FDBB, 0x402921FB, 0x402C463A, 0x402F6A7A, 0x4031475C, 0x4032D97C,
+    0x40346B9C, 0x4035FDBB, 0x40378FDB, 0x403921FB, 0x403AB41B, 0x403C463A,
+    0x403DD85A, 0x403F6A7A, 0x40407E4C, 0x4041475C, 0x4042106C, 0x4042D97C,
+    0x4043A28C, 0x40446B9C, 0x404534AC, 0x4045FDBB, 0x4046C6CB, 0x40478FDB,
+    0x404858EB, 0x404921FB
+};
+
+// Coefficients for sin(x) polynomial approximation: S1..S6.
+// See kernel_sin comments in macroAssembler_aarch64_trig.cpp for details
+jdouble StubRoutines::aarch64::_dsin_coef[] __attribute__ ((aligned(64))) = {
+    -1.66666666666666324348e-01, // 0xBFC5555555555549
+     8.33333333332248946124e-03, // 0x3F8111111110F8A6
+    -1.98412698298579493134e-04, // 0xBF2A01A019C161D5
+     2.75573137070700676789e-06, // 0x3EC71DE357B1FE7D
+    -2.50507602534068634195e-08, // 0xBE5AE5E68A2B9CEB
+     1.58969099521155010221e-10  // 0x3DE5D93A5ACFD57C
+};
+
+// Coefficients for cos(x) polynomial approximation: C1..C6.
+// See kernel_cos comments in macroAssembler_aarch64_trig.cpp for details
+jdouble StubRoutines::aarch64::_dcos_coef[] __attribute__ ((aligned(64))) = {
+     4.16666666666666019037e-02, // c0x3FA555555555554C
+    -1.38888888888741095749e-03, // 0xBF56C16C16C15177
+     2.48015872894767294178e-05, // 0x3EFA01A019CB1590
+    -2.75573143513906633035e-07, // 0xBE927E4F809C52AD
+     2.08757232129817482790e-09, // 0x3E21EE9EBDB4B1C4
+    -1.13596475577881948265e-11  // 0xBDA8FAE9BE8838D4
+};
+
+// Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi.
+// Used in cases of very large argument. 396 hex digits is enough to support
+// required precision.
+// Converted to double to avoid unnecessary conversion in code
+// NOTE: table looks like original int table: {0xA2F983, 0x6E4E44,...} with
+//       only (double) conversion added
+jdouble StubRoutines::aarch64::_two_over_pi[] __attribute__ ((aligned(64))) = {
+  (double)0xA2F983, (double)0x6E4E44, (double)0x1529FC, (double)0x2757D1, (double)0xF534DD, (double)0xC0DB62,
+  (double)0x95993C, (double)0x439041, (double)0xFE5163, (double)0xABDEBB, (double)0xC561B7, (double)0x246E3A,
+  (double)0x424DD2, (double)0xE00649, (double)0x2EEA09, (double)0xD1921C, (double)0xFE1DEB, (double)0x1CB129,
+  (double)0xA73EE8, (double)0x8235F5, (double)0x2EBB44, (double)0x84E99C, (double)0x7026B4, (double)0x5F7E41,
+  (double)0x3991D6, (double)0x398353, (double)0x39F49C, (double)0x845F8B, (double)0xBDF928, (double)0x3B1FF8,
+  (double)0x97FFDE, (double)0x05980F, (double)0xEF2F11, (double)0x8B5A0A, (double)0x6D1F6D, (double)0x367ECF,
+  (double)0x27CB09, (double)0xB74F46, (double)0x3F669E, (double)0x5FEA2D, (double)0x7527BA, (double)0xC7EBE5,
+  (double)0xF17B3D, (double)0x0739F7, (double)0x8A5292, (double)0xEA6BFB, (double)0x5FB11F, (double)0x8D5D08,
+  (double)0x560330, (double)0x46FC7B, (double)0x6BABF0, (double)0xCFBC20, (double)0x9AF436, (double)0x1DA9E3,
+  (double)0x91615E, (double)0xE61B08, (double)0x659985, (double)0x5F14A0, (double)0x68408D, (double)0xFFD880,
+  (double)0x4D7327, (double)0x310606, (double)0x1556CA, (double)0x73A8C9, (double)0x60E27B, (double)0xC08C6B,
+};
+
+// Pi over 2 value
+jdouble StubRoutines::aarch64::_pio2[] __attribute__ ((aligned(64))) = {
+  1.57079625129699707031e+00, // 0x3FF921FB40000000
+  7.54978941586159635335e-08, // 0x3E74442D00000000
+  5.39030252995776476554e-15, // 0x3CF8469880000000
+  3.28200341580791294123e-22, // 0x3B78CC5160000000
+  1.27065575308067607349e-29, // 0x39F01B8380000000
+  1.22933308981111328932e-36, // 0x387A252040000000
+  2.73370053816464559624e-44, // 0x36E3822280000000
+  2.16741683877804819444e-51, // 0x3569F31D00000000
+};
