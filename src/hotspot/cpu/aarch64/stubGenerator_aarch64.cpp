@@ -1351,9 +1351,9 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_DISJOINT;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
-      decorators |= AS_DEST_NOT_INITIALIZED;
+      decorators |= IS_DEST_UNINITIALIZED;
     }
     if (aligned) {
       decorators |= ARRAYCOPY_ALIGNED;
@@ -1425,9 +1425,9 @@ class StubGenerator: public StubCodeGenerator {
     __ cmp(rscratch1, count, Assembler::LSL, exact_log2(size));
     __ br(Assembler::HS, nooverlap_target);
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
     if (dest_uninitialized) {
-      decorators |= AS_DEST_NOT_INITIALIZED;
+      decorators |= IS_DEST_UNINITIALIZED;
     }
     if (aligned) {
       decorators |= ARRAYCOPY_ALIGNED;
@@ -1789,10 +1789,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 #endif //ASSERT
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_CHECKCAST;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_CHECKCAST;
     bool is_oop = true;
     if (dest_uninitialized) {
-      decorators |= AS_DEST_NOT_INITIALIZED;
+      decorators |= IS_DEST_UNINITIALIZED;
     }
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -3990,6 +3990,701 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
+  address generate_dsin_dcos(bool isCos) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", isCos ? "libmDcos" : "libmDsin");
+    address start = __ pc();
+    __ generate_dsin_dcos(isCos, (address)StubRoutines::aarch64::_npio2_hw,
+        (address)StubRoutines::aarch64::_two_over_pi,
+        (address)StubRoutines::aarch64::_pio2,
+        (address)StubRoutines::aarch64::_dsin_coef,
+        (address)StubRoutines::aarch64::_dcos_coef);
+    return start;
+  }
+
+  address generate_dlog() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "dlog");
+    address entry = __ pc();
+    FloatRegister vtmp0 = v0, vtmp1 = v1, vtmp2 = v2, vtmp3 = v3, vtmp4 = v4,
+        vtmp5 = v5, tmpC1 = v16, tmpC2 = v17, tmpC3 = v18, tmpC4 = v19;
+    Register tmp1 = r0, tmp2 = r1, tmp3 = r2, tmp4 = r3, tmp5 = r4;
+    __ fast_log(vtmp0, vtmp1, vtmp2, vtmp3, vtmp4, vtmp5, tmpC1, tmpC2, tmpC3,
+        tmpC4, tmp1, tmp2, tmp3, tmp4, tmp5);
+    return entry;
+  }
+
+  // code for comparing 16 bytes of strings with same encoding
+  void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
+    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, tmp1 = r10, tmp2 = r11;
+    __ ldr(rscratch1, Address(__ post(str1, 8)));
+    __ eor(rscratch2, tmp1, tmp2);
+    __ ldr(cnt1, Address(__ post(str2, 8)));
+    __ cbnz(rscratch2, DIFF1);
+    __ ldr(tmp1, Address(__ post(str1, 8)));
+    __ eor(rscratch2, rscratch1, cnt1);
+    __ ldr(tmp2, Address(__ post(str2, 8)));
+    __ cbnz(rscratch2, DIFF2);
+  }
+
+  // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
+  void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
+      Label &DIFF2) {
+    Register cnt1 = r2, tmp1 = r10, tmp2 = r11, tmp3 = r12;
+    FloatRegister vtmp = v1, vtmpZ = v0, vtmp3 = v2;
+
+    __ ldrq(vtmp, Address(__ post(tmp2, 16)));
+    __ ldr(tmpU, Address(__ post(cnt1, 8)));
+    __ zip1(vtmp3, __ T16B, vtmp, vtmpZ);
+    // now we have 32 bytes of characters (converted to U) in vtmp:vtmp3
+
+    __ fmovd(tmpL, vtmp3);
+    __ eor(rscratch2, tmp3, tmpL);
+    __ cbnz(rscratch2, DIFF2);
+
+    __ ldr(tmp3, Address(__ post(cnt1, 8)));
+    __ umov(tmpL, vtmp3, __ D, 1);
+    __ eor(rscratch2, tmpU, tmpL);
+    __ cbnz(rscratch2, DIFF1);
+
+    __ zip2(vtmp, __ T16B, vtmp, vtmpZ);
+    __ ldr(tmpU, Address(__ post(cnt1, 8)));
+    __ fmovd(tmpL, vtmp);
+    __ eor(rscratch2, tmp3, tmpL);
+    __ cbnz(rscratch2, DIFF2);
+
+    __ ldr(tmp3, Address(__ post(cnt1, 8)));
+    __ umov(tmpL, vtmp, __ D, 1);
+    __ eor(rscratch2, tmpU, tmpL);
+    __ cbnz(rscratch2, DIFF1);
+  }
+
+  // r0  = result
+  // r1  = str1
+  // r2  = cnt1
+  // r3  = str2
+  // r4  = cnt2
+  // r10 = tmp1
+  // r11 = tmp2
+  address generate_compare_long_string_different_encoding(bool isLU) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", isLU
+        ? "compare_long_string_different_encoding LU"
+        : "compare_long_string_different_encoding UL");
+    address entry = __ pc();
+    Label SMALL_LOOP, TAIL, TAIL_LOAD_16, LOAD_LAST, DIFF1, DIFF2,
+        DONE, CALCULATE_DIFFERENCE, LARGE_LOOP_PREFETCH, SMALL_LOOP_ENTER,
+        LARGE_LOOP_PREFETCH_REPEAT1, LARGE_LOOP_PREFETCH_REPEAT2;
+    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
+        tmp1 = r10, tmp2 = r11, tmp3 = r12, tmp4 = r14;
+    FloatRegister vtmpZ = v0, vtmp = v1, vtmp3 = v2;
+    RegSet spilled_regs = RegSet::of(tmp3, tmp4);
+
+    int prefetchLoopExitCondition = MAX(32, SoftwarePrefetchHintDistance/2);
+
+    __ eor(vtmpZ, __ T16B, vtmpZ, vtmpZ);
+    // cnt2 == amount of characters left to compare
+    // Check already loaded first 4 symbols(vtmp and tmp2(LU)/tmp1(UL))
+    __ zip1(vtmp, __ T8B, vtmp, vtmpZ);
+    __ add(str1, str1, isLU ? wordSize/2 : wordSize);
+    __ add(str2, str2, isLU ? wordSize : wordSize/2);
+    __ fmovd(isLU ? tmp1 : tmp2, vtmp);
+    __ subw(cnt2, cnt2, 8); // Already loaded 4 symbols. Last 4 is special case.
+    __ add(str1, str1, cnt2, __ LSL, isLU ? 0 : 1);
+    __ eor(rscratch2, tmp1, tmp2);
+    __ add(str2, str2, cnt2, __ LSL, isLU ? 1 : 0);
+    __ mov(rscratch1, tmp2);
+    __ cbnz(rscratch2, CALCULATE_DIFFERENCE);
+    Register strU = isLU ? str2 : str1,
+             strL = isLU ? str1 : str2,
+             tmpU = isLU ? rscratch1 : tmp1, // where to keep U for comparison
+             tmpL = isLU ? tmp1 : rscratch1; // where to keep L for comparison
+    __ push(spilled_regs, sp);
+    __ sub(tmp2, strL, cnt2); // strL pointer to load from
+    __ sub(cnt1, strU, cnt2, __ LSL, 1); // strU pointer to load from
+
+    __ ldr(tmp3, Address(__ post(cnt1, 8)));
+
+    if (SoftwarePrefetchHintDistance >= 0) {
+      __ cmp(cnt2, prefetchLoopExitCondition);
+      __ br(__ LT, SMALL_LOOP);
+      __ bind(LARGE_LOOP_PREFETCH);
+        __ prfm(Address(tmp2, SoftwarePrefetchHintDistance));
+        __ mov(tmp4, 2);
+        __ prfm(Address(cnt1, SoftwarePrefetchHintDistance));
+        __ bind(LARGE_LOOP_PREFETCH_REPEAT1);
+          compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
+          __ subs(tmp4, tmp4, 1);
+          __ br(__ GT, LARGE_LOOP_PREFETCH_REPEAT1);
+          __ prfm(Address(cnt1, SoftwarePrefetchHintDistance));
+          __ mov(tmp4, 2);
+        __ bind(LARGE_LOOP_PREFETCH_REPEAT2);
+          compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
+          __ subs(tmp4, tmp4, 1);
+          __ br(__ GT, LARGE_LOOP_PREFETCH_REPEAT2);
+          __ sub(cnt2, cnt2, 64);
+          __ cmp(cnt2, prefetchLoopExitCondition);
+          __ br(__ GE, LARGE_LOOP_PREFETCH);
+    }
+    __ cbz(cnt2, LOAD_LAST); // no characters left except last load
+    __ subs(cnt2, cnt2, 16);
+    __ br(__ LT, TAIL);
+    __ b(SMALL_LOOP_ENTER);
+    __ bind(SMALL_LOOP); // smaller loop
+      __ subs(cnt2, cnt2, 16);
+    __ bind(SMALL_LOOP_ENTER);
+      compare_string_16_x_LU(tmpL, tmpU, DIFF1, DIFF2);
+      __ br(__ GE, SMALL_LOOP);
+      __ cbz(cnt2, LOAD_LAST);
+    __ bind(TAIL); // 1..15 characters left
+      __ cmp(cnt2, -8);
+      __ br(__ GT, TAIL_LOAD_16);
+      __ ldrd(vtmp, Address(tmp2));
+      __ zip1(vtmp3, __ T8B, vtmp, vtmpZ);
+
+      __ ldr(tmpU, Address(__ post(cnt1, 8)));
+      __ fmovd(tmpL, vtmp3);
+      __ eor(rscratch2, tmp3, tmpL);
+      __ cbnz(rscratch2, DIFF2);
+      __ umov(tmpL, vtmp3, __ D, 1);
+      __ eor(rscratch2, tmpU, tmpL);
+      __ cbnz(rscratch2, DIFF1);
+      __ b(LOAD_LAST);
+    __ bind(TAIL_LOAD_16);
+      __ ldrq(vtmp, Address(tmp2));
+      __ ldr(tmpU, Address(__ post(cnt1, 8)));
+      __ zip1(vtmp3, __ T16B, vtmp, vtmpZ);
+      __ zip2(vtmp, __ T16B, vtmp, vtmpZ);
+      __ fmovd(tmpL, vtmp3);
+      __ eor(rscratch2, tmp3, tmpL);
+      __ cbnz(rscratch2, DIFF2);
+
+      __ ldr(tmp3, Address(__ post(cnt1, 8)));
+      __ umov(tmpL, vtmp3, __ D, 1);
+      __ eor(rscratch2, tmpU, tmpL);
+      __ cbnz(rscratch2, DIFF1);
+
+      __ ldr(tmpU, Address(__ post(cnt1, 8)));
+      __ fmovd(tmpL, vtmp);
+      __ eor(rscratch2, tmp3, tmpL);
+      __ cbnz(rscratch2, DIFF2);
+
+      __ umov(tmpL, vtmp, __ D, 1);
+      __ eor(rscratch2, tmpU, tmpL);
+      __ cbnz(rscratch2, DIFF1);
+      __ b(LOAD_LAST);
+    __ bind(DIFF2);
+      __ mov(tmpU, tmp3);
+    __ bind(DIFF1);
+      __ pop(spilled_regs, sp);
+      __ b(CALCULATE_DIFFERENCE);
+    __ bind(LOAD_LAST);
+      __ pop(spilled_regs, sp);
+
+      __ ldrs(vtmp, Address(strL));
+      __ ldr(tmpU, Address(strU));
+      __ zip1(vtmp, __ T8B, vtmp, vtmpZ);
+      __ fmovd(tmpL, vtmp);
+
+      __ eor(rscratch2, tmpU, tmpL);
+      __ cbz(rscratch2, DONE);
+
+    // Find the first different characters in the longwords and
+    // compute their difference.
+    __ bind(CALCULATE_DIFFERENCE);
+      __ rev(rscratch2, rscratch2);
+      __ clz(rscratch2, rscratch2);
+      __ andr(rscratch2, rscratch2, -16);
+      __ lsrv(tmp1, tmp1, rscratch2);
+      __ uxthw(tmp1, tmp1);
+      __ lsrv(rscratch1, rscratch1, rscratch2);
+      __ uxthw(rscratch1, rscratch1);
+      __ subw(result, tmp1, rscratch1);
+    __ bind(DONE);
+      __ ret(lr);
+    return entry;
+  }
+
+  // r0  = result
+  // r1  = str1
+  // r2  = cnt1
+  // r3  = str2
+  // r4  = cnt2
+  // r10 = tmp1
+  // r11 = tmp2
+  address generate_compare_long_string_same_encoding(bool isLL) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", isLL
+        ? "compare_long_string_same_encoding LL"
+        : "compare_long_string_same_encoding UU");
+    address entry = __ pc();
+    Register result = r0, str1 = r1, cnt1 = r2, str2 = r3, cnt2 = r4,
+        tmp1 = r10, tmp2 = r11;
+    Label SMALL_LOOP, LARGE_LOOP_PREFETCH, CHECK_LAST, DIFF2, TAIL,
+        LENGTH_DIFF, DIFF, LAST_CHECK_AND_LENGTH_DIFF,
+        DIFF_LAST_POSITION, DIFF_LAST_POSITION2;
+    // exit from large loop when less than 64 bytes left to read or we're about
+    // to prefetch memory behind array border
+    int largeLoopExitCondition = MAX(64, SoftwarePrefetchHintDistance)/(isLL ? 1 : 2);
+    // cnt1/cnt2 contains amount of characters to compare. cnt1 can be re-used
+    // update cnt2 counter with already loaded 8 bytes
+    __ sub(cnt2, cnt2, wordSize/(isLL ? 1 : 2));
+    // update pointers, because of previous read
+    __ add(str1, str1, wordSize);
+    __ add(str2, str2, wordSize);
+    if (SoftwarePrefetchHintDistance >= 0) {
+      __ bind(LARGE_LOOP_PREFETCH);
+        __ prfm(Address(str1, SoftwarePrefetchHintDistance));
+        __ prfm(Address(str2, SoftwarePrefetchHintDistance));
+        compare_string_16_bytes_same(DIFF, DIFF2);
+        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ sub(cnt2, cnt2, isLL ? 64 : 32);
+        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ cmp(cnt2, largeLoopExitCondition);
+        compare_string_16_bytes_same(DIFF, DIFF2);
+        __ br(__ GT, LARGE_LOOP_PREFETCH);
+        __ cbz(cnt2, LAST_CHECK_AND_LENGTH_DIFF); // no more chars left?
+        // less than 16 bytes left?
+        __ subs(cnt2, cnt2, isLL ? 16 : 8);
+        __ br(__ LT, TAIL);
+    }
+    __ bind(SMALL_LOOP);
+      compare_string_16_bytes_same(DIFF, DIFF2);
+      __ subs(cnt2, cnt2, isLL ? 16 : 8);
+      __ br(__ GE, SMALL_LOOP);
+    __ bind(TAIL);
+      __ adds(cnt2, cnt2, isLL ? 16 : 8);
+      __ br(__ EQ, LAST_CHECK_AND_LENGTH_DIFF);
+      __ subs(cnt2, cnt2, isLL ? 8 : 4);
+      __ br(__ LE, CHECK_LAST);
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbnz(rscratch2, DIFF);
+      __ ldr(tmp1, Address(__ post(str1, 8)));
+      __ ldr(tmp2, Address(__ post(str2, 8)));
+      __ sub(cnt2, cnt2, isLL ? 8 : 4);
+    __ bind(CHECK_LAST);
+      if (!isLL) {
+        __ add(cnt2, cnt2, cnt2); // now in bytes
+      }
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbnz(rscratch2, DIFF);
+      __ ldr(rscratch1, Address(str1, cnt2));
+      __ ldr(cnt1, Address(str2, cnt2));
+      __ eor(rscratch2, rscratch1, cnt1);
+      __ cbz(rscratch2, LENGTH_DIFF);
+      // Find the first different characters in the longwords and
+      // compute their difference.
+    __ bind(DIFF2);
+      __ rev(rscratch2, rscratch2);
+      __ clz(rscratch2, rscratch2);
+      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
+      __ lsrv(rscratch1, rscratch1, rscratch2);
+      if (isLL) {
+        __ lsrv(cnt1, cnt1, rscratch2);
+        __ uxtbw(rscratch1, rscratch1);
+        __ uxtbw(cnt1, cnt1);
+      } else {
+        __ lsrv(cnt1, cnt1, rscratch2);
+        __ uxthw(rscratch1, rscratch1);
+        __ uxthw(cnt1, cnt1);
+      }
+      __ subw(result, rscratch1, cnt1);
+      __ b(LENGTH_DIFF);
+    __ bind(DIFF);
+      __ rev(rscratch2, rscratch2);
+      __ clz(rscratch2, rscratch2);
+      __ andr(rscratch2, rscratch2, isLL ? -8 : -16);
+      __ lsrv(tmp1, tmp1, rscratch2);
+      if (isLL) {
+        __ lsrv(tmp2, tmp2, rscratch2);
+        __ uxtbw(tmp1, tmp1);
+        __ uxtbw(tmp2, tmp2);
+      } else {
+        __ lsrv(tmp2, tmp2, rscratch2);
+        __ uxthw(tmp1, tmp1);
+        __ uxthw(tmp2, tmp2);
+      }
+      __ subw(result, tmp1, tmp2);
+      __ b(LENGTH_DIFF);
+    __ bind(LAST_CHECK_AND_LENGTH_DIFF);
+      __ eor(rscratch2, tmp1, tmp2);
+      __ cbnz(rscratch2, DIFF);
+    __ bind(LENGTH_DIFF);
+      __ ret(lr);
+    return entry;
+  }
+
+  void generate_compare_long_strings() {
+      StubRoutines::aarch64::_compare_long_string_LL
+          = generate_compare_long_string_same_encoding(true);
+      StubRoutines::aarch64::_compare_long_string_UU
+          = generate_compare_long_string_same_encoding(false);
+      StubRoutines::aarch64::_compare_long_string_LU
+          = generate_compare_long_string_different_encoding(true);
+      StubRoutines::aarch64::_compare_long_string_UL
+          = generate_compare_long_string_different_encoding(false);
+  }
+
+  // R0 = result
+  // R1 = str2
+  // R2 = cnt1
+  // R3 = str1
+  // R4 = cnt2
+  // This generic linear code use few additional ideas, which makes it faster:
+  // 1) we can safely keep at least 1st register of pattern(since length >= 8)
+  // in order to skip initial loading(help in systems with 1 ld pipeline)
+  // 2) we can use "fast" algorithm of finding single character to search for
+  // first symbol with less branches(1 branch per each loaded register instead
+  // of branch for each symbol), so, this is where constants like
+  // 0x0101...01, 0x00010001...0001, 0x7f7f...7f, 0x7fff7fff...7fff comes from
+  // 3) after loading and analyzing 1st register of source string, it can be
+  // used to search for every 1st character entry, saving few loads in
+  // comparison with "simplier-but-slower" implementation
+  // 4) in order to avoid lots of push/pop operations, code below is heavily
+  // re-using/re-initializing/compressing register values, which makes code
+  // larger and a bit less readable, however, most of extra operations are
+  // issued during loads or branches, so, penalty is minimal
+  address generate_string_indexof_linear(bool str1_isL, bool str2_isL) {
+    const char* stubName = str1_isL
+        ? (str2_isL ? "indexof_linear_ll" : "indexof_linear_ul")
+        : "indexof_linear_uu";
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", stubName);
+    address entry = __ pc();
+
+    int str1_chr_size = str1_isL ? 1 : 2;
+    int str2_chr_size = str2_isL ? 1 : 2;
+    int str1_chr_shift = str1_isL ? 0 : 1;
+    int str2_chr_shift = str2_isL ? 0 : 1;
+    bool isL = str1_isL && str2_isL;
+   // parameters
+    Register result = r0, str2 = r1, cnt1 = r2, str1 = r3, cnt2 = r4;
+    // temporary registers
+    Register tmp1 = r20, tmp2 = r21, tmp3 = r22, tmp4 = r23;
+    RegSet spilled_regs = RegSet::range(tmp1, tmp4);
+    // redefinitions
+    Register ch1 = rscratch1, ch2 = rscratch2, first = tmp3;
+
+    __ push(spilled_regs, sp);
+    Label L_LOOP, L_LOOP_PROCEED, L_SMALL, L_HAS_ZERO, L_SMALL_MATCH_LOOP,
+        L_HAS_ZERO_LOOP, L_CMP_LOOP, L_CMP_LOOP_NOMATCH, L_SMALL_PROCEED,
+        L_SMALL_HAS_ZERO_LOOP, L_SMALL_CMP_LOOP_NOMATCH, L_SMALL_CMP_LOOP,
+        L_POST_LOOP, L_CMP_LOOP_LAST_CMP, L_HAS_ZERO_LOOP_NOMATCH,
+        L_SMALL_CMP_LOOP_LAST_CMP, L_SMALL_CMP_LOOP_LAST_CMP2,
+        L_CMP_LOOP_LAST_CMP2, DONE, NOMATCH;
+    // Read whole register from str1. It is safe, because length >=8 here
+    __ ldr(ch1, Address(str1));
+    // Read whole register from str2. It is safe, because length >=8 here
+    __ ldr(ch2, Address(str2));
+    __ andr(first, ch1, str1_isL ? 0xFF : 0xFFFF);
+    if (str1_isL != str2_isL) {
+      __ eor(v0, __ T16B, v0, v0);
+    }
+    __ mov(tmp1, str2_isL ? 0x0101010101010101 : 0x0001000100010001);
+    __ mul(first, first, tmp1);
+    // check if we have less than 1 register to check
+    __ subs(cnt2, cnt2, wordSize/str2_chr_size - 1);
+    if (str1_isL != str2_isL) {
+      __ fmovd(v1, ch1);
+    }
+    __ br(__ LE, L_SMALL);
+    __ eor(ch2, first, ch2);
+    if (str1_isL != str2_isL) {
+      __ zip1(v1, __ T16B, v1, v0);
+    }
+    __ sub(tmp2, ch2, tmp1);
+    __ orr(ch2, ch2, str2_isL ? 0x7f7f7f7f7f7f7f7f : 0x7fff7fff7fff7fff);
+    __ bics(tmp2, tmp2, ch2);
+    if (str1_isL != str2_isL) {
+      __ fmovd(ch1, v1);
+    }
+    __ br(__ NE, L_HAS_ZERO);
+    __ subs(cnt2, cnt2, wordSize/str2_chr_size);
+    __ add(result, result, wordSize/str2_chr_size);
+    __ add(str2, str2, wordSize);
+    __ br(__ LT, L_POST_LOOP);
+    __ BIND(L_LOOP);
+      __ ldr(ch2, Address(str2));
+      __ eor(ch2, first, ch2);
+      __ sub(tmp2, ch2, tmp1);
+      __ orr(ch2, ch2, str2_isL ? 0x7f7f7f7f7f7f7f7f : 0x7fff7fff7fff7fff);
+      __ bics(tmp2, tmp2, ch2);
+      __ br(__ NE, L_HAS_ZERO);
+    __ BIND(L_LOOP_PROCEED);
+      __ subs(cnt2, cnt2, wordSize/str2_chr_size);
+      __ add(str2, str2, wordSize);
+      __ add(result, result, wordSize/str2_chr_size);
+      __ br(__ GE, L_LOOP);
+    __ BIND(L_POST_LOOP);
+      __ cmp(cnt2, -wordSize/str2_chr_size); // no extra characters to check
+      __ br(__ LE, NOMATCH);
+      __ ldr(ch2, Address(str2));
+      __ sub(cnt2, zr, cnt2, __ LSL, LogBitsPerByte + str2_chr_shift);
+      __ eor(ch2, first, ch2);
+      __ sub(tmp2, ch2, tmp1);
+      __ orr(ch2, ch2, str2_isL ? 0x7f7f7f7f7f7f7f7f : 0x7fff7fff7fff7fff);
+      __ mov(tmp4, -1); // all bits set
+      __ b(L_SMALL_PROCEED);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_SMALL);
+      __ sub(cnt2, zr, cnt2, __ LSL, LogBitsPerByte + str2_chr_shift);
+      __ eor(ch2, first, ch2);
+      if (str1_isL != str2_isL) {
+        __ zip1(v1, __ T16B, v1, v0);
+      }
+      __ sub(tmp2, ch2, tmp1);
+      __ mov(tmp4, -1); // all bits set
+      __ orr(ch2, ch2, str2_isL ? 0x7f7f7f7f7f7f7f7f : 0x7fff7fff7fff7fff);
+      if (str1_isL != str2_isL) {
+        __ fmovd(ch1, v1); // move converted 4 symbols
+      }
+    __ BIND(L_SMALL_PROCEED);
+      __ lsrv(tmp4, tmp4, cnt2); // mask. zeroes on useless bits.
+      __ bic(tmp2, tmp2, ch2);
+      __ ands(tmp2, tmp2, tmp4); // clear useless bits and check
+      __ rbit(tmp2, tmp2);
+      __ br(__ EQ, NOMATCH);
+    __ BIND(L_SMALL_HAS_ZERO_LOOP);
+      __ clz(tmp4, tmp2); // potentially long. Up to 4 cycles on some cpu's
+      __ cmp(cnt1, wordSize/str2_chr_size);
+      __ br(__ LE, L_SMALL_CMP_LOOP_LAST_CMP2);
+      if (str2_isL) { // LL
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte); // address of "index"
+        __ ldr(ch2, Address(str2)); // read whole register of str2. Safe.
+        __ lslv(tmp2, tmp2, tmp4); // shift off leading zeroes from match info
+        __ add(result, result, tmp4, __ LSR, LogBitsPerByte);
+        __ lsl(tmp2, tmp2, 1); // shift off leading "1" from match info
+      } else {
+        __ mov(ch2, 0xE); // all bits in byte set except last one
+        __ andr(ch2, ch2, tmp4, __ LSR, LogBitsPerByte); // byte shift amount
+        __ ldr(ch2, Address(str2, ch2)); // read whole register of str2. Safe.
+        __ lslv(tmp2, tmp2, tmp4);
+        __ add(result, result, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ lsl(tmp2, tmp2, 1); // shift off leading "1" from match info
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+      }
+      __ cmp(ch1, ch2);
+      __ mov(tmp4, wordSize/str2_chr_size);
+      __ br(__ NE, L_SMALL_CMP_LOOP_NOMATCH);
+    __ BIND(L_SMALL_CMP_LOOP);
+      str1_isL ? __ ldrb(first, Address(str1, tmp4, Address::lsl(str1_chr_shift)))
+               : __ ldrh(first, Address(str1, tmp4, Address::lsl(str1_chr_shift)));
+      str2_isL ? __ ldrb(ch2, Address(str2, tmp4, Address::lsl(str2_chr_shift)))
+               : __ ldrh(ch2, Address(str2, tmp4, Address::lsl(str2_chr_shift)));
+      __ add(tmp4, tmp4, 1);
+      __ cmp(tmp4, cnt1);
+      __ br(__ GE, L_SMALL_CMP_LOOP_LAST_CMP);
+      __ cmp(first, ch2);
+      __ br(__ EQ, L_SMALL_CMP_LOOP);
+    __ BIND(L_SMALL_CMP_LOOP_NOMATCH);
+      __ cbz(tmp2, NOMATCH); // no more matches. exit
+      __ clz(tmp4, tmp2);
+      __ add(result, result, 1); // advance index
+      __ add(str2, str2, str2_chr_size); // advance pointer
+      __ b(L_SMALL_HAS_ZERO_LOOP);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_SMALL_CMP_LOOP_LAST_CMP);
+      __ cmp(first, ch2);
+      __ br(__ NE, L_SMALL_CMP_LOOP_NOMATCH);
+      __ b(DONE);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_SMALL_CMP_LOOP_LAST_CMP2);
+      if (str2_isL) { // LL
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte); // address of "index"
+        __ ldr(ch2, Address(str2)); // read whole register of str2. Safe.
+        __ lslv(tmp2, tmp2, tmp4); // shift off leading zeroes from match info
+        __ add(result, result, tmp4, __ LSR, LogBitsPerByte);
+        __ lsl(tmp2, tmp2, 1); // shift off leading "1" from match info
+      } else {
+        __ mov(ch2, 0xE); // all bits in byte set except last one
+        __ andr(ch2, ch2, tmp4, __ LSR, LogBitsPerByte); // byte shift amount
+        __ ldr(ch2, Address(str2, ch2)); // read whole register of str2. Safe.
+        __ lslv(tmp2, tmp2, tmp4);
+        __ add(result, result, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ lsl(tmp2, tmp2, 1); // shift off leading "1" from match info
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+      }
+      __ cmp(ch1, ch2);
+      __ br(__ NE, L_SMALL_CMP_LOOP_NOMATCH);
+      __ b(DONE);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_HAS_ZERO);
+      __ rbit(tmp2, tmp2);
+      __ clz(tmp4, tmp2); // potentially long. Up to 4 cycles on some CPU's
+      // Now, perform compression of counters(cnt2 and cnt1) into one register.
+      // It's fine because both counters are 32bit and are not changed in this
+      // loop. Just restore it on exit. So, cnt1 can be re-used in this loop.
+      __ orr(cnt2, cnt2, cnt1, __ LSL, BitsPerByte * wordSize / 2);
+      __ sub(result, result, 1);
+    __ BIND(L_HAS_ZERO_LOOP);
+      __ mov(cnt1, wordSize/str2_chr_size);
+      __ cmp(cnt1, cnt2, __ LSR, BitsPerByte * wordSize / 2);
+      __ br(__ GE, L_CMP_LOOP_LAST_CMP2); // case of 8 bytes only to compare
+      if (str2_isL) {
+        __ lsr(ch2, tmp4, LogBitsPerByte + str2_chr_shift); // char index
+        __ ldr(ch2, Address(str2, ch2)); // read whole register of str2. Safe.
+        __ lslv(tmp2, tmp2, tmp4);
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ add(tmp4, tmp4, 1);
+        __ add(result, result, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ lsl(tmp2, tmp2, 1);
+        __ mov(tmp4, wordSize/str2_chr_size);
+      } else {
+        __ mov(ch2, 0xE);
+        __ andr(ch2, ch2, tmp4, __ LSR, LogBitsPerByte); // byte shift amount
+        __ ldr(ch2, Address(str2, ch2)); // read whole register of str2. Safe.
+        __ lslv(tmp2, tmp2, tmp4);
+        __ add(tmp4, tmp4, 1);
+        __ add(result, result, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte);
+        __ lsl(tmp2, tmp2, 1);
+        __ mov(tmp4, wordSize/str2_chr_size);
+        __ sub(str2, str2, str2_chr_size);
+      }
+      __ cmp(ch1, ch2);
+      __ mov(tmp4, wordSize/str2_chr_size);
+      __ br(__ NE, L_CMP_LOOP_NOMATCH);
+    __ BIND(L_CMP_LOOP);
+      str1_isL ? __ ldrb(cnt1, Address(str1, tmp4, Address::lsl(str1_chr_shift)))
+               : __ ldrh(cnt1, Address(str1, tmp4, Address::lsl(str1_chr_shift)));
+      str2_isL ? __ ldrb(ch2, Address(str2, tmp4, Address::lsl(str2_chr_shift)))
+               : __ ldrh(ch2, Address(str2, tmp4, Address::lsl(str2_chr_shift)));
+      __ add(tmp4, tmp4, 1);
+      __ cmp(tmp4, cnt2, __ LSR, BitsPerByte * wordSize / 2);
+      __ br(__ GE, L_CMP_LOOP_LAST_CMP);
+      __ cmp(cnt1, ch2);
+      __ br(__ EQ, L_CMP_LOOP);
+    __ BIND(L_CMP_LOOP_NOMATCH);
+      // here we're not matched
+      __ cbz(tmp2, L_HAS_ZERO_LOOP_NOMATCH); // no more matches. Proceed to main loop
+      __ clz(tmp4, tmp2);
+      __ add(str2, str2, str2_chr_size); // advance pointer
+      __ b(L_HAS_ZERO_LOOP);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_CMP_LOOP_LAST_CMP);
+      __ cmp(cnt1, ch2);
+      __ br(__ NE, L_CMP_LOOP_NOMATCH);
+      __ b(DONE);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_CMP_LOOP_LAST_CMP2);
+      if (str2_isL) {
+        __ lsr(ch2, tmp4, LogBitsPerByte + str2_chr_shift); // char index
+        __ ldr(ch2, Address(str2, ch2)); // read whole register of str2. Safe.
+        __ lslv(tmp2, tmp2, tmp4);
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ add(tmp4, tmp4, 1);
+        __ add(result, result, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ lsl(tmp2, tmp2, 1);
+      } else {
+        __ mov(ch2, 0xE);
+        __ andr(ch2, ch2, tmp4, __ LSR, LogBitsPerByte); // byte shift amount
+        __ ldr(ch2, Address(str2, ch2)); // read whole register of str2. Safe.
+        __ lslv(tmp2, tmp2, tmp4);
+        __ add(tmp4, tmp4, 1);
+        __ add(result, result, tmp4, __ LSR, LogBitsPerByte + str2_chr_shift);
+        __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte);
+        __ lsl(tmp2, tmp2, 1);
+        __ sub(str2, str2, str2_chr_size);
+      }
+      __ cmp(ch1, ch2);
+      __ br(__ NE, L_CMP_LOOP_NOMATCH);
+      __ b(DONE);
+    __ align(OptoLoopAlignment);
+    __ BIND(L_HAS_ZERO_LOOP_NOMATCH);
+      // 1) Restore "result" index. Index was wordSize/str2_chr_size * N until
+      // L_HAS_ZERO block. Byte octet was analyzed in L_HAS_ZERO_LOOP,
+      // so, result was increased at max by wordSize/str2_chr_size - 1, so,
+      // respective high bit wasn't changed. L_LOOP_PROCEED will increase
+      // result by analyzed characters value, so, we can just reset lower bits
+      // in result here. Clear 2 lower bits for UU/UL and 3 bits for LL
+      // 2) restore cnt1 and cnt2 values from "compressed" cnt2
+      // 3) advance str2 value to represent next str2 octet. result & 7/3 is
+      // index of last analyzed substring inside current octet. So, str2 in at
+      // respective start address. We need to advance it to next octet
+      __ andr(tmp2, result, wordSize/str2_chr_size - 1); // symbols analyzed
+      __ lsr(cnt1, cnt2, BitsPerByte * wordSize / 2);
+      __ bfm(result, zr, 0, 2 - str2_chr_shift);
+      __ sub(str2, str2, tmp2, __ LSL, str2_chr_shift); // restore str2
+      __ movw(cnt2, cnt2);
+      __ b(L_LOOP_PROCEED);
+    __ align(OptoLoopAlignment);
+    __ BIND(NOMATCH);
+      __ mov(result, -1);
+    __ BIND(DONE);
+      __ pop(spilled_regs, sp);
+      __ ret(lr);
+    return entry;
+  }
+
+  void generate_string_indexof_stubs() {
+    StubRoutines::aarch64::_string_indexof_linear_ll = generate_string_indexof_linear(true, true);
+    StubRoutines::aarch64::_string_indexof_linear_uu = generate_string_indexof_linear(false, false);
+    StubRoutines::aarch64::_string_indexof_linear_ul = generate_string_indexof_linear(true, false);
+  }
+
+  void inflate_and_store_2_fp_registers(bool generatePrfm,
+      FloatRegister src1, FloatRegister src2) {
+    Register dst = r1;
+    __ zip1(v1, __ T16B, src1, v0);
+    __ zip2(v2, __ T16B, src1, v0);
+    if (generatePrfm) {
+      __ prfm(Address(dst, SoftwarePrefetchHintDistance), PSTL1STRM);
+    }
+    __ zip1(v3, __ T16B, src2, v0);
+    __ zip2(v4, __ T16B, src2, v0);
+    __ st1(v1, v2, v3, v4, __ T16B, Address(__ post(dst, 64)));
+  }
+
+  // R0 = src
+  // R1 = dst
+  // R2 = len
+  // R3 = len >> 3
+  // V0 = 0
+  // v1 = loaded 8 bytes
+  address generate_large_byte_array_inflate() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "large_byte_array_inflate");
+    address entry = __ pc();
+    Label LOOP, LOOP_START, LOOP_PRFM, LOOP_PRFM_START, DONE;
+    Register src = r0, dst = r1, len = r2, octetCounter = r3;
+    const int large_loop_threshold = MAX(64, SoftwarePrefetchHintDistance)/8 + 4;
+
+    // do one more 8-byte read to have address 16-byte aligned in most cases
+    // also use single store instruction
+    __ ldrd(v2, __ post(src, 8));
+    __ sub(octetCounter, octetCounter, 2);
+    __ zip1(v1, __ T16B, v1, v0);
+    __ zip1(v2, __ T16B, v2, v0);
+    __ st1(v1, v2, __ T16B, __ post(dst, 32));
+    __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
+    __ cmp(octetCounter, large_loop_threshold);
+    __ br(__ LE, LOOP_START);
+    __ b(LOOP_PRFM_START);
+    __ bind(LOOP_PRFM);
+      __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
+    __ bind(LOOP_PRFM_START);
+      __ prfm(Address(src, SoftwarePrefetchHintDistance));
+      __ sub(octetCounter, octetCounter, 8);
+      __ cmp(octetCounter, large_loop_threshold);
+      inflate_and_store_2_fp_registers(true, v3, v4);
+      inflate_and_store_2_fp_registers(true, v5, v6);
+      __ br(__ GT, LOOP_PRFM);
+      __ cmp(octetCounter, 8);
+      __ br(__ LT, DONE);
+    __ bind(LOOP);
+      __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
+      __ bind(LOOP_START);
+      __ sub(octetCounter, octetCounter, 8);
+      __ cmp(octetCounter, 8);
+      inflate_and_store_2_fp_registers(false, v3, v4);
+      inflate_and_store_2_fp_registers(false, v5, v6);
+      __ br(__ GE, LOOP);
+    __ bind(DONE);
+      __ ret(lr);
+    return entry;
+  }
 
   /**
    *  Arguments:
@@ -5044,6 +5739,18 @@ class StubGenerator: public StubCodeGenerator {
     if (UseCRC32CIntrinsics) {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
+      StubRoutines::_dlog = generate_dlog();
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin)) {
+      StubRoutines::_dsin = generate_dsin_dcos(/* isCos = */ false);
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
+      StubRoutines::_dcos = generate_dsin_dcos(/* isCos = */ true);
+    }
   }
 
   void generate_all() {
@@ -5077,6 +5784,13 @@ class StubGenerator: public StubCodeGenerator {
     if (!UseSimpleArrayEquals) {
       StubRoutines::aarch64::_large_array_equals = generate_large_array_equals();
     }
+
+    generate_compare_long_strings();
+
+    generate_string_indexof_stubs();
+
+    // byte_array_inflate stub for large arrays.
+    StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
 
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();

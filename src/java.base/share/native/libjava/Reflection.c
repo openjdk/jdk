@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,4 +37,10 @@ JNIEXPORT jint JNICALL
 Java_jdk_internal_reflect_Reflection_getClassAccessFlags(JNIEnv *env, jclass unused, jclass cls)
 {
     return JVM_GetClassAccessFlags(env, cls);
+}
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_reflect_Reflection_areNestMates(JNIEnv *env, jclass unused, jclass current, jclass member)
+{
+  return JVM_AreNestMates(env, current, member);
 }

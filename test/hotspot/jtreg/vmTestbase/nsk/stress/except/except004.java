@@ -211,15 +211,15 @@ public class except004 {
         Object integerValue = new Integer(0);
         Object doubleValue = new Double(0);
         Object trash = null;
-        Field abraPrivateField;
         Field abraIntegerField;
         Field abraBooleanField;
+        Field extPrivateField;
         try {
-            abraPrivateField = Abra.class.getDeclaredField("DONT_TOUCH_ME");
             abraIntegerField = Abra.class.getDeclaredField("MAIN_CYR_NUMBER");
             abraBooleanField = Abra.class.getDeclaredField("NOT_AN_INTEGER");
+            extPrivateField = Ext.class.getDeclaredField("DONT_TOUCH_ME");
         } catch (NoSuchFieldException nsfe) {
-            out.println("Test initialisation failed: field not found in class Abra");
+            out.println("Test initialisation failed: field not found: " + nsfe.getMessage());
             return 2;
         }
 
@@ -369,7 +369,6 @@ public class except004 {
         // Check IllegalAccessException (positive):
         try {
             int junkIt = abraIntegerField.getInt(null); //   legal - should pass
-//          int junkIt = abraPrivateField.getInt(null); // illegal - should fail
             if (TRACE_ON)
                 log[messages++] = "Success: IllegalAccessException (positive)";
         } catch (IllegalAccessException iae) {
@@ -383,8 +382,7 @@ public class except004 {
 
         // Check IllegalAccessException (negative):
         try {
-//          int junkIt = abraIntegerField.getInt(null); //   legal - should pass
-            int junkIt = abraPrivateField.getInt(null); // illegal - should fail
+            int junkIt = extPrivateField.getInt(null); // illegal - should fail
             log[messages++] = "Failure: IllegalAccessException (negative)";
             exitCode = 2; // FAILED
         } catch (IllegalAccessException iae) {
@@ -512,7 +510,7 @@ public class except004 {
 
     /**
      * This class should be used to check <code>CloneNotSupportedException</code>,
-     * <code>IllegalAccessException</code>, and <code>IllegalArgumentException</code>.
+     * and <code>IllegalArgumentException</code>.
      * The class extends <code>except004</code> in order that its (protected)
      * method <code>clone()</code> be available from <code>except004</code>.
      */
@@ -524,10 +522,6 @@ public class except004 {
         public static class Cadabra implements Cloneable {
         }
 
-        /**
-         * Will try to incorrectly access to this field from outside this class.
-         */
-        private static final int DONT_TOUCH_ME = 666;
         /**
          * Will try to incorrectly access to this field from outside this class.
          */
@@ -550,4 +544,12 @@ public class except004 {
         public Abra(String nothingSpecial) {
         }
     }
+}
+
+/* Package accessible class that has non-accessible private member */
+class Ext {
+    /**
+     * Will try to incorrectly access to this field from outside this class.
+     */
+    private static final int DONT_TOUCH_ME = 666;
 }

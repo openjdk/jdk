@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8055008 8197901
+ * @bug 8055008 8197901 8010319
  * @summary Redefine EMCP and non-EMCP methods that are running in an infinite loop
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -34,10 +34,33 @@
  * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace,all=trace:file=all.log RedefineRunningMethods
  */
 // Test is executed with full trace logging redirected to a file to ensure there is no crash during logging anonymous classes - see JDK-8197901
+
+
+// package access top-level class to avoid problem with RedefineClassHelper
+// and nested types.
+class RedefineRunningMethods_B {
+    static int count1 = 0;
+    static int count2 = 0;
+    public static volatile boolean stop = false;
+    static void localSleep() {
+        try{
+            Thread.currentThread().sleep(10);//sleep for 10 ms
+        } catch(InterruptedException ie) {
+        }
+    }
+
+    public static void infinite() {
+        while (!stop) { count1++; localSleep(); }
+    }
+    public static void infinite_emcp() {
+        while (!stop) { count2++; localSleep(); }
+    }
+}
+
 public class RedefineRunningMethods {
 
     public static String newB =
-                "class RedefineRunningMethods$B {" +
+                "class RedefineRunningMethods_B {" +
                 "   static int count1 = 0;" +
                 "   static int count2 = 0;" +
                 "   public static volatile boolean stop = false;" +
@@ -56,7 +79,7 @@ public class RedefineRunningMethods {
                 "}";
 
     public static String evenNewerB =
-                "class RedefineRunningMethods$B {" +
+                "class RedefineRunningMethods_B {" +
                 "   static int count1 = 0;" +
                 "   static int count2 = 0;" +
                 "   public static volatile boolean stop = false;" +
@@ -72,50 +95,31 @@ public class RedefineRunningMethods {
                 "   }" +
                 "}";
 
-    static class B {
-        static int count1 = 0;
-        static int count2 = 0;
-        public static volatile boolean stop = false;
-        static void localSleep() {
-          try{
-            Thread.currentThread().sleep(10);//sleep for 10 ms
-          } catch(InterruptedException ie) {
-          }
-        }
-
-        public static void infinite() {
-            while (!stop) { count1++; localSleep(); }
-        }
-        public static void infinite_emcp() {
-            while (!stop) { count2++; localSleep(); }
-        }
-    }
-
 
     public static void main(String[] args) throws Exception {
 
         new Thread() {
             public void run() {
-                B.infinite();
+                RedefineRunningMethods_B.infinite();
             }
         }.start();
 
         new Thread() {
             public void run() {
-                B.infinite_emcp();
+                RedefineRunningMethods_B.infinite_emcp();
             }
         }.start();
 
-        RedefineClassHelper.redefineClass(B.class, newB);
+        RedefineClassHelper.redefineClass(RedefineRunningMethods_B.class, newB);
 
         System.gc();
 
-        B.infinite();
+        RedefineRunningMethods_B.infinite();
 
         // Start a thread with the second version of infinite_emcp running
         new Thread() {
             public void run() {
-                B.infinite_emcp();
+                RedefineRunningMethods_B.infinite_emcp();
             }
         }.start();
 
@@ -124,22 +128,22 @@ public class RedefineRunningMethods {
             System.gc();
         }
 
-        RedefineClassHelper.redefineClass(B.class, evenNewerB);
+        RedefineClassHelper.redefineClass(RedefineRunningMethods_B.class, evenNewerB);
         System.gc();
 
         for (int i = 0; i < 20 ; i++) {
-            B.infinite();
+            RedefineRunningMethods_B.infinite();
             String s = new String("some garbage");
             System.gc();
         }
 
-        B.infinite_emcp();
+        RedefineRunningMethods_B.infinite_emcp();
 
         // purge should clean everything up.
-        B.stop = true;
+        RedefineRunningMethods_B.stop = true;
 
         for (int i = 0; i < 20 ; i++) {
-            B.infinite();
+            RedefineRunningMethods_B.infinite();
             String s = new String("some garbage");
             System.gc();
         }

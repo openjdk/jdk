@@ -85,12 +85,12 @@ inline void ParCompactionManager::mark_and_push(T* p) {
 }
 
 template <typename T>
-inline void ParCompactionManager::MarkAndPushClosure::do_oop_nv(T* p) {
+inline void ParCompactionManager::MarkAndPushClosure::do_oop_work(T* p) {
   _compaction_manager->mark_and_push(p);
 }
 
-inline void ParCompactionManager::MarkAndPushClosure::do_oop(oop* p)       { do_oop_nv(p); }
-inline void ParCompactionManager::MarkAndPushClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
+inline void ParCompactionManager::MarkAndPushClosure::do_oop(oop* p)       { do_oop_work(p); }
+inline void ParCompactionManager::MarkAndPushClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline void ParCompactionManager::follow_klass(Klass* klass) {
   oop holder = klass->klass_holder();

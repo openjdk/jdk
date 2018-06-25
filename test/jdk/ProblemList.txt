@@ -533,10 +533,6 @@ java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-
 
 java/io/pathNames/GeneralWin32.java                             8180264 windows-all
 
-java/io/FileInputStream/UnreferencedFISClosesFd.java            8202292 linux-all
-java/io/FileOutputStream/UnreferencedFOSClosesFd.java           8202292 linux-all
-java/io/RandomAccessFile/UnreferencedRAFClosesFd.java           8202292 linux-all
-
 ############################################################################
 
 # jdk_management

@@ -34,7 +34,7 @@ class EdgeStore;
 class EdgeQueue;
 
 // Class responsible for iterating the heap depth-first
-class DFSClosure: public ExtendedOopClosure {
+class DFSClosure: public BasicOopIterateClosure {
  private:
   static EdgeStore* _edge_store;
   static BitSet*    _mark_bits;

@@ -690,12 +690,10 @@ objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {
 
 
 int Method::line_number_from_bci(int bci) const {
-  if (bci == SynchronizationEntryBCI) bci = 0;
-  assert(bci == 0 || 0 <= bci && bci < code_size(), "illegal bci");
   int best_bci  =  0;
   int best_line = -1;
-
-  if (has_linenumber_table()) {
+  if (bci == SynchronizationEntryBCI) bci = 0;
+  if (0 <= bci && bci < code_size() && has_linenumber_table()) {
     // The line numbers are a short array of 2-tuples [start_pc, line_number].
     // Not necessarily sorted and not necessarily one-to-one.
     CompressedLineNumberReadStream stream(compressed_linenumber_table());

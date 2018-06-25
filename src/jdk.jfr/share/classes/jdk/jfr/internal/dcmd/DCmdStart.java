@@ -25,19 +25,26 @@
 package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.OldObjectSample;
+import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.jfc.JFC;
 
 /**
@@ -51,7 +58,7 @@ final class DCmdStart extends AbstractDCmd {
      * Execute JFR.start.
      *
      * @param name optional name that can be used to identify recording.
-     * @param configurations names of settings files to use, i.e. "default" or
+     * @param settings names of settings files to use, i.e. "default" or
      *        "default.jfc".
      * @param delay delay before recording is started, in nanoseconds. Must be
      *        at least 1 second.
@@ -73,7 +80,19 @@ final class DCmdStart extends AbstractDCmd {
      * @throws DCmdException if recording could not be started
      */
     @SuppressWarnings("resource")
-    public String execute(String name, String[] configurations, Long delay, Long duration, Boolean disk, String path, Long maxAge, Long maxSize, Boolean dumpOnExit, Boolean pathToGcRoots) throws DCmdException {
+    public String execute(String name, String[] settings, Long delay, Long duration, Boolean disk, String path, Long maxAge, Long maxSize, Boolean dumpOnExit, Boolean pathToGcRoots) throws DCmdException {
+        if (LogTag.JFR_DCMD.shouldLog(LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing DCmdStart: name=" + name +
+                    ", settings=" + Arrays.asList(settings) +
+                    ", delay=" + delay +
+                    ", duration=" + duration +
+                    ", disk=" + disk+
+                    ", filename=" + path +
+                    ", maxage=" + maxAge +
+                    ", maxsize=" + maxSize +
+                    ", dumponexit =" + dumpOnExit +
+                    ", path-to-gc-roots=" + pathToGcRoots);
+        }
         if (name != null) {
             try {
                 Integer.parseInt(name);
@@ -86,25 +105,23 @@ final class DCmdStart extends AbstractDCmd {
         if (duration == null && Boolean.FALSE.equals(dumpOnExit) && path != null) {
             throw new DCmdException("Filename can only be set for a time bound recording or if dumponexit=true. Set duration/dumponexit or omit filename.");
         }
-        if (dumpOnExit == null && path != null) {
-            dumpOnExit = Boolean.TRUE;
-        }
+
 
         Map<String, String> s = new HashMap<>();
 
-        if (configurations == null || configurations.length == 0) {
-            configurations = new String[] { "default" };
+        if (settings == null || settings.length == 0) {
+            settings = new String[] { "default" };
         }
 
-        for (String configName : configurations) {
+        for (String configName : settings) {
             try {
                 s.putAll(JFC.createKnown(configName).getSettings());
             } catch (IOException | ParseException e) {
-                throw new DCmdException("Could not parse setting " + configurations[0], e);
+                throw new DCmdException("Could not parse setting " + settings[0], e);
             }
         }
 
-        Utils.updateSettingPathToGcRoots(s, pathToGcRoots);
+        OldObjectSample.updateSettingPathToGcRoots(s, pathToGcRoots);
 
         if (duration != null) {
             if (duration < 1000L * 1000L * 1000L) {
@@ -133,10 +150,24 @@ final class DCmdStart extends AbstractDCmd {
             recording.setToDisk(disk.booleanValue());
         }
         recording.setSettings(s);
+        SafePath safePath = null;
 
         if (path != null) {
             try {
-                recording.setDestination(Paths.get(path));
+                if (dumpOnExit == null) {
+                    // default to dumponexit=true if user specified filename
+                    dumpOnExit = Boolean.TRUE;
+                }
+                Path p = Paths.get(path);
+                if (Files.isDirectory(p) && Boolean.TRUE.equals(dumpOnExit)) {
+                    // Decide destination filename at dump time
+                    // Purposely avoid generating filename in Recording#setDestination due to
+                    // security concerns
+                    PrivateAccess.getInstance().getPlatformRecording(recording).setDumpOnExitDirectory(new SafePath(p));
+                } else {
+                    safePath = resolvePath(recording, path);
+                    recording.setDestination(safePath.toPath());
+                }
             } catch (IOException | InvalidPathException e) {
                 recording.close();
                 throw new DCmdException("Could not start recording, not able to write to file %s. %s ", path, e.getMessage());
@@ -175,10 +206,10 @@ final class DCmdStart extends AbstractDCmd {
             recording.setMaxSize(250*1024L*1024L);
         }
 
-        if (path != null && duration != null) {
+        if (safePath != null && duration != null) {
             println(" The result will be written to:");
             println();
-            printPath(new SafePath(path));
+            printPath(safePath);
         } else {
             println();
             println();

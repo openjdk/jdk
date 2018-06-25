@@ -40,7 +40,7 @@ class KlassRemSet;
 // method at the end of their own do_oop method!
 // Note: no do_oop defined, this is an abstract class.
 
-class OopsInGenClosure : public ExtendedOopClosure {
+class OopsInGenClosure : public OopIterateClosure {
  private:
   Generation*  _orig_gen;     // generation originally set in ctor
   Generation*  _gen;          // generation being scanned
@@ -62,7 +62,7 @@ class OopsInGenClosure : public ExtendedOopClosure {
   template <class T> void par_do_barrier(T* p);
 
  public:
-  OopsInGenClosure() : ExtendedOopClosure(NULL),
+  OopsInGenClosure() : OopIterateClosure(NULL),
     _orig_gen(NULL), _gen(NULL), _gen_boundary(NULL), _rs(NULL) {};
 
   OopsInGenClosure(Generation* gen);
@@ -81,11 +81,21 @@ class OopsInGenClosure : public ExtendedOopClosure {
 
 };
 
+class BasicOopsInGenClosure: public OopsInGenClosure {
+ public:
+  BasicOopsInGenClosure() : OopsInGenClosure() {}
+  BasicOopsInGenClosure(Generation* gen);
+
+  virtual bool do_metadata() { return false; }
+  virtual void do_klass(Klass* k) { ShouldNotReachHere(); }
+  virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
+};
+
 // Super class for scan closures. It contains code to dirty scanned class loader data.
-class OopsInClassLoaderDataOrGenClosure: public OopsInGenClosure {
+class OopsInClassLoaderDataOrGenClosure: public BasicOopsInGenClosure {
   ClassLoaderData* _scanned_cld;
  public:
-  OopsInClassLoaderDataOrGenClosure(Generation* g) : OopsInGenClosure(g), _scanned_cld(NULL) {}
+  OopsInClassLoaderDataOrGenClosure(Generation* g) : BasicOopsInGenClosure(g), _scanned_cld(NULL) {}
   void set_scanned_cld(ClassLoaderData* cld) {
     assert(cld == NULL || _scanned_cld == NULL, "Must be");
     _scanned_cld = cld;
@@ -110,8 +120,6 @@ class ScanClosure: public OopsInClassLoaderDataOrGenClosure {
   ScanClosure(DefNewGeneration* g, bool gc_barrier);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p);
-  inline void do_oop_nv(narrowOop* p);
 };
 
 // Closure for scanning DefNewGeneration.
@@ -129,8 +137,6 @@ class FastScanClosure: public OopsInClassLoaderDataOrGenClosure {
   FastScanClosure(DefNewGeneration* g, bool gc_barrier);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p);
-  inline void do_oop_nv(narrowOop* p);
 };
 
 #endif // INCLUDE_SERIALGC
@@ -146,22 +152,21 @@ class CLDScanClosure: public CLDClosure {
   void do_cld(ClassLoaderData* cld);
 };
 
-class FilteringClosure: public ExtendedOopClosure {
+class FilteringClosure: public OopIterateClosure {
  private:
   HeapWord*   _boundary;
-  ExtendedOopClosure* _cl;
+  OopIterateClosure* _cl;
  protected:
   template <class T> inline void do_oop_work(T* p);
  public:
-  FilteringClosure(HeapWord* boundary, ExtendedOopClosure* cl) :
-    ExtendedOopClosure(cl->ref_discoverer()), _boundary(boundary),
+  FilteringClosure(HeapWord* boundary, OopIterateClosure* cl) :
+    OopIterateClosure(cl->ref_discoverer()), _boundary(boundary),
     _cl(cl) {}
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p);
-  inline void do_oop_nv(narrowOop* p);
-  virtual bool do_metadata()          { return do_metadata_nv(); }
-  inline bool do_metadata_nv()        { assert(!_cl->do_metadata(), "assumption broken, must change to 'return _cl->do_metadata()'"); return false; }
+  virtual bool do_metadata()            { assert(!_cl->do_metadata(), "assumption broken, must change to 'return _cl->do_metadata()'"); return false; }
+  virtual void do_klass(Klass*)         { ShouldNotReachHere(); }
+  virtual void do_cld(ClassLoaderData*) { ShouldNotReachHere(); }
 };
 
 #if INCLUDE_SERIALGC
@@ -179,8 +184,6 @@ class ScanWeakRefClosure: public OopClosure {
   ScanWeakRefClosure(DefNewGeneration* g);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
-  inline void do_oop_nv(oop* p);
-  inline void do_oop_nv(narrowOop* p);
 };
 
 #endif // INCLUDE_SERIALGC

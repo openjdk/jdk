@@ -351,7 +351,7 @@ Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, in
       Node*    elem   = expand_multianewarray(array_klass_1, &lengths[1], ndimensions-1, nargs);
       intptr_t offset = header + ((intptr_t)i << LogBytesPerHeapOop);
       Node*    eaddr  = basic_plus_adr(array, offset);
-      access_store_at(control(), array, eaddr, adr_type, elem, elemtype, T_OBJECT, IN_HEAP | IN_HEAP_ARRAY);
+      access_store_at(control(), array, eaddr, adr_type, elem, elemtype, T_OBJECT, IN_HEAP | IS_ARRAY);
     }
   }
   return array;

@@ -34,6 +34,8 @@ final class BufferMismatch {
     static int mismatch(ByteBuffer a, int aOff, ByteBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 7) {
+            if (a.get(aOff) != b.get(bOff))
+                return 0;
             i = ArraysSupport.vectorizedMismatch(
                     a.base(), a.address + aOff,
                     b.base(), b.address + bOff,
@@ -56,6 +58,8 @@ final class BufferMismatch {
         // (order is null) then the slow path is taken
         if (length > 3 && a.charRegionOrder() == b.charRegionOrder()
             && a.charRegionOrder() != null && b.charRegionOrder() != null) {
+            if (a.get(aOff) != b.get(bOff))
+                return 0;
             i = ArraysSupport.vectorizedMismatch(
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_CHAR_INDEX_SCALE),
@@ -74,6 +78,8 @@ final class BufferMismatch {
     static int mismatch(ShortBuffer a, int aOff, ShortBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 3 && a.order() == b.order()) {
+            if (a.get(aOff) != b.get(bOff))
+                return 0;
             i = ArraysSupport.vectorizedMismatch(
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_SHORT_INDEX_SCALE),
@@ -92,6 +98,8 @@ final class BufferMismatch {
     static int mismatch(IntBuffer a, int aOff, IntBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 1 && a.order() == b.order()) {
+            if (a.get(aOff) != b.get(bOff))
+                return 0;
             i = ArraysSupport.vectorizedMismatch(
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE),
@@ -110,11 +118,13 @@ final class BufferMismatch {
     static int mismatch(FloatBuffer a, int aOff, FloatBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 1 && a.order() == b.order()) {
-            i = ArraysSupport.vectorizedMismatch(
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE);
+            if (Float.floatToRawIntBits(a.get(aOff)) == Float.floatToRawIntBits(b.get(bOff))) {
+                i = ArraysSupport.vectorizedMismatch(
+                        a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
+                        b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE),
+                        length,
+                        ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE);
+            }
             // Mismatched
             if (i >= 0) {
                 // Check if mismatch is not associated with two NaN values; and
@@ -146,6 +156,8 @@ final class BufferMismatch {
     static int mismatch(LongBuffer a, int aOff, LongBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 0 && a.order() == b.order()) {
+            if (a.get(aOff) != b.get(bOff))
+                return 0;
             i = ArraysSupport.vectorizedMismatch(
                     a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
                     b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE),
@@ -163,11 +175,13 @@ final class BufferMismatch {
     static int mismatch(DoubleBuffer a, int aOff, DoubleBuffer b, int bOff, int length) {
         int i = 0;
         if (length > 0 && a.order() == b.order()) {
-            i = ArraysSupport.vectorizedMismatch(
-                    a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
-                    b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
-                    length,
-                    ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            if (Double.doubleToRawLongBits(a.get(aOff)) == Double.doubleToRawLongBits(b.get(bOff))) {
+                i = ArraysSupport.vectorizedMismatch(
+                        a.base(), a.address + (aOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
+                        b.base(), b.address + (bOff << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE),
+                        length,
+                        ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+            }
             // Mismatched
             if (i >= 0) {
                 // Check if mismatch is not associated with two NaN values; and

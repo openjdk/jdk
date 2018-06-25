@@ -43,7 +43,7 @@
 
 void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                             Register addr, Register count) {
-  bool dest_uninitialized = (decorators & AS_DEST_NOT_INITIALIZED) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
   // With G1, don't generate the call if we statically know that the target in uninitialized
   if (!dest_uninitialized) {
     Register tmp = O5;
@@ -406,9 +406,9 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
   // No need for post barrier if storing NULL
   bool needs_post_barrier = val != G0 && in_heap;
 
-  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool precise = on_array || on_anonymous;
+  bool precise = is_array || on_anonymous;
 
   Register index = dst.has_index() ? dst.index() : noreg;
   int disp = dst.has_disp() ? dst.disp() : 0;

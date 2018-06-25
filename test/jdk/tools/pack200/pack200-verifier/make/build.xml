@@ -22,18 +22,18 @@
   <target name="compile" depends="init">
     <!-- Compile the java code from ${src} into ${build} -->
      <javac 
-	   source="1.8"
+	   source="1.9"
 	   srcdir="${src}"
 	   destdir="${build}/classes"
 	   verbose="no"
 	   debug="on">
-       <compilerarg value="--add-exports=jdk.jdeps/com.sun.tools.classfile"/>
+       <compilerarg line="--add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED"/>
      </javac>
   </target>
 
   <target name="doc" depends="init, compile">
       <javadoc
-        source="1.8"
+        source="1.9"
         sourcepath="${src}"
         destdir="${api}"
       />

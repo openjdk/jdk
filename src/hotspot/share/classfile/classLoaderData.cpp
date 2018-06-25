@@ -109,10 +109,9 @@ void ClassLoaderData::init_null_class_loader_data() {
 // it will be available for error messages, logging, JFR, etc.  The name
 // and klass are available after the class_loader oop is no longer alive,
 // during unloading.
-void ClassLoaderData::initialize_name_and_klass(Handle class_loader) {
+void ClassLoaderData::initialize_name(Handle class_loader) {
   Thread* THREAD = Thread::current();
   ResourceMark rm(THREAD);
-  _class_loader_klass = class_loader->klass();
 
   // Obtain the class loader's name.  If the class loader's name was not
   // explicitly set during construction, the CLD's _name field will be null.
@@ -159,6 +158,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
 
   if (!h_class_loader.is_null()) {
     _class_loader = _handles.add(h_class_loader());
+    _class_loader_klass = h_class_loader->klass();
   }
 
   if (!is_anonymous) {
@@ -951,9 +951,11 @@ const char* ClassLoaderData::loader_name() const {
 const char* ClassLoaderData::loader_name_and_id() const {
   if (_class_loader_klass == NULL) {
     return "'" BOOTSTRAP_LOADER_NAME "'";
-  } else {
-    assert(_name_and_id != NULL, "encountered a class loader null name and id");
+  } else if (_name_and_id != NULL) {
     return _name_and_id->as_C_string();
+  } else {
+    // May be called in a race before _name_and_id is initialized.
+    return _class_loader_klass->external_name();
   }
 }
 
@@ -1069,10 +1071,10 @@ ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool is_anony
 
 ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous) {
   ClassLoaderData* loader_data = add_to_graph(loader, is_anonymous);
-  // Initialize name and class after the loader data is added to the CLDG
-  // because adding the Symbol for the name might safepoint.
+  // Initialize _name and _name_and_id after the loader data is added to the
+  // CLDG because adding the Symbol for _name and _name_and_id might safepoint.
   if (loader.not_null()) {
-    loader_data->initialize_name_and_klass(loader);
+    loader_data->initialize_name(loader);
   }
   return loader_data;
 }

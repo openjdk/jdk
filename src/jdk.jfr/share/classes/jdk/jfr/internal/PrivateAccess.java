@@ -92,4 +92,6 @@ public abstract class PrivateAccess {
     public abstract void setAnnotations(SettingDescriptor s, List<AnnotationElement> a);
 
     public abstract boolean isUnsigned(ValueDescriptor v);
+
+    public abstract PlatformRecorder getPlatformRecorder();
 }

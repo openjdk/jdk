@@ -1190,7 +1190,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void save_sweep_limit();
 
   // More iteration support
-  virtual void oop_iterate(ExtendedOopClosure* cl);
+  virtual void oop_iterate(OopIterateClosure* cl);
   virtual void safe_object_iterate(ObjectClosure* cl);
   virtual void object_iterate(ObjectClosure* cl);
 
@@ -1307,7 +1307,7 @@ class ParMarkFromRootsClosure: public BitMapClosure {
 
 // The following closures are used to do certain kinds of verification of
 // CMS marking.
-class PushAndMarkVerifyClosure: public MetadataAwareOopClosure {
+class PushAndMarkVerifyClosure: public MetadataVisitingOopIterateClosure {
   CMSCollector*    _collector;
   MemRegion        _span;
   CMSBitMap*       _verification_bm;

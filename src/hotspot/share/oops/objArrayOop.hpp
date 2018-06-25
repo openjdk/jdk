@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_OOPS_OBJARRAYOOP_HPP
 #define SHARE_VM_OOPS_OBJARRAYOOP_HPP
 
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "oops/arrayOop.hpp"
 #include "utilities/align.hpp"
 
@@ -107,12 +106,10 @@ private:
 
   Klass* element_klass();
 
+public:
   // special iterators for index ranges, returns size of object
-#define ObjArrayOop_OOP_ITERATE_DECL(OopClosureType, nv_suffix)     \
+  template <typename OopClosureType>
   void oop_iterate_range(OopClosureType* blk, int start, int end);
-
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(ObjArrayOop_OOP_ITERATE_DECL)
 };
 
 #endif // SHARE_VM_OOPS_OBJARRAYOOP_HPP

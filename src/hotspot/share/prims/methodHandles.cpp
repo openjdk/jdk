@@ -238,7 +238,12 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
             vmindex);
        m->access_flags().print_on(tty);
        if (!m->is_abstract()) {
-         tty->print("default");
+         if (!m->is_private()) {
+           tty->print("default");
+         }
+         else {
+           tty->print("private-intf");
+         }
        }
        tty->cr();
     }
@@ -292,6 +297,9 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
     } else if (m->is_initializer()) {
       flags |= IS_CONSTRUCTOR | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
     } else {
+      // "special" reflects that this is a direct call, not that it
+      // necessarily originates from an invokespecial. We can also do
+      // direct calls for private and/or final non-static methods.
       flags |= IS_METHOD      | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
     }
     break;

@@ -154,20 +154,7 @@ public class InvokeInterfaceICCE extends SelectionResolutionTest {
                         Template.IfaceMethodrefNotEqualsExpected,
                         Template.IgnoredAbstract,
                         Template.AllCallsiteCases,
-                        Template.IfaceMethodrefAmbiguousResolvedIsIface),
-
-                /* Group 175: private method in interface */
-                new TestGroup.Simple(initBuilder,
-                        Template.SetInvoke(SelectionResolutionTestCase.InvokeInstruction.INVOKEINTERFACE),
-                        Template.ResultCombo(EnumSet.of(Template.Kind.INTERFACE),
-                                             EnumSet.of(MethodData.Access.PRIVATE),
-                                             EnumSet.of(MethodData.Context.INSTANCE),
-                                             EnumSet.of(ClassData.Package.SAME)),
-                        Template.OverrideAbstractExpectedIface,
-                        Template.MethodrefEqualsExpected,
-                        Template.IgnoredAbstract,
-                        Template.CallsiteEqualsMethodref,
-                        Template.IfaceMethodrefSelection)
+                        Template.IfaceMethodrefAmbiguousResolvedIsIface)
             );
 
     private InvokeInterfaceICCE() {

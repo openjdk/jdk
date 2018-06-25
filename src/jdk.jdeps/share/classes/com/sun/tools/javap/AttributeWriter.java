@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import com.sun.tools.classfile.CharacterRangeTable_attribute.Entry;
 import com.sun.tools.classfile.Code_attribute;
 import com.sun.tools.classfile.CompilationID_attribute;
 import com.sun.tools.classfile.ConstantPool;
+import com.sun.tools.classfile.ConstantPool.CONSTANT_Class_info;
 import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.ConstantValue_attribute;
 import com.sun.tools.classfile.DefaultAttribute;
@@ -53,6 +54,8 @@ import com.sun.tools.classfile.ModuleMainClass_attribute;
 import com.sun.tools.classfile.ModulePackages_attribute;
 import com.sun.tools.classfile.ModuleResolution_attribute;
 import com.sun.tools.classfile.ModuleTarget_attribute;
+import com.sun.tools.classfile.NestHost_attribute;
+import com.sun.tools.classfile.NestMembers_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleParameterAnnotations_attribute;
 import com.sun.tools.classfile.RuntimeInvisibleTypeAnnotations_attribute;
@@ -397,6 +400,14 @@ public class AttributeWriter extends BasicWriter
         return null;
     }
 
+    @Override
+    public Void visitNestHost(NestHost_attribute attr, Void aVoid) {
+        print("NestHost: ");
+        constantWriter.write(attr.top_index);
+        println();
+        return null;
+    }
+
     private String getJavaClassName(ModuleMainClass_attribute a) {
         try {
             return getJavaName(a.getMainClassName(constant_pool));
@@ -684,6 +695,22 @@ public class AttributeWriter extends BasicWriter
         } catch (ConstantPoolException e) {
             return report(e);
         }
+    }
+
+    @Override
+    public Void visitNestMembers(NestMembers_attribute attr, Void aVoid) {
+        println("NestMembers:");
+        indent(+1);
+        try {
+            CONSTANT_Class_info[] children = attr.getChildren(constant_pool);
+            for (int i = 0; i < attr.members_indexes.length; i++) {
+                println(constantWriter.stringValue(children[i]));
+            }
+            indent(-1);
+        } catch (ConstantPoolException ex) {
+            throw new AssertionError(ex);
+        }
+        return null;
     }
 
     @Override

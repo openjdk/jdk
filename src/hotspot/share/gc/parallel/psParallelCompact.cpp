@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -53,8 +54,10 @@
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
 #include "oops/methodData.hpp"
@@ -3069,14 +3072,22 @@ void MoveAndUpdateClosure::copy_partial_obj()
 
 void InstanceKlass::oop_pc_update_pointers(oop obj, ParCompactionManager* cm) {
   PSParallelCompact::AdjustPointerClosure closure(cm);
-  oop_oop_iterate_oop_maps<true>(obj, &closure);
+  if (UseCompressedOops) {
+    oop_oop_iterate_oop_maps<narrowOop>(obj, &closure);
+  } else {
+    oop_oop_iterate_oop_maps<oop>(obj, &closure);
+  }
 }
 
 void InstanceMirrorKlass::oop_pc_update_pointers(oop obj, ParCompactionManager* cm) {
   InstanceKlass::oop_pc_update_pointers(obj, cm);
 
   PSParallelCompact::AdjustPointerClosure closure(cm);
-  oop_oop_iterate_statics<true>(obj, &closure);
+  if (UseCompressedOops) {
+    oop_oop_iterate_statics<narrowOop>(obj, &closure);
+  } else {
+    oop_oop_iterate_statics<oop>(obj, &closure);
+  }
 }
 
 void InstanceClassLoaderKlass::oop_pc_update_pointers(oop obj, ParCompactionManager* cm) {
@@ -3118,7 +3129,11 @@ void InstanceRefKlass::oop_pc_update_pointers(oop obj, ParCompactionManager* cm)
 void ObjArrayKlass::oop_pc_update_pointers(oop obj, ParCompactionManager* cm) {
   assert(obj->is_objArray(), "obj must be obj array");
   PSParallelCompact::AdjustPointerClosure closure(cm);
-  oop_oop_iterate_elements<true>(objArrayOop(obj), &closure);
+  if (UseCompressedOops) {
+    oop_oop_iterate_elements<narrowOop>(objArrayOop(obj), &closure);
+  } else {
+    oop_oop_iterate_elements<oop>(objArrayOop(obj), &closure);
+  }
 }
 
 void TypeArrayKlass::oop_pc_update_pointers(oop obj, ParCompactionManager* cm) {

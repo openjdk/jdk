@@ -32,42 +32,38 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-// MetadataAwareOopClosure and MetadataAwareOopsInGenClosure are duplicated,
+// MetadataVisitingOopIterateClosure and MetadataVisitingOopsInGenClosure are duplicated,
 // until we get rid of OopsInGenClosure.
 
-inline void MetadataAwareOopsInGenClosure::do_klass_nv(Klass* k) {
+inline void MetadataVisitingOopsInGenClosure::do_klass(Klass* k) {
   ClassLoaderData* cld = k->class_loader_data();
-  do_cld_nv(cld);
+  MetadataVisitingOopsInGenClosure::do_cld(cld);
 }
-inline void MetadataAwareOopsInGenClosure::do_klass(Klass* k) { do_klass_nv(k); }
 
-inline void MetadataAwareOopsInGenClosure::do_cld_nv(ClassLoaderData* cld) {
+inline void MetadataVisitingOopsInGenClosure::do_cld(ClassLoaderData* cld) {
   bool claim = true;  // Must claim the class loader data before processing.
   cld->oops_do(this, claim);
 }
 
 // Decode the oop and call do_oop on it.
-#define DO_OOP_WORK_IMPL(cls)                               \
-  template <class T> void cls::do_oop_work(T* p) {          \
-    T heap_oop = RawAccess<>::oop_load(p);                  \
-    if (!CompressedOops::is_null(heap_oop)) {               \
-      oop obj = CompressedOops::decode_not_null(heap_oop);  \
-      do_oop(obj);                                          \
-    }                                                       \
-  }
-
-#define DO_OOP_WORK_NV_IMPL(cls)                              \
-  DO_OOP_WORK_IMPL(cls)                                       \
-  void cls::do_oop_nv(oop* p)       { cls::do_oop_work(p); }  \
-  void cls::do_oop_nv(narrowOop* p) { cls::do_oop_work(p); }
+#define DO_OOP_WORK_IMPL(cls)                                \
+  template <class T> void cls::do_oop_work(T* p) {           \
+    T heap_oop = RawAccess<>::oop_load(p);                   \
+    if (!CompressedOops::is_null(heap_oop)) {                \
+      oop obj = CompressedOops::decode_not_null(heap_oop);   \
+      do_oop(obj);                                           \
+    }                                                        \
+  }                                                          \
+  inline void cls::do_oop(oop* p)       { do_oop_work(p); }  \
+  inline void cls::do_oop(narrowOop* p) { do_oop_work(p); }
 
 DO_OOP_WORK_IMPL(MarkRefsIntoClosure)
 DO_OOP_WORK_IMPL(ParMarkRefsIntoClosure)
 DO_OOP_WORK_IMPL(MarkRefsIntoVerifyClosure)
-DO_OOP_WORK_NV_IMPL(PushAndMarkClosure)
-DO_OOP_WORK_NV_IMPL(ParPushAndMarkClosure)
-DO_OOP_WORK_NV_IMPL(MarkRefsIntoAndScanClosure)
-DO_OOP_WORK_NV_IMPL(ParMarkRefsIntoAndScanClosure)
+DO_OOP_WORK_IMPL(PushAndMarkClosure)
+DO_OOP_WORK_IMPL(ParPushAndMarkClosure)
+DO_OOP_WORK_IMPL(MarkRefsIntoAndScanClosure)
+DO_OOP_WORK_IMPL(ParMarkRefsIntoAndScanClosure)
 
 // Trim our work_queue so its length is below max at return
 inline void ParMarkRefsIntoAndScanClosure::trim_queue(uint max) {
@@ -84,10 +80,10 @@ inline void ParMarkRefsIntoAndScanClosure::trim_queue(uint max) {
   }
 }
 
-DO_OOP_WORK_NV_IMPL(PushOrMarkClosure)
-DO_OOP_WORK_NV_IMPL(ParPushOrMarkClosure)
-DO_OOP_WORK_NV_IMPL(CMSKeepAliveClosure)
-DO_OOP_WORK_NV_IMPL(CMSInnerParMarkAndPushClosure)
+DO_OOP_WORK_IMPL(PushOrMarkClosure)
+DO_OOP_WORK_IMPL(ParPushOrMarkClosure)
+DO_OOP_WORK_IMPL(CMSKeepAliveClosure)
+DO_OOP_WORK_IMPL(CMSInnerParMarkAndPushClosure)
 DO_OOP_WORK_IMPL(CMSParKeepAliveClosure)
 
 #endif // SHARE_VM_GC_CMS_CMSOOPCLOSURES_INLINE_HPP

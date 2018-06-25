@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @bug 8025260 8016839
- * @summary Ensure that AbstractMethodError and IllegalAccessError are thrown appropriately, not NullPointerException
+ * @bug 8025260 8016839 8046171
+ * @summary Ensure that correct exceptions are thrown, not NullPointerException
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @library / .
  *
@@ -33,6 +33,13 @@
  * @run main/othervm -Xint compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
  * @run main/othervm -Xcomp compiler.jsr292.methodHandleExceptions.TestAMEnotNPE
  */
+
+// Since this test was written the specification for interface method selection has been
+// revised (JEP 181 - Nestmates) so that private methods are never selected, as they never
+// override any inherited method. So where a private method was previously selected
+// and then resulted in IllegalAccessError, the private method is skipped and the invocation
+// will either succeed or fail based on what other implementations are found in the inheritance
+// hierarchy. This is explained for each test below.
 
 package compiler.jsr292.methodHandleExceptions;
 
@@ -91,43 +98,41 @@ public class TestAMEnotNPE {
             }
         }
 
-        try {
-            System.out.println("TRYING p.D.m PRIVATE interface-invoked as p.I.m, p.D extends p.F, p.F.m FINAL");
-            tryAndCheckThrown(lt, bytesForDprivateSubWhat("p/F"),
-                    "p.D extends p.F (p.F implements p.I, FINAL public m), private m",
-                    IllegalAccessError.class, "pD_ext_pF");
-            // We'll take either a VerifyError (pre 2013-11-30)
-            // or an IllegalAccessError (post 2013-11-22)
-        } catch (VerifyError ve) {
-            System.out.println("Saw expected VerifyError " + ve);
-        }
+        System.out.println("TRYING p.D.m PRIVATE interface-invoked as p.I.m, p.D extends p.F, p.F.m FINAL");
+        System.out.println(" - should invoke p.F.m as private p.D.m is skipped for selection");
+        tryAndCheckThrown(lt, bytesForDprivateSubWhat("p/F"),
+                          "p.D extends p.F (p.F implements p.I, FINAL public m), private m",
+                          null /* should succeed */, "pD_ext_pF");
         System.out.println();
 
         System.out.println("TRYING p.D.m PRIVATE interface-invoked as p.I.m, p.D extends p.E");
+        System.out.println(" - should invoke p.E.m as private p.D.m is skipped for selection");
         tryAndCheckThrown(lt, bytesForDprivateSubWhat("p/E"),
-                "p.D extends p.E (p.E implements p.I, public m), private m",
-                IllegalAccessError.class, "pD_ext_pE");
+                          "p.D extends p.E (p.E implements p.I, public m), private m",
+                          null /* should succeed */, "pD_ext_pE");
 
         System.out.println("TRYING p.D.m ABSTRACT interface-invoked as p.I.m");
         tryAndCheckThrown(lt, bytesForD(),
-                "D extends abstract C, no m",
-                AbstractMethodError.class, "pD_ext_pC");
+                          "D extends abstract C, no m",
+                          AbstractMethodError.class, "pD_ext_pC");
 
         System.out.println("TRYING q.D.m PACKAGE interface-invoked as p.I.m");
         tryAndCheckThrown(lt, "q.D", bytesForDsomeAccess("q/D", 0),
-                "q.D implements p.I, protected m", IllegalAccessError.class,
-                "qD_m_pp_imp_pI");
+                          "q.D implements p.I, protected m",
+                          IllegalAccessError.class, "qD_m_pp_imp_pI");
 
         // Note jar file name is used in the plural-arg case.
         System.out.println("TRYING p.D.m PRIVATE interface-invoked as p.I.m");
+        System.out.println(" - should invoke p.I.m as private p.D.m is skipped for selection");
         tryAndCheckThrown(lt, bytesForDsomeAccess("p/D", ACC_PRIVATE),
-                "p.D implements p.I, private m",
-                IllegalAccessError.class, "pD_m_pri_imp_pI");
+                          "p.D implements p.I, private m",
+                          null /* should succeed */, "pD_m_pri_imp_pI");
 
         // Plural-arg test.
         System.out.println("TRYING p.D.m PRIVATE MANY ARG interface-invoked as p.I.m");
+        System.out.println(" - should invoke p.I.m as private p.D.m is skipped for selection");
         tryAndCheckThrownMany(lt, bytesForDsomeAccess("p/D", ACC_PRIVATE),
-                "p.D implements p.I, private m", IllegalAccessError.class);
+                              "p.D implements p.I, private m", null /* should succeed */);
 
         if (lt.size() > 0) {
             System.out.flush();

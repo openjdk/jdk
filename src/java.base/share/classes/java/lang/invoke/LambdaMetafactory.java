@@ -61,7 +61,13 @@ import java.util.Arrays;
  *     parameters</em>, which must be provided as arguments to the
  *     {@code CallSite} target, and which may be early-bound to the behavior
  *     {@code MethodHandle}.  The number of captured parameters and their types
- *     are determined during linkage.</li>
+ *     are determined during linkage.
+ *     The identity of a function object produced by invoking the
+ *     {@code CallSite}'s target is unpredictable, and therefore
+ *     identity-sensitive operations (such as reference equality, object
+ *     locking, and {@code System.identityHashCode()} may produce different
+ *     results in different implementations, or even upon different invocations
+ *     in the same implementation.</li>
  *
  *     <li><em>Invocation</em> occurs when an implemented interface method
  *     is invoked on a function object.  This may occur many times for a single

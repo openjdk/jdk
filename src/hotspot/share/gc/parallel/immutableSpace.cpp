@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/parallel/immutableSpace.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/macros.hpp"
@@ -39,7 +40,7 @@ void ImmutableSpace::initialize(MemRegion mr) {
   _end = end;
 }
 
-void ImmutableSpace::oop_iterate(ExtendedOopClosure* cl) {
+void ImmutableSpace::oop_iterate(OopIterateClosure* cl) {
   HeapWord* obj_addr = bottom();
   HeapWord* t = end();
   // Could call objects iterate, but this is easier.

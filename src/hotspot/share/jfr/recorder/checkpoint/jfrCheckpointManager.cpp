@@ -66,7 +66,6 @@ JfrCheckpointManager::JfrCheckpointManager(JfrChunkWriter& cw) :
   _free_list_mspace(NULL),
   _epoch_transition_mspace(NULL),
   _lock(NULL),
-  _type_manager(NULL),
   _service_thread(NULL),
   _chunkwriter(cw),
   _checkpoint_epoch_state(JfrTraceIdEpoch::epoch()) {}
@@ -81,9 +80,7 @@ JfrCheckpointManager::~JfrCheckpointManager() {
   if (_lock != NULL) {
     delete _lock;
   }
-  if (_type_manager) {
-    delete _type_manager;
-  }
+  JfrTypeManager::clear();
 }
 
 static const size_t unlimited_mspace_size = 0;
@@ -109,14 +106,12 @@ bool JfrCheckpointManager::initialize() {
   if (_epoch_transition_mspace == NULL) {
     return false;
   }
-  assert(_type_manager == NULL, "invariant");
-  _type_manager = new JfrTypeManager();
-  if (_type_manager == NULL || !_type_manager->initialize()) {
-    return false;
-  }
   assert(_lock == NULL, "invariant");
   _lock = new Mutex(Monitor::leaf - 1, "Checkpoint mutex", Mutex::_allow_vm_block_flag, Monitor::_safepoint_check_never);
-  return _lock != NULL;
+  if (_lock == NULL) {
+    return false;
+  }
+  return JfrTypeManager::initialize();
 }
 
 bool JfrCheckpointManager::use_epoch_transition_mspace(const Thread* thread) const {
@@ -354,37 +349,32 @@ size_t JfrCheckpointManager::clear() {
   return discarder.processed();
 }
 
-bool JfrCheckpointManager::register_serializer(JfrTypeId id, bool require_safepoint, bool permit_cache, JfrSerializer* cs) {
-  assert(cs != NULL, "invariant");
-  return instance()._type_manager->register_serializer(id, require_safepoint, permit_cache, cs);
-}
-
 size_t JfrCheckpointManager::write_types() {
   JfrCheckpointWriter writer(false, true, Thread::current());
-  _type_manager->write_types(writer);
+  JfrTypeManager::write_types(writer);
   return writer.used_size();
 }
 
 size_t JfrCheckpointManager::write_safepoint_types() {
   // this is also a "flushpoint"
   JfrCheckpointWriter writer(true, true, Thread::current());
-  _type_manager->write_safepoint_types(writer);
+  JfrTypeManager::write_safepoint_types(writer);
   return writer.used_size();
 }
 
 void JfrCheckpointManager::write_type_set() {
-  _type_manager->write_type_set();
+  JfrTypeManager::write_type_set();
 }
 
 void JfrCheckpointManager::write_type_set_for_unloaded_classes() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
-  instance()._type_manager->write_type_set_for_unloaded_classes();
+  JfrTypeManager::write_type_set_for_unloaded_classes();
 }
 
 void JfrCheckpointManager::create_thread_checkpoint(JavaThread* jt) {
-  instance()._type_manager->create_thread_checkpoint(jt);
+  JfrTypeManager::create_thread_checkpoint(jt);
 }
 
 void JfrCheckpointManager::write_thread_checkpoint(JavaThread* jt) {
-  instance()._type_manager->write_thread_checkpoint(jt);
+  JfrTypeManager::write_thread_checkpoint(jt);
 }

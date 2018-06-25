@@ -104,8 +104,8 @@ class Access: public AllStatic {
 
   template <DecoratorSet expected_mo_decorators>
   static void verify_primitive_decorators() {
-    const DecoratorSet primitive_decorators = (AS_DECORATOR_MASK ^ AS_NO_KEEPALIVE ^ AS_DEST_NOT_INITIALIZED) |
-                                              IN_HEAP | IN_HEAP_ARRAY;
+    const DecoratorSet primitive_decorators = (AS_DECORATOR_MASK ^ AS_NO_KEEPALIVE) |
+                                              IN_HEAP | IS_ARRAY;
     verify_decorators<expected_mo_decorators | primitive_decorators>();
   }
 
@@ -113,15 +113,14 @@ class Access: public AllStatic {
   static void verify_oop_decorators() {
     const DecoratorSet oop_decorators = AS_DECORATOR_MASK | IN_DECORATOR_MASK |
                                         (ON_DECORATOR_MASK ^ ON_UNKNOWN_OOP_REF) | // no unknown oop refs outside of the heap
-                                        OOP_DECORATOR_MASK;
+                                        IS_ARRAY | IS_NOT_NULL | IS_DEST_UNINITIALIZED;
     verify_decorators<expected_mo_decorators | oop_decorators>();
   }
 
   template <DecoratorSet expected_mo_decorators>
   static void verify_heap_oop_decorators() {
     const DecoratorSet heap_oop_decorators = AS_DECORATOR_MASK | ON_DECORATOR_MASK |
-                                             OOP_DECORATOR_MASK | (IN_DECORATOR_MASK ^
-                                                                   (IN_NATIVE | IN_CONCURRENT_ROOT)); // no root accesses in the heap
+                                             IN_HEAP | IS_ARRAY | IS_NOT_NULL;
     verify_decorators<expected_mo_decorators | heap_oop_decorators>();
   }
 
@@ -135,8 +134,8 @@ protected:
   static inline bool oop_arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
                                    arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                    size_t length) {
-    verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |  IN_HEAP_ARRAY |
-                      AS_DECORATOR_MASK>();
+    verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |
+                      AS_DECORATOR_MASK | IS_ARRAY | IS_DEST_UNINITIALIZED>();
     return AccessInternal::arraycopy<decorators | INTERNAL_VALUE_IS_OOP>(src_obj, src_offset_in_bytes, src_raw,
                                                                          dst_obj, dst_offset_in_bytes, dst_raw,
                                                                          length);
@@ -146,8 +145,8 @@ protected:
   static inline void arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
                                arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                size_t length) {
-    verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP | IN_HEAP_ARRAY |
-                      AS_DECORATOR_MASK>();
+    verify_decorators<ARRAYCOPY_DECORATOR_MASK | IN_HEAP |
+                      AS_DECORATOR_MASK | IS_ARRAY>();
     AccessInternal::arraycopy<decorators>(src_obj, src_offset_in_bytes, src_raw,
                                           dst_obj, dst_offset_in_bytes, dst_raw,
                                           length);
@@ -300,8 +299,8 @@ class NativeAccess: public Access<IN_NATIVE | decorators> {};
 
 // Helper for array access.
 template <DecoratorSet decorators = INTERNAL_EMPTY>
-class ArrayAccess: public HeapAccess<IN_HEAP_ARRAY | decorators> {
-  typedef HeapAccess<IN_HEAP_ARRAY | decorators> AccessT;
+class ArrayAccess: public HeapAccess<IS_ARRAY | decorators> {
+  typedef HeapAccess<IS_ARRAY | decorators> AccessT;
 public:
   template <typename T>
   static inline void arraycopy(arrayOop src_obj, size_t src_offset_in_bytes,
@@ -354,7 +353,6 @@ void Access<decorators>::verify_decorators() {
   const DecoratorSet barrier_strength_decorators = decorators & AS_DECORATOR_MASK;
   STATIC_ASSERT(barrier_strength_decorators == 0 || ( // make sure barrier strength decorators are disjoint if set
     (barrier_strength_decorators ^ AS_NO_KEEPALIVE) == 0 ||
-    (barrier_strength_decorators ^ AS_DEST_NOT_INITIALIZED) == 0 ||
     (barrier_strength_decorators ^ AS_RAW) == 0 ||
     (barrier_strength_decorators ^ AS_NORMAL) == 0
   ));
@@ -378,7 +376,6 @@ void Access<decorators>::verify_decorators() {
   STATIC_ASSERT(location_decorators == 0 || ( // make sure location decorators are disjoint if set
     (location_decorators ^ IN_NATIVE) == 0 ||
     (location_decorators ^ IN_HEAP) == 0 ||
-    (location_decorators ^ (IN_HEAP | IN_HEAP_ARRAY)) == 0 ||
     (location_decorators ^ (IN_NATIVE | IN_CONCURRENT_ROOT)) == 0
   ));
 }

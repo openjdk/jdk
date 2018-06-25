@@ -28,6 +28,44 @@
 #include "gc/shared/gcLocker.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#if INCLUDE_JFR
+#include "jfr/metadata/jfrSerializer.hpp"
+#endif
+
+#if INCLUDE_JFR
+class ZStatisticsCounterTypeConstant : public JfrSerializer {
+public:
+  virtual void serialize(JfrCheckpointWriter& writer) {
+    writer.write_count(ZStatCounter::count());
+    for (ZStatCounter* counter = ZStatCounter::first(); counter != NULL; counter = counter->next()) {
+      writer.write_key(counter->id());
+      writer.write(counter->name());
+    }
+  }
+};
+
+class ZStatisticsSamplerTypeConstant : public JfrSerializer {
+public:
+  virtual void serialize(JfrCheckpointWriter& writer) {
+    writer.write_count(ZStatSampler::count());
+    for (ZStatSampler* sampler = ZStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+      writer.write_key(sampler->id());
+      writer.write(sampler->name());
+    }
+  }
+};
+
+static void register_jfr_type_serializers() {
+  JfrSerializer::register_serializer(TYPE_ZSTATISTICSCOUNTERTYPE,
+                                     false /* require_safepoint */,
+                                     true /* permit_cache */,
+                                     new ZStatisticsCounterTypeConstant());
+  JfrSerializer::register_serializer(TYPE_ZSTATISTICSSAMPLERTYPE,
+                                     false /* require_safepoint */,
+                                     true /* permit_cache */,
+                                     new ZStatisticsSamplerTypeConstant());
+}
+#endif
 
 ZTracer* ZTracer::_tracer = NULL;
 
@@ -35,7 +73,9 @@ ZTracer::ZTracer() :
     GCTracer(Z) {}
 
 void ZTracer::initialize() {
+  assert(_tracer == NULL, "Already initialized");
   _tracer = new (ResourceObj::C_HEAP, mtGC) ZTracer();
+  JFR_ONLY(register_jfr_type_serializers());
 }
 
 void ZTracer::send_stat_counter(uint32_t counter_id, uint64_t increment, uint64_t value) {

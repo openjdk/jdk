@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import jdk.test.lib.cli.predicate.NotPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
 
 /**
- * Generic test case for SHA-related options targeted to non-x86 and
- * non-SPARC CPUs.
+ * Generic test case for SHA-related options targeted to any CPU except
+ * AArch64, S390x, SPARC and X86.
  */
 public class GenericTestCaseForOtherCPU extends
         SHAOptionsBase.TestCase {
@@ -43,7 +43,8 @@ public class GenericTestCaseForOtherCPU extends
                               new OrPredicate(Platform::isS390x,
                               new OrPredicate(Platform::isSparc,
                               new OrPredicate(Platform::isPPC,
-                              new OrPredicate(Platform::isX64, Platform::isX86)))))));
+                              new OrPredicate(Platform::isX64,
+                                              Platform::isX86)))))));
     }
 
     @Override

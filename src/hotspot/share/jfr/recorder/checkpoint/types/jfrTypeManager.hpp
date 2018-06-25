@@ -24,49 +24,21 @@
 #ifndef SHARE_VM_JFR_CHECKPOINT_TYPES_JFRTYPEMANAGER_HPP
 #define SHARE_VM_JFR_CHECKPOINT_TYPES_JFRTYPEMANAGER_HPP
 
-#include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
-#include "jfr/utilities/jfrDoublyLinkedList.hpp"
-#include "jfr/utilities/jfrIterator.hpp"
 
-class JfrSerializerRegistration : public JfrCHeapObj {
- private:
-  JfrSerializerRegistration* _next;
-  JfrSerializerRegistration* _prev;
-  JfrSerializer* _serializer;
-  mutable JfrCheckpointBlobHandle _cache;
-  JfrTypeId _id;
-  bool _permit_cache;
+class JavaThread;
+class JfrCheckpointWriter;
 
+class JfrTypeManager : public AllStatic {
  public:
-  JfrSerializerRegistration(JfrTypeId id, bool permit_cache, JfrSerializer* serializer);
-  ~JfrSerializerRegistration();
-  JfrSerializerRegistration* next() const;
-  void set_next(JfrSerializerRegistration* next);
-  JfrSerializerRegistration* prev() const;
-  void set_prev(JfrSerializerRegistration* prev);
-  void invoke_serializer(JfrCheckpointWriter& writer) const;
-  JfrTypeId id() const;
+  static bool initialize();
+  static void clear();
+  static void write_types(JfrCheckpointWriter& writer);
+  static void write_safepoint_types(JfrCheckpointWriter& writer);
+  static void write_type_set();
+  static void write_type_set_for_unloaded_classes();
+  static void create_thread_checkpoint(JavaThread* jt);
+  static void write_thread_checkpoint(JavaThread* jt);
 };
 
-class JfrTypeManager : public JfrCHeapObj {
-  friend class JfrCheckpointManager;
- public:
-  typedef JfrDoublyLinkedList<JfrSerializerRegistration> List;
-  typedef StopOnNullIterator<const List> Iterator;
- private:
-  List _types;
-  List _safepoint_types;
-
-  ~JfrTypeManager();
-  bool initialize();
-  size_t number_of_registered_types() const;
-  void write_types(JfrCheckpointWriter& writer) const;
-  void write_safepoint_types(JfrCheckpointWriter& writer) const;
-  void write_type_set() const;
-  void write_type_set_for_unloaded_classes() const;
-  void create_thread_checkpoint(JavaThread* jt) const;
-  void write_thread_checkpoint(JavaThread* jt) const;
-  bool register_serializer(JfrTypeId id, bool require_safepoint, bool permit_cache, JfrSerializer* serializer);
-};
 #endif // SHARE_VM_JFR_CHECKPOINT_TYPES_JFRTYPEMANAGER_HPP

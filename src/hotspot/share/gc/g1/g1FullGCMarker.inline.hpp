@@ -28,6 +28,7 @@
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullGCMarker.hpp"
+#include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"

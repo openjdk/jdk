@@ -70,22 +70,22 @@
 ciField::ciField(ciInstanceKlass* klass, int index) :
     _known_to_link_with_put(NULL), _known_to_link_with_get(NULL) {
   ASSERT_IN_VM;
-  CompilerThread *thread = CompilerThread::current();
+  CompilerThread *THREAD = CompilerThread::current();
 
   assert(ciObjectFactory::is_initialized(), "not a shared field");
 
   assert(klass->get_instanceKlass()->is_linked(), "must be linked before using its constant-pool");
 
-  constantPoolHandle cpool(thread, klass->get_instanceKlass()->constants());
+  constantPoolHandle cpool(THREAD, klass->get_instanceKlass()->constants());
 
   // Get the field's name, signature, and type.
   Symbol* name  = cpool->name_ref_at(index);
-  _name = ciEnv::current(thread)->get_symbol(name);
+  _name = ciEnv::current(THREAD)->get_symbol(name);
 
   int nt_index = cpool->name_and_type_ref_index_at(index);
   int sig_index = cpool->signature_ref_index_at(nt_index);
   Symbol* signature = cpool->symbol_at(sig_index);
-  _signature = ciEnv::current(thread)->get_symbol(signature);
+  _signature = ciEnv::current(THREAD)->get_symbol(signature);
 
   BasicType field_type = FieldType::basic_type(signature);
 
@@ -95,12 +95,12 @@ ciField::ciField(ciInstanceKlass* klass, int index) :
     bool ignore;
     // This is not really a class reference; the index always refers to the
     // field's type signature, as a symbol.  Linkage checks do not apply.
-    _type = ciEnv::current(thread)->get_klass_by_index(cpool, sig_index, ignore, klass);
+    _type = ciEnv::current(THREAD)->get_klass_by_index(cpool, sig_index, ignore, klass);
   } else {
     _type = ciType::make(field_type);
   }
 
-  _name = (ciSymbol*)ciEnv::current(thread)->get_symbol(name);
+  _name = (ciSymbol*)ciEnv::current(THREAD)->get_symbol(name);
 
   // Get the field's declared holder.
   //
@@ -109,7 +109,7 @@ ciField::ciField(ciInstanceKlass* klass, int index) :
   int holder_index = cpool->klass_ref_index_at(index);
   bool holder_is_accessible;
 
-  ciKlass* generic_declared_holder = ciEnv::current(thread)->get_klass_by_index(cpool, holder_index,
+  ciKlass* generic_declared_holder = ciEnv::current(THREAD)->get_klass_by_index(cpool, holder_index,
                                                                                 holder_is_accessible,
                                                                                 klass);
 
@@ -126,7 +126,7 @@ ciField::ciField(ciInstanceKlass* klass, int index) :
     // handling in ciField::will_link and will result in a
     // java.lang.NoSuchFieldError exception being thrown by the compiled
     // code (the expected behavior in this case).
-    _holder = ciEnv::current(thread)->Object_klass();
+    _holder = ciEnv::current(THREAD)->Object_klass();
     _offset = -1;
     _is_constant = false;
     return;
@@ -164,10 +164,22 @@ ciField::ciField(ciInstanceKlass* klass, int index) :
   // to check access because it can erroneously succeed. If this check fails,
   // propagate the declared holder to will_link() which in turn will bail out
   // compilation for this field access.
-  if (!Reflection::verify_field_access(klass->get_Klass(), declared_holder->get_Klass(), canonical_holder, field_desc.access_flags(), true)) {
+  bool can_access = Reflection::verify_member_access(klass->get_Klass(),
+                                                     declared_holder->get_Klass(),
+                                                     canonical_holder,
+                                                     field_desc.access_flags(),
+                                                     true, false, THREAD);
+  if (!can_access) {
     _holder = declared_holder;
     _offset = -1;
     _is_constant = false;
+    // It's possible the access check failed due to a nestmate access check
+    // encountering an exception. We can't propagate the exception from here
+    // so we have to clear it. If the access check happens again in a different
+    // context then the exception will be thrown there.
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+    }
     return;
   }
 

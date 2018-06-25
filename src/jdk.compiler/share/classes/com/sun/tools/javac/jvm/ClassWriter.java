@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.stream.Collectors;
 
 import javax.tools.JavaFileManager;
 import javax.tools.FileObject;
@@ -1106,6 +1107,56 @@ public class ClassWriter extends ClassFile {
         endAttr(alenIdx);
     }
 
+    /**
+     * Write NestMembers attribute (if needed)
+     */
+    int writeNestMembersIfNeeded(ClassSymbol csym) {
+        ListBuffer<Symbol> nested = new ListBuffer<>();
+        listNested(csym, nested);
+        Set<Symbol> nestedUnique = new LinkedHashSet<>(nested);
+        if (csym.owner.kind == PCK && !nestedUnique.isEmpty()) {
+            int alenIdx = writeAttr(names.NestMembers);
+            databuf.appendChar(nestedUnique.size());
+            for (Symbol s : nestedUnique) {
+                databuf.appendChar(pool.put(s));
+            }
+            endAttr(alenIdx);
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * Write NestHost attribute (if needed)
+     */
+    int writeNestHostIfNeeded(ClassSymbol csym) {
+        if (csym.owner.kind != PCK) {
+            int alenIdx = writeAttr(names.NestHost);
+            databuf.appendChar(pool.put(csym.outermostClass()));
+            endAttr(alenIdx);
+            return 1;
+        }
+        return 0;
+    }
+
+    private void listNested(Symbol sym, ListBuffer<Symbol> seen) {
+        if (sym.kind != TYP) return;
+        ClassSymbol csym = (ClassSymbol)sym;
+        if (csym.owner.kind != PCK) {
+            seen.add(csym);
+        }
+        if (csym.members() != null) {
+            for (Symbol s : sym.members().getSymbols()) {
+                listNested(s, seen);
+            }
+        }
+        if (csym.trans_local != null) {
+            for (Symbol s : csym.trans_local) {
+                listNested(s, seen);
+            }
+        }
+    }
+
     /** Write "bootstrapMethods" attribute.
      */
     void writeBootstrapMethods() {
@@ -1834,6 +1885,13 @@ public class ClassWriter extends ClassFile {
             poolbuf.appendChar(target.minorVersion);
         }
         poolbuf.appendChar(target.majorVersion);
+
+        if (c.owner.kind != MDL) {
+            if (target.hasNestmateAccess()) {
+                acount += writeNestMembersIfNeeded(c);
+                acount += writeNestHostIfNeeded(c);
+            }
+        }
 
         writePool(c.pool);
 

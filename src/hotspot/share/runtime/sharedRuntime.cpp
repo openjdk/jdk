@@ -1959,14 +1959,27 @@ char* SharedRuntime::generate_class_cast_message(
 // must use a ResourceMark in order to correctly free the result.
 char* SharedRuntime::generate_class_cast_message(
     Klass* caster_klass, Klass* target_klass, Symbol* target_klass_name) {
-
-  const char* caster_name = caster_klass->class_loader_and_module_name();
+  const char* caster_name = caster_klass->external_name();
 
   assert(target_klass != NULL || target_klass_name != NULL, "one must be provided");
   const char* target_name = target_klass == NULL ? target_klass_name->as_C_string() :
-                                                   target_klass->class_loader_and_module_name();
+                                                   target_klass->external_name();
 
-  size_t msglen = strlen(caster_name) + strlen(" cannot be cast to ") + strlen(target_name) + 1;
+  size_t msglen = strlen(caster_name) + strlen("class ") + strlen(" cannot be cast to class ") + strlen(target_name) + 1;
+
+  const char* caster_klass_description = "";
+  const char* target_klass_description = "";
+  const char* klass_separator = "";
+  if (target_klass != NULL && caster_klass->module() == target_klass->module()) {
+    caster_klass_description = caster_klass->joint_in_module_of_loader(target_klass);
+  } else {
+    caster_klass_description = caster_klass->class_in_module_of_loader();
+    target_klass_description = (target_klass != NULL) ? target_klass->class_in_module_of_loader() : "";
+    klass_separator = (target_klass != NULL) ? "; " : "";
+  }
+
+  // add 3 for parenthesis and preceeding space
+  msglen += strlen(caster_klass_description) + strlen(target_klass_description) + strlen(klass_separator) + 3;
 
   char* message = NEW_RESOURCE_ARRAY_RETURN_NULL(char, msglen);
   if (message == NULL) {
@@ -1975,9 +1988,13 @@ char* SharedRuntime::generate_class_cast_message(
   } else {
     jio_snprintf(message,
                  msglen,
-                 "%s cannot be cast to %s",
+                 "class %s cannot be cast to class %s (%s%s%s)",
                  caster_name,
-                 target_name);
+                 target_name,
+                 caster_klass_description,
+                 klass_separator,
+                 target_klass_description
+                 );
   }
   return message;
 }

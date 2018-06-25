@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8174962
+ * @bug 8174962 8010319
  * @summary Redefine class with interface method call
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -39,19 +39,21 @@ import static jdk.test.lib.Asserts.assertEquals;
 interface I1 { default int m() { return 0; } }
 interface I2 extends I1 {}
 
-public class RedefineInterfaceCall {
-
-    public static class C implements I2 {
-        public int test(I2 i) {
-            return i.m(); // invokeinterface cpCacheEntry
-        }
+// package access top-level class to avoid problem with RedefineClassHelper
+// and nested types.
+class RedefineInterfaceCall_C implements I2 {
+    public int test(I2 i) {
+        return i.m(); // invokeinterface cpCacheEntry
     }
+}
+
+public class RedefineInterfaceCall {
 
     static String newI1 =
       "interface I1 { default int m() { return 1; } }";
 
     static String newC =
-        "public class RedefineInterfaceCall$C implements I2 { " +
+        "class RedefineInterfaceCall_C implements I2 { " +
         "  public int test(I2 i) { " +
         "    return i.m(); " +
         "  } " +
@@ -62,12 +64,12 @@ public class RedefineInterfaceCall {
     }
 
     public static void main(String[] args) throws Exception {
-        C c = new C();
+        RedefineInterfaceCall_C c = new RedefineInterfaceCall_C();
 
         assertEquals(test(c),   0);
         assertEquals(c.test(c), 0);
 
-        RedefineClassHelper.redefineClass(C.class, newC);
+        RedefineClassHelper.redefineClass(RedefineInterfaceCall_C.class, newC);
 
         assertEquals(c.test(c), 0);
 
@@ -76,7 +78,7 @@ public class RedefineInterfaceCall {
         assertEquals(test(c),   1);
         assertEquals(c.test(c), 1);
 
-        RedefineClassHelper.redefineClass(C.class, newC);
+        RedefineClassHelper.redefineClass(RedefineInterfaceCall_C.class, newC);
 
         assertEquals(c.test(c), 1);
     }

@@ -38,7 +38,6 @@
 #include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
-#include "gc/shared/specialized_oop_closures.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvmtifiles/jvmti.h"
@@ -145,6 +144,198 @@ static inline bool is_class_loader(const Symbol* class_name,
   return false;
 }
 
+// called to verify that k is a member of this nest
+bool InstanceKlass::has_nest_member(InstanceKlass* k, TRAPS) const {
+  if (_nest_members == NULL || _nest_members == Universe::the_empty_short_array()) {
+    if (log_is_enabled(Trace, class, nestmates)) {
+      ResourceMark rm(THREAD);
+      log_trace(class, nestmates)("Checked nest membership of %s in non-nest-host class %s",
+                                  k->external_name(), this->external_name());
+    }
+    return false;
+  }
+
+  if (log_is_enabled(Trace, class, nestmates)) {
+    ResourceMark rm(THREAD);
+    log_trace(class, nestmates)("Checking nest membership of %s in %s",
+                                k->external_name(), this->external_name());
+  }
+
+  // Check names first and if they match then check actual klass. This avoids
+  // resolving anything unnecessarily.
+  for (int i = 0; i < _nest_members->length(); i++) {
+    int cp_index = _nest_members->at(i);
+    Symbol* name = _constants->klass_name_at(cp_index);
+    if (name == k->name()) {
+      log_trace(class, nestmates)("- Found it at nest_members[%d] => cp[%d]", i, cp_index);
+
+      // names match so check actual klass - this may trigger class loading if
+      // it doesn't match (but that should be impossible)
+      Klass* k2 = _constants->klass_at(cp_index, CHECK_false);
+      if (k2 == k) {
+        log_trace(class, nestmates)("- class is listed as a nest member");
+        return true;
+      } else {
+        // same name but different klass!
+        log_trace(class, nestmates)(" - klass comparison failed!");
+        // can't have different classes for the same name, so we're done
+        return false;
+      }
+    }
+  }
+  log_trace(class, nestmates)("- class is NOT a nest member!");
+  return false;
+}
+
+// Return nest-host class, resolving, validating and saving it if needed.
+// In cases where this is called from a thread that can not do classloading
+// (such as a native JIT thread) then we simply return NULL, which in turn
+// causes the access check to return false. Such code will retry the access
+// from a more suitable environment later.
+InstanceKlass* InstanceKlass::nest_host(Symbol* validationException, TRAPS) {
+  InstanceKlass* nest_host_k = _nest_host;
+  if (nest_host_k == NULL) {
+    // need to resolve and save our nest-host class. This could be attempted
+    // concurrently but as the result is idempotent and we don't use the class
+    // then we do not need any synchronization beyond what is implicitly used
+    // during class loading.
+    if (_nest_host_index != 0) { // we have a real nest_host
+      // Before trying to resolve check if we're in a suitable context
+      if (!THREAD->can_call_java() && !_constants->tag_at(_nest_host_index).is_klass()) {
+        if (log_is_enabled(Trace, class, nestmates)) {
+          ResourceMark rm(THREAD);
+          log_trace(class, nestmates)("Rejected resolution of nest-host of %s in unsuitable thread",
+                                      this->external_name());
+        }
+        return NULL;
+      }
+
+      if (log_is_enabled(Trace, class, nestmates)) {
+        ResourceMark rm(THREAD);
+        log_trace(class, nestmates)("Resolving nest-host of %s using cp entry for %s",
+                                    this->external_name(),
+                                    _constants->klass_name_at(_nest_host_index)->as_C_string());
+      }
+
+      Klass* k = _constants->klass_at(_nest_host_index, THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        Handle exc_h = Handle(THREAD, PENDING_EXCEPTION);
+        if (exc_h->is_a(SystemDictionary::NoClassDefFoundError_klass())) {
+          // throw a new CDNFE with the original as its cause, and a clear msg
+          ResourceMark rm(THREAD);
+          char buf[200];
+          CLEAR_PENDING_EXCEPTION;
+          jio_snprintf(buf, sizeof(buf),
+                       "Unable to load nest-host class (%s) of %s",
+                       _constants->klass_name_at(_nest_host_index)->as_C_string(),
+                       this->external_name());
+          log_trace(class, nestmates)("%s - NoClassDefFoundError", buf);
+          THROW_MSG_CAUSE_NULL(vmSymbols::java_lang_NoClassDefFoundError(), buf, exc_h);
+        }
+        // All other exceptions pass through (OOME, StackOverflowError, LinkageErrors etc).
+        return NULL;
+      }
+
+      // A valid nest-host is an instance class in the current package that lists this
+      // class as a nest member. If any of these conditions are not met we post the
+      // requested exception type (if any) and return NULL
+
+      const char* error = NULL;
+
+      // JVMS 5.4.4 indicates package check comes first
+      if (is_same_class_package(k)) {
+
+        // Now check actual membership. We can't be a member if our "host" is
+        // not an instance class.
+        if (k->is_instance_klass()) {
+          nest_host_k = InstanceKlass::cast(k);
+
+          bool is_member = nest_host_k->has_nest_member(this, CHECK_NULL);
+          if (is_member) {
+            // save resolved nest-host value
+            _nest_host = nest_host_k;
+
+            if (log_is_enabled(Trace, class, nestmates)) {
+              ResourceMark rm(THREAD);
+              log_trace(class, nestmates)("Resolved nest-host of %s to %s",
+                                          this->external_name(), k->external_name());
+            }
+            return nest_host_k;
+          }
+        }
+        error = "current type is not listed as a nest member";
+      } else {
+        error = "types are in different packages";
+      }
+
+      if (log_is_enabled(Trace, class, nestmates)) {
+        ResourceMark rm(THREAD);
+        log_trace(class, nestmates)("Type %s is not a nest member of resolved type %s: %s",
+                                    this->external_name(),
+                                    k->external_name(),
+                                    error);
+      }
+
+      if (validationException != NULL) {
+        ResourceMark rm(THREAD);
+        Exceptions::fthrow(THREAD_AND_LOCATION,
+                           validationException,
+                           "Type %s is not a nest member of %s: %s",
+                           this->external_name(),
+                           k->external_name(),
+                           error
+                           );
+      }
+      return NULL;
+    } else {
+      if (log_is_enabled(Trace, class, nestmates)) {
+        ResourceMark rm(THREAD);
+        log_trace(class, nestmates)("Type %s is not part of a nest: setting nest-host to self",
+                                    this->external_name());
+      }
+      // save resolved nest-host value
+      return (_nest_host = this);
+    }
+  }
+  return nest_host_k;
+}
+
+// check if 'this' and k are nestmates (same nest_host), or k is our nest_host,
+// or we are k's nest_host - all of which is covered by comparing the two
+// resolved_nest_hosts
+bool InstanceKlass::has_nestmate_access_to(InstanceKlass* k, TRAPS) {
+
+  assert(this != k, "this should be handled by higher-level code");
+
+  // Per JVMS 5.4.4 we first resolve and validate the current class, then
+  // the target class k. Resolution exceptions will be passed on by upper
+  // layers. IncompatibleClassChangeErrors from membership validation failures
+  // will also be passed through.
+
+  Symbol* icce = vmSymbols::java_lang_IncompatibleClassChangeError();
+  InstanceKlass* cur_host = nest_host(icce, CHECK_false);
+  if (cur_host == NULL) {
+    return false;
+  }
+
+  Klass* k_nest_host = k->nest_host(icce, CHECK_false);
+  if (k_nest_host == NULL) {
+    return false;
+  }
+
+  bool access = (cur_host == k_nest_host);
+
+  if (log_is_enabled(Trace, class, nestmates)) {
+    ResourceMark rm(THREAD);
+    log_trace(class, nestmates)("Class %s does %shave nestmate access to %s",
+                                this->external_name(),
+                                access ? "" : "NOT ",
+                                k->external_name());
+  }
+
+  return access;
+}
+
 InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& parser, TRAPS) {
   const int size = InstanceKlass::size(parser.vtable_size(),
                                        parser.itable_size(),
@@ -169,13 +360,11 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
     else if (is_class_loader(class_name, parser)) {
       // class loader
       ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
-    }
-    else {
+    } else {
       // normal
       ik = new (loader_data, size, THREAD) InstanceKlass(parser, InstanceKlass::_misc_kind_other);
     }
-  }
-  else {
+  } else {
     // reference
     ik = new (loader_data, size, THREAD) InstanceRefKlass(parser);
   }
@@ -211,11 +400,15 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
   return vtable_indices;
 }
 
-InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind) :
+InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id) :
+  Klass(id),
   _static_field_size(parser.static_field_size()),
   _nonstatic_oop_map_size(nonstatic_oop_map_size(parser.total_oop_map_count())),
   _itable_len(parser.itable_size()),
-  _reference_type(parser.reference_type()) {
+  _reference_type(parser.reference_type()),
+  _nest_members(NULL),
+  _nest_host_index(0),
+  _nest_host(NULL) {
     set_vtable_length(parser.vtable_size());
     set_kind(kind);
     set_access_flags(parser.access_flags());
@@ -358,6 +551,13 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
     MetadataFactory::free_array<jushort>(loader_data, inner_classes());
   }
   set_inner_classes(NULL);
+
+  if (nest_members() != NULL &&
+      nest_members() != Universe::the_empty_short_array() &&
+      !nest_members()->is_shared()) {
+    MetadataFactory::free_array<jushort>(loader_data, nest_members());
+  }
+  set_nest_members(NULL);
 
   // We should deallocate the Annotations instance if it's not in shared spaces.
   if (annotations() != NULL && !annotations()->is_shared()) {
@@ -642,7 +842,6 @@ bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
   }
   return true;
 }
-
 
 // Rewrite the byte codes of all of the methods of a class.
 // The rewriter must be called exactly once. Rewriting must happen after
@@ -1359,13 +1558,14 @@ Method* InstanceKlass::find_method_impl(const Symbol* name,
 // and skips over static methods
 Method* InstanceKlass::find_instance_method(const Array<Method*>* methods,
                                             const Symbol* name,
-                                            const Symbol* signature) {
+                                            const Symbol* signature,
+                                            PrivateLookupMode private_mode) {
   Method* const meth = InstanceKlass::find_method_impl(methods,
                                                  name,
                                                  signature,
                                                  find_overpass,
                                                  skip_static,
-                                                 find_private);
+                                                 private_mode);
   assert(((meth == NULL) || !meth->is_static()),
     "find_instance_method should have skipped statics");
   return meth;
@@ -1373,8 +1573,10 @@ Method* InstanceKlass::find_instance_method(const Array<Method*>* methods,
 
 // find_instance_method looks up the name/signature in the local methods array
 // and skips over static methods
-Method* InstanceKlass::find_instance_method(const Symbol* name, const Symbol* signature) const {
-  return InstanceKlass::find_instance_method(methods(), name, signature);
+Method* InstanceKlass::find_instance_method(const Symbol* name,
+                                            const Symbol* signature,
+                                            PrivateLookupMode private_mode) const {
+  return InstanceKlass::find_instance_method(methods(), name, signature, private_mode);
 }
 
 // Find looks up the name/signature in the local methods array
@@ -1475,7 +1677,7 @@ int InstanceKlass::find_method_index(const Array<Method*>* methods,
     // Do linear search to find matching signature.  First, quick check
     // for common case, ignoring overpasses if requested.
     if (method_matches(m, signature, skipping_overpass, skipping_static, skipping_private)) {
-          return hit;
+      return hit;
     }
 
     // search downwards through overloaded methods
@@ -1531,10 +1733,12 @@ int InstanceKlass::find_method_by_name(const Array<Method*>* methods,
 }
 
 // uncached_lookup_method searches both the local class methods array and all
-// superclasses methods arrays, skipping any overpass methods in superclasses.
+// superclasses methods arrays, skipping any overpass methods in superclasses,
+// and possibly skipping private methods.
 Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
                                               const Symbol* signature,
-                                              OverpassLookupMode overpass_mode) const {
+                                              OverpassLookupMode overpass_mode,
+                                              PrivateLookupMode private_mode) const {
   OverpassLookupMode overpass_local_mode = overpass_mode;
   const Klass* klass = this;
   while (klass != NULL) {
@@ -1542,7 +1746,7 @@ Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
                                                                         signature,
                                                                         overpass_local_mode,
                                                                         find_static,
-                                                                        find_private);
+                                                                        private_mode);
     if (method != NULL) {
       return method;
     }
@@ -2044,6 +2248,8 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
       }
     }
   }
+
+  it->push(&_nest_members);
 }
 
 void InstanceKlass::remove_unshareable_info() {
@@ -2087,10 +2293,12 @@ void InstanceKlass::remove_unshareable_info() {
   guarantee(_previous_versions == NULL, "must be");
 #endif
 
- _init_thread = NULL;
- _methods_jmethod_ids = NULL;
- _jni_ids = NULL;
- _oop_map_cache = NULL;
+  _init_thread = NULL;
+  _methods_jmethod_ids = NULL;
+  _jni_ids = NULL;
+  _oop_map_cache = NULL;
+  // clear _nest_host to ensure re-load at runtime
+  _nest_host = NULL;
 }
 
 void InstanceKlass::remove_java_mirror() {
@@ -2642,9 +2850,14 @@ Method* InstanceKlass::method_at_itable(Klass* holder, int index, TRAPS) {
     if (cnt >= nof_interfaces) {
       ResourceMark rm(THREAD);
       stringStream ss;
+      bool same_module = (module() == holder->module());
       ss.print("Receiver class %s does not implement "
-               "the interface %s defining the method to be called",
-               class_loader_and_module_name(), holder->class_loader_and_module_name());
+               "the interface %s defining the method to be called "
+               "(%s%s%s)",
+               external_name(), holder->external_name(),
+               (same_module) ? joint_in_module_of_loader(holder) : class_in_module_of_loader(),
+               (same_module) ? "" : "; ",
+               (same_module) ? "" : holder->class_in_module_of_loader());
       THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), ss.as_string());
     }
 
@@ -2946,6 +3159,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     st->cr();
   }
   st->print(BULLET"inner classes:     "); inner_classes()->print_value_on(st);     st->cr();
+  st->print(BULLET"nest members:     "); nest_members()->print_value_on(st);     st->cr();
   st->print(BULLET"java mirror:       "); java_mirror()->print_value_on(st);       st->cr();
   st->print(BULLET"vtable length      %d  (start addr: " INTPTR_FORMAT ")", vtable_length(), p2i(start_of_vtable())); st->cr();
   if (vtable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_vtable(), vtable_length(), st);
@@ -3188,6 +3402,7 @@ void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
   n += (sz->_transitive_interfaces_bytes = sz->count_array(transitive_interfaces()));
   n += (sz->_fields_bytes                = sz->count_array(fields()));
   n += (sz->_inner_classes_bytes         = sz->count_array(inner_classes()));
+  n += (sz->_nest_members_bytes          = sz->count_array(nest_members()));
   sz->_ro_bytes += n;
 
   const ConstantPool* cp = constants();
@@ -3413,10 +3628,6 @@ void JNIid::verify(Klass* holder) {
 #endif
     current = current->next();
   }
-}
-
-oop InstanceKlass::holder_phantom() const {
-  return class_loader_data()->holder_phantom();
 }
 
 #ifdef ASSERT

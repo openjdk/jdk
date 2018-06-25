@@ -122,7 +122,7 @@ final class MBeanUtils {
         }
         int size = Integer.parseInt(string);
         if (size <1)  {
-            throw new IllegalArgumentException("Block size msut be at least 1 byte");
+            throw new IllegalArgumentException("Block size must be at least 1 byte");
         }
         return size;
     }

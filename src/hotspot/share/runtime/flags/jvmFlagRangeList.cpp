@@ -293,7 +293,6 @@ void emit_range_double(const char* name, const double* ptr, double min, double m
 
 // Generate code to call emit_range_xxx function
 #define EMIT_RANGE_PRODUCT_FLAG(type, name, value, doc)      ); emit_range_##type(#name,&name
-#define EMIT_RANGE_COMMERCIAL_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
 #define EMIT_RANGE_DIAGNOSTIC_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name
 #define EMIT_RANGE_EXPERIMENTAL_FLAG(type, name, value, doc) ); emit_range_##type(#name,&name
 #define EMIT_RANGE_MANAGEABLE_FLAG(type, name, value, doc)   ); emit_range_##type(#name,&name

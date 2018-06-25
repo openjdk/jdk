@@ -44,6 +44,7 @@
   LOG_TAG(blocks) \
   LOG_TAG(bot) \
   LOG_TAG(breakpoint) \
+  LOG_TAG(bytecode) \
   LOG_TAG(cds) \
   LOG_TAG(census) \
   LOG_TAG(class) \
@@ -60,11 +61,13 @@
   LOG_TAG(cset) \
   LOG_TAG(data) \
   LOG_TAG(datacreation) \
+  LOG_TAG(dcmd) \
   LOG_TAG(decoder) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(director) \
   LOG_TAG(dump) \
   LOG_TAG(ergo) \
+  LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
   LOG_TAG(fingerprint) \
@@ -81,6 +84,7 @@
   LOG_TAG(inlining) \
   LOG_TAG(interpreter) \
   LOG_TAG(itables) \
+  LOG_TAG(jfr) \
   LOG_TAG(jit) \
   LOG_TAG(jni) \
   LOG_TAG(jvmti) \
@@ -100,10 +104,12 @@
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
   LOG_TAG(normalize) \
   LOG_TAG(objecttagging) \
   LOG_TAG(obsolete) \
+  LOG_TAG(oldobject) \
   LOG_TAG(oom) \
   LOG_TAG(oopmap) \
   LOG_TAG(oops) \
@@ -125,10 +131,13 @@
   LOG_TAG(region) \
   LOG_TAG(reloc) \
   LOG_TAG(remset) \
+  LOG_TAG(parser) \
   LOG_TAG(purge) \
   LOG_TAG(resolve) \
   LOG_TAG(safepoint) \
+  LOG_TAG(sampling) \
   LOG_TAG(scavenge) \
+  LOG_TAG(setting) \
   LOG_TAG(smr) \
   LOG_TAG(stacktrace) \
   LOG_TAG(stackwalk) \
@@ -142,6 +151,7 @@
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \
   LOG_TAG(sweep) \
+  LOG_TAG(system) \
   LOG_TAG(table) \
   LOG_TAG(task) \
   DEBUG_ONLY(LOG_TAG(test)) \
@@ -159,15 +169,7 @@
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \
   LOG_TAG(vtables) \
-  LOG_TAG(workgang) \
-  LOG_TAG(jfr) \
-  LOG_TAG(system) \
-  LOG_TAG(parser) \
-  LOG_TAG(bytecode) \
-  LOG_TAG(setting) \
-  LOG_TAG(oldobject) \
-  LOG_TAG(sampling) \
-  LOG_TAG(event)
+  LOG_TAG(workgang)
   LOG_TAG_LIST_EXT
 
 #define PREFIX_LOG_TAG(T) (LogTag::_##T)

@@ -79,9 +79,29 @@ gc/parallel/TestPrintGCDetailsVerbose.java                      8200186   macosx
 
 compiler/jvmci/compilerToVM/ReprofileTest.java                  8201333   generic-all
 
-compiler/tiered/TieredLevelsTest.java                           8202124   generic-all
-compiler/tiered/NonTieredLevelsTest.java                        8202124   generic-all
-compiler/intrinsics/mathexact/sanity/SubtractExactLongTest.java 8202124   generic-all
+compiler/tiered/LevelTransitionTest.java                         8202124   generic-all
+compiler/tiered/TieredLevelsTest.java                            8202124   generic-all
+compiler/tiered/NonTieredLevelsTest.java                         8202124   generic-all
+compiler/intrinsics/mathexact/sanity/IncrementExactIntTest.java  8202124   generic-all
+compiler/intrinsics/mathexact/sanity/NegateExactIntTest.java     8202124   generic-all
+compiler/intrinsics/mathexact/sanity/AddExactLongTest.java       8202124   generic-all
+compiler/intrinsics/mathexact/sanity/SubtractExactLongTest.java  8202124   generic-all
+compiler/intrinsics/mathexact/sanity/AddExactIntTest.java        8202124   generic-all
+compiler/intrinsics/mathexact/sanity/NegateExactLongTest.java    8202124   generic-all
+compiler/intrinsics/mathexact/sanity/DecrementExactLongTest.java 8202124   generic-all
+compiler/intrinsics/mathexact/sanity/DecrementExactIntTest.java  8202124   generic-all
+compiler/intrinsics/mathexact/sanity/IncrementExactLongTest.java 8202124   generic-all
+compiler/intrinsics/mathexact/sanity/SubtractExactIntTest.java   8202124   generic-all
+compiler/intrinsics/mathexact/sanity/MultiplyExactLongTest.java  8202124   generic-all
+compiler/intrinsics/mathexact/sanity/MultiplyExactIntTest.java   8202124   generic-all
+compiler/whitebox/DeoptimizeAllTest.java                         8202124   generic-all
+compiler/whitebox/DeoptimizeMethodTest.java                      8202124   generic-all
+compiler/whitebox/ForceNMethodSweepTest.java                     8202124   generic-all
+compiler/whitebox/GetNMethodTest.java                            8202124   generic-all
+compiler/whitebox/IsMethodCompilableTest.java                    8202124   generic-all
+compiler/whitebox/LockCompilationTest.java                       8202124   generic-all
+compiler/whitebox/SetDontInlineMethodTest.java                   8202124   generic-all
+compiler/whitebox/SetForceInlineMethodTest.java                  8202124   generic-all
 
 compiler/jvmci/meta/StableFieldTest.java                        CODETOOLS-7902162   generic-all
 compiler/jvmci/jdk.vm.ci.hotspot.test/src/jdk/vm/ci/hotspot/test/HotSpotConstantReflectionProviderTest.java   CODETOOLS-7902162   generic-all

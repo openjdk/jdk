@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,8 +154,9 @@
  * application module specified to the 'java' launcher. When compiling code in
  * the unnamed module, or at run-time when the main application class is loaded
  * from the class path, then the default set of root modules is implementation
- * specific (In the JDK implementation it is the module "java.se", if observable,
- * and every observable module that exports an API). </p>
+ * specific. In the JDK the default set of root modules contains every module
+ * that is observable on the upgrade module path or among the system modules,
+ * and that exports at least one package without qualification. </p>
  *
  * <h2> Observable modules </h2>
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -384,6 +384,10 @@ public abstract class FileSystemProvider {
         return Channels.newInputStream(Files.newByteChannel(path, options));
     }
 
+    private static final Set<OpenOption> DEFAULT_OPEN_OPTIONS =
+        Set.of(StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING,
+            StandardOpenOption.WRITE);
+
     /**
      * Opens or creates a file, returning an output stream that may be used to
      * write bytes to the file. This method works in exactly the manner
@@ -419,18 +423,18 @@ public abstract class FileSystemProvider {
         throws IOException
     {
         int len = options.length;
-        Set<OpenOption> opts = new HashSet<>(len + 3);
+        Set<OpenOption> opts ;
         if (len == 0) {
-            opts.add(StandardOpenOption.CREATE);
-            opts.add(StandardOpenOption.TRUNCATE_EXISTING);
+            opts = DEFAULT_OPEN_OPTIONS;
         } else {
+            opts = new HashSet<>();
             for (OpenOption opt: options) {
                 if (opt == StandardOpenOption.READ)
                     throw new IllegalArgumentException("READ not allowed");
                 opts.add(opt);
             }
+            opts.add(StandardOpenOption.WRITE);
         }
-        opts.add(StandardOpenOption.WRITE);
         return Channels.newOutputStream(newByteChannel(path, opts));
     }
 

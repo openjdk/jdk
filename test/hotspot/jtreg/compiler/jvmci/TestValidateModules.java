@@ -37,7 +37,8 @@ public class TestValidateModules {
     public static void main(String... args) throws Exception {
         ProcessTools.executeTestJava("-XX:+UnlockExperimentalVMOptions",
                                      "-XX:+EnableJVMCI",
-                                     "--validate-modules")
+                                     "--validate-modules",
+                                     "--list-modules")
                 .outputTo(System.out)
                 .errorTo(System.out)
                 .stdoutShouldContain("java.base")

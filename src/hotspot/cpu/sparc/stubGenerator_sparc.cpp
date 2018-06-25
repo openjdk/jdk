@@ -2269,9 +2269,9 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_DISJOINT;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
-      decorators |= AS_DEST_NOT_INITIALIZED;
+      decorators |= IS_DEST_UNINITIALIZED;
     }
     if (aligned) {
       decorators |= ARRAYCOPY_ALIGNED;
@@ -2326,9 +2326,9 @@ class StubGenerator: public StubCodeGenerator {
 
     array_overlap_test(nooverlap_target, LogBytesPerHeapOop);
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
     if (dest_uninitialized) {
-      decorators |= AS_DEST_NOT_INITIALIZED;
+      decorators |= IS_DEST_UNINITIALIZED;
     }
     if (aligned) {
       decorators |= ARRAYCOPY_ALIGNED;
@@ -2446,9 +2446,9 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY | ARRAYCOPY_CHECKCAST;
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_CHECKCAST;
     if (dest_uninitialized) {
-      decorators |= AS_DEST_NOT_INITIALIZED;
+      decorators |= IS_DEST_UNINITIALIZED;
     }
 
     BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();

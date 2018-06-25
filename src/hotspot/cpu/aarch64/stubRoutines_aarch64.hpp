@@ -41,7 +41,7 @@ static bool    returns_to_call_stub(address return_pc)   {
 
 enum platform_dependent_constants {
   code_size1 = 19000,          // simply increase if too small (assembler will crash if too small)
-  code_size2 = 22000           // simply increase if too small (assembler will crash if too small)
+  code_size2 = 28000           // simply increase if too small (assembler will crash if too small)
 };
 
 class aarch64 {
@@ -66,6 +66,14 @@ class aarch64 {
   static address _has_negatives;
   static address _has_negatives_long;
   static address _large_array_equals;
+  static address _compare_long_string_LL;
+  static address _compare_long_string_LU;
+  static address _compare_long_string_UL;
+  static address _compare_long_string_UU;
+  static address _string_indexof_linear_ll;
+  static address _string_indexof_linear_uu;
+  static address _string_indexof_linear_ul;
+  static address _large_byte_array_inflate;
   static bool _completed;
 
  public:
@@ -136,6 +144,38 @@ class aarch64 {
       return _large_array_equals;
   }
 
+  static address compare_long_string_LL() {
+      return _compare_long_string_LL;
+  }
+
+  static address compare_long_string_LU() {
+      return _compare_long_string_LU;
+  }
+
+  static address compare_long_string_UL() {
+      return _compare_long_string_UL;
+  }
+
+  static address compare_long_string_UU() {
+      return _compare_long_string_UU;
+  }
+
+  static address string_indexof_linear_ul() {
+      return _string_indexof_linear_ul;
+  }
+
+  static address string_indexof_linear_ll() {
+      return _string_indexof_linear_ll;
+  }
+
+  static address string_indexof_linear_uu() {
+      return _string_indexof_linear_uu;
+  }
+
+  static address large_byte_array_inflate() {
+      return _large_byte_array_inflate;
+  }
+
   static bool complete() {
     return _completed;
   }
@@ -146,7 +186,13 @@ class aarch64 {
 
 private:
   static juint    _crc_table[];
-
+  // begin trigonometric tables block. See comments in .cpp file
+  static juint    _npio2_hw[];
+  static jdouble   _two_over_pi[];
+  static jdouble   _pio2[];
+  static jdouble   _dsin_coef[];
+  static jdouble  _dcos_coef[];
+  // end trigonometric tables block
 };
 
 #endif // CPU_AARCH64_VM_STUBROUTINES_AARCH64_HPP

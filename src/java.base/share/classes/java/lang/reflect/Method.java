@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,8 +505,8 @@ public final class Method extends Executable {
      *
      * <p>If the underlying method is an instance method, it is invoked
      * using dynamic method lookup as documented in The Java Language
-     * Specification, Second Edition, section 15.12.4.4; in particular,
-     * overriding based on the runtime type of the target object will occur.
+     * Specification, section 15.12.4.4; in particular,
+     * overriding based on the runtime type of the target object may occur.
      *
      * <p>If the underlying method is static, the class that declared
      * the method is initialized if it has not already been initialized.

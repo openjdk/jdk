@@ -35,7 +35,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       CFLAGS := $(CFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := crypt32.lib advapi32.lib, \
+      LIBS := crypt32.lib advapi32.lib ncrypt.lib, \
   ))
 
   TARGETS += $(BUILD_LIBSUNMSCAPI)

@@ -38,7 +38,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-class UpdateRSetDeferred : public ExtendedOopClosure {
+class UpdateRSetDeferred : public BasicOopIterateClosure {
 private:
   G1CollectedHeap* _g1h;
   DirtyCardQueue* _dcq;

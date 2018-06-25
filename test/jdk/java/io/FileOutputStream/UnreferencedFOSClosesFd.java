@@ -25,6 +25,8 @@
  *
  * @test
  * @modules java.base/java.io:open
+ * @library /test/lib
+ * @build jdk.test.lib.util.FileUtils UnreferencedFOSClosesFd
  * @bug 6524062
  * @summary Test to ensure that FOS.finalize() invokes the close() method as per
  * the specification.
@@ -41,10 +43,14 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.nio.file.Path;
+import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.sun.management.UnixOperatingSystemMXBean;
+
+import jdk.test.lib.util.FileUtils;
 
 public class UnreferencedFOSClosesFd {
 
@@ -133,8 +139,8 @@ public class UnreferencedFOSClosesFd {
 
         String name = inFile.getPath();
 
+        FileUtils.listFileDescriptors(System.out);
         long fdCount0 = getFdCount();
-        System.out.printf("initial count of open file descriptors: %d%n", fdCount0);
 
         int failCount = 0;
         failCount += test(new FileOutputStream(name), CleanupType.CLEANER);
@@ -153,10 +159,10 @@ public class UnreferencedFOSClosesFd {
 
         // Check the final count of open file descriptors
         long fdCount = getFdCount();
-        System.out.printf("final count of open file descriptors: %d%n", fdCount);
         if (fdCount != fdCount0) {
-            throw new AssertionError("raw fd count wrong: expected: " + fdCount0
-            + ", actual: " + fdCount);
+            System.out.printf("initial count of open file descriptors: %d%n", fdCount0);
+            System.out.printf("final count of open file descriptors: %d%n", fdCount);
+            FileUtils.listFileDescriptors(System.out);
         }
     }
 

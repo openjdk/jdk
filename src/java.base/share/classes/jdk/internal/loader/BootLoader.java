@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.Modules;
 import jdk.internal.module.ServicesCatalog;
 
 /**
@@ -249,15 +250,16 @@ public class BootLoader {
                 }
             }
 
+            // return the Module object for the module name. The Module may
+            // in the boot layer or a child layer for the case that the module
+            // is loaded into a running VM
             if (mn != null) {
-                // named module from runtime image or exploded module
-                Optional<Module> om = ModuleLayer.boot().findModule(mn);
-                if (!om.isPresent())
-                    throw new InternalError(mn + " not in boot layer");
-                return om.get();
+                String name = mn;
+                return Modules.findLoadedModule(mn)
+                    .orElseThrow(() -> new InternalError(name + " not loaded"));
+            } else {
+                return null;
             }
-
-            return null;
         }
 
         /**

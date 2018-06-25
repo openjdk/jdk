@@ -47,7 +47,7 @@ import sun.security.util.SecurityConstants;
  * in a manner that would normally be prohibited.
  *
  * <p> Java language access control prevents use of private members outside
- * their class; package access members outside their package; protected members
+ * their top-level class; package access members outside their package; protected members
  * outside their package or subclasses; and public members outside their
  * module unless they are declared in an {@link Module#isExported(String,Module)
  * exported} package and the user {@link Module#canRead reads} their module. By

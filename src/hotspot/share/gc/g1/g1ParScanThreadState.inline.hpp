@@ -32,7 +32,7 @@
 
 template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
   // Reference should not be NULL here as such are never pushed to the task queue.
-  oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
 
   // Although we never intentionally push references outside of the collection
   // set, due to (benign) races in the claim mechanism during RSet scanning more
@@ -47,7 +47,7 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p) {
     } else {
       obj = copy_to_survivor_space(in_cset_state, obj, m);
     }
-    RawAccess<OOP_NOT_NULL>::oop_store(p, obj);
+    RawAccess<IS_NOT_NULL>::oop_store(p, obj);
   } else if (in_cset_state.is_humongous()) {
     _g1h->set_humongous_is_live(obj);
   } else {

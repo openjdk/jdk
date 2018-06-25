@@ -38,7 +38,7 @@
 #endif
 
 inline OopsInGenClosure::OopsInGenClosure(Generation* gen) :
-  ExtendedOopClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
+  OopIterateClosure(gen->ref_processor()), _orig_gen(gen), _rs(NULL) {
   set_generation(gen);
 }
 
@@ -73,6 +73,9 @@ template <class T> inline void OopsInGenClosure::par_do_barrier(T* p) {
   }
 }
 
+inline BasicOopsInGenClosure::BasicOopsInGenClosure(Generation* gen) : OopsInGenClosure(gen) {
+}
+
 inline void OopsInClassLoaderDataOrGenClosure::do_cld_barrier() {
   assert(_scanned_cld != NULL, "Must be");
   if (!_scanned_cld->has_modified_oops()) {
@@ -93,7 +96,7 @@ template <class T> inline void ScanClosure::do_oop_work(T* p) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
       oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
 
     if (is_scanning_a_cld()) {
@@ -105,8 +108,8 @@ template <class T> inline void ScanClosure::do_oop_work(T* p) {
   }
 }
 
-inline void ScanClosure::do_oop_nv(oop* p)       { ScanClosure::do_oop_work(p); }
-inline void ScanClosure::do_oop_nv(narrowOop* p) { ScanClosure::do_oop_work(p); }
+inline void ScanClosure::do_oop(oop* p)       { ScanClosure::do_oop_work(p); }
+inline void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
 
 // NOTE! Any changes made here should also be made
 // in ScanClosure::do_oop_work()
@@ -119,7 +122,7 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
       assert(!_g->to()->is_in_reserved(obj), "Scanning field twice?");
       oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                         : _g->copy_to_survivor_space(obj);
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
       if (is_scanning_a_cld()) {
         do_cld_barrier();
       } else if (_gc_barrier) {
@@ -130,8 +133,8 @@ template <class T> inline void FastScanClosure::do_oop_work(T* p) {
   }
 }
 
-inline void FastScanClosure::do_oop_nv(oop* p)       { FastScanClosure::do_oop_work(p); }
-inline void FastScanClosure::do_oop_nv(narrowOop* p) { FastScanClosure::do_oop_work(p); }
+inline void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
+inline void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
 #endif // INCLUDE_SERIALGC
 
@@ -145,26 +148,26 @@ template <class T> void FilteringClosure::do_oop_work(T* p) {
   }
 }
 
-void FilteringClosure::do_oop_nv(oop* p)       { FilteringClosure::do_oop_work(p); }
-void FilteringClosure::do_oop_nv(narrowOop* p) { FilteringClosure::do_oop_work(p); }
+inline void FilteringClosure::do_oop(oop* p)       { FilteringClosure::do_oop_work(p); }
+inline void FilteringClosure::do_oop(narrowOop* p) { FilteringClosure::do_oop_work(p); }
 
 #if INCLUDE_SERIALGC
 
 // Note similarity to ScanClosure; the difference is that
 // the barrier set is taken care of outside this closure.
 template <class T> inline void ScanWeakRefClosure::do_oop_work(T* p) {
-  oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
   // weak references are sometimes scanned twice; must check
   // that to-space doesn't already contain this object
   if ((HeapWord*)obj < _boundary && !_g->to()->is_in_reserved(obj)) {
     oop new_obj = obj->is_forwarded() ? obj->forwardee()
                                       : _g->copy_to_survivor_space(obj);
-    RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+    RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
   }
 }
 
-inline void ScanWeakRefClosure::do_oop_nv(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
-inline void ScanWeakRefClosure::do_oop_nv(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
+inline void ScanWeakRefClosure::do_oop(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
+inline void ScanWeakRefClosure::do_oop(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
 
 #endif // INCLUDE_SERIALGC
 

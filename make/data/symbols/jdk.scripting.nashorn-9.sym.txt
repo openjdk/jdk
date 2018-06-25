@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,15 +30,16 @@ module name jdk.scripting.nashorn
 header exports jdk/nashorn/api/scripting,jdk/nashorn/api/tree requires name\u0020;jdk.dynalink\u0020;flags\u0020;0,name\u0020;java.logging\u0020;flags\u0020;0,name\u0020;java.base\u0020;flags\u0020;8000,name\u0020;java.scripting\u0020;flags\u0020;20 provides interface\u0020;javax/script/ScriptEngineFactory\u0020;impls\u0020;jdk/nashorn/api/scripting/NashornScriptEngineFactory,interface\u0020;jdk/dynalink/linker/GuardingDynamicLinkerExporter\u0020;impls\u0020;jdk/nashorn/api/linker/NashornLinkerExporter flags 8000
 
 class name jdk/nashorn/api/scripting/AbstractJSObject
--method name toNumber descriptor ()D
-method name toNumber descriptor ()D flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
+header extends java/lang/Object implements jdk/nashorn/api/scripting/JSObject flags 421
+-method name getDefaultValue descriptor (Ljava/lang/Class;)Ljava/lang/Object;
+-method name getDefaultValue descriptor (Ljdk/nashorn/api/scripting/JSObject;Ljava/lang/Class;)Ljava/lang/Object;
 method name getDefaultValue descriptor (Ljdk/nashorn/api/scripting/JSObject;Ljava/lang/Class;)Ljava/lang/Object; flags 9 deprecated true signature (Ljdk/nashorn/api/scripting/JSObject;Ljava/lang/Class<*>;)Ljava/lang/Object; runtimeAnnotations @Ljava/lang/Deprecated;
 
 class name jdk/nashorn/api/scripting/ClassFilter
 header extends java/lang/Object flags 601
-method name exposeToScripts descriptor (Ljava/lang/String;)Z flags 401
 
 class name jdk/nashorn/api/scripting/JSObject
+header extends java/lang/Object flags 601
 -method name toNumber descriptor ()D
 method name toNumber descriptor ()D flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
 method name getDefaultValue descriptor (Ljava/lang/Class;)Ljava/lang/Object; thrownTypes java/lang/UnsupportedOperationException flags 1 signature (Ljava/lang/Class<*>;)Ljava/lang/Object;
@@ -46,41 +47,26 @@ method name getDefaultValue descriptor (Ljava/lang/Class;)Ljava/lang/Object; thr
 class name jdk/nashorn/api/scripting/NashornException
 header extends java/lang/RuntimeException flags 421
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
--field name ENGINE_SCRIPT_SOURCE_NAME descriptor Ljava/lang/String;
-method name setFileName descriptor (Ljava/lang/String;)V flags 11
-method name setLineNumber descriptor (I)V flags 11
-method name setColumnNumber descriptor (I)V flags 11
-method name getThrown descriptor ()Ljava/lang/Object; flags 4
-method name getEcmaError descriptor ()Ljava/lang/Object; flags 1
-method name setEcmaError descriptor (Ljava/lang/Object;)V flags 1
+-method name initEcmaError descriptor (Ljdk/nashorn/internal/runtime/ScriptObject;)Ljdk/nashorn/api/scripting/NashornException;
 
 class name jdk/nashorn/api/scripting/NashornScriptEngine
--method name __noSuchProperty__ descriptor (Ljava/lang/Object;Ljavax/script/ScriptContext;Ljava/lang/String;)Ljava/lang/Object;
+header extends javax/script/AbstractScriptEngine implements javax/script/Compilable,javax/script/Invocable flags 31
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 
 class name jdk/nashorn/api/scripting/NashornScriptEngineFactory
 header extends java/lang/Object implements javax/script/ScriptEngineFactory flags 31
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
--method name getScriptEngine descriptor ([Ljava/lang/String;)Ljavax/script/ScriptEngine;
-method name getScriptEngine descriptor (Ljdk/nashorn/api/scripting/ClassFilter;)Ljavax/script/ScriptEngine; flags 1
-method name getScriptEngine descriptor ([Ljava/lang/String;)Ljavax/script/ScriptEngine; flags 81
-method name getScriptEngine descriptor ([Ljava/lang/String;Ljava/lang/ClassLoader;Ljdk/nashorn/api/scripting/ClassFilter;)Ljavax/script/ScriptEngine; flags 1
 
 class name jdk/nashorn/api/scripting/ScriptObjectMirror
 header extends jdk/nashorn/api/scripting/AbstractJSObject implements javax/script/Bindings flags 31
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
--method name toNumber descriptor ()D
-method name setIndexedPropertiesToExternalArrayData descriptor (Ljava/nio/ByteBuffer;)V flags 1
-method name wrapAsJSONCompatible descriptor (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; flags 9
-method name identical descriptor (Ljava/lang/Object;Ljava/lang/Object;)Z flags 9
-method name toNumber descriptor ()D flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;
-method name getDefaultValue descriptor (Ljava/lang/Class;)Ljava/lang/Object; flags 1 signature (Ljava/lang/Class<*>;)Ljava/lang/Object;
 
 class name jdk/nashorn/api/scripting/ScriptUtils
--method name makeSynchronizedFunction descriptor (Ljdk/nashorn/internal/runtime/ScriptFunction;Ljava/lang/Object;)Ljava/lang/Object;
--method name wrap descriptor (Ljava/lang/Object;)Ljava/lang/Object;
-method name makeSynchronizedFunction descriptor (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; flags 9
-method name wrap descriptor (Ljava/lang/Object;)Ljdk/nashorn/api/scripting/ScriptObjectMirror; flags 9
+header extends java/lang/Object flags 31
+
+class name jdk/nashorn/api/scripting/URLReader
+header extends java/io/Reader flags 31
 
 class name jdk/nashorn/api/tree/ArrayAccessTree
 header extends java/lang/Object implements jdk/nashorn/api/tree/ExpressionTree flags 601

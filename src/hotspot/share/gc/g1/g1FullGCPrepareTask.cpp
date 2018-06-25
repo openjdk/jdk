@@ -35,6 +35,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 

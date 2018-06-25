@@ -2599,6 +2599,16 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
     st->move_to(column);
     if (sd->bci() == SynchronizationEntryBCI) {
       st->print(";*synchronization entry");
+    } else if (sd->bci() == AfterBci) {
+      st->print(";* method exit (unlocked if synchronized)");
+    } else if (sd->bci() == UnwindBci) {
+      st->print(";* unwind (locked if synchronized)");
+    } else if (sd->bci() == AfterExceptionBci) {
+      st->print(";* unwind (unlocked if synchronized)");
+    } else if (sd->bci() == UnknownBci) {
+      st->print(";* unknown");
+    } else if (sd->bci() == InvalidFrameStateBci) {
+      st->print(";* invalid frame state");
     } else {
       if (sd->method() == NULL) {
         st->print("method is NULL");

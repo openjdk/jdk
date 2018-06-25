@@ -34,7 +34,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
                                    Register val, Address dst, Register tmp) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
-  bool oop_not_null = (decorators & OOP_NOT_NULL) != 0;
+  bool is_not_null = (decorators & IS_NOT_NULL) != 0;
 
   switch (type) {
   case T_ARRAY:
@@ -47,7 +47,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
       }
       if (UseCompressedOops) {
         assert(dst.base() != val, "not enough registers");
-        if (oop_not_null) {
+        if (is_not_null) {
           __ encode_heap_oop_not_null(val);
         } else {
           __ encode_heap_oop(val);
@@ -70,7 +70,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
                                   Address src, Register dst, Register tmp) {
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
-  bool oop_not_null = (decorators & OOP_NOT_NULL) != 0;
+  bool is_not_null = (decorators & IS_NOT_NULL) != 0;
 
   switch (type) {
   case T_ARRAY:
@@ -83,7 +83,7 @@ void BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorators,
       }
       if (UseCompressedOops) {
         __ lduw(src, dst);
-        if (oop_not_null) {
+        if (is_not_null) {
           __ decode_heap_oop_not_null(dst);
         } else {
           __ decode_heap_oop(dst);

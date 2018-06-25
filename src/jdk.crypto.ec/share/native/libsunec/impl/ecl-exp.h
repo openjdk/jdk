@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -160,6 +160,12 @@ typedef enum {
         /* ECCurve_WTLS_10 == ECCurve_NIST_K233 */
         /* ECCurve_WTLS_11 == ECCurve_NIST_B233 */
         /* ECCurve_WTLS_12 == ECCurve_NIST_P224 */
+
+        /* ECC Brainpool prime curves in RFC 5639*/
+        ECCurve_BrainpoolP256r1,
+        ECCurve_BrainpoolP320r1,
+        ECCurve_BrainpoolP384r1,
+        ECCurve_BrainpoolP512r1,
 
         ECCurve_pastLastCurve
 } ECCurveName;

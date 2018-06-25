@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,8 +241,10 @@ public class AccessControlTest {
             LookupCase lc = this.in(c2);
             int m1 = lc.lookupModes();
             int m2 = fixMods(m.getModifiers());
-            // privacy is strictly enforced on lookups
-            if (c1 != c2)  m1 &= ~PRIVATE;
+            // allow private lookup on nestmates. Otherwise, privacy is strictly enforced
+            if (c1 != c2 && ((m2 & PRIVATE) == 0 || !c1.isNestmateOf(c2))) {
+                m1 &= ~PRIVATE;
+            }
             // protected access is sometimes allowed
             if ((m2 & PROTECTED) != 0) {
                 int prev = m2;
@@ -252,7 +254,7 @@ public class AccessControlTest {
                     m2 |= PUBLIC;  // from a subclass, it acts like a public method also
             }
             if (verbosity >= 2)
-                System.out.println(this+" willAccess "+lc+" m1="+m1+" m2="+m2+" => "+((m2 & m1) != 0));
+                System.out.format("%s willAccess %s m1=0x%h m2=0x%h => %s%n", this, lc, m1, m2, ((m2 & m1) != 0));
             return (m2 & m1) != 0;
         }
 

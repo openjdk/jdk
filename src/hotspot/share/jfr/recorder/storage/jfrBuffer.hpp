@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_JFR_RECORDER_STORAGE_JFRBUFFER_HPP
 #define SHARE_VM_JFR_RECORDER_STORAGE_JFRBUFFER_HPP
 
-#include "jni.h"
 #include "memory/allocation.hpp"
 
 //
@@ -34,7 +33,7 @@
 // u1* _pos <-- next store position
 // u1* _top <-- next unflushed position
 //
-// const void* _identity <<-- acquired by
+// const void* _identity <-- acquired by
 //
 // Must be the owner before attempting stores.
 // Use acquire() and/or try_acquire() for exclusive access

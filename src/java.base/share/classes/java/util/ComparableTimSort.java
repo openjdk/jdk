@@ -305,7 +305,7 @@ class ComparableTimSort {
      * @param a the array in which a run is to be counted and possibly reversed
      * @param lo index of the first element in the run
      * @param hi index after the last element that may be contained in the run.
-              It is required that {@code lo < hi}.
+     *        It is required that {@code lo < hi}.
      * @return  the length of the run beginning at the specified position in
      *          the specified array
      */
@@ -394,19 +394,23 @@ class ComparableTimSort {
      * This method is called each time a new run is pushed onto the stack,
      * so the invariants are guaranteed to hold for i < stackSize upon
      * entry to the method.
+     *
+     * Thanks to Stijn de Gouw, Jurriaan Rot, Frank S. de Boer,
+     * Richard Bubel and Reiner Hahnle, this is fixed with respect to
+     * the analysis in "On the Worst-Case Complexity of TimSort" by
+     * Nicolas Auger, Vincent Jug, Cyril Nicaud, and Carine Pivoteau.
      */
     private void mergeCollapse() {
         while (stackSize > 1) {
             int n = stackSize - 2;
-            if (n > 0 && runLen[n-1] <= runLen[n] + runLen[n+1]) {
+            if (n > 0 && runLen[n-1] <= runLen[n] + runLen[n+1] ||
+                n > 1 && runLen[n-2] <= runLen[n] + runLen[n-1]) {
                 if (runLen[n - 1] < runLen[n + 1])
                     n--;
-                mergeAt(n);
-            } else if (runLen[n] <= runLen[n + 1]) {
-                mergeAt(n);
-            } else {
+            } else if (n < 0 || runLen[n] > runLen[n + 1]) {
                 break; // Invariant is established
             }
+            mergeAt(n);
         }
     }
 

@@ -385,9 +385,11 @@ public class LinkedListTest extends JSR166TestCase {
      */
     public void testToArray() {
         LinkedList q = populatedQueue(SIZE);
-        Object[] o = q.toArray();
-        for (int i = 0; i < o.length; i++)
-            assertSame(o[i], q.poll());
+        Object[] a = q.toArray();
+        assertSame(Object[].class, a.getClass());
+        for (Object o : a)
+            assertSame(o, q.poll());
+        assertTrue(q.isEmpty());
     }
 
     /**
@@ -398,8 +400,9 @@ public class LinkedListTest extends JSR166TestCase {
         Integer[] ints = new Integer[SIZE];
         Integer[] array = q.toArray(ints);
         assertSame(ints, array);
-        for (int i = 0; i < ints.length; i++)
-            assertSame(ints[i], q.poll());
+        for (Integer o : ints)
+            assertSame(o, q.poll());
+        assertTrue(q.isEmpty());
     }
 
     /**

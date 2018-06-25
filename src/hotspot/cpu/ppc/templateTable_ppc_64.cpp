@@ -688,7 +688,7 @@ void TemplateTable::aaload() {
                  Rtemp2     = R31;
   __ index_check(Rarray, R17_tos /* index */, UseCompressedOops ? 2 : LogBytesPerWord, Rtemp, Rload_addr);
   do_oop_load(_masm, Rload_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos, Rtemp, Rtemp2,
-              IN_HEAP_ARRAY);
+              IS_ARRAY);
   __ verify_oop(R17_tos);
   //__ dcbt(R17_tos); // prefetch
 }
@@ -1015,14 +1015,14 @@ void TemplateTable::aastore() {
 
   __ bind(Lis_null);
   do_oop_store(_masm, Rstore_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), noreg /* 0 */,
-               Rscratch, Rscratch2, Rscratch3, IN_HEAP_ARRAY);
+               Rscratch, Rscratch2, Rscratch3, IS_ARRAY);
   __ profile_null_seen(Rscratch, Rscratch2);
   __ b(Ldone);
 
   // Store is OK.
   __ bind(Lstore_ok);
   do_oop_store(_masm, Rstore_addr, arrayOopDesc::base_offset_in_bytes(T_OBJECT), R17_tos /* value */,
-               Rscratch, Rscratch2, Rscratch3, IN_HEAP_ARRAY | OOP_NOT_NULL);
+               Rscratch, Rscratch2, Rscratch3, IS_ARRAY | IS_NOT_NULL);
 
   __ bind(Ldone);
   // Adjust sp (pops array, index and value).
@@ -3583,14 +3583,46 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   prepare_invoke(byte_no, Rinterface_klass, Rret_addr, Rmethod, Rreceiver, Rflags, Rscratch1);
 
-  // Get receiver klass.
+  // First check for Object case, then private interface method,
+  // then regular interface method.
+
+  // Get receiver klass - this is also a null check
   __ null_check_throw(Rreceiver, oopDesc::klass_offset_in_bytes(), Rscratch2);
   __ load_klass(Rrecv_klass, Rreceiver);
 
   // Check corner case object method.
-  Label LobjectMethod, L_no_such_interface, Lthrow_ame;
+  // Special case of invokeinterface called for virtual method of
+  // java.lang.Object. See ConstantPoolCacheEntry::set_method() for details:
+  // The invokeinterface was rewritten to a invokevirtual, hence we have
+  // to handle this corner case.
+
+  Label LnotObjectMethod, Lthrow_ame;
   __ testbitdi(CCR0, R0, Rflags, ConstantPoolCacheEntry::is_forced_virtual_shift);
-  __ btrue(CCR0, LobjectMethod);
+  __ bfalse(CCR0, LnotObjectMethod);
+  invokeinterface_object_method(Rrecv_klass, Rret_addr, Rflags, Rmethod, Rscratch1, Rscratch2);
+  __ bind(LnotObjectMethod);
+
+  // Check for private method invocation - indicated by vfinal
+  Label LnotVFinal, L_no_such_interface, L_subtype;
+
+  __ testbitdi(CCR0, R0, Rflags, ConstantPoolCacheEntry::is_vfinal_shift);
+  __ bfalse(CCR0, LnotVFinal);
+
+  __ check_klass_subtype(Rrecv_klass, Rinterface_klass, Rscratch1, Rscratch2, L_subtype);
+  // If we get here the typecheck failed
+  __ b(L_no_such_interface);
+  __ bind(L_subtype);
+
+  // do the call
+
+  Register Rscratch = Rflags; // Rflags is dead now.
+
+  __ profile_final_call(Rscratch1, Rscratch);
+  __ profile_arguments_type(Rindex, Rscratch, Rrecv_klass /* scratch */, true);
+
+  __ call_from_interpreter(Rindex, Rret_addr, Rscratch, Rrecv_klass /* scratch */);
+
+  __ bind(LnotVFinal);
 
   __ lookup_interface_method(Rrecv_klass, Rinterface_klass, noreg, noreg, Rscratch1, Rscratch2,
                              L_no_such_interface, /*return_method=*/false);
@@ -3631,14 +3663,6 @@ void TemplateTable::invokeinterface(int byte_no) {
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_IncompatibleClassChangeErrorVerbose),
           Rrecv_klass, Rinterface_klass);
   DEBUG_ONLY( __ should_not_reach_here(); )
-
-  // Special case of invokeinterface called for virtual method of
-  // java.lang.Object. See ConstantPoolCacheEntry::set_method() for details:
-  // The invokeinterface was rewritten to a invokevirtual, hence we have
-  // to handle this corner case. This code isn't produced by javac, but could
-  // be produced by another compliant java compiler.
-  __ bind(LobjectMethod);
-  invokeinterface_object_method(Rrecv_klass, Rret_addr, Rflags, Rmethod, Rscratch1, Rscratch2);
 }
 
 void TemplateTable::invokedynamic(int byte_no) {

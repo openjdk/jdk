@@ -91,9 +91,9 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                                 Address dst, Register val, Register tmp1, Register tmp2) {
   bool in_heap = (decorators & IN_HEAP) != 0;
-  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool precise = on_array || on_anonymous;
+  bool precise = is_array || on_anonymous;
 
   bool needs_post_barrier = val != noreg && in_heap;
   BarrierSetAssembler::store_at(masm, decorators, type, dst, val, noreg, noreg);

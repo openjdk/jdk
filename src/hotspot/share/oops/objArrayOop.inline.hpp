@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,12 +46,12 @@ template <class T> T* objArrayOopDesc::obj_at_addr_raw(int index) const {
 
 inline oop objArrayOopDesc::obj_at(int index) const {
   ptrdiff_t offset = UseCompressedOops ? obj_at_offset<narrowOop>(index) : obj_at_offset<oop>(index);
-  return HeapAccess<IN_HEAP_ARRAY>::oop_load_at(as_oop(), offset);
+  return HeapAccess<IS_ARRAY>::oop_load_at(as_oop(), offset);
 }
 
 inline void objArrayOopDesc::obj_at_put(int index, oop value) {
   ptrdiff_t offset = UseCompressedOops ? obj_at_offset<narrowOop>(index) : obj_at_offset<oop>(index);
-  HeapAccess<IN_HEAP_ARRAY>::oop_store_at(as_oop(), offset, value);
+  HeapAccess<IS_ARRAY>::oop_store_at(as_oop(), offset, value);
 }
 
 #endif // SHARE_VM_OOPS_OBJARRAYOOP_INLINE_HPP

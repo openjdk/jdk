@@ -132,7 +132,7 @@ public class RSAPSSSignature extends SignatureSpi {
         }
         this.pubKey = (RSAPublicKey) isValid((RSAKey)publicKey);
         this.privKey = null;
-
+        resetDigest();
     }
 
     // initialize for signing. See JCA doc
@@ -153,6 +153,7 @@ public class RSAPSSSignature extends SignatureSpi {
         this.pubKey = null;
         this.random =
             (random == null? JCAUtil.getSecureRandom() : random);
+        resetDigest();
     }
 
     /**

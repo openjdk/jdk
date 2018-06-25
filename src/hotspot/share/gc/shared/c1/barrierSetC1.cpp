@@ -40,7 +40,7 @@
 
 LIR_Opr BarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_register) {
   DecoratorSet decorators = access.decorators();
-  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool is_array = (decorators & IS_ARRAY) != 0;
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
 
   LIRItem& base = access.base().item();
@@ -48,7 +48,7 @@ LIR_Opr BarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_registe
   LIRGenerator *gen = access.gen();
 
   LIR_Opr addr_opr;
-  if (on_array) {
+  if (is_array) {
     addr_opr = LIR_OprFact::address(gen->emit_array_address(base.result(), offset, access.type()));
   } else if (needs_patching) {
     // we need to patch the offset in the instruction so don't allow

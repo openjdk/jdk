@@ -32,20 +32,12 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 
-inline void ZLoadBarrierOopClosure::do_oop_nv(oop* p) {
+inline void ZLoadBarrierOopClosure::do_oop(oop* p) {
   ZBarrier::load_barrier_on_oop_field(p);
 }
 
-inline void ZLoadBarrierOopClosure::do_oop_nv(narrowOop* p) {
-  ShouldNotReachHere();
-}
-
-inline void ZLoadBarrierOopClosure::do_oop(oop* p) {
-  do_oop_nv(p);
-}
-
 inline void ZLoadBarrierOopClosure::do_oop(narrowOop* p) {
-  do_oop_nv(p);
+  ShouldNotReachHere();
 }
 
 inline void ZMarkRootOopClosure::do_oop(oop* p) {
@@ -66,26 +58,16 @@ inline void ZRelocateRootOopClosure::do_oop(narrowOop* p) {
 
 template <bool finalizable>
 inline ZMarkBarrierOopClosure<finalizable>::ZMarkBarrierOopClosure() :
-    ExtendedOopClosure(finalizable ? NULL : ZHeap::heap()->reference_discoverer()) {}
+    BasicOopIterateClosure(finalizable ? NULL : ZHeap::heap()->reference_discoverer()) {}
 
 template <bool finalizable>
-inline void ZMarkBarrierOopClosure<finalizable>::do_oop_nv(oop* p) {
+inline void ZMarkBarrierOopClosure<finalizable>::do_oop(oop* p) {
   ZBarrier::mark_barrier_on_oop_field(p, finalizable);
 }
 
 template <bool finalizable>
-inline void ZMarkBarrierOopClosure<finalizable>::do_oop_nv(narrowOop* p) {
-  ShouldNotReachHere();
-}
-
-template <bool finalizable>
-inline void ZMarkBarrierOopClosure<finalizable>::do_oop(oop* p) {
-  do_oop_nv(p);
-}
-
-template <bool finalizable>
 inline void ZMarkBarrierOopClosure<finalizable>::do_oop(narrowOop* p) {
-  do_oop_nv(p);
+  ShouldNotReachHere();
 }
 
 inline bool ZPhantomIsAliveObjectClosure::do_object_b(oop o) {

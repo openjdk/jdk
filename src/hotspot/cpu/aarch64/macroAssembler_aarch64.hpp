@@ -1212,8 +1212,8 @@ public:
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
-                      Register tmp1,
-                      FloatRegister vtmp, FloatRegister vtmpZ, int ae);
+                      Register tmp1, Register tmp2, FloatRegister vtmp1,
+                      FloatRegister vtmp2, FloatRegister vtmp3, int ae);
 
   void has_negatives(Register ary1, Register len, Register result);
 
@@ -1247,11 +1247,25 @@ public:
                       Register cnt1, Register cnt2,
                       Register tmp1, Register tmp2,
                       Register tmp3, Register tmp4,
+                      Register tmp5, Register tmp6,
                       int int_cnt1, Register result, int ae);
   void string_indexof_char(Register str1, Register cnt1,
                            Register ch, Register result,
                            Register tmp1, Register tmp2, Register tmp3);
-private:
+  void fast_log(FloatRegister vtmp0, FloatRegister vtmp1, FloatRegister vtmp2,
+                FloatRegister vtmp3, FloatRegister vtmp4, FloatRegister vtmp5,
+                FloatRegister tmpC1, FloatRegister tmpC2, FloatRegister tmpC3,
+                FloatRegister tmpC4, Register tmp1, Register tmp2,
+                Register tmp3, Register tmp4, Register tmp5);
+  void generate_dsin_dcos(bool isCos, address npio2_hw, address two_over_pi,
+      address pio2, address dsin_coef, address dcos_coef);
+ private:
+  // begin trigonometric functions support block
+  void generate__ieee754_rem_pio2(address npio2_hw, address two_over_pi, address pio2);
+  void generate__kernel_rem_pio2(address two_over_pi, address pio2);
+  void generate_kernel_sin(FloatRegister x, bool iyIsOne, address dsin_coef);
+  void generate_kernel_cos(FloatRegister x, address dcos_coef);
+  // end trigonometric functions support block
   void add2_with_carry(Register final_dest_hi, Register dest_hi, Register dest_lo,
                        Register src1, Register src2);
   void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2) {

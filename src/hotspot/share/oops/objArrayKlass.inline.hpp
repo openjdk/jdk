@@ -26,7 +26,7 @@
 #define SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP
 
 #include "memory/memRegion.hpp"
-#include "memory/iterator.inline.hpp"
+#include "memory/iterator.hpp"
 #include "oops/arrayOop.inline.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/klass.hpp"
@@ -35,18 +35,18 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/macros.hpp"
 
-template <bool nv, typename T, class OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_elements_specialized(objArrayOop a, OopClosureType* closure) {
+template <typename T, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure) {
   T* p         = (T*)a->base_raw();
   T* const end = p + a->length();
 
   for (;p < end; p++) {
-    Devirtualizer<nv>::do_oop(closure, p);
+    Devirtualizer::do_oop(closure, p);
   }
 }
 
-template <bool nv, typename T, class OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_elements_specialized_bounded(
+template <typename T, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_elements_bounded(
     objArrayOop a, OopClosureType* closure, void* low, void* high) {
 
   T* const l = (T*)low;
@@ -63,78 +63,58 @@ void ObjArrayKlass::oop_oop_iterate_elements_specialized_bounded(
   }
 
   for (;p < end; ++p) {
-    Devirtualizer<nv>::do_oop(closure, p);
+    Devirtualizer::do_oop(closure, p);
   }
 }
 
-template <bool nv, class OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure) {
-  if (UseCompressedOops) {
-    oop_oop_iterate_elements_specialized<nv, narrowOop>(a, closure);
-  } else {
-    oop_oop_iterate_elements_specialized<nv, oop>(a, closure);
-  }
-}
-
-template <bool nv, class OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_elements_bounded(objArrayOop a, OopClosureType* closure, MemRegion mr) {
-  if (UseCompressedOops) {
-    oop_oop_iterate_elements_specialized_bounded<nv, narrowOop>(a, closure, mr.start(), mr.end());
-  } else {
-    oop_oop_iterate_elements_specialized_bounded<nv, oop>(a, closure, mr.start(), mr.end());
-  }
-}
-
-template <bool nv, typename OopClosureType>
+template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   assert (obj->is_array(), "obj must be array");
   objArrayOop a = objArrayOop(obj);
 
-  if (Devirtualizer<nv>::do_metadata(closure)) {
-    Devirtualizer<nv>::do_klass(closure, obj->klass());
+  if (Devirtualizer::do_metadata(closure)) {
+    Devirtualizer::do_klass(closure, obj->klass());
   }
 
-  oop_oop_iterate_elements<nv>(a, closure);
+  oop_oop_iterate_elements<T>(a, closure);
 }
 
-template <bool nv, typename OopClosureType>
+template <typename T, typename OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
+  // No reverse implementation ATM.
+  oop_oop_iterate<T>(obj, closure);
+}
+
+template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
   assert(obj->is_array(), "obj must be array");
   objArrayOop a  = objArrayOop(obj);
 
-  if (Devirtualizer<nv>::do_metadata(closure)) {
-    Devirtualizer<nv>::do_klass(closure, a->klass());
+  if (Devirtualizer::do_metadata(closure)) {
+    Devirtualizer::do_klass(closure, a->klass());
   }
 
-  oop_oop_iterate_elements_bounded<nv>(a, closure, mr);
-}
-
-template <bool nv, typename T, class OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_range_specialized(objArrayOop a, OopClosureType* closure, int start, int end) {
-  T* low = start == 0 ? cast_from_oop<T*>(a) : a->obj_at_addr_raw<T>(start);
-  T* high = (T*)a->base_raw() + end;
-
-  oop_oop_iterate_elements_specialized_bounded<nv, T>(a, closure, low, high);
+  oop_oop_iterate_elements_bounded<T>(a, closure, mr.start(), mr.end());
 }
 
 // Like oop_oop_iterate but only iterates over a specified range and only used
 // for objArrayOops.
-template <bool nv, class OopClosureType>
-void ObjArrayKlass::oop_oop_iterate_range(oop obj, OopClosureType* closure, int start, int end) {
-  assert(obj->is_array(), "obj must be array");
-  objArrayOop a  = objArrayOop(obj);
+template <typename T, class OopClosureType>
+void ObjArrayKlass::oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end) {
+  T* low = start == 0 ? cast_from_oop<T*>(a) : a->obj_at_addr_raw<T>(start);
+  T* high = (T*)a->base_raw() + end;
 
-  if (UseCompressedOops) {
-    oop_oop_iterate_range_specialized<nv, narrowOop>(a, closure, start, end);
-  } else {
-    oop_oop_iterate_range_specialized<nv, oop>(a, closure, start, end);
-  }
+  oop_oop_iterate_elements_bounded<T>(a, closure, low, high);
 }
 
-#define ALL_OBJ_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)    \
-  OOP_OOP_ITERATE_DEFN(             ObjArrayKlass, OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN_BOUNDED(     ObjArrayKlass, OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN_RANGE(       ObjArrayKlass, OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN_NO_BACKWARDS(ObjArrayKlass, OopClosureType, nv_suffix)
+// Placed here to resolve include cycle between objArrayKlass.inline.hpp and objArrayOop.inline.hpp
+template <typename OopClosureType>
+void objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {
+  if (UseCompressedOops) {
+    ((ObjArrayKlass*)klass())->oop_oop_iterate_range<narrowOop>(this, blk, start, end);
+  } else {
+    ((ObjArrayKlass*)klass())->oop_oop_iterate_range<oop>(this, blk, start, end);
+  }
+}
 
 #endif // SHARE_VM_OOPS_OBJARRAYKLASS_INLINE_HPP

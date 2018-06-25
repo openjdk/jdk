@@ -36,19 +36,27 @@
 #include "oops/oop.inline.hpp"
 
 template <typename T>
-inline void G1MarkAndPushClosure::do_oop_nv(T* p) {
+inline void G1MarkAndPushClosure::do_oop_work(T* p) {
   _marker->mark_and_push(p);
 }
 
-inline bool G1MarkAndPushClosure::do_metadata_nv() {
+inline void G1MarkAndPushClosure::do_oop(oop* p) {
+  do_oop_work(p);
+}
+
+inline void G1MarkAndPushClosure::do_oop(narrowOop* p) {
+  do_oop_work(p);
+}
+
+inline bool G1MarkAndPushClosure::do_metadata() {
   return true;
 }
 
-inline void G1MarkAndPushClosure::do_klass_nv(Klass* k) {
+inline void G1MarkAndPushClosure::do_klass(Klass* k) {
   _marker->follow_klass(k);
 }
 
-inline void G1MarkAndPushClosure::do_cld_nv(ClassLoaderData* cld) {
+inline void G1MarkAndPushClosure::do_cld(ClassLoaderData* cld) {
   _marker->follow_cld(cld);
 }
 
@@ -78,11 +86,11 @@ template <class T> inline void G1AdjustClosure::adjust_pointer(T* p) {
 
   // Forwarded, just update.
   assert(Universe::heap()->is_in_reserved(forwardee), "should be in object space");
-  RawAccess<OOP_NOT_NULL>::oop_store(p, forwardee);
+  RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
 }
 
-inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_nv(p); }
-inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
+inline void G1AdjustClosure::do_oop(oop* p)       { do_oop_work(p); }
+inline void G1AdjustClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 inline bool G1IsAliveClosure::do_object_b(oop p) {
   return _bitmap->is_marked(p) || G1ArchiveAllocator::is_closed_archive_object(p);
