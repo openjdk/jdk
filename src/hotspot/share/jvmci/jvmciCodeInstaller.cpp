@@ -234,7 +234,7 @@ int AOTOopRecorder::find_index(Metadata* h) {
 
   vmassert(index + 1 == newCount, "must be last");
 
-  Klass* klass = NULL;
+  JVMCIKlassHandle klass(THREAD);
   oop result = NULL;
   if (h->is_klass()) {
     klass = (Klass*) h;

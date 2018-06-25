@@ -44,6 +44,21 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe_hp.hpp"
 
+JVMCIKlassHandle::JVMCIKlassHandle(Thread* thread, Klass* klass) {
+  _thread = thread;
+  _klass = klass;
+  if (klass != NULL) {
+    _holder = Handle(_thread, klass->holder_phantom());
+  }
+}
+
+JVMCIKlassHandle& JVMCIKlassHandle::operator=(Klass* klass) {
+  _klass = klass;
+  if (klass != NULL) {
+    _holder = Handle(_thread, klass->holder_phantom());
+  }
+  return *this;
+}
 
 void JNIHandleMark::push_jni_handle_block() {
   JavaThread* thread = JavaThread::current();
@@ -91,8 +106,8 @@ oop CompilerToVM::get_jvmci_method(const methodHandle& method, TRAPS) {
   return NULL;
 }
 
-oop CompilerToVM::get_jvmci_type(Klass* klass, TRAPS) {
-  if (klass != NULL) {
+oop CompilerToVM::get_jvmci_type(JVMCIKlassHandle& klass, TRAPS) {
+  if (!klass.is_null()) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;
     args.push_oop(Handle(THREAD, klass->java_mirror()));
@@ -311,7 +326,7 @@ C2V_VMENTRY(jobject, getConstantPool, (JNIEnv *, jobject, jobject object_handle)
 }
 
 C2V_VMENTRY(jobject, getResolvedJavaType, (JNIEnv *, jobject, jobject base, jlong offset, jboolean compressed))
-  Klass* klass = NULL;
+  JVMCIKlassHandle klass(THREAD);
   oop base_object = JNIHandles::resolve(base);
   jlong base_address = 0;
   if (base_object != NULL && offset == oopDesc::klass_offset_in_bytes()) {
@@ -365,7 +380,8 @@ C2V_VMENTRY(jobject, getImplementor, (JNIEnv *, jobject, jobject jvmci_type))
         err_msg("Expected interface type, got %s", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
-  oop implementor = CompilerToVM::get_jvmci_type(iklass->implementor(), CHECK_NULL);
+  JVMCIKlassHandle handle(THREAD, iklass->implementor());
+  oop implementor = CompilerToVM::get_jvmci_type(handle, CHECK_NULL);
   return JNIHandles::make_local(THREAD, implementor);
 C2V_END
 
@@ -400,7 +416,7 @@ C2V_VMENTRY(jobject, lookupType, (JNIEnv*, jobject, jstring jname, jclass access
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), err_msg("Primitive type %s should be handled in Java code", class_name->as_C_string()));
   }
 
-  Klass* resolved_klass = NULL;
+  JVMCIKlassHandle resolved_klass(THREAD);
   if (JNIHandles::resolve(accessing_class) == NULL) {
     THROW_0(vmSymbols::java_lang_NullPointerException());
   }
@@ -433,12 +449,11 @@ C2V_VMENTRY(jobject, lookupType, (JNIEnv*, jobject, jstring jname, jclass access
                                                              class_loader,
                                                              protection_domain,
                                                              CHECK_0);
-        if (resolved_klass != NULL) {
+        if (!resolved_klass.is_null()) {
           resolved_klass = resolved_klass->array_klass(fd.dimension(), CHECK_0);
         }
       } else {
-        resolved_klass = Universe::typeArrayKlassObj(t);
-        resolved_klass = TypeArrayKlass::cast(resolved_klass)->array_klass(fd.dimension(), CHECK_0);
+        resolved_klass = TypeArrayKlass::cast(Universe::typeArrayKlassObj(t))->array_klass(fd.dimension(), CHECK_0);
       }
     }
   }
@@ -482,25 +497,26 @@ C2V_END
 
 C2V_VMENTRY(jobject, resolveTypeInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index))
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
-  Klass* resolved_klass = cp->klass_at(index, CHECK_NULL);
+  Klass* klass = cp->klass_at(index, CHECK_NULL);
+  JVMCIKlassHandle resolved_klass(THREAD, klass);
   if (resolved_klass->is_instance_klass()) {
-    InstanceKlass::cast(resolved_klass)->link_class_or_fail(THREAD);
+    InstanceKlass::cast(resolved_klass())->link_class_or_fail(THREAD);
   }
-  oop klass = CompilerToVM::get_jvmci_type(resolved_klass, CHECK_NULL);
-  return JNIHandles::make_local(THREAD, klass);
+  oop jvmci_type = CompilerToVM::get_jvmci_type(resolved_klass, CHECK_NULL);
+  return JNIHandles::make_local(THREAD, jvmci_type);
 C2V_END
 
 C2V_VMENTRY(jobject, lookupKlassInPool, (JNIEnv*, jobject, jobject jvmci_constant_pool, jint index, jbyte opcode))
   constantPoolHandle cp = CompilerToVM::asConstantPool(jvmci_constant_pool);
   Klass* loading_klass = cp->pool_holder();
   bool is_accessible = false;
-  Klass* klass = JVMCIEnv::get_klass_by_index(cp, index, is_accessible, loading_klass);
+  JVMCIKlassHandle klass(THREAD, JVMCIEnv::get_klass_by_index(cp, index, is_accessible, loading_klass));
   Symbol* symbol = NULL;
   if (klass == NULL) {
     symbol = cp->klass_name_at(index);
   }
   oop result_oop;
-  if (klass != NULL) {
+  if (!klass.is_null()) {
     result_oop = CompilerToVM::get_jvmci_type(klass, CHECK_NULL);
   } else {
     Handle result = java_lang_String::create_from_symbol(symbol, CHECK_NULL);
@@ -543,7 +559,8 @@ C2V_VMENTRY(jobject, resolveFieldInPool, (JNIEnv*, jobject, jobject jvmci_consta
   info->int_at_put(0, fd.access_flags().as_int());
   info->int_at_put(1, fd.offset());
   info->int_at_put(2, fd.index());
-  oop field_holder = CompilerToVM::get_jvmci_type(fd.field_holder(), CHECK_NULL);
+  JVMCIKlassHandle handle(THREAD, fd.field_holder());
+  oop field_holder = CompilerToVM::get_jvmci_type(handle, CHECK_NULL);
   return JNIHandles::make_local(THREAD, field_holder);
 C2V_END
 
@@ -1413,7 +1430,8 @@ C2V_END
 C2V_VMENTRY(jobject, getHostClass, (JNIEnv*, jobject, jobject jvmci_type))
   InstanceKlass* k = InstanceKlass::cast(CompilerToVM::asKlass(jvmci_type));
   InstanceKlass* host = k->host_klass();
-  oop result = CompilerToVM::get_jvmci_type(host, CHECK_NULL);
+  JVMCIKlassHandle handle(THREAD, host);
+  oop result = CompilerToVM::get_jvmci_type(handle, CHECK_NULL);
   return JNIHandles::make_local(THREAD, result);
 C2V_END
 

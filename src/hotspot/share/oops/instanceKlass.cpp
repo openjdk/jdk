@@ -3625,10 +3625,6 @@ void JNIid::verify(Klass* holder) {
   }
 }
 
-oop InstanceKlass::holder_phantom() const {
-  return class_loader_data()->holder_phantom();
-}
-
 #ifdef ASSERT
 void InstanceKlass::set_init_state(ClassState state) {
   bool good_state = is_shared() ? (_init_state <= state)
