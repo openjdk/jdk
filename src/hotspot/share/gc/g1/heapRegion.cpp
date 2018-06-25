@@ -37,7 +37,7 @@
 #include "gc/shared/space.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
-#include "memory/iterator.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -450,7 +450,7 @@ void HeapRegion::print_on(outputStream* st) const {
                p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()), rem_set()->get_state_str());
 }
 
-class G1VerificationClosure : public ExtendedOopClosure {
+class G1VerificationClosure : public BasicOopIterateClosure {
 protected:
   G1CollectedHeap* _g1h;
   G1CardTable *_ct;
@@ -608,7 +608,7 @@ public:
 };
 
 // Closure that applies the given two closures in sequence.
-class G1Mux2Closure : public ExtendedOopClosure {
+class G1Mux2Closure : public BasicOopIterateClosure {
   OopClosure* _c1;
   OopClosure* _c2;
 public:

@@ -530,7 +530,7 @@ public class ClassReader {
      *            , {@link #SKIP_FRAMES}, {@link #SKIP_CODE}.
      */
     public void accept(final ClassVisitor classVisitor, final int flags) {
-        accept(classVisitor, new Attribute[0], flags);
+        accept(classVisitor, Attribute.DEFAULT_ATTRIBUTE_PROTOS, flags);
     }
 
     /**

@@ -1638,12 +1638,14 @@ void mvnw(Register Rd, Register Rm,
 #undef INSN
 
   // Conditional compare (both kinds)
-  void conditional_compare(unsigned op, int o2, int o3,
+  void conditional_compare(unsigned op, int o1, int o2, int o3,
                            Register Rn, unsigned imm5, unsigned nzcv,
                            unsigned cond) {
+    starti;
     f(op, 31, 29);
     f(0b11010010, 28, 21);
     f(cond, 15, 12);
+    f(o1, 11);
     f(o2, 10);
     f(o3, 4);
     f(nzcv, 3, 0);
@@ -1652,15 +1654,12 @@ void mvnw(Register Rd, Register Rm,
 
 #define INSN(NAME, op)                                                  \
   void NAME(Register Rn, Register Rm, int imm, Condition cond) {        \
-    starti;                                                             \
-    f(0, 11);                                                           \
-    conditional_compare(op, 0, 0, Rn, (uintptr_t)Rm, imm, cond);        \
+    int regNumber = (Rm == zr ? 31 : (uintptr_t)Rm);                    \
+    conditional_compare(op, 0, 0, 0, Rn, regNumber, imm, cond);         \
   }                                                                     \
                                                                         \
-  void NAME(Register Rn, int imm5, int imm, Condition cond) {   \
-    starti;                                                             \
-    f(1, 11);                                                           \
-    conditional_compare(op, 0, 0, Rn, imm5, imm, cond);                 \
+  void NAME(Register Rn, int imm5, int imm, Condition cond) {           \
+    conditional_compare(op, 1, 0, 0, Rn, imm5, imm, cond);              \
   }
 
   INSN(ccmnw, 0b001);
@@ -2025,6 +2024,57 @@ public:
       fmovd(Vn, zr);
   }
 
+   // Floating-point rounding
+   // type: half-precision = 11
+   //       single         = 00
+   //       double         = 01
+   // rmode: A = Away     = 100
+   //        I = current  = 111
+   //        M = MinusInf = 010
+   //        N = eveN     = 000
+   //        P = PlusInf  = 001
+   //        X = eXact    = 110
+   //        Z = Zero     = 011
+  void float_round(unsigned type, unsigned rmode, FloatRegister Rd, FloatRegister Rn) {
+    starti;
+    f(0b00011110, 31, 24);
+    f(type, 23, 22);
+    f(0b1001, 21, 18);
+    f(rmode, 17, 15);
+    f(0b10000, 14, 10);
+    rf(Rn, 5), rf(Rd, 0);
+  }
+#define INSN(NAME, type, rmode)                   \
+  void NAME(FloatRegister Vd, FloatRegister Vn) { \
+    float_round(type, rmode, Vd, Vn);             \
+  }
+
+public:
+  INSN(frintah, 0b11, 0b100);
+  INSN(frintih, 0b11, 0b111);
+  INSN(frintmh, 0b11, 0b010);
+  INSN(frintnh, 0b11, 0b000);
+  INSN(frintph, 0b11, 0b001);
+  INSN(frintxh, 0b11, 0b110);
+  INSN(frintzh, 0b11, 0b011);
+
+  INSN(frintas, 0b00, 0b100);
+  INSN(frintis, 0b00, 0b111);
+  INSN(frintms, 0b00, 0b010);
+  INSN(frintns, 0b00, 0b000);
+  INSN(frintps, 0b00, 0b001);
+  INSN(frintxs, 0b00, 0b110);
+  INSN(frintzs, 0b00, 0b011);
+
+  INSN(frintad, 0b01, 0b100);
+  INSN(frintid, 0b01, 0b111);
+  INSN(frintmd, 0b01, 0b010);
+  INSN(frintnd, 0b01, 0b000);
+  INSN(frintpd, 0b01, 0b001);
+  INSN(frintxd, 0b01, 0b110);
+  INSN(frintzd, 0b01, 0b011);
+#undef INSN
+
 /* SIMD extensions
  *
  * We just use FloatRegister in the following. They are exactly the same
@@ -2293,6 +2343,42 @@ public:
   INSN(aesimc, 0b0100111000101000011110);
 
 #undef INSN
+
+#define INSN(NAME, op1, op2) \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index = 0) { \
+    starti;                                                                                            \
+    assert(T == T2S || T == T4S || T == T2D, "invalid arrangement");                                   \
+    assert(index >= 0 && ((T == T2D && index <= 1) || (T != T2D && index <= 3)), "invalid index");     \
+    f(0, 31), f((int)T & 1, 30), f(op1, 29); f(0b011111, 28, 23);                                      \
+    f(T == T2D ? 1 : 0, 22), f(T == T2D ? 0 : index & 1, 21), rf(Vm, 16);                              \
+    f(op2, 15, 12), f(T == T2D ? index : (index >> 1), 11), f(0, 10);                                  \
+    rf(Vn, 5), rf(Vd, 0);                                                                              \
+  }
+
+  // FMLA/FMLS - Vector - Scalar
+  INSN(fmlavs, 0, 0b0001);
+  INSN(fmlsvs, 0, 0b0001);
+  // FMULX - Vector - Scalar
+  INSN(fmulxvs, 1, 0b1001);
+
+#undef INSN
+
+  // Floating-point Reciprocal Estimate
+  void frecpe(FloatRegister Vd, FloatRegister Vn, SIMD_RegVariant type) {
+    assert(type == D || type == S, "Wrong type for frecpe");
+    starti;
+    f(0b010111101, 31, 23);
+    f(type == D ? 1 : 0, 22);
+    f(0b100001110110, 21, 10);
+    rf(Vn, 5), rf(Vd, 0);
+  }
+
+  // (double) {a, b} -> (a + b)
+  void faddpd(FloatRegister Vd, FloatRegister Vn) {
+    starti;
+    f(0b0111111001110000110110, 31, 10);
+    rf(Vn, 5), rf(Vd, 0);
+  }
 
   void ins(FloatRegister Vd, SIMD_RegVariant T, FloatRegister Vn, int didx, int sidx) {
     starti;

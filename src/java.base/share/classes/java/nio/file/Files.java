@@ -410,8 +410,13 @@ public final class Files {
     public static SeekableByteChannel newByteChannel(Path path, OpenOption... options)
         throws IOException
     {
-        Set<OpenOption> set = new HashSet<>(options.length);
-        Collections.addAll(set, options);
+        Set<OpenOption> set;
+        if (options.length == 0) {
+            set = Collections.emptySet();
+        } else {
+            set = new HashSet<>();
+            Collections.addAll(set, options);
+        }
         return newByteChannel(path, set);
     }
 
@@ -599,6 +604,9 @@ public final class Files {
 
     // -- Creation and deletion --
 
+    private static final Set<OpenOption> DEFAULT_CREATE_OPTIONS =
+        Set.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+
     /**
      * Creates a new and empty file, failing if the file already exists. The
      * check for the existence of the file and the creation of the new file if
@@ -635,9 +643,7 @@ public final class Files {
     public static Path createFile(Path path, FileAttribute<?>... attrs)
         throws IOException
     {
-        EnumSet<StandardOpenOption> options =
-            EnumSet.<StandardOpenOption>of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
-        newByteChannel(path, options, attrs).close();
+        newByteChannel(path, DEFAULT_CREATE_OPTIONS, attrs).close();
         return path;
     }
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ fi
 #
 # see above - already in place, copy the flags down here to disable
 ENABLE_FLIGHT_RECORDER_FLAGS="\
-    -XX:+UnlockCommercialFeatures \
     -XX:+FlightRecorder \
     -XX:FlightRecorderOptions=defaultrecording=true,disk=true,dumponexit=true,dumponexitpath=$JFR_FILENAME,stackdepth=1024"
 

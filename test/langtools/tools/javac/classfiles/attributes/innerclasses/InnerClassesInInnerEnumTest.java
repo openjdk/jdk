@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,24 @@
  *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox InMemoryFileManager TestResult TestBase
  * @build InnerClassesInInnerClassTestBase InnerClassesTestBase
- * @run main InnerClassesInInnerEnumTest
+ * @run main InnerClassesInInnerEnumTest true
+ * @run main InnerClassesInInnerEnumTest false
  */
+
+import java.util.Arrays;
+import java.util.List;
 
 public class InnerClassesInInnerEnumTest extends InnerClassesInInnerClassTestBase {
 
+    final boolean expectSyntheticClass;
+
+    public InnerClassesInInnerEnumTest(boolean expectSyntheticClass) {
+        this.expectSyntheticClass = expectSyntheticClass;
+    }
+
     public static void main(String[] args) throws TestFailedException {
-        InnerClassesTestBase test = new InnerClassesInInnerEnumTest();
+        boolean expectSyntheticClass = Boolean.parseBoolean(args[0]);
+        InnerClassesTestBase test = new InnerClassesInInnerEnumTest(expectSyntheticClass);
         test.test("InnerClassesSrc$Inner", "Inner", "1");
     }
 
@@ -46,8 +57,15 @@ public class InnerClassesInInnerEnumTest extends InnerClassesInInnerClassTestBas
         setOuterOtherModifiers(Modifier.EMPTY, Modifier.STATIC);
         setOuterClassType(ClassType.ENUM);
         setInnerClassType(ClassType.CLASS);
-        setHasSyntheticClass(true);
+        setHasSyntheticClass(expectSyntheticClass);
         setPrefix("Inner {;");
         setSuffix("}");
+    }
+
+    @Override
+    protected List<String> getCompileOptions() {
+        return !expectSyntheticClass ?
+                super.getCompileOptions() :
+                Arrays.asList("-source", "10", "-target", "10");
     }
 }

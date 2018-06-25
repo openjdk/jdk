@@ -96,11 +96,11 @@
 address os::current_stack_pointer() {
 #ifdef SPARC_WORKS
   register void *esp;
-  __asm__("mov %%"SPELL_REG_SP", %0":"=r"(esp));
+  __asm__("mov %%" SPELL_REG_SP ", %0":"=r"(esp));
   return (address) ((char*)esp + sizeof(long)*2);
 #elif defined(__clang__)
   intptr_t* esp;
-  __asm__ __volatile__ ("mov %%"SPELL_REG_SP", %0":"=r"(esp):);
+  __asm__ __volatile__ ("mov %%" SPELL_REG_SP ", %0":"=r"(esp):);
   return (address) esp;
 #else
   register void *esp __asm__ (SPELL_REG_SP);
@@ -234,10 +234,10 @@ frame os::get_sender_for_C_frame(frame* fr) {
 intptr_t* _get_previous_fp() {
 #ifdef SPARC_WORKS
   register intptr_t **ebp;
-  __asm__("mov %%"SPELL_REG_FP", %0":"=r"(ebp));
+  __asm__("mov %%" SPELL_REG_FP ", %0":"=r"(ebp));
 #elif defined(__clang__)
   intptr_t **ebp;
-  __asm__ __volatile__ ("mov %%"SPELL_REG_FP", %0":"=r"(ebp):);
+  __asm__ __volatile__ ("mov %%" SPELL_REG_FP ", %0":"=r"(ebp):);
 #else
   register intptr_t **ebp __asm__ (SPELL_REG_FP);
 #endif

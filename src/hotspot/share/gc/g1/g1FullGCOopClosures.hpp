@@ -55,7 +55,7 @@ public:
   virtual void do_oop(narrowOop* p);
 };
 
-class G1MarkAndPushClosure : public ExtendedOopClosure {
+class G1MarkAndPushClosure : public OopIterateClosure {
   G1FullGCMarker* _marker;
   uint _worker_id;
 
@@ -63,26 +63,21 @@ public:
   G1MarkAndPushClosure(uint worker, G1FullGCMarker* marker, ReferenceDiscoverer* ref) :
     _marker(marker),
     _worker_id(worker),
-    ExtendedOopClosure(ref) { }
+    OopIterateClosure(ref) { }
 
-  template <class T> inline void do_oop_nv(T* p);
+  template <class T> inline void do_oop_work(T* p);
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 
   virtual bool do_metadata();
-  bool do_metadata_nv();
-
   virtual void do_klass(Klass* k);
-  void do_klass_nv(Klass* k);
-
   virtual void do_cld(ClassLoaderData* cld);
-  void do_cld_nv(ClassLoaderData* cld);
 };
 
-class G1AdjustClosure : public ExtendedOopClosure {
+class G1AdjustClosure : public BasicOopIterateClosure {
   template <class T> static inline void adjust_pointer(T* p);
 public:
-  template <class T> void do_oop_nv(T* p) { adjust_pointer(p); }
+  template <class T> void do_oop_work(T* p) { adjust_pointer(p); }
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 
@@ -107,10 +102,10 @@ public:
   bool failures() { return _failures; }
   void print_object(outputStream* out, oop obj);
 
-  template <class T> void do_oop_nv(T* p);
+  template <class T> void do_oop_work(T* p);
 
-  void do_oop(oop* p)       { do_oop_nv(p); }
-  void do_oop(narrowOop* p) { do_oop_nv(p); }
+  void do_oop(oop* p)       { do_oop_work(p); }
+  void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
 class G1FollowStackClosure: public VoidClosure {

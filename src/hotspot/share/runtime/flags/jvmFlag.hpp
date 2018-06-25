@@ -60,11 +60,10 @@ struct JVMFlag {
     KIND_C2                 = 1 << 13,
     KIND_ARCH               = 1 << 14,
     KIND_LP64_PRODUCT       = 1 << 15,
-    KIND_COMMERCIAL         = 1 << 16,
-    KIND_JVMCI              = 1 << 17,
+    KIND_JVMCI              = 1 << 16,
 
     // set this bit if the flag was set on the command line
-    ORIG_COMMAND_LINE       = 1 << 18,
+    ORIG_COMMAND_LINE       = 1 << 17,
 
     KIND_MASK = ~(VALUE_ORIGIN_MASK | ORIG_COMMAND_LINE)
   };
@@ -101,9 +100,7 @@ struct JVMFlag {
     DIAGNOSTIC_FLAG_BUT_LOCKED,
     EXPERIMENTAL_FLAG_BUT_LOCKED,
     DEVELOPER_FLAG_BUT_PRODUCT_BUILD,
-    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD,
-    COMMERCIAL_FLAG_BUT_DISABLED,
-    COMMERCIAL_FLAG_BUT_LOCKED
+    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD
   };
 
   const char* _type;
@@ -187,7 +184,6 @@ struct JVMFlag {
   bool is_notproduct() const;
   bool is_develop() const;
   bool is_read_write() const;
-  bool is_commercial() const;
 
   bool is_constant_in_binary() const;
 

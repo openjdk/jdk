@@ -54,30 +54,28 @@ inline void InstanceKlass::release_set_methods_jmethod_ids(jmethodID* jmeths) {
 // By force inlining the following functions, we get similar GC performance
 // as the previous macro based implementation.
 
-template <bool nv, typename T, class OopClosureType>
+template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map(OopMapBlock* map, oop obj, OopClosureType* closure) {
   T* p         = (T*)obj->obj_field_addr_raw<T>(map->offset());
   T* const end = p + map->count();
 
   for (; p < end; ++p) {
-    Devirtualizer<nv>::do_oop(closure, p);
+    Devirtualizer::do_oop(closure, p);
   }
 }
 
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-template <bool nv, typename T, class OopClosureType>
+template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_reverse(OopMapBlock* map, oop obj, OopClosureType* closure) {
   T* const start = (T*)obj->obj_field_addr_raw<T>(map->offset());
   T*       p     = start + map->count();
 
   while (start < p) {
     --p;
-    Devirtualizer<nv>::do_oop(closure, p);
+    Devirtualizer::do_oop(closure, p);
   }
 }
-#endif
 
-template <bool nv, typename T, class OopClosureType>
+template <typename T, class OopClosureType>
 ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_bounded(OopMapBlock* map, oop obj, OopClosureType* closure, MemRegion mr) {
   T* p   = (T*)obj->obj_field_addr_raw<T>(map->offset());
   T* end = p + map->count();
@@ -96,111 +94,73 @@ ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_map_bounded(OopMapBlock* ma
   }
 
   for (;p < end; ++p) {
-    Devirtualizer<nv>::do_oop(closure, p);
+    Devirtualizer::do_oop(closure, p);
   }
 }
 
-template <bool nv, typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_specialized(oop obj, OopClosureType* closure) {
+template <typename T, class OopClosureType>
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps(oop obj, OopClosureType* closure) {
   OopMapBlock* map           = start_of_nonstatic_oop_maps();
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   for (; map < end_map; ++map) {
-    oop_oop_iterate_oop_map<nv, T>(map, obj, closure);
+    oop_oop_iterate_oop_map<T>(map, obj, closure);
   }
 }
 
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-template <bool nv, typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_specialized_reverse(oop obj, OopClosureType* closure) {
+template <typename T, class OopClosureType>
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure) {
   OopMapBlock* const start_map = start_of_nonstatic_oop_maps();
   OopMapBlock* map             = start_map + nonstatic_oop_map_count();
 
   while (start_map < map) {
     --map;
-    oop_oop_iterate_oop_map_reverse<nv, T>(map, obj, closure);
+    oop_oop_iterate_oop_map_reverse<T>(map, obj, closure);
   }
 }
-#endif
 
-template <bool nv, typename T, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_specialized_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+template <typename T, class OopClosureType>
+ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
   OopMapBlock* map           = start_of_nonstatic_oop_maps();
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   for (;map < end_map; ++map) {
-    oop_oop_iterate_oop_map_bounded<nv, T>(map, obj, closure, mr);
+    oop_oop_iterate_oop_map_bounded<T>(map, obj, closure, mr);
   }
 }
 
-template <bool nv, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps(oop obj, OopClosureType* closure) {
-  if (UseCompressedOops) {
-    oop_oop_iterate_oop_maps_specialized<nv, narrowOop>(obj, closure);
-  } else {
-    oop_oop_iterate_oop_maps_specialized<nv, oop>(obj, closure);
-  }
-}
-
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-template <bool nv, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_reverse(oop obj, OopClosureType* closure) {
-  if (UseCompressedOops) {
-    oop_oop_iterate_oop_maps_specialized_reverse<nv, narrowOop>(obj, closure);
-  } else {
-    oop_oop_iterate_oop_maps_specialized_reverse<nv, oop>(obj, closure);
-  }
-}
-#endif
-
-template <bool nv, class OopClosureType>
-ALWAYSINLINE void InstanceKlass::oop_oop_iterate_oop_maps_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  if (UseCompressedOops) {
-    oop_oop_iterate_oop_maps_specialized_bounded<nv, narrowOop>(obj, closure, mr);
-  } else {
-    oop_oop_iterate_oop_maps_specialized_bounded<nv, oop>(obj, closure, mr);
-  }
-}
-
-template <bool nv, class OopClosureType>
+template <typename T, class OopClosureType>
 ALWAYSINLINE int InstanceKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  if (Devirtualizer<nv>::do_metadata(closure)) {
-    Devirtualizer<nv>::do_klass(closure, this);
+  if (Devirtualizer::do_metadata(closure)) {
+    Devirtualizer::do_klass(closure, this);
   }
 
-  oop_oop_iterate_oop_maps<nv>(obj, closure);
+  oop_oop_iterate_oop_maps<T>(obj, closure);
 
   return size_helper();
 }
 
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-template <bool nv, class OopClosureType>
+template <typename T, class OopClosureType>
 ALWAYSINLINE int InstanceKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  assert(!Devirtualizer<nv>::do_metadata(closure),
+  assert(!Devirtualizer::do_metadata(closure),
       "Code to handle metadata is not implemented");
 
-  oop_oop_iterate_oop_maps_reverse<nv>(obj, closure);
+  oop_oop_iterate_oop_maps_reverse<T>(obj, closure);
 
   return size_helper();
 }
-#endif
 
-template <bool nv, class OopClosureType>
+template <typename T, class OopClosureType>
 ALWAYSINLINE int InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  if (Devirtualizer<nv>::do_metadata(closure)) {
+  if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
-      Devirtualizer<nv>::do_klass(closure, this);
+      Devirtualizer::do_klass(closure, this);
     }
   }
 
-  oop_oop_iterate_oop_maps_bounded<nv>(obj, closure, mr);
+  oop_oop_iterate_oop_maps_bounded<T>(obj, closure, mr);
 
   return size_helper();
 }
-
-#define ALL_INSTANCE_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN(          InstanceKlass, OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN_BOUNDED(  InstanceKlass, OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN_BACKWARDS(InstanceKlass, OopClosureType, nv_suffix)
 
 #endif // SHARE_VM_OOPS_INSTANCEKLASS_INLINE_HPP

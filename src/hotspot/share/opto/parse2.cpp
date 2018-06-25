@@ -69,7 +69,7 @@ void Parse::array_load(BasicType bt) {
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
 
   Node* ld = access_load_at(array, adr, adr_type, elemtype, bt,
-                            IN_HEAP | IN_HEAP_ARRAY | C2_CONTROL_DEPENDENT_LOAD);
+                            IN_HEAP | IS_ARRAY | C2_CONTROL_DEPENDENT_LOAD);
   if (big_val) {
     push_pair(ld);
   } else {
@@ -104,7 +104,7 @@ void Parse::array_store(BasicType bt) {
 
   const TypeAryPtr* adr_type = TypeAryPtr::get_array_body_type(bt);
 
-  access_store_at(control(), array, adr, adr_type, val, elemtype, bt, MO_UNORDERED | IN_HEAP | IN_HEAP_ARRAY);
+  access_store_at(control(), array, adr, adr_type, val, elemtype, bt, MO_UNORDERED | IN_HEAP | IS_ARRAY);
 }
 
 

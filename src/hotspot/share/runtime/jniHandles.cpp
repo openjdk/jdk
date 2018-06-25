@@ -517,7 +517,7 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
   // Try last block
   if (_last->_top < block_size_in_oops) {
     oop* handle = &(_last->_handles)[_last->_top++];
-    NativeAccess<AS_DEST_NOT_INITIALIZED>::oop_store(handle, obj);
+    NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, obj);
     return (jobject) handle;
   }
 
@@ -525,7 +525,7 @@ jobject JNIHandleBlock::allocate_handle(oop obj) {
   if (_free_list != NULL) {
     oop* handle = _free_list;
     _free_list = (oop*) *_free_list;
-    NativeAccess<AS_DEST_NOT_INITIALIZED>::oop_store(handle, obj);
+    NativeAccess<IS_DEST_UNINITIALIZED>::oop_store(handle, obj);
     return (jobject) handle;
   }
   // Check if unused block follow last

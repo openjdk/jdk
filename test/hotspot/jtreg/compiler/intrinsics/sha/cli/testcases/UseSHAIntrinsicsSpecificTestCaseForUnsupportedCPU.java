@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,25 +33,22 @@ import jdk.test.lib.cli.predicate.NotPredicate;
 import jdk.test.lib.cli.predicate.OrPredicate;
 
 /**
- * Test case specific to UseSHA*Intrinsics options targeted to SPARC and AArch64
- * CPUs which don't support required instruction, but support other SHA-related
+ * Test case specific to UseSHA*Intrinsics options targeted to CPUs
+ * which don't support required instruction, but support other SHA-related
  * instructions.
  *
- * For example, CPU support sha1 instruction, but don't support sha256 or
+ * For example, CPU supports sha1 instruction, but doesn't support sha256 or
  * sha512.
  */
 public class UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU
         extends SHAOptionsBase.TestCase {
     public UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU(
             String optionName) {
-        // execute test case on SPARC CPU that support any sha* instructions,
+        // execute test case on CPU that supports any sha* instructions,
         // but does not support sha* instruction required by the tested option.
         super(optionName, new AndPredicate(
-                new OrPredicate(Platform::isSparc, Platform::isAArch64),
-                new AndPredicate(
-                        IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE,
-                        new NotPredicate(SHAOptionsBase.getPredicateForOption(
-                                optionName)))));
+                IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE,
+                new NotPredicate(SHAOptionsBase.getPredicateForOption(optionName))));
     }
     @Override
     protected void verifyWarnings() throws Throwable {

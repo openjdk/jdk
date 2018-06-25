@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,8 @@ public final class SunMSCAPI extends Provider {
                         return new RSASignature.MD5();
                     } else if (algo.equals("MD2withRSA")) {
                         return new RSASignature.MD2();
+                    } else if (algo.equals("RSASSA-PSS")) {
+                        return new RSASignature.PSS();
                     }
                 } else if (type.equals("KeyPairGenerator")) {
                     if (algo.equals("RSA")) {
@@ -177,6 +179,10 @@ public final class SunMSCAPI extends Provider {
                            "SHA512withRSA", "sun.security.mscapi.RSASignature$SHA512",
                            new String[] { "1.2.840.113549.1.1.13", "OID.1.2.840.113549.1.1.13" },
                            attrs));
+                putService(new ProviderService(p, "Signature",
+                        "RSASSA-PSS", "sun.security.mscapi.RSASignature$PSS",
+                        new String[] { "1.2.840.113549.1.1.10", "OID.1.2.840.113549.1.1.10" },
+                        attrs));
                 putService(new ProviderService(p, "Signature",
                            "MD5withRSA", "sun.security.mscapi.RSASignature$MD5",
                            null, attrs));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,6 +116,8 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
   void write_attribute_name_index(const char* name);
   void write_annotations_attribute(const char* attr_name, AnnotationArray* annos);
   void write_bootstrapmethod_attribute();
+  void write_nest_host_attribute();
+  void write_nest_members_attribute();
 
   address writeable_address(size_t size);
   void write_u1(u1 x);

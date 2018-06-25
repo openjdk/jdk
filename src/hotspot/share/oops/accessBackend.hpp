@@ -181,7 +181,7 @@ namespace AccessInternal {
 // This mask specifies what decorators are relevant for raw accesses. When passing
 // accesses to the raw layer, irrelevant decorators are removed.
 const DecoratorSet RAW_DECORATOR_MASK = INTERNAL_DECORATOR_MASK | MO_DECORATOR_MASK |
-                                        ARRAYCOPY_DECORATOR_MASK | OOP_DECORATOR_MASK;
+                                        ARRAYCOPY_DECORATOR_MASK | IS_NOT_NULL;
 
 // The RawAccessBarrier performs raw accesses with additional knowledge of
 // memory ordering, so that OrderAccess/Atomic is called when necessary.
@@ -1290,7 +1290,7 @@ namespace AccessInternal {
                    (IsSame<T, void>::value || IsIntegral<T>::value) ||
                     IsFloatingPoint<T>::value)); // arraycopy allows type erased void elements
     typedef typename Decay<T>::type DecayedT;
-    const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IN_HEAP_ARRAY | IN_HEAP>::value;
+    const DecoratorSet expanded_decorators = DecoratorFixup<decorators | IS_ARRAY | IN_HEAP>::value;
     return arraycopy_reduce_types<expanded_decorators>(src_obj, src_offset_in_bytes, const_cast<DecayedT*>(src_raw),
                                                        dst_obj, dst_offset_in_bytes, const_cast<DecayedT*>(dst_raw),
                                                        length);

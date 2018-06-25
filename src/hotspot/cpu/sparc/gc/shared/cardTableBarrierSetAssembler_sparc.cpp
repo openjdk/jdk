@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -90,9 +89,9 @@ void CardTableBarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorS
                                                 Register val, Address dst, Register tmp) {
   bool in_heap = (decorators & IN_HEAP) != 0;
 
-  bool on_array = (decorators & IN_HEAP_ARRAY) != 0;
+  bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
-  bool precise = on_array || on_anonymous;
+  bool precise = is_array || on_anonymous;
 
   // No need for post barrier if storing NULL
   bool needs_post_barrier = val != G0 && in_heap;

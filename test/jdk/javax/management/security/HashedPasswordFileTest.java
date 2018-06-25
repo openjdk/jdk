@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,17 @@
  */
 
  /* @test
- * @bug 5016517
+ * @bug 5016517 8204661
  * @summary Test Hashed passwords
  * @library /test/lib
  * @modules java.management
+ *          jdk.management.agent/jdk.internal.agent
  * @build HashedPasswordFileTest
  * @run testng/othervm  HashedPasswordFileTest
  *
  */
 
+import jdk.internal.agent.ConnectorAddressLink;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import org.testng.Assert;
@@ -405,7 +407,6 @@ public class HashedPasswordFileTest {
     @Test
     public void testDefaultAgent() throws Exception {
         List<String> pbArgs = new ArrayList<>();
-        int port = Utils.getFreePort();
         generateClearTextPasswordFile();
 
         // This will run only on a POSIX compliant system
@@ -424,10 +425,12 @@ public class HashedPasswordFileTest {
         pbArgs.add("-cp");
         pbArgs.add(System.getProperty("test.class.path"));
 
-        pbArgs.add("-Dcom.sun.management.jmxremote.port=" + port);
+        pbArgs.add("-Dcom.sun.management.jmxremote.port=0");
         pbArgs.add("-Dcom.sun.management.jmxremote.authenticate=true");
         pbArgs.add("-Dcom.sun.management.jmxremote.password.file=" + file.getAbsolutePath());
         pbArgs.add("-Dcom.sun.management.jmxremote.ssl=false");
+        pbArgs.add("--add-exports");
+        pbArgs.add("jdk.management.agent/jdk.internal.agent=ALL-UNNAMED");
         pbArgs.add(TestApp.class.getSimpleName());
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -445,7 +448,6 @@ public class HashedPasswordFileTest {
     @Test
     public void testDefaultAgentNoHash() throws Exception {
         List<String> pbArgs = new ArrayList<>();
-        int port = Utils.getFreePort();
         generateClearTextPasswordFile();
 
         // This will run only on a POSIX compliant system
@@ -464,11 +466,13 @@ public class HashedPasswordFileTest {
         pbArgs.add("-cp");
         pbArgs.add(System.getProperty("test.class.path"));
 
-        pbArgs.add("-Dcom.sun.management.jmxremote.port=" + port);
+        pbArgs.add("-Dcom.sun.management.jmxremote.port=0");
         pbArgs.add("-Dcom.sun.management.jmxremote.authenticate=true");
         pbArgs.add("-Dcom.sun.management.jmxremote.password.file=" + file.getAbsolutePath());
         pbArgs.add("-Dcom.sun.management.jmxremote.password.toHashes=false");
         pbArgs.add("-Dcom.sun.management.jmxremote.ssl=false");
+        pbArgs.add("--add-exports");
+        pbArgs.add("jdk.management.agent/jdk.internal.agent=ALL-UNNAMED");
         pbArgs.add(TestApp.class.getSimpleName());
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
@@ -496,12 +500,12 @@ class TestApp {
 
     public static void main(String[] args) throws IOException {
         try {
-            JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:"
-                    + System.getProperty("com.sun.management.jmxremote.port") + "/jmxrmi");
+            Map<String, String> propsMap = ConnectorAddressLink.importRemoteFrom(0);
+            String jmxServiceUrl = propsMap.get("sun.management.JMXConnectorServer.0.remoteAddress");
             Map<String, Object> env = new HashMap<>(1);
             // any dummy credentials will do. We just have to trigger password hashing
             env.put("jmx.remote.credentials", new String[]{"a", "a"});
-            try (JMXConnector cc = JMXConnectorFactory.connect(url, env)) {
+            try (JMXConnector cc = JMXConnectorFactory.connect(new JMXServiceURL(jmxServiceUrl), env)) {
                 cc.getMBeanServerConnection();
             }
         } catch (SecurityException ex) {

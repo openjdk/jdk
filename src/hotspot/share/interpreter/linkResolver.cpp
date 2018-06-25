@@ -387,12 +387,13 @@ Method* LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
 // Looks up method in classes, then looks up local default methods
 methodHandle LinkResolver::lookup_instance_method_in_klasses(Klass* klass,
                                                              Symbol* name,
-                                                             Symbol* signature, TRAPS) {
-  Method* result = klass->uncached_lookup_method(name, signature, Klass::find_overpass);
+                                                             Symbol* signature,
+                                                             Klass::PrivateLookupMode private_mode, TRAPS) {
+  Method* result = klass->uncached_lookup_method(name, signature, Klass::find_overpass, private_mode);
 
   while (result != NULL && result->is_static() && result->method_holder()->super() != NULL) {
     Klass* super_klass = result->method_holder()->super();
-    result = super_klass->uncached_lookup_method(name, signature, Klass::find_overpass);
+    result = super_klass->uncached_lookup_method(name, signature, Klass::find_overpass, private_mode);
   }
 
   if (klass->is_array_klass()) {
@@ -582,20 +583,27 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
   }
 //  assert(extra_arg_result_or_null != NULL, "must be able to return extra argument");
 
-  if (!Reflection::verify_field_access(ref_klass,
-                                       resolved_klass,
-                                       sel_klass,
-                                       flags,
-                                       true)) {
+  bool can_access = Reflection::verify_member_access(ref_klass,
+                                                     resolved_klass,
+                                                     sel_klass,
+                                                     flags,
+                                                     true, false, CHECK);
+  // Any existing exceptions that may have been thrown, for example LinkageErrors
+  // from nest-host resolution, have been allowed to propagate.
+  if (!can_access) {
     ResourceMark rm(THREAD);
+    bool same_module = (sel_klass->module() == ref_klass->module());
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_IllegalAccessError(),
-      "tried to access method %s.%s%s from class %s",
+      "class %s tried to access method %s.%s%s (%s%s%s)",
+      ref_klass->external_name(),
       sel_klass->external_name(),
       sel_method->name()->as_C_string(),
       sel_method->signature()->as_C_string(),
-      ref_klass->external_name()
+      (same_module) ? ref_klass->joint_in_module_of_loader(sel_klass) : ref_klass->class_in_module_of_loader(),
+      (same_module) ? "" : "; ",
+      (same_module) ? "" : sel_klass->class_in_module_of_loader()
     );
     return;
   }
@@ -757,7 +765,7 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
                     nested_exception, NULL);
   }
 
-  // 5. access checks, access checking may be turned off when calling from within the VM.
+  // 6. access checks, access checking may be turned off when calling from within the VM.
   Klass* current_klass = link_info.current_klass();
   if (link_info.check_access()) {
     assert(current_klass != NULL , "current_klass should not be null");
@@ -771,6 +779,24 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
 
     // check loader constraints
     check_method_loader_constraints(link_info, resolved_method, "method", CHECK_NULL);
+  }
+
+  // For private method invocation we should only find the method in the resolved class.
+  // If that is not the case then we have a found a supertype method that we have nestmate
+  // access to.
+  if (resolved_method->is_private() && resolved_method->method_holder() != resolved_klass) {
+    ResourceMark rm(THREAD);
+    DEBUG_ONLY(bool is_nestmate = InstanceKlass::cast(link_info.current_klass())->has_nestmate_access_to(InstanceKlass::cast(resolved_klass), THREAD);)
+    assert(is_nestmate, "was only expecting nestmates to get here!");
+    Exceptions::fthrow(
+      THREAD_AND_LOCATION,
+      vmSymbols::java_lang_NoSuchMethodError(),
+      "%s: method %s%s not found",
+      resolved_klass->external_name(),
+      resolved_method->name()->as_C_string(),
+      resolved_method->signature()->as_C_string()
+    );
+    return NULL;
   }
 
   return resolved_method;
@@ -874,19 +900,6 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info, B
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  if (code == Bytecodes::_invokeinterface && resolved_method->is_private()) {
-    ResourceMark rm(THREAD);
-    char buf[200];
-
-    Klass* current_klass = link_info.current_klass();
-    jio_snprintf(buf, sizeof(buf), "private interface method requires invokespecial, not invokeinterface: method %s, caller-class:%s",
-                 Method::name_and_sig_as_C_string(resolved_klass,
-                                                  resolved_method->name(),
-                                                  resolved_method->signature()),
-                                                  (current_klass == NULL ? "<NULL>" : current_klass->internal_name()));
-     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
-  }
-
   if (log_develop_is_enabled(Trace, itables)) {
     char buf[200];
     jio_snprintf(buf, sizeof(buf), "%s resolved interface method: caller-class:",
@@ -906,11 +919,14 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
                                              Klass* sel_klass,
                                              const fieldDescriptor& fd,
                                              TRAPS) {
-  if (!Reflection::verify_field_access(ref_klass,
-                                       resolved_klass,
-                                       sel_klass,
-                                       fd.access_flags(),
-                                       true)) {
+  bool can_access = Reflection::verify_member_access(ref_klass,
+                                                     resolved_klass,
+                                                     sel_klass,
+                                                     fd.access_flags(),
+                                                     true, false, CHECK);
+  // Any existing exceptions that may have been thrown, for example LinkageErrors
+  // from nest-host resolution, have been allowed to propagate.
+  if (!can_access) {
     ResourceMark rm(THREAD);
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
@@ -1128,7 +1144,8 @@ methodHandle LinkResolver::linktime_resolve_special_method(const LinkInfo& link_
     return NULL;
   }
 
-  // check if invokespecial's interface method reference is in an indirect superinterface
+  // ensure that invokespecial's interface method reference is in
+  // a direct superinterface, not an indirect superinterface
   Klass* current_klass = link_info.current_klass();
   if (current_klass != NULL && resolved_klass->is_interface()) {
     InstanceKlass* ck = InstanceKlass::cast(current_klass);
@@ -1146,8 +1163,8 @@ methodHandle LinkResolver::linktime_resolve_special_method(const LinkInfo& link_
       jio_snprintf(buf, sizeof(buf),
                    "Interface method reference: %s, is in an indirect superinterface of %s",
                    Method::name_and_sig_as_C_string(resolved_klass,
-                                                    resolved_method->name(),
-                                                    resolved_method->signature()),
+                                                                           resolved_method->name(),
+                                                                           resolved_method->signature()),
                    current_klass->external_name());
       THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
     }
@@ -1192,7 +1209,7 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
       resolved_method->name() != vmSymbols::object_initializer_name()) {
 
      // check if this is an old-style super call and do a new lookup if so
-        // a) check if ACC_SUPER flag is set for the current class
+     // a) check if ACC_SUPER flag is set for the current class
     Klass* current_klass = link_info.current_klass();
     if ((current_klass->is_super() || !AllowNonVirtualCalls) &&
         // b) check if the class of the resolved_klass is a superclass
@@ -1200,12 +1217,14 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
         // This check is not performed for super.invoke for interface methods
         // in super interfaces.
         current_klass->is_subclass_of(resolved_klass) &&
-        current_klass != resolved_klass) {
+        current_klass != resolved_klass
+        ) {
       // Lookup super method
       Klass* super_klass = current_klass->super();
       sel_method = lookup_instance_method_in_klasses(super_klass,
-                           resolved_method->name(),
-                           resolved_method->signature(), CHECK);
+                                                     resolved_method->name(),
+                                                     resolved_method->signature(),
+                                                     Klass::find_private, CHECK);
       // check if found
       if (sel_method.is_null()) {
         ResourceMark rm(THREAD);
@@ -1356,11 +1375,12 @@ void LinkResolver::runtime_resolve_virtual_method(CallInfo& result,
     // a default or miranda method; therefore, it must have a valid vtable index.
     assert(!resolved_method->has_itable_index(), "");
     vtable_index = resolved_method->vtable_index();
-    // We could get a negative vtable_index for final methods,
-    // because as an optimization they are never put in the vtable,
-    // unless they override an existing method.
-    // If we do get a negative, it means the resolved method is the the selected
-    // method, and it can never be changed by an override.
+    // We could get a negative vtable_index of nonvirtual_vtable_index for private
+    // methods, or for final methods. Private methods never appear in the vtable
+    // and never override other methods. As an optimization, final methods are
+    // never put in the vtable, unless they override an existing method.
+    // So if we do get nonvirtual_vtable_index, it means the selected method is the
+    // resolved method, and it can never be changed by an override.
     if (vtable_index == Method::nonvirtual_vtable_index) {
       assert(resolved_method->can_be_statically_bound(), "cannot override this method");
       selected_method = resolved_method;
@@ -1415,6 +1435,7 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
                                                     Handle recv,
                                                     Klass* recv_klass,
                                                     bool check_null_and_abstract, TRAPS) {
+
   // check if receiver exists
   if (check_null_and_abstract && recv.is_null()) {
     THROW(vmSymbols::java_lang_NullPointerException());
@@ -1430,35 +1451,43 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
     THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  // do lookup based on receiver klass
-  // This search must match the linktime preparation search for itable initialization
-  // to correctly enforce loader constraints for interface method inheritance
-  methodHandle selected_method = lookup_instance_method_in_klasses(recv_klass,
-                                                  resolved_method->name(),
-                                                  resolved_method->signature(), CHECK);
-  if (selected_method.is_null() && !check_null_and_abstract) {
-    // In theory this is a harmless placeholder value, but
-    // in practice leaving in null affects the nsk default method tests.
-    // This needs further study.
-    selected_method = resolved_method;
-  }
-  // check if method exists
-  if (selected_method.is_null()) {
-    // Pass arguments for generating a verbose error message.
-    throw_abstract_method_error(resolved_method, recv_klass, CHECK);
-  }
-  // check access
-  // Throw Illegal Access Error if selected_method is not public.
-  if (!selected_method->is_public()) {
-    ResourceMark rm(THREAD);
-    THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
-              Method::name_and_sig_as_C_string(recv_klass,
-                                               selected_method->name(),
-                                               selected_method->signature()));
-  }
-  // check if abstract
-  if (check_null_and_abstract && selected_method->is_abstract()) {
-    throw_abstract_method_error(resolved_method, selected_method, recv_klass, CHECK);
+  methodHandle selected_method = resolved_method;
+
+  // resolve the method in the receiver class, unless it is private
+  if (!resolved_method()->is_private()) {
+    // do lookup based on receiver klass
+    // This search must match the linktime preparation search for itable initialization
+    // to correctly enforce loader constraints for interface method inheritance.
+    // Private methods are skipped as the resolved method was not private.
+    selected_method = lookup_instance_method_in_klasses(recv_klass,
+                                                        resolved_method->name(),
+                                                        resolved_method->signature(),
+                                                        Klass::skip_private, CHECK);
+
+    if (selected_method.is_null() && !check_null_and_abstract) {
+      // In theory this is a harmless placeholder value, but
+      // in practice leaving in null affects the nsk default method tests.
+      // This needs further study.
+      selected_method = resolved_method;
+    }
+    // check if method exists
+    if (selected_method.is_null()) {
+      // Pass arguments for generating a verbose error message.
+      throw_abstract_method_error(resolved_method, recv_klass, CHECK);
+    }
+    // check access
+    // Throw Illegal Access Error if selected_method is not public.
+    if (!selected_method->is_public()) {
+      ResourceMark rm(THREAD);
+      THROW_MSG(vmSymbols::java_lang_IllegalAccessError(),
+                Method::name_and_sig_as_C_string(recv_klass,
+                                                 selected_method->name(),
+                                                 selected_method->signature()));
+    }
+    // check if abstract
+    if (check_null_and_abstract && selected_method->is_abstract()) {
+      throw_abstract_method_error(resolved_method, selected_method, recv_klass, CHECK);
+    }
   }
 
   if (log_develop_is_enabled(Trace, itables)) {
@@ -1466,13 +1495,25 @@ void LinkResolver::runtime_resolve_interface_method(CallInfo& result,
                             recv_klass, resolved_klass, selected_method, true);
   }
   // setup result
-  if (!resolved_method->has_itable_index()) {
+  if (resolved_method->has_vtable_index()) {
     int vtable_index = resolved_method->vtable_index();
+    log_develop_trace(itables)("  -- vtable index: %d", vtable_index);
     assert(vtable_index == selected_method->vtable_index(), "sanity check");
     result.set_virtual(resolved_klass, recv_klass, resolved_method, selected_method, vtable_index, CHECK);
-  } else {
+  } else if (resolved_method->has_itable_index()) {
     int itable_index = resolved_method()->itable_index();
+    log_develop_trace(itables)("  -- itable index: %d", itable_index);
     result.set_interface(resolved_klass, recv_klass, resolved_method, selected_method, itable_index, CHECK);
+  } else {
+    int index = resolved_method->vtable_index();
+    log_develop_trace(itables)("  -- non itable/vtable index: %d", index);
+    assert(index == Method::nonvirtual_vtable_index, "Oops hit another case!");
+    assert(resolved_method()->is_private() ||
+           (resolved_method()->is_final() && resolved_method->method_holder() == SystemDictionary::Object_klass()),
+           "Should only have non-virtual invokeinterface for private or final-Object methods!");
+    assert(resolved_method()->can_be_statically_bound(), "Should only have non-virtual invokeinterface for statically bound methods!");
+    // This sets up the nonvirtual form of "virtual" call (as needed for final and private methods)
+    result.set_virtual(resolved_klass, resolved_klass, resolved_method, resolved_method, index, CHECK);
   }
 }
 

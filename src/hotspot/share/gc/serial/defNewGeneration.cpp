@@ -46,7 +46,7 @@
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
-#include "memory/iterator.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "oops/oop.inline.hpp"
@@ -112,17 +112,11 @@ ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
   _boundary = _g->reserved().end();
 }
 
-void ScanClosure::do_oop(oop* p)       { ScanClosure::do_oop_work(p); }
-void ScanClosure::do_oop(narrowOop* p) { ScanClosure::do_oop_work(p); }
-
 FastScanClosure::FastScanClosure(DefNewGeneration* g, bool gc_barrier) :
     OopsInClassLoaderDataOrGenClosure(g), _g(g), _gc_barrier(gc_barrier)
 {
   _boundary = _g->reserved().end();
 }
-
-void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
-void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
 void CLDScanClosure::do_cld(ClassLoaderData* cld) {
   NOT_PRODUCT(ResourceMark rm);
@@ -154,9 +148,6 @@ ScanWeakRefClosure::ScanWeakRefClosure(DefNewGeneration* g) :
 {
   _boundary = _g->reserved().end();
 }
-
-void ScanWeakRefClosure::do_oop(oop* p)       { ScanWeakRefClosure::do_oop_work(p); }
-void ScanWeakRefClosure::do_oop(narrowOop* p) { ScanWeakRefClosure::do_oop_work(p); }
 
 DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t initial_size,

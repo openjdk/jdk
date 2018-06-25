@@ -1122,7 +1122,7 @@ void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
 inline bool interface_method_needs_itable_index(Method* m) {
   if (m->is_static())           return false;   // e.g., Stream.empty
   if (m->is_initializer())      return false;   // <init> or <clinit>
-  if (m->is_private())          return false;   // requires invokeSpecial
+  if (m->is_private())          return false;   // uses direct call
   // If an interface redeclares a method from java.lang.Object,
   // it should already have a vtable index, don't touch it.
   // e.g., CharSequence.toString (from initialize_vtable)
@@ -1211,8 +1211,13 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
     methodHandle target;
     if (m->has_itable_index()) {
       // This search must match the runtime resolution, i.e. selection search for invokeinterface
-      // to correctly enforce loader constraints for interface method inheritance
-      target = LinkResolver::lookup_instance_method_in_klasses(_klass, m->name(), m->signature(), CHECK);
+      // to correctly enforce loader constraints for interface method inheritance.
+      // Private methods are skipped as a private class method can never be the implementation
+      // of an interface method.
+      // Invokespecial does not perform selection based on the receiver, so it does not use
+      // the cached itable.
+      target = LinkResolver::lookup_instance_method_in_klasses(_klass, m->name(), m->signature(),
+                                                               Klass::skip_private, CHECK);
     }
     if (target == NULL || !target->is_public() || target->is_abstract() || target->is_overpass()) {
       assert(target == NULL || !target->is_overpass() || target->is_public(),

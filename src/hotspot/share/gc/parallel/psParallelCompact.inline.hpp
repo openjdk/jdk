@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,17 +119,17 @@ inline void PSParallelCompact::adjust_pointer(T* p, ParCompactionManager* cm) {
     if (new_obj != NULL) {
       assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
              "should be in object space");
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
   }
 }
 
 template <typename T>
-void PSParallelCompact::AdjustPointerClosure::do_oop_nv(T* p) {
+void PSParallelCompact::AdjustPointerClosure::do_oop_work(T* p) {
   adjust_pointer(p, _cm);
 }
 
-inline void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { do_oop_nv(p); }
-inline void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_nv(p); }
+inline void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
+inline void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 #endif // SHARE_VM_GC_PARALLEL_PSPARALLELCOMPACT_INLINE_HPP

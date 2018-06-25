@@ -70,7 +70,8 @@ public class HotPotatoes {
             System.out.printf("implClazz=%s, argClazz=%s\n",
                               implClazz.getName(), argClazz.getName());
             final int iterations = 100000;
-            final List<Integer> list = (List<Integer>) argClazz.newInstance();
+            final List<Integer> list = (List<Integer>)
+                argClazz.getDeclaredConstructor().newInstance();
             final Integer one = Integer.valueOf(1);
             final List<Integer> oneElementList = Collections.singletonList(one);
             final Constructor<? extends Collection> constr

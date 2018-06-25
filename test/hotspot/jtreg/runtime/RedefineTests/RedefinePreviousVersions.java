@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8165246
+ * @bug 8165246 8010319
  * @summary Test has_previous_versions flag and processing during class unloading.
  * @requires vm.opt.final.ClassUnloading
  * @library /test/lib
@@ -38,37 +38,42 @@
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
+// package access top-level classes to avoid problem with RedefineClassHelper
+// and nested types.
+
+class RedefinePreviousVersions_B { }
+
+class RedefinePreviousVersions_Running {
+    public static volatile boolean stop = false;
+    public static volatile boolean running = false;
+    static void localSleep() {
+        try {
+            Thread.sleep(10); // sleep for 10 ms
+        } catch(InterruptedException ie) {
+        }
+    }
+
+    public static void infinite() {
+        running = true;
+        while (!stop) { localSleep(); }
+    }
+}
+
+
+
 public class RedefinePreviousVersions {
 
     public static String newB =
-                "class RedefinePreviousVersions$B {" +
+                "class RedefinePreviousVersions_B {" +
                 "}";
 
-    static class B { }
-
     public static String newRunning =
-        "class RedefinePreviousVersions$Running {" +
+        "class RedefinePreviousVersions_Running {" +
         "    public static volatile boolean stop = true;" +
         "    public static volatile boolean running = true;" +
         "    static void localSleep() { }" +
         "    public static void infinite() { }" +
         "}";
-
-    static class Running {
-        public static volatile boolean stop = false;
-        public static volatile boolean running = false;
-        static void localSleep() {
-          try{
-            Thread.sleep(10); // sleep for 10 ms
-          } catch(InterruptedException ie) {
-          }
-        }
-
-        public static void infinite() {
-            running = true;
-            while (!stop) { localSleep(); }
-        }
-    }
 
     public static void main(String[] args) throws Exception {
 
@@ -88,7 +93,7 @@ public class RedefinePreviousVersions {
         // Redefine a class and create some garbage
         // Since there are no methods running, the previous version is never added to the
         // previous_version_list and the flag _has_previous_versions should stay false
-        RedefineClassHelper.redefineClass(B.class, newB);
+        RedefineClassHelper.redefineClass(RedefinePreviousVersions_B.class, newB);
 
         for (int i = 0; i < 10 ; i++) {
             String s = new String("some garbage");
@@ -98,17 +103,17 @@ public class RedefinePreviousVersions {
         // Start a class that has a method running
         new Thread() {
             public void run() {
-                Running.infinite();
+                RedefinePreviousVersions_Running.infinite();
             }
         }.start();
 
-        while (!Running.running) {
+        while (!RedefinePreviousVersions_Running.running) {
             Thread.sleep(10); // sleep for 10 ms
         }
 
         // Since a method of newRunning is running, this class should be added to the previous_version_list
         // of Running, and _has_previous_versions should return true at class unloading.
-        RedefineClassHelper.redefineClass(Running.class, newRunning);
+        RedefineClassHelper.redefineClass(RedefinePreviousVersions_Running.class, newRunning);
 
         for (int i = 0; i < 10 ; i++) {
             String s = new String("some garbage");
@@ -116,7 +121,7 @@ public class RedefinePreviousVersions {
         }
 
         // purge should clean everything up, except Xcomp it might not.
-        Running.stop = true;
+        RedefinePreviousVersions_Running.stop = true;
 
         for (int i = 0; i < 10 ; i++) {
             String s = new String("some garbage");

@@ -24,13 +24,11 @@
 
 #include "precompiled.hpp"
 #include "jfr/recorder/stringpool/jfrStringPoolBuffer.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/orderAccess.hpp"
-#include "runtime/thread.inline.hpp"
 
 JfrStringPoolBuffer::JfrStringPoolBuffer() : JfrBuffer(), _string_count_pos(0), _string_count_top(0) {}
 
 void JfrStringPoolBuffer::reinitialize() {
+  assert(acquired_by_self() || retired(), "invariant");
   concurrent_top();
   set_pos((start()));
   set_string_pos(0);
@@ -39,35 +37,31 @@ void JfrStringPoolBuffer::reinitialize() {
 }
 
 uint64_t JfrStringPoolBuffer::string_pos() const {
-  return OrderAccess::load_acquire(&_string_count_pos);
+  assert(acquired_by_self() || retired(), "invariant");
+  return _string_count_pos;
 }
 
 uint64_t JfrStringPoolBuffer::string_top() const {
-  return OrderAccess::load_acquire(&_string_count_top);
+  assert(acquired_by_self() || retired(), "invariant");
+  return _string_count_top;
 }
 
 uint64_t JfrStringPoolBuffer::string_count() const {
+  assert(acquired_by_self() || retired(), "invariant");
   return string_pos() - string_top();
 }
 
 void JfrStringPoolBuffer::set_string_pos(uint64_t value) {
-  Atomic::store(value, &_string_count_pos);
+  assert(acquired_by_self() || retired(), "invariant");
+  _string_count_pos = value;
 }
 
 void JfrStringPoolBuffer::increment(uint64_t value) {
-#if !(defined(ARM) || defined(IA32))
-  Atomic::add(value, &_string_count_pos);
-#else
-  // TODO: This should be fixed in Atomic::add handling for 32-bit platforms,
-  // see JDK-8203283. We workaround the absence of support right here.
-  uint64_t cur, val;
-  do {
-     cur = Atomic::load(&_string_count_top);
-     val = cur + value;
-  } while (Atomic::cmpxchg(val, &_string_count_pos, cur) != cur);
-#endif
+  assert(acquired_by_self() || retired(), "invariant");
+  ++_string_count_pos;
 }
 
 void JfrStringPoolBuffer::set_string_top(uint64_t value) {
-  Atomic::store(value, &_string_count_top);
+  assert(acquired_by_self() || retired(), "invariant");
+  _string_count_top = value;
 }

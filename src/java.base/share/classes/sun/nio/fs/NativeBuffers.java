@@ -25,6 +25,7 @@
 
 package sun.nio.fs;
 
+import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 
 /**
@@ -37,8 +38,21 @@ class NativeBuffers {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
     private static final int TEMP_BUF_POOL_SIZE = 3;
-    private static ThreadLocal<NativeBuffer[]> threadLocal =
-        new ThreadLocal<NativeBuffer[]>();
+    private static ThreadLocal<NativeBuffer[]> threadLocal = new TerminatingThreadLocal<>() {
+        @Override
+        protected void threadTerminated(NativeBuffer[] buffers) {
+            // threadLocal may be initialized but with initialValue of null
+            if (buffers != null) {
+                for (int i = 0; i < TEMP_BUF_POOL_SIZE; i++) {
+                    NativeBuffer buffer = buffers[i];
+                    if (buffer != null) {
+                        buffer.free();
+                        buffers[i] = null;
+                    }
+                }
+            }
+        }
+    };
 
     /**
      * Allocates a native buffer, of at least the given size, from the heap.

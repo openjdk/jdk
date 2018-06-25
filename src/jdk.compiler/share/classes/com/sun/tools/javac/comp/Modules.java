@@ -81,6 +81,7 @@ import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.jvm.JNIWriter;
+import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
@@ -144,6 +145,7 @@ public class Modules extends JCTree.Visitor {
     private final JavaFileManager fileManager;
     private final ModuleFinder moduleFinder;
     private final Source source;
+    private final Target target;
     private final boolean allowModules;
     private final boolean allowAccessIntoSystem;
 
@@ -191,6 +193,7 @@ public class Modules extends JCTree.Visitor {
         types = Types.instance(context);
         fileManager = context.get(JavaFileManager.class);
         source = Source.instance(context);
+        target = Target.instance(context);
         allowModules = Feature.MODULES.allowedInSource(source);
         Options options = Options.instance(context);
 
@@ -1234,18 +1237,24 @@ public class Modules extends JCTree.Visitor {
         Set<ModuleSymbol> enabledRoot = new LinkedHashSet<>();
 
         if (rootModules.contains(syms.unnamedModule)) {
-            ModuleSymbol javaSE = syms.getModule(java_se);
             Predicate<ModuleSymbol> jdkModulePred;
-
-            if (javaSE != null && (observable == null || observable.contains(javaSE))) {
+            if (target.allApiModulesAreRoots()) {
                 jdkModulePred = sym -> {
                     sym.complete();
-                    return   !sym.name.startsWith(java_)
-                           && sym.exports.stream().anyMatch(e -> e.modules == null);
+                    return sym.exports.stream().anyMatch(e -> e.modules == null);
                 };
-                enabledRoot.add(javaSE);
             } else {
-                jdkModulePred = sym -> true;
+                ModuleSymbol javaSE = syms.getModule(java_se);
+                if (javaSE != null && (observable == null || observable.contains(javaSE))) {
+                    jdkModulePred = sym -> {
+                        sym.complete();
+                        return !sym.name.startsWith(java_)
+                            && sym.exports.stream().anyMatch(e -> e.modules == null);
+                    };
+                    enabledRoot.add(javaSE);
+                } else {
+                    jdkModulePred = sym -> true;
+                }
             }
 
             Predicate<ModuleSymbol> noIncubatorPred = sym -> {

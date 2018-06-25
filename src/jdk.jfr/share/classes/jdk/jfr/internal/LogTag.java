@@ -73,7 +73,12 @@ public enum LogTag {
     /**
      * Covers setting (for users of the JDK)
      */
-    JFR_SETTING(9);
+    JFR_SETTING(9),
+    /**
+     * Covers usage of jcmd with JFR
+     */
+    JFR_DCMD(10);
+
     /* set from native side */
     private volatile int tagSetLevel = 100; // prevent logging if JVM log system has not been initialized
 
@@ -85,5 +90,9 @@ public enum LogTag {
 
     public boolean shouldLog(int level) {
         return level >= tagSetLevel;
+    }
+
+    public boolean shouldLog(LogLevel logLevel) {
+        return shouldLog(logLevel.level);
     }
 }

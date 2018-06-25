@@ -26,6 +26,7 @@
 package sun.nio.ch;
 
 import java.io.FileDescriptor;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
@@ -35,9 +36,10 @@ import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
+
+import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
-import java.io.IOException;
 
 public class Util {
 
@@ -50,12 +52,17 @@ public class Util {
     private static final long MAX_CACHED_BUFFER_SIZE = getMaxCachedBufferSize();
 
     // Per-thread cache of temporary direct buffers
-    private static ThreadLocal<BufferCache> bufferCache =
-        new ThreadLocal<BufferCache>()
-    {
+    private static ThreadLocal<BufferCache> bufferCache = new TerminatingThreadLocal<>() {
         @Override
         protected BufferCache initialValue() {
             return new BufferCache();
+        }
+        @Override
+        protected void threadTerminated(BufferCache cache) { // will never be null
+            while (!cache.isEmpty()) {
+                ByteBuffer bb = cache.removeFirst();
+                free(bb);
+            }
         }
     };
 

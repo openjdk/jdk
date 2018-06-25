@@ -55,17 +55,17 @@ class DoNothingClosure : public OopClosure {
 };
 extern DoNothingClosure do_nothing_cl;
 
-// ExtendedOopClosure adds extra code to be run during oop iterations.
+// OopIterateClosure adds extra code to be run during oop iterations.
 // This is needed by the GC and is extracted to a separate type to not
 // pollute the OopClosure interface.
-class ExtendedOopClosure : public OopClosure {
+class OopIterateClosure : public OopClosure {
  private:
   ReferenceDiscoverer* _ref_discoverer;
 
  protected:
-  ExtendedOopClosure(ReferenceDiscoverer* rd) : _ref_discoverer(rd) { }
-  ExtendedOopClosure() : _ref_discoverer(NULL) { }
-  ~ExtendedOopClosure() { }
+  OopIterateClosure(ReferenceDiscoverer* rd) : _ref_discoverer(rd) { }
+  OopIterateClosure() : _ref_discoverer(NULL) { }
+  ~OopIterateClosure() { }
 
   void set_ref_discoverer_internal(ReferenceDiscoverer* rd) { _ref_discoverer = rd; }
 
@@ -89,23 +89,10 @@ class ExtendedOopClosure : public OopClosure {
   // 1) do_klass on the header klass pointer.
   // 2) do_klass on the klass pointer in the mirrors.
   // 3) do_cld   on the class loader data in class loaders.
-  //
-  // The virtual (without suffix) and the non-virtual (with _nv suffix) need
-  // to be updated together, or else the devirtualization will break.
-  //
-  // Providing default implementations of the _nv functions unfortunately
-  // removes the compile-time safeness, but reduces the clutter for the
-  // ExtendedOopClosures that don't need to walk the metadata.
-  // Currently, only CMS and G1 need these.
 
-  bool do_metadata_nv()      { return false; }
-  virtual bool do_metadata() { return do_metadata_nv(); }
-
-  void do_klass_nv(Klass* k)      { ShouldNotReachHere(); }
-  virtual void do_klass(Klass* k) { do_klass_nv(k); }
-
-  void do_cld_nv(ClassLoaderData* cld)      { ShouldNotReachHere(); }
-  virtual void do_cld(ClassLoaderData* cld) { do_cld_nv(cld); }
+  virtual bool do_metadata() = 0;
+  virtual void do_klass(Klass* k) = 0;
+  virtual void do_cld(ClassLoaderData* cld) = 0;
 
   // True iff this closure may be safely applied more than once to an oop
   // location without an intervening "major reset" (like the end of a GC).
@@ -120,19 +107,24 @@ class ExtendedOopClosure : public OopClosure {
 #endif
 };
 
+// An OopIterateClosure that can be used when there's no need to visit the Metadata.
+class BasicOopIterateClosure : public OopIterateClosure {
+public:
+  BasicOopIterateClosure(ReferenceDiscoverer* rd = NULL) : OopIterateClosure(rd) {}
+
+  virtual bool do_metadata() { return false; }
+  virtual void do_klass(Klass* k) { ShouldNotReachHere(); }
+  virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
+};
+
 // Wrapper closure only used to implement oop_iterate_no_header().
-class NoHeaderExtendedOopClosure : public ExtendedOopClosure {
+class NoHeaderExtendedOopClosure : public BasicOopIterateClosure {
   OopClosure* _wrapped_closure;
  public:
   NoHeaderExtendedOopClosure(OopClosure* cl) : _wrapped_closure(cl) {}
   // Warning: this calls the virtual version do_oop in the the wrapped closure.
-  void do_oop_nv(oop* p)       { _wrapped_closure->do_oop(p); }
-  void do_oop_nv(narrowOop* p) { _wrapped_closure->do_oop(p); }
-
-  void do_oop(oop* p)          { assert(false, "Only the _nv versions should be used");
-                                 _wrapped_closure->do_oop(p); }
-  void do_oop(narrowOop* p)    { assert(false, "Only the _nv versions should be used");
-                                 _wrapped_closure->do_oop(p);}
+  virtual void do_oop(oop* p)       { _wrapped_closure->do_oop(p); }
+  virtual void do_oop(narrowOop* p) { _wrapped_closure->do_oop(p); }
 };
 
 class KlassClosure : public Closure {
@@ -161,20 +153,13 @@ class CLDToOopClosure : public CLDClosure {
 // The base class for all concurrent marking closures,
 // that participates in class unloading.
 // It's used to proxy through the metadata to the oops defined in them.
-class MetadataAwareOopClosure: public ExtendedOopClosure {
-
+class MetadataVisitingOopIterateClosure: public OopIterateClosure {
  public:
-  MetadataAwareOopClosure() : ExtendedOopClosure() { }
-  MetadataAwareOopClosure(ReferenceDiscoverer* rd) : ExtendedOopClosure(rd) { }
+  MetadataVisitingOopIterateClosure(ReferenceDiscoverer* rd = NULL) : OopIterateClosure(rd) { }
 
-  bool do_metadata_nv()      { return true; }
-  virtual bool do_metadata() { return do_metadata_nv(); }
-
-  void do_klass_nv(Klass* k);
-  virtual void do_klass(Klass* k) { do_klass_nv(k); }
-
-  void do_cld_nv(ClassLoaderData* cld);
-  virtual void do_cld(ClassLoaderData* cld) { do_cld_nv(cld); }
+  virtual bool do_metadata() { return true; }
+  virtual void do_klass(Klass* k);
+  virtual void do_cld(ClassLoaderData* cld);
 };
 
 // ObjectClosure is used for iterating through an object space
@@ -204,10 +189,10 @@ class AlwaysFalseClosure : public BoolObjectClosure {
 // Applies an oop closure to all ref fields in objects iterated over in an
 // object iteration.
 class ObjectToOopClosure: public ObjectClosure {
-  ExtendedOopClosure* _cl;
+  OopIterateClosure* _cl;
 public:
   void do_object(oop obj);
-  ObjectToOopClosure(ExtendedOopClosure* cl) : _cl(cl) {}
+  ObjectToOopClosure(OopIterateClosure* cl) : _cl(cl) {}
 };
 
 // A version of ObjectClosure that is expected to be robust
@@ -371,30 +356,22 @@ class SymbolClosure : public StackObj {
   }
 };
 
-// The two class template specializations are used to dispatch calls
-// to the ExtendedOopClosure functions. If use_non_virtual_call is true,
-// the non-virtual versions are called (E.g. do_oop_nv), otherwise the
-// virtual versions are called (E.g. do_oop).
-
-template <bool use_non_virtual_call>
-class Devirtualizer {};
-
-// Dispatches to the non-virtual functions.
-template <> class Devirtualizer<true> {
+// Dispatches to the non-virtual functions if OopClosureType has
+// a concrete implementation, otherwise a virtual call is taken.
+class Devirtualizer {
  public:
-  template <class OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
-  template <class OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
-  template <class OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
-  template <class OopClosureType>             static bool do_metadata(OopClosureType* closure);
+  template <typename OopClosureType, typename T> static void do_oop_no_verify(OopClosureType* closure, T* p);
+  template <typename OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
+  template <typename OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
+  template <typename OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
+  template <typename OopClosureType>             static bool do_metadata(OopClosureType* closure);
 };
 
-// Dispatches to the virtual functions.
-template <> class Devirtualizer<false> {
+class OopIteratorClosureDispatch {
  public:
-  template <class OopClosureType, typename T> static void do_oop(OopClosureType* closure, T* p);
-  template <class OopClosureType>             static void do_klass(OopClosureType* closure, Klass* k);
-  template <class OopClosureType>             static void do_cld(OopClosureType* closure, ClassLoaderData* cld);
-  template <class OopClosureType>             static bool do_metadata(OopClosureType* closure);
+  template <typename OopClosureType> static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass);
+  template <typename OopClosureType> static void oop_oop_iterate(OopClosureType* cl, oop obj, Klass* klass, MemRegion mr);
+  template <typename OopClosureType> static void oop_oop_iterate_backwards(OopClosureType* cl, oop obj, Klass* klass);
 };
 
 #endif // SHARE_VM_MEMORY_ITERATOR_HPP

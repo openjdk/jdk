@@ -1,12 +1,14 @@
-## International Components for Unicode (ICU4J) v56.1
+## International Components for Unicode (ICU4J) v60.2
 
 ### ICU4J License
-<pre>
+
+```
 
 UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
 Unicode Data Files include all data files under the directories
 http://www.unicode.org/Public/, http://www.unicode.org/reports/,
-http://www.unicode.org/cldr/data/, http://source.icu-project.org/repos/icu/, and
+http://www.unicode.org/cldr/data/,
+http://source.icu-project.org/repos/icu/, and
 http://www.unicode.org/utility/trac/browser/.
 
 Unicode Data Files do not include PDF online code charts under the
@@ -15,7 +17,8 @@ directory http://www.unicode.org/Public/.
 Software includes any source code published in the Unicode Standard
 or under the directories
 http://www.unicode.org/Public/, http://www.unicode.org/reports/,
-http://www.unicode.org/cldr/data/, http://source.icu-project.org/repos/icu/, and
+http://www.unicode.org/cldr/data/,
+http://source.icu-project.org/repos/icu/, and
 http://www.unicode.org/utility/trac/browser/.
 
 NOTICE TO USER: Carefully read the following legal agreement.
@@ -28,7 +31,7 @@ THE DATA FILES OR SOFTWARE.
 
 COPYRIGHT AND PERMISSION NOTICE
 
-Copyright © 1991-2016 Unicode, Inc. All rights reserved.
+Copyright © 1991-2018 Unicode, Inc. All rights reserved.
 Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
 
 Permission is hereby granted, free of charge, to any person obtaining
@@ -60,4 +63,4 @@ shall not be used in advertising or otherwise to promote the sale,
 use or other dealings in these Data Files or Software without prior
 written authorization of the copyright holder.
 
-</pre>
+```

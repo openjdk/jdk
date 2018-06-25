@@ -69,6 +69,3 @@ void ZVerifyObjectClosure::do_object(oop o) {
   ZVerifyHeapOopClosure cl(o);
   o->oop_iterate(&cl);
 }
-
-// Generate Z specialized oop_oop_iterate functions.
-SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_Z(ALL_KLASS_OOP_OOP_ITERATE_DEFN)

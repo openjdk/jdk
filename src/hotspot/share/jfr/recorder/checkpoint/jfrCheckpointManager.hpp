@@ -28,7 +28,6 @@
 #include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.hpp"
 #include "jfr/recorder/storage/jfrMemorySpaceRetrieval.hpp"
-#include "jfr/utilities/jfrTypes.hpp"
 
 class JfrCheckpointManager;
 class JfrChunkWriter;
@@ -59,7 +58,6 @@ class JfrCheckpointManager : public JfrCHeapObj {
   JfrCheckpointMspace* _free_list_mspace;
   JfrCheckpointMspace* _epoch_transition_mspace;
   Mutex* _lock;
-  JfrTypeManager* _type_manager;
   const Thread* _service_thread;
   JfrChunkWriter& _chunkwriter;
   bool _checkpoint_epoch_state;
@@ -90,8 +88,6 @@ class JfrCheckpointManager : public JfrCHeapObj {
   static JfrCheckpointManager* create(JfrChunkWriter& cw);
   bool initialize();
   static void destroy();
-
-  static bool register_serializer(JfrTypeId id, bool require_safepoint, bool permit_cache, JfrSerializer* serializer);
 
  public:
   void register_service_thread(const Thread* t);

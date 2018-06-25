@@ -1,7 +1,7 @@
 ## jQuery v3.3.1
 
 ### jQuery License
-<pre>
+```
 jQuery v 3.3.1
 Copyright 2005, 2018 jQuery Foundation, Inc. and other contributors
 http://jquery.com/
@@ -70,4 +70,4 @@ the terms above.
 
 *********************
 
-</pre>
+```

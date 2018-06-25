@@ -210,7 +210,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphKlassIteratorStatic;
   friend class ClassLoaderDataGraphMetaspaceIterator;
-  friend class InstanceKlass;
+  friend class Klass;
   friend class MetaDataFactory;
   friend class Method;
 
@@ -305,7 +305,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   Dictionary* create_dictionary();
 
-  void initialize_name_and_klass(Handle class_loader);
+  void initialize_name(Handle class_loader);
  public:
   // GC interface.
   void clear_claimed() { _claimed = 0; }

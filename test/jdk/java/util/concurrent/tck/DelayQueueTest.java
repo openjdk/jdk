@@ -593,10 +593,12 @@ public class DelayQueueTest extends JSR166TestCase {
      */
     public void testToArray() throws InterruptedException {
         DelayQueue q = populatedQueue(SIZE);
-        Object[] o = q.toArray();
-        Arrays.sort(o);
-        for (int i = 0; i < o.length; i++)
-            assertSame(o[i], q.take());
+        Object[] a = q.toArray();
+        assertSame(Object[].class, a.getClass());
+        Arrays.sort(a);
+        for (Object o : a)
+            assertSame(o, q.take());
+        assertTrue(q.isEmpty());
     }
 
     /**
@@ -608,8 +610,9 @@ public class DelayQueueTest extends JSR166TestCase {
         PDelay[] array = q.toArray(ints);
         assertSame(ints, array);
         Arrays.sort(ints);
-        for (int i = 0; i < ints.length; i++)
-            assertSame(ints[i], q.remove());
+        for (PDelay o : ints)
+            assertSame(o, q.remove());
+        assertTrue(q.isEmpty());
     }
 
     /**

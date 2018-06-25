@@ -37,7 +37,7 @@
 #include "oops/oop.inline.hpp"
 
 template <class T> inline void ParScanWeakRefClosure::do_oop_work(T* p) {
-  oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
   // weak references are sometimes scanned twice; must check
   // that to-space doesn't already contain this object
   if ((HeapWord*)obj < _boundary && !_g->to()->is_in_reserved(obj)) {
@@ -53,16 +53,16 @@ template <class T> inline void ParScanWeakRefClosure::do_oop_work(T* p) {
       new_obj = ((ParNewGeneration*)_g)->copy_to_survivor_space(_par_scan_state,
                                                                 obj, obj_sz, m);
     }
-    RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+    RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
   }
 }
 
-inline void ParScanWeakRefClosure::do_oop_nv(oop* p)       { ParScanWeakRefClosure::do_oop_work(p); }
-inline void ParScanWeakRefClosure::do_oop_nv(narrowOop* p) { ParScanWeakRefClosure::do_oop_work(p); }
+inline void ParScanWeakRefClosure::do_oop(oop* p)       { ParScanWeakRefClosure::do_oop_work(p); }
+inline void ParScanWeakRefClosure::do_oop(narrowOop* p) { ParScanWeakRefClosure::do_oop_work(p); }
 
 template <class T> inline void ParScanClosure::par_do_barrier(T* p) {
   assert(generation()->is_in_reserved(p), "expected ref in generation");
-  oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
   // If p points to a younger generation, mark the card.
   if ((HeapWord*)obj < gen_boundary()) {
     rs()->write_ref_field_gc_par(p, obj);
@@ -112,14 +112,14 @@ inline void ParScanClosure::do_oop_work(T* p,
       oop new_obj;
       if (m->is_marked()) { // Contains forwarding pointer.
         new_obj = ParNewGeneration::real_forwardee(obj);
-        RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+        RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
         log_develop_trace(gc, scavenge)("{%s %s ( " PTR_FORMAT " ) " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
                                         "forwarded ",
                                         new_obj->klass()->internal_name(), p2i(p), p2i((void *)obj), p2i((void *)new_obj), new_obj->size());
       } else {
         size_t obj_sz = obj->size_given_klass(objK);
         new_obj = _g->copy_to_survivor_space(_par_scan_state, obj, obj_sz, m);
-        RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+        RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
         if (root_scan) {
           // This may have pushed an object.  If we have a root
           // category with a lot of roots, can't let the queue get too
@@ -137,10 +137,10 @@ inline void ParScanClosure::do_oop_work(T* p,
   }
 }
 
-inline void ParScanWithBarrierClosure::do_oop_nv(oop* p)       { ParScanClosure::do_oop_work(p, true, false); }
-inline void ParScanWithBarrierClosure::do_oop_nv(narrowOop* p) { ParScanClosure::do_oop_work(p, true, false); }
+inline void ParScanWithBarrierClosure::do_oop(oop* p)       { ParScanClosure::do_oop_work(p, true, false); }
+inline void ParScanWithBarrierClosure::do_oop(narrowOop* p) { ParScanClosure::do_oop_work(p, true, false); }
 
-inline void ParScanWithoutBarrierClosure::do_oop_nv(oop* p)       { ParScanClosure::do_oop_work(p, false, false); }
-inline void ParScanWithoutBarrierClosure::do_oop_nv(narrowOop* p) { ParScanClosure::do_oop_work(p, false, false); }
+inline void ParScanWithoutBarrierClosure::do_oop(oop* p)       { ParScanClosure::do_oop_work(p, false, false); }
+inline void ParScanWithoutBarrierClosure::do_oop(narrowOop* p) { ParScanClosure::do_oop_work(p, false, false); }
 
 #endif // SHARE_VM_GC_CMS_PAROOPCLOSURES_INLINE_HPP

@@ -200,8 +200,8 @@ public class ConcurrentHashMap8Test extends JSR166TestCase {
     static Set populatedSet(Integer[] elements) {
         Set<Integer> a = ConcurrentHashMap.<Integer>newKeySet();
         assertTrue(a.isEmpty());
-        for (int i = 0; i < elements.length; i++)
-            assertTrue(a.add(elements[i]));
+        for (Integer element : elements)
+            assertTrue(a.add(element));
         assertFalse(a.isEmpty());
         assertEquals(elements.length, a.size());
         return a;

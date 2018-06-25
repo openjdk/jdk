@@ -175,13 +175,13 @@ private:
 
   void update_contents(oop obj);
 
-  class MarkAndPushClosure: public ExtendedOopClosure {
+  class MarkAndPushClosure: public BasicOopIterateClosure {
    private:
     ParCompactionManager* _compaction_manager;
    public:
     MarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
 
-    template <typename T> void do_oop_nv(T* p);
+    template <typename T> void do_oop_work(T* p);
     virtual void do_oop(oop* p);
     virtual void do_oop(narrowOop* p);
 

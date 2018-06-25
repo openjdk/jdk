@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class JdepsConfiguration implements AutoCloseable {
@@ -319,7 +320,6 @@ public class JdepsConfiguration implements AutoCloseable {
 
     static class SystemModuleFinder implements ModuleFinder {
         private static final String JAVA_HOME = System.getProperty("java.home");
-        private static final String JAVA_SE = "java.se";
 
         private final FileSystem fileSystem;
         private final Path root;
@@ -444,29 +444,15 @@ public class JdepsConfiguration implements AutoCloseable {
         }
 
         public Set<String> defaultSystemRoots() {
-            Set<String> roots = new HashSet<>();
-            boolean hasJava = false;
-            if (systemModules.containsKey(JAVA_SE)) {
-                // java.se is a system module
-                hasJava = true;
-                roots.add(JAVA_SE);
-            }
-
-            for (ModuleReference mref : systemModules.values()) {
-                String mn = mref.descriptor().name();
-                if (hasJava && mn.startsWith("java."))
-                    continue;
-
-                // add as root if observable and exports at least one package
-                ModuleDescriptor descriptor = mref.descriptor();
-                for (ModuleDescriptor.Exports e : descriptor.exports()) {
-                    if (!e.isQualified()) {
-                        roots.add(mn);
-                        break;
-                    }
-                }
-            }
-            return roots;
+            return systemModules.values().stream()
+                .map(ModuleReference::descriptor)
+                .filter(descriptor -> descriptor.exports()
+                        .stream()
+                        .filter(e -> !e.isQualified())
+                        .findAny()
+                        .isPresent())
+                .map(ModuleDescriptor::name)
+                .collect(Collectors.toSet());
         }
     }
 

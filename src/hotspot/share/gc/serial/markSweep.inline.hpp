@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_SERIAL_MARKSWEEP_INLINE_HPP
 #define SHARE_VM_GC_SERIAL_MARKSWEEP_INLINE_HPP
 
+#include "classfile/classLoaderData.inline.hpp"
 #include "gc/serial/markSweep.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
@@ -33,9 +34,43 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-inline int MarkSweep::adjust_pointers(oop obj) {
-  return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);
+inline void MarkSweep::mark_object(oop obj) {
+  // some marks may contain information we need to preserve so we store them away
+  // and overwrite the mark.  We'll restore it at the end of markSweep.
+  markOop mark = obj->mark_raw();
+  obj->set_mark_raw(markOopDesc::prototype()->set_marked());
+
+  if (mark->must_be_preserved(obj)) {
+    preserve_mark(obj, mark);
+  }
 }
+
+template <class T> inline void MarkSweep::mark_and_push(T* p) {
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (!CompressedOops::is_null(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    if (!obj->mark_raw()->is_marked()) {
+      mark_object(obj);
+      _marking_stack.push(obj);
+    }
+  }
+}
+
+inline void MarkSweep::follow_klass(Klass* klass) {
+  oop op = klass->klass_holder();
+  MarkSweep::mark_and_push(&op);
+}
+
+inline void MarkSweep::follow_cld(ClassLoaderData* cld) {
+  MarkSweep::follow_cld_closure.do_cld(cld);
+}
+
+template <typename T>
+inline void MarkAndPushClosure::do_oop_work(T* p)            { MarkSweep::mark_and_push(p); }
+inline void MarkAndPushClosure::do_oop(oop* p)               { do_oop_work(p); }
+inline void MarkAndPushClosure::do_oop(narrowOop* p)         { do_oop_work(p); }
+inline void MarkAndPushClosure::do_klass(Klass* k)           { MarkSweep::follow_klass(k); }
+inline void MarkAndPushClosure::do_cld(ClassLoaderData* cld) { MarkSweep::follow_cld(cld); }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
@@ -54,9 +89,19 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     if (new_obj != NULL) {
       assert(Universe::heap()->is_in_reserved(new_obj),
              "should be in object space");
-      RawAccess<OOP_NOT_NULL>::oop_store(p, new_obj);
+      RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }
   }
+}
+
+template <typename T>
+void AdjustPointerClosure::do_oop_work(T* p)           { MarkSweep::adjust_pointer(p); }
+inline void AdjustPointerClosure::do_oop(oop* p)       { do_oop_work(p); }
+inline void AdjustPointerClosure::do_oop(narrowOop* p) { do_oop_work(p); }
+
+
+inline int MarkSweep::adjust_pointers(oop obj) {
+  return obj->oop_iterate_size(&MarkSweep::adjust_pointer_closure);
 }
 
 #endif // SHARE_VM_GC_SERIAL_MARKSWEEP_INLINE_HPP

@@ -312,13 +312,13 @@ public interface Condition {
      * <pre> {@code
      * boolean aMethod(long timeout, TimeUnit unit)
      *     throws InterruptedException {
-     *   long nanos = unit.toNanos(timeout);
+     *   long nanosRemaining = unit.toNanos(timeout);
      *   lock.lock();
      *   try {
      *     while (!conditionBeingWaitedFor()) {
-     *       if (nanos <= 0L)
+     *       if (nanosRemaining <= 0L)
      *         return false;
-     *       nanos = theCondition.awaitNanos(nanos);
+     *       nanosRemaining = theCondition.awaitNanos(nanosRemaining);
      *     }
      *     // ...
      *     return true;

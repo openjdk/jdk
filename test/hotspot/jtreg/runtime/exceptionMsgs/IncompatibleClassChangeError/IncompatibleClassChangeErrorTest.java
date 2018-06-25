@@ -212,7 +212,7 @@ public class IncompatibleClassChangeErrorTest {
     }
 
     private static String expectedErrorMessage3 =
-        "Class test.ICC3_B can not implement test.ICC3_A, because it is not an interface";
+        "class test.ICC3_B can not implement test.ICC3_A, because it is not an interface (test.ICC3_A is in unnamed module of loader 'app')";
 
     public static void test3_implementsClass() throws Exception {
         try {

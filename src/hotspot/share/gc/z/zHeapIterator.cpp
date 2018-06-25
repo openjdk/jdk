@@ -28,6 +28,7 @@
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/stack.inline.hpp"
@@ -73,7 +74,7 @@ public:
   }
 };
 
-class ZHeapIteratorPushOopClosure : public ExtendedOopClosure {
+class ZHeapIteratorPushOopClosure : public BasicOopIterateClosure {
 private:
   ZHeapIterator* const _iter;
   const oop            _base;
@@ -83,21 +84,13 @@ public:
       _iter(iter),
       _base(base) {}
 
-  void do_oop_nv(oop* p) {
+  virtual void do_oop(oop* p) {
     const oop obj = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
     _iter->push(obj);
   }
 
-  void do_oop_nv(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-
-  virtual void do_oop(oop* p) {
-    do_oop_nv(p);
-  }
-
   virtual void do_oop(narrowOop* p) {
-    do_oop_nv(p);
+    ShouldNotReachHere();
   }
 
 #ifdef ASSERT

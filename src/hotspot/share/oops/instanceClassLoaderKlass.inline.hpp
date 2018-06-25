@@ -26,7 +26,7 @@
 #define SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP
 
 #include "classfile/javaClasses.hpp"
-#include "memory/iterator.inline.hpp"
+#include "memory/iterator.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -34,48 +34,40 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-template <bool nv, class OopClosureType>
+template <typename T, class OopClosureType>
 inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate<nv>(obj, closure);
+  InstanceKlass::oop_oop_iterate<T>(obj, closure);
 
-  if (Devirtualizer<nv>::do_metadata(closure)) {
+  if (Devirtualizer::do_metadata(closure)) {
     ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
     // cld can be null if we have a non-registered class loader.
     if (cld != NULL) {
-      Devirtualizer<nv>::do_cld(closure, cld);
+      Devirtualizer::do_cld(closure, cld);
     }
   }
 }
 
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-template <bool nv, class OopClosureType>
+template <typename T, class OopClosureType>
 inline void InstanceClassLoaderKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  InstanceKlass::oop_oop_iterate_reverse<nv>(obj, closure);
+  InstanceKlass::oop_oop_iterate_reverse<T>(obj, closure);
 
-  assert(!Devirtualizer<nv>::do_metadata(closure),
+  assert(!Devirtualizer::do_metadata(closure),
       "Code to handle metadata is not implemented");
 }
-#endif // INCLUDE_OOP_OOP_ITERATE_BACKWARDS
 
-
-template <bool nv, class OopClosureType>
+template <typename T, class OopClosureType>
 inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  InstanceKlass::oop_oop_iterate_bounded<nv>(obj, closure, mr);
+  InstanceKlass::oop_oop_iterate_bounded<T>(obj, closure, mr);
 
-  if (Devirtualizer<nv>::do_metadata(closure)) {
+  if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
       ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
       // cld can be null if we have a non-registered class loader.
       if (cld != NULL) {
-        Devirtualizer<nv>::do_cld(closure, cld);
+        Devirtualizer::do_cld(closure, cld);
       }
     }
   }
 }
-
-#define ALL_INSTANCE_CLASS_LOADER_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-  OOP_OOP_ITERATE_DEFN(          InstanceClassLoaderKlass, OopClosureType, nv_suffix)    \
-  OOP_OOP_ITERATE_DEFN_BOUNDED(  InstanceClassLoaderKlass, OopClosureType, nv_suffix)    \
-  OOP_OOP_ITERATE_DEFN_BACKWARDS(InstanceClassLoaderKlass, OopClosureType, nv_suffix)
 
 #endif // SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_INLINE_HPP

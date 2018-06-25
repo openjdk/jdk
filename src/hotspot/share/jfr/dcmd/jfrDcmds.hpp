@@ -31,6 +31,10 @@ class JfrDumpFlightRecordingDCmd : public DCmdWithParser {
  protected:
   DCmdArgument<char*> _name;
   DCmdArgument<char*> _filename;
+  DCmdArgument<NanoTimeArgument> _maxage;
+  DCmdArgument<MemorySizeArgument> _maxsize;
+  DCmdArgument<char*> _begin;
+  DCmdArgument<char*> _end;
   DCmdArgument<bool>  _path_to_gc_roots;
 
  public:

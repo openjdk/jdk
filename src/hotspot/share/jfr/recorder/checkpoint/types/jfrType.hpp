@@ -135,14 +135,4 @@ class JfrThreadConstant : public JfrSerializer {
   void serialize(JfrCheckpointWriter& writer);
 };
 
-class ZStatisticsCounterTypeConstant : public JfrSerializer {
- public:
-  void serialize(JfrCheckpointWriter& writer);
-};
-
-class ZStatisticsSamplerTypeConstant : public JfrSerializer {
- public:
-  void serialize(JfrCheckpointWriter& writer);
-};
-
 #endif // SHARE_VM_JFR_CHECKPOINT_CONSTANT_JFRCONSTANT_HPP

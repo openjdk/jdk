@@ -361,9 +361,7 @@ public class SubmissionPublisherTest extends JSR166TestCase {
         TestSubscriber s = new TestSubscriber();
         SubmissionPublisher<Integer> p = basicPublisher();
         s.throwOnCall = true;
-        try {
-            p.subscribe(s);
-        } catch (Exception ok) {}
+        p.subscribe(s);
         s.awaitError();
         assertEquals(0, s.nexts);
         assertEquals(1, s.errors);

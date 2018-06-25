@@ -26,6 +26,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zOop.inline.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"

@@ -31,11 +31,11 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.Utils;
@@ -93,11 +93,14 @@ public final class Recording implements Closeable {
 
     private final PlatformRecording internal;
 
-    private Recording(PlatformRecording internal) {
-        this.internal = internal;
-        this.internal.setRecording(this);
-        if (internal.getRecording() != this) {
-            throw new InternalError("Internal recording not properly setup");
+    public Recording(Map<String, String> settings) {
+        PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
+        synchronized (r) {
+            this.internal = r.newRecording(settings);
+            this.internal.setRecording(this);
+            if (internal.getRecording() != this) {
+                throw new InternalError("Internal recording not properly setup");
+            }
         }
     }
 
@@ -115,8 +118,8 @@ public final class Recording implements Closeable {
      *         FlightRecorderPermission "accessFlightRecorder" is not set.
      */
     public Recording() {
-        this(FlightRecorder.getFlightRecorder().newInternalRecording(new HashMap<String, String>()));
-    }
+        this(new HashMap<String, String>());
+     }
 
     /**
      * Creates a recording with settings from a configuration.
@@ -145,7 +148,7 @@ public final class Recording implements Closeable {
      * @see Configuration
      */
     public Recording(Configuration configuration) {
-        this(FlightRecorder.getFlightRecorder().newInternalRecording(configuration.getSettings()));
+        this(configuration.getSettings());
     }
 
     /**
@@ -370,7 +373,8 @@ public final class Recording implements Closeable {
      */
     public void dump(Path destination) throws IOException {
         Objects.requireNonNull(destination);
-        internal.copyTo(new WriteableUserPath(destination), "Dumped by user", Collections.emptyMap());
+        internal.dump(new WriteableUserPath(destination));
+
     }
 
     /**

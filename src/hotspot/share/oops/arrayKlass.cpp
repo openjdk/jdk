@@ -71,16 +71,18 @@ Klass* ArrayKlass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) co
 
 Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
                                            const Symbol* signature,
-                                           OverpassLookupMode overpass_mode) const {
+                                           OverpassLookupMode overpass_mode,
+                                           PrivateLookupMode private_mode) const {
   // There are no methods in an array klass but the super class (Object) has some
   assert(super(), "super klass must be present");
   // Always ignore overpass methods in superclasses, although technically the
   // super klass of an array, (j.l.Object) should not have
   // any overpass methods present.
-  return super()->uncached_lookup_method(name, signature, Klass::skip_overpass);
+  return super()->uncached_lookup_method(name, signature, Klass::skip_overpass, private_mode);
 }
 
-ArrayKlass::ArrayKlass(Symbol* name) :
+ArrayKlass::ArrayKlass(Symbol* name, KlassID id) :
+  Klass(id),
   _dimension(1),
   _higher_dimension(NULL),
   _lower_dimension(NULL) {

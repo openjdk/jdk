@@ -358,7 +358,7 @@
  ]>
 
 <specification label="JVM(TM) Tool Interface"
-        majorversion="9"
+        majorversion="11"
         minorversion="0"
         microversion="0">
   <title subtitle="Version">
@@ -778,7 +778,7 @@ Agent_OnUnload_L(JavaVM *vm)</example>
 
   <intro id="bci" label="Bytecode Instrumentation">
     This interface does not include some events that one might expect in an interface with
-    profiling support.  Some examples include object allocation events and full speed
+    profiling support.  Some examples include full speed
     method enter and exit events.  The interface instead provides support for
     <i>bytecode instrumentation</i>, the ability to alter the Java virtual machine
     bytecode instructions which comprise the target program.  Typically, these alterations
@@ -3454,7 +3454,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 	  <jint/>
 	  <description>
             For <datalink id="JVMTI_HEAP_REFERENCE_FIELD"/>, the
-            referrer object is not a class or an inteface.
+            referrer object is not a class or an interface.
             In this case, <code>index</code> is the index of the field
             in the class of the referrer object.
             This class is referred to below as <i>C</i>.
@@ -7631,9 +7631,12 @@ class C2 extends C1 implements I2 {
         <eventlink id="ClassFileLoadHook"/> event
         will be sent.
         <p/>
-        The retransformation may change method bodies, the constant pool and attributes.
+        The retransformation may change method bodies, the constant pool and attributes
+        (unless explicitly prohibited).
         The retransformation must not add, remove or rename fields or methods, change the
         signatures of methods, change modifiers, or change inheritance.
+        The retransformation must not change the <code>NestHost</code> or
+        <code>NestMembers</code> attributes.
         These restrictions may be lifted in future versions.
         See the error return description below for information on error codes
         returned if an unsupported retransformation is attempted.
@@ -7703,6 +7706,9 @@ class C2 extends C1 implements I2 {
         <error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_METHOD_DELETED">
           A retransformed class file does not declare a method
           declared in the old class version.
+        </error>
+        <error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED">
+          A retransformed class file has unsupported differences in class attributes.
         </error>
         <error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_MODIFIERS_CHANGED">
           A retransformed class file has different class modifiers.
@@ -7778,9 +7784,12 @@ class C2 extends C1 implements I2 {
         <eventlink id="ClassFileLoadHook">Class File Load Hook</eventlink>
         will be sent (if enabled), but no other <jvmti/> events will be sent.
         <p/>
-        The redefinition may change method bodies, the constant pool and attributes.
+        The redefinition may change method bodies, the constant pool and attributes
+        (unless explicitly prohibited).
         The redefinition must not add, remove or rename fields or methods, change the
         signatures of methods, change modifiers, or change inheritance.
+        The retransformation must not change the <code>NestHost</code> or
+        <code>NestMembers</code> attributes.
         These restrictions may be lifted in future versions.
 	See the error return description below for information on error codes
 	returned if an unsupported redefinition is attempted.
@@ -7855,6 +7864,9 @@ class C2 extends C1 implements I2 {
 	  A new class version does not declare a method
 	  declared in the old class version.
 	</error>
+        <error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED">
+          A new class version has unsupported differences in class attributes.
+        </error>
 	<error id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_MODIFIERS_CHANGED">
 	  A new class version has different modifiers.
 	</error>
@@ -8513,10 +8525,10 @@ class C2 extends C1 implements I2 {
 	For the method indicated by <code>method</code>,
 	return the beginning and ending addresses through
 	<code>start_location_ptr</code> and <code>end_location_ptr</code>. In a
-	conventional byte code indexing scheme,
+	conventional bytecode indexing scheme,
 	<code>start_location_ptr</code> will always point to zero
 	and <code>end_location_ptr</code>
-	will always point to the byte code count minus one.
+	will always point to the bytecode count minus one.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -8649,8 +8661,8 @@ class C2 extends C1 implements I2 {
       <synopsis>Get Bytecodes</synopsis>
       <description>
 	For the method indicated by <code>method</code>,
-	return the byte codes that implement the method. The number of
-	bytecodes is returned via <code>bytecode_count_ptr</code>. The byte codes
+	return the bytecodes that implement the method. The number of
+	bytecodes is returned via <code>bytecode_count_ptr</code>. The bytecodes
 	themselves are returned via <code>bytecodes_ptr</code>.
       </description>
       <origin>jvmdi</origin>
@@ -8673,13 +8685,13 @@ class C2 extends C1 implements I2 {
 	<param id="bytecode_count_ptr">
 	  <outptr><jint/></outptr>
 	  <description>
-	    On return, points to the length of the byte code array
+	    On return, points to the length of the bytecode array
 	  </description>
 	</param>
 	<param id="bytecodes_ptr">
 	  <allocbuf outcount="bytecode_count_ptr"><uchar/></allocbuf>
 	  <description>
-	    On return, points to the pointer to the byte code array
+	    On return, points to the pointer to the bytecode array
 	  </description>
 	</param>
       </parameters>
@@ -8923,7 +8935,7 @@ method(wrapped_foo) -> nativeImplementation(foo)</example>
          layer of agents) this function allows each transformation
          to have its own prefix.
          The prefixes are applied in the order supplied and are
-         processed in the same manor as described for the
+         processed in the same manner as described for the
          application of prefixes from multiple <jvmti/> environments
          in <functionlink id="SetNativeMethodPrefix"/>.
          <p/>
@@ -11788,6 +11800,9 @@ myInit() {
       A method in the new class version has different modifiers
       than its counterpart in the old class version.
     </errorid>
+    <errorid id="JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED" num="72">
+      A new class version has unsupported differences in class attributes.
+    </errorid>
   </errorcategory>
 </errorsection>
 
@@ -12996,7 +13011,7 @@ myInit() {
       Agents that create more than one JVM TI environment, where the
       capability is added to some but not all environments, may observe the
       start phase beginning earlier in the JVM TI environments that possess
-      the capabilty.
+      the capability.
       <p/>
       In the case of VM start-up failure, this event will not be sent.
     </description>
@@ -13492,9 +13507,8 @@ myInit() {
   <event label="VM Object Allocation"
 	 id="VMObjectAlloc" const="JVMTI_EVENT_VM_OBJECT_ALLOC" num="84">
     <description>
-      Sent when a method causes the virtual machine to allocate an
-      Object visible to Java programming language code and the
-      allocation is not detectable by other intrumentation mechanisms.
+      Sent when a method causes the virtual machine to directly allocate an
+      Object visible to Java programming language code.
       Generally object allocation should be detected by instrumenting
       the bytecodes of allocating methods.
       Object allocation generated in native code by JNI function
@@ -13505,6 +13519,12 @@ myInit() {
       VM. These methods should send this event.
       Virtual machines which are incapable of bytecode instrumentation
       for some or all of their methods can send this event.
+
+      Note that the <internallink
+      id="SampledObjectAlloc">SampledObjectAlloc</internallink>
+      event is triggered on all Java object allocations, including those
+      caused by bytecode method execution, JNI method execution, and
+      directly by VM methods.
       <p/>
       Typical examples where this event might be sent:
       <ul>
@@ -14926,6 +14946,13 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update for GetCurrentThread function:
        - The function may return NULL in the start phase if the
          can_generate_early_vmstart capability is enabled.
+  </change>
+  <change date="7 February 2018" version="11.0.0">
+      Minor update for new class file NestHost and NestMembers attributes:
+        - Specify that RedefineClasses and RetransformClasses are not allowed
+          to change the class file NestHost and NestMembers attributes.
+        - Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
+          that can be returned by RedefineClasses and RetransformClasses.
   </change>
 </changehistory>
 

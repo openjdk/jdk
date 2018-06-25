@@ -650,26 +650,27 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
   return msg;
 }
 
-bool Reflection::verify_field_access(const Klass* current_class,
-                                     const Klass* resolved_class,
-                                     const Klass* field_class,
-                                     AccessFlags access,
-                                     bool classloader_only,
-                                     bool protected_restriction) {
-  // Verify that current_class can access a field of field_class, where that
+bool Reflection::verify_member_access(const Klass* current_class,
+                                      const Klass* resolved_class,
+                                      const Klass* member_class,
+                                      AccessFlags access,
+                                      bool classloader_only,
+                                      bool protected_restriction,
+                                      TRAPS) {
+  // Verify that current_class can access a member of member_class, where that
   // field's access bits are "access".  We assume that we've already verified
-  // that current_class can access field_class.
+  // that current_class can access member_class.
   //
   // If the classloader_only flag is set, we automatically allow any accesses
   // in which current_class doesn't have a classloader.
   //
-  // "resolved_class" is the runtime type of "field_class". Sometimes we don't
+  // "resolved_class" is the runtime type of "member_class". Sometimes we don't
   // need this distinction (e.g. if all we have is the runtime type, or during
   // class file parsing when we only care about the static type); in that case
-  // callers should ensure that resolved_class == field_class.
+  // callers should ensure that resolved_class == member_class.
   //
   if ((current_class == NULL) ||
-      (current_class == field_class) ||
+      (current_class == member_class) ||
       access.is_public()) {
     return true;
   }
@@ -683,18 +684,18 @@ bool Reflection::verify_field_access(const Klass* current_class,
            InstanceKlass::cast(host_class)->is_anonymous()),
            "host_class should not be anonymous");
   }
-  if (host_class == field_class) {
+  if (host_class == member_class) {
     return true;
   }
 
   if (access.is_protected()) {
     if (!protected_restriction) {
-      // See if current_class (or outermost host class) is a subclass of field_class
+      // See if current_class (or outermost host class) is a subclass of member_class
       // An interface may not access protected members of j.l.Object
-      if (!host_class->is_interface() && host_class->is_subclass_of(field_class)) {
+      if (!host_class->is_interface() && host_class->is_subclass_of(member_class)) {
         if (access.is_static() || // static fields are ok, see 6622385
             current_class == resolved_class ||
-            field_class == resolved_class ||
+            member_class == resolved_class ||
             host_class->is_subclass_of(resolved_class) ||
             resolved_class->is_subclass_of(host_class)) {
           return true;
@@ -703,8 +704,25 @@ bool Reflection::verify_field_access(const Klass* current_class,
     }
   }
 
-  if (!access.is_private() && is_same_class_package(current_class, field_class)) {
+  // package access
+  if (!access.is_private() && is_same_class_package(current_class, member_class)) {
     return true;
+  }
+
+  // private access between different classes needs a nestmate check, but
+  // not for anonymous classes - so check host_class
+  if (access.is_private() && host_class == current_class) {
+    if (current_class->is_instance_klass() && member_class->is_instance_klass() ) {
+      InstanceKlass* cur_ik = const_cast<InstanceKlass*>(InstanceKlass::cast(current_class));
+      InstanceKlass* field_ik = const_cast<InstanceKlass*>(InstanceKlass::cast(member_class));
+      // Nestmate access checks may require resolution and validation of the nest-host.
+      // It is up to the caller to check for pending exceptions and handle appropriately.
+      bool access = cur_ik->has_nestmate_access_to(field_ik, CHECK_false);
+      if (access) {
+        guarantee(resolved_class->is_subclass_of(member_class), "must be!");
+        return true;
+      }
+    }
   }
 
   // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
@@ -713,8 +731,8 @@ bool Reflection::verify_field_access(const Klass* current_class,
     return true;
   }
 
-  return can_relax_access_check_for(
-    current_class, field_class, classloader_only);
+  // Check for special relaxations
+  return can_relax_access_check_for(current_class, member_class, classloader_only);
 }
 
 bool Reflection::is_same_class_package(const Klass* class1, const Klass* class2) {

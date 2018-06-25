@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,6 +250,9 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * can also be created.  These do not perform virtual lookup based on
  * receiver type.  Such a method handle simulates the effect of
  * an {@code invokespecial} instruction to the same method.
+ * A non-virtual method handle can also be created to simulate the effect
+ * of an {@code invokevirtual} or {@code invokeinterface} instruction on
+ * a private method (as applicable).
  *
  * <h1>Usage examples</h1>
  * Here are some examples of usage:

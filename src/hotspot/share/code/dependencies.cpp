@@ -33,6 +33,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileTask.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/flags/flagSetting.hpp"
@@ -1228,8 +1229,9 @@ class ClassHierarchyWalker {
     } else if (!k->is_instance_klass()) {
       return false; // no methods to find in an array type
     } else {
-      // Search class hierarchy first.
-      Method* m = InstanceKlass::cast(k)->find_instance_method(_name, _signature);
+      // Search class hierarchy first, skipping private implementations
+      // as they never override any inherited methods
+      Method* m = InstanceKlass::cast(k)->find_instance_method(_name, _signature, Klass::skip_private);
       if (!Dependencies::is_concrete_method(m, k)) {
         // Check for re-abstraction of method
         if (!k->is_interface() && m != NULL && m->is_abstract()) {

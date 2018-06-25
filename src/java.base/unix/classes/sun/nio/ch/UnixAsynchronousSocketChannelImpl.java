@@ -32,6 +32,7 @@ import java.util.concurrent.*;
 import java.io.IOException;
 import java.io.FileDescriptor;
 import sun.net.NetHooks;
+import sun.net.util.SocketExceptions;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -258,6 +259,10 @@ class UnixAsynchronousSocketChannelImpl
             end();
         }
         if (e != null) {
+            if (e instanceof IOException) {
+                var isa = (InetSocketAddress)pendingRemote;
+                e = SocketExceptions.of((IOException)e, isa);
+            }
             // close channel if connection cannot be established
             try {
                 close();
@@ -350,6 +355,9 @@ class UnixAsynchronousSocketChannelImpl
 
         // close channel if connect fails
         if (e != null) {
+            if (e instanceof IOException) {
+                e = SocketExceptions.of((IOException)e, isa);
+            }
             try {
                 close();
             } catch (Throwable suppressed) {

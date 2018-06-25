@@ -45,10 +45,8 @@ public class FlagCombo {
 
         SharedStringsUtils.runWithArchive("HelloString", "-XX:+UseG1GC");
 
-        if (BuildHelper.isCommercialBuild()) {
-            SharedStringsUtils.runWithArchiveAuto("HelloString", "-XX:+UnlockCommercialFeatures",
-                "-XX:StartFlightRecording=dumponexit=true");
-        }
+        SharedStringsUtils.runWithArchiveAuto("HelloString",
+           "-XX:StartFlightRecording=dumponexit=true");
 
         SharedStringsUtils.runWithArchive("HelloString", "-XX:+UnlockDiagnosticVMOptions",
            "-XX:NativeMemoryTracking=detail", "-XX:+PrintNMTStatistics");

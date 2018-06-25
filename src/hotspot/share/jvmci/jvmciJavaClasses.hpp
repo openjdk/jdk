@@ -210,7 +210,12 @@ class JVMCIJavaClasses : AllStatic {
     int_field(BytecodeFrame, numLocks)                                                                                                                         \
     boolean_field(BytecodeFrame, rethrowException)                                                                                                             \
     boolean_field(BytecodeFrame, duringCall)                                                                                                                   \
+    static_int_field(BytecodeFrame, UNKNOWN_BCI)                                                                                                               \
+    static_int_field(BytecodeFrame, UNWIND_BCI)                                                                                                                \
     static_int_field(BytecodeFrame, BEFORE_BCI)                                                                                                                \
+    static_int_field(BytecodeFrame, AFTER_BCI)                                                                                                                 \
+    static_int_field(BytecodeFrame, AFTER_EXCEPTION_BCI)                                                                                                       \
+    static_int_field(BytecodeFrame, INVALID_FRAMESTATE_BCI)                                                                                                    \
   end_class                                                                                                                                                    \
   start_class(BytecodePosition)                                                                                                                                \
     oop_field(BytecodePosition, caller, "Ljdk/vm/ci/code/BytecodePosition;")                                                                                   \

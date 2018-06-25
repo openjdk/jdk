@@ -38,6 +38,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +47,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import jdk.jfr.Enabled;
 import jdk.jfr.EventType;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.FlightRecorderListener;
@@ -56,8 +56,6 @@ import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
 import jdk.jfr.internal.instrument.JDKEvents;
-import jdk.jfr.internal.settings.CutoffSetting;
-import jdk.jfr.internal.test.WhiteBox;
 
 public final class PlatformRecorder {
 
@@ -111,7 +109,16 @@ public final class PlatformRecorder {
         return newRecording(settings, ++recordingCounter);
     }
 
-    public synchronized PlatformRecording newRecording(Map<String, String> settings, long id) {
+    // To be used internally when doing dumps.
+    // Caller must have recorder lock and close recording before releasing lock
+    public PlatformRecording newTemporaryRecording() {
+        if(!Thread.holdsLock(this)) {
+            throw new InternalError("Caller must have recorder lock");
+        }
+        return newRecording(new HashMap<>(), 0);
+    }
+
+    private synchronized PlatformRecording newRecording(Map<String, String> settings, long id) {
         PlatformRecording recording = new PlatformRecording(this, id);
         if (!settings.isEmpty()) {
             recording.setSettings(settings);
@@ -249,7 +256,7 @@ public final class PlatformRecorder {
         RequestEngine.doChunkBegin();
     }
 
-    synchronized void stop(PlatformRecording recording, WriteableUserPath alternativePath) {
+    synchronized void stop(PlatformRecording recording) {
         RecordingState state = recording.getState();
 
         if (Utils.isAfter(state, RecordingState.RUNNING)) {
@@ -270,7 +277,7 @@ public final class PlatformRecorder {
                 }
             }
         }
-        emitOldObjectSamples(recording);
+        OldObjectSample.emit(recording);
 
         if (endPhysical) {
             RequestEngine.doChunkEnd();
@@ -282,7 +289,7 @@ public final class PlatformRecorder {
                 }
             } else {
                 // last memory
-                dumpMemoryToDestination(recording, alternativePath);
+                dumpMemoryToDestination(recording);
             }
             jvm.endRecording_();
             disableEvents();
@@ -306,26 +313,13 @@ public final class PlatformRecorder {
         recording.setState(RecordingState.STOPPED);
     }
 
-    // Only dump event if the recording that is being stopped
-    // has OldObjectSample enabled + cutoff from recording, not global value
-    private void emitOldObjectSamples(PlatformRecording recording) {
-        Map<String, String> settings = recording.getSettings();
-        String s = settings.get(Type.EVENT_NAME_PREFIX + "OldObjectSample#" + Enabled.NAME);
-        if ("true".equals(s)) {
-            long nanos = CutoffSetting.parseValueSafe(settings.get(Type.EVENT_NAME_PREFIX + "OldObjectSample#" + Cutoff.NAME));
-            long ticks = Utils.nanosToTicks(nanos);
-            JVM.getJVM().emitOldObjectSamples(ticks, WhiteBox.getWriteAllObjectSamples());
-        }
-    }
-
-    private void dumpMemoryToDestination(PlatformRecording recording, WriteableUserPath alternativePath) {
-        WriteableUserPath dest = alternativePath != null ? alternativePath : recording.getDestination();
+    private void dumpMemoryToDestination(PlatformRecording recording)  {
+        WriteableUserPath dest = recording.getDestination();
         if (dest != null) {
             MetadataRepository.getInstance().setOutput(dest.getText());
             recording.clearDestination();
         }
     }
-
     private void disableEvents() {
         MetadataRepository.getInstance().disableEvents();
     }
@@ -504,47 +498,47 @@ public final class PlatformRecorder {
         return newRec;
     }
 
-    public synchronized Recording newSnapshot() {
+    public synchronized void fillWithRecordedData(PlatformRecording target, Boolean pathToGcRoots) {
         boolean running = false;
         boolean toDisk = false;
+
         for (PlatformRecording r : recordings) {
             if (r.getState() == RecordingState.RUNNING) {
                 running = true;
+                if (r.isToDisk()) {
+                    toDisk = true;
+                }
             }
-            if (r.isToDisk()) {
-                toDisk = true;
-            }
-
         }
         // If needed, flush data from memory
         if (running) {
             if (toDisk) {
+                OldObjectSample.emit(recordings, pathToGcRoots);
                 rotateDisk();
             } else {
-                try (Recording snapshot = new Recording()) {
-                    PlatformRecording internal = PrivateAccess.getInstance().getPlatformRecording(snapshot);
-                    internal.setShouldWriteActiveRecordingEvent(false);
+                try (PlatformRecording snapshot = newTemporaryRecording()) {
+                    snapshot.setToDisk(true);
+                    snapshot.setShouldWriteActiveRecordingEvent(false);
                     snapshot.start();
-                    snapshot.stop();
-                    return makeRecordingWithDiskChunks();
+                    OldObjectSample.emit(recordings, pathToGcRoots);
+                    snapshot.stop("Snapshot dump");
+                    fillWithDiskChunks(target);
                 }
+                return;
             }
         }
-        return makeRecordingWithDiskChunks();
+        fillWithDiskChunks(target);
     }
 
-    private Recording makeRecordingWithDiskChunks() {
-        Recording snapshot = new Recording();
-        snapshot.setName("Snapshot");
-        PlatformRecording internal = PrivateAccess.getInstance().getPlatformRecording(snapshot);
+    private void fillWithDiskChunks(PlatformRecording target) {
         for (RepositoryChunk c : makeChunkList(null, null)) {
-            internal.add(c);
+            target.add(c);
         }
-        internal.setState(RecordingState.STOPPED);
+        target.setState(RecordingState.STOPPED);
         Instant startTime = null;
         Instant endTime = null;
 
-        for (RepositoryChunk c : makeChunkList(null, null)) {
+        for (RepositoryChunk c : target.getChunks()) {
             if (startTime == null || c.getStartTime().isBefore(startTime)) {
                 startTime = c.getStartTime();
             }
@@ -559,9 +553,8 @@ public final class PlatformRecorder {
         if (endTime == null) {
             endTime = now;
         }
-        internal.setStartTime(startTime);
-        internal.setStopTime(endTime);
-        internal.setInternalDuration(Duration.between(startTime, endTime));
-        return snapshot;
+        target.setStartTime(startTime);
+        target.setStopTime(endTime);
+        target.setInternalDuration(Duration.between(startTime, endTime));
     }
 }

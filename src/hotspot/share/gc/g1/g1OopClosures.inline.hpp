@@ -72,7 +72,7 @@ inline void G1ScanClosureBase::trim_queue_partially() {
 }
 
 template <class T>
-inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
+inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
 
   if (CompressedOops::is_null(heap_oop)) {
@@ -92,12 +92,12 @@ inline void G1ScanEvacuatedObjClosure::do_oop_nv(T* p) {
 }
 
 template <class T>
-inline void G1CMOopClosure::do_oop_nv(T* p) {
+inline void G1CMOopClosure::do_oop_work(T* p) {
   _task->deal_with_reference(p);
 }
 
 template <class T>
-inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
+inline void G1RootRegionScanClosure::do_oop_work(T* p) {
   T heap_oop = RawAccess<MO_VOLATILE>::oop_load(p);
   if (CompressedOops::is_null(heap_oop)) {
     return;
@@ -128,7 +128,7 @@ inline static void check_obj_during_refinement(T* p, oop const obj) {
 }
 
 template <class T>
-inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
+inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
   T o = RawAccess<MO_VOLATILE>::oop_load(p);
   if (CompressedOops::is_null(o)) {
     return;
@@ -157,7 +157,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_nv(T* p) {
 }
 
 template <class T>
-inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
+inline void G1ScanObjsDuringUpdateRSClosure::do_oop_work(T* p) {
   T o = RawAccess<>::oop_load(p);
   if (CompressedOops::is_null(o)) {
     return;
@@ -183,7 +183,7 @@ inline void G1ScanObjsDuringUpdateRSClosure::do_oop_nv(T* p) {
 }
 
 template <class T>
-inline void G1ScanObjsDuringScanRSClosure::do_oop_nv(T* p) {
+inline void G1ScanObjsDuringScanRSClosure::do_oop_work(T* p) {
   T heap_oop = RawAccess<>::oop_load(p);
   if (CompressedOops::is_null(heap_oop)) {
     return;
@@ -256,7 +256,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
       forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
-    RawAccess<OOP_NOT_NULL>::oop_store(p, forwardee);
+    RawAccess<IS_NOT_NULL>::oop_store(p, forwardee);
     if (do_mark_object != G1MarkNone && forwardee != obj) {
       // If the object is self-forwarded we don't need to explicitly
       // mark it, the evacuation failure protocol will do so.
@@ -280,7 +280,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   trim_queue_partially();
 }
 
-template <class T> void G1RebuildRemSetClosure::do_oop_nv(T* p) {
+template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   oop const obj = RawAccess<MO_VOLATILE>::oop_load(p);
   if (obj == NULL) {
     return;

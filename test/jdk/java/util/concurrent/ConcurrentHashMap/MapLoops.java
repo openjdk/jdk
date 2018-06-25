@@ -156,7 +156,8 @@ public class MapLoops {
 
     static void test(int i, int nkeys, Class mapClass) throws Exception {
         System.out.print("Threads: " + i + "\t:");
-        Map<Integer, Integer> map = (Map<Integer,Integer>)mapClass.newInstance();
+        Map<Integer, Integer> map = (Map<Integer, Integer>)
+            mapClass.getDeclaredConstructor().newInstance();
         Integer[] key = makeKeys(nkeys);
         // Uncomment to start with a non-empty table
         //        for (int j = 0; j < nkeys; j += 4) // start 1/4 occupied

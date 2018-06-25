@@ -352,7 +352,7 @@ bool oopDesc::cas_forward_to(oop p, markOop compare, atomic_memory_order order) 
   return cas_set_mark_raw(m, compare, order) == compare;
 }
 
-oop oopDesc::forward_to_atomic(oop p) {
+oop oopDesc::forward_to_atomic(oop p, atomic_memory_order order) {
   markOop oldMark = mark_raw();
   markOop forwardPtrMark = markOopDesc::encode_pointer_as_mark(p);
   markOop curMark;
@@ -361,7 +361,7 @@ oop oopDesc::forward_to_atomic(oop p) {
   assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
 
   while (!oldMark->is_marked()) {
-    curMark = cas_set_mark_raw(forwardPtrMark, oldMark);
+    curMark = cas_set_mark_raw(forwardPtrMark, oldMark, order);
     assert(is_forwarded(), "object should have been forwarded");
     if (curMark == oldMark) {
       return NULL;
@@ -432,35 +432,40 @@ void oopDesc::ps_push_contents(PSPromotionManager* pm) {
 }
 #endif // INCLUDE_PARALLELGC
 
-#define OOP_ITERATE_DEFN(OopClosureType, nv_suffix)                 \
-                                                                    \
-void oopDesc::oop_iterate(OopClosureType* blk) {                    \
-  klass()->oop_oop_iterate##nv_suffix(this, blk);                   \
-}                                                                   \
-                                                                    \
-void oopDesc::oop_iterate(OopClosureType* blk, MemRegion mr) {      \
-  klass()->oop_oop_iterate_bounded##nv_suffix(this, blk, mr);       \
+template <typename OopClosureType>
+void oopDesc::oop_iterate(OopClosureType* cl) {
+  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, klass());
 }
 
-#define OOP_ITERATE_SIZE_DEFN(OopClosureType, nv_suffix)            \
-                                                                    \
-int oopDesc::oop_iterate_size(OopClosureType* blk) {                \
-  Klass* k = klass();                                               \
-  int size = size_given_klass(k);                                   \
-  k->oop_oop_iterate##nv_suffix(this, blk);                         \
-  return size;                                                      \
-}                                                                   \
-                                                                    \
-int oopDesc::oop_iterate_size(OopClosureType* blk, MemRegion mr) {  \
-  Klass* k = klass();                                               \
-  int size = size_given_klass(k);                                   \
-  k->oop_oop_iterate_bounded##nv_suffix(this, blk, mr);             \
-  return size;                                                      \
+template <typename OopClosureType>
+void oopDesc::oop_iterate(OopClosureType* cl, MemRegion mr) {
+  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, klass(), mr);
+}
+
+template <typename OopClosureType>
+int oopDesc::oop_iterate_size(OopClosureType* cl) {
+  Klass* k = klass();
+  int size = size_given_klass(k);
+  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k);
+  return size;
+}
+
+template <typename OopClosureType>
+int oopDesc::oop_iterate_size(OopClosureType* cl, MemRegion mr) {
+  Klass* k = klass();
+  int size = size_given_klass(k);
+  OopIteratorClosureDispatch::oop_oop_iterate(cl, this, k, mr);
+  return size;
+}
+
+template <typename OopClosureType>
+void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
+  OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, klass());
 }
 
 int oopDesc::oop_iterate_no_header(OopClosure* blk) {
   // The NoHeaderExtendedOopClosure wraps the OopClosure and proxies all
-  // the do_oop calls, but turns off all other features in ExtendedOopClosure.
+  // the do_oop calls, but turns off all other features in OopIterateClosure.
   NoHeaderExtendedOopClosure cl(blk);
   return oop_iterate_size(&cl);
 }
@@ -469,24 +474,6 @@ int oopDesc::oop_iterate_no_header(OopClosure* blk, MemRegion mr) {
   NoHeaderExtendedOopClosure cl(blk);
   return oop_iterate_size(&cl, mr);
 }
-
-#if INCLUDE_OOP_OOP_ITERATE_BACKWARDS
-#define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)       \
-                                                                    \
-inline void oopDesc::oop_iterate_backwards(OopClosureType* blk) {   \
-  klass()->oop_oop_iterate_backwards##nv_suffix(this, blk);         \
-}
-#else
-#define OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-#endif
-
-#define ALL_OOPDESC_OOP_ITERATE(OopClosureType, nv_suffix)  \
-  OOP_ITERATE_DEFN(OopClosureType, nv_suffix)               \
-  OOP_ITERATE_SIZE_DEFN(OopClosureType, nv_suffix)          \
-  OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-
-ALL_OOP_OOP_ITERATE_CLOSURES_1(ALL_OOPDESC_OOP_ITERATE)
-ALL_OOP_OOP_ITERATE_CLOSURES_2(ALL_OOPDESC_OOP_ITERATE)
 
 bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
   return obj == NULL || obj->klass()->is_subtype_of(klass);

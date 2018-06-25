@@ -26,7 +26,6 @@
 #define SHARE_VM_JFR_RECORDER_STRINGPOOL_JFRSTRINGPOOLBUFFER_HPP
 
 #include "jfr/recorder/storage/jfrBuffer.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 class JfrStringPoolBuffer : public JfrBuffer {
  private:

@@ -26,10 +26,21 @@ package jdk.jfr.internal.dcmd;
 
 import java.io.IOException;
 import java.nio.file.InvalidPathException;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
 
+import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
+import jdk.jfr.internal.LogLevel;
+import jdk.jfr.internal.LogTag;
+import jdk.jfr.internal.Logger;
+import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
@@ -40,41 +51,155 @@ import jdk.jfr.internal.WriteableUserPath;
  * JFR.dump
  *
  */
-//Instantiated by native
+// Instantiated by native
 final class DCmdDump extends AbstractDCmd {
     /**
      * Execute JFR.dump.
      *
-     * @param recordingText name or id of the recording to dump, or
-     *        <code>null</code>
+     * @param name name or id of the recording to dump, or <code>null</code> to dump everything
      *
-     * @param textPath file path where recording should be written.
+     * @param filename file path where recording should be written, not null
+     * @param maxAge how far back in time to dump, may be null
+     * @param maxSize how far back in size to dump data from, may be null
+     * @param begin point in time to dump data from, may be null
+     * @param end point in time to dump data to, may be null
+     * @param pathToGcRoots if Java heap should be swept for reference chains
      *
      * @return result output
      *
      * @throws DCmdException if the dump could not be completed
      */
-    public String execute(String recordingText, String textPath,  Boolean pathToGcRoots) throws DCmdException {
-        if (textPath == null) {
-            throw new DCmdException("Failed to dump %s, missing filename.", recordingText);
+    public String execute(String name, String filename, Long maxAge, Long maxSize, String begin, String end, Boolean pathToGcRoots) throws DCmdException {
+        if (LogTag.JFR_DCMD.shouldLog(LogLevel.DEBUG)) {
+            Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG,
+                    "Executing DCmdDump: name=" + name +
+                    ", filename=" + filename +
+                    ", maxage=" + maxAge +
+                    ", maxsize=" + maxSize +
+                    ", begin=" + begin +
+                    ", end" + end +
+                    ", path-to-gc-roots=" + pathToGcRoots);
         }
-        Recording recording = findRecording(recordingText);
-        try {
-            SafePath dumpFile = resolvePath(textPath, "Failed to dump %s");
-            // create file for JVM
-            Utils.touch(dumpFile.toPath());
-            PlatformRecording r = PrivateAccess.getInstance().getPlatformRecording(recording);
-            WriteableUserPath wup = new WriteableUserPath(dumpFile.toPath());
 
-            Map<String, String> overlay = new HashMap<>();
-            Utils.updateSettingPathToGcRoots(overlay, pathToGcRoots);
+        if (FlightRecorder.getFlightRecorder().getRecordings().isEmpty()) {
+            throw new DCmdException("No recordings to dump from. Use JFR.start to start a recording.");
+        }
 
-            r.copyTo(wup, "Dumped by user", overlay);
-            reportOperationComplete("Dumped", recording, dumpFile);
-        } catch (IOException | InvalidPathException e) {
-            throw new DCmdException("Failed to dump %s. Could not copy recording for dump. %s", recordingText, e.getMessage());
+        if (maxAge != null) {
+            if (end != null || begin != null) {
+                throw new DCmdException("Dump failed, maxage can't be combined with begin or end.");
+            }
+
+            if (maxAge < 0) {
+                throw new DCmdException("Dump failed, maxage can't be negative.");
+            }
+            if (maxAge == 0) {
+                maxAge = Long.MAX_VALUE / 2; // a high value that won't overflow
+            }
+        }
+
+        if (maxSize!= null) {
+            if (maxSize < 0) {
+                throw new DCmdException("Dump failed, maxsize can't be negative.");
+            }
+            if (maxSize == 0) {
+                maxSize = Long.MAX_VALUE / 2; // a high value that won't overflow
+            }
+        }
+
+        Instant beginTime = parseTime(begin, "begin");
+        Instant endTime = parseTime(end, "end");
+
+        if (beginTime != null && endTime != null) {
+            if (endTime.isBefore(beginTime)) {
+                throw new DCmdException("Dump failed, begin must preceed end.");
+            }
+        }
+
+        Duration duration = null;
+        if (maxAge != null) {
+            duration = Duration.ofNanos(maxAge);
+            beginTime = Instant.now().minus(duration);
+        }
+        Recording recording = null;
+        if (name != null) {
+            recording = findRecording(name);
+        }
+        PlatformRecorder recorder = PrivateAccess.getInstance().getPlatformRecorder();
+        synchronized (recorder) {
+            dump(recorder, recording, name, filename, maxSize, pathToGcRoots, beginTime, endTime);
         }
         return getResult();
+    }
+
+    public void dump(PlatformRecorder recorder, Recording recording, String name, String filename, Long maxSize, Boolean pathToGcRoots, Instant beginTime, Instant endTime) throws DCmdException {
+        try (PlatformRecording r = newSnapShot(recorder, recording, pathToGcRoots)) {
+            r.filter(beginTime, endTime, maxSize);
+            if (r.getChunks().isEmpty()) {
+                throw new DCmdException("Dump failed. No data found in the specified interval.");
+            }
+            SafePath dumpFile = resolvePath(recording, filename);
+
+            // Needed for JVM
+            Utils.touch(dumpFile.toPath());
+            r.dumpStopped(new WriteableUserPath(dumpFile.toPath()));
+            reportOperationComplete("Dumped", name, dumpFile);
+        } catch (IOException | InvalidPathException e) {
+            throw new DCmdException("Dump failed. Could not copy recording data. %s", e.getMessage());
+        }
+    }
+
+    private Instant parseTime(String time, String parameter) throws DCmdException {
+        if (time == null) {
+            return null;
+        }
+        try {
+            return Instant.parse(time);
+        } catch (DateTimeParseException dtp) {
+            // fall through
+        }
+        try {
+            LocalDateTime ldt = LocalDateTime.parse(time);
+            return ZonedDateTime.of(ldt, ZoneId.systemDefault()).toInstant();
+        } catch (DateTimeParseException dtp) {
+            // fall through
+        }
+        try {
+            LocalTime lt = LocalTime.parse(time);
+            LocalDate ld = LocalDate.now();
+            Instant instant = ZonedDateTime.of(ld, lt, ZoneId.systemDefault()).toInstant();
+            Instant now = Instant.now();
+            if (instant.isAfter(now) && !instant.isBefore(now.plusSeconds(3600))) {
+                // User must have meant previous day
+                ld = ld.minusDays(1);
+            }
+            return ZonedDateTime.of(ld, lt, ZoneId.systemDefault()).toInstant();
+        } catch (DateTimeParseException dtp) {
+            // fall through
+        }
+
+        if (time.startsWith("-")) {
+            try {
+                long durationNanos = Utils.parseTimespan(time.substring(1));
+                Duration duration = Duration.ofNanos(durationNanos);
+                return Instant.now().minus(duration);
+            } catch (NumberFormatException nfe) {
+                // fall through
+            }
+        }
+        throw new DCmdException("Dump failed, not a valid %s time.", parameter);
+    }
+
+    private PlatformRecording newSnapShot(PlatformRecorder recorder, Recording recording, Boolean pathToGcRoots) throws DCmdException, IOException {
+        if (recording == null) {
+            // Operate on all recordings
+            PlatformRecording snapshot = recorder.newTemporaryRecording();
+            recorder.fillWithRecordedData(snapshot, pathToGcRoots);
+            return snapshot;
+        }
+
+        PlatformRecording pr = PrivateAccess.getInstance().getPlatformRecording(recording);
+        return pr.newSnapshotClone("Dumped by user", pathToGcRoots);
     }
 
 }

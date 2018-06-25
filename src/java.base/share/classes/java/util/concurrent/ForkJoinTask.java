@@ -826,7 +826,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public static <T extends ForkJoinTask<?>> Collection<T> invokeAll(Collection<T> tasks) {
         if (!(tasks instanceof RandomAccess) || !(tasks instanceof List<?>)) {
-            invokeAll(tasks.toArray(new ForkJoinTask<?>[tasks.size()]));
+            invokeAll(tasks.toArray(new ForkJoinTask<?>[0]));
             return tasks;
         }
         @SuppressWarnings("unchecked")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ Java_java_io_FileDescriptor_close0(JNIEnv *env, jobject this) {
 JNIEXPORT void JNICALL
 Java_java_io_FileCleanable_cleanupClose0(JNIEnv *env, jclass fdClass, jint unused, jlong handle) {
     if (handle != -1) {
-        if (CloseHandle((HANDLE)handle) == -1) {
+        if (!CloseHandle((HANDLE)handle)) {
             JNU_ThrowIOExceptionWithLastError(env, "close failed");
         }
     }

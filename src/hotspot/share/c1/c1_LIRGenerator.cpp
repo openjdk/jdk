@@ -1602,7 +1602,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     array_store_check(value.result(), array.result(), store_check_info, x->profiled_method(), x->profiled_bci());
   }
 
-  DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
+  DecoratorSet decorators = IN_HEAP | IS_ARRAY;
   if (x->check_boolean()) {
     decorators |= C1_MASK_BOOLEAN;
   }
@@ -1847,7 +1847,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     }
   }
 
-  DecoratorSet decorators = IN_HEAP | IN_HEAP_ARRAY;
+  DecoratorSet decorators = IN_HEAP | IS_ARRAY;
 
   LIR_Opr result = rlock_result(x, x->elt_type());
   access_load_at(decorators, x->elt_type(),

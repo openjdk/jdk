@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,6 +285,7 @@ jdwpErrorText(jdwpError serror)
         CASE_RETURN_JDWP_ERROR_TEXT(NAMES_DONT_MATCH)
         CASE_RETURN_JDWP_ERROR_TEXT(CLASS_MODIFIERS_CHANGE_NOT_IMPLEMENTED)
         CASE_RETURN_JDWP_ERROR_TEXT(METHOD_MODIFIERS_CHANGE_NOT_IMPLEMENTED)
+        CASE_RETURN_JDWP_ERROR_TEXT(CLASS_ATTRIBUTE_CHANGE_NOT_IMPLEMENTED)
         CASE_RETURN_JDWP_ERROR_TEXT(NOT_IMPLEMENTED)
         CASE_RETURN_JDWP_ERROR_TEXT(NULL_POINTER)
         CASE_RETURN_JDWP_ERROR_TEXT(ABSENT_INFORMATION)

@@ -53,7 +53,7 @@
 
 void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                             Register addr, Register count, int callee_saved_regs) {
-  bool dest_uninitialized = (decorators & AS_DEST_NOT_INITIALIZED) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
   if (!dest_uninitialized) {
     assert( addr->encoding() < callee_saved_regs, "addr must be saved");
     assert(count->encoding() < callee_saved_regs, "count must be saved");

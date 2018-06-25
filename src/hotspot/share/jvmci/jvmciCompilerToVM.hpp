@@ -28,6 +28,37 @@
 #include "runtime/javaCalls.hpp"
 #include "jvmci/jvmciJavaClasses.hpp"
 
+// Helper class to ensure that references to Klass* are kept alive for G1
+class JVMCIKlassHandle : public StackObj {
+ private:
+  Klass*     _klass;
+  Handle     _holder;
+  Thread*    _thread;
+
+  Klass*        klass() const                     { return _klass; }
+  Klass*        non_null_klass() const            { assert(_klass != NULL, "resolving NULL _klass"); return _klass; }
+
+ public:
+  /* Constructors */
+  JVMCIKlassHandle (Thread* thread) : _klass(NULL), _thread(thread) {}
+  JVMCIKlassHandle (Thread* thread, Klass* klass);
+
+  JVMCIKlassHandle (const JVMCIKlassHandle &h): _klass(h._klass), _holder(h._holder), _thread(h._thread) {}
+  JVMCIKlassHandle& operator=(const JVMCIKlassHandle &s);
+  JVMCIKlassHandle& operator=(Klass* klass);
+
+  /* Operators for ease of use */
+  Klass*        operator () () const            { return klass(); }
+  Klass*        operator -> () const            { return non_null_klass(); }
+
+  bool    operator == (Klass* o) const          { return klass() == o; }
+  bool    operator == (const JVMCIKlassHandle& h) const  { return klass() == h.klass(); }
+
+  /* Null checks */
+  bool    is_null() const                      { return _klass == NULL; }
+  bool    not_null() const                     { return _klass != NULL; }
+};
+
 class CompilerToVM {
  public:
   class Data {
@@ -161,7 +192,7 @@ class CompilerToVM {
 
   static oop get_jvmci_method(const methodHandle& method, TRAPS);
 
-  static oop get_jvmci_type(Klass* klass, TRAPS);
+  static oop get_jvmci_type(JVMCIKlassHandle& klass, TRAPS);
 };
 
 class JavaArgumentUnboxer : public SignatureIterator {

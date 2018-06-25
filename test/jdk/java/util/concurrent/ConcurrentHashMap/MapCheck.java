@@ -109,7 +109,7 @@ public class MapCheck {
 
     static Map newMap(Class cl) {
         try {
-            return (Map)cl.newInstance();
+            return (Map)cl.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Can't instantiate " + cl + ": " + e);
         }
@@ -407,7 +407,7 @@ public class MapCheck {
         timer.start("Put (putAll)           ", size * 2);
         Map s2 = null;
         try {
-            s2 = (Map) (s.getClass().newInstance());
+            s2 = (Map) s.getClass().getDeclaredConstructor().newInstance();
             s2.putAll(s);
         }
         catch (Exception e) { e.printStackTrace(); return; }

@@ -234,7 +234,7 @@ int AOTOopRecorder::find_index(Metadata* h) {
 
   vmassert(index + 1 == newCount, "must be last");
 
-  Klass* klass = NULL;
+  JVMCIKlassHandle klass(THREAD);
   oop result = NULL;
   if (h->is_klass()) {
     klass = (Klass*) h;
@@ -1048,6 +1048,26 @@ void CodeInstaller::record_scope(jint pc_offset, Handle debug_info, ScopeMode sc
   record_scope(pc_offset, position, scope_mode, objectMapping, return_oop, CHECK);
 }
 
+int CodeInstaller::map_jvmci_bci(int bci) {
+  if (bci < 0) {
+    if (bci == BytecodeFrame::BEFORE_BCI()) {
+      return BeforeBci;
+    } else if (bci == BytecodeFrame::AFTER_BCI()) {
+      return AfterBci;
+    } else if (bci == BytecodeFrame::UNWIND_BCI()) {
+      return UnwindBci;
+    } else if (bci == BytecodeFrame::AFTER_EXCEPTION_BCI()) {
+      return AfterExceptionBci;
+    } else if (bci == BytecodeFrame::UNKNOWN_BCI()) {
+      return UnknownBci;
+    } else if (bci == BytecodeFrame::INVALID_FRAMESTATE_BCI()) {
+      return InvalidFrameStateBci;
+    }
+    ShouldNotReachHere();
+  }
+  return bci;
+}
+
 void CodeInstaller::record_scope(jint pc_offset, Handle position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, bool return_oop, TRAPS) {
   Handle frame;
   if (scope_mode == CodeInstaller::FullFrame) {
@@ -1063,16 +1083,13 @@ void CodeInstaller::record_scope(jint pc_offset, Handle position, ScopeMode scop
 
   Handle hotspot_method (THREAD, BytecodePosition::method(position));
   Method* method = getMethodFromHotSpotMethod(hotspot_method());
-  jint bci = BytecodePosition::bci(position);
-  if (bci == BytecodeFrame::BEFORE_BCI()) {
-    bci = SynchronizationEntryBCI;
-  }
+  jint bci = map_jvmci_bci(BytecodePosition::bci(position));
 
   TRACE_jvmci_2("Recording scope pc_offset=%d bci=%d method=%s", pc_offset, bci, method->name_and_sig_as_C_string());
 
   bool reexecute = false;
   if (frame.not_null()) {
-    if (bci == SynchronizationEntryBCI){
+    if (bci < 0) {
        reexecute = false;
     } else {
       Bytecodes::Code code = Bytecodes::java_code_at(method, method->bcp_from(bci));

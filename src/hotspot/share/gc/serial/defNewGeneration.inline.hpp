@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,12 +40,12 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   {
     // We never expect to see a null reference being processed
     // as a weak reference.
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     assert (oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
   }
 #endif // ASSERT
 
-  _cl->do_oop_nv(p);
+  Devirtualizer::do_oop_no_verify(_cl, p);
 
   // Card marking is trickier for weak refs.
   // This oop is a 'next' field which was filled in while we
@@ -61,7 +61,7 @@ inline void DefNewGeneration::KeepAliveClosure::do_oop_work(T* p) {
   // dirty cards in the young gen are never scanned, so the
   // extra check probably isn't worthwhile.
   if (GenCollectedHeap::heap()->is_in_reserved(p)) {
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     _rs->inline_write_ref_field_gc(p, obj);
   }
 }
@@ -72,17 +72,17 @@ inline void DefNewGeneration::FastKeepAliveClosure::do_oop_work(T* p) {
   {
     // We never expect to see a null reference being processed
     // as a weak reference.
-    oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+    oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
     assert (oopDesc::is_oop(obj), "expected an oop while scanning weak refs");
   }
 #endif // ASSERT
 
-  _cl->do_oop_nv(p);
+  Devirtualizer::do_oop_no_verify(_cl, p);
 
   // Optimized for Defnew generation if it's the youngest generation:
   // we set a younger_gen card if we have an older->youngest
   // generation pointer.
-  oop obj = RawAccess<OOP_NOT_NULL>::oop_load(p);
+  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
   if (((HeapWord*)obj < _boundary) && GenCollectedHeap::heap()->is_in_reserved(p)) {
     _rs->inline_write_ref_field_gc(p, obj);
   }

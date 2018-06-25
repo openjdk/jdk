@@ -955,9 +955,10 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
 
       if (!interf->is_interface()) {
         THROW_MSG(vmSymbols::java_lang_IncompatibleClassChangeError(),
-                  err_msg("Class %s can not implement %s, because it is not an interface",
+                  err_msg("class %s can not implement %s, because it is not an interface (%s)",
                           _class_name->as_klass_external_name(),
-                          interf->class_loader_and_module_name()));
+                          interf->external_name(),
+                          interf->class_in_module_of_loader()));
       }
 
       if (InstanceKlass::cast(interf)->has_nonstatic_concrete_methods()) {
@@ -3148,7 +3149,6 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
   _inner_classes = inner_classes;
 
   int index = 0;
-  const int cp_size = _cp->length();
   cfs->guarantee_more(8 * length, CHECK_0);  // 4-tuples of u2
   for (int n = 0; n < length; n++) {
     // Inner class index
@@ -3213,6 +3213,38 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
   if (parsed_enclosingmethod_attribute) {
     inner_classes->at_put(index++, enclosing_method_class_index);
     inner_classes->at_put(index++, enclosing_method_method_index);
+  }
+  assert(index == size, "wrong size");
+
+  // Restore buffer's current position.
+  cfs->set_current(current_mark);
+
+  return length;
+}
+
+u2 ClassFileParser::parse_classfile_nest_members_attribute(const ClassFileStream* const cfs,
+                                                           const u1* const nest_members_attribute_start,
+                                                           TRAPS) {
+  const u1* const current_mark = cfs->current();
+  u2 length = 0;
+  if (nest_members_attribute_start != NULL) {
+    cfs->set_current(nest_members_attribute_start);
+    cfs->guarantee_more(2, CHECK_0);  // length
+    length = cfs->get_u2_fast();
+  }
+  const int size = length;
+  Array<u2>* const nest_members = MetadataFactory::new_array<u2>(_loader_data, size, CHECK_0);
+  _nest_members = nest_members;
+
+  int index = 0;
+  cfs->guarantee_more(2 * length, CHECK_0);
+  for (int n = 0; n < length; n++) {
+    const u2 class_info_index = cfs->get_u2_fast();
+    check_property(
+      valid_klass_reference_at(class_info_index),
+      "Nest member class_info_index %u has bad constant type in class file %s",
+      class_info_index, CHECK_0);
+    nest_members->at_put(index++, class_info_index);
   }
   assert(index == size, "wrong size");
 
@@ -3329,10 +3361,14 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
 
   // Set inner classes attribute to default sentinel
   _inner_classes = Universe::the_empty_short_array();
+  // Set nest members attribute to default sentinel
+  _nest_members = Universe::the_empty_short_array();
   cfs->guarantee_more(2, CHECK);  // attributes_count
   u2 attributes_count = cfs->get_u2_fast();
   bool parsed_sourcefile_attribute = false;
   bool parsed_innerclasses_attribute = false;
+  bool parsed_nest_members_attribute = false;
+  bool parsed_nest_host_attribute = false;
   bool parsed_enclosingmethod_attribute = false;
   bool parsed_bootstrap_methods_attribute = false;
   const u1* runtime_visible_annotations = NULL;
@@ -3350,6 +3386,9 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
   u4  inner_classes_attribute_length = 0;
   u2  enclosing_method_class_index = 0;
   u2  enclosing_method_method_index = 0;
+  const u1* nest_members_attribute_start = NULL;
+  u4  nest_members_attribute_length = 0;
+
   // Iterate over attributes
   while (attributes_count--) {
     cfs->guarantee_more(6, CHECK);  // attribute_name_index, attribute_length
@@ -3498,6 +3537,40 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
           assert(runtime_invisible_type_annotations != NULL, "null invisible type annotations");
         }
         cfs->skip_u1(attribute_length, CHECK);
+      } else if (_major_version >= JAVA_11_VERSION) {
+        if (tag == vmSymbols::tag_nest_members()) {
+          // Check for NestMembers tag
+          if (parsed_nest_members_attribute) {
+            classfile_parse_error("Multiple NestMembers attributes in class file %s", CHECK);
+          } else {
+            parsed_nest_members_attribute = true;
+          }
+          if (parsed_nest_host_attribute) {
+            classfile_parse_error("Conflicting NestHost and NestMembers attributes in class file %s", CHECK);
+          }
+          nest_members_attribute_start = cfs->current();
+          nest_members_attribute_length = attribute_length;
+          cfs->skip_u1(nest_members_attribute_length, CHECK);
+        } else if (tag == vmSymbols::tag_nest_host()) {
+          if (parsed_nest_host_attribute) {
+            classfile_parse_error("Multiple NestHost attributes in class file %s", CHECK);
+          } else {
+            parsed_nest_host_attribute = true;
+          }
+          if (parsed_nest_members_attribute) {
+            classfile_parse_error("Conflicting NestMembers and NestHost attributes in class file %s", CHECK);
+          }
+          if (_need_verify) {
+            guarantee_property(attribute_length == 2, "Wrong NestHost attribute length in class file %s", CHECK);
+          }
+          cfs->guarantee_more(2, CHECK);
+          u2 class_info_index = cfs->get_u2_fast();
+          check_property(
+                         valid_klass_reference_at(class_info_index),
+                         "Nest-host class_info_index %u has bad constant type in class file %s",
+                         class_info_index, CHECK);
+          _nest_host = class_info_index;
+        }
       } else {
         // Unknown attribute
         cfs->skip_u1(attribute_length, CHECK);
@@ -3526,10 +3599,22 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
                             enclosing_method_class_index,
                             enclosing_method_method_index,
                             CHECK);
-    if (parsed_innerclasses_attribute &&_need_verify && _major_version >= JAVA_1_5_VERSION) {
+    if (parsed_innerclasses_attribute && _need_verify && _major_version >= JAVA_1_5_VERSION) {
       guarantee_property(
         inner_classes_attribute_length == sizeof(num_of_classes) + 4 * sizeof(u2) * num_of_classes,
         "Wrong InnerClasses attribute length in class file %s", CHECK);
+    }
+  }
+
+  if (parsed_nest_members_attribute) {
+    const u2 num_of_classes = parse_classfile_nest_members_attribute(
+                            cfs,
+                            nest_members_attribute_start,
+                            CHECK);
+    if (_need_verify) {
+      guarantee_property(
+        nest_members_attribute_length == sizeof(num_of_classes) + sizeof(u2) * num_of_classes,
+        "Wrong NestMembers attribute length in class file %s", CHECK);
     }
   }
 
@@ -3595,6 +3680,8 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_fields(_fields, java_fields_count);
   this_klass->set_methods(_methods);
   this_klass->set_inner_classes(_inner_classes);
+  this_klass->set_nest_members(_nest_members);
+  this_klass->set_nest_host_index(_nest_host);
   this_klass->set_local_interfaces(_local_interfaces);
   this_klass->set_annotations(_combined_annotations);
   // Delay the setting of _transitive_interfaces until after initialize_supers() in
@@ -4605,24 +4692,26 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
           }
 
           if (super_m->is_final() && !super_m->is_static() &&
-              // matching method in super is final, and not static
-              (Reflection::verify_field_access(this_klass,
-                                               super_m->method_holder(),
-                                               super_m->method_holder(),
-                                               super_m->access_flags(), false))
-            // this class can access super final method and therefore override
-            ) {
-            ResourceMark rm(THREAD);
-            Exceptions::fthrow(
-              THREAD_AND_LOCATION,
-              vmSymbols::java_lang_VerifyError(),
-              "class %s overrides final method %s.%s%s",
-              this_klass->external_name(),
-              super_m->method_holder()->external_name(),
-              name->as_C_string(),
-              signature->as_C_string()
-            );
-            return;
+              !super_m->access_flags().is_private()) {
+            // matching method in super is final, and not static or private
+            bool can_access = Reflection::verify_member_access(this_klass,
+                                                               super_m->method_holder(),
+                                                               super_m->method_holder(),
+                                                               super_m->access_flags(),
+                                                              false, false, CHECK);
+            if (can_access) {
+              // this class can access super final method and therefore override
+              ResourceMark rm(THREAD);
+              Exceptions::fthrow(THREAD_AND_LOCATION,
+                                 vmSymbols::java_lang_VerifyError(),
+                                 "class %s overrides final method %s.%s%s",
+                                 this_klass->external_name(),
+                                 super_m->method_holder()->external_name(),
+                                 name->as_C_string(),
+                                 signature->as_C_string()
+                                 );
+              return;
+            }
           }
 
           // continue to look from super_m's holder's super.
@@ -5470,6 +5559,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   assert(NULL == _fields, "invariant");
   assert(NULL == _methods, "invariant");
   assert(NULL == _inner_classes, "invariant");
+  assert(NULL == _nest_members, "invariant");
   assert(NULL == _local_interfaces, "invariant");
   assert(NULL == _combined_annotations, "invariant");
 
@@ -5739,6 +5829,8 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _fields(NULL),
   _methods(NULL),
   _inner_classes(NULL),
+  _nest_members(NULL),
+  _nest_host(0),
   _local_interfaces(NULL),
   _transitive_interfaces(NULL),
   _combined_annotations(NULL),
@@ -5843,6 +5935,7 @@ void ClassFileParser::clear_class_metadata() {
   _fields = NULL;
   _methods = NULL;
   _inner_classes = NULL;
+  _nest_members = NULL;
   _local_interfaces = NULL;
   _combined_annotations = NULL;
   _annotations = _type_annotations = NULL;
@@ -5866,6 +5959,10 @@ ClassFileParser::~ClassFileParser() {
   // beware of the Universe::empty_blah_array!!
   if (_inner_classes != NULL && _inner_classes != Universe::the_empty_short_array()) {
     MetadataFactory::free_array<u2>(_loader_data, _inner_classes);
+  }
+
+  if (_nest_members != NULL && _nest_members != Universe::the_empty_short_array()) {
+    MetadataFactory::free_array<u2>(_loader_data, _nest_members);
   }
 
   // Free interfaces

@@ -853,7 +853,7 @@ void TemplateTable::aaload() {
   index_check(Z_tmp_1, index, shift);
   // Now load array element.
   do_oop_load(_masm, Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), Z_tos,
-              Z_tmp_2, Z_tmp_3, IN_HEAP_ARRAY);
+              Z_tmp_2, Z_tmp_3, IS_ARRAY);
   __ verify_oop(Z_tos);
 }
 
@@ -1197,7 +1197,7 @@ void TemplateTable::aastore() {
 
   // Store a NULL.
   do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), noreg,
-               tmp3, tmp2, tmp1, IN_HEAP_ARRAY);
+               tmp3, tmp2, tmp1, IS_ARRAY);
   __ z_bru(done);
 
   // Come here on success.
@@ -1205,7 +1205,7 @@ void TemplateTable::aastore() {
 
   // Now store using the appropriate barrier.
   do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), Rvalue,
-               tmp3, tmp2, tmp1, IN_HEAP_ARRAY | OOP_NOT_NULL);
+               tmp3, tmp2, tmp1, IS_ARRAY | IS_NOT_NULL);
 
   // Pop stack arguments.
   __ bind(done);
@@ -3610,20 +3610,43 @@ void TemplateTable::invokeinterface(int byte_no) {
 
   BLOCK_COMMENT("invokeinterface {");
 
-  prepare_invoke(byte_no, interface, method,  // Get f1 klassOop, f2 itable index.
+  prepare_invoke(byte_no, interface, method,  // Get f1 klassOop, f2 Method*.
                  receiver, flags);
 
   // Z_R14 (== Z_bytecode) : return entry
 
+  // First check for Object case, then private interface method,
+  // then regular interface method.
+
   // Special case of invokeinterface called for virtual method of
-  // java.lang.Object. See cpCacheOop.cpp for details.
-  // This code isn't produced by javac, but could be produced by
-  // another compliant java compiler.
-  NearLabel notMethod, no_such_interface, no_such_method;
+  // java.lang.Object. See cpCache.cpp for details.
+  NearLabel notObjectMethod, no_such_method;
   __ testbit(flags, ConstantPoolCacheEntry::is_forced_virtual_shift);
-  __ z_brz(notMethod);
+  __ z_brz(notObjectMethod);
   invokevirtual_helper(method, receiver, flags);
-  __ bind(notMethod);
+  __ bind(notObjectMethod);
+
+  // Check for private method invocation - indicated by vfinal
+  NearLabel notVFinal;
+  __ testbit(flags, ConstantPoolCacheEntry::is_vfinal_shift);
+  __ z_brz(notVFinal);
+
+  // Get receiver klass into klass - also a null check.
+  __ load_klass(klass, receiver);
+
+  NearLabel subtype, no_such_interface;
+
+  __ check_klass_subtype(klass, interface, Z_tmp_2, Z_tmp_3, subtype);
+  // If we get here the typecheck failed
+  __ z_bru(no_such_interface);
+  __ bind(subtype);
+
+  // do the call
+  __ profile_final_call(Z_tmp_2);
+  __ profile_arguments_type(Z_tmp_2, method, Z_ARG5, true);
+  __ jump_from_interpreted(method, Z_tmp_2);
+
+  __ bind(notVFinal);
 
   // Get receiver klass into klass - also a null check.
   __ restore_locals();

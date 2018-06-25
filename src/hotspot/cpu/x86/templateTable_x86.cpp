@@ -770,7 +770,7 @@ void TemplateTable::iaload() {
   // rax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ access_load_at(T_INT, IN_HEAP | IN_HEAP_ARRAY, rax,
+  __ access_load_at(T_INT, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_4,
                             arrayOopDesc::base_offset_in_bytes(T_INT)),
                     noreg, noreg);
@@ -783,7 +783,7 @@ void TemplateTable::laload() {
   index_check(rdx, rax); // kills rbx
   NOT_LP64(__ mov(rbx, rax));
   // rbx,: index
-  __ access_load_at(T_LONG, IN_HEAP | IN_HEAP_ARRAY, noreg /* ltos */,
+  __ access_load_at(T_LONG, IN_HEAP | IS_ARRAY, noreg /* ltos */,
                     Address(rdx, rbx, Address::times_8,
                             arrayOopDesc::base_offset_in_bytes(T_LONG)),
                     noreg, noreg);
@@ -796,7 +796,7 @@ void TemplateTable::faload() {
   // rax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ access_load_at(T_FLOAT, IN_HEAP | IN_HEAP_ARRAY, noreg /* ftos */,
+  __ access_load_at(T_FLOAT, IN_HEAP | IS_ARRAY, noreg /* ftos */,
                     Address(rdx, rax,
                             Address::times_4,
                             arrayOopDesc::base_offset_in_bytes(T_FLOAT)),
@@ -808,7 +808,7 @@ void TemplateTable::daload() {
   // rax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ access_load_at(T_DOUBLE, IN_HEAP | IN_HEAP_ARRAY, noreg /* dtos */,
+  __ access_load_at(T_DOUBLE, IN_HEAP | IS_ARRAY, noreg /* dtos */,
                     Address(rdx, rax,
                             Address::times_8,
                             arrayOopDesc::base_offset_in_bytes(T_DOUBLE)),
@@ -825,7 +825,7 @@ void TemplateTable::aaload() {
                       UseCompressedOops ? Address::times_4 : Address::times_ptr,
                       arrayOopDesc::base_offset_in_bytes(T_OBJECT)),
               rax,
-              IN_HEAP_ARRAY);
+              IS_ARRAY);
 }
 
 void TemplateTable::baload() {
@@ -833,7 +833,7 @@ void TemplateTable::baload() {
   // rax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ access_load_at(T_BYTE, IN_HEAP | IN_HEAP_ARRAY, rax,
+  __ access_load_at(T_BYTE, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_1, arrayOopDesc::base_offset_in_bytes(T_BYTE)),
                     noreg, noreg);
 }
@@ -843,7 +843,7 @@ void TemplateTable::caload() {
   // rax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ access_load_at(T_CHAR, IN_HEAP | IN_HEAP_ARRAY, rax,
+  __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)),
                     noreg, noreg);
 }
@@ -858,7 +858,7 @@ void TemplateTable::fast_icaload() {
   // rax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ access_load_at(T_CHAR, IN_HEAP | IN_HEAP_ARRAY, rax,
+  __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)),
                     noreg, noreg);
 }
@@ -869,7 +869,7 @@ void TemplateTable::saload() {
   // rax: index
   // rdx: array
   index_check(rdx, rax); // kills rbx
-  __ access_load_at(T_SHORT, IN_HEAP | IN_HEAP_ARRAY, rax,
+  __ access_load_at(T_SHORT, IN_HEAP | IS_ARRAY, rax,
                     Address(rdx, rax, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_SHORT)),
                     noreg, noreg);
 }
@@ -1063,7 +1063,7 @@ void TemplateTable::iastore() {
   // rbx: index
   // rdx: array
   index_check(rdx, rbx); // prefer index in rbx
-  __ access_store_at(T_INT, IN_HEAP | IN_HEAP_ARRAY,
+  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx, Address::times_4,
                              arrayOopDesc::base_offset_in_bytes(T_INT)),
                      rax, noreg, noreg);
@@ -1077,7 +1077,7 @@ void TemplateTable::lastore() {
   // rdx: high(value)
   index_check(rcx, rbx);  // prefer index in rbx,
   // rbx,: index
-  __ access_store_at(T_LONG, IN_HEAP | IN_HEAP_ARRAY,
+  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY,
                      Address(rcx, rbx, Address::times_8,
                              arrayOopDesc::base_offset_in_bytes(T_LONG)),
                      noreg /* ltos */, noreg, noreg);
@@ -1091,7 +1091,7 @@ void TemplateTable::fastore() {
   // rbx:  index
   // rdx:  array
   index_check(rdx, rbx); // prefer index in rbx
-  __ access_store_at(T_FLOAT, IN_HEAP | IN_HEAP_ARRAY,
+  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx, Address::times_4,
                              arrayOopDesc::base_offset_in_bytes(T_FLOAT)),
                      noreg /* ftos */, noreg, noreg);
@@ -1104,7 +1104,7 @@ void TemplateTable::dastore() {
   // rbx:  index
   // rdx:  array
   index_check(rdx, rbx); // prefer index in rbx
-  __ access_store_at(T_DOUBLE, IN_HEAP | IN_HEAP_ARRAY,
+  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx, Address::times_8,
                              arrayOopDesc::base_offset_in_bytes(T_DOUBLE)),
                      noreg /* dtos */, noreg, noreg);
@@ -1148,7 +1148,7 @@ void TemplateTable::aastore() {
   __ movptr(rax, at_tos());
   __ movl(rcx, at_tos_p1()); // index
   // Now store using the appropriate barrier
-  do_oop_store(_masm, element_address, rax, IN_HEAP_ARRAY);
+  do_oop_store(_masm, element_address, rax, IS_ARRAY);
   __ jmp(done);
 
   // Have a NULL in rax, rdx=array, ecx=index.  Store NULL at ary[idx]
@@ -1156,7 +1156,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(rbx);
 
   // Store a NULL
-  do_oop_store(_masm, element_address, noreg, IN_HEAP_ARRAY);
+  do_oop_store(_masm, element_address, noreg, IS_ARRAY);
 
   // Pop stack arguments
   __ bind(done);
@@ -1180,7 +1180,7 @@ void TemplateTable::bastore() {
   __ jccb(Assembler::zero, L_skip);
   __ andl(rax, 1);  // if it is a T_BOOLEAN array, mask the stored value to 0/1
   __ bind(L_skip);
-  __ access_store_at(T_BYTE, IN_HEAP | IN_HEAP_ARRAY,
+  __ access_store_at(T_BYTE, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx,Address::times_1,
                              arrayOopDesc::base_offset_in_bytes(T_BYTE)),
                      rax, noreg, noreg);
@@ -1193,7 +1193,7 @@ void TemplateTable::castore() {
   // rbx: index
   // rdx: array
   index_check(rdx, rbx);  // prefer index in rbx
-  __ access_store_at(T_CHAR, IN_HEAP | IN_HEAP_ARRAY,
+  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY,
                      Address(rdx, rbx, Address::times_2,
                              arrayOopDesc::base_offset_in_bytes(T_CHAR)),
                      rax, noreg, noreg);
@@ -3792,30 +3792,61 @@ void TemplateTable::invokeinterface(int byte_no) {
   prepare_invoke(byte_no, rax, rbx,  // get f1 Klass*, f2 Method*
                  rcx, rdx); // recv, flags
 
-  // rax: reference klass (from f1)
+  // rax: reference klass (from f1) if interface method
   // rbx: method (from f2)
   // rcx: receiver
   // rdx: flags
 
+  // First check for Object case, then private interface method,
+  // then regular interface method.
+
   // Special case of invokeinterface called for virtual method of
-  // java.lang.Object.  See cpCacheOop.cpp for details.
-  // This code isn't produced by javac, but could be produced by
-  // another compliant java compiler.
-  Label notMethod;
+  // java.lang.Object.  See cpCache.cpp for details.
+  Label notObjectMethod;
   __ movl(rlocals, rdx);
   __ andl(rlocals, (1 << ConstantPoolCacheEntry::is_forced_virtual_shift));
-
-  __ jcc(Assembler::zero, notMethod);
-
+  __ jcc(Assembler::zero, notObjectMethod);
   invokevirtual_helper(rbx, rcx, rdx);
-  __ bind(notMethod);
+  // no return from above
+  __ bind(notObjectMethod);
+
+  Label no_such_interface; // for receiver subtype check
+  Register recvKlass; // used for exception processing
+
+  // Check for private method invocation - indicated by vfinal
+  Label notVFinal;
+  __ movl(rlocals, rdx);
+  __ andl(rlocals, (1 << ConstantPoolCacheEntry::is_vfinal_shift));
+  __ jcc(Assembler::zero, notVFinal);
+
+  // Get receiver klass into rlocals - also a null check
+  __ null_check(rcx, oopDesc::klass_offset_in_bytes());
+  __ load_klass(rlocals, rcx);
+
+  Label subtype;
+  __ check_klass_subtype(rlocals, rax, rbcp, subtype);
+  // If we get here the typecheck failed
+  recvKlass = rdx;
+  __ mov(recvKlass, rlocals); // shuffle receiver class for exception use
+  __ jmp(no_such_interface);
+
+  __ bind(subtype);
+
+  // do the call - rbx is actually the method to call
+
+  __ profile_final_call(rdx);
+  __ profile_arguments_type(rdx, rbx, rbcp, true);
+
+  __ jump_from_interpreted(rbx, rdx);
+  // no return from above
+  __ bind(notVFinal);
 
   // Get receiver klass into rdx - also a null check
   __ restore_locals();  // restore r14
   __ null_check(rcx, oopDesc::klass_offset_in_bytes());
   __ load_klass(rdx, rcx);
 
-  Label no_such_interface, no_such_method;
+  Label no_such_method;
 
   // Preserve method for throw_AbstractMethodErrorVerbose.
   __ mov(rcx, rbx);
@@ -3877,12 +3908,12 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ restore_locals();   // make sure locals pointer is correct as well (was destroyed)
   // Pass arguments for generating a verbose error message.
 #ifdef _LP64
-  Register recvKlass = c_rarg1;
+  recvKlass = c_rarg1;
   Register method    = c_rarg2;
   if (recvKlass != rdx) { __ movq(recvKlass, rdx); }
   if (method != rcx)    { __ movq(method, rcx);    }
 #else
-  Register recvKlass = rdx;
+  recvKlass = rdx;
   Register method    = rcx;
 #endif
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose),

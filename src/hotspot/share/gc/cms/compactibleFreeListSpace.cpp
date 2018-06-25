@@ -30,12 +30,14 @@
 #include "gc/cms/concurrentMarkSweepThread.hpp"
 #include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/binaryTreeDictionary.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -843,13 +845,13 @@ protected:
     void walk_mem_region_with_cl_nopar(MemRegion mr,                    \
                                        HeapWord* bottom, HeapWord* top, \
                                        ClosureType* cl)
-  walk_mem_region_with_cl_DECL(ExtendedOopClosure);
+  walk_mem_region_with_cl_DECL(OopIterateClosure);
   walk_mem_region_with_cl_DECL(FilteringClosure);
 
 public:
   FreeListSpaceDCTOC(CompactibleFreeListSpace* sp,
                      CMSCollector* collector,
-                     ExtendedOopClosure* cl,
+                     OopIterateClosure* cl,
                      CardTable::PrecisionStyle precision,
                      HeapWord* boundary,
                      bool parallel) :
@@ -929,11 +931,11 @@ void FreeListSpaceDCTOC::walk_mem_region_with_cl_nopar(MemRegion mr,            
 // (There are only two of these, rather than N, because the split is due
 // only to the introduction of the FilteringClosure, a local part of the
 // impl of this abstraction.)
-FreeListSpaceDCTOC__walk_mem_region_with_cl_DEFN(ExtendedOopClosure)
+FreeListSpaceDCTOC__walk_mem_region_with_cl_DEFN(OopIterateClosure)
 FreeListSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 
 DirtyCardToOopClosure*
-CompactibleFreeListSpace::new_dcto_cl(ExtendedOopClosure* cl,
+CompactibleFreeListSpace::new_dcto_cl(OopIterateClosure* cl,
                                       CardTable::PrecisionStyle precision,
                                       HeapWord* boundary,
                                       bool parallel) {
@@ -965,7 +967,7 @@ void CompactibleFreeListSpace::blk_iterate(BlkClosure* cl) {
 }
 
 // Apply the given closure to each oop in the space.
-void CompactibleFreeListSpace::oop_iterate(ExtendedOopClosure* cl) {
+void CompactibleFreeListSpace::oop_iterate(OopIterateClosure* cl) {
   assert_lock_strong(freelistLock());
   HeapWord *cur, *limit;
   size_t curSize;

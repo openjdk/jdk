@@ -39,6 +39,7 @@ import static java.nio.file.StandardOpenOption.WRITE;
 
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 /*
  * @test
@@ -93,6 +94,7 @@ public class TestMaxCachedBufferSize {
     // by setting the jdk.nio.maxCachedBufferSize property.
     private static class Worker implements Runnable {
         private final int id;
+        private final CountDownLatch finishLatch, exitLatch;
         private final Random random = new Random();
         private long smallBufferCount = 0;
         private long largeBufferCount = 0;
@@ -152,6 +154,13 @@ public class TestMaxCachedBufferSize {
                 }
             } catch (IOException e) {
                 throw new Error("I/O error", e);
+            } finally {
+                finishLatch.countDown();
+                try {
+                    exitLatch.await();
+                } catch (InterruptedException e) {
+                    // ignore
+                }
             }
         }
 
@@ -160,8 +169,10 @@ public class TestMaxCachedBufferSize {
             loop();
         }
 
-        public Worker(int id) {
+        public Worker(int id, CountDownLatch finishLatch, CountDownLatch exitLatch) {
             this.id = id;
+            this.finishLatch = finishLatch;
+            this.exitLatch = exitLatch;
         }
     }
 
@@ -171,10 +182,6 @@ public class TestMaxCachedBufferSize {
         System.out.printf("Direct %d / %dK\n",
                           directCount, directTotalCapacity / 1024);
 
-        // Note that directCount could be < expectedCount. This can
-        // happen if a GC occurs after one of the worker threads exits
-        // since its thread-local DirectByteBuffer could be cleaned up
-        // before we reach here.
         if (directCount > expectedCount) {
             throw new Error(String.format(
                 "inconsistent direct buffer total count, expected = %d, found = %d",
@@ -208,46 +215,57 @@ public class TestMaxCachedBufferSize {
                           threadNum, iters, maxBufferSize);
         System.out.println();
 
+        final CountDownLatch finishLatch = new CountDownLatch(threadNum);
+        final CountDownLatch exitLatch = new CountDownLatch(1);
         final Thread[] threads = new Thread[threadNum];
         for (int i = 0; i < threadNum; i += 1) {
-            threads[i] = new Thread(new Worker(i));
+            threads[i] = new Thread(new Worker(i, finishLatch, exitLatch));
             threads[i].start();
         }
 
         try {
-            for (int i = 0; i < threadNum; i += 1) {
-                threads[i].join();
+            try {
+                finishLatch.await();
+            } catch (InterruptedException e) {
+                throw new Error("finishLatch.await() interrupted!", e);
             }
-        } catch (InterruptedException e) {
-            throw new Error("join() interrupted!", e);
-        }
 
-        // There is an assumption here that, at this point, only the
-        // cached DirectByteBuffers should be active. Given we
-        // haven't used any other DirectByteBuffers in this test, this
-        // should hold.
-        //
-        // Also note that we can only do the sanity checking at the
-        // end and not during the run given that, at any time, there
-        // could be buffers currently in use by some of the workers
-        // that will not be cached.
+            // There is an assumption here that, at this point, only the
+            // cached DirectByteBuffers should be active. Given we
+            // haven't used any other DirectByteBuffers in this test, this
+            // should hold.
+            //
+            // Also note that we can only do the sanity checking at the
+            // end and not during the run given that, at any time, there
+            // could be buffers currently in use by some of the workers
+            // that will not be cached.
 
-        System.out.println();
-        if (maxBufferSize < SMALL_BUFFER_MAX_SIZE) {
-            // The max buffer size is smaller than all buffers that
-            // were allocated. No buffers should have been cached.
-            checkDirectBuffers(0, 0);
-        } else if (maxBufferSize < LARGE_BUFFER_MIN_SIZE) {
-            // The max buffer size is larger than all small buffers
-            // but smaller than all large buffers that were
-            // allocated. Only small buffers could have been cached.
-            checkDirectBuffers(threadNum,
-                               (long) threadNum * (long) SMALL_BUFFER_MAX_SIZE);
-        } else {
-            // The max buffer size is larger than all buffers that
-            // were allocated. All buffers could have been cached.
-            checkDirectBuffers(threadNum,
-                               (long) threadNum * (long) LARGE_BUFFER_MAX_SIZE);
+            System.out.println();
+            if (maxBufferSize < SMALL_BUFFER_MAX_SIZE) {
+                // The max buffer size is smaller than all buffers that
+                // were allocated. No buffers should have been cached.
+                checkDirectBuffers(0, 0);
+            } else if (maxBufferSize < LARGE_BUFFER_MIN_SIZE) {
+                // The max buffer size is larger than all small buffers
+                // but smaller than all large buffers that were
+                // allocated. Only small buffers could have been cached.
+                checkDirectBuffers(threadNum,
+                                   (long) threadNum * (long) SMALL_BUFFER_MAX_SIZE);
+            } else {
+                // The max buffer size is larger than all buffers that
+                // were allocated. All buffers could have been cached.
+                checkDirectBuffers(threadNum,
+                                   (long) threadNum * (long) LARGE_BUFFER_MAX_SIZE);
+            }
+        } finally {
+            exitLatch.countDown();
+            try {
+                for (int i = 0; i < threadNum; i += 1) {
+                    threads[i].join();
+                }
+            } catch (InterruptedException e) {
+                // ignore
+            }
         }
     }
 }
