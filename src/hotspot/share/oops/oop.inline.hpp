@@ -352,7 +352,7 @@ bool oopDesc::cas_forward_to(oop p, markOop compare, atomic_memory_order order) 
   return cas_set_mark_raw(m, compare, order) == compare;
 }
 
-oop oopDesc::forward_to_atomic(oop p) {
+oop oopDesc::forward_to_atomic(oop p, atomic_memory_order order) {
   markOop oldMark = mark_raw();
   markOop forwardPtrMark = markOopDesc::encode_pointer_as_mark(p);
   markOop curMark;
@@ -361,7 +361,7 @@ oop oopDesc::forward_to_atomic(oop p) {
   assert(sizeof(markOop) == sizeof(intptr_t), "CAS below requires this.");
 
   while (!oldMark->is_marked()) {
-    curMark = cas_set_mark_raw(forwardPtrMark, oldMark);
+    curMark = cas_set_mark_raw(forwardPtrMark, oldMark, order);
     assert(is_forwarded(), "object should have been forwarded");
     if (curMark == oldMark) {
       return NULL;
