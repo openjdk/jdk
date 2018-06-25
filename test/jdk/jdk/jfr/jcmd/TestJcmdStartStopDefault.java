@@ -25,7 +25,8 @@
 
 package jdk.jfr.jcmd;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,7 +44,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestJcmdStartStopDefault {
 
     public static void main(String[] args) throws Exception {
-        File recording = new File("TestJcmdStartStopDefault.jfr");
+        Path recording = Paths.get(".","TestJcmdStartStopDefault.jfr").toAbsolutePath().normalize();
 
         OutputAnalyzer output = JcmdHelper.jcmd("JFR.start");
         JcmdAsserts.assertRecordingHasStarted(output);
@@ -53,10 +54,10 @@ public class TestJcmdStartStopDefault {
 
         output = JcmdHelper.jcmd("JFR.dump",
                 "name=" + name,
-                "filename=" + recording.getAbsolutePath());
-        JcmdAsserts.assertRecordingDumpedToFile(output, name, recording);
+                "filename=" + recording);
+        JcmdAsserts.assertRecordingDumpedToFile(output, recording.toFile());
         JcmdHelper.stopAndCheck(name);
-        FileHelper.verifyRecording(recording);
+        FileHelper.verifyRecording(recording.toFile());
     }
 
     private static String parseRecordingName(OutputAnalyzer output) {

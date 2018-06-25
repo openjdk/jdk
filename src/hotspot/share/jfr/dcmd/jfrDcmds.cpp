@@ -179,11 +179,19 @@ static oop construct_dcmd_instance(JfrJavaArguments* args, TRAPS) {
 
 JfrDumpFlightRecordingDCmd::JfrDumpFlightRecordingDCmd(outputStream* output,
                                                        bool heap) : DCmdWithParser(output, heap),
-  _name("name", "Recording name, e.g. \\\"My Recording\\\"", "STRING", true, NULL),
-  _filename("filename", "Copy recording data to file, i.e \\\"" JFR_FILENAME_EXAMPLE "\\\"", "STRING", true),
+  _name("name", "Recording name, e.g. \\\"My Recording\\\"", "STRING", false, NULL),
+  _filename("filename", "Copy recording data to file, e.g. \\\"" JFR_FILENAME_EXAMPLE "\\\"", "STRING", false),
+  _maxage("maxage", "Maximum duration to dump, in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit", "NANOTIME", false, "0"),
+  _maxsize("maxsize", "Maximum amount of bytes to dump, in (M)B or (G)B, e.g. 500M, or 0 for no limit", "MEMORY SIZE", false, "0"),
+  _begin("begin", "Point in time to dump data from, e.g. 09:00, 21:35:00, 2018-06-03T18:12:56.827Z, 2018-06-03T20:13:46.832, -10m, -3h, or -1d", "STRING", false),
+  _end("end", "Point in time to dump data to, e.g. 09:00, 21:35:00, 2018-06-03T18:12:56.827Z, 2018-06-03T20:13:46.832, -10m, -3h, or -1d", "STRING", false),
   _path_to_gc_roots("path-to-gc-roots", "Collect path to GC roots", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_name);
   _dcmdparser.add_dcmd_option(&_filename);
+  _dcmdparser.add_dcmd_option(&_maxage);
+  _dcmdparser.add_dcmd_option(&_maxsize);
+  _dcmdparser.add_dcmd_option(&_begin);
+  _dcmdparser.add_dcmd_option(&_end);
   _dcmdparser.add_dcmd_option(&_path_to_gc_roots);
 };
 
@@ -225,6 +233,26 @@ void JfrDumpFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
     filepath = JfrJavaSupport::new_string(_filename.value(), CHECK);
   }
 
+  jobject maxage = NULL;
+  if (_maxage.is_set()) {
+    maxage = JfrJavaSupport::new_java_lang_Long(_maxage.value()._nanotime, CHECK);
+  }
+
+  jobject maxsize = NULL;
+  if (_maxsize.is_set()) {
+    maxsize = JfrJavaSupport::new_java_lang_Long(_maxsize.value()._size, CHECK);
+  }
+
+  jstring begin = NULL;
+  if (_begin.is_set() && _begin.value() != NULL) {
+    begin = JfrJavaSupport::new_string(_begin.value(), CHECK);
+  }
+
+  jstring end = NULL;
+  if (_end.is_set() && _end.value() != NULL) {
+    end = JfrJavaSupport::new_string(_end.value(), CHECK);
+  }
+
   jobject path_to_gc_roots = NULL;
   if (_path_to_gc_roots.is_set()) {
     path_to_gc_roots = JfrJavaSupport::new_java_lang_Boolean(_path_to_gc_roots.value(), CHECK);
@@ -232,7 +260,7 @@ void JfrDumpFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
 
   static const char klass[] = "jdk/jfr/internal/dcmd/DCmdDump";
   static const char method[] = "execute";
-  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Ljava/lang/String;";
+  static const char signature[] = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/Long;Ljava/lang/Long;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Boolean;)Ljava/lang/String;";
 
   JfrJavaArguments execute_args(&result, klass, method, signature, CHECK);
   execute_args.set_receiver(h_dcmd_instance);
@@ -240,6 +268,10 @@ void JfrDumpFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
   // arguments
   execute_args.push_jobject(name);
   execute_args.push_jobject(filepath);
+  execute_args.push_jobject(maxage);
+  execute_args.push_jobject(maxsize);
+  execute_args.push_jobject(begin);
+  execute_args.push_jobject(end);
   execute_args.push_jobject(path_to_gc_roots);
 
   JfrJavaSupport::call_virtual(&execute_args, THREAD);
@@ -247,7 +279,7 @@ void JfrDumpFlightRecordingDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 JfrCheckFlightRecordingDCmd::JfrCheckFlightRecordingDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
-  _name("name","Recording text, e.g. \\\"My Recording\\\" or omit to see all recordings","STRING",false, NULL),
+  _name("name","Recording name, e.g. \\\"My Recording\\\" or omit to see all recordings","STRING",false, NULL),
   _verbose("verbose","Print event settings for the recording(s)","BOOLEAN",
            false, "false") {
   _dcmdparser.add_dcmd_option(&_name);

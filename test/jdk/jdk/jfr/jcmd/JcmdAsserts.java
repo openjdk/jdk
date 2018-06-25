@@ -47,7 +47,7 @@ public class JcmdAsserts {
         output.shouldMatch("Flight Recorder has been used");
     }
 
-    public static void assertRecordingDumpedToFile(OutputAnalyzer output, String name, File recording) {
+    public static void assertRecordingDumpedToFile(OutputAnalyzer output, File recording) {
         output.shouldContain("Dumped recording");
         output.shouldContain(recording.getAbsolutePath());
     }

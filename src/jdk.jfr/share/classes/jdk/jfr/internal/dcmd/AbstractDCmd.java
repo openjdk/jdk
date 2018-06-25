@@ -27,8 +27,10 @@ package jdk.jfr.internal.dcmd;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,15 +65,19 @@ abstract class AbstractDCmd {
         return result.toString();
     }
 
-    protected final SafePath resolvePath(String path, String errorMsg) throws DCmdException {
-        if (path == null) {
-            return null;
+    protected final SafePath resolvePath(Recording recording, String filename) throws InvalidPathException {
+        if (filename == null) {
+             return makeGenerated(recording, Paths.get("."));
         }
-        try {
-            return new SafePath(path);
-        } catch (InvalidPathException e) {
-            throw new DCmdException(e, errorMsg, ", invalid path \"" + path + "\".");
+        Path path = Paths.get(filename);
+        if (Files.isDirectory(path)) {
+            return makeGenerated(recording, path);
         }
+        return new SafePath(path.toAbsolutePath().normalize());
+    }
+
+    private SafePath makeGenerated(Recording recording, Path directory) {
+        return new SafePath(directory.toAbsolutePath().resolve(Utils.makeFilename(recording)).normalize());
     }
 
     protected final Recording findRecording(String name) throws DCmdException {
@@ -83,10 +89,12 @@ abstract class AbstractDCmd {
         }
     }
 
-    protected final void reportOperationComplete(String actionPrefix, Recording r, SafePath file) {
+    protected final void reportOperationComplete(String actionPrefix, String name, SafePath file) {
         print(actionPrefix);
-        print(" recording ");
-        print("\"" + r.getName() + "\"");
+        print(" recording");
+        if (name != null) {
+            print(" \"" + name + "\"");
+        }
         if (file != null) {
             print(",");
             try {
@@ -136,7 +144,7 @@ abstract class AbstractDCmd {
     }
 
     protected final void printBytes(long bytes, String separation) {
-       print(Utils.formatBytes(bytes, separation));
+        print(Utils.formatBytes(bytes, separation));
     }
 
     protected final void printTimespan(Duration timespan, String separator) {

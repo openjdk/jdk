@@ -41,7 +41,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -54,6 +53,7 @@ import jdk.jfr.Configuration;
 import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
+import jdk.jfr.internal.SecuritySupport.SafePath;
 
 public final class PlatformRecording implements AutoCloseable {
 
@@ -70,6 +70,7 @@ public final class PlatformRecording implements AutoCloseable {
     private boolean toDisk = true;
     private String name;
     private boolean dumpOnExit;
+    private SafePath dumpOnExitDirectory = new SafePath(".");
     // Timestamp information
     private Instant stopTime;
     private Instant startTime;
@@ -89,7 +90,7 @@ public final class PlatformRecording implements AutoCloseable {
         // when you call dump(Path) or setDdestination(Path),
         // but if no destination is set and dumponexit=true
         // the control context of the recording is taken when the
-        // Recording object is constructed.  This works well for
+        // Recording object is constructed. This works well for
         // -XX:StartFlightRecording and JFR.dump
         this.noDestinationDumpOnExitAccessControlContext = AccessController.getContext();
         this.id = id;
@@ -114,45 +115,37 @@ public final class PlatformRecording implements AutoCloseable {
             Logger.log(LogTag.JFR, LogLevel.INFO, () -> {
                 // Only print non-default values so it easy to see
                 // which options were added
-                    StringJoiner options = new StringJoiner(", ");
-                    if (!toDisk) {
-                        options.add("disk=false");
-                    }
-                    if (maxAge != null) {
-                        options.add("maxage=" + Utils.formatTimespan(maxAge, ""));
-                    }
-                    if (maxSize != 0) {
-                        options.add("maxsize=" + Utils.formatBytes(maxSize, ""));
-                    }
-                    if (dumpOnExit) {
-                        options.add("dumponexit=true");
-                    }
-                    if (duration != null) {
-                        options.add("duration=" + Utils.formatTimespan(duration, ""));
-                    }
-                    if (destination != null) {
-                        options.add("filename=" + destination.getText());
-                    }
-                    String optionText = options.toString();
-                    if (optionText.length() != 0) {
-                        optionText = "{" + optionText + "}";
-                    }
-                    return "Started recording \"" + getName() + "\" (" + getId() + ") " + optionText;
-                });
+                StringJoiner options = new StringJoiner(", ");
+                if (!toDisk) {
+                    options.add("disk=false");
+                }
+                if (maxAge != null) {
+                    options.add("maxage=" + Utils.formatTimespan(maxAge, ""));
+                }
+                if (maxSize != 0) {
+                    options.add("maxsize=" + Utils.formatBytes(maxSize, ""));
+                }
+                if (dumpOnExit) {
+                    options.add("dumponexit=true");
+                }
+                if (duration != null) {
+                    options.add("duration=" + Utils.formatTimespan(duration, ""));
+                }
+                if (destination != null) {
+                    options.add("filename=" + destination.getText());
+                }
+                String optionText = options.toString();
+                if (optionText.length() != 0) {
+                    optionText = "{" + optionText + "}";
+                }
+                return "Started recording \"" + getName() + "\" (" + getId() + ") " + optionText;
+            });
             newState = getState();
         }
         notifyIfStateChanged(oldState, newState);
     }
 
     public boolean stop(String reason) {
-        return stop(reason, null);
-    }
-
-    public boolean stop(String reason, WriteableUserPath alternativePath) {
-        return stop(reason, alternativePath, Collections.emptyMap());
-    }
-
-    boolean stop(String reason, WriteableUserPath alternativePath, Map<String, String> overlaySettings) {
         RecordingState oldState;
         RecordingState newState;
         synchronized (recorder) {
@@ -161,23 +154,21 @@ public final class PlatformRecording implements AutoCloseable {
                 stopTask.cancel();
                 stopTask = null;
             }
-            recorder.stop(this, alternativePath);
+            recorder.stop(this);
             String endText = reason == null ? "" : ". Reason \"" + reason + "\".";
-            Logger.log(LogTag.JFR, LogLevel.INFO, "Stopped recording \"" + getName() + "\" (" + getId()+ ")" + endText);
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Stopped recording \"" + getName() + "\" (" + getId() + ")" + endText);
             this.stopTime = Instant.now();
             newState = getState();
         }
         WriteableUserPath dest = getDestination();
-        if (dest == null && alternativePath != null) {
-            dest = alternativePath;
-        }
+
         if (dest != null) {
             try {
-                copyTo(dest, reason, overlaySettings);
-                Logger.log(LogTag.JFR, LogLevel.INFO, "Wrote recording \"" + getName() + "\" (" + getId()+ ") to " + dest.getText());
+                dumpStopped(dest);
+                Logger.log(LogTag.JFR, LogLevel.INFO, "Wrote recording \"" + getName() + "\" (" + getId() + ") to " + dest.getText());
                 notifyIfStateChanged(newState, oldState);
                 close(); // remove if copied out
-            } catch (IOException e) {
+            } catch(IOException e) {
                 // throw e; // BUG8925030
             }
         } else {
@@ -195,7 +186,7 @@ public final class PlatformRecording implements AutoCloseable {
             setState(RecordingState.DELAYED);
             startTask = createStartTask();
             recorder.getTimer().schedule(startTask, delay.toMillis());
-            Logger.log(LogTag.JFR, LogLevel.INFO, "Scheduled recording \"" + getName() + "\" (" + getId()+ ") to start at " + now);
+            Logger.log(LogTag.JFR, LogLevel.INFO, "Scheduled recording \"" + getName() + "\" (" + getId() + ") to start at " + now);
         }
     }
 
@@ -271,7 +262,6 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
-
     public RecordingState getState() {
         synchronized (recorder) {
             return state;
@@ -296,79 +286,67 @@ public final class PlatformRecording implements AutoCloseable {
                 }
                 chunks.clear();
                 setState(RecordingState.CLOSED);
-                Logger.log(LogTag.JFR, LogLevel.INFO, "Closed recording \"" + getName() + "\" (" + getId()+ ")");
+                Logger.log(LogTag.JFR, LogLevel.INFO, "Closed recording \"" + getName() + "\" (" + getId() + ")");
             }
             newState = getState();
         }
         notifyIfStateChanged(newState, oldState);
     }
 
-    public void copyTo(WriteableUserPath path, String reason, Map<String, String> dumpSettings) throws IOException {
-        synchronized (recorder) {
-            RecordingState state = getState();
-            if (state == RecordingState.CLOSED) {
-                throw new IOException("Recording \"" + name + "\" (id=" + id + ") has been closed, no contents to write");
-            }
-            if (state == RecordingState.DELAYED || state == RecordingState.NEW) {
-                throw new IOException("Recording \"" + name + "\" (id=" + id + ") has not started, no contents to write");
-            }
-            if (state == RecordingState.STOPPED) {
-                // have all we need, just write it
-                dumpToFile(path, reason, getId());
-                return;
-            }
-
-            // Recording is RUNNING, create a clone
-            try(PlatformRecording clone = recorder.newRecording(Collections.emptyMap(), 0)) {
-                clone.setShouldWriteActiveRecordingEvent(false);
-                clone.setName(getName());
-                clone.setDestination(path);
-                clone.setToDisk(true);
-                // We purposely don't clone settings, since
-                // a union a == a
-                if (!isToDisk()) {
-                    // force memory contents to disk
-                    clone.start();
-                } else {
-                    // using existing chunks on disk
-                    for (RepositoryChunk c : chunks) {
-                        clone.add(c);
-                    }
-                    clone.setState(RecordingState.RUNNING);
-                    clone.setStartTime(getStartTime());
-                }
-                if (dumpSettings.isEmpty()) {
-                    clone.setSettings(getSettings());
-                    clone.stop(reason); // dumps to destination path here
-                } else {
-                    // Risk of violating lock order here, since
-                    // clone.stop() will take recorder lock inside
-                    // metadata lock, but OK if we already
-                    // have recorder lock when we entered metadata lock
-                    Thread.holdsLock(recorder);
-                    synchronized(MetadataRepository.getInstance()) {
-                        Thread.holdsLock(recorder);
-                        Map<String, String> oldSettings = getSettings();
-                        Map<String, String> newSettings = new HashMap<>(oldSettings);
-                        // replace with dump settings
-                        newSettings.putAll(dumpSettings);
-                        clone.setSettings(newSettings);
-                        clone.stop(reason);
-                    }
-                }
-            }
-            return;
+    // To be used internally when doing dumps.
+    // Caller must have recorder lock and close recording before releasing lock
+    public PlatformRecording newSnapshotClone(String reason, Boolean pathToGcRoots) throws IOException {
+        if(!Thread.holdsLock(recorder)) {
+            throw new InternalError("Caller must have recorder lock");
         }
-    }
-
-    private void dumpToFile(WriteableUserPath userPath, String reason, long id) throws IOException {
-        userPath.doPriviligedIO(() -> {
-            try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
-                cc.transferTo(fc);
-                fc.force(true);
+        RecordingState state = getState();
+        if (state == RecordingState.CLOSED) {
+            throw new IOException("Recording \"" + name + "\" (id=" + id + ") has been closed, no contents to write");
+        }
+        if (state == RecordingState.DELAYED || state == RecordingState.NEW) {
+            throw new IOException("Recording \"" + name + "\" (id=" + id + ") has not started, no contents to write");
+        }
+        if (state == RecordingState.STOPPED) {
+            PlatformRecording clone = recorder.newTemporaryRecording();
+            for (RepositoryChunk r : chunks) {
+                clone.add(r);
             }
-            return null;
-        });
+            return clone;
+        }
+
+        // Recording is RUNNING, create a clone
+        PlatformRecording clone = recorder.newTemporaryRecording();
+        clone.setShouldWriteActiveRecordingEvent(false);
+        clone.setName(getName());
+        clone.setDestination(this.destination);
+        clone.setToDisk(true);
+        // We purposely don't clone settings here, since
+        // a union a == a
+        if (!isToDisk()) {
+            // force memory contents to disk
+            clone.start();
+        } else {
+            // using existing chunks on disk
+            for (RepositoryChunk c : chunks) {
+                clone.add(c);
+            }
+            clone.setState(RecordingState.RUNNING);
+            clone.setStartTime(getStartTime());
+        }
+        if (pathToGcRoots == null) {
+            clone.setSettings(getSettings()); // needed for old object sample
+            clone.stop(reason); // dumps to destination path here
+        } else {
+            // Risk of violating lock order here, since
+            // clone.stop() will take recorder lock inside
+            // metadata lock, but OK if we already
+            // have recorder lock when we entered metadata lock
+            synchronized (MetadataRepository.getInstance()) {
+                clone.setSettings(OldObjectSample.createSettingsForSnapshot(this, pathToGcRoots));
+                clone.stop(reason);
+            }
+        }
+        return clone;
     }
 
     public boolean isToDisk() {
@@ -387,7 +365,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
     }
 
-   public void setDestination(WriteableUserPath userSuppliedPath) throws IOException {
+    public void setDestination(WriteableUserPath userSuppliedPath) throws IOException {
         synchronized (recorder) {
             if (Utils.isState(getState(), RecordingState.STOPPED, RecordingState.CLOSED)) {
                 throw new IllegalStateException("Destination can't be set on a recording that has been stopped/closed");
@@ -479,7 +457,7 @@ public final class PlatformRecording implements AutoCloseable {
             TreeMap<String, String> ordered = new TreeMap<>(settings);
             Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, "New settings for recording \"" + getName() + "\" (" + getId() + ")");
             for (Map.Entry<String, String> entry : ordered.entrySet()) {
-                String text =  entry.getKey() + "=\"" + entry.getValue() + "\"";
+                String text = entry.getKey() + "=\"" + entry.getValue() + "\"";
                 Logger.log(LogTag.JFR_SETTING, LogLevel.INFO, text);
             }
         }
@@ -490,7 +468,6 @@ public final class PlatformRecording implements AutoCloseable {
             }
         }
     }
-
 
     private void notifyIfStateChanged(RecordingState newState, RecordingState oldState) {
         if (oldState == newState) {
@@ -580,12 +557,12 @@ public final class PlatformRecording implements AutoCloseable {
     private void added(RepositoryChunk c) {
         c.use();
         size += c.getSize();
-        Logger.log(JFR, DEBUG,  ()-> "Recording \"" + name + "\" (" + id + ") added chunk " + c.toString() + ", current size=" + size);
+        Logger.log(JFR, DEBUG, () -> "Recording \"" + name + "\" (" + id + ") added chunk " + c.toString() + ", current size=" + size);
     }
 
     private void removed(RepositoryChunk c) {
         size -= c.getSize();
-        Logger.log(JFR, DEBUG,  ()->  "Recording \"" + name + "\" (" + id + ") removed chunk " + c.toString() + ", current size=" + size);
+        Logger.log(JFR, DEBUG, () -> "Recording \"" + name + "\" (" + id + ") removed chunk " + c.toString() + ", current size=" + size);
         c.release();
     }
 
@@ -661,7 +638,7 @@ public final class PlatformRecording implements AutoCloseable {
                     stop("End of duration reached");
                 } catch (Throwable t) {
                     // Prevent malicious user to propagate exception callback in the wrong context
-                    Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not stop recording. " + t.getMessage());
+                    Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not stop recording.");
                 }
             }
         };
@@ -678,7 +655,7 @@ public final class PlatformRecording implements AutoCloseable {
     }
 
     void clearDestination() {
-       destination = null;
+        destination = null;
     }
 
     public AccessControlContext getNoDestinationDumpOnExitAccessControlContext() {
@@ -686,10 +663,116 @@ public final class PlatformRecording implements AutoCloseable {
     }
 
     void setShouldWriteActiveRecordingEvent(boolean shouldWrite) {
-       this.shuoldWriteActiveRecordingEvent = shouldWrite;
+        this.shuoldWriteActiveRecordingEvent = shouldWrite;
     }
 
     boolean shouldWriteMetadataEvent() {
         return shuoldWriteActiveRecordingEvent;
+    }
+
+    // Dump running and stopped recordings
+    public void dump(WriteableUserPath writeableUserPath) throws IOException {
+        synchronized (recorder) {
+            try(PlatformRecording p = newSnapshotClone("Dumped by user", null))  {
+                p.dumpStopped(writeableUserPath);
+            }
+        }
+    }
+
+    public void dumpStopped(WriteableUserPath userPath) throws IOException {
+        synchronized (recorder) {
+                userPath.doPriviligedIO(() -> {
+                    try (ChunksChannel cc = new ChunksChannel(chunks); FileChannel fc = FileChannel.open(userPath.getReal(), StandardOpenOption.WRITE, StandardOpenOption.APPEND)) {
+                        cc.transferTo(fc);
+                        fc.force(true);
+                    }
+                    return null;
+                });
+        }
+    }
+
+    public void filter(Instant begin, Instant end, Long maxSize) {
+        synchronized (recorder) {
+            List<RepositoryChunk> result = removeAfter(end, removeBefore(begin, new ArrayList<>(chunks)));
+            if (maxSize != null) {
+                if (begin != null && end == null) {
+                    result = reduceFromBeginning(maxSize, result);
+                } else {
+                    result = reduceFromEnd(maxSize, result);
+                }
+            }
+            int size = 0;
+            for (RepositoryChunk r : result) {
+                size += r.getSize();
+                r.use();
+            }
+            this.size = size;
+            for (RepositoryChunk r : chunks) {
+                r.release();
+            }
+            chunks.clear();
+            chunks.addAll(result);
+        }
+    }
+
+    private static List<RepositoryChunk> removeBefore(Instant time, List<RepositoryChunk> input) {
+        if (time == null) {
+            return input;
+        }
+        List<RepositoryChunk> result = new ArrayList<>(input.size());
+        for (RepositoryChunk r : input) {
+            if (!r.getEndTime().isBefore(time)) {
+                result.add(r);
+            }
+        }
+        return result;
+    }
+
+    private static List<RepositoryChunk> removeAfter(Instant time, List<RepositoryChunk> input) {
+        if (time == null) {
+            return input;
+        }
+        List<RepositoryChunk> result = new ArrayList<>(input.size());
+        for (RepositoryChunk r : input) {
+            if (!r.getStartTime().isAfter(time)) {
+                result.add(r);
+            }
+        }
+        return result;
+    }
+
+    private static List<RepositoryChunk> reduceFromBeginning(Long maxSize, List<RepositoryChunk> input) {
+        if (maxSize == null || input.isEmpty()) {
+            return input;
+        }
+        List<RepositoryChunk> result = new ArrayList<>(input.size());
+        long total = 0;
+        for (RepositoryChunk r : input) {
+            total += r.getSize();
+            if (total > maxSize) {
+                break;
+            }
+            result.add(r);
+        }
+        // always keep at least one chunk
+        if (result.isEmpty()) {
+            result.add(input.get(0));
+        }
+        return result;
+    }
+
+    private static List<RepositoryChunk> reduceFromEnd(Long maxSize, List<RepositoryChunk> input) {
+        Collections.reverse(input);
+        List<RepositoryChunk> result = reduceFromBeginning(maxSize, input);
+        Collections.reverse(result);
+        return result;
+    }
+
+    public void setDumpOnExitDirectory(SafePath directory) {
+       this.dumpOnExitDirectory = directory;
+    }
+
+    public SafePath getDumpOnExitDirectory()  {
+        return this.dumpOnExitDirectory;
     }
 }

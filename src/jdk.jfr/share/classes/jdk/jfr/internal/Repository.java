@@ -41,7 +41,7 @@ public final class Repository {
     private static final JVM jvm = JVM.getJVM();
     private static final Repository instance = new Repository();
 
-    static DateTimeFormatter REPO_DATE_FORMAT = DateTimeFormatter
+    public final static DateTimeFormatter REPO_DATE_FORMAT = DateTimeFormatter
             .ofPattern("yyyy_MM_dd_HH_mm_ss");
 
     private final Set<SafePath> cleanupDirectories = new HashSet<>();
