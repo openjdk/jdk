@@ -63,13 +63,12 @@ public abstract class Reader implements Readable, Closeable {
      *
      * <p> While the stream is open, the {@code read()}, {@code read(char[])},
      * {@code read(char[], int, int)}, {@code read(Charbuffer)}, {@code
-     * ready())}, {@code skip(long)}, and {@code transferTo()} methods all
-     * behave as if end of stream has been reached.  After the stream has been
+     * ready()}, {@code skip(long)}, and {@code transferTo()} methods all
+     * behave as if end of stream has been reached. After the stream has been
      * closed, these methods all throw {@code IOException}.
      *
      * <p> The {@code markSupported()} method returns {@code false}.  The
-     * {@code mark()} method does nothing, and the {@code reset()} method
-     * throws {@code IOException}.
+     * {@code mark()} and {@code reset()} methods throw an {@code IOException}.
      *
      * <p> The {@link #lock object} used to synchronize operations on the
      * returned {@code Reader} is not specified.
@@ -112,6 +111,12 @@ public abstract class Reader implements Readable, Closeable {
                     return -1;
                 }
                 return 0;
+            }
+
+            @Override
+            public boolean ready() throws IOException {
+                ensureOpen();
+                return false;
             }
 
             @Override
