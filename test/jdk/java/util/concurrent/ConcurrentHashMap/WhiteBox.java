@@ -45,15 +45,20 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
 
 @Test
 public class WhiteBox {
     final ThreadLocalRandom rnd = ThreadLocalRandom.current();
     final VarHandle TABLE, NEXTTABLE, SIZECTL;
+    final MethodHandle TABLE_SIZE_FOR;
 
     WhiteBox() throws ReflectiveOperationException {
         Class<?> mClass = ConcurrentHashMap.class;
@@ -65,11 +70,33 @@ public class WhiteBox {
         TABLE = lookup.findVarHandle(mClass, "table", nodeArrayClass);
         NEXTTABLE = lookup.findVarHandle(mClass, "nextTable", nodeArrayClass);
         SIZECTL = lookup.findVarHandle(mClass, "sizeCtl", int.class);
+        TABLE_SIZE_FOR = lookup.findStatic(
+                mClass, "tableSizeFor",
+                MethodType.methodType(int.class, int.class));
     }
 
     Object[] table(ConcurrentHashMap m) { return (Object[]) TABLE.getVolatile(m); }
     Object[] nextTable(ConcurrentHashMap m) { return (Object[]) NEXTTABLE.getVolatile(m); }
     int sizeCtl(ConcurrentHashMap m) { return (int) SIZECTL.getVolatile(m); }
+    int tableSizeFor(int n) {
+        try {
+            return (int) TABLE_SIZE_FOR.invoke(n);
+        } catch (Throwable t) { throw new AssertionError(t); }
+    }
+
+    List<Supplier<ConcurrentHashMap>> newConcurrentHashMapSuppliers(
+        int initialCapacity) {
+        return List.of(
+            () -> new ConcurrentHashMap(initialCapacity),
+            () -> new ConcurrentHashMap(initialCapacity, 0.75f),
+            () -> new ConcurrentHashMap(initialCapacity, 0.75f, 1));
+    }
+
+    ConcurrentHashMap newConcurrentHashMap(int initialCapacity) {
+        List<Supplier<ConcurrentHashMap>> suppliers
+            = newConcurrentHashMapSuppliers(initialCapacity);
+        return suppliers.get(rnd.nextInt(suppliers.size())).get();
+    }
 
     @Test
     public void defaultConstructor() {
@@ -83,7 +110,7 @@ public class WhiteBox {
     public void shouldNotResizeWhenInitialCapacityProvided() {
         int initialCapacity = rnd.nextInt(1, 100);
         Object[] initialTable = null;
-        ConcurrentHashMap m = new ConcurrentHashMap(initialCapacity);
+        ConcurrentHashMap m = newConcurrentHashMap(initialCapacity);
 
         // table is lazily initialized
         assertNull(table(m));
@@ -99,6 +126,34 @@ public class WhiteBox {
             assertInvariants(m);
         }
         assertEquals(initialTable.length, expectedInitialTableLength);
+    }
+
+    @Test
+    public void constructorsShouldGiveSameInitialCapacity() {
+        int initialCapacity = rnd.nextInt(1, 256);
+        long distinctTableLengths
+            = newConcurrentHashMapSuppliers(initialCapacity).stream()
+            .map(Supplier::get)
+            .mapToInt(map -> { map.put(42, 42); return table(map).length; })
+            .distinct()
+            .count();
+        assertEquals(1L, distinctTableLengths);
+    }
+
+    @Test
+    public void testTableSizeFor() {
+        assertEquals(1, tableSizeFor(0));
+        assertEquals(1, tableSizeFor(1));
+        assertEquals(2, tableSizeFor(2));
+        assertEquals(4, tableSizeFor(3));
+        assertEquals(16, tableSizeFor(15));
+        assertEquals(16, tableSizeFor(16));
+        assertEquals(32, tableSizeFor(17));
+        int maxSize = 1 << 30;
+        assertEquals(maxSize, tableSizeFor(maxSize - 1));
+        assertEquals(maxSize, tableSizeFor(maxSize));
+        assertEquals(maxSize, tableSizeFor(maxSize + 1));
+        assertEquals(maxSize, tableSizeFor(Integer.MAX_VALUE));
     }
 
     byte[] serialBytes(Object o) {
@@ -132,7 +187,7 @@ public class WhiteBox {
     public void testSerialization() {
         assertInvariants(serialClone(new ConcurrentHashMap()));
 
-        ConcurrentHashMap m = new ConcurrentHashMap(rnd.nextInt(100));
+        ConcurrentHashMap m = newConcurrentHashMap(rnd.nextInt(100));
         m.put(1, 1);
         ConcurrentHashMap clone = serialClone(m);
         assertInvariants(clone);
