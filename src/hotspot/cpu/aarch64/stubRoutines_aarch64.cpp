@@ -55,6 +55,7 @@ address StubRoutines::aarch64::_compare_long_string_UL = NULL;
 address StubRoutines::aarch64::_string_indexof_linear_ll = NULL;
 address StubRoutines::aarch64::_string_indexof_linear_uu = NULL;
 address StubRoutines::aarch64::_string_indexof_linear_ul = NULL;
+address StubRoutines::aarch64::_large_byte_array_inflate = NULL;
 bool StubRoutines::aarch64::_completed = false;
 
 /**

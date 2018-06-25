@@ -5681,26 +5681,24 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
 void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len,
                                         FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
                                         Register tmp4) {
-  Label big, done;
+  Label big, done, after_init, to_stub;
 
   assert_different_registers(src, dst, len, tmp4, rscratch1);
 
-  fmovd(vtmp1 , zr);
-  lsrw(rscratch1, len, 3);
-
-  cbnzw(rscratch1, big);
-
+  fmovd(vtmp1, zr);
+  lsrw(tmp4, len, 3);
+  bind(after_init);
+  cbnzw(tmp4, big);
   // Short string: less than 8 bytes.
   {
-    Label loop, around, tiny;
+    Label loop, tiny;
 
-    subsw(len, len, 4);
-    andw(len, len, 3);
-    br(LO, tiny);
-
+    cmpw(len, 4);
+    br(LT, tiny);
     // Use SIMD to do 4 bytes.
     ldrs(vtmp2, post(src, 4));
     zip1(vtmp3, T8B, vtmp2, vtmp1);
+    subw(len, len, 4);
     strd(vtmp3, post(dst, 8));
 
     cbzw(len, done);
@@ -5714,35 +5712,65 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
     bind(tiny);
     cbnz(len, loop);
 
-    bind(around);
     b(done);
+  }
+
+  if (SoftwarePrefetchHintDistance >= 0) {
+    bind(to_stub);
+      RuntimeAddress stub =  RuntimeAddress(StubRoutines::aarch64::large_byte_array_inflate());
+      assert(stub.target() != NULL, "large_byte_array_inflate stub has not been generated");
+      trampoline_call(stub);
+      b(after_init);
   }
 
   // Unpack the bytes 8 at a time.
   bind(big);
-  andw(len, len, 7);
-
   {
-    Label loop, around;
+    Label loop, around, loop_last, loop_start;
 
-    bind(loop);
-    ldrd(vtmp2, post(src, 8));
-    sub(rscratch1, rscratch1, 1);
-    zip1(vtmp3, T16B, vtmp2, vtmp1);
-    st1(vtmp3, T8H, post(dst, 16));
-    cbnz(rscratch1, loop);
+    if (SoftwarePrefetchHintDistance >= 0) {
+      const int large_loop_threshold = (64 + 16)/8;
+      ldrd(vtmp2, post(src, 8));
+      andw(len, len, 7);
+      cmp(tmp4, large_loop_threshold);
+      br(GE, to_stub);
+      b(loop_start);
 
-    bind(around);
+      bind(loop);
+      ldrd(vtmp2, post(src, 8));
+      bind(loop_start);
+      subs(tmp4, tmp4, 1);
+      br(EQ, loop_last);
+      zip1(vtmp2, T16B, vtmp2, vtmp1);
+      ldrd(vtmp3, post(src, 8));
+      st1(vtmp2, T8H, post(dst, 16));
+      subs(tmp4, tmp4, 1);
+      zip1(vtmp3, T16B, vtmp3, vtmp1);
+      st1(vtmp3, T8H, post(dst, 16));
+      br(NE, loop);
+      b(around);
+      bind(loop_last);
+      zip1(vtmp2, T16B, vtmp2, vtmp1);
+      st1(vtmp2, T8H, post(dst, 16));
+      bind(around);
+      cbz(len, done);
+    } else {
+      andw(len, len, 7);
+      bind(loop);
+      ldrd(vtmp2, post(src, 8));
+      sub(tmp4, tmp4, 1);
+      zip1(vtmp3, T16B, vtmp2, vtmp1);
+      st1(vtmp3, T8H, post(dst, 16));
+      cbnz(tmp4, loop);
+    }
   }
 
   // Do the tail of up to 8 bytes.
-  sub(src, src, 8);
-  add(src, src, len, ext::uxtw, 0);
-  ldrd(vtmp2, Address(src));
-  sub(dst, dst, 16);
+  add(src, src, len);
+  ldrd(vtmp3, Address(src, -8));
   add(dst, dst, len, ext::uxtw, 1);
-  zip1(vtmp3, T16B, vtmp2, vtmp1);
-  st1(vtmp3, T8H, Address(dst));
+  zip1(vtmp3, T16B, vtmp3, vtmp1);
+  strq(vtmp3, Address(dst, -16));
 
   bind(done);
 }
