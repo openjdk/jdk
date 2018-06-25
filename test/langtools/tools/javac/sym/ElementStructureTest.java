@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8072480
+ * @bug 8072480 8203814
  * @summary Check the platform classpath contains the correct elements.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.code
@@ -134,10 +134,10 @@ public class ElementStructureTest {
         (byte) 0x0C, (byte) 0x2D, (byte) 0x3A, (byte) 0x7C
     };
     static final byte[] hash8 = new byte[] {
-        (byte) 0x37, (byte) 0x0C, (byte) 0xBA, (byte) 0xCE,
-        (byte) 0xCF, (byte) 0x81, (byte) 0xAE, (byte) 0xA8,
-        (byte) 0x1E, (byte) 0x10, (byte) 0xAB, (byte) 0x72,
-        (byte) 0xF7, (byte) 0xE5, (byte) 0x34, (byte) 0x72
+        (byte) 0x44, (byte) 0x77, (byte) 0x6E, (byte) 0x52,
+        (byte) 0x2B, (byte) 0x16, (byte) 0xD3, (byte) 0x3C,
+        (byte) 0x78, (byte) 0x75, (byte) 0xF5, (byte) 0x0A,
+        (byte) 0x01, (byte) 0x24, (byte) 0xBD, (byte) 0x2A
     };
 
     final static Map<String, byte[]> version2Hash = new HashMap<>();
