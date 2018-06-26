@@ -69,9 +69,14 @@ JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssInitialize
     int res = 0;
     FPTR_Initialize initialize =
         (FPTR_Initialize)findFunction(env, jHandle, "NSS_Initialize");
+    #ifdef SECMOD_DEBUG
+    FPTR_GetError getError =
+        (FPTR_GetError)findFunction(env, jHandle, "PORT_GetError");
+    #endif // SECMOD_DEBUG
     unsigned int flags = 0x00;
     const char *configDir = NULL;
     const char *functionName = NULL;
+    const char *configFile = NULL;
 
     /* If we cannot initialize, exit now */
     if (initialize == NULL) {
@@ -97,13 +102,18 @@ JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssInitialize
         flags = 0x20; // NSS_INIT_OPTIMIZESPACE flag
     }
 
+    configFile = "secmod.db";
+    if (configDir != NULL && strncmp("sql:", configDir, 4U) == 0) {
+        configFile = "pkcs11.txt";
+    }
+
     /*
      * If the NSS_Init function is requested then call NSS_Initialize to
      * open the Cert, Key and Security Module databases, read only.
      */
     if (strcmp("NSS_Init", functionName) == 0) {
         flags = flags | 0x01; // NSS_INIT_READONLY flag
-        res = initialize(configDir, "", "", "secmod.db", flags);
+        res = initialize(configDir, "", "", configFile, flags);
 
     /*
      * If the NSS_InitReadWrite function is requested then call
@@ -111,7 +121,7 @@ JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssInitialize
      * read/write.
      */
     } else if (strcmp("NSS_InitReadWrite", functionName) == 0) {
-        res = initialize(configDir, "", "", "secmod.db", flags);
+        res = initialize(configDir, "", "", configFile, flags);
 
     /*
      * If the NSS_NoDB_Init function is requested then call
@@ -137,6 +147,13 @@ cleanup:
         (*env)->ReleaseStringUTFChars(env, jConfigDir, configDir);
     }
     dprintf1("-res: %d\n", res);
+    #ifdef SECMOD_DEBUG
+    if (res == -1) {
+        if (getError != NULL) {
+            dprintf1("-NSS error: %d\n", getError());
+        }
+    }
+    #endif // SECMOD_DEBUG
 
     return (res == 0) ? JNI_TRUE : JNI_FALSE;
 }
