@@ -675,8 +675,14 @@ public class ReflectionFactory {
      * @returns true if the two classes are in the same classloader and package
      */
     private static boolean packageEquals(Class<?> cl1, Class<?> cl2) {
+        assert !cl1.isArray() && !cl2.isArray();
+
+        if (cl1 == cl2) {
+            return true;
+        }
+
         return cl1.getClassLoader() == cl2.getClassLoader() &&
-                Objects.equals(cl1.getPackage(), cl2.getPackage());
+                Objects.equals(cl1.getPackageName(), cl2.getPackageName());
     }
 
 }
