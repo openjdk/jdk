@@ -22,12 +22,13 @@
  */
 
 import java.util.Date;
+import java.util.Locale;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
 
 /**
  * @test
- * @bug 8024302 8026037
+ * @bug 8024302 8026037 8196213
  * @summary Checks warnings if -tsa and -tsacert options are not specified
  * @library /lib/testlibrary /test/lib ../
  * @build jdk.test.lib.util.JarUtils
@@ -40,8 +41,16 @@ public class NoTimestampTest extends Test {
      * and checks that proper warnings are shown.
      */
     public static void main(String[] args) throws Throwable {
-        NoTimestampTest test = new NoTimestampTest();
-        test.start();
+        Locale reservedLocale = Locale.getDefault();
+        Locale.setDefault(Locale.US);
+
+        try {
+            NoTimestampTest test = new NoTimestampTest();
+            test.start();
+        } finally {
+            // Restore the reserved locale
+            Locale.setDefault(reservedLocale);
+        }
     }
 
     private void start() throws Throwable {
