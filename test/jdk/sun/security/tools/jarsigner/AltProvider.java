@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4906940 8130302
+ * @bug 4906940 8130302 8194152
  * @summary -providerPath, -providerClass, -addprovider, and -providerArg
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -159,6 +159,11 @@ public class AltProvider {
     private static OutputAnalyzer tool(String tool, String args)
             throws Throwable {
         JDKToolLauncher l = JDKToolLauncher.createUsingTestJDK(tool);
+
+        // Set locale to en-US so that the output are not translated into other languages.
+        l.addVMArg("-Duser.language=en");
+        l.addVMArg("-Duser.country=US");
+
         for (String a: args.split("\\s+")) {
             if (a.startsWith("-J")) {
                 l.addVMArg(a.substring(2));
