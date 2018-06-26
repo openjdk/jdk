@@ -83,6 +83,7 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java   8191270 generic-all
 serviceability/sa/sadebugd/SADebugDTest.java         8163805 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorGCCMSTest.java 8205643 generic-all
 serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java 8205541 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatRateTest.java 8205652 generic-all
 
 #############################################################################
 
