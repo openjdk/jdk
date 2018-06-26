@@ -25,17 +25,53 @@
 
 package java.nio.file.spi;
 
-import java.nio.file.*;
-import java.nio.file.attribute.*;
-import java.nio.channels.*;
+import java.nio.channels.AsynchronousFileChannel;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.WritableByteChannel;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.AccessMode;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileStore;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystemAlreadyExistsException;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.LinkPermission;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.NotLinkException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.net.URI;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
-import java.util.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileAttributeView;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import sun.nio.ch.FileChannelImpl;
 
 /**
  * Service-provider class for file systems. The methods defined by the {@link
@@ -381,7 +417,11 @@ public abstract class FileSystemProvider {
                     throw new UnsupportedOperationException("'" + opt + "' not allowed");
             }
         }
-        return Channels.newInputStream(Files.newByteChannel(path, options));
+        ReadableByteChannel rbc = Files.newByteChannel(path, options);
+        if (rbc instanceof FileChannelImpl) {
+            ((FileChannelImpl) rbc).setUninterruptible();
+        }
+        return Channels.newInputStream(rbc);
     }
 
     private static final Set<OpenOption> DEFAULT_OPEN_OPTIONS =
@@ -435,7 +475,11 @@ public abstract class FileSystemProvider {
             }
             opts.add(StandardOpenOption.WRITE);
         }
-        return Channels.newOutputStream(newByteChannel(path, opts));
+        WritableByteChannel wbc = newByteChannel(path, opts);
+        if (wbc instanceof FileChannelImpl) {
+            ((FileChannelImpl) wbc).setUninterruptible();
+        }
+        return Channels.newOutputStream(wbc);
     }
 
     /**
