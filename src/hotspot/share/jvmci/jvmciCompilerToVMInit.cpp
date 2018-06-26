@@ -234,10 +234,15 @@ objArrayHandle CompilerToVM::initialize_intrinsics(TRAPS) {
   do_bool_flag(UseCRC32Intrinsics)                                         \
   do_bool_flag(UseCompressedClassPointers)                                 \
   do_bool_flag(UseCompressedOops)                                          \
-  do_bool_flag(UseConcMarkSweepGC)                                         \
   X86_ONLY(do_bool_flag(UseCountLeadingZerosInstruction))                  \
   X86_ONLY(do_bool_flag(UseCountTrailingZerosInstruction))                 \
+  do_bool_flag(UseConcMarkSweepGC)                                         \
   do_bool_flag(UseG1GC)                                                    \
+  do_bool_flag(UseParallelGC)                                              \
+  do_bool_flag(UseParallelOldGC)                                           \
+  do_bool_flag(UseSerialGC)                                                \
+  do_bool_flag(UseZGC)                                                     \
+  do_bool_flag(UseEpsilonGC)                                               \
   COMPILER2_PRESENT(do_bool_flag(UseMontgomeryMultiplyIntrinsic))          \
   COMPILER2_PRESENT(do_bool_flag(UseMontgomerySquareIntrinsic))            \
   COMPILER2_PRESENT(do_bool_flag(UseMulAddIntrinsic))                      \
