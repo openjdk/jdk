@@ -42,13 +42,13 @@ private:
 
 public:
   enum G1VerifyType {
-    G1VerifyYoungOnly   =  1, // -XX:VerifyGCType=young-only
-    G1VerifyInitialMark =  2, // -XX:VerifyGCType=initial-mark
-    G1VerifyMixed       =  4, // -XX:VerifyGCType=mixed
-    G1VerifyRemark      =  8, // -XX:VerifyGCType=remark
-    G1VerifyCleanup     = 16, // -XX:VerifyGCType=cleanup
-    G1VerifyFull        = 32, // -XX:VerifyGCType=full
-    G1VerifyAll         = -1
+    G1VerifyYoungNormal     =  1, // -XX:VerifyGCType=young-normal
+    G1VerifyConcurrentStart =  2, // -XX:VerifyGCType=concurrent-start
+    G1VerifyMixed           =  4, // -XX:VerifyGCType=mixed
+    G1VerifyRemark          =  8, // -XX:VerifyGCType=remark
+    G1VerifyCleanup         = 16, // -XX:VerifyGCType=cleanup
+    G1VerifyFull            = 32, // -XX:VerifyGCType=full
+    G1VerifyAll             = -1
   };
 
   G1HeapVerifier(G1CollectedHeap* heap) : _g1h(heap) {}
