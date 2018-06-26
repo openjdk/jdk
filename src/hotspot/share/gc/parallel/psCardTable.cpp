@@ -39,7 +39,7 @@
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
-class CheckForUnmarkedOops : public OopClosure {
+class CheckForUnmarkedOops : public BasicOopIterateClosure {
  private:
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
@@ -89,7 +89,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {
     CheckForUnmarkedOops object_check(_young_gen, _card_table);
-    obj->oop_iterate_no_header(&object_check);
+    obj->oop_iterate(&object_check);
     if (object_check.has_unmarked_oop()) {
       guarantee(_card_table->addr_is_marked_imprecise(obj), "Found unmarked young_gen object");
     }
@@ -97,7 +97,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
 };
 
 // Checks for precise marking of oops as newgen.
-class CheckForPreciseMarks : public OopClosure {
+class CheckForPreciseMarks : public BasicOopIterateClosure {
  private:
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
@@ -336,7 +336,7 @@ void PSCardTable::verify_all_young_refs_precise() {
 
   CheckForPreciseMarks check(heap->young_gen(), this);
 
-  old_gen->oop_iterate_no_header(&check);
+  old_gen->oop_iterate(&check);
 
   verify_all_young_refs_precise_helper(old_gen->object_space()->used_region());
 }

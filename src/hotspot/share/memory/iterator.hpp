@@ -117,16 +117,6 @@ public:
   virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
 };
 
-// Wrapper closure only used to implement oop_iterate_no_header().
-class NoHeaderExtendedOopClosure : public BasicOopIterateClosure {
-  OopClosure* _wrapped_closure;
- public:
-  NoHeaderExtendedOopClosure(OopClosure* cl) : _wrapped_closure(cl) {}
-  // Warning: this calls the virtual version do_oop in the the wrapped closure.
-  virtual void do_oop(oop* p)       { _wrapped_closure->do_oop(p); }
-  virtual void do_oop(narrowOop* p) { _wrapped_closure->do_oop(p); }
-};
-
 class KlassClosure : public Closure {
  public:
   virtual void do_klass(Klass* k) = 0;

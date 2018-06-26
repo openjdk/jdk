@@ -463,18 +463,6 @@ void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
   OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, klass());
 }
 
-int oopDesc::oop_iterate_no_header(OopClosure* blk) {
-  // The NoHeaderExtendedOopClosure wraps the OopClosure and proxies all
-  // the do_oop calls, but turns off all other features in OopIterateClosure.
-  NoHeaderExtendedOopClosure cl(blk);
-  return oop_iterate_size(&cl);
-}
-
-int oopDesc::oop_iterate_no_header(OopClosure* blk, MemRegion mr) {
-  NoHeaderExtendedOopClosure cl(blk);
-  return oop_iterate_size(&cl, mr);
-}
-
 bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
   return obj == NULL || obj->klass()->is_subtype_of(klass);
 }

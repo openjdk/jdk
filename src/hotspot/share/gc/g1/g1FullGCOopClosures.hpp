@@ -84,7 +84,7 @@ public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 };
 
-class G1VerifyOopClosure: public OopClosure {
+class G1VerifyOopClosure: public BasicOopIterateClosure {
 private:
   G1CollectedHeap* _g1h;
   bool             _failures;

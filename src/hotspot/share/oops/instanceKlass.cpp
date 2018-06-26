@@ -3430,7 +3430,7 @@ void InstanceKlass::collect_statistics(KlassSizeStats *sz) const {
 
 // Verification
 
-class VerifyFieldClosure: public OopClosure {
+class VerifyFieldClosure: public BasicOopIterateClosure {
  protected:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
@@ -3578,7 +3578,7 @@ void InstanceKlass::verify_on(outputStream* st) {
 void InstanceKlass::oop_verify_on(oop obj, outputStream* st) {
   Klass::oop_verify_on(obj, st);
   VerifyFieldClosure blk;
-  obj->oop_iterate_no_header(&blk);
+  obj->oop_iterate(&blk);
 }
 
 
