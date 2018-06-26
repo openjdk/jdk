@@ -327,7 +327,8 @@ define SetupApiDocsGenerationBody
   )
 
   ifeq ($$($1_JAVADOC_CMD), )
-    $1_JAVADOC_CMD := $$(JAVA) -Djava.awt.headless=true $$($1_JAVA_ARGS) \
+    $1_JAVADOC_CMD := $$(JAVA) -Djava.awt.headless=true \
+        -Dextlink.spec.version=$$(VERSION_SPECIFICATION) $$($1_JAVA_ARGS) \
         $$(NEW_JAVADOC)
   endif
 
