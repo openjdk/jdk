@@ -94,10 +94,6 @@ class OopIterateClosure : public OopClosure {
   virtual void do_klass(Klass* k) = 0;
   virtual void do_cld(ClassLoaderData* cld) = 0;
 
-  // True iff this closure may be safely applied more than once to an oop
-  // location without an intervening "major reset" (like the end of a GC).
-  virtual bool idempotent() { return false; }
-
 #ifdef ASSERT
   // Default verification of each visited oop field.
   template <typename T> void verify(T* p);
