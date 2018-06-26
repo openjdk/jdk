@@ -375,8 +375,7 @@ void Access<decorators>::verify_decorators() {
   const DecoratorSet location_decorators = decorators & IN_DECORATOR_MASK;
   STATIC_ASSERT(location_decorators == 0 || ( // make sure location decorators are disjoint if set
     (location_decorators ^ IN_NATIVE) == 0 ||
-    (location_decorators ^ IN_HEAP) == 0 ||
-    (location_decorators ^ (IN_NATIVE | IN_CONCURRENT_ROOT)) == 0
+    (location_decorators ^ IN_HEAP) == 0
   ));
 }
 

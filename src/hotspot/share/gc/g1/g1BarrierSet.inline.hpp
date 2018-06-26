@@ -98,12 +98,10 @@ template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline void G1BarrierSet::AccessBarrier<decorators, BarrierSetT>::
 oop_store_not_in_heap(T* addr, oop new_value) {
-  if (HasDecorator<decorators, IN_CONCURRENT_ROOT>::value) {
-    // For roots not scanned in a safepoint, we have to apply SATB barriers
-    // even for roots.
-    G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
-    bs->write_ref_field_pre<decorators>(addr);
-  }
+  // Apply SATB barriers for all non-heap references, to allow
+  // concurrent scanning of such references.
+  G1BarrierSet *bs = barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  bs->write_ref_field_pre<decorators>(addr);
   Raw::oop_store(addr, new_value);
 }
 
