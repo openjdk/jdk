@@ -561,22 +561,6 @@ java/net/MulticastSocket/Test.java                              7145658 macosx-a
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
-java/net/httpclient/ConcurrentResponses.java                    8204977 generic-all
-java/net/httpclient/DigestEchoClientSSL.java                    8204977 generic-all
-java/net/httpclient/EncodedCharsInURI.java                      8204977 generic-all
-java/net/httpclient/FlowAdapterSubscriberTest.java              8204977 generic-all
-java/net/httpclient/ImmutableFlowItems.java                     8204977 generic-all
-java/net/httpclient/ManyRequests.java                           8204977 generic-all
-java/net/httpclient/ManyRequests2.java                          8204977 generic-all
-java/net/httpclient/SplitResponseSSL.java                       8204977 generic-all
-java/net/httpclient/http2/BasicTest.java                        8204977 generic-all
-java/net/httpclient/http2/ContinuationFrameTest.java            8204977 generic-all
-java/net/httpclient/ProxyAuthDisabledSchemesSSL.java            8204977 generic-all
-java/net/httpclient/RequestBodyTest.java                        8204977 generic-all
-java/net/httpclient/SmokeTest.java                              8204977 generic-all
-java/net/httpclient/CancelledResponse.java                      8204977 solaris-all
-java/net/httpclient/InvalidSSLContextTest.java                  8204980 generic-all
-
 ############################################################################
 
 # jdk_nio
