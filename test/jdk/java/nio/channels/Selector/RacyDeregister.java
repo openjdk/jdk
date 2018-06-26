@@ -34,7 +34,7 @@ import java.nio.channels.SocketChannel;
 
 /*
  * @test
- * @bug 6429204 8203766
+ * @bug 6429204 8203766 8205641
  * @summary SelectionKey.interestOps does not update interest set on Windows.
  * @author Frank Ding
  * @run main/timeout=1200 RacyDeregister
@@ -91,6 +91,9 @@ public class RacyDeregister {
             public void run() {
                 try {
                     for (int k = 0; k < NUM_OUTER_LOOP_ITERATIONS; k++) {
+                        System.out.format("outer loop %3d at %7d ms%n", k,
+                            System.currentTimeMillis() - t0);
+                        System.out.flush();
                         for (int i = 0; i < 10000; i++) {
                             synchronized (notifyLock) {
                                 synchronized (selectorLock) {
@@ -115,6 +118,7 @@ public class RacyDeregister {
                                                 System.err.printf
                                                     ("Notified after %d ms%n",
                                                      t - beginTime);
+                                                System.err.flush();
                                                 break;
                                             }
                                         }
@@ -130,6 +134,7 @@ public class RacyDeregister {
                         if (t - t0 > TIMEOUT_THRESHOLD_MILLIS) {
                             System.err.format
                                 ("Timeout after %d outer loop iterations%n", k);
+                            System.err.flush();
                             succTermination = false;
                             // wake up main thread doing select()
                             sel.wakeup();
@@ -141,6 +146,7 @@ public class RacyDeregister {
                     sel.wakeup();
                 } catch (Exception e) {
                     System.out.println(e);
+                    System.out.flush();
                     succTermination = true;
                     // wake up main thread doing select()
                     sel.wakeup();
@@ -153,11 +159,13 @@ public class RacyDeregister {
             sel.select();
             if (Boolean.TRUE.equals(succTermination)) {
                 System.out.println("Test passed");
+                System.out.flush();
                 sel.close();
                 sc.close();
                 break;
             } else if (Boolean.FALSE.equals(succTermination)) {
                 System.err.println("Failed to pass the test");
+                System.err.flush();
                 sel.close();
                 sc.close();
                 throw new RuntimeException("Failed to pass the test");
