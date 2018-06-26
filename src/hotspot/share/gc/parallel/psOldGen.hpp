@@ -192,7 +192,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   HeapWord* allocate(size_t word_size);
 
   // Iteration.
-  void oop_iterate_no_header(OopClosure* cl) { object_space()->oop_iterate_no_header(cl); }
+  void oop_iterate(OopIterateClosure* cl) { object_space()->oop_iterate(cl); }
   void object_iterate(ObjectClosure* cl) { object_space()->object_iterate(cl); }
 
   // Debugging - do not use for time critical operations

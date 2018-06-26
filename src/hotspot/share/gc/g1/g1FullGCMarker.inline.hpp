@@ -120,8 +120,7 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
 
   if (VerifyDuringGC) {
     _verify_closure.set_containing_obj(array);
-    NoHeaderExtendedOopClosure no(&_verify_closure);
-    array->oop_iterate_range(&no, beg_index, end_index);
+    array->oop_iterate_range(&_verify_closure, beg_index, end_index);
     if (_verify_closure.failures()) {
       assert(false, "Failed");
     }
@@ -141,7 +140,7 @@ inline void G1FullGCMarker::follow_object(oop obj) {
         return;
       }
       _verify_closure.set_containing_obj(obj);
-      obj->oop_iterate_no_header(&_verify_closure);
+      obj->oop_iterate(&_verify_closure);
       if (_verify_closure.failures()) {
         log_warning(gc, verify)("Failed after %d", _verify_closure._cc);
         assert(false, "Failed");
