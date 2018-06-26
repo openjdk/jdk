@@ -26,6 +26,7 @@
 package sun.security.util;
 
 import java.io.IOException;
+import java.net.IDN;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Principal;
@@ -261,6 +262,11 @@ public class HostnameChecker {
      */
     private boolean isMatched(String name, String template,
                               boolean chainsToPublicCA) {
+
+        // Normalize to Unicode, because PSL is in Unicode.
+        name = IDN.toUnicode(IDN.toASCII(name));
+        template = IDN.toUnicode(IDN.toASCII(template));
+
         if (hasIllegalWildcard(name, template, chainsToPublicCA)) {
             return false;
         }
@@ -271,7 +277,7 @@ public class HostnameChecker {
             // the domain name template validity.
             //
             // Using the checking implemented in SNIHostName
-            SNIHostName sni = new SNIHostName(template.replace('*', 'x'));
+            new SNIHostName(template.replace('*', 'x'));
         } catch (IllegalArgumentException iae) {
             // It would be nice to add debug log if not matching.
             return false;
