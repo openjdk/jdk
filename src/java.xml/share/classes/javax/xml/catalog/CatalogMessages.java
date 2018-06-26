@@ -53,7 +53,7 @@ final class CatalogMessages {
     public static final String ERR_CREATING_URI = "FailedCreatingURI";
     public static final String ERR_OTHER = "OtherError";
 
-    static final String bundleName = CatalogMessages.class.getPackage().getName() + ".CatalogMessages";
+    static final String bundleName = CatalogMessages.class.getPackageName() + ".CatalogMessages";
     static ResourceBundle resourceBundle;
 
     /**
