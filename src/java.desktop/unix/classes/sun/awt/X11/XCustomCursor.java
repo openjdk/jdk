@@ -63,6 +63,10 @@ public class XCustomCursor extends X11CustomCursor {
 
             XlibWrapper.XQueryBestCursor(display,root_window, Math.abs(preferredWidth),Math.abs(preferredHeight),XlibWrapper.larg1,XlibWrapper.larg2);
             d = new Dimension(XlibWrapper.unsafe.getInt(XlibWrapper.larg1),XlibWrapper.unsafe.getInt(XlibWrapper.larg2));
+            if (preferredWidth > 0 && preferredHeight > 0) {
+                d.width = Math.min(d.width, preferredWidth);
+                d.height = Math.min(d.height, preferredHeight);
+            }
         }
         finally {
             XToolkit.awtUnlock();
