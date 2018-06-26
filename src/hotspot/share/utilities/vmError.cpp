@@ -1703,7 +1703,7 @@ void VMError::controlled_crash(int how) {
   // from racing with Threads::add() or Threads::remove() as we
   // generate the hs_err_pid file. This makes our ErrorHandling tests
   // more stable.
-  MutexLockerEx ml(Threads_lock, Mutex::_no_safepoint_check_flag);
+  MutexLockerEx ml(Threads_lock->owned_by_self() ? NULL : Threads_lock, Mutex::_no_safepoint_check_flag);
 
   switch (how) {
     case  1: vmassert(str == NULL, "expected null"); break;
