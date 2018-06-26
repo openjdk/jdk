@@ -1569,7 +1569,8 @@ public class Collections {
                 super((Set)s);
             }
 
-            static <K, V> Consumer<Map.Entry<K, V>> entryConsumer(Consumer<? super Entry<K, V>> action) {
+            static <K, V> Consumer<Map.Entry<? extends K, ? extends V>> entryConsumer(
+                    Consumer<? super Entry<K, V>> action) {
                 return e -> action.accept(new UnmodifiableEntry<>(e));
             }
 
@@ -1660,6 +1661,9 @@ public class Collections {
                     }
                     public void remove() {
                         throw new UnsupportedOperationException();
+                    }
+                    public void forEachRemaining(Consumer<? super Map.Entry<K, V>> action) {
+                        i.forEachRemaining(entryConsumer(action));
                     }
                 };
             }
@@ -3081,7 +3085,11 @@ public class Collections {
             return new Iterator<E>() {
                 public boolean hasNext() { return it.hasNext(); }
                 public E next()          { return it.next(); }
-                public void remove()     {        it.remove(); }};
+                public void remove()     {        it.remove(); }
+                public void forEachRemaining(Consumer<? super E> action) {
+                    it.forEachRemaining(action);
+                }
+            };
         }
 
         public boolean add(E e)          { return c.add(typeCheck(e)); }
@@ -3757,7 +3765,6 @@ public class Collections {
 
             public Iterator<Map.Entry<K,V>> iterator() {
                 final Iterator<Map.Entry<K, V>> i = s.iterator();
-                final Class<V> valueType = this.valueType;
 
                 return new Iterator<Map.Entry<K,V>>() {
                     public boolean hasNext() { return i.hasNext(); }
@@ -3765,6 +3772,11 @@ public class Collections {
 
                     public Map.Entry<K,V> next() {
                         return checkedEntry(i.next(), valueType);
+                    }
+
+                    public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+                        i.forEachRemaining(
+                            e -> action.accept(checkedEntry(e, valueType)));
                     }
                 };
             }
