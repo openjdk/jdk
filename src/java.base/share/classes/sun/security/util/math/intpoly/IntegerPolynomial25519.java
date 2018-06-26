@@ -27,6 +27,11 @@ package sun.security.util.math.intpoly;
 
 import java.math.BigInteger;
 
+/**
+ * An IntegerFieldModuloP designed for use with the Curve25519.
+ * The representation uses 10 signed long values.
+ */
+
 public class IntegerPolynomial25519 extends IntegerPolynomial {
 
     private static final int POWER = 255;
@@ -44,6 +49,14 @@ public class IntegerPolynomial25519 extends IntegerPolynomial {
 
     public IntegerPolynomial25519() {
         super(BITS_PER_LIMB, NUM_LIMBS, MODULUS);
+    }
+
+    @Override
+    protected void finalCarryReduceLast(long[] limbs) {
+
+        long reducedValue = limbs[numLimbs - 1] >> RIGHT_BIT_OFFSET;
+        limbs[numLimbs - 1] -= reducedValue << RIGHT_BIT_OFFSET;
+        limbs[0] += reducedValue * SUBTRAHEND;
     }
 
     @Override

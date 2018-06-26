@@ -27,6 +27,11 @@ package sun.security.util.math.intpoly;
 
 import java.math.BigInteger;
 
+/**
+ * An IntegerFieldModuloP designed for use with the Curve448.
+ * The representation uses 16 signed long values.
+ */
+
 public class IntegerPolynomial448 extends IntegerPolynomial {
 
     private static final int POWER = 448;
@@ -38,6 +43,18 @@ public class IntegerPolynomial448 extends IntegerPolynomial {
 
     public IntegerPolynomial448() {
         super(BITS_PER_LIMB, NUM_LIMBS, MODULUS);
+    }
+
+    private void modReduceIn(long[] limbs, int index, long x) {
+        limbs[index - NUM_LIMBS] += x;
+        limbs[index - NUM_LIMBS / 2] += x;
+    }
+
+    @Override
+    protected void finalCarryReduceLast(long[] limbs) {
+        long carry = limbs[numLimbs - 1] >> bitsPerLimb;
+        limbs[numLimbs - 1] -= carry << bitsPerLimb;
+        modReduceIn(limbs, numLimbs, carry);
     }
 
     @Override

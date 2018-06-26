@@ -54,6 +54,8 @@ import java.util.Arrays;
  * setDifference
  * setProduct
  * setSquare
+ * addModPowerTwo
+ * asByteArray
  *
  * All other operations may branch in some subclasses.
  *
@@ -66,6 +68,7 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
     protected final int numLimbs;
     private final BigInteger modulus;
     protected final int bitsPerLimb;
+    private final long[] posModLimbs;
 
     // must work when a==r
     protected abstract void multByInt(long[] a, long b, long[] r);
@@ -84,6 +87,14 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         this.numLimbs = numLimbs;
         this.modulus = modulus;
         this.bitsPerLimb = bitsPerLimb;
+
+        posModLimbs = setPosModLimbs();
+    }
+
+    private long[] setPosModLimbs() {
+        long[] result = new long[numLimbs];
+        setLimbsValuePositive(modulus, result);
+        return result;
     }
 
     protected int getNumLimbs() {
@@ -250,6 +261,58 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         }
     }
 
+    protected abstract void finalCarryReduceLast(long[] limbs);
+
+    // Convert reduced limbs into a number between 0 and MODULUS-1
+    protected void finalReduce(long[] limbs) {
+
+        // This method works by doing several full carry/reduce operations.
+        // Some representations have extra high bits, so the carry/reduce out
+        // of the high position is implementation-specific. The "unsigned"
+        // carry operation always carries some (negative) value out of a
+        // position occupied by a negative value. So after a number of
+        // passes, all negative values are removed.
+
+        // The first pass may leave a negative value in the high position, but
+        // this only happens if something was carried out of the previous
+        // position. So the previous position must have a "small" value. The
+        // next full carry is guaranteed not to carry out of that position.
+
+        for (int pass = 0; pass < 2; pass++) {
+            // unsigned carry out of last position and reduce in to
+            // first position
+            finalCarryReduceLast(limbs);
+
+            // unsigned carry on all positions
+            long carry = 0;
+            for (int i = 0; i < numLimbs - 1; i++) {
+                limbs[i] += carry;
+                carry = limbs[i] >> bitsPerLimb;
+                limbs[i] -= carry << bitsPerLimb;
+            }
+            limbs[numLimbs - 1] += carry;
+        }
+
+        // Limbs are positive and all less than 2^bitsPerLimb, and the
+        // high-order limb may be even smaller due to the representation-
+        // specific carry/reduce out of the high position.
+        // The value may still be greater than the modulus.
+        // Subtract the max limb values only if all limbs end up non-negative
+        // This only works if there is at most one position where posModLimbs
+        // is less than 2^bitsPerLimb - 1 (not counting the high-order limb,
+        // if it has extra bits that are cleared by finalCarryReduceLast).
+        int smallerNonNegative = 1;
+        long[] smaller = new long[numLimbs];
+        for (int i = numLimbs - 1; i >= 0; i--) {
+            smaller[i] = limbs[i] - posModLimbs[i];
+            // expression on right is 1 if smaller[i] is nonnegative,
+            // 0 otherwise
+            smallerNonNegative *= (int) (smaller[i] >> 63) + 1;
+        }
+        conditionalSwap(smallerNonNegative, limbs, smaller);
+
+    }
+
     // v must be final reduced. I.e. all limbs in [0, bitsPerLimb)
     // and value in [0, modulus)
     protected void decode(long[] v, byte[] dst, int offset, int length) {
@@ -262,7 +325,10 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
             int dstIndex = i + offset;
             if (bitPos + 8 >= bitsPerLimb) {
                 dst[dstIndex] = (byte) curLimbValue;
-                curLimbValue = v[nextLimbIndex++];
+                curLimbValue = 0;
+                if (nextLimbIndex < v.length) {
+                    curLimbValue = v[nextLimbIndex++];
+                }
                 int bitsAdded = bitsPerLimb - bitPos;
                 int bitsLeft = 8 - bitsAdded;
 
@@ -293,33 +359,33 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         }
     }
 
-    private void bigIntToByteArray(BigInteger bi, byte[] result) {
-        byte[] biBytes = bi.toByteArray();
-        // biBytes is backwards and possibly too big
-        // Copy the low-order bytes into result in reverse
-        int sourceIndex = biBytes.length - 1;
-        for (int i = 0; i < result.length; i++) {
-            if (sourceIndex >= 0) {
-                result[i] = biBytes[sourceIndex--];
-            }
-            else {
-                result[i] = 0;
-            }
-        }
-    }
-
     protected void limbsToByteArray(long[] limbs, byte[] result) {
 
-        bigIntToByteArray(evaluate(limbs), result);
+        long[] reducedLimbs = limbs.clone();
+        finalReduce(reducedLimbs);
+
+        decode(reducedLimbs, result, 0, result.length);
     }
 
     protected void addLimbsModPowerTwo(long[] limbs, long[] other,
                                        byte[] result) {
 
-        BigInteger bi1 = evaluate(limbs);
-        BigInteger bi2 = evaluate(other);
-        BigInteger biResult = bi1.add(bi2);
-        bigIntToByteArray(biResult, result);
+        long[] reducedOther = other.clone();
+        long[] reducedLimbs = limbs.clone();
+        finalReduce(reducedOther);
+        finalReduce(reducedLimbs);
+
+        addLimbs(reducedLimbs, reducedOther, reducedLimbs);
+
+        // may carry out a value which can be ignored
+        long carry = 0;
+        for (int i = 0; i < numLimbs; i++) {
+            reducedLimbs[i] += carry;
+            carry  = reducedLimbs[i] >> bitsPerLimb;
+            reducedLimbs[i] -= carry << bitsPerLimb;
+        }
+
+        decode(reducedLimbs, result, 0, result.length);
     }
 
     private abstract class Element implements IntegerModuloP {
@@ -418,11 +484,11 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         }
 
         public void addModPowerTwo(IntegerModuloP arg, byte[] result) {
-            if (!summand) {
-                throw new ArithmeticException("Not a valid summand");
-            }
 
             Element other = (Element) arg;
+            if (!(summand && other.summand)) {
+                throw new ArithmeticException("Not a valid summand");
+            }
             addLimbsModPowerTwo(limbs, other.limbs, result);
         }
 
