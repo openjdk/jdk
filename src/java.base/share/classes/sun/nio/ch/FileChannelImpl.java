@@ -31,6 +31,7 @@ import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner.Cleanable;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
+import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
@@ -38,24 +39,15 @@ import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
 import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.NonWritableChannelException;
-import java.nio.channels.OverlappingFileLockException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.WritableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.FileStore;
-import java.nio.file.FileSystemException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
 
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.JavaNioAccess;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.ref.Cleaner;
 import jdk.internal.ref.CleanerFactory;
-import sun.security.action.GetPropertyAction;
 
 public class FileChannelImpl
     extends FileChannel
@@ -90,7 +82,7 @@ public class FileChannelImpl
     // Lock for operations involving position and size
     private final Object positionLock = new Object();
 
-    // Positional-read is not interruptible
+    // blocking operations are not interruptible
     private volatile boolean uninterruptible;
 
     // DirectIO flag
@@ -162,6 +154,14 @@ public class FileChannelImpl
         uninterruptible = true;
     }
 
+    private void beginBlocking() {
+        if (!uninterruptible) begin();
+    }
+
+    private void endBlocking(boolean completed) throws AsynchronousCloseException {
+        if (!uninterruptible) end(completed);
+    }
+
     // -- Standard channel operations --
 
     protected void implCloseChannel() throws IOException {
@@ -215,7 +215,7 @@ public class FileChannelImpl
             int n = 0;
             int ti = -1;
             try {
-                begin();
+                beginBlocking();
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
@@ -225,7 +225,7 @@ public class FileChannelImpl
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
-                end(n > 0);
+                endBlocking(n > 0);
                 assert IOStatus.check(n);
             }
         }
@@ -245,7 +245,7 @@ public class FileChannelImpl
             long n = 0;
             int ti = -1;
             try {
-                begin();
+                beginBlocking();
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
@@ -256,7 +256,7 @@ public class FileChannelImpl
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
-                end(n > 0);
+                endBlocking(n > 0);
                 assert IOStatus.check(n);
             }
         }
@@ -272,7 +272,7 @@ public class FileChannelImpl
             int n = 0;
             int ti = -1;
             try {
-                begin();
+                beginBlocking();
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
@@ -282,7 +282,7 @@ public class FileChannelImpl
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
-                end(n > 0);
+                endBlocking(n > 0);
                 assert IOStatus.check(n);
             }
         }
@@ -302,7 +302,7 @@ public class FileChannelImpl
             long n = 0;
             int ti = -1;
             try {
-                begin();
+                beginBlocking();
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
@@ -313,7 +313,7 @@ public class FileChannelImpl
                 return IOStatus.normalize(n);
             } finally {
                 threads.remove(ti);
-                end(n > 0);
+                endBlocking(n > 0);
                 assert IOStatus.check(n);
             }
         }
@@ -327,7 +327,7 @@ public class FileChannelImpl
             long p = -1;
             int ti = -1;
             try {
-                begin();
+                beginBlocking();
                 ti = threads.add();
                 if (!isOpen())
                     return 0;
@@ -339,7 +339,7 @@ public class FileChannelImpl
                 return IOStatus.normalize(p);
             } finally {
                 threads.remove(ti);
-                end(p > -1);
+                endBlocking(p > -1);
                 assert IOStatus.check(p);
             }
         }
@@ -353,7 +353,7 @@ public class FileChannelImpl
             long p = -1;
             int ti = -1;
             try {
-                begin();
+                beginBlocking();
                 ti = threads.add();
                 if (!isOpen())
                     return null;
@@ -363,7 +363,7 @@ public class FileChannelImpl
                 return this;
             } finally {
                 threads.remove(ti);
-                end(p > -1);
+                endBlocking(p > -1);
                 assert IOStatus.check(p);
             }
         }
@@ -375,7 +375,7 @@ public class FileChannelImpl
             long s = -1;
             int ti = -1;
             try {
-                begin();
+                beginBlocking();
                 ti = threads.add();
                 if (!isOpen())
                     return -1;
@@ -385,7 +385,7 @@ public class FileChannelImpl
                 return IOStatus.normalize(s);
             } finally {
                 threads.remove(ti);
-                end(s > -1);
+                endBlocking(s > -1);
                 assert IOStatus.check(s);
             }
         }
@@ -403,7 +403,7 @@ public class FileChannelImpl
             int ti = -1;
             long rp = -1;
             try {
-                begin();
+                beginBlocking();
                 ti = threads.add();
                 if (!isOpen())
                     return null;
@@ -442,7 +442,7 @@ public class FileChannelImpl
                 return this;
             } finally {
                 threads.remove(ti);
-                end(rv > -1);
+                endBlocking(rv > -1);
                 assert IOStatus.check(rv);
             }
         }
@@ -453,7 +453,7 @@ public class FileChannelImpl
         int rv = -1;
         int ti = -1;
         try {
-            begin();
+            beginBlocking();
             ti = threads.add();
             if (!isOpen())
                 return;
@@ -462,7 +462,7 @@ public class FileChannelImpl
             } while ((rv == IOStatus.INTERRUPTED) && isOpen());
         } finally {
             threads.remove(ti);
-            end(rv > -1);
+            endBlocking(rv > -1);
             assert IOStatus.check(rv);
         }
     }
@@ -493,7 +493,7 @@ public class FileChannelImpl
         long n = -1;
         int ti = -1;
         try {
-            begin();
+            beginBlocking();
             ti = threads.add();
             if (!isOpen())
                 return -1;
@@ -808,9 +808,8 @@ public class FileChannelImpl
         int n = 0;
         int ti = -1;
 
-        boolean interruptible = !uninterruptible;
         try {
-            if (interruptible) begin();
+            beginBlocking();
             ti = threads.add();
             if (!isOpen())
                 return -1;
@@ -820,7 +819,7 @@ public class FileChannelImpl
             return IOStatus.normalize(n);
         } finally {
             threads.remove(ti);
-            if (interruptible) end(n > 0);
+            endBlocking(n > 0);
             assert IOStatus.check(n);
         }
     }
@@ -849,7 +848,7 @@ public class FileChannelImpl
         int n = 0;
         int ti = -1;
         try {
-            begin();
+            beginBlocking();
             ti = threads.add();
             if (!isOpen())
                 return -1;
@@ -859,7 +858,7 @@ public class FileChannelImpl
             return IOStatus.normalize(n);
         } finally {
             threads.remove(ti);
-            end(n > 0);
+            endBlocking(n > 0);
             assert IOStatus.check(n);
         }
     }
@@ -963,7 +962,7 @@ public class FileChannelImpl
         long addr = -1;
         int ti = -1;
         try {
-            begin();
+            beginBlocking();
             ti = threads.add();
             if (!isOpen())
                 return null;
@@ -1052,7 +1051,7 @@ public class FileChannelImpl
             }
         } finally {
             threads.remove(ti);
-            end(IOStatus.checkAll(addr));
+            endBlocking(IOStatus.checkAll(addr));
         }
     }
 
@@ -1117,7 +1116,7 @@ public class FileChannelImpl
         boolean completed = false;
         int ti = -1;
         try {
-            begin();
+            beginBlocking();
             ti = threads.add();
             if (!isOpen())
                 return null;
@@ -1140,7 +1139,7 @@ public class FileChannelImpl
                 flt.remove(fli);
             threads.remove(ti);
             try {
-                end(completed);
+                endBlocking(completed);
             } catch (ClosedByInterruptException e) {
                 throw new FileLockInterruptionException();
             }
