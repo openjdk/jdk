@@ -653,7 +653,6 @@ Node* ZBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) co
     return p;
   }
 
-  bool conc_root = (access.decorators() & IN_CONCURRENT_ROOT) != 0;
   bool weak = (access.decorators() & ON_WEAK_OOP_REF) != 0;
 
   GraphKit* kit = access.kit();

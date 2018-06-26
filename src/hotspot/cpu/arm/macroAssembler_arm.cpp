@@ -2140,7 +2140,7 @@ void MacroAssembler::resolve_jobject(Register value,
   b(done);
   bind(not_weak);
   // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
+  access_load_at(T_OBJECT, IN_NATIVE,
                  Address(value, 0), value, tmp1, tmp2, noreg);
   verify_oop(value);
   bind(done);

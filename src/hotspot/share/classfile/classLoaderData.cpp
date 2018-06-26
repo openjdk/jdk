@@ -832,9 +832,7 @@ void ClassLoaderData::remove_handle(OopHandle h) {
   oop* ptr = h.ptr_raw();
   if (ptr != NULL) {
     assert(_handles.owner_of(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
-    // This root is not walked in safepoints, and hence requires an appropriate
-    // decorator that e.g. maintains the SATB invariant in SATB collectors.
-    NativeAccess<IN_CONCURRENT_ROOT>::oop_store(ptr, oop(NULL));
+    NativeAccess<>::oop_store(ptr, oop(NULL));
   }
 }
 

@@ -48,12 +48,9 @@ bool ZBarrierSet::barrier_needed(DecoratorSet decorators, BasicType type) {
   //assert((decorators & ON_UNKNOWN_OOP_REF) == 0, "Unexpected decorator");
 
   if (type == T_OBJECT || type == T_ARRAY) {
-    if (((decorators & IN_HEAP) != 0) ||
-        ((decorators & IN_CONCURRENT_ROOT) != 0) ||
-        ((decorators & ON_PHANTOM_OOP_REF) != 0)) {
-      // Barrier needed
-      return true;
-    }
+    assert((decorators & (IN_HEAP | IN_NATIVE)) != 0, "Where is reference?");
+    // Barrier needed even when IN_NATIVE, to allow concurrent scanning.
+    return true;
   }
 
   // Barrier not neeed

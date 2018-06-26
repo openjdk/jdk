@@ -5238,8 +5238,7 @@ void MacroAssembler::resolve_jobject(Register value,
   jmp(done);
   bind(not_weak);
   // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
-                 value, Address(value, 0), tmp, thread);
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp, thread);
   verify_oop(value);
   bind(done);
 }
@@ -6216,7 +6215,7 @@ void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // Only 64 bit platforms support GCs that require a tmp register
   // Only IN_HEAP loads require a thread_tmp register
   // OopHandle::resolve is an indirection like jobject.
-  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
+  access_load_at(T_OBJECT, IN_NATIVE,
                  result, Address(result, 0), tmp, /*tmp_thread*/noreg);
 }
 

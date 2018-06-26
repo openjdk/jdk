@@ -153,8 +153,8 @@ const DecoratorSet MO_DECORATOR_MASK = MO_UNORDERED | MO_VOLATILE | MO_RELAXED |
 //   Note that primitive accesses will only be resolved on the barrier set if the appropriate build-time
 //   decorator for enabling primitive barriers is enabled for the build.
 const DecoratorSet AS_RAW                  = UCONST64(1) << 12;
-const DecoratorSet AS_NO_KEEPALIVE         = UCONST64(1) << 14;
-const DecoratorSet AS_NORMAL               = UCONST64(1) << 15;
+const DecoratorSet AS_NO_KEEPALIVE         = UCONST64(1) << 13;
+const DecoratorSet AS_NORMAL               = UCONST64(1) << 14;
 const DecoratorSet AS_DECORATOR_MASK       = AS_RAW | AS_NO_KEEPALIVE | AS_NORMAL;
 
 // === Reference Strength Decorators ===
@@ -166,10 +166,10 @@ const DecoratorSet AS_DECORATOR_MASK       = AS_RAW | AS_NO_KEEPALIVE | AS_NORMA
 // * ON_UNKNOWN_OOP_REF: The memory access is performed on a reference of unknown strength.
 //   This could for example come from the unsafe API.
 // * Default (no explicit reference strength specified): ON_STRONG_OOP_REF
-const DecoratorSet ON_STRONG_OOP_REF  = UCONST64(1) << 16;
-const DecoratorSet ON_WEAK_OOP_REF    = UCONST64(1) << 17;
-const DecoratorSet ON_PHANTOM_OOP_REF = UCONST64(1) << 18;
-const DecoratorSet ON_UNKNOWN_OOP_REF = UCONST64(1) << 19;
+const DecoratorSet ON_STRONG_OOP_REF  = UCONST64(1) << 15;
+const DecoratorSet ON_WEAK_OOP_REF    = UCONST64(1) << 16;
+const DecoratorSet ON_PHANTOM_OOP_REF = UCONST64(1) << 17;
+const DecoratorSet ON_UNKNOWN_OOP_REF = UCONST64(1) << 18;
 const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
                                         ON_PHANTOM_OOP_REF | ON_UNKNOWN_OOP_REF;
 
@@ -179,13 +179,9 @@ const DecoratorSet ON_DECORATOR_MASK  = ON_STRONG_OOP_REF | ON_WEAK_OOP_REF |
 // * IN_HEAP: The access is performed in the heap. Many barriers such as card marking will
 //   be omitted if this decorator is not set.
 // * IN_NATIVE: The access is performed in an off-heap data structure pointing into the Java heap.
-// * IN_CONCURRENT_ROOT: The access is performed in an off-heap data structure pointing into the Java heap,
-//   but is notably not scanned during safepoints. This is sometimes a special case for some GCs and
-//   implies that it is also an IN_NATIVE.
-const DecoratorSet IN_HEAP            = UCONST64(1) << 20;
-const DecoratorSet IN_NATIVE          = UCONST64(1) << 22;
-const DecoratorSet IN_CONCURRENT_ROOT = UCONST64(1) << 23;
-const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_NATIVE | IN_CONCURRENT_ROOT;
+const DecoratorSet IN_HEAP            = UCONST64(1) << 19;
+const DecoratorSet IN_NATIVE          = UCONST64(1) << 20;
+const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_NATIVE;
 
 // == Boolean Flag Decorators ==
 // * IS_ARRAY: The access is performed on a heap allocated array. This is sometimes a special case
@@ -194,8 +190,8 @@ const DecoratorSet IN_DECORATOR_MASK  = IN_HEAP | IN_NATIVE | IN_CONCURRENT_ROOT
 //   marking that the previous value is uninitialized nonsense rather than a real value.
 // * IS_NOT_NULL: This property can make certain barriers faster such as compressing oops.
 const DecoratorSet IS_ARRAY              = UCONST64(1) << 21;
-const DecoratorSet IS_DEST_UNINITIALIZED = UCONST64(1) << 13;
-const DecoratorSet IS_NOT_NULL           = UCONST64(1) << 25;
+const DecoratorSet IS_DEST_UNINITIALIZED = UCONST64(1) << 22;
+const DecoratorSet IS_NOT_NULL           = UCONST64(1) << 23;
 
 // == Arraycopy Decorators ==
 // * ARRAYCOPY_CHECKCAST: This property means that the class of the objects in source
@@ -207,17 +203,17 @@ const DecoratorSet IS_NOT_NULL           = UCONST64(1) << 25;
 // * ARRAYCOPY_ARRAYOF: The copy is in the arrayof form.
 // * ARRAYCOPY_ATOMIC: The accesses have to be atomic over the size of its elements.
 // * ARRAYCOPY_ALIGNED: The accesses have to be aligned on a HeapWord.
-const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 26;
-const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 27;
-const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 28;
-const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 29;
-const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 30;
+const DecoratorSet ARRAYCOPY_CHECKCAST            = UCONST64(1) << 24;
+const DecoratorSet ARRAYCOPY_DISJOINT             = UCONST64(1) << 25;
+const DecoratorSet ARRAYCOPY_ARRAYOF              = UCONST64(1) << 26;
+const DecoratorSet ARRAYCOPY_ATOMIC               = UCONST64(1) << 27;
+const DecoratorSet ARRAYCOPY_ALIGNED              = UCONST64(1) << 28;
 const DecoratorSet ARRAYCOPY_DECORATOR_MASK       = ARRAYCOPY_CHECKCAST | ARRAYCOPY_DISJOINT |
                                                     ARRAYCOPY_DISJOINT | ARRAYCOPY_ARRAYOF |
                                                     ARRAYCOPY_ATOMIC | ARRAYCOPY_ALIGNED;
 
 // Keep track of the last decorator.
-const DecoratorSet DECORATOR_LAST = UCONST64(1) << 30;
+const DecoratorSet DECORATOR_LAST = UCONST64(1) << 28;
 
 namespace AccessInternal {
   // This class adds implied decorators that follow according to decorator rules.
@@ -235,9 +231,7 @@ namespace AccessInternal {
     // If no barrier strength has been picked, normal will be used
     static const DecoratorSet barrier_strength_default = memory_ordering_default |
       ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : INTERNAL_EMPTY);
-    static const DecoratorSet conc_root_is_root = barrier_strength_default |
-      ((IN_CONCURRENT_ROOT & barrier_strength_default) != 0 ? IN_NATIVE : INTERNAL_EMPTY);
-    static const DecoratorSet value = conc_root_is_root | BT_BUILDTIME_DECORATORS;
+    static const DecoratorSet value = barrier_strength_default | BT_BUILDTIME_DECORATORS;
   };
 
   // This function implements the above DecoratorFixup rules, but without meta
@@ -253,9 +247,7 @@ namespace AccessInternal {
     // If no barrier strength has been picked, normal will be used
     DecoratorSet barrier_strength_default = memory_ordering_default |
       ((AS_DECORATOR_MASK & memory_ordering_default) == 0 ? AS_NORMAL : INTERNAL_EMPTY);
-    DecoratorSet conc_root_is_root = barrier_strength_default |
-      ((IN_CONCURRENT_ROOT & barrier_strength_default) != 0 ? IN_NATIVE : INTERNAL_EMPTY);
-    DecoratorSet value = conc_root_is_root | BT_BUILDTIME_DECORATORS;
+    DecoratorSet value = barrier_strength_default | BT_BUILDTIME_DECORATORS;
     return value;
   }
 }
