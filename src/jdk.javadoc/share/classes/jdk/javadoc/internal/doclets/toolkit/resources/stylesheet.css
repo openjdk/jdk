@@ -566,7 +566,6 @@ th.colFirst, th.colSecond, th.colLast, th.colConstructorName, th.colDeprecatedIt
     padding:8px 3px 3px 7px;
 }
 td.colFirst, th.colFirst {
-    white-space:nowrap;
     font-size:13px;
 }
 td.colSecond, th.colSecond, td.colLast, th.colConstructorName, th.colDeprecatedItemName, th.colLast {
@@ -822,6 +821,9 @@ ul.ui-autocomplete  li {
     display:block;
     margin: -100px 0 0 100px;
     z-index: 1;
+}
+.details pre {
+    white-space:normal;
 }
 
 /*

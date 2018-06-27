@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util.links;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.lang.model.element.Element;
@@ -218,13 +217,14 @@ public abstract class LinkFactory {
     protected abstract Content getClassLink(LinkInfo linkInfo);
 
     /**
-     * Returns a link to the given type parameter.
+     * Returns links to the type parameters.
      *
      * @param linkInfo     the information about the link to construct
-     * @param typeParam the type parameter to link to
-     * @return the link
+     * @param isClassLabel true if this is a class label, or false if it is
+     *                     the type parameters portion of the link
+     * @return the links to the type parameters
      */
-    protected abstract Content getTypeParameterLink(LinkInfo linkInfo, TypeMirror typeParam);
+    protected abstract Content getTypeParameterLinks(LinkInfo linkInfo, boolean isClassLabel);
 
     /**
      * Returns links to the type parameters.
@@ -234,52 +234,6 @@ public abstract class LinkFactory {
      */
     public Content getTypeParameterLinks(LinkInfo linkInfo) {
         return getTypeParameterLinks(linkInfo, true);
-    }
-
-    /**
-     * Returns links to the type parameters.
-     *
-     * @param linkInfo     the information about the link to construct
-     * @param isClassLabel true if this is a class label, or false if it is
-     *                     the type parameters portion of the link
-     * @return the links to the type parameters
-     */
-    public Content getTypeParameterLinks(LinkInfo linkInfo, boolean isClassLabel) {
-        Content links = newContent();
-        List<TypeMirror> vars = new ArrayList<>();
-        TypeMirror ctype = linkInfo.type != null
-                ? utils.getComponentType(linkInfo.type)
-                : null;
-        if (linkInfo.executableElement != null) {
-            linkInfo.executableElement.getTypeParameters().stream().forEach((t) -> {
-                vars.add(t.asType());
-            });
-        } else if (linkInfo.type != null && utils.isDeclaredType(linkInfo.type)) {
-            ((DeclaredType)linkInfo.type).getTypeArguments().stream().forEach(vars::add);
-        } else if (ctype != null && utils.isDeclaredType(ctype)) {
-            ((DeclaredType)ctype).getTypeArguments().stream().forEach(vars::add);
-        } else if (linkInfo.typeElement != null) {
-            linkInfo.typeElement.getTypeParameters().stream().forEach((t) -> {
-                vars.add(t.asType());
-            });
-        } else {
-            // Nothing to document.
-            return links;
-        }
-        if (((linkInfo.includeTypeInClassLinkLabel && isClassLabel)
-                || (linkInfo.includeTypeAsSepLink && !isClassLabel)) && !vars.isEmpty()) {
-            links.addContent("<");
-            boolean many = false;
-            for (TypeMirror t : vars) {
-                if (many) {
-                    links.addContent(",");
-                }
-                links.addContent(getTypeParameterLink(linkInfo, t));
-                many = true;
-            }
-            links.addContent(">");
-        }
-        return links;
     }
 
     public abstract Content getTypeAnnotationLinks(LinkInfo linkInfo);
