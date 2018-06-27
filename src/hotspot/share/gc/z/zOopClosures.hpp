@@ -83,11 +83,8 @@ public:
 };
 
 class ZVerifyHeapOopClosure : public BasicOopIterateClosure {
-private:
-  const oop _base;
-
 public:
-  ZVerifyHeapOopClosure(oop base);
+  virtual ReferenceIterationMode reference_iteration_mode();
 
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
@@ -102,6 +99,8 @@ public:
 
 class ZVerifyRootOopClosure : public OopClosure {
 public:
+  ZVerifyRootOopClosure();
+
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
 };

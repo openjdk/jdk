@@ -503,10 +503,10 @@ void ZHeap::relocate() {
                                  used(), used_high(), used_low());
 }
 
-void ZHeap::object_iterate(ObjectClosure* cl) {
+void ZHeap::object_iterate(ObjectClosure* cl, bool visit_referents) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
 
-  ZHeapIterator iter;
+  ZHeapIterator iter(visit_referents);
   iter.objects_do(cl);
 }
 
@@ -577,6 +577,6 @@ void ZHeap::verify() {
 
   {
     ZVerifyObjectClosure cl;
-    object_iterate(&cl);
+    object_iterate(&cl, false /* visit_referents */);
   }
 }

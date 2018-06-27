@@ -40,13 +40,17 @@ static void z_verify_loaded_object(const oop* p, const oop obj) {
             p2i(obj), p2i(p));
 }
 
-ZVerifyHeapOopClosure::ZVerifyHeapOopClosure(oop base)
-    : _base(base) {}
+OopIterateClosure::ReferenceIterationMode ZVerifyHeapOopClosure::reference_iteration_mode() {
+  // Don't visit the j.l.Reference.referents for this verification closure,
+  // since they are cleaned concurrently after ZHeap::mark_end(), and can
+  // therefore not be verified at this point.
+  return DO_FIELDS_EXCEPT_REFERENT;
+}
 
 void ZVerifyHeapOopClosure::do_oop(oop* p) {
   guarantee(ZHeap::heap()->is_in((uintptr_t)p), "oop* " PTR_FORMAT " not in heap", p2i(p));
 
-  const oop obj = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
+  const oop obj = RawAccess<>::oop_load(p);
   z_verify_loaded_object(p, obj);
 }
 
@@ -54,10 +58,16 @@ void ZVerifyHeapOopClosure::do_oop(narrowOop* p) {
   ShouldNotReachHere();
 }
 
+ZVerifyRootOopClosure::ZVerifyRootOopClosure() {
+  // This closure should only be used from ZHeap::mark_end(),
+  // when all roots should have been fixed by the fixup_partial_loads().
+  guarantee(ZGlobalPhase == ZPhaseMarkCompleted, "Invalid phase");
+}
+
 void ZVerifyRootOopClosure::do_oop(oop* p) {
   guarantee(!ZHeap::heap()->is_in((uintptr_t)p), "oop* " PTR_FORMAT " in heap", p2i(p));
 
-  const oop obj = NativeAccess<>::oop_load(p);
+  const oop obj = RawAccess<>::oop_load(p);
   z_verify_loaded_object(p, obj);
 }
 
@@ -66,6 +76,6 @@ void ZVerifyRootOopClosure::do_oop(narrowOop* p) {
 }
 
 void ZVerifyObjectClosure::do_object(oop o) {
-  ZVerifyHeapOopClosure cl(o);
+  ZVerifyHeapOopClosure cl;
   o->oop_iterate(&cl);
 }
