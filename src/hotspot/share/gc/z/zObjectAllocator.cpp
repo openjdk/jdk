@@ -133,14 +133,6 @@ uintptr_t ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags fl
 uintptr_t ZObjectAllocator::alloc_small_object_from_nonworker(size_t size, ZAllocationFlags flags) {
   assert(ZThread::is_java() || ZThread::is_vm(), "Should be a Java or VM thread");
 
-  if (flags.relocation() && flags.java_thread() && UseTLAB) {
-    // For relocations from Java threads, try TLAB allocation first
-    const uintptr_t addr = (uintptr_t)Thread::current()->tlab().allocate(ZUtils::bytes_to_words(size));
-    if (addr != 0) {
-      return addr;
-    }
-  }
-
   // Non-worker small page allocation can never use the reserve
   flags.set_no_reserve();
 
@@ -237,13 +229,6 @@ bool ZObjectAllocator::undo_alloc_medium_object(ZPage* page, uintptr_t addr, siz
 
 bool ZObjectAllocator::undo_alloc_small_object_from_nonworker(ZPage* page, uintptr_t addr, size_t size) {
   assert(page->type() == ZPageTypeSmall, "Invalid page type");
-
-  if (ZThread::is_java()) {
-    // Try undo allocation in TLAB
-    if (Thread::current()->tlab().undo_allocate((HeapWord*)addr, ZUtils::bytes_to_words(size))) {
-      return true;
-    }
-  }
 
   // Try atomic undo on shared page
   return page->undo_alloc_object_atomic(addr, size);
