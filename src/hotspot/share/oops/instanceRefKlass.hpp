@@ -131,6 +131,10 @@ class InstanceRefKlass: public InstanceKlass {
   template <typename T, class OopClosureType, class Contains>
   static void oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains);
 
+  // Apply the closure to all fields, except the referent field. No reference discovery is done.
+  template <typename T, class OopClosureType, class Contains>
+  static void oop_oop_iterate_fields_except_referent(oop obj, OopClosureType* closure, Contains& contains);
+
   template <typename T>
   static void trace_reference_gc(const char *s, oop obj) NOT_DEBUG_RETURN;
 

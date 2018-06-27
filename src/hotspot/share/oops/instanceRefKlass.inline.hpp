@@ -89,17 +89,22 @@ void InstanceRefKlass::oop_oop_iterate_discovery(oop obj, ReferenceType type, Oo
 }
 
 template <typename T, class OopClosureType, class Contains>
+void InstanceRefKlass::oop_oop_iterate_discovered_and_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains) {
+  // Explicitly apply closure to the discovered field.
+  do_discovered<T>(obj, closure, contains);
+  // Then do normal reference processing with discovery.
+  oop_oop_iterate_discovery<T>(obj, type, closure, contains);
+}
+
+template <typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains) {
   do_referent<T>(obj, closure, contains);
   do_discovered<T>(obj, closure, contains);
 }
 
 template <typename T, class OopClosureType, class Contains>
-void InstanceRefKlass::oop_oop_iterate_discovered_and_discovery(oop obj, ReferenceType type, OopClosureType* closure, Contains& contains) {
-  // Explicitly apply closure to the discovered field.
+void InstanceRefKlass::oop_oop_iterate_fields_except_referent(oop obj, OopClosureType* closure, Contains& contains) {
   do_discovered<T>(obj, closure, contains);
-  // Then do normal reference processing with discovery.
-  oop_oop_iterate_discovery<T>(obj, type, closure, contains);
 }
 
 template <typename T, class OopClosureType, class Contains>
@@ -116,6 +121,10 @@ void InstanceRefKlass::oop_oop_iterate_ref_processing(oop obj, OopClosureType* c
     case OopIterateClosure::DO_FIELDS:
       trace_reference_gc<T>("do_fields", obj);
       oop_oop_iterate_fields<T>(obj, closure, contains);
+      break;
+    case OopIterateClosure::DO_FIELDS_EXCEPT_REFERENT:
+      trace_reference_gc<T>("do_fields_except_referent", obj);
+      oop_oop_iterate_fields_except_referent<T>(obj, closure, contains);
       break;
     default:
       ShouldNotReachHere();
