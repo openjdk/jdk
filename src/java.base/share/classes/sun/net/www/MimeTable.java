@@ -24,6 +24,8 @@
  */
 
 package sun.net.www;
+import jdk.internal.util.StaticProperty;
+
 import java.io.*;
 import java.net.FileNameMap;
 import java.util.Hashtable;
@@ -53,7 +55,7 @@ public class MimeTable implements FileNameMap {
 
                 mailcapLocations = new String[] {
                     System.getProperty("user.mailcap"),
-                    System.getProperty("user.home") + "/.mailcap",
+                    StaticProperty.userHome() + "/.mailcap",
                     "/etc/mailcap",
                     "/usr/etc/mailcap",
                     "/usr/local/etc/mailcap",
@@ -384,7 +386,12 @@ public class MimeTable implements FileNameMap {
             Properties properties = getAsProperties();
             properties.put("temp.file.template", tempFileTemplate);
             String tag;
-            String user = System.getProperty("user.name");
+            // Perform the property security check for user.name
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPropertyAccess("user.name");
+            }
+            String user = StaticProperty.userName();
             if (user != null) {
                 tag = "; customized for " + user;
                 properties.store(os, filePreamble + tag);

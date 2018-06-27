@@ -61,6 +61,7 @@ import jdk.internal.jimage.ImageReader;
 import jdk.internal.jimage.ImageReaderFactory;
 import jdk.internal.misc.JavaNetUriAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import jdk.internal.module.ModuleHashes.HashSupplier;
 
 /**
@@ -183,7 +184,7 @@ public final class SystemModuleFinders {
         }
 
         // probe to see if this is an images build
-        String home = System.getProperty("java.home");
+        String home = StaticProperty.javaHome();
         Path modules = Path.of(home, "lib", "modules");
         if (Files.isRegularFile(modules)) {
             if (USE_FAST_PATH) {

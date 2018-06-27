@@ -42,6 +42,8 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
 import java.util.stream.Collectors;
+
+import jdk.internal.util.StaticProperty;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleServiceProviderPool;
 import sun.util.logging.PlatformLogger;
@@ -236,7 +238,7 @@ public final class Currency implements Serializable {
                 // look for the properties file for overrides
                 String propsFile = System.getProperty("java.util.currency.data");
                 if (propsFile == null) {
-                    propsFile = System.getProperty("java.home") + File.separator + "lib" +
+                    propsFile = StaticProperty.javaHome() + File.separator + "lib" +
                         File.separator + "currency.properties";
                 }
                 try {
@@ -578,7 +580,7 @@ public final class Currency implements Serializable {
 
     /**
      * Returns the 3 digit ISO 4217 numeric code of this currency as a {@code String}.
-     * Unlike {@link getNumericCode()}, which returns the numeric code as {@code int},
+     * Unlike {@link #getNumericCode()}, which returns the numeric code as {@code int},
      * this method always returns the numeric code as a 3 digit string.
      * e.g. a numeric value of 32 would be returned as "032",
      * and a numeric value of 6 would be returned as "006".
