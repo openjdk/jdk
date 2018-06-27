@@ -119,9 +119,11 @@ define SetupJdkLibraryBody
   endif
 
   ifneq ($$($1_HEADERS_FROM_SRC), false)
-    $1_SRC_HEADER_FLAGS := $$(foreach dir, $$(wildcard $$($1_SRC) \
-        $$(call GetJavaHeaderDir, $$(MODULE))), -I$$(dir))
+    $1_SRC_HEADER_FLAGS := $$(addprefix -I, $$(wildcard $$($1_SRC)))
   endif
+  # Always add the java header dir
+  $1_SRC_HEADER_FLAGS += $$(addprefix -I, $$(call GetJavaHeaderDir, $$(MODULE)))
+
   ifneq ($$($1_EXTRA_HEADER_DIRS), )
     $1_PROCESSED_EXTRA_HEADER_DIRS := $$(foreach dir, $$($1_EXTRA_HEADER_DIRS), \
         $$(call ProcessDir, $$(dir)))
