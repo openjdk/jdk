@@ -25,7 +25,7 @@
  * @test
  * @bug 8192920 8204588
  * @summary Test source mode
- * @modules jdk.compiler
+ * @modules jdk.compiler jdk.jlink
  * @run main SourceMode
  */
 
@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.spi.ToolProvider;
 
 public class SourceMode extends TestHelper {
 
@@ -49,33 +50,47 @@ public class SourceMode extends TestHelper {
         new SourceMode().run(args);
     }
 
-    // to reduce the chance of creating shebang lines that are too long,
-    // we use a relative path to the java command if that is shorter
-    private final Path shortJavaCmd;
+    // To reduce the chance of creating shebang lines that are too long,
+    // use a shorter path for a java command if the standard path is too long.
+    private final Path shebangJavaCmd;
+
+    // Whether or not to automatically skip the shebang tests
+    private final boolean skipShebangTest;
 
     private final PrintStream log;
 
-    private final boolean skipShebangTest;
+    private static final String thisVersion = System.getProperty("java.specification.version");
 
-    SourceMode() {
-        Path cwd = Paths.get(System.getProperty("user.dir"));
-        Path cmd = Paths.get(javaCmd);
+    SourceMode() throws Exception {
+        log = System.err;
 
         if (isWindows) {
             // Skip shebang tests on Windows, because that requires Cygwin.
-            shortJavaCmd = cmd;
             skipShebangTest = true;
+            shebangJavaCmd = null;
         } else {
-            // Skip shebang tests if the path to the Java launcher is too long,
-            // because that will cause tests to overflow the mostly undocumented
-            // limit of 120 characters for a shebang line.
-            Path p = cwd.relativize(cmd);
-            shortJavaCmd = (p.toString().length() < cmd.toString().length()) ? p : cmd;
-            // skipShebangTest = shortJavaCmd.toString().length() > 100;
-            skipShebangTest = true;
+            // Try to ensure the path to the Java launcher is reasonably short,
+            // to work around the mostly undocumented limit of 120 characters
+            // for a shebang line.
+            // The value of 120 is the typical kernel compile-time buffer limit.
+            // The following limit of 80 allows room for arguments to be placed
+            // after the path to the launcher on the shebang line.
+            Path cmd = Paths.get(javaCmd);
+            if (cmd.toString().length() < 80) {
+                shebangJavaCmd = cmd;
+            } else {
+                // Create a small image in the current directory, such that
+                // the path for the launcher is just "tmpJDK/bin/java".
+                Path tmpJDK = Paths.get("tmpJDK");
+                ToolProvider jlink = ToolProvider.findFirst("jlink")
+                    .orElseThrow(() -> new Exception("cannot find jlink"));
+                jlink.run(System.out, System.err,
+                    "--add-modules", "jdk.compiler,jdk.zipfs", "--output", tmpJDK.toString());
+                shebangJavaCmd = tmpJDK.resolve("bin").resolve("java");
+            }
+            log.println("Using java command: " + shebangJavaCmd);
+            skipShebangTest = false;
         }
-
-        log = System.err;
     }
 
     // java Simple.java 1 2 3
@@ -91,12 +106,12 @@ public class SourceMode extends TestHelper {
         show(tr);
     }
 
-    // java --source 10 simple 1 2 3
+    // java --source N simple 1 2 3
     @Test
     void testSimple() throws IOException {
         starting("testSimple");
         Path file = getSimpleFile("simple", false);
-        TestResult tr = doExec(javaCmd, "--source", "10", file.toString(), "1", "2", "3");
+        TestResult tr = doExec(javaCmd, "--source", thisVersion, file.toString(), "1", "2", "3");
         if (!tr.isOK())
             error(tr, "Bad exit code: " + tr.exitValue);
         if (!tr.contains("[1, 2, 3]"))
@@ -136,13 +151,13 @@ public class SourceMode extends TestHelper {
         show(tr);
     }
 
-    // java @simple.at  (contains --source 10 simple 1 2 3)
+    // java @simple.at  (contains --source N simple 1 2 3)
     @Test
     void testSimpleAtFile() throws IOException {
         starting("testSimpleAtFile");
         Path file = getSimpleFile("simple", false);
         Path atFile = Paths.get("simple.at");
-        createFile(atFile, List.of("--source 10 " + file + " 1 2 3"));
+        createFile(atFile, List.of("--source " + thisVersion + " " + file + " 1 2 3"));
         TestResult tr = doExec(javaCmd, "@" + atFile);
         if (!tr.isOK())
             error(tr, "Bad exit code: " + tr.exitValue);
@@ -248,7 +263,7 @@ public class SourceMode extends TestHelper {
         show(tr);
     }
 
-    // java --source 10 -jar simple.jar
+    // java --source N -jar simple.jar
     @Test
     void testSourceJarConflict() throws IOException {
         starting("testSourceJarConflict");
@@ -259,7 +274,7 @@ public class SourceMode extends TestHelper {
         Path simpleJar = base.resolve("simple.jar");
         createJar("cf", simpleJar.toString(), "-C", classes.toString(), ".");
         TestResult tr =
-            doExec(javaCmd, "--source", "10", "-jar", simpleJar.toString());
+            doExec(javaCmd, "--source", thisVersion, "-jar", simpleJar.toString());
         if (tr.isOK())
             error(tr, "Command succeeded unexpectedly");
         if (!tr.contains("Option -jar is not allowed with --source"))
@@ -267,11 +282,11 @@ public class SourceMode extends TestHelper {
         show(tr);
     }
 
-    // java --source 10 -m jdk.compiler
+    // java --source N -m jdk.compiler
     @Test
     void testSourceModuleConflict() throws IOException {
         starting("testSourceModuleConflict");
-        TestResult tr = doExec(javaCmd, "--source", "10", "-m", "jdk.compiler");
+        TestResult tr = doExec(javaCmd, "--source", thisVersion, "-m", "jdk.compiler");
         if (tr.isOK())
             error(tr, "Command succeeded unexpectedly");
         if (!tr.contains("Option -m is not allowed with --source"))
@@ -279,11 +294,15 @@ public class SourceMode extends TestHelper {
         show(tr);
     }
 
-    // #!.../java --source 10 -version
+    // #!.../java --source N -version
     @Test
     void testTerminalOptionInShebang() throws IOException {
         starting("testTerminalOptionInShebang");
-        if (skipShebangTest) {
+        if (skipShebangTest || isMacOSX || isSolaris) {
+            // On MacOSX, we cannot distinguish between terminal options on the
+            // shebang line and those on the command line.
+            // On Solaris, all options after the first on the shebang line are
+            // ignored.
             log.println("SKIPPED");
             return;
         }
@@ -291,7 +310,7 @@ public class SourceMode extends TestHelper {
             Paths.get("testTerminalOptionInShebang"));
         Path bad = base.resolve("bad");
         createFile(bad, List.of(
-            "#!" + shortJavaCmd + " --source 10 -version"));
+            "#!" + shebangJavaCmd + " --source " + thisVersion + " -version"));
         setExecutable(bad);
         TestResult tr = doExec(bad.toString());
         if (!tr.contains("Option -version is not allowed in this context"))
@@ -299,11 +318,15 @@ public class SourceMode extends TestHelper {
         show(tr);
     }
 
-    // #!.../java --source 10 @bad.at  (contains -version)
+    // #!.../java --source N @bad.at  (contains -version)
     @Test
     void testTerminalOptionInShebangAtFile() throws IOException {
         starting("testTerminalOptionInShebangAtFile");
-        if (skipShebangTest) {
+        if (skipShebangTest || isMacOSX || isSolaris) {
+            // On MacOSX, we cannot distinguish between terminal options in a
+            // shebang @-file and those on the command line.
+            // On Solaris, all options after the first on the shebang line are
+            // ignored.
             log.println("SKIPPED");
             return;
         }
@@ -313,7 +336,7 @@ public class SourceMode extends TestHelper {
         createFile(bad_at, List.of("-version"));
         Path bad = base.resolve("bad");
         createFile(bad, List.of(
-            "#!" + shortJavaCmd + " --source 10 @" + bad_at));
+            "#!" + shebangJavaCmd + " --source " + thisVersion + " @" + bad_at));
         setExecutable(bad);
         TestResult tr = doExec(bad.toString());
         if (!tr.contains("Option -version in @testBadAtFile/bad.at is "
@@ -322,18 +345,22 @@ public class SourceMode extends TestHelper {
         show(tr);
     }
 
-    // #!.../java --source 10 HelloWorld
+    // #!.../java --source N HelloWorld
     @Test
     void testMainClassInShebang() throws IOException {
         starting("testMainClassInShebang");
-        if (skipShebangTest) {
+        if (skipShebangTest || isMacOSX || isSolaris) {
+            // On MacOSX, we cannot distinguish between a main class on the
+            // shebang line and one on the command line.
+            // On Solaris, all options after the first on the shebang line are
+            // ignored.
             log.println("SKIPPED");
             return;
         }
         Path base = Files.createDirectories(Paths.get("testMainClassInShebang"));
         Path bad = base.resolve("bad");
         createFile(bad, List.of(
-            "#!" + shortJavaCmd + " --source 10 HelloWorld"));
+            "#!" + shebangJavaCmd + " --source " + thisVersion + " HelloWorld"));
         setExecutable(bad);
         TestResult tr = doExec(bad.toString());
         if (!tr.contains("Cannot specify main class in this context"))
@@ -367,7 +394,7 @@ public class SourceMode extends TestHelper {
         Path file = Paths.get(name);
         if (!Files.exists(file)) {
             createFile(file, List.of(
-                (shebang ? "#!" + shortJavaCmd + " --source 10" : ""),
+                (shebang ? "#!" + shebangJavaCmd + " --source=" + thisVersion: ""),
                 "public class Simple {",
                 "  public static void main(String[] args) {",
                 "    System.out.println(java.util.Arrays.toString(args));",
