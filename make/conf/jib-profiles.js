@@ -523,17 +523,6 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
             profiles[maketestName].default_make_targets = [ "test-make" ];
         });
-    // Generate cmp-baseline profiles for each main profile. This profile does
-    // a compare build run with no changes to verify that the compare script
-    // has a clean baseline
-    common.main_profile_names.forEach(function (name) {
-        var cmpBaselineName = name + "-cmp-baseline";
-        profiles[cmpBaselineName] = clone(profiles[name]);
-        // Only compare the images target. This should pressumably be expanded
-        // to include more build targets when possible.
-        profiles[cmpBaselineName].default_make_targets = [ "images" ];
-        profiles[cmpBaselineName].make_args = [ "COMPARE_BUILD=CONF=" ];
-    });
 
     // Profiles for building the zero jvm variant. These are used for verification
     // in JPRT.
@@ -725,6 +714,22 @@ var getJibProfilesProfiles = function (input, common, data) {
         var debugName = name + common.debug_suffix;
         profiles[name] = concatObjects(profiles[name], configureArgs);
         profiles[debugName] = concatObjects(profiles[debugName], configureArgs);
+    });
+
+    // Generate cmp-baseline profiles for each main profile and their
+    // corresponding debug profile. This profile does a compare build run with no
+    // changes to verify that the compare script has a clean baseline
+    common.main_profile_names.forEach(function (name) {
+        [ "", common.open_suffix ].forEach(function (suffix) {
+            var cmpBaselineName = name + suffix + "-cmp-baseline";
+            profiles[cmpBaselineName] = clone(profiles[name + suffix]);
+            // Only compare the images target. This should pressumably be expanded
+            // to include more build targets when possible.
+            profiles[cmpBaselineName].default_make_targets = [ "images" ];
+            profiles[cmpBaselineName].make_args = [ "COMPARE_BUILD=CONF=" ];
+            // Do not inherit artifact definitions from base profile
+            delete profiles[cmpBaselineName].artifacts;
+        });
     });
 
     // Profiles used to run tests. Used in JPRT and Mach 5.
