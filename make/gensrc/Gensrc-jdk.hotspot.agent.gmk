@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,21 @@ $(SA_PROPERTIES): $(call DependOnVariable, VERSION_STRING)
 	$(ECHO) "$(SA_BUILD_VERSION_PROP_NAME)=$(VERSION_STRING)" > $@
 
 TARGETS += $(SA_PROPERTIES)
+
+################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  MIG_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
+  MACH_EXC_HEADER := $(MIG_OUTPUT_DIR)/mach_exc.h
+  MACH_EXC_USER := $(MIG_OUTPUT_DIR)/mach_excUser.c
+  MACH_EXC_SERVER := $(MIG_OUTPUT_DIR)/mach_excServer.c
+
+  $(MACH_EXC_SERVER): $(SDKROOT)/usr/include/mach/mach_exc.defs
+	$(MIG) -isysroot $(SDKROOT) -server $@ -user $(MACH_EXC_USER) \
+	    -header $(MACH_EXC_HEADER) $(SDKROOT)/usr/include/mach/mach_exc.defs
+
+  TARGETS += $(MACH_EXC_SERVER)
+endif
 
 ################################################################################
 
