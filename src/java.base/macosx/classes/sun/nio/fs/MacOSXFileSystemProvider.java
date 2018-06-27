@@ -27,6 +27,7 @@ package sun.nio.fs;
 
 import java.nio.file.Path;
 import java.nio.file.spi.FileTypeDetector;
+import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -45,8 +46,7 @@ public class MacOSXFileSystemProvider extends BsdFileSystemProvider {
 
     @Override
     FileTypeDetector getFileTypeDetector() {
-        Path userMimeTypes = Path.of(GetPropertyAction
-                .privilegedGetProperty("user.home"), ".mime.types");
+        Path userMimeTypes = Path.of(StaticProperty.userHome(), ".mime.types");
 
         return chain(new MimeTypesFileTypeDetector(userMimeTypes),
                      new UTIFileTypeDetector());

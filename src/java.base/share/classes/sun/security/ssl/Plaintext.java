@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,16 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 final class Plaintext {
     static final Plaintext PLAINTEXT_NULL = new Plaintext();
 
-    byte            contentType;
-    byte            majorVersion;
-    byte            minorVersion;
-    int             recordEpoch;    // incremented on every cipher state change
-    long            recordSN;       // contains epcoh number (epoch | sequence)
-    ByteBuffer      fragment;       // null if need to be reassembled
+    final byte       contentType;
+    final byte       majorVersion;
+    final byte       minorVersion;
+    final int        recordEpoch;     // increments on every cipher state change
+    final long       recordSN;        // epoch | sequence number
+    final ByteBuffer fragment;        // null if need to be reassembled
 
-    HandshakeStatus handshakeStatus;    // null if not used or not handshaking
+    HandshakeStatus  handshakeStatus; // null if not used or not handshaking
 
-    Plaintext() {
+    private Plaintext() {
         this.contentType = 0;
         this.majorVersion = 0;
         this.minorVersion = 0;
@@ -53,7 +53,8 @@ final class Plaintext {
         this.handshakeStatus = null;
     }
 
-    Plaintext(byte contentType, byte majorVersion, byte minorVersion,
+    Plaintext(byte contentType,
+            byte majorVersion, byte minorVersion,
             int recordEpoch, long recordSN, ByteBuffer fragment) {
 
         this.contentType = contentType;
@@ -66,6 +67,7 @@ final class Plaintext {
         this.handshakeStatus = null;
     }
 
+    @Override
     public String toString() {
         return "contentType: " + contentType + "/" +
                "majorVersion: " + majorVersion + "/" +

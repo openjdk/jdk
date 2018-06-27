@@ -25,15 +25,16 @@
  * @test
  * @bug 4948079
  * @summary SSLEngineResult needs updating [none yet]
- *
- * This is a simple hack to test a bunch of conditions and check
- * their return codes.
- *
+ * @ignore the dependent implementation details are changed
  * @run main/othervm -Djsse.enableCBCProtection=false CheckStatus
  *
  * @author Brad Wetmore
  */
 
+/*
+ * This is a simple hack to test a bunch of conditions and check
+ * their return codes.
+ */
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 import java.io.*;

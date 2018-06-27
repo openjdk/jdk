@@ -30,10 +30,11 @@ import java.io.BufferedOutputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
+
+import jdk.internal.util.StaticProperty;
 import sun.net.SocksProxy;
 import sun.net.spi.DefaultProxySelector;
 import sun.net.www.ParseUtil;
-import sun.security.action.GetPropertyAction;
 /* import org.ietf.jgss.*; */
 
 /**
@@ -178,7 +179,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 userName = pw.getUserName();
                 password = new String(pw.getPassword());
             } else {
-                userName = GetPropertyAction.privilegedGetProperty("user.name");
+                userName = StaticProperty.userName();
             }
             if (userName == null)
                 return false;
@@ -1088,7 +1089,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
                 userName = System.getProperty("user.name");
             } catch (SecurityException se) { /* swallow Exception */ }
         } else {
-            userName = GetPropertyAction.privilegedGetProperty("user.name");
+            userName = StaticProperty.userName();
         }
         return userName;
     }

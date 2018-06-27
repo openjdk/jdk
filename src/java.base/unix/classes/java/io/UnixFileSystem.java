@@ -26,6 +26,8 @@
 package java.io;
 
 import java.util.Properties;
+
+import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
 
@@ -40,8 +42,8 @@ class UnixFileSystem extends FileSystem {
         Properties props = GetPropertyAction.privilegedGetProperties();
         slash = props.getProperty("file.separator").charAt(0);
         colon = props.getProperty("path.separator").charAt(0);
-        javaHome = props.getProperty("java.home");
-        userDir = props.getProperty("user.dir");
+        javaHome = StaticProperty.javaHome();
+        userDir = StaticProperty.userDir();
     }
 
 

@@ -197,6 +197,9 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
 
   ClassFileStream* old_stream = stream;
 
+  // increment counter
+  THREAD->statistical_info().incr_define_class_count();
+
   // Skip this processing for VM anonymous classes
   if (host_klass == NULL) {
     stream = check_class_file_load_hook(stream,

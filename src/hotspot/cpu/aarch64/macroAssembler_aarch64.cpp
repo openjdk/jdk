@@ -2127,8 +2127,7 @@ void MacroAssembler::resolve_jobject(Register value, Register thread, Register t
 
   bind(not_weak);
   // Resolve (untagged) jobject.
-  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT, value, Address(value, 0), tmp,
-                 thread);
+  access_load_at(T_OBJECT, IN_NATIVE, value, Address(value, 0), tmp, thread);
   verify_oop(value);
   bind(done);
 }
@@ -3643,8 +3642,7 @@ void MacroAssembler::load_klass(Register dst, Register src) {
 // ((OopHandle)result).resolve();
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection.
-  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
-                 result, Address(result, 0), tmp, noreg);
+  access_load_at(T_OBJECT, IN_NATIVE, result, Address(result, 0), tmp, noreg);
 }
 
 void MacroAssembler::load_mirror(Register dst, Register method, Register tmp) {

@@ -57,6 +57,8 @@ import java.security.*;
 
 import java.security.Provider.Service;
 
+import jdk.internal.util.StaticProperty;
+
 import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.util.Debug;
@@ -71,8 +73,8 @@ import sun.security.util.Debug;
  */
 
 final class JceSecurity {
-  
-  	
+
+
     private static final Debug debug = Debug.getInstance("jca");
 
     static final SecureRandom RANDOM = new SecureRandom();
@@ -307,7 +309,7 @@ final class JceSecurity {
 
         // Prepend java.home to get the full path.  normalize() in
         // case an extra "." or ".." snuck in somehow.
-        String javaHomeProperty = System.getProperty("java.home");
+        String javaHomeProperty = StaticProperty.javaHome();
         Path javaHomePolicyPath = Paths.get(javaHomeProperty, "conf",
                 "security", "policy").normalize();
         Path cryptoPolicyPath = Paths.get(javaHomeProperty, "conf", "security",

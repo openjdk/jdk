@@ -26,6 +26,7 @@
 package sun.security.util;
 
 import java.io.IOException;
+import java.net.IDN;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Principal;
@@ -35,9 +36,8 @@ import javax.security.auth.x500.X500Principal;
 import javax.net.ssl.SNIHostName;
 
 import sun.net.util.IPAddressUtil;
-import sun.security.ssl.ClientKeyExchangeService;
-import sun.security.ssl.Debug;
 import sun.security.x509.X500Name;
+import sun.security.ssl.SSLLogger;
 
 /**
  * Class to check hostnames against the names specified in a certificate as
@@ -59,8 +59,6 @@ public class HostnameChecker {
     // constants for subject alt names of type DNS and IP
     private static final int ALTNAME_DNS = 2;
     private static final int ALTNAME_IP  = 7;
-
-    private static final Debug debug = Debug.getInstance("ssl");
 
     // the algorithm to follow to perform the check. Currently unused.
     private final byte checkType;
@@ -104,26 +102,6 @@ public class HostnameChecker {
     public void match(String expectedName, X509Certificate cert)
             throws CertificateException {
         match(expectedName, cert, false);
-    }
-
-    /**
-     * Perform the check for Kerberos.
-     */
-    public static boolean match(String expectedName, Principal principal) {
-        String hostName = getServerName(principal);
-        return (expectedName.equalsIgnoreCase(hostName));
-    }
-
-    /**
-     * Return the Server name from Kerberos principal.
-     */
-    public static String getServerName(Principal principal) {
-        ClientKeyExchangeService p =
-                ClientKeyExchangeService.find("KRB5");
-        if (p == null) {
-            throw new AssertionError("Kerberos should have been available");
-        }
-        return p.getServiceHostName(principal);
     }
 
     /**
@@ -284,6 +262,11 @@ public class HostnameChecker {
      */
     private boolean isMatched(String name, String template,
                               boolean chainsToPublicCA) {
+
+        // Normalize to Unicode, because PSL is in Unicode.
+        name = IDN.toUnicode(IDN.toASCII(name));
+        template = IDN.toUnicode(IDN.toASCII(template));
+
         if (hasIllegalWildcard(name, template, chainsToPublicCA)) {
             return false;
         }
@@ -294,7 +277,7 @@ public class HostnameChecker {
             // the domain name template validity.
             //
             // Using the checking implemented in SNIHostName
-            SNIHostName sni = new SNIHostName(template.replace('*', 'x'));
+            new SNIHostName(template.replace('*', 'x'));
         } catch (IllegalArgumentException iae) {
             // It would be nice to add debug log if not matching.
             return false;
@@ -316,9 +299,10 @@ public class HostnameChecker {
                                               boolean chainsToPublicCA) {
         // not ok if it is a single wildcard character or "*."
         if (template.equals("*") || template.equals("*.")) {
-            if (debug != null) {
-                debug.println("Certificate domain name has illegal single " +
-                              "wildcard character: " + template);
+            if (SSLLogger.isOn) {
+                SSLLogger.fine(
+                    "Certificate domain name has illegal single " +
+                      "wildcard character: " + template);
             }
             return true;
         }
@@ -335,9 +319,10 @@ public class HostnameChecker {
 
         // not ok if there is no dot after wildcard (ex: "*com")
         if (firstDotIndex == -1) {
-            if (debug != null) {
-                debug.println("Certificate domain name has illegal wildcard, " +
-                              "no dot after wildcard character: " + template);
+            if (SSLLogger.isOn) {
+                SSLLogger.fine(
+                    "Certificate domain name has illegal wildcard, " +
+                    "no dot after wildcard character: " + template);
             }
             return true;
         }
@@ -354,9 +339,10 @@ public class HostnameChecker {
         if (rd.isPresent()) {
             String wDomain = afterWildcard.substring(firstDotIndex + 1);
             if (rd.get().publicSuffix().equalsIgnoreCase(wDomain)) {
-                if (debug != null) {
-                    debug.println("Certificate domain name has illegal " +
-                                  "wildcard for public suffix: " + template);
+                if (SSLLogger.isOn) {
+                    SSLLogger.fine(
+                        "Certificate domain name has illegal " +
+                        "wildcard for public suffix: " + template);
                 }
                 return true;
             }

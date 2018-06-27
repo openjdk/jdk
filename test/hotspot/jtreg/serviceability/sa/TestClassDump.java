@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,11 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-/*
+/**
  * @test
  * @bug 8184982
  * @summary Test ClassDump tool
+ * @requires vm.hasSAandCanAttach
  * @library /test/lib
  * @run main/othervm TestClassDump
  */
@@ -82,12 +83,6 @@ public class TestClassDump {
     }
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.shouldSAAttach()) {
-            // Silently skip the test if we don't have enough permissions to attach
-            System.out.println("SA attach not expected to work - test skipped.");
-            return;
-        }
-
         LingeredApp theApp = null;
         try {
             theApp = LingeredApp.startApp();

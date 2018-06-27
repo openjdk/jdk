@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,12 @@ package sun.security.ssl;
 
 import java.util.HashSet;
 import java.util.Set;
-import sun.security.util.AlgorithmDecomposer;
-import static sun.security.ssl.CipherSuite.*;
+import sun.security.ssl.CipherSuite.HashAlg;
+import sun.security.ssl.CipherSuite.KeyExchange;
 import static sun.security.ssl.CipherSuite.KeyExchange.*;
+import sun.security.ssl.CipherSuite.MacAlg;
+import static sun.security.ssl.SSLCipher.*;
+import sun.security.util.AlgorithmDecomposer;
 
 /**
  * The class decomposes standard SSL/TLS cipher suites into sub-elements.
@@ -126,18 +129,13 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
                 }
                 break;
             default:
-                if (ClientKeyExchangeService.find(keyExchange.name) != null) {
-                    if (!onlyX509) {
-                        components.add(keyExchange.name);
-                    }
-                }
                 // otherwise ignore
             }
 
         return components;
     }
 
-    private Set<String> decomposes(CipherSuite.BulkCipher bulkCipher) {
+    private Set<String> decomposes(SSLCipher bulkCipher) {
         Set<String> components = new HashSet<>();
 
         if (bulkCipher.transformation != null) {
@@ -185,7 +183,7 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
     }
 
     private Set<String> decomposes(CipherSuite.MacAlg macAlg,
-            BulkCipher cipher) {
+            SSLCipher cipher) {
         Set<String> components = new HashSet<>();
 
         if (macAlg == CipherSuite.MacAlg.M_NULL
@@ -211,8 +209,26 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
         return components;
     }
 
-    private Set<String> decompose(KeyExchange keyExchange, BulkCipher cipher,
-            MacAlg macAlg) {
+    private Set<String> decomposes(CipherSuite.HashAlg hashAlg) {
+        Set<String> components = new HashSet<>();
+
+        if (hashAlg == CipherSuite.HashAlg.H_SHA256) {
+            components.add("SHA256");
+            components.add("SHA-256");
+            components.add("HmacSHA256");
+        } else if (hashAlg == CipherSuite.HashAlg.H_SHA384) {
+            components.add("SHA384");
+            components.add("SHA-384");
+            components.add("HmacSHA384");
+        }
+
+        return components;
+    }
+
+    private Set<String> decompose(KeyExchange keyExchange,
+            SSLCipher cipher,
+            MacAlg macAlg,
+            HashAlg hashAlg) {
         Set<String> components = new HashSet<>();
 
         if (keyExchange != null) {
@@ -233,6 +249,10 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
             components.addAll(decomposes(macAlg, cipher));
         }
 
+        if (hashAlg != null) {
+            components.addAll(decomposes(hashAlg));
+        }
+
         return components;
     }
 
@@ -241,18 +261,19 @@ class SSLAlgorithmDecomposer extends AlgorithmDecomposer {
         if (algorithm.startsWith("SSL_") || algorithm.startsWith("TLS_")) {
             CipherSuite cipherSuite = null;
             try {
-                cipherSuite = CipherSuite.valueOf(algorithm);
+                cipherSuite = CipherSuite.nameOf(algorithm);
             } catch (IllegalArgumentException iae) {
                 // ignore: unknown or unsupported ciphersuite
             }
 
             if (cipherSuite != null) {
-                return decompose(cipherSuite.keyExchange, cipherSuite.cipher,
-                        cipherSuite.macAlg);
+                return decompose(cipherSuite.keyExchange,
+                        cipherSuite.bulkCipher,
+                        cipherSuite.macAlg,
+                        cipherSuite.hashAlg);
             }
         }
 
         return super.decompose(algorithm);
     }
-
 }

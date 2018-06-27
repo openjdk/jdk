@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,20 +74,12 @@ public interface RegisteredDomain {
      * Returns an {@code Optional<RegisteredDomain>} representing the
      * registered part of the specified domain.
      *
-     * {@implNote}
-     * The default implementation is based on the legacy
-     * {@code sun.net.RegisteredDomain} class which is no longer maintained.
-     * It should be updated or replaced with an appropriate implementation.
-     *
      * @param domain the domain name
      * @return an {@code Optional<RegisteredDomain>}; the {@code Optional} is
      *    empty if the domain is unknown or not registerable
      * @throws NullPointerException if domain is null
      */
     public static Optional<RegisteredDomain> from(String domain) {
-        if (domain == null) {
-            throw new NullPointerException();
-        }
-        return Optional.ofNullable(sun.net.RegisteredDomain.registeredDomain(domain));
+        return Optional.ofNullable(DomainName.registeredDomain(domain));
     }
 }

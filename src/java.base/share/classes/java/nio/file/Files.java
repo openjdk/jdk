@@ -77,6 +77,7 @@ import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import sun.nio.ch.FileChannelImpl;
 import sun.nio.fs.AbstractFileSystemProvider;
 
 /**
@@ -3203,10 +3204,11 @@ public final class Files {
     public static byte[] readAllBytes(Path path) throws IOException {
         try (SeekableByteChannel sbc = Files.newByteChannel(path);
              InputStream in = Channels.newInputStream(sbc)) {
+            if (sbc instanceof FileChannelImpl)
+                ((FileChannelImpl) sbc).setUninterruptible();
             long size = sbc.size();
-            if (size > (long)MAX_BUFFER_SIZE)
+            if (size > (long) MAX_BUFFER_SIZE)
                 throw new OutOfMemoryError("Required array size too large");
-
             return read(in, (int)size);
         }
     }
@@ -3279,11 +3281,7 @@ public final class Files {
         Objects.requireNonNull(cs);
 
         byte[] ba = readAllBytes(path);
-        try {
-            return JLA.newStringNoRepl(ba, cs);
-        } catch (IllegalArgumentException e) {
-            throw new IOException(e);
-        }
+        return JLA.newStringNoRepl(ba, cs);
     }
 
     /**
@@ -3634,12 +3632,8 @@ public final class Files {
         Objects.requireNonNull(csq);
         Objects.requireNonNull(cs);
 
-        try {
-            byte[] bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
-            write(path, bytes, options);
-        } catch (IllegalArgumentException e) {
-            throw new IOException(e);
-        }
+        byte[] bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
+        write(path, bytes, options);
 
         return path;
     }

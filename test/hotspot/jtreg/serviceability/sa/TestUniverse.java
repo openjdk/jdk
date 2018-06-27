@@ -33,10 +33,10 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
- * @requires vm.gc != "Z"
+ * @requires vm.hasSAandCanAttach & vm.gc != "Z"
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.lib.apps.*
@@ -45,10 +45,10 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. TestUniverse withoutZ
  */
 
-/*
+/**
  * @test
  * @summary Test the 'universe' command of jhsdb clhsdb.
- * @requires vm.gc == "Z"
+ * @requires vm.hasSAandCanAttach & vm.gc == "Z"
  * @bug 8190307
  * @library /test/lib
  * @build jdk.test.lib.apps.*
@@ -147,13 +147,6 @@ public class TestUniverse {
 
 
     public static void main (String... args) throws Exception {
-
-        if (!Platform.shouldSAAttach()) {
-            System.out.println(
-               "SA attach not expected to work - test skipped.");
-            return;
-        }
-
         try {
             test("-XX:+UseG1GC");
             test("-XX:+UseParallelGC");

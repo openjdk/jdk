@@ -29,6 +29,8 @@ import java.io.*;
 import java.net.*;
 import java.util.Map;
 import java.security.*;
+
+import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -403,7 +405,7 @@ final class SunEntries {
             if(deviceURI.isOpaque()) {
                 // File constructor does not accept opaque URI
                 URI localDir = new File(
-                    System.getProperty("user.dir")).toURI();
+                    StaticProperty.userDir()).toURI();
                 String uriPath = localDir.toString() +
                                      deviceURI.toString().substring(5);
                 return new File(URI.create(uriPath));

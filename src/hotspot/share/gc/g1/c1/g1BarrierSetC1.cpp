@@ -52,11 +52,6 @@ void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
                                  LIR_Opr pre_val, CodeEmitInfo* info) {
   LIRGenerator* gen = access.gen();
   DecoratorSet decorators = access.decorators();
-  bool in_heap = (decorators & IN_HEAP) != 0;
-  bool in_conc_root = (decorators & IN_CONCURRENT_ROOT) != 0;
-  if (!in_heap && !in_conc_root) {
-    return;
-  }
 
   // First we test whether marking is in progress.
   BasicType flag_type;

@@ -21,9 +21,10 @@
  * questions.
  */
 
-/*
+/**
  * @test TestJmapCoreMetaspace
  * @summary Test verifies that jhsdb jmap could generate heap dump from core when metspace is full
+ * @requires vm.hasSA
  * @library /test/lib
  * @run driver/timeout=240 TestJmapCore run metaspace
  */

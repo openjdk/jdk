@@ -238,8 +238,14 @@ public class DisabledShortRSAKeys extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        if (debug)
+        Security.setProperty("jdk.certpath.disabledAlgorithms",
+                "RSA keySize < 1024");
+        Security.setProperty("jdk.tls.disabledAlgorithms",
+                "RSA keySize < 1024");
+
+        if (debug) {
             System.setProperty("javax.net.debug", "all");
+        }
 
         /*
          * Get the customized arguments.

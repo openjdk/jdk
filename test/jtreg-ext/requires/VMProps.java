@@ -73,6 +73,12 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.debug", vmDebug());
         map.put("vm.jvmci", vmJvmci());
         map.put("vm.emulatedClient", vmEmulatedClient());
+        // vm.hasSA is "true" if the VM contains the serviceability agent
+        // and jhsdb.
+        map.put("vm.hasSA", vmHasSA());
+        // vm.hasSAandCanAttach is "true" if the VM contains the serviceability agent
+        // and jhsdb and it can attach to the VM.
+        map.put("vm.hasSAandCanAttach", vmHasSAandCanAttach());
         map.put("vm.cpu.features", cpuFeatures());
         map.put("vm.rtm.cpu", vmRTMCPU());
         map.put("vm.rtm.os", vmRTMOS());
@@ -256,6 +262,28 @@ public class VMProps implements Callable<Map<String, String>> {
     protected void vmOptFinalFlags(Map<String, String> map) {
         vmOptFinalFlag(map, "ClassUnloading");
         vmOptFinalFlag(map, "UseCompressedOops");
+    }
+
+    /**
+     * @return "true" if VM has a serviceability agent.
+     */
+    protected String vmHasSA() {
+        return "" + Platform.hasSA();
+    }
+
+    /**
+     * @return "true" if VM has a serviceability agent and it can
+     * attach to the VM.
+     */
+    protected String vmHasSAandCanAttach() {
+        try {
+            return "" + Platform.shouldSAAttach();
+        } catch (IOException e) {
+            System.out.println("Checking whether SA can attach to the VM failed.");
+            e.printStackTrace();
+            // Run the tests anyways.
+            return "true";
+        }
     }
 
     /**

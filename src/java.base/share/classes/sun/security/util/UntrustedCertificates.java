@@ -26,12 +26,12 @@ package sun.security.util;
 
 import java.io.*;
 import java.security.AccessController;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.util.*;
+
+import jdk.internal.util.StaticProperty;
 import sun.security.x509.X509CertImpl;
 
 /**
@@ -54,7 +54,7 @@ public final class UntrustedCertificates {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
-                File f = new File(System.getProperty("java.home"),
+                File f = new File(StaticProperty.javaHome(),
                         "lib/security/blacklisted.certs");
                 try (FileInputStream fin = new FileInputStream(f)) {
                     props.load(fin);

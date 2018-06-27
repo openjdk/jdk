@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,12 +131,10 @@ public class TrustTrustedCert extends SSLSocketTemplate {
             sslIS.read();
             sslOS.write('A');
             sslOS.flush();
-        } catch (SSLHandshakeException e) {
-            if (expectFail && !e.toString().contains("certificate_unknown")) {
-                throw new RuntimeException(
-                        "Expected to see certificate_unknown in exception output",
-                        e);
-            }
+        } catch (SSLException ssle) {
+            if (!expectFail) {
+                throw ssle;
+            }   // Otherwise, ignore.
         }
     }
 
@@ -158,12 +156,15 @@ public class TrustTrustedCert extends SSLSocketTemplate {
             sslOS.flush();
             sslIS.read();
         } catch (SSLHandshakeException e) {
+            if (expectFail) {
             // focus on the CertPathValidatorException
-            Throwable t = e.getCause().getCause();
-            if ((t == null)
-                    || (expectFail && !t.toString().contains("MD5withRSA"))) {
-                throw new RuntimeException(
+                Throwable t = e.getCause().getCause();
+                if (t == null || !t.toString().contains("MD5withRSA")) {
+                    throw new RuntimeException(
                         "Expected to see MD5withRSA in exception output", t);
+                }
+            } else {
+                throw e;
             }
         }
     }

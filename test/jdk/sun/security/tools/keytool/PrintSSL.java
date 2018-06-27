@@ -53,7 +53,7 @@ public class PrintSSL {
         // make sure that "-printcert" works with weak algorithms
         OutputAnalyzer out = SecurityTools.keytool("-genkeypair "
                 + "-keystore keystore -storepass passphrase "
-                + "-keypass passphrase -keyalg rsa -keysize 512 "
+                + "-keypass passphrase -keyalg rsa -keysize 1024 "
                 + "-sigalg MD5withRSA -alias rsa_alias -dname CN=Server");
         System.out.println(out.getOutput());
         out.shouldHaveExitValue(0);
@@ -92,7 +92,7 @@ public class PrintSSL {
             System.setProperty("javax.net.ssl.keyStorePassword", "passphrase");
             System.setProperty("javax.net.ssl.keyStore", "keystore");
             SSLServerSocketFactory sslssf =
-                    (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+                (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
             try (ServerSocket server = sslssf.createServerSocket(0)) {
                 this.serverPort = server.getLocalPort();
                 System.out.printf("%nServer started on: %s%n", getServerPort());
@@ -110,5 +110,5 @@ public class PrintSSL {
         }
 
     }
-
 }
+

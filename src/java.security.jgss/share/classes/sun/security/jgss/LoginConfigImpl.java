@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,16 +109,6 @@ public class LoginConfigImpl extends Configuration {
                     "com.sun.security.jgss.krb5.accept",
                     "com.sun.security.jgss.accept",
                 };
-            } else if (caller == GSSCaller.CALLER_SSL_CLIENT) {
-                alts = new String[] {
-                    "com.sun.security.jgss.krb5.initiate",
-                    "com.sun.net.ssl.client",
-                };
-            } else if (caller == GSSCaller.CALLER_SSL_SERVER) {
-                alts = new String[] {
-                    "com.sun.security.jgss.krb5.accept",
-                    "com.sun.net.ssl.server",
-                };
             } else if (caller instanceof HttpCaller) {
                 alts = new String[] {
                     "com.sun.security.jgss.krb5.initiate",
@@ -132,14 +122,12 @@ public class LoginConfigImpl extends Configuration {
             /*
             switch (caller) {
             case GSSUtil.CALLER_INITIATE:
-            case GSSUtil.CALLER_SSL_CLIENT:
             case GSSUtil.CALLER_HTTP_NEGOTIATE:
                 alts = new String[] {
                     "com.sun.security.jgss." + mechName + ".initiate",
                 };
                 break;
             case GSSUtil.CALLER_ACCEPT:
-            case GSSUtil.CALLER_SSL_SERVER:
                 alts = new String[] {
                     "com.sun.security.jgss." + mechName + ".accept",
                 };
@@ -207,7 +195,6 @@ public class LoginConfigImpl extends Configuration {
     }
 
     private static boolean isServerSide (GSSCaller caller) {
-        return GSSCaller.CALLER_ACCEPT == caller ||
-               GSSCaller.CALLER_SSL_SERVER == caller;
+        return GSSCaller.CALLER_ACCEPT == caller;
     }
 }

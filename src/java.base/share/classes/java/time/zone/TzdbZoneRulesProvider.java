@@ -61,19 +61,19 @@
  */
 package java.time.zone;
 
+import jdk.internal.util.StaticProperty;
+
 import java.io.ByteArrayInputStream;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.StreamCorruptedException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -106,7 +106,7 @@ final class TzdbZoneRulesProvider extends ZoneRulesProvider {
      */
     public TzdbZoneRulesProvider() {
         try {
-            String libDir = System.getProperty("java.home") + File.separator + "lib";
+            String libDir = StaticProperty.javaHome() + File.separator + "lib";
             try (DataInputStream dis = new DataInputStream(
                      new BufferedInputStream(new FileInputStream(
                          new File(libDir, "tzdb.dat"))))) {

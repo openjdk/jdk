@@ -133,8 +133,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
          "Only ones we deal with for now.");
 
   assert(_precision != CardTable::ObjHeadPreciseArray ||
-         _cl->idempotent() || _last_bottom == NULL ||
-         top <= _last_bottom,
+         _last_bottom == NULL || top <= _last_bottom,
          "Not decreasing");
   NOT_PRODUCT(_last_bottom = mr.start());
 
@@ -172,14 +171,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
     walk_mem_region(extended_mr, bottom_obj, top);
   }
 
-  // An idempotent closure might be applied in any order, so we don't
-  // record a _min_done for it.
-  if (!_cl->idempotent()) {
-    _min_done = bottom;
-  } else {
-    assert(_min_done == _last_explicit_min_done,
-           "Don't update _min_done for idempotent cl");
-  }
+  _min_done = bottom;
 }
 
 DirtyCardToOopClosure* Space::new_dcto_cl(OopIterateClosure* cl,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -50,15 +51,12 @@ import javax.lang.model.util.Elements;
 
 import javax.tools.Diagnostic;
 
-import static javax.lang.model.SourceVersion.RELEASE_11;
-
 /**
  * Annotation processor for the Deprecation Scanner tool.
  * Examines APIs for deprecated elements and records information
  *
  */
 @SupportedAnnotationTypes("java.lang.Deprecated")
-@SupportedSourceVersion(RELEASE_11)
 public class LoadProc extends AbstractProcessor {
     Elements elements;
     Messager messager;
@@ -72,6 +70,11 @@ public class LoadProc extends AbstractProcessor {
         super.init(pe);
         elements = pe.getElementUtils();
         messager = pe.getMessager();
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     @Override

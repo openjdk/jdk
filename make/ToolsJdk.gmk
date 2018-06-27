@@ -121,6 +121,9 @@ TOOL_GENCLASSLOADERMAP = $(JAVA_SMALL) $(INTERIM_LANGTOOLS_BOOTCLASSPATH) \
     -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes) \
     build.tools.module.GenModuleLoaderMap
 
+TOOL_PUBLICSUFFIXLIST = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+    build.tools.publicsuffixlist.GeneratePublicSuffixList
+
 ##########################################################################################
 
 endif # _TOOLS_GMK

@@ -55,7 +55,7 @@ public class SecmodTest extends PKCS11Test {
 
         DBDIR = System.getProperty("test.classes", ".") + SEP + "tmpdb";
         if (useSqlite) {
-            System.setProperty("pkcs11test.nss.db", "sql:/" + DBDIR);
+            System.setProperty("pkcs11test.nss.db", "sql:" + DBDIR);
         } else {
             System.setProperty("pkcs11test.nss.db", DBDIR);
         }
@@ -67,6 +67,7 @@ public class SecmodTest extends PKCS11Test {
         if (useSqlite) {
             copyFile("key4.db", BASE, DBDIR);
             copyFile("cert9.db", BASE, DBDIR);
+            copyFile("pkcs11.txt", BASE, DBDIR);
         } else {
             copyFile("secmod.db", BASE, DBDIR);
             copyFile("key3.db", BASE, DBDIR);

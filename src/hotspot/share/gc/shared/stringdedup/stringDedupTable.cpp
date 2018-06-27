@@ -281,13 +281,11 @@ typeArrayOop StringDedupTable::lookup(typeArrayOop value, bool latin1, unsigned 
                                       StringDedupEntry** list, uintx &count) {
   for (StringDedupEntry* entry = *list; entry != NULL; entry = entry->next()) {
     if (entry->hash() == hash && entry->latin1() == latin1) {
-      typeArrayOop existing_value = entry->obj();
-      if (equals(value, existing_value)) {
-        // Apply proper barrier to make sure it is kept alive. Concurrent mark might
-        // otherwise declare it dead if there are no other strong references to this object.
-        oop* obj_addr = (oop*)entry->obj_addr();
-        oop obj = NativeAccess<IN_CONCURRENT_ROOT | ON_WEAK_OOP_REF>::oop_load(obj_addr);
-        return typeArrayOop(obj);
+      oop* obj_addr = (oop*)entry->obj_addr();
+      oop obj = NativeAccess<ON_PHANTOM_OOP_REF | AS_NO_KEEPALIVE>::oop_load(obj_addr);
+      if (equals(value, static_cast<typeArrayOop>(obj))) {
+        obj = NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(obj_addr);
+        return static_cast<typeArrayOop>(obj);
       }
     }
     count++;

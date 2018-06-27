@@ -245,6 +245,8 @@ public class SSLEngineTemplate {
                 log("\tClosing clientEngine's *OUTBOUND*...");
                 clientEngine.closeOutbound();
                 dataDone = true;
+                log("\tClosing serverEngine's *OUTBOUND*...");
+                serverEngine.closeOutbound();
             }
         }
     }

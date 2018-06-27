@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,11 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test
  * @summary Test the 'intConstant' command of jhsdb clhsdb.
  * @bug 8190307
+ * @requires vm.hasSAandCanAttach
  * @library /test/lib
  * @build jdk.test.lib.apps.*
  * @run main/othervm TestIntConstant
@@ -128,12 +129,6 @@ public class TestIntConstant {
     }
 
     public static void main (String... args) throws Exception {
-
-        if (!Platform.shouldSAAttach()) {
-            System.out.println(
-               "SA attach not expected to work - test skipped.");
-            return;
-        }
 
         try {
             testIntConstant();

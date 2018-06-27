@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,12 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
             throw new RuntimeException("handshake message is not available");
         }
 
-        // outputRecord cannot be null
-        outputRecord.encodeHandshake(buf, 0, count);
+        if (outputRecord != null) {
+            outputRecord.encodeHandshake(buf, 0, count);
 
-        // reset the byte array output stream
-        reset();
+            // reset the byte array output stream
+            reset();
+        }   // otherwise, the handshake outstream is temporarily used only.
     }
 
     //
@@ -76,7 +77,9 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
 
     @Override
     public void flush() throws IOException {
-        outputRecord.flush();
+        if (outputRecord != null) {
+            outputRecord.flush();
+        }
     }
 
     //
@@ -101,6 +104,13 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
 
     void putInt24(int i) throws IOException {
         checkOverflow(i, Record.OVERFLOW_OF_INT24);
+        super.write(i >> 16);
+        super.write(i >> 8);
+        super.write(i);
+    }
+
+    void putInt32(int i) throws IOException {
+        super.write(i >> 24);
         super.write(i >> 16);
         super.write(i >> 8);
         super.write(i);

@@ -183,7 +183,8 @@ public class MockServer extends Thread implements Closeable {
             } catch (IOException |InterruptedException e1) {
                 cleanup();
             } catch (Throwable t) {
-                System.out.println("X: " + t);
+                System.out.println("Exception: " + t);
+                t.printStackTrace();
                 cleanup();
             }
         }

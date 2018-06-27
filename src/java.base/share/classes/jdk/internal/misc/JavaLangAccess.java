@@ -30,6 +30,7 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.security.AccessControlContext;
 import java.security.ProtectionDomain;
@@ -266,9 +267,9 @@ public interface JavaLangAccess {
      * @param bytes the byte array source
      * @param cs the Charset
      * @return the newly created string
-     * @throws IllegalArgumentException for malformed or unmappable bytes
+     * @throws CharacterCodingException for malformed or unmappable bytes
      */
-    String newStringNoRepl(byte[] bytes, Charset cs);
+    String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException;
 
     /**
      * Encode the given string into a sequence of bytes using the specified Charset.
@@ -276,15 +277,15 @@ public interface JavaLangAccess {
      * This method avoids copying the String's internal representation if the input
      * is ASCII.
      *
-     * This method throws IllegalArgumentException instead of replacing when
+     * This method throws CharacterCodingException instead of replacing when
      * malformed input or unmappable characters are encountered.
      *
      * @param s the string to encode
      * @param cs the charset
      * @return the encoded bytes
-     * @throws IllegalArgumentException for malformed input or unmappable characters
+     * @throws CharacterCodingException for malformed input or unmappable characters
      */
-    byte[] getBytesNoRepl(String s, Charset cs);
+    byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
      * Returns a new string by decoding from the given utf8 bytes array.

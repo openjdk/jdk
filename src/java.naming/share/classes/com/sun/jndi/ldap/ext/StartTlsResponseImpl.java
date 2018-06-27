@@ -404,27 +404,16 @@ final public class StartTlsResponseImpl extends StartTlsResponse {
         try {
             HostnameChecker checker = HostnameChecker.getInstance(
                                                 HostnameChecker.TYPE_LDAP);
-            // Use ciphersuite to determine whether Kerberos is active.
-            if (session.getCipherSuite().startsWith("TLS_KRB5")) {
-                Principal principal = getPeerPrincipal(session);
-                if (!HostnameChecker.match(hostname, principal)) {
-                    throw new SSLPeerUnverifiedException(
-                        "hostname of the kerberos principal:" + principal +
-                        " does not match the hostname:" + hostname);
-                }
-            } else { // X.509
-
-                // get the subject's certificate
-                certs = session.getPeerCertificates();
-                X509Certificate peerCert;
-                if (certs[0] instanceof java.security.cert.X509Certificate) {
-                    peerCert = (java.security.cert.X509Certificate) certs[0];
-                } else {
-                    throw new SSLPeerUnverifiedException(
-                            "Received a non X509Certificate from the server");
-                }
-                checker.match(hostname, peerCert);
+            // get the subject's certificate
+            certs = session.getPeerCertificates();
+            X509Certificate peerCert;
+            if (certs[0] instanceof java.security.cert.X509Certificate) {
+                peerCert = (java.security.cert.X509Certificate) certs[0];
+            } else {
+                throw new SSLPeerUnverifiedException(
+                        "Received a non X509Certificate from the server");
             }
+            checker.match(hostname, peerCert);
 
             // no exception means verification passed
             return true;

@@ -24,7 +24,7 @@
 /**
  * @test SASymbolTableTest
  * @summary Walk symbol table using SA, with and without CDS.
- * @requires vm.cds
+ * @requires vm.cds & vm.hasSAandCanAttach
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot.oops
@@ -59,11 +59,6 @@ public class SASymbolTableTest {
 
 
     public static void main(String[] args) throws Exception {
-        if (!Platform.shouldSAAttach()) {
-            System.out.println("SA attach not expected to work - test skipped.");
-            return;
-        }
-
         CDSTestUtils.createArchiveAndCheck();
         run(true);
         run(false);

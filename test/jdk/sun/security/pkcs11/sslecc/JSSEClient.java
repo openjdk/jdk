@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,8 @@ class JSSEClient extends CipherTest.Client {
             }
 
             socket.setSoTimeout(CipherTest.TIMEOUT);
-            socket.setEnabledCipherSuites(new String[] {params.cipherSuite});
-            socket.setEnabledProtocols(new String[] {params.protocol});
+            socket.setEnabledCipherSuites(new String[] {params.cipherSuite.name()});
+            socket.setEnabledProtocols(new String[] {params.protocol.name});
             InputStream in = socket.getInputStream();
             OutputStream out = socket.getOutputStream();
             sendRequest(in, out);
@@ -76,11 +76,11 @@ class JSSEClient extends CipherTest.Client {
             SSLSession session = socket.getSession();
             session.invalidate();
             String cipherSuite = session.getCipherSuite();
-            if (params.cipherSuite.equals(cipherSuite) == false) {
+            if (!params.cipherSuite.name().equals(cipherSuite)) {
                 throw new Exception("Negotiated ciphersuite mismatch: " + cipherSuite + " != " + params.cipherSuite);
             }
             String protocol = session.getProtocol();
-            if (params.protocol.equals(protocol) == false) {
+            if (!params.protocol.name.equals(protocol)) {
                 throw new Exception("Negotiated protocol mismatch: " + protocol + " != " + params.protocol);
             }
             if (cipherSuite.indexOf("DH_anon") == -1) {

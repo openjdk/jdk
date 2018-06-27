@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,18 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.util.concurrent.*;
-
-import java.security.*;
-import java.security.cert.*;
-import java.security.cert.Certificate;
-
-import javax.net.ssl.*;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
 
 class JSSEServer extends CipherTest.Server {
 
@@ -40,23 +41,28 @@ class JSSEServer extends CipherTest.Server {
     JSSEServer(CipherTest cipherTest) throws Exception {
         super(cipherTest);
         SSLContext serverContext = SSLContext.getInstance("TLS");
-        serverContext.init(new KeyManager[] {cipherTest.keyManager}, new TrustManager[] {cipherTest.trustManager}, cipherTest.secureRandom);
+        serverContext.init(
+                new KeyManager[] { CipherTest.keyManager },
+                new TrustManager[] { CipherTest.trustManager },
+                CipherTest.secureRandom);
 
-        SSLServerSocketFactory factory = (SSLServerSocketFactory)serverContext.getServerSocketFactory();
-        serverSocket = (SSLServerSocket)factory.createServerSocket(cipherTest.serverPort);
-        cipherTest.serverPort = serverSocket.getLocalPort();
+        SSLServerSocketFactory factory
+                = (SSLServerSocketFactory) serverContext.getServerSocketFactory();
+        serverSocket
+                = (SSLServerSocket) factory.createServerSocket(CipherTest.serverPort);
+        CipherTest.serverPort = serverSocket.getLocalPort();
         serverSocket.setEnabledCipherSuites(factory.getSupportedCipherSuites());
         serverSocket.setWantClientAuth(true);
     }
 
     public void run() {
-        System.out.println("JSSE Server listening on port " + cipherTest.serverPort);
+        System.out.println("JSSE Server listening on port " + CipherTest.serverPort);
         Executor exec = Executors.newFixedThreadPool
                             (cipherTest.THREADS, DaemonThreadFactory.INSTANCE);
         try {
             while (true) {
                 final SSLSocket socket = (SSLSocket)serverSocket.accept();
-                socket.setSoTimeout(cipherTest.TIMEOUT);
+                socket.setSoTimeout(CipherTest.TIMEOUT);
                 Runnable r = new Runnable() {
                     public void run() {
                         try {

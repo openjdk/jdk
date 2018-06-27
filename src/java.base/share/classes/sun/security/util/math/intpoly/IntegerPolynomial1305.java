@@ -33,13 +33,6 @@ import java.nio.*;
 /**
  * An IntegerFieldModuloP designed for use with the Poly1305 authenticator.
  * The representation uses 5 signed long values.
- *
- * In addition to the branch-free operations specified in the parent class,
- * the following operations are branch-free:
- *
- * addModPowerTwo
- * asByteArray
- *
  */
 
 public class IntegerPolynomial1305 extends IntegerPolynomial {
@@ -51,17 +44,8 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
     private static final BigInteger MODULUS
         = TWO.pow(POWER).subtract(BigInteger.valueOf(SUBTRAHEND));
 
-    private final long[] posModLimbs;
-
-    private long[] setPosModLimbs() {
-        long[] result = new long[NUM_LIMBS];
-        setLimbsValuePositive(MODULUS, result);
-        return result;
-    }
-
     public IntegerPolynomial1305() {
         super(BITS_PER_LIMB, NUM_LIMBS, MODULUS);
-        posModLimbs = setPosModLimbs();
     }
 
     protected void mult(long[] a, long[] b, long[] r) {
@@ -181,10 +165,17 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
         }
     }
 
-    protected void modReduceIn(long[] limbs, int index, long x) {
+    private void modReduceIn(long[] limbs, int index, long x) {
         // this only works when BITS_PER_LIMB * NUM_LIMBS = POWER exactly
         long reducedValue = (x * SUBTRAHEND);
         limbs[index - NUM_LIMBS] += reducedValue;
+    }
+
+    @Override
+    protected void finalCarryReduceLast(long[] limbs) {
+        long carry = limbs[numLimbs - 1] >> bitsPerLimb;
+        limbs[numLimbs - 1] -= carry << bitsPerLimb;
+        modReduceIn(limbs, numLimbs, carry);
     }
 
     protected final void modReduce(long[] limbs, int start, int end) {
@@ -218,83 +209,6 @@ public class IntegerPolynomial1305 extends IntegerPolynomial {
 
         modReduceIn(limbs, 5, carry4);
         carry(limbs);
-    }
-
-    // Convert reduced limbs into a number between 0 and MODULUS-1
-    private void finalReduce(long[] limbs) {
-
-        addLimbs(limbs, posModLimbs, limbs);
-        // now all values are positive, so remaining operations will be unsigned
-
-        // unsigned carry out of last position and reduce in to first position
-        long carry = limbs[NUM_LIMBS - 1] >> BITS_PER_LIMB;
-        limbs[NUM_LIMBS - 1] -= carry << BITS_PER_LIMB;
-        modReduceIn(limbs, NUM_LIMBS, carry);
-
-        // unsigned carry on all positions
-        carry = 0;
-        for (int i = 0; i < NUM_LIMBS; i++) {
-            limbs[i] += carry;
-            carry = limbs[i] >> BITS_PER_LIMB;
-            limbs[i] -= carry << BITS_PER_LIMB;
-        }
-        // reduce final carry value back in
-        modReduceIn(limbs, NUM_LIMBS, carry);
-        // we only reduce back in a nonzero value if some value was carried out
-        // of the previous loop. So at least one remaining value is small.
-
-        // One more carry is all that is necessary. Nothing will be carried out
-        // at the end
-        carry = 0;
-        for (int i = 0; i < NUM_LIMBS; i++) {
-            limbs[i] += carry;
-            carry = limbs[i] >> BITS_PER_LIMB;
-            limbs[i] -= carry << BITS_PER_LIMB;
-        }
-
-        // limbs are positive and all less than 2^BITS_PER_LIMB
-        // but the value may be greater than the MODULUS.
-        // Subtract the max limb values only if all limbs end up non-negative
-        int smallerNonNegative = 1;
-        long[] smaller = new long[NUM_LIMBS];
-        for (int i = NUM_LIMBS - 1; i >= 0; i--) {
-            smaller[i] = limbs[i] - posModLimbs[i];
-            // expression on right is 1 if smaller[i] is nonnegative,
-            // 0 otherwise
-            smallerNonNegative *= (int) (smaller[i] >> 63) + 1;
-        }
-        conditionalSwap(smallerNonNegative, limbs, smaller);
-
-    }
-
-    @Override
-    protected void limbsToByteArray(long[] limbs, byte[] result) {
-
-        long[] reducedLimbs = limbs.clone();
-        finalReduce(reducedLimbs);
-
-        decode(reducedLimbs, result, 0, result.length);
-    }
-
-    @Override
-    protected void addLimbsModPowerTwo(long[] limbs, long[] other,
-                                       byte[] result) {
-
-        long[] reducedOther = other.clone();
-        long[] reducedLimbs = limbs.clone();
-        finalReduce(reducedLimbs);
-
-        addLimbs(reducedLimbs, reducedOther, reducedLimbs);
-
-        // may carry out a value which can be ignored
-        long carry = 0;
-        for (int i = 0; i < NUM_LIMBS; i++) {
-            reducedLimbs[i] += carry;
-            carry  = reducedLimbs[i] >> BITS_PER_LIMB;
-            reducedLimbs[i] -= carry << BITS_PER_LIMB;
-        }
-
-        decode(reducedLimbs, result, 0, result.length);
     }
 
 }

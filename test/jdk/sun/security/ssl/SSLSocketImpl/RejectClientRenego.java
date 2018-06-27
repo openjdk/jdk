@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,19 @@
  * @test
  * @bug 7188658
  * @summary Add possibility to disable client initiated renegotiation
- * @run main/othervm RejectClientRenego true
- * @run main/othervm RejectClientRenego false
+ * @run main/othervm RejectClientRenego true SSLv3
+ * @run main/othervm RejectClientRenego false SSLv3
+ * @run main/othervm RejectClientRenego true TLSv1
+ * @run main/othervm RejectClientRenego false TLSv1
+ * @run main/othervm RejectClientRenego true TLSv1.1
+ * @run main/othervm RejectClientRenego false TLSv1.1
+ * @run main/othervm RejectClientRenego true TLSv1.2
+ * @run main/othervm RejectClientRenego false TLSv1.2
  */
 
 import java.io.*;
 import java.net.*;
+import java.security.Security;
 import javax.net.ssl.*;
 
 public class RejectClientRenego implements
@@ -113,6 +120,7 @@ public class RejectClientRenego implements
         serverReady = true;
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+        sslSocket.setEnabledProtocols(new String[] { tlsProtocol });
         sslSocket.addHandshakeCompletedListener(this);
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
@@ -157,6 +165,7 @@ public class RejectClientRenego implements
             (SSLSocketFactory) SSLSocketFactory.getDefault();
         SSLSocket sslSocket = (SSLSocket)
             sslsf.createSocket("localhost", serverPort);
+        sslSocket.setEnabledProtocols(new String[] { tlsProtocol });
 
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
@@ -202,6 +211,9 @@ public class RejectClientRenego implements
     // Is it abbreviated handshake?
     private static boolean isAbbreviated = false;
 
+    // the specified protocol
+    private static String tlsProtocol;
+
     public static void main(String[] args) throws Exception {
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
@@ -219,13 +231,18 @@ public class RejectClientRenego implements
         System.setProperty(
             "jdk.tls.rejectClientInitiatedRenegotiation", "true");
 
-        if (debug)
+        if (debug) {
             System.setProperty("javax.net.debug", "all");
+        }
+
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
 
         // Is it abbreviated handshake?
         if ("true".equals(args[0])) {
             isAbbreviated = true;
         }
+
+        tlsProtocol = args[1];
 
         /*
          * Start the tests.

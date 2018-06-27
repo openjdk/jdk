@@ -126,7 +126,7 @@ import sun.rmi.transport.LiveRef;
  * <ul>
  *
  * <li>The proxy's class is defined according to the specifications for the
- * <a href="{@docRoot}/java/lang/reflect/Proxy.html#membership">
+ * <a href="{@docRoot}/java.base/java/lang/reflect/Proxy.html#membership">
  * {@code Proxy}
  * </a>
  * class, using the class loader of the remote object's class.

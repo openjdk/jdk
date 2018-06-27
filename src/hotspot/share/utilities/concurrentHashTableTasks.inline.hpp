@@ -63,7 +63,8 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BucketsOperation {
   }
 
   // Calculate starting values.
-  void setup() {
+  void setup(Thread* thread) {
+    thread_owns_resize_lock(thread);
     _size_log2 = _cht->_table->_log2_size;
     _task_size_log2 = MIN2(_task_size_log2, _size_log2);
     size_t tmp = _size_log2 > _task_size_log2 ?
@@ -74,12 +75,6 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BucketsOperation {
   // Returns false if all ranges are claimed.
   bool have_more_work() {
     return OrderAccess::load_acquire(&_next_to_claim) >= _stop_task;
-  }
-
-  // If we have changed size.
-  bool is_same_table() {
-    // Not entirely true.
-    return _size_log2 != _cht->_table->_log2_size;
   }
 
   void thread_owns_resize_lock(Thread* thread) {
@@ -100,6 +95,24 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BucketsOperation {
     assert(BucketsOperation::_cht->_resize_lock_owner != thread,
            "Should not be locked by me");
   }
+
+public:
+  // Pauses for safepoint
+  void pause(Thread* thread) {
+    // This leaves internal state locked.
+    this->thread_owns_resize_lock(thread);
+    BucketsOperation::_cht->_resize_lock->unlock();
+    this->thread_owns_only_state_lock(thread);
+  }
+
+  // Continues after safepoint.
+  void cont(Thread* thread) {
+    this->thread_owns_only_state_lock(thread);
+    // If someone slips in here directly after safepoint.
+    while (!BucketsOperation::_cht->_resize_lock->try_lock())
+      { /* for ever */ };
+    this->thread_owns_resize_lock(thread);
+  }
 };
 
 // For doing pausable/parallel bulk delete.
@@ -117,8 +130,7 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BulkDeleteTask :
     if (!lock) {
       return false;
     }
-    this->setup();
-    this->thread_owns_resize_lock(thread);
+    this->setup(thread);
     return true;
   }
 
@@ -135,30 +147,8 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BulkDeleteTask :
     BucketsOperation::_cht->do_bulk_delete_locked_for(thread, start, stop,
                                                       eval_f, del_f,
                                                       BucketsOperation::_is_mt);
-    return true;
-  }
-
-  // Pauses this operations for a safepoint.
-  void pause(Thread* thread) {
-    this->thread_owns_resize_lock(thread);
-    // This leaves internal state locked.
-    BucketsOperation::_cht->unlock_resize_lock(thread);
-    this->thread_do_not_own_resize_lock(thread);
-  }
-
-  // Continues this operations after a safepoint.
-  bool cont(Thread* thread) {
-    this->thread_do_not_own_resize_lock(thread);
-    if (!BucketsOperation::_cht->try_resize_lock(thread)) {
-      this->thread_do_not_own_resize_lock(thread);
-      return false;
-    }
-    if (BucketsOperation::is_same_table()) {
-      BucketsOperation::_cht->unlock_resize_lock(thread);
-      this->thread_do_not_own_resize_lock(thread);
-      return false;
-    }
-    this->thread_owns_resize_lock(thread);
+    assert(BucketsOperation::_cht->_resize_lock_owner != NULL,
+           "Should be locked");
     return true;
   }
 
@@ -183,8 +173,7 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::GrowTask :
           thread, BucketsOperation::_cht->_log2_size_limit)) {
       return false;
     }
-    this->thread_owns_resize_lock(thread);
-    BucketsOperation::setup();
+    this->setup(thread);
     return true;
   }
 
@@ -200,23 +189,6 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::GrowTask :
     assert(BucketsOperation::_cht->_resize_lock_owner != NULL,
            "Should be locked");
     return true;
-  }
-
-  // Pauses growing for safepoint
-  void pause(Thread* thread) {
-    // This leaves internal state locked.
-    this->thread_owns_resize_lock(thread);
-    BucketsOperation::_cht->_resize_lock->unlock();
-    this->thread_owns_only_state_lock(thread);
-  }
-
-  // Continues growing after safepoint.
-  void cont(Thread* thread) {
-    this->thread_owns_only_state_lock(thread);
-    // If someone slips in here directly after safepoint.
-    while (!BucketsOperation::_cht->_resize_lock->try_lock())
-      { /* for ever */ };
-    this->thread_owns_resize_lock(thread);
   }
 
   // Must be called after do_task returns false.

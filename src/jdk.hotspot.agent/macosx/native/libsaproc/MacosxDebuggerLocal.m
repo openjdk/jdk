@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
 #import <mach/mach_types.h>
 #import <sys/sysctl.h>
 #import <stdio.h>
+#import <string.h>
 #import <stdarg.h>
 #import <stdlib.h>
 #import <strings.h>
@@ -69,6 +70,63 @@ static jmethodID getJavaThreadsInfo_ID = 0;
 // indicator if thread id (lwpid_t) was set
 static bool _threads_filled = false;
 
+// mach_exc_server defined in the generated mach_excServer.c
+extern boolean_t mach_exc_server(mach_msg_header_t *input_msg_hdr,
+                                 mach_msg_header_t *output_msg_hdr);
+
+kern_return_t catch_mach_exception_raise(
+  mach_port_t exception_port, mach_port_t thread,
+  mach_port_t task, exception_type_t exception,
+  mach_exception_data_t code,
+  mach_msg_type_number_t code_cnt);
+
+kern_return_t catch_mach_exception_raise_state(
+  mach_port_t exception_port, exception_type_t exception,
+  const mach_exception_data_t code, mach_msg_type_number_t code_cnt,
+  int *flavor, const thread_state_t old_state,
+  mach_msg_type_number_t old_state_cnt, thread_state_t new_state,
+  mach_msg_type_number_t *new_state_cnt);
+
+kern_return_t catch_mach_exception_raise_state_identity(
+  mach_port_t exception_port, mach_port_t thread, mach_port_t task,
+  exception_type_t exception, mach_exception_data_t code,
+  mach_msg_type_number_t code_cnt, int *flavor, thread_state_t old_state,
+  mach_msg_type_number_t old_state_cnt, thread_state_t new_state,
+  mach_msg_type_number_t *new_state_cnt);
+
+static struct exception_saved_state {
+  exception_mask_t       saved_masks[EXC_TYPES_COUNT];
+  mach_port_t            saved_ports[EXC_TYPES_COUNT];
+  exception_behavior_t   saved_behaviors[EXC_TYPES_COUNT];
+  thread_state_flavor_t  saved_flavors[EXC_TYPES_COUNT];
+  mach_msg_type_number_t saved_exception_types_count;
+} exception_saved_state;
+
+static mach_port_t tgt_exception_port;
+
+// Mirrors __Reply__mach_exception_raise_t generated in mach_excServer.c
+static struct rep_msg {
+  mach_msg_header_t header;
+  NDR_record_t ndr;
+  kern_return_t ret_code;
+} rep_msg;
+
+// Mirrors __Request__mach_exception_raise_t generated in mach_excServer.c
+// with a large trailing pad to avoid MACH_MSG_RCV_TOO_LARGE
+static struct exc_msg {
+  mach_msg_header_t header;
+  // start of the kernel processed data
+  mach_msg_body_t msgh_body;
+  mach_msg_port_descriptor_t thread;
+  mach_msg_port_descriptor_t task;
+  // end of the kernel processed data
+  NDR_record_t ndr;
+  exception_type_t exception;
+  mach_msg_type_number_t code_cnt;
+  mach_exception_data_t code; // an array of int64_t
+  char pad[512];
+} exc_msg;
+
 static void putSymbolicator(JNIEnv *env, jobject this_obj, id symbolicator) {
   (*env)->SetLongField(env, this_obj, symbolicatorID, (jlong)(intptr_t)symbolicator);
 }
@@ -91,9 +149,9 @@ static task_t getTask(JNIEnv *env, jobject this_obj) {
 #define CHECK_EXCEPTION if ((*env)->ExceptionOccurred(env)) { return;}
 #define THROW_NEW_DEBUGGER_EXCEPTION_(str, value) { throw_new_debugger_exception(env, str); return value; }
 #define THROW_NEW_DEBUGGER_EXCEPTION(str) { throw_new_debugger_exception(env, str); return;}
-#define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); } 
-#define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return; } 
-#define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return value; } 
+#define CHECK_EXCEPTION_CLEAR if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); }
+#define CHECK_EXCEPTION_CLEAR_VOID if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return; }
+#define CHECK_EXCEPTION_CLEAR_(value) if ((*env)->ExceptionOccurred(env)) { (*env)->ExceptionClear(env); return value; }
 
 static void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
   jclass exceptionClass = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
@@ -129,7 +187,7 @@ static struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
  * Method:    init0
  * Signature: ()V
  */
-JNIEXPORT void JNICALL 
+JNIEXPORT void JNICALL
 Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_init0(JNIEnv *env, jclass cls) {
   symbolicatorID = (*env)->GetFieldID(env, cls, "symbolicator", "J");
   CHECK_EXCEPTION;
@@ -202,10 +260,10 @@ jlong lookupByNameIncore(
  * Method:    lookupByName0
  * Signature: (Ljava/lang/String;Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL 
+JNIEXPORT jlong JNICALL
 Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_lookupByName0(
-  JNIEnv *env, jobject this_obj, 
-  jstring objectName, jstring symbolName) 
+  JNIEnv *env, jobject this_obj,
+  jstring objectName, jstring symbolName)
 {
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   if (ph != NULL && ph->core != NULL) {
@@ -280,8 +338,8 @@ jbyteArray readBytesFromCore(
  */
 JNIEXPORT jbyteArray JNICALL
 Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
-  JNIEnv *env, jobject this_obj, 
-  jlong addr, jlong numBytes) 
+  JNIEnv *env, jobject this_obj,
+  jlong addr, jlong numBytes)
 {
   print_debug("readBytesFromProcess called. addr = %llx numBytes = %lld\n", addr, numBytes);
 
@@ -320,16 +378,16 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
   task_t gTask = getTask(env, this_obj);
   // Try to read each of the pages.
   for (i = 0; i < pageCount; i++) {
-    result = vm_read(gTask, alignedAddress + i*vm_page_size, vm_page_size, 
+    result = vm_read(gTask, alignedAddress + i*vm_page_size, vm_page_size,
 		     &pages[i], &byteCount);
-    mapped[i] = (result == KERN_SUCCESS); 
+    mapped[i] = (result == KERN_SUCCESS);
     // assume all failures are unmapped pages
   }
 
   print_debug("%ld pages\n", pageCount);
-	
+
   remaining = numBytes;
-	
+
   for (i = 0; i < pageCount; i++) {
     unsigned long len = vm_page_size;
     unsigned long start = 0;
@@ -366,18 +424,18 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_readBytesFromProcess0(
   * integers to host all java threads' id, stack_start, stack_end as:
   * [uid0, stack_start0, stack_end0, uid1, stack_start1, stack_end1, ...]
   *
-  * The work cannot be done at init0 since Threads is not available yet(VM not initialized yet). 
+  * The work cannot be done at init0 since Threads is not available yet(VM not initialized yet).
   * This function should be called only once if succeeded
-  */ 
+  */
 bool fill_java_threads(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) {
   int n = 0, i = 0, j;
   struct reg regs;
-  
+
   jlongArray thrinfos = (*env)->CallObjectMethod(env, this_obj, getJavaThreadsInfo_ID);
   CHECK_EXCEPTION_(false);
   int len = (int)(*env)->GetArrayLength(env, thrinfos);
   uint64_t* cinfos = (uint64_t *)(*env)->GetLongArrayElements(env, thrinfos, NULL);
-  CHECK_EXCEPTION_(false); 
+  CHECK_EXCEPTION_(false);
   n = get_num_threads(ph);
   print_debug("fill_java_threads called, num_of_thread = %d\n", n);
   for (i = 0; i < n; i++) {
@@ -388,7 +446,7 @@ bool fill_java_threads(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) 
     for (j = 0; j < len; j += 3) {
       lwpid_t  uid = cinfos[j];
       uint64_t beg = cinfos[j + 1];
-      uint64_t end = cinfos[j + 2]; 
+      uint64_t end = cinfos[j + 2];
       if ((regs.r_rsp < end && regs.r_rsp >= beg) ||
           (regs.r_rbp < end && regs.r_rbp >= beg)) {
         set_lwp_id(ph, i, uid);
@@ -478,19 +536,19 @@ jlongArray getThreadIntegerRegisterSetFromCore(JNIEnv *env, jobject this_obj, lo
 thread_t
 lookupThreadFromThreadId(task_t task, jlong thread_id) {
   print_debug("lookupThreadFromThreadId thread_id=0x%llx\n", thread_id);
-  
+
   thread_array_t thread_list = NULL;
   mach_msg_type_number_t thread_list_count = 0;
   thread_t result_thread = 0;
   int i;
-  
+
   // get the list of all the send rights
   kern_return_t result = task_threads(task, &thread_list, &thread_list_count);
   if (result != KERN_SUCCESS) {
     print_debug("task_threads returned 0x%x\n", result);
     return 0;
   }
-  
+
   for(i = 0 ; i < thread_list_count; i++) {
     thread_identifier_info_data_t m_ident_info;
     mach_msg_type_number_t count = THREAD_IDENTIFIER_INFO_COUNT;
@@ -501,7 +559,7 @@ lookupThreadFromThreadId(task_t task, jlong thread_id) {
       print_debug("thread_info returned 0x%x\n", result);
       break;
     }
-    
+
     // if this is the one we're looking for, return the send right
     if (thread_id == m_ident_info.thread_id)
     {
@@ -509,10 +567,10 @@ lookupThreadFromThreadId(task_t task, jlong thread_id) {
       break;
     }
   }
-  
+
   vm_size_t thread_list_size = (vm_size_t) (thread_list_count * sizeof (thread_t));
   vm_deallocate(mach_task_self(), (vm_address_t) thread_list, thread_list_count);
-  
+
   return result_thread;
 }
 
@@ -522,10 +580,10 @@ lookupThreadFromThreadId(task_t task, jlong thread_id) {
  * Method:    getThreadIntegerRegisterSet0
  * Signature: (J)[J
  */
-JNIEXPORT jlongArray JNICALL 
+JNIEXPORT jlongArray JNICALL
 Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
-  JNIEnv *env, jobject this_obj, 
-  jlong thread_id) 
+  JNIEnv *env, jobject this_obj,
+  jlong thread_id)
 {
   print_debug("getThreadRegisterSet0 called\n");
 
@@ -578,7 +636,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_getThreadIntegerRegisterSet0(
   primitiveArray[REG_INDEX(RCX)] = state.__rcx;
   primitiveArray[REG_INDEX(RAX)] = state.__rax;
   primitiveArray[REG_INDEX(TRAPNO)] = 0;            // trapno, not used
-  primitiveArray[REG_INDEX(ERR)]    = 0;            // err, not used 
+  primitiveArray[REG_INDEX(ERR)]    = 0;            // err, not used
   primitiveArray[REG_INDEX(RIP)] = state.__rip;
   primitiveArray[REG_INDEX(CS)]  = state.__cs;
   primitiveArray[REG_INDEX(RFL)] = state.__rflags;
@@ -630,78 +688,96 @@ Java_sun_jvm_hotspot_debugger_macosx_MacOSXDebuggerLocal_translateTID0(
   return (jint) usable_tid;
 }
 
+// attach to a process/thread specified by "pid"
+static bool ptrace_attach(pid_t pid) {
+  errno = 0;
+  ptrace(PT_ATTACHEXC, pid, 0, 0);
 
-static bool ptrace_continue(pid_t pid, int signal) {
-  // pass the signal to the process so we don't swallow it
-  int res;
-  if ((res = ptrace(PT_CONTINUE, pid, (caddr_t)1, signal)) < 0) {
-    print_error("attach: ptrace(PT_CONTINUE, %d) failed with %d\n", pid, res);
+  if (errno != 0) {
+    print_error("ptrace_attach: ptrace(PT_ATTACHEXC,...) failed: %s", strerror(errno));
     return false;
   }
   return true;
 }
 
-// waits until the ATTACH has stopped the process
-// by signal SIGSTOP
-static bool ptrace_waitpid(pid_t pid) {
-  int ret;
-  int status;
-  while (true) {
-    // Wait for debuggee to stop.
-    ret = waitpid(pid, &status, 0);
-    if (ret >= 0) {
-      if (WIFSTOPPED(status)) {
-        // Any signal will stop the thread, make sure it is SIGSTOP. Otherwise SIGSTOP
-        // will still be pending and delivered when the process is DETACHED and the process
-        // will go to sleep.
-        if (WSTOPSIG(status) == SIGSTOP) {
-          // Debuggee stopped by SIGSTOP.
-          return true;
-        }
-        if (!ptrace_continue(pid, WSTOPSIG(status))) {
-          print_error("attach: Failed to correctly attach to VM. VM might HANG! [PTRACE_CONT failed, stopped by %d]\n", WSTOPSIG(status));
-          return false;
-        }
-      } else {
-        print_error("attach: waitpid(): Child process exited/terminated (status = 0x%x)\n", status);
-        return false;
-      }
-    } else {
-      switch (errno) {
-        case EINTR:
-          continue;
-          break;
-        case ECHILD:
-          print_error("attach: waitpid() failed. Child process pid (%d) does not exist \n", pid);
-          break;
-        case EINVAL:
-          print_error("attach: waitpid() failed. Invalid options argument.\n");
-          break;
-        default:
-          print_error("attach: waitpid() failed. Unexpected error %d\n",errno);
-          break;
-      }
-      return false;
-    }
+kern_return_t catch_mach_exception_raise(
+  mach_port_t exception_port, mach_port_t thread_port, mach_port_t task_port,
+  exception_type_t exception_type, mach_exception_data_t codes,
+  mach_msg_type_number_t num_codes) {
+
+  print_debug("catch_mach_exception_raise: Exception port = %d thread_port = %d "
+              "task port %d exc type = %d num_codes %d\n",
+              exception_port, thread_port, task_port, exception_type, num_codes);
+
+  // This message should denote a Unix soft signal, with
+  // 1. the exception type = EXC_SOFTWARE
+  // 2. codes[0] (which is the code) = EXC_SOFT_SIGNAL
+  // 3. codes[1] (which is the sub-code) = SIGSTOP
+  if (!(exception_type == EXC_SOFTWARE &&
+        codes[0] == EXC_SOFT_SIGNAL    &&
+        codes[num_codes -1] == SIGSTOP)) {
+    print_error("catch_mach_exception_raise: Message doesn't denote a Unix "
+                "soft signal. exception_type = %d, codes[0] = %d, "
+                "codes[num_codes -1] = %d, num_codes = %d\n",
+                exception_type, codes[0], codes[num_codes - 1], num_codes);
+    return MACH_RCV_INVALID_TYPE;
   }
+  return KERN_SUCCESS;
 }
 
-// attach to a process/thread specified by "pid"
-static bool ptrace_attach(pid_t pid) {
-  int res;
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#endif
-  if ((res = ptrace(PT_ATTACH, pid, 0, 0)) < 0) {
-    print_error("ptrace(PT_ATTACH, %d) failed with %d\n", pid, res);
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+kern_return_t catch_mach_exception_raise_state(
+  mach_port_t exception_port, exception_type_t exception, const mach_exception_data_t code,
+  mach_msg_type_number_t code_cnt, int *flavor, const thread_state_t old_state,
+  mach_msg_type_number_t old_state_cnt, thread_state_t new_state,
+  mach_msg_type_number_t *new_state_cnt) {
+  return MACH_RCV_INVALID_TYPE;
+}
+
+
+kern_return_t catch_mach_exception_raise_state_identity(
+  mach_port_t exception_port, mach_port_t thread, mach_port_t task,
+  exception_type_t exception, mach_exception_data_t code,
+  mach_msg_type_number_t code_cnt, int *flavor,
+  thread_state_t old_state, mach_msg_type_number_t old_state_cnt,
+  thread_state_t new_state, mach_msg_type_number_t *new_state_cnt) {
+  return MACH_RCV_INVALID_TYPE;
+}
+
+// wait to receive an exception message
+static bool wait_for_exception() {
+  kern_return_t result;
+
+  result = mach_msg(&exc_msg.header,
+                    MACH_RCV_MSG,
+                    0,
+                    sizeof(exc_msg),
+                    tgt_exception_port,
+                    MACH_MSG_TIMEOUT_NONE,
+                    MACH_PORT_NULL);
+
+  if (result != MACH_MSG_SUCCESS) {
+    print_error("attach: wait_for_exception: mach_msg() failed: '%s' (%d)\n",
+                mach_error_string(result), result);
     return false;
-  } else {
-    return ptrace_waitpid(pid);
   }
+
+  if (mach_exc_server(&exc_msg.header, &rep_msg.header) == false ||
+      rep_msg.ret_code != KERN_SUCCESS) {
+    print_error("attach: wait_for_exception: mach_exc_server failure\n");
+    if (rep_msg.ret_code != KERN_SUCCESS) {
+      print_error("catch_mach_exception_raise() failed '%s' (%d)\n",
+                  mach_error_string(rep_msg.ret_code), rep_msg.ret_code);
+    }
+    return false;
+  }
+
+  print_debug("reply msg from mach_exc_server: (msg->{bits = %#x, size = %u, "
+              "remote_port = %#x, local_port = %#x, reserved = 0x%x, id = 0x%x},)",
+              rep_msg.header.msgh_bits, rep_msg.header.msgh_size,
+              rep_msg.header.msgh_remote_port, rep_msg.header.msgh_local_port,
+              rep_msg.header.msgh_reserved, rep_msg.header.msgh_id);
+
+  return true;
 }
 
 /*
@@ -719,18 +795,97 @@ JNF_COCOA_ENTER(env);
 
   kern_return_t result;
   task_t gTask = 0;
+
   result = task_for_pid(mach_task_self(), jpid, &gTask);
   if (result != KERN_SUCCESS) {
     print_error("attach: task_for_pid(%d) failed: '%s' (%d)\n", (int)jpid, mach_error_string(result), result);
-    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the process. Could be caused by an incorrect pid or lack of privileges.");
+    THROW_NEW_DEBUGGER_EXCEPTION(
+      "Can't attach to the process. Could be caused by an incorrect pid or lack of privileges.");
   }
   putTask(env, this_obj, gTask);
+
+  // Allocate an exception port.
+  result = mach_port_allocate(mach_task_self(),
+                              MACH_PORT_RIGHT_RECEIVE,
+                              &tgt_exception_port);
+  if (result != KERN_SUCCESS) {
+    print_error("attach: mach_port_allocate() for tgt_exception_port failed: '%s' (%d)\n",
+                mach_error_string(result), result);
+    THROW_NEW_DEBUGGER_EXCEPTION(
+      "Can't attach to the process. Couldn't allocate an exception port.");
+  }
+
+  // Enable the new exception port to send messages.
+  result = mach_port_insert_right (mach_task_self(),
+                                   tgt_exception_port,
+                                   tgt_exception_port,
+                                   MACH_MSG_TYPE_MAKE_SEND);
+  if (result != KERN_SUCCESS) {
+    print_error("attach: mach_port_insert_right() failed for port 0x%x: '%s' (%d)\n",
+                tgt_exception_port, mach_error_string(result), result);
+    THROW_NEW_DEBUGGER_EXCEPTION(
+      "Can't attach to the process. Couldn't add send privileges to the exception port.");
+  }
+
+  // Save the existing original exception ports registered with the target
+  // process (for later restoration while detaching from the process).
+  result = task_get_exception_ports(gTask,
+                                    EXC_MASK_ALL,
+                                    exception_saved_state.saved_masks,
+                                    &exception_saved_state.saved_exception_types_count,
+                                    exception_saved_state.saved_ports,
+                                    exception_saved_state.saved_behaviors,
+                                    exception_saved_state.saved_flavors);
+
+  if (result != KERN_SUCCESS) {
+    print_error("attach: task_get_exception_ports() failed: '%s' (%d)\n",
+                mach_error_string(result), result);
+    THROW_NEW_DEBUGGER_EXCEPTION(
+      "Can't attach to the process. Could not get the target exception ports.");
+  }
+
+  // register the exception port to be used for all future exceptions with the
+  // target process.
+  result = task_set_exception_ports(gTask,
+                                    EXC_MASK_ALL,
+                                    tgt_exception_port,
+                                    EXCEPTION_DEFAULT | MACH_EXCEPTION_CODES,
+                                    THREAD_STATE_NONE);
+
+  if (result != KERN_SUCCESS) {
+    print_error("attach: task_set_exception_ports() failed -- port 0x%x: '%s' (%d)\n",
+                tgt_exception_port, mach_error_string(result), result);
+    mach_port_deallocate(mach_task_self(), gTask);
+    mach_port_deallocate(mach_task_self(), tgt_exception_port);
+    THROW_NEW_DEBUGGER_EXCEPTION(
+      "Can't attach to the process. Could not register the exception port "
+      "with the target process.");
+  }
 
   // use ptrace to stop the process
   // on os x, ptrace only needs to be called on the process, not the individual threads
   if (ptrace_attach(jpid) != true) {
+    print_error("attach: ptrace failure in attaching to %d\n", (int)jpid);
     mach_port_deallocate(mach_task_self(), gTask);
-    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the process");
+    mach_port_deallocate(mach_task_self(), tgt_exception_port);
+    THROW_NEW_DEBUGGER_EXCEPTION("Can't ptrace attach to the process");
+  }
+
+  if (wait_for_exception() != true) {
+    mach_port_deallocate(mach_task_self(), gTask);
+    mach_port_deallocate(mach_task_self(), tgt_exception_port);
+    THROW_NEW_DEBUGGER_EXCEPTION(
+      "Can't attach to the process. Issues with reception of the exception message.");
+  }
+
+  // suspend all the threads in the task
+  result = task_suspend(gTask);
+  if (result != KERN_SUCCESS) {
+    print_error("attach: task_suspend() failed: '%s' (%d)\n",
+                mach_error_string(result), result);
+    mach_port_deallocate(mach_task_self(), gTask);
+    mach_port_deallocate(mach_task_self(), tgt_exception_port);
+    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach. Unable to suspend all the threads in the task.");
   }
 
   id symbolicator = nil;
@@ -745,13 +900,15 @@ JNF_COCOA_ENTER(env);
 
   putSymbolicator(env, this_obj, symbolicator);
   if (symbolicator == nil) {
+    mach_port_deallocate(mach_task_self(), gTask);
+    mach_port_deallocate(mach_task_self(), tgt_exception_port);
     THROW_NEW_DEBUGGER_EXCEPTION("Can't attach symbolicator to the process");
   }
 
 JNF_COCOA_EXIT(env);
 }
 
-/** For core file, 
+/** For core file,
     called from Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2Ljava_lang_String_2 */
 static void fillLoadObjects(JNIEnv* env, jobject this_obj, struct ps_prochandle* ph) {
   int n = 0, i = 0;
@@ -811,6 +968,19 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2L
   fillLoadObjects(env, this_obj, ph);
 }
 
+static void detach_cleanup(task_t gTask, JNIEnv *env, jobject this_obj, bool throw_exception) {
+  mach_port_deallocate(mach_task_self(), tgt_exception_port);
+  mach_port_deallocate(mach_task_self(), gTask);
+
+  id symbolicator = getSymbolicator(env, this_obj);
+  if (symbolicator != nil) {
+    CFRelease(symbolicator);
+  }
+  if (throw_exception) {
+    THROW_NEW_DEBUGGER_EXCEPTION("Cannot detach.");
+  }
+}
+
 /*
  * Class:     sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal
  * Method:    detach0
@@ -827,26 +997,55 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_detach0(
      return;
   }
 JNF_COCOA_ENTER(env);
-  task_t gTask = getTask(env, this_obj);
 
-  // detach from the ptraced process causing it to resume execution
-  int pid;
-  kern_return_t k_res;
-  k_res = pid_for_task(gTask, &pid);
-  if (k_res != KERN_SUCCESS) {
-    print_error("detach: pid_for_task(%d) failed (%d)\n", pid, k_res);
-  }
-  else {
-    int res = ptrace(PT_DETACH, pid, 0, 0);
-    if (res < 0) {
-      print_error("detach: ptrace(PT_DETACH, %d) failed (%d)\n", pid, res);
+  task_t gTask = getTask(env, this_obj);
+  kern_return_t k_res = 0;
+
+  // Restore the pre-saved original exception ports registered with the target process
+  for (uint32_t i = 0; i < exception_saved_state.saved_exception_types_count; ++i) {
+    k_res = task_set_exception_ports(gTask,
+                                     exception_saved_state.saved_masks[i],
+                                     exception_saved_state.saved_ports[i],
+                                     exception_saved_state.saved_behaviors[i],
+                                     exception_saved_state.saved_flavors[i]);
+    if (k_res != KERN_SUCCESS) {
+      print_error("detach: task_set_exception_ports failed with %d while "
+                  "restoring the target exception ports.\n", k_res);
+      detach_cleanup(gTask, env, this_obj, true);
     }
   }
 
-  mach_port_deallocate(mach_task_self(), gTask);
-  id symbolicator = getSymbolicator(env, this_obj);
-  if (symbolicator != nil) {
-    CFRelease(symbolicator);
+  // detach from the ptraced process causing it to resume execution
+  int pid;
+  k_res = pid_for_task(gTask, &pid);
+  if (k_res != KERN_SUCCESS) {
+    print_error("detach: pid_for_task(%d) failed (%d)\n", pid, k_res);
+    detach_cleanup(gTask, env, this_obj, true);
   }
+  else {
+    errno = 0;
+    ptrace(PT_DETACH, pid, (caddr_t)1, 0);
+    if (errno != 0) {
+      print_error("detach: ptrace(PT_DETACH,...) failed: %s", strerror(errno));
+      detach_cleanup(gTask, env, this_obj, true);
+    }
+  }
+
+  // reply to the previous exception message
+  k_res = mach_msg(&rep_msg.header,
+                   MACH_SEND_MSG| MACH_SEND_INTERRUPT,
+                   rep_msg.header.msgh_size,
+                   0,
+                   MACH_PORT_NULL,
+                   MACH_MSG_TIMEOUT_NONE,
+                   MACH_PORT_NULL);
+  if (k_res != MACH_MSG_SUCCESS) {
+    print_error("detach: mach_msg() for replying to pending exceptions failed: '%s' (%d)\n",
+                 mach_error_string(k_res), k_res);
+    detach_cleanup(gTask, env, this_obj, true);
+  }
+
+  detach_cleanup(gTask, env, this_obj, false);
+
 JNF_COCOA_EXIT(env);
 }

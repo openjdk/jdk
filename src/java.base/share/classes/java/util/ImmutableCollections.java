@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,16 +213,23 @@ class ImmutableCollections {
         @Stable
         private final int size;
 
+        @Stable
+        private final boolean isListIterator;
+
         private int cursor;
 
         ListItr(List<E> list, int size) {
-            this(list, size, 0);
+            this.list = list;
+            this.size = size;
+            this.cursor = 0;
+            isListIterator = false;
         }
 
         ListItr(List<E> list, int size, int index) {
             this.list = list;
             this.size = size;
             this.cursor = index;
+            isListIterator = true;
         }
 
         public boolean hasNext() {
@@ -245,10 +252,16 @@ class ImmutableCollections {
         }
 
         public boolean hasPrevious() {
+            if (!isListIterator) {
+                throw uoe();
+            }
             return cursor != 0;
         }
 
         public E previous() {
+            if (!isListIterator) {
+                throw uoe();
+            }
             try {
                 int i = cursor - 1;
                 E previous = list.get(i);
@@ -260,10 +273,16 @@ class ImmutableCollections {
         }
 
         public int nextIndex() {
+            if (!isListIterator) {
+                throw uoe();
+            }
             return cursor;
         }
 
         public int previousIndex() {
+            if (!isListIterator) {
+                throw uoe();
+            }
             return cursor - 1;
         }
 

@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633 8026567 8162363
- *           8175200 8186332 8182765 8196202
+ *           8175200 8186332 8182765 8196202 8187288
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -146,7 +146,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 + "<dd><code>V</code> - This is the second type "
                 + "parameter.",
                 // Signature of method with type parameters
-                "public&nbsp;&lt;T extends java.util.List,V&gt;&nbsp;"
+                "public&nbsp;&lt;T extends java.util.List,&#8203;V&gt;&nbsp;"
                 + "java.lang.String[]&nbsp;methodThatHasTypeParameters",
                 // Method that returns TypeParameters
                 "<td class=\"colFirst\"><code><a href=\"TypeParameters.html\" "

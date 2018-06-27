@@ -28,10 +28,11 @@ import java.util.Map;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
 
-/*
+/**
  * @test
  * @bug 8190198
  * @summary Test clhsdb where command
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm ClhsdbWhere
  */

@@ -265,9 +265,11 @@ static OopMap* save_live_registers(StubAssembler* sasm,
   __ push(RegSet::range(r0, r29), sp);         // integer registers except lr & sp
 
   if (save_fpu_registers) {
-    for (int i = 30; i >= 0; i -= 2)
-      __ stpd(as_FloatRegister(i), as_FloatRegister(i+1),
-              Address(__ pre(sp, -2 * wordSize)));
+    for (int i = 31; i>= 0; i -= 4) {
+      __ sub(sp, sp, 4 * wordSize); // no pre-increment for st1. Emulate it without modifying other registers
+      __ st1(as_FloatRegister(i-3), as_FloatRegister(i-2), as_FloatRegister(i-1),
+          as_FloatRegister(i), __ T1D, Address(sp));
+    }
   } else {
     __ add(sp, sp, -32 * wordSize);
   }
@@ -277,9 +279,9 @@ static OopMap* save_live_registers(StubAssembler* sasm,
 
 static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registers = true) {
   if (restore_fpu_registers) {
-    for (int i = 0; i < 32; i += 2)
-      __ ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
-              Address(__ post(sp, 2 * wordSize)));
+    for (int i = 0; i < 32; i += 4)
+      __ ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
+          as_FloatRegister(i+3), __ T1D, Address(__ post(sp, 4 * wordSize)));
   } else {
     __ add(sp, sp, 32 * wordSize);
   }
@@ -290,9 +292,9 @@ static void restore_live_registers(StubAssembler* sasm, bool restore_fpu_registe
 static void restore_live_registers_except_r0(StubAssembler* sasm, bool restore_fpu_registers = true)  {
 
   if (restore_fpu_registers) {
-    for (int i = 0; i < 32; i += 2)
-      __ ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
-              Address(__ post(sp, 2 * wordSize)));
+    for (int i = 0; i < 32; i += 4)
+      __ ld1(as_FloatRegister(i), as_FloatRegister(i+1), as_FloatRegister(i+2),
+          as_FloatRegister(i+3), __ T1D, Address(__ post(sp, 4 * wordSize)));
   } else {
     __ add(sp, sp, 32 * wordSize);
   }

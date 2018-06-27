@@ -2709,11 +2709,11 @@ Handle SystemDictionary::link_method_handle_constant(Klass* caller,
   java_lang_invoke_MemberName::set_flags(mname(), MethodHandles::ref_kind_to_flags(ref_kind));
 
   if (ref_kind == JVM_REF_invokeVirtual &&
-      callee->name() == vmSymbols::java_lang_invoke_MethodHandle() &&
-      (name == vmSymbols::invoke_name() || name == vmSymbols::invokeExact_name())) {
-    // Skip resolution for j.l.i.MethodHandle.invoke()/invokeExact().
-    // They are public signature polymorphic methods, but require appendix argument
-    // which MemberName resolution doesn't handle. There's special logic on JDK side to handle them
+      MethodHandles::is_signature_polymorphic_public_name(callee, name)) {
+    // Skip resolution for public signature polymorphic methods such as
+    // j.l.i.MethodHandle.invoke()/invokeExact() and those on VarHandle
+    // They require appendix argument which MemberName resolution doesn't handle.
+    // There's special logic on JDK side to handle them
     // (see MethodHandles.linkMethodHandleConstant() and MethodHandles.findVirtualForMH()).
   } else {
     MethodHandles::resolve_MemberName(mname, caller, /*speculative_resolve*/false, CHECK_(empty));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,7 @@ class TestStringDeduplicationTools {
                                                       YoungGC,
                                                       "-Xlog:gc,gc+stringdedup=trace");
         output.shouldNotContain("Full GC");
-        output.shouldContain("Pause Young (G1 Evacuation Pause)");
+        output.shouldContain("Pause Young (Normal) (G1 Evacuation Pause)");
         output.shouldContain("Concurrent String Deduplication");
         output.shouldContain("Deduplicated:");
         output.shouldHaveExitValue(0);
@@ -347,7 +347,7 @@ class TestStringDeduplicationTools {
                                                       DefaultAgeThreshold,
                                                       FullGC,
                                                       "-Xlog:gc,gc+stringdedup=trace");
-        output.shouldNotContain("Pause Young (G1 Evacuation Pause)");
+        output.shouldNotContain("Pause Young (Normal) (G1 Evacuation Pause)");
         output.shouldContain("Full GC");
         output.shouldContain("Concurrent String Deduplication");
         output.shouldContain("Deduplicated:");

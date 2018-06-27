@@ -55,46 +55,46 @@ case "$OS" in
     ARCH=`isainfo`
     case "$ARCH" in
       sparc* )
-	FS="/"
-	PS=":"
-	CP="${FS}bin${FS}cp"
-	CHMOD="${FS}bin${FS}chmod"
-	;;
+    FS="/"
+    PS=":"
+    CP="${FS}bin${FS}cp"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
       i[3-6]86 )
-	FS="/"
-	PS=":"
-	CP="${FS}bin${FS}cp"
-	CHMOD="${FS}bin${FS}chmod"
-	;;
+    FS="/"
+    PS=":"
+    CP="${FS}bin${FS}cp"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
       amd64* )
-	FS="/"
-	PS=":"
-	CP="${FS}bin${FS}cp"
-	CHMOD="${FS}bin${FS}chmod"
-	;;
+    FS="/"
+    PS=":"
+    CP="${FS}bin${FS}cp"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
       * )
 #     ?itanium? )
 #     amd64* )
-	echo "Unsupported System: Solaris ${ARCH}"
-	exit 0;
-	;;
+    echo "Unsupported System: Solaris ${ARCH}"
+    exit 0;
+    ;;
     esac
     ;;
   Linux )
     ARCH=`uname -m`
     case "$ARCH" in
       i[3-6]86 )
-	FS="/"
-	PS=":"
-	CP="${FS}bin${FS}cp"
-	CHMOD="${FS}bin${FS}chmod"
-	;;
+    FS="/"
+    PS=":"
+    CP="${FS}bin${FS}cp"
+    CHMOD="${FS}bin${FS}chmod"
+    ;;
       * )
 #     ia64 )
 #     x86_64 )
-	echo "Unsupported System: Linux ${ARCH}"
-	exit 0;
-	;;
+    echo "Unsupported System: Linux ${ARCH}"
+    exit 0;
+    ;;
     esac
     ;;
   Windows* )
@@ -126,23 +126,44 @@ ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 
 # compile test
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-	-classpath ${TESTSRC} \
-	-d ${TESTCLASSES} \
-	${TESTSRC}${FS}ClientAuth.java \
-	${TESTSRC}${FS}..${FS}PKCS11Test.java
+    -classpath ${TESTSRC} \
+    -d ${TESTCLASSES} \
+    ${TESTSRC}${FS}ClientAuth.java \
+    ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
 # run test
-echo "Run ClientAuth ..."
+echo "Run ClientAuth TLSv1 ..."
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-	-classpath ${TESTCLASSES} \
-	-DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
-	-DCUSTOM_DB_DIR=${TESTCLASSES} \
-	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \
-	-DNO_DEFAULT=true \
-	-DNO_DEIMOS=true \
-	-Dtest.src=${TESTSRC} \
-	-Dtest.classes=${TESTCLASSES} \
-	ClientAuth
+    -classpath ${TESTCLASSES} \
+    -DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
+    -DCUSTOM_DB_DIR=${TESTCLASSES} \
+    -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \
+    -DNO_DEFAULT=true \
+    -DNO_DEIMOS=true \
+    -Dtest.src=${TESTSRC} \
+    -Dtest.classes=${TESTCLASSES} \
+    ClientAuth TLSv1
+
+# save error status
+status=$?
+
+# return if failed
+if [ "${status}" != "0" ] ; then
+    exit $status
+fi
+
+# run test
+echo "Run ClientAuth TLSv1.1 ..."
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
+    -classpath ${TESTCLASSES} \
+    -DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
+    -DCUSTOM_DB_DIR=${TESTCLASSES} \
+    -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \
+    -DNO_DEFAULT=true \
+    -DNO_DEIMOS=true \
+    -Dtest.src=${TESTSRC} \
+    -Dtest.classes=${TESTCLASSES} \
+    ClientAuth TLSv1.1
 
 # save error status
 status=$?
@@ -155,15 +176,15 @@ fi
 # run test with specified TLS protocol and cipher suite
 echo "Run ClientAuth TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA"
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-	-classpath ${TESTCLASSES} \
-	-DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
-	-DCUSTOM_DB_DIR=${TESTCLASSES} \
-	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \
-	-DNO_DEFAULT=true \
-	-DNO_DEIMOS=true \
-	-Dtest.src=${TESTSRC} \
-	-Dtest.classes=${TESTCLASSES} \
-	ClientAuth TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA
+    -classpath ${TESTCLASSES} \
+    -DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
+    -DCUSTOM_DB_DIR=${TESTCLASSES} \
+    -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \
+    -DNO_DEFAULT=true \
+    -DNO_DEIMOS=true \
+    -Dtest.src=${TESTSRC} \
+    -Dtest.classes=${TESTCLASSES} \
+    ClientAuth TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA
 
 # save error status
 status=$?

@@ -45,6 +45,8 @@ import java.util.stream.Stream;
  * @test TestInheritFD
  * @bug 8176717 8176809
  * @summary a new process should not inherit open file descriptors
+ * @comment On Aix lsof requires root privileges.
+ * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

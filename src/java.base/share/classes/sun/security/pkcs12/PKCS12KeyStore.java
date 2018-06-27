@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,28 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /**
+     * Retries an action with password "\0" if "" fails.
+     * @param <T> the return type
+     */
+    @FunctionalInterface
+    private interface RetryWithZero<T> {
+
+        T tryOnce(char[] password) throws Exception;
+
+        static <S> S run(RetryWithZero<S> f, char[] password) throws Exception {
+            try {
+                return f.tryOnce(password);
+            } catch (Exception e) {
+                if (password.length == 0) {
+                    // Retry using an empty password with a NUL terminator.
+                    return f.tryOnce(new char[1]);
+                }
+                throw e;
+            }
+        }
+    }
+
+    /**
      * Private keys and certificates are stored in a map.
      * Map entries are keyed by alias names.
      */
@@ -370,26 +392,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 }
             }
 
-            byte[] keyInfo;
-            while (true) {
-                try {
-                    // Use JCE
-                    SecretKey skey = getPBEKey(password);
-                    Cipher cipher = Cipher.getInstance(
+            byte[] keyInfo = RetryWithZero.run(pass -> {
+                // Use JCE
+                SecretKey skey = getPBEKey(pass);
+                Cipher cipher = Cipher.getInstance(
                         mapPBEParamsToAlgorithm(algOid, algParams));
-                    cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
-                    keyInfo = cipher.doFinal(encryptedKey);
-                    break;
-                } catch (Exception e) {
-                    if (password.length == 0) {
-                        // Retry using an empty password
-                        // without a NULL terminator.
-                        password = new char[1];
-                        continue;
-                    }
-                    throw e;
-                }
-            }
+                cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
+                return cipher.doFinal(encryptedKey);
+            }, password);
 
             /*
              * Parse the key algorithm and then use a JCA key factory
@@ -2079,25 +2089,19 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         " iterations: " + ic + ")");
                 }
 
-                while (true) {
-                    try {
+                byte[] rawData = safeContentsData;
+                try {
+                    safeContentsData = RetryWithZero.run(pass -> {
                         // Use JCE
-                        SecretKey skey = getPBEKey(password);
+                        SecretKey skey = getPBEKey(pass);
                         Cipher cipher = Cipher.getInstance(algOid.toString());
                         cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
-                        safeContentsData = cipher.doFinal(safeContentsData);
-                        break;
-                    } catch (Exception e) {
-                        if (password.length == 0) {
-                            // Retry using an empty password
-                            // without a NULL terminator.
-                            password = new char[1];
-                            continue;
-                        }
-                        throw new IOException("keystore password was incorrect",
+                        return cipher.doFinal(rawData);
+                    }, password);
+                } catch (Exception e) {
+                    throw new IOException("keystore password was incorrect",
                             new UnrecoverableKeyException(
-                                "failed to decrypt safe contents entry: " + e));
-                    }
+                                    "failed to decrypt safe contents entry: " + e));
                 }
             } else {
                 throw new IOException("public key protected PKCS12" +
@@ -2128,20 +2132,24 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 Mac m = Mac.getInstance("HmacPBE" + algName);
                 PBEParameterSpec params =
                         new PBEParameterSpec(macData.getSalt(), ic);
-                SecretKey key = getPBEKey(password);
-                m.init(key, params);
-                m.update(authSafeData);
-                byte[] macResult = m.doFinal();
 
-                if (debug != null) {
-                    debug.println("Checking keystore integrity " +
-                        "(" + m.getAlgorithm() + " iterations: " + ic + ")");
-                }
+                RetryWithZero.run(pass -> {
+                    SecretKey key = getPBEKey(pass);
+                    m.init(key, params);
+                    m.update(authSafeData);
+                    byte[] macResult = m.doFinal();
 
-                if (!MessageDigest.isEqual(macData.getDigest(), macResult)) {
-                   throw new UnrecoverableKeyException("Failed PKCS12" +
-                                        " integrity checking");
-                }
+                    if (debug != null) {
+                        debug.println("Checking keystore integrity " +
+                                "(" + m.getAlgorithm() + " iterations: " + ic + ")");
+                    }
+
+                    if (!MessageDigest.isEqual(macData.getDigest(), macResult)) {
+                        throw new UnrecoverableKeyException("Failed PKCS12" +
+                                " integrity checking");
+                    }
+                    return (Void)null;
+                }, password);
             } catch (Exception e) {
                 throw new IOException("Integrity check failed: " + e, e);
             }

@@ -212,7 +212,7 @@ bool VM_PrintThreads::doit_prologue() {
 }
 
 void VM_PrintThreads::doit() {
-  Threads::print_on(_out, true, false, _print_concurrent_locks);
+  Threads::print_on(_out, true, false, _print_concurrent_locks, _print_extended_info);
 }
 
 void VM_PrintThreads::doit_epilogue() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@ package sun.security.ssl;
  */
 interface SSLRecord extends Record {
 
-    static final int    headerSize = 5;         // SSLv3 record header
+    static final int    headerSize = 5;             // SSLv3 record header
+    static final int    handshakeHeaderSize = 4;    // SSLv3 handshake header
 
     /*
      * The size of the header plus the max IV length
@@ -67,19 +68,6 @@ interface SSLRecord extends Record {
                                     + maxMacSize;           // MAC or AEAD tag
 
     /*
-     * For CBC protection in SSL3/TLS1, we break some plaintext into two
-     * packets.  Max application data size for the second packet.
-     */
-    static final int    maxDataSizeMinusOneByteRecord =
-                                  maxDataSize       // max data size
-                                - (                 // max one byte record size
-                                      headerPlusMaxIVSize   // header + iv
-                                    + 1             // one byte data
-                                    + maxPadding    // padding
-                                    + maxMacSize    // MAC
-                                  );
-
-    /*
      * The maximum large record size.
      *
      * Some SSL/TLS implementations support large fragment upto 2^15 bytes,
@@ -91,18 +79,6 @@ interface SSLRecord extends Record {
     static final int    maxLargeRecordSize =
                 maxRecordSize   // Max size with a conforming implementation
               + maxDataSize;    // extra 2^14 bytes for large data packets.
-
-
-    /*
-     * Maximum record size for alert and change cipher spec records.
-     * They only contain 2 and 1 bytes of data, respectively.
-     * Allocate a smaller array.
-     */
-    static final int    maxAlertRecordSize =
-                                      headerPlusMaxIVSize   // header + iv
-                                    + 2                     // alert
-                                    + maxPadding            // padding
-                                    + maxMacSize;           // MAC
 
     /*
      * We may need to send this SSL v2 "No Cipher" message back, if we

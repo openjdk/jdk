@@ -57,7 +57,7 @@ inline oop JNIHandles::resolve_impl(jobject handle) {
   if (is_jweak(handle)) {       // Unlikely
     result = resolve_jweak(handle);
   } else {
-    result = NativeAccess<IN_CONCURRENT_ROOT>::oop_load(jobject_ptr(handle));
+    result = NativeAccess<>::oop_load(jobject_ptr(handle));
     // Construction of jobjects canonicalize a null value into a null
     // jobject, so for non-jweak the pointee should never be null.
     assert(external_guard || result != NULL, "Invalid JNI handle");

@@ -37,8 +37,8 @@ TEST_F(G1HeapVerifierTest, parse) {
 
   // Default is to verify everything.
   ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyAll));
-  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungOnly));
-  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyInitialMark));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungNormal));
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyConcurrentStart));
   ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyMixed));
   ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyRemark));
   ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyCleanup));
@@ -47,18 +47,18 @@ TEST_F(G1HeapVerifierTest, parse) {
   // Setting one will disable all other.
   G1Arguments::parse_verification_type("full");
   ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyAll));
-  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungOnly));
-  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyInitialMark));
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungNormal));
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyConcurrentStart));
   ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyMixed));
   ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyRemark));
   ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyCleanup));
   ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyFull));
 
   // Verify case sensitivity.
-  G1Arguments::parse_verification_type("YOUNG-ONLY");
-  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungOnly));
-  G1Arguments::parse_verification_type("young-only");
-  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungOnly));
+  G1Arguments::parse_verification_type("YOUNG-NORMAL");
+  ASSERT_FALSE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungNormal));
+  G1Arguments::parse_verification_type("young-normal");
+  ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyYoungNormal));
 
   // Verify perfect match
   G1Arguments::parse_verification_type("mixedgc");
@@ -69,7 +69,7 @@ TEST_F(G1HeapVerifierTest, parse) {
   ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyMixed));
 
   // Verify the last three
-  G1Arguments::parse_verification_type("initial-mark");
+  G1Arguments::parse_verification_type("concurrent-start");
   G1Arguments::parse_verification_type("remark");
   G1Arguments::parse_verification_type("cleanup");
   ASSERT_TRUE(G1HeapVerifier::should_verify(G1HeapVerifier::G1VerifyRemark));

@@ -94,10 +94,6 @@ class OopIterateClosure : public OopClosure {
   virtual void do_klass(Klass* k) = 0;
   virtual void do_cld(ClassLoaderData* cld) = 0;
 
-  // True iff this closure may be safely applied more than once to an oop
-  // location without an intervening "major reset" (like the end of a GC).
-  virtual bool idempotent() { return false; }
-
 #ifdef ASSERT
   // Default verification of each visited oop field.
   template <typename T> void verify(T* p);
@@ -115,16 +111,6 @@ public:
   virtual bool do_metadata() { return false; }
   virtual void do_klass(Klass* k) { ShouldNotReachHere(); }
   virtual void do_cld(ClassLoaderData* cld) { ShouldNotReachHere(); }
-};
-
-// Wrapper closure only used to implement oop_iterate_no_header().
-class NoHeaderExtendedOopClosure : public BasicOopIterateClosure {
-  OopClosure* _wrapped_closure;
- public:
-  NoHeaderExtendedOopClosure(OopClosure* cl) : _wrapped_closure(cl) {}
-  // Warning: this calls the virtual version do_oop in the the wrapped closure.
-  virtual void do_oop(oop* p)       { _wrapped_closure->do_oop(p); }
-  virtual void do_oop(narrowOop* p) { _wrapped_closure->do_oop(p); }
 };
 
 class KlassClosure : public Closure {

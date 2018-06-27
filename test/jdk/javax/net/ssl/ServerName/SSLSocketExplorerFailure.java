@@ -45,6 +45,7 @@ import java.nio.channels.*;
 import java.util.*;
 import java.net.*;
 import javax.net.ssl.*;
+import java.security.Security;
 
 public class SSLSocketExplorerFailure {
 
@@ -232,6 +233,9 @@ public class SSLSocketExplorerFailure {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+        Security.setProperty("jdk.certpath.disabledAlgorithms", "");
+
         String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +
                 "/" + keyStoreFile;

@@ -180,7 +180,7 @@ class VerifyCLDClosure: public CLDClosure {
   }
 };
 
-class VerifyLivenessOopClosure: public OopClosure {
+class VerifyLivenessOopClosure: public BasicOopIterateClosure {
   G1CollectedHeap* _g1h;
   VerifyOption _vo;
 public:
@@ -226,7 +226,7 @@ public:
         guarantee(!_g1h->is_obj_dead(o), "Full GC marking and concurrent mark mismatch");
       }
 
-      o->oop_iterate_no_header(&isLive);
+      o->oop_iterate(&isLive);
       if (!_hr->obj_allocated_since_prev_marking(o)) {
         size_t obj_size = o->size();    // Make sure we don't overflow
         _live_bytes += (obj_size * HeapWordSize);
@@ -236,7 +236,7 @@ public:
   size_t live_bytes() { return _live_bytes; }
 };
 
-class VerifyArchiveOopClosure: public OopClosure {
+class VerifyArchiveOopClosure: public BasicOopIterateClosure {
   HeapRegion* _hr;
 public:
   VerifyArchiveOopClosure(HeapRegion *hr)
@@ -269,7 +269,7 @@ public:
   void do_object(oop o) {
     VerifyArchiveOopClosure checkOop(_hr);
     assert(o != NULL, "Should not be here for NULL oops");
-    o->oop_iterate_no_header(&checkOop);
+    o->oop_iterate(&checkOop);
   }
 };
 

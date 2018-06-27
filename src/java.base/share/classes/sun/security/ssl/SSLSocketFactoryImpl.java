@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ import javax.net.ssl.SSLSocketFactory;
  */
 public final class SSLSocketFactoryImpl extends SSLSocketFactory {
 
-    private SSLContextImpl context;
+    private final SSLContextImpl context;
 
     /**
      * Constructor used to instantiate the default factory. This method is
@@ -180,7 +180,7 @@ public final class SSLSocketFactoryImpl extends SSLSocketFactory {
      */
     @Override
     public String[] getDefaultCipherSuites() {
-        return context.getDefaultCipherSuiteList(false).toStringArray();
+        return CipherSuite.namesOf(context.getDefaultCipherSuites(false));
     }
 
     /**
@@ -193,6 +193,6 @@ public final class SSLSocketFactoryImpl extends SSLSocketFactory {
      */
     @Override
     public String[] getSupportedCipherSuites() {
-        return context.getSupportedCipherSuiteList().toStringArray();
+        return CipherSuite.namesOf(context.getSupportedCipherSuites());
     }
 }

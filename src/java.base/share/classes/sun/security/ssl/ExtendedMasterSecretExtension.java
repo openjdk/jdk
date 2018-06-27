@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,46 +27,365 @@
 package sun.security.ssl;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import javax.net.ssl.SSLProtocolException;
+import static sun.security.ssl.SSLExtension.CH_EXTENDED_MASTER_SECRET;
+import sun.security.ssl.SSLExtension.ExtensionConsumer;
+import static sun.security.ssl.SSLExtension.SH_EXTENDED_MASTER_SECRET;
+import sun.security.ssl.SSLExtension.SSLExtensionSpec;
+import sun.security.ssl.SSLHandshake.HandshakeMessage;
 
 /**
- * Extended Master Secret TLS extension (TLS 1.0+). This extension
- * defines how to calculate the TLS connection master secret and
- * mitigates some types of man-in-the-middle attacks.
- *
- * See further information in
- * <a href="https://tools.ietf.org/html/rfc7627">RFC 7627</a>.
- *
- * @author Martin Balao (mbalao@redhat.com)
+ * Pack of the "extended_master_secret" extensions [RFC 7627].
  */
-final class ExtendedMasterSecretExtension extends HelloExtension {
-    ExtendedMasterSecretExtension() {
-        super(ExtensionType.EXT_EXTENDED_MASTER_SECRET);
-    }
+final class ExtendedMasterSecretExtension {
+    static final HandshakeProducer chNetworkProducer =
+            new CHExtendedMasterSecretProducer();
+    static final ExtensionConsumer chOnLoadConsumer =
+            new CHExtendedMasterSecretConsumer();
+    static final HandshakeAbsence chOnLoadAbsence =
+            new CHExtendedMasterSecretAbsence();
 
-    ExtendedMasterSecretExtension(HandshakeInStream s,
-            int len) throws IOException {
-        super(ExtensionType.EXT_EXTENDED_MASTER_SECRET);
+    static final HandshakeProducer shNetworkProducer =
+            new SHExtendedMasterSecretProducer();
+    static final ExtensionConsumer shOnLoadConsumer =
+            new SHExtendedMasterSecretConsumer();
+    static final HandshakeAbsence shOnLoadAbsence =
+            new SHExtendedMasterSecretAbsence();
 
-        if (len != 0) {
-            throw new SSLProtocolException("Invalid " + type + " extension");
+    static final SSLStringizer emsStringizer =
+            new ExtendedMasterSecretStringizer();
+
+    /**
+     * The "extended_master_secret" extension.
+     */
+    static final class ExtendedMasterSecretSpec implements SSLExtensionSpec {
+        // A nominal object that does not holding any real renegotiation info.
+        static final ExtendedMasterSecretSpec NOMINAL =
+                new ExtendedMasterSecretSpec();
+
+        private ExtendedMasterSecretSpec() {
+            // blank
+        }
+
+        private ExtendedMasterSecretSpec(ByteBuffer m) throws IOException {
+            // Parse the extension.
+            if (m.hasRemaining()) {
+                throw new SSLProtocolException(
+                    "Invalid extended_master_secret extension data: " +
+                    "not empty");
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "<empty>";
         }
     }
 
-    @Override
-    int length() {
-        return 4;       // 4: extension type and length fields
+    private static final
+            class ExtendedMasterSecretStringizer implements SSLStringizer {
+        @Override
+        public String toString(ByteBuffer buffer) {
+            try {
+                return (new ExtendedMasterSecretSpec(buffer)).toString();
+            } catch (IOException ioe) {
+                // For debug logging only, so please swallow exceptions.
+                return ioe.getMessage();
+            }
+        }
     }
 
-    @Override
-    void send(HandshakeOutStream s) throws IOException {
-        s.putInt16(type.id);    // ExtensionType extension_type;
-        s.putInt16(0);          // extension_data length
+    /**
+     * Network data producer of a "extended_master_secret" extension in
+     * the ClientHello handshake message.
+     */
+    private static final
+            class CHExtendedMasterSecretProducer implements HandshakeProducer {
+        // Prevent instantiation of this class.
+        private CHExtendedMasterSecretProducer() {
+            // blank
+        }
+
+        @Override
+        public byte[] produce(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in client side only.
+            ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+            // Is it a supported and enabled extension?
+            if (!chc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+                    !SSLConfiguration.useExtendedMasterSecret ||
+                    !chc.conContext.protocolVersion.useTLS10PlusSpec()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine(
+                        "Ignore unavailable extended_master_secret extension");
+                }
+
+                return null;
+            }
+
+            if (chc.handshakeSession == null ||
+                    chc.handshakeSession.useExtendedMasterSecret) {
+                byte[] extData = new byte[0];
+                chc.handshakeExtensions.put(CH_EXTENDED_MASTER_SECRET,
+                        ExtendedMasterSecretSpec.NOMINAL);
+
+                return extData;
+            }
+
+            return null;
+        }
     }
 
-    @Override
-    public String toString() {
-        return "Extension " + type;
+    /**
+     * Network data producer of a "extended_master_secret" extension in
+     * the ServerHello handshake message.
+     */
+    private static final
+            class CHExtendedMasterSecretConsumer implements ExtensionConsumer {
+        // Prevent instantiation of this class.
+        private CHExtendedMasterSecretConsumer() {
+            // blank
+        }
+
+        @Override
+        public void consume(ConnectionContext context,
+            HandshakeMessage message, ByteBuffer buffer) throws IOException {
+
+            // The consuming happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // Is it a supported and enabled extension?
+            if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+                    !SSLConfiguration.useExtendedMasterSecret ||
+                    !shc.negotiatedProtocol.useTLS10PlusSpec()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Ignore unavailable extension: " +
+                            CH_EXTENDED_MASTER_SECRET.name);
+                }
+                return;     // ignore the extension
+            }
+
+            // Parse the extension.
+            ExtendedMasterSecretSpec spec;
+            try {
+                spec = new ExtendedMasterSecretSpec(buffer);
+            } catch (IOException ioe) {
+                shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
+                return;     // fatal() always throws, make the compiler happy.
+            }
+
+            if (shc.isResumption && shc.resumingSession != null &&
+                    !shc.resumingSession.useExtendedMasterSecret) {
+                // For abbreviated handshake request, If the original
+                // session did not use the "extended_master_secret"
+                // extension but the new ClientHello contains the
+                // extension, then the server MUST NOT perform the
+                // abbreviated handshake.  Instead, it SHOULD continue
+                // with a full handshake.
+                shc.isResumption = false;
+                shc.resumingSession = null;
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine(
+                        "abort session resumption which did not use " +
+                        "Extended Master Secret extension");
+                }
+            }
+
+            // Update the context.
+            //
+            shc.handshakeExtensions.put(
+                CH_EXTENDED_MASTER_SECRET, ExtendedMasterSecretSpec.NOMINAL);
+
+            // No impact on session resumption.
+        }
+    }
+
+    /**
+     * The absence processing if a "extended_master_secret" extension is
+     * not present in the ClientHello handshake message.
+     */
+    private static final
+            class CHExtendedMasterSecretAbsence implements HandshakeAbsence {
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            // Is it a supported and enabled extension?
+            if (!shc.sslConfig.isAvailable(CH_EXTENDED_MASTER_SECRET) ||
+                    !SSLConfiguration.useExtendedMasterSecret) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Ignore unavailable extension: " +
+                            CH_EXTENDED_MASTER_SECRET.name);
+                }
+                return;     // ignore the extension
+            }
+
+            if (shc.negotiatedProtocol.useTLS10PlusSpec() &&
+                    !SSLConfiguration.allowLegacyMasterSecret) {
+                // For full handshake, if the server receives a ClientHello
+                // without the extension, it SHOULD abort the handshake if
+                // it does not wish to interoperate with legacy clients.
+                //
+                // As if extended master extension is required for full
+                // handshake, it MUST be used in abbreviated handshake too.
+                shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                    "Extended Master Secret extension is required");
+            }
+
+            if (shc.isResumption && shc.resumingSession != null) {
+                if (shc.resumingSession.useExtendedMasterSecret) {
+                    // For abbreviated handshake request, if the original
+                    // session used the "extended_master_secret" extension
+                    // but the new ClientHello does not contain it, the
+                    // server MUST abort the abbreviated handshake.
+                    shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Missing Extended Master Secret extension " +
+                            "on session resumption");
+                } else {
+                    // For abbreviated handshake request, if neither the
+                    // original session nor the new ClientHello uses the
+                    // extension, the server SHOULD abort the handshake.
+                    if (!SSLConfiguration.allowLegacyResumption) {
+                        shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Missing Extended Master Secret extension " +
+                            "on session resumption");
+                    } else {  // Otherwise, continue with a full handshake.
+                        shc.isResumption = false;
+                        shc.resumingSession = null;
+                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                            SSLLogger.fine(
+                                "abort session resumption, " +
+                                "missing Extended Master Secret extension");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Network data producer of a "extended_master_secret" extension in
+     * the ServerHello handshake message.
+     */
+    private static final
+            class SHExtendedMasterSecretProducer implements HandshakeProducer {
+        // Prevent instantiation of this class.
+        private SHExtendedMasterSecretProducer() {
+            // blank
+        }
+
+        @Override
+        public byte[] produce(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in server side only.
+            ServerHandshakeContext shc = (ServerHandshakeContext)context;
+
+            if (shc.handshakeSession.useExtendedMasterSecret) {
+                byte[] extData = new byte[0];
+                shc.handshakeExtensions.put(SH_EXTENDED_MASTER_SECRET,
+                        ExtendedMasterSecretSpec.NOMINAL);
+
+                return extData;
+            }
+
+            return null;
+        }
+    }
+
+    /**
+     * Network data consumer of a "extended_master_secret" extension in
+     * the ServerHello handshake message.
+     */
+    private static final
+            class SHExtendedMasterSecretConsumer implements ExtensionConsumer {
+        // Prevent instantiation of this class.
+        private SHExtendedMasterSecretConsumer() {
+            // blank
+        }
+
+        @Override
+        public void consume(ConnectionContext context,
+            HandshakeMessage message, ByteBuffer buffer) throws IOException {
+            // The producing happens in client side only.
+            ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+            // In response to the client extended_master_secret extension
+            // request, which is mandatory for ClientHello message.
+            ExtendedMasterSecretSpec requstedSpec = (ExtendedMasterSecretSpec)
+                    chc.handshakeExtensions.get(CH_EXTENDED_MASTER_SECRET);
+            if (requstedSpec == null) {
+                chc.conContext.fatal(Alert.UNSUPPORTED_EXTENSION,
+                        "Server sent the extended_master_secret " +
+                        "extension improperly");
+            }
+
+            // Parse the extension.
+            ExtendedMasterSecretSpec spec;
+            try {
+                spec = new ExtendedMasterSecretSpec(buffer);
+            } catch (IOException ioe) {
+                chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
+                return;     // fatal() always throws, make the compiler happy.
+            }
+
+            if (chc.isResumption && chc.resumingSession != null &&
+                    !chc.resumingSession.useExtendedMasterSecret) {
+                chc.conContext.fatal(Alert.UNSUPPORTED_EXTENSION,
+                        "Server sent an unexpected extended_master_secret " +
+                        "extension on session resumption");
+            }
+
+            // Update the context.
+            chc.handshakeExtensions.put(
+                SH_EXTENDED_MASTER_SECRET, ExtendedMasterSecretSpec.NOMINAL);
+
+            // No impact on session resumption.
+        }
+    }
+
+    /**
+     * The absence processing if a "extended_master_secret" extension is
+     * not present in the ServerHello handshake message.
+     */
+    private static final
+            class SHExtendedMasterSecretAbsence implements HandshakeAbsence {
+        @Override
+        public void absent(ConnectionContext context,
+                HandshakeMessage message) throws IOException {
+            // The producing happens in client side only.
+            ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+            if (SSLConfiguration.useExtendedMasterSecret &&
+                    !SSLConfiguration.allowLegacyMasterSecret) {
+                // For full handshake, if a client receives a ServerHello
+                // without the extension, it SHOULD abort the handshake if
+                // it does not wish to interoperate with legacy servers.
+                chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "Extended Master Secret extension is required");
+            }
+
+            if (chc.isResumption && chc.resumingSession != null) {
+                if (chc.resumingSession.useExtendedMasterSecret) {
+                    // For abbreviated handshake, if the original session used
+                    // the "extended_master_secret" extension but the new
+                    // ServerHello does not contain the extension, the client
+                    // MUST abort the handshake.
+                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                            "Missing Extended Master Secret extension " +
+                            "on session resumption");
+                } else if (SSLConfiguration.useExtendedMasterSecret &&
+                        !SSLConfiguration.allowLegacyResumption &&
+                        chc.negotiatedProtocol.useTLS10PlusSpec()) {
+                    // Unlikely, abbreviated handshake should be discarded.
+                    chc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
+                        "Extended Master Secret extension is required");
+                }
+            }
+        }
     }
 }
 

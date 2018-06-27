@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,7 +150,7 @@ class verification_type_info {
       case ITEM_Object:
         st->print("Object[#%d]", cpool_index()); break;
       default:
-        assert(false, "Bad verification_type_info");
+        st->print("BAD:%d", tag()); break;
     }
   }
 };

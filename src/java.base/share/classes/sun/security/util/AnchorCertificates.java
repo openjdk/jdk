@@ -36,6 +36,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
 
+import jdk.internal.util.StaticProperty;
 import sun.security.x509.X509CertImpl;
 
 /**
@@ -52,7 +53,7 @@ public class AnchorCertificates {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
-                File f = new File(System.getProperty("java.home"),
+                File f = new File(StaticProperty.javaHome(),
                         "lib/security/cacerts");
                 KeyStore cacerts;
                 try {

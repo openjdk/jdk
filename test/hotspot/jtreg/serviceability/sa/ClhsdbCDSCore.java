@@ -21,11 +21,12 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug 8174994
  * @summary Test the clhsdb commands 'printmdo', 'printall' on a CDS enabled corefile.
  * @requires vm.cds
+ * @requires vm.hasSA
  * @requires os.family != "windows"
  * @requires vm.flavor == "server"
  * @library /test/lib

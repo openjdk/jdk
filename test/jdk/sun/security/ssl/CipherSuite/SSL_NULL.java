@@ -24,7 +24,8 @@
 /**
  * @test
  * @bug 4854838
- * @summary Verify that SSL_NULL_WITH_NULL_NULL is returned as ciphersuite if the handshake fails
+ * @summary Verify that SSL_NULL_WITH_NULL_NULL is returned as ciphersuite
+ *      if the handshake fails
  * @author Andreas Sterbenz
  */
 
@@ -34,7 +35,6 @@ import java.net.Socket;
 import javax.net.ssl.*;
 
 public class SSL_NULL {
-
     private static volatile Boolean result;
 
     public static void main(String[] args) throws Exception {
@@ -71,15 +71,18 @@ public class SSL_NULL {
             SSLSocketFactory.getDefault().createSocket(
                 "localhost", serverSocket.getLocalPort());
         socket.setEnabledCipherSuites(
-            new String[] { "SSL_RSA_WITH_RC4_128_MD5" });
+            new String[] { "TLS_DHE_RSA_WITH_AES_128_CBC_SHA" });
         try {
             OutputStream out = socket.getOutputStream();
             out.write(0);
             out.flush();
             throw new RuntimeException("No exception received");
         } catch (SSLHandshakeException e) {
+            System.out.println("Expected handshake exception: " + e);
         }
+
         System.out.println("client: " + socket.getSession().getCipherSuite());
+
         // wait for other thread to set result
         while (result == null) {
             Thread.sleep(50);

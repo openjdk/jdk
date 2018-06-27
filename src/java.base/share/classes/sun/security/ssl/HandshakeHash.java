@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,514 +23,623 @@
  * questions.
  */
 
-
 package sun.security.ssl;
 
 import java.io.ByteArrayOutputStream;
-import java.security.*;
-import java.util.Locale;
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.LinkedList;
+import javax.crypto.SecretKey;
+import sun.security.util.MessageDigestSpi2;
 
-/**
- * Abstraction for the SSL/TLS hash of all handshake messages that is
- * maintained to verify the integrity of the negotiation. Internally,
- * it consists of an MD5 and an SHA1 digest. They are used in the client
- * and server finished messages and in certificate verify messages (if sent).
- *
- * This class transparently deals with cloneable and non-cloneable digests.
- *
- * This class now supports TLS 1.2 also. The key difference for TLS 1.2
- * is that you cannot determine the hash algorithms for CertificateVerify
- * at a early stage. On the other hand, it's simpler than TLS 1.1 (and earlier)
- * that there is no messy MD5+SHA1 digests.
- *
- * You need to obey these conventions when using this class:
- *
- * 1. protocolDetermined(version) should be called when the negotiated
- * protocol version is determined.
- *
- * 2. Before protocolDetermined() is called, only update(), and reset()
- * and setFinishedAlg() can be called.
- *
- * 3. After protocolDetermined() is called, reset() cannot be called.
- *
- * 4. After protocolDetermined() is called, if the version is pre-TLS 1.2,
- * getFinishedHash() cannot be called. Otherwise,
- * getMD5Clone() and getSHAClone() cannot be called.
- *
- * 5. getMD5Clone() and getSHAClone() can only be called after
- * protocolDetermined() is called and version is pre-TLS 1.2.
- *
- * 6. getFinishedHash() can only be called after protocolDetermined()
- * and setFinishedAlg() have been called and the version is TLS 1.2.
- *
- * Suggestion: Call protocolDetermined() and setFinishedAlg()
- * as early as possible.
- *
- * Example:
- * <pre>
- * HandshakeHash hh = new HandshakeHash(...)
- * hh.protocolDetermined(ProtocolVersion.TLS12);
- * hh.update(clientHelloBytes);
- * hh.setFinishedAlg("SHA-256");
- * hh.update(serverHelloBytes);
- * ...
- * hh.update(CertificateVerifyBytes);
- * ...
- * hh.update(finished1);
- * byte[] finDigest1 = hh.getFinishedHash();
- * hh.update(finished2);
- * byte[] finDigest2 = hh.getFinishedHash();
- * </pre>
- */
 final class HandshakeHash {
+    private TranscriptHash transcriptHash;
+    private LinkedList<byte[]> reserves;    // one handshake message per entry
+    private boolean hasBeenUsed;
 
-    // Common
-
-    // -1:  unknown
-    //  1:  <=TLS 1.1
-    //  2:  TLS 1.2
-    private int version = -1;
-    private ByteArrayOutputStream data = new ByteArrayOutputStream();
-
-    // For TLS 1.1
-    private MessageDigest md5, sha;
-    private final int clonesNeeded;    // needs to be saved for later use
-
-    // For TLS 1.2
-    private MessageDigest finMD;
-
-    // Cache for input record handshake hash computation
-    private ByteArrayOutputStream reserve = new ByteArrayOutputStream();
-
-    /**
-     * Create a new HandshakeHash. needCertificateVerify indicates whether
-     * a hash for the certificate verify message is required.
-     */
-    HandshakeHash(boolean needCertificateVerify) {
-        // We may rework the code later, but for now we use hard-coded number
-        // of clones if the underlying MessageDigests are not cloneable.
-        //
-        // The number used here is based on the current handshake protocols and
-        // implementation.  It may be changed if the handshake processe gets
-        // changed in the future, for example adding a new extension that
-        // requires handshake hash.  Please be careful about the number of
-        // clones if additional handshak hash is required in the future.
-        //
-        // For the current implementation, the handshake hash is required for
-        // the following items:
-        //     . CertificateVerify handshake message (optional)
-        //     . client Finished handshake message
-        //     . server Finished Handshake message
-        //     . the extended Master Secret extension [RFC 7627]
-        //
-        // Note that a late call to server setNeedClientAuth dose not update
-        // the number of clones.  We may address the issue later.
-        //
-        // Note for safety, we allocate one more clone for the current
-        // implementation.  We may consider it more carefully in the future
-        // for the exact number or rework the code in a different way.
-        clonesNeeded = needCertificateVerify ? 5 : 4;
+    HandshakeHash() {
+        this.transcriptHash = new CacheOnlyHash();
+        this.reserves = new LinkedList<>();
+        this.hasBeenUsed = false;
     }
 
-    void reserve(ByteBuffer input) {
+    // fix the negotiated protocol version and cipher suite
+    void determine(ProtocolVersion protocolVersion,
+            CipherSuite cipherSuite) {
+        if (!(transcriptHash instanceof CacheOnlyHash)) {
+            throw new IllegalStateException(
+                    "Not expected instance of transcript hash");
+        }
+
+        CacheOnlyHash coh = (CacheOnlyHash)transcriptHash;
+        if (protocolVersion.useTLS13PlusSpec()) {
+            transcriptHash = new T13HandshakeHash(cipherSuite);
+        } else if (protocolVersion.useTLS12PlusSpec()) {
+            transcriptHash = new T12HandshakeHash(cipherSuite);
+        } else if (protocolVersion.useTLS10PlusSpec()) {
+            transcriptHash = new T10HandshakeHash(cipherSuite);
+        } else {
+            transcriptHash = new S30HandshakeHash(cipherSuite);
+        }
+
+        byte[] reserved = coh.baos.toByteArray();
+        if (reserved.length != 0) {
+            transcriptHash.update(reserved, 0, reserved.length);
+        }
+    }
+
+    HandshakeHash copy() {
+        if (transcriptHash instanceof CacheOnlyHash) {
+            HandshakeHash result = new HandshakeHash();
+            result.transcriptHash = ((CacheOnlyHash)transcriptHash).copy();
+            result.reserves = new LinkedList<>(reserves);
+            result.hasBeenUsed = hasBeenUsed;
+            return result;
+        } else {
+            throw new IllegalStateException("Hash does not support copying");
+        }
+    }
+
+    void receive(byte[] input) {
+        reserves.add(Arrays.copyOf(input, input.length));
+    }
+
+    void receive(ByteBuffer input, int length) {
         if (input.hasArray()) {
-            reserve.write(input.array(),
+            int from = input.position() + input.arrayOffset();
+            int to = from + length;
+            reserves.add(Arrays.copyOfRange(input.array(), from, to));
+        } else {
+            int inPos = input.position();
+            byte[] holder = new byte[length];
+            input.get(holder);
+            input.position(inPos);
+            reserves.add(Arrays.copyOf(holder, holder.length));
+        }
+    }
+    void receive(ByteBuffer input) {
+        receive(input, input.remaining());
+    }
+
+    // For HelloRetryRequest only! Please use this method very carefully!
+    void push(byte[] input) {
+        reserves.push(Arrays.copyOf(input, input.length));
+    }
+
+    // For PreSharedKey to modify the state of the PSK binder hash
+    byte[] removeLastReceived() {
+        return reserves.removeLast();
+    }
+
+    void deliver(byte[] input) {
+        update();
+        transcriptHash.update(input, 0, input.length);
+    }
+
+    void deliver(byte[] input, int offset, int length) {
+        update();
+        transcriptHash.update(input, offset, length);
+    }
+
+    void deliver(ByteBuffer input) {
+        update();
+        if (input.hasArray()) {
+            transcriptHash.update(input.array(),
                     input.position() + input.arrayOffset(), input.remaining());
         } else {
             int inPos = input.position();
             byte[] holder = new byte[input.remaining()];
             input.get(holder);
             input.position(inPos);
-            reserve.write(holder, 0, holder.length);
+            transcriptHash.update(holder, 0, holder.length);
         }
     }
 
-    void reserve(byte[] b, int offset, int len) {
-        reserve.write(b, offset, len);
-    }
-
-    void reload() {
-        if (reserve.size() != 0) {
-            byte[] bytes = reserve.toByteArray();
-            reserve.reset();
-            update(bytes, 0, bytes.length);
-        }
-    }
-
-    void update(ByteBuffer input) {
-
-        // reload if there are reserved messages.
-        reload();
-
-        int inPos = input.position();
-        switch (version) {
-            case 1:
-                md5.update(input);
-                input.position(inPos);
-
-                sha.update(input);
-                input.position(inPos);
-
-                break;
-            default:
-                if (finMD != null) {
-                    finMD.update(input);
-                    input.position(inPos);
-                }
-                if (input.hasArray()) {
-                    data.write(input.array(),
-                            inPos + input.arrayOffset(), input.remaining());
-                } else {
-                    byte[] holder = new byte[input.remaining()];
-                    input.get(holder);
-                    input.position(inPos);
-                    data.write(holder, 0, holder.length);
-                }
-                break;
-        }
-    }
-
-    void update(byte handshakeType, byte[] handshakeBody) {
-
-        // reload if there are reserved messages.
-        reload();
-
-        switch (version) {
-            case 1:
-                md5.update(handshakeType);
-                sha.update(handshakeType);
-
-                md5.update((byte)((handshakeBody.length >> 16) & 0xFF));
-                sha.update((byte)((handshakeBody.length >> 16) & 0xFF));
-                md5.update((byte)((handshakeBody.length >> 8) & 0xFF));
-                sha.update((byte)((handshakeBody.length >> 8) & 0xFF));
-                md5.update((byte)(handshakeBody.length & 0xFF));
-                sha.update((byte)(handshakeBody.length & 0xFF));
-
-                md5.update(handshakeBody);
-                sha.update(handshakeBody);
-                break;
-            default:
-                if (finMD != null) {
-                    finMD.update(handshakeType);
-                    finMD.update((byte)((handshakeBody.length >> 16) & 0xFF));
-                    finMD.update((byte)((handshakeBody.length >> 8) & 0xFF));
-                    finMD.update((byte)(handshakeBody.length & 0xFF));
-                    finMD.update(handshakeBody);
-                }
-                data.write(handshakeType);
-                data.write((byte)((handshakeBody.length >> 16) & 0xFF));
-                data.write((byte)((handshakeBody.length >> 8) & 0xFF));
-                data.write((byte)(handshakeBody.length & 0xFF));
-                data.write(handshakeBody, 0, handshakeBody.length);
-                break;
-        }
-    }
-
-    void update(byte[] b, int offset, int len) {
-
-        // reload if there are reserved messages.
-        reload();
-
-        switch (version) {
-            case 1:
-                md5.update(b, offset, len);
-                sha.update(b, offset, len);
-                break;
-            default:
-                if (finMD != null) {
-                    finMD.update(b, offset, len);
-                }
-                data.write(b, offset, len);
-                break;
-        }
-    }
-
-    /**
-     * Reset the remaining digests. Note this does *not* reset the number of
-     * digest clones that can be obtained. Digests that have already been
-     * cloned and are gone remain gone.
-     */
-    void reset() {
-        if (version != -1) {
-            throw new RuntimeException(
-                    "reset() can be only be called before protocolDetermined");
-        }
-        data.reset();
-    }
-
-
-    void protocolDetermined(ProtocolVersion pv) {
-
-        // Do not set again, will ignore
-        if (version != -1) {
+    // Use one handshake message if it has not been used.
+    void utilize() {
+        if (hasBeenUsed) {
             return;
         }
-
-        if (pv.maybeDTLSProtocol()) {
-            version = pv.compareTo(ProtocolVersion.DTLS12) >= 0 ? 2 : 1;
-        } else {
-            version = pv.compareTo(ProtocolVersion.TLS12) >= 0 ? 2 : 1;
-        }
-        switch (version) {
-            case 1:
-                // initiate md5, sha and call update on saved array
-                try {
-                    md5 = CloneableDigest.getDigest("MD5", clonesNeeded);
-                    sha = CloneableDigest.getDigest("SHA", clonesNeeded);
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException
-                                ("Algorithm MD5 or SHA not available", e);
-                }
-                byte[] bytes = data.toByteArray();
-                update(bytes, 0, bytes.length);
-                break;
-            case 2:
-                break;
+        if (reserves.size() != 0) {
+            byte[] holder = reserves.remove();
+            transcriptHash.update(holder, 0, holder.length);
+            hasBeenUsed = true;
         }
     }
 
-    /////////////////////////////////////////////////////////////
-    // Below are old methods for pre-TLS 1.1
-    /////////////////////////////////////////////////////////////
-
-    /**
-     * Return a new MD5 digest updated with all data hashed so far.
-     */
-    MessageDigest getMD5Clone() {
-        if (version != 1) {
-            throw new RuntimeException(
-                    "getMD5Clone() can be only be called for TLS 1.1");
+    // Consume one handshake message if it has not been consumed.
+    void consume() {
+        if (hasBeenUsed) {
+            hasBeenUsed = false;
+            return;
         }
-        return cloneDigest(md5);
-    }
-
-    /**
-     * Return a new SHA digest updated with all data hashed so far.
-     */
-    MessageDigest getSHAClone() {
-        if (version != 1) {
-            throw new RuntimeException(
-                    "getSHAClone() can be only be called for TLS 1.1");
-        }
-        return cloneDigest(sha);
-    }
-
-    private static MessageDigest cloneDigest(MessageDigest digest) {
-        try {
-            return (MessageDigest)digest.clone();
-        } catch (CloneNotSupportedException e) {
-            // cannot occur for digests generated via CloneableDigest
-            throw new RuntimeException("Could not clone digest", e);
+        if (reserves.size() != 0) {
+            byte[] holder = reserves.remove();
+            transcriptHash.update(holder, 0, holder.length);
         }
     }
 
-    /////////////////////////////////////////////////////////////
-    // Below are new methods for TLS 1.2
-    /////////////////////////////////////////////////////////////
+    void update() {
+        while (reserves.size() != 0) {
+            byte[] holder = reserves.remove();
+            transcriptHash.update(holder, 0, holder.length);
+        }
+        hasBeenUsed = false;
+    }
 
-    private static String normalizeAlgName(String alg) {
-        alg = alg.toUpperCase(Locale.US);
-        if (alg.startsWith("SHA")) {
-            if (alg.length() == 3) {
-                return "SHA-1";
+    byte[] digest() {
+        // Note that the reserve handshake message may be not a part of
+        // the expected digest.
+        return transcriptHash.digest();
+    }
+
+    void finish() {
+        this.transcriptHash = new CacheOnlyHash();
+        this.reserves = new LinkedList<>();
+        this.hasBeenUsed = false;
+    }
+
+    // Optional
+    byte[] archived() {
+        // Note that the reserve handshake message may be not a part of
+        // the expected digest.
+        return transcriptHash.archived();
+    }
+
+    // Optional, TLS 1.0/1.1 only
+    byte[] digest(String algorithm) {
+        T10HandshakeHash hh = (T10HandshakeHash)transcriptHash;
+        return hh.digest(algorithm);
+    }
+
+    // Optional, SSL 3.0 only
+    byte[] digest(String algorithm, SecretKey masterSecret) {
+        S30HandshakeHash hh = (S30HandshakeHash)transcriptHash;
+        return hh.digest(algorithm, masterSecret);
+    }
+
+    // Optional, SSL 3.0 only
+    byte[] digest(boolean useClientLabel, SecretKey masterSecret) {
+        S30HandshakeHash hh = (S30HandshakeHash)transcriptHash;
+        return hh.digest(useClientLabel, masterSecret);
+    }
+
+    public boolean isHashable(byte handshakeType) {
+        return handshakeType != SSLHandshake.HELLO_REQUEST.id &&
+               handshakeType != SSLHandshake.HELLO_VERIFY_REQUEST.id;
+    }
+
+    interface TranscriptHash {
+        void update(byte[] input, int offset, int length);
+        byte[] digest();
+        byte[] archived();  // optional
+    }
+
+    // For cache only.
+    private static final class CacheOnlyHash implements TranscriptHash {
+        private final ByteArrayOutputStream baos;
+
+        CacheOnlyHash() {
+            this.baos = new ByteArrayOutputStream();
+        }
+
+        @Override
+        public void update(byte[] input, int offset, int length) {
+            baos.write(input, offset, length);
+        }
+
+        @Override
+        public byte[] digest() {
+            throw new IllegalStateException(
+                    "Not expected call to handshake hash digest");
+        }
+
+        @Override
+        public byte[] archived() {
+            return baos.toByteArray();
+        }
+
+        CacheOnlyHash copy() {
+            CacheOnlyHash result = new CacheOnlyHash();
+            try {
+                baos.writeTo(result.baos);
+            } catch (IOException ex) {
+                throw new RuntimeException("unable to to clone hash state");
             }
-            if (alg.charAt(3) != '-') {
-                return "SHA-" + alg.substring(3);
+            return result;
+        }
+    }
+
+    static final class S30HandshakeHash implements TranscriptHash {
+        static final byte[] MD5_pad1 = genPad(0x36, 48);
+        static final byte[] MD5_pad2 = genPad(0x5c, 48);
+
+        static final byte[] SHA_pad1 = genPad(0x36, 40);
+        static final byte[] SHA_pad2 = genPad(0x5c, 40);
+
+        private static final byte[] SSL_CLIENT = { 0x43, 0x4C, 0x4E, 0x54 };
+        private static final byte[] SSL_SERVER = { 0x53, 0x52, 0x56, 0x52 };
+
+        private final MessageDigest mdMD5;
+        private final MessageDigest mdSHA;
+        private final TranscriptHash md5;
+        private final TranscriptHash sha;
+        private final ByteArrayOutputStream baos;
+
+        S30HandshakeHash(CipherSuite cipherSuite) {
+            this.mdMD5 = JsseJce.getMessageDigest("MD5");
+            this.mdSHA = JsseJce.getMessageDigest("SHA");
+
+            boolean hasArchived = false;
+            if (mdMD5 instanceof Cloneable) {
+                md5 = new CloneableHash(mdMD5);
+            } else {
+                hasArchived = true;
+                md5 = new NonCloneableHash(mdMD5);
+            }
+            if (mdSHA instanceof Cloneable) {
+                sha = new CloneableHash(mdSHA);
+            } else {
+                hasArchived = true;
+                sha = new NonCloneableHash(mdSHA);
+            }
+
+            if (hasArchived) {
+                this.baos = null;
+            } else {
+                this.baos = new ByteArrayOutputStream();
             }
         }
-        return alg;
-    }
-    /**
-     * Specifies the hash algorithm used in Finished. This should be called
-     * based in info in ServerHello.
-     * Can be called multiple times.
-     */
-    void setFinishedAlg(String s) {
-        if (s == null) {
-            throw new RuntimeException(
-                    "setFinishedAlg's argument cannot be null");
+
+        @Override
+        public void update(byte[] input, int offset, int length) {
+            md5.update(input, offset, length);
+            sha.update(input, offset, length);
+            if (baos != null) {
+                baos.write(input, offset, length);
+            }
         }
 
-        // Can be called multiple times, but only set once
-        if (finMD != null) return;
+        @Override
+        public byte[] digest() {
+            byte[] digest = new byte[36];
+            System.arraycopy(md5.digest(), 0, digest, 0, 16);
+            System.arraycopy(sha.digest(), 0, digest, 16, 20);
 
-        try {
-            // See comment in the contructor.
-            finMD = CloneableDigest.getDigest(normalizeAlgName(s), 4);
-        } catch (NoSuchAlgorithmException e) {
-            throw new Error(e);
-        }
-        finMD.update(data.toByteArray());
-    }
-
-    byte[] getAllHandshakeMessages() {
-        return data.toByteArray();
-    }
-
-    /**
-     * Calculates the hash in Finished. Must be called after setFinishedAlg().
-     * This method can be called twice, for Finished messages of the server
-     * side and client side respectively.
-     */
-    byte[] getFinishedHash() {
-        try {
-            return cloneDigest(finMD).digest();
-        } catch (Exception e) {
-            throw new Error("Error during hash calculation", e);
-        }
-    }
-}
-
-/**
- * A wrapper for MessageDigests that simulates cloning of non-cloneable
- * digests. It uses the standard MessageDigest API and therefore can be used
- * transparently in place of a regular digest.
- *
- * Note that we extend the MessageDigest class directly rather than
- * MessageDigestSpi. This works because MessageDigest was originally designed
- * this way in the JDK 1.1 days which allows us to avoid creating an internal
- * provider.
- *
- * It can be "cloned" a limited number of times, which is specified at
- * construction time. This is achieved by internally maintaining n digests
- * in parallel. Consequently, it is only 1/n-th times as fast as the original
- * digest.
- *
- * Example:
- *   MessageDigest md = CloneableDigest.getDigest("SHA", 2);
- *   md.update(data1);
- *   MessageDigest md2 = (MessageDigest)md.clone();
- *   md2.update(data2);
- *   byte[] d1 = md2.digest(); // digest of data1 || data2
- *   md.update(data3);
- *   byte[] d2 = md.digest();  // digest of data1 || data3
- *
- * This class is not thread safe.
- *
- */
-final class CloneableDigest extends MessageDigest implements Cloneable {
-
-    /**
-     * The individual MessageDigests. Initially, all elements are non-null.
-     * When clone() is called, the non-null element with the maximum index is
-     * returned and the array element set to null.
-     *
-     * All non-null element are always in the same state.
-     */
-    private final MessageDigest[] digests;
-
-    private CloneableDigest(MessageDigest digest, int n, String algorithm)
-            throws NoSuchAlgorithmException {
-        super(algorithm);
-        digests = new MessageDigest[n];
-        digests[0] = digest;
-        for (int i = 1; i < n; i++) {
-            digests[i] = JsseJce.getMessageDigest(algorithm);
-        }
-    }
-
-    /**
-     * Return a MessageDigest for the given algorithm that can be cloned the
-     * specified number of times. If the default implementation supports
-     * cloning, it is returned. Otherwise, an instance of this class is
-     * returned.
-     */
-    static MessageDigest getDigest(String algorithm, int n)
-            throws NoSuchAlgorithmException {
-        MessageDigest digest = JsseJce.getMessageDigest(algorithm);
-        try {
-            digest.clone();
-            // already cloneable, use it
             return digest;
-        } catch (CloneNotSupportedException e) {
-            return new CloneableDigest(digest, n, algorithm);
         }
-    }
 
-    /**
-     * Check if this object is still usable. If it has already been cloned the
-     * maximum number of times, there are no digests left and this object can no
-     * longer be used.
-     */
-    private void checkState() {
-        // XXX handshaking currently doesn't stop updating hashes...
-        // if (digests[0] == null) {
-        //     throw new IllegalStateException("no digests left");
-        // }
-    }
-
-    @Override
-    protected int engineGetDigestLength() {
-        checkState();
-        return digests[0].getDigestLength();
-    }
-
-    @Override
-    protected void engineUpdate(byte b) {
-        checkState();
-        for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
-            digests[i].update(b);
-        }
-    }
-
-    @Override
-    protected void engineUpdate(byte[] b, int offset, int len) {
-        checkState();
-        for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
-            digests[i].update(b, offset, len);
-        }
-    }
-
-    @Override
-    protected byte[] engineDigest() {
-        checkState();
-        byte[] digest = digests[0].digest();
-        digestReset();
-        return digest;
-    }
-
-    @Override
-    protected int engineDigest(byte[] buf, int offset, int len)
-            throws DigestException {
-        checkState();
-        int n = digests[0].digest(buf, offset, len);
-        digestReset();
-        return n;
-    }
-
-    /**
-     * Reset all digests after a digest() call. digests[0] has already been
-     * implicitly reset by the digest() call and does not need to be reset
-     * again.
-     */
-    private void digestReset() {
-        for (int i = 1; (i < digests.length) && (digests[i] != null); i++) {
-            digests[i].reset();
-        }
-    }
-
-    @Override
-    protected void engineReset() {
-        checkState();
-        for (int i = 0; (i < digests.length) && (digests[i] != null); i++) {
-            digests[i].reset();
-        }
-    }
-
-    @Override
-    public Object clone() {
-        checkState();
-        for (int i = digests.length - 1; i >= 0; i--) {
-            if (digests[i] != null) {
-                MessageDigest digest = digests[i];
-                digests[i] = null;
-                return digest;
+        @Override
+        public byte[] archived() {
+            if (baos != null) {
+                return baos.toByteArray();
+            } else if (md5 instanceof NonCloneableHash) {
+                return md5.archived();
+            } else {
+                return sha.archived();
             }
         }
-        // cannot occur
-        throw new InternalError();
+
+        byte[] digest(boolean useClientLabel, SecretKey masterSecret) {
+            MessageDigest md5Clone = cloneMd5();
+            MessageDigest shaClone = cloneSha();
+
+            if (useClientLabel) {
+                md5Clone.update(SSL_CLIENT);
+                shaClone.update(SSL_CLIENT);
+            } else {
+                md5Clone.update(SSL_SERVER);
+                shaClone.update(SSL_SERVER);
+            }
+
+            updateDigest(md5Clone, MD5_pad1, MD5_pad2, masterSecret);
+            updateDigest(shaClone, SHA_pad1, SHA_pad2, masterSecret);
+
+            byte[] digest = new byte[36];
+            System.arraycopy(md5Clone.digest(), 0, digest, 0, 16);
+            System.arraycopy(shaClone.digest(), 0, digest, 16, 20);
+
+            return digest;
+        }
+
+        byte[] digest(String algorithm, SecretKey masterSecret) {
+            if ("RSA".equalsIgnoreCase(algorithm)) {
+                MessageDigest md5Clone = cloneMd5();
+                MessageDigest shaClone = cloneSha();
+                updateDigest(md5Clone, MD5_pad1, MD5_pad2, masterSecret);
+                updateDigest(shaClone, SHA_pad1, SHA_pad2, masterSecret);
+
+                byte[] digest = new byte[36];
+                System.arraycopy(md5Clone.digest(), 0, digest, 0, 16);
+                System.arraycopy(shaClone.digest(), 0, digest, 16, 20);
+
+                return digest;
+            } else {
+                MessageDigest shaClone = cloneSha();
+                updateDigest(shaClone, SHA_pad1, SHA_pad2, masterSecret);
+                return shaClone.digest();
+            }
+        }
+
+        private static byte[] genPad(int b, int count) {
+            byte[] padding = new byte[count];
+            Arrays.fill(padding, (byte)b);
+            return padding;
+        }
+
+        private MessageDigest cloneMd5() {
+            MessageDigest md5Clone;
+            if (mdMD5 instanceof Cloneable) {
+                try {
+                    md5Clone = (MessageDigest)mdMD5.clone();
+                } catch (CloneNotSupportedException ex) {   // unlikely
+                    throw new RuntimeException(
+                            "MessageDigest does no support clone operation");
+                }
+            } else {
+                md5Clone = JsseJce.getMessageDigest("MD5");
+                md5Clone.update(md5.archived());
+            }
+
+            return md5Clone;
+        }
+
+        private MessageDigest cloneSha() {
+            MessageDigest shaClone;
+            if (mdSHA instanceof Cloneable) {
+                try {
+                    shaClone = (MessageDigest)mdSHA.clone();
+                } catch (CloneNotSupportedException ex) {   // unlikely
+                    throw new RuntimeException(
+                            "MessageDigest does no support clone operation");
+                }
+            } else {
+                shaClone = JsseJce.getMessageDigest("SHA");
+                shaClone.update(sha.archived());
+            }
+
+            return shaClone;
+        }
+
+        private static void updateDigest(MessageDigest md,
+                byte[] pad1, byte[] pad2, SecretKey masterSecret) {
+            byte[] keyBytes = "RAW".equals(masterSecret.getFormat())
+                            ? masterSecret.getEncoded() : null;
+            if (keyBytes != null) {
+                md.update(keyBytes);
+            } else {
+                digestKey(md, masterSecret);
+            }
+            md.update(pad1);
+            byte[] temp = md.digest();
+
+            if (keyBytes != null) {
+                md.update(keyBytes);
+            } else {
+                digestKey(md, masterSecret);
+            }
+            md.update(pad2);
+            md.update(temp);
+        }
+
+        private static void digestKey(MessageDigest md, SecretKey key) {
+            try {
+                if (md instanceof MessageDigestSpi2) {
+                    ((MessageDigestSpi2)md).engineUpdate(key);
+                } else {
+                    throw new Exception(
+                        "Digest does not support implUpdate(SecretKey)");
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(
+                    "Could not obtain encoded key and "
+                    + "MessageDigest cannot digest key", e);
+            }
+        }
     }
 
+    // TLS 1.0 and TLS 1.1
+    static final class T10HandshakeHash implements TranscriptHash {
+        private final TranscriptHash md5;
+        private final TranscriptHash sha;
+        private final ByteArrayOutputStream baos;
+
+        T10HandshakeHash(CipherSuite cipherSuite) {
+            MessageDigest mdMD5 = JsseJce.getMessageDigest("MD5");
+            MessageDigest mdSHA = JsseJce.getMessageDigest("SHA");
+
+            boolean hasArchived = false;
+            if (mdMD5 instanceof Cloneable) {
+                md5 = new CloneableHash(mdMD5);
+            } else {
+                hasArchived = true;
+                md5 = new NonCloneableHash(mdMD5);
+            }
+            if (mdSHA instanceof Cloneable) {
+                sha = new CloneableHash(mdSHA);
+            } else {
+                hasArchived = true;
+                sha = new NonCloneableHash(mdSHA);
+            }
+
+            if (hasArchived) {
+                this.baos = null;
+            } else {
+                this.baos = new ByteArrayOutputStream();
+            }
+        }
+
+        @Override
+        public void update(byte[] input, int offset, int length) {
+            md5.update(input, offset, length);
+            sha.update(input, offset, length);
+            if (baos != null) {
+                baos.write(input, offset, length);
+            }
+        }
+
+        @Override
+        public byte[] digest() {
+            byte[] digest = new byte[36];
+            System.arraycopy(md5.digest(), 0, digest, 0, 16);
+            System.arraycopy(sha.digest(), 0, digest, 16, 20);
+
+            return digest;
+        }
+
+        byte[] digest(String algorithm) {
+            if ("RSA".equalsIgnoreCase(algorithm)) {
+                return digest();
+            } else {
+                return sha.digest();
+            }
+        }
+
+        @Override
+        public byte[] archived() {
+            if (baos != null) {
+                return baos.toByteArray();
+            } else if (md5 instanceof NonCloneableHash) {
+                return md5.archived();
+            } else {
+                return sha.archived();
+            }
+        }
+    }
+
+    static final class T12HandshakeHash implements TranscriptHash {
+        private final TranscriptHash transcriptHash;
+        private final ByteArrayOutputStream baos;
+
+        T12HandshakeHash(CipherSuite cipherSuite) {
+            MessageDigest md =
+                    JsseJce.getMessageDigest(cipherSuite.hashAlg.name);
+            if (md instanceof Cloneable) {
+                transcriptHash = new CloneableHash(md);
+                this.baos = null;
+            } else {
+                transcriptHash = new NonCloneableHash(md);
+                this.baos = new ByteArrayOutputStream();
+            }
+        }
+
+        @Override
+        public void update(byte[] input, int offset, int length) {
+            transcriptHash.update(input, offset, length);
+            if (baos != null) {
+                baos.write(input, offset, length);
+            }
+        }
+
+        @Override
+        public byte[] digest() {
+            return transcriptHash.digest();
+        }
+
+        @Override
+        public byte[] archived() {
+            if (baos != null) {
+                return baos.toByteArray();
+            } else {
+                return transcriptHash.archived();
+            }
+        }
+    }
+
+    static final class T13HandshakeHash implements TranscriptHash {
+        private final TranscriptHash transcriptHash;
+        private final ByteArrayOutputStream baos;
+
+        T13HandshakeHash(CipherSuite cipherSuite) {
+            MessageDigest md =
+                    JsseJce.getMessageDigest(cipherSuite.hashAlg.name);
+            if (md instanceof Cloneable) {
+                transcriptHash = new CloneableHash(md);
+                this.baos = null;
+            } else {
+                transcriptHash = new NonCloneableHash(md);
+                this.baos = new ByteArrayOutputStream();
+            }
+        }
+
+        @Override
+        public void update(byte[] input, int offset, int length) {
+            transcriptHash.update(input, offset, length);
+            if (baos != null) {
+                baos.write(input, offset, length);
+            }
+        }
+
+        @Override
+        public byte[] digest() {
+            return transcriptHash.digest();
+        }
+
+        @Override
+        public byte[] archived() {
+            if (baos != null) {
+                return baos.toByteArray();
+            } else {
+                return transcriptHash.archived();
+            }
+
+            // throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
+
+    static final class CloneableHash implements TranscriptHash {
+        private final MessageDigest md;
+
+        CloneableHash(MessageDigest md) {
+            this.md = md;
+        }
+
+        @Override
+        public void update(byte[] input, int offset, int length) {
+            md.update(input, offset, length);
+        }
+
+        @Override
+        public byte[] digest() {
+            try {
+                return ((MessageDigest)md.clone()).digest();
+            } catch (CloneNotSupportedException ex) {
+                // unlikely
+                return new byte[0];
+            }
+        }
+
+        @Override
+        public byte[] archived() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
+
+    static final class NonCloneableHash implements TranscriptHash {
+        private final MessageDigest md;
+        private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        NonCloneableHash(MessageDigest md) {
+            this.md = md;
+        }
+
+        @Override
+        public void update(byte[] input, int offset, int length) {
+            baos.write(input, offset, length);
+        }
+
+        @Override
+        public byte[] digest() {
+            byte[] bytes = baos.toByteArray();
+            md.reset();
+            return md.digest(bytes);
+        }
+
+        @Override
+        public byte[] archived() {
+            return baos.toByteArray();
+        }
+    }
 }

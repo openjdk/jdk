@@ -35,6 +35,10 @@
 
 import java.io.*;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.ServerSocket;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import javax.net.ssl.*;
@@ -71,7 +75,7 @@ public class SSLSocketWithStapling {
      */
 
     // Turn on TLS debugging
-    static boolean debug = false;
+    static final boolean debug = false;
 
     /*
      * Should we run the client or server in a separate thread?
@@ -106,6 +110,11 @@ public class SSLSocketWithStapling {
     static SimpleOCSPServer intOcsp;        // Intermediate CA OCSP Responder
     static int intOcspPort;                 // Port number for intermed. OCSP
 
+    // Extra configuration parameters and constants
+    static final String[] TLS13ONLY = new String[] { "TLSv1.3" };
+    static final String[] TLS12MAX =
+            new String[] { "TLSv1.2", "TLSv1.1", "TLSv1" };
+
     /*
      * If the client or server is doing some kind of object creation
      * that the other side depends on, and that thread prematurely
@@ -116,20 +125,31 @@ public class SSLSocketWithStapling {
      */
     public static void main(String[] args) throws Exception {
         if (debug) {
-            System.setProperty("javax.net.debug", "ssl");
+            System.setProperty("javax.net.debug", "ssl:handshake");
         }
 
         try {
             // Create the PKI we will use for the test and start the OCSP servers
             createPKI();
 
-            testAllDefault();
-            testPKIXParametersRevEnabled();
-            testRevokedCertificate();
-            testHardFailFallback();
-            testSoftFailFallback();
-            testLatencyNoStaple(false);
-            testLatencyNoStaple(true);
+            testAllDefault(false);
+            testAllDefault(true);
+            testPKIXParametersRevEnabled(false);
+            testPKIXParametersRevEnabled(true);
+            testRevokedCertificate(false);
+            testRevokedCertificate(true);
+            testRevokedIntermediate(false);
+            testRevokedIntermediate(true);
+            testMissingIntermediate(false);
+            testMissingIntermediate(true);
+            testHardFailFallback(false);
+            testHardFailFallback(true);
+            testSoftFailFallback(false);
+            testSoftFailFallback(true);
+            testLatencyNoStaple(false, false);
+            testLatencyNoStaple(false, true);
+            testLatencyNoStaple(true, false);
+            testLatencyNoStaple(true, true);
         } finally {
             // shut down the OCSP responders before finishing the test
             intOcsp.stop();
@@ -140,9 +160,16 @@ public class SSLSocketWithStapling {
     /**
      * Default test using no externally-configured PKIXBuilderParameters
      */
-    static void testAllDefault() throws Exception {
+    static void testAllDefault(boolean isTls13) throws Exception {
         ClientParameters cliParams = new ClientParameters();
         ServerParameters servParams = new ServerParameters();
+        if (isTls13) {
+            cliParams.protocols = TLS13ONLY;
+            servParams.protocols = TLS13ONLY;
+        } else {
+            cliParams.protocols = TLS12MAX;
+            servParams.protocols = TLS12MAX;
+        }
         serverReady = false;
         Map<BigInteger, SimpleOCSPServer.CertStatusInfo> revInfo =
                 new HashMap<>();
@@ -188,9 +215,16 @@ public class SSLSocketWithStapling {
      * enabled and client-side OCSP disabled.  It will only pass if all
      * stapled responses are present, valid and have a GOOD status.
      */
-    static void testPKIXParametersRevEnabled() throws Exception {
+    static void testPKIXParametersRevEnabled(boolean isTls13) throws Exception {
         ClientParameters cliParams = new ClientParameters();
         ServerParameters servParams = new ServerParameters();
+        if (isTls13) {
+            cliParams.protocols = TLS13ONLY;
+            servParams.protocols = TLS13ONLY;
+        } else {
+            cliParams.protocols = TLS12MAX;
+            servParams.protocols = TLS12MAX;
+        }
         serverReady = false;
 
         System.out.println("=====================================");
@@ -222,9 +256,16 @@ public class SSLSocketWithStapling {
      * pass if the OCSP response is found, since we will check the
      * CertPathValidatorException reason for revoked status.
      */
-    static void testRevokedCertificate() throws Exception {
+    static void testRevokedCertificate(boolean isTls13) throws Exception {
         ClientParameters cliParams = new ClientParameters();
         ServerParameters servParams = new ServerParameters();
+        if (isTls13) {
+            cliParams.protocols = TLS13ONLY;
+            servParams.protocols = TLS13ONLY;
+        } else {
+            cliParams.protocols = TLS12MAX;
+            servParams.protocols = TLS12MAX;
+        }
         serverReady = false;
         Map<BigInteger, SimpleOCSPServer.CertStatusInfo> revInfo =
                 new HashMap<>();
@@ -242,9 +283,9 @@ public class SSLSocketWithStapling {
                         fiveMinsAgo));
         intOcsp.updateStatusDb(revInfo);
 
-        System.out.println("=======================================");
-        System.out.println("Stapling enabled, default configuration");
-        System.out.println("=======================================");
+        System.out.println("============================================");
+        System.out.println("Stapling enabled, detect revoked certificate");
+        System.out.println("============================================");
 
         cliParams.pkixParams = new PKIXBuilderParameters(trustStore,
                 new X509CertSelector());
@@ -274,13 +315,146 @@ public class SSLSocketWithStapling {
     }
 
     /**
+     * Perform a test where the intermediate CA certificate is revoked and
+     * placed in the TLS handshake.  Client-side OCSP is disabled, so this
+     * test will only pass if the OCSP response for the intermediate CA is
+     * found and placed into the CertificateStatus or Certificate message
+     * (depending on the protocol version) since we will check
+     * the CertPathValidatorException reason for revoked status.
+     */
+    static void testRevokedIntermediate(boolean isTls13) throws Exception {
+        ClientParameters cliParams = new ClientParameters();
+        ServerParameters servParams = new ServerParameters();
+        if (isTls13) {
+            cliParams.protocols = TLS13ONLY;
+            servParams.protocols = TLS13ONLY;
+        } else {
+            cliParams.protocols = TLS12MAX;
+            servParams.protocols = TLS12MAX;
+        }
+        serverReady = false;
+        Map<BigInteger, SimpleOCSPServer.CertStatusInfo> revInfo =
+                new HashMap<>();
+
+        // We will prove revocation checking is disabled by marking the SSL
+        // certificate as revoked.  The test would only pass if revocation
+        // checking did not happen.
+        X509Certificate intCACert =
+                (X509Certificate)intKeystore.getCertificate(INT_ALIAS);
+        Date fiveMinsAgo = new Date(System.currentTimeMillis() -
+                TimeUnit.MINUTES.toMillis(5));
+        revInfo.put(intCACert.getSerialNumber(),
+                new SimpleOCSPServer.CertStatusInfo(
+                        SimpleOCSPServer.CertStatus.CERT_STATUS_REVOKED,
+                        fiveMinsAgo));
+        rootOcsp.updateStatusDb(revInfo);
+
+        System.out.println("===============================================");
+        System.out.println("Stapling enabled, detect revoked CA certificate");
+        System.out.println("===============================================");
+
+        cliParams.pkixParams = new PKIXBuilderParameters(trustStore,
+                new X509CertSelector());
+        cliParams.pkixParams.setRevocationEnabled(true);
+        Security.setProperty("ocsp.enable", "false");
+
+        SSLSocketWithStapling sslTest = new SSLSocketWithStapling(cliParams,
+                servParams);
+        TestResult tr = sslTest.getResult();
+        if (!checkClientValidationFailure(tr.clientExc, BasicReason.REVOKED)) {
+            if (tr.clientExc != null) {
+                throw tr.clientExc;
+            } else {
+                throw new RuntimeException(
+                        "Expected client failure, but the client succeeded");
+            }
+        }
+
+        // Return the ssl certificate to non-revoked status
+        revInfo.put(intCACert.getSerialNumber(),
+                new SimpleOCSPServer.CertStatusInfo(
+                        SimpleOCSPServer.CertStatus.CERT_STATUS_GOOD));
+        rootOcsp.updateStatusDb(revInfo);
+
+        System.out.println("                 PASS");
+        System.out.println("=======================================\n");
+    }
+
+    /**
+     * Test a case where OCSP stapling is attempted, but partially occurs
+     * because the root OCSP responder is unreachable.  This should use a
+     * default hard-fail behavior.
+     */
+    static void testMissingIntermediate(boolean isTls13) throws Exception {
+        ClientParameters cliParams = new ClientParameters();
+        ServerParameters servParams = new ServerParameters();
+        if (isTls13) {
+            cliParams.protocols = TLS13ONLY;
+            servParams.protocols = TLS13ONLY;
+        } else {
+            cliParams.protocols = TLS12MAX;
+            servParams.protocols = TLS12MAX;
+        }
+        serverReady = false;
+
+        // Make the OCSP responder reject connections
+        rootOcsp.rejectConnections();
+
+        System.out.println("=======================================");
+        System.out.println("Stapling enbled in client and server,");
+        System.out.println("but root OCSP responder disabled.");
+        System.out.println("PKIXParameters with Revocation checking");
+        System.out.println("enabled.");
+        System.out.println("=======================================");
+
+        Security.setProperty("ocsp.enable", "false");
+        cliParams.pkixParams = new PKIXBuilderParameters(trustStore,
+                new X509CertSelector());
+        cliParams.pkixParams.setRevocationEnabled(true);
+
+        SSLSocketWithStapling sslTest = new SSLSocketWithStapling(cliParams,
+                servParams);
+        TestResult tr = sslTest.getResult();
+        if (!checkClientValidationFailure(tr.clientExc,
+                BasicReason.UNDETERMINED_REVOCATION_STATUS)) {
+            if (tr.clientExc != null) {
+                throw tr.clientExc;
+            } else {
+                throw new RuntimeException(
+                        "Expected client failure, but the client succeeded");
+            }
+        }
+
+        System.out.println("                 PASS");
+        System.out.println("=======================================\n");
+
+        // Make root OCSP responder accept connections
+        rootOcsp.acceptConnections();
+
+        // Wait 5 seconds for server ready
+        for (int i = 0; (i < 100 && !rootOcsp.isServerReady()); i++) {
+            Thread.sleep(50);
+        }
+        if (!rootOcsp.isServerReady()) {
+            throw new RuntimeException("Root OCSP responder not ready yet");
+        }
+    }
+
+    /**
      * Test a case where client-side stapling is attempted, but does not
      * occur because OCSP responders are unreachable.  This should use a
      * default hard-fail behavior.
      */
-    static void testHardFailFallback() throws Exception {
+    static void testHardFailFallback(boolean isTls13) throws Exception {
         ClientParameters cliParams = new ClientParameters();
         ServerParameters servParams = new ServerParameters();
+        if (isTls13) {
+            cliParams.protocols = TLS13ONLY;
+            servParams.protocols = TLS13ONLY;
+        } else {
+            cliParams.protocols = TLS12MAX;
+            servParams.protocols = TLS12MAX;
+        }
         serverReady = false;
 
         // make OCSP responders reject connections
@@ -320,7 +494,8 @@ public class SSLSocketWithStapling {
         rootOcsp.acceptConnections();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() || !rootOcsp.isServerReady())); i++) {
+        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() ||
+                !rootOcsp.isServerReady())); i++) {
             Thread.sleep(50);
         }
         if (!intOcsp.isServerReady() || !rootOcsp.isServerReady()) {
@@ -333,9 +508,16 @@ public class SSLSocketWithStapling {
      * occur because OCSP responders are unreachable.  Client-side OCSP
      * checking is enabled for this, with SOFT_FAIL.
      */
-    static void testSoftFailFallback() throws Exception {
+    static void testSoftFailFallback(boolean isTls13) throws Exception {
         ClientParameters cliParams = new ClientParameters();
         ServerParameters servParams = new ServerParameters();
+        if (isTls13) {
+            cliParams.protocols = TLS13ONLY;
+            servParams.protocols = TLS13ONLY;
+        } else {
+            cliParams.protocols = TLS12MAX;
+            servParams.protocols = TLS12MAX;
+        }
         serverReady = false;
 
         // make OCSP responders reject connections
@@ -381,7 +563,8 @@ public class SSLSocketWithStapling {
         rootOcsp.acceptConnections();
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() || !rootOcsp.isServerReady())); i++) {
+        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() ||
+                        !rootOcsp.isServerReady())); i++) {
             Thread.sleep(50);
         }
         if (!intOcsp.isServerReady() || !rootOcsp.isServerReady()) {
@@ -400,9 +583,17 @@ public class SSLSocketWithStapling {
      * will change the result from the client failing with CPVE (no fallback)
      * to a pass (fallback active).
      */
-    static void testLatencyNoStaple(Boolean fallback) throws Exception {
+    static void testLatencyNoStaple(Boolean fallback, boolean isTls13)
+            throws Exception {
         ClientParameters cliParams = new ClientParameters();
         ServerParameters servParams = new ServerParameters();
+        if (isTls13) {
+            cliParams.protocols = TLS13ONLY;
+            servParams.protocols = TLS13ONLY;
+        } else {
+            cliParams.protocols = TLS12MAX;
+            servParams.protocols = TLS12MAX;
+        }
         serverReady = false;
 
         // Give a 1 second delay before running the test.
@@ -411,7 +602,8 @@ public class SSLSocketWithStapling {
         Thread.sleep(1000);
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() || !rootOcsp.isServerReady())); i++) {
+        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() ||
+                        !rootOcsp.isServerReady())); i++) {
             Thread.sleep(50);
         }
         if (!intOcsp.isServerReady() || !rootOcsp.isServerReady()) {
@@ -462,7 +654,8 @@ public class SSLSocketWithStapling {
         Thread.sleep(1000);
 
         // Wait 5 seconds for server ready
-        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() || !rootOcsp.isServerReady())); i++) {
+        for (int i = 0; (i < 100 && (!intOcsp.isServerReady() ||
+                !rootOcsp.isServerReady())); i++) {
             Thread.sleep(50);
         }
         if (!intOcsp.isServerReady() || !rootOcsp.isServerReady()) {
@@ -504,7 +697,8 @@ public class SSLSocketWithStapling {
         SSLContext sslc = SSLContext.getInstance("TLS");
         sslc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
-        SSLServerSocketFactory sslssf = sslc.getServerSocketFactory();
+        SSLServerSocketFactory sslssf = new CustomizedServerSocketFactory(sslc,
+                servParams.protocols, servParams.ciphers);
 
         try (SSLServerSocket sslServerSocket =
                 (SSLServerSocket) sslssf.createServerSocket(serverPort)) {
@@ -570,7 +764,8 @@ public class SSLSocketWithStapling {
         SSLContext sslc = SSLContext.getInstance("TLS");
         sslc.init(null, tmf.getTrustManagers(), null);
 
-        SSLSocketFactory sslsf = sslc.getSocketFactory();
+        SSLSocketFactory sslsf = new CustomizedSocketFactory(sslc,
+                cliParams.protocols, cliParams.ciphers);
         try (SSLSocket sslSocket = (SSLSocket)sslsf.createSocket("localhost",
                 serverPort);
                 InputStream sslIS = sslSocket.getInputStream();
@@ -927,6 +1122,8 @@ public class SSLSocketWithStapling {
         boolean enabled = true;
         PKIXBuilderParameters pkixParams = null;
         PKIXRevocationChecker revChecker = null;
+        String[] protocols = null;
+        String[] ciphers = null;
 
         ClientParameters() { }
     }
@@ -939,9 +1136,160 @@ public class SSLSocketWithStapling {
         String respUri = "";
         boolean respOverride = false;
         boolean ignoreExts = false;
+        String[] protocols = null;
+        String[] ciphers = null;
 
         ServerParameters() { }
     }
+
+    static class CustomizedSocketFactory extends SSLSocketFactory {
+        final SSLContext sslc;
+        final String[] protocols;
+        final String[] cipherSuites;
+
+        CustomizedSocketFactory(SSLContext ctx, String[] prots, String[] suites)
+                throws GeneralSecurityException {
+            super();
+            sslc = (ctx != null) ? ctx : SSLContext.getDefault();
+            protocols = prots;
+            cipherSuites = suites;
+
+            // Create the Trust Manager Factory using the PKIX variant
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+        }
+
+        @Override
+        public Socket createSocket(Socket s, String host, int port,
+                boolean autoClose) throws IOException {
+            Socket sock =  sslc.getSocketFactory().createSocket(s, host, port,
+                    autoClose);
+            customizeSocket(sock);
+            return sock;
+        }
+
+        @Override
+        public Socket createSocket(InetAddress host, int port)
+                throws IOException {
+            Socket sock = sslc.getSocketFactory().createSocket(host, port);
+            customizeSocket(sock);
+            return sock;
+        }
+
+        @Override
+        public Socket createSocket(InetAddress host, int port,
+                InetAddress localAddress, int localPort) throws IOException {
+            Socket sock = sslc.getSocketFactory().createSocket(host, port,
+                    localAddress, localPort);
+            customizeSocket(sock);
+            return sock;
+        }
+
+        @Override
+        public Socket createSocket(String host, int port)
+                throws IOException {
+            Socket sock =  sslc.getSocketFactory().createSocket(host, port);
+            customizeSocket(sock);
+            return sock;
+        }
+
+        @Override
+        public Socket createSocket(String host, int port,
+                InetAddress localAddress, int localPort)
+                throws IOException {
+            Socket sock =  sslc.getSocketFactory().createSocket(host, port,
+                    localAddress, localPort);
+            customizeSocket(sock);
+            return sock;
+        }
+
+        @Override
+        public String[] getDefaultCipherSuites() {
+            return sslc.getDefaultSSLParameters().getCipherSuites();
+        }
+
+        @Override
+        public String[] getSupportedCipherSuites() {
+            return sslc.getSupportedSSLParameters().getCipherSuites();
+        }
+
+        private void customizeSocket(Socket sock) {
+            if (sock instanceof SSLSocket) {
+                if (protocols != null) {
+                    ((SSLSocket)sock).setEnabledProtocols(protocols);
+                }
+                if (cipherSuites != null) {
+                    ((SSLSocket)sock).setEnabledCipherSuites(cipherSuites);
+                }
+            }
+        }
+    }
+
+    static class CustomizedServerSocketFactory extends SSLServerSocketFactory {
+        final SSLContext sslc;
+        final String[] protocols;
+        final String[] cipherSuites;
+
+        CustomizedServerSocketFactory(SSLContext ctx, String[] prots, String[] suites)
+                throws GeneralSecurityException {
+            super();
+            sslc = (ctx != null) ? ctx : SSLContext.getDefault();
+            protocols = prots;
+            cipherSuites = suites;
+
+            // Create the Trust Manager Factory using the PKIX variant
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+        }
+
+        @Override
+        public ServerSocket createServerSocket(int port) throws IOException {
+            ServerSocket sock =
+                    sslc.getServerSocketFactory().createServerSocket(port);
+            customizeSocket(sock);
+            return sock;
+        }
+
+        @Override
+        public ServerSocket createServerSocket(int port, int backlog)
+                throws IOException {
+            ServerSocket sock =
+                    sslc.getServerSocketFactory().createServerSocket(port,
+                            backlog);
+            customizeSocket(sock);
+            return sock;
+        }
+
+        @Override
+        public ServerSocket createServerSocket(int port, int backlog,
+                InetAddress ifAddress) throws IOException {
+            ServerSocket sock =
+                    sslc.getServerSocketFactory().createServerSocket(port,
+                            backlog, ifAddress);
+            customizeSocket(sock);
+            return sock;
+        }
+
+        @Override
+        public String[] getDefaultCipherSuites() {
+            return sslc.getDefaultSSLParameters().getCipherSuites();
+        }
+
+        @Override
+        public String[] getSupportedCipherSuites() {
+            return sslc.getSupportedSSLParameters().getCipherSuites();
+        }
+
+        private void customizeSocket(ServerSocket sock) {
+            if (sock instanceof SSLServerSocket) {
+                if (protocols != null) {
+                    ((SSLServerSocket)sock).setEnabledProtocols(protocols);
+                }
+                if (cipherSuites != null) {
+                    ((SSLServerSocket)sock).setEnabledCipherSuites(cipherSuites);
+                }
+            }
+        }
+    }
+
 
     static class TestResult {
         Exception serverExc = null;

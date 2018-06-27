@@ -1208,6 +1208,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
     BASIC_REQUIRE_PROGS(DSYMUTIL, dsymutil)
+    BASIC_REQUIRE_PROGS(MIG, mig)
     BASIC_REQUIRE_PROGS(XATTR, xattr)
     BASIC_PATH_PROGS(CODESIGN, codesign)
     if test "x$CODESIGN" != "x"; then

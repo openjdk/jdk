@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,33 +25,40 @@
 
 package sun.security.ssl;
 
-import java.util.*;
 import java.security.CryptoPrimitive;
-import sun.security.ssl.CipherSuite.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.List;
 
 /**
- * Type safe enum for an SSL/TLS protocol version. Instances are obtained
- * using the static factory methods or by referencing the static members
- * in this class. Member variables are final and can be accessed without
- * accessor methods.
- *
- * There is only ever one instance per supported protocol version, this
- * means == can be used for comparision instead of equals() if desired.
- *
- * Checks for a particular version number should generally take this form:
- *
- * <pre>{@code
- * if (protocolVersion.v >= ProtocolVersion.TLS10) {
- *   // TLS 1.0 code goes here
- * } else {
- *   // SSL 3.0 code here
- * }
- * }</pre>
+ * Enum for an SSL/TLS/DTLS protocol version.
  *
  * @author  Andreas Sterbenz
  * @since   1.4.1
  */
-public final class ProtocolVersion implements Comparable<ProtocolVersion> {
+enum ProtocolVersion {
+//    TLS13           (0x0304,    "TLSv1.3",      false),
+    TLS13           (SSLConfiguration.tls13VN,    "TLSv1.3",      false),
+    TLS12           (0x0303,    "TLSv1.2",      false),
+    TLS11           (0x0302,    "TLSv1.1",      false),
+    TLS10           (0x0301,    "TLSv1",        false),
+    SSL30           (0x0300,    "SSLv3",        false),
+    SSL20Hello      (0x0002,    "SSLv2Hello",   false),
+
+    DTLS12          (0xFEFD,    "DTLSv1.2",     true),
+    DTLS10          (0xFEFF,    "DTLSv1.0",     true),
+
+    // Dummy protocol version value for invalid SSLSession
+    NONE            (-1,        "NONE",         false);
+
+
+    final int id;
+    final String name;
+    final boolean isDTLS;
+    final byte major;
+    final byte minor;
+    final boolean isAvailable;
 
     // The limit of maximum protocol version
     static final int LIMIT_MAX_VALUE = 0xFFFF;
@@ -59,257 +66,348 @@ public final class ProtocolVersion implements Comparable<ProtocolVersion> {
     // The limit of minimum protocol version
     static final int LIMIT_MIN_VALUE = 0x0000;
 
-    // Dummy protocol version value for invalid SSLSession
-    static final ProtocolVersion NONE = new ProtocolVersion(-1, "NONE");
+    // (D)TLS ProtocolVersion array for TLS 1.0 and previous versions.
+    static final ProtocolVersion[] PROTOCOLS_TO_10 = new ProtocolVersion[] {
+            TLS10, SSL30
+        };
 
-    // If enabled, send/accept SSLv2 hello messages
-    static final ProtocolVersion SSL20Hello =
-                                new ProtocolVersion(0x0002, "SSLv2Hello");
+    // (D)TLS ProtocolVersion array for TLS 1.1/DTLS 1.0 and previous versions.
+    static final ProtocolVersion[] PROTOCOLS_TO_11 = new ProtocolVersion[] {
+            TLS11, TLS10, SSL30, DTLS10
+        };
 
-    // SSL 3.0
-    static final ProtocolVersion SSL30 = new ProtocolVersion(0x0300, "SSLv3");
+    // (D)TLS ProtocolVersion array for (D)TLS 1.2 and previous versions.
+    static final ProtocolVersion[] PROTOCOLS_TO_12 = new ProtocolVersion[] {
+            TLS12, TLS11, TLS10, SSL30, DTLS12, DTLS10
+    };
 
-    // TLS 1.0
-    static final ProtocolVersion TLS10 = new ProtocolVersion(0x0301, "TLSv1");
+    // (D)TLS ProtocolVersion array for (D)TLS 1.3 and previous versions.
+    static final ProtocolVersion[] PROTOCOLS_TO_13 = new ProtocolVersion[] {
+            TLS13, TLS12, TLS11, TLS10, SSL30, DTLS12, DTLS10
+        };
 
-    // TLS 1.1
-    static final ProtocolVersion TLS11 = new ProtocolVersion(0x0302, "TLSv1.1");
+    // No protocol version specified.
+    static final ProtocolVersion[] PROTOCOLS_OF_NONE = new ProtocolVersion[] {
+            NONE
+        };
 
-    // TLS 1.2
-    static final ProtocolVersion TLS12 = new ProtocolVersion(0x0303, "TLSv1.2");
+    // (D)TLS ProtocolVersion array for SSL 3.0.
+    static final ProtocolVersion[] PROTOCOLS_OF_30 = new ProtocolVersion[] {
+            SSL30
+        };
 
-    // DTLS 1.0
-    // {254, 255}, the version value of DTLS 1.0.
-    static final ProtocolVersion DTLS10 =
-                                new ProtocolVersion(0xFEFF, "DTLSv1.0");
+    // (D)TLS ProtocolVersion array for TLS 1.1/DTSL 1.0.
+    static final ProtocolVersion[] PROTOCOLS_OF_11 = new ProtocolVersion[] {
+            TLS11, DTLS10
+        };
 
-    // No DTLS 1.1, that version number was skipped in order to harmonize
-    // version numbers with TLS.
+    // (D)TLS ProtocolVersion array for (D)TLS 1.2.
+    static final ProtocolVersion[] PROTOCOLS_OF_12 = new ProtocolVersion[] {
+            TLS12, DTLS12
+        };
 
-    // DTLS 1.2
-    // {254, 253}, the version value of DTLS 1.2.
-    static final ProtocolVersion DTLS12 =
-                                new ProtocolVersion(0xFEFD, "DTLSv1.2");
+    // (D)TLS ProtocolVersion array for (D)TLS 1.3.
+    static final ProtocolVersion[] PROTOCOLS_OF_13 = new ProtocolVersion[] {
+            TLS13
+        };
 
-    private static final boolean FIPS = SunJSSE.isFIPS();
+    // (D)TLS ProtocolVersion array for TSL 1.0/1.1 and DTLS 1.0.
+    static final ProtocolVersion[] PROTOCOLS_10_11 = new ProtocolVersion[] {
+            TLS11, TLS10, DTLS10
+        };
 
-    // minimum version we implement (SSL 3.0)
-    static final ProtocolVersion MIN = FIPS ? TLS10 : SSL30;
+    // (D)TLS ProtocolVersion array for TSL 1.1/1.2 and DTLS 1.0/1.2.
+    static final ProtocolVersion[] PROTOCOLS_11_12 = new ProtocolVersion[] {
+            TLS12, TLS11, DTLS12, DTLS10
+        };
 
-    // maximum version we implement (TLS 1.2)
-    static final ProtocolVersion MAX = TLS12;
+    // (D)TLS ProtocolVersion array for TSL 1.2/1.3 and DTLS 1.2/1.3.
+    static final ProtocolVersion[] PROTOCOLS_12_13 = new ProtocolVersion[] {
+            TLS13, TLS12, DTLS12
+        };
 
-    // SSL/TLS ProtocolVersion to use by default (TLS 1.2)
-    static final ProtocolVersion DEFAULT_TLS = TLS12;
+    // (D)TLS ProtocolVersion array for TSL 1.0/1.1/1.2 and DTLS 1.0/1.2.
+    static final ProtocolVersion[] PROTOCOLS_10_12 = new ProtocolVersion[] {
+            TLS12, TLS11, TLS10, DTLS12, DTLS10
+        };
 
-    // DTLS ProtocolVersion to use by default (TLS 1.2)
-    static final ProtocolVersion DEFAULT_DTLS = DTLS12;
+    // TLS ProtocolVersion array for TLS 1.2 and previous versions.
+    static final ProtocolVersion[] PROTOCOLS_TO_TLS12 = new ProtocolVersion[] {
+            TLS12, TLS11, TLS10, SSL30
+    };
 
-    // Default version for hello messages (SSLv2Hello)
-    static final ProtocolVersion DEFAULT_HELLO = FIPS ? TLS10 : SSL30;
+    // TLS ProtocolVersion array for TLS 1.1 and previous versions.
+    static final ProtocolVersion[] PROTOCOLS_TO_TLS11 = new ProtocolVersion[] {
+            TLS11, TLS10, SSL30
+    };
 
-    // Available protocols
-    //
-    // Including all supported protocols except the disabled ones.
-    static final Set<ProtocolVersion> availableProtocols;
+    // TLS ProtocolVersion array for TLS 1.0 and previous versions.
+    static final ProtocolVersion[] PROTOCOLS_TO_TLS10 = new ProtocolVersion[] {
+            TLS10, SSL30
+    };
 
-    // version in 16 bit MSB format as it appears in records and
-    // messages, i.e. 0x0301 for TLS 1.0
-    public final int v;
+    // Empty ProtocolVersion array
+    static final ProtocolVersion[] PROTOCOLS_EMPTY = new ProtocolVersion[0];
 
-    // major and minor version
-    public final byte major, minor;
-
-    // name used in JSSE (e.g. TLSv1 for TLS 1.0)
-    final String name;
-
-    // Initialize the available protocols.
-    static {
-        Set<ProtocolVersion> protocols = new HashSet<>(7);
-
-        ProtocolVersion[] pvs = new ProtocolVersion[] {
-                SSL20Hello, SSL30, TLS10, TLS11, TLS12, DTLS10, DTLS12};
-        EnumSet<CryptoPrimitive> cryptoPrimitives =
-            EnumSet.<CryptoPrimitive>of(CryptoPrimitive.KEY_AGREEMENT);
-        for (ProtocolVersion p : pvs) {
-            if (SSLAlgorithmConstraints.DEFAULT_SSL_ONLY.permits(
-                    cryptoPrimitives, p.name, null)) {
-                protocols.add(p);
-            }
-        }
-
-        availableProtocols =
-                Collections.<ProtocolVersion>unmodifiableSet(protocols);
-    }
-
-    // private
-    private ProtocolVersion(int v, String name) {
-        this.v = v;
+    private ProtocolVersion(int id, String name, boolean isDTLS) {
+        this.id = id;
         this.name = name;
-        major = (byte)(v >>> 8);
-        minor = (byte)(v & 0xFF);
-    }
+        this.isDTLS = isDTLS;
+        this.major = (byte)((id >>> 8) & 0xFF);
+        this.minor = (byte)(id & 0xFF);
 
-    // private
-    private static ProtocolVersion valueOf(int v) {
-        if (v == SSL30.v) {
-            return SSL30;
-        } else if (v == TLS10.v) {
-            return TLS10;
-        } else if (v == TLS11.v) {
-            return TLS11;
-        } else if (v == TLS12.v) {
-            return TLS12;
-        } else if (v == SSL20Hello.v) {
-            return SSL20Hello;
-        } else if (v == DTLS10.v) {
-            return DTLS10;
-        } else if (v == DTLS12.v) {
-            return DTLS12;
-        } else {
-            int major = (v >>> 8) & 0xFF;
-            int minor = v & 0xFF;
-            return new ProtocolVersion(v, "Unknown-" + major + "." + minor);
-        }
+        this.isAvailable = SSLAlgorithmConstraints.DEFAULT_SSL_ONLY.permits(
+                EnumSet.<CryptoPrimitive>of(CryptoPrimitive.KEY_AGREEMENT),
+                name, null);
     }
 
     /**
-     * Return a ProtocolVersion with the specified major and minor version
-     * numbers. Never throws exceptions.
+     * Return a ProtocolVersion with the specified major and minor
+     * version numbers.
      */
-    public static ProtocolVersion valueOf(int major, int minor) {
-        return valueOf(((major & 0xFF) << 8) | (minor & 0xFF));
+    static ProtocolVersion valueOf(byte major, byte minor) {
+        for (ProtocolVersion pv : ProtocolVersion.values()) {
+            if ((pv.major == major) && (pv.minor == minor)) {
+                return pv;
+            }
+        }
+
+        return null;
     }
 
     /**
-     * Return a ProtocolVersion for the given name.
+     * Return a ProtocolVersion with the specified version number.
+     */
+    static ProtocolVersion valueOf(int id) {
+        for (ProtocolVersion pv : ProtocolVersion.values()) {
+            if (pv.id == id) {
+                return pv;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return name of a (D)TLS protocol specified by major and
+     * minor version numbers.
+     */
+    static String nameOf(byte major, byte minor) {
+        for (ProtocolVersion pv : ProtocolVersion.values()) {
+            if ((pv.major == major) && (pv.minor == minor)) {
+                return pv.name;
+            }
+        }
+
+        return "(D)TLS-" + major + "." + minor;
+    }
+
+    /**
+     * Return name of a (D)TLS protocol specified by a protocol number.
+     */
+    static String nameOf(int id) {
+        return nameOf((byte)((id >>> 8) & 0xFF), (byte)(id & 0xFF));
+    }
+
+    /**
+     * Return a ProtocolVersion for the given (D)TLS protocol name.
+     */
+    static ProtocolVersion nameOf(String name) {
+        for (ProtocolVersion pv : ProtocolVersion.values()) {
+            if (pv.name.equals(name)) {
+                return pv;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Return true if the specific (D)TLS protocol is negotiable.
      *
-     * @exception IllegalArgumentException if name is null or does not
-     * identify a supported protocol
+     * Used to filter out SSLv2Hello and protocol numbers less than the
+     * minimal supported protocol versions.
      */
-    static ProtocolVersion valueOf(String name) {
-        if (name == null) {
-            throw new IllegalArgumentException("Protocol cannot be null");
-        }
-
-        if (FIPS && (name.equals(SSL30.name) || name.equals(SSL20Hello.name))) {
-            throw new IllegalArgumentException(
-                    "Only TLS 1.0 or later allowed in FIPS mode");
-        }
-
-        if (name.equals(SSL30.name)) {
-            return SSL30;
-        } else if (name.equals(TLS10.name)) {
-            return TLS10;
-        } else if (name.equals(TLS11.name)) {
-            return TLS11;
-        } else if (name.equals(TLS12.name)) {
-            return TLS12;
-        } else if (name.equals(SSL20Hello.name)) {
-            return SSL20Hello;
-        } else if (name.equals(DTLS10.name)) {
-            return DTLS10;
-        } else if (name.equals(DTLS12.name)) {
-            return DTLS12;
+    static boolean isNegotiable(
+            byte major, byte minor, boolean isDTLS, boolean allowSSL20Hello) {
+        int v = ((major & 0xFF) << 8) | (minor & 0xFF);
+        if (isDTLS) {
+            return v <= DTLS10.id;
         } else {
-            throw new IllegalArgumentException(name);
+            if (v < SSL30.id) {
+               if (!allowSSL20Hello || (v != SSL20Hello.id)) {
+                   return false;
+               }
+            }
+            return true;
         }
-    }
-
-    @Override
-    public String toString() {
-        return name;
     }
 
     /**
-     * Compares this object with the specified object for order.
+     * Get names of a list of ProtocolVersion objects.
      */
-    @Override
-    public int compareTo(ProtocolVersion protocolVersion) {
-        if (maybeDTLSProtocol()) {
-            if (!protocolVersion.maybeDTLSProtocol()) {
-                throw new IllegalArgumentException("Not DTLS protocol");
+    static String[] toStringArray(List<ProtocolVersion> protocolVersions) {
+        if ((protocolVersions != null) && !protocolVersions.isEmpty()) {
+            String[] protocolNames = new String[protocolVersions.size()];
+            int i = 0;
+            for (ProtocolVersion pv : protocolVersions) {
+                protocolNames[i++] = pv.name;
             }
 
-            return protocolVersion.v - this.v;
-        } else {
-            if (protocolVersion.maybeDTLSProtocol()) {
-                throw new IllegalArgumentException("Not TLS protocol");
+            return protocolNames;
+        }
+
+        return new String[0];
+    }
+
+    /**
+     * Get names of a list of protocol version identifiers.
+     */
+    static String[] toStringArray(int[] protocolVersions) {
+        if ((protocolVersions != null) && protocolVersions.length != 0) {
+            String[] protocolNames = new String[protocolVersions.length];
+            int i = 0;
+            for (int pv : protocolVersions) {
+                protocolNames[i++] = ProtocolVersion.nameOf(pv);
             }
 
-            return this.v - protocolVersion.v;
+            return protocolNames;
+        }
+
+        return new String[0];
+    }
+
+    /**
+     * Get a list of ProtocolVersion objects of an array protocol
+     * version names.
+     */
+    static List<ProtocolVersion> namesOf(String[] protocolNames) {
+        if (protocolNames == null || protocolNames.length == 0) {
+            return Collections.<ProtocolVersion>emptyList();
+        }
+
+        List<ProtocolVersion> pvs = new ArrayList<>(protocolNames.length);
+        for (String pn : protocolNames) {
+            ProtocolVersion pv = ProtocolVersion.nameOf(pn);
+            if (pv == null) {
+                throw new IllegalArgumentException(
+                        "Unsupported protocol" + pn);
+            }
+
+            pvs.add(pv);
+        }
+
+        return Collections.unmodifiableList(pvs);
+    }
+
+    /**
+     * Return true if the specific protocol version name is
+     * of (D)TLS 1.2 or newer version.
+     */
+    static boolean useTLS12PlusSpec(String name) {
+        ProtocolVersion pv = ProtocolVersion.nameOf(name);
+        if (pv != null && pv != NONE) {
+            return pv.isDTLS ? (pv.id <= DTLS12.id) : (pv.id >= TLS12.id);
+        }
+
+        return false;
+    }
+
+    /**
+     * Compares this object with the specified ProtocolVersion.
+     *
+     * @see java.lang.Comparable
+     */
+    int compare(ProtocolVersion that) {
+        if (this == that) {
+            return 0;
+        }
+
+        if (this == ProtocolVersion.NONE) {
+            return -1;
+        } else if (that == ProtocolVersion.NONE) {
+            return 1;
+        }
+
+        if (isDTLS) {
+            return that.id - this.id;
+        } else {
+            return this.id - that.id;
         }
     }
 
     /**
-     * Returns true if a ProtocolVersion represents a DTLS protocol.
+     * Return true if this ProtocolVersion object is of (D)TLS 1.3 or
+     * newer version.
      */
-    boolean isDTLSProtocol() {
-        return this.v == DTLS12.v || this.v == DTLS10.v;
+    boolean useTLS13PlusSpec() {
+        return isDTLS ? (this.id < DTLS12.id) : (this.id >= TLS13.id);
     }
 
     /**
-     * Returns true if a ProtocolVersion may represent a DTLS protocol.
+     * Return true if this ProtocolVersion object is of (D)TLS 1.2 or
+     * newer version.
      */
-    boolean maybeDTLSProtocol() {
-        return (this.major & 0x80) != 0;
-    }
-
     boolean useTLS12PlusSpec() {
-        return maybeDTLSProtocol() ? (this.v <= DTLS12.v) : (this.v >= TLS12.v);
+        return isDTLS ? (this.id <= DTLS12.id) : (this.id >= TLS12.id);
     }
 
+    /**
+     * Return true if this ProtocolVersion object is of
+     * TLS 1.1/DTLS 1.0 or newer version.
+     */
     boolean useTLS11PlusSpec() {
-        return maybeDTLSProtocol() ? true : (this.v >= TLS11.v);
+        return isDTLS ? true : (this.id >= TLS11.id);
     }
 
+    /**
+     * Return true if this ProtocolVersion object is of TLS 1.0 or
+     * newer version.
+     */
     boolean useTLS10PlusSpec() {
-        return maybeDTLSProtocol() ? true : (this.v >= TLS10.v);
+        return isDTLS ? true : (this.id >= TLS10.id);
     }
 
-    boolean obsoletes(CipherSuite suite) {
-        ProtocolVersion proto = this;
-        if (proto.isDTLSProtocol()) {
-            // DTLS bans stream ciphers.
-            if (suite.cipher.cipherType == CipherType.STREAM_CIPHER) {
-                return true;
-            }
-
-            proto = mapToTLSProtocol(this);
-        }
-
-        return (proto.v >= suite.obsoleted);
+    /**
+     * Return true if this ProtocolVersion object is of TLS 1.0 or
+     * newer version.
+     */
+    static boolean useTLS10PlusSpec(int id, boolean isDTLS) {
+        return isDTLS ? true : (id >= TLS10.id);
     }
 
-    boolean supports(CipherSuite suite) {
-        ProtocolVersion proto = this;
-        if (proto.isDTLSProtocol()) {
-            // DTLS bans stream ciphers.
-            if (suite.cipher.cipherType == CipherType.STREAM_CIPHER) {
-                return false;
-            }
-
-            proto = mapToTLSProtocol(this);
-        }
-
-        return (proto.v >= suite.supported);
+    /**
+     * Return true if this ProtocolVersion object is of (D)TLS 1.3 or
+     * newer version.
+     */
+    static boolean useTLS13PlusSpec(int id, boolean isDTLS) {
+        return isDTLS ? (id < DTLS12.id) : (id >= TLS13.id);
     }
 
-    // Map a specified protocol to the corresponding TLS version.
-    //
-    // DTLS 1.2 -> TLS 1.2
-    // DTLS 1.0 -> TLS 1.1
-    private static ProtocolVersion mapToTLSProtocol(
-            ProtocolVersion protocolVersion) {
-
-        if (protocolVersion.isDTLSProtocol()) {
-            if (protocolVersion.v == DTLS10.v) {
-                protocolVersion = TLS11;
-            } else {    // DTLS12
-                protocolVersion = TLS12;
+    /**
+     * Select the lower of that suggested protocol version and
+     * the highest of the listed protocol versions.
+     *
+     * @param listedVersions    the listed protocol version
+     * @param suggestedVersion  the suggested protocol version
+     */
+    static ProtocolVersion selectedFrom(
+            List<ProtocolVersion> listedVersions, int suggestedVersion) {
+        ProtocolVersion selectedVersion = ProtocolVersion.NONE;
+        for (ProtocolVersion pv : listedVersions) {
+            if (pv.id == suggestedVersion) {
+                return pv;
+            } else if (pv.isDTLS) {
+                if (pv.id > suggestedVersion && pv.id < selectedVersion.id) {
+                    selectedVersion = pv;
+                }
+            } else {
+                if (pv.id < suggestedVersion && pv.id > selectedVersion.id) {
+                    selectedVersion = pv;
+                }
             }
         }
 
-        return protocolVersion;
+        return selectedVersion;
     }
 }
