@@ -75,73 +75,33 @@ void buildJniFunctionName(const char *sym, const char *cname,
 }
 
 JNIEXPORT size_t JNICALL
-getLastErrorString(char *utf8_jvmErrorMsg, size_t cbErrorMsg)
-{
-    size_t n = 0;
-    if (cbErrorMsg > 0) {
-        BOOLEAN noError = FALSE;
-        WCHAR *utf16_osErrorMsg = (WCHAR *)malloc(cbErrorMsg*sizeof(WCHAR));
-        if (utf16_osErrorMsg == NULL) {
-            // OOM accident
-            strncpy(utf8_jvmErrorMsg, "Out of memory", cbErrorMsg);
-            // truncate if too long
-            utf8_jvmErrorMsg[cbErrorMsg - 1] = '\0';
-            n = strlen(utf8_jvmErrorMsg);
-        } else {
-            DWORD errval = GetLastError();
-            if (errval != 0) {
-                // WIN32 error
-                n = (size_t)FormatMessageW(
-                    FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-                    NULL,
-                    errval,
-                    0,
-                    utf16_osErrorMsg,
-                    (DWORD)cbErrorMsg,
-                    NULL);
-                if (n > 3) {
-                    // Drop final '.', CR, LF
-                    if (utf16_osErrorMsg[n - 1] == L'\n') --n;
-                    if (utf16_osErrorMsg[n - 1] == L'\r') --n;
-                    if (utf16_osErrorMsg[n - 1] == L'.') --n;
-                    utf16_osErrorMsg[n] = L'\0';
-                }
-            } else if (errno != 0) {
-                // C runtime error that has no corresponding WIN32 error code
-                int ret = _wcserror_s(utf16_osErrorMsg, cbErrorMsg, errno);
-                if (ret == 0)
-                    n = wcslen(utf16_osErrorMsg);
-            } else
-                noError = TRUE; //OS has no error to report
+getLastErrorString(char *buf, size_t len) {
 
-            if (!noError) {
-                if (n > 0) {
-                    n = WideCharToMultiByte(
-                        CP_UTF8,
-                        0,
-                        utf16_osErrorMsg,
-                        (int)n,
-                        utf8_jvmErrorMsg,
-                        (int)cbErrorMsg,
-                        NULL,
-                        NULL);
+    DWORD errval;
 
-                    // no way to die
-                    if (n > 0)
-                        utf8_jvmErrorMsg[min(cbErrorMsg - 1, n)] = '\0';
-                }
-
-                if (n <= 0) {
-                    strncpy(utf8_jvmErrorMsg, "Secondary error while OS message extraction", cbErrorMsg);
-                    // truncate if too long
-                    utf8_jvmErrorMsg[cbErrorMsg - 1] = '\0';
-                    n = strlen(utf8_jvmErrorMsg);
-                }
-            }
-            free(utf16_osErrorMsg);
+    if ((errval = GetLastError()) != 0) {
+        // DOS error
+        size_t n = (size_t)FormatMessage(
+                FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                errval,
+                0,
+                buf,
+                (DWORD)len,
+                NULL);
+        if (n > 3) {
+            // Drop final '.', CR, LF
+            if (buf[n - 1] == '\n') n--;
+            if (buf[n - 1] == '\r') n--;
+            if (buf[n - 1] == '.') n--;
+            buf[n] = '\0';
         }
+        return n;
     }
-    return n;
+
+    // C runtime error that has no corresponding DOS error code
+    if (errno == 0 || len < 1) return 0;
+    return strerror_s(buf, len, errno);
 }
 
 JNIEXPORT int JNICALL
