@@ -725,18 +725,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Fairer handling of safepoints for native methods.
-  //
-  // Generate code which reads from the polling page. This special handling is needed as the
-  // linux-ppc64 kernel before 2.6.6 doesn't set si_addr on some segfaults in 64bit mode
-  // (cf. http://www.kernel.org/pub/linux/kernel/v2.6/ChangeLog-2.6.6), especially when we try
-  // to read from the safepoint polling page.
-  address generate_load_from_poll() {
-    StubCodeMark mark(this, "StubRoutines", "generate_load_from_poll");
-    address start = __ function_entry();
-    __ unimplemented("StubRoutines::verify_oop", 95);  // TODO PPC port
-    return start;
-  }
 
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //

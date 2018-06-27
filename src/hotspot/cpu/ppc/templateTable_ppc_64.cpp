@@ -3320,9 +3320,9 @@ void TemplateTable::fast_xaccess(TosState state) {
 //   - byte_no
 //
 // Output:
-//   - Rmethod:        The method to invoke next.
+//   - Rmethod:        The method to invoke next or i-klass (invokeinterface).
 //   - Rret_addr:      The return address to return to.
-//   - Rindex:         MethodType (invokehandle) or CallSite obj (invokedynamic)
+//   - Rindex:         MethodType (invokehandle), CallSite obj (invokedynamic) or Method (invokeinterface)
 //   - Rrecv:          Cache for "this" pointer, might be noreg if static call.
 //   - Rflags:         Method flags from const pool cache.
 //
@@ -3332,7 +3332,7 @@ void TemplateTable::fast_xaccess(TosState state) {
 void TemplateTable::prepare_invoke(int byte_no,
                                    Register Rmethod,  // linked method (or i-klass)
                                    Register Rret_addr,// return address
-                                   Register Rindex,   // itable index, MethodType, etc.
+                                   Register Rindex,   // itable index, MethodType, Method, etc.
                                    Register Rrecv,    // If caller wants to see it.
                                    Register Rflags,   // If caller wants to test it.
                                    Register Rscratch
@@ -3618,9 +3618,9 @@ void TemplateTable::invokeinterface(int byte_no) {
   Register Rscratch = Rflags; // Rflags is dead now.
 
   __ profile_final_call(Rscratch1, Rscratch);
-  __ profile_arguments_type(Rindex, Rscratch, Rrecv_klass /* scratch */, true);
+  __ profile_arguments_type(Rmethod, Rscratch, Rrecv_klass /* scratch */, true);
 
-  __ call_from_interpreter(Rindex, Rret_addr, Rscratch, Rrecv_klass /* scratch */);
+  __ call_from_interpreter(Rmethod, Rret_addr, Rscratch, Rrecv_klass /* scratch */);
 
   __ bind(LnotVFinal);
 
