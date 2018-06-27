@@ -49,6 +49,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   MACH_EXC_SERVER := $(MIG_OUTPUT_DIR)/mach_excServer.c
 
   $(MACH_EXC_SERVER): $(SDKROOT)/usr/include/mach/mach_exc.defs
+	$(call MakeTargetDir)
 	$(MIG) -isysroot $(SDKROOT) -server $@ -user $(MACH_EXC_USER) \
 	    -header $(MACH_EXC_HEADER) $(SDKROOT)/usr/include/mach/mach_exc.defs
 
