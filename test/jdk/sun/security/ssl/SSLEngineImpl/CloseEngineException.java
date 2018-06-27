@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,10 @@ import java.io.*;
 import java.security.*;
 import java.nio.*;
 
+// Note that this test case depends on JSSE provider implementation details.
 public class CloseEngineException {
 
-    private static boolean debug = false;
+    private static boolean debug = true;
 
     private SSLContext sslc;
     private SSLEngine ssle1;    // client
@@ -94,43 +95,53 @@ public class CloseEngineException {
         SSLEngineResult result1;        // ssle1's results from last operation
         SSLEngineResult result2;        // ssle2's results from last operation
 
-        while (!isEngineClosed(ssle1) || !isEngineClosed(ssle2)) {
+        while (!isEngineClosed(ssle1) && !isEngineClosed(ssle2)) {
 
             log("================");
 
-            result1 = ssle1.wrap(appOut1, oneToTwo);
-            result2 = ssle2.wrap(appOut2, twoToOne);
+            if (!isEngineClosed(ssle1)) {
+                result1 = ssle1.wrap(appOut1, oneToTwo);
+                runDelegatedTasks(result1, ssle1);
 
-            log("wrap1:  " + result1);
-            log("oneToTwo  = " + oneToTwo);
-            log("");
+                log("wrap1:  " + result1);
+                log("oneToTwo  = " + oneToTwo);
+                log("");
 
-            log("wrap2:  " + result2);
-            log("twoToOne  = " + twoToOne);
+                oneToTwo.flip();
+            }
+            if (!isEngineClosed(ssle2)) {
+                result2 = ssle2.wrap(appOut2, twoToOne);
+                runDelegatedTasks(result2, ssle2);
 
-            runDelegatedTasks(result1, ssle1);
-            runDelegatedTasks(result2, ssle2);
+                log("wrap2:  " + result2);
+                log("twoToOne  = " + twoToOne);
 
-            oneToTwo.flip();
-            twoToOne.flip();
+                twoToOne.flip();
+            }
 
             log("----");
 
-            result1 = ssle1.unwrap(twoToOne, appIn1);
-            result2 = ssle2.unwrap(oneToTwo, appIn2);
+            if (!isEngineClosed(ssle1) && !dataDone) {
+            log("--");
+                result1 = ssle1.unwrap(twoToOne, appIn1);
+                runDelegatedTasks(result1, ssle1);
 
-            log("unwrap1: " + result1);
-            log("twoToOne  = " + twoToOne);
-            log("");
+                log("unwrap1: " + result1);
+                log("twoToOne  = " + twoToOne);
+                log("");
 
-            log("unwrap2: " + result2);
-            log("oneToTwo  = " + oneToTwo);
+                twoToOne.compact();
+            }
+            if (!isEngineClosed(ssle2)) {
+            log("---");
+                result2 = ssle2.unwrap(oneToTwo, appIn2);
+                runDelegatedTasks(result2, ssle2);
 
-            runDelegatedTasks(result1, ssle1);
-            runDelegatedTasks(result2, ssle2);
+                log("unwrap2: " + result2);
+                log("oneToTwo  = " + oneToTwo);
 
-            oneToTwo.compact();
-            twoToOne.compact();
+                oneToTwo.compact();
+            }
 
             /*
              * If we've transfered all the data between app1 and app2,
@@ -154,7 +165,7 @@ public class CloseEngineException {
                     throw new Exception(
                         "TEST FAILED:  didn't throw Exception");
                 } catch (SSLException e) {
-                    System.out.println("PARTIAL PASS");
+                    System.err.println("PARTIAL PASS");
                 }
             }
         }
@@ -167,7 +178,7 @@ public class CloseEngineException {
             throw new Exception(
                 "TEST FAILED:  didn't throw Exception");
         } catch (SSLException e) {
-            System.out.println("TEST PASSED");
+            System.err.println("TEST PASSED");
         }
     }
 
@@ -181,7 +192,7 @@ public class CloseEngineException {
 
         test.runTest();
 
-        System.out.println("Test Passed.");
+        System.err.println("Test Passed.");
     }
 
     /*
@@ -277,7 +288,7 @@ public class CloseEngineException {
 
     private static void log(String str) {
         if (debug) {
-            System.out.println(str);
+            System.err.println(str);
         }
     }
 }

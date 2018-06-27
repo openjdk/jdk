@@ -26,10 +26,11 @@ import java.util.List;
 import java.util.Map;
 import jdk.test.lib.apps.LingeredApp;
 
-/*
+/**
  * @test
  * @bug 8193352
  * @summary Test clhsdb 'thread' and 'threads' commands
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm ClhsdbThread
  */

@@ -455,6 +455,7 @@ void MetaspaceShared::serialize_well_known_classes(SerializeClosure* soc) {
   java_lang_StackTraceElement::serialize(soc);
   java_lang_StackFrameInfo::serialize(soc);
   java_lang_LiveStackFrameInfo::serialize(soc);
+  java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize(soc);
 }
 
 address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {

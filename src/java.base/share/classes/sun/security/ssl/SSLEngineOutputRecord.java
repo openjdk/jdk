@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,14 @@
 
 package sun.security.ssl;
 
-import java.io.*;
-import java.nio.*;
-import java.util.*;
-
-import javax.net.ssl.SSLException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.LinkedList;
 import javax.net.ssl.SSLHandshakeException;
-import sun.security.util.HexDumpEncoder;
-import static sun.security.ssl.Ciphertext.RecordType;
+
+import sun.security.ssl.SSLCipher.SSLWriteCipher;
+import sun.security.ssl.KeyUpdate.KeyUpdateMessage;
+import sun.security.ssl.KeyUpdate.KeyUpdateRequest;
 
 /**
  * {@code OutputRecord} implementation for {@code SSLEngine}.
@@ -40,23 +40,22 @@ import static sun.security.ssl.Ciphertext.RecordType;
 final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
     private HandshakeFragment fragmenter = null;
-    private LinkedList<RecordMemo> alertMemos = new LinkedList<>();
     private boolean isTalkingToV2 = false;      // SSLv2Hello
     private ByteBuffer v2ClientHello = null;    // SSLv2Hello
 
     private boolean isCloseWaiting = false;
 
-    SSLEngineOutputRecord() {
-        this.writeAuthenticator = MAC.TLS_NULL;
+    SSLEngineOutputRecord(HandshakeHash handshakeHash) {
+        super(handshakeHash, SSLWriteCipher.nullTlsWriteCipher());
 
         this.packetSize = SSLRecord.maxRecordSize;
-        this.protocolVersion = ProtocolVersion.DEFAULT_TLS;
+        this.protocolVersion = ProtocolVersion.NONE;
     }
 
     @Override
     public synchronized void close() throws IOException {
         if (!isClosed) {
-            if (alertMemos != null && !alertMemos.isEmpty()) {
+            if (fragmenter != null && fragmenter.hasAlert()) {
                 isCloseWaiting = true;
             } else {
                 super.close();
@@ -66,19 +65,11 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
     @Override
     void encodeAlert(byte level, byte description) throws IOException {
-        RecordMemo memo = new RecordMemo();
+        if (fragmenter == null) {
+           fragmenter = new HandshakeFragment();
+        }
 
-        memo.contentType = Record.ct_alert;
-        memo.majorVersion = protocolVersion.major;
-        memo.minorVersion = protocolVersion.minor;
-        memo.encodeCipher = writeCipher;
-        memo.encodeAuthenticator = writeAuthenticator;
-
-        memo.fragment = new byte[2];
-        memo.fragment[0] = level;
-        memo.fragment[1] = description;
-
-        alertMemos.add(memo);
+        fragmenter.queueUpAlert(level, description);
     }
 
     @Override
@@ -93,7 +84,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             firstMessage = false;
 
             if ((helloVersion == ProtocolVersion.SSL20Hello) &&
-                (source[offset] == HandshakeMessage.ht_client_hello) &&
+                (source[offset] == SSLHandshake.CLIENT_HELLO.id) &&
                                             //  5: recode header size
                 (source[offset + 4 + 2 + 32] == 0)) {
                                             // V3 session ID is empty
@@ -106,7 +97,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
                         source, (offset + 4), (length - 4));
 
                 v2ClientHello.position(2);     // exclude the header
-                handshakeHash.update(v2ClientHello);
+                handshakeHash.deliver(v2ClientHello);
                 v2ClientHello.position(0);
 
                 return;
@@ -114,8 +105,8 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         }
 
         byte handshakeType = source[offset];
-        if (handshakeType != HandshakeMessage.ht_hello_request) {
-            handshakeHash.update(source, offset, length);
+        if (handshakeHash.isHashable(handshakeType)) {
+            handshakeHash.deliver(source, offset, length);
         }
 
         fragmenter.queueUpFragment(source, offset, length);
@@ -135,22 +126,43 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     @Override
-    Ciphertext encode(ByteBuffer[] sources, int offset, int length,
+    Ciphertext encode(
+        ByteBuffer[] srcs, int srcsOffset, int srcsLength,
+        ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
+        return encode(srcs, srcsOffset, srcsLength, dsts[0]);
+    }
+
+    private Ciphertext encode(ByteBuffer[] sources, int offset, int length,
             ByteBuffer destination) throws IOException {
 
-        if (writeAuthenticator.seqNumOverflow()) {
-            if (debug != null && Debug.isOn("ssl")) {
-                System.out.println(Thread.currentThread().getName() +
-                    ", sequence number extremely close to overflow " +
+        if (writeCipher.authenticator.seqNumOverflow()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.fine(
+                    "sequence number extremely close to overflow " +
                     "(2^64-1 packets). Closing connection.");
             }
 
             throw new SSLHandshakeException("sequence number overflow");
         }
 
-        int macLen = 0;
-        if (writeAuthenticator instanceof MAC) {
-            macLen = ((MAC)writeAuthenticator).MAClen();
+        // Don't process the incoming record until all of the
+        // buffered records get handled.
+        Ciphertext ct = acquireCiphertext(destination);
+        if (ct != null) {
+            return ct;
+        }
+
+        if (sources == null || sources.length == 0) {
+            return null;
+        }
+
+        int srcsRemains = 0;
+        for (int i = offset; i < offset + length; i++) {
+            srcsRemains += sources[i].remaining();
+        }
+
+        if (srcsRemains == 0) {
+            return null;
         }
 
         int dstLim = destination.limit();
@@ -170,7 +182,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
                 if (packetLeftSize > 0) {
                     fragLen = writeCipher.calculateFragmentSize(
-                            packetLeftSize, macLen, headerSize);
+                            packetLeftSize, headerSize);
 
                     fragLen = Math.min(fragLen, Record.maxDataSize);
                 } else {
@@ -208,26 +220,24 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             destination.limit(destination.position());
             destination.position(dstContent);
 
-            if ((debug != null) && Debug.isOn("record")) {
-                System.out.println(Thread.currentThread().getName() +
-                        ", WRITE: " + protocolVersion + " " +
-                        Record.contentName(Record.ct_application_data) +
+            if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+                SSLLogger.fine(
+                        "WRITE: " + protocolVersion + " " +
+                        ContentType.APPLICATION_DATA.name +
                         ", length = " + destination.remaining());
             }
 
             // Encrypt the fragment and wrap up a record.
-            recordSN = encrypt(writeAuthenticator, writeCipher,
-                    Record.ct_application_data, destination,
+            recordSN = encrypt(writeCipher,
+                    ContentType.APPLICATION_DATA.id, destination,
                     dstPos, dstLim, headerSize,
-                    protocolVersion, false);
+                    protocolVersion);
 
-            if ((debug != null) && Debug.isOn("packet")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
                 ByteBuffer temporary = destination.duplicate();
                 temporary.limit(temporary.position());
                 temporary.position(dstPos);
-                Debug.printHex(
-                        "[Raw write]: length = " + temporary.remaining(),
-                        temporary);
+                SSLLogger.fine("Raw write", temporary);
             }
 
             packetLeftSize -= destination.position() - dstPos;
@@ -238,103 +248,62 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             if (isFirstAppOutputRecord) {
                 isFirstAppOutputRecord = false;
             }
+
+            // atKeyLimit() inactive when limits not checked, tc set when limits
+            // are active.
+            if (writeCipher.atKeyLimit()) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.fine("KeyUpdate: triggered, write side.");
+                }
+
+                PostHandshakeContext p = new PostHandshakeContext(tc);
+                KeyUpdate.handshakeProducer.produce(p,
+                    new KeyUpdateMessage(p, KeyUpdateRequest.REQUESTED));
+            }
         }
 
-        return new Ciphertext(RecordType.RECORD_APPLICATION_DATA, recordSN);
+        return new Ciphertext(ContentType.APPLICATION_DATA.id,
+                SSLHandshake.NOT_APPLICABLE.id, recordSN);
     }
 
-    @Override
-    Ciphertext acquireCiphertext(ByteBuffer destination) throws IOException {
+    private Ciphertext acquireCiphertext(ByteBuffer destination) throws IOException {
         if (isTalkingToV2) {              // SSLv2Hello
             // We don't support SSLv2.  Send an SSLv2 error message
             // so that the connection can be closed gracefully.
             //
             // Please don't change the limit of the destination buffer.
             destination.put(SSLRecord.v2NoCipher);
-            if (debug != null && Debug.isOn("packet")) {
-                Debug.printHex(
-                        "[Raw write]: length = " + SSLRecord.v2NoCipher.length,
-                        SSLRecord.v2NoCipher);
+            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+                SSLLogger.fine("Raw write", SSLRecord.v2NoCipher);
             }
 
             isTalkingToV2 = false;
 
-            return new Ciphertext(RecordType.RECORD_ALERT, -1L);
+            return new Ciphertext(ContentType.ALERT.id,
+                    SSLHandshake.NOT_APPLICABLE.id, -1L);
         }
 
         if (v2ClientHello != null) {
             // deliver the SSLv2 format ClientHello message
             //
             // Please don't change the limit of the destination buffer.
-            if (debug != null) {
-                if (Debug.isOn("record")) {
-                     System.out.println(Thread.currentThread().getName() +
+            if (SSLLogger.isOn) {
+                if (SSLLogger.isOn("record")) {
+                     SSLLogger.fine(Thread.currentThread().getName() +
                             ", WRITE: SSLv2 ClientHello message" +
                             ", length = " + v2ClientHello.remaining());
                 }
 
-                if (Debug.isOn("packet")) {
-                    Debug.printHex(
-                        "[Raw write]: length = " + v2ClientHello.remaining(),
-                        v2ClientHello);
+                if (SSLLogger.isOn("packet")) {
+                    SSLLogger.fine("Raw write", v2ClientHello);
                 }
             }
 
             destination.put(v2ClientHello);
             v2ClientHello = null;
 
-            return new Ciphertext(RecordType.RECORD_CLIENT_HELLO, -1L);
-        }
-
-        if (alertMemos != null && !alertMemos.isEmpty()) {
-            RecordMemo memo = alertMemos.pop();
-
-            int macLen = 0;
-            if (memo.encodeAuthenticator instanceof MAC) {
-                macLen = ((MAC)memo.encodeAuthenticator).MAClen();
-            }
-
-            int dstPos = destination.position();
-            int dstLim = destination.limit();
-            int dstContent = dstPos + headerSize +
-                                writeCipher.getExplicitNonceSize();
-            destination.position(dstContent);
-
-            destination.put(memo.fragment);
-
-            destination.limit(destination.position());
-            destination.position(dstContent);
-
-            if ((debug != null) && Debug.isOn("record")) {
-                System.out.println(Thread.currentThread().getName() +
-                        ", WRITE: " + protocolVersion + " " +
-                        Record.contentName(Record.ct_alert) +
-                        ", length = " + destination.remaining());
-            }
-
-            // Encrypt the fragment and wrap up a record.
-            long recordSN = encrypt(memo.encodeAuthenticator, memo.encodeCipher,
-                    Record.ct_alert, destination, dstPos, dstLim, headerSize,
-                    ProtocolVersion.valueOf(memo.majorVersion,
-                            memo.minorVersion), false);
-
-            if ((debug != null) && Debug.isOn("packet")) {
-                ByteBuffer temporary = destination.duplicate();
-                temporary.limit(temporary.position());
-                temporary.position(dstPos);
-                Debug.printHex(
-                        "[Raw write]: length = " + temporary.remaining(),
-                        temporary);
-            }
-
-            // remain the limit unchanged
-            destination.limit(dstLim);
-
-            if (isCloseWaiting && (memo.contentType == Record.ct_alert)) {
-                isCloseWaiting = true;
-                close();
-            }
-            return new Ciphertext(RecordType.RECORD_ALERT, recordSN);
+            return new Ciphertext(ContentType.HANDSHAKE.id,
+                   SSLHandshake.CLIENT_HELLO.id, -1L);
         }
 
         if (fragmenter != null) {
@@ -347,8 +316,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
     @Override
     boolean isEmpty() {
         return (!isTalkingToV2) && (v2ClientHello == null) &&
-                ((fragmenter == null) || fragmenter.isEmpty()) &&
-                ((alertMemos == null) || alertMemos.isEmpty());
+                ((fragmenter == null) || fragmenter.isEmpty());
     }
 
     // buffered record fragment
@@ -356,8 +324,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         byte            contentType;
         byte            majorVersion;
         byte            minorVersion;
-        CipherBox       encodeCipher;
-        Authenticator   encodeAuthenticator;
+        SSLWriteCipher  encodeCipher;
 
         byte[]          fragment;
     }
@@ -372,14 +339,12 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
         void queueUpFragment(byte[] source,
                 int offset, int length) throws IOException {
-
             HandshakeMemo memo = new HandshakeMemo();
 
-            memo.contentType = Record.ct_handshake;
+            memo.contentType = ContentType.HANDSHAKE.id;
             memo.majorVersion = protocolVersion.major;  // kick start version?
             memo.minorVersion = protocolVersion.minor;
             memo.encodeCipher = writeCipher;
-            memo.encodeAuthenticator = writeAuthenticator;
 
             memo.handshakeType = source[offset];
             memo.acquireOffset = 0;
@@ -394,14 +359,28 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         void queueUpChangeCipherSpec() {
             RecordMemo memo = new RecordMemo();
 
-            memo.contentType = Record.ct_change_cipher_spec;
+            memo.contentType = ContentType.CHANGE_CIPHER_SPEC.id;
             memo.majorVersion = protocolVersion.major;
             memo.minorVersion = protocolVersion.minor;
             memo.encodeCipher = writeCipher;
-            memo.encodeAuthenticator = writeAuthenticator;
 
             memo.fragment = new byte[1];
             memo.fragment[0] = 1;
+
+            handshakeMemos.add(memo);
+        }
+
+        void queueUpAlert(byte level, byte description) {
+            RecordMemo memo = new RecordMemo();
+
+            memo.contentType = ContentType.ALERT.id;
+            memo.majorVersion = protocolVersion.major;
+            memo.minorVersion = protocolVersion.minor;
+            memo.encodeCipher = writeCipher;
+
+            memo.fragment = new byte[2];
+            memo.fragment[0] = level;
+            memo.fragment[1] = description;
 
             handshakeMemos.add(memo);
         }
@@ -413,13 +392,8 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
             RecordMemo memo = handshakeMemos.getFirst();
             HandshakeMemo hsMemo = null;
-            if (memo.contentType == Record.ct_handshake) {
+            if (memo.contentType == ContentType.HANDSHAKE.id) {
                 hsMemo = (HandshakeMemo)memo;
-            }
-
-            int macLen = 0;
-            if (memo.encodeAuthenticator instanceof MAC) {
-                macLen = ((MAC)memo.encodeAuthenticator).MAClen();
             }
 
             // ChangeCipherSpec message is pretty small.  Don't worry about
@@ -428,7 +402,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             if (packetSize > 0) {
                 fragLen = Math.min(maxRecordSize, packetSize);
                 fragLen = memo.encodeCipher.calculateFragmentSize(
-                        fragLen, macLen, headerSize);
+                        fragLen, headerSize);
             } else {
                 fragLen = Record.maxDataSize;
             }
@@ -474,11 +448,12 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
                                  !handshakeMemos.isEmpty()) {
 
                             // look for the next buffered record fragment
-                            RecordMemo reMemo = handshakeMemos.getFirst();
-                            if (reMemo.contentType == Record.ct_handshake) {
-                                hsMemo = (HandshakeMemo)reMemo;
+                            RecordMemo rm = handshakeMemos.getFirst();
+                            if (rm.contentType == ContentType.HANDSHAKE.id &&
+                                    rm.encodeCipher == hsMemo.encodeCipher) {
+                                hsMemo = (HandshakeMemo)rm;
                             } else {
-                                // not handshake message, break the loop
+                                // not of the flight, break the loop
                                 break;
                             }
                         }
@@ -486,8 +461,6 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
                     remainingFragLen -= chipLen;
                 }
-
-                fragLen -= remainingFragLen;
             } else {
                 fragLen = Math.min(fragLen, memo.fragment.length);
                 dstBuf.put(memo.fragment, 0, fragLen);
@@ -498,27 +471,26 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             dstBuf.limit(dstBuf.position());
             dstBuf.position(dstContent);
 
-            if ((debug != null) && Debug.isOn("record")) {
-                System.out.println(Thread.currentThread().getName() +
-                        ", WRITE: " + protocolVersion + " " +
-                        Record.contentName(memo.contentType) +
+            if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+                SSLLogger.fine(
+                        "WRITE: " + protocolVersion + " " +
+                        ContentType.nameOf(memo.contentType) +
                         ", length = " + dstBuf.remaining());
             }
 
             // Encrypt the fragment and wrap up a record.
-            long recordSN = encrypt(memo.encodeAuthenticator, memo.encodeCipher,
+            long recordSN = encrypt(
+                    memo.encodeCipher,
                     memo.contentType, dstBuf,
                     dstPos, dstLim, headerSize,
                     ProtocolVersion.valueOf(memo.majorVersion,
-                            memo.minorVersion), false);
+                            memo.minorVersion));
 
-            if ((debug != null) && Debug.isOn("packet")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
                 ByteBuffer temporary = dstBuf.duplicate();
                 temporary.limit(temporary.position());
                 temporary.position(dstPos);
-                Debug.printHex(
-                        "[Raw write]: length = " + temporary.remaining(),
-                        temporary);
+                SSLLogger.fine("Raw write", temporary);
             }
 
             // remain the limit unchanged
@@ -526,16 +498,31 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
             // Reset the fragmentation offset.
             if (hsMemo != null) {
-                return new Ciphertext(RecordType.valueOf(
-                        hsMemo.contentType, hsMemo.handshakeType), recordSN);
+                return new Ciphertext(hsMemo.contentType,
+                        hsMemo.handshakeType, recordSN);
             } else {
-                return new Ciphertext(
-                        RecordType.RECORD_CHANGE_CIPHER_SPEC, recordSN);
+                if (isCloseWaiting &&
+                        memo.contentType == ContentType.ALERT.id) {
+                    close();
+                }
+
+                return new Ciphertext(memo.contentType,
+                        SSLHandshake.NOT_APPLICABLE.id, recordSN);
             }
         }
 
         boolean isEmpty() {
             return handshakeMemos.isEmpty();
+        }
+
+        boolean hasAlert() {
+            for (RecordMemo memo : handshakeMemos) {
+                if (memo.contentType ==  ContentType.ALERT.id) {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 

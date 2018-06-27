@@ -21,7 +21,7 @@
  * questions.
  */
 
-/*
+/**
  * @test WBStackSize
  * @summary verify that whitebox functions getThreadFullStackSize() and getThreadRemainingStackSize are working
  * @modules java.base/jdk.internal.misc
@@ -43,6 +43,7 @@
  */
 
 import sun.hotspot.WhiteBox;
+import jdk.test.lib.Platform;
 
 public class WBStackSize {
 
@@ -83,18 +84,40 @@ public class WBStackSize {
     }
 
     public static void main(String[] args) {
+        long pageSize = wb.getVMPageSize();
+
         long configStackSize = wb.getIntxVMFlag("ThreadStackSize") * K;
         System.out.println("ThreadStackSize VM option: " + configStackSize);
 
-        long stackProtectionSize = wb.getIntxVMFlag("StackShadowPages") * wb.getVMPageSize();
+        long stackProtectionSize = wb.getIntxVMFlag("StackShadowPages") * pageSize;
         System.out.println("Size of protected shadow pages: " + stackProtectionSize);
 
         long actualStackSize = wb.getThreadStackSize();
         System.out.println("Full stack size: " + actualStackSize);
 
-        if (Math.abs(actualStackSize - configStackSize) > configStackSize * 0.1) {
-            throw new RuntimeException("getThreadFullStackSize value [" + actualStackSize
-                                     + "] should be within 90%..110% of ThreadStackSize value");
+        if (!Platform.isAix()) {
+            if (Math.abs(actualStackSize - configStackSize) > configStackSize * 0.1) {
+                throw new RuntimeException("getThreadStackSize value [" + actualStackSize
+                                           + "] should be within 90%..110% of ThreadStackSize value");
+            }
+        } else {
+            // AIX pthread implementation returns stacks with sizes varying a lot.
+            // We add +64K to assure stacks are not too small, thus we get
+            // even more variation to bigger sizes. So only check the lower bound.
+            // Allow for at least one page deviation.
+            long slack = (long)(configStackSize * 0.1);
+            if (slack < pageSize) {
+                if (configStackSize - actualStackSize > pageSize) {
+                    throw new RuntimeException("getThreadStackSize value [" + actualStackSize
+                                               + "] should not be more than one page smaller than "
+                                               + "ThreadStackSize value");
+                }
+            } else {
+                if (configStackSize - actualStackSize > slack) {
+                    throw new RuntimeException("getThreadStackSize value [" + actualStackSize
+                                               + "] should not be less than 90% of ThreadStackSize value");
+                }
+            }
         }
 
         long remainingStackSize = wb.getThreadRemainingStackSize();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class SSLEngineWithStapling {
      * including specific handshake messages, and might be best examined
      * after gaining some familiarity with this application.
      */
-    private static final boolean debug = false;
+    private static final boolean debug = true;
 
     private SSLEngine clientEngine;     // client Engine
     private ByteBuffer clientOut;       // write side of clientEngine
@@ -142,12 +142,17 @@ public class SSLEngineWithStapling {
     static SimpleOCSPServer intOcsp;        // Intermediate CA OCSP Responder
     static int intOcspPort;                 // Port number for intermed. OCSP
 
+    // Extra configuration parameters and constants
+    static final String[] TLS13ONLY = new String[] { "TLSv1.3" };
+    static final String[] TLS12MAX =
+            new String[] { "TLSv1.2", "TLSv1.1", "TLSv1" };
+
     /*
      * Main entry point for this test.
      */
     public static void main(String args[]) throws Exception {
         if (debug) {
-            System.setProperty("javax.net.debug", "ssl");
+            System.setProperty("javax.net.debug", "ssl:handshake");
         }
 
         // Create the PKI we will use for the test and start the OCSP servers
@@ -166,16 +171,23 @@ public class SSLEngineWithStapling {
                                 TimeUnit.HOURS.toMillis(8))));
         intOcsp.updateStatusDb(revInfo);
 
-        SSLEngineWithStapling test = new SSLEngineWithStapling();
-        try {
-            test.runTest();
-            throw new RuntimeException("Expected failure due to revocation " +
-                    "did not occur");
-        } catch (Exception e) {
-            if (!checkClientValidationFailure(e,
-                    CertPathValidatorException.BasicReason.REVOKED)) {
-                System.out.println("*** Didn't find the exception we wanted");
-                throw e;
+        // Create a list of TLS protocol configurations we can use to
+        // drive tests with different handshaking models.
+        List<String[]> allowedProtList = List.of(TLS12MAX, TLS13ONLY);
+
+        for (String[] protocols : allowedProtList) {
+            SSLEngineWithStapling test = new SSLEngineWithStapling();
+            try {
+                test.runTest(protocols);
+                throw new RuntimeException("Expected failure due to " +
+                        "revocation did not occur");
+            } catch (Exception e) {
+                if (!checkClientValidationFailure(e,
+                        CertPathValidatorException.BasicReason.REVOKED)) {
+                    System.out.println(
+                            "*** Didn't find the exception we wanted");
+                    throw e;
+                }
             }
         }
 
@@ -218,10 +230,10 @@ public class SSLEngineWithStapling {
      * One could easily separate these phases into separate
      * sections of code.
      */
-    private void runTest() throws Exception {
+    private void runTest(String[] protocols) throws Exception {
         boolean dataDone = false;
 
-        createSSLEngines();
+        createSSLEngines(protocols);
         createBuffers();
 
         SSLEngineResult clientResult;   // results from client's last operation
@@ -290,7 +302,7 @@ public class SSLEngineWithStapling {
      * Using the SSLContext created during object creation,
      * create/configure the SSLEngines we'll use for this test.
      */
-    private void createSSLEngines() throws Exception {
+    private void createSSLEngines(String[] protocols) throws Exception {
         // Initialize the KeyManager and TrustManager for the server
         KeyManagerFactory servKmf = KeyManagerFactory.getInstance("PKIX");
         servKmf.init(serverKeystore, passwd.toCharArray());
@@ -321,6 +333,7 @@ public class SSLEngineWithStapling {
          * handshake.
          */
         serverEngine = servCtx.createSSLEngine();
+        serverEngine.setEnabledProtocols(protocols);
         serverEngine.setUseClientMode(false);
         serverEngine.setNeedClientAuth(false);
 
@@ -328,6 +341,7 @@ public class SSLEngineWithStapling {
          * Similar to above, but using client mode instead.
          */
         clientEngine = cliCtx.createSSLEngine("client", 80);
+        clientEngine.setEnabledProtocols(protocols);
         clientEngine.setUseClientMode(true);
     }
 
@@ -637,8 +651,8 @@ public class SSLEngineWithStapling {
     /**
      * Checks a validation failure to see if it failed for the reason we think
      * it should.  This comes in as an SSLException of some sort, but it
-     * encapsulates a ValidatorException which in turn encapsulates the
-     * CertPathValidatorException we are interested in.
+     * encapsulates a CertPathValidatorException at some point in the
+     * exception stack.
      *
      * @param e the exception thrown at the top level
      * @param reason the underlying CertPathValidatorException BasicReason
@@ -650,22 +664,31 @@ public class SSLEngineWithStapling {
             CertPathValidatorException.BasicReason reason) {
         boolean result = false;
 
-        if (e instanceof SSLException) {
-            Throwable sslhe = e.getCause();
-            if (sslhe instanceof SSLHandshakeException) {
-                Throwable valExc = sslhe.getCause();
-                if (valExc instanceof sun.security.validator.ValidatorException) {
-                    Throwable cause = valExc.getCause();
-                    if (cause instanceof CertPathValidatorException) {
-                        CertPathValidatorException cpve =
-                                (CertPathValidatorException)cause;
-                        if (cpve.getReason() == reason) {
-                            result = true;
-                        }
-                    }
-                }
+        // Locate the CertPathValidatorException.  If one
+        // Does not exist, then it's an automatic failure of
+        // the test.
+        Throwable curExc = e;
+        CertPathValidatorException cpve = null;
+        while (curExc != null) {
+            if (curExc instanceof CertPathValidatorException) {
+                cpve = (CertPathValidatorException)curExc;
             }
+            curExc = curExc.getCause();
         }
+
+        // If we get through the loop and cpve is null then we
+        // we didn't find CPVE and this is a failure
+        if (cpve != null) {
+            if (cpve.getReason() == reason) {
+                result = true;
+            } else {
+                System.out.println("CPVE Reason Mismatch: Expected = " +
+                        reason + ", Actual = " + cpve.getReason());
+            }
+        } else {
+            System.out.println("Failed to find an expected CPVE");
+        }
+
         return result;
     }
 }

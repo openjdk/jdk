@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,21 @@
  * questions.
  */
 
-
 package sun.security.ssl;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Vector;
 import java.util.Locale;
-
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
-
 import sun.security.util.Cache;
 
 
 final class SSLSessionContextImpl implements SSLSessionContext {
-    private Cache<SessionId, SSLSessionImpl> sessionCache;
+    private final Cache<SessionId, SSLSessionImpl> sessionCache;
                                         // session cache, session id as key
-    private Cache<String, SSLSessionImpl> sessionHostPortCache;
+    private final Cache<String, SSLSessionImpl> sessionHostPortCache;
                                         // session cache, "host:port" as key
     private int cacheLimit;             // the max cache size
     private int timeout;                // timeout in seconds
@@ -137,7 +135,6 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         return cacheLimit;
     }
 
-
     // package-private method, used ONLY by ServerHandshaker
     SSLSessionImpl get(byte[] id) {
         return (SSLSessionImpl)getSession(id);
@@ -161,7 +158,7 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         return null;
     }
 
-    private String getKey(String hostname, int port) {
+    private static String getKey(String hostname, int port) {
         return (hostname + ":" +
             String.valueOf(port)).toLowerCase(Locale.ENGLISH);
     }
@@ -192,29 +189,30 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         if (s != null) {
             sessionCache.remove(key);
             sessionHostPortCache.remove(
-                        getKey(s.getPeerHost(), s.getPeerPort()));
+                    getKey(s.getPeerHost(), s.getPeerPort()));
         }
     }
 
-    private int getDefaultCacheLimit() {
-        int cacheLimit = 0;
+    private static int getDefaultCacheLimit() {
+        int defaultCacheLimit = 0;
         try {
-        String s = java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty(
-                        "javax.net.ssl.sessionCacheSize");
-                }
-            });
-            cacheLimit = (s != null) ? Integer.valueOf(s).intValue() : 0;
+            String s = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<String>() {
+                    @Override
+                    public String run() {
+                        return System.getProperty(
+                            "javax.net.ssl.sessionCacheSize");
+                    }
+                });
+                defaultCacheLimit = (s != null) ? Integer.parseInt(s) : 0;
         } catch (Exception e) {
+            // swallow the exception
         }
 
-        return (cacheLimit > 0) ? cacheLimit : 0;
+        return (defaultCacheLimit > 0) ? defaultCacheLimit : 0;
     }
 
-    boolean isTimedout(SSLSession sess) {
+    private boolean isTimedout(SSLSession sess) {
         if (timeout == 0) {
             return false;
         }
@@ -228,27 +226,26 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         return false;
     }
 
-    final class SessionCacheVisitor
+    private final class SessionCacheVisitor
             implements Cache.CacheVisitor<SessionId, SSLSessionImpl> {
-        Vector<byte[]> ids = null;
+        ArrayList<byte[]> ids = null;
 
         // public void visit(java.util.Map<K,V> map) {}
         @Override
         public void visit(java.util.Map<SessionId, SSLSessionImpl> map) {
-            ids = new Vector<>(map.size());
+            ids = new ArrayList<>(map.size());
 
             for (SessionId key : map.keySet()) {
                 SSLSessionImpl value = map.get(key);
                 if (!isTimedout(value)) {
-                    ids.addElement(key.getId());
+                    ids.add(key.getId());
                 }
             }
         }
 
-        public Enumeration<byte[]> getSessionIds() {
-            return  ids != null ? ids.elements() :
-                                  new Vector<byte[]>().elements();
+        Enumeration<byte[]> getSessionIds() {
+            return  ids != null ? Collections.enumeration(ids) :
+                                  Collections.emptyEnumeration();
         }
     }
-
 }

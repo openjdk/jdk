@@ -675,9 +675,21 @@ public final class SocketPermission extends Permission
 
     private transient String cdomain, hdomain;
 
+    /**
+     * previously we allowed domain names to be specified in IDN ACE form
+     * Need to check for that and convert to Unicode
+     */
+    private static String checkForIDN(String name) {
+        if (name.startsWith("xn--") || name.contains(".xn--")) {
+            return IDN.toUnicode(name);
+        } else {
+            return name;
+        }
+    }
+
     private boolean match(String cname, String hname) {
-        String a = cname.toLowerCase();
-        String b = hname.toLowerCase();
+        String a = checkForIDN(cname.toLowerCase());
+        String b = checkForIDN(hname.toLowerCase());
         if (a.startsWith(b)  &&
             ((a.length() == b.length()) || (a.charAt(b.length()) == '.'))) {
             return true;

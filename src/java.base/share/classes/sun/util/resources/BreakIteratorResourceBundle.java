@@ -69,7 +69,7 @@ public abstract class BreakIteratorResourceBundle extends ResourceBundle {
         if (!info.containsKey(key)) {
             return null;
         }
-        String path = getClass().getPackage().getName().replace('.', '/')
+        String path = getClass().getPackageName().replace('.', '/')
                       + '/' + info.getString(key);
         byte[] data;
         try (InputStream is = getResourceAsStream(path)) {

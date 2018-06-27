@@ -24,6 +24,8 @@
  */
 package sun.net;
 
+import jdk.internal.util.StaticProperty;
+
 import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -57,7 +59,7 @@ public class NetProperties {
      * the file is in jre/lib/net.properties
      */
     private static void loadDefaultProperties() {
-        String fname = System.getProperty("java.home");
+        String fname = StaticProperty.javaHome();
         if (fname == null) {
             throw new Error("Can't find java.home ??");
         }

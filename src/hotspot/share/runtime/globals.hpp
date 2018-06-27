@@ -661,6 +661,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, PrintCompilation, false,                                    \
           "Print compilations")                                             \
                                                                             \
+  product(bool, PrintExtendedThreadInfo, false,                             \
+          "Print more information in thread dump")                          \
+                                                                            \
   diagnostic(bool, TraceNMethodInstalls, false,                             \
           "Trace nmethod installation")                                     \
                                                                             \
@@ -853,12 +856,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(bool, FilterSpuriousWakeups, true,                                \
           "When true prevents OS-level spurious, or premature, wakeups "    \
           "from Object.wait (Ignored for Windows)")                         \
-                                                                            \
-  experimental(intx, NativeMonitorTimeout, -1, "(Unstable)")                \
-                                                                            \
-  experimental(intx, NativeMonitorFlags, 0, "(Unstable)")                   \
-                                                                            \
-  experimental(intx, NativeMonitorSpinLimit, 20, "(Unstable)")              \
                                                                             \
   develop(bool, UsePthreads, false,                                         \
           "Use pthread-based instead of libthread-based synchronization "   \

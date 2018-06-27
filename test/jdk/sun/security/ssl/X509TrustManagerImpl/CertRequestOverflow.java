@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,9 @@ public class CertRequestOverflow {
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
         serverPort = sslServerSocket.getLocalPort();
+        if (debug) {
+            System.out.println("Server port is " + serverPort);
+        }
 
         // enable endpoint identification
         // ignore, we may test the feature when known how to parse client
@@ -153,6 +156,10 @@ public class CertRequestOverflow {
         SSLSocketFactory sslsf = getContext(false).getSocketFactory();
         SSLSocket sslSocket = (SSLSocket)
             sslsf.createSocket("localhost", serverPort);
+        if (debug) {
+            System.out.println("Connected to: " +
+                    sslSocket.getRemoteSocketAddress());
+        }
 
         // enable endpoint identification
         SSLParameters params = sslSocket.getSSLParameters();
@@ -214,7 +221,7 @@ public class CertRequestOverflow {
             tms = new TrustManager[] {clientTM};
         }
 
-        SSLContext ctx = SSLContext.getInstance("TLS");
+        SSLContext ctx = SSLContext.getInstance("TLSv1.2");
         ctx.init(kmf.getKeyManagers(), tms, null);
 
         return ctx;
@@ -243,17 +250,19 @@ public class CertRequestOverflow {
             return serverChecked;
         }
 
-
+        @Override
         public void checkClientTrusted(X509Certificate chain[], String authType)
                 throws CertificateException {
             tm.checkClientTrusted(chain, authType);
         }
 
+        @Override
         public void checkServerTrusted(X509Certificate chain[], String authType)
                 throws CertificateException {
             tm.checkServerTrusted(chain, authType);
         }
 
+        @Override
         public X509Certificate[] getAcceptedIssuers() {
             // (hack code) increase the size of the returned array to make a
             // overflow CertificateRequest.
@@ -268,24 +277,28 @@ public class CertRequestOverflow {
             return issuersList.toArray(issuers);
         }
 
+        @Override
         public void checkClientTrusted(X509Certificate[] chain, String authType,
                 Socket socket) throws CertificateException {
             clientChecked = true;
             tm.checkClientTrusted(chain, authType);
         }
 
+        @Override
         public void checkServerTrusted(X509Certificate[] chain, String authType,
                 Socket socket) throws CertificateException {
             serverChecked = true;
             tm.checkServerTrusted(chain, authType);
         }
 
+        @Override
         public void checkClientTrusted(X509Certificate[] chain, String authType,
             SSLEngine engine) throws CertificateException {
             clientChecked = true;
             tm.checkClientTrusted(chain, authType);
         }
 
+        @Override
         public void checkServerTrusted(X509Certificate[] chain, String authType,
             SSLEngine engine) throws CertificateException {
             serverChecked = true;
@@ -357,6 +370,7 @@ public class CertRequestOverflow {
     void startServer(boolean newThread) throws Exception {
         if (newThread) {
             serverThread = new Thread() {
+                @Override
                 public void run() {
                     try {
                         doServerSide();
@@ -381,6 +395,7 @@ public class CertRequestOverflow {
     void startClient(boolean newThread) throws Exception {
         if (newThread) {
             clientThread = new Thread() {
+                @Override
                 public void run() {
                     try {
                         doClientSide();

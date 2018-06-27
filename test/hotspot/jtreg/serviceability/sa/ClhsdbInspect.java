@@ -27,10 +27,11 @@ import java.util.Map;
 import java.util.ArrayList;
 import jdk.test.lib.apps.LingeredApp;
 
-/*
+/**
  * @test
  * @bug 8192985
  * @summary Test the clhsdb 'inspect' command
+ * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm ClhsdbInspect
  */

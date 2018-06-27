@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,18 +41,16 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 
-import javax.lang.model.element.ModuleElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.Elements;
-
-import static javax.lang.model.SourceVersion.RELEASE_10;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 
-@SupportedSourceVersion(RELEASE_10)
 @SupportedAnnotationTypes("*")
 public class TraverseProc extends AbstractProcessor {
     Elements elements;
@@ -69,6 +67,11 @@ public class TraverseProc extends AbstractProcessor {
         super.init(pe);
         elements = pe.getElementUtils();
         messager = pe.getMessager();
+    }
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
     }
 
     @Override

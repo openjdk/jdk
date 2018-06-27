@@ -21,19 +21,25 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4403428
  * @summary Invalidating JSSE session on server causes SSLProtocolException
- * @run main/othervm InvalidateServerSessionRenegotiate
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
+ * @run main/othervm InvalidateServerSessionRenegotiate SSLv3
+ * @run main/othervm InvalidateServerSessionRenegotiate TLSv1
+ * @run main/othervm InvalidateServerSessionRenegotiate TLSv1.1
+ * @run main/othervm InvalidateServerSessionRenegotiate TLSv1.2
  * @author Brad Wetmore
  */
 
 import java.io.*;
 import java.net.*;
+import java.security.Security;
 import javax.net.ssl.*;
 
 public class InvalidateServerSessionRenegotiate implements
@@ -157,6 +163,7 @@ public class InvalidateServerSessionRenegotiate implements
             (SSLSocketFactory) SSLSocketFactory.getDefault();
         SSLSocket sslSocket = (SSLSocket)
             sslsf.createSocket("localhost", serverPort);
+        sslSocket.setEnabledProtocols(new String[] { tlsProtocol });
 
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
@@ -187,6 +194,9 @@ public class InvalidateServerSessionRenegotiate implements
     volatile Exception serverException = null;
     volatile Exception clientException = null;
 
+    // the specified protocol
+    private static String tlsProtocol;
+
     public static void main(String[] args) throws Exception {
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
@@ -200,8 +210,13 @@ public class InvalidateServerSessionRenegotiate implements
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
-        if (debug)
+        if (debug) {
             System.setProperty("javax.net.debug", "all");
+        }
+
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
+        tlsProtocol = args[0];
 
         /*
          * Start the tests.

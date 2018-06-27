@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4927167 4974929 7010344 8025633 8081854 8182765
+ * @bug      4927167 4974929 7010344 8025633 8081854 8182765 8187288
  * @summary  When the type parameters are more than 10 characters in length,
  *           make sure there is a line break between type params and return type
  *           in member summary. Also, test for type parameter links in package-summary and
@@ -52,7 +52,7 @@ public class TestTypeParameters extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/C.html", true,
-                "<td class=\"colFirst\"><code>&lt;W extends java.lang.String,V extends "
+                "<td class=\"colFirst\"><code>&lt;W extends java.lang.String,&#8203;V extends "
                 + "java.util.List&gt;<br>java.lang.Object</code></td>",
                 "<code>&lt;T&gt;&nbsp;java.lang.Object</code>");
 

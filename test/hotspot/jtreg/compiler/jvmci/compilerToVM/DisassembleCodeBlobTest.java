@@ -41,6 +41,7 @@
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *                   -XX:-BackgroundCompilation
  *                   compiler.jvmci.compilerToVM.DisassembleCodeBlobTest
  */
 

@@ -2435,7 +2435,7 @@ class VerifyAllBlksClosure: public BlkClosure {
   }
 };
 
-class VerifyAllOopsClosure: public OopClosure {
+class VerifyAllOopsClosure: public BasicOopIterateClosure {
  private:
   const CMSCollector*             _collector;
   const CompactibleFreeListSpace* _sp;
@@ -2524,9 +2524,8 @@ void CompactibleFreeListSpace::verify() const {
     VerifyAllOopsClosure cl(_collector, this, span, past_remark,
       _collector->markBitMap());
 
-    // Iterate over all oops in the heap. Uses the _no_header version
-    // since we are not interested in following the klass pointers.
-    CMSHeap::heap()->oop_iterate_no_header(&cl);
+    // Iterate over all oops in the heap.
+    CMSHeap::heap()->oop_iterate(&cl);
   }
 
   if (VerifyObjectStartArray) {

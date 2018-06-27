@@ -35,7 +35,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 8196298
+ * @bug 8196298 8204930
  * @run testng NullReader
  * @summary Check for expected behavior of Reader.nullReader().
  */
@@ -96,6 +96,11 @@ public class NullReader {
     }
 
     @Test(groups = "open")
+    public static void testReady() throws IOException {
+        assertFalse(openReader.ready());
+    }
+
+    @Test(groups = "open")
     public static void testSkip() throws IOException {
         assertEquals(0, openReader.skip(1), "skip() != 0");
     }
@@ -126,6 +131,11 @@ public class NullReader {
     public static void testReadCharBufferZeroRemainingClosed() throws IOException {
         CharBuffer charBuffer = CharBuffer.allocate(0);
         closedReader.read(charBuffer);
+    }
+
+    @Test(groups = "closed", expectedExceptions = IOException.class)
+    public static void testReadyClosed() throws IOException {
+        closedReader.ready();
     }
 
     @Test(groups = "closed", expectedExceptions = IOException.class)

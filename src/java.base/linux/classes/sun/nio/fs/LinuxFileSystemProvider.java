@@ -29,8 +29,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.file.spi.FileTypeDetector;
 import java.io.IOException;
-import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
+
+import jdk.internal.util.StaticProperty;
 
 /**
  * Linux implementation of FileSystemProvider
@@ -102,7 +102,7 @@ public class LinuxFileSystemProvider extends UnixFileSystemProvider {
 
     @Override
     FileTypeDetector getFileTypeDetector() {
-        String userHome = GetPropertyAction.privilegedGetProperty("user.home");
+        String userHome = StaticProperty.userHome();
         Path userMimeTypes = Path.of(userHome, ".mime.types");
         Path etcMimeTypes = Path.of("/etc/mime.types");
 

@@ -25,11 +25,13 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
@@ -131,6 +133,52 @@ public class LinkFactoryImpl extends LinkFactory {
      * {@inheritDoc}
      */
     @Override
+    protected Content getTypeParameterLinks(LinkInfo linkInfo, boolean isClassLabel){
+        Content links = newContent();
+        List<TypeMirror> vars = new ArrayList<>();
+        TypeMirror ctype = linkInfo.type != null
+                ? utils.getComponentType(linkInfo.type)
+                : null;
+        if (linkInfo.executableElement != null) {
+            linkInfo.executableElement.getTypeParameters().stream().forEach((t) -> {
+                vars.add(t.asType());
+            });
+        } else if (linkInfo.type != null && utils.isDeclaredType(linkInfo.type)) {
+            ((DeclaredType)linkInfo.type).getTypeArguments().stream().forEach(vars::add);
+        } else if (ctype != null && utils.isDeclaredType(ctype)) {
+            ((DeclaredType)ctype).getTypeArguments().stream().forEach(vars::add);
+        } else if (linkInfo.typeElement != null) {
+            linkInfo.typeElement.getTypeParameters().stream().forEach((t) -> {
+                vars.add(t.asType());
+            });
+        } else {
+            // Nothing to document.
+            return links;
+        }
+        if (((linkInfo.includeTypeInClassLinkLabel && isClassLabel)
+                || (linkInfo.includeTypeAsSepLink && !isClassLabel)) && !vars.isEmpty()) {
+            links.addContent("<");
+            boolean many = false;
+            for (TypeMirror t : vars) {
+                if (many) {
+                    links.addContent(",");
+                    links.addContent(Contents.ZERO_WIDTH_SPACE);
+                }
+                links.addContent(getTypeParameterLink(linkInfo, t));
+                many = true;
+            }
+            links.addContent(">");
+        }
+        return links;
+    }
+
+    /**
+     * Returns a link to the given type parameter.
+     *
+     * @param linkInfo     the information about the link to construct
+     * @param typeParam the type parameter to link to
+     * @return the link
+     */
     protected Content getTypeParameterLink(LinkInfo linkInfo, TypeMirror typeParam) {
         LinkInfoImpl typeLinkInfo = new LinkInfoImpl(m_writer.configuration,
                 ((LinkInfoImpl) linkInfo).getContext(), typeParam);

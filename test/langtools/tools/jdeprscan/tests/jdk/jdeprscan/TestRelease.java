@@ -44,7 +44,10 @@ import static org.testng.Assert.assertTrue;
 
 public class TestRelease {
     static boolean invoke(String arg) {
-        return Main.call(System.out, System.err, "--list", "--release", arg);
+        System.err.println(">>> invoking Main.call with arguments: --list --release " + arg);
+        boolean r = Main.call(System.out, System.err, "--list", "--release", arg);
+        System.err.println(">>> Main.call returned " + r);
+        return r;
     }
 
     @Test

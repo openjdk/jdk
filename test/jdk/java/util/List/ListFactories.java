@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -356,5 +357,16 @@ public class ListFactories {
     @Test(expectedExceptions=NullPointerException.class)
     public void copyOfRejectsNullElements() {
         List<Integer> list = List.copyOf(Arrays.asList(1, null, 3));
+    }
+
+    @Test
+    public void iteratorShouldNotBeListIterator() {
+        List<Integer> list = List.of(1, 2, 3, 4, 5);
+        Iterator<Integer> it = list.iterator();
+        it.next();
+        try {
+            ((ListIterator<Integer>) it).previous();
+            fail("ListIterator operation succeeded on Iterator");
+        } catch (ClassCastException|UnsupportedOperationException ignore) { }
     }
 }

@@ -109,7 +109,7 @@ jobject JNIHandles::make_global(Handle obj, AllocFailType alloc_failmode) {
     // Return NULL on allocation failure.
     if (ptr != NULL) {
       assert(*ptr == NULL, "invariant");
-      NativeAccess<IN_CONCURRENT_ROOT>::oop_store(ptr, obj());
+      NativeAccess<>::oop_store(ptr, obj());
       res = reinterpret_cast<jobject>(ptr);
     } else {
       report_handle_allocation_failure(alloc_failmode, "global");
@@ -175,7 +175,7 @@ void JNIHandles::destroy_global(jobject handle) {
   if (handle != NULL) {
     assert(!is_jweak(handle), "wrong method for detroying jweak");
     oop* oop_ptr = jobject_ptr(handle);
-    NativeAccess<IN_CONCURRENT_ROOT>::oop_store(oop_ptr, (oop)NULL);
+    NativeAccess<>::oop_store(oop_ptr, (oop)NULL);
     global_handles()->release(oop_ptr);
   }
 }

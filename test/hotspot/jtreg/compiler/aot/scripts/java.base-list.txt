@@ -33,4 +33,3 @@ exclude sun.reflect.misc.Trampoline.invoke(Ljava/lang/reflect/Method;Ljava/lang/
 # assert(referenceMask != -1) failed: must not be a derived reference type
 exclude com.sun.crypto.provider.AESWrapCipher.engineUnwrap([BLjava/lang/String;I)Ljava/security/Key;
 exclude sun.security.ssl.*
-exclude sun.net.RegisteredDomain.<clinit>()V

@@ -508,7 +508,7 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
       return NULL;
     }
 
-    log_debug(gc, metaspace, alloc)("Free list allocate humongous chunk size " SIZE_FORMAT " for requested size " SIZE_FORMAT " waste " SIZE_FORMAT,
+    log_trace(gc, metaspace, alloc)("Free list allocate humongous chunk size " SIZE_FORMAT " for requested size " SIZE_FORMAT " waste " SIZE_FORMAT,
                                     chunk->word_size(), word_size, chunk->word_size() - word_size);
   }
 
@@ -550,7 +550,7 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   assert((word_size <= chunk->word_size()) ||
          (list_index(chunk->word_size()) == HumongousIndex),
          "Non-humongous variable sized chunk");
-  LogTarget(Debug, gc, metaspace, freelist) lt;
+  LogTarget(Trace, gc, metaspace, freelist) lt;
   if (lt.is_enabled()) {
     size_t list_count;
     if (list_index(word_size) < HumongousIndex) {

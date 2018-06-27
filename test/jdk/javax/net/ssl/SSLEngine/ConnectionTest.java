@@ -26,17 +26,18 @@
  * @bug 4495742
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
- *
- * This is a bit hacky, meant to test various conditions.  The main
- * thing I wanted to do with this was to do buffer reads/writes
- * when buffers were not empty.  (buffer.position() = 10)
- * The code could certainly be tightened up a lot.
- *
+ * @ignore the dependent implementation details are changed
  * @author Brad Wetmore
  *
  * @run main/othervm ConnectionTest
  */
 
+/*
+ * This is a bit hacky, meant to test various conditions.  The main
+ * thing I wanted to do with this was to do buffer reads/writes
+ * when buffers were not empty.  (buffer.position() = 10)
+ * The code could certainly be tightened up a lot.
+ */
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 import java.io.*;

@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984 8162363 8175200 8186332 8182765
+ *           8187288
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -89,7 +90,7 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/TwoBounds.html", true,
                 "<pre>class <span class=\"typeNameLabel\">TwoBounds&lt;K extends <a href=\""
                 + "ClassParamA.html\" title=\"annotation in typeannos\">"
-                + "@ClassParamA</a> java.lang.String,V extends <a href=\""
+                + "@ClassParamA</a> java.lang.String,&#8203;V extends <a href=\""
                 + "ClassParamB.html\" title=\"annotation in typeannos\">@ClassParamB"
                 + "</a> java.lang.String&gt;</span>");
 
@@ -114,7 +115,7 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/DefaultScope.html", true,
                 "<pre><a href=\"Parameterized.html\" title=\"class in "
                 + "typeannos\">Parameterized</a>&lt;<a href=\"FldA.html\" "
-                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String,<a "
+                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String,&#8203;<a "
                 + "href=\"FldB.html\" title=\"annotation in typeannos\">"
                 + "@FldB</a> java.lang.String&gt; bothTypeArgs</pre>",
 
@@ -141,9 +142,9 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "FldA.html\" title=\"annotation in typeannos\">@FldA</a> "
                 + "<a href=\"Parameterized.html\" title=\"class in "
                 + "typeannos\">Parameterized</a>&lt;<a href=\"FldA.html\" "
-                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String,<a "
+                + "title=\"annotation in typeannos\">@FldA</a> java.lang.String,&#8203;<a "
                 + "href=\"FldB.html\" title=\"annotation in typeannos\">"
-                + "@FldB</a> java.lang.String&gt;,<a href=\"FldB.html\" "
+                + "@FldB</a> java.lang.String&gt;,&#8203;<a href=\"FldB.html\" "
                 + "title=\"annotation in typeannos\">@FldB</a> java.lang.String&gt; "
                 + "nestedParameterized</pre>",
 
@@ -174,8 +175,8 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "<a href=\"MtdParameterized.html\" title=\"class in "
                 + "typeannos\">MtdParameterized</a>&lt;<a href=\"MRtnA."
                 + "html\" title=\"annotation in typeannos\">@MRtnA</a> java.lang."
-                + "String,<a href=\"MRtnB.html\" title=\"annotation in "
-                + "typeannos\">@MRtnB</a> java.lang.String&gt;,<a href=\""
+                + "String,&#8203;<a href=\"MRtnB.html\" title=\"annotation in "
+                + "typeannos\">@MRtnB</a> java.lang.String&gt;,&#8203;<a href=\""
                 + "MRtnB.html\" title=\"annotation in typeannos\">@MRtnB</a> java."
                 + "lang.String&gt;&nbsp;nestedMtdParameterized()</pre>");
 
@@ -199,7 +200,7 @@ public class TestTypeAnnotations extends JavadocTester {
 
                 "<pre>public final&nbsp;&lt;K extends <a href=\""
                 + "MTyParamA.html\" title=\"annotation in typeannos\">@MTyParamA</a> "
-                + "java.lang.String,V extends <a href=\"MTyParamA.html\" "
+                + "java.lang.String,&#8203;V extends <a href=\"MTyParamA.html\" "
                 + "title=\"annotation in typeannos\">@MTyParamA</a> <a href=\""
                 + "MtdTyParameterized.html\" title=\"class in typeannos\">"
                 + "MtdTyParameterized</a>&lt;<a href=\"MTyParamB.html\" "
@@ -210,7 +211,7 @@ public class TestTypeAnnotations extends JavadocTester {
         checkOutput("typeannos/Parameters.html", true,
                 "<pre>void&nbsp;unannotated&#8203;(<a href=\""
                 + "ParaParameterized.html\" title=\"class in typeannos\">"
-                + "ParaParameterized</a>&lt;java.lang.String,java.lang.String&gt;"
+                + "ParaParameterized</a>&lt;java.lang.String,&#8203;java.lang.String&gt;"
                 + "&nbsp;a)</pre>",
 
                 "<pre>void&nbsp;nestedParaParameterized&#8203;(<a href=\""
@@ -219,9 +220,9 @@ public class TestTypeAnnotations extends JavadocTester {
                 + "title=\"annotation in typeannos\">@ParamA</a> <a href=\""
                 + "ParaParameterized.html\" title=\"class in typeannos\">"
                 + "ParaParameterized</a>&lt;<a href=\"ParamA.html\" "
-                + "title=\"annotation in typeannos\">@ParamA</a> java.lang.String,"
+                + "title=\"annotation in typeannos\">@ParamA</a> java.lang.String,&#8203;"
                 + "<a href=\"ParamB.html\" title=\"annotation in "
-                + "typeannos\">@ParamB</a> java.lang.String&gt;,<a href=\""
+                + "typeannos\">@ParamB</a> java.lang.String&gt;,&#8203;<a href=\""
                 + "ParamB.html\" title=\"annotation in typeannos\">@ParamB"
                 + "</a> java.lang.String&gt;&nbsp;a)</pre>",
 
@@ -272,7 +273,7 @@ public class TestTypeAnnotations extends JavadocTester {
 
         // Test for type annotations on type parameters (TypeParameters.java).
         checkOutput("typeannos/TestMethods.html", true,
-                "<pre>&lt;K,<a href=\"TyParaA.html\" title=\"annotation in typeannos\">"
+                "<pre>&lt;K,&#8203;<a href=\"TyParaA.html\" title=\"annotation in typeannos\">"
                 + "@TyParaA</a> V extends <a href=\"TyParaA.html\" "
                 + "title=\"annotation in typeannos\">@TyParaA</a> "
                 + "java.lang.String&gt;&nbsp;void&nbsp;secondAnnotated()</pre>"

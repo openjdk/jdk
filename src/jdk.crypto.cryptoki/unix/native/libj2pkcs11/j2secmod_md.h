@@ -34,6 +34,10 @@ typedef int (*FPTR_Initialize)(const char *configdir,
         const char *certPrefix, const char *keyPrefix,
         const char *secmodName, unsigned int flags);
 
+#ifdef SECMOD_DEBUG
+typedef int (*FPTR_GetError)(void);
+#endif //SECMOD_DEBUG
+
 // in secmod.h
 //extern SECMODModule *SECMOD_LoadModule(char *moduleSpec,SECMODModule *parent,
 //                                                      PRBool recurse);

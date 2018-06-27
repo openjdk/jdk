@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,18 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4404399
+ * @ignore this test does not work any more as the TLS spec changes the
+ *         behaviors of close_notify.
  * @summary When a layered SSL socket is closed, it should wait for close_notify
  * @run main/othervm NonAutoClose
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  * @author Brad Wetmore
  */
 
@@ -72,7 +76,7 @@ public class NonAutoClose {
      * Turn on SSL debugging?
      */
     private final static boolean DEBUG = false;
-    private final static boolean VERBOSE = false;
+    private final static boolean VERBOSE = true;
     private final static int NUM_ITERATIONS  = 10;
     private final static int PLAIN_SERVER_VAL = 1;
     private final static int PLAIN_CLIENT_VAL = 2;
@@ -90,7 +94,7 @@ public class NonAutoClose {
 
     void expectValue(int got, int expected, String msg) throws IOException {
         if (VERBOSE) {
-            System.out.println(msg + ": read (" + got + ")");
+            System.err.println(msg + ": read (" + got + ")");
         }
         if (got != expected) {
             throw new IOException(msg + ": read (" + got
@@ -108,7 +112,7 @@ public class NonAutoClose {
 
      void doServerSide() throws Exception {
         if (VERBOSE) {
-            System.out.println("Starting server");
+            System.err.println("Starting server");
         }
 
         /*
@@ -137,8 +141,8 @@ public class NonAutoClose {
 
         for (int i = 1; i <= NUM_ITERATIONS; i++) {
             if (VERBOSE) {
-                System.out.println("=================================");
-                System.out.println("Server Iteration #" + i);
+                System.err.println("=================================");
+                System.err.println("Server Iteration #" + i);
             }
 
             SSLSocket ssls = (SSLSocket) sslsf.createSocket(plainSocket,
@@ -158,7 +162,7 @@ public class NonAutoClose {
             ssls.close();
 
             if (VERBOSE) {
-                System.out.println("TLS socket is closed");
+                System.err.println("TLS socket is closed");
             }
         }
 
@@ -172,7 +176,7 @@ public class NonAutoClose {
         plainSocket.close();
 
         if (VERBOSE) {
-            System.out.println("Server plain socket is closed");
+            System.err.println("Server plain socket is closed");
         }
     }
 
@@ -191,7 +195,7 @@ public class NonAutoClose {
         }
 
         if (VERBOSE) {
-            System.out.println("Starting client");
+            System.err.println("Starting client");
         }
 
         /*
@@ -211,8 +215,8 @@ public class NonAutoClose {
 
         for (int i = 1; i <= NUM_ITERATIONS; i++) {
             if (VERBOSE) {
-                System.out.println("===================================");
-                System.out.println("Client Iteration #" + i);
+                System.err.println("===================================");
+                System.err.println("Client Iteration #" + i);
               }
 
             SSLSocket ssls = (SSLSocket) sslsf.createSocket(plainSocket,
@@ -233,7 +237,7 @@ public class NonAutoClose {
             ssls.close();
 
             if (VERBOSE) {
-                System.out.println("Client TLS socket is closed");
+                System.err.println("Client TLS socket is closed");
             }
         }
 
@@ -247,7 +251,7 @@ public class NonAutoClose {
         plainSocket.close();
 
         if (VERBOSE) {
-            System.out.println("Client plain socket is closed");
+            System.err.println("Client plain socket is closed");
         }
     }
 

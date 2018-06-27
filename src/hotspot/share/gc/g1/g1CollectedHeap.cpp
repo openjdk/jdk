@@ -2813,15 +2813,19 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     GCTraceCPUTime tcpu;
 
     G1HeapVerifier::G1VerifyType verify_type;
-    FormatBuffer<> gc_string("Pause ");
+    FormatBuffer<> gc_string("Pause Young ");
     if (collector_state()->in_initial_mark_gc()) {
-      gc_string.append("Initial Mark");
-      verify_type = G1HeapVerifier::G1VerifyInitialMark;
+      gc_string.append("(Concurrent Start)");
+      verify_type = G1HeapVerifier::G1VerifyConcurrentStart;
     } else if (collector_state()->in_young_only_phase()) {
-      gc_string.append("Young");
-      verify_type = G1HeapVerifier::G1VerifyYoungOnly;
+      if (collector_state()->in_young_gc_before_mixed()) {
+        gc_string.append("(Prepare Mixed)");
+      } else {
+        gc_string.append("(Normal)");
+      }
+      verify_type = G1HeapVerifier::G1VerifyYoungNormal;
     } else {
-      gc_string.append("Mixed");
+      gc_string.append("(Mixed)");
       verify_type = G1HeapVerifier::G1VerifyMixed;
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);

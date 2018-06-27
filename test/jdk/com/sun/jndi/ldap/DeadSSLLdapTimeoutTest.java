@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,8 @@ class DeadServerTimeoutSSLTest implements Callable {
     public void performOp(InitialContext ctx) throws NamingException {}
 
     public void handleNamingException(NamingException e, long start, long end) {
-        if (e.getCause() instanceof SocketTimeoutException) {
+        if (e.getCause() instanceof SocketTimeoutException
+                || e.getCause().getCause() instanceof SocketTimeoutException) {
             // SSL connect will timeout via readReply using
             // SocketTimeoutException
             e.printStackTrace();

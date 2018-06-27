@@ -45,12 +45,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.CRC32;
+
+import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -252,7 +251,7 @@ public final class ZoneInfoFile {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 try {
-                    String libDir = System.getProperty("java.home") + File.separator + "lib";
+                    String libDir = StaticProperty.javaHome() + File.separator + "lib";
                     try (DataInputStream dis = new DataInputStream(
                              new BufferedInputStream(new FileInputStream(
                                  new File(libDir, "tzdb.dat"))))) {

@@ -34,6 +34,7 @@ import java.io.*;
 import java.util.*;
 import java.security.AccessController;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.StaticProperty;
 import sun.nio.ch.ThreadPool;
 import sun.security.util.SecurityConstants;
 
@@ -46,11 +47,10 @@ public class WindowsFileSystemProvider
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
 
-    private static final String USER_DIR = "user.dir";
     private final WindowsFileSystem theFileSystem;
 
     public WindowsFileSystemProvider() {
-        theFileSystem = new WindowsFileSystem(this, System.getProperty(USER_DIR));
+        theFileSystem = new WindowsFileSystem(this, StaticProperty.userDir());
     }
 
     @Override

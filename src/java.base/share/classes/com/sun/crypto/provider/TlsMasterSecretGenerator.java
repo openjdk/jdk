@@ -95,7 +95,7 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
             premasterMajor = premaster[0] & 0xff;
             premasterMinor = premaster[1] & 0xff;
         } else {
-            // DH, KRB5, others
+            // DH, others
             premasterMajor = -1;
             premasterMinor = -1;
         }

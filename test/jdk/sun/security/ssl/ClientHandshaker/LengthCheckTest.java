@@ -74,7 +74,6 @@ import java.security.*;
 import java.nio.*;
 import java.util.List;
 import java.util.ArrayList;
-import sun.security.ssl.ProtocolVersion;
 
 public class LengthCheckTest {
 
@@ -155,6 +154,7 @@ public class LengthCheckTest {
     private static final int TLS_ALERT_UNEXPECTED_MSG = 0x0A;
     private static final int TLS_ALERT_HANDSHAKE_FAILURE = 0x28;
     private static final int TLS_ALERT_INTERNAL_ERROR = 0x50;
+    private static final int TLS_ALERT_ILLEGAL_PARAMETER = 0x2F;
 
     public interface HandshakeTest {
         void execTest() throws Exception;
@@ -268,24 +268,24 @@ public class LengthCheckTest {
                 runDelegatedTasks(serverResult, serverEngine);
                 sTOc.flip();
                 dumpByteBuffer("SERVER-TO-CLIENT", sTOc);
+
+                // We expect to see the server generate an alert here
+                serverResult = serverEngine.wrap(serverOut, sTOc);
+                log("server wrap: ", serverResult);
+                runDelegatedTasks(serverResult, serverEngine);
+                sTOc.flip();
+                dumpByteBuffer("SERVER-TO-CLIENT", sTOc);
             } catch (SSLProtocolException ssle) {
                 log("Received expected SSLProtocolException: " + ssle);
                 gotException = true;
             }
-
-            // We expect to see the server generate an alert here
-            serverResult = serverEngine.wrap(serverOut, sTOc);
-            log("server wrap: ", serverResult);
-            runDelegatedTasks(serverResult, serverEngine);
-            sTOc.flip();
-            dumpByteBuffer("SERVER-TO-CLIENT", sTOc);
 
             // At this point we can verify that both an exception
             // was thrown and the proper action (a TLS alert) was
             // sent back to the client.
             if (gotException == false ||
                 !isTlsMessage(sTOc, TLS_RECTYPE_ALERT, TLS_ALERT_LVL_FATAL,
-                        TLS_ALERT_UNEXPECTED_MSG)) {
+                        TLS_ALERT_ILLEGAL_PARAMETER)) {
                 throw new SSLException(
                     "Server failed to throw Alert:fatal:internal_error");
             }
@@ -783,10 +783,9 @@ public class LengthCheckTest {
             int ver_major = Byte.toUnsignedInt(bBuf.get());
             int ver_minor = Byte.toUnsignedInt(bBuf.get());
             int recLen = Short.toUnsignedInt(bBuf.getShort());
-            ProtocolVersion pv = ProtocolVersion.valueOf(ver_major, ver_minor);
 
             log("===== " + header + " (" + tlsRecType(type) + " / " +
-                pv + " / " + bufLen + " bytes) =====");
+                ver_major + "." + ver_minor + " / " + bufLen + " bytes) =====");
             bBuf.reset();
             for (int i = 0; i < bufLen; i++) {
                 if (i != 0 && i % 16 == 0) {

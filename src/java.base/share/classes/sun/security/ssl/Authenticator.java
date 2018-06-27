@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,92 +25,78 @@
 
 package sun.security.ssl;
 
+import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import sun.security.ssl.CipherSuite.MacAlg;
 
 /**
  * This class represents an SSL/TLS/DTLS message authentication token,
  * which encapsulates a sequence number and ensures that attempts to
  * delete or reorder messages can be detected.
- *
- * Each connection state contains a sequence number, which is maintained
- * separately for read and write states.
- *
- * For SSL/TLS protocols, the sequence number MUST be set to zero
- * whenever a connection state is made the active state.
- *
- * DTLS uses an explicit sequence number, rather than an implicit one.
- * Sequence numbers are maintained separately for each epoch, with
- * each sequence number initially being 0 for each epoch.  The sequence
- * number used to compute the DTLS MAC is the 64-bit value formed by
- * concatenating the epoch and the sequence number.
- *
- * Sequence numbers do not wrap.  If an implementation would need to wrap
- * a sequence number, it must renegotiate instead.  A sequence number is
- * incremented after each record: specifically, the first record transmitted
- * under a particular connection state MUST use sequence number 0.
  */
-class Authenticator {
-
+abstract class Authenticator {
     // byte array containing the additional authentication information for
     // each record
-    private final byte[] block;
+    protected final byte[] block;   // at least 8 bytes for sequence number
 
-    // the block size of SSL v3.0:
-    // sequence number + record type + + record length
-    private static final int BLOCK_SIZE_SSL = 8 + 1 + 2;
-
-    // the block size of TLS v1.0 and later:
-    // sequence number + record type + protocol version + record length
-    private static final int BLOCK_SIZE_TLS = 8 + 1 + 2 + 2;
-
-    // the block size of DTLS v1.0 and later:
-    // epoch + sequence number + record type + protocol version + record length
-    private static final int BLOCK_SIZE_DTLS = 2 + 6 + 1 + 2 + 2;
-
-    private final boolean isDTLS;
-
-    /**
-     * Default construct, no message authentication token is initialized.
-     *
-     * Note that this construct can only be called for null MAC
-     */
-    protected Authenticator(boolean isDTLS) {
-        if (isDTLS) {
-            // For DTLS protocols, plaintexts use explicit epoch and
-            // sequence number in each record.  The first 8 byte of
-            // the block is initialized for null MAC so that the
-            // epoch and sequence number can be acquired to generate
-            // plaintext records.
-            block = new byte[8];
-        } else {
-            block = new byte[0];
-        }
-
-        this.isDTLS = isDTLS;
+    private Authenticator(byte[] block) {
+        this.block = block;
     }
 
     /**
      * Constructs the message authentication token for the specified
      * SSL/TLS protocol.
      */
-    Authenticator(ProtocolVersion protocolVersion) {
-        if (protocolVersion.isDTLSProtocol()) {
-            block = new byte[BLOCK_SIZE_DTLS];
-            block[9] = protocolVersion.major;
-            block[10] = protocolVersion.minor;
-
-            this.isDTLS = true;
-        } else if (protocolVersion.v >= ProtocolVersion.TLS10.v) {
-            block = new byte[BLOCK_SIZE_TLS];
-            block[9] = protocolVersion.major;
-            block[10] = protocolVersion.minor;
-
-            this.isDTLS = false;
+    static Authenticator valueOf(ProtocolVersion protocolVersion) {
+        if (protocolVersion.isDTLS) {
+            if (protocolVersion.useTLS13PlusSpec()) {
+                return new DTLS13Authenticator(protocolVersion);
+            } else {
+                return new DTLS10Authenticator(protocolVersion);
+            }
         } else {
-            block = new byte[BLOCK_SIZE_SSL];
-
-            this.isDTLS = false;
+            if (protocolVersion.useTLS13PlusSpec()) {
+                return new TLS13Authenticator(protocolVersion);
+            } else if (protocolVersion.useTLS10PlusSpec()) {
+                return new TLS10Authenticator(protocolVersion);
+            } else {
+                return new SSL30Authenticator();
+            }
         }
+    }
+
+    @SuppressWarnings({"unchecked"})
+    static <T extends Authenticator & MAC> T
+         valueOf(ProtocolVersion protocolVersion, MacAlg macAlg,
+                 SecretKey key) throws NoSuchAlgorithmException,
+                        InvalidKeyException {
+        if (protocolVersion.isDTLS) {
+            if (protocolVersion.useTLS13PlusSpec()) {
+                throw new RuntimeException("No MacAlg used in DTLS 1.3");
+            } else {
+                return (T)(new DTLS10Mac(protocolVersion, macAlg, key));
+            }
+        } else {
+            if (protocolVersion.useTLS13PlusSpec()) {
+                throw new RuntimeException("No MacAlg used in TLS 1.3");
+            } else if (protocolVersion.useTLS10PlusSpec()) {
+                return (T)(new TLS10Mac(protocolVersion, macAlg, key));
+            } else {
+                return (T)(new SSL30Mac(protocolVersion, macAlg, key));
+            }
+        }
+    }
+
+    static Authenticator nullTlsMac() {
+        return new SSLNullMac();
+    }
+
+    static Authenticator nullDtlsMac() {
+        return new DTLSNullMac();
     }
 
     /**
@@ -122,25 +108,7 @@ class Authenticator {
      *
      * @return true if the sequence number is close to wrap
      */
-    final boolean seqNumOverflow() {
-        /*
-         * Conservatively, we don't allow more records to be generated
-         * when there are only 2^8 sequence numbers left.
-         */
-        if (isDTLS) {
-            return (block.length != 0 &&
-                // no epoch bytes, block[0] and block[1]
-                block[2] == (byte)0xFF && block[3] == (byte)0xFF &&
-                block[4] == (byte)0xFF && block[5] == (byte)0xFF &&
-                block[6] == (byte)0xFF);
-        } else {
-            return (block.length != 0 &&
-                block[0] == (byte)0xFF && block[1] == (byte)0xFF &&
-                block[2] == (byte)0xFF && block[3] == (byte)0xFF &&
-                block[4] == (byte)0xFF && block[5] == (byte)0xFF &&
-                block[6] == (byte)0xFF);
-        }
-    }
+    abstract boolean seqNumOverflow();
 
     /**
      * Checks whether the sequence number close to renew.
@@ -152,21 +120,7 @@ class Authenticator {
      *
      * @return true if the sequence number is huge enough to renew
      */
-    final boolean seqNumIsHuge() {
-        /*
-         * Conservatively, we should ask for renegotiation when there are
-         * only 2^32 sequence numbers left.
-         */
-        if (isDTLS) {
-            return (block.length != 0 &&
-                // no epoch bytes, block[0] and block[1]
-                block[2] == (byte)0xFF && block[3] == (byte)0xFF);
-        } else {
-            return (block.length != 0 &&
-                block[0] == (byte)0xFF && block[1] == (byte)0xFF &&
-                block[2] == (byte)0xFF && block[3] == (byte)0xFF);
-        }
-    }
+    abstract boolean seqNumIsHuge();
 
     /**
      * Gets the current sequence number, including the epoch number for
@@ -181,14 +135,9 @@ class Authenticator {
     /**
      * Sets the epoch number (only apply to DTLS protocols).
      */
-    final void setEpochNumber(int epoch) {
-        if (!isDTLS) {
-            throw new RuntimeException(
+    void setEpochNumber(int epoch) {
+        throw new UnsupportedOperationException(
                 "Epoch numbers apply to DTLS protocols only");
-        }
-
-        block[0] = (byte)((epoch >> 8) & 0xFF);
-        block[1] = (byte)(epoch & 0xFF);
     }
 
     /**
@@ -208,7 +157,7 @@ class Authenticator {
     /**
      * Acquires the current message authentication information with the
      * specified record type and fragment length, and then increases the
-     * sequence number.
+     * sequence number if using implicit sequence number.
      *
      * @param  type the record type
      * @param  length the fragment of the record
@@ -216,32 +165,465 @@ class Authenticator {
      *
      * @return the byte array of the current message authentication information
      */
-    final byte[] acquireAuthenticationBytes(
+    byte[] acquireAuthenticationBytes(
             byte type, int length, byte[] sequence) {
+        throw new UnsupportedOperationException("Used by AEAD algorithms only");
+    }
 
-        byte[] copy = block.clone();
-        if (sequence != null) {
-            if (sequence.length != 8) {
-                throw new RuntimeException(
-                        "Insufficient explicit sequence number bytes");
-            }
+    private static class SSLAuthenticator extends Authenticator {
+        private SSLAuthenticator(byte[] block) {
+            super(block);
+        }
 
-            System.arraycopy(sequence, 0, copy, 0, sequence.length);
-        }   // Otherwise, use the implicit sequence number.
+        @Override
+        boolean seqNumOverflow() {
+            /*
+             * Conservatively, we don't allow more records to be generated
+             * when there are only 2^8 sequence numbers left.
+             */
+            return (block.length != 0 &&
+                block[0] == (byte)0xFF && block[1] == (byte)0xFF &&
+                block[2] == (byte)0xFF && block[3] == (byte)0xFF &&
+                block[4] == (byte)0xFF && block[5] == (byte)0xFF &&
+                block[6] == (byte)0xFF);
+        }
 
-        if (block.length != 0) {
-            copy[8] = type;
+        @Override
+        boolean seqNumIsHuge() {
+            return (block.length != 0 &&
+                block[0] == (byte)0xFF && block[1] == (byte)0xFF &&
+                block[2] == (byte)0xFF && block[3] == (byte)0xFF);
+        }
+    }
 
-            copy[copy.length - 2] = (byte)(length >> 8);
-            copy[copy.length - 1] = (byte)(length);
+    // For null MAC only.
+    private static class SSLNullAuthenticator extends SSLAuthenticator {
+        private SSLNullAuthenticator() {
+            super(new byte[8]);
+        }
+    }
 
-            if (sequence == null || sequence.length != 0) {
+    // For SSL 3.0
+    private static class SSL30Authenticator extends SSLAuthenticator {
+        // Block size of SSL v3.0:
+        //     sequence number + record type + + record length
+        private static final int BLOCK_SIZE = 11;   // 8 + 1 + 2
+
+        private SSL30Authenticator() {
+            super(new byte[BLOCK_SIZE]);
+        }
+
+        @Override
+        byte[] acquireAuthenticationBytes(
+                byte type, int length, byte[] sequence) {
+            byte[] ad = block.clone();
+
+            // Increase the implicit sequence number in the block array.
+            increaseSequenceNumber();
+
+            ad[8] = type;
+            ad[9] = (byte)(length >> 8);
+            ad[10] = (byte)(length);
+
+            return ad;
+        }
+    }
+
+    // For TLS 1.0 - 1.2
+    private static class TLS10Authenticator extends SSLAuthenticator {
+        // Block size of TLS v1.0/1.1/1.2.
+        //     sequence number + record type + protocol version + record length
+        private static final int BLOCK_SIZE = 13;   // 8 + 1 + 2 + 2
+
+        private TLS10Authenticator(ProtocolVersion protocolVersion) {
+            super(new byte[BLOCK_SIZE]);
+            block[9] = protocolVersion.major;
+            block[10] = protocolVersion.minor;
+        }
+
+        @Override
+        byte[] acquireAuthenticationBytes(
+                byte type, int length, byte[] sequence) {
+            byte[] ad = block.clone();
+            if (sequence != null) {
+                if (sequence.length != 8) {
+                    throw new RuntimeException(
+                            "Insufficient explicit sequence number bytes");
+                }
+
+                System.arraycopy(sequence, 0, ad, 0, sequence.length);
+            } else {    // Otherwise, use the implicit sequence number.
                 // Increase the implicit sequence number in the block array.
                 increaseSequenceNumber();
             }
+
+            ad[8] = type;
+            ad[11] = (byte)(length >> 8);
+            ad[12] = (byte)(length);
+
+            return ad;
+        }
+    }
+
+    // For TLS 1.3
+    private static final class TLS13Authenticator extends SSLAuthenticator {
+        // Block size of TLS v1.3:
+        //     record type + protocol version + record length + sequence number
+        private static final int BLOCK_SIZE = 13;   // 1 + 2 + 2 + 8
+
+        private TLS13Authenticator(ProtocolVersion protocolVersion) {
+            super(new byte[BLOCK_SIZE]);
+            block[9] = ProtocolVersion.TLS12.major;
+            block[10] = ProtocolVersion.TLS12.minor;
         }
 
-        return copy;
+        @Override
+        byte[] acquireAuthenticationBytes(
+                byte type, int length, byte[] sequence) {
+            byte[] ad = Arrays.copyOfRange(block, 8, 13);
+
+            // Increase the implicit sequence number in the block array.
+            increaseSequenceNumber();
+
+            ad[0] = type;
+            ad[3] = (byte)(length >> 8);
+            ad[4] = (byte)(length & 0xFF);
+
+            return ad;
+        }
+    }
+
+    private static class DTLSAuthenticator extends Authenticator {
+        private DTLSAuthenticator(byte[] block) {
+            super(block);
+        }
+
+        @Override
+        boolean seqNumOverflow() {
+            /*
+             * Conservatively, we don't allow more records to be generated
+             * when there are only 2^8 sequence numbers left.
+             */
+            return (block.length != 0 &&
+                // no epoch bytes, block[0] and block[1]
+                block[2] == (byte)0xFF && block[3] == (byte)0xFF &&
+                block[4] == (byte)0xFF && block[5] == (byte)0xFF &&
+                block[6] == (byte)0xFF);
+        }
+
+        @Override
+        boolean seqNumIsHuge() {
+            return (block.length != 0 &&
+                // no epoch bytes, block[0] and block[1]
+                block[2] == (byte)0xFF && block[3] == (byte)0xFF);
+        }
+
+        @Override
+        void setEpochNumber(int epoch) {
+            block[0] = (byte)((epoch >> 8) & 0xFF);
+            block[1] = (byte)(epoch & 0xFF);
+        }
+    }
+
+    // For null MAC only.
+    private static class DTLSNullAuthenticator extends DTLSAuthenticator {
+        private DTLSNullAuthenticator() {
+            // For DTLS protocols, plaintexts use explicit epoch and
+            // sequence number in each record.  The first 8 byte of
+            // the block is initialized for null MAC so that the
+            // epoch and sequence number can be acquired to generate
+            // plaintext records.
+            super(new byte[8]);
+        }
+    }
+
+    // DTLS 1.0/1.2
+    private static class DTLS10Authenticator extends DTLSAuthenticator {
+        // Block size of DTLS v1.0 and later:
+        //     epoch + sequence number +
+        //     record type + protocol version + record length
+        private static final int BLOCK_SIZE = 13;  // 2 + 6 + 1 + 2 + 2;
+
+        private DTLS10Authenticator(ProtocolVersion protocolVersion) {
+            super(new byte[BLOCK_SIZE]);
+            block[9] = protocolVersion.major;
+            block[10] = protocolVersion.minor;
+        }
+
+        @Override
+        byte[] acquireAuthenticationBytes(
+                byte type, int length, byte[] sequence) {
+            byte[] ad = block.clone();
+            if (sequence != null) {
+                if (sequence.length != 8) {
+                    throw new RuntimeException(
+                            "Insufficient explicit sequence number bytes");
+                }
+
+                System.arraycopy(sequence, 0, ad, 0, sequence.length);
+            } else {    // Otherwise, use the implicit sequence number.
+                // Increase the implicit sequence number in the block array.
+                increaseSequenceNumber();
+            }
+
+            ad[8] = type;
+            ad[11] = (byte)(length >> 8);
+            ad[12] = (byte)(length);
+
+            return ad;
+        }
+    }
+
+    // DTLS 1.3
+    private static final class DTLS13Authenticator extends DTLSAuthenticator {
+        // Block size of DTLS v1.0 and later:
+        //     epoch + sequence number +
+        //     record type + protocol version + record length
+        private static final int BLOCK_SIZE = 13;  // 2 + 6 + 1 + 2 + 2;
+
+        private DTLS13Authenticator(ProtocolVersion protocolVersion) {
+            super(new byte[BLOCK_SIZE]);
+            block[9] = ProtocolVersion.TLS12.major;
+            block[10] = ProtocolVersion.TLS12.minor;
+        }
+
+        @Override
+        byte[] acquireAuthenticationBytes(
+                byte type, int length, byte[] sequence) {
+            byte[] ad = Arrays.copyOfRange(block, 8, 13);
+
+            // Increase the implicit sequence number in the block array.
+            increaseSequenceNumber();
+
+            ad[0] = type;
+            ad[3] = (byte)(length >> 8);
+            ad[4] = (byte)(length & 0xFF);
+
+            return ad;
+        }
+    }
+
+    interface MAC {
+        MacAlg macAlg();
+
+        /**
+         * Compute and returns the MAC for the remaining data
+         * in this ByteBuffer.
+         *
+         * On return, the bb position == limit, and limit will
+         * have not changed.
+         *
+         * @param type record type
+         * @param bb a ByteBuffer in which the position and limit
+         *          demarcate the data to be MAC'd.
+         * @param isSimulated if true, simulate the MAC computation
+         * @param sequence the explicit sequence number, or null if using
+         *        the implicit sequence number for the computation
+         *
+         * @return the MAC result
+         */
+        byte[] compute(byte type, ByteBuffer bb,
+                byte[] sequence, boolean isSimulated);
+
+
+        /**
+         * Compute and returns the MAC for the remaining data
+         * in this ByteBuffer.
+         *
+         * On return, the bb position == limit, and limit will
+         * have not changed.
+         *
+         * @param type record type
+         * @param bb a ByteBuffer in which the position and limit
+         *        demarcate the data to be MAC'd.
+         * @param isSimulated if true, simulate the MAC computation
+         *
+         * @return the MAC result
+         */
+        default byte[] compute(byte type, ByteBuffer bb, boolean isSimulated) {
+            return compute(type, bb, null, isSimulated);
+        }
+    }
+
+    private class MacImpl implements MAC {
+        // internal identifier for the MAC algorithm
+        private final MacAlg macAlg;
+
+        // JCE Mac object
+        private final Mac mac;
+
+        private MacImpl() {
+            macAlg = MacAlg.M_NULL;
+            mac = null;
+        }
+
+        private MacImpl(ProtocolVersion protocolVersion, MacAlg macAlg,
+                SecretKey key) throws NoSuchAlgorithmException,
+                        InvalidKeyException {
+            if (macAlg == null) {
+                throw new RuntimeException("Null MacAlg");
+            }
+
+            // using SSL MAC computation?
+            boolean useSSLMac = (protocolVersion.id < ProtocolVersion.TLS10.id);
+            String algorithm;
+            switch (macAlg) {
+                case M_MD5:
+                    algorithm = useSSLMac ? "SslMacMD5" : "HmacMD5";
+                    break;
+                case M_SHA:
+                    algorithm = useSSLMac ? "SslMacSHA1" : "HmacSHA1";
+                    break;
+                case M_SHA256:
+                    algorithm = "HmacSHA256";    // TLS 1.2+
+                    break;
+                case M_SHA384:
+                    algorithm = "HmacSHA384";    // TLS 1.2+
+                    break;
+                default:
+                    throw new RuntimeException("Unknown MacAlg " + macAlg);
+            }
+
+            Mac m = JsseJce.getMac(algorithm);
+            m.init(key);
+            this.macAlg = macAlg;
+            this.mac = m;
+        }
+
+        @Override
+        public MacAlg macAlg() {
+            return macAlg;
+        }
+
+        @Override
+        public byte[] compute(byte type, ByteBuffer bb,
+                byte[] sequence, boolean isSimulated) {
+
+            if (macAlg.size == 0) {
+                return new byte[0];
+            }
+
+            if (!isSimulated) {
+                // Uses the explicit sequence number for the computation.
+                byte[] additional =
+                    acquireAuthenticationBytes(type, bb.remaining(), sequence);
+                mac.update(additional);
+            }
+            mac.update(bb);
+
+            return mac.doFinal();
+        }
+    }
+
+    // NULL SSL MAC
+    private static final
+            class SSLNullMac extends SSLNullAuthenticator implements MAC {
+        private final MacImpl macImpl;
+        public SSLNullMac() {
+            super();
+            this.macImpl = new MacImpl();
+        }
+
+        @Override
+        public MacAlg macAlg() {
+            return macImpl.macAlg;
+        }
+
+        @Override
+        public byte[] compute(byte type, ByteBuffer bb,
+                byte[] sequence, boolean isSimulated) {
+            return macImpl.compute(type, bb, sequence, isSimulated);
+        }
+    }
+
+    // For SSL 3.0
+    private static final
+            class SSL30Mac extends SSL30Authenticator implements MAC {
+        private final MacImpl macImpl;
+        public SSL30Mac(ProtocolVersion protocolVersion,
+                MacAlg macAlg, SecretKey key) throws NoSuchAlgorithmException,
+                        InvalidKeyException {
+            super();
+            this.macImpl = new MacImpl(protocolVersion, macAlg, key);
+        }
+
+        @Override
+        public MacAlg macAlg() {
+            return macImpl.macAlg;
+        }
+
+        @Override
+        public byte[] compute(byte type, ByteBuffer bb,
+                byte[] sequence, boolean isSimulated) {
+            return macImpl.compute(type, bb, sequence, isSimulated);
+        }
+    }
+
+    // For TLS 1.0 - 1.2
+    private static final
+            class TLS10Mac extends TLS10Authenticator implements MAC {
+        private final MacImpl macImpl;
+        public TLS10Mac(ProtocolVersion protocolVersion,
+                MacAlg macAlg, SecretKey key) throws NoSuchAlgorithmException,
+                        InvalidKeyException {
+            super(protocolVersion);
+            this.macImpl = new MacImpl(protocolVersion, macAlg, key);
+        }
+
+        @Override
+        public MacAlg macAlg() {
+            return macImpl.macAlg;
+        }
+
+        @Override
+        public byte[] compute(byte type, ByteBuffer bb,
+                byte[] sequence, boolean isSimulated) {
+            return macImpl.compute(type, bb, sequence, isSimulated);
+        }
+    }
+
+    // NULL DTLS MAC
+    private static final
+            class DTLSNullMac extends DTLSNullAuthenticator implements MAC {
+        private final MacImpl macImpl;
+        public DTLSNullMac() {
+            super();
+            this.macImpl = new MacImpl();
+        }
+
+        @Override
+        public MacAlg macAlg() {
+            return macImpl.macAlg;
+        }
+
+        @Override
+        public byte[] compute(byte type, ByteBuffer bb,
+                byte[] sequence, boolean isSimulated) {
+            return macImpl.compute(type, bb, sequence, isSimulated);
+        }
+    }
+
+    // DTLS 1.0/1.2
+    private static final class DTLS10Mac
+            extends DTLS10Authenticator implements MAC {
+        private final MacImpl macImpl;
+        public DTLS10Mac(ProtocolVersion protocolVersion,
+                MacAlg macAlg, SecretKey key) throws NoSuchAlgorithmException,
+                        InvalidKeyException {
+            super(protocolVersion);
+            this.macImpl = new MacImpl(protocolVersion, macAlg, key);
+        }
+
+        @Override
+        public MacAlg macAlg() {
+            return macImpl.macAlg;
+        }
+
+        @Override
+        public byte[] compute(byte type, ByteBuffer bb,
+                byte[] sequence, boolean isSimulated) {
+            return macImpl.compute(type, bb, sequence, isSimulated);
+        }
     }
 
     static final long toLong(byte[] recordEnS) {

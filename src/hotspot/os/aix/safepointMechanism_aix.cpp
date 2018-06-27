@@ -38,7 +38,7 @@ void SafepointMechanism::pd_initialize() {
 
   // Allocate one protected page
   char* map_address = (char*)MAP_FAILED;
-  const size_t page_size = os::vm_page_size();
+  const size_t map_size = ThreadLocalHandshakes ? 2 * os::vm_page_size() : os::vm_page_size();
   const int prot  = PROT_READ;
   const int flags = MAP_PRIVATE | MAP_ANONYMOUS;
 
@@ -68,7 +68,7 @@ void SafepointMechanism::pd_initialize() {
       // AIX: AIX needs MAP_FIXED if we provide an address and mmap will
       // fail if the address is already mapped.
       map_address = (char*) ::mmap(address_wishes[i],
-                                   page_size, prot,
+                                   map_size, prot,
                                    flags | MAP_FIXED,
                                    -1, 0);
       log_debug(os)("SafePoint Polling Page address: %p (wish) => %p",
@@ -81,24 +81,27 @@ void SafepointMechanism::pd_initialize() {
 
       if (map_address != (char*)MAP_FAILED) {
         // Map succeeded, but polling_page is not at wished address, unmap and continue.
-        ::munmap(map_address, page_size);
+        ::munmap(map_address, map_size);
         map_address = (char*)MAP_FAILED;
       }
       // Map failed, continue loop.
     }
   }
   if (map_address == (char*)MAP_FAILED) {
-    map_address = (char*) ::mmap(NULL, page_size, prot, flags, -1, 0);
+    map_address = (char*) ::mmap(NULL, map_size, prot, flags, -1, 0);
   }
-  guarantee(map_address != (char*)MAP_FAILED, "SafepointMechanism::pd_initialize: failed to allocate polling page");
+  guarantee(map_address != (char*)MAP_FAILED && map_address != NULL,
+            "SafepointMechanism::pd_initialize: failed to allocate polling page");
   log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(map_address));
   os::set_polling_page((address)(map_address));
 
   // Use same page for ThreadLocalHandshakes without SIGTRAP
   if (ThreadLocalHandshakes) {
     set_uses_thread_local_poll();
-    intptr_t bad_page_val = reinterpret_cast<intptr_t>(map_address);
-    _poll_armed_value    = reinterpret_cast<void*>(bad_page_val | poll_bit());
-    _poll_disarmed_value = NULL; // Readable on AIX
+    os::make_polling_page_unreadable();
+    intptr_t bad_page_val  = reinterpret_cast<intptr_t>(map_address),
+             good_page_val = bad_page_val + os::vm_page_size();
+    _poll_armed_value    = reinterpret_cast<void*>(bad_page_val  + poll_bit());
+    _poll_disarmed_value = reinterpret_cast<void*>(good_page_val);
   }
 }

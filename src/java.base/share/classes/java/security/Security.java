@@ -31,6 +31,7 @@ import java.io.*;
 import java.net.URL;
 
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import sun.security.util.Debug;
 import sun.security.util.PropertyExpander;
 
@@ -214,7 +215,7 @@ public final class Security {
         // maybe check for a system property which will specify where to
         // look. Someday.
         String sep = File.separator;
-        return new File(System.getProperty("java.home") + sep + "conf" + sep +
+        return new File(StaticProperty.javaHome() + sep + "conf" + sep +
                         "security" + sep + filename);
     }
 

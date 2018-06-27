@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,10 @@ import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 
-/*
+/**
  * @test
  * @summary Test deadlock detection
+ * @requires vm.hasSAandCanAttach
  * @library /test/lib
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
@@ -68,12 +69,6 @@ public class DeadlockDetectionTest {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Starting DeadlockDetectionTest");
-
-        if (!Platform.shouldSAAttach()) {
-            // Silently skip the test if we don't have enough permissions to attach
-            System.err.println("Error! Insufficient permissions to attach.");
-            return;
-        }
 
         if (!LingeredApp.isLastModifiedWorking()) {
             // Exact behaviour of the test depends on operating system and the test nature,

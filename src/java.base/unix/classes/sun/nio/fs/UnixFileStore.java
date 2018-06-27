@@ -25,6 +25,8 @@
 
 package sun.nio.fs;
 
+import jdk.internal.util.StaticProperty;
+
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.channels.*;
@@ -259,7 +261,7 @@ abstract class UnixFileStore
 
     private static Properties loadProperties() {
         Properties result = new Properties();
-        String fstypes = System.getProperty("java.home") + "/lib/fstypes.properties";
+        String fstypes = StaticProperty.javaHome() + "/lib/fstypes.properties";
         Path file = Path.of(fstypes);
         try {
             try (ReadableByteChannel rbc = Files.newByteChannel(file)) {

@@ -258,7 +258,6 @@ public:
   virtual void verify_nmethod(nmethod* nmethod);
 
   // Iteration functions.
-  void oop_iterate_no_header(OopClosure* cl);
   void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl);
   void safe_object_iterate(ObjectClosure* cl);

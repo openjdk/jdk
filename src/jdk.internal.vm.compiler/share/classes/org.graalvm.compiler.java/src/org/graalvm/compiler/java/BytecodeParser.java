@@ -1661,6 +1661,8 @@ public class BytecodeParser implements GraphBuilderContext {
 
         if (initialInvokeKind == InvokeKind.Special && !targetMethod.isConstructor()) {
             emitCheckForInvokeSuperSpecial(args);
+        } else if (initialInvokeKind == InvokeKind.Interface && targetMethod.isPrivate()) {
+            emitCheckForDeclaringClassChange(targetMethod.getDeclaringClass(), args);
         }
 
         InlineInfo inlineInfo = null;
@@ -1745,6 +1747,25 @@ public class BytecodeParser implements GraphBuilderContext {
             invoke.setUseForInlining(false);
         }
         return invoke;
+    }
+
+    /**
+     * Checks that the class of the receiver of an {@link Bytecodes#INVOKEINTERFACE} invocation of a
+     * private method is assignable to the interface that declared the method. If not, then
+     * deoptimize so that the interpreter can throw an {@link IllegalAccessError}.
+     *
+     * This is a check not performed by the verifier and so must be performed at runtime.
+     *
+     * @param declaringClass interface declaring the callee
+     * @param args arguments to an {@link Bytecodes#INVOKEINTERFACE} call to a private method
+     *            declared in a interface
+     */
+    private void emitCheckForDeclaringClassChange(ResolvedJavaType declaringClass, ValueNode[] args) {
+        ValueNode receiver = args[0];
+        TypeReference checkedType = TypeReference.createTrusted(graph.getAssumptions(), declaringClass);
+        LogicNode condition = genUnique(createInstanceOf(checkedType, receiver, null));
+        FixedGuardNode fixedGuard = append(new FixedGuardNode(condition, ClassCastException, None, false));
+        args[0] = append(PiNode.create(receiver, StampFactory.object(checkedType, true), fixedGuard));
     }
 
     /**

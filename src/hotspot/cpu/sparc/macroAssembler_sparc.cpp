@@ -182,8 +182,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp) {
   br (Assembler::always, true, Assembler::pt, done);
   delayed()->nop();
   bind(not_weak);
-  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
-                 Address(value, 0), value, tmp);
+  access_load_at(T_OBJECT, IN_NATIVE, Address(value, 0), value, tmp);
   verify_oop(value);
   bind(done);
 }
@@ -3402,8 +3401,7 @@ void MacroAssembler::reserved_stack_check() {
 // ((OopHandle)result).resolve();
 void MacroAssembler::resolve_oop_handle(Register result, Register tmp) {
   // OopHandle::resolve is an indirection.
-  access_load_at(T_OBJECT, IN_CONCURRENT_ROOT,
-                 Address(result, 0), result, tmp);
+  access_load_at(T_OBJECT, IN_NATIVE, Address(result, 0), result, tmp);
 }
 
 void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp) {

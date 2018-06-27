@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,14 +74,14 @@ public class TestG1ClassUnloadingHWM {
     OutputAnalyzer out = runWithoutG1ClassUnloading();
 
     out.shouldMatch(".*Pause Full.*");
-    out.shouldNotMatch(".*Pause Initial Mark.*");
+    out.shouldNotMatch(".*Pause Young \\(Concurrent Start\\).*");
   }
 
   public static void testWithG1ClassUnloading() throws Exception {
     // -XX:+ClassUnloadingWithConcurrentMark is used, so we expect a concurrent cycle instead of a full GC.
     OutputAnalyzer out = runWithG1ClassUnloading();
 
-    out.shouldMatch(".*Pause Initial Mark.*");
+    out.shouldMatch(".*Pause Young \\(Concurrent Start\\).*");
     out.shouldNotMatch(".*Pause Full.*");
   }
 

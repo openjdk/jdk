@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -516,7 +516,7 @@ public abstract class AbstractDrbg {
      * This object uses {@link SeedGenerator#generateSeed(byte[])} to
      * return a byte array containing {@code minLength} bytes. It is
      * assumed to support prediction resistance and always contains
-     * full-entropy. A trusted application can update this field.
+     * full-entropy.
      */
     private final static EntropySource defaultES =
             (minE, minLen, maxLen, pr) -> {

@@ -30,6 +30,8 @@ import java.net.InetAddress;
 import java.net.SocketPermission;
 import java.io.*;
 import java.security.Permission;
+
+import jdk.internal.util.StaticProperty;
 import sun.net.www.*;
 import sun.net.smtp.SmtpClient;
 import sun.net.www.ParseUtil;
@@ -65,7 +67,12 @@ public class MailToURLConnection extends URLConnection {
     String getFromAddress() {
         String str = System.getProperty("user.fromaddr");
         if (str == null) {
-            str = System.getProperty("user.name");
+            // Perform the property security check for user.name
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPropertyAccess("user.name");
+            }
+            str = StaticProperty.userName();
             if (str != null) {
                 String host = System.getProperty("mail.host");
                 if (host == null) {

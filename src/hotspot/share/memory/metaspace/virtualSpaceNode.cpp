@@ -428,7 +428,7 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
       "The committed memory doesn't match the expanded memory.");
 
   if (!is_available(chunk_word_size)) {
-    LogTarget(Debug, gc, metaspace, freelist) lt;
+    LogTarget(Trace, gc, metaspace, freelist) lt;
     if (lt.is_enabled()) {
       LogStream ls(lt);
       ls.print("VirtualSpaceNode::take_from_committed() not available " SIZE_FORMAT " words ", chunk_word_size);

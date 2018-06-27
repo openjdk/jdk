@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,30 +59,6 @@ interface DTLSRecord extends Record {
                                     + maxDataSize           // data
                                     + maxPadding            // padding
                                     + maxMacSize;           // MAC or AEAD tag
-
-    /*
-     * For CBC protection in SSL3/TLS1, we break some plaintext into two
-     * packets.  Max application data size for the second packet.
-     */
-    static final int    maxDataSizeMinusOneByteRecord =
-                                  maxDataSize       // max data size
-                                - (                 // max one byte record size
-                                      headerPlusMaxIVSize   // header + iv
-                                    + 1             // one byte data
-                                    + maxPadding    // padding
-                                    + maxMacSize    // MAC
-                                  );
-
-    /*
-     * Maximum record size for alert and change cipher spec records.
-     * They only contain 2 and 1 bytes of data, respectively.
-     * Allocate a smaller array.
-     */
-    static final int    maxAlertRecordSize =
-                                      headerPlusMaxIVSize   // header + iv
-                                    + 2                     // alert
-                                    + maxPadding            // padding
-                                    + maxMacSize;           // MAC
 
     /*
      * Minimum record size of Certificate handshake message.

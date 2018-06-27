@@ -40,6 +40,7 @@
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyFactory;
 import java.security.cert.Certificate;
@@ -49,7 +50,6 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Base64;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -141,7 +141,7 @@ public class ECCurvesconstraints {
             sslOS.flush();
 
             throw new Exception("EC curve secp224k1 should be disabled");
-        } catch (SSLHandshakeException she) {
+        } catch (IOException she) {
             // expected exception: no cipher suites in common
             System.out.println("Expected exception: " + she);
         } finally {
@@ -183,7 +183,7 @@ public class ECCurvesconstraints {
             sslIS.read();
 
             throw new Exception("EC curve secp224k1 should be disabled");
-        } catch (SSLHandshakeException she) {
+        } catch (IOException she) {
             // expected exception: Received fatal alert
             System.out.println("Expected exception: " + she);
         } finally {
