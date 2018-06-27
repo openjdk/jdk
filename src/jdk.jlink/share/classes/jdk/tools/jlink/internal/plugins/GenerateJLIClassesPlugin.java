@@ -66,6 +66,7 @@ public final class GenerateJLIClassesPlugin implements Plugin {
     private static final String DMH_NEW_INVOKE_SPECIAL = "newInvokeSpecial";
     private static final String DMH_INVOKE_INTERFACE = "invokeInterface";
     private static final String DMH_INVOKE_STATIC_INIT = "invokeStaticInit";
+    private static final String DMH_INVOKE_SPECIAL_IFC = "invokeSpecialIFC";
 
     private static final String DELEGATING_HOLDER = "java/lang/invoke/DelegatingMethodHandle$Holder";
     private static final String BASIC_FORMS_HOLDER = "java/lang/invoke/LambdaForm$Holder";
@@ -132,7 +133,15 @@ public final class GenerateJLIClassesPlugin implements Plugin {
      * @return the default invoker forms to generate.
      */
     private static Set<String> defaultInvokers() {
-        return Set.of("LL_L", "LL_I", "LLLL_L", "LLLL_I", "LLIL_L", "LLIL_I", "L6_L");
+        return Set.of("LL_L", "LL_I", "LLLL_L", "LLLL_I", "LLIL_L", "LLIL_I",
+                "L6_L");
+    }
+
+    /**
+     * @return the default call site forms to generate (linkToTargetMethod).
+     */
+    private static Set<String> defaultCallSiteTypes() {
+        return Set.of("L5_L", "LIL3_L", "ILL_L");
     }
 
     /**
@@ -140,23 +149,27 @@ public final class GenerateJLIClassesPlugin implements Plugin {
      */
     private static Map<String, Set<String>> defaultDMHMethods() {
         return Map.of(
+            DMH_INVOKE_INTERFACE, Set.of("LL_L", "L3_I", "L3_V"),
             DMH_INVOKE_VIRTUAL, Set.of("L_L", "LL_L", "LLI_I", "L3_V"),
-            DMH_INVOKE_SPECIAL, Set.of("LL_I", "LL_L", "LLF_L", "LLD_L", "L3_L",
-                "L4_L", "L5_L", "L6_L", "L7_L", "L8_L", "LLI_I", "LLI_L",
-                "LLIL_I", "LLII_I", "LLII_L", "L3I_L", "L3I_I", "LLILI_I",
-                "LLIIL_L", "LLIILL_L", "LLIILL_I", "LLIIL_I", "LLILIL_I",
-                "LLILILL_I", "LLILII_I", "LLI3_I", "LLI3L_I", "LLI3LL_I",
-                "LLI3_L", "LLI4_I"),
+            DMH_INVOKE_SPECIAL, Set.of("LL_I", "LL_L", "LLF_L", "LLD_L",
+                "L3_I", "L3_L", "L4_L", "L5_L", "L6_L", "L7_L", "L8_L",
+                "LLI_I", "LLI_L", "LLIL_I", "LLIL_L", "LLII_I", "LLII_L",
+                "L3I_L", "L3I_I", "L3ILL_L", "LLILI_I", "LLIIL_L", "LLIILL_L",
+                "LLIILL_I", "LLIIL_I", "LLILIL_I", "LLILILL_I", "LLILII_I",
+                "LLI3_I", "LLI3L_I", "LLI3LL_I", "LLI3_L", "LLI4_I"),
             DMH_INVOKE_STATIC, Set.of("LII_I", "LIL_I", "LILIL_I", "LILII_I",
                 "L_I", "L_L", "L_V", "LD_L", "LF_L", "LI_I", "LII_L", "LLI_L",
-                "LL_V", "LL_L", "L3_L", "L4_L", "L5_L", "L6_L", "L7_L",
-                "L8_L", "L9_L", "L10_L", "L10I_L", "L10II_L", "L10IIL_L",
-                "L11_L", "L12_L", "L13_L", "L14_L", "L14I_L", "L14II_L"),
-            DMH_NEW_INVOKE_SPECIAL, Set.of("L_L", "LL_L")
+                "LL_I", "LLILL_L", "LLIL3_L", "LL_V", "LL_L", "L3_I", "L3_L",
+                "L3_V", "L4_I", "L4_L", "L5_L", "L6_L", "L7_L", "L8_L", "L9_L",
+                "L10_L", "L10I_L", "L10II_L", "L10IIL_L", "L11_L", "L12_L",
+                "L13_L", "L14_L", "L14I_L", "L14II_L"),
+            DMH_NEW_INVOKE_SPECIAL, Set.of("L_L", "LL_L"),
+            DMH_INVOKE_SPECIAL_IFC, Set.of("L5_I")
         );
     }
 
-    // Map from DirectMethodHandle method type to internal ID
+    // Map from DirectMethodHandle method type to internal ID, matching values
+    // of the corresponding constants in java.lang.invoke.MethodTypeForm
     private static final Map<String, Integer> DMH_METHOD_TYPE_MAP =
             Map.of(
                 DMH_INVOKE_VIRTUAL,     0,
@@ -164,7 +177,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
                 DMH_INVOKE_SPECIAL,     2,
                 DMH_NEW_INVOKE_SPECIAL, 3,
                 DMH_INVOKE_INTERFACE,   4,
-                DMH_INVOKE_STATIC_INIT, 5
+                DMH_INVOKE_STATIC_INIT, 5,
+                DMH_INVOKE_SPECIAL_IFC, 20
             );
 
     @Override
@@ -180,6 +194,8 @@ public final class GenerateJLIClassesPlugin implements Plugin {
 
         invokerTypes = defaultInvokers();
         validateMethodTypes(invokerTypes);
+
+        callSiteTypes = defaultCallSiteTypes();
 
         dmhMethods = defaultDMHMethods();
         for (Set<String> dmhMethodTypes : dmhMethods.values()) {
