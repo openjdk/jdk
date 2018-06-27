@@ -1011,7 +1011,7 @@ public class ByteCodeVisitor implements Visitor<byte[]> {
     @Override
     public byte[] visit(Interface node) {
         String name = node.getName();
-        ContextDependedClassWriter classWriter = new ContextDependedClassWriter(context, CLASS_WRITER_FLAGS);
+        ContextDependedClassWriter classWriter = new ContextDependedClassWriter(CLASS_WRITER_FLAGS);
         classWriters.put(name, classWriter);
         TypeKlass parentKlass = node.getParentKlass();
         classWriter.visit(Opcodes.V1_8,
@@ -1036,7 +1036,7 @@ public class ByteCodeVisitor implements Visitor<byte[]> {
         String name = node.getName();
         TypeKlass prevClass = currentClass;
         currentClass = node.getThisKlass();
-        ContextDependedClassWriter classWriter = new ContextDependedClassWriter(context, CLASS_WRITER_FLAGS);
+        ContextDependedClassWriter classWriter = new ContextDependedClassWriter(CLASS_WRITER_FLAGS);
         classWriters.put(name, classWriter);
         TypeKlass thisClass = node.getThisKlass();
         TypeKlass parentClass = node.getParentKlass();
@@ -1233,7 +1233,7 @@ public class ByteCodeVisitor implements Visitor<byte[]> {
         TypeKlass prevClass = currentClass;
         currentClass = node.getThisKlass();
         String name = node.getName();
-        ContextDependedClassWriter mainClassWriter = new ContextDependedClassWriter(context, CLASS_WRITER_FLAGS);
+        ContextDependedClassWriter mainClassWriter = new ContextDependedClassWriter(CLASS_WRITER_FLAGS);
         classWriters.put(name, mainClassWriter);
 
         TypeKlass thisClass = node.getThisKlass();
@@ -1780,11 +1780,10 @@ public class ByteCodeVisitor implements Visitor<byte[]> {
         }
     }
 
-    private static class GeneratedClassesContext extends java.lang.ClassLoader {
+    private static class GeneratedClassesContext {
         private final HashMap<String, byte[]> byteCodes = new HashMap<>();
 
         public void register(String name, byte[] bytecode) {
-            defineClass(name, bytecode, 0, bytecode.length);
             byteCodes.put(name, bytecode);
         }
 
@@ -1795,37 +1794,32 @@ public class ByteCodeVisitor implements Visitor<byte[]> {
 
 
     private static class ContextDependedClassWriter extends ClassWriter {
-        private final GeneratedClassesContext context;
-
-        public ContextDependedClassWriter(GeneratedClassesContext context, int flags) {
+        public ContextDependedClassWriter(int flags) {
             super(flags);
-            this.context = context;
         }
 
         protected String getCommonSuperClass(String className1, String className2) {
-            Class<?> klass1;
-            Class<?> klass2;
-            try {
-                klass1 = Class.forName(className1.replace('/', '.'), false, context);
-                klass2 = Class.forName(className2.replace('/', '.'), false, context);
-            } catch (ClassNotFoundException e) {
-                throw new Error("can not get common supper for " + className1
-                                + " and " + className2, e);
+            TypeKlass type1 = (TypeKlass) TypeList.find(className1.replace('/', '.'));
+            TypeKlass type2 = (TypeKlass) TypeList.find(className2.replace('/', '.'));
+            if (type1 == null || type2 == null) {
+                return super.getCommonSuperClass(className1, className2);
             }
 
-            if (klass1.isAssignableFrom(klass2)) {
+            if (type2.canImplicitlyCastTo(type1)) {
                 return className1;
-            } else if (klass2.isAssignableFrom(klass1)) {
+            }
+            if (type1.canImplicitlyCastTo(type2)) {
                 return className2;
-            } else if (!klass1.isInterface() && !klass2.isInterface()) {
-                do {
-                    klass1 = klass1.getSuperclass();
-                } while (!klass1.isAssignableFrom(klass2));
-
-                return asInternalName(className1);
-            } else {
+            }
+            if (type1.isInterface() || type2.isInterface()) {
                 return "java/lang/Object";
             }
+
+            do {
+                type1 = type1.getParent();
+            } while (!type2.canImplicitlyCastTo(type1));
+
+            return asInternalName(type1.getName());
         }
     }
 }
