@@ -213,7 +213,7 @@ static void cht_getinsert_bulkdelete_task(Thread* thr) {
   if (bdt.prepare(thr)) {
     while(bdt.do_task(thr, getinsert_bulkdelete_eval, getinsert_bulkdelete_del)) {
       bdt.pause(thr);
-      EXPECT_TRUE(bdt.cont(thr)) << "Uncontended continue should work.";
+      bdt.cont(thr);
     }
     bdt.done(thr);
   }
