@@ -80,6 +80,7 @@ import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.model.JavacTypes;
+import jdk.javadoc.internal.doclets.formats.html.SearchIndexItem;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentDuo;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -2077,6 +2078,48 @@ public class Utils {
                 }
             }.visit(e);
         }
+    }
+
+    /**
+     * Returns a Comparator for SearchIndexItems representing types. Items are
+     * compared by short name, or full string representation if names are equal.
+     *
+     * @return a Comparator
+     */
+    public Comparator<SearchIndexItem> makeTypeSearchIndexComparator() {
+        return (SearchIndexItem sii1, SearchIndexItem sii2) -> {
+            int result = compareStrings(sii1.getSimpleName(), sii2.getSimpleName());
+            if (result == 0) {
+                // TreeSet needs this to be consistent with equal so we do
+                // a plain comparison of string representations as fallback.
+                result = sii1.toString().compareTo(sii2.toString());
+            }
+            return result;
+        };
+    }
+
+    private Comparator<SearchIndexItem> genericSearchIndexComparator = null;
+    /**
+     * Returns a Comparator for SearchIndexItems representing modules, packages, or members.
+     * Items are compared by label (member name plus signature for members, package name for
+     * packages, and module name for modules). If labels are equal then full string
+     * representation is compared.
+     *
+     * @return a Comparator
+     */
+    public Comparator<SearchIndexItem> makeGenericSearchIndexComparator() {
+        if (genericSearchIndexComparator == null) {
+            genericSearchIndexComparator = (SearchIndexItem sii1, SearchIndexItem sii2) -> {
+                int result = compareStrings(sii1.getLabel(), sii2.getLabel());
+                if (result == 0) {
+                    // TreeSet needs this to be consistent with equal so we do
+                    // a plain comparison of string representations as fallback.
+                    result = sii1.toString().compareTo(sii2.toString());
+                }
+                return result;
+            };
+        }
+        return genericSearchIndexComparator;
     }
 
     public Iterable<TypeElement> getEnclosedTypeElements(PackageElement pkg) {

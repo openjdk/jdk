@@ -631,9 +631,9 @@ public class TestSearch extends JavadocTester {
                 "camelCaseMatcher.test(item.l)",
                 "var secondaryresult = new Array();",
                 "function nestedName(e) {",
-                "function sortAndConcatResults(a1, a2) {",
+                "function concatResults(a1, a2) {",
                 "if (exactMatcher.test(item.l)) {\n"
-                + "                        presult.unshift(item);",
+                + "                        presult.push(item);",
                 "$(\"#search\").on('click keydown', function() {\n"
                 + "        if ($(this).val() == watermark) {\n"
                 + "            $(this).val('').removeClass('watermark');\n"

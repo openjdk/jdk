@@ -24,7 +24,6 @@
  */
 
 var noResult = {l: "No results found"};
-var category = "category";
 var catModules = "Modules";
 var catPackages = "Packages";
 var catTypes = "Types";
@@ -170,25 +169,7 @@ $(function() {
                 return e.l.substring(e.l.lastIndexOf(".") + 1);
             }
 
-            // Sort array items by short name (as opposed to fully qualified name).
-            // Additionally, sort by the nested type name, when present,
-            // as opposed to top level short name.
-            function sortAndConcatResults(a1, a2) {
-                var sortingKey;
-                var sortArray = function(e1, e2) {
-                    var l = sortingKey(e1);
-                    var m = sortingKey(e2);
-                    if (l < m)
-                        return -1;
-                    if (l > m)
-                        return 1;
-                    return 0;
-                };
-                sortingKey = function(e) {
-                    return nestedName(e).toUpperCase();
-                };
-                a1.sort(sortArray);
-                a2.sort(sortArray);
+            function concatResults(a1, a2) {
                 a1 = a1.concat(a2);
                 a2.length = 0;
                 return a1;
@@ -197,85 +178,85 @@ $(function() {
             if (moduleSearchIndex) {
                 var mdleCount = 0;
                 $.each(moduleSearchIndex, function(index, item) {
-                    item[category] = catModules;
+                    item.category = catModules;
                     if (exactMatcher.test(item.l)) {
-                        result.unshift(item);
+                        result.push(item);
                         mdleCount++;
                     } else if (camelCaseMatcher.test(item.l)) {
-                        result.unshift(item);
+                        result.push(item);
                     } else if (secondaryMatcher.test(item.l)) {
                         secondaryresult.push(item);
                     }
                 });
                 displayCount = mdleCount;
-                result = sortAndConcatResults(result, secondaryresult);
+                result = concatResults(result, secondaryresult);
             }
             if (packageSearchIndex) {
                 var pCount = 0;
                 var pkg = "";
                 $.each(packageSearchIndex, function(index, item) {
-                    item[category] = catPackages;
+                    item.category = catPackages;
                     pkg = (item.m)
                             ? (item.m + "/" + item.l)
                             : item.l;
                     if (exactMatcher.test(item.l)) {
-                        presult.unshift(item);
+                        presult.push(item);
                         pCount++;
                     } else if (camelCaseMatcher.test(pkg)) {
-                        presult.unshift(item);
+                        presult.push(item);
                     } else if (secondaryMatcher.test(pkg)) {
                         secondaryresult.push(item);
                     }
                 });
-                result = result.concat(sortAndConcatResults(presult, secondaryresult));
+                result = result.concat(concatResults(presult, secondaryresult));
                 displayCount = (pCount > displayCount) ? pCount : displayCount;
             }
             if (typeSearchIndex) {
                 var tCount = 0;
                 $.each(typeSearchIndex, function(index, item) {
-                    item[category] = catTypes;
+                    item.category = catTypes;
                     var s = nestedName(item);
                     if (exactMatcher.test(s)) {
-                        tresult.unshift(item);
+                        tresult.push(item);
                         tCount++;
                     } else if (camelCaseMatcher.test(s)) {
-                        tresult.unshift(item);
+                        tresult.push(item);
                     } else if (secondaryMatcher.test(item.p + "." + item.l)) {
                         secondaryresult.push(item);
                     }
                 });
-                result = result.concat(sortAndConcatResults(tresult, secondaryresult));
+                result = result.concat(concatResults(tresult, secondaryresult));
                 displayCount = (tCount > displayCount) ? tCount : displayCount;
             }
             if (memberSearchIndex) {
                 var mCount = 0;
                 $.each(memberSearchIndex, function(index, item) {
-                    item[category] = catMembers;
+                    item.category = catMembers;
                     var s = nestedName(item);
                     if (exactMatcher.test(s)) {
-                        mresult.unshift(item);
+                        mresult.push(item);
                         mCount++;
                     } else if (camelCaseMatcher.test(s)) {
-                        mresult.unshift(item);
+                        mresult.push(item);
                     } else if (secondaryMatcher.test(item.c + "." + item.l)) {
                         secondaryresult.push(item);
                     }
                 });
-                result = result.concat(sortAndConcatResults(mresult, secondaryresult));
+                result = result.concat(concatResults(mresult, secondaryresult));
                 displayCount = (mCount > displayCount) ? mCount : displayCount;
             }
             if (tagSearchIndex) {
                 var tgCount = 0;
                 $.each(tagSearchIndex, function(index, item) {
-                    item[category] = catSearchTags;
+                    item.category = catSearchTags;
                     if (exactMatcher.test(item.l)) {
-                        tgresult.unshift(item);
+                        tgresult.push(item);
                         tgCount++;
                     } else if (secondaryMatcher.test(item.l)) {
                         secondaryresult.push(item);
                     }
                 });
-                result = result.concat(sortAndConcatResults(tgresult, secondaryresult));
+                result = result.concat(concatResults(tgresult, secondaryresult));
                 displayCount = (tgCount > displayCount) ? tgCount : displayCount;
             }
             displayCount = (displayCount > 500) ? displayCount : 500;

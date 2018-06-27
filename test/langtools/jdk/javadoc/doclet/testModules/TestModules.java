@@ -1171,12 +1171,12 @@ public class TestModules extends JavadocTester {
                 + "</dd>\n"
                 + "</dl>",
                 "<dl>\n"
-                + "<dt><span class=\"searchTagLink\"><a href=\"moduleA/module-summary.html#searchphrase\">"
-                + "search phrase</a></span> - Search tag in moduleA</dt>\n"
-                + "<dd>with description</dd>\n"
                 + "<dt><span class=\"searchTagLink\"><a href=\"moduleB/module-summary.html#search_word\">"
                 + "search_word</a></span> - Search tag in moduleB</dt>\n"
                 + "<dd>&nbsp;</dd>\n"
+                + "<dt><span class=\"searchTagLink\"><a href=\"moduleA/module-summary.html#searchphrase\">"
+                + "search phrase</a></span> - Search tag in moduleA</dt>\n"
+                + "<dd>with description</dd>\n"
                 + "</dl>");
         checkOutput("index-all.html", false,
                 "<dt><span class=\"searchTagLink\"><a href=\"moduleA/module-summary.html#searchphrase\">"

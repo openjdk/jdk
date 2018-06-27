@@ -232,15 +232,15 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public TypeElement currentTypeElement = null;  // Set this TypeElement in the ClassWriter.
 
-    protected List<SearchIndexItem> memberSearchIndex = new ArrayList<>();
+    protected SortedSet<SearchIndexItem> memberSearchIndex;
 
-    protected List<SearchIndexItem> moduleSearchIndex = new ArrayList<>();
+    protected SortedSet<SearchIndexItem> moduleSearchIndex;
 
-    protected List<SearchIndexItem> packageSearchIndex = new ArrayList<>();
+    protected SortedSet<SearchIndexItem> packageSearchIndex;
 
-    protected SortedSet<SearchIndexItem> tagSearchIndex = new TreeSet<>(makeSearchTagComparator());
+    protected SortedSet<SearchIndexItem> tagSearchIndex;
 
-    protected List<SearchIndexItem> typeSearchIndex = new ArrayList<>();
+    protected SortedSet<SearchIndexItem> typeSearchIndex;
 
     protected Map<Character,List<SearchIndexItem>> tagSearchIndexMap = new HashMap<>();
 
@@ -383,16 +383,6 @@ public class HtmlConfiguration extends BaseConfiguration {
      */
     public boolean allowTag(HtmlTag htmlTag) {
         return htmlTag.allowTag(this.htmlVersion);
-    }
-
-    public Comparator<SearchIndexItem> makeSearchTagComparator() {
-        return (SearchIndexItem sii1, SearchIndexItem sii2) -> {
-            int result = (sii1.getLabel()).compareTo(sii2.getLabel());
-            if (result == 0) {
-                result = (sii1.getHolder()).compareTo(sii2.getHolder());
-            }
-            return result;
-        };
     }
 
     /**
@@ -882,5 +872,15 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
         return super.finishOptionSettings0();
+    }
+
+    @Override
+    protected void initConfiguration(DocletEnvironment docEnv) {
+        super.initConfiguration(docEnv);
+        memberSearchIndex = new TreeSet<>(utils.makeGenericSearchIndexComparator());
+        moduleSearchIndex = new TreeSet<>(utils.makeGenericSearchIndexComparator());
+        packageSearchIndex = new TreeSet<>(utils.makeGenericSearchIndexComparator());
+        tagSearchIndex = new TreeSet<>(utils.makeGenericSearchIndexComparator());
+        typeSearchIndex = new TreeSet<>(utils.makeTypeSearchIndexComparator());
     }
 }

@@ -139,4 +139,13 @@ public class SearchIndexItem {
         }
         return item.toString();
     }
+
+    /**
+     * Get the part of the label after the last dot, or whole label if no dots.
+     *
+     * @return the simple name
+     */
+    public String getSimpleName() {
+        return label.substring(label.lastIndexOf('.') + 1);
+    }
 }
