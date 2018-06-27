@@ -42,6 +42,7 @@ private:
 
   ZVisitStack _visit_stack;
   ZVisitMap   _visit_map;
+  const bool  _visit_referents;
 
   size_t object_index_max() const;
   size_t object_index(oop obj) const;
@@ -50,8 +51,10 @@ private:
   void push(oop obj);
   void drain(ObjectClosure* cl);
 
+  bool visit_referents() const;
+
 public:
-  ZHeapIterator();
+  ZHeapIterator(bool visit_referents);
   ~ZHeapIterator();
 
   void objects_do(ObjectClosure* cl);

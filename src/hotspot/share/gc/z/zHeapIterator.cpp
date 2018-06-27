@@ -78,14 +78,28 @@ class ZHeapIteratorPushOopClosure : public BasicOopIterateClosure {
 private:
   ZHeapIterator* const _iter;
   const oop            _base;
+  const bool           _visit_referents;
 
 public:
   ZHeapIteratorPushOopClosure(ZHeapIterator* iter, oop base) :
       _iter(iter),
-      _base(base) {}
+      _base(base),
+      _visit_referents(iter->visit_referents()) {}
+
+  oop load_oop(oop* p) {
+    if (_visit_referents) {
+      return HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
+    } else {
+      return HeapAccess<>::oop_load(p);
+    }
+  }
+
+  virtual ReferenceIterationMode reference_iteration_mode() {
+    return _visit_referents ? DO_FIELDS : DO_FIELDS_EXCEPT_REFERENT;
+  }
 
   virtual void do_oop(oop* p) {
-    const oop obj = HeapAccess<ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
+    const oop obj = load_oop(p);
     _iter->push(obj);
   }
 
@@ -100,9 +114,10 @@ public:
 #endif
 };
 
-ZHeapIterator::ZHeapIterator() :
+ZHeapIterator::ZHeapIterator(bool visit_referents) :
     _visit_stack(),
-    _visit_map() {}
+    _visit_map(),
+    _visit_referents(visit_referents) {}
 
 ZHeapIterator::~ZHeapIterator() {
   ZVisitMapIterator iter(&_visit_map);
@@ -161,6 +176,10 @@ void ZHeapIterator::drain(ObjectClosure* cl) {
     ZHeapIteratorPushOopClosure push_cl(this, obj);
     obj->oop_iterate(&push_cl);
   }
+}
+
+bool ZHeapIterator::visit_referents() const {
+  return _visit_referents;
 }
 
 void ZHeapIterator::objects_do(ObjectClosure* cl) {

@@ -233,11 +233,11 @@ GrowableArray<MemoryPool*> ZCollectedHeap::memory_pools() {
 }
 
 void ZCollectedHeap::object_iterate(ObjectClosure* cl) {
-  _heap.object_iterate(cl);
+  _heap.object_iterate(cl, true /* visit_referents */);
 }
 
 void ZCollectedHeap::safe_object_iterate(ObjectClosure* cl) {
-  _heap.object_iterate(cl);
+  _heap.object_iterate(cl, true /* visit_referents */);
 }
 
 HeapWord* ZCollectedHeap::block_start(const void* addr) const {
