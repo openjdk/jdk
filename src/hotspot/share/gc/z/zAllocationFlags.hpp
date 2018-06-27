@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,41 +31,34 @@
 // Allocation flags layout
 // -----------------------
 //
-//   7   4 3 2 1 0
-//  +---+-+-+-+-+-+
-//  |000|1|1|1|1|1|
-//  +---+-+-+-+-+-+
-//  |   | | | | |
-//  |   | | | | * 0-0 Java Thread Flag (1-bit)
-//  |   | | | |
-//  |   | | | * 1-1 Worker Thread Flag (1-bit)
-//  |   | | |
-//  |   | | * 2-2 Non-Blocking Flag (1-bit)
-//  |   | |
-//  |   | * 3-3 Relocation Flag (1-bit)
-//  |   |
-//  |   * 4-4 No Reserve Flag (1-bit)
+//   7    3 2 1 0
+//  +----+-+-+-+-+
+//  |0000|1|1|1|1|
+//  +----+-+-+-+-+
+//  |    | | | |
+//  |    | | | * 0-0 Worker Thread Flag (1-bit)
+//  |    | | |
+//  |    | | * 1-1 Non-Blocking Flag (1-bit)
+//  |    | |
+//  |    | * 2-2 Relocation Flag (1-bit)
+//  |    |
+//  |    * 3-3 No Reserve Flag (1-bit)
 //  |
 //  * 7-5 Unused (3-bits)
 //
 
 class ZAllocationFlags {
 private:
-  typedef ZBitField<uint8_t, bool, 0, 1> field_java_thread;
-  typedef ZBitField<uint8_t, bool, 1, 1> field_worker_thread;
-  typedef ZBitField<uint8_t, bool, 2, 1> field_non_blocking;
-  typedef ZBitField<uint8_t, bool, 3, 1> field_relocation;
-  typedef ZBitField<uint8_t, bool, 4, 1> field_no_reserve;
+  typedef ZBitField<uint8_t, bool, 0, 1> field_worker_thread;
+  typedef ZBitField<uint8_t, bool, 1, 1> field_non_blocking;
+  typedef ZBitField<uint8_t, bool, 2, 1> field_relocation;
+  typedef ZBitField<uint8_t, bool, 3, 1> field_no_reserve;
 
   uint8_t _flags;
 
 public:
   ZAllocationFlags() :
       _flags(0) {}
-
-  void set_java_thread() {
-    _flags |= field_java_thread::encode(true);
-  }
 
   void set_worker_thread() {
     _flags |= field_worker_thread::encode(true);
@@ -81,10 +74,6 @@ public:
 
   void set_no_reserve() {
     _flags |= field_no_reserve::encode(true);
-  }
-
-  bool java_thread() const {
-    return field_java_thread::decode(_flags);
   }
 
   bool worker_thread() const {

@@ -186,7 +186,6 @@ uintptr_t ZObjectAllocator::alloc_object(size_t size) {
   assert(ZThread::is_java(), "Must be a Java thread");
 
   ZAllocationFlags flags;
-  flags.set_java_thread();
   flags.set_no_reserve();
 
   if (!ZStallOnOutOfMemory) {
@@ -205,8 +204,6 @@ uintptr_t ZObjectAllocator::alloc_object_for_relocation(size_t size) {
 
   if (ZThread::is_worker()) {
     flags.set_worker_thread();
-  } else if (ZThread::is_java()) {
-    flags.set_java_thread();
   }
 
   return alloc_object(size, flags);
