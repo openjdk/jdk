@@ -623,7 +623,7 @@ void ZStatPhaseCycle::register_start(const Ticks& start) const {
 }
 
 #define ZUSED_FMT                       SIZE_FORMAT "M(%.0lf%%)"
-#define ZUSED_ARGS(size, max_capacity)  ((size) / M), (percent_of<size_t>(size, max_capacity))
+#define ZUSED_ARGS(size, max_capacity)  ((size) / M), (percent_of(size, max_capacity))
 
 void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
   timer()->register_gc_end(end);
@@ -641,6 +641,7 @@ void ZStatPhaseCycle::register_end(const Ticks& start, const Ticks& end) const {
   ZStatMark::print();
   ZStatRelocation::print();
   ZStatNMethods::print();
+  ZStatMetaspace::print();
   ZStatReferences::print();
   ZStatHeap::print();
 
@@ -1129,6 +1130,19 @@ void ZStatNMethods::print() {
 }
 
 //
+// Stat metaspace
+//
+void ZStatMetaspace::print() {
+  log_info(gc, metaspace)("Metaspace: "
+                          SIZE_FORMAT "M used, " SIZE_FORMAT "M capacity, "
+                          SIZE_FORMAT "M committed, " SIZE_FORMAT "M reserved",
+                          MetaspaceUtils::used_bytes() / M,
+                          MetaspaceUtils::capacity_bytes() / M,
+                          MetaspaceUtils::committed_bytes() / M,
+                          MetaspaceUtils::reserved_bytes() / M);
+}
+
+//
 // Stat references
 //
 ZStatReferences::ZCount ZStatReferences::_soft;
@@ -1187,7 +1201,7 @@ ZStatHeap::ZAtRelocateEnd ZStatHeap::_at_relocate_end;
 
 #define ZSIZE_NA               "%9s", "-"
 #define ZSIZE_ARGS(size)       SIZE_FORMAT_W(8) "M (%.0lf%%)", \
-                               ((size) / M), (percent_of<size_t>(size, _at_initialize.max_capacity))
+                               ((size) / M), (percent_of(size, _at_initialize.max_capacity))
 
 size_t ZStatHeap::available(size_t used) {
   return _at_initialize.max_capacity - used;
