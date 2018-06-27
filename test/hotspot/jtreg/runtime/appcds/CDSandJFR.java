@@ -74,5 +74,10 @@ public class CDSandJFR {
         TestCommon.checkExec(TestCommon.exec(appJar,
                                              "-XX:FlightRecorderOptions=retransform=false",
                                              "GetFlightRecorder"));
+
+        // Test dumping with flight recorder enabled.
+        output = TestCommon.testDump(appJar, TestCommon.list(classes),
+                                     "-XX:StartFlightRecording=dumponexit=true");
+        TestCommon.checkDump(output, "warning: JFR will be disabled during CDS dumping");
     }
 }
