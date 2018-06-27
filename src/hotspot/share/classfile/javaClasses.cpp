@@ -4425,6 +4425,12 @@ oop java_util_concurrent_locks_AbstractOwnableSynchronizer::get_owner_threadObj(
   return obj->obj_field(_owner_offset);
 }
 
+#if INCLUDE_CDS
+void java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize(SerializeClosure* f) {
+  AOS_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
 static int member_offset(int hardcoded_offset) {
   return (hardcoded_offset * heapOopSize) + instanceOopDesc::base_offset_in_bytes();
 }

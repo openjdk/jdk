@@ -1488,6 +1488,7 @@ class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
  public:
   static void compute_offsets();
   static oop  get_owner_threadObj(oop obj);
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
 // Use to declare fields that need to be injected into Java classes
