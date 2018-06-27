@@ -35,7 +35,7 @@ SA_PROPERTIES := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/sa.properties
 SA_BUILD_VERSION_PROP_NAME := "sun.jvm.hotspot.runtime.VM.saBuildVersion"
 
 $(SA_PROPERTIES): $(call DependOnVariable, VERSION_STRING)
-	$(MKDIR) -p $(@D)
+	$(call MakeTargetDir)
 	$(ECHO) "$(SA_BUILD_VERSION_PROP_NAME)=$(VERSION_STRING)" > $@
 
 TARGETS += $(SA_PROPERTIES)
@@ -49,7 +49,9 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   MACH_EXC_SERVER := $(MIG_OUTPUT_DIR)/mach_excServer.c
 
   $(MACH_EXC_SERVER): $(SDKROOT)/usr/include/mach/mach_exc.defs
-	$(MIG) -isysroot $(SDKROOT) -server $@ -user $(MACH_EXC_USER) \
+	$(call MakeTargetDir)
+	$(MIG) $(if $(SDKROOT), -isysroot $(SDKROOT)) \
+	    -server $@ -user $(MACH_EXC_USER) \
 	    -header $(MACH_EXC_HEADER) $(SDKROOT)/usr/include/mach/mach_exc.defs
 
   TARGETS += $(MACH_EXC_SERVER)
