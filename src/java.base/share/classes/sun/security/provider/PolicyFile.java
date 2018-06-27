@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.misc.JavaSecurityAccess;
 import static jdk.internal.misc.JavaSecurityAccess.ProtectionDomainCache;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import sun.security.util.*;
 import sun.net.www.ParseUtil;
 
@@ -279,7 +280,7 @@ public class PolicyFile extends java.security.Policy {
             public URL run() {
                 String sep = File.separator;
                 try {
-                    return Path.of(System.getProperty("java.home"),
+                    return Path.of(StaticProperty.javaHome(),
                                      "lib", "security",
                                      "default.policy").toUri().toURL();
                 } catch (MalformedURLException mue) {

@@ -39,10 +39,9 @@
 package java.util;
 
 import java.io.Serializable;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.time.ZoneId;
-import java.util.Properties;
+
+import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 import sun.util.calendar.ZoneInfo;
 import sun.util.calendar.ZoneInfoFile;
@@ -667,7 +666,7 @@ public abstract class TimeZone implements Serializable, Cloneable {
         // if the time zone ID is not set (yet), perform the
         // platform to Java time zone ID mapping.
         if (zoneID == null || zoneID.isEmpty()) {
-            String javaHome = props.getProperty("java.home");
+            String javaHome = StaticProperty.javaHome();
             try {
                 zoneID = getSystemTimeZoneID(javaHome);
                 if (zoneID == null) {

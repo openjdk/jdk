@@ -49,6 +49,7 @@ import java.security.PrivilegedExceptionAction;
 import java.util.Properties;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -122,7 +123,7 @@ final class ProcessImpl extends Process {
 
         String helperPath() {
             Properties props = GetPropertyAction.privilegedGetProperties();
-            return helperPath(props.getProperty("java.home"),
+            return helperPath(StaticProperty.javaHome(),
                               props.getProperty("os.arch"));
         }
 
