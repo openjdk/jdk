@@ -683,38 +683,40 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     Block* store_block = get_block_for_node(store);
     assert(store_block != NULL, "unused killing projections skipped above");
 
-    if (store->is_Phi()) {
-      if (store->in(0)->is_Loop()) {
-        // 'load' uses memory which is one (or more) of the Phi's inputs.
-        // It must be scheduled not before the Phi, but rather before
-        // each of the relevant Phi inputs.
-        //
-        // Instead of finding the LCA of all inputs to a Phi that match 'mem',
-        // we mark each corresponding predecessor block and do a combined
-        // hoisting operation later (raise_LCA_above_marks).
-        //
-        // Do not assert(store_block != early, "Phi merging memory after access")
-        // PhiNode may be at start of block 'early' with backedge to 'early'
-        DEBUG_ONLY(bool found_match = false);
-        for (uint j = PhiNode::Input, jmax = store->req(); j < jmax; j++) {
-          if (store->in(j) == mem) {   // Found matching input?
-            DEBUG_ONLY(found_match = true);
-            Block* pred_block = get_block_for_node(store_block->pred(j));
-            if (pred_block != early) {
-              // If any predecessor of the Phi matches the load's "early block",
-              // we do not need a precedence edge between the Phi and 'load'
-              // since the load will be forced into a block preceding the Phi.
-              pred_block->set_raise_LCA_mark(load_index);
-              assert(!LCA_orig->dominates(pred_block) ||
-                     early->dominates(pred_block), "early is high enough");
-              must_raise_LCA = true;
-            } else {
-              // anti-dependent upon PHI pinned below 'early', no edge needed
-              LCA = early;             // but can not schedule below 'early'
-            }
+    if (store->is_Phi() && store->in(0)->is_Loop()) {
+      // Loop-phis need to raise load before input. (Other phis are treated
+      // as store below.)
+      //
+      // 'load' uses memory which is one (or more) of the Phi's inputs.
+      // It must be scheduled not before the Phi, but rather before
+      // each of the relevant Phi inputs.
+      //
+      // Instead of finding the LCA of all inputs to a Phi that match 'mem',
+      // we mark each corresponding predecessor block and do a combined
+      // hoisting operation later (raise_LCA_above_marks).
+      //
+      // Do not assert(store_block != early, "Phi merging memory after access")
+      // PhiNode may be at start of block 'early' with backedge to 'early'
+      DEBUG_ONLY(bool found_match = false);
+      for (uint j = PhiNode::Input, jmax = store->req(); j < jmax; j++) {
+        if (store->in(j) == mem) {   // Found matching input?
+          DEBUG_ONLY(found_match = true);
+          Block* pred_block = get_block_for_node(store_block->pred(j));
+          if (pred_block != early) {
+            // If any predecessor of the Phi matches the load's "early block",
+            // we do not need a precedence edge between the Phi and 'load'
+            // since the load will be forced into a block preceding the Phi.
+            pred_block->set_raise_LCA_mark(load_index);
+            assert(!LCA_orig->dominates(pred_block) ||
+                   early->dominates(pred_block), "early is high enough");
+            must_raise_LCA = true;
+          } else {
+            // anti-dependent upon PHI pinned below 'early', no edge needed
+            LCA = early;             // but can not schedule below 'early'
           }
         }
-        assert(found_match, "no worklist bug");
+      }
+      assert(found_match, "no worklist bug");
 #ifdef TRACK_PHI_INPUTS
 #ifdef ASSERT
         // This assert asks about correct handling of PhiNodes, which may not
@@ -728,7 +730,6 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
                "Expect at least one phi input will not be from original memory state");
 #endif //ASSERT
 #endif //TRACK_PHI_INPUTS
-      }
     } else if (store_block != early) {
       // 'store' is between the current LCA and earliest possible block.
       // Label its block, and decide later on how to raise the LCA
