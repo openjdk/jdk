@@ -24,6 +24,8 @@
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.MalformedInputException;
+import java.nio.charset.UnmappableCharacterException;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -31,8 +33,8 @@ import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import static java.nio.file.StandardOpenOption.APPEND;
+import static java.nio.file.StandardOpenOption.CREATE;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import static org.testng.Assert.assertTrue;
@@ -43,7 +45,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /* @test
- * @bug 8201276
+ * @bug 8201276 8205058
  * @build ReadWriteString PassThroughFileSystem
  * @run testng ReadWriteString
  * @summary Unit test for methods for Files readString and write methods.
@@ -52,7 +54,6 @@ import org.testng.annotations.Test;
 @Test(groups = "readwrite")
 public class ReadWriteString {
 
-    private static final OpenOption OPTION_CREATE = StandardOpenOption.CREATE;
     // data for text files
     private static final String EN_STRING = "The quick brown fox jumps over the lazy dog";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
@@ -74,7 +75,8 @@ public class ReadWriteString {
             baos.write(str2.getBytes());
             return baos.toByteArray();
         } catch (IOException ex) {
-            return null; //shouldn't happen
+            // in case it happens, fail the test
+            throw new RuntimeException(ex);
         }
     }
 
@@ -125,20 +127,20 @@ public class ReadWriteString {
      */
     @Test
     public void testNulls() {
-        Path path = Paths.get(".");
+        Path path = Paths.get("foo");
         String s = "abc";
 
         checkNullPointerException(() -> Files.readString((Path) null));
         checkNullPointerException(() -> Files.readString((Path) null, UTF_8));
         checkNullPointerException(() -> Files.readString(path, (Charset) null));
 
-        checkNullPointerException(() -> Files.writeString((Path) null, s, OPTION_CREATE));
-        checkNullPointerException(() -> Files.writeString(path, (CharSequence) null, OPTION_CREATE));
+        checkNullPointerException(() -> Files.writeString((Path) null, s, CREATE));
+        checkNullPointerException(() -> Files.writeString(path, (CharSequence) null, CREATE));
         checkNullPointerException(() -> Files.writeString(path, s, (OpenOption[]) null));
 
-        checkNullPointerException(() -> Files.writeString((Path) null, s, UTF_8, OPTION_CREATE));
-        checkNullPointerException(() -> Files.writeString(path, (CharSequence) null, UTF_8, OPTION_CREATE));
-        checkNullPointerException(() -> Files.writeString(path, s, (Charset) null, OPTION_CREATE));
+        checkNullPointerException(() -> Files.writeString((Path) null, s, UTF_8, CREATE));
+        checkNullPointerException(() -> Files.writeString(path, (CharSequence) null, UTF_8, CREATE));
+        checkNullPointerException(() -> Files.writeString(path, s, (Charset) null, CREATE));
         checkNullPointerException(() -> Files.writeString(path, s, UTF_8, (OpenOption[]) null));
     }
 
@@ -168,13 +170,13 @@ public class ReadWriteString {
      * @param cs the Charset
      * @throws IOException if the input is malformed
      */
-    @Test(dataProvider = "malformedWrite", expectedExceptions = IOException.class)
+    @Test(dataProvider = "malformedWrite", expectedExceptions = UnmappableCharacterException.class)
     public void testMalformedWrite(Path path, String s, Charset cs) throws IOException {
         path.toFile().deleteOnExit();
         if (cs == null) {
-            Files.writeString(path, s, OPTION_CREATE);
+            Files.writeString(path, s, CREATE);
         } else {
-            Files.writeString(path, s, cs, OPTION_CREATE);
+            Files.writeString(path, s, cs, CREATE);
         }
     }
 
@@ -188,11 +190,11 @@ public class ReadWriteString {
      * @param csRead the Charset to use for reading the file
      * @throws IOException when the Charset used for reading the file is incorrect
      */
-    @Test(dataProvider = "illegalInput", expectedExceptions = IOException.class)
+    @Test(dataProvider = "illegalInput", expectedExceptions = MalformedInputException.class)
     public void testMalformedRead(Path path, byte[] data, Charset csWrite, Charset csRead) throws IOException {
         path.toFile().deleteOnExit();
         String temp = new String(data, csWrite);
-        Files.writeString(path, temp, csWrite, OPTION_CREATE);
+        Files.writeString(path, temp, csWrite, CREATE);
         String s;
         if (csRead == null) {
             s = Files.readString(path);
@@ -212,7 +214,6 @@ public class ReadWriteString {
     }
 
     private void testReadWrite(int size, Charset cs, boolean append) throws IOException {
-        StringBuilder sb = new StringBuilder(size);
         String expected;
         String str = generateString(size);
         Path result;
@@ -235,8 +236,7 @@ public class ReadWriteString {
 
 
         if (append) {
-            sb.append(str).append(str);
-            expected = sb.toString();
+            expected = str + str;
         } else {
             expected = str;
         }
@@ -247,14 +247,12 @@ public class ReadWriteString {
         } else {
             read = Files.readString(result, cs);
         }
-        //System.out.println("chars read: " + read.length());
-        //System.out.println(read);
-        //System.out.println("---end---");
+
         assertTrue(read.equals(expected), "String read not the same as written");
     }
 
     static final char[] CHARS = "abcdefghijklmnopqrstuvwxyz \r\n".toCharArray();
-    StringBuilder sb = new StringBuilder(512);
+    StringBuilder sb = new StringBuilder(1024 << 4);
     Random random = new Random();
 
     private String generateString(int size) {
