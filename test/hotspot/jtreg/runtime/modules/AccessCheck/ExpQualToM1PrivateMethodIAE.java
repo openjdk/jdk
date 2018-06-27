@@ -103,9 +103,10 @@ public class ExpQualToM1PrivateMethodIAE {
             String message = e.getMessage();
             System.out.println(e.toString());
             // java.lang.IllegalAccessError:
-            //   tried to access method p2.c2.method2()V from class p1.c1 (p2.c2 is in module m2x of loader
+            //   tried to access private method p2.c2.method2()V from class p1.c1 (p2.c2 is in module m2x of loader
             //   myloaders.MySameClassLoader @<id>; p1.c1 is in module m1x of loader myloaders.MySameClassLoader @<id>)
-            if (!message.contains("class p1.c1 tried to access method p2.c2.method2()V (p1.c1 is in module m1x of loader myloaders.MySameClassLoader @") ||
+            if (!message.contains("class p1.c1 tried to access private method p2.c2.method2()V " +
+                                  "(p1.c1 is in module m1x of loader myloaders.MySameClassLoader @") ||
                 !message.contains("; p2.c2 is in module m2x of loader myloaders.MySameClassLoader @")) {
               throw new RuntimeException("Test Failed, an IAE was thrown with the wrong message: " + e.toString());
             }
