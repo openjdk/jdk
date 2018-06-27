@@ -671,7 +671,7 @@ public class TestNestmateMembership {
     static void test_NoHostInvoke() throws Throwable {
         System.out.println("Testing for missing nest-host attribute");
         String msg = "class TestNestmateMembership$Caller tried to access " +
-            "method TestNestmateMembership$TargetNoHost.m()V";
+            "private method TestNestmateMembership$TargetNoHost.m()V";
         try {
             Caller.invokeTargetNoHost();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -698,7 +698,7 @@ public class TestNestmateMembership {
         }
 
         msg = "class TestNestmateMembership$CallerNoHost tried to access " +
-            "method TestNestmateMembership$Target.m()V";
+            "private method TestNestmateMembership$Target.m()V";
         try {
             CallerNoHost.invokeTarget();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -706,8 +706,8 @@ public class TestNestmateMembership {
         catch (IllegalAccessError expected) {
             check_expected(expected, msg);
         }
-        msg = "class TestNestmateMembership$CallerNoHost tried to access method " +
-            "TestNestmateMembership$TargetNoHost.m()V";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
+            "method TestNestmateMembership$TargetNoHost.m()V";
         try {
             CallerNoHost.invokeTargetNoHost();
             throw new Error("Missing IllegalAccessError: " + msg);
@@ -949,8 +949,8 @@ public class TestNestmateMembership {
 
     static void test_NoHostConstruct() throws Throwable {
         System.out.println("Testing for missing nest-host attribute");
-        String msg = "class TestNestmateMembership$Caller tried to access method " +
-            "TestNestmateMembership$TargetNoHost.<init>()V";
+        String msg = "class TestNestmateMembership$Caller tried to access private " +
+            "method TestNestmateMembership$TargetNoHost.<init>()V";
         try {
             Caller.newTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -976,8 +976,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "class TestNestmateMembership$CallerNoHost tried to access method " +
-            "TestNestmateMembership$Target.<init>()V";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
+            "method TestNestmateMembership$Target.<init>()V";
         try {
             CallerNoHost.newTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -985,8 +985,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "class TestNestmateMembership$CallerNoHost tried to access method " +
-            "TestNestmateMembership$TargetNoHost.<init>()V";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
+            "method TestNestmateMembership$TargetNoHost.<init>()V";
         try {
             CallerNoHost.newTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1220,8 +1220,8 @@ public class TestNestmateMembership {
 
     static void test_NoHostGetField() throws Throwable {
         System.out.println("Testing for missing nest-host attribute");
-        String msg = "tried to access field TestNestmateMembership$TargetNoHost.f" +
-            " from class TestNestmateMembership$Caller";
+        String msg = "class TestNestmateMembership$Caller tried to access private " +
+            "field TestNestmateMembership$TargetNoHost.f";
         try {
             Caller.getFieldTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1247,8 +1247,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "tried to access field TestNestmateMembership$Target.f" +
-            " from class TestNestmateMembership$CallerNoHost";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
+            "field TestNestmateMembership$Target.f";
         try {
             CallerNoHost.getFieldTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1256,8 +1256,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "tried to access field TestNestmateMembership$TargetNoHost.f" +
-            " from class TestNestmateMembership$CallerNoHost";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
+            "field TestNestmateMembership$TargetNoHost.f";
         try {
             CallerNoHost.getFieldTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1485,8 +1485,8 @@ public class TestNestmateMembership {
 
     static void test_NoHostPutField() throws Throwable {
         System.out.println("Testing for missing nest-host attribute");
-        String msg = "tried to access field TestNestmateMembership$TargetNoHost.f" +
-            " from class TestNestmateMembership$Caller";
+        String msg = "class TestNestmateMembership$Caller tried to access private " +
+            "field TestNestmateMembership$TargetNoHost.f";
         try {
             Caller.putFieldTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1512,8 +1512,8 @@ public class TestNestmateMembership {
             check_expected(expected, msg);
         }
 
-        msg = "tried to access field TestNestmateMembership$Target.f" +
-            " from class TestNestmateMembership$CallerNoHost";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
+            "field TestNestmateMembership$Target.f";
         try {
             CallerNoHost.putFieldTarget();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);
@@ -1521,8 +1521,8 @@ public class TestNestmateMembership {
         catch (IncompatibleClassChangeError expected) {
             check_expected(expected, msg);
         }
-        msg = "tried to access field TestNestmateMembership$TargetNoHost.f" +
-            " from class TestNestmateMembership$CallerNoHost";
+        msg = "class TestNestmateMembership$CallerNoHost tried to access private " +
+            "field TestNestmateMembership$TargetNoHost.f";
         try {
             CallerNoHost.putFieldTargetNoHost();
             throw new Error("Missing IncompatibleClassChangeError: " + msg);

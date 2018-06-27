@@ -218,7 +218,7 @@ void CallInfo::verify() {
     fatal("Unexpected call kind %d", call_kind());
   }
 }
-#endif //ASSERT
+#endif // ASSERT
 
 #ifndef PRODUCT
 void CallInfo::print() {
@@ -294,7 +294,7 @@ void LinkResolver::check_klass_accessability(Klass* ref_klass, Klass* sel_klass,
       base_klass = ObjArrayKlass::cast(sel_klass)->bottom_klass();
     }
     // The element type could be a typeArray - we only need the access
-    // check if it is an reference to another class.
+    // check if it is a reference to another class.
     if (!base_klass->is_instance_klass()) {
       return;  // no relevant check to do
     }
@@ -306,13 +306,17 @@ void LinkResolver::check_klass_accessability(Klass* ref_klass, Klass* sel_klass,
     char* msg = Reflection::verify_class_access_msg(ref_klass,
                                                     InstanceKlass::cast(base_klass),
                                                     vca_result);
+    bool same_module = (base_klass->module() == ref_klass->module());
     if (msg == NULL) {
       Exceptions::fthrow(
         THREAD_AND_LOCATION,
         vmSymbols::java_lang_IllegalAccessError(),
-        "failed to access class %s from class %s",
+        "failed to access class %s from class %s (%s%s%s)",
         base_klass->external_name(),
-        ref_klass->external_name());
+        ref_klass->external_name(),
+        (same_module) ? base_klass->joint_in_module_of_loader(ref_klass) : base_klass->class_in_module_of_loader(),
+        (same_module) ? "" : "; ",
+        (same_module) ? "" : ref_klass->class_in_module_of_loader());
     } else {
       // Use module specific message returned by verify_class_access_msg().
       Exceptions::fthrow(
@@ -596,8 +600,11 @@ void LinkResolver::check_method_accessability(Klass* ref_klass,
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_IllegalAccessError(),
-      "class %s tried to access method %s.%s%s (%s%s%s)",
+      "class %s tried to access %s%s%smethod %s.%s%s (%s%s%s)",
       ref_klass->external_name(),
+      sel_method->is_abstract()  ? "abstract "  : "",
+      sel_method->is_protected() ? "protected " : "",
+      sel_method->is_private()   ? "private "   : "",
       sel_klass->external_name(),
       sel_method->name()->as_C_string(),
       sel_method->signature()->as_C_string(),
@@ -927,14 +934,20 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
   // Any existing exceptions that may have been thrown, for example LinkageErrors
   // from nest-host resolution, have been allowed to propagate.
   if (!can_access) {
+    bool same_module = (sel_klass->module() == ref_klass->module());
     ResourceMark rm(THREAD);
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_IllegalAccessError(),
-      "tried to access field %s.%s from class %s",
+      "class %s tried to access %s%sfield %s.%s (%s%s%s)",
+      ref_klass->external_name(),
+      fd.is_protected() ? "protected " : "",
+      fd.is_private()   ? "private "   : "",
       sel_klass->external_name(),
       fd.name()->as_C_string(),
-      ref_klass->external_name()
+      (same_module) ? ref_klass->joint_in_module_of_loader(sel_klass) : ref_klass->class_in_module_of_loader(),
+      (same_module) ? "" : "; ",
+      (same_module) ? "" : sel_klass->class_in_module_of_loader()
     );
     return;
   }
