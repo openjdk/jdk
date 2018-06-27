@@ -41,6 +41,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URI;
+import java.nio.charset.CharacterCodingException;
 import java.security.AccessControlContext;
 import java.security.ProtectionDomain;
 import java.security.AccessController;
@@ -2184,11 +2185,11 @@ public final class System {
                 return ModuleLayer.layers(loader);
             }
 
-            public String newStringNoRepl(byte[] bytes, Charset cs) {
+            public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return StringCoding.newStringNoRepl(bytes, cs);
             }
 
-            public byte[] getBytesNoRepl(String s, Charset cs) {
+            public byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
                 return StringCoding.getBytesNoRepl(s, cs);
             }
 

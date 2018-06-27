@@ -3281,11 +3281,7 @@ public final class Files {
         Objects.requireNonNull(cs);
 
         byte[] ba = readAllBytes(path);
-        try {
-            return JLA.newStringNoRepl(ba, cs);
-        } catch (IllegalArgumentException e) {
-            throw new IOException(e);
-        }
+        return JLA.newStringNoRepl(ba, cs);
     }
 
     /**
@@ -3636,12 +3632,8 @@ public final class Files {
         Objects.requireNonNull(csq);
         Objects.requireNonNull(cs);
 
-        try {
-            byte[] bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
-            write(path, bytes, options);
-        } catch (IllegalArgumentException e) {
-            throw new IOException(e);
-        }
+        byte[] bytes = JLA.getBytesNoRepl(String.valueOf(csq), cs);
+        write(path, bytes, options);
 
         return path;
     }

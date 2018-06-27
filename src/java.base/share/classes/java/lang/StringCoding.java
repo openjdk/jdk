@@ -36,6 +36,8 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.MalformedInputException;
+import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import jdk.internal.HotSpotIntrinsicCandidate;
@@ -607,7 +609,7 @@ class StringCoding {
             dp = dp + ret;
             if (ret != len) {
                 if (!doReplace) {
-                    throwMalformed(sp, 1);
+                    throwUnmappable(sp, 1);
                 }
                 char c = StringUTF16.getChar(val, sp++);
                 if (Character.isHighSurrogate(c) && sp < sl &&
@@ -679,14 +681,25 @@ class StringCoding {
     }
 
     private static void throwMalformed(int off, int nb) {
-        throw new IllegalArgumentException("malformed input off : " + off +
-                                           ", length : " + nb);
+        String msg = "malformed input off : " + off + ", length : " + nb;
+        throw new IllegalArgumentException(msg, new MalformedInputException(nb));
     }
 
     private static void throwMalformed(byte[] val) {
         int dp = 0;
         while (dp < val.length && val[dp] >=0) { dp++; }
         throwMalformed(dp, 1);
+    }
+
+    private static void throwUnmappable(int off, int nb) {
+        String msg = "malformed input off : " + off + ", length : " + nb;
+        throw new IllegalArgumentException(msg, new UnmappableCharacterException(nb));
+    }
+
+    private static void throwUnmappable(byte[] val) {
+        int dp = 0;
+        while (dp < val.length && val[dp] >=0) { dp++; }
+        throwUnmappable(dp, 1);
     }
 
     private static char repl = '\ufffd';
@@ -919,7 +932,7 @@ class StringCoding {
                     if (doReplace) {
                         dst[dp++] = '?';
                     } else {
-                        throwMalformed(sp - 1, 1); // or 2, does not matter here
+                        throwUnmappable(sp - 1, 1); // or 2, does not matter here
                     }
                 } else {
                     dst[dp++] = (byte)(0xf0 | ((uc >> 18)));
@@ -972,7 +985,20 @@ class StringCoding {
         return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
     }
 
-    static String newStringNoRepl(byte[] src, Charset cs) {
+    static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
+        try {
+            return newStringNoRepl1(src, cs);
+        } catch (IllegalArgumentException e) {
+            //newStringNoRepl1 throws IAE with MalformedInputException or CCE as the cause
+            Throwable cause = e.getCause();
+            if (cause instanceof MalformedInputException) {
+                throw (MalformedInputException)cause;
+            }
+            throw (CharacterCodingException)cause;
+        }
+    }
+
+    static String newStringNoRepl1(byte[] src, Charset cs) {
         if (cs == UTF_8) {
             if (COMPACT_STRINGS && isASCII(src))
                 return new String(src, LATIN1);
@@ -1023,9 +1049,22 @@ class StringCoding {
     }
 
     /*
-     * Throws iae, instead of replacing, if unmappable.
+     * Throws CCE, instead of replacing, if unmappable.
      */
-    static byte[] getBytesNoRepl(String s, Charset cs) {
+    static byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
+        try {
+            return getBytesNoRepl1(s, cs);
+        } catch (IllegalArgumentException e) {
+            //getBytesNoRepl1 throws IAE with UnmappableCharacterException or CCE as the cause
+            Throwable cause = e.getCause();
+            if (cause instanceof UnmappableCharacterException) {
+                throw (UnmappableCharacterException)cause;
+            }
+            throw (CharacterCodingException)cause;
+        }
+    }
+
+    static byte[] getBytesNoRepl1(String s, Charset cs) {
         byte[] val = s.value();
         byte coder = s.coder();
         if (cs == UTF_8) {
@@ -1045,7 +1084,7 @@ class StringCoding {
                 if (isASCII(val)) {
                     return val;
                 } else {
-                    throwMalformed(val);
+                    throwUnmappable(val);
                 }
             }
         }
@@ -1083,7 +1122,7 @@ class StringCoding {
             if (!cr.isUnderflow())
                 cr.throwException();
         } catch (CharacterCodingException x) {
-            throw new Error(x);
+            throw new IllegalArgumentException(x);
         }
         return safeTrim(ba, bb.position(), isTrusted);
     }
