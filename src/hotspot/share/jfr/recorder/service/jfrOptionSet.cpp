@@ -707,7 +707,7 @@ void JfrOptionSet::release_startup_recordings() {
     }
   }
   delete startup_recording_array;
-  DEBUG_ONLY(startup_recording_array = NULL;)
+  startup_recording_array = NULL;
 }
 
 bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, char* tail) {

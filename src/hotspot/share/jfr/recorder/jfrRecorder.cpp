@@ -181,6 +181,11 @@ static void log_jdk_jfr_module_resolution_error(TRAPS) {
 }
 
 bool JfrRecorder::on_vm_start() {
+  if (DumpSharedSpaces && (JfrOptionSet::startup_recordings() != NULL)) {
+    warning("JFR will be disabled during CDS dumping");
+    teardown_startup_support();
+    return true;
+  }
   const bool in_graph = JfrJavaSupport::is_jdk_jfr_module_available();
   Thread* const thread = Thread::current();
   if (!JfrOptionSet::initialize(thread)) {
