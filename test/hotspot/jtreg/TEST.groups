@@ -156,7 +156,6 @@ ctw_2 = \
   applications/ctw/modules/java_desktop_2.java
 
 ctw_3 = \
-  applications/ctw/modules/javafx_graphics.java \
   applications/ctw/modules/java_xml.java \
   applications/ctw/modules/jdk_compiler.java \
   applications/ctw/modules/jdk_internal_vm_compiler.java \
