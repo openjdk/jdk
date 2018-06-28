@@ -51,6 +51,7 @@ public class WindowTitles extends JavadocTester {
                 "-sourcepath", testSrc,
                 "p1", "p2");
         checkExit(Exit.OK);
+        checkFiles(false, "allclasses-noframe.html");
 
         checkTitle("overview-summary.html",     "Overview");
         checkTitle("overview-tree.html",        "Class Hierarchy");
@@ -61,7 +62,6 @@ public class WindowTitles extends JavadocTester {
         checkTitle("p1/package-use.html",       "Uses of Package p1");
         checkTitle("p1/C1.html",                "C1");
         checkTitle("allclasses-frame.html",     "All Classes");
-        checkTitle("allclasses-noframe.html",   "All Classes");
         checkTitle("constant-values.html",      "Constant Field Values");
         checkTitle("deprecated-list.html",      "Deprecated List");
         checkTitle("serialized-form.html",      "Serialized Form");

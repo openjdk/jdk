@@ -45,6 +45,7 @@ public class TestGeneratedBy extends JavadocTester {
             "-sourcepath", testSrc,
             "pkg");
         checkExit(Exit.OK);
+        checkFiles(false, "allclasses-noframe.html");
 
         checkTimestamps(true);
     }
@@ -57,6 +58,7 @@ public class TestGeneratedBy extends JavadocTester {
             "-sourcepath", testSrc,
             "pkg");
         checkExit(Exit.OK);
+        checkFiles(false, "allclasses-noframe.html");
 
         checkTimestamps(false);
     }
@@ -67,7 +69,6 @@ public class TestGeneratedBy extends JavadocTester {
         "pkg/package-summary.html",
         "pkg/package-frame.html",
         "pkg/package-tree.html",
-        "allclasses-noframe.html",
         "constant-values.html",
         "allclasses-frame.html",
         "overview-tree.html",

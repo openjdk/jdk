@@ -375,23 +375,6 @@ public class HelpWriter extends HtmlDocletWriter {
             ul.addContent(htmlTree);
         }
 
-        // All Classes
-        Content allclassesHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
-                contents.allClassesLabel);
-        htmlTree = (configuration.allowTag(HtmlTag.SECTION))
-                ? HtmlTree.SECTION(allclassesHead)
-                : HtmlTree.LI(HtmlStyle.blockList, allclassesHead);
-        Content allClassesBody = contents.getContent("doclet.help.all_classes.body",
-                links.createLink(DocPaths.AllClasses(configuration.frames),
-                resources.getText("doclet.All_Classes")));
-        Content allclassesPara = HtmlTree.P(allClassesBody);
-        htmlTree.addContent(allclassesPara);
-        if (configuration.allowTag(HtmlTag.SECTION)) {
-            ul.addContent(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
-        } else {
-            ul.addContent(htmlTree);
-        }
-
         // Serialized Form
         Content sHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
                 contents.serializedForm);

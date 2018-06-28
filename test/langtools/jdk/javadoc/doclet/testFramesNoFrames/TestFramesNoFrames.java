@@ -287,24 +287,19 @@ public class TestFramesNoFrames extends JavadocTester {
         private void checkAllClassesFiles() {
             // these files are only generated in frames mode
             checkFiles(frames,
-                    "allclasses-frame.html",
-                    "allclasses-noframe.html");
+                    "allclasses-frame.html");
 
-            // this file is only generated when not in frames mode
-            checkFiles(!frames,
+            checkFiles(false,
                     "allclasses.html");
+
+            checkFiles(false,
+                    "allclasses-noframe.html");
 
             if (frames) {
                 checkOutput("allclasses-frame.html", true,
                         classes.stream()
                             .map(c -> "title=\"class in " + packagePart(c) + "\" target=\"classFrame\">" + classPart(c) + "</a>")
                             .toArray(String[]::new));
-                checkOutput("allclasses-noframe.html", false,
-                            "target=\"classFrame\">");
-            } else {
-                checkOutput("allclasses.html", false,
-                            "target=\"classFrame\">");
-
             }
         }
 

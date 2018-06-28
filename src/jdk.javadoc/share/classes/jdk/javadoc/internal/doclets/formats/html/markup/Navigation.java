@@ -106,21 +106,15 @@ public class Navigation {
     }
 
     enum Position {
-        BOTTOM("allclasses_navbar_bottom", HtmlConstants.START_OF_BOTTOM_NAVBAR, HtmlConstants.END_OF_BOTTOM_NAVBAR),
-        TOP("allclasses_navbar_top", HtmlConstants.START_OF_TOP_NAVBAR, HtmlConstants.END_OF_TOP_NAVBAR);
+        BOTTOM(HtmlConstants.START_OF_BOTTOM_NAVBAR, HtmlConstants.END_OF_BOTTOM_NAVBAR),
+        TOP(HtmlConstants.START_OF_TOP_NAVBAR, HtmlConstants.END_OF_TOP_NAVBAR);
 
-        final String allClassesLinkId;
         final Content startOfNav;
         final Content endOfNav;
 
-        Position(String allClassesLinkId, Content startOfNav, Content endOfNav) {
-            this.allClassesLinkId = allClassesLinkId;
+        Position(Content startOfNav, Content endOfNav) {
             this.startOfNav = startOfNav;
             this.endOfNav = endOfNav;
-        }
-
-        String allClassesLinkId() {
-            return allClassesLinkId;
         }
 
         Content startOfNav() {
@@ -129,20 +123,6 @@ public class Navigation {
 
         Content endOfNav() {
             return endOfNav;
-        }
-
-        Script allClassesLinkScript() {
-            return new Script("<!--\n"
-                    + "  allClassesLink = document.getElementById(")
-                    .appendStringLiteral(allClassesLinkId)
-                    .append(");\n"
-                            + "  if(window==top) {\n"
-                            + "    allClassesLink.style.display = \"block\";\n"
-                            + "  }\n"
-                            + "  else {\n"
-                            + "    allClassesLink.style.display = \"none\";\n"
-                            + "  }\n"
-                            + "  //-->\n");
         }
     }
 
@@ -971,13 +951,6 @@ public class Navigation {
         tree.addContent(HtmlTree.LI(noFramesContent));
     }
 
-    private void addNavLinkClassIndex(Content tree) {
-        Content allClassesContent = links.createLink(pathToRoot.resolve(
-                DocPaths.AllClasses(configuration.frames)),
-                contents.allClassesLabel, "", "");
-        tree.addContent(HtmlTree.LI(allClassesContent));
-    }
-
     private void addSearch(Content tree) {
         String searchValueId = "search";
         String reset = "reset";
@@ -988,16 +961,6 @@ public class Navigation {
         liInput.addContent(inputReset);
         HtmlTree ulSearch = HtmlTree.UL(HtmlStyle.navListSearch, liInput);
         tree.addContent(ulSearch);
-    }
-
-    private void addAllClassesLinkScript(Content tree, boolean top) {
-        Content div = HtmlTree.DIV(top
-                ? Position.TOP.allClassesLinkScript().asContent()
-                : Position.BOTTOM.allClassesLinkScript().asContent());
-        Content div_noscript = HtmlTree.DIV(contents.noScriptMessage);
-        Content noScript = HtmlTree.NOSCRIPT(div_noscript);
-        div.addContent(noScript);
-        tree.addContent(div);
     }
 
     private void addFixedNavScript(Content tree) {
@@ -1046,26 +1009,6 @@ public class Navigation {
             }
             HtmlTree subDiv = new HtmlTree(HtmlTag.DIV);
             subDiv.setStyle(HtmlStyle.subNav);
-            HtmlTree ulFrames = new HtmlTree(HtmlTag.UL);
-            ulFrames.setStyle(HtmlStyle.navList);
-            if (!configuration.nonavbar) {
-                if (configuration.frames) {
-                    addNavShowLists(ulFrames);
-                    addNavHideLists(ulFrames);
-                }
-            }
-            subDiv.addContent(ulFrames);
-            HtmlTree ulAllClasses = new HtmlTree(HtmlTag.UL);
-            ulAllClasses.setStyle(HtmlStyle.navList);
-            ulAllClasses.addAttr(HtmlAttr.ID, top
-                    ? Position.TOP.allClassesLinkId()
-                    : Position.BOTTOM.allClassesLinkId());
-            addNavLinkClassIndex(ulAllClasses);
-            subDiv.addContent(ulAllClasses);
-            if (top && configuration.createindex) {
-                addSearch(subDiv);
-            }
-            addAllClassesLinkScript(subDiv, top);
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             // Add the summary links if present.
             HtmlTree ulNavSummary = new HtmlTree(HtmlTag.UL);
@@ -1077,10 +1020,22 @@ public class Navigation {
             ulNavDetail.setStyle(HtmlStyle.subNavList);
             addDetailLinks(ulNavDetail);
             div.addContent(ulNavDetail);
+            HtmlTree ulFrames = new HtmlTree(HtmlTag.UL);
+            ulFrames.setStyle(HtmlStyle.navList);
+            if (!configuration.nonavbar) {
+                if (configuration.frames) {
+                    addNavShowLists(ulFrames);
+                    addNavHideLists(ulFrames);
+                }
+            }
+            div.addContent(ulFrames);
             subDiv.addContent(div);
-            subDiv.addContent(queue.poll());
+            if (top && configuration.createindex) {
+                addSearch(subDiv);
+            }
             if (top) {
                 fixedNavDiv.addContent(subDiv);
+                fixedNavDiv.addContent(queue.poll());
                 fixedNavDiv.addContent(Position.TOP.endOfNav());
                 tree.addContent(fixedNavDiv);
                 HtmlTree paddingDiv = HtmlTree.DIV(HtmlStyle.navPadding, Contents.SPACE);
@@ -1088,6 +1043,7 @@ public class Navigation {
                 addFixedNavScript(tree);
             } else {
                 tree.addContent(subDiv);
+                tree.addContent(queue.poll());
                 tree.addContent(Position.BOTTOM.endOfNav());
             }
             return tree;

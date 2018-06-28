@@ -85,16 +85,13 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
      * "allclasses-frame.html" file. Generate the file in the current or the
      * destination directory.
      *
-     * @param indexBuilder IndexBuilder object for all classes index.
+     * @param configuration the configuration for this javadoc run
      * @throws DocFileIOException
      */
     public static void generate(HtmlConfiguration configuration,
             IndexBuilder indexBuilder) throws DocFileIOException {
         if (configuration.frames) {
             generate(configuration, indexBuilder, DocPaths.ALLCLASSES_FRAME, true);
-            generate(configuration, indexBuilder, DocPaths.ALLCLASSES_NOFRAME, false);
-        } else {
-            generate(configuration, indexBuilder, DocPaths.ALLCLASSES, false);
         }
     }
 
