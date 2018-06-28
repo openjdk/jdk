@@ -139,7 +139,6 @@ public:
 
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
-  HeapWord* allocate_sampled_object(size_t size);
 
   // Reserve space at the end of TLAB
   static size_t end_reserve() {
