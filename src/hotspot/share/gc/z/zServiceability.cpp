@@ -149,7 +149,7 @@ ZServiceabilityManagerStatsTracer::ZServiceabilityManagerStatsTracer(bool is_gc_
 
 ZServiceabilityCountersTracer::ZServiceabilityCountersTracer() {
   // Nothing to trace with TraceCollectorStats, since ZGC has
-  // neither a young collector or a full collector.
+  // neither a young collector nor a full collector.
 }
 
 ZServiceabilityCountersTracer::~ZServiceabilityCountersTracer() {

@@ -101,7 +101,7 @@ bool ZDirector::rule_allocation_rate() const {
   // Perform GC if the estimated max allocation rate indicates that we
   // will run out of memory. The estimated max allocation rate is based
   // on the moving average of the sampled allocation rate plus a safety
-  // margin based on variations in the allocation rate and unforseen
+  // margin based on variations in the allocation rate and unforeseen
   // allocation spikes.
 
   // Calculate amount of free memory available to Java threads. Note that
@@ -115,9 +115,9 @@ bool ZDirector::rule_allocation_rate() const {
 
   // Calculate time until OOM given the max allocation rate and the amount
   // of free memory. The allocation rate is a moving average and we multiply
-  // that with an alllcation spike tolerance factor to guard against unforseen
+  // that with an allocation spike tolerance factor to guard against unforeseen
   // phase changes in the allocate rate. We then add ~3.3 sigma to account for
-  // the allocation rate variance, which means the probablility is 1 in 1000
+  // the allocation rate variance, which means the probability is 1 in 1000
   // that a sample is outside of the confidence interval.
   const double max_alloc_rate = (ZStatAllocRate::avg() * ZAllocationSpikeTolerance) + (ZStatAllocRate::avg_sd() * one_in_1000);
   const double time_until_oom = free / (max_alloc_rate + 1.0); // Plus 1.0B/s to avoid division by zero

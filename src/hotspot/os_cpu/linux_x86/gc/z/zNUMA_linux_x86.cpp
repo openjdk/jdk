@@ -31,11 +31,11 @@
 #include <sys/syscall.h>
 
 #ifndef MPOL_F_NODE
-#define MPOL_F_NODE     (1<<0)  /* return next IL mode instead of node mask */
+#define MPOL_F_NODE     (1<<0)  // Return next IL mode instead of node mask
 #endif
 
 #ifndef MPOL_F_ADDR
-#define MPOL_F_ADDR     (1<<1)  /* look up vma using address */
+#define MPOL_F_ADDR     (1<<1)  // Look up VMA using address
 #endif
 
 static int z_get_mempolicy(uint32_t* mode, const unsigned long *nmask, unsigned long maxnode, uintptr_t addr, int flags) {

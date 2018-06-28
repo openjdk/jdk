@@ -170,7 +170,7 @@ int ZBackingFile::create_file_fd(const char* name) const {
   const int fd_anon = open(path.get(), O_TMPFILE|O_EXCL|O_RDWR|O_CLOEXEC, S_IRUSR|S_IWUSR);
   if (fd_anon == -1) {
     ZErrno err;
-    log_debug(gc, init)("Failed to create anonymouns file in %s (%s)", path.get(),
+    log_debug(gc, init)("Failed to create anonymous file in %s (%s)", path.get(),
                         (err == EINVAL ? "Not supported" : err.to_string()));
   } else {
     // Get inode number for anonymous file
@@ -224,7 +224,7 @@ int ZBackingFile::create_fd(const char* name) const {
       return fd;
     }
 
-    log_debug(gc, init)("Falling back to searching for an accessible moint point");
+    log_debug(gc, init)("Falling back to searching for an accessible mount point");
   }
 
   return create_file_fd(name);

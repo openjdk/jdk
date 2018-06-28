@@ -40,7 +40,7 @@ private:
   ZPage* alloc_page(uint8_t type, size_t size, ZAllocationFlags flags);
 
   // Allocate an object in a shared page. Allocate and
-  // atomically install a new page if neccesary.
+  // atomically install a new page if necessary.
   uintptr_t alloc_object_in_shared_page(ZPage** shared_page,
                                         uint8_t page_type,
                                         size_t page_size,

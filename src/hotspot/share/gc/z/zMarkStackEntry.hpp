@@ -77,7 +77,7 @@ private:
 
 public:
   ZMarkStackEntry() {
-    // This constructor is intentionally left emtpy and does not initialize
+    // This constructor is intentionally left empty and does not initialize
     // _entry to allow it to be optimized out when instantiating ZMarkStack,
     // which has a long array of ZMarkStackEntry elements, but doesn't care
     // what _entry is initialized to.

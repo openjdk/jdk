@@ -50,12 +50,12 @@
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
-static const ZStatSampler  ZSamplerHeapUsedBeforeMark("Memory", "Heap Used Before Mark", ZStatUnitBytes);
-static const ZStatSampler  ZSamplerHeapUsedAfterMark("Memory", "Heap Used After Mark", ZStatUnitBytes);
-static const ZStatSampler  ZSamplerHeapUsedBeforeRelocation("Memory", "Heap Used Before Relocation", ZStatUnitBytes);
-static const ZStatSampler  ZSamplerHeapUsedAfterRelocation("Memory", "Heap Used After Relocation", ZStatUnitBytes);
-static const ZStatCounter  ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);
-static const ZStatCounter  ZCounterOutOfMemory("Memory", "Out Of Memory", ZStatUnitOpsPerSecond);
+static const ZStatSampler ZSamplerHeapUsedBeforeMark("Memory", "Heap Used Before Mark", ZStatUnitBytes);
+static const ZStatSampler ZSamplerHeapUsedAfterMark("Memory", "Heap Used After Mark", ZStatUnitBytes);
+static const ZStatSampler ZSamplerHeapUsedBeforeRelocation("Memory", "Heap Used Before Relocation", ZStatUnitBytes);
+static const ZStatSampler ZSamplerHeapUsedAfterRelocation("Memory", "Heap Used After Relocation", ZStatUnitBytes);
+static const ZStatCounter ZCounterUndoPageAllocation("Memory", "Undo Page Allocation", ZStatUnitOpsPerSecond);
+static const ZStatCounter ZCounterOutOfMemory("Memory", "Out Of Memory", ZStatUnitOpsPerSecond);
 
 ZHeap* ZHeap::_heap = NULL;
 
@@ -155,7 +155,7 @@ size_t ZHeap::unsafe_max_tlab_alloc() const {
     // fit the smallest possible TLAB. This means that the next
     // TLAB allocation will force the allocator to get a new
     // backing page anyway, which in turn means that we can then
-    // fit the larges possible TLAB.
+    // fit the largest possible TLAB.
     size = max_tlab_size();
   }
 

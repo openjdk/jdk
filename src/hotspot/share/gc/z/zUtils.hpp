@@ -35,7 +35,7 @@ public:
   static size_t round_up_power_of_2(size_t value);
   static size_t round_down_power_of_2(size_t value);
 
-  // Size convertion
+  // Size conversion
   static size_t bytes_to_words(size_t size_in_words);
   static size_t words_to_bytes(size_t size_in_words);
 

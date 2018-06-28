@@ -141,7 +141,7 @@ inline oop ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_atomic_cmpxc
   verify_decorators_present<ON_STRONG_OOP_REF | ON_UNKNOWN_OOP_REF>();
   verify_decorators_absent<AS_NO_KEEPALIVE>();
 
-  // Through Unsafe.CompareAndExchangeObject()/CompareAndSetObject() we can recieve
+  // Through Unsafe.CompareAndExchangeObject()/CompareAndSetObject() we can receive
   // calls with ON_UNKNOWN_OOP_REF set. However, we treat these as ON_STRONG_OOP_REF,
   // with the motivation that if you're doing Unsafe operations on a Reference.referent
   // field, then you're on your own anyway.

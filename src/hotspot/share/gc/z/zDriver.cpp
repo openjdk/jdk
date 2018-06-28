@@ -181,11 +181,11 @@ public:
     ZStatTimer timer(ZPhasePauseMarkStart);
     ZServiceabilityMarkStartTracer tracer;
 
-    // Setup soft reference policy
+    // Set up soft reference policy
     const bool clear = should_clear_soft_references();
     ZHeap::heap()->set_soft_reference_policy(clear);
 
-    // Setup boost mode
+    // Set up boost mode
     const bool boost = should_boost_worker_threads();
     ZHeap::heap()->set_boost_worker_threads(boost);
 
@@ -373,7 +373,7 @@ void ZDriver::run_gc_cycle(GCCause::Cause cause) {
     ZHeap::heap()->select_relocation_set();
   }
 
-  // Phase 8: Prepare Relocation Set
+  // Phase 8: Concurrent Prepare Relocation Set
   {
     ZStatTimer timer(ZPhaseConcurrentPrepareRelocationSet);
     ZHeap::heap()->prepare_relocation_set();

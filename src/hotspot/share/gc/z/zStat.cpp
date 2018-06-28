@@ -482,7 +482,7 @@ ZStatCounterData ZStatUnsampledCounter::collect_and_reset() const {
 }
 
 //
-// Stat MMU (Mimimum Mutator Utilization)
+// Stat MMU (Minimum Mutator Utilization)
 //
 ZStatMMUPause::ZStatMMUPause() :
     _start(0.0),
@@ -560,9 +560,8 @@ void ZStatMMU::register_pause(const Ticks& start, const Ticks& end) {
 }
 
 void ZStatMMU::print() {
-  log_info(gc, mmu)(
-     "MMU: 2ms/%.1f%%, 5ms/%.1f%%, 10ms/%.1f%%, 20ms/%.1f%%, 50ms/%.1f%%, 100ms/%.1f%%",
-     _mmu_2ms, _mmu_5ms, _mmu_10ms, _mmu_20ms, _mmu_50ms, _mmu_100ms);
+  log_info(gc, mmu)("MMU: 2ms/%.1f%%, 5ms/%.1f%%, 10ms/%.1f%%, 20ms/%.1f%%, 50ms/%.1f%%, 100ms/%.1f%%",
+                    _mmu_2ms, _mmu_5ms, _mmu_10ms, _mmu_20ms, _mmu_50ms, _mmu_100ms);
 }
 
 //

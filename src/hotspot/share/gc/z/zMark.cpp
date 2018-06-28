@@ -398,7 +398,7 @@ bool ZMark::flush(bool at_safepoint) {
 }
 
 bool ZMark::try_flush(volatile size_t* nflush) {
-  // Only flush if handhakes are enabled
+  // Only flush if handshakes are enabled
   if (!ThreadLocalHandshakes) {
     return false;
   }
@@ -681,5 +681,5 @@ void ZMark::verify_all_stacks_empty() const {
   Threads::threads_do(&cl);
 
   // Verify stripe stacks
-  guarantee(_stripes.is_empty(), "Should be emtpy");
+  guarantee(_stripes.is_empty(), "Should be empty");
 }

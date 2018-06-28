@@ -244,7 +244,7 @@ public:
 
   virtual void do_thread(Thread* thread) {
     if (thread->is_Java_thread()) {
-      // Update thread local adddress bad mask
+      // Update thread local address bad mask
       ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
     }
 

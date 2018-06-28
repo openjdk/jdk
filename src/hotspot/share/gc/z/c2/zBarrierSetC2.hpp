@@ -35,8 +35,8 @@ private:
   bool _writeback;          // Controls if the barrier writes the healed oop back to memory
                             // A swap on a memory location must never write back the healed oop
   bool _oop_reload_allowed; // Controls if the barrier are allowed to reload the oop from memory
-                            // before healing, otherwise both the oop and the address must be passed to the
-                            // barrier from the oop
+                            // before healing, otherwise both the oop and the address must be
+                            // passed to the barrier from the oop
 
   static bool is_dominator(PhaseIdealLoop* phase, bool linear_only, Node *d, Node *n);
   void push_dominated_barriers(PhaseIterGVN* igvn) const;

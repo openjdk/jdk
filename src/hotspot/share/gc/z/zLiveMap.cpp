@@ -73,7 +73,7 @@ void ZLiveMap::reset(size_t index) {
 
     // Mark reset contention
     if (!contention) {
-      // Count contention once, not every loop
+      // Count contention once
       ZStatInc(ZCounterMarkSeqNumResetContention);
       contention = true;
 
@@ -95,7 +95,7 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
 
       // Mark reset contention
       if (!contention) {
-        // Count contention once, not every loop
+        // Count contention once
         ZStatInc(ZCounterMarkSegmentResetContention);
         contention = true;
 

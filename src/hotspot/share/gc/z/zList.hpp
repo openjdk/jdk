@@ -29,7 +29,7 @@
 
 template <typename T> class ZList;
 
-// Element in a double linked list
+// Element in a doubly linked list
 template <typename T>
 class ZListNode {
   friend class ZList<T>;
@@ -61,7 +61,7 @@ public:
   }
 };
 
-// Double-linked list
+// Doubly linked list
 template <typename T>
 class ZList {
 private:

@@ -156,7 +156,7 @@ public:
 };
 
 //
-// Stat MMU (Mimimum Mutator Utilization)
+// Stat MMU (Minimum Mutator Utilization)
 //
 class ZStatMMUPause {
 private:
