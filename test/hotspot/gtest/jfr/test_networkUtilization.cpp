@@ -61,8 +61,8 @@ namespace {
     }
   };
 
-  typedef TimeInstant<CounterRepresentation, MockFastUnorderedElapsedCounterSource> JfrTicks;
-  typedef TimeInterval<CounterRepresentation, MockFastUnorderedElapsedCounterSource> JfrTickspan;
+  typedef TimeInstant<CounterRepresentation, MockFastUnorderedElapsedCounterSource> MockJfrTicks;
+  typedef TimeInterval<CounterRepresentation, MockFastUnorderedElapsedCounterSource> MockJfrTickspan;
 
   class MockJfrCheckpointWriter {
   public:
@@ -128,9 +128,9 @@ namespace {
       committed.push_back(*this);
     }
 
-    void set_starttime(const JfrTicks& time) {}
+    void set_starttime(const MockJfrTicks& time) {}
 
-    void set_endtime(const JfrTicks& time) {}
+    void set_endtime(const MockJfrTicks& time) {}
 
     static const MockEventNetworkUtilization& get_committed(const std::string& name) {
       static MockEventNetworkUtilization placeholder;
@@ -216,6 +216,8 @@ namespace {
 #define JfrOSInterface MockJfrOSInterface
 #define JfrSerializer MockJfrSerializer
 #define JfrCheckpointWriter MockJfrCheckpointWriter
+#define JfrTicks MockJfrTicks
+#define JfrTickspan MockJfrTickspan
 
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.cpp"
@@ -225,6 +227,8 @@ namespace {
 #undef JfrOSInterface
 #undef JfrSerializer
 #undef JfrCheckpointWriter
+#undef JfrTicks
+#undef JfrTickspan
 
 } // anonymous namespace
 
