@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -207,7 +208,7 @@ public class TypesParser {
         Asserts.assertNotNull(klassesFileName, "Classes input file name is null");
         Asserts.assertFalse(klassesFileName.isEmpty(), "Classes input file name is empty");
         List<String> klassNamesList = new ArrayList<>();
-        Path klassesFilePath = (new File(klassesFileName)).toPath();
+        Path klassesFilePath = Paths.get(klassesFileName);
         try {
             Files.lines(klassesFilePath).forEach(line -> {
                 line = line.trim();
@@ -223,7 +224,7 @@ public class TypesParser {
             throw new Error("Error reading klasses file", ex);
         }
         List<Class<?>> klassesList = new ArrayList<>();
-        klassNamesList.stream().forEach(klassName -> {
+        klassNamesList.forEach(klassName -> {
             try {
                 klassesList.add(Class.forName(klassName));
             } catch (ClassNotFoundException ex) {
@@ -237,7 +238,7 @@ public class TypesParser {
         Asserts.assertNotNull(methodsFileName, "Methods exclude input file name is null");
         Asserts.assertFalse(methodsFileName.isEmpty(), "Methods exclude input file name is empty");
         LinkedList<String> methodNamesList = new LinkedList<>();
-        Path klassesFilePath = (new File(methodsFileName)).toPath();
+        Path klassesFilePath = Paths.get(methodsFileName);
         try {
             Files.lines(klassesFilePath).forEach(line -> {
                 line = line.trim();
@@ -253,7 +254,7 @@ public class TypesParser {
             throw new Error("Error reading exclude method file", ex);
         }
         Set<Executable> methodsList = new HashSet<>();
-        methodNamesList.stream().forEach(methodName -> {
+        methodNamesList.forEach(methodName -> {
             String[] klassAndNameAndSig = methodName.split("::");
             String klassName = klassAndNameAndSig[0].replaceAll("/", "\\.");
             String[] nameAndSig = klassAndNameAndSig[1].split("[\\(\\)]");
