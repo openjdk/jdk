@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -290,13 +290,13 @@ static int closefd(int fd1, int fd2) {
          * And close/dup the file descriptor
          * (restart if interrupted by signal)
          */
-        do {
-            if (fd1 < 0) {
-                rv = close(fd2);
-            } else {
+        if (fd1 < 0) {
+            rv = close(fd2);
+        } else {
+            do {
                 rv = dup2(fd1, fd2);
-            }
-        } while (rv == -1 && errno == EINTR);
+            } while (rv == -1 && errno == EINTR);
+        }
 
         /*
          * Send a wakeup signal to all threads blocked on this
