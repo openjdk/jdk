@@ -1627,7 +1627,7 @@ source %{
   // which looks like this
   //
   //   MemBarRelease
-  //   MemBarCPUOrder_(leading)__________________
+  //  {MemBarCPUOrder}_(leading)_________________
   //     C |    M \       \\                   C \
   //       |       \    StoreN/P[mo_release]  CastP2X
   //       |    Bot \    /
@@ -1663,7 +1663,7 @@ source %{
   // The graph for a CAS varies slightly, the difference being
   // that the StoreN/P node is replaced by a CompareAndSwapP/N node
   // and the trailing MemBarVolatile by a MemBarCPUOrder +
-  // MemBarAcquire pair.
+  // MemBarAcquire pair (also the MemBarCPUOrder nodes are not optional).
   //
   //   MemBarRelease
   //   MemBarCPUOrder_(leading)_______________
@@ -1691,7 +1691,7 @@ source %{
   //          |  . . .  \  / Bot
   //          |       MergeMem
   //          |          |
-  //       {MemBarCPUOrder}
+  //        MemBarCPUOrder
   //        MemBarVolatile (trailing)
   //
   //
@@ -1716,7 +1716,8 @@ source %{
   // So with G1 the pre-write and releasing store subgraph looks like
   // this (the nested Ifs are omitted).
   //
-  //  MemBarRelease (leading)____________
+  //  MemBarRelease
+  // {MemBarCPUOrder}_(leading)___________
   //     C |  ||  M \   M \    M \  M \ . . .
   //       | LoadB   \  LoadL  LoadN   \
   //       | /        \                 \
@@ -1932,7 +1933,7 @@ source %{
   // the following 3 Mem flow subgraphs is present.
   //
   //   MemBarRelease
-  //   MemBarCPUOrder {leading}
+  //  {MemBarCPUOrder} {leading}
   //          |  \      . . .
   //          |  StoreN/P[mo_release]  . . .
   //          |   /
@@ -1961,7 +1962,7 @@ source %{
   //   MemBarAcquire {trailing}
   //
   // if the correct configuration is present returns the trailing
-  // membar otherwise NULL.
+  // or cardmark membar otherwise NULL.
   //
   // the input membar is expected to be either a cpuorder membar or a
   // release membar. in the latter case it should not have a cpu membar
@@ -2070,8 +2071,8 @@ source %{
           // for a volatile store this can be either a trailing membar
           // or a card mark membar. for a cas it must be a card mark
           // membar
-          assert(cas == NULL || is_card_mark_membar(mbar),
-                 "in CAS graph volatile membar must be a card mark");
+          guarantee(cas == NULL || is_card_mark_membar(mbar),
+                    "in CAS graph volatile membar must be a card mark");
 	} else if (cas != NULL && x->Opcode() == Op_MemBarAcquire) {
 	  mbar = x->as_MemBar();
 	}
@@ -2197,15 +2198,16 @@ source %{
       }
     }
 
-    // we should not have both a store and a cas
-    if (st == NULL & cas == NULL) {
+    // we cannot have both a store and a cas
+    if (st == NULL && cas == NULL) {
+      // we have neither -- this is not a normal graph
       return NULL;
     }
     if (st == NULL) {
       // if we started from a volatile membar and found a CAS then the
       // original membar ought to be for a card mark
-      assert((barrier_is_acquire || is_card_mark_membar(barrier)),
-             "unexpected volatile barrier (i.e. not card mark) in CAS graph");
+      guarantee((barrier_is_acquire || is_card_mark_membar(barrier)),
+                "unexpected volatile barrier (i.e. not card mark) in CAS graph");
       // check that the CAS feeds the merge we used to get here via an
       // intermediary SCMemProj
       Node *scmemproj = NULL;
@@ -2227,8 +2229,8 @@ source %{
       }
     } else {
       // we should not have found a store if we started from an acquire
-      assert(!barrier_is_acquire,
-             "unexpected trailing acquire barrier in volatile store graph");
+      guarantee(!barrier_is_acquire,
+                "unexpected trailing acquire barrier in volatile store graph");
 
       // the store should feed the merge we used to get here
       for (DUIterator_Fast imax, i = st->fast_outs(imax); i < imax; i++) {
@@ -2396,7 +2398,7 @@ source %{
     }
 
     // sanity check this feed turns up as the expected slice
-    assert(mm->as_MergeMem()->in(Compile::AliasIdxBot) == feed, "expecting membar to feed AliasIdxBot slice to Merge");
+    guarantee(mm->as_MergeMem()->in(Compile::AliasIdxBot) == feed, "expecting membar to feed AliasIdxBot slice to Merge");
 
     MemBarNode *trailing = NULL;
     // be sure we have a trailing membar fed by the merge
@@ -2831,8 +2833,8 @@ bool needs_acquiring_load_exclusive(const Node *n)
 
   // the barrier must be a cpuorder mmebar fed by a release membar
 
-  assert(barrier->Opcode() == Op_MemBarCPUOrder,
-	 "CAS not fed by cpuorder membar!");
+  guarantee(barrier->Opcode() == Op_MemBarCPUOrder,
+            "CAS not fed by cpuorder membar!");
 
   MemBarNode *b = parent_membar(barrier);
   assert ((b != NULL && b->Opcode() == Op_MemBarRelease),
@@ -2841,7 +2843,7 @@ bool needs_acquiring_load_exclusive(const Node *n)
   // does this lead a normal subgraph?
   MemBarNode *mbar = leading_to_normal(barrier);
 
-  assert(mbar != NULL, "CAS not embedded in normal graph!");
+  guarantee(mbar != NULL, "CAS not embedded in normal graph!");
 
   // if this is a card mark membar check we have a trailing acquire
 
@@ -2849,9 +2851,9 @@ bool needs_acquiring_load_exclusive(const Node *n)
     mbar = card_mark_to_trailing(mbar);
   }
 
-  assert(mbar != NULL, "card mark membar for CAS not embedded in normal graph!");
+  guarantee(mbar != NULL, "card mark membar for CAS not embedded in normal graph!");
 
-  assert(mbar->Opcode() == Op_MemBarAcquire, "trailing membar should be an acquire");
+  guarantee(mbar->Opcode() == Op_MemBarAcquire, "trailing membar should be an acquire");
 #endif // ASSERT
   // so we can just return true here
   return true;
@@ -2875,7 +2877,7 @@ bool unnecessary_storestore(const Node *storecm)
   }
 
   // if we are implementing volatile puts using barriers then the
-  // object put as an str so we must insert the dmb ishst
+  // object put is an str so we must insert the dmb ishst
 
   if (UseBarriersForVolatile) {
     return false;
@@ -8400,7 +8402,8 @@ instruct storeimmCM0(immI0 zero, memory mem)
   predicate(unnecessary_storestore(n));
 
   ins_cost(INSN_COST);
-  format %{ "strb zr, $mem\t# byte" %}
+  format %{ "storestore (elided)\n\t"
+            "strb zr, $mem\t# byte" %}
 
   ins_encode(aarch64_enc_strb0(mem));
 
@@ -8414,8 +8417,9 @@ instruct storeimmCM0_ordered(immI0 zero, memory mem)
   match(Set mem (StoreCM mem zero));
 
   ins_cost(INSN_COST * 2);
-  format %{ "dmb ishst"
-      "\n\tstrb zr, $mem\t# byte" %}
+  format %{ "storestore\n\t"
+            "dmb ishst"
+            "\n\tstrb zr, $mem\t# byte" %}
 
   ins_encode(aarch64_enc_strb0_ordered(mem));
 
@@ -9193,7 +9197,8 @@ instruct membar_acquire() %{
   match(MemBarAcquire);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_acquire" %}
+  format %{ "membar_acquire\n\t"
+            "dmb ish" %}
 
   ins_encode %{
     __ block_comment("membar_acquire");
@@ -9246,7 +9251,8 @@ instruct membar_release() %{
   match(MemBarRelease);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "membar_release" %}
+  format %{ "membar_release\n\t"
+            "dmb ish" %}
 
   ins_encode %{
     __ block_comment("membar_release");
@@ -9298,7 +9304,8 @@ instruct membar_volatile() %{
   match(MemBarVolatile);
   ins_cost(VOLATILE_REF_COST*100);
 
-  format %{ "membar_volatile" %}
+  format %{ "membar_volatile\n\t"
+             "dmb ish"%}
 
   ins_encode %{
     __ block_comment("membar_volatile");
