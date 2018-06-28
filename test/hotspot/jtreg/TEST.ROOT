@@ -29,7 +29,7 @@
 # The list of keywords supported in this test suite
 keys=cte_test jcmd nmt regression gc stress metaspace headful intermittent
 
-groups=TEST.groups
+groups=TEST.groups TEST.quick-groups
 
 # Source files for classes that will be used at the beginning of each test suite run,
 # to determine additional characteristics of the system for use with the @requires tag.
