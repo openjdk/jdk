@@ -220,12 +220,11 @@ final class DCmdStart extends AbstractDCmd {
             if (name != null) {
                 recordingspecifier = "name=" + quoteIfNeeded(name);
             }
-            print("Use jcmd " + getPid() + " JFR." + cmd + " " + recordingspecifier + " " + fileOption + "to copy recording data to file.");
+            print("Use JFR." + cmd + " " + recordingspecifier + " " + fileOption + "to copy recording data to file.");
             println();
         }
         return getResult();
     }
-
 
     // Instruments JDK-events on class load to reduce startup time
     private void initializeWithForcedInstrumentation(Map<String, String> settings) {
