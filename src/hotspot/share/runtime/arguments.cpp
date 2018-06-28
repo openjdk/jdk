@@ -3900,12 +3900,12 @@ jint Arguments::apply_ergo() {
   jint result = set_ergonomics_flags();
   if (result != JNI_OK) return result;
 
-  set_shared_spaces_flags();
-
   // Set heap size based on available physical memory
   set_heap_size();
 
   GCConfig::arguments()->initialize();
+
+  set_shared_spaces_flags();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();

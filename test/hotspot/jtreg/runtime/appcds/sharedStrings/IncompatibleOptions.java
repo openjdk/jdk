@@ -39,6 +39,7 @@
  */
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import sun.hotspot.code.Compiler;
@@ -62,6 +63,9 @@ public class IncompatibleOptions {
 
         // Uncompressed OOPs
         testDump(1, "-XX:+UseG1GC", "-XX:-UseCompressedOops", COOPS_DUMP_WARNING, true);
+        if (Platform.isLinux() && Platform.isX64()) {
+            testDump(1, "-XX:+UnlockExperimentalVMOptions", "-XX:+UseZGC", COOPS_DUMP_WARNING, true);
+        }
 
         // incompatible GCs
         testDump(2, "-XX:+UseParallelGC", "", GC_WARNING, false);
