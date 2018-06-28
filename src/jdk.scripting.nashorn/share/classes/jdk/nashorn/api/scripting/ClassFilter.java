@@ -29,8 +29,12 @@ package jdk.nashorn.api.scripting;
  * jsr-223 program embedding nashorn script can set ClassFilter instance
  * to be used when an engine instance is created.
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 1.8u40
  */
+@Deprecated(since="11", forRemoval=true)
 public interface ClassFilter {
      /**
       * Should the Java class of the specified name be exposed to scripts?

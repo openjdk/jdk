@@ -42,6 +42,7 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
  * can use the linkers exported by this provider to support tight integration
  * of Nashorn objects.
  */
+@Deprecated(since="11", forRemoval=true)
 public final class NashornLinkerExporter extends GuardingDynamicLinkerExporter {
     /**
      * The default constructor.

@@ -54,6 +54,6 @@ var emptyFile = new File($ENV.PWD+File.separator+"empty.js");
 emptyFile.createNewFile();
 emptyFile.deleteOnExit();
 
-$EXEC(jjsCmd + " empty.js");
+$EXEC(jjsCmd + " --no-deprecation-warning empty.js");
 if($ERR != "")
     fail("jjs fails with empty script file");

@@ -33,6 +33,10 @@ package jdk.nashorn.api.tree;
  *    ;
  * </pre>
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 public interface EmptyStatementTree extends StatementTree {}

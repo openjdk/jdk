@@ -41,8 +41,12 @@ import java.util.List;
  *   <em>var</em> func = <em>(x) =&gt; x+1</em>
  * </pre>
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 public interface FunctionExpressionTree extends ExpressionTree {
     /**
      * Returns the name of the function being declared.

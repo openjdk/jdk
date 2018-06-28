@@ -34,8 +34,12 @@ package jdk.nashorn.api.tree;
  *   <em>leftOperand</em> <em>operator</em> <em>rightOperand</em>
  * </pre>
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 public interface BinaryTree extends ExpressionTree {
     /**
      * Returns left hand side (LHS) of this binary expression.

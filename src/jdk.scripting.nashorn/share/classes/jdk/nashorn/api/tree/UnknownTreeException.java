@@ -33,8 +33,12 @@ package jdk.nashorn.api.tree;
  * {@linkplain TreeVisitor tree visitor} to indicate that the
  * visitor was created for a prior version of the language.
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 public class UnknownTreeException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;

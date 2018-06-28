@@ -135,10 +135,14 @@ ScriptEngine nashornEngine = new ScriptEngineManager().getEngineByName("nashorn"
  * non-standard built-in objects:
  * {@code JSAdapter}, {@code JavaImporter}, {@code Packages}
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @provides javax.script.ScriptEngineFactory
  * @moduleGraph
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 module jdk.scripting.nashorn {
     requires java.logging;
     requires jdk.dynalink;

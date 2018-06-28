@@ -43,7 +43,7 @@ fi
 # with -l option
 
 rm -f jrunscript-fTest.out 2>/dev/null
-${JRUNSCRIPT} -J-Djava.awt.headless=true -l nashorn -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
+${JRUNSCRIPT} -J-Dnashorn.args.prepend=--no-deprecation-warning -J-Djava.awt.headless=true -l nashorn -f ${TESTSRC}/hello.js > jrunscript-fTest.out 2>&1
 
 $golden_diff jrunscript-fTest.out ${TESTSRC}/dash-f.out
 if [ $? != 0 ]

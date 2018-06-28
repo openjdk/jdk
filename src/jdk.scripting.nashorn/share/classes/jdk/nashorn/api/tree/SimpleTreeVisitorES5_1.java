@@ -40,12 +40,16 @@ package jdk.nashorn.api.tree;
  * subclasses with {@link java.lang.Override @Override} will help
  * ensure that methods are overridden as intended.
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
  * @param <P> the type of the additional parameter to this visitor's
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  */
+@Deprecated(since="11", forRemoval=true)
 public class SimpleTreeVisitorES5_1<R, P> implements TreeVisitor<R, P> {
     @Override
     public R visitAssignment(final AssignmentTree node, final P r) {

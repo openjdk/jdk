@@ -45,6 +45,9 @@ package jdk.nashorn.api.tree;
  default method bodies will be introduced which will call visitUnknown
  method as a fallback.
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @param <R> the return type of this visitor's methods.  Use {@link
  *            Void} for visitors that do not need to return results.
  * @param <P> the type of the additional parameter to this visitor's
@@ -53,6 +56,7 @@ package jdk.nashorn.api.tree;
  *
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 public interface TreeVisitor<R,P> {
     /**
      * Visit assignment tree.

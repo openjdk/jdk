@@ -29,8 +29,12 @@ package jdk.nashorn.api.tree;
  * Provides methods to convert between character positions and line numbers
  * for a compilation unit.
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 public interface LineMap {
     /**
      * Find the line containing a position; a line termination
