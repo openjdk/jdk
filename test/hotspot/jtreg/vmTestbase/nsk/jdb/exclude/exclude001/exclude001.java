@@ -61,9 +61,9 @@
  * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdb.exclude.exclude001.exclude001
  *        nsk.jdb.exclude.exclude001.exclude001a
- * @run main/othervm PropertyResolvingWrapper nsk.jdb.exclude.exclude001.exclude001
+ * @run main/othervm/timeout=420 PropertyResolvingWrapper nsk.jdb.exclude.exclude001.exclude001
  *      -arch=${os.family}-${os.simpleArch}
- *      -waittime=5
+ *      -waittime=7
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
