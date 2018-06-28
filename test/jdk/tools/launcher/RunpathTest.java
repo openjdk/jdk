@@ -57,14 +57,14 @@ public class RunpathTest extends TestHelper {
         final TestResult tr = doExec(elfreaderCmd, "-d", javacmd);
         if (!tr.matches(expectedRpath)) {
             System.out.println(tr);
-            throw new RuntimeException("FAILED: RPATH strings " +
+            throw new RuntimeException("FAILED: RPATH/RUNPATH strings " +
                     expectedRpath + " not found in " + javaCmd);
         }
-        System.out.println(javacmd + " contains expected RPATHS");
+        System.out.println(javacmd + " contains expected RPATHS/RUNPATH");
     }
 
     void testRpath() {
-        String expectedRpath = ".*RPATH.*\\$ORIGIN/../lib.*";
+        String expectedRpath = ".*R(UN)?PATH.*\\$ORIGIN/../lib.*";
         elfCheck(javaCmd, expectedRpath);
     }
 
