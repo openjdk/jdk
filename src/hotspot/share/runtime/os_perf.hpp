@@ -25,9 +25,8 @@
 #ifndef SHARE_VM_RUNTIME_OS_PERF_HPP
 #define SHARE_VM_RUNTIME_OS_PERF_HPP
 
-#include "utilities/macros.hpp"
 #include "memory/allocation.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 
 #define FUNCTIONALITY_NOT_IMPLEMENTED -8
 
@@ -194,6 +193,47 @@ class SystemProcess : public CHeapObj<mtInternal> {
   }
 };
 
+class NetworkInterface : public ResourceObj {
+ private:
+  char* _name;
+  uint64_t _bytes_in;
+  uint64_t _bytes_out;
+  NetworkInterface* _next;
+
+  NetworkInterface(); // no impl
+  NetworkInterface(const NetworkInterface& rhs); // no impl
+  NetworkInterface& operator=(const NetworkInterface& rhs); // no impl
+ public:
+  NetworkInterface(const char* name, uint64_t bytes_in, uint64_t bytes_out, NetworkInterface* next) :
+  _name(NULL),
+  _bytes_in(bytes_in),
+  _bytes_out(bytes_out),
+  _next(next) {
+    assert(name != NULL, "invariant");
+    const size_t length = strlen(name);
+    assert(allocated_on_res_area(), "invariant");
+    _name = NEW_RESOURCE_ARRAY(char, length + 1);
+    strncpy(_name, name, length + 1);
+    assert(strncmp(_name, name, length) == 0, "invariant");
+  }
+
+  NetworkInterface* next() const {
+    return _next;
+  }
+
+  const char* get_name() const {
+    return _name;
+  }
+
+  uint64_t get_bytes_out() const {
+    return _bytes_out;
+  }
+
+  uint64_t get_bytes_in() const {
+    return _bytes_in;
+  }
+};
+
 class CPUInformationInterface : public CHeapObj<mtInternal> {
  private:
   CPUInformation* _cpu_info;
@@ -232,6 +272,19 @@ class SystemProcessInterface : public CHeapObj<mtInternal> {
 
   // information about system processes
   int system_processes(SystemProcess** system_procs, int* const no_of_sys_processes) const;
+};
+
+class NetworkPerformanceInterface : public CHeapObj<mtInternal> {
+ private:
+  class NetworkPerformance;
+  NetworkPerformance* _impl;
+  NetworkPerformanceInterface(const NetworkPerformanceInterface& rhs); // no impl
+  NetworkPerformanceInterface& operator=(const NetworkPerformanceInterface& rhs); // no impl
+ public:
+  NetworkPerformanceInterface();
+  bool initialize();
+  ~NetworkPerformanceInterface();
+  int network_utilization(NetworkInterface** network_interfaces) const;
 };
 
 #endif // SHARE_VM_RUNTIME_OS_PERF_HPP

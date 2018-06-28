@@ -155,6 +155,7 @@ public class EventNames {
     public final static String InitialEnvironmentVariable = PREFIX + "InitialEnvironmentVariable";
     public final static String NativeLibrary = PREFIX + "NativeLibrary";
     public final static String PhysicalMemory = PREFIX + "PhysicalMemory";
+    public final static String NetworkUtilization = PREFIX + "NetworkUtilization";
 
     // JDK
     public static final String FileForce  = PREFIX + "FileForce";

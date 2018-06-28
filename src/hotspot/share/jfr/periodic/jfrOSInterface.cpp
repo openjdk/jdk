@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -54,6 +55,7 @@ JfrOSInterface* JfrOSInterface::create() {
 }
 
 void JfrOSInterface::destroy() {
+  JfrNetworkUtilization::destroy();
   if (_instance != NULL) {
     delete _instance;
     _instance = NULL;
@@ -66,6 +68,7 @@ class JfrOSInterface::JfrOSInterfaceImpl : public JfrCHeapObj {
   CPUInformationInterface* _cpu_info_interface;
   CPUPerformanceInterface* _cpu_perf_interface;
   SystemProcessInterface*  _system_process_interface;
+  NetworkPerformanceInterface* _network_performance_interface;
 
   // stub helper
   void functionality_not_implemented(char** str) const;
@@ -89,6 +92,8 @@ class JfrOSInterface::JfrOSInterfaceImpl : public JfrCHeapObj {
 
    // system processes information
   int system_processes(SystemProcess** system_processes, int* no_of_sys_processes);
+
+  int network_utilization(NetworkInterface** network_interfaces) const;
 };
 
 JfrOSInterface::JfrOSInterfaceImpl::JfrOSInterfaceImpl() : _cpu_info_interface(NULL),
@@ -97,18 +102,19 @@ JfrOSInterface::JfrOSInterfaceImpl::JfrOSInterfaceImpl() : _cpu_info_interface(N
 
 bool JfrOSInterface::JfrOSInterfaceImpl::initialize() {
   _cpu_info_interface = new CPUInformationInterface();
-  bool success = _cpu_info_interface != NULL && _cpu_info_interface->initialize();
-  if (!success) {
+  if (!(_cpu_info_interface != NULL && _cpu_info_interface->initialize())) {
     return false;
   }
   _cpu_perf_interface = new CPUPerformanceInterface();
-  success = _cpu_perf_interface != NULL && _cpu_perf_interface->initialize();
-  if (!success) {
+  if (!(_cpu_perf_interface != NULL && _cpu_perf_interface->initialize())) {
     return false;
   }
   _system_process_interface = new SystemProcessInterface();
-  success = _system_process_interface != NULL && _system_process_interface->initialize();
-  return success;
+  if (!(_system_process_interface != NULL && _system_process_interface->initialize())) {
+    return false;
+  }
+  _network_performance_interface = new NetworkPerformanceInterface();
+  return _network_performance_interface != NULL && _network_performance_interface->initialize();
 }
 
 JfrOSInterface::JfrOSInterfaceImpl::~JfrOSInterfaceImpl(void) {
@@ -123,6 +129,10 @@ JfrOSInterface::JfrOSInterfaceImpl::~JfrOSInterfaceImpl(void) {
   if (_system_process_interface != NULL) {
     delete _system_process_interface;
     _system_process_interface = NULL;
+  }
+  if (_network_performance_interface != NULL) {
+    delete _network_performance_interface;
+    _network_performance_interface = NULL;
   }
 }
 
@@ -152,6 +162,10 @@ int JfrOSInterface::JfrOSInterfaceImpl::system_processes(SystemProcess** system_
   assert(system_processes != NULL, "system_processes pointer is NULL!");
   assert(no_of_sys_processes != NULL, "no_of_sys_processes pointer is NULL!");
   return _system_process_interface->system_processes(system_processes, no_of_sys_processes);
+}
+
+int JfrOSInterface::JfrOSInterfaceImpl::network_utilization(NetworkInterface** network_interfaces) const {
+  return _network_performance_interface->network_utilization(network_interfaces);
 }
 
 // assigned char* is RESOURCE_HEAP_ALLOCATED
@@ -245,4 +259,8 @@ int JfrOSInterface::generate_initial_environment_variable_events() {
 
 int JfrOSInterface::system_processes(SystemProcess** sys_processes, int* no_of_sys_processes) {
   return instance()._impl->system_processes(sys_processes, no_of_sys_processes);
+}
+
+int JfrOSInterface::network_utilization(NetworkInterface** network_interfaces) {
+  return instance()._impl->network_utilization(network_interfaces);
 }
