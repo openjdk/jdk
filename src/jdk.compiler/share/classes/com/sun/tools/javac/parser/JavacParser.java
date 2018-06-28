@@ -2784,7 +2784,7 @@ public class JavacParser implements Parser {
                 return variableDeclarators(modifiersOpt(), t, stats, true).toList();
             } else if ((lastmode & TYPE) != 0 && token.kind == COLON) {
                 log.error(DiagnosticFlag.SYNTAX, pos, Errors.BadInitializer("for-loop"));
-                return List.of((JCStatement)F.at(pos).VarDef(null, null, t, null));
+                return List.of((JCStatement)F.at(pos).VarDef(modifiersOpt(), names.error, t, null));
             } else {
                 return moreStatementExpressions(pos, t, stats).toList();
             }
