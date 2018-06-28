@@ -1691,7 +1691,6 @@ public:
       ls.print("" PTR_FORMAT "[offset=%d] detected scavengable oop " PTR_FORMAT " (found at " PTR_FORMAT ") ",
                p2i(_print_nm), (int)((intptr_t)p - (intptr_t)_print_nm),
                p2i(*p), p2i(p));
-      (*p)->print_value_on(&ls);
       ls.cr();
     }
   }
