@@ -1799,6 +1799,7 @@ unpacker::attr_definitions::parseLayout(const char* lp, band** &res,
     case 'B': case 'H': case 'I': case 'V': // unsigned_int
     case 'S': // signed_int
       --lp; // reparse
+      /* fall through */
     case 'F':
       lp = parseIntLayout(lp, b, EK_INT);
       break;
@@ -3709,7 +3710,7 @@ const char* entry::string() {
   case CONSTANT_Signature:
     if (value.b.ptr == null)
       return ref(0)->string();
-    // else fall through:
+    /* fall through */
   case CONSTANT_Utf8:
     buf = value.b;
     break;
@@ -4216,6 +4217,7 @@ void unpacker::write_bc_ops() {
         case _invokeinit_self_option:   classRef = thisClass;  break;
         case _invokeinit_super_option:  classRef = superClass; break;
         default: assert(bc == _invokeinit_op+_invokeinit_new_option);
+        /* fall through */
         case _invokeinit_new_option:    classRef = newClass;   break;
         }
         wp[-1] = origBC;  // overwrite with origBC
