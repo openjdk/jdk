@@ -754,3 +754,88 @@ int CPUInformationInterface::cpu_information(CPUInformation& cpu_info) {
   cpu_info = *_cpu_info; // shallow copy assignment
   return OS_OK;
 }
+
+class NetworkPerformanceInterface::NetworkPerformance : public CHeapObj<mtInternal> {
+  friend class NetworkPerformanceInterface;
+ private:
+  NetworkPerformance();
+  NetworkPerformance(const NetworkPerformance& rhs); // no impl
+  NetworkPerformance& operator=(const NetworkPerformance& rhs); // no impl
+  bool initialize();
+  ~NetworkPerformance();
+  int network_utilization(NetworkInterface** network_interfaces) const;
+};
+
+NetworkPerformanceInterface::NetworkPerformance::NetworkPerformance() {
+
+}
+
+bool NetworkPerformanceInterface::NetworkPerformance::initialize() {
+  return true;
+}
+
+NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {
+
+}
+
+int NetworkPerformanceInterface::NetworkPerformance::network_utilization(NetworkInterface** network_interfaces) const
+{
+  kstat_ctl_t* ctl = kstat_open();
+  if (ctl == NULL) {
+    return OS_ERR;
+  }
+
+  NetworkInterface* ret = NULL;
+  for (kstat_t* k = ctl->kc_chain; k != NULL; k = k->ks_next) {
+    if (strcmp(k->ks_class, "net") != 0) {
+      continue;
+    }
+    if (strcmp(k->ks_module, "link") != 0) {
+      continue;
+    }
+
+    if (kstat_read(ctl, k, NULL) == -1) {
+      return OS_ERR;
+    }
+
+    uint64_t bytes_in = UINT64_MAX;
+    uint64_t bytes_out = UINT64_MAX;
+    for (int i = 0; i < k->ks_ndata; ++i) {
+      kstat_named_t* data = &reinterpret_cast<kstat_named_t*>(k->ks_data)[i];
+      if (strcmp(data->name, "rbytes64") == 0) {
+        bytes_in = data->value.ui64;
+      }
+      else if (strcmp(data->name, "obytes64") == 0) {
+        bytes_out = data->value.ui64;
+      }
+    }
+
+    if ((bytes_in != UINT64_MAX) && (bytes_out != UINT64_MAX)) {
+      NetworkInterface* cur = new NetworkInterface(k->ks_name, bytes_in, bytes_out, ret);
+      ret = cur;
+    }
+  }
+
+  *network_interfaces = ret;
+
+  return OS_OK;
+}
+
+NetworkPerformanceInterface::NetworkPerformanceInterface() {
+  _impl = NULL;
+}
+
+NetworkPerformanceInterface::~NetworkPerformanceInterface() {
+  if (_impl != NULL) {
+    delete _impl;
+  }
+}
+
+bool NetworkPerformanceInterface::initialize() {
+  _impl = new NetworkPerformanceInterface::NetworkPerformance();
+  return _impl != NULL && _impl->initialize();
+}
+
+int NetworkPerformanceInterface::network_utilization(NetworkInterface** network_interfaces) const {
+  return _impl->network_utilization(network_interfaces);
+}

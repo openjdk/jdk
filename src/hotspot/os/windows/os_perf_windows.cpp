@@ -23,14 +23,15 @@
  */
 
 #include "precompiled.hpp"
+#include "iphlp_interface.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "pdh_interface.hpp"
 #include "runtime/os_perf.hpp"
 #include "runtime/os.hpp"
-#include "vm_version_ext_x86.hpp"
 #include "utilities/macros.hpp"
+#include "vm_version_ext_x86.hpp"
 #include <math.h>
 #include <psapi.h>
 #include <TlHelp32.h>
@@ -1379,4 +1380,79 @@ int CPUInformationInterface::cpu_information(CPUInformation& cpu_info) {
   }
   cpu_info = *_cpu_info; // shallow copy assignment
   return OS_OK;
+}
+
+class NetworkPerformanceInterface::NetworkPerformance : public CHeapObj<mtInternal> {
+  friend class NetworkPerformanceInterface;
+ private:
+  bool _iphlp_attached;
+
+  NetworkPerformance();
+  NetworkPerformance(const NetworkPerformance& rhs); // no impl
+  NetworkPerformance& operator=(const NetworkPerformance& rhs); // no impl
+  bool initialize();
+  ~NetworkPerformance();
+  int network_utilization(NetworkInterface** network_interfaces) const;
+};
+
+NetworkPerformanceInterface::NetworkPerformance::NetworkPerformance()
+: _iphlp_attached(false) {
+}
+
+bool NetworkPerformanceInterface::NetworkPerformance::initialize() {
+  _iphlp_attached = IphlpDll::IphlpAttach();
+  return _iphlp_attached;
+}
+
+NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {
+  if (_iphlp_attached) {
+    IphlpDll::IphlpDetach();
+  }
+}
+
+int NetworkPerformanceInterface::NetworkPerformance::network_utilization(NetworkInterface** network_interfaces) const {
+  MIB_IF_TABLE2* table;
+
+  if (IphlpDll::GetIfTable2(&table) != NO_ERROR) {
+    return OS_ERR;
+  }
+
+  NetworkInterface* ret = NULL;
+  for (ULONG i = 0; i < table->NumEntries; ++i) {
+    if (table->Table[i].InterfaceAndOperStatusFlags.FilterInterface) {
+      continue;
+    }
+
+    char buf[256];
+    if (WideCharToMultiByte(CP_UTF8, 0, table->Table[i].Description, -1, buf, sizeof(buf), NULL, NULL) == 0) {
+      continue;
+    }
+
+    NetworkInterface* cur = new NetworkInterface(buf, table->Table[i].InOctets, table->Table[i].OutOctets, ret);
+    ret = cur;
+  }
+
+  IphlpDll::FreeMibTable(table);
+  *network_interfaces = ret;
+
+  return OS_OK;
+}
+
+NetworkPerformanceInterface::NetworkPerformanceInterface() {
+  _impl = NULL;
+}
+
+NetworkPerformanceInterface::~NetworkPerformanceInterface() {
+  if (_impl != NULL) {
+    delete _impl;
+  }
+}
+
+bool NetworkPerformanceInterface::initialize() {
+  _impl = new NetworkPerformanceInterface::NetworkPerformance();
+  return _impl != NULL && _impl->initialize();
+}
+
+int NetworkPerformanceInterface::network_utilization(NetworkInterface** network_interfaces) const {
+  return _impl->network_utilization(network_interfaces);
 }

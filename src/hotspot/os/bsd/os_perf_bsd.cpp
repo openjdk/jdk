@@ -34,6 +34,10 @@
   #include <sys/sysctl.h>
   #include <mach/mach.h>
   #include <mach/task_info.h>
+  #include <sys/socket.h>
+  #include <net/if.h>
+  #include <net/if_dl.h>
+  #include <net/route.h>
 #endif
 
 static const double NANOS_PER_SEC = 1000000000.0;
@@ -402,4 +406,86 @@ int CPUInformationInterface::cpu_information(CPUInformation& cpu_info) {
 
   cpu_info = *_cpu_info; // shallow copy assignment
   return OS_OK;
+}
+
+class NetworkPerformanceInterface::NetworkPerformance : public CHeapObj<mtInternal> {
+  friend class NetworkPerformanceInterface;
+ private:
+  NetworkPerformance();
+  NetworkPerformance(const NetworkPerformance& rhs); // no impl
+  NetworkPerformance& operator=(const NetworkPerformance& rhs); // no impl
+  bool initialize();
+  ~NetworkPerformance();
+  int network_utilization(NetworkInterface** network_interfaces) const;
+};
+
+NetworkPerformanceInterface::NetworkPerformance::NetworkPerformance() {
+}
+
+bool NetworkPerformanceInterface::NetworkPerformance::initialize() {
+  return true;
+}
+
+NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {
+}
+
+int NetworkPerformanceInterface::NetworkPerformance::network_utilization(NetworkInterface** network_interfaces) const {
+  size_t len;
+  int mib[] = {CTL_NET, PF_ROUTE, /* protocol number */ 0, /* address family */ 0, NET_RT_IFLIST2, /* NET_RT_FLAGS mask*/ 0};
+  if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), NULL, &len, NULL, 0) != 0) {
+    return OS_ERR;
+  }
+  uint8_t* buf = NEW_RESOURCE_ARRAY(uint8_t, len);
+  if (sysctl(mib, sizeof(mib) / sizeof(mib[0]), buf, &len, NULL, 0) != 0) {
+    return OS_ERR;
+  }
+
+  size_t index = 0;
+  NetworkInterface* ret = NULL;
+  while (index < len) {
+    if_msghdr* msghdr = reinterpret_cast<if_msghdr*>(buf + index);
+    index += msghdr->ifm_msglen;
+
+    if (msghdr->ifm_type != RTM_IFINFO2) {
+      continue;
+    }
+
+    if_msghdr2* msghdr2 = reinterpret_cast<if_msghdr2*>(msghdr);
+    sockaddr_dl* sockaddr = reinterpret_cast<sockaddr_dl*>(msghdr2 + 1);
+
+    // The interface name is not necessarily NUL-terminated
+    char name_buf[128];
+    size_t name_len = MIN2(sizeof(name_buf) - 1, static_cast<size_t>(sockaddr->sdl_nlen));
+    strncpy(name_buf, sockaddr->sdl_data, name_len);
+    name_buf[name_len] = '\0';
+
+    uint64_t bytes_in = msghdr2->ifm_data.ifi_ibytes;
+    uint64_t bytes_out = msghdr2->ifm_data.ifi_obytes;
+
+    NetworkInterface* cur = new NetworkInterface(name_buf, bytes_in, bytes_out, ret);
+    ret = cur;
+  }
+
+  *network_interfaces = ret;
+
+  return OS_OK;
+}
+
+NetworkPerformanceInterface::NetworkPerformanceInterface() {
+  _impl = NULL;
+}
+
+NetworkPerformanceInterface::~NetworkPerformanceInterface() {
+  if (_impl != NULL) {
+    delete _impl;
+  }
+}
+
+bool NetworkPerformanceInterface::initialize() {
+  _impl = new NetworkPerformanceInterface::NetworkPerformance();
+  return _impl != NULL && _impl->initialize();
+}
+
+int NetworkPerformanceInterface::network_utilization(NetworkInterface** network_interfaces) const {
+  return _impl->network_utilization(network_interfaces);
 }

@@ -44,6 +44,8 @@
 #include <dlfcn.h>
 #include <pthread.h>
 #include <limits.h>
+#include <ifaddrs.h>
+#include <fcntl.h>
 
 /**
    /proc/[number]/stat
@@ -1047,4 +1049,95 @@ int CPUInformationInterface::cpu_information(CPUInformation& cpu_info) {
 
   cpu_info = *_cpu_info; // shallow copy assignment
   return OS_OK;
+}
+
+class NetworkPerformanceInterface::NetworkPerformance : public CHeapObj<mtInternal> {
+  friend class NetworkPerformanceInterface;
+ private:
+  NetworkPerformance();
+  NetworkPerformance(const NetworkPerformance& rhs); // no impl
+  NetworkPerformance& operator=(const NetworkPerformance& rhs); // no impl
+  bool initialize();
+  ~NetworkPerformance();
+  int64_t read_counter(const char* iface, const char* counter) const;
+  int network_utilization(NetworkInterface** network_interfaces) const;
+};
+
+NetworkPerformanceInterface::NetworkPerformance::NetworkPerformance() {
+
+}
+
+bool NetworkPerformanceInterface::NetworkPerformance::initialize() {
+  return true;
+}
+
+NetworkPerformanceInterface::NetworkPerformance::~NetworkPerformance() {
+}
+
+int64_t NetworkPerformanceInterface::NetworkPerformance::read_counter(const char* iface, const char* counter) const {
+  char buf[128];
+
+  snprintf(buf, sizeof(buf), "/sys/class/net/%s/statistics/%s", iface, counter);
+
+  int fd = open(buf, O_RDONLY);
+  if (fd == -1) {
+    return -1;
+  }
+
+  ssize_t num_bytes = read(fd, buf, sizeof(buf));
+  close(fd);
+  if ((num_bytes == -1) || (num_bytes >= static_cast<ssize_t>(sizeof(buf))) || (num_bytes < 1)) {
+    return -1;
+  }
+
+  buf[num_bytes] = '\0';
+  int64_t value = strtoll(buf, NULL, 10);
+
+  return value;
+}
+
+int NetworkPerformanceInterface::NetworkPerformance::network_utilization(NetworkInterface** network_interfaces) const
+{
+  ifaddrs* addresses;
+  ifaddrs* cur_address;
+
+  if (getifaddrs(&addresses) != 0) {
+    return OS_ERR;
+  }
+
+  NetworkInterface* ret = NULL;
+  for (cur_address = addresses; cur_address != NULL; cur_address = cur_address->ifa_next) {
+    if (cur_address->ifa_addr->sa_family != AF_PACKET) {
+      continue;
+    }
+
+    int64_t bytes_in = read_counter(cur_address->ifa_name, "rx_bytes");
+    int64_t bytes_out = read_counter(cur_address->ifa_name, "tx_bytes");
+
+    NetworkInterface* cur = new NetworkInterface(cur_address->ifa_name, bytes_in, bytes_out, ret);
+    ret = cur;
+  }
+
+  *network_interfaces = ret;
+
+  return OS_OK;
+}
+
+NetworkPerformanceInterface::NetworkPerformanceInterface() {
+  _impl = NULL;
+}
+
+NetworkPerformanceInterface::~NetworkPerformanceInterface() {
+  if (_impl != NULL) {
+    delete _impl;
+  }
+}
+
+bool NetworkPerformanceInterface::initialize() {
+  _impl = new NetworkPerformanceInterface::NetworkPerformance();
+  return _impl != NULL && _impl->initialize();
+}
+
+int NetworkPerformanceInterface::network_utilization(NetworkInterface** network_interfaces) const {
+  return _impl->network_utilization(network_interfaces);
 }
