@@ -109,7 +109,10 @@ class arrayOopDesc : public oopDesc {
     return *(int*)(((intptr_t)this) + length_offset_in_bytes());
   }
   void set_length(int length) {
-    *(int*)(((intptr_t)this) + length_offset_in_bytes()) = length;
+    set_length((HeapWord*)this, length);
+  }
+  static void set_length(HeapWord* mem, int length) {
+    *(int*)(((char*)mem) + length_offset_in_bytes()) = length;
   }
 
   // Should only be called with constants as argument

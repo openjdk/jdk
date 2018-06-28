@@ -57,7 +57,7 @@ class ThreadHeapSampler {
   size_t bytes_until_sample()                    { return _bytes_until_sample;   }
   void set_bytes_until_sample(size_t bytes)      { _bytes_until_sample = bytes;  }
 
-  void check_for_sampling(HeapWord* obj, size_t size_in_bytes, size_t bytes_allocated_before = 0);
+  void check_for_sampling(oop obj, size_t size_in_bytes, size_t bytes_allocated_before);
 
   static int enabled();
   static void enable();

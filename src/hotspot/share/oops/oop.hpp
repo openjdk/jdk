@@ -69,6 +69,7 @@ class oopDesc {
 
   inline void set_mark(volatile markOop m);
   inline void set_mark_raw(volatile markOop m);
+  static inline void set_mark_raw(HeapWord* mem, markOop m);
 
   inline void release_set_mark(markOop m);
   inline markOop cas_set_mark(markOop new_mark, markOop old_mark);
@@ -82,15 +83,18 @@ class oopDesc {
   inline Klass* klass() const;
   inline Klass* klass_or_null() const volatile;
   inline Klass* klass_or_null_acquire() const volatile;
+  static inline Klass** klass_addr(HeapWord* mem);
+  static inline narrowKlass* compressed_klass_addr(HeapWord* mem);
   inline Klass** klass_addr();
   inline narrowKlass* compressed_klass_addr();
 
   inline void set_klass(Klass* k);
-  inline void release_set_klass(Klass* k);
+  static inline void release_set_klass(HeapWord* mem, Klass* klass);
 
   // For klass field compression
   inline int klass_gap() const;
   inline void set_klass_gap(int z);
+  static inline void set_klass_gap(HeapWord* mem, int z);
   // For when the klass pointer is being used as a linked list "next" field.
   inline void set_klass_to_list_ptr(oop k);
   inline oop list_ptr_from_klass();

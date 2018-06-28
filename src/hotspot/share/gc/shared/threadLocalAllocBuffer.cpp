@@ -185,10 +185,6 @@ void ThreadLocalAllocBuffer::fill(HeapWord* start,
 
   initialize(start, top, start + new_size - alignment_reserve());
 
-  if (ThreadHeapSampler::enabled()) {
-    set_sample_end();
-  }
-
   // Reset amount of internal fragmentation
   set_refill_waste_limit(initial_refill_waste_limit());
 }
@@ -325,14 +321,14 @@ void ThreadLocalAllocBuffer::verify() {
 void ThreadLocalAllocBuffer::set_sample_end() {
   size_t heap_words_remaining = pointer_delta(_end, _top);
   size_t bytes_until_sample = myThread()->heap_sampler().bytes_until_sample();
-  size_t words_until_sample = bytes_until_sample / HeapWordSize;;
+  size_t words_until_sample = bytes_until_sample / HeapWordSize;
 
   if (heap_words_remaining > words_until_sample) {
     HeapWord* new_end = _top + words_until_sample;
     set_end(new_end);
     _bytes_since_last_sample_point = bytes_until_sample;
   } else {
-    _bytes_since_last_sample_point = heap_words_remaining * HeapWordSize;;
+    _bytes_since_last_sample_point = heap_words_remaining * HeapWordSize;
   }
 }
 
@@ -344,18 +340,6 @@ Thread* ThreadLocalAllocBuffer::myThread() {
 
 void ThreadLocalAllocBuffer::set_back_allocation_end() {
   _end = _allocation_end;
-}
-
-HeapWord* ThreadLocalAllocBuffer::allocate_sampled_object(size_t size) {
-  set_back_allocation_end();
-  HeapWord* result = allocate(size);
-
-  if (result) {
-    myThread()->heap_sampler().check_for_sampling(result, size * HeapWordSize, _bytes_since_last_sample_point);
-    set_sample_end();
-  }
-
-  return result;
 }
 
 HeapWord* ThreadLocalAllocBuffer::hard_end() {

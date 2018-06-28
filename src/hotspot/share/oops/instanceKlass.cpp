@@ -1184,8 +1184,8 @@ objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
   }
   int size = objArrayOopDesc::object_size(length);
   Klass* ak = array_klass(n, CHECK_NULL);
-  objArrayOop o =
-    (objArrayOop)CollectedHeap::array_allocate(ak, size, length, CHECK_NULL);
+  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
+                                                                /* do_zero */ true, CHECK_NULL);
   return o;
 }
 
@@ -1210,7 +1210,7 @@ instanceOop InstanceKlass::allocate_instance(TRAPS) {
 
   instanceOop i;
 
-  i = (instanceOop)CollectedHeap::obj_allocate(this, size, CHECK_NULL);
+  i = (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
   if (has_finalizer_flag && !RegisterFinalizersAtInit) {
     i = register_finalizer(i, CHECK_NULL);
   }
