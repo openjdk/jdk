@@ -23,7 +23,7 @@
 JAVA="$TESTJAVA/bin/java"
 JAVA_OPTS="$TESTJAVAOPTS $TESTVMOPTS -cp $TESTCLASSPATH -agentlib:alloc001"
 
-. ${TESTSRC}/../../../../../../../../../open/test/hotspot/jtreg/test_env.sh
+. ${TESTSRC}/../../../../../test_env.sh
 
 # Set virtual memory usage limit to be not 'unlimited' on unix platforms
 # This is workaround for 6683371.
