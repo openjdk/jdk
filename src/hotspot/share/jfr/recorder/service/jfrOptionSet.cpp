@@ -665,13 +665,11 @@ bool JfrOptionSet::adjust_memory_options() {
   return true;
 }
 
-static const char XXFlightRecorderOptions[] = "-XX:FlightRecorderOptions";
-
 bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, char* delimiter) {
   assert(option != NULL, "invariant");
   assert(delimiter != NULL, "invariant");
   assert((*option)->optionString != NULL, "invariant");
-  assert(strncmp((*option)->optionString, XXFlightRecorderOptions, sizeof XXFlightRecorderOptions - 1) == 0, "invariant");
+  assert(strncmp((*option)->optionString, "-XX:FlightRecorderOptions", 25) == 0, "invariant");
   if (*delimiter == '\0') {
     // -XX:FlightRecorderOptions without any delimiter and values
   } else {
@@ -683,20 +681,19 @@ bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, cha
 }
 
 static GrowableArray<const char*>* startup_recording_options_array = NULL;
-static const char XXStartFlightRecordingOption[] = "-XX:StartFlightRecording";
 
 bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
   assert(option != NULL, "invariant");
   assert(delimiter != NULL, "invariant");
   assert((*option)->optionString != NULL, "invariant");
-  assert(strncmp((*option)->optionString, XXStartFlightRecordingOption, sizeof XXStartFlightRecordingOption - 1) == 0, "invariant");
+  assert(strncmp((*option)->optionString, "-XX:StartFlightRecording", 24) == 0, "invariant");
   const char* value = NULL;
   if (*delimiter == '\0') {
     // -XX:StartFlightRecording without any delimiter and values
     // Add dummy value "dumponexit=false" so -XX:StartFlightRecording can be used without explicit values.
     // The existing option->optionString points to stack memory so no need to deallocate.
     const_cast<JavaVMOption*>(*option)->optionString = (char*)"-XX:StartFlightRecording=dumponexit=false";
-    value = (*option)->optionString + sizeof XXStartFlightRecordingOption;
+    value = (*option)->optionString + 25;
   } else {
     // -XX:StartFlightRecording[=|:]
     // set delimiter to '='
