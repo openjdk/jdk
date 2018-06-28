@@ -20,10 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.amd64;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.Options.GraalArithmeticStubs;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,7 +71,7 @@ import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
 import jdk.vm.ci.meta.Value;
 import jdk.vm.ci.runtime.JVMCIBackend;
@@ -88,7 +91,7 @@ public class AMD64HotSpotBackendFactory implements HotSpotBackendFactory {
 
     @Override
     @SuppressWarnings("try")
-    public HotSpotBackend createBackend(HotSpotGraalRuntimeProvider graalRuntime, CompilerConfiguration compilerConfiguration, HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotBackend host) {
+    public HotSpotBackend createBackend(HotSpotGraalRuntimeProvider graalRuntime, CompilerConfiguration compilerConfiguration, HotSpotJVMCIRuntime jvmciRuntime, HotSpotBackend host) {
         assert host == null;
 
         OptionValues options = graalRuntime.getOptions();
@@ -160,7 +163,7 @@ public class AMD64HotSpotBackendFactory implements HotSpotBackendFactory {
                     HotSpotSnippetReflectionProvider snippetReflection, HotSpotReplacementsImpl replacements, HotSpotWordTypes wordTypes, HotSpotStampProvider stampProvider) {
         Plugins plugins = HotSpotGraphBuilderPlugins.create(compilerConfiguration, config, wordTypes, metaAccess, constantReflection, snippetReflection, foreignCalls, lowerer, stampProvider,
                         replacements);
-        AMD64GraphBuilderPlugins.register(plugins, replacements.getDefaultReplacementBytecodeProvider(), (AMD64) target.arch, GraalArithmeticStubs.getValue(options));
+        AMD64GraphBuilderPlugins.register(plugins, replacements.getDefaultReplacementBytecodeProvider(), (AMD64) target.arch, GraalArithmeticStubs.getValue(options), false);
         return plugins;
     }
 
@@ -176,7 +179,7 @@ public class AMD64HotSpotBackendFactory implements HotSpotBackendFactory {
         return new HotSpotReplacementsImpl(options, p, snippetReflection, bytecodeProvider, p.getCodeCache().getTarget());
     }
 
-    protected AMD64HotSpotForeignCallsProvider createForeignCalls(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalRuntimeProvider runtime, HotSpotMetaAccessProvider metaAccess,
+    protected AMD64HotSpotForeignCallsProvider createForeignCalls(HotSpotJVMCIRuntime jvmciRuntime, HotSpotGraalRuntimeProvider runtime, HotSpotMetaAccessProvider metaAccess,
                     HotSpotCodeCacheProvider codeCache, WordTypes wordTypes, Value[] nativeABICallerSaveRegisters) {
         return new AMD64HotSpotForeignCallsProvider(jvmciRuntime, runtime, metaAccess, codeCache, wordTypes, nativeABICallerSaveRegisters);
     }

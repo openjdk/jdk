@@ -40,6 +40,7 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
      */
     boolean isCallerSensitive();
 
+    @Override
     HotSpotResolvedObjectType getDeclaringClass();
 
     /**
@@ -84,6 +85,7 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
      */
     boolean hasCompiledCodeAtLevel(int level);
 
+    @Override
     default boolean isDefault() {
         if (isConstructor()) {
             return false;

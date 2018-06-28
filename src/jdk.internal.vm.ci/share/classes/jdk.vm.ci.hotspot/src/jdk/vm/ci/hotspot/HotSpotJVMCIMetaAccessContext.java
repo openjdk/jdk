@@ -44,7 +44,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  * longer used.
  *
  */
-public class HotSpotJVMCIMetaAccessContext {
+class HotSpotJVMCIMetaAccessContext {
 
     /**
      * The set of currently live contexts used for tracking of live metadata. Examined from the VM
@@ -207,6 +207,7 @@ public class HotSpotJVMCIMetaAccessContext {
             return head;
         }
 
+        @Override
         public Iterator<T> iterator() {
             return new ChunkIterator<>();
         }
@@ -244,10 +245,12 @@ public class HotSpotJVMCIMetaAccessContext {
                 return result;
             }
 
+            @Override
             public boolean hasNext() {
                 return next != null;
             }
 
+            @Override
             public V next() {
                 V result = next;
                 next = findNext();

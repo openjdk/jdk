@@ -124,6 +124,16 @@ public class TestResolvedJavaType extends TypeUniverse {
     }
 
     @Test
+    public void isEnumTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            boolean expected = c.isEnum();
+            boolean actual = type.isEnum();
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
     public void isInstanceClassTest() {
         for (Class<?> c : classes) {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
@@ -971,16 +981,14 @@ public class TestResolvedJavaType extends TypeUniverse {
         "hasFinalizableSubclass",
         "hasFinalizer",
         "getSourceFileName",
-        "getClassFilePath",
         "isLocal",
         "isJavaLangObject",
         "isMember",
         "getElementalType",
         "getEnclosingType",
-        "$jacocoInit",
-        "isCpiSet",
-        "getCorrespondingCpi",
-        "setCorrespondingCpi"
+        "lookupType",
+        "resolveField",
+        "$jacocoInit"
     };
     // @formatter:on
 

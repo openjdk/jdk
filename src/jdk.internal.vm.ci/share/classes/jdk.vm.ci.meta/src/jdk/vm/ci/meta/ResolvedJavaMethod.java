@@ -25,6 +25,7 @@ package jdk.vm.ci.meta;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
@@ -60,6 +61,7 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * Returns the {@link ResolvedJavaType} object representing the class or interface that declares
      * this method.
      */
+    @Override
     ResolvedJavaType getDeclaringClass();
 
     /**
@@ -273,14 +275,17 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
             return method.isVarArgs() && index == method.getSignature().getParameterCount(false) - 1;
         }
 
+        @Override
         public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
             return method.getParameterAnnotations(annotationClass)[index];
         }
 
+        @Override
         public Annotation[] getAnnotations() {
             return method.getParameterAnnotations()[index];
         }
 
+        @Override
         public Annotation[] getDeclaredAnnotations() {
             return getAnnotations();
         }
@@ -460,4 +465,15 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
     }
 
     SpeculationLog getSpeculationLog();
+
+    /**
+     *
+     * @param object
+     * @param args
+     * @throws InvocationTargetException
+     * @throws IllegalAccessException
+     */
+    default JavaConstant invoke(JavaConstant object, JavaConstant... args) throws InvocationTargetException, IllegalAccessException {
+        throw new InternalError("unimplemented");
+    }
 }

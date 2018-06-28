@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package org.graalvm.compiler.core.aarch64;
 
 import static jdk.vm.ci.aarch64.AArch64.sp;
@@ -134,24 +136,24 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
 
     @Override
     public Value emitDiv(Value a, Value b, LIRFrameState state) {
-        return emitBinary(LIRKind.combine(a, b), getOpCode(a, AArch64ArithmeticOp.DIV, AArch64ArithmeticOp.FDIV), false, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b));
+        return emitBinary(LIRKind.combine(a, b), getOpCode(a, AArch64ArithmeticOp.DIV, AArch64ArithmeticOp.FDIV), false, asAllocatable(a), asAllocatable(b));
     }
 
     @Override
     public Value emitRem(Value a, Value b, LIRFrameState state) {
-        return emitBinary(LIRKind.combine(a, b), getOpCode(a, AArch64ArithmeticOp.REM, AArch64ArithmeticOp.FREM), false, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b));
+        return emitBinary(LIRKind.combine(a, b), getOpCode(a, AArch64ArithmeticOp.REM, AArch64ArithmeticOp.FREM), false, asAllocatable(a), asAllocatable(b));
     }
 
     @Override
     public Value emitUDiv(Value a, Value b, LIRFrameState state) {
         assert isNumericInteger(a.getPlatformKind());
-        return emitBinary(LIRKind.combine(a, b), AArch64ArithmeticOp.UDIV, false, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b));
+        return emitBinary(LIRKind.combine(a, b), AArch64ArithmeticOp.UDIV, false, asAllocatable(a), asAllocatable(b));
     }
 
     @Override
     public Value emitURem(Value a, Value b, LIRFrameState state) {
         assert isNumericInteger(a.getPlatformKind());
-        return emitBinary(LIRKind.combine(a, b), AArch64ArithmeticOp.UREM, false, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b));
+        return emitBinary(LIRKind.combine(a, b), AArch64ArithmeticOp.UREM, false, asAllocatable(a), asAllocatable(b));
     }
 
     @Override
@@ -195,7 +197,7 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
         PlatformKind resultPlatformKind = getFloatConvertResultKind(op);
         LIRKind resultLirKind = LIRKind.combine(inputVal).changeType(resultPlatformKind);
         Variable result = getLIRGen().newVariable(resultLirKind);
-        getLIRGen().append(new AArch64FloatConvertOp(op, result, getLIRGen().asAllocatable(inputVal)));
+        getLIRGen().append(new AArch64FloatConvertOp(op, result, asAllocatable(inputVal)));
         return result;
     }
 
@@ -227,7 +229,7 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
             return inputVal;
         }
         Variable result = getLIRGen().newVariable(to);
-        getLIRGen().append(new AArch64ReinterpretOp(result, getLIRGen().asAllocatable(inputVal)));
+        getLIRGen().append(new AArch64ReinterpretOp(result, asAllocatable(inputVal)));
         return result;
     }
 
@@ -273,7 +275,7 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
             return new ConstantValue(resultKind, JavaConstant.forLong((constant << shiftCount) >> shiftCount));
         }
         Variable result = getLIRGen().newVariable(resultKind);
-        getLIRGen().append(new AArch64SignExtendOp(result, getLIRGen().asAllocatable(inputVal), fromBits, toBits));
+        getLIRGen().append(new AArch64SignExtendOp(result, asAllocatable(inputVal), fromBits, toBits));
         return result;
     }
 
@@ -290,11 +292,11 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
     protected Variable emitBinary(ValueKind<?> resultKind, AArch64ArithmeticOp op, boolean commutative, Value a, Value b) {
         Variable result = getLIRGen().newVariable(resultKind);
         if (isValidBinaryConstant(op, a, b)) {
-            emitBinaryConst(result, op, getLIRGen().asAllocatable(a), asJavaConstant(b));
+            emitBinaryConst(result, op, asAllocatable(a), asJavaConstant(b));
         } else if (commutative && isValidBinaryConstant(op, b, a)) {
-            emitBinaryConst(result, op, getLIRGen().asAllocatable(b), asJavaConstant(a));
+            emitBinaryConst(result, op, asAllocatable(b), asJavaConstant(a));
         } else {
-            emitBinaryVar(result, op, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b));
+            emitBinaryVar(result, op, asAllocatable(a), asAllocatable(b));
         }
         return result;
     }
@@ -397,26 +399,26 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
     @Override
     public Value emitBitScanReverse(Value value) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
-        getLIRGen().append(new AArch64BitManipulationOp(BSR, result, getLIRGen().asAllocatable(value)));
+        getLIRGen().append(new AArch64BitManipulationOp(BSR, result, asAllocatable(value)));
         return result;
     }
 
     @Override
     public Value emitCountLeadingZeros(Value value) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
-        getLIRGen().append(new AArch64BitManipulationOp(CLZ, result, getLIRGen().asAllocatable(value)));
+        getLIRGen().append(new AArch64BitManipulationOp(CLZ, result, asAllocatable(value)));
         return result;
     }
 
     @Override
     public Value emitCountTrailingZeros(Value value) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(value).changeType(AArch64Kind.DWORD));
-        getLIRGen().append(new AArch64BitManipulationOp(CTZ, result, getLIRGen().asAllocatable(value)));
+        getLIRGen().append(new AArch64BitManipulationOp(CTZ, result, asAllocatable(value)));
         return result;
     }
 
     private Variable emitUnary(AArch64ArithmeticOp op, Value inputVal) {
-        AllocatableValue input = getLIRGen().asAllocatable(inputVal);
+        AllocatableValue input = asAllocatable(inputVal);
         Variable result = getLIRGen().newVariable(LIRKind.combine(input));
         getLIRGen().append(new AArch64ArithmeticOp.UnaryOp(op, result, input));
         return result;
@@ -462,7 +464,7 @@ public class AArch64ArithmeticLIRGenerator extends ArithmeticLIRGenerator implem
                 return;
             }
         }
-        AllocatableValue input = getLIRGen().asAllocatable(inputVal);
+        AllocatableValue input = asAllocatable(inputVal);
         getLIRGen().append(new StoreOp(kind, storeAddress, input, state));
     }
 

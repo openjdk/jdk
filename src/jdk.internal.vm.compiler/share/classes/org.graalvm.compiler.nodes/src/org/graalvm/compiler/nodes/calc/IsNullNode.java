@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.nodes.calc;
 
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
@@ -29,6 +31,7 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.spi.CanonicalizerTool;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
+import org.graalvm.compiler.nodes.CompressionNode;
 import org.graalvm.compiler.nodes.LogicConstantNode;
 import org.graalvm.compiler.nodes.LogicNode;
 import org.graalvm.compiler.nodes.NodeView;
@@ -42,6 +45,7 @@ import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.type.StampTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
 
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.TriState;
 
 /**
@@ -52,22 +56,27 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
 
     public static final NodeClass<IsNullNode> TYPE = NodeClass.create(IsNullNode.class);
 
-    public IsNullNode(ValueNode object) {
+    /*
+     * When linear pointer compression is enabled, compressed and uncompressed nulls differ.
+     */
+    private final JavaConstant nullConstant;
+
+    private IsNullNode(ValueNode object, JavaConstant nullConstant) {
         super(TYPE, object);
+        this.nullConstant = nullConstant;
         assert object != null;
     }
 
-    public static LogicNode create(ValueNode forValue) {
-        return canonicalized(null, forValue);
+    public IsNullNode(ValueNode object) {
+        this(object, JavaConstant.NULL_POINTER);
     }
 
-    public static LogicNode tryCanonicalize(ValueNode forValue) {
-        if (StampTool.isPointerAlwaysNull(forValue)) {
-            return LogicConstantNode.tautology();
-        } else if (StampTool.isPointerNonNull(forValue)) {
-            return LogicConstantNode.contradiction();
-        }
-        return null;
+    public JavaConstant nullConstant() {
+        return nullConstant;
+    }
+
+    public static LogicNode create(ValueNode forValue) {
+        return canonicalized(null, forValue, JavaConstant.NULL_POINTER);
     }
 
     @Override
@@ -84,31 +93,46 @@ public final class IsNullNode extends UnaryOpLogicNode implements LIRLowerable, 
 
     @Override
     public ValueNode canonical(CanonicalizerTool tool, ValueNode forValue) {
-        return canonicalized(this, forValue);
+        return canonicalized(this, forValue, nullConstant);
     }
 
-    private static LogicNode canonicalized(IsNullNode isNullNode, ValueNode forValue) {
-        IsNullNode self = isNullNode;
-        LogicNode result = tryCanonicalize(forValue);
-        if (result != null) {
-            return result;
-        }
-
-        if (forValue instanceof PiNode) {
-            return IsNullNode.create(GraphUtil.skipPi(forValue));
-        }
-
-        if (forValue instanceof ConvertNode) {
-            ConvertNode convertNode = (ConvertNode) forValue;
-            if (convertNode.mayNullCheckSkipConversion()) {
-                return IsNullNode.create(convertNode.getValue());
+    private static LogicNode canonicalized(IsNullNode node, ValueNode forValue, JavaConstant forNullConstant) {
+        JavaConstant nullConstant = forNullConstant;
+        ValueNode value = forValue;
+        while (true) {
+            if (StampTool.isPointerAlwaysNull(value)) {
+                return LogicConstantNode.tautology();
+            } else if (StampTool.isPointerNonNull(value)) {
+                return LogicConstantNode.contradiction();
             }
-        }
 
-        if (self == null) {
-            self = new IsNullNode(GraphUtil.skipPi(forValue));
+            if (value instanceof PiNode) {
+                value = GraphUtil.skipPi(value);
+                continue;
+            }
+
+            if (value instanceof ConvertNode) {
+                ConvertNode convertNode = (ConvertNode) value;
+                if (convertNode.mayNullCheckSkipConversion()) {
+                    value = convertNode.getValue();
+                    continue;
+                }
+                /*
+                 * CompressionNode.mayNullCheckSkipConversion returns false when linear pointer
+                 * compression is enabled.
+                 */
+                if (value instanceof CompressionNode) {
+                    CompressionNode compressionNode = (CompressionNode) value;
+                    nullConstant = compressionNode.nullConstant();
+                    value = compressionNode.getValue();
+                    continue;
+                }
+            }
+            /*
+             * If we are at original node, just return it. Otherwise create a new node.
+             */
+            return (node != null && value == forValue) ? node : new IsNullNode(value, nullConstant);
         }
-        return self;
     }
 
     @Override

@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.test;
 
 import static java.lang.reflect.Modifier.FINAL;
@@ -34,15 +36,15 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.graalvm.compiler.core.common.util.Util;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
+import org.junit.Assert;
+import org.junit.Test;
 
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaField;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Tests {@link HotSpotResolvedJavaField} functionality.
@@ -91,7 +93,7 @@ public class HotSpotResolvedJavaFieldTest extends HotSpotGraalCompilerTest {
     @Test
     public void testModifiersForInternal() {
         for (Class<?> c : classesWithInternalFields) {
-            HotSpotResolvedObjectType type = HotSpotResolvedObjectType.fromObjectClass(c);
+            ResolvedJavaType type = getMetaAccess().lookupJavaType(c);
             for (ResolvedJavaField field : type.getInstanceFields(false)) {
                 if (field.isInternal()) {
                     Assert.assertEquals(0, ~jvmFieldModifiers() & field.getModifiers());
@@ -101,9 +103,9 @@ public class HotSpotResolvedJavaFieldTest extends HotSpotGraalCompilerTest {
     }
 
     /**
-     * Tests that {@code HotSpotResolvedObjectType#createField(String, JavaType, long, int)} always
-     * returns an {@linkplain ResolvedJavaField#equals(Object) equivalent} object for an internal
-     * field.
+     * Tests that {@code HotSpotResolvedObjectTypeImpl#createField(String, JavaType, long, int)}
+     * always returns an {@linkplain ResolvedJavaField#equals(Object) equivalent} object for an
+     * internal field.
      *
      * @throws InvocationTargetException
      * @throws IllegalArgumentException
@@ -112,12 +114,12 @@ public class HotSpotResolvedJavaFieldTest extends HotSpotGraalCompilerTest {
     @Test
     public void testEquivalenceForInternalFields() throws IllegalAccessException, IllegalArgumentException, InvocationTargetException {
         for (Class<?> c : classesWithInternalFields) {
-            HotSpotResolvedObjectType type = HotSpotResolvedObjectType.fromObjectClass(c);
+            ResolvedJavaType type = getMetaAccess().lookupJavaType(c);
             for (ResolvedJavaField field : type.getInstanceFields(false)) {
                 if (field.isInternal()) {
                     HotSpotResolvedJavaField expected = (HotSpotResolvedJavaField) field;
                     int index = indexField.getInt(expected);
-                    ResolvedJavaField actual = (ResolvedJavaField) createFieldMethod.invoke(type, expected.getType(), expected.offset(), expected.getModifiers(), index);
+                    ResolvedJavaField actual = (ResolvedJavaField) createFieldMethod.invoke(type, expected.getType(), expected.getOffset(), expected.getModifiers(), index);
                     Assert.assertEquals(expected, actual);
                 }
             }
@@ -128,7 +130,7 @@ public class HotSpotResolvedJavaFieldTest extends HotSpotGraalCompilerTest {
     public void testIsInObject() {
         for (Field f : String.class.getDeclaredFields()) {
             HotSpotResolvedJavaField rf = (HotSpotResolvedJavaField) getMetaAccess().lookupJavaField(f);
-            Assert.assertEquals(rf.toString(), rf.isInObject("a string"), !rf.isStatic());
+            Assert.assertEquals(rf.toString(), rf.isInObject(getConstantReflection().forString("a string")), !rf.isStatic());
         }
     }
 }

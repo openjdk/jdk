@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.nodes;
 
 import static org.graalvm.compiler.nodeinfo.InputType.Condition;
@@ -41,7 +43,7 @@ import org.graalvm.compiler.nodes.extended.GuardingNode;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
-import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.SpeculationLog.Speculation;
 
 /**
  * A guard is a node that deoptimizes based on a conditional expression. Guards are not attached to
@@ -62,17 +64,17 @@ public class GuardNode extends FloatingAnchoredNode implements Canonicalizable, 
     @Input(Condition) protected LogicNode condition;
     protected DeoptimizationReason reason;
     protected DeoptimizationAction action;
-    protected JavaConstant speculation;
+    protected Speculation speculation;
     protected boolean negated;
     protected NodeSourcePosition noDeoptSuccessorPosition;
 
-    public GuardNode(LogicNode condition, AnchoringNode anchor, DeoptimizationReason reason, DeoptimizationAction action, boolean negated, JavaConstant speculation,
+    public GuardNode(LogicNode condition, AnchoringNode anchor, DeoptimizationReason reason, DeoptimizationAction action, boolean negated, Speculation speculation,
                     NodeSourcePosition noDeoptSuccessorPosition) {
         this(TYPE, condition, anchor, reason, action, negated, speculation, noDeoptSuccessorPosition);
     }
 
     protected GuardNode(NodeClass<? extends GuardNode> c, LogicNode condition, AnchoringNode anchor, DeoptimizationReason reason, DeoptimizationAction action, boolean negated,
-                    JavaConstant speculation, NodeSourcePosition noDeoptSuccessorPosition) {
+                    Speculation speculation, NodeSourcePosition noDeoptSuccessorPosition) {
         super(c, StampFactory.forVoid(), anchor);
         this.condition = condition;
         this.reason = reason;
@@ -113,11 +115,11 @@ public class GuardNode extends FloatingAnchoredNode implements Canonicalizable, 
     }
 
     @Override
-    public JavaConstant getSpeculation() {
+    public Speculation getSpeculation() {
         return speculation;
     }
 
-    public void setSpeculation(JavaConstant speculation) {
+    public void setSpeculation(Speculation speculation) {
         this.speculation = speculation;
     }
 

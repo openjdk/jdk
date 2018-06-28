@@ -20,14 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.GraalOptions.HotSpotPrintInlining;
 import static org.graalvm.compiler.debug.DebugContext.DEFAULT_LOG_STREAM;
+import static org.graalvm.compiler.hotspot.HotSpotGraalRuntime.HotSpotGC.CMS;
+import static org.graalvm.compiler.hotspot.HotSpotGraalRuntime.HotSpotGC.G1;
+import static org.graalvm.compiler.hotspot.HotSpotGraalRuntime.HotSpotGC.Parallel;
+import static org.graalvm.compiler.hotspot.HotSpotGraalRuntime.HotSpotGC.Serial;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -80,6 +85,7 @@ import jdk.vm.ci.hotspot.HotSpotResolvedJavaType;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.runtime.JVMCI;
@@ -92,15 +98,15 @@ import jdk.vm.ci.runtime.JVMCIBackend;
  */
 public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
-    private static boolean checkArrayIndexScaleInvariants() {
-        assert getArrayIndexScale(JavaKind.Byte) == 1;
-        assert getArrayIndexScale(JavaKind.Boolean) == 1;
-        assert getArrayIndexScale(JavaKind.Char) == 2;
-        assert getArrayIndexScale(JavaKind.Short) == 2;
-        assert getArrayIndexScale(JavaKind.Int) == 4;
-        assert getArrayIndexScale(JavaKind.Long) == 8;
-        assert getArrayIndexScale(JavaKind.Float) == 4;
-        assert getArrayIndexScale(JavaKind.Double) == 8;
+    private static boolean checkArrayIndexScaleInvariants(MetaAccessProvider metaAccess) {
+        assert metaAccess.getArrayIndexScale(JavaKind.Byte) == 1;
+        assert metaAccess.getArrayIndexScale(JavaKind.Boolean) == 1;
+        assert metaAccess.getArrayIndexScale(JavaKind.Char) == 2;
+        assert metaAccess.getArrayIndexScale(JavaKind.Short) == 2;
+        assert metaAccess.getArrayIndexScale(JavaKind.Int) == 4;
+        assert metaAccess.getArrayIndexScale(JavaKind.Long) == 8;
+        assert metaAccess.getArrayIndexScale(JavaKind.Float) == 4;
+        assert metaAccess.getArrayIndexScale(JavaKind.Double) == 8;
         return true;
     }
 
@@ -109,6 +115,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
     private final HotSpotBackend hostBackend;
     private final GlobalMetrics metricValues = new GlobalMetrics();
     private final List<SnippetCounter.Group> snippetCounterGroups;
+    private final HotSpotGC garbageCollector;
 
     private final EconomicMap<Class<? extends Architecture>, HotSpotBackend> backends = EconomicMap.create(Equivalence.IDENTITY);
 
@@ -126,6 +133,40 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
     private final DiagnosticsOutputDirectory outputDirectory;
     private final Map<ExceptionAction, Integer> compilationProblemsPerAction;
+
+    /**
+     * Constants denoting the GC algorithms available in HotSpot.
+     */
+    public enum HotSpotGC {
+        Serial("UseSerialGC"),
+        Parallel("UseParallelGC", "UseParallelOldGC", "UseParNewGC"),
+        CMS("UseConcMarkSweepGC"),
+        G1("UseG1GC"),
+        Epsilon("UseEpsilonGC"),
+        Z("UseZGC");
+
+        HotSpotGC(String... flags) {
+            this.flags = flags;
+        }
+
+        private final String[] flags;
+
+        public boolean isSelected(GraalHotSpotVMConfig config) {
+            for (String flag : flags) {
+                final boolean notPresent = false;
+                if (config.getFlag(flag, Boolean.class, notPresent)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+    }
+
+    /**
+     * Set of GCs supported by Graal.
+     */
+    private static final HotSpotGC[] SUPPORTED_GCS = {Serial, Parallel, CMS, G1};
 
     /**
      * @param nameQualifier a qualifier to be added to this runtime's {@linkplain #getName() name}
@@ -146,11 +187,24 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
         }
         OptionValues options = optionsRef.get();
 
-        if (config.useCMSGC) {
-            // Graal doesn't work with the CMS collector (e.g. GR-6777)
-            // and is deprecated (http://openjdk.java.net/jeps/291).
-            throw new GraalError("Graal does not support the CMS collector");
+        HotSpotGC selected = null;
+        for (HotSpotGC gc : SUPPORTED_GCS) {
+            if (gc.isSelected(config)) {
+                selected = gc;
+                break;
+            }
         }
+        if (selected == null) {
+            for (HotSpotGC gc : HotSpotGC.values()) {
+                if (gc.isSelected(config)) {
+                    selected = gc;
+                    break;
+                }
+            }
+            String unsupportedGC = selected != null ? selected.name() : "<unknown>";
+            throw new GraalError(unsupportedGC + " garbage collector is not supported by Graal");
+        }
+        garbageCollector = selected;
 
         outputDirectory = new DiagnosticsOutputDirectory(options);
         compilationProblemsPerAction = new EnumMap<>(ExceptionAction.class);
@@ -205,7 +259,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
 
         BenchmarkCounters.initialize(jvmciRuntime, options);
 
-        assert checkArrayIndexScaleInvariants();
+        assert checkArrayIndexScaleInvariants(hostJvmciBackend.getMetaAccess());
 
         runtimeStartTime = System.nanoTime();
         bootstrapJVMCI = config.getFlag("BootstrapJVMCI", Boolean.class);
@@ -234,7 +288,7 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
             if (compilable instanceof HotSpotResolvedJavaMethod) {
                 HotSpotResolvedObjectType type = ((HotSpotResolvedJavaMethod) compilable).getDeclaringClass();
                 if (type instanceof HotSpotResolvedJavaType) {
-                    Class<?> clazz = ((HotSpotResolvedJavaType) type).mirror();
+                    Class<?> clazz = runtime().getMirror(type);
                     try {
                         ClassLoader cl = clazz.getClassLoader();
                         if (cl != null) {
@@ -285,6 +339,10 @@ public final class HotSpotGraalRuntime implements HotSpotGraalRuntimeProvider {
             return (T) getHostProviders().getStampProvider();
         }
         return null;
+    }
+
+    public HotSpotGC getGarbageCollector() {
+        return garbageCollector;
     }
 
     @Override

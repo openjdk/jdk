@@ -52,6 +52,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      *
      * @return {@code true} if this type is an interface
      */
+    @Override
     boolean isInterface();
 
     /**
@@ -75,6 +76,13 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     default boolean isLeaf() {
         return getElementalType().isFinalFlagSet();
     }
+
+    /**
+     * Checks whether this type is an enum.
+     *
+     * @return {@code true} if this type is an enum
+     */
+    boolean isEnum();
 
     /**
      * Checks whether this type is initialized. If a type is initialized it implies that it was
@@ -186,8 +194,10 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      */
     AssumptionResult<ResolvedJavaType> findLeafConcreteSubtype();
 
+    @Override
     ResolvedJavaType getComponentType();
 
+    @Override
     default ResolvedJavaType getElementalType() {
         ResolvedJavaType t = this;
         while (t.isArray()) {
@@ -196,6 +206,7 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
         return t;
     }
 
+    @Override
     ResolvedJavaType getArrayClass();
 
     /**
@@ -328,4 +339,17 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * so they would to go through the normal {@link Object#clone} path.
      */
     boolean isCloneableWithAllocation();
+
+    /**
+     * Lookup an unresolved type relative to an existing resolved type.
+     */
+    @SuppressWarnings("unused")
+    default ResolvedJavaType lookupType(UnresolvedJavaType unresolvedJavaType, boolean resolve) {
+        return null;
+    }
+
+    @SuppressWarnings("unused")
+    default ResolvedJavaField resolveField(UnresolvedJavaField unresolvedJavaField, ResolvedJavaType accessingClass) {
+        return null;
+    }
 }

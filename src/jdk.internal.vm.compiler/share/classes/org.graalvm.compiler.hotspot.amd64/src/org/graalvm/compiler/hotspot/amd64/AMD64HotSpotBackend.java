@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.amd64;
 
 import static jdk.vm.ci.amd64.AMD64.r10;
@@ -223,7 +225,7 @@ public class AMD64HotSpotBackend extends HotSpotHostBackend {
         Assembler masm = createAssembler(frameMap);
         HotSpotFrameContext frameContext = new HotSpotFrameContext(stub != null, omitFrame);
         DataBuilder dataBuilder = new HotSpotDataBuilder(getCodeCache().getTarget());
-        CompilationResultBuilder crb = factory.createBuilder(getCodeCache(), getForeignCalls(), frameMap, masm, dataBuilder, frameContext, options, debug, compilationResult);
+        CompilationResultBuilder crb = factory.createBuilder(getCodeCache(), getForeignCalls(), frameMap, masm, dataBuilder, frameContext, options, debug, compilationResult, Register.None);
         crb.setTotalFrameSize(frameMap.totalFrameSize());
         crb.setMaxInterpreterFrameSize(gen.getMaxInterpreterFrameSize());
         StackSlot deoptimizationRescueSlot = gen.getDeoptimizationRescueSlot();

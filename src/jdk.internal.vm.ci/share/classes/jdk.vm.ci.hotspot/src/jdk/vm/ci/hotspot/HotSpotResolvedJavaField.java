@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaField;
 
 /**
@@ -35,9 +36,7 @@ public interface HotSpotResolvedJavaField extends ResolvedJavaField {
      * @return true iff this is a non-static field and its declaring class is assignable from
      *         {@code object}'s class
      */
-    boolean isInObject(Object object);
-
-    int offset();
+    boolean isInObject(JavaConstant object);
 
     /**
      * Determines if this field should be treated as a constant.

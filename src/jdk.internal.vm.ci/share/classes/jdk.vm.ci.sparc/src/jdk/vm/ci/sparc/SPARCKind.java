@@ -65,6 +65,7 @@ public enum SPARCKind implements PlatformKind {
         return scalar;
     }
 
+    @Override
     public int getSizeInBytes() {
         return size;
     }
@@ -73,10 +74,12 @@ public enum SPARCKind implements PlatformKind {
         return getSizeInBytes() * 8;
     }
 
+    @Override
     public int getVectorLength() {
         return vectorLength;
     }
 
+    @Override
     public Key getKey() {
         return key;
     }
@@ -97,6 +100,7 @@ public enum SPARCKind implements PlatformKind {
         return !isInteger();
     }
 
+    @Override
     public char getTypeChar() {
         switch (this) {
             case BYTE:

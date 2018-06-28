@@ -75,11 +75,7 @@ public interface RegisterConfig {
 
     /**
      * Gets the set of all registers that might be used by the register allocator.
-     *
-     * To get the set of registers the register allocator is allowed to use see
-     * {@link RegisterAllocationConfig#getAllocatableRegisters()}
      */
-    @SuppressWarnings("javadoc")
     RegisterArray getAllocatableRegisters();
 
     /**

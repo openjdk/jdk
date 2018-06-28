@@ -30,7 +30,7 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
         super(name);
     }
 
-    public abstract Class<?> mirror();
+    abstract Class<?> mirror();
 
     @Override
     public final boolean equals(Object obj) {

@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.nodes;
 
 import static org.graalvm.compiler.hotspot.HotSpotBackend.VM_ERROR;

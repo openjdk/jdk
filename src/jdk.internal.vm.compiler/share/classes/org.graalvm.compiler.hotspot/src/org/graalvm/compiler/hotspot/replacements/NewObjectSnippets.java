@@ -20,9 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.replacements;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.core.common.calc.UnsignedMath.belowThan;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
@@ -124,7 +125,6 @@ import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.MemoryBarriers;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.DeoptimizationReason;
@@ -640,8 +640,8 @@ public class NewObjectSnippets implements Snippets {
             HotSpotResolvedObjectType arrayType = (HotSpotResolvedObjectType) elementType.getArrayClass();
             JavaKind elementKind = elementType.getJavaKind();
             ConstantNode hub = ConstantNode.forConstant(KlassPointerStamp.klassNonNull(), arrayType.klass(), providers.getMetaAccess(), graph);
-            final int headerSize = getArrayBaseOffset(elementKind);
-            int log2ElementSize = CodeUtil.log2(HotSpotJVMCIRuntimeProvider.getArrayIndexScale(elementKind));
+            final int headerSize = tool.getMetaAccess().getArrayBaseOffset(elementKind);
+            int log2ElementSize = CodeUtil.log2(tool.getMetaAccess().getArrayIndexScale(elementKind));
 
             OptionValues localOptions = graph.getOptions();
             SnippetInfo snippet;

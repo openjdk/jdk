@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot;
 
 import org.graalvm.compiler.api.replacements.Fold;
@@ -28,6 +30,7 @@ import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
+import jdk.vm.ci.meta.MetaAccessProvider;
 
 /**
  * This is a source with different versions for various JDKs.
@@ -50,6 +53,7 @@ public abstract class GraalHotSpotVMConfigBase extends HotSpotVMConfigAccess {
      * {@link GraalHotSpotVMConfig} parameter to a {@linkplain Fold foldable} method.
      */
     public static final GraalHotSpotVMConfig INJECTED_VMCONFIG = null;
+    public static final MetaAccessProvider INJECTED_METAACCESS = null;
 
     public final String osName = getHostOSName();
     public final String osArch = getHostArchitectureName();

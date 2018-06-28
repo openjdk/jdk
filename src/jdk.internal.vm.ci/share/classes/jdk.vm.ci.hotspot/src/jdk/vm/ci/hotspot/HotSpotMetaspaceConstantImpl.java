@@ -73,14 +73,17 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
         return toValueString();
     }
 
+    @Override
     public boolean isDefaultForKind() {
         return false;
     }
 
+    @Override
     public boolean isCompressed() {
         return compressed;
     }
 
+    @Override
     public Constant compress() {
         assert !isCompressed();
         HotSpotMetaspaceConstantImpl res = HotSpotMetaspaceConstantImpl.forMetaspaceObject(metaspaceObject, true);
@@ -88,6 +91,7 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
         return res;
     }
 
+    @Override
     public Constant uncompress() {
         assert isCompressed();
         HotSpotMetaspaceConstantImpl res = HotSpotMetaspaceConstantImpl.forMetaspaceObject(metaspaceObject, false);
@@ -95,6 +99,7 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
         return res;
     }
 
+    @Override
     public HotSpotResolvedObjectType asResolvedJavaType() {
         if (metaspaceObject instanceof HotSpotResolvedObjectType) {
             return (HotSpotResolvedObjectType) metaspaceObject;
@@ -102,6 +107,7 @@ final class HotSpotMetaspaceConstantImpl implements HotSpotMetaspaceConstant, VM
         return null;
     }
 
+    @Override
     public HotSpotResolvedJavaMethod asResolvedJavaMethod() {
         if (metaspaceObject instanceof HotSpotResolvedJavaMethod) {
             return (HotSpotResolvedJavaMethod) metaspaceObject;

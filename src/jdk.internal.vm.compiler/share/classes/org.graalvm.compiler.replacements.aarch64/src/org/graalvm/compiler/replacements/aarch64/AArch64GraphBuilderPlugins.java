@@ -20,8 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.replacements.aarch64;
 
+import static org.graalvm.compiler.replacements.StandardGraphBuilderPlugins.registerPlatformSpecificUnsafePlugins;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.COS;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.EXP;
 import static org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation.LOG;
@@ -44,7 +47,6 @@ import org.graalvm.compiler.nodes.java.AtomicReadAndAddNode;
 import org.graalvm.compiler.nodes.java.AtomicReadAndWriteNode;
 import org.graalvm.compiler.nodes.memory.address.AddressNode;
 import org.graalvm.compiler.nodes.memory.address.OffsetAddressNode;
-import org.graalvm.compiler.replacements.StandardGraphBuilderPlugins;
 import org.graalvm.compiler.replacements.nodes.BinaryMathIntrinsicNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode;
 import org.graalvm.compiler.replacements.nodes.UnaryMathIntrinsicNode.UnaryOperation;
@@ -56,7 +58,7 @@ import sun.misc.Unsafe;
 
 public class AArch64GraphBuilderPlugins {
 
-    public static void register(Plugins plugins, BytecodeProvider bytecodeProvider) {
+    public static void register(Plugins plugins, BytecodeProvider bytecodeProvider, boolean explicitUnsafeNullChecks) {
         InvocationPlugins invocationPlugins = plugins.getInvocationPlugins();
         invocationPlugins.defer(new Runnable() {
             @Override
@@ -69,7 +71,7 @@ public class AArch64GraphBuilderPlugins {
                 registerUnsafePlugins(invocationPlugins, bytecodeProvider);
                 // This is temporarily disabled until we implement correct emitting of the CAS
                 // instructions of the proper width.
-                StandardGraphBuilderPlugins.registerPlatformSpecificUnsafePlugins(invocationPlugins, bytecodeProvider,
+                registerPlatformSpecificUnsafePlugins(invocationPlugins, bytecodeProvider, explicitUnsafeNullChecks,
                                 new JavaKind[]{JavaKind.Int, JavaKind.Long, JavaKind.Object});
             }
         });

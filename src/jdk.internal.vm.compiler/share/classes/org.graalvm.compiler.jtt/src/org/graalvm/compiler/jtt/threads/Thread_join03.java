@@ -25,6 +25,8 @@
  * This test sleeps the joining thread, which should enure that the joinee is
  * terminated by the time the join occurs.
  */
+
+
 package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.jtt.JTTTest;

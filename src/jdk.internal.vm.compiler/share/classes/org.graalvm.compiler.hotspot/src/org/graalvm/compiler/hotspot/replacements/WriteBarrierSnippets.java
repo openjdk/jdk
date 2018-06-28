@@ -20,11 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.replacements;
 
 import static jdk.vm.ci.code.MemoryBarriers.STORE_LOAD;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayIndexScale;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_METAACCESS;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.cardTableShift;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.dirtyCardValue;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.g1CardQueueBufferOffset;
@@ -326,7 +328,7 @@ public class WriteBarrierSnippets implements Snippets {
         Word bufferAddress = thread.readWord(g1SATBQueueBufferOffset(INJECTED_VMCONFIG));
         Word indexAddress = thread.add(g1SATBQueueIndexOffset(INJECTED_VMCONFIG));
         long indexValue = indexAddress.readWord(0).rawValue();
-        final int scale = arrayIndexScale(JavaKind.Object);
+        final int scale = HotSpotReplacementsUtil.arrayIndexScale(INJECTED_METAACCESS, JavaKind.Object);
         long start = getPointerToFirstArrayElement(address, length, elementStride);
 
         for (int i = 0; i < length; i++) {
@@ -599,15 +601,19 @@ public class WriteBarrierSnippets implements Snippets {
      * prematurely crash the VM and debug the stack trace of the faulty method.
      */
     public static void validateObject(Object parent, Object child) {
-        if (verifyOops(INJECTED_VMCONFIG) && child != null && !validateOop(VALIDATE_OBJECT, parent, child)) {
-            log(true, "Verification ERROR, Parent: %p Child: %p\n", Word.objectToTrackedPointer(parent).rawValue(), Word.objectToTrackedPointer(child).rawValue());
-            VMErrorNode.vmError("Verification ERROR, Parent: %p\n", Word.objectToTrackedPointer(parent).rawValue());
+        if (verifyOops(INJECTED_VMCONFIG) && child != null) {
+            Word parentWord = Word.objectToTrackedPointer(parent);
+            Word childWord = Word.objectToTrackedPointer(child);
+            if (!validateOop(VALIDATE_OBJECT, parentWord, childWord)) {
+                log(true, "Verification ERROR, Parent: %p Child: %p\n", parentWord.rawValue(), childWord.rawValue());
+                VMErrorNode.vmError("Verification ERROR, Parent: %p\n", parentWord.rawValue());
+            }
         }
     }
 
     public static final ForeignCallDescriptor VALIDATE_OBJECT = new ForeignCallDescriptor("validate_object", boolean.class, Word.class, Word.class);
 
     @NodeIntrinsic(ForeignCallNode.class)
-    private static native boolean validateOop(@ConstantNodeParameter ForeignCallDescriptor descriptor, Object parent, Object object);
+    private static native boolean validateOop(@ConstantNodeParameter ForeignCallDescriptor descriptor, Word parent, Word object);
 
 }

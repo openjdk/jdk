@@ -63,20 +63,9 @@ public final class VMField {
     }
 
     /**
-     * Creates a description of a non-static field.
+     * Creates a description of a field.
      */
-    public VMField(String name, String type, long offset) {
-        this.name = name;
-        this.type = type;
-        this.offset = offset;
-        this.address = 0;
-        this.value = null;
-    }
-
-    /**
-     * Creates a description of a static field.
-     */
-    public VMField(String name, String type, long address, Long value) {
+    VMField(String name, String type, long address, Object value) {
         this.name = name;
         this.type = type;
         this.offset = 0;

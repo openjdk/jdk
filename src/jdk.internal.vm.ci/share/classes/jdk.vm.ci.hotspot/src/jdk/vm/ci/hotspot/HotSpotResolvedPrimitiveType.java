@@ -49,12 +49,12 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
      *
      * <p>
      * <b>NOTE</b>: Creating an instance of this class does not install the mirror for the
-     * {@link Class} type. Use {@link HotSpotJVMCIRuntimeProvider#fromClass(Class)} instead.
+     * {@link Class} type. Use {@link HotSpotJVMCIRuntime#fromClass(Class)} instead.
      * </p>
      *
      * @param kind the Kind to create the mirror for
      */
-    public HotSpotResolvedPrimitiveType(JavaKind kind) {
+    HotSpotResolvedPrimitiveType(JavaKind kind) {
         super(String.valueOf(kind.getTypeChar()));
         this.kind = kind;
         assert mirror().isPrimitive() : mirror() + " not a primitive type";
@@ -74,6 +74,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
         return HotSpotResolvedObjectTypeImpl.fromObjectClass(javaArrayMirror);
     }
 
+    @Override
     public ResolvedJavaType getElementalType() {
         return this;
     }
@@ -119,6 +120,11 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
+    public boolean isEnum() {
+        return false;
+    }
+
+    @Override
     public boolean isPrimitive() {
         return true;
     }
@@ -128,6 +134,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
         return true;
     }
 
+    @Override
     public boolean isLinked() {
         return true;
     }
@@ -234,7 +241,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public Class<?> mirror() {
+    Class<?> mirror() {
         return kind.toJavaClass();
     }
 

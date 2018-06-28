@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot;
 
 import static org.graalvm.compiler.core.common.GraalOptions.OptAssumptions;
@@ -67,7 +69,7 @@ import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.code.CompilationRequestResult;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequestResult;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.DefaultProfilingInfo;
 import jdk.vm.ci.meta.JavaMethod;
 import jdk.vm.ci.meta.ProfilingInfo;
@@ -78,13 +80,13 @@ import jdk.vm.ci.runtime.JVMCICompiler;
 
 public class HotSpotGraalCompiler implements GraalJVMCICompiler {
 
-    private final HotSpotJVMCIRuntimeProvider jvmciRuntime;
+    private final HotSpotJVMCIRuntime jvmciRuntime;
     private final HotSpotGraalRuntimeProvider graalRuntime;
     private final CompilationCounters compilationCounters;
     private final BootstrapWatchDog bootstrapWatchDog;
     private List<DebugHandlersFactory> factories;
 
-    HotSpotGraalCompiler(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalRuntimeProvider graalRuntime, OptionValues options) {
+    HotSpotGraalCompiler(HotSpotJVMCIRuntime jvmciRuntime, HotSpotGraalRuntimeProvider graalRuntime, OptionValues options) {
         this.jvmciRuntime = jvmciRuntime;
         this.graalRuntime = graalRuntime;
         // It is sufficient to have one compilation counter object per Graal compiler object.

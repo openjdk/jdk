@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package jdk.internal.vm.compiler.word.impl;
 
 import jdk.internal.vm.compiler.word.WordBase;

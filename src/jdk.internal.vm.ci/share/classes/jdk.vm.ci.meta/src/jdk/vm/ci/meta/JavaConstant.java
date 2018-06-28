@@ -81,6 +81,7 @@ public interface JavaConstant extends Constant, JavaValue {
      *
      * @return {@code true} if this constant is the default value for its kind
      */
+    @Override
     boolean isDefaultForKind();
 
     /**
@@ -130,6 +131,7 @@ public interface JavaConstant extends Constant, JavaValue {
      */
     double asDouble();
 
+    @Override
     default String toValueString() {
         if (getJavaKind() == JavaKind.Illegal) {
             return "illegal";

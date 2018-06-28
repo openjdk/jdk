@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.sparc;
 
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
@@ -33,8 +35,8 @@ import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_C
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.JUMP_ADDRESS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF_NOFP;
-import static org.graalvm.compiler.hotspot.replacements.CRC32Substitutions.UPDATE_BYTES_CRC32;
 import static org.graalvm.compiler.hotspot.replacements.CRC32CSubstitutions.UPDATE_BYTES_CRC32C;
+import static org.graalvm.compiler.hotspot.replacements.CRC32Substitutions.UPDATE_BYTES_CRC32;
 import static jdk.internal.vm.compiler.word.LocationIdentity.any;
 
 import org.graalvm.compiler.core.common.LIRKind;
@@ -50,7 +52,7 @@ import jdk.vm.ci.code.CallingConvention;
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.RegisterValue;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PlatformKind;
@@ -60,7 +62,7 @@ public class SPARCHotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
 
     private final Value[] nativeABICallerSaveRegisters;
 
-    public SPARCHotSpotForeignCallsProvider(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, CodeCacheProvider codeCache,
+    public SPARCHotSpotForeignCallsProvider(HotSpotJVMCIRuntime jvmciRuntime, HotSpotGraalRuntimeProvider runtime, MetaAccessProvider metaAccess, CodeCacheProvider codeCache,
                     WordTypes wordTypes, Value[] nativeABICallerSaveRegisters) {
         super(jvmciRuntime, runtime, metaAccess, codeCache, wordTypes);
         this.nativeABICallerSaveRegisters = nativeABICallerSaveRegisters;

@@ -36,8 +36,10 @@ import jdk.vm.ci.meta.VMConstant;
  */
 public interface HotSpotObjectConstant extends JavaConstant, HotSpotConstant, VMConstant {
 
+    @Override
     JavaConstant compress();
 
+    @Override
     JavaConstant uncompress();
 
     /**
@@ -46,34 +48,10 @@ public interface HotSpotObjectConstant extends JavaConstant, HotSpotConstant, VM
     HotSpotResolvedObjectType getType();
 
     /**
-     * Gets the result of {@link Class#getClassLoader()} for the {@link Class} object represented by
-     * this constant.
-     *
-     * @return {@code null} if this constant does not represent a {@link Class} object
-     */
-    JavaConstant getClassLoader();
-
-    /**
      * Gets the {@linkplain System#identityHashCode(Object) identity} has code for the object
      * represented by this constant.
      */
     int getIdentityHashCode();
-
-    /**
-     * Gets the result of {@link Class#getComponentType()} for the {@link Class} object represented
-     * by this constant.
-     *
-     * @return {@code null} if this constant does not represent a {@link Class} object
-     */
-    JavaConstant getComponentType();
-
-    /**
-     * Gets the result of {@link Class#getSuperclass()} for the {@link Class} object represented by
-     * this constant.
-     *
-     * @return {@code null} if this constant does not represent a {@link Class} object
-     */
-    JavaConstant getSuperclass();
 
     /**
      * Gets the result of {@link CallSite#getTarget()} for the {@link CallSite} object represented

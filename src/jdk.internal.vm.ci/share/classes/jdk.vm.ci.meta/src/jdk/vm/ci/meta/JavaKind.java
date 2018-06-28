@@ -33,37 +33,37 @@ import java.lang.reflect.Array;
  */
 public enum JavaKind {
     /** The primitive boolean kind, represented as an int on the stack. */
-    Boolean('Z', "boolean", 1, true, java.lang.Boolean.TYPE, java.lang.Boolean.class),
+    Boolean('Z', 4, "boolean", 1, true, java.lang.Boolean.TYPE, java.lang.Boolean.class),
 
     /** The primitive byte kind, represented as an int on the stack. */
-    Byte('B', "byte", 1, true, java.lang.Byte.TYPE, java.lang.Byte.class),
+    Byte('B', 8, "byte", 1, true, java.lang.Byte.TYPE, java.lang.Byte.class),
 
     /** The primitive short kind, represented as an int on the stack. */
-    Short('S', "short", 1, true, java.lang.Short.TYPE, java.lang.Short.class),
+    Short('S', 9, "short", 1, true, java.lang.Short.TYPE, java.lang.Short.class),
 
     /** The primitive char kind, represented as an int on the stack. */
-    Char('C', "char", 1, true, java.lang.Character.TYPE, java.lang.Character.class),
+    Char('C', 5, "char", 1, true, java.lang.Character.TYPE, java.lang.Character.class),
 
     /** The primitive int kind, represented as an int on the stack. */
-    Int('I', "int", 1, true, java.lang.Integer.TYPE, java.lang.Integer.class),
+    Int('I', 10, "int", 1, true, java.lang.Integer.TYPE, java.lang.Integer.class),
 
     /** The primitive float kind. */
-    Float('F', "float", 1, false, java.lang.Float.TYPE, java.lang.Float.class),
+    Float('F', 6, "float", 1, false, java.lang.Float.TYPE, java.lang.Float.class),
 
     /** The primitive long kind. */
-    Long('J', "long", 2, false, java.lang.Long.TYPE, java.lang.Long.class),
+    Long('J', 11, "long", 2, false, java.lang.Long.TYPE, java.lang.Long.class),
 
     /** The primitive double kind. */
-    Double('D', "double", 2, false, java.lang.Double.TYPE, java.lang.Double.class),
+    Double('D', 7, "double", 2, false, java.lang.Double.TYPE, java.lang.Double.class),
 
     /** The Object kind, also used for arrays. */
-    Object('A', "Object", 1, false, null, null),
+    Object('A', 12, "Object", 1, false, null, null),
 
     /** The void kind. */
-    Void('V', "void", 0, false, java.lang.Void.TYPE, java.lang.Void.class),
+    Void('V', 14, "void", 0, false, java.lang.Void.TYPE, java.lang.Void.class),
 
     /** The non-type. */
-    Illegal('-', "illegal", 0, false, null, null);
+    Illegal('-', 99, "illegal", 0, false, null, null);
 
     private final char typeChar;
     private final String javaName;
@@ -71,14 +71,16 @@ public enum JavaKind {
     private final Class<?> primitiveJavaClass;
     private final Class<?> boxedJavaClass;
     private final int slotCount;
+    private final int basicType;
 
-    JavaKind(char typeChar, String javaName, int slotCount, boolean isStackInt, Class<?> primitiveJavaClass, Class<?> boxedJavaClass) {
+    JavaKind(char typeChar, int basicType, String javaName, int slotCount, boolean isStackInt, Class<?> primitiveJavaClass, Class<?> boxedJavaClass) {
         this.typeChar = typeChar;
         this.javaName = javaName;
         this.slotCount = slotCount;
         this.isStackInt = isStackInt;
         this.primitiveJavaClass = primitiveJavaClass;
         this.boxedJavaClass = boxedJavaClass;
+        this.basicType = basicType;
         assert primitiveJavaClass == null || javaName.equals(primitiveJavaClass.getName());
     }
 
@@ -106,6 +108,13 @@ public enum JavaKind {
      */
     public char getTypeChar() {
         return typeChar;
+    }
+
+    /**
+     * Returns the JVM BasicType value for this type.
+     */
+    public int getBasicType() {
+        return basicType;
     }
 
     /**

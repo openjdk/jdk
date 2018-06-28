@@ -92,14 +92,17 @@ public enum AMD64Kind implements PlatformKind {
         return scalar;
     }
 
+    @Override
     public int getSizeInBytes() {
         return size;
     }
 
+    @Override
     public int getVectorLength() {
         return vectorLength;
     }
 
+    @Override
     public Key getKey() {
         return key;
     }
@@ -161,6 +164,7 @@ public enum AMD64Kind implements PlatformKind {
         }
     }
 
+    @Override
     public char getTypeChar() {
         switch (this) {
             case BYTE:

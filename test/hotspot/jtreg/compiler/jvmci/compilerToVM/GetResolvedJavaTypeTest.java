@@ -114,7 +114,7 @@ public class GetResolvedJavaTypeTest {
             @Override
             HotSpotResolvedObjectType getResolvedJavaType() {
                 long ptr = getPtrToKlass();
-                ConstantPool cpInst = HotSpotResolvedObjectType
+                ConstantPool cpInst = CompilerToVMHelper
                         .fromObjectClass(TEST_CLASS)
                         .getConstantPool();
                 try {
@@ -133,7 +133,7 @@ public class GetResolvedJavaTypeTest {
             @Override
             HotSpotResolvedObjectType getResolvedJavaType() {
                 long ptr = getPtrToKlass();
-                ConstantPool cpInst = HotSpotResolvedObjectType
+                ConstantPool cpInst = CompilerTovMHelper
                         .fromObjectClass(TEST_CLASS)
                         .getConstantPool();
                 try {

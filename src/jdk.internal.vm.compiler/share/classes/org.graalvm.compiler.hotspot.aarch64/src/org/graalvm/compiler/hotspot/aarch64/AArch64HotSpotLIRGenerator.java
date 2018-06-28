@@ -22,6 +22,8 @@
  * questions.
  */
 
+
+
 package org.graalvm.compiler.hotspot.aarch64;
 
 import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
@@ -99,6 +101,7 @@ import jdk.vm.ci.meta.DeoptimizationReason;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.SpeculationLog;
 import jdk.vm.ci.meta.Value;
 import org.graalvm.compiler.options.OptionValues;
 
@@ -398,8 +401,8 @@ public class AArch64HotSpotLIRGenerator extends AArch64LIRGenerator implements H
     @Override
     public void emitDeoptimizeCaller(DeoptimizationAction action, DeoptimizationReason reason) {
         Value actionAndReason = emitJavaConstant(getMetaAccess().encodeDeoptActionAndReason(action, reason, 0));
-        Value nullValue = emitConstant(LIRKind.reference(AArch64Kind.QWORD), JavaConstant.NULL_POINTER);
-        moveDeoptValuesToThread(actionAndReason, nullValue);
+        Value speculation = emitJavaConstant(getMetaAccess().encodeSpeculation(SpeculationLog.NO_SPECULATION));
+        moveDeoptValuesToThread(actionAndReason, speculation);
         append(new AArch64HotSpotDeoptimizeCallerOp(config));
     }
 

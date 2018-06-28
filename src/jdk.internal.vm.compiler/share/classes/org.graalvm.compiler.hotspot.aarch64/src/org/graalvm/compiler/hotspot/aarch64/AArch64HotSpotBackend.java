@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.aarch64;
 
 import static java.lang.reflect.Modifier.isStatic;
@@ -232,7 +234,8 @@ public class AArch64HotSpotBackend extends HotSpotHostBackend {
         HotSpotFrameContext frameContext = new HotSpotFrameContext(stub != null);
 
         DataBuilder dataBuilder = new HotSpotDataBuilder(getCodeCache().getTarget());
-        CompilationResultBuilder crb = factory.createBuilder(getCodeCache(), getForeignCalls(), frameMap, masm, dataBuilder, frameContext, lir.getOptions(), lir.getDebug(), compilationResult);
+        CompilationResultBuilder crb = factory.createBuilder(getCodeCache(), getForeignCalls(), frameMap, masm, dataBuilder, frameContext, lir.getOptions(), lir.getDebug(), compilationResult,
+                        Register.None);
         crb.setTotalFrameSize(frameMap.totalFrameSize());
         crb.setMaxInterpreterFrameSize(gen.getMaxInterpreterFrameSize());
         StackSlot deoptimizationRescueSlot = gen.getDeoptimizationRescueSlot();

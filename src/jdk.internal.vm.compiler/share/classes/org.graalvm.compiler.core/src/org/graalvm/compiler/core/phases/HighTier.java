@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.core.phases;
 
 import static org.graalvm.compiler.core.common.GraalOptions.ConditionalElimination;
@@ -76,12 +78,16 @@ public class HighTier extends PhaseSuite<HighTierContext> {
         appendPhase(canonicalizer);
 
         if (NodeCounterPhase.Options.NodeCounters.getValue(options)) {
-            appendPhase(new NodeCounterPhase());
+            appendPhase(new NodeCounterPhase(NodeCounterPhase.Stage.INIT));
         }
 
         if (Options.Inline.getValue(options)) {
             appendPhase(new InliningPhase(canonicalizer));
             appendPhase(new DeadCodeEliminationPhase(Optional));
+        }
+
+        if (NodeCounterPhase.Options.NodeCounters.getValue(options)) {
+            appendPhase(new NodeCounterPhase(NodeCounterPhase.Stage.EARLY));
         }
 
         if (OptConvertDeoptsToGuards.getValue(options)) {
@@ -117,6 +123,10 @@ public class HighTier extends PhaseSuite<HighTierContext> {
         }
 
         appendPhase(new RemoveValueProxyPhase());
+
+        if (NodeCounterPhase.Options.NodeCounters.getValue(options)) {
+            appendPhase(new NodeCounterPhase(NodeCounterPhase.Stage.LATE));
+        }
 
         appendPhase(new LoweringPhase(canonicalizer, LoweringTool.StandardLoweringStage.HIGH_TIER));
     }

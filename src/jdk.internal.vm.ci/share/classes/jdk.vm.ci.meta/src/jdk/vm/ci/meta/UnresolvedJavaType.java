@@ -20,41 +20,42 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
-
-import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.JavaType;
-import jdk.vm.ci.meta.ResolvedJavaType;
+package jdk.vm.ci.meta;
 
 /**
  * Implementation of {@link JavaType} for unresolved HotSpot classes.
  */
-final class HotSpotUnresolvedJavaType extends HotSpotJavaType {
+public final class UnresolvedJavaType implements JavaType {
+    private final String name;
 
-    private final HotSpotJVMCIRuntimeProvider runtime;
+    @Override
+    public String getName() {
+        return name;
+    }
 
-    private HotSpotUnresolvedJavaType(String name, HotSpotJVMCIRuntimeProvider runtime) {
-        super(name);
-        assert name.charAt(0) == '[' || name.charAt(name.length() - 1) == ';' : name;
-        this.runtime = runtime;
+    private UnresolvedJavaType(String name) {
+        this.name = name;
+        assert name.length() == 1 && JavaKind.fromPrimitiveOrVoidTypeChar(name.charAt(0)) != null || name.charAt(0) == '[' || name.charAt(name.length() - 1) == ';' : name;
     }
 
     /**
      * Creates an unresolved type for a valid {@link JavaType#getName() type name}.
      */
-    static HotSpotUnresolvedJavaType create(HotSpotJVMCIRuntimeProvider runtime, String name) {
-        return new HotSpotUnresolvedJavaType(name, runtime);
+    public static UnresolvedJavaType create(String name) {
+        return new UnresolvedJavaType(name);
     }
 
     @Override
     public JavaType getComponentType() {
-        assert getName().charAt(0) == '[' : "no array class" + getName();
-        return new HotSpotUnresolvedJavaType(getName().substring(1), runtime);
+        if (getName().charAt(0) == '[') {
+            return new UnresolvedJavaType(getName().substring(1));
+        }
+        return null;
     }
 
     @Override
     public JavaType getArrayClass() {
-        return new HotSpotUnresolvedJavaType('[' + getName(), runtime);
+        return new UnresolvedJavaType('[' + getName());
     }
 
     @Override
@@ -72,34 +73,20 @@ final class HotSpotUnresolvedJavaType extends HotSpotJavaType {
         if (this == obj) {
             return true;
         }
-        if (obj == null || !(obj instanceof HotSpotUnresolvedJavaType)) {
+        if (obj == null || !(obj instanceof UnresolvedJavaType)) {
             return false;
         }
-        HotSpotUnresolvedJavaType that = (HotSpotUnresolvedJavaType) obj;
+        UnresolvedJavaType that = (UnresolvedJavaType) obj;
         return this.getName().equals(that.getName());
     }
 
     @Override
     public String toString() {
-        return "HotSpotType<" + getName() + ", unresolved>";
+        return "UnresolvedJavaType<" + getName() + ">";
     }
 
     @Override
     public ResolvedJavaType resolve(ResolvedJavaType accessingClass) {
-        return (ResolvedJavaType) runtime.lookupType(getName(), (HotSpotResolvedObjectType) accessingClass, true);
-    }
-
-    /**
-     * Try to find a loaded version of this class.
-     *
-     * @param accessingClass
-     * @return the resolved class or null.
-     */
-    ResolvedJavaType reresolve(HotSpotResolvedObjectType accessingClass) {
-        JavaType type = runtime.lookupType(getName(), accessingClass, false);
-        if (type instanceof ResolvedJavaType) {
-            return (ResolvedJavaType) type;
-        }
-        return null;
+        return accessingClass.lookupType(this, true);
     }
 }

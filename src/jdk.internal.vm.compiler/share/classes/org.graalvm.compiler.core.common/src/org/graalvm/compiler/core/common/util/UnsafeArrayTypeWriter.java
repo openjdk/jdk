@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.core.common.util;
 
 import static org.graalvm.compiler.core.common.util.TypeConversion.asS1;

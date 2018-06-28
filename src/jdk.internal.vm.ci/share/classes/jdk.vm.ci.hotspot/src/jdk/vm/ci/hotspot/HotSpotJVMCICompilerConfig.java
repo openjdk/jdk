@@ -41,6 +41,7 @@ final class HotSpotJVMCICompilerConfig {
      */
     private static class DummyCompilerFactory implements JVMCICompilerFactory, JVMCICompiler {
 
+        @Override
         public HotSpotCompilationRequestResult compileMethod(CompilationRequest request) {
             throw new JVMCIError("no JVMCI compiler selected");
         }

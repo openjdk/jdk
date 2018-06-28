@@ -24,9 +24,9 @@ package jdk.vm.ci.hotspot;
 
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
-import jdk.vm.ci.meta.ValueKind;
 import jdk.vm.ci.meta.VMConstant;
 import jdk.vm.ci.meta.Value;
+import jdk.vm.ci.meta.ValueKind;
 
 public final class HotSpotSentinelConstant extends Value implements JavaConstant, VMConstant {
 
@@ -37,6 +37,7 @@ public final class HotSpotSentinelConstant extends Value implements JavaConstant
         this.javaKind = javaKind;
     }
 
+    @Override
     public JavaKind getJavaKind() {
         return javaKind;
     }

@@ -22,8 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.reflect.Array;
@@ -43,9 +41,9 @@ import jdk.vm.ci.meta.ResolvedJavaType;
  */
 class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
 
-    protected final HotSpotJVMCIRuntimeProvider runtime;
+    protected final HotSpotJVMCIRuntime runtime;
 
-    HotSpotMemoryAccessProviderImpl(HotSpotJVMCIRuntimeProvider runtime) {
+    HotSpotMemoryAccessProviderImpl(HotSpotJVMCIRuntime runtime) {
         this.runtime = runtime;
     }
 
@@ -62,7 +60,7 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
             HotSpotObjectConstantImpl constant = (HotSpotObjectConstantImpl) base;
             HotSpotResolvedObjectType type = constant.getType();
             Object object = constant.object();
-            checkRead(kind, displacement, type, object);
+            checkRead(kind, displacement, type, object, runtime.getHostJVMCIBackend().getMetaAccess());
             return object;
         }
         return null;
@@ -74,12 +72,12 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
      */
     private long oopSizeOffset;
 
-    private static int computeOopSizeOffset(HotSpotJVMCIRuntimeProvider runtime) {
+    private static int computeOopSizeOffset(HotSpotJVMCIRuntime runtime) {
         MetaAccessProvider metaAccess = runtime.getHostJVMCIBackend().getMetaAccess();
         ResolvedJavaType staticType = metaAccess.lookupJavaType(Class.class);
         for (ResolvedJavaField f : staticType.getInstanceFields(false)) {
             if (f.getName().equals("oop_size")) {
-                int offset = ((HotSpotResolvedJavaField) f).offset();
+                int offset = ((HotSpotResolvedJavaField) f).getOffset();
                 assert offset != 0 : "not expecting offset of java.lang.Class::oop_size to be 0";
                 return offset;
             }
@@ -87,12 +85,12 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         throw new JVMCIError("Could not find injected java.lang.Class::oop_size field");
     }
 
-    private boolean checkRead(JavaKind kind, long displacement, HotSpotResolvedObjectType type, Object object) {
+    private boolean checkRead(JavaKind kind, long displacement, HotSpotResolvedObjectType type, Object object, MetaAccessProvider metaAccess) {
         if (type.isArray()) {
             ResolvedJavaType componentType = type.getComponentType();
             JavaKind componentKind = componentType.getJavaKind();
-            final int headerSize = getArrayBaseOffset(componentKind);
-            int sizeOfElement = getArrayIndexScale(componentKind);
+            final int headerSize = metaAccess.getArrayBaseOffset(componentKind);
+            int sizeOfElement = metaAccess.getArrayIndexScale(componentKind);
             int length = Array.getLength(object);
             long arrayEnd = headerSize + (sizeOfElement * length);
             boolean aligned = ((displacement - headerSize) % sizeOfElement) == 0;
@@ -122,7 +120,6 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
             ResolvedJavaField field = type.findInstanceFieldWithOffset(displacement, JavaKind.Object);
             if (field == null && object instanceof Class) {
                 // Read of a static field
-                MetaAccessProvider metaAccess = runtime.getHostJVMCIBackend().getMetaAccess();
                 HotSpotResolvedObjectTypeImpl staticFieldsHolder = (HotSpotResolvedObjectTypeImpl) metaAccess.lookupJavaType((Class<?>) object);
                 field = staticFieldsHolder.findStaticFieldWithOffset(displacement, JavaKind.Object);
             }
@@ -214,8 +211,9 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
     JavaConstant readFieldValue(HotSpotResolvedJavaField field, Object obj) {
         assert obj != null;
         assert !field.isStatic() || obj instanceof Class;
-        long displacement = field.offset();
-        assert checkRead(field.getJavaKind(), displacement, (HotSpotResolvedObjectType) runtime.getHostJVMCIBackend().getMetaAccess().lookupJavaType(obj.getClass()), obj);
+        long displacement = field.getOffset();
+        assert checkRead(field.getJavaKind(), displacement, (HotSpotResolvedObjectType) runtime.getHostJVMCIBackend().getMetaAccess().lookupJavaType(obj.getClass()), obj,
+                        runtime.getHostJVMCIBackend().getMetaAccess());
         if (field.getJavaKind() == JavaKind.Object) {
             Object o = UNSAFE.getObject(obj, displacement);
             return HotSpotObjectConstantImpl.forObject(o);

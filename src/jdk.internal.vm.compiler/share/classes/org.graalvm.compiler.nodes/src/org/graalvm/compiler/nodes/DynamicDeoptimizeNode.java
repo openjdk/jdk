@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.nodes;
 
 import org.graalvm.compiler.graph.Node;
@@ -81,7 +83,7 @@ public final class DynamicDeoptimizeNode extends AbstractDeoptimizeNode implemen
             JavaConstant constant = actionAndReason.asJavaConstant();
             JavaConstant speculationConstant = speculation.asJavaConstant();
             DeoptimizeNode newDeopt = new DeoptimizeNode(tool.getMetaAccess().decodeDeoptAction(constant), tool.getMetaAccess().decodeDeoptReason(constant), tool.getMetaAccess().decodeDebugId(
-                            constant), speculationConstant, stateBefore());
+                            constant), tool.getMetaAccess().decodeSpeculation(speculationConstant, graph().getSpeculationLog()), stateBefore());
             return newDeopt;
         }
         return this;

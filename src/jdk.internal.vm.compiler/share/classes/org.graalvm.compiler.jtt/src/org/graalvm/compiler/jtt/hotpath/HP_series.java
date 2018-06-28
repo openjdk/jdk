@@ -22,6 +22,8 @@
  */
 // Checkstyle: stop
 
+
+
 package org.graalvm.compiler.jtt.hotpath;
 
 import org.graalvm.compiler.jtt.JTTTest;

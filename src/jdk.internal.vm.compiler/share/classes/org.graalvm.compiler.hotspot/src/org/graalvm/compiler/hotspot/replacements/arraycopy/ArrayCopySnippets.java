@@ -20,14 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
+import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_METAACCESS;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.KLASS_SUPER_CHECK_OFFSET_LOCATION;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.OBJ_ARRAY_KLASS_ELEMENT_KLASS_LOCATION;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayBaseOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayClassElementOffset;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayIndexScale;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getArrayBaseOffset;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.loadHub;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.readLayoutHelper;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.superCheckOffsetOffset;
@@ -49,6 +51,7 @@ import org.graalvm.compiler.debug.DebugHandlersFactory;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.graph.Node;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
+import org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.DeoptimizeNode;
@@ -177,8 +180,8 @@ public class ArrayCopySnippets implements Snippets {
     }
 
     private static void unrolledArraycopyWork(Object nonNullSrc, int srcPos, Object nonNullDest, int destPos, int length, JavaKind elementKind) {
-        int scale = arrayIndexScale(elementKind);
-        int arrayBaseOffset = arrayBaseOffset(elementKind);
+        int scale = HotSpotReplacementsUtil.arrayIndexScale(INJECTED_METAACCESS, elementKind);
+        int arrayBaseOffset = getArrayBaseOffset(INJECTED_METAACCESS, elementKind);
         LocationIdentity arrayLocation = getArrayLocation(elementKind);
 
         long sourceOffset = arrayBaseOffset + (long) srcPos * scale;

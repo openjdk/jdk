@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.phases.common;
 
 import org.graalvm.compiler.debug.DebugContext;
@@ -33,6 +35,18 @@ import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 public class NodeCounterPhase extends BasePhase<PhaseContext> {
 
+    private Stage stage;
+
+    public NodeCounterPhase(Stage stage) {
+        this.stage = stage;
+    }
+
+    public enum Stage {
+        INIT,
+        EARLY,
+        LATE
+    }
+
     public static class Options {
         // @formatter:off
         @Option(help = "Counts the number of instances of each node class.", type = OptionType.Debug)
@@ -42,9 +56,11 @@ public class NodeCounterPhase extends BasePhase<PhaseContext> {
 
     @Override
     protected void run(StructuredGraph graph, PhaseContext context) {
+
         for (Node node : graph.getNodes()) {
-            DebugContext.counter("NodeCounter_%s",
-                            node.getNodeClass().getClazz().getSimpleName()).increment(node.getDebug());
+            String nodeName = node.getNodeClass().getClazz().getSimpleName();
+
+            DebugContext.counter("NodeCounter_%s_%s", this.stage, nodeName).increment(node.getDebug());
         }
     }
 }

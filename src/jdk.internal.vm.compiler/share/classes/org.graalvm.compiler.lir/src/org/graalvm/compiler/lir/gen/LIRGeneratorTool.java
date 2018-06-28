@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.lir.gen;
 
 import jdk.vm.ci.code.RegisterConfig;
@@ -278,4 +280,11 @@ public interface LIRGeneratorTool extends DiagnosticLIRGeneratorTool, ValueKindF
 
     Value emitUncompress(Value pointer, CompressEncoding encoding, boolean nonNull);
 
+    default void emitConvertNullToZero(AllocatableValue result, Value input) {
+        emitMove(result, input);
+    }
+
+    default void emitConvertZeroToNull(AllocatableValue result, Value input) {
+        emitMove(result, input);
+    }
 }

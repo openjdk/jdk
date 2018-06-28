@@ -46,6 +46,7 @@ public final class InitTimer implements AutoCloseable {
         System.out.println("START: " + SPACES.substring(0, n * 2) + name);
     }
 
+    @Override
     @SuppressFBWarnings(value = "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD", justification = "only the initializing thread accesses this field")
     public void close() {
         final long end = System.currentTimeMillis();
