@@ -102,14 +102,8 @@ typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   if (length >= 0) {
     if (length <= max_length()) {
       size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
-      typeArrayOop t;
-      CollectedHeap* ch = Universe::heap();
-      if (do_zero) {
-        t = (typeArrayOop)CollectedHeap::array_allocate(this, (int)size, length, CHECK_NULL);
-      } else {
-        t = (typeArrayOop)CollectedHeap::array_allocate_nozero(this, (int)size, length, CHECK_NULL);
-      }
-      return t;
+      return (typeArrayOop)Universe::heap()->array_allocate(this, (int)size, length,
+                                                            do_zero, CHECK_NULL);
     } else {
       report_java_out_of_memory("Requested array size exceeds VM limit");
       JvmtiExport::post_array_size_exhausted();

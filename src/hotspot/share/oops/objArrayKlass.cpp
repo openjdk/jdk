@@ -173,7 +173,8 @@ objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
   if (length >= 0) {
     if (length <= arrayOopDesc::max_array_length(T_OBJECT)) {
       int size = objArrayOopDesc::object_size(length);
-      return (objArrayOop)CollectedHeap::array_allocate(this, size, length, THREAD);
+      return (objArrayOop)Universe::heap()->array_allocate(this, size, length,
+                                                           /* do_zero */ true, THREAD);
     } else {
       report_java_out_of_memory("Requested array size exceeds VM limit");
       JvmtiExport::post_array_size_exhausted();

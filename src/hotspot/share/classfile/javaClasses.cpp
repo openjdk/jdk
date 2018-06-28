@@ -1265,10 +1265,10 @@ int  java_lang_Class::oop_size(oop java_class) {
   return size;
 }
 
-void java_lang_Class::set_oop_size(oop java_class, int size) {
+void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
   assert(_oop_size_offset != 0, "must be set");
   assert(size > 0, "Oop size must be greater than zero, not %d", size);
-  java_class->int_field_put(_oop_size_offset, size);
+  *(int*)(((char*)java_class) + _oop_size_offset) = size;
 }
 
 int  java_lang_Class::static_oop_field_count(oop java_class) {

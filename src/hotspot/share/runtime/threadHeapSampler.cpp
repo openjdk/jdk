@@ -116,8 +116,7 @@ void ThreadHeapSampler::pick_next_sample(size_t overflowed_bytes) {
   }
 }
 
-void ThreadHeapSampler::check_for_sampling(HeapWord* ptr, size_t allocation_size, size_t bytes_since_allocation) {
-  oopDesc* oop = reinterpret_cast<oopDesc*>(ptr);
+void ThreadHeapSampler::check_for_sampling(oop obj, size_t allocation_size, size_t bytes_since_allocation) {
   size_t total_allocated_bytes = bytes_since_allocation + allocation_size;
 
   // If not yet time for a sample, skip it.
@@ -126,7 +125,7 @@ void ThreadHeapSampler::check_for_sampling(HeapWord* ptr, size_t allocation_size
     return;
   }
 
-  JvmtiExport::sampled_object_alloc_event_collector(oop);
+  JvmtiExport::sampled_object_alloc_event_collector(obj);
 
   size_t overflow_bytes = total_allocated_bytes - _bytes_until_sample;
   pick_next_sample(overflow_bytes);
