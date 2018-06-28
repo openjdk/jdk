@@ -1,9 +1,9 @@
-% Testing OpenJDK
+% Testing the JDK
 
 ## Using the run-test framework
 
 This new way of running tests is developer-centric. It assumes that you have
-built a jdk locally and want to test it. Running common test targets is simple,
+built a JDK locally and want to test it. Running common test targets is simple,
 and more complex ad-hoc combination of tests is possible. The user interface is
 forgiving, and clearly report errors it cannot resolve.
 
@@ -61,7 +61,7 @@ JTReg test groups can be specified either without a test root, e.g. `:tier1`
 (or `tier1`, the initial colon is optional), or with, e.g. `hotspot:tier1`,
 `test/jdk:jdk_util` or `$(TOPDIR)/test/hotspot/jtreg:hotspot_all`. The test
 root can be specified either as an absolute path, or a path relative to the
-OpenJDK top directory, or the `test` directory. For simplicity, the hotspot
+JDK top directory, or the `test` directory. For simplicity, the hotspot
 JTReg test root, which really is `hotspot/jtreg` can be abbreviated as
 just `hotspot`.
 
@@ -73,7 +73,7 @@ Individual JTReg tests or directories containing JTReg tests can also be
 specified, like `test/hotspot/jtreg/native_sanity/JniVersion.java` or
 `hotspot/jtreg/native_sanity`. Just like for test root selection, you can
 either specify an absolute path (which can even point to JTReg tests outside
-the source tree), or a path relative to either the OpenJDK top directory or the
+the source tree), or a path relative to either the JDK top directory or the
 `test` directory. `hotspot` can be used as an alias for `hotspot/jtreg` here as
 well.
 
