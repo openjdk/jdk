@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * This class consists exclusively of static methods for obtaining
@@ -390,6 +391,20 @@ public class Base64 {
             return new Encoder(isURL, newline, linemax, false);
         }
 
+        @HotSpotIntrinsicCandidate
+        private void encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL) {
+            char[] base64 = isURL ? toBase64URL : toBase64;
+            for (int sp0 = sp, dp0 = dp ; sp0 < sl; ) {
+                int bits = (src[sp0++] & 0xff) << 16 |
+                           (src[sp0++] & 0xff) <<  8 |
+                           (src[sp0++] & 0xff);
+                dst[dp0++] = (byte)base64[(bits >>> 18) & 0x3f];
+                dst[dp0++] = (byte)base64[(bits >>> 12) & 0x3f];
+                dst[dp0++] = (byte)base64[(bits >>> 6)  & 0x3f];
+                dst[dp0++] = (byte)base64[bits & 0x3f];
+            }
+        }
+
         private int encode0(byte[] src, int off, int end, byte[] dst) {
             char[] base64 = isURL ? toBase64URL : toBase64;
             int sp = off;
@@ -400,15 +415,7 @@ public class Base64 {
             int dp = 0;
             while (sp < sl) {
                 int sl0 = Math.min(sp + slen, sl);
-                for (int sp0 = sp, dp0 = dp ; sp0 < sl0; ) {
-                    int bits = (src[sp0++] & 0xff) << 16 |
-                               (src[sp0++] & 0xff) <<  8 |
-                               (src[sp0++] & 0xff);
-                    dst[dp0++] = (byte)base64[(bits >>> 18) & 0x3f];
-                    dst[dp0++] = (byte)base64[(bits >>> 12) & 0x3f];
-                    dst[dp0++] = (byte)base64[(bits >>> 6)  & 0x3f];
-                    dst[dp0++] = (byte)base64[bits & 0x3f];
-                }
+                encodeBlock(src, sp, sl0, dst, dp, isURL);
                 int dlen = (sl0 - sp) / 3 * 4;
                 dp += dlen;
                 sp = sl0;

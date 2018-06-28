@@ -345,6 +345,9 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   diagnostic(bool, UseGHASHIntrinsics, false,                               \
           "Use intrinsics for GHASH versions of crypto")                    \
                                                                             \
+  product(bool, UseBASE64Intrinsics, false,                                 \
+          "Use intrinsics for java.util.Base64")                            \
+                                                                            \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Large page size (0 to let VM choose the page size)")             \
           range(0, max_uintx)                                               \

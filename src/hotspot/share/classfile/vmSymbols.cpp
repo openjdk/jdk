@@ -735,6 +735,9 @@ bool vmIntrinsics::is_disabled_by_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_ghash_processBlocks:
     if (!UseGHASHIntrinsics) return true;
     break;
+  case vmIntrinsics::_base64_encodeBlock:
+    if (!UseBASE64Intrinsics) return true;
+    break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;

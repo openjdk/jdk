@@ -291,6 +291,7 @@ private:
   static const TypeFunc* vectorizedMismatch_Type();
 
   static const TypeFunc* ghash_processBlocks_Type();
+  static const TypeFunc* base64_encodeBlock_Type();
 
   static const TypeFunc* updateBytesCRC32_Type();
   static const TypeFunc* updateBytesCRC32C_Type();

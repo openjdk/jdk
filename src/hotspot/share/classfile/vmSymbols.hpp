@@ -1017,6 +1017,12 @@
    do_name(     implCompressMB_name,                               "implCompressMultiBlock0")                           \
    do_signature(implCompressMB_signature,                          "([BII)I")                                           \
                                                                                                                         \
+   /* support for java.util.Base64.Encoder*/                                                                            \
+  do_class(java_util_Base64_Encoder, "java/util/Base64$Encoder")                                                        \
+  do_intrinsic(_base64_encodeBlock, java_util_Base64_Encoder, encodeBlock_name, encodeBlock_signature, F_R)             \
+  do_name(encodeBlock_name, "encodeBlock")                                                                              \
+  do_signature(encodeBlock_signature, "([BII[BIZ)V")                                                                    \
+                                                                                                                        \
   /* support for com.sun.crypto.provider.GHASH */                                                                       \
   do_class(com_sun_crypto_provider_ghash, "com/sun/crypto/provider/GHASH")                                              \
   do_intrinsic(_ghash_processBlocks, com_sun_crypto_provider_ghash, processBlocks_name, ghash_processBlocks_signature, F_S) \

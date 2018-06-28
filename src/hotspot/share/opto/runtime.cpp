@@ -1123,6 +1123,27 @@ const TypeFunc* OptoRuntime::ghash_processBlocks_Type() {
     const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
     return TypeFunc::make(domain, range);
 }
+// Base64 encode function
+const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
+  int argcnt = 6;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // src array
+  fields[argp++] = TypeInt::INT;        // offset
+  fields[argp++] = TypeInt::INT;        // length
+  fields[argp++] = TypePtr::NOTNULL;    // dest array
+  fields[argp++] = TypeInt::INT;       // dp
+  fields[argp++] = TypeInt::BOOL;       // isURL
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = NULL; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
 
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {

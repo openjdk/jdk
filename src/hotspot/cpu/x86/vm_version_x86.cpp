@@ -856,6 +856,17 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
+  // Base64 Intrinsics (Check the condition for which the intrinsic will be active)
+  if ((UseAVX > 2) && supports_avx512vl() && supports_avx512bw()) {
+    if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+      UseBASE64Intrinsics = true;
+    }
+  } else if (UseBASE64Intrinsics) {
+     if (!FLAG_IS_DEFAULT(UseBASE64Intrinsics))
+      warning("Base64 intrinsic requires EVEX instructions on this CPU");
+    FLAG_SET_DEFAULT(UseBASE64Intrinsics, false);
+  }
+
   if (supports_fma() && UseSSE >= 2) { // Check UseSSE since FMA code uses SSE instructions
     if (FLAG_IS_DEFAULT(UseFMA)) {
       UseFMA = true;
