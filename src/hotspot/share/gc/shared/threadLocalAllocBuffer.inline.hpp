@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,19 +51,6 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
     return obj;
   }
   return NULL;
-}
-
-inline bool ThreadLocalAllocBuffer::undo_allocate(HeapWord* obj, size_t size) {
-  invariants();
-
-  if (!is_last_allocation(obj, size)) {
-    return false;
-  }
-
-  set_top(obj);
-
-  invariants();
-  return true;
 }
 
 inline size_t ThreadLocalAllocBuffer::compute_size(size_t obj_size) {
