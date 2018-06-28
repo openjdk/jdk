@@ -37,8 +37,12 @@ import jdk.nashorn.internal.runtime.Source;
  * A Reader that reads from a URL. Used to make sure that the reader
  * reads content from given URL and can be trusted to do so.
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 1.8u40
  */
+@Deprecated(since="11", forRemoval=true)
 public final class URLReader extends Reader {
     // underlying URL
     private final URL url;

@@ -37,6 +37,7 @@
  * @moduleGraph
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 module jdk.scripting.nashorn.shell {
     requires static java.compiler;
     requires jdk.internal.le;

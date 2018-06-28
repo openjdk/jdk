@@ -108,6 +108,8 @@ public final class ScriptEnvironment {
     /** Enable experimental ECMAScript 6 features. */
     public final boolean _es6;
 
+    /** do not show deprecation warning for nashorn engine and jjs usage. */
+    public final boolean _no_deprecation_warning;
 
     /** Number of times a dynamic call site has to be relinked before it is
      * considered unstable (and thus should be linked as if it were megamorphic).
@@ -306,6 +308,7 @@ public final class ScriptEnvironment {
         _strict               = options.getBoolean("strict");
         _version              = options.getBoolean("version");
         _verify_code          = options.getBoolean("verify.code");
+        _no_deprecation_warning = options.getBoolean("no.deprecation.warning");
 
         final int configuredUrt = options.getInteger("unstable.relink.threshold");
         // The default for this property is -1, so we can easily detect when

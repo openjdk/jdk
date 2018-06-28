@@ -170,6 +170,9 @@ public class Shell implements PartialParser {
 
         final Global global = context.createGlobal();
         final ScriptEnvironment env = context.getEnv();
+        if (!env._no_deprecation_warning) {
+            System.err.println("Warning: The jjs tool is planned to be removed from a future JDK release");
+        }
         final List<String> files = env.getFiles();
         if (files.isEmpty()) {
             return readEvalPrint(context, global);

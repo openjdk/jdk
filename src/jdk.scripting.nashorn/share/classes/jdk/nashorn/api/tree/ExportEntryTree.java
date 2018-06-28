@@ -28,7 +28,11 @@ import java.util.List;
 
 /**
  * A Tree node for export entry in <a href="http://www.ecma-international.org/ecma-262/6.0/#sec-modules">Module information</a>.
+ *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
  */
+@Deprecated(since="11", forRemoval=true)
 public interface ExportEntryTree extends Tree {
     /**
      * Returns the entry's export name.

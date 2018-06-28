@@ -33,8 +33,12 @@ package jdk.nashorn.api.tree;
  *   <em>variable</em> = <em>expression</em>
  * </pre>
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 9
  */
+@Deprecated(since="11", forRemoval=true)
 public interface AssignmentTree extends ExpressionTree {
     /**
      * Returns the left hand side (LHS) of this assignment.

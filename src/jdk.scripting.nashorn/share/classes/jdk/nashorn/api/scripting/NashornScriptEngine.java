@@ -67,8 +67,12 @@ import jdk.nashorn.internal.runtime.options.Options;
  * {@link Invocable} interfaces, allowing for efficient precompilation and repeated execution of scripts.
  * @see NashornScriptEngineFactory
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 1.8u40
  */
+@Deprecated(since="11", forRemoval=true)
 public final class NashornScriptEngine extends AbstractScriptEngine implements Compilable, Invocable {
     /**
      * Key used to associate Nashorn global object mirror with arbitrary Bindings instance.
@@ -134,6 +138,10 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 }
             }
         }, CREATE_CONTEXT_ACC_CTXT);
+
+        if (!nashornContext.getEnv()._no_deprecation_warning) {
+            System.err.println("Warning: Nashorn engine is planned to be removed from a future JDK release");
+        }
 
         // cache this option that is used often
         this._global_per_engine = nashornContext.getEnv()._global_per_engine;

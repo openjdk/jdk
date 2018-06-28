@@ -38,8 +38,12 @@ import java.util.Set;
  * operations like obj[i], obj.foo, obj.func(), delete obj.foo will be delegated
  * to appropriate method call of this class.
  *
+ * @deprecated Nashorn JavaScript script engine and APIs, and the jjs tool
+ * are deprecated with the intent to remove them in a future release.
+ *
  * @since 1.8u40
  */
+@Deprecated(since="11", forRemoval=true)
 public abstract class AbstractJSObject implements JSObject {
     /**
      * The default constructor.

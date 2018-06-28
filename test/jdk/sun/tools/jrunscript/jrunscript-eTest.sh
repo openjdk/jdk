@@ -42,7 +42,7 @@ fi
 # -e option with JavaScript explicitly choosen as language
 
 rm -f jrunscript-eTest.out 2>/dev/null
-${JRUNSCRIPT} -J-Djava.awt.headless=true -l nashorn -e "println('hello')" > jrunscript-eTest.out 2>&1
+${JRUNSCRIPT} -J-Dnashorn.args.prepend=--no-deprecation-warning -J-Djava.awt.headless=true -l nashorn -e "println('hello')" > jrunscript-eTest.out 2>&1
 
 $golden_diff jrunscript-eTest.out ${TESTSRC}/dash-e.out
 if [ $? != 0 ]

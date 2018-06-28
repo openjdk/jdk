@@ -35,7 +35,7 @@
 
 setup
 rm -f jjs-fileTest.out 2>/dev/null
-${JJS} -J-Djava.security.manager ${TESTSRC}/file.js > jjs-fileTest.out 2>&1
+${JJS} --no-deprecation-warning -J-Djava.security.manager ${TESTSRC}/file.js > jjs-fileTest.out 2>&1
 
 $golden_diff jjs-fileTest.out ${TESTSRC}/file.out
 if [ $? != 0 ]

@@ -40,7 +40,7 @@ if [ $? -eq 2 ]; then
 fi
 
 rm -f jrunscriptTest.out 2>/dev/null
-${JRUNSCRIPT} -J-Djava.awt.headless=true -l nashorn > jrunscriptTest.out 2>&1 <<EOF
+${JRUNSCRIPT} -J-Dnashorn.args.prepend=--no-deprecation-warning -J-Djava.awt.headless=true -l nashorn > jrunscriptTest.out 2>&1 <<EOF
 v = 2 + 5;
 v *= 5; v.doubleValue();
 v = v + " is the value";

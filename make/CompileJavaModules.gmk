@@ -345,10 +345,12 @@ jdk.jartool_ADD_JAVAC_FLAGS += -XDstringConcat=inline
 
 ################################################################################
 
+jdk.scripting.nashorn_ADD_JAVAC_FLAGS += $(DISABLE_WARNINGS),-overrides
 jdk.scripting.nashorn_COPY := .properties .js
 
 ################################################################################
 
+jdk.scripting.nashorn.shell_ADD_JAVAC_FLAGS += $(DISABLE_WARNINGS),-overrides
 jdk.scripting.nashorn.shell_COPY += .js .properties
 
 ################################################################################
