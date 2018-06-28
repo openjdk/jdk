@@ -44,7 +44,7 @@
 //  |    |
 //  |    * 3-3 No Reserve Flag (1-bit)
 //  |
-//  * 7-5 Unused (3-bits)
+//  * 7-4 Unused (4-bits)
 //
 
 class ZAllocationFlags {

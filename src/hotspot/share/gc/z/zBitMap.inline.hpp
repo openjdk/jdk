@@ -51,16 +51,20 @@ inline bool ZBitMap::par_set_bit_pair_strong(idx_t bit, bool& inc_live) {
   do {
     const bm_word_t new_val = old_val | pair_mask;
     if (new_val == old_val) {
+      // Someone else beat us to it
       inc_live = false;
-      return false;     // Someone else beat us to it.
+      return false;
     }
     const bm_word_t cur_val = Atomic::cmpxchg(new_val, addr, old_val);
     if (cur_val == old_val) {
+      // Success
       const bm_word_t marked_mask = bit_mask(bit);
       inc_live = !(old_val & marked_mask);
-      return true;      // Success.
+      return true;
     }
-    old_val = cur_val;  // The value changed, try again.
+
+    // The value changed, retry
+    old_val = cur_val;
   } while (true);
 }
 

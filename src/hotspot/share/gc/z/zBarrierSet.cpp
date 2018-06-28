@@ -53,7 +53,7 @@ bool ZBarrierSet::barrier_needed(DecoratorSet decorators, BasicType type) {
     return true;
   }
 
-  // Barrier not neeed
+  // Barrier not needed
   return false;
 }
 

@@ -292,7 +292,7 @@ LoadBarrierNode* LoadBarrierNode::has_dominating_barrier(PhaseIdealLoop* phase, 
 }
 
 void LoadBarrierNode::push_dominated_barriers(PhaseIterGVN* igvn) const {
-  // change to that barrier may affect a dominated barrier so re-push those
+  // Change to that barrier may affect a dominated barrier so re-push those
   Node* val = in(LoadBarrierNode::Oop);
 
   for (DUIterator_Fast imax, i = val->fast_outs(imax); i < imax; i++) {
@@ -526,7 +526,7 @@ Node* ZBarrierSetC2::make_cas_loadbarrier(C2AtomicAccess& access) const {
   phi_mem2->init_req(1, scmemproj2);
   kit->set_memory(phi_mem2, alias_idx);
 
-  // Merge outer flow - then check if first cas succeded
+  // Merge outer flow - then check if first CAS succeeded
   region->set_req(1, then);
   region->set_req(2, region2);
   phi->set_req(1, kit->intcon(1));
@@ -573,7 +573,7 @@ Node* ZBarrierSetC2::make_cmpx_loadbarrier(C2AtomicAccess& access) const {
   Node* region2 = new RegionNode(3);
   Node* phi2    = new PhiNode(region2, adr_type);
 
-  // Check if cmpx succeded
+  // Check if cmpx succeeded
   Node* cmp     = gvn.transform(new CmpPNode(cmpx, in_expected));
   Node* bol     = gvn.transform(new BoolNode(cmp, BoolTest::eq))->as_Bool();
   IfNode* iff   = gvn.transform(new IfNode(in_ctrl, bol, likely, COUNT_UNKNOWN))->as_If();
@@ -610,7 +610,7 @@ Node* ZBarrierSetC2::make_cmpx_loadbarrier(C2AtomicAccess& access) const {
   phi2->set_req(1, cmpx2);
   phi2->set_req(2, barrierdata);
 
-  // Merge outer flow - then check if first cas succeded
+  // Merge outer flow - then check if first cas succeeded
   region->set_req(1, then);
   region->set_req(2, region2);
   phi->set_req(1, cmpx);
@@ -802,7 +802,7 @@ void ZBarrierSetC2::expand_loadbarrier_node(PhaseMacroExpand* phase, LoadBarrier
   }
 }
 
-// Basic loadbarrier using conventional arg passing
+// Basic loadbarrier using conventional argument passing
 void ZBarrierSetC2::expand_loadbarrier_basic(PhaseMacroExpand* phase, LoadBarrierNode *barrier) const {
   PhaseIterGVN &igvn = phase->igvn();
 
@@ -862,7 +862,7 @@ void ZBarrierSetC2::expand_loadbarrier_basic(PhaseMacroExpand* phase, LoadBarrie
   if (barrier->is_writeback()) {
     call->init_req(TypeFunc::Parms+1, in_adr);
   } else {
-    // when slow path is called with a null adr, the healed oop will not be written back
+    // When slow path is called with a null address, the healed oop will not be written back
     call->init_req(TypeFunc::Parms+1, igvn.zerocon(T_OBJECT));
   }
   call = igvn.transform(call);
@@ -877,7 +877,7 @@ void ZBarrierSetC2::expand_loadbarrier_basic(PhaseMacroExpand* phase, LoadBarrie
   result_region = igvn.transform(result_region);
   result_val = igvn.transform(result_val);
 
-  if (out_ctrl != NULL) { // added if cond
+  if (out_ctrl != NULL) { // Added if cond
     igvn.replace_node(out_ctrl, result_region);
   }
   igvn.replace_node(out_res, result_val);
@@ -934,7 +934,7 @@ void ZBarrierSetC2::expand_loadbarrier_optimized(PhaseMacroExpand* phase, LoadBa
 
   Node *new_loadp;
   new_loadp = slow_path_surrogate;
-  // create the final region/phi pair to converge cntl/data paths to downstream code
+  // Create the final region/phi pair to converge cntl/data paths to downstream code
   Node* result_region = igvn.transform(new RegionNode(3));
   result_region->set_req(1, then);
   result_region->set_req(2, elsen);
@@ -943,7 +943,7 @@ void ZBarrierSetC2::expand_loadbarrier_optimized(PhaseMacroExpand* phase, LoadBa
   result_phi->set_req(1, new_loadp);
   result_phi->set_req(2, barrier->in(LoadBarrierNode::Oop));
 
-  // finally, connect the original outputs to the barrier region and phi to complete the expansion/substitution
+  // Finally, connect the original outputs to the barrier region and phi to complete the expansion/substitution
   // igvn.replace_node(out_ctrl, result_region);
   if (out_ctrl != NULL) { // added if cond
     igvn.replace_node(out_ctrl, result_region);
@@ -980,7 +980,7 @@ bool ZBarrierSetC2::expand_macro_nodes(PhaseMacroExpand* macro) const {
       int load_barrier_count = s->load_barrier_count();
       LoadBarrierNode * n = s->load_barrier_node(load_barrier_count-1-skipped);
       if (igvn.type(n) == Type::TOP || (n->in(0) != NULL && n->in(0)->is_top())) {
-        // node is unreachable, so don't try to expand it
+        // Node is unreachable, so don't try to expand it
         s->remove_load_barrier_node(n);
         continue;
       }

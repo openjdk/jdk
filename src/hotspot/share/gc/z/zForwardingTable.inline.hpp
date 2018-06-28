@@ -65,7 +65,7 @@ inline ZForwardingTableEntry ZForwardingTable::find(uintptr_t from_index) const 
 }
 
 inline ZForwardingTableEntry ZForwardingTable::find(uintptr_t from_index, ZForwardingTableCursor* cursor) const {
-  // Reading entries in the table races with the atomic cas done for
+  // Reading entries in the table races with the atomic CAS done for
   // insertion into the table. This is safe because each entry is at
   // most updated once (from -1 to something else).
   ZForwardingTableEntry entry = first(from_index, cursor);

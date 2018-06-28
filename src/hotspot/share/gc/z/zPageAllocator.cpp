@@ -145,7 +145,7 @@ void ZPageAllocator::reset_statistics() {
 void ZPageAllocator::increase_used(size_t size, bool relocation) {
   if (relocation) {
     // Allocating a page for the purpose of relocation has a
-    // negative contribution to the number of relcaimed bytes.
+    // negative contribution to the number of reclaimed bytes.
     _reclaimed -= size;
   }
   _allocated += size;

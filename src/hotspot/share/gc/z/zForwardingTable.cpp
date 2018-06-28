@@ -34,7 +34,7 @@ void ZForwardingTable::setup(size_t live_objects) {
   // Allocate table for linear probing. The size of the table must be
   // a power of two to allow for quick and inexpensive indexing/masking.
   // The table is sized to have a load factor of 50%, i.e. sized to have
-  // double the number of entries actuallly inserted.
+  // double the number of entries actually inserted.
   _size = ZUtils::round_up_power_of_2(live_objects * 2);
   _table = MallocArrayAllocator<ZForwardingTableEntry>::allocate(_size, mtGC);
 

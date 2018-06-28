@@ -44,7 +44,7 @@ uint ZWorkers::calculate_nparallel() {
 uint ZWorkers::calculate_nconcurrent() {
   // Use 12.5% of the CPUs, rounded up. The number of concurrent threads we
   // would like to use heavily depends on the type of workload we are running.
-  // Using too many threads will have a nagative impact on the application
+  // Using too many threads will have a negative impact on the application
   // throughput, while using too few threads will prolong the GC-cycle and
   // we then risk being out-run by the application. Using 12.5% of the active
   // processors appears to be a fairly good balance.

@@ -187,7 +187,7 @@ void ZHeapIterator::objects_do(ObjectClosure* cl) {
   ZRootsIterator roots;
 
   // Follow roots. Note that we also visit the JVMTI weak tag map
-  // as if they where strong roots to make sure we visit all tagged
+  // as if they were strong roots to make sure we visit all tagged
   // objects, even those that might now have become unreachable.
   // If we didn't do this the user would have expected to see
   // ObjectFree events for unreachable objects in the tag map.
