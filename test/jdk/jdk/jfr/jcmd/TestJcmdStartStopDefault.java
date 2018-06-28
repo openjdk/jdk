@@ -66,7 +66,7 @@ public class TestJcmdStartStopDefault {
         // Use JFR.dump name=recording-1 filename=FILEPATH to copy recording data to file.
 
         String stdout = output.getStdout();
-        Pattern p = Pattern.compile(".*Use JFR.dump name=(\\S+).*", Pattern.DOTALL);
+        Pattern p = Pattern.compile(".*Use jcmd \\d+ JFR.dump name=(\\S+).*", Pattern.DOTALL);
         Matcher m = p.matcher(stdout);
         Asserts.assertTrue(m.matches(), "Could not parse recording name");
         String name = m.group(1);
