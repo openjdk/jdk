@@ -23,7 +23,6 @@
 
 package jdk.test.lib.jittester;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.function.Function;
 import jdk.test.lib.jittester.visitors.JavaCodeVisitor;
@@ -65,7 +64,9 @@ public class JavaCodeGenerator extends TestsGenerator {
     }
 
     private void compileJavaFile(String mainClassName) {
-        String classPath = getRoot() + File.pathSeparator + generatorDir;
+        String classPath = getRoot().resolve(generatorDir)
+                                    .toAbsolutePath()
+                                    .toString();
         ProcessBuilder pb = new ProcessBuilder(JAVAC, "-cp", classPath,
                 generatorDir.resolve(mainClassName + ".java").toString());
         try {
