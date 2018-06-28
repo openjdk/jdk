@@ -48,7 +48,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @summary The test verifies JFR.dump command
  * @key jfr
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:FlightRecorderOptions jdk.jfr.jcmd.TestJcmdDumpLimited
+ * @run main/othervm jdk.jfr.jcmd.TestJcmdDumpLimited
  */
 public class TestJcmdDumpLimited {
 

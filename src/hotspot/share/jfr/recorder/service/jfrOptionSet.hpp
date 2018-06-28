@@ -78,11 +78,10 @@ class JfrOptionSet : public AllStatic {
   static bool sample_protection();
   DEBUG_ONLY(static void set_sample_protection(jboolean protection);)
 
-  static bool parse_start_flight_recording_option(const JavaVMOption** option, char* tail);
-  static bool parse_flight_recorder_option(const JavaVMOption** option, char* tail);
-
-  static const GrowableArray<const char*>* startup_recordings();
-  static void release_startup_recordings();
+  static bool parse_flight_recorder_option(const JavaVMOption** option, char* delimiter);
+  static bool parse_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
+  static const GrowableArray<const char*>* startup_recording_options();
+  static void release_startup_recording_options();
 };
 
 #endif // SHARE_VM_JFR_RECORDER_SERVICE_JFROPTIONSET_HPP
