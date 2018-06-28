@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,12 @@
 OS=`uname -s`
 UMASK=`umask`
 
-case $OS in
-CYGWIN_NT*)
+if [[ $OS == CYGWIN_NT* ]] ; then
     OS="Windows_NT"
     if [ -z "$SystemRoot" ] ;  then
-        SystemRoot=$SYSTEMROOT
+        SystemRoot=`cygpath $SYSTEMROOT`
     fi
-esac
+fi
 
 case $OS in
 SunOS | Linux | Darwin | AIX )
@@ -70,17 +69,17 @@ EOF
     if [ "$OS" = "Windows_NT" ]; then
         USER=`id -u -n`
         CACLS="$SystemRoot/system32/cacls.exe"
-        REVOKEALL="${TESTSRC}/../../windows/revokeall.exe"
+        TEST_SRC=`cygpath ${TESTSRC}`
+        REVOKEALL="$TEST_SRC/../../windows/revokeall.exe"
         if [ ! -f "$REVOKEALL" ] ; then
             echo "$REVOKEALL missing"
             exit 1
         fi
+        chmod ug+x $REVOKEALL
     fi
-
-
     ;;
 *)
-    echo "Unrecognized system!"
+    echo "Unrecognized system! $OS"
     exit 1
     ;;
 esac
