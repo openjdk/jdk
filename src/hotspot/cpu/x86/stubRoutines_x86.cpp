@@ -45,6 +45,15 @@ address StubRoutines::x86::_k256_adr = NULL;
 address StubRoutines::x86::_k256_W_adr = NULL;
 address StubRoutines::x86::_k512_W_addr = NULL;
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr_sha512 = NULL;
+// Base64 masks
+address StubRoutines::x86::_bswap_mask = NULL;
+address StubRoutines::x86::_base64_charset = NULL;
+address StubRoutines::x86::_gather_mask = NULL;
+address StubRoutines::x86::_right_shift_mask = NULL;
+address StubRoutines::x86::_left_shift_mask = NULL;
+address StubRoutines::x86::_and_mask = NULL;
+address StubRoutines::x86::_url_charset = NULL;
+
 #endif
 address StubRoutines::x86::_pshuffle_byte_flip_mask_addr = NULL;
 

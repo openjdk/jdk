@@ -520,6 +520,7 @@ void AOTCodeHeap::link_stub_routines_symbols() {
 
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_stub_routines_counterMode_AESCrypt", address, StubRoutines::_counterMode_AESCrypt);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_stub_routines_ghash_processBlocks", address, StubRoutines::_ghash_processBlocks);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_stub_routines_base64_encodeBlock", address, StubRoutines::_base64_encodeBlock);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_stub_routines_crc32c_table_addr", address, StubRoutines::_crc32c_table_addr);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_stub_routines_updateBytesCRC32C", address, StubRoutines::_updateBytesCRC32C);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_stub_routines_updateBytesAdler32", address, StubRoutines::_updateBytesAdler32);

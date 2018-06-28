@@ -213,6 +213,7 @@ public final class BinaryContainer implements SymbolTable {
 
         {"StubRoutines::_counterMode_AESCrypt", "_aot_stub_routines_counterMode_AESCrypt" },
         {"StubRoutines::_ghash_processBlocks", "_aot_stub_routines_ghash_processBlocks" },
+        {"StubRoutines::_base64_encodeBlock", "_aot_stub_routines_base64_encodeBlock" },
         {"StubRoutines::_crc32c_table_addr", "_aot_stub_routines_crc32c_table_addr" },
         {"StubRoutines::_updateBytesCRC32C", "_aot_stub_routines_updateBytesCRC32C" },
         {"StubRoutines::_updateBytesAdler32", "_aot_stub_routines_updateBytesAdler32" },

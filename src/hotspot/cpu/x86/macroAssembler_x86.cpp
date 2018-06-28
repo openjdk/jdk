@@ -3570,6 +3570,15 @@ void MacroAssembler::vmovdqu(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+void MacroAssembler::evmovdquq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
+  if (reachable(src)) {
+    Assembler::evmovdquq(dst, as_Address(src), vector_len);
+  } else {
+    lea(rscratch, src);
+    Assembler::evmovdquq(dst, Address(rscratch, 0), vector_len);
+  }
+}
+
 void MacroAssembler::movdqa(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
     Assembler::movdqa(dst, as_Address(src));
