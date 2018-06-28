@@ -89,8 +89,6 @@ private:
 
   size_t remaining();
 
-  bool is_last_allocation(HeapWord* obj, size_t size) { return pointer_delta(top(), obj) == size; }
-
   // Make parsable and release it.
   void reset();
 
@@ -142,9 +140,6 @@ public:
   // Allocate size HeapWords. The memory is NOT initialized to zero.
   inline HeapWord* allocate(size_t size);
   HeapWord* allocate_sampled_object(size_t size);
-
-  // Undo last allocation.
-  inline bool undo_allocate(HeapWord* obj, size_t size);
 
   // Reserve space at the end of TLAB
   static size_t end_reserve() {
