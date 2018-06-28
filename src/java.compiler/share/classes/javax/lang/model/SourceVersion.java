@@ -171,7 +171,15 @@ public enum SourceVersion {
      *
      * @since 11
      */
-     RELEASE_11;
+     RELEASE_11,
+
+    /**
+     * The version recognized by the Java Platform, Standard Edition
+     * 12.
+     *
+     * @since 12
+     */
+     RELEASE_12;
 
     // Note that when adding constants for newer releases, the
     // behavior of latest() and latestSupported() must be updated too.
@@ -182,7 +190,7 @@ public enum SourceVersion {
      * @return the latest source version that can be modeled
      */
     public static SourceVersion latest() {
-        return RELEASE_11;
+        return RELEASE_12;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -192,6 +200,8 @@ public enum SourceVersion {
             String specVersion = System.getProperty("java.specification.version");
 
             switch (specVersion) {
+                case "12":
+                    return RELEASE_12;
                 case "11":
                     return RELEASE_11;
                 case "10":

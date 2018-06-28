@@ -106,7 +106,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
     // Keep these updated manually until there's a compiler API
     // that allows querying of supported releases.
     final Set<String> releasesWithoutForRemoval = Set.of("6", "7", "8");
-    final Set<String> releasesWithForRemoval = Set.of("9", "10", "11");
+    final Set<String> releasesWithForRemoval = Set.of("9", "10", "11", "12");
 
     final Set<String> validReleases;
     {
@@ -496,7 +496,7 @@ public class Main implements DiagnosticListener<JavaFileObject> {
         String dir = null;
         String jar = null;
         String jdkHome = null;
-        String release = "11";
+        String release = Integer.toString(Runtime.version().feature());
         List<String> loadClasses = new ArrayList<>();
         String csvFile = null;
 

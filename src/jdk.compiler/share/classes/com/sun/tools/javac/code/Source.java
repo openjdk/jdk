@@ -81,8 +81,11 @@ public enum Source {
     /** 1.10 local-variable type inference (var). */
     JDK10("10"),
 
-    /** 1.11 covers the to be determined language features that will be added in JDK 11. */
-    JDK11("11");
+    /** 1.11 local-variable syntax for lambda parameters */
+    JDK11("11"),
+
+    /** 12 covers the to be determined language features that will be added in JDK 12. */
+    JDK12("12");
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
 
@@ -129,6 +132,7 @@ public enum Source {
     }
 
     public Target requiredTarget() {
+        if (this.compareTo(JDK12) >= 0) return Target.JDK1_12;
         if (this.compareTo(JDK11) >= 0) return Target.JDK1_11;
         if (this.compareTo(JDK10) >= 0) return Target.JDK1_10;
         if (this.compareTo(JDK9) >= 0) return Target.JDK1_9;
@@ -265,6 +269,8 @@ public enum Source {
             return RELEASE_10;
         case JDK11:
             return RELEASE_11;
+        case JDK12:
+            return RELEASE_12;
         default:
             return null;
         }

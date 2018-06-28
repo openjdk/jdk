@@ -33,7 +33,7 @@ import static javax.lang.model.SourceVersion.*;
 /**
  * A simple visitor of program elements with default behavior
  * appropriate for source versions {@link SourceVersion#RELEASE_9
- * RELEASE_9} through {@link SourceVersion#RELEASE_11 RELEASE_11}.
+ * RELEASE_9} through {@link SourceVersion#RELEASE_12 RELEASE_12}.
  *
  * Visit methods corresponding to {@code RELEASE_9} and earlier
  * language constructs call {@link #defaultAction defaultAction},
@@ -73,7 +73,7 @@ import static javax.lang.model.SourceVersion.*;
  * @since 9
  * @spec JPMS
  */
-@SupportedSourceVersion(RELEASE_11)
+@SupportedSourceVersion(RELEASE_12)
 public class SimpleElementVisitor9<R, P> extends SimpleElementVisitor8<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

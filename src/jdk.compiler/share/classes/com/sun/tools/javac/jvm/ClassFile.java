@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,8 @@ public class ClassFile {
         V52(52, 0),   // JDK 1.8: lambda, type annos, param names
         V53(53, 0),   // JDK 1.9: modules, indy string concat
         V54(54, 0),   // JDK 10
-        V55(55, 0);   // JDK 11: constant dynamic
+        V55(55, 0),   // JDK 11: constant dynamic, nest mates
+        V56(56, 0);   // JDK 12
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;

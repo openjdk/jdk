@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -64,13 +64,15 @@ public class Versions {
         String TC = "";
         System.out.println("Version.java: Starting");
 
-        check("55.0");
-        check("55.0", "-source 1.6");
-        check("55.0", "-source 1.7");
-        check("55.0", "-source 1.8");
-        check("55.0", "-source 1.9");
-        check("55.0", "-source 1.10");
-        check("55.0", "-source 11");
+        String LATEST_MAJOR_VERSION = "56.0";
+        check(LATEST_MAJOR_VERSION);
+        check(LATEST_MAJOR_VERSION, "-source 1.6");
+        check(LATEST_MAJOR_VERSION, "-source 1.7");
+        check(LATEST_MAJOR_VERSION, "-source 1.8");
+        check(LATEST_MAJOR_VERSION, "-source 1.9");
+        check(LATEST_MAJOR_VERSION, "-source 1.10");
+        check(LATEST_MAJOR_VERSION, "-source 11");
+        check(LATEST_MAJOR_VERSION, "-source 12");
 
         check_source_target(true, "50.0", "6", "6");
         check_source_target(true, "51.0", "6", "7");
@@ -93,6 +95,7 @@ public class Versions {
         check_source_target(false, "55.0", "9", "11");
         check_source_target(false, "55.0", "10", "11");
         check_source_target(false, "55.0", "11", "11");
+        check_source_target(false, "56.0", "12", "12");
 
         checksrc16("-source 1.6");
         checksrc16("-source 6");
@@ -117,7 +120,9 @@ public class Versions {
         checksrc110("-source 10", "-target 10");
         checksrc111("-source 11");
         checksrc111("-source 11", "-target 11");
-        checksrc111("-target 11");
+        checksrc112("-source 12");
+        checksrc112("-source 12", "-target 12");
+        checksrc112("-target 12");
 
         fail("-source 7", "-target 1.6", "Base.java");
         fail("-source 8", "-target 1.6", "Base.java");
@@ -128,6 +133,8 @@ public class Versions {
         fail("-source 10", "-target 1.8", "Base.java");
         fail("-source 11", "-target 1.9", "Base.java");
         fail("-source 11", "-target 1.10", "Base.java");
+        fail("-source 12", "-target 1.10", "Base.java");
+        fail("-source 12", "-target 11", "Base.java");
 
         fail("-source 1.5", "-target 1.5", "Base.java");
         fail("-source 1.4", "-target 1.4", "Base.java");
@@ -246,6 +253,11 @@ public class Versions {
     protected void checksrc111(String... args) {
         printargs("checksrc111", args);
         checksrc110(args);
+    }
+
+    protected void checksrc112(String... args) {
+        printargs("checksrc112", args);
+        checksrc111(args);
     }
 
     protected void pass(String... args) {

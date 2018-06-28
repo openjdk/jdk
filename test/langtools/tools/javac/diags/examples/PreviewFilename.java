@@ -25,7 +25,7 @@
 
 // key: compiler.note.preview.filename
 // key: compiler.note.preview.recompile
-// options: -XDforcePreview  -source 11 --enable-preview
+// options: -XDforcePreview  -source 12 --enable-preview
 
 import java.util.ArrayList;
 import java.util.List;

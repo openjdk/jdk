@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ class Constants {
         1.9 to 1.9.X 53,0
         1.10 to 1.10.X 54,0
         1.11 to 1.11.X 55,0
+        1.12 to 1.12.X 56,0
     */
 
     public static final Package.Version JAVA_MIN_CLASS_VERSION =
@@ -75,6 +76,9 @@ class Constants {
     public static final Package.Version JAVA11_MAX_CLASS_VERSION =
             Package.Version.of(55, 00);
 
+    public static final Package.Version JAVA12_MAX_CLASS_VERSION =
+            Package.Version.of(56, 00);
+
     public static final int JAVA_PACKAGE_MAGIC = 0xCAFED00D;
 
     public static final Package.Version JAVA5_PACKAGE_VERSION =
@@ -91,7 +95,7 @@ class Constants {
 
     // upper limit, should point to the latest class version
     public static final Package.Version JAVA_MAX_CLASS_VERSION =
-            JAVA11_MAX_CLASS_VERSION;
+            JAVA12_MAX_CLASS_VERSION;
 
     // upper limit should point to the latest package version, for version info!.
     public static final Package.Version MAX_PACKAGE_VERSION =

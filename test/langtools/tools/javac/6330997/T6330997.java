@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     6330997 7025789 8000961 8188870
+ * @bug     6330997 7025789 8000961 8188870 8193290
  * @summary javac should accept class files with major version of the next release
  * @author  Wei Tao
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -32,8 +32,8 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @clean T1 T2
- * @compile -source 10 -target 11 T1.java
- * @compile -source 10 -target 11 T2.java
+ * @compile -source 11 -target 12 T1.java
+ * @compile -source 11 -target 12 T2.java
  * @run main/othervm T6330997
  */
 

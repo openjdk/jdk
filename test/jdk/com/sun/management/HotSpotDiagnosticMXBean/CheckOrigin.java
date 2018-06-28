@@ -58,7 +58,7 @@ public class CheckOrigin {
             File flagsFile = File.createTempFile("CheckOriginFlags", null);
             try (PrintWriter pw =
                    new PrintWriter(new FileWriter(flagsFile))) {
-                pw.println("+PrintSafepointStatistics");
+                pw.println("+PrintVMQWaitTime");
             }
 
             ProcessBuilder pb = ProcessTools.
@@ -108,7 +108,7 @@ public class CheckOrigin {
             checkOrigin("IgnoreUnrecognizedVMOptions", Origin.ENVIRON_VAR);
             checkOrigin("PrintVMOptions", Origin.ENVIRON_VAR);
             // Set in -XX:Flags file
-            checkOrigin("PrintSafepointStatistics", Origin.CONFIG_FILE);
+            checkOrigin("PrintVMQWaitTime", Origin.CONFIG_FILE);
             // Set through j.l.m
             checkOrigin("HeapDumpOnOutOfMemoryError", Origin.MANAGEMENT);
             // Should be set by the VM, when we set UseConcMarkSweepGC

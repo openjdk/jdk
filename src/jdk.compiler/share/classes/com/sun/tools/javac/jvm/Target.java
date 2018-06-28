@@ -67,7 +67,10 @@ public enum Target {
     JDK1_10("1.10", 54, 0),
 
     /** JDK 11. */
-    JDK1_11("11", 55, 0);
+    JDK1_11("11", 55, 0),
+
+    /** JDK 12. */
+    JDK1_12("12", 56, 0);
 
     private static final Context.Key<Target> targetKey = new Context.Key<>();
 
@@ -99,6 +102,7 @@ public enum Target {
         tab.put("9", JDK1_9);
         tab.put("10", JDK1_10);
         tab.put("11", JDK1_11);
+        tab.put("12", JDK1_12);
     }
 
     public final String name;

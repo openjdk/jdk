@@ -116,7 +116,8 @@ public class MultiReleaseJarTest {
         return new Object[][] {
                 {Version.parse("8"),    8},
                 {Version.parse("9"),    9},
-                {Version.parse("11"),  MAJOR_VERSION},
+                {Version.parse(Integer.toString(MAJOR_VERSION)),  MAJOR_VERSION},
+                {Version.parse(Integer.toString(MAJOR_VERSION) + 1),  MAJOR_VERSION},
                 {Version.parse("100"), MAJOR_VERSION}
         };
     }
