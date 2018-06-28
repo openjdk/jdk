@@ -1,10 +1,12 @@
-Welcome to OpenJDK!
+
+Welcome to the JDK!
 ===================
 
-For information about building OpenJDK, including how to fully retrieve all
-source code, please see either of these:
+For information about building the JDK, including how to retrieve all
+of the source code, please see either of these files:
 
   * doc/building.html   (html version)
   * doc/building.md     (markdown version)
 
-See http://openjdk.java.net/ for more information about OpenJDK.
+See http://openjdk.java.net/ for more information about the OpenJDK
+Community and the JDK.

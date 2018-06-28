@@ -579,8 +579,14 @@ static jlong read_input_via_gzip(unpacker* u,
         fseek(u->infileptr, -TRAILER_LEN, SEEK_END);
         uint filecrc;
         uint filelen;
-        fread(&filecrc, sizeof(filecrc), 1, u->infileptr);
-        fread(&filelen, sizeof(filelen), 1, u->infileptr);
+        if (fread(&filecrc, sizeof(filecrc), 1, u->infileptr) != 1) {
+            fprintf(u->errstrm, "Error:reading CRC information on input file failed err=%d\n",errno);
+            exit(1);
+        }
+        if (fread(&filelen, sizeof(filelen), 1, u->infileptr) != 1) {
+            fprintf(u->errstrm, "Error:reading file length on input file failed err=%d\n",errno);
+            exit(1);
+        }
         filecrc = SWAP_INT(filecrc);
         filelen = SWAP_INT(filelen);
         if (u->gzin->gzcrc != filecrc ||

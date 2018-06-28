@@ -33,6 +33,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/memAllocator.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
@@ -46,6 +47,7 @@
 #include "runtime/vmThread.hpp"
 #include "services/heapDumper.hpp"
 #include "utilities/align.hpp"
+#include "utilities/copy.hpp"
 
 class ClassLoaderData;
 
@@ -327,15 +329,6 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
 }
 
 #ifndef PRODUCT
-void CollectedHeap::check_for_bad_heap_word_value(HeapWord* addr, size_t size) {
-  if (CheckMemoryInitialization && ZapUnusedHeapArea) {
-    for (size_t slot = 0; slot < size; slot += 1) {
-      assert((*(intptr_t*) (addr + slot)) != ((intptr_t) badHeapWordVal),
-             "Found badHeapWordValue in post-allocation check");
-    }
-  }
-}
-
 void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
   if (CheckMemoryInitialization && ZapUnusedHeapArea) {
     for (size_t slot = 0; slot < size; slot += 1) {
@@ -345,118 +338,6 @@ void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t siz
   }
 }
 #endif // PRODUCT
-
-#ifdef ASSERT
-void CollectedHeap::check_for_valid_allocation_state() {
-  Thread *thread = Thread::current();
-  // How to choose between a pending exception and a potential
-  // OutOfMemoryError?  Don't allow pending exceptions.
-  // This is a VM policy failure, so how do we exhaustively test it?
-  assert(!thread->has_pending_exception(),
-         "shouldn't be allocating with pending exception");
-  if (StrictSafepointChecks) {
-    assert(thread->allow_allocation(),
-           "Allocation done by thread for which allocation is blocked "
-           "by No_Allocation_Verifier!");
-    // Allocation of an oop can always invoke a safepoint,
-    // hence, the true argument
-    thread->check_for_valid_safepoint_state(true);
-  }
-}
-#endif
-
-HeapWord* CollectedHeap::obj_allocate_raw(Klass* klass, size_t size,
-                                          bool* gc_overhead_limit_was_exceeded, TRAPS) {
-  if (UseTLAB) {
-    HeapWord* result = allocate_from_tlab(klass, size, THREAD);
-    if (result != NULL) {
-      return result;
-    }
-  }
-
-  return allocate_outside_tlab(klass, size, gc_overhead_limit_was_exceeded, THREAD);
-}
-
-HeapWord* CollectedHeap::allocate_from_tlab_slow(Klass* klass, size_t size, TRAPS) {
-  HeapWord* obj = NULL;
-
-  // In assertion mode, check that there was a sampling collector present
-  // in the stack. This enforces checking that no path is without a sampling
-  // collector.
-  // Only check if the sampler could actually sample something in this call path.
-  assert(!JvmtiExport::should_post_sampled_object_alloc()
-         || !JvmtiSampledObjectAllocEventCollector::object_alloc_is_safe_to_sample()
-         || THREAD->heap_sampler().sampling_collector_present(),
-         "Sampling collector not present.");
-
-  if (ThreadHeapSampler::enabled()) {
-    // Try to allocate the sampled object from TLAB, it is possible a sample
-    // point was put and the TLAB still has space.
-    obj = THREAD->tlab().allocate_sampled_object(size);
-
-    if (obj != NULL) {
-      return obj;
-    }
-  }
-
-  ThreadLocalAllocBuffer& tlab = THREAD->tlab();
-
-  // Retain tlab and allocate object in shared space if
-  // the amount free in the tlab is too large to discard.
-  if (tlab.free() > tlab.refill_waste_limit()) {
-    tlab.record_slow_allocation(size);
-    return NULL;
-  }
-
-  // Discard tlab and allocate a new one.
-  // To minimize fragmentation, the last TLAB may be smaller than the rest.
-  size_t new_tlab_size = tlab.compute_size(size);
-
-  tlab.clear_before_allocation();
-
-  if (new_tlab_size == 0) {
-    return NULL;
-  }
-
-  // Allocate a new TLAB requesting new_tlab_size. Any size
-  // between minimal and new_tlab_size is accepted.
-  size_t actual_tlab_size = 0;
-  size_t min_tlab_size = ThreadLocalAllocBuffer::compute_min_size(size);
-  obj = Universe::heap()->allocate_new_tlab(min_tlab_size, new_tlab_size, &actual_tlab_size);
-  if (obj == NULL) {
-    assert(actual_tlab_size == 0, "Allocation failed, but actual size was updated. min: " SIZE_FORMAT ", desired: " SIZE_FORMAT ", actual: " SIZE_FORMAT,
-           min_tlab_size, new_tlab_size, actual_tlab_size);
-    return NULL;
-  }
-  assert(actual_tlab_size != 0, "Allocation succeeded but actual size not updated. obj at: " PTR_FORMAT " min: " SIZE_FORMAT ", desired: " SIZE_FORMAT,
-         p2i(obj), min_tlab_size, new_tlab_size);
-
-  AllocTracer::send_allocation_in_new_tlab(klass, obj, actual_tlab_size * HeapWordSize, size * HeapWordSize, THREAD);
-
-  if (ZeroTLAB) {
-    // ..and clear it.
-    Copy::zero_to_words(obj, actual_tlab_size);
-  } else {
-    // ...and zap just allocated object.
-#ifdef ASSERT
-    // Skip mangling the space corresponding to the object header to
-    // ensure that the returned space is not considered parsable by
-    // any concurrent GC thread.
-    size_t hdr_size = oopDesc::header_size();
-    Copy::fill_to_words(obj + hdr_size, actual_tlab_size - hdr_size, badHeapWordVal);
-#endif // ASSERT
-  }
-
-  // Send the thread information about this allocation in case a sample is
-  // requested.
-  if (ThreadHeapSampler::enabled()) {
-    size_t tlab_bytes_since_last_sample = THREAD->tlab().bytes_since_last_sample_point();
-    THREAD->heap_sampler().check_for_sampling(obj, size, tlab_bytes_since_last_sample);
-  }
-
-  tlab.fill(obj, obj + size, actual_tlab_size);
-  return obj;
-}
 
 size_t CollectedHeap::max_tlab_size() const {
   // TLABs can't be bigger than we can fill with a int[Integer.MAX_VALUE].
@@ -509,9 +390,8 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
   assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
 
-  // Set the length first for concurrent GC.
-  ((arrayOop)start)->set_length((int)len);
-  post_allocation_setup_common(Universe::intArrayKlassObj(), start);
+  ObjArrayAllocator allocator(Universe::intArrayKlassObj(), words, (int)len, /* do_zero */ false);
+  allocator.initialize(start);
   DEBUG_ONLY(zap_filler_array(start, words, zap);)
 }
 
@@ -524,7 +404,8 @@ CollectedHeap::fill_with_object_impl(HeapWord* start, size_t words, bool zap)
     fill_with_array(start, words, zap);
   } else if (words > 0) {
     assert(words == min_fill_size(), "unaligned size");
-    post_allocation_setup_common(SystemDictionary::Object_klass(), start);
+    ObjAllocator allocator(SystemDictionary::Object_klass(), words);
+    allocator.initialize(start);
   }
 }
 
@@ -564,6 +445,21 @@ HeapWord* CollectedHeap::allocate_new_tlab(size_t min_size,
                                            size_t* actual_size) {
   guarantee(false, "thread-local allocation buffers not supported");
   return NULL;
+}
+
+oop CollectedHeap::obj_allocate(Klass* klass, int size, TRAPS) {
+  ObjAllocator allocator(klass, size, THREAD);
+  return allocator.allocate();
+}
+
+oop CollectedHeap::array_allocate(Klass* klass, int size, int length, bool do_zero, TRAPS) {
+  ObjArrayAllocator allocator(klass, size, length, do_zero, THREAD);
+  return allocator.allocate();
+}
+
+oop CollectedHeap::class_allocate(Klass* klass, int size, TRAPS) {
+  ClassAllocator allocator(klass, size, THREAD);
+  return allocator.allocate();
 }
 
 void CollectedHeap::ensure_parsability(bool retire_tlabs) {

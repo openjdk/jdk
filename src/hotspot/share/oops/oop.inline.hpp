@@ -63,6 +63,10 @@ void oopDesc::set_mark_raw(volatile markOop m) {
   _mark = m;
 }
 
+void oopDesc::set_mark_raw(HeapWord* mem, markOop m) {
+  *(markOop*)(((char*)mem) + mark_offset_in_bytes()) = m;
+}
+
 void oopDesc::release_set_mark(markOop m) {
   HeapAccess<MO_RELEASE>::store_at(as_oop(), mark_offset_in_bytes(), m);
 }
@@ -110,16 +114,26 @@ Klass* oopDesc::klass_or_null_acquire() const volatile {
   }
 }
 
-Klass** oopDesc::klass_addr() {
+Klass** oopDesc::klass_addr(HeapWord* mem) {
   // Only used internally and with CMS and will not work with
   // UseCompressedOops
   assert(!UseCompressedClassPointers, "only supported with uncompressed klass pointers");
-  return (Klass**) &_metadata._klass;
+  ByteSize offset = byte_offset_of(oopDesc, _metadata._klass);
+  return (Klass**) (((char*)mem) + in_bytes(offset));
+}
+
+narrowKlass* oopDesc::compressed_klass_addr(HeapWord* mem) {
+  assert(UseCompressedClassPointers, "only called by compressed klass pointers");
+  ByteSize offset = byte_offset_of(oopDesc, _metadata._compressed_klass);
+  return (narrowKlass*) (((char*)mem) + in_bytes(offset));
+}
+
+Klass** oopDesc::klass_addr() {
+  return klass_addr((HeapWord*)this);
 }
 
 narrowKlass* oopDesc::compressed_klass_addr() {
-  assert(UseCompressedClassPointers, "only called by compressed klass pointers");
-  return &_metadata._compressed_klass;
+  return compressed_klass_addr((HeapWord*)this);
 }
 
 #define CHECK_SET_KLASS(k)                                                \
@@ -137,13 +151,13 @@ void oopDesc::set_klass(Klass* k) {
   }
 }
 
-void oopDesc::release_set_klass(Klass* k) {
-  CHECK_SET_KLASS(k);
+void oopDesc::release_set_klass(HeapWord* mem, Klass* klass) {
+  CHECK_SET_KLASS(klass);
   if (UseCompressedClassPointers) {
-    OrderAccess::release_store(compressed_klass_addr(),
-                               Klass::encode_klass_not_null(k));
+    OrderAccess::release_store(compressed_klass_addr(mem),
+                               Klass::encode_klass_not_null(klass));
   } else {
-    OrderAccess::release_store(klass_addr(), k);
+    OrderAccess::release_store(klass_addr(mem), klass);
   }
 }
 
@@ -153,10 +167,14 @@ int oopDesc::klass_gap() const {
   return *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes());
 }
 
-void oopDesc::set_klass_gap(int v) {
+void oopDesc::set_klass_gap(HeapWord* mem, int v) {
   if (UseCompressedClassPointers) {
-    *(int*)(((intptr_t)this) + klass_gap_offset_in_bytes()) = v;
+    *(int*)(((char*)mem) + klass_gap_offset_in_bytes()) = v;
   }
+}
+
+void oopDesc::set_klass_gap(int v) {
+  set_klass_gap((HeapWord*)this, v);
 }
 
 void oopDesc::set_klass_to_list_ptr(oop k) {
