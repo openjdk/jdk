@@ -39,7 +39,6 @@ import java.util.List;
 
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
-import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.Utils;
@@ -66,17 +65,9 @@ abstract class AbstractDCmd {
         return result.toString();
     }
 
-    public String getPid() {
-        // Invoking ProcessHandle.current().pid() would require loading more
-        // classes during startup so instead JVM.getJVM().getPid() is used.
-        // The pid will not be exposed to running Java application, only when starting
-        // JFR from command line (-XX:StartFlightRecordin) or jcmd (JFR.start and JFR.check)
-        return JVM.getJVM().getPid();
-    }
-
     protected final SafePath resolvePath(Recording recording, String filename) throws InvalidPathException {
         if (filename == null) {
-            return makeGenerated(recording, Paths.get("."));
+             return makeGenerated(recording, Paths.get("."));
         }
         Path path = Paths.get(filename);
         if (Files.isDirectory(path)) {

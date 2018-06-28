@@ -80,7 +80,7 @@ final class DCmdCheck extends AbstractDCmd {
         if (!verbose && recordings.isEmpty()) {
             println("No available recordings.");
             println();
-            println("Use jcmd " + getPid() + " JFR.start to start a recording.");
+            println("Use JFR.start to start a recording.");
             return;
         }
         boolean first = true;
