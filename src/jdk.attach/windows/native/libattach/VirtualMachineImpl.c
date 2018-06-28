@@ -490,9 +490,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
                         JNU_ThrowIOException(env,
                             "Unable to enqueue operation: the target VM does not support attach mechanism");
                         break;
-                    default :
-                        JNU_ThrowInternalError(env,
-                            "Remote thread failed for unknown reason");
+                    default : {
+                        char errmsg[128];
+                        sprintf(errmsg, "Remote thread failed for unknown reason (%d)", exitCode);
+                        JNU_ThrowInternalError(env, errmsg);
+                    }
                 }
             }
         }
