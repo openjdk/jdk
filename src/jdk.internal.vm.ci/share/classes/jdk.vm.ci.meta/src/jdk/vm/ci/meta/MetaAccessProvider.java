@@ -27,6 +27,8 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
+import jdk.vm.ci.meta.SpeculationLog.Speculation;
+
 /**
  * Provides access to the metadata of a class typically provided in a class file.
  */
@@ -100,9 +102,17 @@ public interface MetaAccessProvider {
      */
     JavaConstant encodeDeoptActionAndReason(DeoptimizationAction action, DeoptimizationReason reason, int debugId);
 
+    JavaConstant encodeSpeculation(Speculation speculation);
+
     DeoptimizationReason decodeDeoptReason(JavaConstant constant);
 
     DeoptimizationAction decodeDeoptAction(JavaConstant constant);
 
+    Speculation decodeSpeculation(JavaConstant constant, SpeculationLog speculationLog);
+
     int decodeDebugId(JavaConstant constant);
+
+    int getArrayBaseOffset(JavaKind elementKind);
+
+    int getArrayIndexScale(JavaKind elementKind);
 }

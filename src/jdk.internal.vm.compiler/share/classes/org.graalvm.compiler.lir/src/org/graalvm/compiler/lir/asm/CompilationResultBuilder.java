@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.lir.asm;
 
 import static jdk.vm.ci.code.ValueUtil.asStackSlot;
@@ -60,6 +62,7 @@ import org.graalvm.compiler.options.OptionValues;
 
 import jdk.vm.ci.code.CodeCacheProvider;
 import jdk.vm.ci.code.DebugInfo;
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.StackSlot;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.code.site.ConstantReference;
@@ -122,6 +125,7 @@ public class CompilationResultBuilder {
     public final Assembler asm;
     public final DataBuilder dataBuilder;
     public final CompilationResult compilationResult;
+    public final Register nullRegister;
     public final TargetDescription target;
     public final CodeCacheProvider codeCache;
     public final ForeignCallsProvider foreignCalls;
@@ -151,13 +155,17 @@ public class CompilationResultBuilder {
     private Consumer<LIRInstruction> beforeOp;
     private Consumer<LIRInstruction> afterOp;
 
-    public CompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-                    OptionValues options, DebugContext debug, CompilationResult compilationResult) {
-        this(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, EconomicMap.create(Equivalence.DEFAULT));
+    public final boolean mustReplaceWithNullRegister(JavaConstant nullConstant) {
+        return !nullRegister.equals(Register.None) && JavaConstant.NULL_POINTER.equals(nullConstant);
     }
 
     public CompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
-                    OptionValues options, DebugContext debug, CompilationResult compilationResult, EconomicMap<Constant, Data> dataCache) {
+                    OptionValues options, DebugContext debug, CompilationResult compilationResult, Register nullRegister) {
+        this(codeCache, foreignCalls, frameMap, asm, dataBuilder, frameContext, options, debug, compilationResult, nullRegister, EconomicMap.create(Equivalence.DEFAULT));
+    }
+
+    public CompilationResultBuilder(CodeCacheProvider codeCache, ForeignCallsProvider foreignCalls, FrameMap frameMap, Assembler asm, DataBuilder dataBuilder, FrameContext frameContext,
+                    OptionValues options, DebugContext debug, CompilationResult compilationResult, Register nullRegister, EconomicMap<Constant, Data> dataCache) {
         this.target = codeCache.getTarget();
         this.codeCache = codeCache;
         this.foreignCalls = foreignCalls;
@@ -165,6 +173,7 @@ public class CompilationResultBuilder {
         this.asm = asm;
         this.dataBuilder = dataBuilder;
         this.compilationResult = compilationResult;
+        this.nullRegister = nullRegister;
         this.frameContext = frameContext;
         this.options = options;
         this.debug = debug;

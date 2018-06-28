@@ -63,6 +63,7 @@ public class ResolvedJavaTypeResolveMethodTest {
     }
 
     protected static class B extends A implements I {
+        @Override
         public void i() {
         }
 
@@ -77,6 +78,7 @@ public class ResolvedJavaTypeResolveMethodTest {
     }
 
     protected static class C extends B {
+        @Override
         public void d() {
         }
     }

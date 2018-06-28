@@ -26,6 +26,7 @@ package compiler.jvmci.compilerToVM;
 import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.ConstantPool.Tag;
+import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import sun.hotspot.WhiteBox;
@@ -251,7 +252,7 @@ public class ConstantPoolTestCase {
             System.out.printf("Testing dummy %s with constant pool cached = %b%n",
                               dummyClass.klass,
                               isCPCached);
-            HotSpotResolvedObjectType holder = HotSpotResolvedObjectType.fromObjectClass(dummyClass.klass);
+            HotSpotResolvedObjectType holder = CompilerToVMHelper.fromObjectClass(dummyClass.klass);
             jdk.vm.ci.meta.ConstantPool constantPoolCTVM = holder.getConstantPool();
             ConstantPool constantPoolSS = dummyClass.constantPoolSS;
             for (int i = 0; i < constantPoolSS.getSize(); i++) {

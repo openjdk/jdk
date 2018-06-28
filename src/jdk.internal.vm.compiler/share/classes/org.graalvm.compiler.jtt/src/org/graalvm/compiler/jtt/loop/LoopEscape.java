@@ -21,6 +21,8 @@
  * questions.
  */
 // Checkstyle: stop
+
+
 package org.graalvm.compiler.jtt.loop;
 
 import org.junit.Test;

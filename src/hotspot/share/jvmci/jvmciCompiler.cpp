@@ -215,8 +215,10 @@ void JVMCICompiler::exit_on_pending_exception(oop exception, const char* message
     Handle ex(THREAD, exception);
     java_lang_Throwable::java_printStackTrace(ex, THREAD);
   } else {
-    // Allow error reporting thread to print the stack trace.
-    os::sleep(THREAD, 200, false);
+    // Allow error reporting thread to print the stack trace.  Windows
+    // doesn't allow uninterruptible wait for JavaThreads
+    const bool interruptible = true;
+    os::sleep(THREAD, 200, interruptible);
   }
 
   before_exit(THREAD);
@@ -226,13 +228,6 @@ void JVMCICompiler::exit_on_pending_exception(oop exception, const char* message
 // Compilation entry point for methods
 void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {
   ShouldNotReachHere();
-}
-
-bool JVMCICompiler::is_trivial(Method* method) {
-  if (_bootstrapping) {
-    return false;
-  }
-  return JVMCIRuntime::treat_as_trivial(method);
 }
 
 // Print compilation timers and statistics

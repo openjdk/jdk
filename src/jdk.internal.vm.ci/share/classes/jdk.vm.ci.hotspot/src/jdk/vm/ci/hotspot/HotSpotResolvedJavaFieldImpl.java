@@ -29,8 +29,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 
 import jdk.internal.vm.annotation.Stable;
+
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**
  * Represents a field in a HotSpot type.
@@ -95,10 +98,12 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
      * @return true iff this is a non-static field and its declaring class is assignable from
      *         {@code object}'s class
      */
-    public boolean isInObject(Object object) {
+    @Override
+    public boolean isInObject(JavaConstant constant) {
         if (isStatic()) {
             return false;
         }
+        Object object = ((HotSpotObjectConstantImpl) constant).object();
         return getDeclaringClass().isAssignableFrom(HotSpotResolvedObjectTypeImpl.fromObjectClass(object.getClass()));
     }
 
@@ -117,10 +122,10 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         // Pull field into local variable to prevent a race causing
         // a ClassCastException below
         JavaType currentType = type;
-        if (currentType instanceof HotSpotUnresolvedJavaType) {
+        if (currentType instanceof UnresolvedJavaType) {
             // Don't allow unresolved types to hang around forever
-            HotSpotUnresolvedJavaType unresolvedType = (HotSpotUnresolvedJavaType) currentType;
-            ResolvedJavaType resolved = unresolvedType.reresolve(holder);
+            UnresolvedJavaType unresolvedType = (UnresolvedJavaType) currentType;
+            ResolvedJavaType resolved = unresolvedType.resolve(holder);
             if (resolved != null) {
                 type = resolved;
             }
@@ -128,7 +133,8 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         return type;
     }
 
-    public int offset() {
+    @Override
+    public int getOffset() {
         return offset;
     }
 
@@ -147,6 +153,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
      *
      * @return true if field has {@link Stable} annotation, false otherwise
      */
+    @Override
     public boolean isStable() {
         return (config().jvmAccFieldStable & modifiers) != 0;
     }

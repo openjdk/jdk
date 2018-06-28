@@ -61,8 +61,6 @@
 jobject JVMCIRuntime::_HotSpotJVMCIRuntime_instance = NULL;
 bool JVMCIRuntime::_HotSpotJVMCIRuntime_initialized = false;
 bool JVMCIRuntime::_well_known_classes_initialized = false;
-int JVMCIRuntime::_trivial_prefixes_count = 0;
-char** JVMCIRuntime::_trivial_prefixes = NULL;
 JVMCIRuntime::CompLevelAdjustment JVMCIRuntime::_comp_level_adjustment = JVMCIRuntime::none;
 bool JVMCIRuntime::_shutdown_called = false;
 
@@ -536,11 +534,9 @@ JRT_END
 
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
-JRT_LEAF(void, JVMCIRuntime::log_printf(JavaThread* thread, oopDesc* format, jlong v1, jlong v2, jlong v3))
+JRT_LEAF(void, JVMCIRuntime::log_printf(JavaThread* thread, const char* format, jlong v1, jlong v2, jlong v3))
   ResourceMark rm;
-  assert(format != NULL && java_lang_String::is_instance(format), "must be");
-  char *buf = java_lang_String::as_utf8_string(format);
-  tty->print((const char*)buf, v1, v2, v3);
+  tty->print(format, v1, v2, v3);
 JRT_END
 PRAGMA_DIAG_POP
 
@@ -685,20 +681,6 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
   Handle result = callStatic("jdk/vm/ci/hotspot/HotSpotJVMCIRuntime",
                              "runtime",
                              "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;", NULL, CHECK);
-  objArrayOop trivial_prefixes = HotSpotJVMCIRuntime::trivialPrefixes(result);
-  if (trivial_prefixes != NULL) {
-    char** prefixes = NEW_C_HEAP_ARRAY(char*, trivial_prefixes->length(), mtCompiler);
-    for (int i = 0; i < trivial_prefixes->length(); i++) {
-      oop str = trivial_prefixes->obj_at(i);
-      if (str == NULL) {
-        THROW(vmSymbols::java_lang_NullPointerException());
-      } else {
-        prefixes[i] = strdup(java_lang_String::as_utf8_string(str));
-      }
-    }
-    _trivial_prefixes = prefixes;
-    _trivial_prefixes_count = trivial_prefixes->length();
-  }
   int adjustment = HotSpotJVMCIRuntime::compilationLevelAdjustment(result);
   assert(adjustment >= JVMCIRuntime::none &&
          adjustment <= JVMCIRuntime::by_full_signature,
@@ -917,15 +899,4 @@ void JVMCIRuntime::bootstrap_finished(TRAPS) {
   JavaCallArguments args;
   args.push_oop(receiver);
   JavaCalls::call_special(&result, receiver->klass(), vmSymbols::bootstrapFinished_method_name(), vmSymbols::void_method_signature(), &args, CHECK);
-}
-
-bool JVMCIRuntime::treat_as_trivial(Method* method) {
-  if (_HotSpotJVMCIRuntime_initialized) {
-    for (int i = 0; i < _trivial_prefixes_count; i++) {
-      if (method->method_holder()->name()->starts_with(_trivial_prefixes[i])) {
-        return true;
-      }
-    }
-  }
-  return false;
 }

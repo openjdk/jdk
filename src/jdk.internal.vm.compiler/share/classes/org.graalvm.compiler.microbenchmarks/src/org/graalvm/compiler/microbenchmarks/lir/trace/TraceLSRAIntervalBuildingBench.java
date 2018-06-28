@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.microbenchmarks.lir.trace;
 
 import org.graalvm.compiler.core.common.alloc.RegisterAllocationConfig;

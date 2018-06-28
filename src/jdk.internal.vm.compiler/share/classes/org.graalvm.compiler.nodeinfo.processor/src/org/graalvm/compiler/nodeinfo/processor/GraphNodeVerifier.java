@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.nodeinfo.processor;
 
 import static javax.lang.model.element.Modifier.FINAL;

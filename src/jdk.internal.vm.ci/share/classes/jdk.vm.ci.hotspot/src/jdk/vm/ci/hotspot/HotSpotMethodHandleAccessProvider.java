@@ -167,6 +167,6 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
 
         Object object = ((HotSpotObjectConstantImpl) method).object();
         /* Read the ResolvedJavaMethod from the injected field MemberName.method.vmtarget */
-        return compilerToVM().getResolvedJavaMethod(object, LazyInitialization.vmtargetField.offset());
+        return compilerToVM().getResolvedJavaMethod(object, LazyInitialization.vmtargetField.getOffset());
     }
 }

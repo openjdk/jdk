@@ -1547,13 +1547,13 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
     methodHandle    trap_method = trap_scope->method();
     int             trap_bci    = trap_scope->bci();
 #if INCLUDE_JVMCI
-    oop speculation = thread->pending_failed_speculation();
+    long speculation = thread->pending_failed_speculation();
     if (nm->is_compiled_by_jvmci()) {
-      if (speculation != NULL) {
+      if (speculation != 0) {
         oop speculation_log = nm->as_nmethod()->speculation_log();
         if (speculation_log != NULL) {
           if (TraceDeoptimization || TraceUncollectedSpeculations) {
-            if (HotSpotSpeculationLog::lastFailed(speculation_log) != NULL) {
+            if (HotSpotSpeculationLog::lastFailed(speculation_log) != 0) {
               tty->print_cr("A speculation that was not collected by the compiler is being overwritten");
             }
           }
@@ -1566,14 +1566,14 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
             tty->print_cr("Speculation present but no speculation log");
           }
         }
-        thread->set_pending_failed_speculation(NULL);
+        thread->set_pending_failed_speculation(0);
       } else {
         if (TraceDeoptimization) {
           tty->print_cr("No speculation");
         }
       }
     } else {
-      assert(speculation == NULL, "There should not be a speculation for method compiled by non-JVMCI compilers");
+      assert(speculation == 0, "There should not be a speculation for method compiled by non-JVMCI compilers");
     }
 
     if (trap_bci == SynchronizationEntryBCI) {

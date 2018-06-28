@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package org.graalvm.compiler.core.sparc;
 
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Op3s.Add;
@@ -113,7 +115,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     @Override
     public Variable emitBitCount(Value operand) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(operand).changeType(SPARCKind.WORD));
-        AllocatableValue usedOperand = getLIRGen().asAllocatable(emitZeroExtend(operand));
+        AllocatableValue usedOperand = asAllocatable(emitZeroExtend(operand));
         getLIRGen().append(new SPARCOP3Op(Op3s.Popc, g0.asValue(), usedOperand, result));
         return result;
     }
@@ -121,7 +123,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     @Override
     public Variable emitBitScanForward(Value operand) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(operand).changeType(SPARCKind.WORD));
-        getLIRGen().append(new SPARCBitManipulationOp(BSF, result, getLIRGen().asAllocatable(operand), getLIRGen()));
+        getLIRGen().append(new SPARCBitManipulationOp(BSF, result, asAllocatable(operand), getLIRGen()));
         return result;
     }
 
@@ -129,9 +131,9 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     public Variable emitBitScanReverse(Value operand) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(operand).changeType(SPARCKind.WORD));
         if (operand.getPlatformKind() == SPARCKind.XWORD) {
-            getLIRGen().append(new SPARCBitManipulationOp(LBSR, result, getLIRGen().asAllocatable(operand), getLIRGen()));
+            getLIRGen().append(new SPARCBitManipulationOp(LBSR, result, asAllocatable(operand), getLIRGen()));
         } else {
-            getLIRGen().append(new SPARCBitManipulationOp(IBSR, result, getLIRGen().asAllocatable(operand), getLIRGen()));
+            getLIRGen().append(new SPARCBitManipulationOp(IBSR, result, asAllocatable(operand), getLIRGen()));
         }
         return result;
     }
@@ -151,7 +153,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             default:
                 throw GraalError.shouldNotReachHere("Input kind: " + kind);
         }
-        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), getLIRGen().asAllocatable(inputValue), result));
+        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), asAllocatable(inputValue), result));
         return result;
     }
 
@@ -170,7 +172,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             default:
                 throw GraalError.shouldNotReachHere("Input kind: " + kind);
         }
-        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), getLIRGen().asAllocatable(inputValue), result));
+        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), asAllocatable(inputValue), result));
         return result;
     }
 
@@ -191,7 +193,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
 
     private Variable emitUnary(Opfs opf, Value inputValue) {
         Variable result = getLIRGen().newVariable(LIRKind.combine(inputValue));
-        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), getLIRGen().asAllocatable(inputValue), result));
+        getLIRGen().append(new SPARCOPFOp(opf, g0.asValue(), asAllocatable(inputValue), result));
         return result;
     }
 
@@ -207,7 +209,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
 
     private Variable emitBinary(ValueKind<?> resultKind, Opfs opf, Value a, Value b, LIRFrameState state) {
         Variable result = getLIRGen().newVariable(resultKind);
-        getLIRGen().append(new SPARCOPFOp(opf, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b), result, state));
+        getLIRGen().append(new SPARCOPFOp(opf, asAllocatable(a), asAllocatable(b), result, state));
         return result;
     }
 
@@ -377,7 +379,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             default:
                 throw GraalError.shouldNotReachHere();
         }
-        getLIRGen().append(new RemOp(opcode, result, getLIRGen().asAllocatable(a), getLIRGen().asAllocatable(b), scratch1, scratch2, state));
+        getLIRGen().append(new RemOp(opcode, result, asAllocatable(a), asAllocatable(b), scratch1, scratch2, state));
         return result;
 
     }
@@ -467,7 +469,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
 
     @Override
     public Value emitFloatConvert(FloatConvert op, Value inputValue) {
-        AllocatableValue inputAllocatable = getLIRGen().asAllocatable(inputValue);
+        AllocatableValue inputAllocatable = asAllocatable(inputValue);
         AllocatableValue result;
         switch (op) {
             case D2F:
@@ -598,7 +600,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             }
             return new ConstantValue(resultKind, JavaConstant.forLong((constant << shiftCount) >> shiftCount));
         } else {
-            AllocatableValue inputAllocatable = getLIRGen().asAllocatable(inputVal);
+            AllocatableValue inputAllocatable = asAllocatable(inputVal);
             Variable result = getLIRGen().newVariable(resultKind);
             if (fromBits == WORD.getSizeInBits() && toBits == XWORD.getSizeInBits()) {
                 getLIRGen().append(new SPARCOP3Op(Sra, inputAllocatable, g0.asValue(LIRKind.value(WORD)), result));
@@ -623,7 +625,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
             return inputValue;
         }
         Variable result = getLIRGen().newVariable(LIRKind.combine(inputValue).changeType(toBits > WORD.getSizeInBits() ? XWORD : WORD));
-        AllocatableValue inputAllocatable = getLIRGen().asAllocatable(inputValue);
+        AllocatableValue inputAllocatable = asAllocatable(inputValue);
         if (fromBits == 32) {
             getLIRGen().append(new SPARCOP3Op(Srl, inputAllocatable, g0.asValue(), result));
         } else {
@@ -637,7 +639,7 @@ public class SPARCArithmeticLIRGenerator extends ArithmeticLIRGenerator {
     public AllocatableValue emitReinterpret(LIRKind to, Value inputVal) {
         SPARCKind fromKind = (SPARCKind) inputVal.getPlatformKind();
         SPARCKind toKind = (SPARCKind) to.getPlatformKind();
-        AllocatableValue input = getLIRGen().asAllocatable(inputVal);
+        AllocatableValue input = asAllocatable(inputVal);
         Variable result = getLIRGen().newVariable(to);
         // These cases require a move between CPU and FPU registers:
         if (fromKind.isFloat() != toKind.isFloat()) {

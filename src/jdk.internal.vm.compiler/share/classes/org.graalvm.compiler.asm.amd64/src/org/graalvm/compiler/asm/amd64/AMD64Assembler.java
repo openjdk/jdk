@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.asm.amd64;
 
 import static jdk.vm.ci.amd64.AMD64.CPU;
@@ -813,6 +815,7 @@ public class AMD64Assembler extends Assembler {
         public static final AMD64RMOp MOVSXD = new AMD64RMOp("MOVSXD",             0x63, OpAssertion.QwordAssertion);
         public static final AMD64RMOp MOVB   = new AMD64RMOp("MOVB",               0x8A, OpAssertion.ByteAssertion);
         public static final AMD64RMOp MOV    = new AMD64RMOp("MOV",                0x8B);
+        public static final AMD64RMOp CMP    = new AMD64RMOp("CMP",                0x3B);
 
         // MOVD/MOVQ and MOVSS/MOVSD are the same opcode, just with different operand size prefix
         public static final AMD64RMOp MOVD   = new AMD64RMOp("MOVD",   0x66, P_0F, 0x6E, OpAssertion.IntToFloatAssertion, CPUFeature.SSE2);

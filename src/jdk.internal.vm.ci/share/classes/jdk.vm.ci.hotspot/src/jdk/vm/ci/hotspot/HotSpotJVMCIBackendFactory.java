@@ -26,7 +26,7 @@ import jdk.vm.ci.runtime.JVMCIBackend;
 
 public interface HotSpotJVMCIBackendFactory {
 
-    JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntimeProvider runtime, JVMCIBackend host);
+    JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntime runtime, JVMCIBackend host);
 
     /**
      * Gets the CPU architecture of this backend.

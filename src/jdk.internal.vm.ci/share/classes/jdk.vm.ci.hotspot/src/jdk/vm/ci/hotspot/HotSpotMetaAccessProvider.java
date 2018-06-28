@@ -22,8 +22,6 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 import static jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl.fromObjectClass;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
@@ -44,6 +42,7 @@ import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Signature;
+import jdk.vm.ci.meta.SpeculationLog;
 
 // JaCoCo Exclude
 
@@ -52,12 +51,13 @@ import jdk.vm.ci.meta.Signature;
  */
 public class HotSpotMetaAccessProvider implements MetaAccessProvider {
 
-    protected final HotSpotJVMCIRuntimeProvider runtime;
+    protected final HotSpotJVMCIRuntime runtime;
 
-    public HotSpotMetaAccessProvider(HotSpotJVMCIRuntimeProvider runtime) {
+    public HotSpotMetaAccessProvider(HotSpotJVMCIRuntime runtime) {
         this.runtime = runtime;
     }
 
+    @Override
     public ResolvedJavaType lookupJavaType(Class<?> clazz) {
         if (clazz == null) {
             throw new IllegalArgumentException("Class parameter was null");
@@ -65,6 +65,7 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
         return runtime.fromClass(clazz);
     }
 
+    @Override
     public HotSpotResolvedObjectType lookupJavaType(JavaConstant constant) {
         if (constant.isNull() || !(constant instanceof HotSpotObjectConstant)) {
             return null;
@@ -72,14 +73,17 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
         return ((HotSpotObjectConstant) constant).getType();
     }
 
+    @Override
     public Signature parseMethodDescriptor(String signature) {
         return new HotSpotSignature(runtime, signature);
     }
 
+    @Override
     public ResolvedJavaMethod lookupJavaMethod(Executable reflectionMethod) {
         return runtime.getCompilerToVM().asResolvedJavaMethod(Objects.requireNonNull(reflectionMethod));
     }
 
+    @Override
     public ResolvedJavaField lookupJavaField(Field reflectionField) {
         Class<?> fieldHolder = reflectionField.getDeclaringClass();
 
@@ -87,14 +91,14 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
         if (Modifier.isStatic(reflectionField.getModifiers())) {
             final long offset = UNSAFE.staticFieldOffset(reflectionField);
             for (ResolvedJavaField field : holder.getStaticFields()) {
-                if (offset == ((HotSpotResolvedJavaField) field).offset()) {
+                if (offset == ((HotSpotResolvedJavaField) field).getOffset()) {
                     return field;
                 }
             }
         } else {
             final long offset = UNSAFE.objectFieldOffset(reflectionField);
             for (ResolvedJavaField field : holder.getInstanceFields(false)) {
-                if (offset == ((HotSpotResolvedJavaField) field).offset()) {
+                if (offset == ((HotSpotResolvedJavaField) field).getOffset()) {
                     return field;
                 }
             }
@@ -120,6 +124,7 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
         return c;
     }
 
+    @Override
     public DeoptimizationReason decodeDeoptReason(JavaConstant constant) {
         HotSpotVMConfig config = runtime.getConfig();
         int reasonValue = ((~constant.asInt()) >> config.deoptimizationReasonShift) & intMaskRight(config.deoptimizationReasonBits);
@@ -127,6 +132,7 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
         return reason;
     }
 
+    @Override
     public DeoptimizationAction decodeDeoptAction(JavaConstant constant) {
         HotSpotVMConfig config = runtime.getConfig();
         int actionValue = ((~constant.asInt()) >> config.deoptimizationActionShift) & intMaskRight(config.deoptimizationActionBits);
@@ -134,9 +140,27 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
         return action;
     }
 
+    @Override
     public int decodeDebugId(JavaConstant constant) {
         HotSpotVMConfig config = runtime.getConfig();
         return ((~constant.asInt()) >> config.deoptimizationDebugIdShift) & intMaskRight(config.deoptimizationDebugIdBits);
+    }
+
+    @Override
+    public JavaConstant encodeSpeculation(SpeculationLog.Speculation speculation) {
+        if (speculation.getReason() instanceof SpeculationLog.NoSpeculationReason) {
+            return JavaConstant.LONG_0;
+        }
+        return ((HotSpotSpeculationLog.HotSpotSpeculation) speculation).getEncoding();
+    }
+
+    @Override
+    public SpeculationLog.Speculation decodeSpeculation(JavaConstant constant, SpeculationLog speculationLog) {
+        if (constant.equals(JavaConstant.LONG_0)) {
+            return SpeculationLog.NO_SPECULATION;
+        }
+        assert speculationLog != null : "Must have a speculation log";
+        return speculationLog.lookupSpeculation(constant);
     }
 
     public int convertDeoptAction(DeoptimizationAction action) {
@@ -310,5 +334,15 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider {
         int size = (length << log2ElementSize) + headerSize + (alignment - 1);
         int mask = ~(alignment - 1);
         return size & mask;
+    }
+
+    @Override
+    public int getArrayBaseOffset(JavaKind kind) {
+        return runtime.getArrayBaseOffset(kind);
+    }
+
+    @Override
+    public int getArrayIndexScale(JavaKind kind) {
+        return runtime.getArrayIndexScale(kind);
     }
 }

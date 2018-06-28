@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.phases.common;
 
 import static org.graalvm.compiler.nodes.StaticDeoptimizingNode.mergeActions;
@@ -97,6 +99,7 @@ import org.graalvm.compiler.phases.tiers.PhaseContext;
 
 import jdk.vm.ci.meta.DeoptimizationAction;
 import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.SpeculationLog.Speculation;
 import jdk.vm.ci.meta.TriState;
 
 public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
@@ -198,7 +201,7 @@ public class ConditionalEliminationPhase extends BasePhase<PhaseContext> {
                     for (GuardNode guard : node.falseSuccessor().guards().snapshot()) {
                         GuardNode otherGuard = trueGuards.get(guard.getCondition());
                         if (otherGuard != null && guard.isNegated() == otherGuard.isNegated()) {
-                            JavaConstant speculation = otherGuard.getSpeculation();
+                            Speculation speculation = otherGuard.getSpeculation();
                             if (speculation == null) {
                                 speculation = guard.getSpeculation();
                             } else if (guard.getSpeculation() != null && guard.getSpeculation() != speculation) {

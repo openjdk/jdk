@@ -96,14 +96,17 @@ public final class DefaultProfilingInfo implements ProfilingInfo {
         return "DefaultProfilingInfo<" + this.toString(null, "; ") + ">";
     }
 
+    @Override
     public void setMature() {
         // Do nothing
     }
 
+    @Override
     public boolean setCompilerIRSize(Class<?> irType, int nodeCount) {
         return false;
     }
 
+    @Override
     public int getCompilerIRSize(Class<?> irType) {
         return -1;
     }

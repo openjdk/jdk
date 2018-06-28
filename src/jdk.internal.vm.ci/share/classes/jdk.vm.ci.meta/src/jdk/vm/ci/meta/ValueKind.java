@@ -33,18 +33,22 @@ public abstract class ValueKind<K extends ValueKind<K>> {
 
         private final EnumKey<IllegalKind> key = new EnumKey<>(this);
 
+        @Override
         public Key getKey() {
             return key;
         }
 
+        @Override
         public int getSizeInBytes() {
             return 0;
         }
 
+        @Override
         public int getVectorLength() {
             return 0;
         }
 
+        @Override
         public char getTypeChar() {
             return '-';
         }

@@ -314,4 +314,8 @@ public class CompilerToVMHelper {
     public static Class<?> getMirror(HotSpotResolvedObjectType type) {
         return ((HotSpotResolvedJavaType) type).mirror();
     }
+
+    public static HotSpotResolvedObjectType fromObjectClass(Class<?> theClass) {
+        return HotSpotResolvedObjectTypeImpl.fromObjectClass(theClass);
+    }
 }

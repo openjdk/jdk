@@ -33,6 +33,31 @@ public final class Services {
     // This class must be compilable and executable on JDK 8 since it's used in annotation
     // processors while building JDK 9 so use of API added in JDK 9 is made via reflection.
 
+    /**
+     * Guards code that should be run when building a native image but should be excluded from
+     * (being compiled into) the image. Such code must be directly guarded by an {@code if}
+     * statement on this field - the guard cannot be behind a method call.
+     */
+    public static final boolean IS_BUILDING_NATIVE_IMAGE;
+
+    /**
+     * Guards code that should only be run in native image. Such code must be directly guarded by an
+     * {@code if} statement on this field - the guard cannot be behind a method call.
+     *
+     * The value of this field seen during analysis and compilation of an SVM image must be
+     * {@code true}.
+     */
+    public static final boolean IS_IN_NATIVE_IMAGE;
+
+    static {
+        /*
+         * Prevents javac from constant folding use of this field. It is set to true in the SVM
+         * image via substitution during image building.
+         */
+        IS_IN_NATIVE_IMAGE = false;
+        IS_BUILDING_NATIVE_IMAGE = false;
+    }
+
     private Services() {
     }
 

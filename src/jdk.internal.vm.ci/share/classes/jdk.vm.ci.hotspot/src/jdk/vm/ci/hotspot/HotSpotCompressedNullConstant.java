@@ -36,6 +36,7 @@ public final class HotSpotCompressedNullConstant implements JavaConstant, HotSpo
     private HotSpotCompressedNullConstant() {
     }
 
+    @Override
     public JavaKind getJavaKind() {
         return JavaKind.Object;
     }
@@ -50,10 +51,12 @@ public final class HotSpotCompressedNullConstant implements JavaConstant, HotSpo
         return true;
     }
 
+    @Override
     public Constant compress() {
         throw new IllegalArgumentException();
     }
 
+    @Override
     public Constant uncompress() {
         return NULL_POINTER;
     }

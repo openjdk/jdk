@@ -22,24 +22,13 @@
  */
 package jdk.vm.ci.hotspot;
 
+import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.runtime.JVMCICompilerFactory;
 
 /**
  * HotSpot extensions to {@link JVMCICompilerFactory}.
  */
 public abstract class HotSpotJVMCICompilerFactory implements JVMCICompilerFactory {
-
-    /**
-     * Gets 0 or more prefixes identifying classes that should by compiled by C1 in simple mode
-     * (i.e., {@code CompLevel_simple}) when HotSpot is running with tiered compilation. The
-     * prefixes should be class or package names using "/" as the separator, e.g. "jdk/vm/ci".
-     *
-     * @return 0 or more Strings identifying packages that should by compiled by the first tier only
-     *         or null if no redirection to C1 should be performed.
-     */
-    public String[] getTrivialPrefixes() {
-        return null;
-    }
 
     public enum CompilationLevelAdjustment {
         /**
@@ -78,7 +67,9 @@ public abstract class HotSpotJVMCICompilerFactory implements JVMCICompilerFactor
      * Potentially modifies the compilation level currently selected by the VM compilation policy
      * for a method.
      *
-     * @param declaringClass the class in which the method is declared
+     * @param declaringClass the class in which the method is declared. This value is either a
+     *            {@code Class} instance or a {@code String} representing the
+     *            {@link JavaType#toJavaName() name} of the class.
      * @param name the name of the method or {@code null} depending on the value that was returned
      *            by {@link #getCompilationLevelAdjustment()}
      * @param signature the signature of the method or {@code null} depending on the value that was
@@ -88,7 +79,8 @@ public abstract class HotSpotJVMCICompilerFactory implements JVMCICompilerFactor
      * @return the compilation level to use for the compilation being scheduled (must be a valid
      *         {@code CompLevel} enum value)
      */
-    public CompilationLevel adjustCompilationLevel(Class<?> declaringClass, String name, String signature, boolean isOsr, CompilationLevel level) {
-        throw new InternalError("Should not reach here");
+    public CompilationLevel adjustCompilationLevel(Object declaringClass, String name, String signature, boolean isOsr, CompilationLevel level) {
+        throw new InternalError(getClass().getName() + " must override adjustCompilationLevel(...) since it returned a value other than " + CompilationLevel.class.getName() + "." +
+                        CompilationLevel.None + " from getCompilationLevelAdjustment()");
     }
 }

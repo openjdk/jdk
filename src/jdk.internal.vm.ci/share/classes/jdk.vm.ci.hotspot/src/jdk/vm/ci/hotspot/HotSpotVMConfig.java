@@ -261,7 +261,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
      * @return the symbol at position id
      */
     String symbolAt(int index) {
-        HotSpotJVMCIRuntimeProvider runtime = runtime();
+        HotSpotJVMCIRuntime runtime = runtime();
         assert vmSymbolsFirstSID <= index && index < vmSymbolsSIDLimit : "index " + index + " is out of bounds";
         assert symbolPointerSize == Unsafe.ADDRESS_SIZE : "the following address read is broken";
         int offset = index * symbolPointerSize;

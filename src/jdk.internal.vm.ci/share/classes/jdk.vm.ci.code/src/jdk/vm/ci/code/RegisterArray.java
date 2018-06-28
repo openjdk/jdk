@@ -78,6 +78,7 @@ public final class RegisterArray implements Iterable<Register> {
         return registers.clone();
     }
 
+    @Override
     public Iterator<Register> iterator() {
         return Arrays.asList(registers).iterator();
     }

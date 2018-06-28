@@ -73,6 +73,7 @@ abstract class HotSpotMethod implements JavaMethod, Formattable {
         return format(fmt);
     }
 
+    @Override
     public void formatTo(Formatter formatter, int flags, int width, int precision) {
         String base = (flags & ALTERNATE) == ALTERNATE ? getName() : toString();
         formatter.format(applyFormattingFlagsAndWidth(base, flags & ~ALTERNATE, width));

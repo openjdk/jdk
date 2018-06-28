@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.core.test;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
@@ -39,6 +41,7 @@ import org.graalvm.compiler.phases.common.LoweringPhase;
 import org.graalvm.compiler.phases.common.inlining.InliningPhase;
 import org.graalvm.compiler.phases.tiers.HighTierContext;
 import org.graalvm.compiler.phases.tiers.PhaseContext;
+import org.graalvm.compiler.virtual.phases.ea.PartialEscapePhase;
 
 public class LockEliminationTest extends GraalCompilerTest {
 
@@ -67,7 +70,7 @@ public class LockEliminationTest extends GraalCompilerTest {
     public void testLock() {
         test("testSynchronizedSnippet", new A(), new A());
 
-        StructuredGraph graph = getGraph("testSynchronizedSnippet");
+        StructuredGraph graph = getGraph("testSynchronizedSnippet", false);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         new LockEliminationPhase().apply(graph);
         assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
@@ -85,7 +88,7 @@ public class LockEliminationTest extends GraalCompilerTest {
     public void testSynchronizedMethod() {
         test("testSynchronizedMethodSnippet", new A());
 
-        StructuredGraph graph = getGraph("testSynchronizedMethodSnippet");
+        StructuredGraph graph = getGraph("testSynchronizedMethodSnippet", false);
         new CanonicalizerPhase().apply(graph, new PhaseContext(getProviders()));
         new LockEliminationPhase().apply(graph);
         assertDeepEquals(1, graph.getNodes().filter(RawMonitorEnterNode.class).count());
@@ -102,7 +105,7 @@ public class LockEliminationTest extends GraalCompilerTest {
 
     @Test
     public void testUnrolledSync() {
-        StructuredGraph graph = getGraph("testUnrolledSyncSnippet");
+        StructuredGraph graph = getGraph("testUnrolledSyncSnippet", false);
         CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
         canonicalizer.apply(graph, new PhaseContext(getProviders()));
         HighTierContext context = getDefaultHighTierContext();
@@ -112,17 +115,56 @@ public class LockEliminationTest extends GraalCompilerTest {
         assertDeepEquals(1, graph.getNodes().filter(MonitorExitNode.class).count());
     }
 
-    private StructuredGraph getGraph(String snippet) {
+    private StructuredGraph getGraph(String snippet, boolean doEscapeAnalysis) {
         ResolvedJavaMethod method = getResolvedJavaMethod(snippet);
         StructuredGraph graph = parseEager(method, AllowAssumptions.YES);
         HighTierContext context = getDefaultHighTierContext();
-        new CanonicalizerPhase().apply(graph, context);
+        CanonicalizerPhase canonicalizer = new CanonicalizerPhase();
+        canonicalizer.apply(graph, context);
         new InliningPhase(new CanonicalizerPhase()).apply(graph, context);
         new CanonicalizerPhase().apply(graph, context);
         new DeadCodeEliminationPhase().apply(graph);
+        if (doEscapeAnalysis) {
+            new PartialEscapePhase(true, canonicalizer, graph.getOptions()).apply(graph, context);
+        }
         new LoweringPhase(new CanonicalizerPhase(), LoweringTool.StandardLoweringStage.HIGH_TIER).apply(graph, context);
-        new LockEliminationPhase().apply(graph);
         return graph;
     }
 
+    public void testEscapeAnalysisSnippet(A a) {
+        A newA = new A();
+        synchronized (newA) {
+            synchronized (a) {
+                field1 = a.value;
+            }
+        }
+        /*
+         * Escape analysis removes the synchronization on newA. But lock elimination still must not
+         * combine the two synchronizations on the parameter a because they have a different lock
+         * depth.
+         */
+        synchronized (a) {
+            field2 = a.value;
+        }
+        /*
+         * Lock elimination can combine these synchronizations, since they are both on parameter a
+         * with the same lock depth.
+         */
+        synchronized (a) {
+            field1 = a.value;
+        }
+    }
+
+    @Test
+    public void testEscapeAnalysis() {
+        StructuredGraph graph = getGraph("testEscapeAnalysisSnippet", true);
+
+        assertDeepEquals(3, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(3, graph.getNodes().filter(MonitorExitNode.class).count());
+
+        new LockEliminationPhase().apply(graph);
+
+        assertDeepEquals(2, graph.getNodes().filter(RawMonitorEnterNode.class).count());
+        assertDeepEquals(2, graph.getNodes().filter(MonitorExitNode.class).count());
+    }
 }

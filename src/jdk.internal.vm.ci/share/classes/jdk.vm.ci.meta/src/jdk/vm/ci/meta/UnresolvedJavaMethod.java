@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,34 +20,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.hotspot;
-
-import jdk.vm.ci.meta.JavaField;
-import jdk.vm.ci.meta.JavaType;
+package jdk.vm.ci.meta;
 
 /**
- * A implementation of {@link JavaField} for an unresolved field.
+ * Implementation of {@link JavaMethod} for unresolved HotSpot methods.
  */
-class HotSpotUnresolvedField implements JavaField {
+public final class UnresolvedJavaMethod implements JavaMethod {
 
     private final String name;
-    private final JavaType holder;
-    private final JavaType type;
+    private final Signature signature;
+    protected JavaType holder;
 
-    HotSpotUnresolvedField(JavaType holder, String name, JavaType type) {
+    public UnresolvedJavaMethod(String name, Signature signature, JavaType holder) {
         this.name = name;
-        this.type = type;
         this.holder = holder;
+        this.signature = signature;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
-    public JavaType getType() {
-        return type;
+    @Override
+    public Signature getSignature() {
+        return signature;
     }
 
+    @Override
     public JavaType getDeclaringClass() {
         return holder;
     }
@@ -62,18 +62,10 @@ class HotSpotUnresolvedField implements JavaField {
         if (this == obj) {
             return true;
         }
-        if (obj == null || !(obj instanceof HotSpotUnresolvedField)) {
+        if (obj == null || !(obj instanceof UnresolvedJavaMethod)) {
             return false;
         }
-        HotSpotUnresolvedField that = (HotSpotUnresolvedField) obj;
-        return this.holder.equals(that.holder) && this.name.equals(that.name) && this.type.equals(that.type);
-    }
-
-    /**
-     * Converts this compiler interface field to a string.
-     */
-    @Override
-    public String toString() {
-        return format("HotSpotField<%H.%n %t, unresolved>");
+        UnresolvedJavaMethod that = (UnresolvedJavaMethod) obj;
+        return this.name.equals(that.name) && this.signature.equals(that.signature) && this.holder.equals(that.holder);
     }
 }

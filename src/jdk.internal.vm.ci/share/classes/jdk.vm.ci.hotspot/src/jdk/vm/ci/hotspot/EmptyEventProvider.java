@@ -38,45 +38,56 @@ final class EmptyEventProvider implements EventProvider {
     }
 
     static class EmptyCompilationEvent implements CompilationEvent {
+        @Override
         public void commit() {
             throw shouldNotReachHere();
         }
 
+        @Override
         public boolean shouldWrite() {
             // Events of this class should never been written.
             return false;
         }
 
+        @Override
         public void begin() {
         }
 
+        @Override
         public void end() {
         }
 
+        @Override
         public void setMethod(String method) {
             throw shouldNotReachHere();
         }
 
+        @Override
         public void setCompileId(int compileId) {
             throw shouldNotReachHere();
         }
 
+        @Override
         public void setCompileLevel(int compileLevel) {
             throw shouldNotReachHere();
         }
 
+        @Override
         public void setSucceeded(boolean succeeded) {
             throw shouldNotReachHere();
         }
 
+        @Override
         public void setIsOsr(boolean isOsr) {
             throw shouldNotReachHere();
         }
 
+        @Override
         public void setCodeSize(int codeSize) {
             throw shouldNotReachHere();
         }
 
+        @Override
         public void setInlinedBytes(int inlinedBytes) {
             throw shouldNotReachHere();
         }
@@ -88,19 +99,23 @@ final class EmptyEventProvider implements EventProvider {
     }
 
     static class EmptyCompilerFailureEvent implements CompilerFailureEvent {
+        @Override
         public void commit() {
             throw shouldNotReachHere();
         }
 
+        @Override
         public boolean shouldWrite() {
             // Events of this class should never been written.
             return false;
         }
 
+        @Override
         public void setCompileId(int compileId) {
             throw shouldNotReachHere();
         }
 
+        @Override
         public void setMessage(String message) {
             throw shouldNotReachHere();
         }

@@ -1501,7 +1501,7 @@ void JavaThread::initialize() {
 #if INCLUDE_JVMCI
   _pending_monitorenter = false;
   _pending_deoptimization = -1;
-  _pending_failed_speculation = NULL;
+  _pending_failed_speculation = 0;
   _pending_transfer_to_interpreter = false;
   _adjusting_comp_level = false;
   _jvmci._alternate_call_target = NULL;
@@ -2769,8 +2769,6 @@ void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
 
   // Traverse the GCHandles
   Thread::oops_do(f, cf);
-
-  JVMCI_ONLY(f->do_oop((oop*)&_pending_failed_speculation);)
 
   assert((!has_last_Java_frame() && java_call_counter() == 0) ||
          (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");

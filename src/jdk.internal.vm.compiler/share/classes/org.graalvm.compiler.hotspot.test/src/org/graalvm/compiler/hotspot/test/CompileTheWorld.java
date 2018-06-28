@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot.test;
 
 import static java.util.Collections.singletonList;
@@ -94,7 +96,6 @@ import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
 import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotInstalledCode;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
-import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.vm.ci.meta.ConstantPool;
@@ -139,7 +140,7 @@ public final class CompileTheWorld {
         return EconomicMap.create();
     }
 
-    private final HotSpotJVMCIRuntimeProvider jvmciRuntime;
+    private final HotSpotJVMCIRuntime jvmciRuntime;
 
     private final HotSpotGraalCompiler compiler;
 
@@ -197,7 +198,7 @@ public final class CompileTheWorld {
      * @param methodFilters
      * @param excludeMethodFilters
      */
-    public CompileTheWorld(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalCompiler compiler, String files, int startAt, int stopAt, String methodFilters, String excludeMethodFilters,
+    public CompileTheWorld(HotSpotJVMCIRuntime jvmciRuntime, HotSpotGraalCompiler compiler, String files, int startAt, int stopAt, String methodFilters, String excludeMethodFilters,
                     boolean verbose, OptionValues initialOptions, EconomicMap<OptionKey<?>, Object> compilationOptions) {
         this.jvmciRuntime = jvmciRuntime;
         this.compiler = compiler;
@@ -222,7 +223,7 @@ public final class CompileTheWorld {
         this.compilationOptions = compilationOptionsCopy;
     }
 
-    public CompileTheWorld(HotSpotJVMCIRuntimeProvider jvmciRuntime, HotSpotGraalCompiler compiler, OptionValues options) {
+    public CompileTheWorld(HotSpotJVMCIRuntime jvmciRuntime, HotSpotGraalCompiler compiler, OptionValues options) {
         this(jvmciRuntime, compiler, Options.Classpath.getValue(options),
                         Options.StartAt.getValue(options),
                         Options.StopAt.getValue(options),
@@ -587,10 +588,11 @@ public final class CompileTheWorld {
                     try {
                         // Load and initialize class
                         Class<?> javaClass = Class.forName(className, true, loader);
+                        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
 
                         // Pre-load all classes in the constant pool.
                         try {
-                            HotSpotResolvedObjectType objectType = HotSpotResolvedObjectType.fromObjectClass(javaClass);
+                            HotSpotResolvedObjectType objectType = (HotSpotResolvedObjectType) metaAccess.lookupJavaType(javaClass);
                             ConstantPool constantPool = objectType.getConstantPool();
                             for (int cpi = 1; cpi < constantPool.length(); cpi++) {
                                 constantPool.loadReferencedType(cpi, Bytecodes.LDC);
@@ -604,7 +606,6 @@ public final class CompileTheWorld {
                         }
 
                         // Are we compiling this class?
-                        MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
                         if (classFileCounter >= startAt) {
                             println("CompileTheWorld (%d) : %s", classFileCounter, className);
 

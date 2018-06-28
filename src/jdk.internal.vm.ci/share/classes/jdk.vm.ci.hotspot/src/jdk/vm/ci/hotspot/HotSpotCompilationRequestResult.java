@@ -58,6 +58,7 @@ public final class HotSpotCompilationRequestResult implements CompilationRequest
         this.inlinedBytecodes = inlinedBytecodes;
     }
 
+    @Override
     public Object getFailure() {
         return failureMessage;
     }

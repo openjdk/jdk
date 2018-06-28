@@ -91,68 +91,52 @@ class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         return object;
     }
 
+    @Override
     public boolean isCompressed() {
         return compressed;
     }
 
+    @Override
     public JavaConstant compress() {
         assert !compressed;
         return new HotSpotObjectConstantImpl(object, true);
     }
 
+    @Override
     public JavaConstant uncompress() {
         assert compressed;
         return new HotSpotObjectConstantImpl(object, false);
     }
 
+    @Override
     public HotSpotResolvedObjectType getType() {
         return fromObjectClass(object.getClass());
     }
 
-    public JavaConstant getClassLoader() {
-        if (object instanceof Class) {
-            /*
-             * This is an intrinsic for getClassLoader0, which occurs after any security checks. We
-             * can't call that directly so just call getClassLoader.
-             */
-            return HotSpotObjectConstantImpl.forObject(((Class<?>) object).getClassLoader());
-        }
-        return null;
-    }
-
+    @Override
     public int getIdentityHashCode() {
         return System.identityHashCode(object);
     }
 
-    public JavaConstant getComponentType() {
-        if (object instanceof Class) {
-            return HotSpotObjectConstantImpl.forObject(((Class<?>) object).getComponentType());
-        }
-        return null;
-    }
-
-    public JavaConstant getSuperclass() {
-        if (object instanceof Class) {
-            return HotSpotObjectConstantImpl.forObject(((Class<?>) object).getSuperclass());
-        }
-        return null;
-    }
-
+    @Override
     public JavaConstant getCallSiteTarget(Assumptions assumptions) {
         if (object instanceof CallSite) {
             CallSite callSite = (CallSite) object;
             MethodHandle target = callSite.getTarget();
+            JavaConstant targetConstant = HotSpotObjectConstantImpl.forObject(target);
             if (!(callSite instanceof ConstantCallSite)) {
                 if (assumptions == null) {
                     return null;
                 }
-                assumptions.record(new Assumptions.CallSiteTargetValue(callSite, target));
+                assumptions.record(new Assumptions.CallSiteTargetValue(this, targetConstant));
             }
-            return HotSpotObjectConstantImpl.forObject(target);
+
+            return targetConstant;
         }
         return null;
     }
 
+    @Override
     @SuppressFBWarnings(value = "ES_COMPARING_STRINGS_WITH_EQ", justification = "reference equality is what we want")
     public boolean isInternedString() {
         if (object instanceof String) {
@@ -162,6 +146,7 @@ class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         return false;
     }
 
+    @Override
     public <T> T asObject(Class<T> type) {
         if (type.isInstance(object)) {
             return type.cast(object);
@@ -169,6 +154,7 @@ class HotSpotObjectConstantImpl implements HotSpotObjectConstant {
         return null;
     }
 
+    @Override
     public Object asObject(ResolvedJavaType type) {
         if (type.isInstance(this)) {
             return object;

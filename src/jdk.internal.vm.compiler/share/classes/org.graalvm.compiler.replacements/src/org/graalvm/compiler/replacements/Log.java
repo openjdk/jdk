@@ -20,7 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.replacements;
+
+import static org.graalvm.compiler.replacements.nodes.CStringConstant.cstring;
 
 import java.io.PrintStream;
 
@@ -28,6 +32,7 @@ import org.graalvm.compiler.core.common.spi.ForeignCallDescriptor;
 import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.nodes.extended.ForeignCallNode;
+import org.graalvm.compiler.word.Word;
 
 import jdk.vm.ci.meta.JavaKind;
 
@@ -40,7 +45,7 @@ public final class Log {
 
     public static final ForeignCallDescriptor LOG_PRIMITIVE = new ForeignCallDescriptor("logPrimitive", void.class, int.class, long.class, boolean.class);
     public static final ForeignCallDescriptor LOG_OBJECT = new ForeignCallDescriptor("logObject", void.class, Object.class, boolean.class, boolean.class);
-    public static final ForeignCallDescriptor LOG_PRINTF = new ForeignCallDescriptor("logPrintf", void.class, String.class, long.class, long.class, long.class);
+    public static final ForeignCallDescriptor LOG_PRINTF = new ForeignCallDescriptor("logPrintf", void.class, Word.class, long.class, long.class, long.class);
 
     @NodeIntrinsic(ForeignCallNode.class)
     private static native void log(@ConstantNodeParameter ForeignCallDescriptor logObject, Object object, boolean asString, boolean newline);
@@ -49,7 +54,7 @@ public final class Log {
     private static native void log(@ConstantNodeParameter ForeignCallDescriptor logPrimitive, int typeChar, long value, boolean newline);
 
     @NodeIntrinsic(ForeignCallNode.class)
-    private static native void printf(@ConstantNodeParameter ForeignCallDescriptor logPrintf, String format, long v1, long v2, long v3);
+    private static native void printf(@ConstantNodeParameter ForeignCallDescriptor logPrintf, Word format, long v1, long v2, long v3);
 
     public static void print(boolean value) {
         log(LOG_PRIMITIVE, JavaKind.Boolean.getTypeChar(), value ? 1L : 0L, false);
@@ -83,15 +88,15 @@ public final class Log {
      * @param value the value associated with the conversion specifier
      */
     public static void printf(String format, long value) {
-        printf(LOG_PRINTF, format, value, 0L, 0L);
+        printf(LOG_PRINTF, cstring(format), value, 0L, 0L);
     }
 
     public static void printf(String format, long v1, long v2) {
-        printf(LOG_PRINTF, format, v1, v2, 0L);
+        printf(LOG_PRINTF, cstring(format), v1, v2, 0L);
     }
 
     public static void printf(String format, long v1, long v2, long v3) {
-        printf(LOG_PRINTF, format, v1, v2, v3);
+        printf(LOG_PRINTF, cstring(format), v1, v2, v3);
     }
 
     public static void print(float value) {

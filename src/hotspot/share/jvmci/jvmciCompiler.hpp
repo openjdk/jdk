@@ -92,8 +92,6 @@ public:
 
   void compile_method(const methodHandle& target, int entry_bci, JVMCIEnv* env);
 
-  virtual bool is_trivial(Method* method);
-
   // Print compilation timers and statistics
   virtual void print_timers();
 

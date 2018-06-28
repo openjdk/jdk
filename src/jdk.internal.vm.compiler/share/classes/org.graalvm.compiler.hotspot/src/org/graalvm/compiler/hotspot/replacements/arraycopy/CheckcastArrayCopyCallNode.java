@@ -21,10 +21,10 @@
  * questions.
  */
 //JaCoCo Exclude
+
+
 package org.graalvm.compiler.hotspot.replacements.arraycopy;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_UNKNOWN;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_UNKNOWN;
 
@@ -111,15 +111,16 @@ public final class CheckcastArrayCopyCallNode extends AbstractMemoryCheckpoint i
         return uninit;
     }
 
-    private ValueNode computeBase(ValueNode base, ValueNode pos) {
+    private ValueNode computeBase(LoweringTool tool, ValueNode base, ValueNode pos) {
         FixedWithNextNode basePtr = graph().add(new GetObjectAddressNode(base));
         graph().addBeforeFixed(this, basePtr);
 
-        int shift = CodeUtil.log2(getArrayIndexScale(JavaKind.Object));
+        int shift = CodeUtil.log2(tool.getMetaAccess().getArrayIndexScale(JavaKind.Object));
         ValueNode extendedPos = IntegerConvertNode.convert(pos, StampFactory.forKind(runtime.getTarget().wordJavaKind), graph(), NodeView.DEFAULT);
         ValueNode scaledIndex = graph().unique(new LeftShiftNode(extendedPos, ConstantNode.forInt(shift, graph())));
         ValueNode offset = graph().unique(
-                        new AddNode(scaledIndex, ConstantNode.forIntegerBits(PrimitiveStamp.getBits(scaledIndex.stamp(NodeView.DEFAULT)), getArrayBaseOffset(JavaKind.Object), graph())));
+                        new AddNode(scaledIndex,
+                                        ConstantNode.forIntegerBits(PrimitiveStamp.getBits(scaledIndex.stamp(NodeView.DEFAULT)), tool.getMetaAccess().getArrayBaseOffset(JavaKind.Object), graph())));
         return graph().unique(new OffsetAddressNode(basePtr, offset));
     }
 
@@ -128,8 +129,8 @@ public final class CheckcastArrayCopyCallNode extends AbstractMemoryCheckpoint i
         if (graph().getGuardsStage().areFrameStatesAtDeopts()) {
             ForeignCallDescriptor desc = HotSpotHostForeignCallsProvider.lookupCheckcastArraycopyDescriptor(isUninit());
             StructuredGraph graph = graph();
-            ValueNode srcAddr = computeBase(getSource(), getSourcePosition());
-            ValueNode destAddr = computeBase(getDestination(), getDestinationPosition());
+            ValueNode srcAddr = computeBase(tool, getSource(), getSourcePosition());
+            ValueNode destAddr = computeBase(tool, getDestination(), getDestinationPosition());
             ValueNode len = getLength();
             if (len.stamp(NodeView.DEFAULT).getStackKind() != runtime.getTarget().wordJavaKind) {
                 len = IntegerConvertNode.convert(len, StampFactory.forKind(runtime.getTarget().wordJavaKind), graph(), NodeView.DEFAULT);

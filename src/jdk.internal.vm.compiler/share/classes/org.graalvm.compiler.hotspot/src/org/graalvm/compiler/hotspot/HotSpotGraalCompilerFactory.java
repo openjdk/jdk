@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package org.graalvm.compiler.hotspot;
 
 import static jdk.vm.ci.common.InitTimer.timer;
@@ -160,7 +162,13 @@ public final class HotSpotGraalCompilerFactory extends HotSpotJVMCICompilerFacto
     }
 
     @Override
-    public CompilationLevel adjustCompilationLevel(Class<?> declaringClass, String name, String signature, boolean isOsr, CompilationLevel level) {
+    public CompilationLevel adjustCompilationLevel(Object declaringClassObject, String name, String signature, boolean isOsr, CompilationLevel level) {
+        if (declaringClassObject instanceof String) {
+            // This must be SVM mode in which case only GraalCompileC1Only matters since Graal and
+            // JVMCI are already compiled.
+            return checkGraalCompileOnlyFilter((String) declaringClassObject, name, signature, level);
+        }
+        Class<?> declaringClass = (Class<?>) declaringClassObject;
         return adjustCompilationLevelInternal(declaringClass, name, signature, level);
     }
 

@@ -25,13 +25,14 @@
  * @test
  * @bug 8152341
  * @requires vm.jvmci
- * @library /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
+ * @library /compiler/jvmci/common/patches /test/lib /compiler/jvmci/jdk.vm.ci.hotspot.test/src
  * @modules jdk.internal.vm.ci/jdk.vm.ci.meta
  *          jdk.internal.vm.ci/jdk.vm.ci.common
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          java.base/jdk.internal.misc
  * @build sun.hotspot.WhiteBox
+ * @build jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run testng/othervm -Xbootclasspath/a:.

@@ -30,6 +30,7 @@ import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.Signature;
+import jdk.vm.ci.meta.UnresolvedJavaType;
 
 /**
  * Represents a method signature.
@@ -41,9 +42,9 @@ public class HotSpotSignature implements Signature {
     private final String originalString;
     private ResolvedJavaType[] parameterTypes;
     private ResolvedJavaType returnTypeCache;
-    private final HotSpotJVMCIRuntimeProvider runtime;
+    private final HotSpotJVMCIRuntime runtime;
 
-    public HotSpotSignature(HotSpotJVMCIRuntimeProvider runtime, String signature) {
+    public HotSpotSignature(HotSpotJVMCIRuntime runtime, String signature) {
         this.runtime = runtime;
         if (signature.length() == 0) {
             throw new IllegalArgumentException("Signature cannot be empty");
@@ -69,7 +70,7 @@ public class HotSpotSignature implements Signature {
         }
     }
 
-    public HotSpotSignature(HotSpotJVMCIRuntimeProvider runtime, ResolvedJavaType returnType, ResolvedJavaType... parameterTypes) {
+    public HotSpotSignature(HotSpotJVMCIRuntime runtime, ResolvedJavaType returnType, ResolvedJavaType... parameterTypes) {
         this.runtime = runtime;
         this.parameterTypes = parameterTypes.clone();
         this.returnTypeCache = returnType;
@@ -142,12 +143,12 @@ public class HotSpotSignature implements Signature {
         return true;
     }
 
-    private static JavaType getUnresolvedOrPrimitiveType(HotSpotJVMCIRuntimeProvider runtime, String name) {
+    private static JavaType getUnresolvedOrPrimitiveType(HotSpotJVMCIRuntime runtime, String name) {
         if (name.length() == 1) {
             JavaKind kind = JavaKind.fromPrimitiveOrVoidTypeChar(name.charAt(0));
             return runtime.getHostJVMCIBackend().getMetaAccess().lookupJavaType(kind.toJavaClass());
         }
-        return HotSpotUnresolvedJavaType.create(runtime, name);
+        return UnresolvedJavaType.create(name);
     }
 
     @Override
