@@ -36,11 +36,13 @@
 
 
 ClassLoaderHierarchyDCmd::ClassLoaderHierarchyDCmd(outputStream* output, bool heap)
-  : DCmdWithParser(output, heap)
-  , _show_classes("show-classes", "Print loaded classes.", "BOOLEAN", false, "false")
-  , _verbose("verbose", "Print detailed information.", "BOOLEAN", false, "false") {
+  : DCmdWithParser(output, heap),
+   _show_classes("show-classes", "Print loaded classes.", "BOOLEAN", false, "false"),
+  _verbose("verbose", "Print detailed information.", "BOOLEAN", false, "false"),
+  _fold("fold", "Show loaders of the same name and class as one.", "BOOLEAN", true, "true") {
   _dcmdparser.add_dcmd_option(&_show_classes);
   _dcmdparser.add_dcmd_option(&_verbose);
+  _dcmdparser.add_dcmd_option(&_fold);
 }
 
 
@@ -127,10 +129,12 @@ public:
 class LoaderTreeNode : public ResourceObj {
 
   // We walk the CLDG and, for each CLD which is non-anonymous, add
-  // a tree node. To add a node we need its parent node; if it itself
-  // does not exist yet, we add a preliminary node for it. This preliminary
-  // node just contains its loader oop; later, when encountering its CLD in
-  // our CLDG walk, we complete the missing information in this node.
+  // a tree node.
+  // To add a node we need its parent node; if the parent node does not yet
+  // exist - because we have not yet encountered the CLD for the parent loader -
+  // we add a preliminary empty LoaderTreeNode for it. This preliminary node
+  // just contains the loader oop and nothing else. Once we encounter the CLD of
+  // this parent loader, we fill in all the other details.
 
   const oop _loader_oop;
   const ClassLoaderData* _cld;
@@ -143,6 +147,12 @@ class LoaderTreeNode : public ResourceObj {
 
   LoadedClassInfo* _anon_classes;
   int _num_anon_classes;
+
+  // In default view, similar tree nodes (same loader class, same name or no name)
+  // are folded into each other to make the output more readable.
+  // _num_folded contains the number of nodes which have been folded into this
+  // one.
+  int _num_folded;
 
   void print_with_childs(outputStream* st, BranchTracker& branchtracker,
       bool print_classes, bool verbose) const {
@@ -170,7 +180,9 @@ class LoaderTreeNode : public ResourceObj {
         st->print(" \"%s\",", loader_name->as_C_string());
       }
       st->print(" %s", loader_klass != NULL ? loader_klass->external_name() : "??");
-      st->print(" {" PTR_FORMAT "}", p2i(_loader_oop));
+      if (_num_folded > 0) {
+        st->print(" (+ %d more)", _num_folded);
+      }
     }
     st->cr();
 
@@ -192,6 +204,8 @@ class LoaderTreeNode : public ResourceObj {
       const int indentation = 18;
 
       if (verbose) {
+        branchtracker.print(st);
+        st->print_cr("%*s " PTR_FORMAT, indentation, "Loader Oop:", p2i(_loader_oop));
         branchtracker.print(st);
         st->print_cr("%*s " PTR_FORMAT, indentation, "Loader Data:", p2i(_cld));
         branchtracker.print(st);
@@ -246,7 +260,7 @@ class LoaderTreeNode : public ResourceObj {
             // For anonymous classes, also print CLD if verbose. Should be a different one than the primary CLD.
             assert(lci->_cld != _cld, "must be");
             if (verbose) {
-              st->print("  (CLD: " PTR_FORMAT ")", p2i(lci->_cld));
+              st->print("  (Loader Data: " PTR_FORMAT ")", p2i(lci->_cld));
             }
             st->cr();
           }
@@ -272,13 +286,22 @@ class LoaderTreeNode : public ResourceObj {
 
   }
 
+  // Helper: Attempt to fold this node into the target node. If success, returns true.
+  // Folding can be done if both nodes are leaf nodes and they refer to the same loader class
+  // and they have the same name or no name (note: leaf check is done by caller).
+  bool can_fold_into(LoaderTreeNode* target_node) const {
+    assert(is_leaf() && target_node->is_leaf(), "must be leaf");
+    return _cld->class_loader_klass() == target_node->_cld->class_loader_klass() &&
+           _cld->name() == target_node->_cld->name();
+  }
+
 public:
 
   LoaderTreeNode(const oop loader_oop)
-    : _loader_oop(loader_oop), _cld(NULL)
-    , _child(NULL), _next(NULL)
-    , _classes(NULL), _anon_classes(NULL)
-    , _num_classes(0), _num_anon_classes(0) {}
+    : _loader_oop(loader_oop), _cld(NULL), _child(NULL), _next(NULL),
+      _classes(NULL), _anon_classes(NULL), _num_classes(0), _num_anon_classes(0),
+      _num_folded(0)
+    {}
 
   void set_cld(const ClassLoaderData* cld) {
     _cld = cld;
@@ -329,6 +352,39 @@ public:
       }
     }
     return result;
+  }
+
+  bool is_leaf() const { return _child == NULL; }
+
+  // Attempt to fold similar nodes among this node's children. We only fold leaf nodes
+  // (no child class loaders).
+  // For non-leaf nodes (class loaders with child class loaders), do this recursivly.
+  void fold_children() {
+    LoaderTreeNode* node = _child;
+    LoaderTreeNode* prev = NULL;
+    while (node != NULL) {
+      LoaderTreeNode* matching_node = NULL;
+      if (node->is_leaf()) {
+        // Look among the preceeding node siblings for a match.
+        for (LoaderTreeNode* node2 = _child; node2 != node && matching_node == NULL;
+            node2 = node2->_next) {
+          if (node2->is_leaf() && node->can_fold_into(node2)) {
+            matching_node = node2;
+          }
+        }
+      } else {
+        node->fold_children();
+      }
+      if (matching_node != NULL) {
+        // Increase fold count for the matching node and remove folded node from the child list.
+        matching_node->_num_folded ++;
+        assert(prev != NULL, "Sanity"); // can never happen since we do not fold the first node.
+        prev->_next = node->_next;
+      } else {
+        prev = node;
+      }
+      node = node->_next;
+    }
   }
 
   void print_with_childs(outputStream* st, bool print_classes, bool print_add_info) const {
@@ -433,6 +489,10 @@ public:
     fill_in_classes(info, cld);
   }
 
+  void fold() {
+    _root->fold_children();
+  }
+
 };
 
 
@@ -440,9 +500,10 @@ class ClassLoaderHierarchyVMOperation : public VM_Operation {
   outputStream* const _out;
   const bool _show_classes;
   const bool _verbose;
+  const bool _fold;
 public:
-  ClassLoaderHierarchyVMOperation(outputStream* out, bool show_classes, bool verbose) :
-    _out(out), _show_classes(show_classes), _verbose(verbose)
+  ClassLoaderHierarchyVMOperation(outputStream* out, bool show_classes, bool verbose, bool fold) :
+    _out(out), _show_classes(show_classes), _verbose(verbose), _fold(fold)
   {}
 
   VMOp_Type type() const {
@@ -454,12 +515,18 @@ public:
     ResourceMark rm;
     LoaderInfoScanClosure cl (_show_classes, _verbose);
     ClassLoaderDataGraph::cld_do(&cl);
+    // In non-verbose and non-show-classes mode, attempt to fold the tree.
+    if (_fold) {
+      if (!_verbose && !_show_classes) {
+        cl.fold();
+      }
+    }
     cl.print_results(_out);
   }
 };
 
 // This command needs to be executed at a safepoint.
 void ClassLoaderHierarchyDCmd::execute(DCmdSource source, TRAPS) {
-  ClassLoaderHierarchyVMOperation op(output(), _show_classes.value(), _verbose.value());
+  ClassLoaderHierarchyVMOperation op(output(), _show_classes.value(), _verbose.value(), _fold.value());
   VMThread::execute(&op);
 }

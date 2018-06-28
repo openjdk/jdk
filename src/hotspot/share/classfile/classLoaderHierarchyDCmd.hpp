@@ -31,6 +31,7 @@
 class ClassLoaderHierarchyDCmd: public DCmdWithParser {
   DCmdArgument<bool> _show_classes;
   DCmdArgument<bool> _verbose;
+  DCmdArgument<bool> _fold;
 public:
 
   ClassLoaderHierarchyDCmd(outputStream* output, bool heap);
