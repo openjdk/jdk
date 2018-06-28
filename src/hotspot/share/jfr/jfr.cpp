@@ -85,12 +85,12 @@ void Jfr::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   LeakProfiler::oops_do(is_alive, f);
 }
 
-bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* tail) {
-  return JfrOptionSet::parse_start_flight_recording_option(option, tail);
+bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* delimiter) {
+  return JfrOptionSet::parse_flight_recorder_option(option, delimiter);
 }
 
-bool Jfr::on_flight_recorder_option(const JavaVMOption** option, char* tail) {
-  return JfrOptionSet::parse_flight_recorder_option(option, tail);
+bool Jfr::on_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
+  return JfrOptionSet::parse_start_flight_recording_option(option, delimiter);
 }
 
 Thread* Jfr::sampler_thread() {

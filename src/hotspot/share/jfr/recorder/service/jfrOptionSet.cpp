@@ -665,59 +665,69 @@ bool JfrOptionSet::adjust_memory_options() {
   return true;
 }
 
-static GrowableArray<const char*>* startup_recording_array = NULL;
+static const char XXFlightRecorderOptions[] = "-XX:FlightRecorderOptions";
 
-bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** option, char* tail) {
+bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, char* delimiter) {
   assert(option != NULL, "invariant");
-  assert(tail != NULL, "invariant");
+  assert(delimiter != NULL, "invariant");
   assert((*option)->optionString != NULL, "invariant");
-  assert(strncmp((*option)->optionString, "-XX:StartFlightRecording", 24) == 0, "invariant");
-  const char* param_string = NULL;
-  if (*tail == '\0') {
-    // Add dummy dumponexit=false so -XX:StartFlightRecording can be used without a parameter.
+  assert(strncmp((*option)->optionString, XXFlightRecorderOptions, sizeof XXFlightRecorderOptions - 1) == 0, "invariant");
+  if (*delimiter == '\0') {
+    // -XX:FlightRecorderOptions without any delimiter and values
+  } else {
+    // -XX:FlightRecorderOptions[=|:]
+    // set delimiter to '='
+    *delimiter = '=';
+  }
+  return false;
+}
+
+static GrowableArray<const char*>* startup_recording_options_array = NULL;
+static const char XXStartFlightRecordingOption[] = "-XX:StartFlightRecording";
+
+bool JfrOptionSet::parse_start_flight_recording_option(const JavaVMOption** option, char* delimiter) {
+  assert(option != NULL, "invariant");
+  assert(delimiter != NULL, "invariant");
+  assert((*option)->optionString != NULL, "invariant");
+  assert(strncmp((*option)->optionString, XXStartFlightRecordingOption, sizeof XXStartFlightRecordingOption - 1) == 0, "invariant");
+  const char* value = NULL;
+  if (*delimiter == '\0') {
+    // -XX:StartFlightRecording without any delimiter and values
+    // Add dummy value "dumponexit=false" so -XX:StartFlightRecording can be used without explicit values.
     // The existing option->optionString points to stack memory so no need to deallocate.
     const_cast<JavaVMOption*>(*option)->optionString = (char*)"-XX:StartFlightRecording=dumponexit=false";
-    param_string = (*option)->optionString + 25;
+    value = (*option)->optionString + sizeof XXStartFlightRecordingOption;
   } else {
-    *tail = '='; // ":" -> "="
-    param_string = tail + 1;
+    // -XX:StartFlightRecording[=|:]
+    // set delimiter to '='
+    *delimiter = '=';
+    value = delimiter + 1;
   }
-  assert(param_string != NULL, "invariant");
-  const size_t param_length = strlen(param_string);
+  assert(value != NULL, "invariant");
+  const size_t value_length = strlen(value);
 
-  if (startup_recording_array == NULL) {
-    startup_recording_array = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(8, true, mtTracing);
+  if (startup_recording_options_array == NULL) {
+    startup_recording_options_array = new (ResourceObj::C_HEAP, mtTracing) GrowableArray<const char*>(8, true, mtTracing);
   }
-  assert(startup_recording_array != NULL, "invariant");
-  char* startup_options = NEW_C_HEAP_ARRAY(char, param_length + 1, mtTracing);
-  strncpy(startup_options, param_string, strlen(param_string) + 1);
-  assert(strncmp(param_string, startup_options, param_length) == 0, "invariant");
-  startup_recording_array->append(startup_options);
+  assert(startup_recording_options_array != NULL, "invariant");
+  char* const startup_value = NEW_C_HEAP_ARRAY(char, value_length + 1, mtTracing);
+  strncpy(startup_value, value, value_length + 1);
+  assert(strncmp(startup_value, value, value_length) == 0, "invariant");
+  startup_recording_options_array->append(startup_value);
   return false;
 }
 
-const GrowableArray<const char*>* JfrOptionSet::startup_recordings() {
-  return startup_recording_array;
+const GrowableArray<const char*>* JfrOptionSet::startup_recording_options() {
+  return startup_recording_options_array;
 }
 
-void JfrOptionSet::release_startup_recordings() {
-  if (startup_recording_array != NULL) {
-    for (int i = 0; i < startup_recording_array->length(); ++i) {
-      FREE_C_HEAP_ARRAY(char, startup_recording_array->at(i));
+void JfrOptionSet::release_startup_recording_options() {
+  if (startup_recording_options_array != NULL) {
+    const int length = startup_recording_options_array->length();
+    for (int i = 0; i < length; ++i) {
+      FREE_C_HEAP_ARRAY(char, startup_recording_options_array->at(i));
     }
+    delete startup_recording_options_array;
+    startup_recording_options_array = NULL;
   }
-  delete startup_recording_array;
-  startup_recording_array = NULL;
 }
-
-bool JfrOptionSet::parse_flight_recorder_option(const JavaVMOption** option, char* tail) {
-  assert(option != NULL, "invariant");
-  assert(tail != NULL, "invariant");
-  assert((*option)->optionString != NULL, "invariant");
-  assert(strncmp((*option)->optionString, "-XX:FlightRecorderOptions", 25) == 0, "invariant");
-  if (tail != NULL) {
-    *tail = '='; // ":" -> "="
-  }
-  return false;
-}
-
