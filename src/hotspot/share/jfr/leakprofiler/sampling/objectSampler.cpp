@@ -32,9 +32,10 @@
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
+#include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/thread.hpp"
-#include "logging/log.hpp"
 
 ObjectSampler::ObjectSampler(size_t size) :
   _priority_queue(new SamplePriorityQueue(size)),
@@ -72,8 +73,6 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, JavaThread* thread) {
     stack_trace_id = JfrStackTraceRepository::record(thread, 0, &stack_trace_hash);
     thread->jfr_thread_local()->set_cached_stack_trace_id(stack_trace_id, stack_trace_hash);
   }
-
-  const JfrTicks allocation_time = JfrTicks::now();
 
   JfrTryLock tryLock(&_tryLock);
   if (!tryLock.has_lock()) {
@@ -114,7 +113,8 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, JavaThread* thread) {
   sample->set_span(allocated);
   sample->set_object((oop)obj);
   sample->set_allocated(allocated);
-  sample->set_allocation_time(allocation_time);
+  sample->set_allocation_time(JfrTicks::now());
+  sample->set_heap_used_at_last_gc(Universe::get_heap_used_at_last_gc());
   _priority_queue->push(sample);
 }
 

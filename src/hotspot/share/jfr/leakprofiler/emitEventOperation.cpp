@@ -216,6 +216,7 @@ void EmitEventOperation::write_event(const ObjectSample* sample, EdgeStore* edge
   e.set_starttime(GranularTimer::start_time());
   e.set_endtime(GranularTimer::end_time());
   e.set_allocationTime(sample->allocation_time());
+  e.set_lastKnownHeapUsage(sample->heap_used_at_last_gc());
   e.set_object(object_id);
   e.set_arrayElements(array_size(*object_addr));
   e.set_root(gc_root_id);

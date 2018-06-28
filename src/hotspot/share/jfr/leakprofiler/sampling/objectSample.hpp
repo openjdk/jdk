@@ -53,6 +53,7 @@ class ObjectSample : public JfrCHeapObj {
   int _index;
   size_t _span;
   size_t _allocated;
+  size_t _heap_used_at_last_gc;
   unsigned int _stack_trace_hash;
   bool _dead;
 
@@ -88,6 +89,7 @@ class ObjectSample : public JfrCHeapObj {
                    _index(0),
                    _span(0),
                    _allocated(0),
+                   _heap_used_at_last_gc(0),
                    _stack_trace_hash(0),
                    _dead(false) {}
 
@@ -162,6 +164,14 @@ class ObjectSample : public JfrCHeapObj {
 
   const void set_allocation_time(const JfrTicks& time) {
     _allocation_time = Ticks(time.value());
+  }
+
+  void set_heap_used_at_last_gc(size_t heap_used) {
+    _heap_used_at_last_gc = heap_used;
+  }
+
+  size_t heap_used_at_last_gc() const {
+    return _heap_used_at_last_gc;
   }
 
   bool has_stack_trace() const {
