@@ -171,3 +171,20 @@ compiler/stable/TestStableObject.java                            8204347   gener
 compiler/stable/TestStableShort.java                             8204347   generic-all
 compiler/stable/TestStableUByte.java                             8204347   generic-all
 compiler/stable/TestStableUShort.java                            8204347   generic-all
+
+# Graal unit tests
+org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081
+org.graalvm.compiler.core.test.inlining.PolymorphicInliningTest                  8205081
+org.graalvm.compiler.core.test.OptionsVerifierTest                               8205081
+org.graalvm.compiler.core.test.ProfilingInfoTest                                 8205081
+org.graalvm.compiler.hotspot.test.CompilationWrapperTest                         8205081
+org.graalvm.compiler.hotspot.test.HsErrLogTest                                   8205081
+org.graalvm.compiler.hotspot.test.OptionsInFileTest                              8205081
+org.graalvm.compiler.replacements.test.classfile.ClassfileBytecodeProviderTest   8205081
+org.graalvm.compiler.replacements.test.classfile.RedefineIntrinsicTest           8205081
+
+org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
+org.graalvm.compiler.core.test.CountedLoopTest                   8199885
+org.graalvm.compiler.debug.test.DebugContextTest                 8203504
+org.graalvm.compiler.debug.test.VersionsTest                     8204517
+org.graalvm.compiler.core.test.VerifyDebugUsageTest              8205078

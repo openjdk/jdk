@@ -76,7 +76,8 @@ tier1_compiler = \
 hotspot_not_fast_compiler = \
   :hotspot_compiler \
   -:tier1_compiler \
-  -:hotspot_slow_compiler
+  -:hotspot_slow_compiler \
+  -compiler/graalunit
 
 hotspot_slow_compiler = \
   compiler/codegen/aes \

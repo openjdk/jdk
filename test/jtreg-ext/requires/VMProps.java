@@ -257,11 +257,12 @@ public class VMProps implements Callable<Map<String, String>> {
 
     /**
      * Selected sets of final flags.
-     * @param map -property-value pairs
+     * @param map - property-value pairs
      */
     protected void vmOptFinalFlags(Map<String, String> map) {
         vmOptFinalFlag(map, "ClassUnloading");
         vmOptFinalFlag(map, "UseCompressedOops");
+        vmOptFinalFlag(map, "EnableJVMCI");
     }
 
     /**

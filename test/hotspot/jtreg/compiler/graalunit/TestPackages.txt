@@ -1,0 +1,38 @@
+Collections   jdk.internal.vm.compiler.collections.test
+ApiDirectives org.graalvm.compiler.api.directives.test
+Api           org.graalvm.compiler.api.test
+AsmAarch64    org.graalvm.compiler.asm.aarch64.test
+AsmAmd64      org.graalvm.compiler.asm.amd64.test
+AsmSparc      org.graalvm.compiler.asm.sparc.test
+CoreAmd64     org.graalvm.compiler.core.amd64.test
+CoreSparc     org.graalvm.compiler.core.sparc.test @requires vm.simpleArch == "sparcv9"
+Core          org.graalvm.compiler.core.test
+Debug         org.graalvm.compiler.debug.test
+Graph         org.graalvm.compiler.graph.test      @requires vm.graal.enabled
+HotspotAmd64  org.graalvm.compiler.hotspot.amd64.test
+HotspotLir    org.graalvm.compiler.hotspot.lir.test
+Hotspot       org.graalvm.compiler.hotspot.test
+Loop          org.graalvm.compiler.loop.test
+Nodes         org.graalvm.compiler.nodes.test      @requires vm.graal.enabled
+Options       org.graalvm.compiler.options.test
+PhasesCommon  org.graalvm.compiler.phases.common.test
+Replacements  org.graalvm.compiler.replacements.test
+Util          org.graalvm.util.test
+JttBackend    org.graalvm.compiler.jtt.backend
+JttBytecode   org.graalvm.compiler.jtt.bytecode
+JttExcept     org.graalvm.compiler.jtt.except
+JttHotpath    org.graalvm.compiler.jtt.hotpath
+JttHotspot    org.graalvm.compiler.jtt.hotspot
+JttJdk        org.graalvm.compiler.jtt.jdk
+JttLangAL     org.graalvm.compiler.jtt.lang.[a-lA-L]
+JttLangM      org.graalvm.compiler.jtt.lang.[mM]
+JttLangNZ     org.graalvm.compiler.jtt.lang.[n-zN-Z]
+JttLoop       org.graalvm.compiler.jtt.loop
+Jtt.Micro     org.graalvm.compiler.jtt.micro
+JttOptimize   org.graalvm.compiler.jtt.optimize
+JttReflectAE  org.graalvm.compiler.jtt.reflect.[a-eA-E]
+JttReflectF   org.graalvm.compiler.jtt.reflect.[fF]
+JttReflectGZ  org.graalvm.compiler.jtt.reflect.[g-zG-Z]
+JttThreads    org.graalvm.compiler.jtt.threads
+LirJtt        org.graalvm.compiler.lir.jtt
+Lir           org.graalvm.compiler.lir.test
