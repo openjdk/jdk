@@ -121,10 +121,6 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDesc
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance001/TestDescription.java                              8203174   generic-all
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance002/TestDescription.java                              8203174   generic-all
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance003/TestDescription.java                              8203174   generic-all
-vmTestbase/nsk/jdi/EventRequestManager/methodExitRequests/methexitreq002/TestDescription.java             8203174   generic-all
-vmTestbase/nsk/jdi/MonitorContendedEnteredRequest/MonitorContendedEnteredRequest001/TestDescription.java  8203174   generic-all
-vmTestbase/nsk/jdi/MonitorContendedEnteredRequest/MonitorContendedEnteredRequest002/TestDescription.java  8203174   generic-all
-vmTestbase/nsk/jdi/MonitorWaitedRequest/addClassExclusionFilter/TestDescription.java                      8203174   generic-all
 vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects001/referringObjects001.java          8203174   generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances002/instances002.java                                 8203174   generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances003/instances003.java                                 8203174   generic-all
