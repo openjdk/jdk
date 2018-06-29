@@ -1,7 +1,7 @@
 ## Mozilla Public Suffix List
 
 ### Public Suffix Notice
-<pre>
+```
 You are receiving a copy of the Mozilla Public Suffix List in the following
 file: <java-home>/lib/security/public_suffix_list.dat. The terms of the
 Oracle license do NOT apply to this file; it is licensed under the
@@ -11,17 +11,17 @@ If you do not wish to use the Public Suffix List, you may remove the
 
 The Source Code of this file is available under the
 Mozilla Public License, v. 2.0 and is located at
-https://github.com/publicsuffix/list/blob/03089bfe4aa5b7a2e291f33e07a28d20f875cb83/public_suffix_list.dat
+https://raw.githubusercontent.com/publicsuffix/list/2225db8d9f4a2a27ec697c883360632fa0c16261/public_suffix_list.dat.
 If a copy of the MPL was not distributed with this file, you can obtain one
-at http://mozilla.org/MPL/2.0/.
+at https://mozilla.org/MPL/2.0/.
 
 Software distributed under the License is distributed on an "AS IS" basis,
 WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
 for the specific language governing rights and limitations under the License. 
-</pre>
+```
 
 ### MPL v2.0
-<pre>
+```
 Mozilla Public License Version 2.0
 ==================================
 
@@ -381,7 +381,7 @@ Exhibit A - Source Code Form License Notice
 
   This Source Code Form is subject to the terms of the Mozilla Public
   License, v. 2.0. If a copy of the MPL was not distributed with this
-  file, You can obtain one at http://mozilla.org/MPL/2.0/.
+  file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 If it is not possible or desirable to put the notice in a particular
 file, then You may include the notice in a location (such as a LICENSE
@@ -396,4 +396,4 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
   This Source Code Form is "Incompatible With Secondary Licenses", as
   defined by the Mozilla Public License, v. 2.0.
 
-</pre>
+```
