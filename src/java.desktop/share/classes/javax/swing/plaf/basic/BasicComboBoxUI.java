@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 import sun.awt.AppContext;
 import sun.swing.DefaultLookup;
+import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
 
 /**
@@ -1806,6 +1807,10 @@ public class BasicComboBoxUI extends ComboBoxUI {
                     if ( editor != null ) {
                         editor.setFont( comboBox.getFont() );
                     }
+                    isMinimumSizeDirty = true;
+                    isDisplaySizeDirty = true;
+                    comboBox.validate();
+                } else if (SwingUtilities2.isScaleChanged(e)) {
                     isMinimumSizeDirty = true;
                     isDisplaySizeDirty = true;
                     comboBox.validate();
