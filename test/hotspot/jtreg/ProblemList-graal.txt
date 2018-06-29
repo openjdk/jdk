@@ -184,5 +184,4 @@ org.graalvm.compiler.replacements.test.classfile.RedefineIntrinsicTest          
 org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
 org.graalvm.compiler.core.test.CountedLoopTest                   8199885
 org.graalvm.compiler.debug.test.DebugContextTest                 8203504
-org.graalvm.compiler.debug.test.VersionsTest                     8204517
 org.graalvm.compiler.core.test.VerifyDebugUsageTest              8205078
