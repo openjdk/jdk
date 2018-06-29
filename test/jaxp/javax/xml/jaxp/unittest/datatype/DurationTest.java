@@ -39,11 +39,13 @@ import javax.xml.namespace.QName;
 import org.testng.Assert;
 import org.testng.AssertJUnit;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 
 /*
  * @test
+ * @bug 8190835
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true datatype.DurationTest
  * @run testng/othervm datatype.DurationTest
@@ -64,6 +66,61 @@ public class DurationTest {
             dce.printStackTrace();
             Assert.fail("Failed to create instance of DatatypeFactory " + dce.getMessage());
         }
+    }
+
+    /*
+       DataProvider: for testDurationSubtract1
+       Data: minuend, subtrahend, expected result
+     */
+    @DataProvider(name = "DurationSubtract1")
+    public Object[][] getSubtract1() {
+
+        return new Object[][]{
+            {"P2Y2M", "P1Y5M", "P9M"},
+            {"P2DT2H", "P1DT12H", "PT14H"},
+            {"P2DT2H10M", "P1DT2H25M", "PT23H45M"},
+            {"PT2H10M", "PT1H25M", "PT45M"},
+            {"PT2H10M20S", "PT1H25M35S", "PT44M45S"},
+            {"PT2H10M20.25S", "PT1H25M35.45S", "PT44M44.8S"},
+            // 8190835 test case
+            {"PT2M3.123S", "PT1M10.123S", "PT53S"}
+        };
+    }
+
+    @DataProvider(name = "DurationSubtract2")
+    public Object[][] getSubtract2() {
+
+        return new Object[][]{
+            {"P2Y20D", "P1Y125D"},
+            {"P2M20D", "P1M25D"}
+        };
+    }
+
+    /*
+     * Verifies valid substraction operations.
+     */
+    @Test(dataProvider = "DurationSubtract1")
+    public void testDurationSubtract1(String t1, String t2, String e) throws Exception {
+        DatatypeFactory factory = DatatypeFactory.newInstance();
+        Duration dt1 = factory.newDuration(t1);
+        Duration dt2 = factory.newDuration(t2);
+
+        Duration result = dt1.subtract(dt2);
+        Duration expected = factory.newDuration(e);
+        Assert.assertTrue(result.equals(expected), "The result should be " + e);
+
+    }
+
+    /*
+     * Verifies invalid substraction operations. These operations are invalid
+     * since days in a month are indeterminate.
+    */
+    @Test(dataProvider = "DurationSubtract2", expectedExceptions = IllegalStateException.class)
+    public void testDurationSubtract2(String t1, String t2) throws Exception {
+        DatatypeFactory factory = DatatypeFactory.newInstance();
+        Duration dt1 = factory.newDuration(t1);
+        Duration dt2 = factory.newDuration(t2);
+        Duration result = dt1.subtract(dt2);
     }
 
     @Test

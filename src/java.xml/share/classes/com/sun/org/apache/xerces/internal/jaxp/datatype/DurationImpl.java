@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -98,6 +98,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
  * @author Kohsuke Kawaguchi
  * @author Joseph Fialli
  * @see XMLGregorianCalendar#add(Duration)
+ * @LastModified: June 2018
  */
 class DurationImpl
         extends Duration
@@ -1603,9 +1604,10 @@ class DurationImpl
                     touched = true;
 
                     // compute the number of unit that needs to be borrowed.
-                    BigDecimal borrow =
-                        buf[i].abs().divide(
+                    // scale should be 0 in all cases
+                    BigDecimal borrow = buf[i].abs().divide(
                             FACTORS[i - 1],
+                            0,
                             RoundingMode.UP);
                     if (buf[i].signum() > 0) {
                         borrow = borrow.negate();
