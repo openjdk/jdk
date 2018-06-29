@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary
- * @requires vm.opt.final.EnableJVMCI
+ * @requires vm.opt.final.EnableJVMCI == true
  *
  * @modules jdk.internal.vm.compiler
  *
