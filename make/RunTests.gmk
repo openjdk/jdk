@@ -535,6 +535,8 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -cpa:$$(JIB_JAR)
   endif
 
+  $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_GRAAL_DIR=${TEST_IMAGE_DIR}/hotspot/jtreg/graal
+
   ifneq ($$(JTREG_FAILURE_HANDLER_OPTIONS), )
     $1_JTREG_LAUNCHER_OPTIONS += -Djava.library.path="$(JTREG_FAILURE_HANDLER_DIR)"
   endif
