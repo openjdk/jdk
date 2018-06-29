@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,66 +22,97 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.util.Objects;
-import java.util.Vector;
-import java.util.Locale;
-import java.util.EventListener;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.Collections;
+import java.applet.Applet;
+import java.awt.dnd.DropTarget;
+import java.awt.event.ActionEvent;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.HierarchyBoundsListener;
+import java.awt.event.HierarchyEvent;
+import java.awt.event.HierarchyListener;
+import java.awt.event.InputEvent;
+import java.awt.event.InputMethodEvent;
+import java.awt.event.InputMethodListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.event.MouseWheelEvent;
+import java.awt.event.MouseWheelListener;
+import java.awt.event.PaintEvent;
+import java.awt.event.TextEvent;
+import java.awt.im.InputContext;
+import java.awt.im.InputMethodRequests;
+import java.awt.image.BufferStrategy;
+import java.awt.image.ColorModel;
+import java.awt.image.ImageObserver;
+import java.awt.image.ImageProducer;
+import java.awt.image.VolatileImage;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.ContainerPeer;
 import java.awt.peer.LightweightPeer;
-import java.awt.image.BufferStrategy;
-import java.awt.image.ImageObserver;
-import java.awt.image.ImageProducer;
-import java.awt.image.ColorModel;
-import java.awt.image.VolatileImage;
-import java.awt.event.*;
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
-import java.io.IOException;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.Transient;
-import java.awt.im.InputContext;
-import java.awt.im.InputMethodRequests;
-import java.awt.dnd.DropTarget;
-import java.security.AccessController;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.Serializable;
 import java.security.AccessControlContext;
-import javax.accessibility.*;
-import java.applet.Applet;
+import java.security.AccessController;
+import java.util.Collections;
+import java.util.EventListener;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Vector;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 import javax.swing.JComponent;
 import javax.swing.JRootPane;
 
-import sun.awt.ComponentFactory;
-import sun.security.action.GetPropertyAction;
-import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
+import sun.awt.AppContext;
+import sun.awt.ComponentFactory;
 import sun.awt.ConstrainableGraphics;
+import sun.awt.EmbeddedFrame;
+import sun.awt.RequestFocusController;
 import sun.awt.SubRegionShowable;
 import sun.awt.SunToolkit;
-import sun.awt.EmbeddedFrame;
 import sun.awt.dnd.SunDropTargetEvent;
 import sun.awt.im.CompositionArea;
+import sun.awt.image.VSyncedBSManager;
 import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.font.SunFontManager;
 import sun.java2d.SunGraphics2D;
-import sun.java2d.pipe.Region;
-import sun.awt.image.VSyncedBSManager;
-import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
-import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
-import sun.awt.RequestFocusController;
 import sun.java2d.SunGraphicsEnvironment;
+import sun.java2d.pipe.Region;
+import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
+import sun.security.action.GetPropertyAction;
 import sun.swing.SwingAccessor;
 import sun.util.logging.PlatformLogger;
+
+import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_DEFAULT;
+import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.VSYNC_ON;
 
 /**
  * A <em>component</em> is an object having a graphical representation
@@ -1129,28 +1160,39 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
     }
 
-    boolean updateGraphicsData(GraphicsConfiguration gc) {
-        checkTreeLock();
+    final boolean updateGraphicsData(GraphicsConfiguration gc) {
+        GraphicsConfiguration oldConfig = graphicsConfig;
+        // First, update own graphics configuration
+        boolean ret = updateSelfGraphicsData(gc);
+        // Second, update children graphics configurations
+        ret |= updateChildGraphicsData(gc);
+        // Third, fire PropertyChange if needed
+        if (oldConfig != gc) {
+            /*
+             * If component is moved from one screen to another screen or shown
+             * for the first time graphicsConfiguration property is fired to
+             * enable the component to recalculate any rendering data, if needed
+             */
+            firePropertyChange("graphicsConfiguration", oldConfig, gc);
+        }
+        return ret;
+    }
 
+    private boolean updateSelfGraphicsData(GraphicsConfiguration gc) {
+        checkTreeLock();
         if (graphicsConfig == gc) {
             return false;
         }
-        GraphicsConfiguration oldConfig = graphicsConfig;
         graphicsConfig = gc;
-
-        /*
-         * If component is moved from one screen to another sceeen
-         * graphicsConfiguration property is fired to enable the component
-         * to recalculate any rendering data, if needed
-         */
-        if (oldConfig != null && gc != null) {
-            firePropertyChange("graphicsConfiguration", oldConfig, gc);
-        }
 
         ComponentPeer peer = this.peer;
         if (peer != null) {
             return peer.updateGraphicsData(gc);
         }
+        return false;
+    }
+
+    boolean updateChildGraphicsData(GraphicsConfiguration gc) {
         return false;
     }
 

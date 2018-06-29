@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1145,9 +1145,8 @@ public class BasicMenuItemUI extends MenuItemUI
             if (name == "labelFor" || name == "displayedMnemonic" ||
                 name == "accelerator") {
                 updateAcceleratorBinding();
-            } else if (name == "text" || "font" == name ||
-                       "foreground" == name ||
-                       "ancestor" == name || "graphicsConfiguration" == name) {
+            } else if (name == "text" || "font" == name || "foreground" == name
+                    || SwingUtilities2.isScaleChanged(e)) {
                 // remove the old html view client property if one
                 // existed, and install a new one if the text installed
                 // into the JLabel is html source.
