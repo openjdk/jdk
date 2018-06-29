@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.tools.javac.comp;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.source.tree.NewClassTree;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Type.ErrorType;
+import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.code.Type.StructuralTypeMapping;
 import com.sun.tools.javac.code.Types.TypeMapping;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
@@ -59,6 +61,7 @@ import java.util.WeakHashMap;
 import java.util.function.Function;
 
 import com.sun.source.tree.MemberReferenceTree;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.OverloadKind;
 
 import static com.sun.tools.javac.code.TypeTag.*;
@@ -1002,7 +1005,7 @@ public class DeferredAttr extends JCTree.Visitor {
      * where T is computed by retrieving the type that has already been
      * computed for D during a previous deferred attribution round of the given kind.
      */
-    class DeferredTypeMap extends StructuralTypeMapping<Void> {
+    class DeferredTypeMap<T> extends StructuralTypeMapping<T> {
         DeferredAttrContext deferredAttrContext;
 
         protected DeferredTypeMap(AttrMode mode, Symbol msym, MethodResolutionPhase phase) {
@@ -1011,16 +1014,16 @@ public class DeferredAttr extends JCTree.Visitor {
         }
 
         @Override
-        public Type visitType(Type t, Void _unused) {
+        public Type visitType(Type t, T p) {
             if (!t.hasTag(DEFERRED)) {
-                return super.visitType(t, null);
+                return super.visitType(t, p);
             } else {
                 DeferredType dt = (DeferredType)t;
-                return typeOf(dt);
+                return typeOf(dt, p);
             }
         }
 
-        protected Type typeOf(DeferredType dt) {
+        protected Type typeOf(DeferredType dt, T p) {
             switch (deferredAttrContext.mode) {
                 case CHECK:
                     return dt.tree.type == null ? Type.noType : dt.tree.type;
@@ -1039,17 +1042,35 @@ public class DeferredAttr extends JCTree.Visitor {
      * attribution round (as before), or (ii) by synthesizing a new type R for D
      * (the latter step is useful in a recovery scenario).
      */
-    public class RecoveryDeferredTypeMap extends DeferredTypeMap {
+    public class RecoveryDeferredTypeMap extends DeferredTypeMap<Type> {
 
         public RecoveryDeferredTypeMap(AttrMode mode, Symbol msym, MethodResolutionPhase phase) {
             super(mode, msym, phase != null ? phase : MethodResolutionPhase.BOX);
         }
 
         @Override
-        protected Type typeOf(DeferredType dt) {
-            Type owntype = super.typeOf(dt);
+        protected Type typeOf(DeferredType dt, Type pt) {
+            Type owntype = super.typeOf(dt, pt);
             return owntype == Type.noType ?
-                        recover(dt) : owntype;
+                        recover(dt, pt) : owntype;
+        }
+
+        @Override
+        public Type visitMethodType(Type.MethodType t, Type pt) {
+            if (t.hasTag(METHOD) && deferredAttrContext.mode == AttrMode.CHECK) {
+                Type mtype = deferredAttrContext.msym.type;
+                mtype = mtype.hasTag(ERROR) ? ((ErrorType)mtype).getOriginalType() : null;
+                if (mtype != null && mtype.hasTag(METHOD)) {
+                    List<Type> argtypes1 = map(t.getParameterTypes(), mtype.getParameterTypes());
+                    Type restype1 = visit(t.getReturnType(), mtype.getReturnType());
+                    List<Type> thrown1 = map(t.getThrownTypes(), mtype.getThrownTypes());
+                    if (argtypes1 == t.getParameterTypes() &&
+                        restype1 == t.getReturnType() &&
+                        thrown1 == t.getThrownTypes()) return t;
+                    else return new MethodType(argtypes1, restype1, thrown1, t.tsym);
+                }
+            }
+            return super.visitMethodType(t, pt);
         }
 
         /**
@@ -1059,14 +1080,24 @@ public class DeferredAttr extends JCTree.Visitor {
          * representation. Remaining deferred types are attributed using
          * a default expected type (j.l.Object).
          */
-        private Type recover(DeferredType dt) {
-            dt.check(attr.new RecoveryInfo(deferredAttrContext) {
+        private Type recover(DeferredType dt, Type pt) {
+            dt.check(attr.new RecoveryInfo(deferredAttrContext, pt != null ? pt : Type.recoveryType) {
                 @Override
                 protected Type check(DiagnosticPosition pos, Type found) {
                     return chk.checkNonVoid(pos, super.check(pos, found));
                 }
             });
             return super.visit(dt);
+        }
+
+        private List<Type> map(List<Type> ts, List<Type> pts) {
+            if (ts.nonEmpty()) {
+                List<Type> tail1 = map(ts.tail, pts != null ? pts.tail : null);
+                Type t = visit(ts.head, pts != null && pts.nonEmpty() ? pts.head : null);
+                if (tail1 != ts.tail || t != ts.head)
+                    return tail1.prepend(t);
+            }
+            return ts;
         }
     }
 

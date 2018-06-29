@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ public class UnicodeReader {
     /** A character buffer for saved chars.
      */
     protected char[] sbuf = new char[128];
+    protected int realLength;
     protected int sp;
 
     /**
@@ -89,6 +90,7 @@ public class UnicodeReader {
     protected UnicodeReader(ScannerFactory sf, char[] input, int inputLength) {
         log = sf.log;
         names = sf.names;
+        realLength = inputLength;
         if (inputLength == input.length) {
             if (input.length > 0 && Character.isWhitespace(input[input.length - 1])) {
                 inputLength--;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -674,7 +674,7 @@ public class JavaTokenizer {
                             scanNumber(pos, 10);
                         } else if (reader.bp == reader.buflen || reader.ch == EOI && reader.bp + 1 == reader.buflen) { // JLS 3.5
                             tk = TokenKind.EOF;
-                            pos = reader.buflen;
+                            pos = reader.realLength;
                         } else {
                             String arg;
 

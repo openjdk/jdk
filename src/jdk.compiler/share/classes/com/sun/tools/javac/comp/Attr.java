@@ -586,8 +586,11 @@ public class Attr extends JCTree.Visitor {
     class RecoveryInfo extends ResultInfo {
 
         public RecoveryInfo(final DeferredAttr.DeferredAttrContext deferredAttrContext) {
-            super(KindSelector.VAL, Type.recoveryType,
-                  new Check.NestedCheckContext(chk.basicHandler) {
+            this(deferredAttrContext, Type.recoveryType);
+        }
+
+        public RecoveryInfo(final DeferredAttr.DeferredAttrContext deferredAttrContext, Type pt) {
+            super(KindSelector.VAL, pt, new Check.NestedCheckContext(chk.basicHandler) {
                 @Override
                 public DeferredAttr.DeferredAttrContext deferredAttrContext() {
                     return deferredAttrContext;
@@ -598,7 +601,9 @@ public class Attr extends JCTree.Visitor {
                 }
                 @Override
                 public void report(DiagnosticPosition pos, JCDiagnostic details) {
-                    chk.basicHandler.report(pos, details);
+                    if (pt == Type.recoveryType) {
+                        chk.basicHandler.report(pos, details);
+                    }
                 }
             });
         }
@@ -656,7 +661,7 @@ public class Attr extends JCTree.Visitor {
             }
             if (tree == breakTree &&
                     resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
-                throw new BreakAttr(copyEnv(env));
+                breakTreeFound(copyEnv(env));
             }
             return result;
         } catch (CompletionFailure ex) {
@@ -666,6 +671,10 @@ public class Attr extends JCTree.Visitor {
             this.env = prevEnv;
             this.resultInfo = prevResult;
         }
+    }
+
+    protected void breakTreeFound(Env<AttrContext> env) {
+        throw new BreakAttr(env);
     }
 
     Env<AttrContext> copyEnv(Env<AttrContext> env) {
@@ -2506,8 +2515,7 @@ public class Attr extends JCTree.Visitor {
                 //lambda only allowed in assignment or method invocation/cast context
                 log.error(that.pos(), Errors.UnexpectedLambda);
             }
-            result = that.type = types.createErrorType(pt());
-            return;
+            resultInfo = recoveryInfo;
         }
         //create an environment for attribution of the lambda expression
         final Env<AttrContext> localEnv = lambdaEnv(that, env);
@@ -2595,6 +2603,10 @@ public class Attr extends JCTree.Visitor {
                 attribTree(that.getBody(), localEnv, bodyResultInfo);
             } else {
                 JCBlock body = (JCBlock)that.body;
+                if (body == breakTree &&
+                        resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
+                    breakTreeFound(copyEnv(localEnv));
+                }
                 attribStats(body.stats, localEnv);
             }
 
@@ -4126,8 +4138,8 @@ public class Attr extends JCTree.Visitor {
                     typeargtypes,
                     noteWarner);
 
-            DeferredAttr.DeferredTypeMap checkDeferredMap =
-                deferredAttr.new DeferredTypeMap(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
+            DeferredAttr.DeferredTypeMap<Void> checkDeferredMap =
+                deferredAttr.new DeferredTypeMap<>(DeferredAttr.AttrMode.CHECK, sym, env.info.pendingResolutionPhase);
 
             argtypes = argtypes.map(checkDeferredMap);
 
