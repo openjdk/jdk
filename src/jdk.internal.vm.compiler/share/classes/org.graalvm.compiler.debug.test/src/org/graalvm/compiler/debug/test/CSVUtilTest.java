@@ -117,8 +117,8 @@ public class CSVUtilTest {
             CSVUtil.Escape.println(new PrintStream(outputStream), format, toObjectArray(args));
             // get the actual string
             String printedStream = new String(outputStream.toByteArray(), StandardCharsets.UTF_8);
-            // remove newline
-            assertEquals(expected, printedStream.substring(0, printedStream.length() - 1));
+            // add newline to the expected string
+            assertEquals(expected + System.lineSeparator(), printedStream);
         }
 
         private static Object[] toObjectArray(String args) {
