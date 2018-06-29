@@ -251,7 +251,7 @@ public class VMProps implements Callable<Map<String, String>> {
      * @param flagName - flag name
      */
     private void vmOptFinalFlag(Map<String, String> map, String flagName) {
-        String value = WB.getBooleanVMFlag(flagName) ? "true" : "false";
+        String value = String.valueOf(WB.getBooleanVMFlag(flagName));
         map.put("vm.opt.final." + flagName, value);
     }
 

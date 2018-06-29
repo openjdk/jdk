@@ -54,7 +54,7 @@ do
 /*
  * @test
  * @summary
- * @requires vm.opt.final.EnableJVMCI
+ * @requires vm.opt.final.EnableJVMCI == true
  * $requireInfo
  * @modules jdk.internal.vm.compiler
  *
