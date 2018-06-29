@@ -153,8 +153,6 @@ vmTestbase/nsk/jvmti/PopFrame/popframe009/TestDescription.java                  
 vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn001/TestDescription.java     8195674   generic-all
 vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn002/TestDescription.java     8195674   generic-all
 
-vmTestbase/nsk/jvmti/AttachOnDemand/attach024/TestDescription.java                 8195630   generic-all
-
 vmTestbase/nsk/jvmti/unit/FollowReferences/followref003/TestDescription.java       8202342   generic-all
 
 vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java        8204506   macosx-all

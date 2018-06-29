@@ -30,27 +30,27 @@ public class attach024Agent00 extends AbstractJarAgent {
 
     public static final String MODIFIED_TO_STRING = "attach024: Modified version";
 
-    private static final String TESTED_CLASS_NAME = "java.util.ServiceConfigurationError";
+    private static final String TESTED_CLASS_NAME = "java.util.TooManyListenersException";
 
     protected void agentActions() {
         /*
-         * Check that ServiceConfigurationError isn't loaded, otherwise test checks
+         * Check that TooManyListenersException isn't loaded, otherwise test checks
          * doesn't make sense
          */
         for (Class<?> klass : inst.getAllLoadedClasses()) {
             if (klass.getName().equals(TESTED_CLASS_NAME)) {
-                throw new TestBug("ServiceConfigurationError already loaded");
+                throw new TestBug("TooManyListenersException already loaded");
             }
         }
 
-        checkServiceConfigurationError();
+        checkTooManyListenersException();
     }
 
-    void checkServiceConfigurationError() {
-        java.util.ServiceConfigurationError e = new java.util.ServiceConfigurationError("Test");
-        display("ServiceConfigurationError.toString(): " + e.toString());
+    void checkTooManyListenersException() {
+        java.util.TooManyListenersException e = new java.util.TooManyListenersException("Test");
+        display("TooManyListenersException.toString(): " + e.toString());
         if (e.toString().equals(MODIFIED_TO_STRING)) {
-            setStatusFailed("Class ServiceConfigurationError was erroneously loaded from agent's jar");
+            setStatusFailed("Class TooManyListenersException was erroneously loaded from agent's jar");
         }
     }
 
