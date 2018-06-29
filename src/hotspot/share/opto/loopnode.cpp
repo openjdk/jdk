@@ -616,6 +616,11 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
     }
 
     IfNode* check_iff = limit_check_proj->in(0)->as_If();
+
+    if (!is_dominator(get_ctrl(limit), check_iff->in(0))) {
+      return false;
+    }
+
     Node* cmp_limit;
     Node* bol;
 
