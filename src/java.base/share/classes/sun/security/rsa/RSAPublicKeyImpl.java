@@ -116,6 +116,9 @@ public final class RSAPublicKeyImpl extends X509Key implements RSAPublicKey {
      * Construct a key from its encoding. Used by RSAKeyFactory.
      */
     RSAPublicKeyImpl(byte[] encoded) throws InvalidKeyException {
+        if (encoded == null || encoded.length == 0) {
+            throw new InvalidKeyException("Missing key encoding");
+        }
         decode(encoded); // this sets n and e value
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
         checkExponentRange(n, e);
