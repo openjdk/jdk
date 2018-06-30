@@ -43,7 +43,7 @@ WCHAR* currentDir(int di);
 int currentDirLength(const WCHAR* path, int pathlen);
 int handleAvailable(FD fd, jlong *pbytes);
 int handleSync(FD fd);
-int handleSetLength(FD fd, jlong length);
+jint handleSetLength(FD fd, jlong length);
 jlong handleGetLength(FD fd);
 JNIEXPORT jint handleRead(FD fd, void *buf, jint len);
 jint handleWrite(FD fd, const void *buf, jint len);
