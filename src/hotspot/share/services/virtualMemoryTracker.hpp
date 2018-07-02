@@ -302,7 +302,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
 
   ReservedMemoryRegion(address base, size_t size) :
-    VirtualMemoryRegion(base, size), _stack(NativeCallStack::EMPTY_STACK), _flag(mtNone) { }
+    VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _flag(mtNone) { }
 
   // Copy constructor
   ReservedMemoryRegion(const ReservedMemoryRegion& rr) :
