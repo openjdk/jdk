@@ -1033,7 +1033,7 @@ ReferenceProcessor::add_to_discovered_list_mt(DiscoveredList& refs_list,
   // The last ref must have its discovered field pointing to itself.
   oop next_discovered = (current_head != NULL) ? current_head : obj;
 
-  oop retest = RawAccess<>::oop_atomic_cmpxchg(next_discovered, discovered_addr, oop(NULL));
+  oop retest = HeapAccess<AS_NO_KEEPALIVE>::oop_atomic_cmpxchg(next_discovered, discovered_addr, oop(NULL));
 
   if (retest == NULL) {
     // This thread just won the right to enqueue the object.
