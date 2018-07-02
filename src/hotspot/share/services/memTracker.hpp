@@ -31,8 +31,8 @@
 
 #if !INCLUDE_NMT
 
-#define CURRENT_PC   NativeCallStack::EMPTY_STACK
-#define CALLER_PC    NativeCallStack::EMPTY_STACK
+#define CURRENT_PC   NativeCallStack::empty_stack()
+#define CALLER_PC    NativeCallStack::empty_stack()
 
 class Tracker : public StackObj {
  public:
@@ -86,9 +86,9 @@ class MemTracker : AllStatic {
 extern volatile bool NMT_stack_walkable;
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail && NMT_stack_walkable) ? \
-                    NativeCallStack(0, true) : NativeCallStack::EMPTY_STACK)
+                    NativeCallStack(0, true) : NativeCallStack::empty_stack())
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail && NMT_stack_walkable) ?  \
-                    NativeCallStack(1, true) : NativeCallStack::EMPTY_STACK)
+                    NativeCallStack(1, true) : NativeCallStack::empty_stack())
 
 class MemBaseline;
 class Mutex;
