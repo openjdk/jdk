@@ -1056,7 +1056,9 @@ void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *lo
           stack.push(in, 1);
           break;
         } else if (in->is_IfProj() &&
-                   in->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
+                   in->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) &&
+                   (in->in(0)->Opcode() == Op_If ||
+                    in->in(0)->Opcode() == Op_RangeCheck)) {
           if (pf.to(in) * loop_trip_cnt >= 1) {
             stack.push(in, 1);
           }
@@ -1281,7 +1283,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
     Node* n = skip_loop_predicates(entry);
     // Check if predicates were already added to the profile predicate
     // block
-    if (n != entry->in(0)->in(0)) {
+    if (n != entry->in(0)->in(0) || n->outcnt() != 1) {
       has_profile_predicates = true;
     }
     entry = n;
