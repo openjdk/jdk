@@ -28,7 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-const NativeCallStack NativeCallStack::EMPTY_STACK(0, false);
+NativeCallStack NativeCallStack::EMPTY_STACK(0, false);
 
 NativeCallStack::NativeCallStack(int toSkip, bool fillStack) :
   _hash_value(0) {
@@ -126,4 +126,3 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
     }
   }
 }
-
