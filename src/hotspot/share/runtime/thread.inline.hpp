@@ -170,8 +170,13 @@ inline bool JavaThread::stack_guards_enabled() {
 
 // The release make sure this store is done after storing the handshake
 // operation or global state
-inline void JavaThread::set_polling_page(void* poll_value) {
+inline void JavaThread::set_polling_page_release(void* poll_value) {
   OrderAccess::release_store(polling_page_addr(), poll_value);
+}
+
+// Caller is responsible for using a memory barrier if needed.
+inline void JavaThread::set_polling_page(void* poll_value) {
+  *polling_page_addr() = poll_value;
 }
 
 // The aqcquire make sure reading of polling page is done before

@@ -1207,6 +1207,7 @@ class JavaThread: public Thread {
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
+  inline void set_polling_page_release(void* poll_value);
   inline void set_polling_page(void* poll_value);
   inline volatile void* get_polling_page();
 

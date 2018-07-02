@@ -243,9 +243,10 @@ void SafepointSynchronize::begin() {
     if (SafepointMechanism::uses_thread_local_poll()) {
       // Arming the per thread poll while having _state != _not_synchronized means safepointing
       log_trace(safepoint)("Setting thread local yield flag for threads");
+      OrderAccess::storestore(); // storestore, global state -> local state
       for (JavaThreadIteratorWithHandle jtiwh; JavaThread *cur = jtiwh.next(); ) {
         // Make sure the threads start polling, it is time to yield.
-        SafepointMechanism::arm_local_poll(cur); // release store, global state -> local state
+        SafepointMechanism::arm_local_poll(cur);
       }
     }
     OrderAccess::fence(); // storestore|storeload, global state -> local state
@@ -546,7 +547,7 @@ void SafepointSynchronize::end() {
         for (; JavaThread *current = jtiwh.next(); ) {
           ThreadSafepointState* cur_state = current->safepoint_state();
           cur_state->restart(); // TSS _running
-          SafepointMechanism::disarm_local_poll(current); // release store, local state -> polling page
+          SafepointMechanism::disarm_local_poll(current);
         }
         log_info(safepoint)("Leaving safepoint region");
       } else {
