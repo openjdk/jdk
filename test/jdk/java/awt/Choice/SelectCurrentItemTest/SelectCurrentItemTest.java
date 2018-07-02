@@ -21,67 +21,48 @@
  * questions.
  */
 /*
-  test 1.3 02/06/25
-  @bug 4902933
-  @summary Test that selecting the current item sends an ItemEvent
-  @author bchristi : area= Choice
-  @run applet SelectCurrentItemTest.html
+  @test
+  @bug 4902933 8197810
+  @summary Test that selecting the current item doesnot send an ItemEvent
+  @key headful
+  @run main SelectCurrentItemTest
 */
 
-// Note there is no @ in front of test above.  This is so that the
-//  harness will not mistake this file as a test file.  It should
-//  only see the html file as a test file. (the harness runs all
-//  valid test files, so it would run this test twice if this file
-//  were valid as well as the html file.)
-// Also, note the area= after Your Name in the author tag.  Here, you
-//  should put which functional area the test falls in.  See the
-//  AWT-core home page -> test areas and/or -> AWT team  for a list of
-//  areas.
-// Note also the 'SelectCurrentItemTest.html' in the run tag.  This should
-//  be changed to the name of the test.
+import java.awt.Choice;
+import java.awt.Robot;
+import java.awt.Frame;
+import java.awt.BorderLayout;
+import java.awt.AWTException;
+import java.awt.Point;
+import java.awt.Dimension;
+import java.awt.event.InputEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.WindowListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-
-/**
- * SelectCurrentItemTest.java
- *
- * summary:
- */
-
-import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.*;
-
-//Automated tests should run as applet tests if possible because they
-// get their environments cleaned up, including AWT threads, any
-// test created threads, and any system resources used by the test
-// such as file descriptors.  (This is normally not a problem as
-// main tests usually run in a separate VM, however on some platforms
-// such as the Mac, separate VMs are not possible and non-applet
-// tests will cause problems).  Also, you don't have to worry about
-// synchronisation stuff in Applet tests they way you do in main
-// tests...
-
-
-public class SelectCurrentItemTest extends Applet implements ItemListener,
- WindowListener, Runnable
-{
+public class SelectCurrentItemTest implements ItemListener, WindowListener {
     //Declare things used in the test, like buttons and labels here
-    Frame frame;
-    Choice theChoice;
-    Robot robot;
+    private Frame frame;
+    private Choice theChoice;
+    private Robot robot;
 
-    Object lock = new Object();
-    boolean passed = false;
+    private CountDownLatch latch = new CountDownLatch(1);
+    private volatile boolean passed = true;
 
-    public void init()
+    private void init()
     {
-        //Create instructions for the user here, as well as set up
-        // the environment -- set the layout manager, add buttons,
-        // etc.
-
-        this.setLayout (new BorderLayout ());
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(500);
+        } catch (AWTException e) {
+            throw new RuntimeException("Unable to create Robot. Test fails.");
+        }
 
         frame = new Frame("SelectCurrentItemTest");
+        frame.setLayout(new BorderLayout());
         theChoice = new Choice();
         for (int i = 0; i < 10; i++) {
             theChoice.add(new String("Choice Item " + i));
@@ -90,49 +71,30 @@ public class SelectCurrentItemTest extends Applet implements ItemListener,
         frame.add(theChoice);
         frame.addWindowListener(this);
 
-        try {
-            robot = new Robot();
-            robot.setAutoDelay(500);
-        }
-        catch (AWTException e) {
-            throw new RuntimeException("Unable to create Robot.  Test fails.");
-        }
-
-    }//End  init()
-
-    public void start ()
-    {
-        //Get things going.  Request focus, set size, et cetera
-        setSize (200,200);
-        setVisible(true);
-        validate();
-
-        //What would normally go into main() will probably go here.
-        //Use System.out.println for diagnostic messages that you want
-        //to read after the test is done.
-        //Use System.out.println for messages you want the tester to read.
-
         frame.setLocation(1,20);
         robot.mouseMove(10, 30);
         frame.pack();
         frame.setVisible(true);
-        synchronized(lock) {
+    }
+
+    public static void main(String... args) {
+        SelectCurrentItemTest test = new SelectCurrentItemTest();
+        test.init();
         try {
-        lock.wait(120000);
-        }
-        catch(InterruptedException e) {}
-        }
-        robot.waitForIdle();
-        if (!passed) {
-            throw new RuntimeException("TEST FAILED!");
-        }
+            test.latch.await(12000, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {}
+        test.robot.waitForIdle();
 
-        // wait to make sure ItemEvent has been processed
+        try {
+            if (!test.passed) {
+                throw new RuntimeException("TEST FAILED.");
+            }
+        } finally {
+            test.frame.dispose();
+        }
+    }
 
-//        try {Thread.sleep(10000);} catch (InterruptedException e){}
-    }// start()
-
-    public void run() {
+    private void run() {
         try {Thread.sleep(1000);} catch (InterruptedException e){}
         // get loc of Choice on screen
         Point loc = theChoice.getLocationOnScreen();
@@ -144,33 +106,29 @@ public class SelectCurrentItemTest extends Applet implements ItemListener,
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
 
-        robot.setAutoDelay(1000);
+        robot.delay(1000);
+
         robot.mouseMove(loc.x + size.width / 2, loc.y + size.height + size.height / 2);
-        robot.setAutoDelay(250);
         robot.mousePress(InputEvent.BUTTON1_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_MASK);
         robot.waitForIdle();
-        synchronized(lock) {
-            lock.notify();
-        }
+        latch.countDown();
     }
 
-    public void itemStateChanged(ItemEvent e) {
-        System.out.println("ItemEvent received.  Test passes");
-        passed = true;
+    @Override public void itemStateChanged(ItemEvent e) {
+        System.out.println("ItemEvent received.  Test fails");
+        passed = false;
     }
 
-    public void windowOpened(WindowEvent e) {
+    @Override public void windowOpened(WindowEvent e) {
         System.out.println("windowActivated()");
-        Thread testThread = new Thread(this);
-        testThread.start();
+        (new Thread(this::run)).start();
     }
-    public void windowActivated(WindowEvent e) {
-    }
-    public void windowDeactivated(WindowEvent e) {}
-    public void windowClosed(WindowEvent e) {}
-    public void windowClosing(WindowEvent e) {}
-    public void windowIconified(WindowEvent e) {}
-    public void windowDeiconified(WindowEvent e) {}
 
-}// class SelectCurrentItemTest
+    @Override public void windowActivated(WindowEvent e) {}
+    @Override public void windowDeactivated(WindowEvent e) {}
+    @Override public void windowClosed(WindowEvent e) {}
+    @Override public void windowClosing(WindowEvent e) {}
+    @Override public void windowIconified(WindowEvent e) {}
+    @Override public void windowDeiconified(WindowEvent e) {}
+}
