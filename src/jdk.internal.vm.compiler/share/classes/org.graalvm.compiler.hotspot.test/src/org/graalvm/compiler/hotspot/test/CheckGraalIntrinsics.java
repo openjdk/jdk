@@ -371,6 +371,7 @@ public class CheckGraalIntrinsics extends GraalTest {
         if (isJDK11OrHigher()) {
             // Relevant for Java flight recorder
             add(toBeInvestigated,
+                            "java/util/Base64$Encoder.encodeBlock([BII[BIZ)V",
                             "jdk/jfr/internal/JVM.getEventWriter()Ljava/lang/Object;");
         }
 
