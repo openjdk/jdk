@@ -297,12 +297,12 @@ HandshakeState::HandshakeState() : _operation(NULL), _semaphore(1), _thread_in_p
 
 void HandshakeState::set_operation(JavaThread* target, HandshakeOperation* op) {
   _operation = op;
-  SafepointMechanism::arm_local_poll(target);
+  SafepointMechanism::arm_local_poll_release(target);
 }
 
 void HandshakeState::clear_handshake(JavaThread* target) {
   _operation = NULL;
-  SafepointMechanism::disarm_local_poll(target);
+  SafepointMechanism::disarm_local_poll_release(target);
 }
 
 void HandshakeState::process_self_inner(JavaThread* thread) {
