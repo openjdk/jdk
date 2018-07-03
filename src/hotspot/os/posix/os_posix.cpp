@@ -150,6 +150,19 @@ int os::get_last_error() {
   return errno;
 }
 
+size_t os::lasterror(char *buf, size_t len) {
+  if (errno == 0)  return 0;
+
+  const char *s = os::strerror(errno);
+  size_t n = ::strlen(s);
+  if (n >= len) {
+    n = len - 1;
+  }
+  ::strncpy(buf, s, n);
+  buf[n] = '\0';
+  return n;
+}
+
 bool os::is_debugger_attached() {
   // not implemented
   return false;
