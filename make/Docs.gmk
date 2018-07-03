@@ -274,6 +274,8 @@ define SetupApiDocsGenerationBody
   $1_INDIRECT_EXPORTS := $$(call FindTransitiveIndirectDepsForModules, $$($1_MODULES))
   $1_ALL_MODULES := $$(sort $$($1_MODULES) $$($1_INDIRECT_EXPORTS))
 
+  $1_JAVA_ARGS := -Dextlink.spec.version=$$(VERSION_SPECIFICATION)
+
   ifeq ($$(ENABLE_FULL_DOCS), true)
     # Tell the ModuleGraph taglet to generate html links to soon-to-be-created
     # png files with module graphs.
@@ -327,9 +329,10 @@ define SetupApiDocsGenerationBody
   )
 
   ifeq ($$($1_JAVADOC_CMD), )
-    $1_JAVADOC_CMD := $$(JAVA) -Djava.awt.headless=true \
-        -Dextlink.spec.version=$$(VERSION_SPECIFICATION) $$($1_JAVA_ARGS) \
+    $1_JAVADOC_CMD := $$(JAVA) -Djava.awt.headless=true $$($1_JAVA_ARGS) \
         $$(NEW_JAVADOC)
+  else
+    $1_OPTIONS += $$(addprefix -J, $$($1_JAVA_ARGS)) 
   endif
 
   $1_VARDEPS := $$($1_JAVA_ARGS) $$($1_OPTIONS) $$(MODULES_SOURCE_PATH) \
@@ -463,7 +466,9 @@ $(eval $(call SetupApiDocsGeneration, JAVASE_API, \
 # Setup generation of the reference Java SE API documentation (javadoc + modulegraph)
 
 # The reference javadoc is just the same as javase, but using the BootJDK javadoc
-# and a stable set of javadoc options.
+# and a stable set of javadoc options.  Typically it is used for generating 
+# diffs between the reference javadoc and a javadoc bundle of a specific build
+# generated in the same way.
 
 $(eval $(call SetupApiDocsGeneration, REFERENCE_API, \
     MODULES := $(JAVASE_MODULES), \
