@@ -518,8 +518,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, N
       if (ac->is_clonebasic()) {
         intptr_t offset;
         AllocateNode* alloc = AllocateNode::Ideal_allocation(ac->in(ArrayCopyNode::Dest), phase, offset);
-        assert(alloc != NULL && (!ReduceBulkZeroing || alloc->initialization()->is_complete_with_arraycopy()), "broken allocation");
-        if (alloc == ld_alloc) {
+        if (alloc != NULL && alloc == ld_alloc) {
           return ac;
         }
       }

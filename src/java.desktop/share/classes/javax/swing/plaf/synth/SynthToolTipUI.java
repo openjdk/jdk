@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.swing.plaf.basic.BasicToolTipUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.text.View;
 
+import sun.swing.SwingUtilities2;
 
 /**
  * Provides the Synth L&amp;F UI delegate for
@@ -226,9 +227,8 @@ public class SynthToolTipUI extends BasicToolTipUI
             updateStyle((JToolTip)e.getSource());
         }
         String name = e.getPropertyName();
-        if (name.equals("tiptext") || "font".equals(name) ||
-                "foreground".equals(name) ||
-                "ancestor" == name || "graphicsConfiguration" == name) {
+        if (name.equals("tiptext") || SwingUtilities2.isScaleChanged(e)
+                || "foreground".equals(name) || "font".equals(name)) {
             // remove the old html view client property if one
             // existed, and install a new one if the text installed
             // into the JLabel is html source.

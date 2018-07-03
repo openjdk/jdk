@@ -1638,12 +1638,6 @@ bool CompileBroker::init_compiler_runtime() {
  * out to be a problem.
  */
 void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread) {
-  // Free buffer blob, if allocated
-  if (thread->get_buffer_blob() != NULL) {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::free(thread->get_buffer_blob());
-  }
-
   if (comp->should_perform_shutdown()) {
     // There are two reasons for shutting down the compiler
     // 1) compiler runtime initialization failed

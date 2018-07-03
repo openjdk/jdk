@@ -58,7 +58,9 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
     }
 
     protected void generateGoldenOut(String mainClassName) {
-        String classPath = getRoot() + File.pathSeparator + generatorDir;
+        String classPath = getRoot().resolve(generatorDir)
+                                    .toAbsolutePath()
+                                    .toString();
         ProcessBuilder pb = new ProcessBuilder(JAVA, "-Xint", DISABLE_WARNINGS, "-Xverify",
                 "-cp", classPath, mainClassName);
         String goldFile = mainClassName + ".gold";
@@ -182,7 +184,10 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
         for (String name : env) {
             String path = System.getenv(name);
             if (path != null) {
-                return path + "/bin/";
+                return Paths.get(path)
+                            .resolve("bin")
+                            .toAbsolutePath()
+                            .toString();
             }
         }
         return "";

@@ -52,7 +52,11 @@ public class RSAUtil {
         public String keyAlgo() {
             return algo;
         }
-        public static KeyType lookup(String name) {
+        public static KeyType lookup(String name)
+                throws InvalidKeyException, ProviderException {
+            if (name == null) {
+                throw new InvalidKeyException("Null key algorithm");
+            }
             for (KeyType kt : KeyType.values()) {
                 if (kt.keyAlgo().equalsIgnoreCase(name)) {
                     return kt;
@@ -133,21 +137,24 @@ public class RSAUtil {
             throws ProviderException {
         if (params == null) return null;
 
-        String algName = params.getAlgorithm();
-        KeyType type = KeyType.lookup(algName);
-        Class<? extends AlgorithmParameterSpec> specCls;
-        switch (type) {
-            case RSA:
-                throw new ProviderException("No params accepted for " +
-                    type.keyAlgo());
-            case PSS:
-                specCls = PSSParameterSpec.class;
-                break;
-            default:
-                throw new ProviderException("Unsupported RSA algorithm: " + algName);
-        }
         try {
+            String algName = params.getAlgorithm();
+            KeyType type = KeyType.lookup(algName);
+            Class<? extends AlgorithmParameterSpec> specCls;
+            switch (type) {
+                case RSA:
+                    throw new ProviderException("No params accepted for " +
+                        type.keyAlgo());
+                case PSS:
+                    specCls = PSSParameterSpec.class;
+                    break;
+                default:
+                    throw new ProviderException("Unsupported RSA algorithm: " + algName);
+            }
             return params.getParameterSpec(specCls);
+        } catch (ProviderException pe) {
+            // pass it up
+            throw pe;
         } catch (Exception e) {
             throw new ProviderException(e);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
 import sun.swing.DefaultLookup;
+import sun.swing.SwingUtilities2;
 import sun.swing.UIAction;
 
 
@@ -1829,6 +1830,7 @@ public class BasicSliderUI extends SliderUI{
                     propertyName == "paintTicks" ||
                     propertyName == "paintTrack" ||
                     propertyName == "font" ||
+                    SwingUtilities2.isScaleChanged(e) ||
                     propertyName == "paintLabels" ||
                     propertyName == "Slider.paintThumbArrowShape") {
                 checkedLabelBaselines = false;

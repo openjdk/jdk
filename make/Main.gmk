@@ -487,6 +487,14 @@ test-image-jdk-jtreg-native:
 	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregNativeJdk.gmk \
 	    test-image-jdk-jtreg-native)
 
+build-test-hotspot-jtreg-graal:
+	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregGraalUnit.gmk \
+	     build-test-hotspot-jtreg-graal)
+
+test-image-hotspot-jtreg-graal:
+	+($(CD) $(TOPDIR)/make/test && $(MAKE) $(MAKE_ARGS) -f JtregGraalUnit.gmk \
+	     test-image-hotspot-jtreg-graal)
+
 run-test:
 	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f RunTests.gmk run-test TEST="$(TEST)")
 
@@ -523,6 +531,7 @@ ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
     test-image-hotspot-jtreg-native build-test-jdk-jtreg-native \
     test-image-jdk-jtreg-native build-test-lib build-test-failure-handler \
     test-failure-handler test-image-failure-handler test-image-hotspot-gtest \
+    test-image-hotspot-jtreg-graal build-test-hotspot-jtreg-graal \
     run-test exploded-run-test
 
 ################################################################################
@@ -853,9 +862,13 @@ else
 
   build-test-jdk-jtreg-native: buildtools-jdk java.base-libs
 
+  build-test-hotspot-jtreg-graal: exploded-image-optimize
+
   test-image-hotspot-jtreg-native: build-test-hotspot-jtreg-native
 
   test-image-jdk-jtreg-native: build-test-jdk-jtreg-native
+
+  test-image-hotspot-jtreg-graal: build-test-hotspot-jtreg-graal
 
   test-image-hotspot-gtest: hotspot
 
@@ -992,6 +1005,10 @@ docs-image: docs-jdk
 
 # If not already set, set the JVM specific targets to build the test image
 JVM_TEST_IMAGE_TARGETS ?= test-image-hotspot-jtreg-native test-image-hotspot-gtest
+
+ifeq ($(INCLUDE_GRAAL), true)
+  JVM_TEST_IMAGE_TARGETS += test-image-hotspot-jtreg-graal
+endif
 
 # This target builds the test image
 test-image: prepare-test-image \

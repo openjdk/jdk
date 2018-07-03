@@ -3320,7 +3320,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             } else if (name == "indexForNullComponent") {
                 isRunsDirty = true;
                 updateHtmlViews((Integer) e.getNewValue(), true);
-            } else if (name == "font") {
+            } else if (name == "font" || SwingUtilities2.isScaleChanged(e)) {
                 calculatedBaseline = false;
             }
         }

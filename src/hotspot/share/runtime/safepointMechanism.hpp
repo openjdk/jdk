@@ -79,8 +79,12 @@ public:
   // Blocks a thread until safepoint is completed
   static inline void block_if_requested(JavaThread* thread);
 
+  // Caller is responsible for using a memory barrier if needed.
   static inline void arm_local_poll(JavaThread* thread);
   static inline void disarm_local_poll(JavaThread* thread);
+
+  static inline void arm_local_poll_release(JavaThread* thread);
+  static inline void disarm_local_poll_release(JavaThread* thread);
 
   // Setup the selected safepoint mechanism
   static void initialize();

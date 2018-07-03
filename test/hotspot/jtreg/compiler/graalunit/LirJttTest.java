@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,22 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.util;
 
-import nsk.jvmti.AttachOnDemand.attach024.*;
-
-public class ServiceConfigurationError extends Error {
-    private static final long serialVersionUID = 74132770414881L;
-
-    public ServiceConfigurationError(String msg) {
-        super(msg);
-    }
-
-    public ServiceConfigurationError(String msg, Throwable cause) {
-        super(msg, cause);
-    }
-
-    public String toString() {
-        return attach024Agent00.MODIFIED_TO_STRING;
-    }
-}
+/*
+ * @test
+ * @summary
+ * @requires vm.opt.final.EnableJVMCI == true
+ *
+ * @modules jdk.internal.vm.compiler
+ *
+ * @library /test/lib /compiler/graalunit /
+ *
+ * @build compiler.graalunit.common.GraalUnitTestLauncher
+ *
+ * @run driver jdk.test.lib.FileInstaller ../../ProblemList-graal.txt ExcludeList.txt
+ *
+ * @run main/othervm compiler.graalunit.common.GraalUnitTestLauncher -prefix org.graalvm.compiler.lir.jtt -exclude ExcludeList.txt
+ */

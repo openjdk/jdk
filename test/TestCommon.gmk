@@ -448,6 +448,9 @@ JTREG_BASIC_OPTIONS += -e:JDK8_HOME=${JT_JAVA}
 ifneq ($(VS120COMNTOOLS), )
   JTREG_BASIC_OPTIONS += -e:VS120COMNTOOLS="$(shell $(GETMIXEDPATH) "$(patsubst %\,%,$(VS120COMNTOOLS))")"
 endif
+
+JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_GRAAL_DIR=${TEST_IMAGE_DIR}/hotspot/jtreg/graal
+
 # Set other vm and test options
 JTREG_TEST_OPTIONS += $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
 ifneq ($(JIB_JAR), )

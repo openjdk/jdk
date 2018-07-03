@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
 import java.awt.dnd.DropTarget;
@@ -1172,10 +1173,10 @@ public class Container extends Component {
     }
 
     @Override
-    boolean updateGraphicsData(GraphicsConfiguration gc) {
+    final boolean updateChildGraphicsData(GraphicsConfiguration gc) {
         checkTreeLock();
 
-        boolean ret = super.updateGraphicsData(gc);
+        boolean ret = false;
 
         for (Component comp : component) {
             if (comp != null) {

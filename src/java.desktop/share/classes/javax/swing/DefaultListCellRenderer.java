@@ -35,7 +35,7 @@ import java.awt.Rectangle;
 
 import java.io.Serializable;
 import sun.swing.DefaultLookup;
-
+import sun.swing.SwingUtilities2;
 
 /**
  * Renders an item in a list.
@@ -259,9 +259,10 @@ public class DefaultListCellRenderer extends JLabel
     protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         // Strings get interned...
         if (propertyName == "text"
-                || ((propertyName == "font" || propertyName == "foreground")
-                    && oldValue != newValue
-                    && getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey) != null)) {
+            || ((SwingUtilities2.isScaleChanged(propertyName, oldValue, newValue)
+                    || propertyName == "font" || propertyName == "foreground")
+                && oldValue != newValue
+                && getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey) != null)) {
 
             super.firePropertyChange(propertyName, oldValue, newValue);
         }

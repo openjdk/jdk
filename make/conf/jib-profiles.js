@@ -378,7 +378,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "graphviz", "pandoc"],
+            dependencies: ["devkit", "autoconf", "graphviz", "pandoc", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit,
                 "--enable-full-docs", "--with-zlib=system"),
             default_make_targets: ["docs-bundles"],
@@ -396,7 +396,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf"],
+            dependencies: ["devkit", "autoconf", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=10.9.0"),
         },
@@ -420,7 +420,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf"],
+            dependencies: ["devkit", "autoconf", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit),
         },
 
@@ -972,6 +972,14 @@ var getJibProfilesDependencies = function (input, common) {
             configure_args: "",
         },
 
+        graalunit_lib: {
+            organization: common.organization,
+            ext: "zip",
+            revision: "619_Apr_12_2018",
+            module: "graalunit-lib",
+            configure_args: "--with-graalunit-lib=" + input.get("graalunit_lib", "install_path"),
+            environment_name: "GRAALUNIT_LIB"
+        },
     };
 
     // Need to add a value for the Visual Studio tools variable to make

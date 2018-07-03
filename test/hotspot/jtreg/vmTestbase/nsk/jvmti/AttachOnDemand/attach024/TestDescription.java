@@ -35,8 +35,8 @@
  *     agent starts new thread from the 'agentmain' method, and all test checks are executed
  *     in this thread.
  *     Test checks that agent's JAR file is appended at the end of the system class path.
- *     Agent's JAR file contains modified class java.util.ServiceConfigurationError (it is assumed
- *     that this class isn't loaded before agent is loaded), agent instantiates ServiceConfigurationError
+ *     Agent's JAR file contains modified class java.util.TooManyListenersException (it is assumed
+ *     that this class isn't loaded before agent is loaded), agent instantiates TooManyListenersException
  *     and checks that non-modified version of this class was loaded from rt.jar (not from agent's JAR).
  *
  * @library /vmTestbase
@@ -46,7 +46,7 @@
  *        nsk.share.aod.TargetApplicationWaitingAgents
  *        nsk.jvmti.AttachOnDemand.attach024.attach024Agent00
  *
- * @comment compile modified java.util.ServiceConfigurationError
+ * @comment compile modified java.util.TooManyListenersException
  * @build ExecDriver
  * @run driver PropertyResolvingWrapper ExecDriver --cmd
  *      ${compile.jdk}/bin/javac
@@ -54,14 +54,14 @@
  *      -d ./bin/classes
  *      --patch-module java.base=${test.src}/java.base
  *      --add-reads java.base=ALL-UNNAMED
- *      ${test.src}/java.base/java/util/ServiceConfigurationError.java
+ *      ${test.src}/java.base/java/util/TooManyListenersException.java
  *
  * @comment create attach024Agent00.jar in current directory
  * @run driver PropertyResolvingWrapper ExecDriver --cmd
  *      ${compile.jdk}/bin/jar
  *      -cfm attach024Agent00.jar ${test.src}/attach024Agent00.mf
  *      -C ./bin/classes
- *      java/util/ServiceConfigurationError.class
+ *      java/util/TooManyListenersException.class
  * @run driver ClassFileInstaller
  *      nsk.jvmti.AttachOnDemand.attach024.attach024Agent00
  * @run driver PropertyResolvingWrapper ExecDriver --cmd
