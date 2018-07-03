@@ -57,7 +57,7 @@ public class ClhsdbPrintStatics {
             expStrMap.put("printstatics", List.of(
                     "All known static fields",
                     "Abstract_VM_Version::_vm_major_version",
-                    "ClassLoaderDataGraph::_head", "SymbolTable::_the_table",
+                    "ClassLoaderDataGraph::_head",
                     "JNIHandles::_weak_global_handles", "PerfMemory::_top",
                     "ObjectSynchronizer::gBlockList",
                     "java_lang_Class::_oop_size_offset",

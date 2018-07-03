@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,39 +135,35 @@ public class ObjectReader {
       }
    }
 
-   protected Symbol javaLangString;
-   protected Symbol javaUtilHashtableEntry;
-   protected Symbol javaUtilHashtable;
-   protected Symbol javaUtilProperties;
+   protected String javaLangString;
+   protected String javaUtilHashtableEntry;
+   protected String javaUtilHashtable;
+   protected String javaUtilProperties;
 
-   protected Symbol getVMSymbol(String name) {
-      return VM.getVM().getSymbolTable().probe(name);
-   }
-
-   protected Symbol javaLangString() {
+   protected String javaLangString() {
       if (javaLangString == null) {
-         javaLangString = getVMSymbol("java/lang/String");
+         javaLangString = "java/lang/String";
       }
       return javaLangString;
    }
 
-   protected Symbol javaUtilHashtableEntry() {
+   protected String javaUtilHashtableEntry() {
       if (javaUtilHashtableEntry == null) {
-         javaUtilHashtableEntry = getVMSymbol("java/util/Hashtable$Entry");
+         javaUtilHashtableEntry = "java/util/Hashtable$Entry";
       }
       return javaUtilHashtableEntry;
    }
 
-   protected Symbol javaUtilHashtable() {
+   protected String javaUtilHashtable() {
       if (javaUtilHashtable == null) {
-         javaUtilHashtable = getVMSymbol("java/util/Hashtable");
+         javaUtilHashtable = "java/util/Hashtable";
       }
       return javaUtilHashtable;
    }
 
-   protected Symbol javaUtilProperties() {
+   protected String javaUtilProperties() {
       if (javaUtilProperties == null) {
-         javaUtilProperties = getVMSymbol("java/util/Properties");
+         javaUtilProperties = "java/util/Properties";
       }
       return javaUtilProperties;
    }

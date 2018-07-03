@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,29 +127,25 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
    }
 
    // -- Internals only below this point
-   private Symbol javaLangString() {
+   private String javaLangString() {
       if (javaLangString == null) {
-         javaLangString = getSymbol("java/lang/String");
+         javaLangString = "java/lang/String";
       }
       return javaLangString;
    }
 
-   private Symbol javaLangThread() {
+   private String javaLangThread() {
       if (javaLangThread == null) {
-         javaLangThread = getSymbol("java/lang/Thread");
+         javaLangThread = "java/lang/Thread";
       }
       return javaLangThread;
    }
 
-   private Symbol javaLangClass() {
+   private String javaLangClass() {
       if (javaLangClass == null) {
-         javaLangClass = getSymbol("java/lang/Class");
+         javaLangClass = "java/lang/Class";
       }
       return javaLangClass;
-   }
-
-   private Symbol getSymbol(String str) {
-      return VM.getVM().getSymbolTable().probe(str);
    }
 
    private JSJavaObject newJavaInstance(Instance instance) {
@@ -196,7 +192,7 @@ public class JSJavaFactoryImpl implements JSJavaFactory {
 
    // Map<Oop, SoftReference<JSJavaObject>>
    private Map om = new HashMap();
-   private Symbol javaLangString;
-   private Symbol javaLangThread;
-   private Symbol javaLangClass;
+   private String javaLangString;
+   private String javaLangThread;
+   private String javaLangClass;
 }

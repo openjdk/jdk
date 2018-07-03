@@ -43,10 +43,9 @@ import sun.jvm.hotspot.runtime.*;
 public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
     // the function iterates heap and calls Oop type specific writers
     protected void write() throws IOException {
-        SymbolTable symTbl = VM.getVM().getSymbolTable();
-        javaLangClass = symTbl.probe("java/lang/Class");
-        javaLangString = symTbl.probe("java/lang/String");
-        javaLangThread = symTbl.probe("java/lang/Thread");
+        javaLangClass = "java/lang/Class";
+        javaLangString = "java/lang/String";
+        javaLangThread = "java/lang/Thread";
         ObjectHeap heap = VM.getVM().getObjectHeap();
         try {
             heap.iterate(new DefaultHeapVisitor() {
@@ -458,7 +457,7 @@ public abstract class AbstractHeapGraphWriter implements HeapGraphWriter {
         }
     }
 
-    protected Symbol javaLangClass;
-    protected Symbol javaLangString;
-    protected Symbol javaLangThread;
+    protected String javaLangClass;
+    protected String javaLangString;
+    protected String javaLangThread;
 }

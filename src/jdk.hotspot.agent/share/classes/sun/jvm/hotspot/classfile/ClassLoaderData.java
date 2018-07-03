@@ -92,9 +92,9 @@ public class ClassLoaderData extends VMObject {
   public Klass getKlasses()    { return (Klass)klassesField.getValue(this);  }
 
   /** Lookup an already loaded class. If not found null is returned. */
-  public Klass find(Symbol className) {
+  public Klass find(String className) {
     for (Klass l = getKlasses(); l != null; l = l.getNextLinkKlass()) {
-        if (className.equals(l.getName())) {
+        if (l.getName().equals(className)) {
             return l;
         }
     }

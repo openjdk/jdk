@@ -50,7 +50,6 @@ import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.OopHandle;
 import sun.jvm.hotspot.classfile.ClassLoaderDataGraph;
 import sun.jvm.hotspot.memory.FileMapInfo;
-import sun.jvm.hotspot.memory.SymbolTable;
 import sun.jvm.hotspot.memory.SystemDictionary;
 import sun.jvm.hotspot.memory.Universe;
 import sun.jvm.hotspot.gc.shared.CollectedHeap;
@@ -625,35 +624,6 @@ public class CommandProcessor {
                     Address a = VM.getVM().getDebugger().parseAddress(t.nextToken());
                     Symbol.create(a).printValueOn(out);
                     out.println();
-                }
-            }
-        },
-        new Command("symboltable", "symboltable name", false) {
-            public void doit(Tokens t) {
-                if (t.countTokens() != 1) {
-                    usage();
-                } else {
-                    out.println(SymbolTable.getTheTable().probe(t.nextToken()));
-                }
-            }
-        },
-        new Command("symboldump", "symboldump", false) {
-            public void doit(Tokens t) {
-                SymbolTable theTable = SymbolTable.getTheTable();
-                theTable.symbolsDo(new SymbolTable.SymbolVisitor() {
-                        public void visit(Symbol sym) {
-                            sym.printValueOn(out);
-                            out.println();
-                        }
-                    });
-                CompactHashTable sharedTable = theTable.getSharedTable();
-                if (sharedTable != null) {
-                    sharedTable.symbolsDo(new CompactHashTable.SymbolVisitor() {
-                            public void visit(Symbol sym) {
-                                sym.printValueOn(out);
-                                out.println();
-                            }
-                        });
                 }
             }
         },

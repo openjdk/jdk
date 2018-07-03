@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class Field {
     offset               = holder.getFieldOffset(fieldIndex);
     genericSignature     = holder.getFieldGenericSignature(fieldIndex);
 
-    Symbol name          = holder.getFieldName(fieldIndex);
+    name                 = holder.getFieldName(fieldIndex);
     id          = new NamedFieldIdentifier(name.asString());
 
     signature            = holder.getFieldSignature(fieldIndex);
@@ -57,6 +57,7 @@ public class Field {
     accessFlags = new AccessFlags(access);
   }
 
+  private Symbol          name;
   private long            offset;
   private FieldIdentifier id;
   private boolean         isVMField;
@@ -73,6 +74,8 @@ public class Field {
 
   /** Returns the identifier of the field */
   public FieldIdentifier getID() { return id; }
+
+  public Symbol getName() { return name; }
 
   /** Indicates whether this is a VM field */
   public boolean isVMField() { return isVMField; }
