@@ -41,8 +41,14 @@ import javax.tools.StandardJavaFileManager;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Set;
+import java.util.function.BiConsumer;
 
-
+/*
+ * If not explicitly specified the latest source and latest target
+ * values are the defaults. If explicitly specified, the target value
+ * has to be greater than or equal to the source value.
+ */
 public class Versions {
 
     protected JavaCompiler javacompiler;
@@ -59,87 +65,116 @@ public class Versions {
         versions.run();
     }
 
-    void run() {
+    public static final Set<String> RETIRED_SOURCES =
+        Set.of("1.2", "1.3", "1.4", "1.5");
 
+    public static final Set<String> VALID_SOURCES =
+        Set.of("1.6", "1.7", "1.8", "1.9", "1.10", "11", "12");
+
+    public static final String LATEST_MAJOR_VERSION = "56.0";
+
+    static enum SourceTarget {
+        SIX(true,     "50.0",  "6", Versions::checksrc16),
+        SEVEN(true,   "51.0",  "7", Versions::checksrc17),
+        EIGHT(true,   "52.0",  "8", Versions::checksrc18),
+        NINE(true,    "53.0",  "9", Versions::checksrc19),
+        TEN(true,     "54.0", "10", Versions::checksrc110),
+        ELEVEN(false, "55.0", "11", Versions::checksrc111),
+        TWELVE(false, "56.0", "12", Versions::checksrc112);
+
+        private final boolean dotOne;
+        private final String classFileVer;
+        private final String target;
+        private final BiConsumer<Versions, String[]> checker;
+
+        private SourceTarget(boolean dotOne, String classFileVer, String target,
+                             BiConsumer<Versions, String[]> checker) {
+            this.dotOne = dotOne;
+            this.classFileVer = classFileVer;
+            this.target = target;
+            this.checker = checker;
+        }
+
+        public void checksrc(Versions version, String... args) {
+            checker.accept(version, args);
+        }
+
+        public boolean dotOne() {
+            return dotOne;
+        }
+
+        public String classFileVer() {
+            return classFileVer;
+        }
+
+        public String target() {
+            return target;
+        }
+    }
+
+    void run() {
         String TC = "";
         System.out.println("Version.java: Starting");
 
-        String LATEST_MAJOR_VERSION = "56.0";
         check(LATEST_MAJOR_VERSION);
-        check(LATEST_MAJOR_VERSION, "-source 1.6");
-        check(LATEST_MAJOR_VERSION, "-source 1.7");
-        check(LATEST_MAJOR_VERSION, "-source 1.8");
-        check(LATEST_MAJOR_VERSION, "-source 1.9");
-        check(LATEST_MAJOR_VERSION, "-source 1.10");
-        check(LATEST_MAJOR_VERSION, "-source 11");
-        check(LATEST_MAJOR_VERSION, "-source 12");
+        for (String source : VALID_SOURCES) {
+            check(LATEST_MAJOR_VERSION, "-source " + source);
+        }
 
-        check_source_target(true, "50.0", "6", "6");
-        check_source_target(true, "51.0", "6", "7");
-        check_source_target(true, "51.0", "7", "7");
-        check_source_target(true, "52.0", "6", "8");
-        check_source_target(true, "52.0", "7", "8");
-        check_source_target(true, "52.0", "8", "8");
-        check_source_target(true, "53.0", "6", "9");
-        check_source_target(true, "53.0", "7", "9");
-        check_source_target(true, "53.0", "8", "9");
-        check_source_target(true, "53.0", "9", "9");
-        check_source_target(true, "54.0", "6", "10");
-        check_source_target(true, "54.0", "7", "10");
-        check_source_target(true, "54.0", "8", "10");
-        check_source_target(true, "54.0", "9", "10");
-        check_source_target(true, "54.0", "10", "10");
-        check_source_target(false, "55.0", "6", "11");
-        check_source_target(false, "55.0", "7", "11");
-        check_source_target(false, "55.0", "8", "11");
-        check_source_target(false, "55.0", "9", "11");
-        check_source_target(false, "55.0", "10", "11");
-        check_source_target(false, "55.0", "11", "11");
-        check_source_target(false, "56.0", "12", "12");
+        // Verify that a -source value less than a -target value is
+        // accepted and that the resulting class files are dependent
+        // on the target setting alone.
+        SourceTarget[] sourceTargets = SourceTarget.values();
+        for (int i = 0; i < sourceTargets.length; i++) {
+            SourceTarget st = sourceTargets[i];
+            String classFileVer = st.classFileVer();
+            String target = st.target();
+            boolean dotOne = st.dotOne();
+            check_source_target(dotOne, classFileVer, target, target);
+            for (int j = i; j > 0; j--) {
+                String source = sourceTargets[j].target();
+                check_source_target(dotOne, classFileVer, source, target);
+            }
+        }
 
-        checksrc16("-source 1.6");
-        checksrc16("-source 6");
-        checksrc16("-source 1.6", "-target 1.6");
-        checksrc16("-source 6", "-target 6");
-        checksrc17("-source 1.7");
-        checksrc17("-source 7");
-        checksrc17("-source 1.7", "-target 1.7");
-        checksrc17("-source 7", "-target 7");
-        checksrc18("-source 1.8");
-        checksrc18("-source 8");
-        checksrc18("-source 1.8", "-target 1.8");
-        checksrc18("-source 8", "-target 8");
-        checksrc19("-source 1.9");
-        checksrc19("-source 9");
-        checksrc19("-source 1.9", "-target 1.9");
-        checksrc19("-source 9", "-target 9");
-        checksrc110();
-        checksrc110("-source 1.10");
-        checksrc110("-source 10");
-        checksrc110("-source 1.10", "-target 1.10");
-        checksrc110("-source 10", "-target 10");
-        checksrc111("-source 11");
-        checksrc111("-source 11", "-target 11");
-        checksrc112("-source 12");
-        checksrc112("-source 12", "-target 12");
-        checksrc112("-target 12");
+        // Verify acceptance of different combinations of -source N,
+        // -target M; N <= M
+        for (int i = 0; i < sourceTargets.length; i++) {
+            SourceTarget st = sourceTargets[i];
 
-        fail("-source 7", "-target 1.6", "Base.java");
-        fail("-source 8", "-target 1.6", "Base.java");
-        fail("-source 8", "-target 1.7", "Base.java");
-        fail("-source 9", "-target 1.7", "Base.java");
-        fail("-source 9", "-target 1.8", "Base.java");
-        fail("-source 10", "-target 1.7", "Base.java");
-        fail("-source 10", "-target 1.8", "Base.java");
-        fail("-source 11", "-target 1.9", "Base.java");
-        fail("-source 11", "-target 1.10", "Base.java");
-        fail("-source 12", "-target 1.10", "Base.java");
-        fail("-source 12", "-target 11", "Base.java");
+            st.checksrc(this, "-source " + st.target());
+            st.checksrc(this, "-source " + st.target(), "-target " + st.target());
 
-        fail("-source 1.5", "-target 1.5", "Base.java");
-        fail("-source 1.4", "-target 1.4", "Base.java");
-        fail("-source 1.3", "-target 1.3", "Base.java");
-        fail("-source 1.2", "-target 1.2", "Base.java");
+            if (st.dotOne()) {
+                st.checksrc(this, "-source 1." + st.target());
+                st.checksrc(this, "-source 1." + st.target(), "-target 1." + st.target());
+            }
+
+            if (i == sourceTargets.length) {
+                // Can use -target without -source setting only for
+                // most recent target since the most recent source is
+                // the default.
+                st.checksrc(this, "-target " + st.target());
+
+                if (!st.classFileVer().equals(LATEST_MAJOR_VERSION)) {
+                    throw new RuntimeException(st +
+                                               "does not have class file version" +
+                                               LATEST_MAJOR_VERSION);
+                }
+            }
+        }
+
+        // Verify that -source N -target (N-1) is rejected
+        for (int i = 1 /* Skip zeroth value */; i < sourceTargets.length; i++) {
+            fail("-source " + sourceTargets[i].target(),
+                 "-target " + sourceTargets[i-1].target(),
+                 "Base.java");
+        }
+
+        // Previously supported source/target values
+        for (String source  : RETIRED_SOURCES) {
+            fail("-source " + source, "-target " + source, "Base.java");
+        }
 
         if (failedCases > 0) {
             System.err.println("failedCases = " + String.valueOf(failedCases));
@@ -252,7 +287,17 @@ public class Versions {
 
     protected void checksrc111(String... args) {
         printargs("checksrc111", args);
-        checksrc110(args);
+        int asize = args.length;
+        String[] newargs = new String[asize+1];
+        System.arraycopy(args, 0, newargs,0 , asize);
+        newargs[asize] = "New17.java";
+        pass(newargs);
+        newargs[asize] = "New18.java";
+        pass(newargs);
+        newargs[asize] = "New110.java";
+        pass(newargs);
+        newargs[asize] = "New111.java";
+        pass(newargs);
     }
 
     protected void checksrc112(String... args) {
@@ -399,6 +444,17 @@ public class Versions {
             "} \n"
         );
 
+        /*
+         * Create a file with a new feature in 11, not in 10 : var for lambda parameters
+         */
+        writeSourceFile("New111.java",
+            "public class New111 { \n" +
+            "    static java.util.function.Function<String,String> f = (var x) -> x.substring(0);\n" +
+            "    void m(String name) { \n" +
+            "    var tmp = new Thread(() -> { }, f.apply(name)); \n" +
+            "    } \n" +
+            "} \n"
+        );
     }
 
     protected boolean checkClassFileVersion
