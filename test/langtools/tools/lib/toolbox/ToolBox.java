@@ -34,8 +34,10 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
@@ -43,8 +45,11 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -98,6 +103,12 @@ public class ToolBox {
     public static final String testSrc = System.getProperty("test.src");
     /** The location of the test JDK for this test, or null if not set. */
     public static final String testJDK = System.getProperty("test.jdk");
+    /** The timeout factor for slow systems. */
+    public static final float timeoutFactor;
+    static {
+        String ttf = System.getProperty("test.timeout.factor");
+        timeoutFactor = (ttf == null) ? 1.0f : Float.valueOf(ttf);
+    }
 
     /** The current directory. */
     public static final Path currDir = Paths.get(".");
@@ -109,7 +120,7 @@ public class ToolBox {
      * Checks if the host OS is some version of Windows.
      * @return true if the host OS is some version of Windows
      */
-    public boolean isWindows() {
+    public static boolean isWindows() {
         return osName.toLowerCase(Locale.ENGLISH).startsWith("windows");
     }
 
@@ -238,21 +249,50 @@ public class ToolBox {
     }
 
     /**
-     * Deletes one or more files.
-     * Any directories to be deleted must be empty.
+     * Deletes one or more files, awaiting confirmation that the files
+     * no longer exist. Any directories to be deleted must be empty.
      * <p>Similar to the shell command: {@code rm files}.
-     * @param files the files to be deleted
+     * @param files the names of the files to be deleted
      * @throws IOException if an error occurred while deleting the files
      */
     public void deleteFiles(String... files) throws IOException {
-        if (files.length == 0)
-            throw new IllegalArgumentException("no files specified");
-        for (String file : files)
-            Files.delete(Paths.get(file));
+        deleteFiles(List.of(files).stream().map(Paths::get).collect(Collectors.toList()));
     }
 
     /**
-     * Deletes all content of a directory (but not the directory itself).
+     * Deletes one or more files, awaiting confirmation that the files
+     * no longer exist. Any directories to be deleted must be empty.
+     * <p>Similar to the shell command: {@code rm files}.
+     * @param paths the paths for the files to be deleted
+     * @throws IOException if an error occurred while deleting the files
+     */
+    public void deleteFiles(Path... paths) throws IOException {
+        deleteFiles(List.of(paths));
+    }
+
+    /**
+     * Deletes one or more files, awaiting confirmation that the files
+     * no longer exist. Any directories to be deleted must be empty.
+     * <p>Similar to the shell command: {@code rm files}.
+     * @param paths the paths for the files to be deleted
+     * @throws IOException if an error occurred while deleting the files
+     */
+    public void deleteFiles(List<Path> paths) throws IOException {
+        if (paths.isEmpty())
+            throw new IllegalArgumentException("no files specified");
+        IOException ioe = null;
+        for (Path path : paths) {
+            ioe = deleteFile(path, ioe);
+        }
+        if (ioe != null) {
+            throw ioe;
+        }
+        ensureDeleted(paths);
+    }
+
+    /**
+     * Deletes all content of a directory (but not the directory itself),
+     * awaiting confirmation that the content has been deleted.
      * @param root the directory to be cleaned
      * @throws IOException if an error occurs while cleaning the directory
      */
@@ -261,9 +301,23 @@ public class ToolBox {
             throw new IOException(root + " is not a directory");
         }
         Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            private IOException ioe = null;
+            // for each directory we visit, maintain a list of the files that we try to delete
+            private Deque<List<Path>> dirFiles = new LinkedList<>();
+
             @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes a) throws IOException {
-                Files.delete(file);
+                ioe = deleteFile(file, ioe);
+                dirFiles.peekFirst().add(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes a) throws IOException {
+                if (!dir.equals(root)) {
+                    dirFiles.peekFirst().add(dir);
+                }
+                dirFiles.addFirst(new ArrayList<>());
                 return FileVisitResult.CONTINUE;
             }
 
@@ -272,13 +326,78 @@ public class ToolBox {
                 if (e != null) {
                     throw e;
                 }
+                if (ioe != null) {
+                    throw ioe;
+                }
+                ensureDeleted(dirFiles.removeFirst());
                 if (!dir.equals(root)) {
-                    Files.delete(dir);
+                    ioe = deleteFile(dir, ioe);
                 }
                 return FileVisitResult.CONTINUE;
             }
         });
     }
+
+    /**
+     * Internal method to delete a file, using {@code Files.delete}.
+     * It does not wait to confirm deletion, nor does it retry.
+     * If an exception occurs it is either returned or added to the set of
+     * suppressed exceptions for an earlier exception.
+     * @param path the path for the file to be deleted
+     * @param ioe the earlier exception, or null
+     * @return the earlier exception or an exception that occurred while
+     *  trying to delete the file
+     */
+    private IOException deleteFile(Path path, IOException ioe) {
+        try {
+            Files.delete(path);
+        } catch (IOException e) {
+            if (ioe == null) {
+                ioe = e;
+            } else {
+                ioe.addSuppressed(e);
+            }
+        }
+        return ioe;
+    }
+
+    /**
+     * Wait until it is confirmed that a set of files have been deleted.
+     * @param paths the paths for the files to be deleted
+     * @throws IOException if a file has not been deleted
+     */
+    private void ensureDeleted(Collection<Path> paths)
+            throws IOException {
+        for (Path path : paths) {
+            ensureDeleted(path);
+        }
+    }
+
+    /**
+     * Wait until it is confirmed that a file has been deleted.
+     * @param path the path for the file to be deleted
+     * @throws IOException if problems occur while deleting the file
+     */
+    private void ensureDeleted(Path path) throws IOException {
+        long startTime = System.currentTimeMillis();
+        do {
+            // Note: Files.notExists is not the same as !Files.exists
+            if (Files.notExists(path)) {
+                return;
+            }
+            System.gc(); // allow finalizers and cleaners to run
+            try {
+                Thread.sleep(RETRY_DELETE_MILLIS);
+            } catch (InterruptedException e) {
+                throw new IOException("Interrupted while waiting for file to be deleted: " + path, e);
+            }
+        } while ((System.currentTimeMillis() - startTime) <= MAX_RETRY_DELETE_MILLIS);
+
+        throw new IOException("File not deleted: " + path);
+    }
+
+    private static final int RETRY_DELETE_MILLIS = isWindows() ? (int)(500 * timeoutFactor): 0;
+    private static final int MAX_RETRY_DELETE_MILLIS = isWindows() ? (int)(15 * 1000 * timeoutFactor) : 0;
 
     /**
      * Moves a file.
