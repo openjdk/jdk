@@ -95,10 +95,11 @@ public class MetricsMemoryTester {
 
     private static void testKernelMemoryLimit(String value) {
         long limit = getMemoryValue(value);
-        if (limit != Metrics.systemMetrics().getKernelMemoryLimit()) {
+        long kmemlimit = Metrics.systemMetrics().getKernelMemoryLimit();
+        if (kmemlimit != 0 && limit != kmemlimit) {
             throw new RuntimeException("Kernel Memory limit not equal, expected : ["
                     + limit + "]" + ", got : ["
-                    + Metrics.systemMetrics().getKernelMemoryLimit() + "]");
+                    + kmemlimit + "]");
         }
         System.out.println("TEST PASSED!!!");
     }
