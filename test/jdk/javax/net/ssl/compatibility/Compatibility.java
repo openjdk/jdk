@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -157,10 +158,6 @@ public class Compatibility {
                                 "ServerStatus=%s, ClientStatus=%s, CaseStatus=%s%n",
                                 serverStatus, clientStatus, testCase.getStatus());
 
-                        // Confirm the server has stopped.
-                        if(new File(Utils.PORT_LOG).exists()) {
-                            throw new RuntimeException("Server doesn't stop.");
-                        }
                         System.out.println("----- Case end -----");
                     }
                 }
@@ -236,10 +233,12 @@ public class Compatibility {
     private static List<String> jdkList(String listFileProp) throws IOException {
         String listFile = System.getProperty(listFileProp);
         System.out.println(listFileProp + "=" + listFile);
-        if (listFile != null && new File(listFile).exists()) {
-            return Files.lines(Paths.get(listFile))
-                        .filter(line -> { return !line.trim().isEmpty(); })
-                        .collect(Collectors.toList());
+        if (listFile != null && Files.exists(Paths.get(listFile))) {
+            try (Stream<String> lines = Files.lines(Paths.get(listFile))) {
+                return lines.filter(line -> {
+                    return !line.trim().isEmpty();
+                }).collect(Collectors.toList());
+            }
         } else {
             return new ArrayList<>();
         }
@@ -263,12 +262,13 @@ public class Compatibility {
 
     // Retrieves the latest server port from port.log.
     private static int getServerPort() throws IOException {
-        if (!new File(Utils.PORT_LOG).exists()) {
+        if (!Files.exists(Paths.get(Utils.PORT_LOG))) {
             return -1;
         }
 
-        return Integer.valueOf(
-                Files.lines(Paths.get(Utils.PORT_LOG)).findFirst().get());
+        try (Stream<String> lines = Files.lines(Paths.get(Utils.PORT_LOG))) {
+            return Integer.valueOf(lines.findFirst().get());
+        }
     }
 
     private static OutputAnalyzer runServer(String jdkPath,
