@@ -386,8 +386,11 @@ class Http1AsyncReceiver {
             // we have a flow List<ByteBuffer> upstream.
             Http1AsyncDelegateSubscription subscription =
                     new Http1AsyncDelegateSubscription(scheduler, cancel, onSubscriptionError);
-            pending.onSubscribe(subscription);
-            this.delegate = delegate = pending;
+            try {
+                pending.onSubscribe(subscription);
+            } finally {
+                this.delegate = delegate = pending;
+            }
             final Object captured = delegate;
             if (debug.on())
                 debug.log("delegate is now " + captured
@@ -485,10 +488,11 @@ class Http1AsyncReceiver {
                 error = ex;
             }
         }
-            final Throwable t = (recorded == null ? ex : recorded);
-            if (debug.on())
-                debug.log("recorded " + t + "\n\t delegate: " + delegate
-                          + "\t\t queue.isEmpty: " + queue.isEmpty(), ex);
+
+        final Throwable t = (recorded == null ? ex : recorded);
+        if (debug.on())
+            debug.log("recorded " + t + "\n\t delegate: " + delegate
+                      + "\t\t queue.isEmpty: " + queue.isEmpty(), ex);
         if (Log.errors()) {
             Log.logError("HTTP/1 read subscriber recorded error: {0} - {1}", describe(), t);
         }

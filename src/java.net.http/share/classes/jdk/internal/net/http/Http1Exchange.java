@@ -257,6 +257,14 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
                 .thenCompose(unused -> {
                     CompletableFuture<Void> cf = new MinimalFuture<>();
                     try {
+                        asyncReceiver.whenFinished.whenComplete((r,t) -> {
+                            if (t != null) {
+                                if (debug.on())
+                                    debug.log("asyncReceiver finished (failed=%s)", (Object)t);
+                                if (!headersSentCF.isDone())
+                                    headersSentCF.completeAsync(() -> this, executor);
+                            }
+                        });
                         connectFlows(connection);
 
                         if (debug.on()) debug.log("requestAction.headers");
@@ -282,7 +290,8 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     private void cancelIfFailed(Flow.Subscription s) {
         asyncReceiver.whenFinished.whenCompleteAsync((r,t) -> {
-            if (debug.on()) debug.log("asyncReceiver finished (failed=%s)", t);
+            if (debug.on())
+                debug.log("asyncReceiver finished (failed=%s)", (Object)t);
             if (t != null) {
                 s.cancel();
                 // Don't complete exceptionally here as 't'

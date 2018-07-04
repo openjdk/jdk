@@ -350,7 +350,7 @@ public class SSLEchoTubeTest extends AbstractSSLTubeTest {
 
             @Override
             public void cancel() {
-                cancelled.set(true);
+                queue.add(EOF);
             }
         }
 

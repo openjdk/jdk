@@ -360,7 +360,6 @@ final class SocketTube implements FlowTube {
                 }
             } catch (Throwable t) {
                 signalError(t);
-                subscription.cancel();
             }
         }
 
@@ -424,6 +423,8 @@ final class SocketTube implements FlowTube {
             }
             completed = true;
             readPublisher.signalError(error);
+            Flow.Subscription subscription = this.subscription;
+            if (subscription != null) subscription.cancel();
         }
 
         // A repeatable WriteEvent which is paused after firing and can
@@ -468,7 +469,11 @@ final class SocketTube implements FlowTube {
 
             @Override
             public void cancel() {
+                if (cancelled) return;
                 if (debug.on()) debug.log("write: cancel");
+                if (Log.channel()) {
+                    Log.logChannel("Cancelling write subscription");
+                }
                 dropSubscription();
                 upstreamSubscription.cancel();
             }
@@ -503,9 +508,7 @@ final class SocketTube implements FlowTube {
                 } catch (Throwable t) {
                     if (debug.on())
                         debug.log("write: error while requesting more: " + t);
-                    cancelled = true;
                     signalError(t);
-                    subscription.cancel();
                 } finally {
                     debugState("leaving requestMore: ");
                 }

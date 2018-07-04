@@ -25,6 +25,7 @@
 
 package jdk.internal.net.http;
 
+import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.frame.SettingsFrame;
 import jdk.internal.net.http.frame.WindowUpdateFrame;
@@ -66,8 +67,9 @@ abstract class WindowUpdateSender {
     abstract int getStreamId();
 
     void update(int delta) {
-        if (debug.on()) debug.log("update: %d", delta);
-        if (received.addAndGet(delta) > limit) {
+        int rcv = received.addAndGet(delta);
+        if (debug.on()) debug.log("update: %d, received: %d, limit: %d", delta, rcv, limit);
+        if (rcv > limit) {
             synchronized (this) {
                 int tosend = received.get();
                 if( tosend > limit) {
@@ -83,8 +85,18 @@ abstract class WindowUpdateSender {
         connection.sendUnorderedFrame(new WindowUpdateFrame(getStreamId(), delta));
     }
 
+    volatile String dbgString;
     String dbgString() {
-        return "WindowUpdateSender(stream: " + getStreamId() + ")";
+        String dbg = dbgString;
+        if (dbg != null) return dbg;
+        FlowTube tube = connection.connection.getConnectionFlow();
+        if (tube == null) {
+            return "WindowUpdateSender(stream: " + getStreamId() + ")";
+        } else {
+            int streamId = getStreamId();
+            dbg = connection.dbgString() + ":WindowUpdateSender(stream: " + streamId + ")";
+            return streamId == 0 ? dbg : (dbgString = dbg);
+        }
     }
 
 }
