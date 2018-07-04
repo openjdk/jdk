@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,21 +42,25 @@ ZPreMappedMemory::ZPreMappedMemory(ZVirtualMemoryManager &vmm, ZPhysicalMemoryMa
   log_info(gc, init)("Pre-touching: %s", AlwaysPreTouch ? "Enabled" : "Disabled");
   log_info(gc, init)("Pre-mapping: " SIZE_FORMAT "M", size / M);
 
-  _pmem = pmm.alloc(size);
-  if (_pmem.is_null()) {
-    // Out of memory
-    return;
-  }
+  if (size > 0) {
+    _pmem = pmm.alloc(size);
+    if (_pmem.is_null()) {
+      // Out of memory
+      log_error(gc, init)("Failed to pre-map Java heap (Cannot allocate physical memory)");
+      return;
+    }
 
-  _vmem = vmm.alloc(size, true /* alloc_from_front */);
-  if (_vmem.is_null()) {
-    // Out of address space
-    pmm.free(_pmem);
-    return;
-  }
+    _vmem = vmm.alloc(size, true /* alloc_from_front */);
+    if (_vmem.is_null()) {
+      // Out of address space
+      log_error(gc, init)("Failed to pre-map Java heap (Cannot allocate virtual memory)");
+      pmm.free(_pmem);
+      return;
+    }
 
-  // Map physical memory
-  pmm.map(_pmem, _vmem.start());
+    // Map physical memory
+    pmm.map(_pmem, _vmem.start());
+  }
 
   _initialized = true;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ private:
   const size_t   _granule_size;
 
   void check_max_map_count(size_t max_capacity, size_t granule_size) const;
+  void check_available_space_on_filesystem(size_t max_capacity) const;
   void map_failed(ZErrno err) const;
 
   void advise_view(uintptr_t addr, size_t size) const;
@@ -49,7 +50,8 @@ public:
 
   bool is_initialized() const;
 
-  bool expand(size_t from, size_t to);
+  size_t try_expand(size_t old_capacity, size_t new_capacity);
+
   ZPhysicalMemory alloc(size_t size);
   void free(ZPhysicalMemory pmem);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,8 @@ private:
   ZVirtualMemoryManager    _virtual;
   ZPhysicalMemoryManager   _physical;
   ZPageCache               _cache;
-  ZPreMappedMemory         _pre_mapped;
   const size_t             _max_reserve;
+  ZPreMappedMemory         _pre_mapped;
   size_t                   _used_high;
   size_t                   _used_low;
   size_t                   _used;
@@ -58,7 +58,9 @@ private:
   void increase_used(size_t size, bool relocation);
   void decrease_used(size_t size, bool reclaimed);
 
-  size_t available(ZAllocationFlags flags) const;
+  size_t max_available(bool no_reserve) const;
+  size_t try_ensure_unused(size_t size, bool no_reserve);
+  size_t try_ensure_unused_for_pre_mapped(size_t size);
 
   ZPage* create_page(uint8_t type, size_t size);
   void map_page(ZPage* page);
@@ -83,6 +85,7 @@ public:
   bool is_initialized() const;
 
   size_t max_capacity() const;
+  size_t current_max_capacity() const;
   size_t capacity() const;
   size_t max_reserve() const;
   size_t used_high() const;
