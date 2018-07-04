@@ -47,12 +47,13 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 public class JImageExtractTest extends JImageCliTest {
     public void testExtract() throws IOException {
+        Set<Path> notJImageModules = Files.walk(Paths.get("."),1).collect(Collectors.toSet());
         jimage("extract", getImagePath())
                 .assertSuccess()
                 .resultChecker(r -> {
                     assertTrue(r.output.isEmpty(), "Output is not expected");
                 });
-        verifyExplodedImage(Paths.get("."));
+        verifyExplodedImage(Paths.get("."), notJImageModules);
     }
 
     public void testExtractHelp() {
@@ -68,12 +69,13 @@ public class JImageExtractTest extends JImageCliTest {
 
     public void testExtractToDir() throws IOException {
         Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
+        Set<Path> notJImageModules = Files.walk(tmp,1).collect(Collectors.toSet());
         jimage("extract", "--dir", tmp.toString(), getImagePath())
                 .assertSuccess()
                 .resultChecker(r -> {
                     assertTrue(r.output.isEmpty(), "Output is not expected");
                 });
-        verifyExplodedImage(tmp);
+        verifyExplodedImage(tmp, notJImageModules);
     }
 
     public void testExtractNoImageSpecified() {
@@ -105,13 +107,14 @@ public class JImageExtractTest extends JImageCliTest {
 
     public void testExtractToNotExistingDir() throws IOException {
         Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
+        Set<Path> notJImageModules = Files.walk(tmp,1).collect(Collectors.toSet());
         Files.delete(tmp);
         jimage("extract", "--dir", tmp.toString(), getImagePath())
                 .assertSuccess()
                 .resultChecker(r -> {
                     assertTrue(r.output.isEmpty(), "Output is not expected");
                 });
-        verifyExplodedImage(tmp);
+        verifyExplodedImage(tmp, notJImageModules);
     }
 
     public void testExtractFromDir() {
@@ -132,19 +135,24 @@ public class JImageExtractTest extends JImageCliTest {
             // nothing to test
             return;
         }
-
+        Set<Path> notJImageModules = Files.walk(tmp,1).collect(Collectors.toSet());
         jimage("extract", "--dir", symlink.toString(), getImagePath())
                 .assertSuccess()
                 .resultChecker(r -> {
                     assertTrue(r.output.isEmpty(), "Output is not expected");
                 });
-        verifyExplodedImage(tmp);
+        verifyExplodedImage(tmp, notJImageModules);
     }
 
     public void testExtractToReadOnlyDir() throws IOException {
         Set<PosixFilePermission> perms = PosixFilePermissions.fromString("r-xr--r--");
-        FileAttribute<Set<PosixFilePermission>> atts = PosixFilePermissions.asFileAttribute(perms);
-        Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName(), atts);
+        Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.indexOf("win") >= 0) {
+            Files.setAttribute(tmp, "dos:readonly", true);
+        } else {
+            Files.setPosixFilePermissions(tmp, perms);
+        }
         jimage("extract", "--dir", tmp.toString(), getImagePath())
                 .assertFailure()
                 .assertShowsError();
@@ -167,15 +175,16 @@ public class JImageExtractTest extends JImageCliTest {
                 .assertShowsError();
     }
 
-    private void verifyExplodedImage(Path imagePath) throws IOException {
+    private void verifyExplodedImage(Path imagePath, Set<Path> notJImageModules) throws IOException {
         Set<Path> allModules = Files.walk(imagePath, 1).collect(Collectors.toSet());
         assertTrue(allModules.stream().anyMatch(p -> "java.base".equals(p.getFileName().toString())),
                 "Exploded image contains java.base module.");
-
         Set<Path> badModules = allModules.stream()
                 .filter(p -> !Files.exists(p.resolve("module-info.class")))
                 .collect(Collectors.toSet());
-        assertEquals(badModules, new HashSet<Path>() {{ add(imagePath); }},
+        // filter bad modules which are not part of jimage
+        badModules.removeAll(notJImageModules);
+        assertEquals(badModules, new HashSet<Path>() {{}},
                 "There are no exploded modules with missing 'module-info.class'");
     }
 
