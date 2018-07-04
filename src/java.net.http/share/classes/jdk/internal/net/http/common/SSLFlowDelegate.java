@@ -33,6 +33,9 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,6 +96,8 @@ public class SSLFlowDelegate {
     // When handshake is in progress trying to wrap may produce no bytes.
     private static final ByteBuffer NOTHING = ByteBuffer.allocate(0);
     private static final String monProp = Utils.getProperty("jdk.internal.httpclient.monitorFlowDelegate");
+    private static final boolean isMonitored =
+            monProp != null && (monProp.equals("") || monProp.equalsIgnoreCase("true"));
 
     final Executor exec;
     final Reader reader;
@@ -100,6 +105,7 @@ public class SSLFlowDelegate {
     final SSLEngine engine;
     final String tubeName; // hack
     final CompletableFuture<String> alpnCF; // completes on initial handshake
+    final Monitorable monitor = isMonitored ? this::monitor : null; // prevent GC until SSLFD is stopped
     volatile boolean close_notify_received;
     final CompletableFuture<Void> readerCF;
     final CompletableFuture<Void> writerCF;
@@ -152,8 +158,7 @@ public class SSLFlowDelegate {
         // Writer to the downWriter.
         connect(downReader, downWriter);
 
-        if (monProp != null && (monProp.equals("") || monProp.equalsIgnoreCase("true")))
-            Monitor.add(this::monitor);
+        if (isMonitored) Monitor.add(monitor);
     }
 
     /**
@@ -202,6 +207,7 @@ public class SSLFlowDelegate {
     public String monitor() {
         StringBuilder sb = new StringBuilder();
         sb.append("SSL: id ").append(id);
+        sb.append(" ").append(dbgString());
         sb.append(" HS state: " + states(handshakeState));
         sb.append(" Engine state: " + engine.getHandshakeStatus().toString());
         if (stateList != null) {
@@ -293,8 +299,10 @@ public class SSLFlowDelegate {
 
         @Override
         public String toString() {
-            return "READER: " + super.toString() + " readBuf: " + readBuf.toString()
-                    + " count: " + count.toString();
+            return "READER: " + super.toString() + ", readBuf: " + readBuf.toString()
+                    + ", count: " + count.toString() + ", scheduler: "
+                    + (scheduler.isStopped() ? "stopped" : "running")
+                    + ", status: " + lastUnwrapStatus;
         }
 
         private void reallocReadBuf() {
@@ -335,6 +343,7 @@ public class SSLFlowDelegate {
                 }
                 if (complete) {
                     this.completing = complete;
+                    minBytesRequired = 0;
                 }
             }
         }
@@ -395,13 +404,23 @@ public class SSLFlowDelegate {
                             // not enough data in the read buffer...
                             // no need to try to unwrap again unless we get more bytes
                             // than minBytesRequired = len in the read buffer.
-                            minBytesRequired = len;
                             synchronized (readBufferLock) {
+                                minBytesRequired = len;
                                 // more bytes could already have been added...
                                 assert readBuf.remaining() >= len;
                                 // check if we have received some data, and if so
                                 // we can just re-spin the loop
                                 if (readBuf.remaining() > len) continue;
+                                else if (this.completing) {
+                                    if (debug.on()) {
+                                        debugr.log("BUFFER_UNDERFLOW with EOF," +
+                                                " %d bytes non decrypted.", len);
+                                    }
+                                    // The channel won't send us any more data, and
+                                    // we are in underflow: we need to fail.
+                                    throw new IOException("BUFFER_UNDERFLOW with EOF, "
+                                            + len + " bytes non decrypted.");
+                                }
                             }
                             // request more data and return.
                             requestMore();
@@ -429,6 +448,7 @@ public class SSLFlowDelegate {
                     } catch (IOException ex) {
                         errorCommon(ex);
                         handleError(ex);
+                        return;
                     }
                     if (handshaking && !complete)
                         return;
@@ -452,12 +472,13 @@ public class SSLFlowDelegate {
             }
         }
 
+        private volatile Status lastUnwrapStatus;
         EngineResult unwrapBuffer(ByteBuffer src) throws IOException {
             ByteBuffer dst = getAppBuffer();
             int len = src.remaining();
             while (true) {
                 SSLEngineResult sslResult = engine.unwrap(src, dst);
-                switch (sslResult.getStatus()) {
+                switch (lastUnwrapStatus = sslResult.getStatus()) {
                     case BUFFER_OVERFLOW:
                         // may happen if app size buffer was changed, or if
                         // our 'adaptiveBufferSize' guess was too small for
@@ -507,7 +528,9 @@ public class SSLFlowDelegate {
     }
 
     public static class Monitor extends Thread {
-        final List<Monitorable> list;
+        final List<WeakReference<Monitorable>> list;
+        final List<FinalMonitorable> finalList;
+        final ReferenceQueue<Monitorable> queue = new ReferenceQueue<>();
         static Monitor themon;
 
         static {
@@ -515,18 +538,60 @@ public class SSLFlowDelegate {
             themon.start(); // uncomment to enable Monitor
         }
 
+        // An instance used to temporarily store the
+        // last observable state of a monitorable object.
+        // When Monitor.remove(o) is called, we replace
+        // 'o' with a FinalMonitorable whose reference
+        // will be enqueued after the last observable state
+        // has been printed.
+        final class FinalMonitorable implements Monitorable {
+            final String finalState;
+            FinalMonitorable(Monitorable o) {
+                finalState = o.getInfo();
+                finalList.add(this);
+            }
+            @Override
+            public String getInfo() {
+                finalList.remove(this);
+                return finalState;
+            }
+        }
+
         Monitor() {
             super("Monitor");
             setDaemon(true);
             list = Collections.synchronizedList(new LinkedList<>());
+            finalList = new ArrayList<>(); // access is synchronized on list above
         }
 
         void addTarget(Monitorable o) {
-            list.add(o);
+            list.add(new WeakReference<>(o, queue));
+        }
+        void removeTarget(Monitorable o) {
+            // It can take a long time for GC to clean up references.
+            // Calling Monitor.remove() early helps removing noise from the
+            // logs/
+            synchronized (list) {
+                Iterator<WeakReference<Monitorable>> it = list.iterator();
+                while (it.hasNext()) {
+                    Monitorable m = it.next().get();
+                    if (m == null) it.remove();
+                    if (o == m) {
+                        it.remove();
+                        break;
+                    }
+                }
+                FinalMonitorable m = new FinalMonitorable(o);
+                addTarget(m);
+                Reference.reachabilityFence(m);
+            }
         }
 
         public static void add(Monitorable o) {
             themon.addTarget(o);
+        }
+        public static void remove(Monitorable o) {
+            themon.removeTarget(o);
         }
 
         @Override
@@ -536,7 +601,14 @@ public class SSLFlowDelegate {
                 while (true) {
                     Thread.sleep(20 * 1000);
                     synchronized (list) {
-                        for (Monitorable o : list) {
+                        Reference<? extends Monitorable> expired;
+                        while ((expired = queue.poll()) != null) list.remove(expired);
+                        for (WeakReference<Monitorable> ref : list) {
+                            Monitorable o = ref.get();
+                            if (o == null) continue;
+                            if (o instanceof FinalMonitorable) {
+                                ref.enqueue();
+                            }
                             System.out.println(o.getInfo());
                             System.out.println("-------------------------");
                         }
@@ -733,6 +805,7 @@ public class SSLFlowDelegate {
         // downstream. Otherwise, we send the writeBuffer downstream
         // and will allocate a new one next time.
         volatile ByteBuffer writeBuffer;
+        private volatile Status lastWrappedStatus;
         @SuppressWarnings("fallthrough")
         EngineResult wrapBuffers(ByteBuffer[] src) throws SSLException {
             long len = Utils.remaining(src);
@@ -747,7 +820,7 @@ public class SSLFlowDelegate {
             while (true) {
                 SSLEngineResult sslResult = engine.wrap(src, dst);
                 if (debugw.on()) debugw.log("SSLResult: " + sslResult);
-                switch (sslResult.getStatus()) {
+                switch (lastWrappedStatus = sslResult.getStatus()) {
                     case BUFFER_OVERFLOW:
                         // Shouldn't happen. We allocated buffer with packet size
                         // get it again if net buffer size was changed
@@ -815,8 +888,10 @@ public class SSLFlowDelegate {
 
         @Override
         public String toString() {
-            return "WRITER: " + super.toString() +
-                    " writeList size " + Integer.toString(writeList.size());
+            return "WRITER: " + super.toString()
+                    + ", writeList size: " + Integer.toString(writeList.size())
+                    + ", scheduler: " + (scheduler.isStopped() ? "stopped" : "running")
+                    + ", status: " + lastWrappedStatus;
                     //" writeList: " + writeList.toString();
         }
     }
@@ -839,6 +914,7 @@ public class SSLFlowDelegate {
         stopped = true;
         reader.stop();
         writer.stop();
+        if (isMonitored) Monitor.remove(monitor);
     }
 
     private Void stopOnError(Throwable currentlyUnused) {
@@ -953,6 +1029,10 @@ public class SSLFlowDelegate {
             case NEED_UNWRAP_AGAIN:
                 // do nothing else
                 // receiving-side data will trigger unwrap
+                if (caller == WRITER) {
+                    reader.schedule();
+                    return false;
+                }
                 break;
             default:
                 throw new InternalError("Unexpected handshake status:"

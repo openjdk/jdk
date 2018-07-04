@@ -264,19 +264,47 @@ public class ShortResponseBody {
 
     // can be used to prolong request body publication
     static final class InfiniteInputStream extends InputStream {
+        int count = 0;
+        int k16 = 0;
         @Override
         public int read() throws IOException {
+            if (++count == 1) {
+                System.out.println("Start sending 1 byte");
+            }
+            if (count > 16 * 1024) {
+                k16++;
+                System.out.println("... 16K sent.");
+                count = count % (16 * 1024);
+            }
+            if (k16 > 128) {
+                System.out.println("WARNING: InfiniteInputStream: " +
+                        "more than 128 16k buffers generated: returning EOF");
+                return -1;
+            }
             return 1;
         }
 
         @Override
         public int read(byte[] buf, int offset, int length) {
             //int count = offset;
-            //length = Math.max(0, Math.min(buf.length - offset, length));
+            length = Math.max(0, Math.min(buf.length - offset, length));
             //for (; count < length; count++)
             //    buf[offset++] = 0x01;
             //return count;
-            return Math.max(0, Math.min(buf.length - offset, length));
+            if (count == 0) {
+                System.out.println("Start sending " + length);
+            } else if (count > 16 * 1024) {
+                k16++;
+                System.out.println("... 16K sent.");
+                count = count % (16 * 1024);
+            }
+            if (k16 > 128) {
+                System.out.println("WARNING: InfiniteInputStream: " +
+                        "more than 128 16k buffers generated: returning EOF");
+                return -1;
+            }
+            count += length;
+            return length;
         }
     }
 
@@ -493,10 +521,13 @@ public class ShortResponseBody {
                     out.print(requestMethod + " ");
                     URI uriPath = readRequestPath(is);
                     out.println(uriPath);
-                    readRequestHeaders(is);
+                    String headers = readRequestHeaders(is);
 
                     String query = uriPath.getRawQuery();
-                    assert query != null;
+                    if (query == null) {
+                        out.println("Request headers: [" + headers + "]");
+                    }
+                    assert query != null : "null query for uriPath: " + uriPath;
                     String qv = query.split("=")[1];
                     int len;
                     if (qv.equals("all")) {
@@ -542,9 +573,11 @@ public class ShortResponseBody {
         }
 
         // Read until the end of a HTTP request headers
-        static void readRequestHeaders(InputStream is) throws IOException {
+        static String readRequestHeaders(InputStream is) throws IOException {
             int requestEndCount = 0, r;
+            StringBuilder sb = new StringBuilder();
             while ((r = is.read()) != -1) {
+                sb.append((char) r);
                 if (r == requestEnd[requestEndCount]) {
                     requestEndCount++;
                     if (requestEndCount == 4) {
@@ -554,6 +587,7 @@ public class ShortResponseBody {
                     requestEndCount = 0;
                 }
             }
+            return sb.toString();
         }
     }
 

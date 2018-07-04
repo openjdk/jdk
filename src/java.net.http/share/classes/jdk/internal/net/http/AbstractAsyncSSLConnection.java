@@ -27,6 +27,7 @@ package jdk.internal.net.http;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.ArrayDeque;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SNIHostName;
@@ -89,11 +90,30 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
 
     final SSLEngine getEngine() { return engine; }
 
+    private static boolean contains(String[] rr, String target) {
+        for (String s : rr)
+            if (target.equalsIgnoreCase(s))
+                return true;
+        return false;
+    }
+
     private static SSLParameters createSSLParameters(HttpClientImpl client,
                                                      ServerName serverName,
                                                      String[] alpn) {
         SSLParameters sslp = client.sslParameters();
         SSLParameters sslParameters = Utils.copySSLParameters(sslp);
+        // filter out unwanted protocols, if h2 only
+        if (alpn != null && alpn.length != 0 && !contains(alpn, "http/1.1")) {
+            ArrayDeque<String> l = new ArrayDeque<>();
+            for (String proto : sslParameters.getProtocols()) {
+                if (!proto.startsWith("SSL") && !proto.endsWith("v1.1") && !proto.endsWith("v1")) {
+                    l.add(proto);
+                }
+            }
+            String[] a1 = l.toArray(new String[0]);
+            sslParameters.setProtocols(a1);
+        }
+
         if (!disableHostnameVerification)
             sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
         if (alpn != null) {
@@ -112,10 +132,12 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
         return sslParameters;
     }
 
+
     private static SSLEngine createEngine(SSLContext context, String serverName, int port,
                                           SSLParameters sslParameters) {
         SSLEngine engine = context.createSSLEngine(serverName, port);
         engine.setUseClientMode(true);
+
         engine.setSSLParameters(sslParameters);
         return engine;
     }

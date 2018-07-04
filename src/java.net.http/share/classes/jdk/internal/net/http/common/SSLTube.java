@@ -406,6 +406,21 @@ public class SSLTube implements FlowTube {
             }
         }
 
+        private void complete(DelegateWrapper subscriberImpl, Throwable t) {
+            try {
+                if (t == null) subscriberImpl.onComplete();
+                else subscriberImpl.onError(t);
+                if (debug.on()) {
+                    debug.log("subscriber completed %s"
+                            + ((t == null) ? "normally" : ("with error: " + t)));
+                }
+            } finally {
+                // Error or EOF while reading:
+                // cancel write side after completing read side
+                writeSubscription.cancel();
+            }
+        }
+
         private void onNewSubscription(DelegateWrapper subscriberImpl,
                                        Flow.Subscription subscription) {
             assert subscriberImpl != null;
@@ -432,13 +447,13 @@ public class SSLTube implements FlowTube {
                 if (debug.on())
                     debug.log("onNewSubscription: subscriberImpl:%s, invoking onError:%s",
                               subscriberImpl, failed);
-                subscriberImpl.onError(failed);
+                complete(subscriberImpl, failed);
             } else if (completed) {
                 if (debug.on())
                     debug.log("onNewSubscription: subscriberImpl:%s, invoking onCompleted",
                               subscriberImpl);
                 finished = true;
-                subscriberImpl.onComplete();
+                complete(subscriberImpl, null);
             }
         }
 
@@ -463,7 +478,7 @@ public class SSLTube implements FlowTube {
                 subscriberImpl = subscribed;
             }
             if (subscriberImpl != null) {
-                subscriberImpl.onError(failed);
+                complete(subscriberImpl, failed);
             } else {
                 if (debug.on())
                     debug.log("%s: delegate null, stored %s", this, failed);
@@ -485,14 +500,22 @@ public class SSLTube implements FlowTube {
             return !(hs == NOT_HANDSHAKING || hs == FINISHED);
         }
 
-        private boolean handshakeFailed() {
+        private String handshakeFailed() {
             // sslDelegate can be null if we reach here
             // during the initial handshake, as that happens
             // within the SSLFlowDelegate constructor.
             // In that case we will want to raise an exception.
-            return handshaking()
+            if (handshaking()
                     && (sslDelegate == null
-                    || !sslDelegate.closeNotifyReceived());
+                    || !sslDelegate.closeNotifyReceived())) {
+                return "Remote host terminated the handshake";
+            }
+            // The initial handshake may not have been started yet.
+            // In which case - if we are completed before the initial handshake
+            // is started, we consider this a handshake failure as well.
+            if ("SSL_NULL_WITH_NULL_NULL".equals(engine.getSession().getCipherSuite()))
+                return "Remote host closed the channel";
+            return null;
         }
 
         @Override
@@ -503,17 +526,18 @@ public class SSLTube implements FlowTube {
                 subscriberImpl = subscribed;
             }
 
-            if (handshakeFailed()) {
+            String handshakeFailed = handshakeFailed();
+            if (handshakeFailed != null) {
                 if (debug.on())
-                    debug.log("handshake: %s, inbound done: %s outbound done: %s",
+                    debug.log("handshake: %s, inbound done: %s, outbound done: %s: %s",
                               engine.getHandshakeStatus(),
                               engine.isInboundDone(),
-                              engine.isOutboundDone());
-                onErrorImpl(new SSLHandshakeException(
-                        "Remote host terminated the handshake"));
+                              engine.isOutboundDone(),
+                              handshakeFailed);
+                onErrorImpl(new SSLHandshakeException(handshakeFailed));
             } else if (subscriberImpl != null) {
                 onCompleteReceived = finished = true;
-                subscriberImpl.onComplete();
+                complete(subscriberImpl, null);
             } else {
                 onCompleteReceived = true;
             }

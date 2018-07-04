@@ -161,14 +161,19 @@ public class SettingsFrame extends Http2Frame {
         }
     }
 
+    public static final int DEFAULT_INITIAL_WINDOW_SIZE = 64 * K -1;
+    public static final int DEFAULT_HEADER_TABLE_SIZE = 4 * K;
+    public static final int DEFAULT_MAX_CONCURRENT_STREAMS = 100;
+    public static final int DEFAULT_MAX_FRAME_SIZE = 16 * K;
+
     public static SettingsFrame getDefaultSettings() {
         SettingsFrame f = new SettingsFrame();
         // TODO: check these values
         f.setParameter(ENABLE_PUSH, 1);
-        f.setParameter(HEADER_TABLE_SIZE, 4 * K);
-        f.setParameter(MAX_CONCURRENT_STREAMS, 100);
-        f.setParameter(INITIAL_WINDOW_SIZE, 64 * K - 1);
-        f.setParameter(MAX_FRAME_SIZE, 16 * K);
+        f.setParameter(HEADER_TABLE_SIZE, DEFAULT_HEADER_TABLE_SIZE);
+        f.setParameter(MAX_CONCURRENT_STREAMS, DEFAULT_MAX_CONCURRENT_STREAMS);
+        f.setParameter(INITIAL_WINDOW_SIZE, DEFAULT_INITIAL_WINDOW_SIZE);
+        f.setParameter(MAX_FRAME_SIZE, DEFAULT_MAX_FRAME_SIZE);
         return f;
     }
 }
