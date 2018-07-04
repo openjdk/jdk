@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,9 @@ TEST(ZPhysicalMemoryTest, split) {
   const size_t SegmentSize = 2 * M;
 
   ZPhysicalMemoryManager pmem_manager(10 * SegmentSize, SegmentSize);
+
+  pmem_manager.try_ensure_unused_capacity(10 * SegmentSize);
+  EXPECT_EQ(pmem_manager.unused_capacity(), 10 * SegmentSize);
 
   ZPhysicalMemory pmem = pmem_manager.alloc(8 * SegmentSize);
   EXPECT_EQ(pmem.nsegments(), 1u) << "wrong number of segments";

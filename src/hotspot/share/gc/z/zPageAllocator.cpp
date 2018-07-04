@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,11 +84,12 @@ public:
 ZPage* const ZPageAllocator::gc_marker = (ZPage*)-1;
 
 ZPageAllocator::ZPageAllocator(size_t min_capacity, size_t max_capacity, size_t max_reserve) :
+    _lock(),
     _virtual(),
     _physical(max_capacity, ZPageSizeMin),
     _cache(),
-    _pre_mapped(_virtual, _physical, min_capacity),
     _max_reserve(max_reserve),
+    _pre_mapped(_virtual, _physical, try_ensure_unused_for_pre_mapped(min_capacity)),
     _used_high(0),
     _used_low(0),
     _used(0),
@@ -105,6 +106,10 @@ bool ZPageAllocator::is_initialized() const {
 
 size_t ZPageAllocator::max_capacity() const {
   return _physical.max_capacity();
+}
+
+size_t ZPageAllocator::current_max_capacity() const {
+  return _physical.current_max_capacity();
 }
 
 size_t ZPageAllocator::capacity() const {
@@ -169,16 +174,41 @@ void ZPageAllocator::decrease_used(size_t size, bool reclaimed) {
   }
 }
 
-size_t ZPageAllocator::available(ZAllocationFlags flags) const {
-  size_t available = max_capacity() - used();
-  assert(_physical.available() + _pre_mapped.available() + _cache.available()  == available, "Should be equal");
+size_t ZPageAllocator::max_available(bool no_reserve) const {
+  size_t available = current_max_capacity() - used();
 
-  if (flags.no_reserve()) {
-    // The memory reserve should not be considered free
+  if (no_reserve) {
+    // The reserve should not be considered available
     available -= MIN2(available, max_reserve());
   }
 
   return available;
+}
+
+size_t ZPageAllocator::try_ensure_unused(size_t size, bool no_reserve) {
+  // Ensure that we always have space available for the reserve. This
+  // is needed to avoid losing the reserve because of failure to map
+  // more memory before reaching max capacity.
+  _physical.try_ensure_unused_capacity(size + max_reserve());
+
+  size_t unused = _physical.unused_capacity();
+
+  if (no_reserve) {
+    // The reserve should not be considered unused
+    unused -= MIN2(unused, max_reserve());
+  }
+
+  return MIN2(size, unused);
+}
+
+size_t ZPageAllocator::try_ensure_unused_for_pre_mapped(size_t size) {
+  // This function is called during construction, where the
+  // physical memory manager might have failed to initialied.
+  if (!_physical.is_initialized()) {
+    return 0;
+  }
+
+  return try_ensure_unused(size, true /* no_reserve */);
 }
 
 ZPage* ZPageAllocator::create_page(uint8_t type, size_t size) {
@@ -259,8 +289,8 @@ void ZPageAllocator::check_out_of_memory_during_initialization() {
 }
 
 ZPage* ZPageAllocator::alloc_page_common_inner(uint8_t type, size_t size, ZAllocationFlags flags) {
-  const size_t available_total = available(flags);
-  if (available_total < size) {
+  const size_t max = max_available(flags.no_reserve());
+  if (max < size) {
     // Not enough free memory
     return NULL;
   }
@@ -281,11 +311,11 @@ ZPage* ZPageAllocator::alloc_page_common_inner(uint8_t type, size_t size, ZAlloc
   // subsequent allocations can use the physical memory.
   flush_pre_mapped();
 
-  // Check if physical memory is available
-  const size_t available_physical = _physical.available();
-  if (available_physical < size) {
+  // Try ensure that physical memory is available
+  const size_t unused = try_ensure_unused(size, flags.no_reserve());
+  if (unused < size) {
     // Flush cache to free up more physical memory
-    flush_cache(size - available_physical);
+    flush_cache(size - unused);
   }
 
   // Create new page and allocate physical memory
@@ -303,7 +333,7 @@ ZPage* ZPageAllocator::alloc_page_common(uint8_t type, size_t size, ZAllocationF
   increase_used(size, flags.relocation());
 
   // Send trace event
-  ZTracer::tracer()->report_page_alloc(size, used(), available(flags), _cache.available(), flags);
+  ZTracer::tracer()->report_page_alloc(size, used(), max_available(flags.no_reserve()), _cache.available(), flags);
 
   return page;
 }

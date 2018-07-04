@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,16 +71,16 @@ inline size_t ZPhysicalMemoryManager::max_capacity() const {
   return _max_capacity;
 }
 
+inline size_t ZPhysicalMemoryManager::current_max_capacity() const {
+  return _current_max_capacity;
+}
+
 inline size_t ZPhysicalMemoryManager::capacity() const {
   return _capacity;
 }
 
-inline size_t ZPhysicalMemoryManager::used() const {
-  return _used;
-}
-
-inline size_t ZPhysicalMemoryManager::available() const {
-  return _max_capacity - _used;
+inline size_t ZPhysicalMemoryManager::unused_capacity() const {
+  return _capacity - _used;
 }
 
 #endif // SHARE_GC_Z_ZPHYSICALMEMORY_INLINE_HPP

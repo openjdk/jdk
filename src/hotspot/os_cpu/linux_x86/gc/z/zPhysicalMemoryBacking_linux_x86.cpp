@@ -52,8 +52,15 @@ ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity, size_t granu
     _file(),
     _granule_size(granule_size) {
 
-  // Check and warn if max map count seems too low
+  if (!_file.is_initialized()) {
+    return;
+  }
+
+  // Check and warn if max map count is too low
   check_max_map_count(max_capacity, granule_size);
+
+  // Check and warn if available space on filesystem is too low
+  check_available_space_on_filesystem(max_capacity);
 }
 
 void ZPhysicalMemoryBacking::check_max_map_count(size_t max_capacity, size_t granule_size) const {
@@ -61,7 +68,7 @@ void ZPhysicalMemoryBacking::check_max_map_count(size_t max_capacity, size_t gra
   FILE* const file = fopen(filename, "r");
   if (file == NULL) {
     // Failed to open file, skip check
-    log_debug(gc)("Failed to open %s", filename);
+    log_debug(gc, init)("Failed to open %s", filename);
     return;
   }
 
@@ -70,7 +77,7 @@ void ZPhysicalMemoryBacking::check_max_map_count(size_t max_capacity, size_t gra
   fclose(file);
   if (result != 1) {
     // Failed to read file, skip check
-    log_debug(gc)("Failed to read %s", filename);
+    log_debug(gc, init)("Failed to read %s", filename);
     return;
   }
 
@@ -81,15 +88,43 @@ void ZPhysicalMemoryBacking::check_max_map_count(size_t max_capacity, size_t gra
   // We speculate that we need another 20% to allow for non-ZGC subsystems to map memory.
   const size_t required_max_map_count = (max_capacity / granule_size) * 3 * 1.2;
   if (actual_max_map_count < required_max_map_count) {
-    log_warning(gc)("The system limit on number of memory mappings "
-                    "per process might be too low for the given");
-    log_warning(gc)("Java heap size (" SIZE_FORMAT "M). Please "
-                    "adjust %s to allow for at least", max_capacity / M, filename);
-    log_warning(gc)(SIZE_FORMAT " mappings (current limit is " SIZE_FORMAT "). "
-                    "Continuing execution with the current limit could",
-                    required_max_map_count, actual_max_map_count);
-    log_warning(gc)("lead to a fatal error down the line, due to failed "
-                    "attempts to map memory.");
+    log_warning(gc, init)("***** WARNING! INCORRECT SYSTEM CONFIGURATION DETECTED! *****");
+    log_warning(gc, init)("The system limit on number of memory mappings per process might be too low "
+                          "for the given");
+    log_warning(gc, init)("max Java heap size (" SIZE_FORMAT "M). Please adjust %s to allow for at",
+                          max_capacity / M, filename);
+    log_warning(gc, init)("least " SIZE_FORMAT " mappings (current limit is " SIZE_FORMAT "). Continuing "
+                          "execution with the current", required_max_map_count, actual_max_map_count);
+    log_warning(gc, init)("limit could lead to a fatal error, due to failure to map memory.");
+  }
+}
+
+void ZPhysicalMemoryBacking::check_available_space_on_filesystem(size_t max_capacity) const {
+  // Note that the available space on a tmpfs or a hugetlbfs filesystem
+  // will be zero if no size limit was specified when it was mounted.
+  const size_t available = _file.available();
+  if (available == 0) {
+    // No size limit set, skip check
+    log_info(gc, init)("Available space on backing filesystem: N/A");
+    return;
+  }
+
+  log_info(gc, init)("Available space on backing filesystem: " SIZE_FORMAT "M",
+                     available / M);
+
+  // Warn if the filesystem doesn't currently have enough space available to hold
+  // the max heap size. The max heap size will be capped if we later hit this limit
+  // when trying to expand the heap.
+  if (available < max_capacity) {
+    log_warning(gc, init)("***** WARNING! INCORRECT SYSTEM CONFIGURATION DETECTED! *****");
+    log_warning(gc, init)("Not enough space available on the backing filesystem to hold the current "
+                          "max Java heap");
+    log_warning(gc, init)("size (" SIZE_FORMAT "M). Please adjust the size of the backing filesystem "
+                          "accordingly (available", max_capacity / M);
+    log_warning(gc, init)("space is currently " SIZE_FORMAT "M). Continuing execution with the current "
+                          "filesystem size could", available / M);
+    log_warning(gc, init)("lead to a premature OutOfMemoryError being thrown, due to failure to map "
+                          "memory.");
   }
 }
 
@@ -97,18 +132,16 @@ bool ZPhysicalMemoryBacking::is_initialized() const {
   return _file.is_initialized();
 }
 
-bool ZPhysicalMemoryBacking::expand(size_t from, size_t to) {
-  const size_t size = to - from;
+size_t ZPhysicalMemoryBacking::try_expand(size_t old_capacity, size_t new_capacity) {
+  assert(old_capacity < new_capacity, "Invalid old/new capacity");
 
-  // Expand
-  if (!_file.expand(from, size)) {
-    return false;
+  const size_t capacity = _file.try_expand(old_capacity, new_capacity - old_capacity, _granule_size);
+  if (capacity > old_capacity) {
+    // Add expanded capacity to free list
+    _manager.free(old_capacity, capacity - old_capacity);
   }
 
-  // Add expanded space to free list
-  _manager.free(from, size);
-
-  return true;
+  return capacity;
 }
 
 ZPhysicalMemory ZPhysicalMemoryBacking::alloc(size_t size) {
