@@ -131,7 +131,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     private volatile LocaleNameProvider localeNameProvider;
     protected volatile TimeZoneNameProvider timeZoneNameProvider;
     protected volatile CalendarDataProvider calendarDataProvider;
-    private volatile CalendarNameProvider calendarNameProvider;
+    protected volatile CalendarNameProvider calendarNameProvider;
 
     private volatile CalendarProvider calendarProvider;
     private volatile JavaTimeDateTimePatternProvider javaTimeDateTimePatternProvider;
