@@ -658,7 +658,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
      */
     @Override
     public Principal getLocalPrincipal() {
-        return ((localCerts == null && localCerts.length != 0) ? null :
+        return ((localCerts == null || localCerts.length == 0) ? null :
                 localCerts[0].getSubjectX500Principal());
     }
 
