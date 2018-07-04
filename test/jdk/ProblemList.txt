@@ -540,9 +540,6 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
 
-sun/management/jmxremote/bootstrap/RmiSslBootstrapTest.sh       8205653 generic-all
-sun/management/jmxremote/bootstrap/RmiRegistrySslTest.java      8205653 generic-all
-
 ############################################################################
 
 # jdk_jmx
