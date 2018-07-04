@@ -84,12 +84,18 @@ bool MallocSiteTable::initialize() {
   // Create pseudo call stack for hashtable entry allocation
   address pc[3];
   if (NMT_TrackingStackDepth >= 3) {
-    pc[2] = (address)MallocSiteTable::allocation_at;
+    uintx *fp = (uintx*)MallocSiteTable::allocation_at;
+    // On ppc64, 'fp' is a pointer to a function descriptor which is a struct  of
+    // three native pointers where the first pointer is the real function address.
+    // See: http://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi-1.9.html#FUNC-DES
+    pc[2] = (address)(fp PPC64_ONLY(BIG_ENDIAN_ONLY([0])));
   }
   if (NMT_TrackingStackDepth >= 2) {
-    pc[1] = (address)MallocSiteTable::lookup_or_add;
+    uintx *fp = (uintx*)MallocSiteTable::lookup_or_add;
+    pc[1] = (address)(fp PPC64_ONLY(BIG_ENDIAN_ONLY([0])));
   }
-  pc[0] = (address)MallocSiteTable::new_entry;
+  uintx *fp = (uintx*)MallocSiteTable::new_entry;
+  pc[0] = (address)(fp PPC64_ONLY(BIG_ENDIAN_ONLY([0])));
 
   // Instantiate NativeCallStack object, have to use placement new operator. (see comments above)
   NativeCallStack* stack = ::new ((void*)_hash_entry_allocation_stack)
