@@ -46,10 +46,6 @@
 // Sysfs file for transparent huge page on tmpfs
 #define ZFILENAME_SHMEM_ENABLED          "/sys/kernel/mm/transparent_hugepage/shmem_enabled"
 
-// Default mount points
-#define ZMOUNTPOINT_TMPFS                "/dev/shm"
-#define ZMOUNTPOINT_HUGETLBFS            "/hugepages"
-
 // Java heap filename
 #define ZFILENAME_HEAP                   "java_heap"
 
@@ -77,6 +73,20 @@
 #ifndef HUGETLBFS_MAGIC
 #define HUGETLBFS_MAGIC                  0x958458f6
 #endif
+
+// Preferred tmpfs mount points, ordered by priority
+static const char* z_preferred_tmpfs_mountpoints[] = {
+  "/dev/shm",
+  "/run/shm",
+  NULL
+};
+
+// Preferred hugetlbfs mount points, ordered by priority
+static const char* z_preferred_hugetlbfs_mountpoints[] = {
+  "/dev/hugepages",
+  "/hugepages",
+  NULL
+};
 
 static int z_memfd_create(const char *name, unsigned int flags) {
   return syscall(__NR_memfd_create, name, flags);
@@ -165,11 +175,15 @@ int ZBackingFile::create_mem_fd(const char* name) const {
 }
 
 int ZBackingFile::create_file_fd(const char* name) const {
-  const char* const filesystem = ZLargePages::is_explicit() ? ZFILESYSTEM_HUGETLBFS : ZFILESYSTEM_TMPFS;
-  const char* const mountpoint = ZLargePages::is_explicit() ? ZMOUNTPOINT_HUGETLBFS : ZMOUNTPOINT_TMPFS;
+  const char* const filesystem = ZLargePages::is_explicit()
+                                 ? ZFILESYSTEM_HUGETLBFS
+                                 : ZFILESYSTEM_TMPFS;
+  const char** const preferred_mountpoints = ZLargePages::is_explicit()
+                                             ? z_preferred_hugetlbfs_mountpoints
+                                             : z_preferred_tmpfs_mountpoints;
 
   // Find mountpoint
-  ZBackingPath path(filesystem, mountpoint);
+  ZBackingPath path(filesystem, preferred_mountpoints);
   if (path.get() == NULL) {
     log_error(gc, init)("Use -XX:ZPath to specify the path to a %s filesystem", filesystem);
     return -1;
