@@ -94,17 +94,9 @@ typedef struct {
 } jzentry;
 
 class ClassPathZipEntry: public ClassPathEntry {
- enum {
-   _unknown = 0,
-   _yes     = 1,
-   _no      = 2
- };
  private:
   jzfile* _zip;              // The zip archive
   const char*   _zip_name;   // Name of zip archive
-  bool _is_boot_append;      // entry coming from -Xbootclasspath/a
-  u1 _multi_versioned;       // indicates if the jar file has multi-versioned entries.
-                             // It can have value of "_unknown", "_yes", or "_no"
  public:
   bool is_modules_image() const { return false; }
   bool is_jar_file() const { return true;  }
@@ -113,10 +105,8 @@ class ClassPathZipEntry: public ClassPathEntry {
   ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_boot_append);
   virtual ~ClassPathZipEntry();
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
-  u1* open_versioned_entry(const char* name, jint* filesize, TRAPS) NOT_CDS_RETURN_(NULL);
   ClassFileStream* open_stream(const char* name, TRAPS);
   void contents_do(void f(const char* name, void* context), void* context);
-  bool is_multiple_versioned(TRAPS) NOT_CDS_RETURN_(false);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
 };
