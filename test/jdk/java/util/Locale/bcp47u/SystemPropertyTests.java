@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import org.testng.annotations.Test;
 public class SystemPropertyTests {
 
     private static String LANGPROP = "-Duser.language=en";
+    private static String SCPTPROP = "-Duser.script=";
     private static String CTRYPROP = "-Duser.country=US";
 
     @DataProvider(name="data")
@@ -88,7 +89,7 @@ public class SystemPropertyTests {
     @Test(dataProvider="data")
     public void runTest(String extprop, String defLoc,
                         String defFmtLoc, String defDspLoc) throws Exception {
-        int exitValue = executeTestJava(LANGPROP, CTRYPROP,
+        int exitValue = executeTestJava(LANGPROP, SCPTPROP, CTRYPROP,
                                     extprop, "DefaultLocaleTest", defLoc, defFmtLoc, defDspLoc)
                             .outputTo(System.out)
                             .errorTo(System.out)
