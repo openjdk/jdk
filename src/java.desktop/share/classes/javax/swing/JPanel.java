@@ -127,7 +127,7 @@ public class JPanel extends JComponent implements Accessible
     }
 
     /**
-     * Returns the look and feel (L&amp;amp;F) object that renders this component.
+     * Returns the look and feel (L&amp;F) object that renders this component.
      *
      * @return the PanelUI object that renders this component
      * @since 1.4
@@ -159,7 +159,7 @@ public class JPanel extends JComponent implements Accessible
      * @see UIDefaults#getUI
      */
     @BeanProperty(bound = false, expert = true, description
-            = "A string that specifies the name of the L&amp;F class.")
+            = "A string that specifies the name of the L&F class.")
     public String getUIClassID() {
         return uiClassID;
     }
