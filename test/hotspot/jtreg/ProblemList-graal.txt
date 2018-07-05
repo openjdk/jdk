@@ -95,6 +95,7 @@ compiler/intrinsics/mathexact/sanity/SubtractExactIntTest.java   8202124   gener
 compiler/intrinsics/mathexact/sanity/MultiplyExactLongTest.java  8202124   generic-all
 compiler/intrinsics/mathexact/sanity/MultiplyExactIntTest.java   8202124   generic-all
 compiler/whitebox/DeoptimizeAllTest.java                         8202124   generic-all
+compiler/whitebox/DeoptimizeFramesTest.java                      8202124   generic-all
 compiler/whitebox/DeoptimizeMethodTest.java                      8202124   generic-all
 compiler/whitebox/ForceNMethodSweepTest.java                     8202124   generic-all
 compiler/whitebox/GetNMethodTest.java                            8202124   generic-all
