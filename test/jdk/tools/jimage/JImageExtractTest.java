@@ -34,11 +34,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.*;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -145,15 +144,25 @@ public class JImageExtractTest extends JImageCliTest {
     }
 
     public void testExtractToReadOnlyDir() throws IOException {
-        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("r-xr--r--");
-        Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.indexOf("win") >= 0) {
-            Files.setAttribute(tmp, "dos:readonly", true);
-        } else {
-            Files.setPosixFilePermissions(tmp, perms);
+        Path filePath = Files.createTempDirectory(Paths.get("."), getClass().getName());
+        Set<String> supportedAttr = filePath.getFileSystem().supportedFileAttributeViews();
+        if (supportedAttr.contains("posix")) {
+            Files.setPosixFilePermissions(filePath, PosixFilePermissions.fromString("r-xr--r--"));
+        } else if (supportedAttr.contains("acl")) {
+            System.out.println("Entered into acl block");
+            UserPrincipal fileOwner = Files.getOwner(filePath);
+            AclFileAttributeView view = Files.getFileAttributeView(filePath, AclFileAttributeView.class);
+            AclEntry entry = AclEntry.newBuilder()
+                                     .setType(AclEntryType.DENY)
+                                     .setPrincipal(fileOwner)
+                                     .setPermissions(AclEntryPermission.WRITE_DATA)
+                                     .setFlags(AclEntryFlag.FILE_INHERIT, AclEntryFlag.DIRECTORY_INHERIT)
+                                     .build();
+            List<AclEntry> acl = view.getAcl();
+            acl.add(0, entry);
+            view.setAcl(acl);
         }
-        jimage("extract", "--dir", tmp.toString(), getImagePath())
+        jimage("extract", "--dir", filePath.toString(), getImagePath())
                 .assertFailure()
                 .assertShowsError();
     }
