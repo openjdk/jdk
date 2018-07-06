@@ -1635,6 +1635,7 @@ class Assembler : public AbstractAssembler {
   // TEXASR bit description
   enum transaction_failure_reason {
     // Upper half (TEXASRU):
+    tm_failure_code       =  0, // The Failure Code is copied from tabort or treclaim operand.
     tm_failure_persistent =  7, // The failure is likely to recur on each execution.
     tm_disallowed         =  8, // The instruction is not permitted.
     tm_nesting_of         =  9, // The maximum transaction level was exceeded.
@@ -1650,6 +1651,7 @@ class Assembler : public AbstractAssembler {
     tm_failure_summary    = 36, // Failure has been detected and recorded.
     tm_tfiar_exact        = 37, // Value in the TFIAR is exact.
     tm_rot                = 38, // Rollback-only transaction.
+    tm_transaction_level  = 52, // Transaction level (nesting depth + 1).
   };
 
   // PPC 1, section 2.4.1 Branch Instructions
