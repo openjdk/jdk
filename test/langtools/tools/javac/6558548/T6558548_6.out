@@ -1,7 +1,0 @@
-T6558548.java:168:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
-T6558548.java:177:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
-T6558548.java:248:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
-T6558548.java:258:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
-T6558548.java:300:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
-T6558548.java:307:9: compiler.err.except.never.thrown.in.try: java.lang.InterruptedException
-6 errors

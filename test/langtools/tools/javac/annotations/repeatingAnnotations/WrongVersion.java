@@ -5,7 +5,6 @@
  * @compile WrongVersion.java
  * @compile -Xlint:-options -source 8 WrongVersion.java
  * @compile/fail/ref=WrongVersion7.out -XDrawDiagnostics -Xlint:-options -source 7 WrongVersion.java
- * @compile/fail/ref=WrongVersion6.out -XDrawDiagnostics -Xlint:-options -source 6 WrongVersion.java
  */
 import java.lang.annotation.Repeatable;
 

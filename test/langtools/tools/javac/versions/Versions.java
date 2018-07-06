@@ -66,15 +66,14 @@ public class Versions {
     }
 
     public static final Set<String> RETIRED_SOURCES =
-        Set.of("1.2", "1.3", "1.4", "1.5");
+        Set.of("1.2", "1.3", "1.4", "1.5" /*, 1.6 */);
 
     public static final Set<String> VALID_SOURCES =
-        Set.of("1.6", "1.7", "1.8", "1.9", "1.10", "11", "12");
+        Set.of("1.7", "1.8", "1.9", "1.10", "11", "12");
 
     public static final String LATEST_MAJOR_VERSION = "56.0";
 
     static enum SourceTarget {
-        SIX(true,     "50.0",  "6", Versions::checksrc16),
         SEVEN(true,   "51.0",  "7", Versions::checksrc17),
         EIGHT(true,   "52.0",  "8", Versions::checksrc18),
         NINE(true,    "53.0",  "9", Versions::checksrc19),
@@ -230,17 +229,6 @@ public class Versions {
         } else if (!checkClassFileVersion("Base.class", major)) {
             failedCases++;
         }
-    }
-
-    protected void checksrc16(String... args) {
-        printargs("checksrc16", args);
-        int asize = args.length;
-        String[] newargs = new String[asize + 1];
-        System.arraycopy(args, 0, newargs, 0, asize);
-        newargs[asize] = "Base.java";
-        pass(newargs);
-        newargs[asize] = "New17.java";
-        fail(newargs);
     }
 
     protected void checksrc17(String... args) {

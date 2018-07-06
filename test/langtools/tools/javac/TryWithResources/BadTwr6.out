@@ -1,6 +1,0 @@
-- compiler.warn.source.no.bootclasspath: 6
-- compiler.warn.option.obsolete.source: 6
-- compiler.warn.option.obsolete.suppression
-BadTwr.java:13:12: compiler.err.feature.not.supported.in.source: (compiler.misc.feature.try.with.resources), 6, 7
-1 error
-3 warnings

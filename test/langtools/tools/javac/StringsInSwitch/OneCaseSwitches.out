@@ -1,6 +1,0 @@
-- compiler.warn.source.no.bootclasspath: 6
-- compiler.warn.option.obsolete.source: 6
-- compiler.warn.option.obsolete.suppression
-OneCaseSwitches.java:23:15: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.string.switch), 6, 7
-1 error
-3 warnings

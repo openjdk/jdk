@@ -3,7 +3,6 @@
  * @bug 6911256 6964740
  * @author Joseph D. Darcy
  * @summary Verify bad TWRs don't compile
- * @compile/fail/ref=BadTwr6.out -XDrawDiagnostics -source 6 BadTwr.java
  * @compile/fail/ref=BadTwr.out -XDrawDiagnostics BadTwr.java
  */
 

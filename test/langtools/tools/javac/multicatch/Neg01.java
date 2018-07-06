@@ -5,8 +5,6 @@
  * @summary Project Coin: Improved Exception Handling for Java (aka 'multicatch')
  * @author darcy
  * @compile/fail/ref=Neg01.out -XDrawDiagnostics Neg01.java
- * @compile -source 6 -XDrawDiagnostics Neg01.java
- *
  */
 
 class Neg01 {

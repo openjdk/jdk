@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 6827009 8078561
  * @summary Positive tests for strings in switch with few alternatives.
- * @compile/fail/ref=OneCaseSwitches.out -XDrawDiagnostics -source 6 OneCaseSwitches.java
  * @compile          OneCaseSwitches.java
  * @run main OneCaseSwitches
  * @author  Joseph D. Darcy

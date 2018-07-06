@@ -1,6 +1,0 @@
-BadBinaryLiterals.java:10:17: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.binary.lit), 6, 7
-BadBinaryLiterals.java:11:24: compiler.err.expected: ';'
-BadBinaryLiterals.java:16:27: compiler.err.expected: ';'
-BadBinaryLiterals.java:17:27: compiler.err.expected: ';'
-BadBinaryLiterals.java:17:30: compiler.err.expected: token.identifier
-5 errors

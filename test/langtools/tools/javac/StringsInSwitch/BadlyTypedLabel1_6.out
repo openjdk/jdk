@@ -1,7 +1,0 @@
-- compiler.warn.source.no.bootclasspath: 6
-- compiler.warn.option.obsolete.source: 6
-- compiler.warn.option.obsolete.suppression
-BadlyTypedLabel1.java:10:15: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.string.switch), 6, 7
-BadlyTypedLabel1.java:13:14: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.String)
-2 errors
-3 warnings

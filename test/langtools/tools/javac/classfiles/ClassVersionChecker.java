@@ -42,7 +42,6 @@ import java.util.regex.*;
  */
 public class ClassVersionChecker {
     private static enum Version {
-        SIX("6", 50),
         SEVEN("7", 51),
         EIGHT("8", 52),
         NINE("9", 53),

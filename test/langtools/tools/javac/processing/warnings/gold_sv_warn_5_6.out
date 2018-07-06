@@ -1,2 +1,2 @@
-- compiler.warn.proc.processor.incompatible.source.version: RELEASE_5, TestSourceVersionWarnings, 6
+- compiler.warn.proc.processor.incompatible.source.version: RELEASE_5, TestSourceVersionWarnings, 8
 1 warning
