@@ -253,17 +253,18 @@ void set_jvmci_specific_flags() {
     if (FLAG_IS_DEFAULT(OnStackReplacePercentage)) {
       FLAG_SET_DEFAULT(OnStackReplacePercentage, 933);
     }
+    // JVMCI needs values not less than defaults
     if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
-      FLAG_SET_DEFAULT(ReservedCodeCacheSize, 64*M);
+      FLAG_SET_DEFAULT(ReservedCodeCacheSize, MAX2(64*M, ReservedCodeCacheSize));
     }
     if (FLAG_IS_DEFAULT(InitialCodeCacheSize)) {
-      FLAG_SET_DEFAULT(InitialCodeCacheSize, 16*M);
+      FLAG_SET_DEFAULT(InitialCodeCacheSize, MAX2(16*M, InitialCodeCacheSize));
     }
     if (FLAG_IS_DEFAULT(MetaspaceSize)) {
-      FLAG_SET_DEFAULT(MetaspaceSize, 12*M);
+      FLAG_SET_DEFAULT(MetaspaceSize, MAX2(12*M, MetaspaceSize));
     }
     if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
-      FLAG_SET_DEFAULT(NewSizeThreadIncrease, 4*K);
+      FLAG_SET_DEFAULT(NewSizeThreadIncrease, MAX2(4*K, NewSizeThreadIncrease));
     }
     if (TieredStopAtLevel != CompLevel_full_optimization) {
       // Currently JVMCI compiler can only work at the full optimization level
