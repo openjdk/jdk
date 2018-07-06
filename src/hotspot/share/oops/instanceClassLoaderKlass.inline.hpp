@@ -39,7 +39,7 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate(oop obj, OopClosureType* c
   InstanceKlass::oop_oop_iterate<T>(obj, closure);
 
   if (Devirtualizer::do_metadata(closure)) {
-    ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
+    ClassLoaderData* cld = java_lang_ClassLoader::loader_data_raw(obj);
     // cld can be null if we have a non-registered class loader.
     if (cld != NULL) {
       Devirtualizer::do_cld(closure, cld);
@@ -61,7 +61,7 @@ inline void InstanceClassLoaderKlass::oop_oop_iterate_bounded(oop obj, OopClosur
 
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
-      ClassLoaderData* cld = java_lang_ClassLoader::loader_data(obj);
+      ClassLoaderData* cld = java_lang_ClassLoader::loader_data_raw(obj);
       // cld can be null if we have a non-registered class loader.
       if (cld != NULL) {
         Devirtualizer::do_cld(closure, cld);

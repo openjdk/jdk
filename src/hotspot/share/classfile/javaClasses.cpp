@@ -1271,6 +1271,13 @@ int  java_lang_Class::oop_size(oop java_class) {
   return size;
 }
 
+int  java_lang_Class::oop_size_raw(oop java_class) {
+  assert(_oop_size_offset != 0, "must be set");
+  int size = java_class->int_field_raw(_oop_size_offset);
+  assert(size > 0, "Oop size must be greater than zero, not %d", size);
+  return size;
+}
+
 void java_lang_Class::set_oop_size(HeapWord* java_class, int size) {
   assert(_oop_size_offset != 0, "must be set");
   assert(size > 0, "Oop size must be greater than zero, not %d", size);
@@ -1281,6 +1288,12 @@ int  java_lang_Class::static_oop_field_count(oop java_class) {
   assert(_static_oop_field_count_offset != 0, "must be set");
   return java_class->int_field(_static_oop_field_count_offset);
 }
+
+int  java_lang_Class::static_oop_field_count_raw(oop java_class) {
+  assert(_static_oop_field_count_offset != 0, "must be set");
+  return java_class->int_field_raw(_static_oop_field_count_offset);
+}
+
 void java_lang_Class::set_static_oop_field_count(oop java_class, int size) {
   assert(_static_oop_field_count_offset != 0, "must be set");
   java_class->int_field_put(_static_oop_field_count_offset, size);
@@ -1366,6 +1379,14 @@ Klass* java_lang_Class::as_Klass(oop java_class) {
   //%note memory_2
   assert(java_lang_Class::is_instance(java_class), "must be a Class object");
   Klass* k = ((Klass*)java_class->metadata_field(_klass_offset));
+  assert(k == NULL || k->is_klass(), "type check");
+  return k;
+}
+
+Klass* java_lang_Class::as_Klass_raw(oop java_class) {
+  //%note memory_2
+  assert(java_lang_Class::is_instance(java_class), "must be a Class object");
+  Klass* k = ((Klass*)java_class->metadata_field_raw(_klass_offset));
   assert(k == NULL || k->is_klass(), "type check");
   return k;
 }
@@ -4005,6 +4026,11 @@ int  java_lang_ClassLoader::unnamedModule_offset = -1;
 ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
   assert(loader != NULL && oopDesc::is_oop(loader), "loader must be oop");
   return HeapAccess<>::load_at(loader, _loader_data_offset);
+}
+
+ClassLoaderData* java_lang_ClassLoader::loader_data_raw(oop loader) {
+  assert(loader != NULL && oopDesc::is_oop(loader), "loader must be oop");
+  return RawAccess<>::load_at(loader, _loader_data_offset);
 }
 
 ClassLoaderData* java_lang_ClassLoader::cmpxchg_loader_data(ClassLoaderData* new_data, oop loader, ClassLoaderData* expected_data) {
