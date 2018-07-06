@@ -1074,10 +1074,13 @@ struct MarkBasePosFormat1
       if (!skippy_iter.prev ()) return_trace (false);
       /* We only want to attach to the first of a MultipleSubst sequence.
        * https://github.com/harfbuzz/harfbuzz/issues/740
-       * Reject others. */
+       * Reject others...
+       * ...but stop if we find a mark in the MultipleSubst sequence:
+       * https://github.com/harfbuzz/harfbuzz/issues/1020 */
       if (!_hb_glyph_info_multiplied (&buffer->info[skippy_iter.idx]) ||
           0 == _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]) ||
           (skippy_iter.idx == 0 ||
+           _hb_glyph_info_is_mark (&buffer->info[skippy_iter.idx - 1]) ||
            _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx]) !=
            _hb_glyph_info_get_lig_id (&buffer->info[skippy_iter.idx - 1]) ||
            _hb_glyph_info_get_lig_comp (&buffer->info[skippy_iter.idx]) !=

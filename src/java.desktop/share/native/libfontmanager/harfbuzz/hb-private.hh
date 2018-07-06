@@ -1228,13 +1228,14 @@ struct hb_bytes_t
 /* fallback for round() */
 #if !defined (HAVE_ROUND) && !defined (HAVE_DECL_ROUND)
 static inline double
-round (double x)
+_hb_round (double x)
 {
   if (x >= 0)
     return floor (x + 0.5);
   else
     return ceil (x - 0.5);
 }
+#define round(x) _hb_round(x)
 #endif
 
 

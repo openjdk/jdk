@@ -668,8 +668,9 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
    *
    * Reports suggest that in some scripts Uniscribe does this only if there
    * is *not* a Halant after last consonant already (eg. Kannada), while it
-   * does it unconditionally in other scripts (eg. Malayalam).  We don't
-   * currently know about other scripts, so we single out Malayalam for now.
+   * does it unconditionally in other scripts (eg. Malayalam, Bengali).  We
+   * don't currently know about other scripts, so we whitelist Malayalam and
+   * Bengali for now.
    *
    * Kannada test case:
    * U+0C9A,U+0CCD,U+0C9A,U+0CCD
@@ -679,10 +680,16 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
    * Malayalam test case:
    * U+0D38,U+0D4D,U+0D31,U+0D4D,U+0D31,U+0D4D
    * With lohit-ttf-20121122/Lohit-Malayalam.ttf
+   *
+   * Bengali test case
+   * U+0998,U+09CD,U+09AF,U+09CD
+   * With Windows XP vrinda.ttf
+   * https://github.com/harfbuzz/harfbuzz/issues/1073
    */
   if (indic_plan->is_old_spec)
   {
-    bool disallow_double_halants = buffer->props.script != HB_SCRIPT_MALAYALAM;
+    bool disallow_double_halants = buffer->props.script != HB_SCRIPT_MALAYALAM &&
+                                   buffer->props.script != HB_SCRIPT_BENGALI;
     for (unsigned int i = base + 1; i < end; i++)
       if (info[i].indic_category() == OT_H)
       {
