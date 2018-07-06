@@ -175,7 +175,7 @@ public class TestIBMBugs {
     }
 
     private static void bug8202329() throws Exception {
-        String original = "\\\u007E\u00A5\u203E"; // "b"; \\ [backslash][tilde][yen][overscore]
+        String original = "\\\u007E\u00A5\u203E"; // [backslash][tilde][yen][overscore]
         byte[] expectedBytes; // bytes after conversion
         String expectedStringfromBytes; // String constructed from bytes
 
@@ -188,7 +188,7 @@ public class TestIBMBugs {
 
 
         // Test IBM943, where \ and ~ are encoded to unmappable i.e., 0x3f
-        // and ¥ andoverscore are encoded to 0x5c and 0x7e
+        // and [yen] and [overscore] are encoded to 0x5c and 0x7e
         charset = Charset.forName("IBM943");
         expectedBytes = new byte[] {0x3f, 0x3f, 0x5c, 0x7e};
         expectedStringfromBytes = "??\u00A5\u203E";
@@ -205,7 +205,7 @@ public class TestIBMBugs {
 
 
         // Test IBM943C, where \ and ~ are encoded to 0x5c and 0x7e
-        // and ¥ an overscore are encoded to 0x5c and 0x7e
+        // and [yen] and [overscore] are encoded to 0x5c and 0x7e
         charset = Charset.forName("IBM943C");
         expectedBytes = new byte[] {0x5c, 0x7e, 0x5c, 0x7e};
         expectedStringfromBytes = "\\~\\~";
