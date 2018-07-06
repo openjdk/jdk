@@ -2571,9 +2571,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
            "Default survivor space alignment in bytes")                     \
            constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
                                                                             \
-  product(bool , AllowNonVirtualCalls, false,                               \
-          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
-                                                                            \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
