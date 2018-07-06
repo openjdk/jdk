@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -84,7 +84,7 @@ import org.xml.sax.XMLReader;
  * @author G. Todd Miller
  * @author Morten Jorgensen
  * @author Santiago Pericas-Geertsen
- * @LastModified: Nov 2017
+ * @LastModified: July 2018
  */
 public class TransformerFactoryImpl
     extends SAXTransformerFactory implements SourceLoader, ErrorListener
@@ -1211,7 +1211,7 @@ public class TransformerFactoryImpl
                     return null;
                 }
                 catch (TransformerException e2) {
-                    new TransformerConfigurationException(e2);
+                    throw new TransformerConfigurationException(e2);
                 }
             }
             throw e1;
