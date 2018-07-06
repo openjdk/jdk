@@ -192,12 +192,6 @@ void VM_ZombieAll::doit() {
 
 #endif // !PRODUCT
 
-void VM_UnlinkSymbols::doit() {
-  JavaThread *thread = (JavaThread *)calling_thread();
-  assert(thread->is_Java_thread(), "must be a Java thread");
-  SymbolTable::unlink();
-}
-
 void VM_Verify::doit() {
   Universe::heap()->prepare_for_verify();
   Universe::verify();

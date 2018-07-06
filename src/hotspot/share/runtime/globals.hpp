@@ -486,9 +486,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   notproduct(bool, ZombieALot, false,                                       \
           "Create zombies (non-entrant) at exit from the runtime system")   \
                                                                             \
-  product(bool, UnlinkSymbolsALot, false,                                   \
-          "Unlink unreferenced symbols from the symbol table at safepoints")\
-                                                                            \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
                                                                             \

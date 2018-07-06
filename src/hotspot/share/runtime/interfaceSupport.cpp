@@ -66,9 +66,6 @@ VMEntryWrapper::~VMEntryWrapper() {
   if (ZombieALot) {
     InterfaceSupport::zombieAll();
   }
-  if (UnlinkSymbolsALot) {
-    InterfaceSupport::unlinkSymbols();
-  }
   // do verification AFTER potential deoptimization
   if (VerifyStack) {
     InterfaceSupport::verify_stack();
@@ -206,11 +203,6 @@ void InterfaceSupport::zombieAll() {
     VMThread::execute(&op);
   }
   zombieAllCounter++;
-}
-
-void InterfaceSupport::unlinkSymbols() {
-  VM_UnlinkSymbols op;
-  VMThread::execute(&op);
 }
 
 void InterfaceSupport::deoptimizeAll() {
