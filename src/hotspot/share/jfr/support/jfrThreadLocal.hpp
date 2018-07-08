@@ -50,10 +50,13 @@ class JfrThreadLocal {
   unsigned int _stack_trace_hash;
   mutable u4 _stackdepth;
   volatile jint _entering_suspend_flag;
+  bool _dead;
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
   JfrStackFrame* install_stackframes() const;
+
+  void set_dead();
 
  public:
   JfrThreadLocal();
@@ -200,6 +203,10 @@ class JfrThreadLocal {
 
   void set_trace_id(traceid id) const {
     _trace_id = id;
+  }
+
+  bool is_dead() const {
+    return _dead;
   }
 
   bool has_thread_checkpoint() const;

@@ -23,8 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
+#include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
@@ -51,7 +52,8 @@ JfrThreadLocal::JfrThreadLocal() :
   _wallclock_time(os::javaTimeNanos()),
   _stack_trace_hash(0),
   _stackdepth(0),
-  _entering_suspend_flag(0) {}
+  _entering_suspend_flag(0),
+  _dead(false) {}
 
 u8 JfrThreadLocal::add_data_lost(u8 value) {
   _data_lost += value;
@@ -71,9 +73,17 @@ const JfrCheckpointBlobHandle& JfrThreadLocal::thread_checkpoint() const {
   return _thread_cp;
 }
 
+void JfrThreadLocal::set_dead() {
+  assert(!is_dead(), "invariant");
+  _dead = true;
+}
+
 void JfrThreadLocal::on_exit(JavaThread* thread) {
-  JfrCheckpointManager::write_thread_checkpoint(thread);
-  JfrThreadCPULoadEvent::send_event_for_thread(thread);
+  if (JfrRecorder::is_recording()) {
+    JfrCheckpointManager::write_thread_checkpoint(thread);
+    JfrThreadCPULoadEvent::send_event_for_thread(thread);
+  }
+  thread->jfr_thread_local()->set_dead();
 }
 
 void JfrThreadLocal::on_destruct(Thread* thread) {
