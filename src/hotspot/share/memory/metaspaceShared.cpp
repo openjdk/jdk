@@ -39,6 +39,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/filemap.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -205,6 +206,10 @@ char* MetaspaceShared::misc_code_space_alloc(size_t num_bytes) {
 
 char* MetaspaceShared::read_only_space_alloc(size_t num_bytes) {
   return _ro_region.allocate(num_bytes);
+}
+
+char* MetaspaceShared::read_only_space_top() {
+  return _ro_region.top();
 }
 
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
@@ -456,6 +461,7 @@ void MetaspaceShared::serialize_well_known_classes(SerializeClosure* soc) {
   java_lang_StackFrameInfo::serialize(soc);
   java_lang_LiveStackFrameInfo::serialize(soc);
   java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize(soc);
+  jdk_internal_module_ArchivedModuleGraph::serialize(soc);
 }
 
 address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {
@@ -1350,6 +1356,11 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   char* table_top = _ro_region.allocate(table_bytes, sizeof(intptr_t));
   SystemDictionary::copy_table(table_top, _ro_region.top());
 
+  // Write the archived object sub-graph infos. For each klass with sub-graphs,
+  // the info includes the static fields (sub-graph entry points) and Klasses
+  // of objects included in the sub-graph.
+  HeapShared::write_archived_subgraph_infos();
+
   // Write the other data to the output array.
   WriteClosure wc(&_ro_region);
   MetaspaceShared::serialize(&wc);
@@ -1861,6 +1872,8 @@ void MetaspaceShared::dump_open_archive_heap_objects(
 
   MetaspaceShared::archive_klass_objects(THREAD);
 
+  HeapShared::archive_module_graph_objects(THREAD);
+
   G1CollectedHeap::heap()->end_archive_alloc_range(open_archive,
                                                    os::vm_allocation_granularity());
 }
@@ -1906,14 +1919,16 @@ oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
     ArchivedObjectCache* cache = MetaspaceShared::archive_object_cache();
     cache->put(obj, archived_oop);
   }
-  log_debug(cds)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT,
-                 p2i(obj), p2i(archived_oop));
+  log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT,
+                       p2i(obj), p2i(archived_oop));
   return archived_oop;
 }
 
 oop MetaspaceShared::materialize_archived_object(oop obj) {
-  assert(obj != NULL, "sanity");
-  return G1CollectedHeap::heap()->materialize_archived_object(obj);
+  if (obj != NULL) {
+    return G1CollectedHeap::heap()->materialize_archived_object(obj);
+  }
+  return NULL;
 }
 
 void MetaspaceShared::archive_klass_objects(Thread* THREAD) {
@@ -2120,6 +2135,9 @@ void MetaspaceShared::initialize_shared_spaces() {
   int len = *(intptr_t*)buffer;     // skip over shared dictionary entries
   buffer += sizeof(intptr_t);
   buffer += len;
+
+  // The table of archived java heap object sub-graph infos
+  buffer = HeapShared::read_archived_subgraph_infos(buffer);
 
   // Verify various attributes of the archive, plus initialize the
   // shared string/symbol tables

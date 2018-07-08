@@ -785,6 +785,10 @@ oop StringTable::lookup_shared(jchar* name, int len, unsigned int hash) {
 oop StringTable::create_archived_string(oop s, Thread* THREAD) {
   assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
 
+  if (MetaspaceShared::is_archive_object(s)) {
+    return s;
+  }
+
   oop new_s = NULL;
   typeArrayOop v = java_lang_String::value_no_keepalive(s);
   typeArrayOop new_v =

@@ -187,6 +187,7 @@ class OopStorage;
   do_klass(jdk_internal_loader_ClassLoaders_AppClassLoader_klass,      jdk_internal_loader_ClassLoaders_AppClassLoader,       Pre ) \
   do_klass(jdk_internal_loader_ClassLoaders_PlatformClassLoader_klass, jdk_internal_loader_ClassLoaders_PlatformClassLoader,  Pre ) \
   do_klass(CodeSource_klass,                            java_security_CodeSource,                  Pre                 ) \
+  do_klass(ArchivedModuleGraph_klass,                   jdk_internal_module_ArchivedModuleGraph,   Pre                 ) \
                                                                                                                          \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement,               Opt                 ) \
                                                                                                                          \

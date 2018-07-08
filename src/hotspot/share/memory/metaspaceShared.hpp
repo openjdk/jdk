@@ -232,6 +232,8 @@ class MetaspaceShared : AllStatic {
   static char* misc_code_space_alloc(size_t num_bytes);
   static char* read_only_space_alloc(size_t num_bytes);
 
+  static char* read_only_space_top();
+
   template <typename T>
   static Array<T>* new_ro_array(int length) {
 #if INCLUDE_CDS

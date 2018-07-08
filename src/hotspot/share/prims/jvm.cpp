@@ -39,6 +39,7 @@
 #include "interpreter/bytecode.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
+#include "memory/heapShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/referenceType.hpp"
 #include "memory/resourceArea.hpp"
@@ -3596,6 +3597,13 @@ JVM_END
 JVM_LEAF(jboolean, JVM_SupportsCX8())
   JVMWrapper("JVM_SupportsCX8");
   return VM_Version::supports_cx8();
+JVM_END
+
+JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
+  JVMWrapper("JVM_InitializeFromArchive");
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
+  assert(k->is_klass(), "just checking");
+  HeapShared::initialize_from_archived_subgraph(k);
 JVM_END
 
 // Returns an array of all live Thread objects (VM internal JavaThreads,

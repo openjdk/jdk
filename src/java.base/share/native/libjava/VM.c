@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,4 +59,10 @@ Java_jdk_internal_misc_VM_initialize(JNIEnv *env, jclass cls) {
 JNIEXPORT jobjectArray JNICALL
 Java_jdk_internal_misc_VM_getRuntimeArguments(JNIEnv *env, jclass cls) {
     return JVM_GetVmArguments(env);
+}
+
+JNIEXPORT void JNICALL
+Java_jdk_internal_misc_VM_initializeFromArchive(JNIEnv *env, jclass ignore,
+                                                jclass c) {
+    JVM_InitializeFromArchive(env, c);
 }

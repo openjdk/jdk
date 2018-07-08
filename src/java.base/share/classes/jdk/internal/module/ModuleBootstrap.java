@@ -54,6 +54,7 @@ import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.VM;
 import jdk.internal.perf.PerfCounter;
 
 /**
@@ -172,23 +173,45 @@ public final class ModuleBootstrap {
         boolean haveModulePath = (appModulePath != null || upgradeModulePath != null);
         boolean needResolution = true;
 
-        if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
-            systemModules = SystemModuleFinders.systemModules(mainModule);
-            if (systemModules != null && !isPatched && (traceOutput == null)) {
-                needResolution = false;
-            }
-        }
-        if (systemModules == null) {
-            // all system modules are observable
-            systemModules = SystemModuleFinders.allSystemModules();
-        }
-        if (systemModules != null) {
-            // images build
-            systemModuleFinder = SystemModuleFinders.of(systemModules);
+        // If the java heap was archived at CDS dump time and the environment
+        // at dump time matches the current environment then use the archived
+        // system modules and finder.
+        ArchivedModuleGraph archivedModuleGraph = ArchivedModuleGraph.get(mainModule);
+        if (archivedModuleGraph != null
+                && !haveModulePath
+                && addModules.isEmpty()
+                && limitModules.isEmpty()
+                && !isPatched) {
+            systemModules = archivedModuleGraph.systemModules();
+            systemModuleFinder = archivedModuleGraph.finder();
+            needResolution = (traceOutput != null);
         } else {
-            // exploded build or testing
-            systemModules = new ExplodedSystemModules();
-            systemModuleFinder = SystemModuleFinders.ofSystem();
+            boolean canArchive = false;
+            if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
+                systemModules = SystemModuleFinders.systemModules(mainModule);
+                if (systemModules != null && !isPatched) {
+                    needResolution = (traceOutput != null);
+                    canArchive = true;
+                }
+            }
+            if (systemModules == null) {
+                // all system modules are observable
+                systemModules = SystemModuleFinders.allSystemModules();
+            }
+            if (systemModules != null) {
+                // images build
+                systemModuleFinder = SystemModuleFinders.of(systemModules);
+            } else {
+                // exploded build or testing
+                systemModules = new ExplodedSystemModules();
+                systemModuleFinder = SystemModuleFinders.ofSystem();
+            }
+
+            // Module graph can be archived at CDS dump time. Only allow the
+            // unnamed module case for now.
+            if (canArchive && (mainModule == null)) {
+                ArchivedModuleGraph.archive(mainModule, systemModules, systemModuleFinder);
+            }
         }
 
         Counters.add("jdk.module.boot.1.systemModulesTime", t1);

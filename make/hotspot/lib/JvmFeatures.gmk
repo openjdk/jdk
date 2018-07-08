@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ ifneq ($(call check-jvm-feature, cds), true)
       classListParser.cpp \
       classLoaderExt.cpp \
       filemap.cpp \
+      heapShared.cpp \
       metaspaceShared.cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU).cpp \
       metaspaceShared_$(HOTSPOT_TARGET_CPU_ARCH).cpp \

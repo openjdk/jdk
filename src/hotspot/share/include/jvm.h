@@ -171,6 +171,8 @@ JVM_IsSupportedJNIVersion(jint version);
 JNIEXPORT jobjectArray JNICALL
 JVM_GetVmArguments(JNIEnv *env);
 
+JNIEXPORT void JNICALL
+JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
 /*
  * java.lang.Throwable

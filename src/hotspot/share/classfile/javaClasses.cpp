@@ -1051,8 +1051,9 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
       ResetMirrorField reset(archived_mirror_h);
       InstanceKlass::cast(k)->do_nonstatic_fields(&reset);
 
-      log_trace(cds, mirror)("Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
-                             type2name((BasicType)t), p2i(Universe::_mirrors[t]), p2i(archived_m));
+      log_trace(cds, heap, mirror)(
+        "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
+        type2name((BasicType)t), p2i(Universe::_mirrors[t]), p2i(archived_m));
 
       Universe::_mirrors[t] = archived_m;
     }
@@ -1133,8 +1134,9 @@ oop java_lang_Class::archive_mirror(Klass* k, TRAPS) {
   k->set_has_raw_archived_mirror();
 
   ResourceMark rm;
-  log_trace(cds, mirror)("Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
-                         k->external_name(), p2i(mirror), p2i(archived_mirror));
+  log_trace(cds, heap, mirror)(
+    "Archived %s mirror object from " PTR_FORMAT " ==> " PTR_FORMAT,
+    k->external_name(), p2i(mirror), p2i(archived_mirror));
 
   return archived_mirror;
 }
@@ -1186,8 +1188,9 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   // klass. Updated the field in the archived mirror to point to the relocated
   // klass in the archive.
   Klass *reloc_k = MetaspaceShared::get_relocated_klass(as_Klass(mirror));
-  log_debug(cds, mirror)("Relocate mirror metadata field at _klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
-                         p2i(as_Klass(mirror)), p2i(reloc_k));
+  log_debug(cds, heap, mirror)(
+    "Relocate mirror metadata field at _klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
+    p2i(as_Klass(mirror)), p2i(reloc_k));
   archived_mirror->metadata_field_put(_klass_offset, reloc_k);
 
   // The field at _array_klass_offset is pointing to the original one dimension
@@ -1195,8 +1198,9 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
   Klass *arr = array_klass_acquire(mirror);
   if (arr != NULL) {
     Klass *reloc_arr = MetaspaceShared::get_relocated_klass(arr);
-    log_debug(cds, mirror)("Relocate mirror metadata field at _array_klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
-                           p2i(arr), p2i(reloc_arr));
+    log_debug(cds, heap, mirror)(
+      "Relocate mirror metadata field at _array_klass_offset from " PTR_FORMAT " ==> " PTR_FORMAT,
+      p2i(arr), p2i(reloc_arr));
     archived_mirror->metadata_field_put(_array_klass_offset, reloc_arr);
   }
   return archived_mirror;
@@ -1247,7 +1251,8 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   set_mirror_module_field(k, mirror, module, THREAD);
 
   ResourceMark rm;
-  log_trace(cds, mirror)("Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
+  log_trace(cds, heap, mirror)(
+    "Restored %s archived mirror " PTR_FORMAT, k->external_name(), p2i(mirror()));
 
   return true;
 }
@@ -4273,6 +4278,9 @@ int java_nio_Buffer::_limit_offset;
 int java_util_concurrent_locks_AbstractOwnableSynchronizer::_owner_offset;
 int reflect_ConstantPool::_oop_offset;
 int reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
+int jdk_internal_module_ArchivedModuleGraph::_archivedSystemModules_offset;
+int jdk_internal_module_ArchivedModuleGraph::_archivedModuleFinder_offset;
+int jdk_internal_module_ArchivedModuleGraph::_archivedMainModule_offset;
 
 #define STACKTRACEELEMENT_FIELDS_DO(macro) \
   macro(declaringClassObject_offset,  k, "declaringClassObject", class_signature, false); \
@@ -4435,6 +4443,23 @@ static int member_offset(int hardcoded_offset) {
   return (hardcoded_offset * heapOopSize) + instanceOopDesc::base_offset_in_bytes();
 }
 
+#define MODULEBOOTSTRAP_FIELDS_DO(macro) \
+  macro(_archivedSystemModules_offset,      k, "archivedSystemModules", systemModules_signature, true); \
+  macro(_archivedModuleFinder_offset,       k, "archivedModuleFinder",  moduleFinder_signature,  true); \
+  macro(_archivedMainModule_offset,         k, "archivedMainModule",    string_signature,        true)
+
+void jdk_internal_module_ArchivedModuleGraph::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::ArchivedModuleGraph_klass();
+  assert(k != NULL, "must be loaded");
+  MODULEBOOTSTRAP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void jdk_internal_module_ArchivedModuleGraph::serialize(SerializeClosure* f) {
+  MODULEBOOTSTRAP_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
 // Compute hard-coded offsets
 // Invoked before SystemDictionary::initialize, so pre-loaded classes
 // are not available to determine the offset_of_static_fields.
@@ -4492,6 +4517,8 @@ void JavaClasses::compute_offsets() {
   java_lang_StackFrameInfo::compute_offsets();
   java_lang_LiveStackFrameInfo::compute_offsets();
   java_util_concurrent_locks_AbstractOwnableSynchronizer::compute_offsets();
+
+  jdk_internal_module_ArchivedModuleGraph::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:
   AbstractAssembler::update_delayed_values();

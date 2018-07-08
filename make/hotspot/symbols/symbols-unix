@@ -136,6 +136,7 @@ JVM_IHashCode
 JVM_InitProperties
 JVM_InitStackTraceElement
 JVM_InitStackTraceElementArray
+JVM_InitializeFromArchive
 JVM_InternString
 JVM_Interrupt
 JVM_InvokeMethod
