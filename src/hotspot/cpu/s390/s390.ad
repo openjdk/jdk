@@ -9839,7 +9839,7 @@ instruct partialSubtypeCheck(rarg1RegP index, rarg2RegP sub, rarg3RegP super, fl
   match(Set index (PartialSubtypeCheck sub super));
   effect(KILL pcc, KILL scratch1, KILL scratch2);
   ins_cost(10 * DEFAULT_COST);
-  size(12);
+  // TODO: s390 port size(FIXED_SIZE);
   format %{ "  CALL   PartialSubtypeCheck\n" %}
   ins_encode %{
     AddressLiteral stub_address(StubRoutines::zarch::partial_subtype_check());
