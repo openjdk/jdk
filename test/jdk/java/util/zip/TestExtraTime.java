@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @bug 4759491 6303183 7012868 8015666 8023713 8068790 8076641 8075526 8130914 8161942
+ * @bug 4759491 6303183 7012868 8015666 8023713 8068790 8076641 8075526 8130914
+ *      8161942 8206389
  * @summary Test ZOS and ZIS timestamp in extra field correctly
  */
 
@@ -96,6 +97,7 @@ public class TestExtraTime {
         testNullHandling();
         testTagOnlyHandling();
         testTimeConversions();
+        testNullMtime();
     }
 
     static void test(FileTime mtime, FileTime atime, FileTime ctime,
@@ -192,9 +194,11 @@ public class TestExtraTime {
                           ze.getTime(),
                           ze.getLastModifiedTime().to(TimeUnit.MILLISECONDS));
          */
-        if (mtime.to(TimeUnit.SECONDS) !=
-            ze.getLastModifiedTime().to(TimeUnit.SECONDS))
+        if (mtime != null &&
+            mtime.to(TimeUnit.SECONDS) !=
+            ze.getLastModifiedTime().to(TimeUnit.SECONDS)) {
             throw new RuntimeException("Timestamp: storing mtime failed!");
+        }
         if (atime != null &&
             atime.to(TimeUnit.SECONDS) !=
             ze.getLastAccessTime().to(TimeUnit.SECONDS))
@@ -301,6 +305,54 @@ public class TestExtraTime {
         try (ZipFile zf = new ZipFile(zpath.toFile())) {
             ZipEntry ze = zf.getEntry("TestExtraTime.java");
             check(ze, extra);
+        } finally {
+            Files.delete(zpath);
+        }
+    }
+
+    static void checkLastModifiedTimeDOS(FileTime mtime, ZipEntry ze) {
+        FileTime lmt = ze.getLastModifiedTime();
+        if ((lmt.to(TimeUnit.SECONDS) >>> 1) != (mtime.to(TimeUnit.SECONDS) >>> 1) ||
+            lmt.to(TimeUnit.MILLISECONDS) != ze.getTime() ||
+            lmt.to(TimeUnit.MILLISECONDS) % 1000 != 0) {
+            throw new RuntimeException("Timestamp: storing mtime in dos format failed!");
+        }
+    }
+
+    static void testNullMtime() throws Throwable {
+        Instant now = Instant.now();
+        FileTime ctime = FileTime.from(now);
+        FileTime atime = FileTime.from(now.plusSeconds(7));
+        FileTime mtime = FileTime.from(now.plusSeconds(13));
+        System.out.printf("--------------------%nTesting: [%s]/[%s]/[%s]%n",
+                          mtime, atime, ctime);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(baos)) {
+            ZipEntry ze = new ZipEntry("TestExtraTime.java");
+            ze.setCreationTime(ctime);
+            ze.setLastAccessTime(atime);
+            // ze.setLastModifiedTime(now);
+            ze.setTime(mtime.toMillis());
+            zos.putNextEntry(ze);
+            zos.write(new byte[] { 1,2 ,3, 4});
+        }
+
+        try (ZipInputStream zis = new ZipInputStream(
+                 new ByteArrayInputStream(baos.toByteArray()))) {
+            ZipEntry ze = zis.getNextEntry();
+            // check LOC
+            check(null, atime, ctime, ze, null);
+            checkLastModifiedTimeDOS(mtime, ze);
+        }
+
+        Path zpath = Paths.get(System.getProperty("test.dir", "."),
+                               "TestExtraTime.zip");
+        Files.copy(new ByteArrayInputStream(baos.toByteArray()), zpath);
+        try (ZipFile zf = new ZipFile(zpath.toFile())) {
+            ZipEntry ze = zf.getEntry("TestExtraTime.java");
+            // check CEN
+            checkLastModifiedTimeDOS(mtime, ze);
         } finally {
             Files.delete(zpath);
         }

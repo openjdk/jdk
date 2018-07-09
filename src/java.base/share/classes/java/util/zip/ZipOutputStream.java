@@ -582,7 +582,9 @@ class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
                 uctime > UPPER_UNIXTIME_BOUND) {
                 elen += 36;         // NTFS time total 36 bytes
             } else {
-                elen += 9;          // headid(2) + sz(2) + flag(1) + mtime (4)
+                elen += 5;          // headid(2) + sz(2) + flag(1)
+                if (e.mtime != null)
+                    elen += 4;      // + mtime (4)
             }
         }
         writeShort(elen);
