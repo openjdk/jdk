@@ -189,12 +189,14 @@ class Target {
 
         }
 
+        breakpoint();    // debugger runs to here before enabling events
         allowRedefine(); // debugger stops us here to attempt redefinitions
 
         System.out.println("Target executed okay");
     }
 
-    public static void allowRedefine() { }
+    static void allowRedefine() { }
+    static void breakpoint() { }
 }
 
 public class TestNestmateAttr extends TestScaffold {
@@ -226,7 +228,7 @@ public class TestNestmateAttr extends TestScaffold {
 
     public void runTests() throws Exception {
         // Get Target into debuggable state
-        BreakpointEvent bpe = startToMain("Target");
+        BreakpointEvent bpe = startTo("Target", "breakpoint", "()V");
         EventRequestManager erm = vm().eventRequestManager();
         MethodEntryRequest mee = erm.createMethodEntryRequest();
         mee.addClassFilter("Target");
