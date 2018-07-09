@@ -52,7 +52,7 @@
 // interfering with with each other.
 //
 // Both allocate() and delete_empty_blocks_concurrent() lock the
-// _allocate_mutex while performing their respective list and array
+// _allocation_mutex while performing their respective list and array
 // manipulations, preventing them from interfering with each other.
 //
 // When allocate() creates a new block, it is added to the end of the
