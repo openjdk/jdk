@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package com.sun.security.auth;
 
 import java.security.Principal;
+import java.util.Objects;
 
 /**
  * This class implements the {@code Principal} interface
@@ -195,6 +196,6 @@ public class UnixNumericGroupPrincipal implements
      * @return a hash code for this {@code UnixNumericGroupPrincipal}.
      */
     public int hashCode() {
-        return toString().hashCode();
+        return Objects.hash(name, isPrimaryGroup());
     }
 }
