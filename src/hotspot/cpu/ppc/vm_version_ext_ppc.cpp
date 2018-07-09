@@ -25,19 +25,30 @@
 #include "jvm.h"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/vm_version.hpp"
 #include "vm_version_ext_ppc.hpp"
 
 // VM_Version_Ext statics
 int   VM_Version_Ext::_no_of_threads = 0;
 int   VM_Version_Ext::_no_of_cores = 0;
 int   VM_Version_Ext::_no_of_sockets = 0;
+bool  VM_Version_Ext::_initialized = false;
 char  VM_Version_Ext::_cpu_name[CPU_TYPE_DESC_BUF_SIZE] = {0};
 char  VM_Version_Ext::_cpu_desc[CPU_DETAILED_DESC_BUF_SIZE] = {0};
 
 // get cpu information.
-bool VM_Version_Ext::initialize_cpu_information(void) {
-  // Not yet implemented.
-  return false;
+void VM_Version_Ext::initialize_cpu_information(void) {
+  // do nothing if cpu info has been initialized
+  if (_initialized) {
+    return;
+  }
+
+  _no_of_cores  = os::processor_count();
+  _no_of_threads = _no_of_cores;
+  _no_of_sockets = _no_of_cores;
+  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE, "PowerPC POWER%lu", PowerArchitecturePPC64);
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "PPC %s", features_string());
+  _initialized = true;
 }
 
 int VM_Version_Ext::number_of_threads(void) {
@@ -56,9 +67,7 @@ int VM_Version_Ext::number_of_sockets(void) {
 }
 
 const char* VM_Version_Ext::cpu_name(void) {
-  if (!initialize_cpu_information()) {
-    return NULL;
-  }
+  initialize_cpu_information();
   char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_TYPE_DESC_BUF_SIZE, mtTracing);
   if (NULL == tmp) {
     return NULL;
@@ -68,9 +77,7 @@ const char* VM_Version_Ext::cpu_name(void) {
 }
 
 const char* VM_Version_Ext::cpu_description(void) {
-  if (!initialize_cpu_information()) {
-    return NULL;
-  }
+  initialize_cpu_information();
   char* tmp = NEW_C_HEAP_ARRAY_RETURN_NULL(char, CPU_DETAILED_DESC_BUF_SIZE, mtTracing);
   if (NULL == tmp) {
     return NULL;
