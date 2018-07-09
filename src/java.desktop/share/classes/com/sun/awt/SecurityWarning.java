@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,10 @@ import sun.awt.AWTAccessor;
  * for limited use outside of the core platform. This API may change
  * drastically between update release, and it may even be
  * removed or be moved to some other packages or classes.
+ *
+ * @deprecated This class is deprecated, no replacement.
  */
+@Deprecated(since = "11", forRemoval = true)
 public final class SecurityWarning {
 
     /**
