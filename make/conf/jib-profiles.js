@@ -239,7 +239,7 @@ var getJibProfilesCommon = function (input, data) {
 
     // These are the base setttings for all the main build profiles.
     common.main_profile_base = {
-        dependencies: ["boot_jdk", "gnumake", "jtreg", "jib"],
+        dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf"],
         default_make_targets: ["product-bundles", "test-bundles"],
         configure_args: concat(["--enable-jtreg-failure-handler"],
             "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I",
@@ -378,7 +378,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "linux-x64": {
             target_os: "linux",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "graphviz", "pandoc", "graalunit_lib"],
+            dependencies: ["devkit", "graphviz", "pandoc", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit,
                 "--enable-full-docs", "--with-zlib=system"),
             default_make_targets: ["docs-bundles"],
@@ -388,7 +388,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "autoconf"],
+            dependencies: ["devkit"],
             configure_args: concat(common.configure_args_32bit,
                 "--with-jvm-variants=minimal,server", "--with-zlib=system"),
         },
@@ -396,7 +396,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "macosx-x64": {
             target_os: "macosx",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "graalunit_lib"],
+            dependencies: ["devkit", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit, "--with-zlib=system",
                 "--with-macosx-version-max=10.9.0"),
         },
@@ -404,7 +404,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "solaris-x64": {
             target_os: "solaris",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "cups"],
+            dependencies: ["devkit", "cups"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-zlib=system", "--enable-dtrace"),
         },
@@ -412,7 +412,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "solaris-sparcv9": {
             target_os: "solaris",
             target_cpu: "sparcv9",
-            dependencies: ["devkit", "autoconf", "cups"],
+            dependencies: ["devkit", "cups"],
             configure_args: concat(common.configure_args_64bit,
                 "--with-zlib=system", "--enable-dtrace"),
         },
@@ -420,7 +420,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         "windows-x64": {
             target_os: "windows",
             target_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "graalunit_lib"],
+            dependencies: ["devkit", "graalunit_lib"],
             configure_args: concat(common.configure_args_64bit),
         },
 
@@ -428,7 +428,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "windows",
             target_cpu: "x86",
             build_cpu: "x64",
-            dependencies: ["devkit", "autoconf"],
+            dependencies: ["devkit"],
             configure_args: concat(common.configure_args_32bit),
         },
 
@@ -436,7 +436,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "aarch64",
             build_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "build_devkit", "cups"],
+            dependencies: ["devkit", "build_devkit", "cups"],
             configure_args: [
                 "--openjdk-target=aarch64-linux-gnu", "--with-freetype=bundled",
                 "--disable-warnings-as-errors", "--with-cpu-port=aarch64",
@@ -447,7 +447,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "aarch64",
             build_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "build_devkit", "cups", "headless_stubs"],
+            dependencies: ["devkit", "build_devkit", "cups", "headless_stubs"],
             configure_args: [
                 "--with-cpu-port=arm64",
                 "--with-jvm-variants=server",
@@ -460,7 +460,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "arm",
             build_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "build_devkit", "cups"],
+            dependencies: ["devkit", "build_devkit", "cups"],
             configure_args: [
                 "--openjdk-target=arm-linux-gnueabihf", "--with-freetype=bundled",
                 "--with-abi-profile=arm-vfp-hflt", "--disable-warnings-as-errors"
@@ -471,7 +471,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_os: "linux",
             target_cpu: "arm",
             build_cpu: "x64",
-            dependencies: ["devkit", "autoconf", "build_devkit", "cups"],
+            dependencies: ["devkit", "build_devkit", "cups"],
             configure_args: [
                 "--with-jvm-variants=minimal1,client",
                 "--with-x=" + input.get("devkit", "install_path") + "/arm-linux-gnueabihf/libc/usr/X11R6-PI",
