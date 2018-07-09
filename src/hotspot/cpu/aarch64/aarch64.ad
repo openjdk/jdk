@@ -1471,7 +1471,7 @@ source %{
   // Ctl+Mem to a StoreB node (which does the actual card mark).
   //
   // n.b. a StoreCM node will only appear in this configuration when
-  // using CMS. StoreCM differs from a normal card mark write (StoreB)
+  // using CMS or G1. StoreCM differs from a normal card mark write (StoreB)
   // because it implies a requirement to order visibility of the card
   // mark (StoreCM) relative to the object put (StoreP/N) using a
   // StoreStore memory barrier (arguably this ought to be represented
@@ -1481,16 +1481,12 @@ source %{
   // the sequence
   //
   //   dmb ishst
-  //   stlrb
+  //   strb
   //
-  // However, in the case of a volatile put if we can recognise this
-  // configuration and plant an stlr for the object write then we can
-  // omit the dmb and just plant an strb since visibility of the stlr
-  // is ordered before visibility of subsequent stores. StoreCM nodes
-  // also arise when using G1 or using CMS with conditional card
-  // marking. In these cases (as we shall see) we don't need to insert
-  // the dmb when translating StoreCM because there is already an
-  // intervening StoreLoad barrier between it and the StoreP/N.
+  // However, when using G1 or CMS with conditional card marking (as
+  // we shall see) we don't need to insert the dmb when translating
+  // StoreCM because there is already an intervening StoreLoad barrier
+  // between it and the StoreP/N.
   //
   // It is also possible to perform the card mark conditionally on it
   // currently being unmarked in which case the volatile put graph
@@ -2868,50 +2864,17 @@ bool unnecessary_storestore(const Node *storecm)
 {
   assert(storecm->Opcode()  == Op_StoreCM, "expecting a StoreCM");
 
-  // we only ever need to generate a dmb ishst between an object put
-  // and the associated card mark when we are using CMS without
-  // conditional card marking
+  // we need to generate a dmb ishst between an object put and the
+  // associated card mark when we are using CMS without conditional
+  // card marking
 
-  if (!UseConcMarkSweepGC || UseCondCardMark) {
-    return true;
-  }
-
-  // if we are implementing volatile puts using barriers then the
-  // object put is an str so we must insert the dmb ishst
-
-  if (UseBarriersForVolatile) {
+  if (UseConcMarkSweepGC && !UseCondCardMark) {
     return false;
   }
 
-  // we can omit the dmb ishst if this StoreCM is part of a volatile
-  // put because in thta case the put will be implemented by stlr
-  //
-  // we need to check for a normal subgraph feeding this StoreCM.
-  // that means the StoreCM must be fed Memory from a leading membar,
-  // either a MemBarRelease or its dependent MemBarCPUOrder, and the
-  // leading membar must be part of a normal subgraph
+  // a storestore is unnecesary in all other cases
 
-  Node *x = storecm->in(StoreNode::Memory);
-
-  if (!x->is_Proj()) {
-    return false;
-  }
-
-  x = x->in(0);
-
-  if (!x->is_MemBar()) {
-    return false;
-  }
-
-  MemBarNode *leading = x->as_MemBar();
-
-  // reject invalid candidates
-  if (!leading_membar(leading)) {
-    return false;
-  }
-
-  // we can omit the StoreStore if it is the head of a normal subgraph
-  return (leading_to_normal(leading) != NULL);
+  return true;
 }
 
 
