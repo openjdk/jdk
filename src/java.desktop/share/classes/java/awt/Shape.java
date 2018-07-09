@@ -90,7 +90,8 @@ public interface Shape {
      * representation.
      *
      * <p>
-     * Note that the <a href="{@docRoot}/java/awt/Shape.html#def_insideness">
+     * Note that the
+     * <a href="{@docRoot}/java.desktop/java/awt/Shape.html#def_insideness">
      * definition of insideness</a> can lead to situations where points
      * on the defining outline of the {@code shape} may not be considered
      * contained in the returned {@code bounds} object, but only in cases
@@ -135,7 +136,8 @@ public interface Shape {
      * store the dimensions.
      *
      * <p>
-     * Note that the <a href="{@docRoot}/java/awt/Shape.html#def_insideness">
+     * Note that the
+     * <a href="{@docRoot}/java.desktop/java/awt/Shape.html#def_insideness">
      * definition of insideness</a> can lead to situations where points
      * on the defining outline of the {@code shape} may not be considered
      * contained in the returned {@code bounds} object, but only in cases
@@ -169,7 +171,7 @@ public interface Shape {
     /**
      * Tests if the specified coordinates are inside the boundary of the
      * {@code Shape}, as described by the
-     * <a href="{@docRoot}/java/awt/Shape.html#def_insideness">
+     * <a href="{@docRoot}/java.desktop/java/awt/Shape.html#def_insideness">
      * definition of insideness</a>.
      * @param x the specified X coordinate to be tested
      * @param y the specified Y coordinate to be tested
@@ -183,7 +185,7 @@ public interface Shape {
     /**
      * Tests if a specified {@link Point2D} is inside the boundary
      * of the {@code Shape}, as described by the
-     * <a href="{@docRoot}/java/awt/Shape.html#def_insideness">
+     * <a href="{@docRoot}/java.desktop/java/awt/Shape.html#def_insideness">
      * definition of insideness</a>.
      * @param p the specified {@code Point2D} to be tested
      * @return {@code true} if the specified {@code Point2D} is

@@ -198,9 +198,7 @@ class IIOAttr extends IIOMetadataNode implements Attr {
 
 /**
  * A class representing a node in a meta-data tree, which implements
- * the <a
- * href="../../../../api/org/w3c/dom/Element.html">
- * {@code org.w3c.dom.Element}</a> interface and additionally allows
+ * the {@link Element org.w3c.dom.Element} interface and additionally allows
  * for the storage of non-textual objects via the
  * {@code getUserObject} and {@code setUserObject} methods.
  *

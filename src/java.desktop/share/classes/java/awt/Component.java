@@ -5987,7 +5987,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * {@code InputMethodRequests} instance.
      * If listener {@code l} is {@code null},
      * no exception is thrown and no action is performed.
-     * <p>Refer to <a href="{@docRoot}/java/awt/doc-files/AWTThreadIssues.html#ListenersThreads"
+     * <p>Refer to
+     * <a href="{@docRoot}/java.desktop/java/awt/doc-files/AWTThreadIssues.html#ListenersThreads"
      * >AWT Threading Issues</a> for details on AWT's threading model.
      *
      * @param    l   the input method listener
