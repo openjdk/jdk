@@ -376,6 +376,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
                 if (same_type) {
                   max_vector = cur_max_vector;
                   flag_small_bt = true;
+                  cl->mark_subword_loop();
                 }
               }
             }

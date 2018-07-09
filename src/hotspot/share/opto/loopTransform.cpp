@@ -861,7 +861,9 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
 
   // Check for being too big
   if (body_size > (uint)_local_loop_unroll_limit) {
-    if ((UseSubwordForMaxVector || xors_in_loop >= 4) && body_size < (uint)LoopUnrollLimit * 4) return true;
+    if ((cl->is_subword_loop() || xors_in_loop >= 4) && body_size < (uint)LoopUnrollLimit * 4) {
+      return true;
+    }
     // Normal case: loop too big
     return false;
   }
