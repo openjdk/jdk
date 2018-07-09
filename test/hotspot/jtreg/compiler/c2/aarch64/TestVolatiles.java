@@ -34,7 +34,7 @@
  *                       TestUnsafeVolatileCAS}
  * and <testtype> in {G1,
  *                    CMS,
- *                    CMSCondCardMark,
+ *                    CMSCondMark,
  *                    Serial,
  *                    Parallel}
  */
@@ -287,7 +287,7 @@ public class TestVolatiles {
                     "ret"
                 };
                 break;
-            case "CMSCondCardMark":
+            case "CMSCondMark":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb from the StoreCM and the
                 // storestore barrier from the StoreCM should be elided
@@ -305,11 +305,13 @@ public class TestVolatiles {
             case "CMS":
                 // a volatile card mark membar should not be generated
                 // before the card mark strb from the StoreCM and the
-                // storestore barrier from the StoreCM should be elided
+                // storestore barrier from the StoreCM should be
+                // generated as "dmb ishst"
                 matches = new String[] {
                     "membar_release (elided)",
                     "stlrw",
-                    "storestore (elided)",
+                    "storestore",
+                    "dmb ishst",
                     "strb",
                     "membar_volatile (elided)",
                     "ret"
@@ -344,7 +346,7 @@ public class TestVolatiles {
                     "ret"
                 };
                 break;
-            case "CMSCondCardMark":
+            case "CMSCondMark":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb from the StoreCM and the
                 // storestore barrier from the StoreCM should be elided
@@ -443,7 +445,7 @@ public class TestVolatiles {
                     "ret"
                 };
                 break;
-            case "CMSCondCardMark":
+            case "CMSCondMark":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb from the StoreCM and the
                 // storestore barrier from the StoreCM should be elided
@@ -465,7 +467,8 @@ public class TestVolatiles {
                 matches = new String[] {
                     "membar_release (elided)",
                     "cmpxchgw_acq",
-                    "storestore (elided)",
+                    "storestore",
+                    "dmb ishst",
                     "strb",
                     "membar_acquire (elided)",
                     "ret"
@@ -500,7 +503,7 @@ public class TestVolatiles {
                     "ret"
                 };
                 break;
-            case "CMSCondCardMark":
+            case "CMSCondMark":
                 // a card mark volatile barrier should be generated
                 // before the card mark strb from the StoreCM and the
                 // storestore barrier from the StoreCM should be elided
