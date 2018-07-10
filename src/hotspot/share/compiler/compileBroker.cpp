@@ -530,7 +530,6 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
 
 void CompileBroker::print_compile_queues(outputStream* st) {
   st->print_cr("Current compiles: ");
-  MutexLocker locker(MethodCompileQueue_lock);
 
   char buf[2000];
   int buflen = sizeof(buf);
@@ -546,7 +545,7 @@ void CompileBroker::print_compile_queues(outputStream* st) {
 }
 
 void CompileQueue::print(outputStream* st) {
-  assert(MethodCompileQueue_lock->owned_by_self(), "must own lock");
+  assert_locked_or_safepoint(MethodCompileQueue_lock);
   st->print_cr("%s:", name());
   CompileTask* task = _first;
   if (task == NULL) {
