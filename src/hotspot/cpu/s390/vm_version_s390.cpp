@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 # include <sys/sysinfo.h>
 
 bool VM_Version::_is_determine_features_test_running  = false;
+const char*   VM_Version::_model_string;
 
 unsigned long VM_Version::_features[_features_buffer_len]           = {0, 0, 0, 0};
 unsigned long VM_Version::_cipher_features[_features_buffer_len]    = {0, 0, 0, 0};
@@ -248,32 +249,40 @@ void VM_Version::initialize() {
 void VM_Version::set_features_string() {
 
   unsigned int ambiguity = 0;
+  _model_string = z_name[0];
   if (is_z13()) {
     _features_string = "System z G7-z13  (LDISP_fast, ExtImm, PCrel Load/Store, CmpB, Cond Load/Store, Interlocked Update, TxM, VectorInstr)";
+    _model_string = z_name[7];
     ambiguity++;
   }
   if (is_ec12()) {
     _features_string = "System z G6-EC12 (LDISP_fast, ExtImm, PCrel Load/Store, CmpB, Cond Load/Store, Interlocked Update, TxM)";
+    _model_string = z_name[6];
     ambiguity++;
   }
   if (is_z196()) {
     _features_string = "System z G5-z196 (LDISP_fast, ExtImm, PCrel Load/Store, CmpB, Cond Load/Store, Interlocked Update)";
+    _model_string = z_name[5];
     ambiguity++;
   }
   if (is_z10()) {
     _features_string = "System z G4-z10  (LDISP_fast, ExtImm, PCrel Load/Store, CmpB)";
+    _model_string = z_name[4];
     ambiguity++;
   }
   if (is_z9()) {
     _features_string = "System z G3-z9   (LDISP_fast, ExtImm), out-of-support as of 2016-04-01";
+    _model_string = z_name[3];
     ambiguity++;
   }
   if (is_z990()) {
     _features_string = "System z G2-z990 (LDISP_fast), out-of-support as of 2014-07-01";
+    _model_string = z_name[2];
     ambiguity++;
   }
   if (is_z900()) {
     _features_string = "System z G1-z900 (LDISP), out-of-support as of 2014-07-01";
+    _model_string = z_name[1];
     ambiguity++;
   }
 
