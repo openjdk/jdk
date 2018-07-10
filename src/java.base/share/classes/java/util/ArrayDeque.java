@@ -180,7 +180,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * sufficient to hold 16 elements.
      */
     public ArrayDeque() {
-        elements = new Object[16];
+        elements = new Object[16 + 1];
     }
 
     /**
