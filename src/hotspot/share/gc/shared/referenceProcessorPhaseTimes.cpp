@@ -80,8 +80,7 @@ static const char* ReferenceTypeNames[REF_PHANTOM + 1] = {
 STATIC_ASSERT((REF_PHANTOM + 1) == ARRAY_SIZE(ReferenceTypeNames));
 
 static const char* phase_enum_2_phase_string(ReferenceProcessor::RefProcPhases phase) {
-  assert(phase >= ReferenceProcessor::RefPhase1 && phase <= ReferenceProcessor::RefPhaseMax,
-         "Invalid reference processing phase (%d)", phase);
+  ASSERT_PHASE(phase);
   return PhaseNames[phase];
 }
 
