@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @requires !vm.graal.enabled
  * @modules jdk.attach
  * @run main/othervm --limit-modules jdk.attach -Djdk.attach.allowAttachSelf
  *    GetPackageBootLoaderChildLayer
