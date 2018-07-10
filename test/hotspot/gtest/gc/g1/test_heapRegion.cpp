@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/vm_operations.hpp"
+#include "runtime/vmThread.hpp"
 #include "unittest.hpp"
 
 class VerifyAndCountMarkClosure : public StackObj {
@@ -60,11 +63,12 @@ public:
 #define MARK_OFFSET_2 ( 99 * MinObjAlignment)
 #define MARK_OFFSET_3 (337 * MinObjAlignment)
 
-TEST_OTHER_VM(HeapRegion, apply_to_marked_objects) {
-  if (!UseG1GC) {
-    return;
-  }
+class VM_HeapRegionApplyToMarkedObjectsTest : public VM_GTestExecuteAtSafepoint {
+public:
+  void doit();
+};
 
+void VM_HeapRegionApplyToMarkedObjectsTest::doit() {
   G1CollectedHeap* heap = G1CollectedHeap::heap();
 
   // Using region 0 for testing.
@@ -79,6 +83,8 @@ TEST_OTHER_VM(HeapRegion, apply_to_marked_objects) {
   bitmap->mark(region->end());
 
   VerifyAndCountMarkClosure cl(bitmap);
+
+  HeapWord* old_top = region->top();
 
   // When top is equal to bottom the closure should not be
   // applied to any object because apply_to_marked_objects
@@ -112,5 +118,19 @@ TEST_OTHER_VM(HeapRegion, apply_to_marked_objects) {
   region->apply_to_marked_objects(bitmap, &cl);
   EXPECT_EQ(4, cl.count());
   cl.reset();
+
+  region->set_top(old_top);
 }
 
+TEST_VM(HeapRegion, apply_to_marked_object) {
+  if (!UseG1GC) {
+    return;
+  }
+
+  // Run the test in our very own safepoint, because otherwise it
+  // modifies a region behind the back of a possibly using allocation
+  // or running GC.
+  VM_HeapRegionApplyToMarkedObjectsTest op;
+  ThreadInVMfromNative invm(JavaThread::current());
+  VMThread::execute(&op);
+}
