@@ -53,8 +53,8 @@ public class TestCPUInformation {
             Events.assertField(event, "hwThreads").atLeast(1);
             Events.assertField(event, "cores").atLeast(1);
             Events.assertField(event, "sockets").atLeast(1);
-            Events.assertField(event, "cpu").containsAny("Intel", "AMD", "Unknown x86", "sparc", "ARM", "PPC", "PowerPC", "AArch64");
-            Events.assertField(event, "description").containsAny("Intel", "AMD", "Unknown x86", "SPARC", "ARM", "PPC", "PowerPC", "AArch64");
+            Events.assertField(event, "cpu").containsAny("Intel", "AMD", "Unknown x86", "sparc", "ARM", "PPC", "PowerPC", "AArch64", "s390");
+            Events.assertField(event, "description").containsAny("Intel", "AMD", "Unknown x86", "SPARC", "ARM", "PPC", "PowerPC", "AArch64", "zArch");
         }
     }
 }

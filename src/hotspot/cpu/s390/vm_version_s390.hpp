@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,6 +131,7 @@ class VM_Version: public Abstract_VM_Version {
   static unsigned int  _Dcache_lineSize;
   static unsigned int  _Icache_lineSize;
   static bool          _is_determine_features_test_running;
+  static const char*   _model_string;
 
   static bool test_feature_bit(unsigned long* featureBuffer, int featureNum, unsigned int bufLen);
   static void set_features_string();
@@ -346,6 +347,7 @@ class VM_Version: public Abstract_VM_Version {
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
 
   // CPU feature query functions
+  static const char* get_model_string()       { return _model_string; }
   static bool has_StoreFacilityListExtended() { return  (_features[0] & StoreFacilityListExtendedMask) == StoreFacilityListExtendedMask; }
   static bool has_Crypto()                    { return  (_features[0] & CryptoFacilityMask)            == CryptoFacilityMask; }
   static bool has_ETF2()                      { return  (_features[0] & ETF2Mask)                      == ETF2Mask; }
