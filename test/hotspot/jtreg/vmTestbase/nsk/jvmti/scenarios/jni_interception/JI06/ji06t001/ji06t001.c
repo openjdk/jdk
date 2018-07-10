@@ -62,6 +62,18 @@ extern "C" {
 #define TRIES 30
 #define MAX_THREADS 5
 
+// Helper for thread detach and terminate
+#define THREAD_return(status) \
+  do { \
+      int res = JNI_ENV_PTR(vm)->DetachCurrentThread(JNI_ENV_ARG1(vm)); \
+      if (res != 0) \
+          NSK_COMPLAIN1("TEST WARNING: DetachCurrentThread() returns: %d\n", res); \
+      else \
+          NSK_DISPLAY0("Detaching thread ...\n"); \
+      return status; \
+  } while (0)
+
+
 static const char *javaField = "_ji06t001a";
 static const char *classSig =
     "Lnsk/jvmti/scenarios/jni_interception/JI06/ji06t001a;";
@@ -225,16 +237,16 @@ static int waitingThread(void *context) {
     thrStarted[indx-1] = 1; /* the thread is started */
 
     if (enterMonitor(env, "waitingThread") == STATUS_FAILED)
-        return STATUS_FAILED;
+        THREAD_return(STATUS_FAILED);
     if (verbose)
         printf("waitingThread: thread #%d entered the monitor\n",
             indx);
     if (exitMonitor(env, "waitingThread") == STATUS_FAILED)
-        return STATUS_FAILED;
+        THREAD_return(STATUS_FAILED);
 
     NSK_DISPLAY2("waitingThread: thread #%d exits the monitor\n\treturning %d\n",
         indx, exitCode);
-    return exitCode;
+    THREAD_return(exitCode);
 }
 
 static int ownerThread(void *context) {
@@ -254,7 +266,7 @@ static int ownerThread(void *context) {
 
     NSK_DISPLAY0("ownerThread: trying to enter the monitor ...\n");
     if (enterMonitor(env, "ownerThread") == STATUS_FAILED)
-        return STATUS_FAILED;
+        THREAD_return(STATUS_FAILED);
 
     monEntered = 1; /* the monitor has been entered */
     NSK_DISPLAY1("ownerThread: entered the monitor: monEntered=%d\n\
@@ -272,12 +284,12 @@ static int ownerThread(void *context) {
     } while(releaseMon != 1);
 
     if (exitMonitor(env, "ownerThread") == STATUS_FAILED)
-        return STATUS_FAILED;
+        THREAD_return(STATUS_FAILED);
 
     NSK_DISPLAY1("ownerThread: exits the monitor\n\treturning %d\n",
         exitCode);
 
-    return exitCode;
+    THREAD_return(exitCode);
 }
 
 static int redirectorThread(void *context) {
@@ -301,7 +313,7 @@ static int redirectorThread(void *context) {
     NSK_DISPLAY1("redirectorThread: the MonitorEnter() redirected\n\treturning %d\n",
         exitCode);
 
-    return exitCode;
+    THREAD_return(exitCode);
 }
 /*********************/
 

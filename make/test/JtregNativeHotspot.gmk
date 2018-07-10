@@ -836,6 +836,10 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libVirtualMachine09agent00 := $(NSK_AOD_INC
 
 ################################################################################
 
+ifeq ($(TOOLCHAIN_TYPE), solstudio)
+   BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libji06t001 += -erroff=E_END_OF_LOOP_CODE_NOT_REACHED
+endif
+
 # Platform specific setup
 ifneq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
   BUILD_HOTSPOT_JTREG_EXCLUDE += liboverflow.c exeThreadSignalMask.c
@@ -858,9 +862,13 @@ endif
 
 BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+    BUILD_HOTSPOT_JTREG_EXCLUDE += libterminatedThread.c
+endif
+
 ifeq ($(OPENJDK_TARGET_OS), windows)
     BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
-    BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c
+    BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c
 
 else
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libbootclssearch_agent += -lpthread
@@ -1494,6 +1502,7 @@ else
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libvmdeath001 += -lpthread
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetphase001 += -lpthread
     BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libgetphase002 += -lpthread
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libterminatedThread += -lpthread
 endif
 
 $(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_LIBRARIES, \
