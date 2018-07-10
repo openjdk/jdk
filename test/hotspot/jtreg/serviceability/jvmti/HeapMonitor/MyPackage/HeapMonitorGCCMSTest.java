@@ -28,6 +28,7 @@ package MyPackage;
  * @summary Verifies the JVMTI Heap Monitor Statistics using CMS GC
  * @build Frame HeapMonitor
  * @requires vm.gc == "ConcMarkSweep" | vm.gc == "null"
+ * @requires !vm.graal.enabled
  * @compile HeapMonitorGCCMSTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest -XX:+UseConcMarkSweepGC MyPackage.HeapMonitorGCTest
  */
