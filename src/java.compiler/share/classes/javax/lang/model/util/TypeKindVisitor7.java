@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,13 @@ public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
     /**
      * Constructor for concrete subclasses to call; uses {@code null}
      * for the default value.
+     *
+     * @deprecated Release 7 is obsolete; update to a visitor for a newer
+     * release level.
      */
-    @SuppressWarnings("deprecation") // Superclass constructor deprecated
+    @Deprecated
     protected TypeKindVisitor7() {
-        super(null);
+        super(null); // Superclass constructor deprecated too
     }
 
     /**
@@ -89,10 +92,13 @@ public class TypeKindVisitor7<R, P> extends TypeKindVisitor6<R, P> {
      * for the default value.
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
+     *
+     * @deprecated Release 7 is obsolete; update to a visitor for a newer
+     * release level.
      */
-    @SuppressWarnings("deprecation") // Superclass constructor deprecated
+    @Deprecated
     protected TypeKindVisitor7(R defaultValue) {
-        super(defaultValue);
+        super(defaultValue); // Superclass constructor deprecated too
     }
 
     /**
