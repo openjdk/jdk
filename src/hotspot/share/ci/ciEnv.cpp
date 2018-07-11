@@ -938,9 +938,9 @@ void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
       _inc_decompile_count_on_failure = false;
       record_failure("call site target change");
     } else if (Dependencies::is_klass_type(result)) {
-      record_failure("invalid non-klass dependency");
-    } else {
       record_failure("concurrent class loading");
+    } else {
+      record_failure("invalid non-klass dependency");
     }
   }
 }
