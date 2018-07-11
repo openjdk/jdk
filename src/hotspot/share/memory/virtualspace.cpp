@@ -70,6 +70,18 @@ ReservedSpace::ReservedSpace(size_t size, size_t alignment,
   initialize(size, alignment, large, NULL, executable);
 }
 
+ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment,
+                             bool special, bool executable) : _fd_for_heap(-1) {
+  assert((size % os::vm_allocation_granularity()) == 0,
+         "size not allocation aligned");
+  _base = base;
+  _size = size;
+  _alignment = alignment;
+  _noaccess_prefix = 0;
+  _special = special;
+  _executable = executable;
+}
+
 // Helper method
 static void unmap_or_release_memory(char* base, size_t size, bool is_file_mapped) {
   if (is_file_mapped) {
@@ -217,20 +229,6 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
     _special = true;
   }
 }
-
-
-ReservedSpace::ReservedSpace(char* base, size_t size, size_t alignment,
-                             bool special, bool executable) {
-  assert((size % os::vm_allocation_granularity()) == 0,
-         "size not allocation aligned");
-  _base = base;
-  _size = size;
-  _alignment = alignment;
-  _noaccess_prefix = 0;
-  _special = special;
-  _executable = executable;
-}
-
 
 ReservedSpace ReservedSpace::first_part(size_t partition_size, size_t alignment,
                                         bool split, bool realloc) {

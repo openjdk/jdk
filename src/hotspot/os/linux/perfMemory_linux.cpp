@@ -534,15 +534,14 @@ static char* get_user_name_slow(int vmid, int nspid, TRAPS) {
   // directory search
   char* oldest_user = NULL;
   time_t oldest_ctime = 0;
-  char buffer[TMP_BUFFER_LEN];
+  char buffer[MAXPATHLEN + 1];
   int searchpid;
   char* tmpdirname = (char *)os::get_temp_directory();
   assert(strlen(tmpdirname) == 4, "No longer using /tmp - update buffer size");
 
   if (nspid == -1) {
     searchpid = vmid;
-  }
-  else {
+  } else {
     jio_snprintf(buffer, MAXPATHLEN, "/proc/%d/root%s", vmid, tmpdirname);
     tmpdirname = buffer;
     searchpid = nspid;

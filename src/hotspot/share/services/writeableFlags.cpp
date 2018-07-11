@@ -79,7 +79,7 @@ static void print_flag_error_message_if_needed(JVMFlag::Error error, const char*
     case JVMFlag::NON_WRITABLE:
       buffer_concat(buffer, "flag is not writeable."); break;
     case JVMFlag::OUT_OF_BOUNDS:
-      print_flag_error_message_bounds(name, buffer); break;
+      if (name != NULL) { print_flag_error_message_bounds(name, buffer); } break;
     case JVMFlag::VIOLATES_CONSTRAINT:
       buffer_concat(buffer, "value violates its flag's constraint."); break;
     case JVMFlag::INVALID_FLAG:

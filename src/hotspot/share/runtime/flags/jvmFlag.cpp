@@ -939,6 +939,10 @@ JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked
     }
   }
 
+  if (match == NULL) {
+    return NULL;
+  }
+
   if (!(match->is_unlocked() || match->is_unlocker())) {
     if (!allow_locked) {
       return NULL;
