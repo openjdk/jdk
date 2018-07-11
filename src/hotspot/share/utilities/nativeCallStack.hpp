@@ -54,18 +54,16 @@
 class MemTracker;
 
 class NativeCallStack : public StackObj {
-  friend class MemTracker;
-
 private:
   address       _stack[NMT_TrackingStackDepth];
   unsigned int  _hash_value;
 
-  static NativeCallStack EMPTY_STACK;
 public:
   NativeCallStack(int toSkip = 0, bool fillStack = false);
   NativeCallStack(address* pc, int frameCount);
 
   static inline const NativeCallStack& empty_stack() {
+    static const NativeCallStack EMPTY_STACK(0, false);
     return EMPTY_STACK;
   }
 

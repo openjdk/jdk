@@ -28,34 +28,10 @@
 #include "runtime/atomic.hpp"
 #include "services/mallocSiteTable.hpp"
 
-/*
- * Early os::malloc() calls come from initializations of static variables, long before entering any
- * VM code. Upon the arrival of the first os::malloc() call, malloc site hashtable has to be
- * initialized, along with the allocation site for the hashtable entries.
- * To ensure that malloc site hashtable can be initialized without triggering any additional os::malloc()
- * call, the hashtable bucket array and hashtable entry allocation site have to be static.
- * It is not a problem for hashtable bucket, since it is an array of pointer type, C runtime just
- * allocates a block memory and zero the memory for it.
- * But for hashtable entry allocation site object, things get tricky. C runtime not only allocates
- * memory for it, but also calls its constructor at some later time. If we initialize the allocation site
- * at the first os::malloc() call, the object will be reinitialized when its constructor is called
- * by C runtime.
- * To workaround above issue, we declare a static size_t array with the size of the CallsiteHashtableEntry,
- * the memory is used to instantiate CallsiteHashtableEntry for the hashtable entry allocation site.
- * Given it is a primitive type array, C runtime will do nothing other than assign the memory block for the variable,
- * which is exactly what we want.
- * The same trick is also applied to create NativeCallStack object for CallsiteHashtableEntry memory allocation.
- *
- * Note: C++ object usually aligns to particular alignment, depends on compiler implementation, we declare
- * the memory as size_t arrays, to ensure the memory is aligned to native machine word alignment.
- */
-
-// Reserve enough memory for NativeCallStack and MallocSiteHashtableEntry objects
-size_t MallocSiteTable::_hash_entry_allocation_stack[CALC_OBJ_SIZE_IN_TYPE(NativeCallStack, size_t)];
-size_t MallocSiteTable::_hash_entry_allocation_site[CALC_OBJ_SIZE_IN_TYPE(MallocSiteHashtableEntry, size_t)];
-
 // Malloc site hashtable buckets
 MallocSiteHashtableEntry*  MallocSiteTable::_table[MallocSiteTable::table_size];
+const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = NULL;
+const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = NULL;
 
 // concurrent access counter
 volatile int MallocSiteTable::_access_count = 0;
@@ -73,9 +49,6 @@ NOT_PRODUCT(int MallocSiteTable::_peak_count = 0;)
  * time, it is in single-threaded mode from JVM perspective.
  */
 bool MallocSiteTable::initialize() {
-  assert(sizeof(_hash_entry_allocation_stack) >= sizeof(NativeCallStack), "Sanity Check");
-  assert(sizeof(_hash_entry_allocation_site) >= sizeof(MallocSiteHashtableEntry),
-    "Sanity Check");
   assert((size_t)table_size <= MAX_MALLOCSITE_TABLE_SIZE, "Hashtable overflow");
 
   // Fake the call stack for hashtable entry allocation
@@ -91,17 +64,19 @@ bool MallocSiteTable::initialize() {
   }
   pc[0] = (address)MallocSiteTable::new_entry;
 
-  // Instantiate NativeCallStack object, have to use placement new operator. (see comments above)
-  NativeCallStack* stack = ::new ((void*)_hash_entry_allocation_stack)
-    NativeCallStack(pc, MIN2(((int)(sizeof(pc) / sizeof(address))), ((int)NMT_TrackingStackDepth)));
+  static const NativeCallStack stack(pc, MIN2(((int)(sizeof(pc) / sizeof(address))), ((int)NMT_TrackingStackDepth)));
+  static const MallocSiteHashtableEntry entry(stack, mtNMT);
 
-  // Instantiate hash entry for hashtable entry allocation callsite
-  MallocSiteHashtableEntry* entry = ::new ((void*)_hash_entry_allocation_site)
-    MallocSiteHashtableEntry(*stack, mtNMT);
+  assert(_hash_entry_allocation_stack == NULL &&
+         _hash_entry_allocation_site == NULL,
+         "Already initailized");
+
+  _hash_entry_allocation_stack = &stack;
+  _hash_entry_allocation_site = &entry;
 
   // Add the allocation site to hashtable.
-  int index = hash_to_index(stack->hash());
-  _table[index] = entry;
+  int index = hash_to_index(stack.hash());
+  _table[index] = const_cast<MallocSiteHashtableEntry*>(&entry);
 
   return true;
 }
@@ -204,6 +179,9 @@ void MallocSiteTable::reset() {
     _table[index] = NULL;
     delete_linked_list(head);
   }
+
+  _hash_entry_allocation_stack = NULL;
+  _hash_entry_allocation_site = NULL;
 }
 
 void MallocSiteTable::delete_linked_list(MallocSiteHashtableEntry* head) {
@@ -211,7 +189,7 @@ void MallocSiteTable::delete_linked_list(MallocSiteHashtableEntry* head) {
   while (head != NULL) {
     p = head;
     head = (MallocSiteHashtableEntry*)head->next();
-    if (p != (MallocSiteHashtableEntry*)_hash_entry_allocation_site) {
+    if (p != hash_entry_allocation_site()) {
       delete p;
     }
   }
