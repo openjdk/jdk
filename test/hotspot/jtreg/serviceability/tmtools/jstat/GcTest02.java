@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,13 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library ../share
- * @run main/othervm -XX:+UsePerfData -XX:MaxNewSize=4m -XX:MaxHeapSize=128M -XX:MaxMetaspaceSize=128M GcTest02
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+                     -XX:+UsePerfData -XX:MaxNewSize=4m -XX:MaxHeapSize=128M -XX:MaxMetaspaceSize=128M GcTest02
  */
 import utils.*;
 
+// This test produces more than 90_000 classes until it eats up ~70% of the 128M meta space.
+// We turn off VerifyDependencies because it slows down the test considerably in debug builds.
 public class GcTest02 {
 
     public static void main(String[] args) throws Exception {
