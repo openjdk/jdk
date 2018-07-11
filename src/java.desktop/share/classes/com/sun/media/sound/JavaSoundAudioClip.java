@@ -173,29 +173,31 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
         if (DEBUG || Printer.debug) Printer.debug("JavaSoundAudioClip.startImpl(loop="+loop+")");
         try {
             if (clip != null) {
-                if (!clip.isOpen()) {
-                    if (DEBUG || Printer.trace)Printer.trace("JavaSoundAudioClip: clip.open()");
-                    clip.open(loadedAudioFormat, loadedAudio, 0, loadedAudioByteLength);
-                } else {
-                    if (DEBUG || Printer.trace)Printer.trace("JavaSoundAudioClip: clip.flush()");
-                    clip.flush();
-                    if (loop != clipLooping) {
-                        // need to stop in case the looped status changed
-                        if (DEBUG || Printer.trace)Printer.trace("JavaSoundAudioClip: clip.stop()");
-                        clip.stop();
+                // We need to disable autoclosing mechanism otherwise the clip
+                // can be closed after "!clip.isOpen()" check, because of
+                // previous inactivity.
+                clip.setAutoClosing(false);
+                try {
+                    if (!clip.isOpen()) {
+                        clip.open(loadedAudioFormat, loadedAudio, 0,
+                                  loadedAudioByteLength);
+                    } else {
+                        clip.flush();
+                        if (loop != clipLooping) {
+                            // need to stop in case the looped status changed
+                            clip.stop();
+                        }
                     }
+                    clip.setFramePosition(0);
+                    if (loop) {
+                        clip.loop(Clip.LOOP_CONTINUOUSLY);
+                    } else {
+                        clip.start();
+                    }
+                    clipLooping = loop;
+                } finally {
+                    clip.setAutoClosing(true);
                 }
-                clip.setFramePosition(0);
-                if (loop) {
-                    if (DEBUG || Printer.trace)Printer.trace("JavaSoundAudioClip: clip.loop()");
-                    clip.loop(Clip.LOOP_CONTINUOUSLY);
-                } else {
-                    if (DEBUG || Printer.trace)Printer.trace("JavaSoundAudioClip: clip.start()");
-                    clip.start();
-                }
-                clipLooping = loop;
-                if (DEBUG || Printer.debug)Printer.debug("Clip should be playing/looping");
-
             } else if (datapusher != null ) {
                 datapusher.start(loop);
                 if (DEBUG || Printer.debug)Printer.debug("Stream should be playing/looping");
