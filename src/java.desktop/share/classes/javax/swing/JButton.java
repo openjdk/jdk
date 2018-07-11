@@ -151,7 +151,7 @@ public class JButton extends AbstractButton implements Accessible {
      * @see UIDefaults#getUI
      */
     @BeanProperty(bound = false, expert = true, description
-            = "A string that specifies the name of the L&amp;F class.")
+            = "A string that specifies the name of the L&F class.")
     public String getUIClassID() {
         return uiClassID;
     }

@@ -33,10 +33,11 @@ import java.awt.event.ActionListener;
 /*
  * @test
  * @bug 6991580 8080108 8133035
- * @requires os.family != "windows"
  * @summary IPv6 Nameservers in resolv.conf throws NumberFormatException
  * @modules java.desktop
  *          jdk.naming.dns/com.sun.jndi.dns
+ * @requires os.family != "windows"
+ * @build IPv6NameserverPlatformParsingTest
  * @run main/manual Test6991580
  */
 

@@ -1033,6 +1033,7 @@ struct ArrayOf
   DEFINE_SIZE_ARRAY (sizeof (LenType), arrayZ);
 };
 template <typename Type> struct LArrayOf : ArrayOf<Type, HBUINT32> {};
+typedef ArrayOf<HBUINT8, HBUINT8> PString;
 
 /* Array of Offset's */
 template <typename Type, typename OffsetType=HBUINT16>

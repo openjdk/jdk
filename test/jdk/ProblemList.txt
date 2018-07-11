@@ -128,7 +128,7 @@ java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 806017
 java/awt/dnd/BadSerializaionTest/BadSerializationTest.java 8039082 generic-all
 java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java 8164464 linux-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.html 8171510 macosx-all
-java/awt/dnd/7171812/bug7171812.java 8041447 macosx-all
+javax/swing/dnd/7171812/bug7171812.java 8041447 macosx-all
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
 java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java 8198618 macosx-all
 java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java 6986252 macosx-all
@@ -196,7 +196,6 @@ java/awt/TrayIcon/ActionEventMask/ActionEventMask.java 8150540 windows-all
 java/awt/TrayIcon/ActionEventTest/ActionEventTest.java 8150540 windows-all
 java/awt/TrayIcon/ModalityTest/ModalityTest.java 8150540 windows-all,macosx-all
 java/awt/TrayIcon/MouseEventMask/MouseEventMaskTest.java 8150540 windows-all
-java/awt/TrayIcon/MouseEventMask/MouseEventMovedTest.java 8150540 windows-all
 java/awt/TrayIcon/MouseMovedTest/MouseMovedTest.java 8150540 windows-all
 java/awt/TrayIcon/SecurityCheck/FunctionalityCheck/FunctionalityCheck.java 8150540 windows-all
 java/awt/TrayIcon/TrayIconEventModifiers/TrayIconEventModifiersTest.java 8150540 windows-all
@@ -244,7 +243,6 @@ sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
 sun/java2d/pipe/InterpolationQualityTest.java 8171303 windows-all,linux-all,macosx-all
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469 windows-all
-java/awt/Graphics/ClippedCopyAreaTest/ClippedCopyAreaTest.java 8196436 linux-all
 java/awt/Graphics2D/DrawString/DrawRotatedStringUsingRotatedFont.java 8197796 generic-all
 java/awt/TextArea/TextAreaScrolling/TextAreaScrolling.java 8196300 windows-all
 java/awt/print/PrinterJob/Margins.java 8196301 windows-all
@@ -399,8 +397,6 @@ java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407 macosx-all
 java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java 8157170 macosx-all
-java/awt/Focus/ForwardingFocusToProxyMotifTest/ForwardingFocusToProxyMotifTest.java 8196436 linux-all
-java/awt/Window/OverrideRedirectRemoved/ChildWindowProblem.java 8196438 linux-all
 java/awt/Modal/ToBack/ToBackAppModal1Test.java 8196441 linux-all,macosx-all
 java/awt/Modal/ToBack/ToBackAppModal2Test.java 8196441 linux-all,macosx-all
 java/awt/Modal/ToBack/ToBackAppModal3Test.java 8196441 linux-all,macosx-all
@@ -475,8 +471,6 @@ java/awt/Robot/RobotWheelTest/RobotWheelTest.java 8129827 generic-all
 java/awt/Focus/WindowUpdateFocusabilityTest/WindowUpdateFocusabilityTest.html 8202926 linux-all
 java/awt/datatransfer/ConstructFlavoredObjectTest/ConstructFlavoredObjectTest.java 8202860 linux-all
 java/awt/dnd/DisposeFrameOnDragCrash/DisposeFrameOnDragTest.java 8202790 macosx-all,linux-all
-java/awt/Clipboard/NoDataConversionFailureTest/NoDataConversionFailureTest.html 8202791 macosx-all
-java/awt/Clipboard/ImageTransferTest/ImageTransferTest.html 8202792 macosx-all
 java/awt/FileDialog/FilenameFilterTest/FilenameFilterTest.html 8202882 linux-all
 java/awt/MenuBar/8007006/bug8007006.java 8202886 macosx-all
 java/awt/Frame/FramesGC/FramesGC.java 8079069 macosx-all
@@ -608,7 +602,6 @@ javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 javax/net/ssl/DTLS/CipherSuite.java                             8202059 macosx-x64
 
-sun/security/krb5/auto/UnboundSSL.java                          8180265 windows-all
 sun/security/provider/KeyStore/DKSTest.sh                       8180266 windows-all
 
 sun/security/pkcs11/Cipher/ReinitCipher.java                    8204203 windows-all
@@ -714,7 +707,6 @@ javax/swing/JTable/4235420/bug4235420.java     8079127 generic-all
 javax/swing/JSplitPane/4201995/bug4201995.java 8079127 generic-all
 javax/swing/JTree/DnD/LastNodeLowerHalfDrop.java 8159131 linux-all
 javax/swing/JTree/4633594/JTreeFocusTest.java 8173125 macosx-all
-javax/swing/JTree/8003400/Test8003401.java 8011259 macosx-all,linux-all
 javax/swing/JFileChooser/8041694/bug8041694.java 8196302 windows-all
 javax/swing/AbstractButton/6711682/bug6711682.java 8060765 windows-all,macosx-all
 javax/swing/Action/8133039/bug8133039.java 8196089 windows-all,macosx-all
@@ -795,7 +787,7 @@ javax/swing/text/html/parser/Parser/8078268/bug8078268.java 8199092 generic-all
 javax/swing/PopupFactory/8048506/bug8048506.java 8202660 windows-all
 javax/swing/JTextArea/TextViewOOM/TextViewOOM.java 8167355 generic-all
 javax/swing/JEditorPane/8195095/ImageViewTest.java 8202656 windows-all
-javax/swing/text/Utilities/8142966/SwingFontMetricsTest.java 8202663 windows-all
+javax/swing/text/Utilities/8142966/SwingFontMetricsTest.java 8199529 windows-all
 javax/swing/JPopupMenu/8075063/ContextMenuScrollTest.java 202880 linux-all
 javax/swing/dnd/8139050/NativeErrorsInTableDnD.java 8202765  macosx-all,linux-all
 javax/swing/Popup/TaskbarPositionTest.java 8065097 macosx-all,linux-all
@@ -816,9 +808,7 @@ java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all,solaris
 # core_tools
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
-
-tools/jimage/JImageExtractTest.java                             8198405,8198819 generic-all
-tools/jimage/JImageListTest.java                                8198405 windows-all
+tools/jimage/JImageListTest.java                                8206445 windows-all
 
 ############################################################################
 

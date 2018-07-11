@@ -43,10 +43,11 @@ class VM_Version_Ext : public VM_Version {
   static int               _no_of_threads;
   static int               _no_of_cores;
   static int               _no_of_sockets;
+  static bool              _initialized;
   static char              _cpu_name[CPU_TYPE_DESC_BUF_SIZE];
   static char              _cpu_desc[CPU_DETAILED_DESC_BUF_SIZE];
 
-  static bool initialize_cpu_information(void);
+  static void initialize_cpu_information(void);
 
  public:
 

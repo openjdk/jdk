@@ -30,6 +30,7 @@
 import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
+import java.util.Arrays;
 
 public class TestIBMBugs {
 
@@ -173,6 +174,53 @@ public class TestIBMBugs {
         }
     }
 
+    private static void bug8202329() throws Exception {
+        String original = "\\\u007E\u00A5\u203E"; // [backslash][tilde][yen][overscore]
+        byte[] expectedBytes; // bytes after conversion
+        String expectedStringfromBytes; // String constructed from bytes
+
+        Charset charset; // charset used for conversion
+
+        ByteBuffer bb; // Buffer that holds encoded bytes
+        byte[]  ba; // byte array that holds encoded bytes
+
+        CharBuffer cb; // Buffer that holds decoded chars
+
+
+        // Test IBM943, where \ and ~ are encoded to unmappable i.e., 0x3f
+        // and [yen] and [overscore] are encoded to 0x5c and 0x7e
+        charset = Charset.forName("IBM943");
+        expectedBytes = new byte[] {0x3f, 0x3f, 0x5c, 0x7e};
+        expectedStringfromBytes = "??\u00A5\u203E";
+        bb = charset.encode(original);
+        ba = new byte[bb.remaining()];
+        bb.get(ba, 0, ba.length);
+        if(!Arrays.equals(ba, expectedBytes)) {
+            throw new Exception("IBM943 failed to encode");
+        }
+        cb = charset.decode(ByteBuffer.wrap(expectedBytes));
+        if(!cb.toString().equals(expectedStringfromBytes)) {
+            throw new Exception("IBM943 failed to decode");
+        }
+
+
+        // Test IBM943C, where \ and ~ are encoded to 0x5c and 0x7e
+        // and [yen] and [overscore] are encoded to 0x5c and 0x7e
+        charset = Charset.forName("IBM943C");
+        expectedBytes = new byte[] {0x5c, 0x7e, 0x5c, 0x7e};
+        expectedStringfromBytes = "\\~\\~";
+        bb = charset.encode(original);
+        ba = new byte[bb.remaining()];
+        bb.get(ba, 0, ba.length);
+        if(!Arrays.equals(ba, expectedBytes)) {
+            throw new Exception("IBM943C failed to encode");
+        }
+        cb = charset.decode(ByteBuffer.wrap(expectedBytes));
+        if(!cb.toString().equals(expectedStringfromBytes)) {
+            throw new Exception("IBM943C failed to decode");
+        }
+    }
+
     public static void main (String[] args) throws Exception {
         bug6577466();
         // need to be tested before any other IBM949C test case
@@ -183,5 +231,6 @@ public class TestIBMBugs {
         bug6371619();
         bug6371431();
         bug6569191();
+        bug8202329();
     }
 }

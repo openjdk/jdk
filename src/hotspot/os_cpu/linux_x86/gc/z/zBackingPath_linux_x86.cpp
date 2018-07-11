@@ -33,13 +33,13 @@
 // Mount information, see proc(5) for more details.
 #define PROC_SELF_MOUNTINFO        "/proc/self/mountinfo"
 
-ZBackingPath::ZBackingPath(const char* filesystem, const char* preferred_path) {
+ZBackingPath::ZBackingPath(const char* filesystem, const char** preferred_mountpoints) {
   if (ZPath != NULL) {
     // Use specified path
     _path = strdup(ZPath);
   } else {
     // Find suitable path
-    _path = find_mountpoint(filesystem, preferred_path);
+    _path = find_mountpoint(filesystem, preferred_mountpoints);
   }
 }
 
@@ -52,8 +52,8 @@ char* ZBackingPath::get_mountpoint(const char* line, const char* filesystem) con
   char* line_mountpoint = NULL;
   char* line_filesystem = NULL;
 
-  // Parse line and return a newly allocated string containing the mountpoint if
-  // the line contains a matching filesystem and the mountpoint is accessible by
+  // Parse line and return a newly allocated string containing the mount point if
+  // the line contains a matching filesystem and the mount point is accessible by
   // the current user.
   if (sscanf(line, "%*u %*u %*u:%*u %*s %ms %*[^-]- %ms", &line_mountpoint, &line_filesystem) != 2 ||
       strcmp(line_filesystem, filesystem) != 0 ||
@@ -68,7 +68,7 @@ char* ZBackingPath::get_mountpoint(const char* line, const char* filesystem) con
   return line_mountpoint;
 }
 
-void ZBackingPath::get_mountpoints(ZArray<char*>* mountpoints, const char* filesystem) const {
+void ZBackingPath::get_mountpoints(const char* filesystem, ZArray<char*>* mountpoints) const {
   FILE* fd = fopen(PROC_SELF_MOUNTINFO, "r");
   if (fd == NULL) {
     ZErrno err;
@@ -98,37 +98,45 @@ void ZBackingPath::free_mountpoints(ZArray<char*>* mountpoints) const {
   mountpoints->clear();
 }
 
-char* ZBackingPath::find_mountpoint(const char* filesystem, const char* preferred_mountpoint) const {
+char* ZBackingPath::find_preferred_mountpoint(const char* filesystem,
+                                              ZArray<char*>* mountpoints,
+                                              const char** preferred_mountpoints) const {
+  // Find preferred mount point
+  ZArrayIterator<char*> iter1(mountpoints);
+  for (char* mountpoint; iter1.next(&mountpoint);) {
+    for (const char** preferred = preferred_mountpoints; *preferred != NULL; preferred++) {
+      if (!strcmp(mountpoint, *preferred)) {
+        // Preferred mount point found
+        return strdup(mountpoint);
+      }
+    }
+  }
+
+  // Preferred mount point not found
+  log_error(gc, init)("More than one %s filesystem found:", filesystem);
+  ZArrayIterator<char*> iter2(mountpoints);
+  for (char* mountpoint; iter2.next(&mountpoint);) {
+    log_error(gc, init)("  %s", mountpoint);
+  }
+
+  return NULL;
+}
+
+char* ZBackingPath::find_mountpoint(const char* filesystem, const char** preferred_mountpoints) const {
   char* path = NULL;
   ZArray<char*> mountpoints;
 
-  get_mountpoints(&mountpoints, filesystem);
+  get_mountpoints(filesystem, &mountpoints);
 
   if (mountpoints.size() == 0) {
-    // No filesystem found
+    // No mount point found
     log_error(gc, init)("Failed to find an accessible %s filesystem", filesystem);
   } else if (mountpoints.size() == 1) {
-    // One filesystem found
+    // One mount point found
     path = strdup(mountpoints.at(0));
-  } else if (mountpoints.size() > 1) {
-    // More than one filesystem found
-    ZArrayIterator<char*> iter(&mountpoints);
-    for (char* mountpoint; iter.next(&mountpoint);) {
-      if (!strcmp(mountpoint, preferred_mountpoint)) {
-        // Preferred mount point found
-        path = strdup(mountpoint);
-        break;
-      }
-    }
-
-    if (path == NULL) {
-      // Preferred mount point not found
-      log_error(gc, init)("More than one %s filesystem found:", filesystem);
-      ZArrayIterator<char*> iter2(&mountpoints);
-      for (char* mountpoint; iter2.next(&mountpoint);) {
-        log_error(gc, init)("  %s", mountpoint);
-      }
-    }
+  } else {
+    // More than one mount point found
+    path = find_preferred_mountpoint(filesystem, &mountpoints, preferred_mountpoints);
   }
 
   free_mountpoints(&mountpoints);

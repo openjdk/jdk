@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "memory/allocation.inline.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ZPhysicalMemory::ZPhysicalMemory() :
     _nsegments(0),
@@ -93,6 +94,7 @@ void ZPhysicalMemory::clear() {
 ZPhysicalMemoryManager::ZPhysicalMemoryManager(size_t max_capacity, size_t granule_size) :
     _backing(max_capacity, granule_size),
     _max_capacity(max_capacity),
+    _current_max_capacity(max_capacity),
     _capacity(0),
     _used(0) {}
 
@@ -100,31 +102,34 @@ bool ZPhysicalMemoryManager::is_initialized() const {
   return _backing.is_initialized();
 }
 
-bool ZPhysicalMemoryManager::ensure_available(size_t size) {
-  const size_t unused_capacity = _capacity - _used;
-  if (unused_capacity >= size) {
-    // Enough unused capacity available
-    return true;
+void ZPhysicalMemoryManager::try_ensure_unused_capacity(size_t size) {
+  const size_t unused = unused_capacity();
+  if (unused >= size) {
+    // Don't try to expand, enough unused capacity available
+    return;
   }
 
-  const size_t expand_with = size - unused_capacity;
-  const size_t new_capacity = _capacity + expand_with;
-  if (new_capacity > _max_capacity) {
-    // Can not expand beyond max capacity
-    return false;
+  const size_t current_max = current_max_capacity();
+  if (_capacity == current_max) {
+    // Don't try to expand, current max capacity reached
+    return;
   }
 
-  // Expand
-  if (!_backing.expand(_capacity, new_capacity)) {
-    log_error(gc)("Failed to expand Java heap with " SIZE_FORMAT "%s",
-                  byte_size_in_proper_unit(expand_with),
-                  proper_unit_for_byte_size(expand_with));
-    return false;
+  // Try to expand
+  const size_t old_capacity = capacity();
+  const size_t new_capacity = MIN2(old_capacity + size - unused, current_max);
+  _capacity = _backing.try_expand(old_capacity, new_capacity);
+
+  if (_capacity != new_capacity) {
+    // Failed, or partly failed, to expand
+    log_error(gc, init)("Not enough space available on the backing filesystem to hold the current max");
+    log_error(gc, init)("Java heap size (" SIZE_FORMAT "M). Forcefully lowering max Java heap size to "
+                        SIZE_FORMAT "M (%.0lf%%).", current_max / M, _capacity / M,
+                        percent_of(_capacity, current_max));
+
+    // Adjust current max capacity to avoid further expand attempts
+    _current_max_capacity = _capacity;
   }
-
-  _capacity = new_capacity;
-
-  return true;
 }
 
 void ZPhysicalMemoryManager::nmt_commit(ZPhysicalMemory pmem, uintptr_t offset) {
@@ -144,7 +149,7 @@ void ZPhysicalMemoryManager::nmt_uncommit(ZPhysicalMemory pmem, uintptr_t offset
 }
 
 ZPhysicalMemory ZPhysicalMemoryManager::alloc(size_t size) {
-  if (!ensure_available(size)) {
+  if (unused_capacity() < size) {
     // Not enough memory available
     return ZPhysicalMemory();
   }

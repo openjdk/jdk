@@ -32,6 +32,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandlers;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 
@@ -56,6 +57,19 @@ public class TLSConnection {
     private static final String PASSWORD = "password";
 
     private static final SSLParameters USE_DEFAULT_SSL_PARAMETERS = new SSLParameters();
+
+    // expect highest supported version we know about
+    static String expectedTLSVersion(SSLContext ctx) throws Exception {
+        if (ctx == null)
+            ctx = SSLContext.getDefault();
+        SSLParameters params = ctx.getSupportedSSLParameters();
+        String[] protocols = params.getProtocols();
+        for (String prot : protocols) {
+            if (prot.equals("TLSv1.3"))
+                return "TLSv1.3";
+        }
+        return "TLSv1.2";
+    }
 
     public static void main(String[] args) throws Exception {
         // re-enable 3DES
@@ -92,7 +106,7 @@ public class TLSConnection {
                     "---\nTest #2: default SSL parameters, "
                             + "expect successful connection",
                     () -> connect(uriString, USE_DEFAULT_SSL_PARAMETERS));
-            success &= checkProtocol(handler.getSSLSession(), "TLSv1.2");
+            success &= checkProtocol(handler.getSSLSession(), expectedTLSVersion(null));
 
             // set SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA cipher suite
             // which has less priority in default cipher suite list

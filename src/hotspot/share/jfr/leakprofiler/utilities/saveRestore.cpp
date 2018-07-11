@@ -74,7 +74,6 @@ CLDClaimContext::CLDClaimContext(ClassLoaderData* cld) : _cld(cld) {
 
 CLDClaimContext::~CLDClaimContext() {
   if (_cld != NULL) {
-    assert(!_cld->claimed(), "invariant");
     _cld->claim();
     assert(_cld->claimed(), "invariant");
   }

@@ -352,7 +352,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<section role=\"region\">\n"
                 + "<h2>Package</h2>\n",
                 "<section role=\"region\">\n"
-                + "<h2>Class/Interface</h2>\n",
+                + "<h2>Class or Interface</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -1266,7 +1266,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<li class=\"blockList\">\n"
                 + "<h2>Package</h2>",
                 "<li class=\"blockList\">\n"
-                + "<h2>Class/Interface</h2>");
+                + "<h2>Class or Interface</h2>");
 
         // Test for a regular class page and members (nested class, field, constructore and method)
         checkOutput("pkg/AnotherClass.html", true,

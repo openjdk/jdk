@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLContext;
 import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocketFactory;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
@@ -268,7 +269,7 @@ public class SplitResponse {
                     String onechar = s.substring(i, i + 1);
                     try {
                         conn.send(onechar);
-                    } catch(SocketException x) {
+                    } catch(SocketException | SSLException x) {
                         if (!useSSL || i != len - 1) throw x;
                         if (x.getMessage().contains("closed by remote host")) {
                             String osname = System.getProperty("os.name", "unknown");

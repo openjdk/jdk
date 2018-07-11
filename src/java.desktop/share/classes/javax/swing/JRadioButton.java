@@ -201,7 +201,7 @@ public class JRadioButton extends JToggleButton implements Accessible {
      * @see UIDefaults#getUI
      */
     @BeanProperty(bound = false, expert = true, description
-            = "A string that specifies the name of the L&amp;F class.")
+            = "A string that specifies the name of the L&F class.")
     public String getUIClassID() {
         return uiClassID;
     }

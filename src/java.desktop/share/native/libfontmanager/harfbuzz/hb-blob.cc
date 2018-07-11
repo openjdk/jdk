@@ -489,10 +489,10 @@ hb_blob_t::try_make_writable (void)
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 # include <windows.h>
-#endif
-
-#ifndef _O_BINARY
-# define _O_BINARY 0
+#else
+# ifndef _O_BINARY
+#  define _O_BINARY 0
+# endif
 #endif
 
 #ifndef MAP_NORESERVE
@@ -517,7 +517,7 @@ _hb_mapped_file_destroy (hb_mapped_file_t *file)
   UnmapViewOfFile (file->contents);
   CloseHandle (file->mapping);
 #else
-  free (file->contents);
+  assert (0); // If we don't have mmap we shouldn't reach here
 #endif
 
   free (file);
@@ -534,77 +534,103 @@ _hb_mapped_file_destroy (hb_mapped_file_t *file)
 hb_blob_t *
 hb_blob_create_from_file (const char *file_name)
 {
-  // Adopted from glib's gmappedfile.c with Matthias Clasen and
-  // Allison Lortie permission but changed a lot to suit our need.
-  bool writable = false;
-  hb_memory_mode_t mm = HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE;
+  /* Adopted from glib's gmappedfile.c with Matthias Clasen and
+     Allison Lortie permission but changed a lot to suit our need. */
+#if defined(HAVE_MMAP) && !defined(HB_NO_MMAP)
   hb_mapped_file_t *file = (hb_mapped_file_t *) calloc (1, sizeof (hb_mapped_file_t));
   if (unlikely (!file)) return hb_blob_get_empty ();
 
-#ifdef HAVE_MMAP
-  int fd = open (file_name, (writable ? O_RDWR : O_RDONLY) | _O_BINARY, 0);
-# define CLOSE close
+  int fd = open (file_name, O_RDONLY | _O_BINARY, 0);
   if (unlikely (fd == -1)) goto fail_without_close;
 
   struct stat st;
   if (unlikely (fstat (fd, &st) == -1)) goto fail;
 
-  // See https://github.com/GNOME/glib/blob/f9faac7/glib/gmappedfile.c#L139-L142
-  if (unlikely (st.st_size == 0 && S_ISREG (st.st_mode))) goto fail;
-
   file->length = (unsigned long) st.st_size;
-  file->contents = (char *) mmap (nullptr, file->length,
-                                  writable ? PROT_READ|PROT_WRITE : PROT_READ,
+  file->contents = (char *) mmap (nullptr, file->length, PROT_READ,
                                   MAP_PRIVATE | MAP_NORESERVE, fd, 0);
 
   if (unlikely (file->contents == MAP_FAILED)) goto fail;
 
-#elif defined(_WIN32) || defined(__CYGWIN__)
-  HANDLE fd = CreateFile (file_name,
-                          writable ? GENERIC_READ|GENERIC_WRITE : GENERIC_READ,
-                          FILE_SHARE_READ, nullptr, OPEN_EXISTING,
-                          FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, nullptr);
-# define CLOSE CloseHandle
+  close (fd);
+
+  return hb_blob_create (file->contents, file->length,
+                         HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE, (void *) file,
+                         (hb_destroy_func_t) _hb_mapped_file_destroy);
+
+fail:
+  close (fd);
+fail_without_close:
+  free (file);
+
+#elif (defined(_WIN32) || defined(__CYGWIN__)) && !defined(HB_NO_MMAP)
+  hb_mapped_file_t *file = (hb_mapped_file_t *) calloc (1, sizeof (hb_mapped_file_t));
+  if (unlikely (!file)) return hb_blob_get_empty ();
+
+  HANDLE fd = CreateFile (file_name, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                          OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,
+                          nullptr);
 
   if (unlikely (fd == INVALID_HANDLE_VALUE)) goto fail_without_close;
 
   file->length = (unsigned long) GetFileSize (fd, nullptr);
-  file->mapping = CreateFileMapping (fd, nullptr,
-                                     writable ? PAGE_WRITECOPY : PAGE_READONLY,
-                                     0, 0, nullptr);
+  file->mapping = CreateFileMapping (fd, nullptr, PAGE_READONLY, 0, 0, nullptr);
   if (unlikely (file->mapping == nullptr)) goto fail;
 
-  file->contents = (char *) MapViewOfFile (file->mapping,
-                                           writable ? FILE_MAP_COPY : FILE_MAP_READ,
-                                           0, 0, 0);
+  file->contents = (char *) MapViewOfFile (file->mapping, FILE_MAP_READ, 0, 0, 0);
   if (unlikely (file->contents == nullptr)) goto fail;
 
-#else
-  mm = HB_MEMORY_MODE_WRITABLE;
-
-  FILE *fd = fopen (file_name, "rb");
-# define CLOSE fclose
-  if (unlikely (!fd)) goto fail_without_close;
-
-  fseek (fd, 0, SEEK_END);
-  file->length = ftell (fd);
-  rewind (fd);
-  file->contents = (char *) malloc (file->length);
-  if (unlikely (!file->contents)) goto fail;
-
-  if (unlikely (fread (file->contents, 1, file->length, fd) != file->length))
-    goto fail;
-
-#endif
-
-  CLOSE (fd);
-  return hb_blob_create (file->contents, file->length, mm, (void *) file,
+  CloseHandle (fd);
+  return hb_blob_create (file->contents, file->length,
+                         HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE, (void *) file,
                          (hb_destroy_func_t) _hb_mapped_file_destroy);
 
 fail:
-  CLOSE (fd);
-#undef CLOSE
+  CloseHandle (fd);
 fail_without_close:
   free (file);
+
+#endif
+
+  /* The following tries to read a file without knowing its size beforehand
+     It's used as a fallback for systems without mmap or to read from pipes */
+  unsigned long len = 0, allocated = BUFSIZ * 16;
+  char *data = (char *) malloc (allocated);
+  if (unlikely (data == nullptr)) return hb_blob_get_empty ();
+
+  FILE *fp = fopen (file_name, "rb");
+  if (unlikely (fp == nullptr)) goto fread_fail_without_close;
+
+  while (!feof (fp))
+  {
+    if (allocated - len < BUFSIZ)
+    {
+      allocated *= 2;
+      /* Don't allocate and go more than ~536MB, our mmap reader still
+         can cover files like that but lets limit our fallback reader */
+      if (unlikely (allocated > (2 << 28))) goto fread_fail;
+      char *new_data = (char *) realloc (data, allocated);
+      if (unlikely (new_data == nullptr)) goto fread_fail;
+      data = new_data;
+    }
+
+    unsigned long addition = fread (data + len, 1, allocated - len, fp);
+
+    int err = ferror (fp);
+#ifdef EINTR // armcc doesn't have it
+    if (unlikely (err == EINTR)) continue;
+#endif
+    if (unlikely (err)) goto fread_fail;
+
+    len += addition;
+  }
+
+  return hb_blob_create (data, len, HB_MEMORY_MODE_WRITABLE, data,
+                         (hb_destroy_func_t) free);
+
+fread_fail:
+  fclose (fp);
+fread_fail_without_close:
+  free (data);
   return hb_blob_get_empty ();
 }

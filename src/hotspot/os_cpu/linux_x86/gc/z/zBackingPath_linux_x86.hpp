@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,19 @@ class ZBackingPath : public StackObj {
 private:
   char* _path;
 
-  char* get_mountpoint(const char* line, const char* filesystem) const;
-  void get_mountpoints(ZArray<char*>* mountpoints, const char* filesystem) const;
+  char* get_mountpoint(const char* line,
+                       const char* filesystem) const;
+  void get_mountpoints(const char* filesystem,
+                       ZArray<char*>* mountpoints) const;
   void free_mountpoints(ZArray<char*>* mountpoints) const;
-  char* find_mountpoint(const char* filesystem, const char* preferred_mountpoint) const;
+  char* find_preferred_mountpoint(const char* filesystem,
+                                  ZArray<char*>* mountpoints,
+                                  const char** preferred_mountpoints) const;
+  char* find_mountpoint(const char* filesystem,
+                        const char** preferred_mountpoints) const;
 
 public:
-  ZBackingPath(const char* filesystem, const char* preferred_path);
+  ZBackingPath(const char* filesystem, const char** preferred_mountpoints);
   ~ZBackingPath();
 
   const char* get() const;

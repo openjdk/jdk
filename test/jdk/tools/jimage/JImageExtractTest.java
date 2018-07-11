@@ -34,11 +34,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.attribute.*;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,12 +46,13 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 public class JImageExtractTest extends JImageCliTest {
     public void testExtract() throws IOException {
+        Set<Path> notJImageModules = Files.walk(Paths.get("."),1).collect(Collectors.toSet());
         jimage("extract", getImagePath())
                 .assertSuccess()
                 .resultChecker(r -> {
                     assertTrue(r.output.isEmpty(), "Output is not expected");
                 });
-        verifyExplodedImage(Paths.get("."));
+        verifyExplodedImage(Paths.get("."), notJImageModules);
     }
 
     public void testExtractHelp() {
@@ -68,12 +68,13 @@ public class JImageExtractTest extends JImageCliTest {
 
     public void testExtractToDir() throws IOException {
         Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
+        Set<Path> notJImageModules = Files.walk(tmp,1).collect(Collectors.toSet());
         jimage("extract", "--dir", tmp.toString(), getImagePath())
                 .assertSuccess()
                 .resultChecker(r -> {
                     assertTrue(r.output.isEmpty(), "Output is not expected");
                 });
-        verifyExplodedImage(tmp);
+        verifyExplodedImage(tmp, notJImageModules);
     }
 
     public void testExtractNoImageSpecified() {
@@ -105,13 +106,14 @@ public class JImageExtractTest extends JImageCliTest {
 
     public void testExtractToNotExistingDir() throws IOException {
         Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName());
+        Set<Path> notJImageModules = Files.walk(tmp,1).collect(Collectors.toSet());
         Files.delete(tmp);
         jimage("extract", "--dir", tmp.toString(), getImagePath())
                 .assertSuccess()
                 .resultChecker(r -> {
                     assertTrue(r.output.isEmpty(), "Output is not expected");
                 });
-        verifyExplodedImage(tmp);
+        verifyExplodedImage(tmp, notJImageModules);
     }
 
     public void testExtractFromDir() {
@@ -132,20 +134,35 @@ public class JImageExtractTest extends JImageCliTest {
             // nothing to test
             return;
         }
-
+        Set<Path> notJImageModules = Files.walk(tmp,1).collect(Collectors.toSet());
         jimage("extract", "--dir", symlink.toString(), getImagePath())
                 .assertSuccess()
                 .resultChecker(r -> {
                     assertTrue(r.output.isEmpty(), "Output is not expected");
                 });
-        verifyExplodedImage(tmp);
+        verifyExplodedImage(tmp, notJImageModules);
     }
 
     public void testExtractToReadOnlyDir() throws IOException {
-        Set<PosixFilePermission> perms = PosixFilePermissions.fromString("r-xr--r--");
-        FileAttribute<Set<PosixFilePermission>> atts = PosixFilePermissions.asFileAttribute(perms);
-        Path tmp = Files.createTempDirectory(Paths.get("."), getClass().getName(), atts);
-        jimage("extract", "--dir", tmp.toString(), getImagePath())
+        Path filePath = Files.createTempDirectory(Paths.get("."), getClass().getName());
+        Set<String> supportedAttr = filePath.getFileSystem().supportedFileAttributeViews();
+        if (supportedAttr.contains("posix")) {
+            Files.setPosixFilePermissions(filePath, PosixFilePermissions.fromString("r-xr--r--"));
+        } else if (supportedAttr.contains("acl")) {
+            System.out.println("Entered into acl block");
+            UserPrincipal fileOwner = Files.getOwner(filePath);
+            AclFileAttributeView view = Files.getFileAttributeView(filePath, AclFileAttributeView.class);
+            AclEntry entry = AclEntry.newBuilder()
+                                     .setType(AclEntryType.DENY)
+                                     .setPrincipal(fileOwner)
+                                     .setPermissions(AclEntryPermission.WRITE_DATA)
+                                     .setFlags(AclEntryFlag.FILE_INHERIT, AclEntryFlag.DIRECTORY_INHERIT)
+                                     .build();
+            List<AclEntry> acl = view.getAcl();
+            acl.add(0, entry);
+            view.setAcl(acl);
+        }
+        jimage("extract", "--dir", filePath.toString(), getImagePath())
                 .assertFailure()
                 .assertShowsError();
     }
@@ -167,15 +184,16 @@ public class JImageExtractTest extends JImageCliTest {
                 .assertShowsError();
     }
 
-    private void verifyExplodedImage(Path imagePath) throws IOException {
+    private void verifyExplodedImage(Path imagePath, Set<Path> notJImageModules) throws IOException {
         Set<Path> allModules = Files.walk(imagePath, 1).collect(Collectors.toSet());
         assertTrue(allModules.stream().anyMatch(p -> "java.base".equals(p.getFileName().toString())),
                 "Exploded image contains java.base module.");
-
         Set<Path> badModules = allModules.stream()
                 .filter(p -> !Files.exists(p.resolve("module-info.class")))
                 .collect(Collectors.toSet());
-        assertEquals(badModules, new HashSet<Path>() {{ add(imagePath); }},
+        // filter bad modules which are not part of jimage
+        badModules.removeAll(notJImageModules);
+        assertEquals(badModules, new HashSet<Path>() {{}},
                 "There are no exploded modules with missing 'module-info.class'");
     }
 

@@ -145,9 +145,15 @@ dbgsysSocket(int domain, int type, int protocol) {
 
 int dbgsysSocketClose(int fd) {
     int rv;
+
+    /* AIX recommends to repeat the close call on EINTR */
+#if defined(_AIX)
     do {
         rv = close(fd);
     } while (rv == -1 && errno == EINTR);
+#else
+    rv = close(fd);
+#endif
 
     return rv;
 }

@@ -807,6 +807,17 @@ void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, i
   }
 }
 
+constantTag ConstantPool::constant_tag_at(int which) {
+  constantTag tag = tag_at(which);
+  if (tag.is_dynamic_constant() ||
+      tag.is_dynamic_constant_in_error()) {
+    // have to look at the signature for this one
+    Symbol* constant_type = uncached_signature_ref_at(which);
+    return constantTag::ofBasicType(FieldType::basic_type(constant_type));
+  }
+  return tag;
+}
+
 BasicType ConstantPool::basic_type_for_constant_at(int which) {
   constantTag tag = tag_at(which);
   if (tag.is_dynamic_constant() ||

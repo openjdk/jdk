@@ -29,6 +29,16 @@
 #include <dlfcn.h>
 #include <cups/cups.h>
 #include <cups/ppd.h>
+/*
+ * CUPS #define's __attribute__(x) to be empty unless __GNUC__ is defined.
+ * However OpenJDK officially uses the SunStudio compiler on Solaris.
+ * We need to #undef this else it breaks use of this keyword used by JNIEXPORT.
+ * See: https://github.com/apple/cups/issues/5349
+ */
+#ifdef __SUNPRO_C
+#undef __attribute__
+#endif
+
 
 //#define CUPS_DEBUG
 

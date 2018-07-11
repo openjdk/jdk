@@ -201,8 +201,6 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
     ENABLE_AOT="true"
   elif test "x$enable_aot" = "xno"; then
     ENABLE_AOT="false"
-    AC_MSG_CHECKING([if aot should be enabled])
-    AC_MSG_RESULT([no, forced])
   else
     AC_MSG_ERROR([Invalid value for --enable-aot: $enable_aot])
   fi
@@ -228,7 +226,7 @@ AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_AOT],
     else
       ENABLE_AOT="false"
       if test "x$enable_aot" = "xyes"; then
-        AC_MSG_ERROR([AOT is currently only supported on x86_64. Remove --enable-aot.])
+        AC_MSG_ERROR([AOT is currently only supported on x86_64 and aarch64. Remove --enable-aot.])
       fi
     fi
   fi
@@ -374,56 +372,105 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     fi
   fi
 
-  # Only enable jvmci on x86_64, sparcv9 and aarch64.
-  if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
-     test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
-     test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
-    JVM_FEATURES_jvmci="jvmci"
-  else
+  AC_MSG_CHECKING([if jvmci module jdk.internal.vm.ci should be built])
+  # Check if jvmci is diabled
+  DISABLE_JVMCI=`$ECHO $DISABLED_JVM_FEATURES | $GREP jvmci`
+  if test "x$DISABLE_JVMCI" = "xjvmci"; then
+    AC_MSG_RESULT([no, forced])
     JVM_FEATURES_jvmci=""
+    INCLUDE_JVMCI="false"
+  else
+    # Only enable jvmci on x86_64, sparcv9 and aarch64
+    if test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
+       test "x$OPENJDK_TARGET_CPU" = "xsparcv9" || \
+       test "x$OPENJDK_TARGET_CPU" = "xaarch64" ; then
+      AC_MSG_RESULT([yes])
+      JVM_FEATURES_jvmci="jvmci"
+      INCLUDE_JVMCI="true"
+    else
+      AC_MSG_RESULT([no])
+      JVM_FEATURES_jvmci=""
+      INCLUDE_JVMCI="false"
+      if HOTSPOT_CHECK_JVM_FEATURE(jvmci); then
+        AC_MSG_ERROR([JVMCI is currently not supported on this platform.])
+      fi
+    fi
   fi
 
-  AC_MSG_CHECKING([if jdk.internal.vm.compiler should be built])
-  if HOTSPOT_CHECK_JVM_FEATURE(graal); then
-    AC_MSG_RESULT([yes, forced])
-    if test "x$JVM_FEATURES_jvmci" != "xjvmci" ; then
-      AC_MSG_ERROR([Specified JVM feature 'graal' requires feature 'jvmci'])
-    fi
-    INCLUDE_GRAAL="true"
+  AC_SUBST(INCLUDE_JVMCI)
+
+  AC_MSG_CHECKING([if graal module jdk.internal.vm.compiler should be built])
+  # Check if graal is diabled
+  DISABLE_GRAAL=`$ECHO $DISABLED_JVM_FEATURES | $GREP graal`
+  if test "x$DISABLE_GRAAL" = "xgraal"; then
+    AC_MSG_RESULT([no, forced])
+    JVM_FEATURES_graal=""
+    INCLUDE_GRAAL="false"
   else
-    # By default enable graal build on x64 or where AOT is available.
-    # graal build requires jvmci.
-    if test "x$JVM_FEATURES_jvmci" = "xjvmci" && \
-        (test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
-         test "x$ENABLE_AOT" = "xtrue") ; then
-      AC_MSG_RESULT([yes])
+    if HOTSPOT_CHECK_JVM_FEATURE(graal); then
+      AC_MSG_RESULT([yes, forced])
+      if test "x$JVM_FEATURES_jvmci" != "xjvmci" ; then
+        AC_MSG_ERROR([Specified JVM feature 'graal' requires feature 'jvmci'])
+      fi
       JVM_FEATURES_graal="graal"
       INCLUDE_GRAAL="true"
     else
-      AC_MSG_RESULT([no])
-      JVM_FEATURES_graal=""
-      INCLUDE_GRAAL="false"
+      # By default enable graal build on x64 or where AOT is available.
+      # graal build requires jvmci.
+      if test "x$JVM_FEATURES_jvmci" = "xjvmci" && \
+          (test "x$OPENJDK_TARGET_CPU" = "xx86_64" || \
+           test "x$ENABLE_AOT" = "xtrue") ; then
+        AC_MSG_RESULT([yes])
+        JVM_FEATURES_graal="graal"
+        INCLUDE_GRAAL="true"
+      else
+        AC_MSG_RESULT([no])
+        JVM_FEATURES_graal=""
+        INCLUDE_GRAAL="false"
+      fi
     fi
   fi
 
   AC_SUBST(INCLUDE_GRAAL)
 
+  # Disable aot with '--with-jvm-features=-aot'
+  DISABLE_AOT=`$ECHO $DISABLED_JVM_FEATURES | $GREP aot`
+  if test "x$DISABLE_AOT" = "xaot"; then
+    ENABLE_AOT="false"
+  fi
+
   AC_MSG_CHECKING([if aot should be enabled])
   if test "x$ENABLE_AOT" = "xtrue"; then
-    if test "x$enable_aot" = "xyes"; then
-      AC_MSG_RESULT([yes, forced])
+    if test "x$JVM_FEATURES_graal" != "xgraal"; then
+      if test "x$enable_aot" = "xyes" || HOTSPOT_CHECK_JVM_FEATURE(aot); then
+        AC_MSG_RESULT([yes, forced])
+        AC_MSG_ERROR([Specified JVM feature 'aot' requires feature 'graal'])
+      else
+        AC_MSG_RESULT([no])
+      fi
+      JVM_FEATURES_aot=""
+      ENABLE_AOT="false"
     else
-      AC_MSG_RESULT([yes])
+      if test "x$enable_aot" = "xyes" || HOTSPOT_CHECK_JVM_FEATURE(aot); then
+        AC_MSG_RESULT([yes, forced])
+      else
+        AC_MSG_RESULT([yes])
+      fi
+      JVM_FEATURES_aot="aot"
     fi
-    JVM_FEATURES_aot="aot"
   else
-    if test "x$enable_aot" = "xno"; then
+    if test "x$enable_aot" = "xno" || "x$DISABLE_AOT" = "xaot"; then
       AC_MSG_RESULT([no, forced])
     else
       AC_MSG_RESULT([no])
     fi
     JVM_FEATURES_aot=""
+    if HOTSPOT_CHECK_JVM_FEATURE(aot); then
+      AC_MSG_ERROR([To enable aot, you must use --enable-aot])
+    fi
   fi
+
+  AC_SUBST(ENABLE_AOT)
 
   if test "x$OPENJDK_TARGET_CPU" = xarm ; then
     # Default to use link time optimizations on minimal on arm

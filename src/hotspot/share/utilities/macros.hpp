@@ -569,6 +569,14 @@
 #define NOT_AARCH64(code) code
 #endif
 
+#ifdef VM_LITTLE_ENDIAN
+#define LITTLE_ENDIAN_ONLY(code) code
+#define BIG_ENDIAN_ONLY(code)
+#else
+#define LITTLE_ENDIAN_ONLY(code)
+#define BIG_ENDIAN_ONLY(code) code
+#endif
+
 #define define_pd_global(type, name, value) const type pd_##name = value;
 
 // Helper macros for constructing file names for includes.

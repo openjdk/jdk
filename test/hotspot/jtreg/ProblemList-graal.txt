@@ -95,6 +95,7 @@ compiler/intrinsics/mathexact/sanity/SubtractExactIntTest.java   8202124   gener
 compiler/intrinsics/mathexact/sanity/MultiplyExactLongTest.java  8202124   generic-all
 compiler/intrinsics/mathexact/sanity/MultiplyExactIntTest.java   8202124   generic-all
 compiler/whitebox/DeoptimizeAllTest.java                         8202124   generic-all
+compiler/whitebox/DeoptimizeFramesTest.java                      8202124   generic-all
 compiler/whitebox/DeoptimizeMethodTest.java                      8202124   generic-all
 compiler/whitebox/ForceNMethodSweepTest.java                     8202124   generic-all
 compiler/whitebox/GetNMethodTest.java                            8202124   generic-all
@@ -181,3 +182,5 @@ org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
 org.graalvm.compiler.core.test.CountedLoopTest                   8199885
 org.graalvm.compiler.debug.test.DebugContextTest                 8203504
 org.graalvm.compiler.core.test.VerifyDebugUsageTest              8205078
+
+org.graalvm.compiler.hotspot.test.GraalOSRTest                   8206947
