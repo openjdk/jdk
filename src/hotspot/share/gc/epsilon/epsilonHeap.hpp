@@ -121,6 +121,11 @@ public:
     safe_object_iterate(cl);
   }
 
+  // Object pinning support: every object is implicitly pinned
+  virtual bool supports_object_pinning() const           { return true; }
+  virtual oop pin_object(JavaThread* thread, oop obj)    { return obj; }
+  virtual void unpin_object(JavaThread* thread, oop obj) { }
+
   // No support for block parsing.
   virtual HeapWord* block_start(const void* addr) const { return NULL;  }
   virtual size_t block_size(const HeapWord* addr) const { return 0;     }
