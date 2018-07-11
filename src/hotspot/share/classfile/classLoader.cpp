@@ -549,6 +549,7 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
 
 void ClassLoader::setup_bootstrap_search_path() {
   const char* sys_class_path = Arguments::get_sysclasspath();
+  assert(sys_class_path != NULL, "System boot class path must not be NULL");
   if (PrintSharedArchiveAndExit) {
     // Don't print sys_class_path - this is the bootcp of this current VM process, not necessarily
     // the same as the bootcp of the shared archive.

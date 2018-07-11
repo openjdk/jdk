@@ -108,6 +108,16 @@ public class MoveJDKTest {
             out.shouldNotContain("shared class paths mismatch");
             out.shouldNotContain("BOOT classpath mismatch");
         }
+
+        // Test with no modules image in the <java home>/lib directory
+        renameModulesFile(java_home_dst);
+        {
+            ProcessBuilder pb = makeBuilder(java_home_dst + "/bin/java",
+                                            "-version");
+            OutputAnalyzer out = TestCommon.executeAndLog(pb, "exec-missing-modules");
+            out.shouldHaveExitValue(1);
+            out.shouldContain("Failed setting boot class path.");
+        }
     }
 
     // Do a cheap clone of the JDK. Most files can be sym-linked. However, $JAVA_HOME/bin/java and $JAVA_HOME/lib/.../libjvm.so"
@@ -141,6 +151,24 @@ public class MoveJDKTest {
             } else {
                 clone(child_src, child_dst);
             }
+        }
+    }
+
+    static void renameModulesFile(String javaHome) throws Exception {
+        String modulesDir = javaHome + File.separator + "lib";
+        File origModules = new File(modulesDir, "modules");
+        if (!origModules.exists()) {
+            throw new RuntimeException("modules file not found");
+        }
+
+        File renamedModules = new File(modulesDir, "orig_modules");
+        if (renamedModules.exists()) {
+            throw new RuntimeException("found orig_modules unexpectedly");
+        }
+
+        boolean success = origModules.renameTo(renamedModules);
+        if (!success) {
+            throw new RuntimeException("rename modules file failed");
         }
     }
 
