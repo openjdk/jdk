@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 /* @test
+ * @bug 8150782 8207027
  * @compile TestFindClass.java TestCls.java
  * @run testng/othervm -ea -esa test.java.lang.invoke.t8150782.TestFindClass
  */
@@ -56,9 +57,15 @@ public class TestFindClass {
     }
 
     @Test
-    public void returnsRequestedClass() throws IllegalAccessException, ClassNotFoundException {
+    public void returnsRequestedClassInSamePackage() throws IllegalAccessException, ClassNotFoundException {
         Class<?> aClass = lookup().findClass(PACKAGE_PREFIX + "TestFindClass$Class1");
         assertEquals(Class1.class, aClass);
+    }
+
+    @Test
+    public void returnsRequestedArrayClassInSamePackage() throws IllegalAccessException, ClassNotFoundException {
+        Class<?> aClass = lookup().findClass("[L" + PACKAGE_PREFIX + "TestFindClass$Class1;");
+        assertEquals(Class1[].class, aClass);
     }
 
     @Test(expectedExceptions = {ClassNotFoundException.class})
