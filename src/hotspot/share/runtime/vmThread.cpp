@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@
 #include "utilities/xmlstream.hpp"
 
 // Dummy VM operation to act as first element in our circular double-linked list
-class VM_Dummy: public VM_Operation {
-  VMOp_Type type() const { return VMOp_Dummy; }
+class VM_None: public VM_Operation {
+  VMOp_Type type() const { return VMOp_None; }
   void  doit() {};
 };
 
@@ -58,7 +58,7 @@ VMOperationQueue::VMOperationQueue() {
   for(int i = 0; i < nof_priorities; i++) {
     _queue_length[i] = 0;
     _queue_counter = 0;
-    _queue[i] = new VM_Dummy();
+    _queue[i] = new VM_None();
     _queue[i]->set_next(_queue[i]);
     _queue[i]->set_prev(_queue[i]);
   }
@@ -511,7 +511,7 @@ void VMThread::loop() {
               _vm_queue->set_drain_list(next);
               evaluate_operation(_cur_vm_operation);
               _cur_vm_operation = next;
-              if (PrintSafepointStatistics) {
+              if (log_is_enabled(Debug, safepoint, stats)) {
                 SafepointSynchronize::inc_vmop_coalesced_count();
               }
             } while (_cur_vm_operation != NULL);

@@ -1177,20 +1177,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "null (+offset) will not raise a SIGSEGV, i.e.,"                  \
           "ImplicitNullChecks don't work (PPC64).")                         \
                                                                             \
-  product(bool, PrintSafepointStatistics, false,                            \
-          "(Deprecated) Print statistics about safepoint synchronization")  \
-                                                                            \
-  product(intx, PrintSafepointStatisticsCount, 300,                         \
-          "(Deprecated) Total number of safepoint statistics collected "    \
-          "before printing them out")                                       \
-          range(1, max_intx)                                                \
-                                                                            \
-  product(intx, PrintSafepointStatisticsTimeout,  -1,                       \
-          "(Deprecated) Print safepoint statistics only when safepoint takes "  \
-          "more than PrintSafepointSatisticsTimeout in millis")             \
-  LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
-  NOT_LP64(range(-1, max_intx))                                             \
-                                                                            \
   diagnostic(bool, EnableThreadSMRExtraValidityChecks, true,                \
              "Enable Thread SMR extra validity checks")                     \
                                                                             \

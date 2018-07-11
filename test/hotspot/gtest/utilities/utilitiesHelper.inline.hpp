@@ -35,7 +35,7 @@ class VM_StopSafepoint : public VM_Operation {
 public:
   Semaphore* _test_complete;
   VM_StopSafepoint(Semaphore* wait_for) : _test_complete(wait_for) {}
-  VMOp_Type type() const          { return VMOp_Dummy; }
+  VMOp_Type type() const          { return VMOp_None; }
   Mode evaluation_mode() const    { return _no_safepoint; }
   bool is_cheap_allocated() const { return false; }
   void doit()                     { _test_complete->wait(); }

@@ -28,6 +28,8 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "logging/log.hpp"
+#include "logging/logTag.hpp"
 #include "memory/universe.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -165,7 +167,7 @@ void exit_globals() {
   if (!destructorsCalled) {
     destructorsCalled = true;
     perfMemory_exit();
-    if (PrintSafepointStatistics) {
+    if (log_is_enabled(Debug, safepoint, stats)) {
       // Print the collected safepoint statistics.
       SafepointSynchronize::print_stat_on_exit();
     }
