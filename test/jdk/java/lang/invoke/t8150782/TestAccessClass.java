@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 /* @test
+ * @bug 8150782 8207027
  * @compile TestAccessClass.java TestCls.java
  * @run testng/othervm -ea -esa test.java.lang.invoke.t8150782.TestAccessClass
  */
@@ -54,9 +55,15 @@ public class TestAccessClass {
     }
 
     @Test
-    public void returnsSameClass() throws IllegalAccessException, ClassNotFoundException {
+    public void returnsSameClassInSamePackage() throws IllegalAccessException, ClassNotFoundException {
         Class<?> aClass = lookup().accessClass(Class1.class);
         assertEquals(Class1.class, aClass);
+    }
+
+    @Test
+    public void returnsSameArrayClassInSamePackage() throws IllegalAccessException, ClassNotFoundException {
+        Class<?> aClass = lookup().accessClass(Class1[].class);
+        assertEquals(Class1[].class, aClass);
     }
 
     @DataProvider
