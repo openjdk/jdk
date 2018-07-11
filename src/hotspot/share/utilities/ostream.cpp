@@ -531,7 +531,8 @@ void fileStream::write(const char* s, size_t len) {
 long fileStream::fileSize() {
   long size = -1;
   if (_file != NULL) {
-    long pos  = ::ftell(_file);
+    long pos = ::ftell(_file);
+    if (pos < 0) return pos;
     if (::fseek(_file, 0, SEEK_END) == 0) {
       size = ::ftell(_file);
     }

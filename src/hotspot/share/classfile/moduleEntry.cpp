@@ -387,7 +387,8 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
     entry->set_is_patched();
     if (log_is_enabled(Trace, module, patch)) {
       ResourceMark rm;
-      log_trace(module, patch)("Marked module %s as patched from --patch-module", name->as_C_string());
+      log_trace(module, patch)("Marked module %s as patched from --patch-module",
+                               name != NULL ? name->as_C_string() : UNNAMED_MODULE);
     }
   }
 

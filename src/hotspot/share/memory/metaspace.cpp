@@ -1260,7 +1260,9 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
       tty->print_cr("Please increase MaxMetaspaceSize (currently " SIZE_FORMAT " bytes).", MaxMetaspaceSize);
       vm_exit(1);
     }
-    report_metadata_oome(loader_data, word_size, type, mdtype, CHECK_NULL);
+    report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
+    assert(HAS_PENDING_EXCEPTION, "sanity");
+    return NULL;
   }
 
   // Zero initialize.

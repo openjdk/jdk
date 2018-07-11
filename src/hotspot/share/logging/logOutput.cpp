@@ -262,7 +262,9 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
   while (n_deviates > 0) {
     size_t prev_deviates = n_deviates;
     int max_score = 0;
-    const LogSelection* best_selection = NULL;
+
+    guarantee(n_selections > 0, "Cannot find maximal selection.");
+    const LogSelection* best_selection = &selections[0];
     for (size_t i = 0; i < n_selections; i++) {
 
       // Give the selection a score based on how many deviating tag sets it selects (with correct level)
@@ -287,13 +289,12 @@ void LogOutput::update_config_string(const size_t on_level[LogLevel::Count]) {
 
       // Pick the selection with the best score, or in the case of a tie, the one with fewest tags
       if (score > max_score ||
-          (score == max_score && best_selection != NULL && selections[i].ntags() < best_selection->ntags())) {
+          (score == max_score && selections[i].ntags() < best_selection->ntags())) {
         max_score = score;
         best_selection = &selections[i];
       }
     }
 
-    assert(best_selection != NULL, "must always find a maximal selection");
     add_to_config_string(*best_selection);
 
     // Remove all deviates that this selection covered
