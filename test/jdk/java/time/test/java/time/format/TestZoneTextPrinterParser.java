@@ -49,7 +49,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8081022 8151876 8166875 8189784
+ * @bug 8081022 8151876 8166875 8189784 8206980
  * @key randomness
  */
 
@@ -156,12 +156,15 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
             {"America/Chicago",  "CST",                   none,      Locale.ENGLISH, TextStyle.SHORT},
             {"Asia/Taipei",      "CST",                   preferred, Locale.ENGLISH, TextStyle.SHORT},
             {"Australia/South",  "ACST",                  preferred_s, Locale.ENGLISH, TextStyle.SHORT},
-            {"America/Chicago",  "CDT",                   none,        Locale.ENGLISH, TextStyle.SHORT},
+            {"America/Chicago",  "CDT",                   none,      Locale.ENGLISH, TextStyle.SHORT},
             {"Asia/Shanghai",    "CDT",                   preferred_s, Locale.ENGLISH, TextStyle.SHORT},
-            {"America/Juneau",   "AKST",                  none,        Locale.ENGLISH, TextStyle.SHORT},
-            {"America/Juneau",   "AKDT",                  none,        Locale.ENGLISH, TextStyle.SHORT},
-            {"Pacific/Honolulu", "HST",                   none,        Locale.ENGLISH, TextStyle.SHORT},
-            {"America/Halifax",  "AST",                   none,        Locale.ENGLISH, TextStyle.SHORT},
+            {"America/Juneau",   "AKST",                  none,      Locale.ENGLISH, TextStyle.SHORT},
+            {"America/Juneau",   "AKDT",                  none,      Locale.ENGLISH, TextStyle.SHORT},
+            {"Pacific/Honolulu", "HST",                   none,      Locale.ENGLISH, TextStyle.SHORT},
+            {"America/Halifax",  "AST",                   none,      Locale.ENGLISH, TextStyle.SHORT},
+            {"Z",                "Z",                     none,      Locale.ENGLISH, TextStyle.SHORT},
+            {"Z",                "Z",                     none,      Locale.US,      TextStyle.SHORT},
+            {"Z",                "Z",                     none,      Locale.CANADA,  TextStyle.SHORT},
        };
     }
 

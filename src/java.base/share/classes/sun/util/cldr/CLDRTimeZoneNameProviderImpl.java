@@ -130,7 +130,8 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
 
         // Fill in for the empty names.
         // English names are prefilled for performance.
-        if (locale.getLanguage() != "en") {
+        if (!locale.equals(Locale.ENGLISH) &&
+            !locale.equals(Locale.US)) {
             for (int zoneIndex = 0; zoneIndex < ret.length; zoneIndex++) {
                 deriveFallbackNames(ret[zoneIndex], locale);
             }
