@@ -49,22 +49,22 @@ public enum Target {
     JDK1_4("1.4", 48, 0),
 
     /** JDK 5, codename Tiger. */
-    JDK1_5("1.5", 49, 0),
+    JDK1_5("5", 49, 0),
 
     /** JDK 6. */
-    JDK1_6("1.6", 50, 0),
+    JDK1_6("6", 50, 0),
 
     /** JDK 7. */
-    JDK1_7("1.7", 51, 0),
+    JDK1_7("7", 51, 0),
 
     /** JDK 8. */
-    JDK1_8("1.8", 52, 0),
+    JDK1_8("8", 52, 0),
 
     /** JDK 9. */
-    JDK1_9("1.9", 53, 0),
+    JDK1_9("9", 53, 0),
 
     /** JDK 10. */
-    JDK1_10("1.10", 54, 0),
+    JDK1_10("10", 54, 0),
 
     /** JDK 11. */
     JDK1_11("11", 55, 0),
@@ -95,14 +95,12 @@ public enum Target {
         for (Target t : values()) {
             tab.put(t.name, t);
         }
-        tab.put("5", JDK1_5);
-        tab.put("6", JDK1_6);
-        tab.put("7", JDK1_7);
-        tab.put("8", JDK1_8);
-        tab.put("9", JDK1_9);
-        tab.put("10", JDK1_10);
-        tab.put("11", JDK1_11);
-        tab.put("12", JDK1_12);
+        tab.put("1.5", JDK1_5);
+        tab.put("1.6", JDK1_6);
+        tab.put("1.7", JDK1_7);
+        tab.put("1.8", JDK1_8);
+        tab.put("1.9", JDK1_9);
+        tab.put("1.10", JDK1_10);
     }
 
     public final String name;
@@ -118,6 +116,10 @@ public enum Target {
 
     public static Target lookup(String name) {
         return tab.get(name);
+    }
+
+    public boolean isSupported() {
+        return this.compareTo(MIN) >= 0;
     }
 
     /** Return the character to be used in constructing synthetic

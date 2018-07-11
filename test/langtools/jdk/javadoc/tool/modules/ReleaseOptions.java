@@ -58,7 +58,7 @@ public class ReleaseOptions extends ModuleTestBase {
         Task.Result result = execNegativeTask("--release", "8",
                 "--patch-module", "m=" + mpath.toString(),
                 "p");
-        assertMessagePresent(".*not allowed with target 1.8.*");
+        assertMessagePresent(".*not allowed with target 8.*");
         assertMessageNotPresent(".*Exception*");
         assertMessageNotPresent(".java.lang.AssertionError.*");
     }
@@ -92,7 +92,7 @@ public class ReleaseOptions extends ModuleTestBase {
         Task.Result result = execNegativeTask("--release", "8",
                 "--module-source-path", src.toString(),
                 "--module", "m");
-        assertMessagePresent(".*not allowed with target 1.8.*");
+        assertMessagePresent(".*not allowed with target 8.*");
         assertMessageNotPresent(".*Exception*");
         assertMessageNotPresent(".java.lang.AssertionError.*");
     }
