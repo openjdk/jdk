@@ -378,7 +378,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
         // Either java.awt.Frame or java.awt.Dialog can be resizable, however java.awt.Window is never resizable
         {
-            final boolean resizable = isFrame ? ((Frame)target).isResizable() : (isDialog ? ((Dialog)target).isResizable() : false);
+            final boolean resizable = isTargetResizable() && isNativelyFocusableWindow();
             styleBits = SET(styleBits, RESIZABLE, resizable);
             if (!resizable) {
                 styleBits = SET(styleBits, ZOOMABLE, false);
@@ -480,6 +480,16 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         peer.setTextured(IS(TEXTURED, styleBits));
 
         return styleBits;
+    }
+
+    private boolean isTargetResizable() {
+        if (target instanceof Frame) {
+            return ((Frame)target).isResizable();
+        } else if (target instanceof Dialog) {
+            return ((Dialog)target).isResizable();
+        }
+
+        return false;
     }
 
     // this is the counter-point to -[CWindow _nativeSetStyleBit:]
@@ -676,10 +686,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         // Manage the extended state when showing
         if (visible) {
             /* Frame or Dialog should be set property WINDOW_FULLSCREENABLE to true if the
-            Frame or Dialog is resizable.
+            Frame or Dialog is resizable and focusable.
             **/
-            final boolean resizable = (target instanceof Frame) ? ((Frame)target).isResizable() :
-            ((target instanceof Dialog) ? ((Dialog)target).isResizable() : false);
+            final boolean resizable = isTargetResizable() && isNativelyFocusableWindow();
             if (resizable) {
                 setCanFullscreen(true);
             }
@@ -814,9 +823,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     @Override
     public void setResizable(final boolean resizable) {
-        setCanFullscreen(resizable);
-        setStyleBits(RESIZABLE, resizable);
-        setStyleBits(ZOOMABLE, resizable);
+        final boolean windowResizable = resizable && isNativelyFocusableWindow();
+        setCanFullscreen(windowResizable);
+        setStyleBits(RESIZABLE, windowResizable);
+        setStyleBits(ZOOMABLE, windowResizable);
     }
 
     @Override
@@ -858,8 +868,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
     @Override
     public void updateFocusableWindowState() {
-        final boolean isFocusable = isNativelyFocusableWindow();
-        setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN | RESIZABLE, isFocusable); // set bits at once
+        setStyleBits(SHOULD_BECOME_KEY | SHOULD_BECOME_MAIN | RESIZABLE,
+                (isNativelyFocusableWindow() && isTargetResizable()));
     }
 
     @Override
