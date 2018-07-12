@@ -1424,7 +1424,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
       // See if this instruction has a delay slot
       if (valid_bundle_info(n) && node_bundling(n)->use_unconditional_delay()) {
-        assert(delay_slot != NULL, "expecting delay slot node");
+        guarantee(delay_slot != NULL, "expecting delay slot node");
 
         // Back up 1 instruction
         cb->set_insts_end(cb->insts_end() - Pipeline::instr_unit_size());

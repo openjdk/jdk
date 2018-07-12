@@ -1363,22 +1363,22 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
       const char *msg1 = msg1_stream.as_string();
       const char *msg2 = msg2_stream.as_string();
 
-      log_warning(codecache)(msg1);
-      log_warning(codecache)(msg2);
-      warning(msg1);
-      warning(msg2);
+      log_warning(codecache)("%s", msg1);
+      log_warning(codecache)("%s", msg2);
+      warning("%s", msg1);
+      warning("%s", msg2);
     } else {
       const char *msg1 = "CodeCache is full. Compiler has been disabled.";
       const char *msg2 = "Try increasing the code cache size using -XX:ReservedCodeCacheSize=";
 
-      log_warning(codecache)(msg1);
-      log_warning(codecache)(msg2);
-      warning(msg1);
-      warning(msg2);
+      log_warning(codecache)("%s", msg1);
+      log_warning(codecache)("%s", msg2);
+      warning("%s", msg1);
+      warning("%s", msg2);
     }
     ResourceMark rm;
     stringStream s;
-    // Dump code cache  into a buffer before locking the tty,
+    // Dump code cache into a buffer before locking the tty.
     {
       MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       print_summary(&s);

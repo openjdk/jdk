@@ -387,6 +387,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
     } else {
       assert( 0, "do not know how to handle this guy" );
     }
+    guarantee(proj != NULL, "sanity");
 
     Node *proj_path_data, *proj_path_ctrl;
     if( proj->Opcode() == Op_IfTrue ) {
