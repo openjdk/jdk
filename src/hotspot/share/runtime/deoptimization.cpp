@@ -2044,7 +2044,7 @@ Deoptimization::update_method_data_from_interpreter(MethodData* trap_mdo, int tr
   bool ignore_maybe_prior_recompile;
   assert(!reason_is_speculate(reason), "reason speculate only used by compiler");
   // JVMCI uses the total counts to determine if deoptimizations are happening too frequently -> do not adjust total counts
-  bool update_total_counts = JVMCI_ONLY(false) NOT_JVMCI(true);
+  bool update_total_counts = true JVMCI_ONLY( && !UseJVMCICompiler);
   query_update_method_data(trap_mdo, trap_bci,
                            (DeoptReason)reason,
                            update_total_counts,
