@@ -26,11 +26,13 @@ package MyPackage;
 import java.util.ArrayList;
 import java.util.List;
 
+// Graal is not tested here due to Graal not supporting DisableIntrinsic.
 /**
  * @test
  * @summary Verifies that when the VM event is sent, sampled events are also collected.
  * @build Frame HeapMonitor
  * @compile HeapMonitorVMEventsTest.java
+ * @requires !vm.graal.enabled
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions
  *                          -XX:DisableIntrinsic=_clone
  *                          -agentlib:HeapMonitorTest MyPackage.HeapMonitorVMEventsTest
