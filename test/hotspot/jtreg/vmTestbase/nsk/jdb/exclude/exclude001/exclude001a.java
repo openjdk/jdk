@@ -29,7 +29,7 @@ import nsk.share.jdb.*;
 
 import java.io.*;
 
-import com.sun.jdi.*;
+import java.util.*;
 
 
 /* This is debuggee aplication */
@@ -89,6 +89,6 @@ class MyThread extends Thread {
 
         long time = java.lang.System.currentTimeMillis();
 
-        VirtualMachineManager vmm = com.sun.jdi.Bootstrap.virtualMachineManager();
+        String caltype = GregorianCalendar.getInstance().getCalendarType();
     }
 }
