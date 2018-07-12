@@ -86,7 +86,7 @@ public enum Target {
         return instance;
     }
 
-    public static final Target MIN = Target.JDK1_6;
+    public static final Target MIN = Target.JDK1_7;
 
     private static final Target MAX = values()[values().length - 1];
 
@@ -129,30 +129,10 @@ public enum Target {
         return '$';
     }
 
-    /** Does the VM support an invokedynamic instruction?
-     */
-    public boolean hasInvokedynamic() {
-        return compareTo(JDK1_7) >= 0;
-    }
-
-    /** Does the target JDK contains the java.util.Objects class?
-     */
-    public boolean hasObjects() {
-        return compareTo(JDK1_7) >= 0;
-    }
-
     /** Does the target VM expect MethodParameters attributes?
      */
     public boolean hasMethodParameters() {
         return compareTo(JDK1_8) >= 0;
-    }
-
-    /** Does the VM support polymorphic method handle invocation?
-     *  Affects the linkage information output to the classfile.
-     *  An alias for {@code hasInvokedynamic}, since all the JSR 292 features appear together.
-     */
-    public boolean hasMethodHandles() {
-        return hasInvokedynamic();
     }
 
     /** Does the target JDK contain StringConcatFactory class?

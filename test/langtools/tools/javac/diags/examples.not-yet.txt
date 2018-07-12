@@ -52,7 +52,7 @@ compiler.misc.bad.enclosing.class                       # bad class file
 compiler.misc.bad.enclosing.method                      # bad class file
 compiler.misc.bad.runtime.invisible.param.annotations   # bad class file
 compiler.misc.bad.signature                             # bad class file
-compiler.misc.bad.requires.flag				# bad class file
+compiler.misc.bad.requires.flag                         # bad class file
 compiler.misc.bad.type.annotation.value
 compiler.misc.base.membership                           # UNUSED
 compiler.misc.class.file.not.found                      # ClassReader
@@ -61,7 +61,7 @@ compiler.misc.exception.message                         # uncommon completion fa
 compiler.misc.fatal.err.cant.locate.ctor                # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.field               # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
-compiler.misc.fatal.err.cant.close	                # JavaCompiler
+compiler.misc.fatal.err.cant.close                      # JavaCompiler
 compiler.misc.feature.not.supported.in.source.plural    # cannot happen (for now)
 compiler.misc.file.does.not.contain.package
 compiler.misc.illegal.start.of.class.file
@@ -153,6 +153,7 @@ compiler.misc.locn.module_source_path                         # fragment uninter
 compiler.misc.locn.system_modules                             # fragment uninteresting in and of itself
 compiler.misc.locn.upgrade_module_path                        # fragment uninteresting in and of itself
 compiler.misc.inferred.do.not.conform.to.eq.bounds            # hard to generate, could probably be removed
+compiler.err.feature.not.supported.in.source                  # Generated for using diamond before source 7
 
 # The following are new module-related messages, that need new  examples to be created
 compiler.err.duplicate.module.on.path

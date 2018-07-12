@@ -100,7 +100,6 @@ public class Resolve {
     ModuleFinder moduleFinder;
     Types types;
     JCDiagnostic.Factory diags;
-    public final boolean allowMethodHandles;
     public final boolean allowFunctionalInterfaceMostSpecific;
     public final boolean allowModules;
     public final boolean checkVarargsAccessAfterResolution;
@@ -135,7 +134,6 @@ public class Resolve {
                 options.isUnset(Option.XDIAGS) && options.isUnset("rawDiagnostics");
         verboseResolutionMode = VerboseResolutionMode.getVerboseResolutionMode(options);
         Target target = Target.instance(context);
-        allowMethodHandles = target.hasMethodHandles();
         allowFunctionalInterfaceMostSpecific = Feature.FUNCTIONAL_INTERFACE_MOST_SPECIFIC.allowedInSource(source);
         allowLocalVariableTypeInference = Feature.LOCAL_VARIABLE_TYPE_INFERENCE.allowedInSource(source);
         checkVarargsAccessAfterResolution =
@@ -2659,7 +2657,7 @@ public class Resolve {
             Symbol access(Env<AttrContext> env, DiagnosticPosition pos, Symbol location, Symbol sym) {
                 if (sym.kind.isResolutionError()) {
                     sym = super.access(env, pos, location, sym);
-                } else if (allowMethodHandles) {
+                } else {
                     MethodSymbol msym = (MethodSymbol)sym;
                     if ((msym.flags() & SIGNATURE_POLYMORPHIC) != 0) {
                         env.info.pendingResolutionPhase = BASIC;

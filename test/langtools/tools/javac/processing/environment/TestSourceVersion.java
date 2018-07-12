@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,14 +31,15 @@
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
  * @compile TestSourceVersion.java
- * @compile -processor TestSourceVersion -proc:only -source 1.6 -AExpectedVersion=RELEASE_6 HelloWorld.java
- * @compile -processor TestSourceVersion -proc:only -source   6 -AExpectedVersion=RELEASE_6 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.7 -AExpectedVersion=RELEASE_7 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   7 -AExpectedVersion=RELEASE_7 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.8 -AExpectedVersion=RELEASE_8 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   8 -AExpectedVersion=RELEASE_8 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source 1.9 -AExpectedVersion=RELEASE_9 HelloWorld.java
  * @compile -processor TestSourceVersion -proc:only -source   9 -AExpectedVersion=RELEASE_9 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source  10 -AExpectedVersion=RELEASE_10 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source  11 -AExpectedVersion=RELEASE_11 HelloWorld.java
+ * @compile -processor TestSourceVersion -proc:only -source  12 -AExpectedVersion=RELEASE_12 HelloWorld.java
  */
 
 import java.util.Set;

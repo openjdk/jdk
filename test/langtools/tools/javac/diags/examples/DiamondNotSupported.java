@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,15 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source
-// key: compiler.misc.feature.diamond
-// options: -source 6 -Xlint:-options
+// key: compiler.misc.feature.not.supported.in.source
+// key: compiler.misc.feature.diamond.and.anon.class
+// key: compiler.err.cant.apply.diamond.1
+// options: -source 8 -Xlint:-options
 
 import java.util.*;
 
 class DiamondNotSupported {
     void m() {
-        List<String> list = new ArrayList<>();
+        List<String> list = new ArrayList<>(){};
     }
 }

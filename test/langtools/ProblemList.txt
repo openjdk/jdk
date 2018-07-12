@@ -59,6 +59,8 @@ tools/javac/importscope/T8193717.java                                           
 
 tools/javac/options/smokeTests/OptionSmokeTest.java                             8205493    generic-all    hard-coded release values in strings
 
+tools/javac/file/zip/8003512/LoadClassFromJava6CreatedJarTest.java              8206874    generic-all    test requires a JDK 6 environment to be useful
+
 ###########################################################################
 #
 # javap

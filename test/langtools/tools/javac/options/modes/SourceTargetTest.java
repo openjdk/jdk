@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class SourceTargetTest extends OptionModesTester {
 
         writeFile("C.java", "class C { }");
 
-        String[] opts = { "-source", "1.6", "-target", "1.6" };
+        String[] opts = { "-source", "1.7", "-target", "1.7" };
         String[] files = { "C.java" };
 
         runMain(opts, files)

@@ -22,6 +22,9 @@
  */
 
 // key: compiler.warn.option.parameters.unsupported
+// key: compiler.warn.option.obsolete.source
+// key: compiler.warn.option.obsolete.suppression
+// key: compiler.warn.option.obsolete.target
 // options: -parameters --release 7
 
 class ParametersUnsupported {

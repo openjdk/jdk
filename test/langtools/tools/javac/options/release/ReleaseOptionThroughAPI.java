@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class ReleaseOptionThroughAPI {
              PrintWriter outWriter = new PrintWriter(out)) {
             Iterable<? extends JavaFileObject> input =
                     fm.getJavaFileObjects(System.getProperty("test.src") + "/ReleaseOption.java");
-            List<String> options = Arrays.asList("--release", "7", "-XDrawDiagnostics");
+            List<String> options = Arrays.asList("--release", "7", "-XDrawDiagnostics", "-Xlint:-options");
 
             compiler.getTask(outWriter, fm, null, options, null, input).call();
             String expected =

@@ -5,7 +5,7 @@
  * @author Tim Hanson, BEA
  *
  * @compile Conditional.java
- * @compile/fail/ref=Conditional.out -XDrawDiagnostics  -source 7 Conditional.java
+ * @compile/fail/ref=Conditional.out -XDrawDiagnostics -source 7 -Xlint:-options Conditional.java
  */
 
 import java.util.*;
