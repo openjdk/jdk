@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,22 @@ package com.sun.tools.javac.api;
 
 import java.io.PrintStream;
 import java.io.Writer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticListener;
+import javax.tools.JavaFileManager;
+import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -53,21 +65,8 @@ import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.JavaCompiler;
-import com.sun.tools.javac.tree.JCTree.JCClassDecl;
-
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticListener;
-import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
-
 import com.sun.tools.javac.model.JavacElements;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -101,9 +100,10 @@ import com.sun.tools.javac.util.Log;
 public class JavacTaskPool {
 
     private static final JavacTool systemProvider = JavacTool.create();
+    private static final Queue<ReusableContext> EMPTY_QUEUE = new ArrayDeque<>(0);
 
     private final int maxPoolSize;
-    private final Map<List<String>, List<ReusableContext>> options2Contexts = new HashMap<>();
+    private final Map<List<String>, Queue<ReusableContext>> options2Contexts = new HashMap<>();
     private int id;
 
     private int statReused = 0;
@@ -159,14 +159,14 @@ public class JavacTaskPool {
         ReusableContext ctx;
 
         synchronized (this) {
-            List<ReusableContext> cached =
-                    options2Contexts.getOrDefault(opts, Collections.emptyList());
+            Queue<ReusableContext> cached =
+                    options2Contexts.getOrDefault(opts, EMPTY_QUEUE);
 
             if (cached.isEmpty()) {
                 ctx = new ReusableContext(opts);
                 statNew++;
             } else {
-                ctx = cached.remove(0);
+                ctx = cached.remove();
                 statReused++;
             }
         }
@@ -200,7 +200,7 @@ public class JavacTaskPool {
                     options2Contexts.get(toRemove.arguments).remove(toRemove);
                     statRemoved++;
                 }
-                options2Contexts.computeIfAbsent(ctx.arguments, x -> new ArrayList<>()).add(ctx);
+                options2Contexts.computeIfAbsent(ctx.arguments, x -> new ArrayDeque<>()).add(ctx);
                 ctx.timeStamp = id++;
             }
         }

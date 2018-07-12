@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,20 @@
 
 package com.sun.tools.javac.comp;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Queue;
+import java.util.function.Predicate;
 
 import com.sun.source.tree.LambdaExpressionTree;
+import com.sun.source.tree.NewClassTree;
+import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
@@ -48,7 +57,9 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCSwitch;
+import com.sun.tools.javac.tree.JCTree.JCTry;
 import com.sun.tools.javac.tree.JCTree.JCTypeApply;
+import com.sun.tools.javac.tree.JCTree.JCUnary;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.JCWhileLoop;
 import com.sun.tools.javac.tree.JCTree.Tag;
@@ -56,29 +67,17 @@ import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeScanner;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
+import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.Position;
-
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Predicate;
-
-import com.sun.source.tree.NewClassTree;
-import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Kinds.Kind;
-import com.sun.tools.javac.code.Symbol.ClassSymbol;
-import com.sun.tools.javac.tree.JCTree.JCTry;
-import com.sun.tools.javac.tree.JCTree.JCUnary;
-import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.DiagnosticSource;
 
 import static com.sun.tools.javac.code.Flags.GENERATEDCONSTR;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
@@ -521,11 +520,11 @@ public class Analyzer {
      */
     DeferredAnalysisHelper queueDeferredHelper = new DeferredAnalysisHelper() {
 
-        Map<ClassSymbol, ArrayList<RewritingContext>> Q = new HashMap<>();
+        Map<ClassSymbol, Queue<RewritingContext>> Q = new HashMap<>();
 
         @Override
         public void queue(RewritingContext rewriting) {
-            ArrayList<RewritingContext> s = Q.computeIfAbsent(rewriting.env.enclClass.sym.outermostClass(), k -> new ArrayList<>());
+            Queue<RewritingContext> s = Q.computeIfAbsent(rewriting.env.enclClass.sym.outermostClass(), k -> new ArrayDeque<>());
             s.add(rewriting);
         }
 
@@ -535,9 +534,9 @@ public class Analyzer {
                 DeferredAnalysisHelper prevHelper = deferredAnalysisHelper;
                 try {
                     deferredAnalysisHelper = flushDeferredHelper;
-                    ArrayList<RewritingContext> rewritings = Q.get(flushEnv.enclClass.sym.outermostClass());
+                    Queue<RewritingContext> rewritings = Q.get(flushEnv.enclClass.sym.outermostClass());
                     while (rewritings != null && !rewritings.isEmpty()) {
-                        doAnalysis(rewritings.remove(0));
+                        doAnalysis(rewritings.remove());
                     }
                 } finally {
                     deferredAnalysisHelper = prevHelper;
