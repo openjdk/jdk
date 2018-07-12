@@ -106,11 +106,17 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
 
 AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
 [
+  # By default don't set any specific assembler debug
+  # info flags for toolchains unless we know they work.
+  # See JDK-8207057.
+  ASFLAGS_DEBUG_SYMBOLS=""
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     CFLAGS_DEBUG_SYMBOLS="-g"
+    ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     CFLAGS_DEBUG_SYMBOLS="-g"
+    ASFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     # -g0 enables debug symbols without disabling inlining.
     CFLAGS_DEBUG_SYMBOLS="-g0 -xs"
@@ -121,6 +127,7 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
   fi
 
   AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
+  AC_SUBST(ASFLAGS_DEBUG_SYMBOLS)
 ])
 
 AC_DEFUN([FLAGS_SETUP_WARNINGS],

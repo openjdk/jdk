@@ -251,6 +251,7 @@ define SetupCompileNativeFileBody
         $$($$($1_BASE)_SYSROOT_CFLAGS)
     $1_BASE_CXXFLAGS := $$($$($1_BASE)_CXXFLAGS) $$($$($1_BASE)_EXTRA_CXXFLAGS) \
         $$($$($1_BASE)_SYSROOT_CFLAGS) $$($1_EXTRA_CXXFLAGS)
+    $1_BASE_ASFLAGS := $$($$($1_BASE)_ASFLAGS) $$($$($1_BASE)_EXTRA_ASFLAGS)
 
     ifneq ($$(filter %.c, $$($1_FILENAME)), )
       # Compile as a C file
@@ -266,7 +267,7 @@ define SetupCompileNativeFileBody
       $1_DEP_FLAG := $(C_FLAG_DEPS)
     else ifneq ($$(filter %.s %.S, $$($1_FILENAME)), )
       # Compile as assembler file
-      $1_FLAGS := $$($$($1_BASE)_ASFLAGS)
+      $1_FLAGS := $$($1_BASE_ASFLAGS)
       $1_COMPILER := $(AS)
       $1_DEP_FLAG :=
     else ifneq ($$(filter %.cpp %.cc %.mm, $$($1_FILENAME)), )
@@ -576,6 +577,7 @@ define SetupNativeCompilationBody
   ifeq ($(COMPILE_WITH_DEBUG_SYMBOLS), true)
     $1_EXTRA_CFLAGS += $$(CFLAGS_DEBUG_SYMBOLS)
     $1_EXTRA_CXXFLAGS += $$(CFLAGS_DEBUG_SYMBOLS)
+    $1_EXTRA_ASFLAGS += $$(ASFLAGS_DEBUG_SYMBOLS)
   endif
 
   ifneq ($$($1_REORDER), )
