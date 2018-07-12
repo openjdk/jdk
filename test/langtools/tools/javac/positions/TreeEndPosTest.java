@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8017216 8019422 8019421 8054956
+ * @bug 8017216 8019422 8019421 8054956 8205418
  * @summary verify start and end positions
  * @modules java.compiler
  *          jdk.compiler
@@ -44,6 +44,13 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.Tree.Kind;
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.SourcePositions;
+import com.sun.source.util.TreeScanner;
+import com.sun.source.util.Trees;
 
 public class TreeEndPosTest {
     private static JavaFileManager getJavaFileManager(JavaCompiler compiler,
@@ -99,6 +106,15 @@ public class TreeEndPosTest {
             js.endPos = end;
             return js;
         }
+
+        static JavaSource createFullJavaSource(String code) {
+            final String name = "Bug";
+            String[] parts = code.split("\\|", 3);
+            JavaSource js = new JavaSource(name + ".java", parts[0] + parts[1] + parts[2]);
+            js.startPos = parts[0].length();
+            js.endPos = parts[0].length() + parts[1].length();
+            return js;
+        }
     }
 
     public static void main(String... args) throws IOException {
@@ -107,6 +123,7 @@ public class TreeEndPosTest {
         testUnresolvableAnnotationAttribute();
         testFinalVariableWithDefaultConstructor();
         testFinalVariableWithConstructor();
+        testWholeTextSpan();
     }
 
     static void testUninitializedVariable() throws IOException {
@@ -131,6 +148,10 @@ public class TreeEndPosTest {
     static void testFinalVariableWithConstructor() throws IOException {
         compile(JavaSource.createJavaSource("public Bug (){} private static final String Foo; public void bar() { }",
                 "{}"));
+    }
+
+    static void testWholeTextSpan() throws IOException {
+        treeSpan(JavaSource.createFullJavaSource("|class X    |"));
     }
 
     static void compile(JavaSource src) throws IOException {
@@ -166,6 +187,48 @@ public class TreeEndPosTest {
                 if (src.startPos != actualStart || src.endPos != actualEnd) {
                     throw new RuntimeException("error: trees don't match");
                 }
+            }
+        }
+    }
+
+    static void treeSpan(JavaSource src) throws IOException {
+        ByteArrayOutputStream ba = new ByteArrayOutputStream();
+        PrintWriter writer = new PrintWriter(ba);
+        File tempDir = new File(".");
+        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+        DiagnosticCollector dc = new DiagnosticCollector();
+        try (JavaFileManager javaFileManager = getJavaFileManager(compiler, dc)) {
+            List<String> options = new ArrayList<>();
+            options.add("-cp");
+            options.add(tempDir.getPath());
+            options.add("-d");
+            options.add(tempDir.getPath());
+            options.add("--should-stop=at=GENERATE");
+
+            List<JavaFileObject> sources = new ArrayList<>();
+            sources.add(src);
+            JavacTask task = (JavacTask) compiler.getTask(writer, javaFileManager,
+                                                          dc, options, null,
+                                                          sources);
+            SourcePositions sp = Trees.instance(task).getSourcePositions();
+            boolean[] found = new boolean[1];
+            new TreeScanner<Void, Void>() {
+                CompilationUnitTree cut;
+                @Override
+                public Void scan(Tree tree, Void p) {
+                    if (tree == null)
+                        return null;
+                    if (tree.getKind() == Kind.COMPILATION_UNIT) {
+                        cut = (CompilationUnitTree) tree;
+                    }
+                    found[0] |= (sp.getStartPosition(cut, tree) == src.startPos) &&
+                                (sp.getEndPosition(cut, tree) == src.endPos);
+                    return super.scan(tree, p);
+                }
+            }.scan(task.parse(), null);
+
+            if (!found[0]) {
+                throw new IllegalStateException();
             }
         }
     }

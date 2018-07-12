@@ -616,6 +616,11 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*& loop) {
     }
 
     IfNode* check_iff = limit_check_proj->in(0)->as_If();
+
+    if (!is_dominator(get_ctrl(limit), check_iff->in(0))) {
+      return false;
+    }
+
     Node* cmp_limit;
     Node* bol;
 
@@ -4224,34 +4229,34 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
   // which can inhibit range check elimination.
   if (least != early) {
     Node* ctrl_out = least->unique_ctrl_out();
-    if (ctrl_out && ctrl_out->is_CountedLoop() &&
+    if (ctrl_out && ctrl_out->is_Loop() &&
         least == ctrl_out->in(LoopNode::EntryControl)) {
+      // Move the node above predicates as far up as possible so a
+      // following pass of loop predication doesn't hoist a predicate
+      // that depends on it above that node.
       Node* new_ctrl = least;
-      // Move the node above predicates so a following pass of loop
-      // predication doesn't hoist a predicate that depends on it
-      // above that node.
-      if (find_predicate_insertion_point(new_ctrl, Deoptimization::Reason_loop_limit_check) != NULL) {
-        new_ctrl = new_ctrl->in(0)->in(0);
-        assert(is_dominator(early, new_ctrl), "least != early so we can move up the dominator tree");
-      }
-      if (find_predicate_insertion_point(new_ctrl, Deoptimization::Reason_profile_predicate) != NULL) {
-        Node* c = new_ctrl->in(0)->in(0);
-        assert(is_dominator(early, c), "least != early so we can move up the dominator tree");
-        new_ctrl = c;
-      }
-      if (find_predicate_insertion_point(new_ctrl, Deoptimization::Reason_predicate) != NULL) {
-        Node* c = new_ctrl->in(0)->in(0);
-        assert(is_dominator(early, c), "least != early so we can move up the dominator tree");
-        new_ctrl = c;
-      }
-      if (new_ctrl != ctrl_out) {
-        least = new_ctrl;
-      } else if (ctrl_out->is_CountedLoop() || ctrl_out->is_OuterStripMinedLoop()) {
-        Node* least_dom = idom(least);
-        if (get_loop(least_dom)->is_member(get_loop(least))) {
-          least = least_dom;
+      for (;;) {
+        if (!new_ctrl->is_Proj()) {
+          break;
         }
+        CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none);
+        if (call == NULL) {
+          break;
+        }
+        int req = call->uncommon_trap_request();
+        Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
+        if (trap_reason != Deoptimization::Reason_loop_limit_check &&
+            trap_reason != Deoptimization::Reason_predicate &&
+            trap_reason != Deoptimization::Reason_profile_predicate) {
+          break;
+        }
+        Node* c = new_ctrl->in(0)->in(0);
+        if (is_dominator(c, early) && c != early) {
+          break;
+        }
+        new_ctrl = c;
       }
+      least = new_ctrl;
     }
   }
 

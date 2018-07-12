@@ -24,6 +24,7 @@
 /*
  *
  * @test
+ * @bug 8206120
  * @modules jdk.localedata
  */
 
@@ -44,6 +45,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
 import java.time.format.FormatStyle;
+import java.time.format.ResolverStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQueries;
@@ -135,6 +137,16 @@ public class TestNonIsoFormatter {
         };
     }
 
+    @DataProvider(name="lenient_eraYear")
+    Object[][] lenientEraYear() {
+        return new Object[][] {
+            // Chronology, lenient era/year, strict era/year
+            { JAPANESE, "Meiji 123", "Heisei 2" },
+            { JAPANESE, "Showa 65", "Heisei 2" },
+            { JAPANESE, "Heisei 32", "NewEra 2" }, // NewEra
+        };
+    }
+
     @Test(dataProvider="format_data")
     public void test_formatLocalizedDate(Chronology chrono, Locale formatLocale, Locale numberingLocale,
                                          ChronoLocalDate date, String expected) {
@@ -172,5 +184,16 @@ public class TestNonIsoFormatter {
         TemporalAccessor ta = dtf.parse(text);
         Chronology cal = ta.query(TemporalQueries.chronology());
         assertEquals(cal, chrono);
+    }
+
+    @Test(dataProvider="lenient_eraYear")
+    public void test_lenientEraYear(Chronology chrono, String lenient, String strict) {
+        String mdStr = "-01-01";
+        DateTimeFormatter dtf = new DateTimeFormatterBuilder()
+            .appendPattern("GGGG y-M-d")
+            .toFormatter()
+            .withChronology(chrono);
+        DateTimeFormatter dtfLenient = dtf.withResolverStyle(ResolverStyle.LENIENT);
+        assertEquals(LocalDate.parse(lenient+mdStr, dtfLenient), LocalDate.parse(strict+mdStr, dtf));
     }
 }

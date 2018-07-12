@@ -377,7 +377,7 @@ public class JSplitPane extends JComponent implements Accessible
      * @return the <code>SplitPaneUI</code> object that renders this component
      */
     @BeanProperty(bound = false, expert = true, description
-            = "The L&amp;F object that renders this component.")
+            = "The L&F object that renders this component.")
     public SplitPaneUI getUI() {
         return (SplitPaneUI)ui;
     }
@@ -404,7 +404,7 @@ public class JSplitPane extends JComponent implements Accessible
      * @see UIDefaults#getUI
      */
     @BeanProperty(bound = false, expert = true, description
-            = "A string that specifies the name of the L&amp;F class.")
+            = "A string that specifies the name of the L&F class.")
     public String getUIClassID() {
         return uiClassID;
     }
@@ -824,7 +824,7 @@ public class JSplitPane extends JComponent implements Accessible
      *          <code>null</code>
      */
     @BeanProperty(bound = false, description
-            = "The minimum location of the divider from the L&amp;F.")
+            = "The minimum location of the divider from the L&F.")
     public int getMinimumDividerLocation() {
         SplitPaneUI         ui = getUI();
 

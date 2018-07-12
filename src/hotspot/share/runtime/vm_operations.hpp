@@ -40,7 +40,7 @@
 
 // Note: When new VM_XXX comes up, add 'XXX' to the template table.
 #define VM_OPS_DO(template)                       \
-  template(Dummy)                                 \
+  template(None)                                  \
   template(ThreadStop)                            \
   template(ThreadDump)                            \
   template(PrintThreads)                          \
@@ -52,7 +52,6 @@
   template(DeoptimizeFrame)                       \
   template(DeoptimizeAll)                         \
   template(ZombieAll)                             \
-  template(UnlinkSymbols)                         \
   template(Verify)                                \
   template(PrintJNI)                              \
   template(HeapDumper)                            \
@@ -352,14 +351,6 @@ class VM_ZombieAll: public VM_Operation {
   bool allow_nested_vm_operations() const        { return true; }
 };
 #endif // PRODUCT
-
-class VM_UnlinkSymbols: public VM_Operation {
- public:
-  VM_UnlinkSymbols() {}
-  VMOp_Type type() const                         { return VMOp_UnlinkSymbols; }
-  void doit();
-  bool allow_nested_vm_operations() const        { return true; }
-};
 
 class VM_Verify: public VM_Operation {
  public:

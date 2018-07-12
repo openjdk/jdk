@@ -4,11 +4,10 @@
  * @summary Project Coin: underscores in literals
  *
  * @compile/fail/ref=BadUnderscoreLiterals.7.out -XDrawDiagnostics BadUnderscoreLiterals.java
- * @compile/fail/ref=BadUnderscoreLiterals.6.out -XDrawDiagnostics -source 6 -Xlint:-options BadUnderscoreLiterals.java
  */
 
 public class BadUnderscoreLiterals {
-    int valid = 1_1;            // valid literal; illegal in -source 6
+    int valid = 1_1;            // valid literal
 
     // test zero
     int z1 = _0;                // valid (but undefined) variable

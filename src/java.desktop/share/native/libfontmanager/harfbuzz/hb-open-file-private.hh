@@ -286,6 +286,197 @@ struct TTCHeader
   } u;
 };
 
+/*
+ * Mac Resource Fork
+ */
+
+struct ResourceRefItem
+{
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    // actual data sanitization is done on ResourceForkHeader sanitizer
+    return_trace (likely (c->check_struct (this)));
+  }
+
+  HBINT16       id;             /* Resource ID, is really should be signed? */
+  HBINT16       nameOffset;     /* Offset from beginning of resource name list
+                                 * to resource name, minus means there is no */
+  HBUINT8       attr;           /* Resource attributes */
+  HBUINT24      dataOffset;     /* Offset from beginning of resource data to
+                                 * data for this resource */
+  HBUINT32      reserved;       /* Reserved for handle to resource */
+  public:
+  DEFINE_SIZE_STATIC (12);
+};
+
+struct ResourceTypeItem
+{
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    // RefList sanitization is done on ResourceMap sanitizer
+    return_trace (likely (c->check_struct (this)));
+  }
+
+  inline unsigned int get_resource_count () const
+  {
+    return numRes + 1;
+  }
+
+  inline bool is_sfnt () const
+  {
+    return type == HB_TAG ('s','f','n','t');
+  }
+
+  inline const ResourceRefItem& get_ref_item (const void *base,
+                                              unsigned int i) const
+  {
+    return (base+refList)[i];
+  }
+
+  protected:
+  Tag           type;           /* Resource type */
+  HBUINT16      numRes;         /* Number of resource this type in map minus 1 */
+  OffsetTo<UnsizedArrayOf<ResourceRefItem> >
+                refList;        /* Offset from beginning of resource type list
+                                 * to reference list for this type */
+  public:
+  DEFINE_SIZE_STATIC (8);
+};
+
+struct ResourceMap
+{
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    if (unlikely (!c->check_struct (this)))
+      return_trace (false);
+    for (unsigned int i = 0; i < get_types_count (); ++i)
+    {
+      const ResourceTypeItem& type = get_type (i);
+      if (unlikely (!type.sanitize (c)))
+        return_trace (false);
+      for (unsigned int j = 0; j < type.get_resource_count (); ++j)
+        if (unlikely (!get_ref_item (type, j).sanitize (c)))
+          return_trace (false);
+    }
+    return_trace (true);
+  }
+
+  inline const ResourceTypeItem& get_type (unsigned int i) const
+  {
+    // Why offset from the second byte of the object? I'm not sure
+    return ((&reserved[2])+typeList)[i];
+  }
+
+  inline unsigned int get_types_count () const
+  {
+    return nTypes + 1;
+  }
+
+  inline const ResourceRefItem &get_ref_item (const ResourceTypeItem &type,
+                                              unsigned int i) const
+  {
+    return type.get_ref_item (&(this+typeList), i);
+  }
+
+  inline const PString& get_name (const ResourceRefItem &item,
+                                  unsigned int i) const
+  {
+    if (item.nameOffset == -1)
+      return Null (PString);
+
+    return StructAtOffset<PString> (this, nameList + item.nameOffset);
+  }
+
+  protected:
+  HBUINT8       reserved[16];   /* Reserved for copy of resource header */
+  LOffsetTo<ResourceMap>
+                reserved1;      /* Reserved for handle to next resource map */
+  HBUINT16      reserved2;      /* Reserved for file reference number */
+  HBUINT16      attr;           /* Resource fork attribute */
+  OffsetTo<UnsizedArrayOf<ResourceTypeItem> >
+                typeList;       /* Offset from beginning of map to
+                                 * resource type list */
+  HBUINT16      nameList;       /* Offset from beginning of map to
+                                 * resource name list */
+  HBUINT16      nTypes;         /* Number of types in the map minus 1 */
+  public:
+  DEFINE_SIZE_STATIC (30);
+};
+
+struct ResourceForkHeader
+{
+  inline unsigned int get_face_count () const
+  {
+    const ResourceMap &resource_map = this+map;
+    for (unsigned int i = 0; i < resource_map.get_types_count (); ++i)
+    {
+      const ResourceTypeItem& type = resource_map.get_type (i);
+      if (type.is_sfnt ())
+        return type.get_resource_count ();
+    }
+    return 0;
+  }
+
+  inline const LArrayOf<HBUINT8>& get_data (const ResourceTypeItem& type,
+                                            unsigned int idx) const
+  {
+    const ResourceMap &resource_map = this+map;
+    unsigned int offset = dataOffset;
+    offset += resource_map.get_ref_item (type, idx).dataOffset;
+    return StructAtOffset<LArrayOf<HBUINT8> > (this, offset);
+  }
+
+  inline const OpenTypeFontFace& get_face (unsigned int idx) const
+  {
+    const ResourceMap &resource_map = this+map;
+    for (unsigned int i = 0; i < resource_map.get_types_count (); ++i)
+    {
+      const ResourceTypeItem& type = resource_map.get_type (i);
+      if (type.is_sfnt () && idx < type.get_resource_count ())
+        return (OpenTypeFontFace&) get_data (type, idx).arrayZ;
+    }
+    return Null (OpenTypeFontFace);
+  }
+
+  inline bool sanitize (hb_sanitize_context_t *c) const
+  {
+    TRACE_SANITIZE (this);
+    if (unlikely (!c->check_struct (this)))
+      return_trace (false);
+
+    const ResourceMap &resource_map = this+map;
+    if (unlikely (!resource_map.sanitize (c)))
+      return_trace (false);
+
+    for (unsigned int i = 0; i < resource_map.get_types_count (); ++i)
+    {
+      const ResourceTypeItem& type = resource_map.get_type (i);
+      for (unsigned int j = 0; j < type.get_resource_count (); ++j)
+      {
+        const LArrayOf<HBUINT8>& data = get_data (type, j);
+        if (unlikely (!(data.sanitize (c) &&
+                        ((OpenTypeFontFace&) data.arrayZ).sanitize (c))))
+          return_trace (false);
+      }
+    }
+
+    return_trace (true);
+  }
+
+  protected:
+  HBUINT32      dataOffset;     /* Offset from beginning of resource fork
+                                 * to resource data */
+  LOffsetTo<ResourceMap>
+                map;            /* Offset from beginning of resource fork
+                                 * to resource map */
+  HBUINT32      dataLen;        /* Length of resource data */
+  HBUINT32      mapLen;         /* Length of resource map */
+  public:
+  DEFINE_SIZE_STATIC (16);
+};
 
 /*
  * OpenType Font File
@@ -299,6 +490,7 @@ struct OpenTypeFontFile
     CFFTag              = HB_TAG ('O','T','T','O'), /* OpenType with Postscript outlines */
     TrueTypeTag = HB_TAG ( 0 , 1 , 0 , 0 ), /* OpenType with TrueType outlines */
     TTCTag              = HB_TAG ('t','t','c','f'), /* TrueType Collection */
+    DFontTag            = HB_TAG ( 0 , 0 , 1 , 0 ), /* DFont Mac Resource Fork */
     TrueTag             = HB_TAG ('t','r','u','e'), /* Obsolete Apple TrueType */
     Typ1Tag             = HB_TAG ('t','y','p','1')  /* Obsolete Apple Type1 font in SFNT container */
   };
@@ -313,6 +505,7 @@ struct OpenTypeFontFile
     case Typ1Tag:
     case TrueTypeTag:   return 1;
     case TTCTag:        return u.ttcHeader.get_face_count ();
+//    case DFontTag:    return u.rfHeader.get_face_count ();
     default:            return 0;
     }
   }
@@ -327,6 +520,7 @@ struct OpenTypeFontFile
     case Typ1Tag:
     case TrueTypeTag:   return u.fontFace;
     case TTCTag:        return u.ttcHeader.get_face (i);
+//    case DFontTag:    return u.rfHeader.get_face (i);
     default:            return Null(OpenTypeFontFace);
     }
   }
@@ -353,6 +547,7 @@ struct OpenTypeFontFile
     case Typ1Tag:
     case TrueTypeTag:   return_trace (u.fontFace.sanitize (c));
     case TTCTag:        return_trace (u.ttcHeader.sanitize (c));
+//    case DFontTag:    return_trace (u.rfHeader.sanitize (c));
     default:            return_trace (true);
     }
   }
@@ -362,6 +557,7 @@ struct OpenTypeFontFile
   Tag                   tag;            /* 4-byte identifier. */
   OpenTypeFontFace      fontFace;
   TTCHeader             ttcHeader;
+  ResourceForkHeader    rfHeader;
   } u;
   public:
   DEFINE_SIZE_UNION (4, tag);

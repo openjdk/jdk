@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1398,7 +1398,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_loadKnownFol
     DEFINE_FIELD_ID(field_defenitionFlags, cl, "defenitionFlags", "I");
     DEFINE_FIELD_ID(field_ftidType, cl, "ftidType", "Ljava/lang/String;");
 
-    jobjectArray result;
+    jobjectArray result = NULL;
     KNOWNFOLDERID* pFoldersIds = NULL;
     UINT count = 0;
     if (SUCCEEDED(pkfm->GetFolderIds(&pFoldersIds, &count))) {

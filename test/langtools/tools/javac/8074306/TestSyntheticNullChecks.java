@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,6 @@
  * @test
  * @bug 8074306 8073432 8074501
  * @summary NULLCHK is emitted as Object.getClass
- * @compile -source 6 -target 6 TestSyntheticNullChecks.java
- * @run main TestSyntheticNullChecks 6
- * @clean TestSyntheticNullChecks*
  * @compile -source 7 -target 7 TestSyntheticNullChecks.java
  * @run main TestSyntheticNullChecks 7
  * @clean TestSyntheticNullChecks*

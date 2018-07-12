@@ -963,7 +963,7 @@ bool Thread::owns_locks_but_compiled_lock() const {
 
 // The flag: potential_vm_operation notifies if this particular safepoint state could potentially
 // invoke the vm-thread (e.g., an oop allocation). In that case, we also have to make sure that
-// no threads which allow_vm_block's are held
+// no locks which allow_vm_block's are held
 void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
   // Check if current thread is allowed to block at a safepoint
   if (!(_allow_safepoint_count == 0)) {
@@ -3298,6 +3298,11 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 }
 
 CompilerThread::~CompilerThread() {
+  // Free buffer blob, if allocated
+  if (get_buffer_blob() != NULL) {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::free(get_buffer_blob());
+  }
   // Delete objects which were allocated on heap.
   delete _counters;
 }

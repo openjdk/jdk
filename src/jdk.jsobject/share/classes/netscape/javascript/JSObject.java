@@ -151,7 +151,7 @@ public abstract class JSObject {
      * JavaScript engine or if applet is {@code null}
      *
      * @deprecated  The Applet API is deprecated. See the
-     * <a href="{@docRoot}/java/applet/package-summary.html">
+     * <a href="{@docRoot}/java.desktop/java/applet/package-summary.html">
      * java.applet package documentation</a> for further information.
      */
 

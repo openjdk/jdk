@@ -1385,26 +1385,22 @@ if [ "$SKIP_DEFAULT" != "true" ]; then
         echo "  $OTHER_SPARKLE_DIR"
     fi
 
-    if [ -d "$OTHER/images" ]; then
-        OTHER_SEC_DIR="$OTHER/images"
-    else
-        OTHER_SEC_DIR="$OTHER/tmp"
-    fi
-    if [ -f "$THIS_SEC_DIR/sec-bin.zip" ]; then
+    THIS_SEC_DIR="$THIS/images"
+    OTHER_SEC_DIR="$OTHER/images"
+    if [ -f "$THIS_SEC_DIR/sec-bin.zip" ] && [ -f "$OTHER_SEC_DIR/sec-bin.zip" ]; then
         OTHER_SEC_BIN="$OTHER_SEC_DIR/sec-bin.zip"
-        THIS_SEC_DIR="$THIS/images"
         THIS_SEC_BIN="$THIS_SEC_DIR/sec-bin.zip"
-    fi
-    if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-        if [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
-            JGSS_WINDOWS_BIN="jgss-windows-x64-bin.zip"
-        else
-            JGSS_WINDOWS_BIN="jgss-windows-i586-bin.zip"
+        if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+            if [ "$OPENJDK_TARGET_CPU" = "x86_64" ]; then
+                JGSS_WINDOWS_BIN="jgss-windows-x64-bin.zip"
+            else
+                JGSS_WINDOWS_BIN="jgss-windows-i586-bin.zip"
+            fi
+            OTHER_SEC_WINDOWS_BIN="$OTHER_SEC_DIR/sec-windows-bin.zip"
+            OTHER_JGSS_WINDOWS_BIN="$OTHER_SEC_DIR/$JGSS_WINDOWS_BIN"
+            THIS_SEC_WINDOWS_BIN="$THIS_SEC_DIR/sec-windows-bin.zip"
+            THIS_JGSS_WINDOWS_BIN="$THIS_SEC_DIR/$JGSS_WINDOWS_BIN"
         fi
-        OTHER_SEC_WINDOWS_BIN="$OTHER_SEC_DIR/sec-windows-bin.zip"
-        OTHER_JGSS_WINDOWS_BIN="$OTHER_SEC_DIR/$JGSS_WINDOWS_BIN"
-        THIS_SEC_WINDOWS_BIN="$THIS_SEC_DIR/sec-windows-bin.zip"
-        THIS_JGSS_WINDOWS_BIN="$THIS_SEC_DIR/$JGSS_WINDOWS_BIN"
     fi
 
     if [ -d "$THIS/images/docs" ] && [ -d "$OTHER/images/docs" ]; then

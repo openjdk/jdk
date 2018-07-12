@@ -78,7 +78,6 @@ public class VM {
   private long         logAddressSize;
   private Universe     universe;
   private ObjectHeap   heap;
-  private SymbolTable  symbols;
   private SystemDictionary dict;
   private ClassLoaderDataGraph cldGraph;
   private Threads      threads;
@@ -645,13 +644,6 @@ public class VM {
       heap = new ObjectHeap(db);
     }
     return heap;
-  }
-
-  public SymbolTable getSymbolTable() {
-    if (symbols == null) {
-      symbols = SymbolTable.getTheTable();
-    }
-    return symbols;
   }
 
   public SystemDictionary getSystemDictionary() {

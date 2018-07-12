@@ -372,7 +372,9 @@ void os::init_system_properties_values() {
       }
     }
     Arguments::set_java_home(buf);
-    set_boot_path('/', ':');
+    if (!set_boot_path('/', ':')) {
+      vm_exit_during_initialization("Failed setting boot class path.", NULL);
+    }
   }
 
   // Where to look for native libraries.
@@ -1079,22 +1081,6 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 void os::die() {
   // _exit() on BsdThreads only kills current thread
   ::abort();
-}
-
-// This method is a copy of JDK's sysGetLastErrorString
-// from src/solaris/hpi/src/system_md.c
-
-size_t os::lasterror(char *buf, size_t len) {
-  if (errno == 0)  return 0;
-
-  const char *s = os::strerror(errno);
-  size_t n = ::strlen(s);
-  if (n >= len) {
-    n = len - 1;
-  }
-  ::strncpy(buf, s, n);
-  buf[n] = '\0';
-  return n;
 }
 
 // Information of current thread in variety of formats

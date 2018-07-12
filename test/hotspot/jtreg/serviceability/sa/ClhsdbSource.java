@@ -66,8 +66,7 @@ public class ClhsdbSource {
                     "Available commands:",
                     "attach pid | exec core",
                     "intConstant [ name [ value ] ]",
-                    "type [ type [ name super isOop isInteger isUnsigned size ] ]",
-                    "symboltable name"));
+                    "type [ type [ name super isOop isInteger isUnsigned size ] ]"));
 
             Map<String, List<String>> unExpStrMap = new HashMap<>();
             unExpStrMap.put("source clhsdb_cmd_file", List.of(

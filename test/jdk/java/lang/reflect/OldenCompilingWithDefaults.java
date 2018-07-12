@@ -25,7 +25,6 @@
  * @test
  * @bug 8009267
  * @summary Verify uses of isAnnotationPresent compile under older source versions
- * @compile -source 1.6 -target 1.6 OldenCompilingWithDefaults.java
  * @compile -source 1.7 -target 1.7 OldenCompilingWithDefaults.java
  * @compile                         OldenCompilingWithDefaults.java
  */

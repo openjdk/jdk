@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,9 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package stream.XMLStreamReaderTest;
 
+import java.io.StringReader;
+import java.util.NoSuchElementException;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
@@ -34,7 +35,7 @@ import org.testng.annotations.Test;
 
 /*
  * @test
- * @bug 8167340
+ * @bug 8167340 8204329
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true stream.XMLStreamReaderTest.StreamReaderTest
  * @run testng/othervm stream.XMLStreamReaderTest.StreamReaderTest
@@ -42,6 +43,20 @@ import org.testng.annotations.Test;
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class StreamReaderTest {
+    @Test(expectedExceptions = NoSuchElementException.class)
+    public void testNext() throws Exception {
+        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        XMLStreamReader xmlStreamReader = xmlInputFactory.createXMLStreamReader(
+                new StringReader("<?xml version='1.0'?><foo/>"));
+
+        while (xmlStreamReader.hasNext()) {
+            int event = xmlStreamReader.next();
+        }
+        // no more event
+        xmlStreamReader.next();
+    }
+
+
     /**
      * Verifies that after switching to a different XML Version (1.1), the parser
      * is initialized properly (the listener was not registered in this case).

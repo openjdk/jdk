@@ -325,6 +325,7 @@ void CompiledMethod::clear_inline_caches() {
 // Clear ICStubs of all compiled ICs
 void CompiledMethod::clear_ic_stubs() {
   assert_locked_or_safepoint(CompiledIC_lock);
+  ResourceMark rm;
   RelocIterator iter(this);
   while(iter.next()) {
     if (iter.type() == relocInfo::virtual_call_type) {
@@ -547,6 +548,7 @@ bool CompiledMethod::unload_nmethod_caches(bool parallel, bool unloading_occurre
 bool CompiledMethod::cleanup_inline_caches_impl(bool parallel, bool unloading_occurred, bool clean_all) {
   assert_locked_or_safepoint(CompiledIC_lock);
   bool postponed = false;
+  ResourceMark rm;
 
   // Find all calls in an nmethod and clear the ones that point to non-entrant,
   // zombie and unloaded nmethods.

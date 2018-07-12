@@ -367,7 +367,9 @@ void os::init_system_properties_values() {
       }
     }
     Arguments::set_java_home(buf);
-    set_boot_path('/', ':');
+    if (!set_boot_path('/', ':')) {
+      vm_exit_during_initialization("Failed setting boot class path.", NULL);
+    }
   }
 
   // Where to look for native libraries.
@@ -1417,23 +1419,6 @@ void os::abort(bool dump_core, void* siginfo, const void* context) {
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
   ::abort();
-}
-
-
-// This method is a copy of JDK's sysGetLastErrorString
-// from src/solaris/hpi/src/system_md.c
-
-size_t os::lasterror(char *buf, size_t len) {
-  if (errno == 0)  return 0;
-
-  const char *s = os::strerror(errno);
-  size_t n = ::strlen(s);
-  if (n >= len) {
-    n = len - 1;
-  }
-  ::strncpy(buf, s, n);
-  buf[n] = '\0';
-  return n;
 }
 
 // thread_id is kernel thread id (similar to Solaris LWP id)
@@ -5572,14 +5557,18 @@ bool os::pd_unmap_memory(char* addr, size_t bytes) {
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);
 
-static clockid_t thread_cpu_clockid(Thread* thread) {
-  pthread_t tid = thread->osthread()->pthread_id();
-  clockid_t clockid;
-
-  // Get thread clockid
-  int rc = os::Linux::pthread_getcpuclockid(tid, &clockid);
-  assert(rc == 0, "pthread_getcpuclockid is expected to return 0 code");
-  return clockid;
+static jlong fast_cpu_time(Thread *thread) {
+    clockid_t clockid;
+    int rc = os::Linux::pthread_getcpuclockid(thread->osthread()->pthread_id(),
+                                              &clockid);
+    if (rc == 0) {
+      return os::Linux::fast_thread_cpu_time(clockid);
+    } else {
+      // It's possible to encounter a terminated native thread that failed
+      // to detach itself from the VM - which should result in ESRCH.
+      assert_status(rc == ESRCH, rc, "pthread_getcpuclockid failed");
+      return -1;
+    }
 }
 
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
@@ -5601,7 +5590,7 @@ jlong os::current_thread_cpu_time() {
 jlong os::thread_cpu_time(Thread* thread) {
   // consistent with what current_thread_cpu_time() returns
   if (os::Linux::supports_fast_thread_cpu_time()) {
-    return os::Linux::fast_thread_cpu_time(thread_cpu_clockid(thread));
+    return fast_cpu_time(thread);
   } else {
     return slow_thread_cpu_time(thread, true /* user + sys */);
   }
@@ -5617,7 +5606,7 @@ jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
 
 jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
   if (user_sys_cpu_time && os::Linux::supports_fast_thread_cpu_time()) {
-    return os::Linux::fast_thread_cpu_time(thread_cpu_clockid(thread));
+    return fast_cpu_time(thread);
   } else {
     return slow_thread_cpu_time(thread, user_sys_cpu_time);
   }

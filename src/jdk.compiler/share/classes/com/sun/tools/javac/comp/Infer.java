@@ -602,7 +602,7 @@ public class Infer {
         return mtype;
     }
     //where
-        class ImplicitArgType extends DeferredAttr.DeferredTypeMap {
+        class ImplicitArgType extends DeferredAttr.DeferredTypeMap<Void> {
 
             public ImplicitArgType(Symbol msym, Resolve.MethodResolutionPhase phase) {
                 (rs.deferredAttr).super(AttrMode.SPECULATIVE, msym, phase);

@@ -230,7 +230,7 @@ void os::init_system_properties_values() {
     FREE_C_HEAP_ARRAY(char, dll_path);
 
     if (!set_boot_path('\\', ';')) {
-      return;
+      vm_exit_during_initialization("Failed setting boot class path.", NULL);
     }
   }
 

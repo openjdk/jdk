@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -729,12 +729,12 @@ public class InstanceKlass extends Klass {
   }
 
   /** Field access by name. */
-  public Field findLocalField(Symbol name, Symbol sig) {
+  public Field findLocalField(String name, String sig) {
     int length = getJavaFieldsCount();
     for (int i = 0; i < length; i++) {
       Symbol f_name = getFieldName(i);
       Symbol f_sig  = getFieldSignature(i);
-      if (name.equals(f_name) && sig.equals(f_sig)) {
+      if (f_name.equals(name) && f_sig.equals(sig)) {
         return newField(i);
       }
     }
@@ -743,14 +743,14 @@ public class InstanceKlass extends Klass {
   }
 
   /** Find field in direct superinterfaces. */
-  public Field findInterfaceField(Symbol name, Symbol sig) {
+  public Field findInterfaceField(String name, String sig) {
     KlassArray interfaces = getLocalInterfaces();
     int n = interfaces.length();
     for (int i = 0; i < n; i++) {
       InstanceKlass intf1 = (InstanceKlass) interfaces.getAt(i);
       if (Assert.ASSERTS_ENABLED) {
         Assert.that(intf1.isInterface(), "just checking type");
-      }
+     }
       // search for field in current interface
       Field f = intf1.findLocalField(name, sig);
       if (f != null) {
@@ -769,7 +769,7 @@ public class InstanceKlass extends Klass {
 
   /** Find field according to JVM spec 5.4.3.2, returns the klass in
       which the field is defined. */
-  public Field findField(Symbol name, Symbol sig) {
+  public Field findField(String name, String sig) {
     // search order according to newest JVM spec (5.4.3.2, p.167).
     // 1) search for field in current klass
     Field f = findLocalField(name, sig);
@@ -785,18 +785,6 @@ public class InstanceKlass extends Klass {
 
     // 4) otherwise field lookup fails
     return null;
-  }
-
-  /** Find field according to JVM spec 5.4.3.2, returns the klass in
-      which the field is defined (convenience routine) */
-  public Field findField(String name, String sig) {
-    SymbolTable symbols = VM.getVM().getSymbolTable();
-    Symbol nameSym = symbols.probe(name);
-    Symbol sigSym  = symbols.probe(sig);
-    if (nameSym == null || sigSym == null) {
-      return null;
-    }
-    return findField(nameSym, sigSym);
   }
 
   /** Find field according to JVM spec 5.4.3.2, returns the klass in
@@ -932,20 +920,8 @@ public class InstanceKlass extends Klass {
      return "L" + super.signature() + ";";
   }
 
-  /** Convenience routine taking Strings; lookup is done in
-      SymbolTable. */
-  public Method findMethod(String name, String sig) {
-    SymbolTable syms = VM.getVM().getSymbolTable();
-    Symbol nameSym = syms.probe(name);
-    Symbol sigSym  = syms.probe(sig);
-    if (nameSym == null || sigSym == null) {
-      return null;
-    }
-    return findMethod(nameSym, sigSym);
-  }
-
   /** Find method in vtable. */
-  public Method findMethod(Symbol name, Symbol sig) {
+  public Method findMethod(String name, String sig) {
     return findMethod(getMethods(), name, sig);
   }
 
@@ -1055,56 +1031,16 @@ public class InstanceKlass extends Klass {
     throw new RuntimeException("Illegal field type at index " + index);
   }
 
-  private static Method findMethod(MethodArray methods, Symbol name, Symbol signature) {
-    int len = methods.length();
-    // methods are sorted, so do binary search
-    int l = 0;
-    int h = len - 1;
-    while (l <= h) {
-      int mid = (l + h) >> 1;
-      Method m = methods.at(mid);
-      long res = m.getName().fastCompare(name);
-      if (res == 0) {
-        // found matching name; do linear search to find matching signature
-        // first, quick check for common case
-        if (m.getSignature().equals(signature)) return m;
-        // search downwards through overloaded methods
-        int i;
-        for (i = mid - 1; i >= l; i--) {
-          Method m1 = methods.at(i);
-          if (!m1.getName().equals(name)) break;
-          if (m1.getSignature().equals(signature)) return m1;
-        }
-        // search upwards
-        for (i = mid + 1; i <= h; i++) {
-          Method m1 = methods.at(i);
-          if (!m1.getName().equals(name)) break;
-          if (m1.getSignature().equals(signature)) return m1;
-        }
-        // not found
-        if (Assert.ASSERTS_ENABLED) {
-          int index = linearSearch(methods, name, signature);
-          if (index != -1) {
-            throw new DebuggerException("binary search bug: should have found entry " + index);
-          }
-        }
-        return null;
-      } else if (res < 0) {
-        l = mid + 1;
-      } else {
-        h = mid - 1;
-      }
+  private static Method findMethod(MethodArray methods, String name, String signature) {
+    int index = linearSearch(methods, name, signature);
+    if (index != -1) {
+      return methods.at(index);
+    } else {
+      return null;
     }
-    if (Assert.ASSERTS_ENABLED) {
-      int index = linearSearch(methods, name, signature);
-      if (index != -1) {
-        throw new DebuggerException("binary search bug: should have found entry " + index);
-      }
-    }
-    return null;
   }
 
-  private static int linearSearch(MethodArray methods, Symbol name, Symbol signature) {
+  private static int linearSearch(MethodArray methods, String name, String signature) {
     int len = (int) methods.length();
     for (int index = 0; index < len; index++) {
       Method m = methods.at(index);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,6 +273,7 @@ class UnixAsynchronousSocketChannelImpl
 
         // invoke handler and set result
         CompletionHandler<Void,Object> handler = connectHandler;
+        connectHandler = null;
         Object att = connectAttachment;
         PendingFuture<Void,Object> future = connectFuture;
         if (handler == null) {
@@ -405,6 +406,7 @@ class UnixAsynchronousSocketChannelImpl
             this.readBuffer = null;
             this.readBuffers = null;
             this.readAttachment = null;
+            this.readHandler = null;
 
             // allow another read to be initiated
             enableReading();
@@ -600,6 +602,7 @@ class UnixAsynchronousSocketChannelImpl
             this.writeBuffer = null;
             this.writeBuffers = null;
             this.writeAttachment = null;
+            this.writeHandler = null;
 
             // allow another write to be initiated
             enableWriting();

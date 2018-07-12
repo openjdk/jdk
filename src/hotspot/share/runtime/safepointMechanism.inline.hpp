@@ -87,4 +87,12 @@ void SafepointMechanism::disarm_local_poll(JavaThread* thread) {
   thread->set_polling_page(poll_disarmed_value());
 }
 
+void SafepointMechanism::arm_local_poll_release(JavaThread* thread) {
+  thread->set_polling_page_release(poll_armed_value());
+}
+
+void SafepointMechanism::disarm_local_poll_release(JavaThread* thread) {
+  thread->set_polling_page_release(poll_disarmed_value());
+}
+
 #endif // SHARE_VM_RUNTIME_SAFEPOINTMECHANISM_INLINE_HPP

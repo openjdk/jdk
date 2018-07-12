@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,6 @@ public interface XMLStreamReader extends XMLStreamConstants {
    *  with  two separate events: START_ELEMENT, END_ELEMENT - This preserves
    *   parsing equivalency of empty element to {@code <tag></tag>}.
    *
-   * This method will throw an IllegalStateException if it is called after hasNext() returns false.
    * @see javax.xml.stream.events.XMLEvent
    * @return the integer code corresponding to the current parse event
    * @throws java.util.NoSuchElementException if this is called when hasNext() returns false

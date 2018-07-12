@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ public class ElementScanner8<R, P> extends ElementScanner7<R, P> {
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected ElementScanner8(){
         super(null);
     }
@@ -105,6 +106,7 @@ public class ElementScanner8<R, P> extends ElementScanner7<R, P> {
      *
      * @param defaultValue the default value
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected ElementScanner8(R defaultValue){
         super(defaultValue);
     }

@@ -440,8 +440,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeInterface, member_reg, temp3);
       }
 
-      BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-
       Register temp3_intf = temp3;
       __ load_heap_oop(temp3_intf, member_clazz);
       load_klass_from_Class(_masm, temp3_intf);

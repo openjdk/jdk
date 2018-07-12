@@ -316,7 +316,7 @@ final class Exchange<T> {
                     proxyResponse.version, true);
             return MinimalFuture.completedFuture(syntheticResponse);
         } else if (t != null) {
-            if (debug.on()) debug.log("checkFor407: no response - %s", t);
+            if (debug.on()) debug.log("checkFor407: no response - %s", (Object)t);
             return MinimalFuture.failedFuture(t);
         } else {
             if (debug.on()) debug.log("checkFor407: all clear");

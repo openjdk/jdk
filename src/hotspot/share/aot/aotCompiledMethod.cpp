@@ -272,6 +272,7 @@ void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
           if (md != _method) f(md);
         }
       } else if (iter.type() == relocInfo::virtual_call_type) {
+        ResourceMark rm;
         // Check compiledIC holders associated with this nmethod
         CompiledIC *ic = CompiledIC_at(&iter);
         if (ic->is_icholder_call()) {
@@ -444,6 +445,7 @@ void AOTCompiledMethod::clear_inline_caches() {
     return;
   }
 
+  ResourceMark rm;
   RelocIterator iter(this);
   while (iter.next()) {
     iter.reloc()->clear_inline_cache();

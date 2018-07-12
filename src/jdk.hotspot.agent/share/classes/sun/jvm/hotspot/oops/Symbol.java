@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,6 +104,10 @@ public class Symbol extends VMObject {
       Assert.that(l == -1, "we should be at the beginning");
     }
     return true;
+  }
+
+  public boolean equals(String string) {
+    return asString().equals(string);
   }
 
   public byte[] asByteArray() {

@@ -1221,17 +1221,14 @@ void LinkResolver::runtime_resolve_special_method(CallInfo& result,
       // check if the method is not <init>
       resolved_method->name() != vmSymbols::object_initializer_name()) {
 
-     // check if this is an old-style super call and do a new lookup if so
-     // a) check if ACC_SUPER flag is set for the current class
     Klass* current_klass = link_info.current_klass();
-    if ((current_klass->is_super() || !AllowNonVirtualCalls) &&
-        // b) check if the class of the resolved_klass is a superclass
-        // (not supertype in order to exclude interface classes) of the current class.
-        // This check is not performed for super.invoke for interface methods
-        // in super interfaces.
-        current_klass->is_subclass_of(resolved_klass) &&
-        current_klass != resolved_klass
-        ) {
+
+    // Check if the class of the resolved_klass is a superclass
+    // (not supertype in order to exclude interface classes) of the current class.
+    // This check is not performed for super.invoke for interface methods
+    // in super interfaces.
+    if (current_klass->is_subclass_of(resolved_klass) &&
+        current_klass != resolved_klass) {
       // Lookup super method
       Klass* super_klass = current_klass->super();
       sel_method = lookup_instance_method_in_klasses(super_klass,

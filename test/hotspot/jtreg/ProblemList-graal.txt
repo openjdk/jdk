@@ -95,6 +95,7 @@ compiler/intrinsics/mathexact/sanity/SubtractExactIntTest.java   8202124   gener
 compiler/intrinsics/mathexact/sanity/MultiplyExactLongTest.java  8202124   generic-all
 compiler/intrinsics/mathexact/sanity/MultiplyExactIntTest.java   8202124   generic-all
 compiler/whitebox/DeoptimizeAllTest.java                         8202124   generic-all
+compiler/whitebox/DeoptimizeFramesTest.java                      8202124   generic-all
 compiler/whitebox/DeoptimizeMethodTest.java                      8202124   generic-all
 compiler/whitebox/ForceNMethodSweepTest.java                     8202124   generic-all
 compiler/whitebox/GetNMethodTest.java                            8202124   generic-all
@@ -121,10 +122,6 @@ vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDesc
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance001/TestDescription.java                              8203174   generic-all
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance002/TestDescription.java                              8203174   generic-all
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance003/TestDescription.java                              8203174   generic-all
-vmTestbase/nsk/jdi/EventRequestManager/methodExitRequests/methexitreq002/TestDescription.java             8203174   generic-all
-vmTestbase/nsk/jdi/MonitorContendedEnteredRequest/MonitorContendedEnteredRequest001/TestDescription.java  8203174   generic-all
-vmTestbase/nsk/jdi/MonitorContendedEnteredRequest/MonitorContendedEnteredRequest002/TestDescription.java  8203174   generic-all
-vmTestbase/nsk/jdi/MonitorWaitedRequest/addClassExclusionFilter/TestDescription.java                      8203174   generic-all
 vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects001/referringObjects001.java          8203174   generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances002/instances002.java                                 8203174   generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances003/instances003.java                                 8203174   generic-all
@@ -153,8 +150,6 @@ vmTestbase/nsk/jvmti/PopFrame/popframe009/TestDescription.java                  
 vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn001/TestDescription.java     8195674   generic-all
 vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn002/TestDescription.java     8195674   generic-all
 
-vmTestbase/nsk/jvmti/AttachOnDemand/attach024/TestDescription.java                 8195630   generic-all
-
 vmTestbase/nsk/jvmti/unit/FollowReferences/followref003/TestDescription.java       8202342   generic-all
 
 vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java        8204506   macosx-all
@@ -171,3 +166,21 @@ compiler/stable/TestStableObject.java                            8204347   gener
 compiler/stable/TestStableShort.java                             8204347   generic-all
 compiler/stable/TestStableUByte.java                             8204347   generic-all
 compiler/stable/TestStableUShort.java                            8204347   generic-all
+
+# Graal unit tests
+org.graalvm.compiler.core.test.CheckGraalInvariants                              8205081
+org.graalvm.compiler.core.test.inlining.PolymorphicInliningTest                  8205081
+org.graalvm.compiler.core.test.OptionsVerifierTest                               8205081
+org.graalvm.compiler.core.test.ProfilingInfoTest                                 8205081
+org.graalvm.compiler.hotspot.test.CompilationWrapperTest                         8205081
+org.graalvm.compiler.hotspot.test.HsErrLogTest                                   8205081
+org.graalvm.compiler.hotspot.test.OptionsInFileTest                              8205081
+org.graalvm.compiler.replacements.test.classfile.ClassfileBytecodeProviderTest   8205081
+org.graalvm.compiler.replacements.test.classfile.RedefineIntrinsicTest           8205081
+
+org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
+org.graalvm.compiler.core.test.CountedLoopTest                   8199885
+org.graalvm.compiler.debug.test.DebugContextTest                 8203504
+org.graalvm.compiler.core.test.VerifyDebugUsageTest              8205078
+
+org.graalvm.compiler.hotspot.test.GraalOSRTest                   8206947

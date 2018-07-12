@@ -1,0 +1,144 @@
+#
+# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file builds Graal component of the JTReg tests for Hotspot.
+# It also covers the test-image part, where the built files are copied to the
+# test image.
+################################################################################
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include SetupJavaCompilers.gmk
+
+TARGETS_BUILD :=
+TARGETS_IMAGE :=
+TARGETS_EXTRA_LIB :=
+
+ifeq ($(INCLUDE_GRAAL), true)
+  ifneq ($(GRAALUNIT_LIB), )
+    SRC_DIR := $(TOPDIR)/src/jdk.internal.vm.compiler/share/classes
+    TEST_DIR := $(TOPDIR)/test/hotspot/jtreg/compiler/graalunit
+    COMPILE_OUTPUTDIR := $(SUPPORT_OUTPUTDIR)/test/graalunit
+    LIB_OUTPUTDIR := $(TEST_IMAGE_DIR)/hotspot/jtreg/graal
+
+    ### Copy 3rd party libs
+    $(eval $(call SetupCopyFiles, COPY_GRAALUNIT_LIBS, \
+        FILES := $(wildcard $(GRAALUNIT_LIB)/*.jar), \
+        DEST := $(LIB_OUTPUTDIR), \
+    ))
+
+    TARGETS_EXTRA_LIB += $(COPY_GRAALUNIT_LIBS)
+
+    ### Compile and build graalunit tests
+    $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_TESTS, \
+        SETUP := GENERATE_USINGJDKBYTECODE, \
+        SRC := \
+            $(SRC_DIR)/jdk.internal.vm.compiler.collections.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.api.directives.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.api.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.asm.aarch64.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.asm.amd64.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.asm.sparc.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.asm.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.core.amd64.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.core.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.debug.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.graph.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.hotspot.amd64.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.hotspot.lir.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.hotspot.sparc.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.hotspot.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.lir.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.loop.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.nodes.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.options.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.phases.common.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.replacements.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.test/src \
+            $(SRC_DIR)/org.graalvm.util.test/src \
+            $(SRC_DIR)/org.graalvm.compiler.jtt/src \
+            $(SRC_DIR)/org.graalvm.compiler.lir.jtt/src \
+            , \
+        BIN := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
+        JAR := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests.jar, \
+        CLASSPATH := \
+            $(JDK_OUTPUTDIR)/modules/jdk.internal.vm.compiler \
+            $(JDK_OUTPUTDIR)/modules/jdk.internal.vm.ci \
+            $(LIB_OUTPUTDIR)/junit-4.12.jar \
+            $(LIB_OUTPUTDIR)/asm-5.0.4.jar \
+            $(LIB_OUTPUTDIR)/asm-tree-5.0.4.jar \
+            $(LIB_OUTPUTDIR)/java-allocation-instrumenter.jar \
+            $(LIB_OUTPUTDIR)/hamcrest-core-1.3.jar \
+            , \
+        ADD_JAVAC_FLAGS := \
+            -Xlint:none -processorpath \
+            $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.replacements.verifier.jar \
+            --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
+            , \
+    ))
+
+    TARGETS_BUILD += $(BUILD_VM_COMPILER_TESTS)
+
+
+    ### Compile and build mxtool
+    $(eval $(call SetupJavaCompilation, BUILD_MXTOOL, \
+        SETUP := GENERATE_USINGJDKBYTECODE, \
+        SRC := $(TEST_DIR)/com.oracle.mxtool.junit, \
+        BIN := $(COMPILE_OUTPUTDIR)/com.oracle.mxtool.junit, \
+        JAR := $(COMPILE_OUTPUTDIR)/com.oracle.mxtool.junit.jar, \
+        CLASSPATH := $(LIB_OUTPUTDIR)/junit-4.12.jar, \
+    ))
+
+    TARGETS_BUILD += $(BUILD_MXTOOL)
+
+
+    ################################################################################
+    # Targets for building test-image.
+    ################################################################################
+
+    # Copy to hotspot jtreg test image
+    $(eval $(call SetupCopyFiles, COPY_HOTSPOT_JTREG_GRAAL, \
+        SRC := $(COMPILE_OUTPUTDIR), \
+        DEST := $(LIB_OUTPUTDIR), \
+        FILES := jdk.vm.compiler.tests.jar com.oracle.mxtool.junit.jar, \
+    ))
+
+    TARGETS_IMAGE += $(COPY_HOTSPOT_JTREG_GRAAL)
+  else
+    $(info Skip building of Graal unit tests because 3rd party libraries directory is not specified)
+  endif
+endif
+
+$(TARGETS_BUILD): $(TARGETS_EXTRA_LIB)
+build-test-hotspot-jtreg-graal: $(TARGETS_BUILD)
+test-image-hotspot-jtreg-graal: $(TARGETS_IMAGE)
+
+all: build-test-hotspot-jtreg-graal
+test-image: test-image-hotspot-jtreg-graal
+
+.PHONY: default all build-test-hotspot-jtreg-graal test-image-hotspot-jtreg-graal test-image

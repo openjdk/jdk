@@ -33,10 +33,6 @@
 // the remembered set, ie. when it should be tracked, and if/when the remembered
 // set is complete.
 class G1RemSetTrackingPolicy : public CHeapObj<mtGC> {
-private:
-  // Is the given region an interesting humongous region to start remembered set tracking
-  // for?
-  bool is_interesting_humongous_region(HeapRegion* r) const;
 public:
   // Do we need to scan the given region to get all outgoing references for remembered
   // set rebuild?
@@ -45,6 +41,9 @@ public:
   // called at any time. The caller makes sure that the changes to the remembered
   // set state are visible to other threads.
   void update_at_allocate(HeapRegion* r);
+  // Update remembered set tracking state for humongous regions before we are going to
+  // rebuild remembered sets. Called at safepoint in the remark pause.
+  bool update_humongous_before_rebuild(HeapRegion* r, bool is_live);
   // Update remembered set tracking state before we are going to rebuild remembered
   // sets. Called at safepoint in the remark pause.
   bool update_before_rebuild(HeapRegion* r, size_t live_bytes);

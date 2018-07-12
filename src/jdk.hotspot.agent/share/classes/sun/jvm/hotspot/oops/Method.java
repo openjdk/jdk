@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,18 +93,18 @@ public class Method extends Metadata {
 
 
   // constant method names - <init>, <clinit>
-  // Initialized lazily to avoid initialization ordering dependencies between Method and SymbolTable
-  private static Symbol objectInitializerName;
-  private static Symbol classInitializerName;
-  private static Symbol objectInitializerName() {
+  // Initialized lazily to avoid initialization ordering dependencies between ArrayKlass and String
+  private static String objectInitializerName;
+  private static String classInitializerName;
+  private static String objectInitializerName() {
     if (objectInitializerName == null) {
-      objectInitializerName = VM.getVM().getSymbolTable().probe("<init>");
+      objectInitializerName = "<init>";
     }
     return objectInitializerName;
   }
-  private static Symbol classInitializerName() {
+  private static String classInitializerName() {
     if (classInitializerName == null) {
-      classInitializerName = VM.getVM().getSymbolTable().probe("<clinit>");
+      classInitializerName = "<clinit>";
     }
     return classInitializerName;
   }

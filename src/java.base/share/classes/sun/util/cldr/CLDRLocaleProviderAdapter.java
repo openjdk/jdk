@@ -45,6 +45,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.CalendarDataProvider;
+import java.util.spi.CalendarNameProvider;
 import java.util.spi.TimeZoneNameProvider;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleDataMetaInfo;
@@ -133,6 +134,24 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
+    public CalendarNameProvider getCalendarNameProvider() {
+        if (calendarNameProvider == null) {
+            CalendarNameProvider provider = AccessController.doPrivileged(
+                    (PrivilegedAction<CalendarNameProvider>) ()
+                    -> new CLDRCalendarNameProviderImpl(
+                            getAdapterType(),
+                            getLanguageTagSet("FormatData")));
+
+            synchronized (this) {
+                if (calendarNameProvider == null) {
+                    calendarNameProvider = provider;
+                }
+            }
+        }
+        return calendarNameProvider;
+    }
+
+    @Override
     public CollatorProvider getCollatorProvider() {
         return null;
     }
@@ -166,7 +185,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
         return locs;
     }
 
-    private Locale applyAliases(Locale loc) {
+    private static Locale applyAliases(Locale loc) {
         if (langAliasesMap.isEmpty()) {
             langAliasesMap = baseMetaInfo.getLanguageAliasMap();
         }
@@ -264,19 +283,18 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     /**
-     * This method returns equivalent CLDR supported locale for zh-HK,
-     * no, no-NO locales so that COMPAT locales do not precede
-     * those locales during ResourceBundle search path.
+     * This method returns equivalent CLDR supported locale
+     * for no, no-NO locales so that COMPAT locales do not precede
+     * those locales during ResourceBundle search path, also if an alias exists for a locale,
+     * it returns equivalent locale, e.g for zh_HK it returns zh_Hant-HK.
      */
     private static Locale getEquivalentLoc(Locale locale) {
         switch (locale.toString()) {
-            case "zh_HK":
-                return Locale.forLanguageTag("zh-Hant-HK");
             case "no":
             case "no_NO":
                 return Locale.forLanguageTag("nb");
         }
-        return locale;
+        return applyAliases(locale);
     }
 
     @Override

@@ -117,14 +117,6 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<ul>\n"
                 + "<li>");
 
-        // Test for allclasses-noframe page
-        checkOutput("allclasses-noframe.html", true,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<main role=\"main\" class=\"indexContainer\">\n"
-                + "<ul>\n"
-                + "<li>");
-
         // Test for overview-summary page
         checkOutput("overview-summary.html", true,
                 "<!DOCTYPE HTML>",
@@ -360,7 +352,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<section role=\"region\">\n"
                 + "<h2>Package</h2>\n",
                 "<section role=\"region\">\n"
-                + "<h2>Class/Interface</h2>\n",
+                + "<h2>Class or Interface</h2>\n",
                 "<footer role=\"contentinfo\">\n"
                 + "<nav role=\"navigation\">\n"
                 + "<!-- ======= START OF BOTTOM NAVBAR ====== -->");
@@ -649,14 +641,6 @@ public class TestHtmlVersion extends JavadocTester {
 
         // Negated test for allclasses-frame page
         checkOutput("allclasses-frame.html", false,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<div class=\"indexContainer\">\n"
-                + "<ul>\n"
-                + "<li>");
-
-        // Negated test for allclasses-noframe page
-        checkOutput("allclasses-noframe.html", false,
                 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
                 "<meta name=\"date\"",
                 "<div class=\"indexContainer\">\n"
@@ -1088,14 +1072,6 @@ public class TestHtmlVersion extends JavadocTester {
                 + "<ul>\n"
                 + "<li>");
 
-        // Test for allclasses-noframe page
-        checkOutput("allclasses-noframe.html", true,
-                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
-                "<meta name=\"date\"",
-                "<div class=\"indexContainer\">\n"
-                + "<ul>\n"
-                + "<li>");
-
         // Test for overview-summary page
         checkOutput("overview-summary.html", true,
                 "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">",
@@ -1290,7 +1266,7 @@ public class TestHtmlVersion extends JavadocTester {
                 "<li class=\"blockList\">\n"
                 + "<h2>Package</h2>",
                 "<li class=\"blockList\">\n"
-                + "<h2>Class/Interface</h2>");
+                + "<h2>Class or Interface</h2>");
 
         // Test for a regular class page and members (nested class, field, constructore and method)
         checkOutput("pkg/AnotherClass.html", true,
@@ -1533,14 +1509,6 @@ public class TestHtmlVersion extends JavadocTester {
 
         // Negated test for allclasses-frame page
         checkOutput("allclasses-frame.html", false,
-                "<!DOCTYPE HTML>",
-                "<meta name=\"dc.created\"",
-                "<main role=\"main\" class=\"indexContainer\">\n"
-                + "<ul>\n"
-                + "<li>");
-
-        // Negated test for allclasses-noframe page
-        checkOutput("allclasses-noframe.html", false,
                 "<!DOCTYPE HTML>",
                 "<meta name=\"dc.created\"",
                 "<main role=\"main\" class=\"indexContainer\">\n"

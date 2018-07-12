@@ -355,7 +355,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     if (klass.isArrayKlass()) {
        klass = klass.getJavaSuper();
     }
-    return ((InstanceKlass)klass).findMethod(name, sig);
+    return ((InstanceKlass)klass).findMethod(name.asString(), sig.asString());
   }
 
   // returns null, if not resolved.
@@ -364,7 +364,7 @@ public class ConstantPool extends Metadata implements ClassConstants {
     if (klass == null) return null;
     Symbol name = getNameRefAt(which);
     Symbol sig  = getSignatureRefAt(which);
-    return klass.findField(name, sig);
+    return klass.findField(name.asString(), sig.asString());
   }
 
   public int getNameAndTypeRefIndexAt(int index) {

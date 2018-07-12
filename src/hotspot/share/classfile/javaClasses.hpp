@@ -1491,6 +1491,19 @@ class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
   static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
+class jdk_internal_module_ArchivedModuleGraph: AllStatic {
+ private:
+  static int _archivedSystemModules_offset;
+  static int _archivedModuleFinder_offset;
+  static int _archivedMainModule_offset;
+ public:
+  static int  archivedSystemModules_offset()      { return _archivedSystemModules_offset; }
+  static int  archivedModuleFinder_offset()       { return _archivedModuleFinder_offset; }
+  static int  archivedMainModule_offset()         { return _archivedMainModule_offset; }
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
 // Use to declare fields that need to be injected into Java classes
 // for the JVM to use.  The name_index and signature_index are
 // declared in vmSymbols.  The may_be_java flag is used to declare

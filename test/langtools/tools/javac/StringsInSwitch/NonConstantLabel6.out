@@ -1,7 +1,0 @@
-- compiler.warn.source.no.bootclasspath: 6
-- compiler.warn.option.obsolete.source: 6
-- compiler.warn.option.obsolete.suppression
-NonConstantLabel.java:11:15: compiler.err.feature.not.supported.in.source.plural: (compiler.misc.feature.string.switch), 6, 7
-NonConstantLabel.java:14:14: compiler.err.string.const.req
-2 errors
-3 warnings

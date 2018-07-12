@@ -41,6 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.StringJoiner;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -295,6 +296,16 @@ public enum Option {
             }
             super.process(helper, option, operand);
         }
+
+        @Override
+        protected void help(Log log) {
+            StringJoiner sj = new StringJoiner(", ");
+            for(Source source :  Source.values()) {
+                if (source.isSupported())
+                    sj.add(source.name);
+            }
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, sj.toString()));
+        }
     },
 
     TARGET("-target", "opt.arg.release", "opt.target", STANDARD, BASIC) {
@@ -305,6 +316,16 @@ public enum Option {
                 throw helper.newInvalidValueException(Errors.InvalidTarget(operand));
             }
             super.process(helper, option, operand);
+        }
+
+        @Override
+        protected void help(Log log) {
+            StringJoiner sj = new StringJoiner(", ");
+            for(Target target :  Target.values()) {
+                if (target.isSupported())
+                    sj.add(target.name);
+            }
+            super.help(log, log.localize(PrefixKind.JAVAC, descrKey, sj.toString()));
         }
     },
 

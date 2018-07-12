@@ -131,6 +131,10 @@ public enum Source {
         return tab.get(name);
     }
 
+    public boolean isSupported() {
+        return this.compareTo(MIN) >= 0;
+    }
+
     public Target requiredTarget() {
         if (this.compareTo(JDK12) >= 0) return Target.JDK1_12;
         if (this.compareTo(JDK11) >= 0) return Target.JDK1_11;

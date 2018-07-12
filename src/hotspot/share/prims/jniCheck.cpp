@@ -1995,9 +1995,6 @@ JNI_ENTRY_CHECKED(jobject,
   checked_jni_GetModule(JNIEnv *env,
                         jclass clazz))
     functionEnter(thr);
-    IN_VM(
-      jniCheck::validate_class(thr, clazz, false);
-    )
     jobject result = UNCHECKED()->GetModule(env,clazz);
     functionExit(thr);
     return result;

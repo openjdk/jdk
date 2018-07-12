@@ -60,6 +60,7 @@ public class TestNavigation extends JavadocTester {
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
+        checkSubNav();
 
         checkOutput("pkg/A.html", true,
                 "<ul class=\"navList\" title=\"Navigation\">\n" +
@@ -117,6 +118,7 @@ public class TestNavigation extends JavadocTester {
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
+        checkSubNav();
 
         checkOutput("pkg/I.html", true,
                 // Test for 4664607
@@ -156,6 +158,7 @@ public class TestNavigation extends JavadocTester {
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
+        checkSubNav();
 
         checkOutput("pkg/A.html", true,
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
@@ -189,6 +192,7 @@ public class TestNavigation extends JavadocTester {
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
+        checkSubNav();
 
         checkOutput("pkg/A.html", false,
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
@@ -221,6 +225,7 @@ public class TestNavigation extends JavadocTester {
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
+        checkSubNav();
 
         checkOutput("pkg/A.html", false,
                 "<!-- ========= END OF TOP NAVBAR ========= -->\n"
@@ -329,4 +334,42 @@ public class TestNavigation extends JavadocTester {
                 "<li>Constr&nbsp;|&nbsp;</li>",
                 "<li>Method</li>");
     }
+
+    private void checkSubNav() {
+
+        checkOutput("pkg/A.html", false,
+                "All&nbsp;Classes",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+
+        checkOutput("pkg/C.html", false,
+                "All&nbsp;Classes",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+
+        checkOutput("pkg/E.html", false,
+                "All&nbsp;Classes",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+
+        checkOutput("pkg/I.html", false,
+                "All&nbsp;Classes",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+
+        checkOutput("pkg/package-summary.html", false,
+                "All&nbsp;Classes",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_top\");",
+                "<script type=\"text/javascript\"><!--\n"
+                + "  allClassesLink = document.getElementById(\"allclasses_navbar_bottom\");");
+}
 }

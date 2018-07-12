@@ -34,82 +34,136 @@
 
 /*
  * @test
- * @bug 8004138
+ * @bug 8004138 8205576
  * @modules java.base/java.util.concurrent:open
+ * @run testng FJExceptionTableLeak
  * @summary Checks that ForkJoinTask thrown exceptions are not leaked.
  * This whitebox test is sensitive to forkjoin implementation details.
  */
+
+import static org.testng.Assert.*;
+import org.testng.annotations.Test;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BooleanSupplier;
 
+@Test
 public class FJExceptionTableLeak {
+    final ThreadLocalRandom rnd = ThreadLocalRandom.current();
+    final VarHandle NEXT, EX;
+    final Object[] exceptionTable;
+    final ReentrantLock exceptionTableLock;
+
+    FJExceptionTableLeak() throws ReflectiveOperationException {
+        MethodHandles.Lookup lookup = MethodHandles.privateLookupIn(
+            ForkJoinTask.class, MethodHandles.lookup());
+        Class<?> nodeClass = Class.forName(
+            ForkJoinTask.class.getName() + "$ExceptionNode");
+        VarHandle exceptionTableHandle = lookup.findStaticVarHandle(
+            ForkJoinTask.class, "exceptionTable", arrayClass(nodeClass));
+        VarHandle exceptionTableLockHandle = lookup.findStaticVarHandle(
+            ForkJoinTask.class, "exceptionTableLock", ReentrantLock.class);
+        exceptionTable = (Object[]) exceptionTableHandle.get();
+        exceptionTableLock = (ReentrantLock) exceptionTableLockHandle.get();
+
+        NEXT = lookup.findVarHandle(nodeClass, "next", nodeClass);
+        EX = lookup.findVarHandle(nodeClass, "ex", Throwable.class);
+    }
+
+    static <T> Class<T[]> arrayClass(Class<T> klazz) {
+        try {
+            return (Class<T[]>) Class.forName("[L" + klazz.getName() + ";");
+        } catch (ReflectiveOperationException ex) {
+            throw new Error(ex);
+        }
+    }
+
+    Object next(Object node) { return NEXT.get(node); }
+    Throwable ex(Object node) { return (Throwable) EX.get(node); }
+
     static class FailingTaskException extends RuntimeException {}
     static class FailingTask extends RecursiveAction {
         public void compute() { throw new FailingTaskException(); }
     }
 
-    static int bucketsInuse(Object[] exceptionTable) {
-        int count = 0;
-        for (Object x : exceptionTable)
-            if (x != null) count++;
-        return count;
+    /** Counts all FailingTaskExceptions still recorded in exceptionTable. */
+    int retainedExceptions() {
+        exceptionTableLock.lock();
+        try {
+            int count = 0;
+            for (Object node : exceptionTable)
+                for (; node != null; node = next(node))
+                    if (ex(node) instanceof FailingTaskException)
+                        count++;
+            return count;
+        } finally {
+            exceptionTableLock.unlock();
+        }
     }
 
-    public static void main(String[] args) throws Exception {
-        final ForkJoinPool pool = new ForkJoinPool(4);
-        final Field exceptionTableField =
-            ForkJoinTask.class.getDeclaredField("exceptionTable");
-        exceptionTableField.setAccessible(true);
-        final Object[] exceptionTable = (Object[]) exceptionTableField.get(null);
+    @Test
+    public void exceptionTableCleanup() throws Exception {
+        ArrayList<FailingTask> failedTasks = failedTasks();
 
-        if (bucketsInuse(exceptionTable) != 0) throw new AssertionError();
-
-        final ArrayList<FailingTask> tasks = new ArrayList<>();
-
-        // Keep submitting failing tasks until most of the exception
-        // table buckets are in use
-        do {
-            for (int i = 0; i < exceptionTable.length; i++) {
-                FailingTask task = new FailingTask();
-                pool.execute(task);
-                tasks.add(task); // retain strong refs to all tasks, for now
-            }
-            for (FailingTask task : tasks) {
-                try {
-                    task.join();
-                    throw new AssertionError("should throw");
-                } catch (FailingTaskException success) {}
-            }
-        } while (bucketsInuse(exceptionTable) < exceptionTable.length * 3 / 4);
-
-        // Retain a strong ref to one last failing task;
-        // task.join() will trigger exception table expunging.
-        FailingTask lastTask = tasks.get(0);
+        // Retain a strong ref to one last failing task
+        FailingTask lastTask = failedTasks.get(rnd.nextInt(failedTasks.size()));
 
         // Clear all other strong refs, making exception table cleanable
-        tasks.clear();
+        failedTasks.clear();
 
         BooleanSupplier exceptionTableIsClean = () -> {
             try {
+                // Trigger exception table expunging as side effect
                 lastTask.join();
                 throw new AssertionError("should throw");
             } catch (FailingTaskException expected) {}
-            int count = bucketsInuse(exceptionTable);
+            int count = retainedExceptions();
             if (count == 0)
                 throw new AssertionError("expected to find last task");
             return count == 1;
         };
         gcAwait(exceptionTableIsClean);
+    }
+
+    /** Sequestered into a separate method to inhibit GC retention. */
+    ArrayList<FailingTask> failedTasks()
+        throws Exception {
+        final ForkJoinPool pool = new ForkJoinPool(rnd.nextInt(1, 4));
+
+        assertEquals(0, retainedExceptions());
+
+        final ArrayList<FailingTask> tasks = new ArrayList<>();
+
+        for (int i = exceptionTable.length; i--> 0; ) {
+            FailingTask task = new FailingTask();
+            pool.execute(task);
+            tasks.add(task); // retain strong refs to all tasks, for now
+            task = null;     // excessive GC retention paranoia
+        }
+        for (FailingTask task : tasks) {
+            try {
+                task.join();
+                throw new AssertionError("should throw");
+            } catch (FailingTaskException success) {}
+            task = null;     // excessive GC retention paranoia
+        }
+
+        if (rnd.nextBoolean())
+            gcAwait(() -> retainedExceptions() == tasks.size());
+
+        return tasks;
     }
 
     // --------------- GC finalization infrastructure ---------------

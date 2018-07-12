@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,7 @@ public class Operators {
      * Report an operator lookup error.
      */
     private OperatorSymbol reportErrorIfNeeded(DiagnosticPosition pos, Tag tag, Type... args) {
-        if (Stream.of(args).noneMatch(Type::isErroneous)) {
+        if (Stream.of(args).noneMatch(t -> t.isErroneous() || t.hasTag(TypeTag.NONE))) {
             Name opName = operatorName(tag);
             JCDiagnostic.Error opError = (args.length) == 1 ?
                     Errors.OperatorCantBeApplied(opName, args[0]) :

@@ -26,10 +26,10 @@
 #include "jfr/jfr.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
-#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
+#include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "runtime/java.hpp"
 
@@ -64,9 +64,7 @@ void Jfr::on_unloading_classes() {
 }
 
 void Jfr::on_thread_exit(JavaThread* thread) {
-  if (JfrRecorder::is_recording()) {
-    JfrThreadLocal::on_exit(thread);
-  }
+  JfrThreadLocal::on_exit(thread);
 }
 
 void Jfr::on_thread_destruct(Thread* thread) {

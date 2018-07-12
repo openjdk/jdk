@@ -372,22 +372,25 @@ initial_reordering_consonant_syllable (const hb_ot_shape_plan_t *plan,
         break;
       }
 
-    /* Note!  syllable() is a one-byte field. */
-    for (unsigned int i = base; i < end; i++)
-      if (info[i].syllable() != 255)
-      {
-        unsigned int max = i;
-        unsigned int j = start + info[i].syllable();
-        while (j != i)
+    if (unlikely (end - start >= 127))
+      buffer->merge_clusters (start, end);
+    else
+      /* Note!  syllable() is a one-byte field. */
+      for (unsigned int i = base; i < end; i++)
+        if (info[i].syllable() != 255)
         {
-          max = MAX (max, j);
-          unsigned int next = start + info[j].syllable();
-          info[j].syllable() = 255; /* So we don't process j later again. */
-          j = next;
+          unsigned int max = i;
+          unsigned int j = start + info[i].syllable();
+          while (j != i)
+          {
+            max = MAX (max, j);
+            unsigned int next = start + info[j].syllable();
+            info[j].syllable() = 255; /* So we don't process j later again. */
+            j = next;
+          }
+          if (i != max)
+            buffer->merge_clusters (i, max + 1);
         }
-        if (i != max)
-          buffer->merge_clusters (i, max + 1);
-      }
 
     /* Put syllable back in. */
     for (unsigned int i = start; i < end; i++)

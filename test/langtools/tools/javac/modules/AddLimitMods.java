@@ -264,7 +264,7 @@ public class AddLimitMods extends ModuleTestBase {
                    .writeAll()
                    .getOutputLines(Task.OutputKind.DIRECT);
 
-        if (!actual.contains("- compiler.err.option.not.allowed.with.target: --add-modules, 1.8")) {
+        if (!actual.contains("- compiler.err.option.not.allowed.with.target: --add-modules, 8")) {
             throw new IllegalStateException("incorrect errors; actual=" + actual);
         }
 

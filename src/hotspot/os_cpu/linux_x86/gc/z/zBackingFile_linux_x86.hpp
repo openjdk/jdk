@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,11 @@
 
 class ZBackingFile {
 private:
+  static bool _hugetlbfs_mmap_retry;
+
   int      _fd;
   uint64_t _filesystem;
+  size_t   _available;
   bool     _initialized;
 
   int create_mem_fd(const char* name) const;
@@ -42,9 +45,9 @@ private:
 
   bool try_split_and_expand_tmpfs(size_t offset, size_t length, size_t alignment) const;
   bool try_expand_tmpfs(size_t offset, size_t length, size_t alignment) const;
-  bool expand_tmpfs(size_t offset, size_t length) const;
-
-  bool expand_hugetlbfs(size_t offset, size_t length) const;
+  bool try_expand_tmpfs(size_t offset, size_t length) const;
+  bool try_expand_hugetlbfs(size_t offset, size_t length) const;
+  bool try_expand_tmpfs_or_hugetlbfs(size_t offset, size_t length, size_t alignment) const;
 
 public:
   ZBackingFile();
@@ -52,7 +55,9 @@ public:
   bool is_initialized() const;
 
   int fd() const;
-  bool expand(size_t offset, size_t length) const;
+  size_t available() const;
+
+  size_t try_expand(size_t offset, size_t length, size_t alignment) const;
 };
 
 #endif // OS_CPU_LINUX_X86_ZBACKINGFILE_LINUX_X86_HPP

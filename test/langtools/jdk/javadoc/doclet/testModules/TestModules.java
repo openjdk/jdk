@@ -1148,7 +1148,8 @@ public class TestModules extends JavadocTester {
                 "module-overview-frame.html");
         checkFiles(true,
                 "moduleC/module-summary.html",
-                "allclasses-frame.html",
+                "allclasses-frame.html");
+        checkFiles(false,
                 "allclasses-noframe.html");
     }
 

@@ -33,6 +33,7 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -342,5 +343,23 @@ public class TestCommon extends CDSTestUtils {
             throw new RuntimeException("Not a directory: " + dirFile.getPath());
         }
         return dirFile.getPath();
+    }
+
+    public static boolean checkOutputStrings(String outputString1,
+                                             String outputString2,
+                                             String split_regex) {
+        String[] sa1 = outputString1.split(split_regex);
+        String[] sa2 = outputString2.split(split_regex);
+        Arrays.sort(sa1);
+        Arrays.sort(sa2);
+
+        int i = 0;
+        for (String s : sa1) {
+            if (!s.equals(sa2[i])) {
+                throw new RuntimeException(s + " is different from " + sa2[i]);
+            }
+            i ++;
+        }
+        return true;
     }
 }

@@ -3,7 +3,6 @@
  * @bug     6558548 7039937
  * @summary The compiler needs to be aligned with clarified specification of throws
  * @compile/fail/ref=T6558548_latest.out -XDrawDiagnostics T6558548.java
- * @compile/fail/ref=T6558548_6.out -source 6 -Xlint:-options -XDrawDiagnostics T6558548.java
  */
 
 class T6558548 {

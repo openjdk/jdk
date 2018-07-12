@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,7 @@ public class SimpleTypeVisitor8<R, P> extends SimpleTypeVisitor7<R, P> {
      * Constructor for concrete subclasses; uses {@code null} for the
      * default value.
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected SimpleTypeVisitor8(){
         super(null);
     }
@@ -88,6 +89,7 @@ public class SimpleTypeVisitor8<R, P> extends SimpleTypeVisitor7<R, P> {
      *
      * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
+    @SuppressWarnings("deprecation") // Superclass constructor deprecated
     protected SimpleTypeVisitor8(R defaultValue){
         super(defaultValue);
     }

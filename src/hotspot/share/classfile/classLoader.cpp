@@ -298,8 +298,6 @@ ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name, bool is_
   char *copy = NEW_C_HEAP_ARRAY(char, strlen(zip_name)+1, mtClass);
   strcpy(copy, zip_name);
   _zip_name = copy;
-  _is_boot_append = is_boot_append;
-  _multi_versioned = _unknown;
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
@@ -338,95 +336,11 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
   return buffer;
 }
 
-#if INCLUDE_CDS
-u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TRAPS) {
-  u1* buffer = NULL;
-  if (DumpSharedSpaces && !_is_boot_append) {
-    // We presume default is multi-release enabled
-    const char* multi_ver = Arguments::get_property("jdk.util.jar.enableMultiRelease");
-    const char* verstr = Arguments::get_property("jdk.util.jar.version");
-    bool is_multi_ver = (multi_ver == NULL ||
-                         strcmp(multi_ver, "true") == 0 ||
-                         strcmp(multi_ver, "force")  == 0) &&
-                         is_multiple_versioned(THREAD);
-    // command line version setting
-    int version = 0;
-    const int base_version = 8; // JDK8
-    int cur_ver = JDK_Version::current().major_version();
-    if (verstr != NULL) {
-      version = atoi(verstr);
-      if (version < base_version || version > cur_ver) {
-        // If the specified version is lower than the base version, the base
-        // entry will be used; if the version is higher than the current
-        // jdk version, the highest versioned entry will be used.
-        if (version < base_version) {
-          is_multi_ver = false;
-        }
-        // print out warning, do not use assertion here since it will continue to look
-        // for proper version.
-        warning("JDK%d is not supported in multiple version jars", version);
-      }
-    }
-
-    if (is_multi_ver) {
-      int n;
-      const char* version_entry = "META-INF/versions/";
-      // 10 is the max length of a decimal 32-bit non-negative number
-      // 2 includes the '/' and trailing zero
-      size_t entry_name_len = strlen(version_entry) + 10 + strlen(name) + 2;
-      char* entry_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, entry_name_len);
-      if (version > 0) {
-        n = jio_snprintf(entry_name, entry_name_len, "%s%d/%s", version_entry, version, name);
-        entry_name[n] = '\0';
-        buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
-        if (buffer == NULL) {
-          warning("Could not find %s in %s, try to find highest version instead", entry_name, _zip_name);
-        }
-      }
-      if (buffer == NULL) {
-        for (int i = cur_ver; i >= base_version; i--) {
-          n = jio_snprintf(entry_name, entry_name_len, "%s%d/%s", version_entry, i, name);
-          entry_name[n] = '\0';
-          buffer = open_entry((const char*)entry_name, filesize, false, CHECK_NULL);
-          if (buffer != NULL) {
-            break;
-          }
-        }
-      }
-      FREE_RESOURCE_ARRAY(char, entry_name, entry_name_len);
-    }
-  }
-  return buffer;
-}
-
-bool ClassPathZipEntry::is_multiple_versioned(TRAPS) {
-  assert(DumpSharedSpaces, "called only at dump time");
-  if (_multi_versioned != _unknown) {
-    return (_multi_versioned == _yes) ? true : false;
-  }
-  jint size;
-  char* buffer = (char*)open_entry("META-INF/MANIFEST.MF", &size, true, CHECK_false);
-  if (buffer != NULL) {
-    char* p = buffer;
-    for ( ; *p; ++p) *p = tolower(*p);
-    if (strstr(buffer, "multi-release: true") != NULL) {
-      _multi_versioned = _yes;
-      return true;
-    }
-  }
-  _multi_versioned = _no;
-  return false;
-}
-#endif // INCLUDE_CDS
-
 ClassFileStream* ClassPathZipEntry::open_stream(const char* name, TRAPS) {
   jint filesize;
-  u1* buffer = open_versioned_entry(name, &filesize, CHECK_NULL);
+  u1* buffer = open_entry(name, &filesize, false, CHECK_NULL);
   if (buffer == NULL) {
-    buffer = open_entry(name, &filesize, false, CHECK_NULL);
-    if (buffer == NULL) {
-      return NULL;
-    }
+    return NULL;
   }
   if (UsePerfData) {
     ClassLoader::perf_sys_classfile_bytes_read()->inc(filesize);
@@ -635,6 +549,7 @@ void ClassLoader::trace_class_path(const char* msg, const char* name) {
 
 void ClassLoader::setup_bootstrap_search_path() {
   const char* sys_class_path = Arguments::get_sysclasspath();
+  assert(sys_class_path != NULL, "System boot class path must not be NULL");
   if (PrintSharedArchiveAndExit) {
     // Don't print sys_class_path - this is the bootcp of this current VM process, not necessarily
     // the same as the bootcp of the shared archive.

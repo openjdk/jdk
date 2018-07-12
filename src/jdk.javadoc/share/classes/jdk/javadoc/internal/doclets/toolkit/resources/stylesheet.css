@@ -191,6 +191,9 @@ sup {
     padding:0 0 5px 6px;
     text-transform:uppercase;
 }
+.subNav .navList {
+    padding-top:5px;
+}
 ul.navList, ul.subNavList {
     float:left;
     margin:0 25px 0 0;
@@ -220,6 +223,7 @@ ul.navListSearch li label {
 ul.subNavList li {
     list-style:none;
     float:left;
+    padding-top:10px;
 }
 .topNav a:link, .topNav a:active, .topNav a:visited, .bottomNav a:link, .bottomNav a:active, .bottomNav a:visited {
     color:#FFFFFF;
@@ -784,6 +788,7 @@ ul.ui-autocomplete  li {
     padding-left:20px;
     position:relative;
     right:-18px;
+    width:400px;
 }
 #reset {
     background-color: rgb(255,255,255);

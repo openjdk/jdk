@@ -177,13 +177,24 @@ public class FixedThreadPoolTest {
         System.err.println("DONE");
     }
 
+    // expect highest supported version we know about
+    static String expectedTLSVersion(SSLContext ctx) {
+        SSLParameters params = ctx.getSupportedSSLParameters();
+        String[] protocols = params.getProtocols();
+        for (String prot : protocols) {
+            if (prot.equals("TLSv1.3"))
+                return "TLSv1.3";
+        }
+        return "TLSv1.2";
+    }
+
     static void paramsTest() throws Exception {
         System.err.println("paramsTest");
         Http2TestServer server = new Http2TestServer(true, 0, exec, sslContext);
         server.addHandler((t -> {
             SSLSession s = t.getSSLSession();
             String prot = s.getProtocol();
-            if (prot.equals("TLSv1.2")) {
+            if (prot.equals(expectedTLSVersion(sslContext))) {
                 t.sendResponseHeaders(200, -1);
             } else {
                 System.err.printf("Protocols =%s\n", prot);

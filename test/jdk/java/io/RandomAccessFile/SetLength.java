@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,60 +22,143 @@
  */
 
 /* @test
-   @summary General tests of the setLength method -- Should migrate to 1.2 JCK
+ * @bug 8204310
+ * @summary General tests of the setLength method
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @run main SetLength
+ * @key randomness
  */
 
-import java.io.*;
+import java.io.IOException;
+import java.io.File;
+import java.io.RandomAccessFile;
 
+import jdk.test.lib.RandomFactory;
 
 public class SetLength {
 
-    static void fail(String s) {
-        throw new RuntimeException(s);
+    static void checkState(RandomAccessFile f, long expectedFilePointer,
+            long expectedLength)
+        throws IOException
+    {
+        long filePointer = f.getFilePointer();
+        long length = f.length();
+        if (length != expectedLength) {
+            throw new RuntimeException("File length " + length + " != expected "
+                    + expectedLength);
+        }
+        if (filePointer != expectedFilePointer) {
+            throw new RuntimeException("File pointer " + filePointer
+                    + " != expected " + expectedFilePointer);
+        }
     }
 
-    static void go(File fn, int max) throws IOException {
-        int chunk = max / 4;
-        long i;
-        RandomAccessFile f;
+    static void test(RandomAccessFile f, long quarterLength)
+        throws IOException
+    {
+        long halfLength = 2 * quarterLength;
+        long threeQuarterLength = 3 * quarterLength;
+        long fullLength = 4 * quarterLength;
 
-        f = new RandomAccessFile(fn, "rw");
-        f.setLength(2 * chunk);
-        if (f.length() != 2 * chunk) fail("Length not increased to " + (2 * chunk));
-        if ((i = f.getFilePointer()) != 0) fail("File pointer shifted to " + i);
-        byte[] buf = new byte[max];
-        f.write(buf);
-        if (f.length() != max) fail("Write didn't work");
-        if (f.getFilePointer() != max) fail("File pointer inconsistent");
-        f.setLength(3 * chunk);
-        if (f.length() != 3 * chunk) fail("Length not reduced to " + 3 * chunk);
-        if (f.getFilePointer() != 3 * chunk) fail("File pointer not shifted to " + (3 * chunk));
-        f.seek(1 * chunk);
-        if (f.getFilePointer() != 1 * chunk) fail("File pointer not shifted to " + (1 * chunk));
-        f.setLength(2 * chunk);
-        if (f.length() != 2 * chunk) fail("Length not reduced to " + (2 * chunk));
-        if (f.getFilePointer() != 1 * chunk) fail("File pointer not shifted to " + (1 * chunk));
+        // initially, empty file
+        checkState(f, 0, 0);
+
+        // extending the file size
+        f.setLength(halfLength);
+        checkState(f, 0, halfLength);
+
+        // writing from the begining
+        f.write(new byte[(int)fullLength]);
+        checkState(f, fullLength, fullLength);
+
+        // setting to the same length
+        f.setLength(fullLength);
+        checkState(f, fullLength, fullLength);
+
+        // truncating the file
+        f.setLength(threeQuarterLength);
+        checkState(f, threeQuarterLength, threeQuarterLength);
+
+        // changing the file pointer
+        f.seek(quarterLength);
+        checkState(f, quarterLength, threeQuarterLength);
+
+        // truncating the file again
+        f.setLength(halfLength);
+        checkState(f, quarterLength, halfLength);
+
+        // writing from the middle with extending the file
+        f.write(new byte[(int)halfLength]);
+        checkState(f, threeQuarterLength, threeQuarterLength);
+
+        // changing the file pointer
+        f.seek(quarterLength);
+        checkState(f, quarterLength, threeQuarterLength);
+
+        // writing from the middle without extending the file
+        f.write(new byte[(int)quarterLength]);
+        checkState(f, halfLength, threeQuarterLength);
+
+        // changing the file pointer to the end of file
+        f.seek(threeQuarterLength);
+        checkState(f, threeQuarterLength, threeQuarterLength);
+
+        // writing to the end of file
+        f.write(new byte[(int)quarterLength]);
+        checkState(f, fullLength, fullLength);
+
+        // truncating the file to zero
+        f.setLength(0);
+        checkState(f, 0, 0);
+
+        // changing the file pointer beyond the end of file
+        f.seek(threeQuarterLength);
+        checkState(f, threeQuarterLength, 0);
+
+        // writing beyont the end of file
+        f.write(new byte[(int)quarterLength]);
+        checkState(f, fullLength, fullLength);
+
+        // negative file pointer
+        try {
+            f.seek(-1);
+            throw new RuntimeException("IOE not thrown");
+        } catch (IOException expected) {
+        }
+        checkState(f, fullLength, fullLength);
+
+        // truncating the file after failed seek
+        f.setLength(halfLength);
+        checkState(f, halfLength, halfLength);
+
+        // truncating after closing
         f.close();
+        try {
+            f.setLength(halfLength);
+            throw new RuntimeException("IOE not thrown");
+        } catch (IOException expected) {
+        }
     }
 
     public static void main(String[] args) throws IOException {
-        File fn = new File("x.SetLength");
-        try {
-            go(fn, 20);
-            fn.delete();
-            go(fn, 64 * 1024);
-            RandomAccessFile f = new RandomAccessFile(fn, "r");
-            boolean thrown = false;
-            try {
-                f.setLength(3);
-            } catch (IOException x) {
-                thrown = true;
-            }
-            if (!thrown) fail("setLength succeeded on a file opened read-only");
-            f.close();
+        File f28b = new File("f28b");
+        File f28K = new File("f28K");
+        File frnd = new File("frnd");
+
+        try (RandomAccessFile raf28b = new RandomAccessFile(f28b, "rw");
+             RandomAccessFile raf28K = new RandomAccessFile(f28K, "rw");
+             RandomAccessFile rafrnd = new RandomAccessFile(frnd, "rw")) {
+            test(raf28b, 7);
+            test(raf28K, 7 * 1024);
+            test(rafrnd, 1 + RandomFactory.getRandom().nextInt(16000));
         }
-        finally {
-            fn.delete();
+
+        // truncating read-only file
+        try (RandomAccessFile raf28b = new RandomAccessFile(f28b, "r")) {
+            raf28b.setLength(42);
+            throw new RuntimeException("IOE not thrown");
+        } catch (IOException expected) {
         }
     }
 

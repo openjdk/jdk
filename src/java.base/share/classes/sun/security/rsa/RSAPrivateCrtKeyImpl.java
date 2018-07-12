@@ -123,6 +123,10 @@ public final class RSAPrivateCrtKeyImpl
      * Construct a key from its encoding. Called from newKey above.
      */
     RSAPrivateCrtKeyImpl(byte[] encoded) throws InvalidKeyException {
+        if (encoded == null || encoded.length == 0) {
+            throw new InvalidKeyException("Missing key encoding");
+        }
+
         decode(encoded);
         RSAKeyFactory.checkRSAProviderKeyLengths(n.bitLength(), e);
         try {

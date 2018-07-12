@@ -34,7 +34,7 @@ import java.awt.Rectangle;
 
 import java.io.Serializable;
 import sun.swing.DefaultLookup;
-
+import sun.swing.SwingUtilities2;
 
 /**
  * The standard class for rendering (displaying) individual cells
@@ -345,11 +345,12 @@ public class DefaultTableCellRenderer extends JLabel
     protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         // Strings get interned...
         if (propertyName=="text"
-                || propertyName == "labelFor"
-                || propertyName == "displayedMnemonic"
-                || ((propertyName == "font" || propertyName == "foreground")
-                    && oldValue != newValue
-                    && getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey) != null)) {
+            || propertyName == "labelFor"
+            || propertyName == "displayedMnemonic"
+            || ((SwingUtilities2.isScaleChanged(propertyName, oldValue, newValue)
+                    || propertyName == "font" || propertyName == "foreground")
+                && oldValue != newValue
+                && getClientProperty(javax.swing.plaf.basic.BasicHTML.propertyKey) != null)) {
 
             super.firePropertyChange(propertyName, oldValue, newValue);
         }

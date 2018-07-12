@@ -102,7 +102,7 @@ public class TestModuleDirs extends JavadocTester {
                 + "<li><a href=\"overview-frame.html\" target=\"packageListFrame\">All&nbsp;Packages</a></li>\n"
                 + "<li><a href=\"module-overview-frame.html\" target=\"packageListFrame\">All&nbsp;Modules</a></li>\n"
                 + "</ul>\n");
-        checkOutput("ma-summary.html", true,
+        checkOutput("ma-summary.html", false,
                 "<ul class=\"navList\" id=\"allclasses_navbar_top\">\n"
                 + "<li><a href=\"allclasses-noframe.html\">All&nbsp;Classes</a></li>\n"
                 + "</ul>\n");
@@ -145,7 +145,7 @@ public class TestModuleDirs extends JavadocTester {
                 + "<li><a href=\"../overview-frame.html\" target=\"packageListFrame\">All&nbsp;Packages</a></li>\n"
                 + "<li><a href=\"../module-overview-frame.html\" target=\"packageListFrame\">All&nbsp;Modules</a></li>\n"
                 + "</ul>\n");
-        checkOutput("ma/module-summary.html", true,
+        checkOutput("ma/module-summary.html", false,
                 "<ul class=\"navList\" id=\"allclasses_navbar_top\">\n"
                 + "<li><a href=\"../allclasses-noframe.html\">All&nbsp;Classes</a></li>\n"
                 + "</ul>\n");

@@ -28,7 +28,6 @@
 #include "gc/z/zErrno.hpp"
 #include "gc/z/zLargePages.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/init.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -46,10 +45,6 @@
 
 // Sysfs file for transparent huge page on tmpfs
 #define ZFILENAME_SHMEM_ENABLED          "/sys/kernel/mm/transparent_hugepage/shmem_enabled"
-
-// Default mount points
-#define ZMOUNTPOINT_TMPFS                "/dev/shm"
-#define ZMOUNTPOINT_HUGETLBFS            "/hugepages"
 
 // Java heap filename
 #define ZFILENAME_HEAP                   "java_heap"
@@ -79,13 +74,30 @@
 #define HUGETLBFS_MAGIC                  0x958458f6
 #endif
 
+// Preferred tmpfs mount points, ordered by priority
+static const char* z_preferred_tmpfs_mountpoints[] = {
+  "/dev/shm",
+  "/run/shm",
+  NULL
+};
+
+// Preferred hugetlbfs mount points, ordered by priority
+static const char* z_preferred_hugetlbfs_mountpoints[] = {
+  "/dev/hugepages",
+  "/hugepages",
+  NULL
+};
+
 static int z_memfd_create(const char *name, unsigned int flags) {
   return syscall(__NR_memfd_create, name, flags);
 }
 
+bool ZBackingFile::_hugetlbfs_mmap_retry = true;
+
 ZBackingFile::ZBackingFile() :
     _fd(-1),
     _filesystem(0),
+    _available(0),
     _initialized(false) {
 
   // Create backing file
@@ -94,39 +106,47 @@ ZBackingFile::ZBackingFile() :
     return;
   }
 
-  // Get filesystem type
+  // Get filesystem statistics
   struct statfs statfs_buf;
   if (fstatfs(_fd, &statfs_buf) == -1) {
     ZErrno err;
-    log_error(gc, init)("Failed to determine filesystem type for backing file (%s)", err.to_string());
+    log_error(gc, init)("Failed to determine filesystem type for backing file (%s)",
+                        err.to_string());
     return;
   }
+
   _filesystem = statfs_buf.f_type;
+  _available = statfs_buf.f_bavail * statfs_buf.f_bsize;
 
   // Make sure we're on a supported filesystem
   if (!is_tmpfs() && !is_hugetlbfs()) {
-    log_error(gc, init)("Backing file must be located on a %s or a %s filesystem", ZFILESYSTEM_TMPFS, ZFILESYSTEM_HUGETLBFS);
+    log_error(gc, init)("Backing file must be located on a %s or a %s filesystem",
+                        ZFILESYSTEM_TMPFS, ZFILESYSTEM_HUGETLBFS);
     return;
   }
 
   // Make sure the filesystem type matches requested large page type
   if (ZLargePages::is_transparent() && !is_tmpfs()) {
-    log_error(gc, init)("-XX:+UseTransparentHugePages can only be enable when using a %s filesystem", ZFILESYSTEM_TMPFS);
+    log_error(gc, init)("-XX:+UseTransparentHugePages can only be enable when using a %s filesystem",
+                        ZFILESYSTEM_TMPFS);
     return;
   }
 
   if (ZLargePages::is_transparent() && !tmpfs_supports_transparent_huge_pages()) {
-    log_error(gc, init)("-XX:+UseTransparentHugePages on a %s filesystem not supported by kernel", ZFILESYSTEM_TMPFS);
+    log_error(gc, init)("-XX:+UseTransparentHugePages on a %s filesystem not supported by kernel",
+                        ZFILESYSTEM_TMPFS);
     return;
   }
 
   if (ZLargePages::is_explicit() && !is_hugetlbfs()) {
-    log_error(gc, init)("-XX:+UseLargePages (without -XX:+UseTransparentHugePages) can only be enabled when using a %s filesystem", ZFILESYSTEM_HUGETLBFS);
+    log_error(gc, init)("-XX:+UseLargePages (without -XX:+UseTransparentHugePages) can only be enabled when using a %s filesystem",
+                        ZFILESYSTEM_HUGETLBFS);
     return;
   }
 
   if (!ZLargePages::is_explicit() && is_hugetlbfs()) {
-    log_error(gc, init)("-XX:+UseLargePages must be enabled when using a %s filesystem", ZFILESYSTEM_HUGETLBFS);
+    log_error(gc, init)("-XX:+UseLargePages must be enabled when using a %s filesystem",
+                        ZFILESYSTEM_HUGETLBFS);
     return;
   }
 
@@ -149,17 +169,21 @@ int ZBackingFile::create_mem_fd(const char* name) const {
     return -1;
   }
 
-  log_debug(gc, init)("Heap backed by file /memfd:%s", filename);
+  log_info(gc, init)("Heap backed by file: /memfd:%s", filename);
 
   return fd;
 }
 
 int ZBackingFile::create_file_fd(const char* name) const {
-  const char* const filesystem = ZLargePages::is_explicit() ? ZFILESYSTEM_HUGETLBFS : ZFILESYSTEM_TMPFS;
-  const char* const mountpoint = ZLargePages::is_explicit() ? ZMOUNTPOINT_HUGETLBFS : ZMOUNTPOINT_TMPFS;
+  const char* const filesystem = ZLargePages::is_explicit()
+                                 ? ZFILESYSTEM_HUGETLBFS
+                                 : ZFILESYSTEM_TMPFS;
+  const char** const preferred_mountpoints = ZLargePages::is_explicit()
+                                             ? z_preferred_hugetlbfs_mountpoints
+                                             : z_preferred_tmpfs_mountpoints;
 
   // Find mountpoint
-  ZBackingPath path(filesystem, mountpoint);
+  ZBackingPath path(filesystem, preferred_mountpoints);
   if (path.get() == NULL) {
     log_error(gc, init)("Use -XX:ZPath to specify the path to a %s filesystem", filesystem);
     return -1;
@@ -181,7 +205,7 @@ int ZBackingFile::create_file_fd(const char* name) const {
       return -1;
     }
 
-    log_debug(gc, init)("Heap backed by file %s/#" UINT64_FORMAT, path.get(), (uint64_t)stat_buf.st_ino);
+    log_info(gc, init)("Heap backed by file: %s/#" UINT64_FORMAT, path.get(), (uint64_t)stat_buf.st_ino);
 
     return fd_anon;
   }
@@ -207,7 +231,7 @@ int ZBackingFile::create_file_fd(const char* name) const {
     return -1;
   }
 
-  log_debug(gc, init)("Heap backed by file %s", filename);
+  log_info(gc, init)("Heap backed by file: %s", filename);
 
   return fd;
 }
@@ -236,6 +260,10 @@ bool ZBackingFile::is_initialized() const {
 
 int ZBackingFile::fd() const {
   return _fd;
+}
+
+size_t ZBackingFile::available() const {
+  return _available;
 }
 
 bool ZBackingFile::is_tmpfs() const {
@@ -292,12 +320,12 @@ bool ZBackingFile::try_expand_tmpfs(size_t offset, size_t length, size_t alignme
   return true;
 }
 
-bool ZBackingFile::expand_tmpfs(size_t offset, size_t length) const {
+bool ZBackingFile::try_expand_tmpfs(size_t offset, size_t length) const {
   assert(is_tmpfs(), "Wrong filesystem");
   return try_expand_tmpfs(offset, length, os::vm_page_size());
 }
 
-bool ZBackingFile::expand_hugetlbfs(size_t offset, size_t length) const {
+bool ZBackingFile::try_expand_hugetlbfs(size_t offset, size_t length) const {
   assert(is_hugetlbfs(), "Wrong filesystem");
 
   // Prior to kernel 4.3, hugetlbfs did not support posix_fallocate().
@@ -320,11 +348,11 @@ bool ZBackingFile::expand_hugetlbfs(size_t offset, size_t length) const {
   // process being returned to the huge page pool and made available for new
   // allocations.
   void* addr = MAP_FAILED;
-  const int max_attempts = 3;
+  const int max_attempts = 5;
   for (int attempt = 1; attempt <= max_attempts; attempt++) {
     addr = mmap(0, length, PROT_READ|PROT_WRITE, MAP_SHARED, _fd, offset);
-    if (addr != MAP_FAILED || is_init_completed()) {
-      // Mapping was successful or initialization phase has completed
+    if (addr != MAP_FAILED || !_hugetlbfs_mmap_retry) {
+      // Mapping was successful or mmap retry is disabled
       break;
     }
 
@@ -335,6 +363,11 @@ bool ZBackingFile::expand_hugetlbfs(size_t offset, size_t length) const {
     // Wait and retry in one second, in the hope that
     // huge pages will be available by then.
     sleep(1);
+  }
+
+  // Disable mmap retry from now on
+  if (_hugetlbfs_mmap_retry) {
+    _hugetlbfs_mmap_retry = false;
   }
 
   if (addr == MAP_FAILED) {
@@ -355,6 +388,39 @@ bool ZBackingFile::expand_hugetlbfs(size_t offset, size_t length) const {
   return true;
 }
 
-bool ZBackingFile::expand(size_t offset, size_t length) const {
-  return is_hugetlbfs() ? expand_hugetlbfs(offset, length) : expand_tmpfs(offset, length);
+bool ZBackingFile::try_expand_tmpfs_or_hugetlbfs(size_t offset, size_t length, size_t alignment) const {
+  assert(is_aligned(offset, alignment), "Invalid offset");
+  assert(is_aligned(length, alignment), "Invalid length");
+
+  log_debug(gc)("Expanding heap from " SIZE_FORMAT "M to " SIZE_FORMAT "M", offset / M, (offset + length) / M);
+
+  return is_hugetlbfs() ? try_expand_hugetlbfs(offset, length) : try_expand_tmpfs(offset, length);
+}
+
+size_t ZBackingFile::try_expand(size_t offset, size_t length, size_t alignment) const {
+  size_t start = offset;
+  size_t end = offset + length;
+
+  // Try to expand
+  if (try_expand_tmpfs_or_hugetlbfs(start, length, alignment)) {
+    // Success
+    return end;
+  }
+
+  // Failed, try to expand as much as possible
+  for (;;) {
+    length = align_down((end - start) / 2, alignment);
+    if (length < alignment) {
+      // Done, don't expand more
+      return start;
+    }
+
+    if (try_expand_tmpfs_or_hugetlbfs(start, length, alignment)) {
+      // Success, try expand more
+      start += length;
+    } else {
+      // Failed, try expand less
+      end -= length;
+    }
+  }
 }

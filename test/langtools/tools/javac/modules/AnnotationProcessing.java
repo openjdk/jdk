@@ -95,6 +95,7 @@ import toolbox.Task.OutputKind;
 public class AnnotationProcessing extends ModuleTestBase {
 
     public static void main(String... args) throws Exception {
+        System.out.println(System.getProperties());
         new AnnotationProcessing().runTests();
     }
 
@@ -568,7 +569,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                             "--module-source-path", moduleSrc.toString());
                 assertFileExists(classes, "m1x", "api1", "Impl.class");
 
-                deleteFile(m1.resolve("test").resolve("Test.java"));
+                tb.deleteFiles(m1.resolve("test").resolve("Test.java"));
 
                 //resource class output:
                 runCompiler(base,
@@ -623,7 +624,7 @@ public class AnnotationProcessing extends ModuleTestBase {
             assertFileExists(classes, "m1x", pack, "Pass.class");
             assertFileNotExists(classes, "m2x", pack, "Pass.class");
 
-            deleteFile(m1.resolve("test").resolve("Test.java"));
+            tb.deleteFiles(m1.resolve("test").resolve("Test.java"));
 
             runCompiler(base,
                         moduleSrc,
@@ -692,36 +693,6 @@ public class AnnotationProcessing extends ModuleTestBase {
                         failingCode,
                         "--module-source-path", moduleSrc.toString());
         }
-    }
-
-    private void deleteFile(Path file) throws IOException {
-        long startTime = System.currentTimeMillis();
-
-        do {
-            Files.delete(file);
-            if (!Files.exists(file)) {
-                return;
-            }
-            System.err.println("!! File not deleted !!");
-            System.gc(); // allow finalizers and cleaners to run
-            try {
-                Thread.sleep(RETRY_DELETE_MILLIS);
-            } catch (InterruptedException e) {
-                throw new IOException("Interrupted while deleting " + file, e);
-            }
-        } while ((System.currentTimeMillis() - startTime) <= MAX_RETRY_DELETE_MILLIS);
-
-        throw new IOException("Can't delete " + file);
-    }
-
-
-    private static final int RETRY_DELETE_MILLIS;
-    private static final int MAX_RETRY_DELETE_MILLIS;
-
-    static {
-        boolean isWindows = System.getProperty("os.name").startsWith("Windows");
-        RETRY_DELETE_MILLIS = isWindows ? 500 : 0;
-        MAX_RETRY_DELETE_MILLIS = isWindows ? 15 * 1000 : 0;
     }
 
     public static abstract class GeneratingAP extends AbstractProcessor {
@@ -872,7 +843,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                                 options);
                     assertFileExists(classes, modulePath, "impl", "Impl.class");
 
-                    deleteFile(m1.resolve("test").resolve("Test.java"));
+                    tb.deleteFiles(m1.resolve("test").resolve("Test.java"));
 
                     //resource class output:
                     runCompiler(base,
@@ -899,7 +870,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                     "expectFilerException(() -> filer.getResource(StandardLocation.SOURCE_PATH, \"m1x/impl\", \"resource\"))",
                     "-sourcepath", m1.toString());
 
-        deleteFile(m1.resolve("impl").resolve("resource"));
+        tb.deleteFiles(m1.resolve("impl").resolve("resource"));
 
         //can read resources from the system module path if module name given:
         runCompiler(base,
@@ -960,7 +931,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                         "-sourcepath", m1.toString());
         }
 
-        deleteFile(m1.resolve("module-info.java"));
+        tb.deleteFiles(m1.resolve("module-info.java"));
         tb.writeJavaFiles(m1,
                           "package test; class Test { }");
 

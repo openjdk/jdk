@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,10 +70,9 @@ class ZPhysicalMemoryManager {
 private:
   ZPhysicalMemoryBacking _backing;
   const size_t           _max_capacity;
+  size_t                 _current_max_capacity;
   size_t                 _capacity;
   size_t                 _used;
-
-  bool ensure_available(size_t size);
 
   void nmt_commit(ZPhysicalMemory pmem, uintptr_t offset);
   void nmt_uncommit(ZPhysicalMemory pmem, uintptr_t offset);
@@ -84,9 +83,11 @@ public:
   bool is_initialized() const;
 
   size_t max_capacity() const;
+  size_t current_max_capacity() const;
   size_t capacity() const;
-  size_t used() const;
-  size_t available() const;
+  size_t unused_capacity() const;
+
+  void try_ensure_unused_capacity(size_t size);
 
   ZPhysicalMemory alloc(size_t size);
   void free(ZPhysicalMemory pmem);

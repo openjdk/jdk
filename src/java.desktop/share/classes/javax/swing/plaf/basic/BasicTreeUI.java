@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3843,7 +3843,8 @@ public class BasicTreeUI extends TreeUI
                 else if(changeName == JTree.SELECTION_MODEL_PROPERTY) {
                     setSelectionModel(tree.getSelectionModel());
                 }
-                else if(changeName == "font") {
+                else if(changeName == "font"
+                        || SwingUtilities2.isScaleChanged(event)) {
                     completeEditing();
                     if(treeState != null)
                         treeState.invalidateSizes();

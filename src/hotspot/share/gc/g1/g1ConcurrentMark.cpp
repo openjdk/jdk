@@ -1024,11 +1024,17 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
     uint _num_regions_selected_for_rebuild;  // The number of regions actually selected for rebuild.
 
-    void update_remset_before_rebuild(HeapRegion * hr) {
+    void update_remset_before_rebuild(HeapRegion* hr) {
       G1RemSetTrackingPolicy* tracking_policy = _g1h->g1_policy()->remset_tracker();
 
-      size_t const live_bytes = _cm->liveness(hr->hrm_index()) * HeapWordSize;
-      bool selected_for_rebuild = tracking_policy->update_before_rebuild(hr, live_bytes);
+      bool selected_for_rebuild;
+      if (hr->is_humongous()) {
+        bool const is_live = _cm->liveness(hr->humongous_start_region()->hrm_index()) > 0;
+        selected_for_rebuild = tracking_policy->update_humongous_before_rebuild(hr, is_live);
+      } else {
+        size_t const live_bytes = _cm->liveness(hr->hrm_index());
+        selected_for_rebuild = tracking_policy->update_before_rebuild(hr, live_bytes);
+      }
       if (selected_for_rebuild) {
         _num_regions_selected_for_rebuild++;
       }

@@ -71,6 +71,9 @@ import static java.lang.invoke.MethodType.methodType;
  * <li>Combinator methods, which combine or transform pre-existing method handles into new ones.
  * <li>Other factory methods to create method handles that emulate other common JVM operations or control flow patterns.
  * </ul>
+ * A lookup, combinator, or factory method will fail and throw an
+ * {@code IllegalArgumentException} if the created method handle's type
+ * would have <a href="MethodHandle.html#maxarity">too many parameters</a>.
  *
  * @author John Rose, JSR 292 EG
  * @since 1.7
@@ -386,8 +389,9 @@ public class MethodHandles {
      * constant is not subject to security manager checks.
      * <li>If the looked-up method has a
      * <a href="MethodHandle.html#maxarity">very large arity</a>,
-     * the method handle creation may fail, due to the method handle
-     * type having too many parameters.
+     * the method handle creation may fail with an
+     * {@code IllegalArgumentException}, due to the method handle type having
+     * <a href="MethodHandle.html#maxarity">too many parameters.</a>
      * </ul>
      *
      * <h1><a id="access"></a>Access checking</h1>

@@ -139,7 +139,7 @@ public class EventTestTemplates {
 
         // can't control events from system libraries, so save events only from nsk packages
         protected boolean shouldSaveEvent(Event event) {
-            return isEventFromNSK(event);
+            return isEventFromNSK(event, debuggee);
         }
 
         protected String debuggeeClassName() {
@@ -415,7 +415,7 @@ public class EventTestTemplates {
 
         // can't control events from system libraries, so save events only from nsk packages
         protected boolean shouldSaveEvent(Event event) {
-            return isEventFromNSK(event);
+            return isEventFromNSK(event, debuggee);
         }
 
         protected String debuggeeClassName() {
@@ -436,20 +436,25 @@ public class EventTestTemplates {
         }
     }
 
-    static public boolean isEventFromNSK(Event event) {
-        if (event instanceof MonitorContendedEnterEvent) {
-            return ((MonitorContendedEnterEvent) event).location() != null && ((MonitorContendedEnterEvent) event).monitor().type().name().startsWith("nsk.");
+    static public boolean isEventFromNSK(Event event, Debugee debuggee) {
+        try {
+            if (event instanceof MonitorContendedEnterEvent) {
+                return ((MonitorContendedEnterEvent) event).location() != null && ((MonitorContendedEnterEvent) event).monitor().type().name().startsWith("nsk.");
+            }
+            if (event instanceof MonitorContendedEnteredEvent) {
+                return ((MonitorContendedEnteredEvent) event).location() != null && ((MonitorContendedEnteredEvent) event).monitor().type().name().startsWith("nsk.");
+            }
+            if (event instanceof MonitorWaitEvent) {
+                return ((MonitorWaitEvent) event).monitor().type().name().startsWith("nsk.");
+            }
+            if (event instanceof MonitorWaitedEvent) {
+                return ((MonitorWaitedEvent) event).monitor().type().name().startsWith("nsk.");
+            }
+        } catch (ObjectCollectedException ex) {
+            // The monitor object the event refers to might be already collected. Ignore this exception.
+            debuggee.getLog().display("Exception caught:" + ex);
+            return false;
         }
-        if (event instanceof MonitorContendedEnteredEvent) {
-            return ((MonitorContendedEnteredEvent) event).location() != null  && ((MonitorContendedEnteredEvent) event).monitor().type().name().startsWith("nsk.");
-        }
-        if (event instanceof MonitorWaitEvent) {
-            return ((MonitorWaitEvent) event).monitor().type().name().startsWith("nsk.");
-        }
-        if (event instanceof MonitorWaitedEvent) {
-            return ((MonitorWaitedEvent) event).monitor().type().name().startsWith("nsk.");
-        }
-
         // don't filter other events
         return true;
     }

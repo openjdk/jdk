@@ -123,7 +123,7 @@ public class PrintingProcessor extends AbstractProcessor {
                     enclosing != null &&
                     NestingKind.ANONYMOUS ==
                     // Use an anonymous class to determine anonymity!
-                    (new SimpleElementVisitor7<NestingKind, Void>() {
+                    (new SimpleElementVisitor9<NestingKind, Void>() {
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public NestingKind visitType(TypeElement e, Void p) {
                             return e.getNestingKind();

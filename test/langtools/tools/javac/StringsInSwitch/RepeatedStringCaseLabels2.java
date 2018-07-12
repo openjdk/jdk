@@ -2,7 +2,6 @@
  * @test  /nodynamiccopyright/
  * @bug 6827009
  * @summary Check for repeated string case labels.
- * @compile/fail/ref=RSCL2_6.out -XDrawDiagnostics -source 6 RepeatedStringCaseLabels2.java
  * @compile/fail/ref=RSCL2.out -XDrawDiagnostics RepeatedStringCaseLabels2.java
  */
 class RepeatedStringCaseLabels2 {

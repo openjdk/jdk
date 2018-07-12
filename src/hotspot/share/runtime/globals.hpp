@@ -486,9 +486,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   notproduct(bool, ZombieALot, false,                                       \
           "Create zombies (non-entrant) at exit from the runtime system")   \
                                                                             \
-  product(bool, UnlinkSymbolsALot, false,                                   \
-          "Unlink unreferenced symbols from the symbol table at safepoints")\
-                                                                            \
   notproduct(bool, WalkStackALot, false,                                    \
           "Trace stack (no print) at every exit from the runtime system")   \
                                                                             \
@@ -1179,20 +1176,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "instruction raising SIGTRAP.  This is only used if an access to" \
           "null (+offset) will not raise a SIGSEGV, i.e.,"                  \
           "ImplicitNullChecks don't work (PPC64).")                         \
-                                                                            \
-  product(bool, PrintSafepointStatistics, false,                            \
-          "(Deprecated) Print statistics about safepoint synchronization")  \
-                                                                            \
-  product(intx, PrintSafepointStatisticsCount, 300,                         \
-          "(Deprecated) Total number of safepoint statistics collected "    \
-          "before printing them out")                                       \
-          range(1, max_intx)                                                \
-                                                                            \
-  product(intx, PrintSafepointStatisticsTimeout,  -1,                       \
-          "(Deprecated) Print safepoint statistics only when safepoint takes "  \
-          "more than PrintSafepointSatisticsTimeout in millis")             \
-  LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
-  NOT_LP64(range(-1, max_intx))                                             \
                                                                             \
   diagnostic(bool, EnableThreadSMRExtraValidityChecks, true,                \
              "Enable Thread SMR extra validity checks")                     \
@@ -2570,9 +2553,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   experimental(intx, SurvivorAlignmentInBytes, 0,                           \
            "Default survivor space alignment in bytes")                     \
            constraint(SurvivorAlignmentInBytesConstraintFunc,AfterErgo)     \
-                                                                            \
-  product(bool , AllowNonVirtualCalls, false,                               \
-          "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
                                                                             \
   product(ccstr, DumpLoadedClassList, NULL,                                 \
           "Dump the names all loaded classes, that could be stored into "   \

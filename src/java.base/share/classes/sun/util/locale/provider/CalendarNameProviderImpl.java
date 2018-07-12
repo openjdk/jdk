@@ -42,8 +42,8 @@ import sun.util.calendar.Era;
  * @author Naoto Sato
  */
 public class CalendarNameProviderImpl extends CalendarNameProvider implements AvailableLanguageTags {
-    private final LocaleProviderAdapter.Type type;
-    private final Set<String> langtags;
+    protected final LocaleProviderAdapter.Type type;
+    protected final Set<String> langtags;
 
     public CalendarNameProviderImpl(LocaleProviderAdapter.Type type, Set<String> langtags) {
         this.type = type;
@@ -248,11 +248,8 @@ public class CalendarNameProviderImpl extends CalendarNameProvider implements Av
         if (langtags.contains(locale.toLanguageTag())) {
             return true;
         }
-        if (type == LocaleProviderAdapter.Type.JRE) {
-            String oldname = locale.toString().replace('_', '-');
-            return langtags.contains(oldname);
-        }
-        return false;
+        String oldname = locale.toString().replace('_', '-');
+        return langtags.contains(oldname);
     }
 
     @Override

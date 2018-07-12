@@ -42,7 +42,7 @@ class MallocSite : public AllocationSite<MemoryCounter> {
 
  public:
   MallocSite() :
-    AllocationSite<MemoryCounter>(NativeCallStack::EMPTY_STACK), _flags(mtNone) {}
+    AllocationSite<MemoryCounter>(NativeCallStack::empty_stack()), _flags(mtNone) {}
 
   MallocSite(const NativeCallStack& stack, MEMFLAGS flags) :
     AllocationSite<MemoryCounter>(stack), _flags(flags) {}
@@ -247,7 +247,13 @@ class MallocSiteTable : AllStatic {
   }
 
   static inline const NativeCallStack* hash_entry_allocation_stack() {
-    return (NativeCallStack*)_hash_entry_allocation_stack;
+    assert(_hash_entry_allocation_stack != NULL, "Must be set");
+    return _hash_entry_allocation_stack;
+  }
+
+  static inline const MallocSiteHashtableEntry* hash_entry_allocation_site() {
+    assert(_hash_entry_allocation_site != NULL, "Must be set");
+    return _hash_entry_allocation_site;
   }
 
  private:
@@ -256,15 +262,11 @@ class MallocSiteTable : AllStatic {
 
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static MallocSiteHashtableEntry*   _table[table_size];
+  static MallocSiteHashtableEntry*        _table[table_size];
+  static const NativeCallStack*           _hash_entry_allocation_stack;
+  static const MallocSiteHashtableEntry*  _hash_entry_allocation_site;
 
 
-  // Reserve enough memory for placing the objects
-
-  // The memory for hashtable entry allocation stack object
-  static size_t _hash_entry_allocation_stack[CALC_OBJ_SIZE_IN_TYPE(NativeCallStack, size_t)];
-  // The memory for hashtable entry allocation callsite object
-  static size_t _hash_entry_allocation_site[CALC_OBJ_SIZE_IN_TYPE(MallocSiteHashtableEntry, size_t)];
   NOT_PRODUCT(static int     _peak_count;)
 };
 

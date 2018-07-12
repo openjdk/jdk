@@ -35,10 +35,40 @@ import java.nio.*;
 import java.util.*;
 import java.util.regex.*;
 
+/*
+ * If not explicitly specified the latest source and latest target
+ * values are the defaults. If explicitly specified, the target value
+ * has to be greater than or equal to the source value.
+ */
 public class ClassVersionChecker {
+    private static enum Version {
+        SEVEN("7", 51),
+        EIGHT("8", 52),
+        NINE("9", 53),
+        TEN("10", 54),
+        ELEVEN("11", 55),
+        TWELVE("12", 56);
+
+        private Version(String release, int classFileVer) {
+            this.release = release;
+            this.classFileVer = classFileVer;
+        }
+        private final String release;
+        private final int classFileVer;
+
+        String release() {return release;}
+        int classFileVer() {return classFileVer;}
+    }
+
+    static final Version CURRENT;
+    static {
+        Version[] versions = Version.values();
+        int index = versions.length;
+        CURRENT = versions[index - 1];
+    }
 
     int errors;
-    String[] jdk = {"", "1.6", "1.7", "1.8", "1.9", "1.10", "11", "12"};
+
     File javaFile = null;
 
     public static void main(String[] args) throws Throwable {
@@ -47,31 +77,23 @@ public class ClassVersionChecker {
 
     void run() throws Exception {
         writeTestFile();
-        /* Rules applicable for -source and -target combinations
+        /*
+         * Rules applicable for -source and -target combinations:
          * 1. If both empty, version num is for the current release
-         * 2. If source is not empty and target is empty, version is based on source
+         * 2. If source is not empty and target is empty, version is
+         * based on the current release
          * 3. If both non-empty, version is based on target
          */
-
-        /* -source (0=>empty,1=>1.2,...) X -target (0=>empty,1=>1.2,...)
-         * ver[0][0] => no -source or -target was given
-         * -1 => invalid combinations
-         */
-        int[][] ver =
-            {{56, -1, -1, -1, -1, -1, -1, -1},
-             {56, 50, 51, 52, 53, 54, 55, 56},
-             {56, -1, 51, 52, 53, 54, 55, 56},
-             {56, -1, -1, 52, 53, 54, 55, 56},
-             {56, -1, -1, -1, 53, 54, 55, 56},
-             {56, -1, -1, -1, -1, 54, 55, 56}};
-
-        // Loop to run all possible combinations of source/target values
-        for (int i = 0; i< ver.length; i++) {
-            for (int j = 0 ; j< ver[i].length; j++) {
-                if(ver[i][j] != -1) {
-                    logMsg("Index values for i = " + i + " j = " + j);
-                    logMsg("Running for src = " + jdk[i] + " target = "+jdk[j] +" expected = " + ver[i][j]);
-                    test(i,j, ver[i][j]);
+        test("", "", CURRENT.classFileVer());
+        for (Version source : Version.values()) {
+            test(source.release(), "", CURRENT.classFileVer()); // no target
+            for (Version target : Version.values()) {
+                if (target.compareTo(source) < 0)
+                    continue; // Target < source not a valid set of arguments
+                else {
+                    logMsg("Running for src = " + source + " target = "+ target +
+                           " expected = " + target.classFileVer());
+                    test(source.release(), target.release(), target.classFileVer());
                 }
             }
         }
@@ -80,7 +102,7 @@ public class ClassVersionChecker {
             throw new Exception(errors + " errors found");
     }
 
-    void test (int i, int j, int expected) {
+    void test(String i, String j, int expected) {
         File classFile = compileTestFile(i, j, javaFile);
         short majorVer = getMajorVersion(classFile);
         checkVersion(majorVer, expected);
@@ -97,15 +119,15 @@ public class ClassVersionChecker {
         }
     }
 
-    File compileTestFile(int i , int j, File f) {
+    File compileTestFile(String i, String j, File f) {
         int rc = -1;
         // Src and target are empty
-        if (i == 0 && j == 0 ) {
+        if (i.isEmpty() && j.isEmpty() ) {
             rc = compile("-g", f.getPath());
-        } else if( j == 0 ) {  // target is empty
-            rc = compile("-source", jdk[i], "-g", f.getPath());
+        } else if( j.isEmpty()) {  // target is empty
+            rc = compile("-source", i, "-g", f.getPath());
         } else {
-            rc = compile("-source", jdk[i], "-target", jdk[j], "-g", f.getPath());
+            rc = compile("-source", i, "-target", j, "-g", f.getPath());
         }
         if (rc != 0)
             throw new Error("compilation failed. rc=" + rc);

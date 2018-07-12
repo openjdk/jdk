@@ -535,12 +535,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "IgnoreUnverifiableClassesDuringDump", JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CompilerThreadHintNoPreempt",  JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "VMThreadHintNoPreempt",        JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "PrintSafepointStatistics",     JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "PrintSafepointStatisticsTimeout", JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "PrintSafepointStatisticsCount",JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "AggressiveOpts",               JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "AllowNonVirtualCalls",         JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
-  { "UnlinkSymbolsALot",            JDK_Version::jdk(11), JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -573,6 +568,11 @@ static SpecialFlag const special_jvm_flags[] = {
   { "NativeMonitorTimeout",          JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "NativeMonitorSpinLimit",        JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "NativeMonitorFlags",            JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "UnlinkSymbolsALot",             JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "AllowNonVirtualCalls",          JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "PrintSafepointStatistics",      JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "PrintSafepointStatisticsTimeout",JDK_Version::jdk(11),    JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "PrintSafepointStatisticsCount", JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },

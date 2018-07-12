@@ -1659,7 +1659,7 @@ public class Types {
         private TypeRelation isCastable = new TypeRelation() {
 
             public Boolean visitType(Type t, Type s) {
-                if (s.hasTag(ERROR))
+                if (s.hasTag(ERROR) || t.hasTag(NONE))
                     return true;
 
                 switch (t.getTag()) {

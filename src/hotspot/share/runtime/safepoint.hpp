@@ -89,20 +89,6 @@ class SafepointSynchronize : AllStatic {
     SAFEPOINT_CLEANUP_NUM_TASKS
   };
 
-  typedef struct {
-    float  _time_stamp;                        // record when the current safepoint occurs in seconds
-    int    _vmop_type;                         // type of VM operation triggers the safepoint
-    int    _nof_total_threads;                 // total number of Java threads
-    int    _nof_initial_running_threads;       // total number of initially seen running threads
-    int    _nof_threads_wait_to_block;         // total number of threads waiting for to block
-    int    _nof_threads_hit_page_trap;         // total number of threads hitting the page trap
-    jlong  _time_to_spin;                      // total time in millis spent in spinning
-    jlong  _time_to_wait_to_block;             // total time in millis spent in waiting for to block
-    jlong  _time_to_do_cleanups;               // total time in millis spent in performing cleanups
-    jlong  _time_to_sync;                      // total time in millis spent in getting to _synchronized
-    jlong  _time_to_exec_vmop;                 // total time in millis spent in vm operation itself
-  } SafepointStats;
-
  private:
   static volatile SynchronizeState _state;     // Threads might read this flag directly, without acquiring the Threads_lock
   static volatile int _waiting_to_block;       // number of threads we are waiting for to block
@@ -118,27 +104,16 @@ class SafepointSynchronize : AllStatic {
 public:
   static volatile int _safepoint_counter;
 private:
-  static long       _end_of_last_safepoint;     // Time of last safepoint in milliseconds
+  static long         _end_of_last_safepoint;     // Time of last safepoint in milliseconds
+  static julong       _coalesced_vmop_count;     // coalesced vmop count
 
   // Statistics
-  static jlong            _safepoint_begin_time;     // time when safepoint begins
-  static SafepointStats*  _safepoint_stats;          // array of SafepointStats struct
-  static int              _cur_stat_index;           // current index to the above array
-  static julong           _safepoint_reasons[];      // safepoint count for each VM op
-  static julong           _coalesced_vmop_count;     // coalesced vmop count
-  static jlong            _max_sync_time;            // maximum sync time in nanos
-  static jlong            _max_vmop_time;            // maximum vm operation time in nanos
-  static float            _ts_of_current_safepoint;  // time stamp of current safepoint in seconds
-
   static void begin_statistics(int nof_threads, int nof_running);
   static void update_statistics_on_spin_end();
   static void update_statistics_on_sync_end(jlong end_time);
   static void update_statistics_on_cleanup_end(jlong end_time);
   static void end_statistics(jlong end_time);
   static void print_statistics();
-  inline static void inc_page_trap_count() {
-    Atomic::inc(&_safepoint_stats[_cur_stat_index]._nof_threads_hit_page_trap);
-  }
 
   // For debug long safepoint
   static void print_safepoint_timeout(SafepointTimeoutReason timeout_reason);
@@ -192,7 +167,6 @@ public:
   static bool is_cleanup_needed();
   static void do_cleanup_tasks();
 
-  static void deferred_initialize_stat();
   static void print_stat_on_exit();
   inline static void inc_vmop_coalesced_count() { _coalesced_vmop_count++; }
 

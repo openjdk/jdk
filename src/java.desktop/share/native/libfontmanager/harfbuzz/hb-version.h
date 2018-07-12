@@ -38,9 +38,9 @@ HB_BEGIN_DECLS
 
 #define HB_VERSION_MAJOR 1
 #define HB_VERSION_MINOR 8
-#define HB_VERSION_MICRO 1
+#define HB_VERSION_MICRO 2
 
-#define HB_VERSION_STRING "1.8.1"
+#define HB_VERSION_STRING "1.8.2"
 
 #define HB_VERSION_ATLEAST(major,minor,micro) \
         ((major)*10000+(minor)*100+(micro) <= \

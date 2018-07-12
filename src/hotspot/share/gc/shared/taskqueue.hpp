@@ -61,10 +61,11 @@ public:
 public:
   inline TaskQueueStats()       { reset(); }
 
-  inline void record_push()     { ++_stats[push]; }
-  inline void record_pop()      { ++_stats[pop]; }
-  inline void record_pop_slow() { record_pop(); ++_stats[pop_slow]; }
-  inline void record_steal(bool success);
+  inline void record_push()          { ++_stats[push]; }
+  inline void record_pop()           { ++_stats[pop]; }
+  inline void record_pop_slow()      { record_pop(); ++_stats[pop_slow]; }
+  inline void record_steal_attempt() { ++_stats[steal_attempt]; }
+  inline void record_steal()         { ++_stats[steal]; }
   inline void record_overflow(size_t new_length);
 
   TaskQueueStats & operator +=(const TaskQueueStats & addend);
@@ -86,11 +87,6 @@ private:
   size_t                    _stats[last_stat_id];
   static const char * const _names[last_stat_id];
 };
-
-void TaskQueueStats::record_steal(bool success) {
-  ++_stats[steal_attempt];
-  if (success) ++_stats[steal];
-}
 
 void TaskQueueStats::record_overflow(size_t new_len) {
   ++_stats[overflow];
@@ -364,17 +360,18 @@ template <MEMFLAGS F> class TaskQueueSetSuperImpl: public CHeapObj<F>, public Ta
 
 template<class T, MEMFLAGS F>
 class GenericTaskQueueSet: public TaskQueueSetSuperImpl<F> {
+public:
+  typedef typename T::element_type E;
+
 private:
   uint _n;
   T** _queues;
 
-public:
-  typedef typename T::element_type E;
+  bool steal_best_of_2(uint queue_num, int* seed, E& t);
 
+public:
   GenericTaskQueueSet(int n);
   ~GenericTaskQueueSet();
-
-  bool steal_best_of_2(uint queue_num, int* seed, E& t);
 
   void register_queue(uint i, T* q);
 

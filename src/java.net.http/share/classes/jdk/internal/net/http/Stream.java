@@ -185,6 +185,7 @@ class Stream<T> extends ExchangeImpl<T> {
                 int size = Utils.remaining(dsts, Integer.MAX_VALUE);
                 if (size == 0 && finished) {
                     inputQ.remove();
+                    connection.ensureWindowUpdated(df); // must update connection window
                     Log.logTrace("responseSubscriber.onComplete");
                     if (debug.on()) debug.log("incoming: onComplete");
                     sched.stop();
@@ -197,7 +198,12 @@ class Stream<T> extends ExchangeImpl<T> {
                     inputQ.remove();
                     Log.logTrace("responseSubscriber.onNext {0}", size);
                     if (debug.on()) debug.log("incoming: onNext(%d)", size);
-                    subscriber.onNext(dsts);
+                    try {
+                        subscriber.onNext(dsts);
+                    } catch (Throwable t) {
+                        connection.dropDataFrame(df); // must update connection window
+                        throw t;
+                    }
                     if (consumed(df)) {
                         Log.logTrace("responseSubscriber.onComplete");
                         if (debug.on()) debug.log("incoming: onComplete");
@@ -215,6 +221,8 @@ class Stream<T> extends ExchangeImpl<T> {
             }
         } catch (Throwable throwable) {
             errorRef.compareAndSet(null, throwable);
+        } finally {
+            if (sched.isStopped()) drainInputQueue();
         }
 
         Throwable t = errorRef.get();
@@ -223,19 +231,34 @@ class Stream<T> extends ExchangeImpl<T> {
             try {
                 if (!onCompleteCalled) {
                     if (debug.on())
-                        debug.log("calling subscriber.onError: %s", (Object)t);
+                        debug.log("calling subscriber.onError: %s", (Object) t);
                     subscriber.onError(t);
                 } else {
                     if (debug.on())
-                        debug.log("already completed: dropping error %s", (Object)t);
+                        debug.log("already completed: dropping error %s", (Object) t);
                 }
             } catch (Throwable x) {
-                Log.logError("Subscriber::onError threw exception: {0}", (Object)t);
+                Log.logError("Subscriber::onError threw exception: {0}", (Object) t);
             } finally {
                 cancelImpl(t);
+                drainInputQueue();
             }
         }
     }
+
+    // must only be called from the scheduler schedule() loop.
+    // ensure that all received data frames are accounted for
+    // in the connection window flow control if the scheduler
+    // is stopped before all the data is consumed.
+    private void drainInputQueue() {
+        Http2Frame frame;
+        while ((frame = inputQ.poll()) != null) {
+            if (frame instanceof DataFrame) {
+                connection.dropDataFrame((DataFrame)frame);
+            }
+        }
+    }
+
 
     // Callback invoked after the Response BodySubscriber has consumed the
     // buffers contained in a DataFrame.
@@ -245,15 +268,19 @@ class Stream<T> extends ExchangeImpl<T> {
         // The entire DATA frame payload is included in flow control,
         // including the Pad Length and Padding fields if present
         int len = df.payloadLength();
+        boolean endStream = df.getFlag(DataFrame.END_STREAM);
+        if (len == 0) return endStream;
+
         connection.windowUpdater.update(len);
 
-        if (!df.getFlag(DataFrame.END_STREAM)) {
+        if (!endStream) {
             // Don't send window update on a stream which is
             // closed or half closed.
             windowUpdater.update(len);
-            return false; // more data coming
         }
-        return true; // end of stream
+
+        // true: end of stream; false: more data coming
+        return endStream;
     }
 
     boolean deRegister() {
@@ -500,8 +527,8 @@ class Stream<T> extends ExchangeImpl<T> {
     {
         int amount = frame.getUpdate();
         if (amount <= 0) {
-            Log.logTrace("Resetting stream: {0} %d, Window Update amount: %d\n",
-                         streamid, streamid, amount);
+            Log.logTrace("Resetting stream: {0}, Window Update amount: {1}",
+                         streamid, amount);
             connection.resetStream(streamid, ResetFrame.FLOW_CONTROL_ERROR);
         } else {
             assert streamid != 0;
@@ -1126,7 +1153,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     connection.resetStream(streamid, ResetFrame.CANCEL);
                 }
             }
-        } catch (IOException ex) {
+        } catch (Throwable ex) {
             Log.logError(ex);
         }
     }
@@ -1288,6 +1315,18 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         int getStreamId() {
             return streamid;
+        }
+
+        @Override
+        String dbgString() {
+            String dbg = dbgString;
+            if (dbg != null) return dbg;
+            if (streamid == 0) {
+                return connection.dbgString() + ":WindowUpdateSender(stream: ?)";
+            } else {
+                dbg = connection.dbgString() + ":WindowUpdateSender(stream: " + streamid + ")";
+                return dbgString = dbg;
+            }
         }
     }
 

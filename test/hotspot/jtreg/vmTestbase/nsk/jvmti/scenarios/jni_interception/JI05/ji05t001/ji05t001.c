@@ -333,8 +333,11 @@ static int agentA(void *context) {
     checkIntercept(1, 0, 1); /* expected interceptions: 1 */
     NSK_DISPLAY0("\n<<< TEST CASE #4) done\n");
 
-    NSK_DISPLAY1("\nagent A: returning exit code %d\n",
+    NSK_DISPLAY1("\nagent A: detaching and returning exit code %d\n",
         exitCode);
+    if ((res = JNI_ENV_PTR(vm)->DetachCurrentThread(JNI_ENV_ARG1(vm))) != 0) {
+        NSK_COMPLAIN1("TEST WARNING: agent A: DetachCurrentThread() returns: %d\n", res);
+    }
     return exitCode;
 }
 
@@ -393,8 +396,11 @@ static int agentB(void *context) {
 
     redir[1] = 1;
 
-    NSK_DISPLAY1("\nagent B: returning exit code %d\n",
+    NSK_DISPLAY1("\nagent B: detaching and returning exit code %d\n",
         exitCode);
+    if ((res = JNI_ENV_PTR(vm)->DetachCurrentThread(JNI_ENV_ARG1(vm))) != 0) {
+        NSK_COMPLAIN1("TEST WARNING: agent B: DetachCurrentThread() returns: %d\n", res);
+    }
     return exitCode;
 }
 /*********************/

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,4 +413,15 @@ public class VM {
         initialize();
     }
     private static native void initialize();
+
+    /**
+     * Initialize archived static fields in the given Class using archived
+     * values from CDS dump time. Also initialize the classes of objects in
+     * the archived graph referenced by those fields.
+     *
+     * Those static fields remain as uninitialized if there is no mapped CDS
+     * java heap data or there is any error during initialization of the
+     * object class in the archived graph.
+     */
+    public static native void initializeFromArchive(Class<?> c);
 }

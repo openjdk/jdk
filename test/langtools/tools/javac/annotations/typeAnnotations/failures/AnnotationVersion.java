@@ -4,7 +4,6 @@
  * @summary test that only Java 8 allows type annotations
  * @author Mahmood Ali
  * @compile AnnotationVersion.java
- * @compile/fail/ref=AnnotationVersion.out -XDrawDiagnostics -Xlint:-options -source 1.6 AnnotationVersion.java
  * @compile/fail/ref=AnnotationVersion7.out -XDrawDiagnostics -Xlint:-options -source 1.7 AnnotationVersion.java
  */
 import java.lang.annotation.*;

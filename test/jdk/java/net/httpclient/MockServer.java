@@ -284,7 +284,7 @@ public class MockServer extends Thread implements Closeable {
             }
             try {
                 socket.close();
-            } catch (IOException e) {}
+            } catch (Throwable e) {}
             synchronized (removals) {
                 removals.add(this);
             }
@@ -339,7 +339,7 @@ public class MockServer extends Thread implements Closeable {
         closed = true;
         try {
             ss.close();
-        } catch (IOException e) {
+        } catch (Throwable e) {
             e.printStackTrace();
         }
         for (Connection c : sockets) {
