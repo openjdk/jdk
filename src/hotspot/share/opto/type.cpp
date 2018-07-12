@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,17 +252,16 @@ const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
         ciObject* oop_constant = constant.as_object();
         if (oop_constant->is_null_object()) {
           con_type = Type::get_zero_type(T_OBJECT);
-        } else if (require_constant || oop_constant->should_be_constant()) {
+        } else {
+          guarantee(require_constant || oop_constant->should_be_constant(), "con_type must get computed");
           con_type = TypeOopPtr::make_from_constant(oop_constant, require_constant);
-          if (con_type != NULL) {
-            if (Compile::current()->eliminate_boxing() && is_autobox_cache) {
-              con_type = con_type->is_aryptr()->cast_to_autobox_cache(true);
-            }
-            if (stable_dimension > 0) {
-              assert(FoldStableValues, "sanity");
-              assert(!con_type->is_zero_type(), "default value for stable field");
-              con_type = con_type->is_aryptr()->cast_to_stable(true, stable_dimension);
-            }
+          if (Compile::current()->eliminate_boxing() && is_autobox_cache) {
+            con_type = con_type->is_aryptr()->cast_to_autobox_cache(true);
+          }
+          if (stable_dimension > 0) {
+            assert(FoldStableValues, "sanity");
+            assert(!con_type->is_zero_type(), "default value for stable field");
+            con_type = con_type->is_aryptr()->cast_to_stable(true, stable_dimension);
           }
         }
         if (is_narrow_oop) {

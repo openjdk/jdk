@@ -236,6 +236,8 @@ int AOTOopRecorder::find_index(Metadata* h) {
 
   JVMCIKlassHandle klass(THREAD);
   oop result = NULL;
+  guarantee(h != NULL,
+            "If DebugInformationRecorder::describe_scope passes NULL oldCount == newCount must hold.");
   if (h->is_klass()) {
     klass = (Klass*) h;
     result = CompilerToVM::get_jvmci_type(klass, CATCH);

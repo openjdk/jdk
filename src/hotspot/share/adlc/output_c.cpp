@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1936,6 +1936,7 @@ public:
           _AD.syntax_err( _ins_encode._linenum,
                           "Parameter %s not passed to enc_class %s from instruct %s.\n",
                           rep_var, _encoding._name, _inst._ident);
+          assert(false, "inst_rep_var == NULL, cannot continue.");
         }
 
         // Check if instruction's actual parameter is a local name in the instruction
@@ -1976,8 +1977,8 @@ public:
         }
         else {
           // Check for unimplemented functionality before hard failure
-          assert( strcmp(opc->_ident,"label")==0, "Unimplemented() Label");
-          assert( false, "ShouldNotReachHere()");
+          assert(opc != NULL && strcmp(opc->_ident, "label") == 0, "Unimplemented Label");
+          assert(false, "ShouldNotReachHere()");
         }
       } // done checking which operand this is.
     } else {
@@ -2450,8 +2451,8 @@ private:
       }
       else {
         // Check for unimplemented functionality before hard failure
-        assert( strcmp(opc->_ident,"label")==0, "Unimplemented() Label");
-        assert( false, "ShouldNotReachHere()");
+        assert(opc != NULL && strcmp(opc->_ident, "label") == 0, "Unimplemented Label");
+        assert(false, "ShouldNotReachHere()");
       }
       // all done
     }
@@ -3305,9 +3306,11 @@ void ArchDesc::defineClasses(FILE *fp) {
   // Output the definitions for machine node specific pipeline data
   _machnodes.reset();
 
-  for ( ; (machnode = (MachNodeForm*)_machnodes.iter()) != NULL; ) {
-    fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %sNode::pipeline() const { return (&pipeline_class_%03d); }\n",
-      machnode->_ident, ((class PipeClassForm *)_pipeline->_classdict[machnode->_machnode_pipe])->_num);
+  if (_pipeline != NULL) {
+    for ( ; (machnode = (MachNodeForm*)_machnodes.iter()) != NULL; ) {
+      fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %sNode::pipeline() const { return (&pipeline_class_%03d); }\n",
+              machnode->_ident, ((class PipeClassForm *)_pipeline->_classdict[machnode->_machnode_pipe])->_num);
+    }
   }
 
   fprintf(_CPP_PIPELINE_file._fp, "\n");
@@ -3315,13 +3318,15 @@ void ArchDesc::defineClasses(FILE *fp) {
   // Output the definitions for instruction pipeline static data references
   _instructions.reset();
 
-  for ( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
-    if (instr->_ins_pipe && _pipeline->_classlist.search(instr->_ins_pipe)) {
-      fprintf(_CPP_PIPELINE_file._fp, "\n");
-      fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*sNode::pipeline_class() { return (&pipeline_class_%03d); }\n",
-        max_ident_len, instr->_ident, ((class PipeClassForm *)_pipeline->_classdict[instr->_ins_pipe])->_num);
-      fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*sNode::pipeline() const { return (&pipeline_class_%03d); }\n",
-        max_ident_len, instr->_ident, ((class PipeClassForm *)_pipeline->_classdict[instr->_ins_pipe])->_num);
+  if (_pipeline != NULL) {
+    for ( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+      if (instr->_ins_pipe && _pipeline->_classlist.search(instr->_ins_pipe)) {
+        fprintf(_CPP_PIPELINE_file._fp, "\n");
+        fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*sNode::pipeline_class() { return (&pipeline_class_%03d); }\n",
+                max_ident_len, instr->_ident, ((class PipeClassForm *)_pipeline->_classdict[instr->_ins_pipe])->_num);
+        fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*sNode::pipeline() const { return (&pipeline_class_%03d); }\n",
+                max_ident_len, instr->_ident, ((class PipeClassForm *)_pipeline->_classdict[instr->_ins_pipe])->_num);
+      }
     }
   }
 }

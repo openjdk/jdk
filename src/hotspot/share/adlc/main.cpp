@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
       const char *base = strip_ext(strdup(argv[i]));
       char       *temp = base_plus_suffix("dfa_",base);
       AD._DFA_file._name = base_plus_suffix(temp,".cpp");
-      delete temp;
+      delete[] temp;
       temp = base_plus_suffix("ad_",base);
       AD._CPP_file._name          = base_plus_suffix(temp,".cpp");
       AD._CPP_CLONE_file._name    = base_plus_suffix(temp,"_clone.cpp");
@@ -153,13 +153,13 @@ int main(int argc, char *argv[])
       AD._CPP_PEEPHOLE_file._name = base_plus_suffix(temp,"_peephole.cpp");
       AD._CPP_PIPELINE_file._name = base_plus_suffix(temp,"_pipeline.cpp");
       AD._HPP_file._name = base_plus_suffix(temp,".hpp");
-      delete temp;
+      delete[] temp;
       temp = base_plus_suffix("adGlobals_",base);
       AD._VM_file._name = base_plus_suffix(temp,".hpp");
-      delete temp;
+      delete[] temp;
       temp = base_plus_suffix("bugs_",base);
       AD._bug_file._name = base_plus_suffix(temp,".out");
-      delete temp;
+      delete[] temp;
     }                           // End of files vs options...
   }                             // End of while have command line arguments
 

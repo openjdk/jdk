@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -543,14 +543,18 @@ void ArchDesc::buildMList(MatchNode *node, const char *rootOp,
   }
 
   // Identify index position among ideal operands
-  intptr_t    index     = _last_opcode;
-  const char *indexStr  = node ? node->_opType : (char *) " ";
-  index            = (intptr_t)_idealIndex[indexStr];
+  intptr_t index = _last_opcode;
+  const char *indexStr = node ? node->_opType : (char *) " ";
+  index = (intptr_t)_idealIndex[indexStr];
   if (index == 0) {
     fprintf(stderr, "error: operand \"%s\" not found\n", indexStr);
     assert(0, "fatal error");
   }
 
+  if (node == NULL) {
+    fprintf(stderr, "error: node is NULL\n");
+    assert(0, "fatal error");
+  }
   // Build MatchLists for children
   // Check each child for an internal operand name, and use that name
   // for the parent's matchlist entry if it exists

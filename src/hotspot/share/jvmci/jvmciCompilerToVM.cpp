@@ -349,7 +349,9 @@ C2V_VMENTRY(jobject, getResolvedJavaType, (JNIEnv *, jobject, jobject base, jlon
     klass = *((Klass**) (intptr_t) (base_address + offset));
   } else {
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Unexpected arguments: %s " JLONG_FORMAT " %s", base_object->klass()->external_name(), offset, compressed ? "true" : "false"));
+                err_msg("Unexpected arguments: %s " JLONG_FORMAT " %s",
+                        base_object != NULL ? base_object->klass()->external_name() : "null",
+                        offset, compressed ? "true" : "false"));
   }
   assert (klass == NULL || klass->is_klass(), "invalid read");
   oop result = CompilerToVM::get_jvmci_type(klass, CHECK_NULL);

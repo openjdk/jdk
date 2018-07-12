@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ void CodeBuffer::freeze_section(CodeSection* cs) {
   cs->_limit = new_limit;
   cs->_locs_limit = new_locs_limit;
   cs->_frozen = true;
-  if (!next_cs->is_allocated() && !next_cs->is_frozen()) {
+  if (next_cs != NULL && !next_cs->is_allocated() && !next_cs->is_frozen()) {
     // Give remaining buffer space to the following section.
     next_cs->initialize(new_limit, old_limit - new_limit);
     next_cs->initialize_shared_locs(new_locs_limit,
@@ -494,10 +494,13 @@ void CodeBuffer::compute_final_layout(CodeBuffer* dest) const {
       // Compute initial padding; assign it to the previous non-empty guy.
       // Cf. figure_expanded_capacities.
       csize_t padding = cs->align_at_start(buf_offset) - buf_offset;
-      if (padding != 0) {
-        buf_offset += padding;
-        assert(prev_dest_cs != NULL, "sanity");
-        prev_dest_cs->_limit += padding;
+      if (prev_dest_cs != NULL) {
+        if (padding != 0) {
+          buf_offset += padding;
+          prev_dest_cs->_limit += padding;
+        }
+      } else {
+        guarantee(padding == 0, "In first iteration no padding should be needed.");
       }
       #ifdef ASSERT
       if (prev_cs != NULL && prev_cs->is_frozen() && n < (SECT_LIMIT - 1)) {

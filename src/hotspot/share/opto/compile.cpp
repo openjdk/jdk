@@ -4049,9 +4049,9 @@ void Compile::ConstantTable::emit(CodeBuffer& cb) {
 
 int Compile::ConstantTable::find_offset(Constant& con) const {
   int idx = _constants.find(con);
-  assert(idx != -1, "constant must be in constant table");
+  guarantee(idx != -1, "constant must be in constant table");
   int offset = _constants.at(idx).offset();
-  assert(offset != -1, "constant table not emitted yet?");
+  guarantee(offset != -1, "constant table not emitted yet?");
   return offset;
 }
 

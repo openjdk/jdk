@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -484,7 +484,7 @@ MethodLivenessResult MethodLiveness::get_liveness_at(int entry_bci) {
     while (block == NULL && t > 0) {
      block = _block_map->at(--t);
     }
-    assert( block != NULL, "invalid bytecode index; must be instruction index" );
+    guarantee(block != NULL, "invalid bytecode index; must be instruction index");
     assert(bci >= block->start_bci() && bci < block->limit_bci(), "block must contain bci.");
 
     answer = block->get_liveness_at(method(), bci);

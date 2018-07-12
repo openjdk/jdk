@@ -759,6 +759,7 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
         }
       }
     }
+    guarantee(dest != NULL, "Call had only one ptr in, broken IR!");
     if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
       return true;
     }

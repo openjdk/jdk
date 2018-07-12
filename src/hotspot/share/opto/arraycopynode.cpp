@@ -659,7 +659,8 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTra
   c = bs->step_over_gc_barrier(c);
 
   CallNode* call = NULL;
-  if (c != NULL && c->is_Region()) {
+  guarantee(c != NULL, "step_over_gc_barrier failed, there must be something to step to.");
+  if (c->is_Region()) {
     for (uint i = 1; i < c->req(); i++) {
       if (c->in(i) != NULL) {
         Node* n = c->in(i)->in(0);

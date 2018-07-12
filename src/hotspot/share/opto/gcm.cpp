@@ -1263,6 +1263,7 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         Node* use = self->fast_out(i);
         LCA = raise_LCA_above_use(LCA, use, self, this);
       }
+      guarantee(LCA != NULL, "There must be a LCA");
     }  // (Hide defs of imax, i from rest of block.)
 
     // Place temps in the block of their use.  This isn't a

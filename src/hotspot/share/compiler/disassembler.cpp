@@ -122,7 +122,7 @@ bool Disassembler::load_library() {
     _decode_instructions_virtual = CAST_TO_FN_PTR(Disassembler::decode_func_virtual,
                                           os::dll_lookup(_library, decode_instructions_virtual_name));
   }
-  if (_decode_instructions_virtual == NULL) {
+  if (_decode_instructions_virtual == NULL && _library != NULL) {
     // could not spot in new version, try old version
     _decode_instructions = CAST_TO_FN_PTR(Disassembler::decode_func,
                                           os::dll_lookup(_library, decode_instructions_name));
