@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8202088
+ * @bug 8202088 8207152
  * @summary Test the localized Japanese new era name (May 1st. 2019-)
  *      is retrieved no matter CLDR provider contains the name or not.
  * @modules jdk.localedata
@@ -51,7 +51,7 @@ public class JapaneseEraNameTest {
     Object[][] names() {
         return new Object[][] {
             // type,    locale,  name
-            { LONG,     JAPAN,   "\u65b0\u5143\u53f7" }, // NewEra
+            { LONG,     JAPAN,   "\u5143\u53f7" }, // NewEra
             { LONG,     US,      "NewEra" },
             { SHORT,    JAPAN,   "N" },
             { SHORT,    US,      "N" },
