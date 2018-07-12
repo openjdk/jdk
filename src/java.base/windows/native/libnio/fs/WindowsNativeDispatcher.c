@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1043,8 +1043,11 @@ Java_sun_nio_fs_WindowsNativeDispatcher_LookupPrivilegeValue0(JNIEnv* env,
     if (pLuid == NULL) {
         JNU_ThrowInternalError(env, "Unable to allocate LUID structure");
     } else {
-        if (LookupPrivilegeValueW(NULL, lpName, pLuid) == 0)
+        if (LookupPrivilegeValueW(NULL, lpName, pLuid) == 0) {
+            LocalFree(pLuid);
             throwWindowsException(env, GetLastError());
+            return (jlong)0;
+        }
     }
     return ptr_to_jlong(pLuid);
 }
