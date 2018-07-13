@@ -25,6 +25,7 @@
  * @test
  * @bug 8201367
  * @summary RPO walk of counted loop block doesn't properly order loads
+ * @requires vm.flavor == "server"
  *
  * @run main/othervm -XX:-BackgroundCompilation -XX:-UseCountedLoopSafepoints TestUnexpectedLoadOrdering
  *

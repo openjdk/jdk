@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8062950
+ * @requires vm.flavor == "server"
  * @key regression
  * @library /test/lib
  * @run driver compiler.c2.Test8062950
