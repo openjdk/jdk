@@ -440,6 +440,21 @@ public class HelpWriter extends HtmlDocletWriter {
             ul.addContent(htmlTree);
         }
 
+        // Search
+        Content searchHead = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING,
+                contents.getContent("doclet.help.search.head"));
+        htmlTree = (configuration.allowTag(HtmlTag.SECTION))
+                ? HtmlTree.SECTION(searchHead)
+                : HtmlTree.LI(HtmlStyle.blockList, searchHead);
+        Content searchBody = contents.getContent("doclet.help.search.body");
+        Content searchPara = HtmlTree.P(searchBody);
+        htmlTree.addContent(searchPara);
+        if (configuration.allowTag(HtmlTag.SECTION)) {
+            ul.addContent(HtmlTree.LI(HtmlStyle.blockList, htmlTree));
+        } else {
+            ul.addContent(htmlTree);
+        }
+
         Content divContent = HtmlTree.DIV(HtmlStyle.contentContainer, ul);
         divContent.addContent(new HtmlTree(HtmlTag.HR));
         Content footnote = HtmlTree.SPAN(HtmlStyle.emphasizedPhrase,
