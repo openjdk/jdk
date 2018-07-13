@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8171277
+ * @bug 8171277 8206915
  * @summary Test XDH key agreement
  * @library /test/lib
  * @build jdk.test.lib.Convert
@@ -66,15 +66,17 @@ public class TestXDH {
         throws Exception {
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(name);
+        AlgorithmParameterSpec paramSpec = null;
         if (param instanceof Integer) {
             kpg.initialize((Integer) param);
         } else if (param instanceof String) {
-            kpg.initialize(new NamedParameterSpec((String) param));
+            paramSpec = new NamedParameterSpec((String) param);
+            kpg.initialize(paramSpec);
         }
         KeyPair kp = kpg.generateKeyPair();
 
         KeyAgreement ka = KeyAgreement.getInstance(name);
-        ka.init(kp.getPrivate());
+        ka.init(kp.getPrivate(), paramSpec);
         ka.doPhase(kp.getPublic(), true);
 
         byte[] secret = ka.generateSecret();
@@ -95,6 +97,16 @@ public class TestXDH {
         if (!Arrays.equals(secret, secret2)) {
             throw new RuntimeException("Arrays not equal");
         }
+
+        // make sure generateSecret() resets the state to after init()
+        try {
+            ka.generateSecret();
+            throw new RuntimeException("generateSecret does not reset state");
+        } catch (IllegalStateException ex) {
+            // do nothing---this is expected
+        }
+        ka.doPhase(pubKey, true);
+        ka.generateSecret();
 
         // test with XDH key specs
         XECPublicKeySpec xdhPublic =
