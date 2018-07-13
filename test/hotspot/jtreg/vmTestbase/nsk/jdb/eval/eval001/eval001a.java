@@ -48,6 +48,7 @@ public class eval001a {
         int i = 111;
         int j = 222;
         int k = 444;
+        double[][][] test = new double[2][2][2];
 
         synchronized (this) {
             lastBreak();
@@ -80,5 +81,9 @@ public class eval001a {
         public String toString() {
              return line;
         }
+    }
+
+    public double testPrimitiveArray(double[][][] d){
+        return 1.0;
     }
 }

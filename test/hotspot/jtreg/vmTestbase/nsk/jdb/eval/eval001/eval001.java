@@ -98,7 +98,8 @@ public class eval001 extends JdbTest {
         { DEBUGGEE_CLASS + "._eval001a.myMethod()", "2147483647" },
         { "myClass.toString().equals(\"abcde\")", "true"},
         { "i + j + k", "777"},
-        { "new java.lang.String(\"Hello, World\").length()", "12"}
+        { "new java.lang.String(\"Hello, World\").length()", "12"},
+        { DEBUGGEE_CLASS + "._eval001a.testPrimitiveArray(test)", "1.0" }
                                           };
 
     protected void runCases() {
