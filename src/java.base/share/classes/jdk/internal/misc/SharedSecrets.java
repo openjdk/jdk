@@ -194,10 +194,9 @@ public class SharedSecrets {
 
     public static JavaNioAccess getJavaNioAccess() {
         if (javaNioAccess == null) {
-            // Ensure java.nio.ByteOrder is initialized; we know that
-            // this class initializes java.nio.Bits that provides the
+            // Ensure java.nio.Buffer is initialized, which provides the
             // shared secret.
-            unsafe.ensureClassInitialized(java.nio.ByteOrder.class);
+            unsafe.ensureClassInitialized(java.nio.Buffer.class);
         }
         return javaNioAccess;
     }
