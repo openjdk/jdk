@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1153,7 +1153,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
         this.genericSignatureGotten = true;
     }
 
-    private static boolean isPrimitiveArray(String signature) {
+    private static boolean isOneDimensionalPrimitiveArray(String signature) {
         int i = signature.lastIndexOf('[');
         /*
          * TO DO: Centralize JNI signature knowledge.
@@ -1162,7 +1162,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
          *  jdk1.4/doc/guide/jpda/jdi/com/sun/jdi/doc-files/signature.html
          */
         boolean isPA;
-        if (i < 0) {
+        if (i < 0 || signature.startsWith("[[")) {
             isPA = false;
         } else {
             char c = signature.charAt(i + 1);
@@ -1186,7 +1186,7 @@ public abstract class ReferenceTypeImpl extends TypeImpl implements ReferenceTyp
             ClassLoaderReferenceImpl loader =
                        (ClassLoaderReferenceImpl)classLoader();
             if ((loader == null) ||
-                (isPrimitiveArray(signature)) //Work around 4450091
+                (isOneDimensionalPrimitiveArray(signature)) //Work around 4450091
                 ) {
                 // Caller wants type of boot class field
                 type = vm.findBootType(signature);
