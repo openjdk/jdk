@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  *
  * This library is free software; you can redistribute it and/or
@@ -80,12 +80,12 @@ ECPoint_mul(const ECGroup *group, const mp_int *k, const mp_int *px,
                                                                  group, timing));
                 }
         } else {
+                kt.flag = (mp_sign)0;
                 if (group->meth->field_enc) {
                         MP_CHECKOK(group->meth->field_enc(px, rx, group->meth));
                         MP_CHECKOK(group->meth->field_enc(py, ry, group->meth));
                         MP_CHECKOK(group->point_mul(&kt, rx, ry, rx, ry, group, timing));
                 } else {
-                        kt.flag = (mp_sign)0;
                         MP_CHECKOK(group->point_mul(&kt, px, py, rx, ry, group, timing));
                 }
         }

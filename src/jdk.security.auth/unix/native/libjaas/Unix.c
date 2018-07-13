@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,9 @@ Java_com_sun_security_auth_module_UnixSystem_getUnixInfo
     jclass cls;
 
     numSuppGroups = getgroups(0, NULL);
+    if (numSuppGroups == -1) {
+        return;
+    }
     groups = (gid_t *)calloc(numSuppGroups, sizeof(gid_t));
     if (groups == NULL) {
         jclass cls = (*env)->FindClass(env,"java/lang/OutOfMemoryError");

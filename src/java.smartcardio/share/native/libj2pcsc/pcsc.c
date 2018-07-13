@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_security_smartcardio_PCSC_SCardListReade
     }
     dprintf1("-size: %d\n", size);
 
-    if (size) {
+    if (size != 0) {
         mszReaders = malloc(size);
         if (mszReaders == NULL) {
             throwOutOfMemoryError(env, NULL);
@@ -205,6 +205,8 @@ JNIEXPORT jobjectArray JNICALL Java_sun_security_smartcardio_PCSC_SCardListReade
             return NULL;
         }
         dprintf1("-String: %s\n", mszReaders);
+    } else {
+      return NULL;
     }
 
     result = pcsc_multi2jstring(env, mszReaders);

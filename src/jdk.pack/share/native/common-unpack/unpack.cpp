@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2681,6 +2681,9 @@ void unpacker::attr_definitions::readBandData(int idx) {
     PRINTCR((1, "counted %d [redefined = %d predefined = %d] attributes of type %s.%s",
             count, isRedefined(idx), isPredefined(idx),
             ATTR_CONTEXT_NAME[attrc], lo->name));
+  } else {
+    abort("layout_definition pointer must not be NULL");
+    return;
   }
   bool hasCallables = lo->hasCallables();
   band** bands = lo->bands();
