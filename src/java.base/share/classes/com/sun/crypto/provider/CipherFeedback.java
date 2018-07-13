@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
 import java.security.ProviderException;
+import sun.security.util.ArrayUtil;
 
 /**
  * This class represents ciphers in cipher-feedback (CFB) mode.
@@ -149,9 +150,9 @@ final class CipherFeedback extends FeedbackCipher {
      */
     int encrypt(byte[] plain, int plainOffset, int plainLen,
                 byte[] cipher, int cipherOffset) {
-        if ((plainLen % numBytes) != 0) {
-            throw new ProviderException("Internal error in input buffering");
-        }
+        ArrayUtil.blockSizeCheck(plainLen, numBytes);
+        ArrayUtil.nullAndBoundsCheck(plain, plainOffset, plainLen);
+        ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, plainLen);
 
         int nShift = blockSize - numBytes;
         int loopCount = plainLen / numBytes;
@@ -225,9 +226,10 @@ final class CipherFeedback extends FeedbackCipher {
      */
     int decrypt(byte[] cipher, int cipherOffset, int cipherLen,
                 byte[] plain, int plainOffset) {
-        if ((cipherLen % numBytes) != 0) {
-            throw new ProviderException("Internal error in input buffering");
-        }
+
+        ArrayUtil.blockSizeCheck(cipherLen, numBytes);
+        ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, cipherLen);
+        ArrayUtil.nullAndBoundsCheck(plain, plainOffset, cipherLen);
 
         int nShift = blockSize - numBytes;
         int loopCount = cipherLen / numBytes;
