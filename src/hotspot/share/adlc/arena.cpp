@@ -79,7 +79,7 @@ Arena::Arena( Arena *a )
 // Total of all Chunks in arena
 size_t Arena::used() const {
   size_t sum = _chunk->_len - (_max-_hwm); // Size leftover in this Chunk
-  register Chunk *k = _first;
+  Chunk *k = _first;
   while( k != _chunk) {         // Whilst have Chunks in a row
     sum += k->_len;             // Total size of this Chunk
     k = k->_next;               // Bump along to next Chunk
@@ -93,7 +93,7 @@ void* Arena::grow( size_t x ) {
   // Get minimal required size.  Either real big, or even bigger for giant objs
   size_t len = max(x, Chunk::size);
 
-  register Chunk *k = _chunk;   // Get filled-up chunk address
+  Chunk *k = _chunk;            // Get filled-up chunk address
   _chunk = new (len) Chunk(len);
 
   if( k ) k->_next = _chunk;    // Append new chunk to end of linked list

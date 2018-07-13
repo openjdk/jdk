@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 
   // Read command line arguments and file names
   for( int i = 1; i < argc; i++ ) { // For all arguments
-    register char *s = argv[i]; // Get option/filename
+    char *s = argv[i];          // Get option/filename
 
     if( *s++ == '-' ) {         // It's a flag? (not a filename)
       if( !*s ) {               // Stand-alone `-' means stdin

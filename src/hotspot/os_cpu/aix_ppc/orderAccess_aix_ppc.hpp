@@ -82,7 +82,7 @@ template<size_t byte_size>
 struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 {
   template <typename T>
-  T operator()(const volatile T* p) const { register T t = Atomic::load(p); inlasm_acquire_reg(t); return t; }
+  T operator()(const volatile T* p) const { T t = Atomic::load(p); inlasm_acquire_reg(t); return t; }
 };
 
 #undef inlasm_sync

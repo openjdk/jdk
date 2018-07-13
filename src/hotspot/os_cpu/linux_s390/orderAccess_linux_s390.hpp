@@ -79,7 +79,7 @@ template<size_t byte_size>
 struct OrderAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 {
   template <typename T>
-  T operator()(const volatile T* p) const { register T t = *p; inlasm_zarch_acquire(); return t; }
+  T operator()(const volatile T* p) const { T t = *p; inlasm_zarch_acquire(); return t; }
 };
 
 #undef inlasm_compiler_barrier
