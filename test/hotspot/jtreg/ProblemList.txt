@@ -139,10 +139,6 @@ vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t003/TestDescription.java 80513
 vmTestbase/nsk/jvmti/AttachOnDemand/attach034/TestDescription.java 8042145 generic-all
 vmTestbase/nsk/jvmti/AttachOnDemand/attach045/TestDescription.java 8202971 generic-all
 vmTestbase/nsk/jvmti/unit/heap/HeapWalkTests/TestDescription.java 8016181 generic-all
-vmTestbase/nsk/jvmti/IterateThroughHeap/filter-tagged/TestDescription.java 8201513 generic-all
-vmTestbase/nsk/jvmti/IterateThroughHeap/filter-class-untagged/TestDescription.java 8201513 generic-all
-vmTestbase/nsk/jvmti/IterateThroughHeap/filter-class-tagged/TestDescription.java 8201513 generic-all
-vmTestbase/nsk/jvmti/IterateThroughHeap/filter-untagged/TestDescription.java 8201513 generic-all
 
 vmTestbase/gc/lock/jni/jnilock002/TestDescription.java 8191869,8192647 generic-all
 
