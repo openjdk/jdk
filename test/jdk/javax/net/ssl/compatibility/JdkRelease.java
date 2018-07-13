@@ -26,12 +26,12 @@
  */
 public enum JdkRelease {
 
-    JDK6(6, "1.6"),
     JDK7(7, "1.7"),
     JDK8(8, "1.8"),
     JDK9(9, "9"),
     JDK10(10, "10"),
-    JDK11(11, "11");
+    JDK11(11, "11"),
+    JDK12(12, "12");
 
     public final int sequence;
     public final String release;
@@ -42,9 +42,7 @@ public enum JdkRelease {
     }
 
     public static JdkRelease getRelease(String jdkVersion) {
-        if (jdkVersion.startsWith(JDK6.release)) {
-            return JDK6;
-        } else if (jdkVersion.startsWith(JDK7.release)) {
+        if (jdkVersion.startsWith(JDK7.release)) {
             return JDK7;
         } else if (jdkVersion.startsWith(JDK8.release)) {
             return JDK8;
@@ -54,6 +52,8 @@ public enum JdkRelease {
             return JDK10;
         } else if (jdkVersion.startsWith(JDK11.release)) {
             return JDK11;
+        } else if (jdkVersion.startsWith(JDK12.release)) {
+            return JDK12;
         }
 
         return null;
