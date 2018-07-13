@@ -366,6 +366,9 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
   if (!forward_ctl->is_top()) {
     // copy forward
     mem = start_mem_dest;
+    uint alias_idx_src = phase->C->get_alias_index(atp_src);
+    uint alias_idx_dest = phase->C->get_alias_index(atp_dest);
+    bool same_alias = (alias_idx_src == alias_idx_dest);
 
     if (count > 0) {
       Node* v = LoadNode::make(*phase, forward_ctl, start_mem_src, adr_src, atp_src, value_type, copy_type, MemNode::unordered);
@@ -376,7 +379,7 @@ Node* ArrayCopyNode::array_copy_forward(PhaseGVN *phase,
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
         Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
         Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
-        v = LoadNode::make(*phase, forward_ctl, mem, next_src, atp_src, value_type, copy_type, MemNode::unordered);
+        v = LoadNode::make(*phase, forward_ctl, same_alias ? mem : start_mem_src, next_src, atp_src, value_type, copy_type, MemNode::unordered);
         v = phase->transform(v);
         mem = StoreNode::make(*phase, forward_ctl,mem,next_dest,atp_dest,v, copy_type, MemNode::unordered);
         mem = phase->transform(mem);
@@ -408,18 +411,21 @@ Node* ArrayCopyNode::array_copy_backward(PhaseGVN *phase,
   if (!backward_ctl->is_top()) {
     // copy backward
     mem = start_mem_dest;
+    uint alias_idx_src = phase->C->get_alias_index(atp_src);
+    uint alias_idx_dest = phase->C->get_alias_index(atp_dest);
+    bool same_alias = (alias_idx_src == alias_idx_dest);
 
     if (count > 0) {
       for (int i = count-1; i >= 1; i--) {
         Node* off  = phase->MakeConX(type2aelembytes(copy_type) * i);
         Node* next_src = phase->transform(new AddPNode(base_src,adr_src,off));
         Node* next_dest = phase->transform(new AddPNode(base_dest,adr_dest,off));
-        Node* v = LoadNode::make(*phase, backward_ctl, mem, next_src, atp_src, value_type, copy_type, MemNode::unordered);
+        Node* v = LoadNode::make(*phase, backward_ctl, same_alias ? mem : start_mem_src, next_src, atp_src, value_type, copy_type, MemNode::unordered);
         v = phase->transform(v);
         mem = StoreNode::make(*phase, backward_ctl,mem,next_dest,atp_dest,v, copy_type, MemNode::unordered);
         mem = phase->transform(mem);
       }
-      Node* v = LoadNode::make(*phase, backward_ctl, mem, adr_src, atp_src, value_type, copy_type, MemNode::unordered);
+      Node* v = LoadNode::make(*phase, backward_ctl, same_alias ? mem : start_mem_src, adr_src, atp_src, value_type, copy_type, MemNode::unordered);
       v = phase->transform(v);
       mem = StoreNode::make(*phase, backward_ctl, mem, adr_dest, atp_dest, v, copy_type, MemNode::unordered);
       mem = phase->transform(mem);
