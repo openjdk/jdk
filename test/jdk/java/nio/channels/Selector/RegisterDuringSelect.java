@@ -28,6 +28,7 @@
  */
 
 import java.io.IOException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -44,9 +45,14 @@ public class RegisterDuringSelect {
             @Override
             public Void call() throws IOException {
                 for (;;) {
-                    sel.select();
+                    try {
+                        sel.select();
+                    } catch (ClosedSelectorException ignore) {
+                        return null;
+                    }
                     if (sel.isOpen()) {
                         barrier.arriveAndAwaitAdvance();
+                        System.out.println("selectLoop advanced ...");
                     } else {
                         // closed
                         return null;
@@ -107,3 +113,4 @@ public class RegisterDuringSelect {
 
     }
 }
+
