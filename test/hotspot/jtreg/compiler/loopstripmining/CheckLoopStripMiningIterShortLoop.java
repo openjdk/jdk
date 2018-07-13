@@ -25,6 +25,7 @@
  * @test
  * @bug 8196294
  * @summary when loop strip is enabled, LoopStripMiningIterShortLoop should be not null
+ * @requires vm.flavor == "server"
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
