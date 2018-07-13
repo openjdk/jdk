@@ -26,6 +26,8 @@
 package java.nio;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.JavaNioAccess;
+import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 
 import java.util.Spliterator;
@@ -705,6 +707,25 @@ public abstract class Buffer {
     static void checkBounds(int off, int len, int size) { // package-private
         if ((off | len | (off + len) | (size - (off + len))) < 0)
             throw new IndexOutOfBoundsException();
+    }
+
+    static {
+        // setup access to this package in SharedSecrets
+        SharedSecrets.setJavaNioAccess(
+            new JavaNioAccess() {
+                @Override
+                public JavaNioAccess.BufferPool getDirectBufferPool() {
+                    return Bits.BUFFER_POOL;
+                }
+                @Override
+                public ByteBuffer newDirectByteBuffer(long addr, int cap, Object ob) {
+                    return new DirectByteBuffer(addr, cap, ob);
+                }
+                @Override
+                public void truncate(Buffer buf) {
+                    buf.truncate();
+                }
+            });
     }
 
 }
