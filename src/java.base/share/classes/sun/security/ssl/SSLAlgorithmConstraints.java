@@ -73,12 +73,20 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             boolean withDefaultCertPathConstraints) {
         AlgorithmConstraints configuredConstraints = null;
         if (socket != null) {
-            HandshakeContext hc =
-                    ((SSLSocketImpl)socket).conContext.handshakeContext;
-            if (hc != null) {
-                configuredConstraints = hc.sslConfig.algorithmConstraints;
+            // Note that the KeyManager or TrustManager implementation may be
+            // not implemented in the same provider as SSLSocket/SSLEngine.
+            // Please check the instance before casting to use SSLSocketImpl.
+            if (socket instanceof SSLSocketImpl) {
+                HandshakeContext hc =
+                        ((SSLSocketImpl)socket).conContext.handshakeContext;
+                if (hc != null) {
+                    configuredConstraints = hc.sslConfig.algorithmConstraints;
+                } else {
+                    configuredConstraints = null;
+                }
             } else {
-                configuredConstraints = null;
+                configuredConstraints =
+                        socket.getSSLParameters().getAlgorithmConstraints();
             }
         }
         this.userSpecifiedConstraints = configuredConstraints;
@@ -90,12 +98,20 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             boolean withDefaultCertPathConstraints) {
         AlgorithmConstraints configuredConstraints = null;
         if (engine != null) {
-            HandshakeContext hc =
-                    ((SSLEngineImpl)engine).conContext.handshakeContext;
-            if (hc != null) {
-                configuredConstraints = hc.sslConfig.algorithmConstraints;
+            // Note that the KeyManager or TrustManager implementation may be
+            // not implemented in the same provider as SSLSocket/SSLEngine.
+            // Please check the instance before casting to use SSLEngineImpl.
+            if (engine instanceof SSLEngineImpl) {
+                HandshakeContext hc =
+                        ((SSLEngineImpl)engine).conContext.handshakeContext;
+                if (hc != null) {
+                    configuredConstraints = hc.sslConfig.algorithmConstraints;
+                } else {
+                    configuredConstraints = null;
+                }
             } else {
-                configuredConstraints = null;
+                configuredConstraints =
+                        engine.getSSLParameters().getAlgorithmConstraints();
             }
         }
         this.userSpecifiedConstraints = configuredConstraints;
