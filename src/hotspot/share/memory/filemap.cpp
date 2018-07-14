@@ -631,7 +631,9 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   si->_read_only = read_only;
   si->_allow_exec = allow_exec;
   si->_crc = ClassLoader::crc32(0, base, (jint)size);
-  write_bytes_aligned(base, (int)size);
+  if (base != NULL) {
+    write_bytes_aligned(base, (int)size);
+  }
 }
 
 // Write out the given archive heap memory regions.  GC code combines multiple

@@ -1015,7 +1015,7 @@ ExecuteWithLog = \
   $(call LogCmdlines, Exececuting: [$(strip $2)]) \
   $(call MakeDir, $(dir $(strip $1))) \
   $(call WriteFile, $2, $(strip $1).cmdline) \
-  ( $(strip $2) > >($(TEE) $(strip $1).log) 2> >($(TEE) $(strip $1).log >&2) || \
+  ( $(RM) $(strip $1).log && $(strip $2) > >($(TEE) -a $(strip $1).log) 2> >($(TEE) -a $(strip $1).log >&2) || \
       ( exitcode=$(DOLLAR)? && \
       $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).log && \
       $(CP) $(strip $1).cmdline $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).cmdline && \

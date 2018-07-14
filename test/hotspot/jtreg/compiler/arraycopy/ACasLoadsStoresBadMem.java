@@ -21,31 +21,38 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 8196294
- * @summary when loop strip is enabled, LoopStripMiningIterShortLoop should be not null
- * @requires vm.flavor == "server"
- * @library /test/lib /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver CheckLoopStripMiningIterShortLoop
+ * @bug 8200282
+ * @summary arraycopy converted as a series of loads/stores uses wrong slice for loads
+ *
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:CompileCommand=dontinline,ACasLoadsStoresBadMem::not_inlined  ACasLoadsStoresBadMem
+ *
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
-public class CheckLoopStripMiningIterShortLoop {
-
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC", "-XX:+PrintFlagsFinal", "-version");
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
-
-        long iter = Long.parseLong(out.firstMatch("uintx LoopStripMiningIter                      = (\\d+)", 1));
-        long iterShort = Long.parseLong(out.firstMatch("uintx LoopStripMiningIterShortLoop             = (\\d+)", 1));
-
-        if (iter <= 0 || iterShort <= 0) {
-            throw new RuntimeException("Bad defaults for loop strip mining");
+public class ACasLoadsStoresBadMem {
+    public static void main(String[] args) {
+        int[] dst = new int[5];
+        for (int i = 0; i < 20_000; i++) {
+            test1(dst, 1);
+            for (int j = 1; j < 5; j++) {
+                if (dst[j] != j) {
+                    throw new RuntimeException("Bad copy ");
+                }
+            }
         }
+    }
+
+    private static void test1(int[] dst, int dstPos) {
+        int[] src = new int[4];
+        not_inlined();
+        src[0] = 1;
+        src[1] = 2;
+        src[2] = 3;
+        src[3] = 4;
+        System.arraycopy(src, 0, dst, dstPos, 4);
+    }
+
+    private static void not_inlined() {
     }
 }

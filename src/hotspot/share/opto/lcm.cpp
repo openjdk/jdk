@@ -646,7 +646,7 @@ Node* PhaseCFG::select(
     }
   } // End of for all ready nodes in worklist
 
-  assert(idx >= 0, "index should be set");
+  guarantee(idx >= 0, "index should be set");
   Node *n = worklist[(uint)idx];      // Get the winner
 
   worklist.map((uint)idx, worklist.pop());     // Compress worklist

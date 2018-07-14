@@ -520,6 +520,7 @@ java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-all
+java/lang/management/ThreadMXBean/AllThreadIds.java             8131745 generic-all
 
 ############################################################################
 

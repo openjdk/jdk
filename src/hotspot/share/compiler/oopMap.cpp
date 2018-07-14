@@ -571,14 +571,14 @@ bool OopMap::equals(const OopMap* other) const {
 
 const ImmutableOopMap* ImmutableOopMapSet::find_map_at_offset(int pc_offset) const {
   ImmutableOopMapPair* pairs = get_pairs();
-  ImmutableOopMapPair* last = NULL;
 
-  for (int i = 0; i < _count; ++i) {
+  int i;
+  for (i = 0; i < _count; ++i) {
     if (pairs[i].pc_offset() >= pc_offset) {
-      last = &pairs[i];
       break;
     }
   }
+  ImmutableOopMapPair* last = &pairs[i];
 
   assert(last->pc_offset() == pc_offset, "oopmap not found");
   return last->get_from(this);

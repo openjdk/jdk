@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,9 +502,11 @@ class dfa_shared_preds {
     case '"':  // such as: #line 10 "myfile.ad"\n mypredicate
       return true;
     case '|':
-      if( prev != pred && *(prev-1) == '|' ) return true;
+      if (prev != pred && *(prev-1) == '|') return true;
+      break;
     case '&':
-      if( prev != pred && *(prev-1) == '&' ) return true;
+      if (prev != pred && *(prev-1) == '&') return true;
+      break;
     default:
       return false;
     }
@@ -717,21 +719,21 @@ const char *Expr::compute_external(const Expr *c1, const Expr *c2) {
 
   // Preserve use of external name which has a zero value
   if( c1->_external_name != NULL ) {
-    sprintf( string_buffer, "%s", c1->as_string());
+    sprintf(string_buffer, "%s", c1->as_string());
     if( !c2->is_zero() ) {
-      strcat( string_buffer, "+");
-      strcat( string_buffer, c2->as_string());
+      strncat(string_buffer, "+", STRING_BUFFER_LENGTH);
+      strncat(string_buffer, c2->as_string(), STRING_BUFFER_LENGTH);
     }
     result = strdup(string_buffer);
   }
   else if( c2->_external_name != NULL ) {
     if( !c1->is_zero() ) {
-      sprintf( string_buffer, "%s", c1->as_string());
-      strcat( string_buffer, " + ");
+      sprintf(string_buffer, "%s", c1->as_string());
+      strncat(string_buffer, " + ", STRING_BUFFER_LENGTH);
     } else {
       string_buffer[0] = '\0';
     }
-    strcat( string_buffer, c2->_external_name );
+    strncat(string_buffer, c2->_external_name, STRING_BUFFER_LENGTH);
     result = strdup(string_buffer);
   }
   return result;
@@ -741,8 +743,8 @@ const char *Expr::compute_expr(const Expr *c1, const Expr *c2) {
   if( !c1->is_zero() ) {
     sprintf( string_buffer, "%s", c1->_expr);
     if( !c2->is_zero() ) {
-      strcat( string_buffer, "+");
-      strcat( string_buffer, c2->_expr);
+      strncat(string_buffer, "+", STRING_BUFFER_LENGTH);
+      strncat(string_buffer, c2->_expr, STRING_BUFFER_LENGTH);
     }
   }
   else if( !c2->is_zero() ) {

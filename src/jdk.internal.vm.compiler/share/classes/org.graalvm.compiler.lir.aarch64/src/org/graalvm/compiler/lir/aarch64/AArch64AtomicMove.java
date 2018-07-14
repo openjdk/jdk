@@ -83,7 +83,7 @@ public class AArch64AtomicMove {
             if (AArch64LIRFlagsVersioned.useLSE(masm.target.arch)) {
                 Register expected = asRegister(expectedValue);
                 masm.mov(size, result, expected);
-                masm.cas(size, expected, newVal, address, true /* acquire */, true /* release */);
+                masm.cas(size, result, newVal, address, true /* acquire */, true /* release */);
                 AArch64Compare.gpCompare(masm, resultValue, expectedValue);
             } else {
                 // We could avoid using a scratch register here, by reusing resultValue for the

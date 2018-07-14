@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,41 @@
  */
 package javax.swing.text.html;
 
-import java.awt.*;
+import java.awt.Rectangle;
+import java.awt.Image;
+import java.awt.Container;
+import java.awt.Color;
+import java.awt.Shape;
+import java.awt.Graphics;
+import java.awt.Toolkit;
+
 import java.awt.image.ImageObserver;
-import java.net.*;
+import java.net.URL;
+import java.net.MalformedURLException;
+
 import java.util.Dictionary;
-import javax.swing.*;
-import javax.swing.text.*;
-import javax.swing.event.*;
+
+import javax.swing.GrayFilter;
+import javax.swing.ImageIcon;
+import javax.swing.Icon;
+import javax.swing.UIManager;
+import javax.swing.SwingUtilities;
+
+import javax.swing.text.JTextComponent;
+import javax.swing.text.StyledDocument;
+import javax.swing.text.View;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.Element;
+import javax.swing.text.ViewFactory;
+import javax.swing.text.Position;
+import javax.swing.text.Segment;
+import javax.swing.text.Highlighter;
+import javax.swing.text.LayeredHighlighter;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.Document;
+import javax.swing.text.BadLocationException;
+
+import javax.swing.event.DocumentEvent;
 
 /**
  * View of an Image, intended to support the HTML &lt;IMG&gt; tag.
@@ -744,12 +772,22 @@ public class ImageView extends View {
             // anything that might cause the image to be loaded, and thus the
             // ImageHandler to be called.
             newWidth = getIntAttr(HTML.Attribute.WIDTH, -1);
+            newHeight = getIntAttr(HTML.Attribute.HEIGHT, -1);
+
             if (newWidth > 0) {
                 newState |= WIDTH_FLAG;
+                if (newHeight <= 0) {
+                    newHeight = newWidth;
+                    newState |= HEIGHT_FLAG;
+                }
             }
-            newHeight = getIntAttr(HTML.Attribute.HEIGHT, -1);
+
             if (newHeight > 0) {
                 newState |= HEIGHT_FLAG;
+                if (newWidth <= 0) {
+                    newWidth = newHeight;
+                    newState |= WIDTH_FLAG;
+                }
             }
 
             if (newWidth <= 0) {

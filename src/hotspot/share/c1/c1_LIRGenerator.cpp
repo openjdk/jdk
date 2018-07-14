@@ -2311,7 +2311,9 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
+    assert(md != NULL, "Sanity");
     ciProfileData* data = md->bci_to_data(x->state()->bci());
+    assert(data != NULL, "must have profiling data");
     assert(data->is_MultiBranchData(), "bad profile data?");
     int default_count_offset = md->byte_offset_of_slot(data, MultiBranchData::default_count_offset());
     LIR_Opr md_reg = new_register(T_METADATA);
@@ -2367,7 +2369,9 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
   if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
+    assert(md != NULL, "Sanity");
     ciProfileData* data = md->bci_to_data(x->state()->bci());
+    assert(data != NULL, "must have profiling data");
     assert(data->is_MultiBranchData(), "bad profile data?");
     int default_count_offset = md->byte_offset_of_slot(data, MultiBranchData::default_count_offset());
     LIR_Opr md_reg = new_register(T_METADATA);
@@ -3076,6 +3080,7 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
   if (compilation()->profile_arguments()) {
     int bci = x->bci_of_invoke();
     ciMethodData* md = x->method()->method_data_or_null();
+    assert(md != NULL, "Sanity");
     ciProfileData* data = md->bci_to_data(bci);
     if (data != NULL) {
       if ((data->is_CallTypeData() && data->as_CallTypeData()->has_arguments()) ||
@@ -3212,6 +3217,7 @@ void LIRGenerator::do_ProfileCall(ProfileCall* x) {
 void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
   int bci = x->bci_of_invoke();
   ciMethodData* md = x->method()->method_data_or_null();
+  assert(md != NULL, "Sanity");
   ciProfileData* data = md->bci_to_data(bci);
   if (data != NULL) {
     assert(data->is_CallTypeData() || data->is_VirtualCallTypeData(), "wrong profile data type");

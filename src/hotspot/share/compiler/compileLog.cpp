@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,14 +217,17 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
       file->print_raw_cr("'>");
 
       size_t nr; // number read into buf from partial log
+      // In case of unsuccessful completion, read returns -1.
+      ssize_t bytes_read;
       // Copy data up to the end of the last <event> element:
       julong to_read = log->_file_end;
       while (to_read > 0) {
         if (to_read < (julong)buflen)
               nr = (size_t)to_read;
         else  nr = buflen;
-        nr = read(partial_fd, buf, (int)nr);
-        if (nr <= 0)  break;
+        bytes_read = read(partial_fd, buf, (int)nr);
+        if (bytes_read <= 0) break;
+        nr = bytes_read;
         to_read -= (julong)nr;
         file->write(buf, nr);
       }
@@ -232,7 +235,8 @@ void CompileLog::finish_log_on_error(outputStream* file, char* buf, int buflen) 
       // Copy any remaining data inside a quote:
       bool saw_slop = false;
       int end_cdata = 0;  // state machine [0..2] watching for too many "]]"
-      while ((nr = read(partial_fd, buf, buflen-1)) > 0) {
+      while ((bytes_read = read(partial_fd, buf, buflen-1)) > 0) {
+        nr = bytes_read;
         buf[buflen-1] = '\0';
         if (!saw_slop) {
           file->print_raw_cr("<fragment>");

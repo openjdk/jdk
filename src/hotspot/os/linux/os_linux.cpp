@@ -2093,7 +2093,9 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   // special case for debian
   if (file_exists("/etc/debian_version")) {
     strncpy(buf, "Debian ", buflen);
-    parse_os_info(&buf[7], buflen-7, "/etc/debian_version");
+    if (buflen > 7) {
+      parse_os_info(&buf[7], buflen-7, "/etc/debian_version");
+    }
   } else {
     strncpy(buf, "Linux", buflen);
   }
@@ -2805,8 +2807,8 @@ int os::numa_get_group_id() {
 }
 
 int os::Linux::get_existing_num_nodes() {
-  size_t node;
-  size_t highest_node_number = Linux::numa_max_node();
+  int node;
+  int highest_node_number = Linux::numa_max_node();
   int num_nodes = 0;
 
   // Get the total number of nodes in the system including nodes without memory.
@@ -2819,14 +2821,14 @@ int os::Linux::get_existing_num_nodes() {
 }
 
 size_t os::numa_get_leaf_groups(int *ids, size_t size) {
-  size_t highest_node_number = Linux::numa_max_node();
+  int highest_node_number = Linux::numa_max_node();
   size_t i = 0;
 
-  // Map all node ids in which is possible to allocate memory. Also nodes are
+  // Map all node ids in which it is possible to allocate memory. Also nodes are
   // not always consecutively available, i.e. available from 0 to the highest
   // node number.
-  for (size_t node = 0; node <= highest_node_number; node++) {
-    if (Linux::isnode_in_configured_nodes(node)) {
+  for (int node = 0; node <= highest_node_number; node++) {
+    if (Linux::isnode_in_configured_nodes((unsigned int)node)) {
       ids[i++] = node;
     }
   }

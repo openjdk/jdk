@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -684,6 +684,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
   Node* max_idx_expr = NULL;
   const TypeInt* idx_type = TypeInt::INT;
   if ((stride > 0) == (scale > 0) == upper) {
+    guarantee(limit != NULL, "sanity");
     if (TraceLoopPredicate) {
       if (limit->is_Con()) {
         predString->print("(%d ", con_limit);

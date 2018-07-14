@@ -1608,7 +1608,12 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     }
     int bci = jvms->bci();
     if (bci < 0) bci = 0;
-    st.print("%s.%s@%d", m->holder()->name()->as_utf8(), m->name()->as_utf8(), bci);
+    if (m != NULL) {
+      st.print("%s.%s", m->holder()->name()->as_utf8(), m->name()->as_utf8());
+    } else {
+      st.print("no method");
+    }
+    st.print("@%d", bci);
     // To print linenumbers instead of bci use: m->line_number_from_bci(bci)
   }
   NamedCounter* c;

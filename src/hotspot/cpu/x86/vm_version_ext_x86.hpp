@@ -63,6 +63,7 @@ class VM_Version_Ext : public VM_Version {
   static bool cpu_is_em64t(void);
   static bool is_netburst(void);
 
+  // Returns bytes written excluding termninating null byte.
   static size_t cpu_write_support_string(char* const buf, size_t buf_len);
   static void resolve_cpu_information_details(void);
   static jlong max_qualified_cpu_freq_from_brand_string(void);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ static inline char* read_line(FILE* fp) {
   int buflen = 512;
   char* buf = NEW_RESOURCE_ARRAY(char, buflen);
   long pos = ftell(fp);
+  if (pos < 0) return NULL;
 
   char* ret = fgets(buf, buflen, fp);
   while (ret != NULL && buf[strlen(buf) - 1] != '\n' && !feof(fp)) {

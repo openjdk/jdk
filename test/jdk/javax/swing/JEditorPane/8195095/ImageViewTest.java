@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 8195095
+ * @bug 8195095 8206238
  * @summary Tests if Images are scaled correctly in JEditorPane.
  * @run main ImageViewTest
  */
@@ -40,22 +40,16 @@ import javax.swing.WindowConstants;
 
 public class ImageViewTest {
 
-    private static final int WIDTH = 200;
-    private static final int HEIGHT = 200;
     private static JFrame f;
 
-    private static JEditorPane editorPane1;
-    private static JEditorPane editorPane2;
-    private static JEditorPane editorPane3;
-    private static JEditorPane editorPane4;
-
-    private static void test(Robot r, JEditorPane editorPane)  throws Exception {
+    private static void test(Robot r, JEditorPane editorPane,
+                            final int WIDTH, final int HEIGHT )  throws Exception {
 
         SwingUtilities.invokeAndWait(() -> {
             f = new JFrame();
             editorPane.setEditable(false);
             f.add(editorPane);
-            f.setSize(220,240);
+            f.setSize(WIDTH + 20, HEIGHT + 40);
             f.setLocationRelativeTo(null);
 
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -109,34 +103,78 @@ public class ImageViewTest {
 
         Robot r = new Robot();
 
+        final JEditorPane[] editorPanes = new JEditorPane[11];
+
         SwingUtilities.invokeAndWait(() -> {
-            editorPane1 = new JEditorPane("text/html",
+            editorPanes[0] = new JEditorPane("text/html",
                     "<img height=\"200\" src=\"file:///" + ABSOLUTE_FILE_PATH + "\"");
 
-            editorPane2 = new JEditorPane("text/html",
+            editorPanes[1] = new JEditorPane("text/html",
                     "<img width=\"200\" src=\"file:///" + ABSOLUTE_FILE_PATH + "\"");
 
-            editorPane3 = new JEditorPane("text/html",
+            editorPanes[2] = new JEditorPane("text/html",
                     "<img width=\"200\" height=\"200\" src=\"file:///" + ABSOLUTE_FILE_PATH + "\"");
 
-            editorPane4 = new JEditorPane("text/html",
+            editorPanes[3] = new JEditorPane("text/html",
                     "<img src=\"file:///" + ABSOLUTE_FILE_PATH + "\"");
+
+            editorPanes[4] = new JEditorPane("text/html",
+                    "<img width=\"100\" src =\"file:///" + ABSOLUTE_FILE_PATH + "\"");
+
+            editorPanes[5] = new JEditorPane("text/html",
+                    "<img height=\"100\" src =\"file:///" + ABSOLUTE_FILE_PATH + "\"");
+
+            editorPanes[6] = new JEditorPane("text/html",
+                    "<img width=\"100\" height=\"100\" src =\"file:///" + ABSOLUTE_FILE_PATH + "\"");
+
+            editorPanes[7] = new JEditorPane("text/html",
+                    "<img width=\"50\" src =\"file:///" + ABSOLUTE_FILE_PATH + "\"");
+
+            editorPanes[8] = new JEditorPane("text/html",
+                    "<img height=\"50\" src =\"file:///" + ABSOLUTE_FILE_PATH + "\"");
+
+            editorPanes[9] = new JEditorPane("text/html",
+                    "<img width=\"300\" src =\"file:///" + ABSOLUTE_FILE_PATH + "\"");
+
+            editorPanes[10] = new JEditorPane("text/html",
+                    "<img height=\"300\" src =\"file:///" + ABSOLUTE_FILE_PATH + "\"");
 
         });
 
         r.waitForIdle();
 
         System.out.println("Test with only height set to 200");
-        test(r, editorPane1);
+        test(r, editorPanes[0], 200, 200);
 
         System.out.println("Test with only width set to 200");
-        test(r, editorPane2);
+        test(r, editorPanes[1], 200, 200);
 
-        System.out.println("Test with none of them set");
-        test(r, editorPane3);
+        System.out.println("Test with both of them set");
+        test(r, editorPanes[2], 200, 200);
 
-        System.out.println("Test with both of them set to 200");
-        test(r, editorPane4);
+        System.out.println("Test with none of them set to 200");
+        test(r, editorPanes[3], 200, 200);
+
+        System.out.println("Test with only width set to 100");
+        test(r, editorPanes[4], 100, 100);
+
+        System.out.println("Test with only height set to 100");
+        test(r, editorPanes[5], 100, 100);
+
+        System.out.println("Test with both width and height set to 100");
+        test(r, editorPanes[6], 100, 100);
+
+        System.out.println("Test with only width set to 50");
+        test(r, editorPanes[7], 50, 50);
+
+        System.out.println("Test with only height set to 50");
+        test(r, editorPanes[8], 50, 50);
+
+        System.out.println("Test with only width set to 300");
+        test(r, editorPanes[9], 300, 300);
+
+        System.out.println("Test with only height set to 300");
+        test(r, editorPanes[10], 300, 300);
 
         System.out.println("Test Passed.");
     }

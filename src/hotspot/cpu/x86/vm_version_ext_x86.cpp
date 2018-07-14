@@ -470,8 +470,8 @@ int VM_Version_Ext::cpu_extended_brand_string(char* const buf, size_t buf_len) {
 }
 
 size_t VM_Version_Ext::cpu_write_support_string(char* const buf, size_t buf_len) {
-  assert(buf != NULL, "buffer is NULL!");
-  assert(buf_len > 0, "buffer len not enough!");
+  guarantee(buf != NULL, "buffer is NULL!");
+  guarantee(buf_len > 0, "buffer len not enough!");
 
   unsigned int flag = 0;
   unsigned int fi = 0;
@@ -481,8 +481,7 @@ size_t VM_Version_Ext::cpu_write_support_string(char* const buf, size_t buf_len)
 #define WRITE_TO_BUF(string)                                                          \
   {                                                                                   \
     int res = jio_snprintf(&buf[written], buf_len - written, "%s%s", prefix, string); \
-    if (res < 0 || (size_t) res >= buf_len - 1) {                                     \
-      buf[buf_len-1] = '\0';                                                          \
+    if (res < 0) {                                                                    \
       return buf_len - 1;                                                             \
     }                                                                                 \
     written += res;                                                                   \
@@ -592,7 +591,7 @@ int VM_Version_Ext::cpu_detailed_description(char* const buf, size_t buf_len) {
     _cpuid_info.ext_cpuid1_edx);
 
   if (outputLen < 0 || (size_t) outputLen >= buf_len - 1) {
-    buf[buf_len-1] = '\0';
+    if (buf_len > 0) { buf[buf_len-1] = '\0'; }
     return OS_ERR;
   }
 
