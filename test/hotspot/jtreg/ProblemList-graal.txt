@@ -67,8 +67,6 @@ gc/g1/plab/TestPLABResize.java                                  8191048   generi
 
 gc/TestNUMAPageSize.java                                        8194949   generic-all
 
-runtime/ReservedStack/ReservedStackTestCompiler.java            8181855   generic-all
-
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8195156   generic-all
 
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
@@ -179,6 +177,7 @@ org.graalvm.compiler.core.test.ProfilingInfoTest                                
 org.graalvm.compiler.hotspot.test.CompilationWrapperTest                         8205081
 org.graalvm.compiler.hotspot.test.HsErrLogTest                                   8205081
 org.graalvm.compiler.hotspot.test.OptionsInFileTest                              8205081
+org.graalvm.compiler.hotspot.test.ReservedStackAccessTest                        8205081
 org.graalvm.compiler.replacements.test.classfile.ClassfileBytecodeProviderTest   8205081
 org.graalvm.compiler.replacements.test.classfile.RedefineIntrinsicTest           8205081
 
