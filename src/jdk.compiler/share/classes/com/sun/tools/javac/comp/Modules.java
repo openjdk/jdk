@@ -1552,7 +1552,9 @@ public class Modules extends JCTree.Visitor {
         }
 
         addExports.forEach((exportsFrom, exports) -> {
-            addVisiblePackages(msym, seen, exportsFrom, exports);
+            if (msym.readModules.contains(exportsFrom)) {
+                addVisiblePackages(msym, seen, exportsFrom, exports);
+            }
         });
     }
 

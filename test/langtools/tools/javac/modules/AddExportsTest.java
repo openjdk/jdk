@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8207032
  * @summary Test the --add-exports option
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -35,6 +36,8 @@ import java.nio.file.Path;
 
 import toolbox.JavacTask;
 import toolbox.Task;
+import toolbox.Task.Expect;
+import toolbox.Task.OutputKind;
 
 public class AddExportsTest extends ModuleTestBase {
 
@@ -74,11 +77,11 @@ public class AddExportsTest extends ModuleTestBase {
                           "package p1; public class C1 { }");
         Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2x { }",
+                          "module m2x { requires m1x; }",
                           "package p2; class C2 { p1.C1 c1; }");
         Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3x { }",
+                          "module m3x { requires m1x; }",
                           "package p3; class C3 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
@@ -275,7 +278,7 @@ public class AddExportsTest extends ModuleTestBase {
                           "package p1; public class C1 { }");
         Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2x { }",
+                          "module m2x { requires m1x; }",
                           "package p2; class C2 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
@@ -298,7 +301,7 @@ public class AddExportsTest extends ModuleTestBase {
                           "package p1; public class C1 { }");
         Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2x { }",
+                          "module m2x { requires m1x; }",
                           "package p2; class C2 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
@@ -322,11 +325,11 @@ public class AddExportsTest extends ModuleTestBase {
                           "package p1; public class C1 { }");
         Path src_m2 = src.resolve("m2x");
         tb.writeJavaFiles(src_m2,
-                          "module m2x { }",
+                          "module m2x { requires m1x; }",
                           "package p2; class C2 { p1.C1 c1; }");
         Path src_m3 = src.resolve("m3x");
         tb.writeJavaFiles(src_m3,
-                          "module m3x { }",
+                          "module m3x { requires m1x; }",
                           "package p3; class C3 { p1.C1 c1; }");
         Path classes = base.resolve("classes");
         tb.createDirectories(classes);
@@ -339,5 +342,90 @@ public class AddExportsTest extends ModuleTestBase {
                 .files(findJavaFiles(src))
                 .run()
                 .writeAll();
+    }
+
+    @Test
+    public void testNoReads(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path src_m1 = src.resolve("m1x");
+        tb.writeJavaFiles(src_m1,
+                          "module m1x { }",
+                          "package p1; public class C1 { }");
+        Path src_m2 = src.resolve("m2x");
+        tb.writeJavaFiles(src_m2,
+                          "module m2x { }",
+                          "package p2; class C2 { p1.C1 c1; }");
+        Path classes = base.resolve("classes");
+        tb.createDirectories(classes);
+
+        String log;
+
+        log = new JavacTask(tb)
+                .options("--module-source-path", src.toString(),
+                         "-XDrawDiagnostics")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutput(OutputKind.DIRECT);
+
+        checkOutputContains(log,
+            "C2.java:1:24: compiler.err.package.not.visible: p1, (compiler.misc.not.def.access.does.not.read: m2x, p1, m1x)");
+
+        log = new JavacTask(tb)
+                .options("--module-source-path", src.toString(),
+                         "-XDrawDiagnostics",
+                         "--add-exports", "m1x/p1=m2x")
+                .outdir(classes)
+                .files(findJavaFiles(src))
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutput(OutputKind.DIRECT);
+
+        checkOutputContains(log,
+            "C2.java:1:24: compiler.err.package.not.visible: p1, (compiler.misc.not.def.access.does.not.read: m2x, p1, m1x)");
+
+        Path mp = base.resolve("mp");
+        tb.createDirectories(mp);
+
+        new JavacTask(tb)
+                .options("--module-source-path", src.toString(),
+                         "-XDrawDiagnostics",
+                         "--add-exports", "m1x/p1=m2x",
+                         "--add-reads", "m2x=m1x")
+                .outdir(mp)
+                .files(findJavaFiles(src))
+                .run(Expect.SUCCESS)
+                .writeAll();
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--add-exports", "m1x/p1=m2x",
+                         "--add-reads", "m2x=m1x",
+                         "--module-path", mp.toString())
+                .outdir(classes)
+                .files(findJavaFiles(src_m2))
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutput(OutputKind.DIRECT);
+
+        checkOutputContains(log,
+            "C2.java:1:24: compiler.err.package.not.visible: p1, (compiler.misc.not.def.access.does.not.read: m2x, p1, m1x)");
+        checkOutputContains(log,
+            "- compiler.warn.module.for.option.not.found: --add-reads, m1x");
+        checkOutputContains(log,
+            "- compiler.warn.module.for.option.not.found: --add-exports, m1x");
+
+        new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--add-exports", "m1x/p1=m2x",
+                         "--add-reads", "m2x=m1x",
+                         "--module-path", mp.toString(),
+                         "--add-modules", "m1x")
+                .outdir(classes)
+                .files(findJavaFiles(src_m2))
+                .run(Expect.SUCCESS)
+                .writeAll()
+                .getOutput(OutputKind.DIRECT);
     }
 }
