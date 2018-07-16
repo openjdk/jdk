@@ -78,11 +78,9 @@ public class Test {
     // Break the expectedErrorMessage into 2 pieces since the loader name will include
     // its identity hash and can not be compared against.
     static String expectedErrorMessage_part1 = "loader constraint violation: loader PreemptingClassLoader @";
-    static String expectedErrorMessage_part2 = " (instance of PreemptingClassLoader, " +
-        "child of 'app' jdk.internal.loader.ClassLoaders$AppClassLoader) wants to load " +
-        "class test.D_ambgs. A different class with the same name was previously loaded " +
-        "by 'app' (instance of jdk.internal.loader.ClassLoaders$AppClassLoader).";
-
+    static String expectedErrorMessage_part2 = " wants to load class test.D_ambgs. A different class " +
+                                               "with the same name was previously loaded by 'app'. " +
+                                               "(test.D_ambgs is in unnamed module of loader 'app')";
     public static void test_access() throws Exception {
         try {
             // Make a Class 'D_ambgs' under the default loader.
@@ -118,4 +116,3 @@ public class Test {
         test_access();
     }
 }
-

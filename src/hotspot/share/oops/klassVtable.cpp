@@ -506,24 +506,21 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
                                                         super_loader, true,
                                                         CHECK_(false));
             if (failed_type_symbol != NULL) {
-              const char* msg = "loader constraint violation for class %s: when selecting "
-                "overriding method %s the class loader %s of the "
-                "selected method's type %s, and the class loader %s for its super "
-                "type %s have different Class objects for the type %s used in the signature";
-              const char* curr_class = klass->external_name();
-              const char* method = target_method()->name_and_sig_as_C_string();
-              const char* loader1 = java_lang_ClassLoader::describe_external(target_loader());
-              const char* sel_class = target_klass->external_name();
-              const char* loader2 = java_lang_ClassLoader::describe_external(super_loader());
-              const char* super_class = super_klass->external_name();
-              const char* failed_type_name = failed_type_symbol->as_klass_external_name();
-              size_t buflen = strlen(msg) + strlen(curr_class) + strlen(method) +
-                strlen(loader1) + strlen(sel_class) + strlen(loader2) +
-                strlen(super_class) + strlen(failed_type_name);
-              char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-              jio_snprintf(buf, buflen, msg, curr_class, method, loader1, sel_class, loader2,
-                           super_class, failed_type_name);
-              THROW_MSG_(vmSymbols::java_lang_LinkageError(), buf, false);
+              stringStream ss;
+              ss.print("loader constraint violation for class %s: when selecting "
+                       "overriding method %s the class loader %s of the "
+                       "selected method's type %s, and the class loader %s for its super "
+                       "type %s have different Class objects for the type %s used in the signature (%s; %s)",
+                       klass->external_name(),
+                       target_method()->name_and_sig_as_C_string(),
+                       target_klass->class_loader_data()->loader_name_and_id(),
+                       target_klass->external_name(),
+                       super_klass->class_loader_data()->loader_name_and_id(),
+                       super_klass->external_name(),
+                       failed_type_symbol->as_klass_external_name(),
+                       target_klass->class_in_module_of_loader(false, true),
+                       super_klass->class_in_module_of_loader(false, true));
+              THROW_MSG_(vmSymbols::java_lang_LinkageError(), ss.as_string(), false);
             }
           }
         }
@@ -1242,25 +1239,22 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
                                                       interface_loader,
                                                       true, CHECK);
           if (failed_type_symbol != NULL) {
-            const char* msg = "loader constraint violation in interface itable"
-              " initialization for class %s: when selecting method %s the"
-              " class loader %s for super interface %s, and the class"
-              " loader %s of the selected method's type, %s have"
-              " different Class objects for the type %s used in the signature";
-            const char* current = _klass->external_name();
-            const char* sig = m->name_and_sig_as_C_string();
-            const char* loader1 = java_lang_ClassLoader::describe_external(interface_loader());
-            const char* iface = InstanceKlass::cast(interf)->external_name();
-            const char* loader2 = java_lang_ClassLoader::describe_external(method_holder_loader());
-            const char* mclass = target()->method_holder()->external_name();
-            const char* failed_type_name = failed_type_symbol->as_klass_external_name();
-            size_t buflen = strlen(msg) + strlen(current) + strlen(sig) +
-              strlen(loader1) + strlen(iface) + strlen(loader2) + strlen(mclass) +
-              strlen(failed_type_name);
-            char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-            jio_snprintf(buf, buflen, msg, current, sig, loader1, iface,
-                         loader2, mclass, failed_type_name);
-            THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
+            stringStream ss;
+            ss.print("loader constraint violation in interface itable"
+                     " initialization for class %s: when selecting method %s the"
+                     " class loader %s for super interface %s, and the class"
+                     " loader %s of the selected method's type, %s have"
+                     " different Class objects for the type %s used in the signature (%s; %s)",
+                     _klass->external_name(),
+                     m->name_and_sig_as_C_string(),
+                     interf->class_loader_data()->loader_name_and_id(),
+                     interf->external_name(),
+                     target()->method_holder()->class_loader_data()->loader_name_and_id(),
+                     target()->method_holder()->external_name(),
+                     failed_type_symbol->as_klass_external_name(),
+                     interf->class_in_module_of_loader(false, true),
+                     target()->method_holder()->class_in_module_of_loader(false, true));
+            THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
           }
         }
       }

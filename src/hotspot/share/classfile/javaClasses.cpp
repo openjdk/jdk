@@ -4129,37 +4129,6 @@ oop java_lang_ClassLoader::unnamedModule(oop loader) {
   return loader->obj_field(unnamedModule_offset);
 }
 
-// Caller needs ResourceMark.
-const char* java_lang_ClassLoader::describe_external(const oop loader) {
-  ClassLoaderData *cld = ClassLoaderData::class_loader_data(loader);
-  const char* name = cld->loader_name_and_id();
-
-  // bootstrap loader
-  if (loader == NULL) {
-    return name;
-  }
-
-  bool well_known_loader = SystemDictionary::is_system_class_loader(loader) ||
-                           SystemDictionary::is_platform_class_loader(loader);
-
-  stringStream ss;
-  ss.print("%s (instance of %s", name, loader->klass()->external_name());
-  if (!well_known_loader) {
-    oop pl = java_lang_ClassLoader::parent(loader);
-    ClassLoaderData *pl_cld = ClassLoaderData::class_loader_data(pl);
-    const char* parentName = pl_cld->loader_name_and_id();
-    if (pl != NULL) {
-      ss.print(", child of %s %s", parentName, pl->klass()->external_name());
-    } else {
-      // bootstrap loader
-      ss.print(", child of %s", parentName);
-    }
-  }
-  ss.print(")");
-
-  return ss.as_string();
-}
-
 // Support for java_lang_System
 //
 #define SYSTEM_FIELDS_DO(macro) \

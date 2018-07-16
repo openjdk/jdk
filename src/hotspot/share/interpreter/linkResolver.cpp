@@ -669,23 +669,28 @@ void LinkResolver::check_method_loader_constraints(const LinkInfo& link_info,
     SystemDictionary::check_signature_loaders(link_info.signature(), current_loader,
                                               resolved_loader, true, CHECK);
   if (failed_type_symbol != NULL) {
-    const char* msg = "loader constraint violation: when resolving %s"
-      " \"%s\" the class loader %s of the current class, %s,"
-      " and the class loader %s for the method's defining class, %s, have"
-      " different Class objects for the type %s used in the signature";
-    char* sig = link_info.method_string();
-    const char* loader1_name = java_lang_ClassLoader::describe_external(current_loader());
-    char* current = link_info.current_klass()->name()->as_C_string();
-    const char* loader2_name = java_lang_ClassLoader::describe_external(resolved_loader());
-    char* target = resolved_method->method_holder()->name()->as_C_string();
-    char* failed_type_name = failed_type_symbol->as_C_string();
-    size_t buflen = strlen(msg) + strlen(sig) + strlen(loader1_name) +
-      strlen(current) + strlen(loader2_name) + strlen(target) +
-      strlen(failed_type_name) + strlen(method_type) + 1;
-    char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-    jio_snprintf(buf, buflen, msg, method_type, sig, loader1_name, current, loader2_name,
-                 target, failed_type_name);
-    THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
+    Klass* current_class = link_info.current_klass();
+    ClassLoaderData* current_loader_data = current_class->class_loader_data();
+    assert(current_loader_data != NULL, "current class has no class loader data");
+    Klass* resolved_method_class = resolved_method->method_holder();
+    ClassLoaderData* target_loader_data = resolved_method_class->class_loader_data();
+    assert(target_loader_data != NULL, "resolved method's class has no class loader data");
+
+    stringStream ss;
+    ss.print("loader constraint violation: when resolving %s"
+             " \"%s\" the class loader %s of the current class, %s,"
+             " and the class loader %s for the method's defining class, %s, have"
+             " different Class objects for the type %s used in the signature (%s; %s)",
+             method_type,
+             link_info.method_string(),
+             current_loader_data->loader_name_and_id(),
+             current_class->name()->as_C_string(),
+             target_loader_data->loader_name_and_id(),
+             resolved_method_class->name()->as_C_string(),
+             failed_type_symbol->as_C_string(),
+             current_class->class_in_module_of_loader(false, true),
+             resolved_method_class->class_in_module_of_loader(false, true));
+    THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
   }
 }
 
@@ -702,23 +707,23 @@ void LinkResolver::check_field_loader_constraints(Symbol* field, Symbol* sig,
                                               false,
                                               CHECK);
   if (failed_type_symbol != NULL) {
-    const char* msg = "loader constraint violation: when resolving field"
-      " \"%s\" of type %s, the class loader %s of the current class, "
-      "%s, and the class loader %s for the field's defining "
-      "type, %s, have different Class objects for type %s";
-    const char* field_name = field->as_C_string();
-    const char* loader1_name = java_lang_ClassLoader::describe_external(ref_loader());
-    const char* sel = sel_klass->external_name();
-    const char* loader2_name = java_lang_ClassLoader::describe_external(sel_loader());
+    stringStream ss;
     const char* failed_type_name = failed_type_symbol->as_klass_external_name();
-    const char* curr_klass_name = current_klass->external_name();
-    size_t buflen = strlen(msg) + strlen(field_name) + 2 * strlen(failed_type_name) +
-                    strlen(loader1_name) + strlen(curr_klass_name) +
-                    strlen(loader2_name) + strlen(sel) + 1;
-    char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-    jio_snprintf(buf, buflen, msg, field_name, failed_type_name, loader1_name,
-                 curr_klass_name, loader2_name, sel, failed_type_name);
-    THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
+
+    ss.print("loader constraint violation: when resolving field"
+             " \"%s\" of type %s, the class loader %s of the current class, "
+             "%s, and the class loader %s for the field's defining "
+             "type, %s, have different Class objects for type %s (%s; %s)",
+             field->as_C_string(),
+             failed_type_name,
+             current_klass->class_loader_data()->loader_name_and_id(),
+             current_klass->external_name(),
+             sel_klass->class_loader_data()->loader_name_and_id(),
+             sel_klass->external_name(),
+             failed_type_name,
+             current_klass->class_in_module_of_loader(false, true),
+             sel_klass->class_in_module_of_loader(false, true));
+    THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
   }
 }
 

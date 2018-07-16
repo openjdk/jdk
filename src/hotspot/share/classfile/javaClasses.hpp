@@ -1310,12 +1310,6 @@ class java_lang_ClassLoader : AllStatic {
   // Debugging
   friend class JavaClasses;
   friend class ClassFileParser; // access to number_of_fake_fields
-
-  // Describe ClassLoader for exceptions, tracing ...
-  // Prints "<name>" (instance of <classname>, child of "<name>" <classname>).
-  // If a classloader has no name, it prints <unnamed> instead. The output
-  // for well known loaders (system/platform) is abbreviated.
-  static const char* describe_external(const oop loader);
 };
 
 

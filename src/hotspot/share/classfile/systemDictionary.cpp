@@ -2084,9 +2084,9 @@ void SystemDictionary::check_constraints(unsigned int d_hash,
       assert(check->is_instance_klass(), "noninstance in systemdictionary");
       if ((defining == true) || (k != check)) {
         throwException = true;
-        ss.print("loader %s", java_lang_ClassLoader::describe_external(class_loader()));
-        ss.print(" attempted duplicate %s definition for %s.",
-                 k->external_kind(), k->external_name());
+        ss.print("loader %s", loader_data->loader_name_and_id());
+        ss.print(" attempted duplicate %s definition for %s. (%s)",
+                 k->external_kind(), k->external_name(), k->class_in_module_of_loader(false, true));
       } else {
         return;
       }
@@ -2100,15 +2100,17 @@ void SystemDictionary::check_constraints(unsigned int d_hash,
     if (throwException == false) {
       if (constraints()->check_or_update(k, class_loader, name) == false) {
         throwException = true;
-        ss.print("loader constraint violation: loader %s",
-                 java_lang_ClassLoader::describe_external(class_loader()));
+        ss.print("loader constraint violation: loader %s", loader_data->loader_name_and_id());
         ss.print(" wants to load %s %s.",
                  k->external_kind(), k->external_name());
         Klass *existing_klass = constraints()->find_constrained_klass(name, class_loader);
         if (existing_klass->class_loader() != class_loader()) {
-          ss.print(" A different %s with the same name was previously loaded by %s.",
+          ss.print(" A different %s with the same name was previously loaded by %s. (%s)",
                    existing_klass->external_kind(),
-                   java_lang_ClassLoader::describe_external(existing_klass->class_loader()));
+                   existing_klass->class_loader_data()->loader_name_and_id(),
+                   existing_klass->class_in_module_of_loader(false, true));
+        } else {
+          ss.print(" (%s)", k->class_in_module_of_loader(false, true));
         }
       }
     }
