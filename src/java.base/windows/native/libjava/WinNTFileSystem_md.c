@@ -36,6 +36,7 @@
 #include <windows.h>
 #include <io.h>
 #include <limits.h>
+#include <wchar.h>
 
 #include "jni.h"
 #include "io_util.h"
@@ -137,28 +138,10 @@ static WCHAR* getFinalPath(JNIEnv *env, const WCHAR *path)
                              result[5] == L'N' &&
                              result[6] == L'C');
                 int prefixLen = (isUnc) ? 7 : 4;
-                /* actual result length (includes terminator) */
-                int resultLen = len - prefixLen + (isUnc ? 1 : 0) + 1;
-
-                /* copy result without prefix into new buffer */
-                WCHAR *tmp = (WCHAR*)malloc(resultLen * sizeof(WCHAR));
-                if (tmp == NULL) {
-                    JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
-                    len = 0;
-                } else {
-                    WCHAR *p = result;
-                    p += prefixLen;
-                    if (isUnc) {
-                        WCHAR *p2 = tmp;
-                        p2[0] = L'\\';
-                        p2++;
-                        wcscpy(p2, p);
-                    } else {
-                        wcscpy(tmp, p);
-                    }
-                    free(result);
-                    result = tmp;
-                }
+                int prefixToKeep = (isUnc) ? 1 : 0;
+                // the amount to copy includes terminator
+                int amountToCopy = len - prefixLen + 1;
+                wmemmove(result + prefixToKeep, result + prefixLen, amountToCopy);
             }
         }
 
