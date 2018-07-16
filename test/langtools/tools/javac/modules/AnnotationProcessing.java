@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119
+ * @bug 8133884 8162711 8133896 8172158 8172262 8173636 8175119 8189747
  * @summary Verify that annotation processing works.
  * @library /tools/lib
  * @modules
@@ -1389,6 +1389,19 @@ public class AnnotationProcessing extends ModuleTestBase {
             .run()
             .writeAll();
 
+        //from source:
+        new JavacTask(tb)
+            .options("--module-source-path", moduleSrc.toString(),
+                     "--source-path", src.toString(),
+                     "-processorpath", System.getProperty("test.class.path"),
+                     "-processor", UnboundLookupGenerate.class.getName(),
+                     "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(findJavaFiles(moduleSrc))
+            .run()
+            .writeAll()
+            .getOutput(OutputKind.DIRECT);
+
     }
 
     @SupportedAnnotationTypes("*")
@@ -1474,6 +1487,29 @@ public class AnnotationProcessing extends ModuleTestBase {
 
             if (processingEnv.getElementUtils().getModuleElement("java.base") != null) {
                 throw new AssertionError("getModuleElement != null for -source 8");
+            }
+
+            return false;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static final class UnboundLookupGenerate extends AbstractProcessor {
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (processingEnv.getElementUtils().getTypeElement("nue.Nue") == null) {
+                try (Writer w = processingEnv.getFiler().createSourceFile("m1x/nue.Nue").openWriter()) {
+                    w.write("package nue; public class Nue {}");
+                } catch (IOException ex) {
+                    throw new IllegalStateException(ex);
+                }
             }
 
             return false;

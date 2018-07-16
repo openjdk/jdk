@@ -26,9 +26,11 @@
 package com.sun.tools.javac.model;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -184,7 +186,9 @@ public class JavacElements implements Elements {
     }
 
     private final Set<String> alreadyWarnedDuplicates = new HashSet<>();
+    private final Map<Pair<String, String>, Optional<Symbol>> resultCache = new HashMap<>();
 
+    @SuppressWarnings("unchecked")
     private <S extends Symbol> S unboundNameToSymbol(String methodName,
                                                      String nameStr,
                                                      Class<S> clazz) {
@@ -192,44 +196,46 @@ public class JavacElements implements Elements {
             return nameToSymbol(syms.noModule, nameStr, clazz);
         }
 
-        Set<S> found = new LinkedHashSet<>();
+        return (S) resultCache.computeIfAbsent(Pair.of(methodName, nameStr), p -> {
+            Set<S> found = new LinkedHashSet<>();
 
-        for (ModuleSymbol msym : modules.allModules()) {
-            S sym = nameToSymbol(msym, nameStr, clazz);
+            for (ModuleSymbol msym : modules.allModules()) {
+                S sym = nameToSymbol(msym, nameStr, clazz);
 
-            if (sym == null)
-                continue;
+                if (sym == null)
+                    continue;
 
-            if (clazz == ClassSymbol.class) {
-                // Always include classes
-                found.add(sym);
-            } else if (clazz == PackageSymbol.class) {
-                // In module mode, ignore the "spurious" empty packages that "enclose" module-specific packages.
-                // For example, if a module contains classes or package info in package p.q.r, it will also appear
-                // to have additional packages p.q and p, even though these packages have no content other
-                // than the subpackage.  We don't want those empty packages showing up in searches for p or p.q.
-                if (!sym.members().isEmpty() || ((PackageSymbol) sym).package_info != null) {
+                if (clazz == ClassSymbol.class) {
+                    // Always include classes
                     found.add(sym);
+                } else if (clazz == PackageSymbol.class) {
+                    // In module mode, ignore the "spurious" empty packages that "enclose" module-specific packages.
+                    // For example, if a module contains classes or package info in package p.q.r, it will also appear
+                    // to have additional packages p.q and p, even though these packages have no content other
+                    // than the subpackage.  We don't want those empty packages showing up in searches for p or p.q.
+                    if (!sym.members().isEmpty() || ((PackageSymbol) sym).package_info != null) {
+                        found.add(sym);
+                    }
                 }
             }
-        }
 
-        if (found.size() == 1) {
-            return found.iterator().next();
-        } else if (found.size() > 1) {
-            //more than one element found, produce a note:
-            if (alreadyWarnedDuplicates.add(methodName + ":" + nameStr)) {
-                String moduleNames = found.stream()
-                                          .map(s -> s.packge().modle)
-                                          .map(m -> m.toString())
-                                          .collect(Collectors.joining(", "));
-                log.note(Notes.MultipleElements(methodName, nameStr, moduleNames));
+            if (found.size() == 1) {
+                return Optional.of(found.iterator().next());
+            } else if (found.size() > 1) {
+                //more than one element found, produce a note:
+                if (alreadyWarnedDuplicates.add(methodName + ":" + nameStr)) {
+                    String moduleNames = found.stream()
+                                              .map(s -> s.packge().modle)
+                                              .map(m -> m.toString())
+                                              .collect(Collectors.joining(", "));
+                    log.note(Notes.MultipleElements(methodName, nameStr, moduleNames));
+                }
+                return Optional.empty();
+            } else {
+                //not found:
+                return Optional.empty();
             }
-            return null;
-        } else {
-            //not found, or more than one element found:
-            return null;
-        }
+        }).orElse(null);
     }
 
     /**
@@ -786,5 +792,9 @@ public class JavacElements implements Elements {
         if (! clazz.isInstance(o))
             throw new IllegalArgumentException(o.toString());
         return clazz.cast(o);
+    }
+
+    public void newRound() {
+        resultCache.clear();
     }
 }

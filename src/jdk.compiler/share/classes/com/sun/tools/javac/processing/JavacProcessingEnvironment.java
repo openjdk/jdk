@@ -1270,6 +1270,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             modules.newRound();
             types.newRound();
             annotate.newRound();
+            elementUtils.newRound();
 
             boolean foundError = false;
 
