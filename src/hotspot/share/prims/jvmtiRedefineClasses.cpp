@@ -4098,17 +4098,14 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
 
   // Initialize the vtable and interface table after
   // methods have been rewritten
-  {
-    ResourceMark rm(THREAD);
-    // no exception should happen here since we explicitly
-    // do not check loader constraints.
-    // compare_and_normalize_class_versions has already checked:
-    //  - classloaders unchanged, signatures unchanged
-    //  - all instanceKlasses for redefined classes reused & contents updated
-    the_class->vtable().initialize_vtable(false, THREAD);
-    the_class->itable().initialize_itable(false, THREAD);
-    assert(!HAS_PENDING_EXCEPTION || (THREAD->pending_exception()->is_a(SystemDictionary::ThreadDeath_klass())), "redefine exception");
-  }
+  // no exception should happen here since we explicitly
+  // do not check loader constraints.
+  // compare_and_normalize_class_versions has already checked:
+  //  - classloaders unchanged, signatures unchanged
+  //  - all instanceKlasses for redefined classes reused & contents updated
+  the_class->vtable().initialize_vtable(false, THREAD);
+  the_class->itable().initialize_itable(false, THREAD);
+  assert(!HAS_PENDING_EXCEPTION || (THREAD->pending_exception()->is_a(SystemDictionary::ThreadDeath_klass())), "redefine exception");
 
   // Leave arrays of jmethodIDs and itable index cache unchanged
 

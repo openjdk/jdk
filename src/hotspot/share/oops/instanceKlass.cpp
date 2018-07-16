@@ -821,7 +821,6 @@ bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
       ClassLoaderData * loader_data = class_loader_data();
       if (!(is_shared() &&
             loader_data->is_the_null_class_loader_data())) {
-        ResourceMark rm(THREAD);
         vtable().initialize_vtable(true, CHECK_false);
         itable().initialize_itable(true, CHECK_false);
       }
@@ -2326,7 +2325,6 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     // point to old or obsolete entries.  RedefineClasses doesn't fix up
     // vtables in the shared system dictionary, only the main one.
     // It also redefines the itable too so fix that too.
-    ResourceMark rm(THREAD);
     vtable().initialize_vtable(false, CHECK);
     itable().initialize_itable(false, CHECK);
   }

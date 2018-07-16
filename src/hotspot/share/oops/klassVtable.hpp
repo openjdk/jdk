@@ -141,7 +141,7 @@ class klassVtable {
 
   // support for miranda methods
   bool is_miranda_entry_at(int i);
-  int fill_in_mirandas(int initialized);
+  int fill_in_mirandas(int initialized, TRAPS);
   static bool is_miranda(Method* m, Array<Method*>* class_methods,
                          Array<Method*>* default_methods, const Klass* super,
                          bool is_interface);
@@ -328,7 +328,7 @@ class klassItable {
 #endif // INCLUDE_JVMTI
 
   // Setup of itable
-  static int assign_itable_indices_for_interface(Klass* klass);
+  static int assign_itable_indices_for_interface(Klass* klass, TRAPS);
   static int method_count_for_interface(Klass* klass);
   static int compute_itable_size(Array<Klass*>* transitive_interfaces);
   static void setup_itable_offset_table(InstanceKlass* klass);
