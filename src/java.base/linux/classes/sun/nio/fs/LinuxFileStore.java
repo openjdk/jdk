@@ -25,9 +25,14 @@
 
 package sun.nio.fs;
 
-import java.nio.file.attribute.*;
-import java.util.*;
 import java.io.IOException;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.UserDefinedFileAttributeView;
+import java.util.Arrays;
+import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Linux implementation of FileStore
@@ -121,6 +126,18 @@ class LinuxFileStore
         return false;
     }
 
+    // get kernel version as a three element array {major, minor, micro}
+    private static int[] getKernelVersion() {
+        Pattern pattern = Pattern.compile("\\D+");
+        String[] matches = pattern.split(System.getProperty("os.version"));
+        int[] majorMinorMicro = new int[3];
+        int length = Math.min(matches.length, majorMinorMicro.length);
+        for (int i = 0; i < length; i++) {
+            majorMinorMicro[i] = Integer.valueOf(matches[i]);
+        }
+        return majorMinorMicro;
+    }
+
     @Override
     public boolean supportsFileAttributeView(Class<? extends FileAttributeView> type) {
         // support DosFileAttributeView and UserDefinedAttributeView if extended
@@ -140,11 +157,31 @@ class LinuxFileStore
             if ((entry().hasOption("user_xattr")))
                 return true;
 
-            // for ext3 and ext4 user_xattr option is enabled by default so
-            // check for explicit disabling of this option
-            if (entry().fstype().equals("ext3") ||
-                entry().fstype().equals("ext4")) {
-                return !entry().hasOption("nouser_xattr");
+            // check for explicit disabling of extended attributes
+            if (entry().hasOption("nouser_xattr")) {
+                return false;
+            }
+
+            // user_{no}xattr options not present but we special-case ext3 as
+            // we know that extended attributes are not enabled by default.
+            if (entry().fstype().equals("ext3")) {
+                return false;
+            }
+
+            // user_xattr option not present but we special-case ext4 as we
+            // know that extended attributes are enabled by default for
+            // kernel version >= 2.6.39
+            if (entry().fstype().equals("ext4")) {
+                if (!xattrChecked) {
+                    // check kernel version
+                    int[] kernelVersion = getKernelVersion();
+                    xattrEnabled = kernelVersion[0] > 2 ||
+                        (kernelVersion[0] == 2 && kernelVersion[1] > 6) ||
+                        (kernelVersion[0] == 2 && kernelVersion[1] == 6 &&
+                            kernelVersion[2] >= 39);
+                    xattrChecked = true;
+                }
+                return xattrEnabled;
             }
 
             // not ext3/4 so probe mount point
