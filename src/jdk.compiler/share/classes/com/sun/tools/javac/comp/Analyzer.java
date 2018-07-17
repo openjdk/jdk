@@ -474,7 +474,7 @@ public class Analyzer {
      * Analyze an AST node; this involves collecting a list of all the nodes that needs rewriting,
      * and speculatively type-check the rewritten code to compare results against previously attributed code.
      */
-    void analyze(JCStatement statement, Env<AttrContext> env) {
+    protected void analyze(JCStatement statement, Env<AttrContext> env) {
         StatementScanner statementScanner = new StatementScanner(statement, env);
         statementScanner.scan();
 
