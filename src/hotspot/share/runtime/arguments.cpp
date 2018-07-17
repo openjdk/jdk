@@ -561,7 +561,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "UseUTCFileTimestamp",           JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "UseAppCDS",                     JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "InlineNotify",                  JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "EnableTracing",                 JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "UseLockedTracing",              JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
@@ -1274,13 +1273,9 @@ bool Arguments::process_argument(const char* arg,
     char stripped_argname[BUFLEN+1]; // +1 for '\0'
     jio_snprintf(stripped_argname, arg_len+1, "%s", argname); // +1 for '\0'
     if (is_obsolete_flag(stripped_argname, &since)) {
-      if (strcmp(stripped_argname, "UseAppCDS") != 0) {
-        char version[256];
-        since.to_string(version, sizeof(version));
-        warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
-      } else {
-        warning("Ignoring obsolete option UseAppCDS; AppCDS is automatically enabled");
-      }
+      char version[256];
+      since.to_string(version, sizeof(version));
+      warning("Ignoring option %s; support was removed in %s", stripped_argname, version);
       return true;
     }
 #ifndef PRODUCT
