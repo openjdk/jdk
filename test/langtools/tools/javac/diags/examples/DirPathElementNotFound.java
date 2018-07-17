@@ -22,8 +22,7 @@
  */
 
 // key: compiler.warn.dir.path.element.not.found
-// key: compiler.warn.source.no.bootclasspath
-// options: -Xlint:path -source 8 -target 8 -extdirs DoesNotExist
+// options: -Xlint:path,-options -source 8 -target 8 -extdirs DoesNotExist
 // run: simple
 
 class DirPathElementNotFound { }
