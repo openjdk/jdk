@@ -739,11 +739,19 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
          || entry.rspec().type() == relocInfo::static_call_type
          || entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
 
-  unsigned int start_offset = offset();
-  if (far_branches() && !Compile::current()->in_scratch_emit_size()) {
-    address stub = emit_trampoline_stub(start_offset, entry.target());
-    if (stub == NULL) {
-      return NULL; // CodeCache is full
+  // We need a trampoline if branches are far.
+  if (far_branches()) {
+    // We don't want to emit a trampoline if C2 is generating dummy
+    // code during its branch shortening phase.
+    CompileTask* task = ciEnv::current()->task();
+    bool in_scratch_emit_size =
+      (task != NULL && is_c2_compile(task->comp_level()) &&
+       Compile::current()->in_scratch_emit_size());
+    if (!in_scratch_emit_size) {
+      address stub = emit_trampoline_stub(offset(), entry.target());
+      if (stub == NULL) {
+        return NULL; // CodeCache is full
+      }
     }
   }
 
