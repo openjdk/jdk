@@ -96,7 +96,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private boolean             invalidated;
     private X509Certificate[]   localCerts;
     private PrivateKey          localPrivateKey;
-    private final String[]      localSupportedSignAlgs;
+    private final Collection<SignatureScheme>     localSupportedSignAlgs;
     private String[]            peerSupportedSignAlgs;      // for certificate
     private boolean             useDefaultPeerSignAlgs = false;
     private List<byte[]>        statusResponses;
@@ -144,7 +144,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.sessionId = new SessionId(false, null);
         this.host = null;
         this.port = -1;
-        this.localSupportedSignAlgs = new String[0];
+        this.localSupportedSignAlgs = Collections.emptySet();
         this.serverNameIndication = null;
         this.requestedServerNames = Collections.<SNIServerName>emptyList();
         this.useExtendedMasterSecret = false;
@@ -179,8 +179,9 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.sessionId = id;
         this.host = hc.conContext.transport.getPeerHost();
         this.port = hc.conContext.transport.getPeerPort();
-        this.localSupportedSignAlgs =
-                SignatureScheme.getAlgorithmNames(hc.localSupportedSignAlgs);
+        this.localSupportedSignAlgs = hc.localSupportedSignAlgs == null ?
+                Collections.emptySet() :
+                Collections.unmodifiableCollection(hc.localSupportedSignAlgs);
         this.serverNameIndication = hc.negotiatedServerName;
         this.requestedServerNames = Collections.<SNIServerName>unmodifiableList(
                 hc.getRequestedServerNames());
@@ -969,16 +970,20 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     }
 
     /**
-     * Gets an array of supported signature algorithms that the local side is
-     * willing to verify.
+     * Gets an array of supported signature algorithm names that the local
+     * side is willing to verify.
      */
     @Override
     public String[] getLocalSupportedSignatureAlgorithms() {
-        if (localSupportedSignAlgs != null) {
-            return localSupportedSignAlgs.clone();
-        }
+        return SignatureScheme.getAlgorithmNames(localSupportedSignAlgs);
+    }
 
-        return new String[0];
+    /**
+     * Gets an array of supported signature schemes that the local side is
+     * willing to verify.
+     */
+    public Collection<SignatureScheme> getLocalSupportedSignatureSchemes() {
+        return localSupportedSignAlgs;
     }
 
     /**

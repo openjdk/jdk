@@ -33,8 +33,11 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.Collection;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import static sun.security.ssl.ClientAuthType.CLIENT_AUTH_REQUIRED;
 import sun.security.ssl.ClientHello.ClientHelloMessage;
 import sun.security.ssl.SSLExtension.ExtensionConsumer;
 import sun.security.ssl.SSLExtension.SSLExtensionSpec;
@@ -167,7 +170,7 @@ final class PreSharedKeyExtension {
 
         int getIdsEncodedLength() {
             int idEncodedLength = 0;
-            for(PskIdentity curId : identities) {
+            for (PskIdentity curId : identities) {
                 idEncodedLength += curId.getEncodedLength();
             }
 
@@ -190,7 +193,7 @@ final class PreSharedKeyExtension {
             byte[] buffer = new byte[encodedLength];
             ByteBuffer m = ByteBuffer.wrap(buffer);
             Record.putInt16(m, idsEncodedLength);
-            for(PskIdentity curId : identities) {
+            for (PskIdentity curId : identities) {
                 curId.writeEncoded(m);
             }
             Record.putInt16(m, bindersEncodedLength);
@@ -220,7 +223,7 @@ final class PreSharedKeyExtension {
 
         String identitiesString() {
             StringBuilder result = new StringBuilder();
-            for(PskIdentity curId : identities) {
+            for (PskIdentity curId : identities) {
                 result.append(curId.toString() + "\n");
             }
 
@@ -229,7 +232,7 @@ final class PreSharedKeyExtension {
 
         String bindersString() {
             StringBuilder result = new StringBuilder();
-            for(byte[] curBinder : binders) {
+            for (byte[] curBinder : binders) {
                 result.append("{" + Utilities.toHexString(curBinder) + "}\n");
             }
 
@@ -328,6 +331,7 @@ final class PreSharedKeyExtension {
         public void consume(ConnectionContext context,
                             HandshakeMessage message,
                             ByteBuffer buffer) throws IOException {
+            ClientHelloMessage clientHello = (ClientHelloMessage) message;
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
             // Is it a supported and enabled extension?
             if (!shc.sslConfig.isAvailable(SSLExtension.CH_PRE_SHARED_KEY)) {
@@ -367,8 +371,7 @@ final class PreSharedKeyExtension {
                 int idIndex = 0;
                 for (PskIdentity requestedId : pskSpec.identities) {
                     SSLSessionImpl s = sessionCache.get(requestedId.identity);
-                    if (s != null && s.isRejoinable() &&
-                            s.getPreSharedKey().isPresent()) {
+                    if (s != null && canRejoin(clientHello, shc, s)) {
                         if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                             SSLLogger.fine("Resuming session: ", s);
                         }
@@ -392,8 +395,66 @@ final class PreSharedKeyExtension {
 
             // update the context
             shc.handshakeExtensions.put(
-                    SSLExtension.CH_PRE_SHARED_KEY, pskSpec);
+                SSLExtension.CH_PRE_SHARED_KEY, pskSpec);
         }
+    }
+
+    private static boolean canRejoin(ClientHelloMessage clientHello,
+        ServerHandshakeContext shc, SSLSessionImpl s) {
+
+        boolean result = s.isRejoinable() && s.getPreSharedKey().isPresent();
+
+        // Check protocol version
+        if (result && s.getProtocolVersion() != shc.negotiatedProtocol) {
+            if (SSLLogger.isOn &&
+                SSLLogger.isOn("ssl,handshake,verbose")) {
+
+                SSLLogger.finest("Can't resume, incorrect protocol version");
+            }
+            result = false;
+        }
+
+        // Validate the required client authentication.
+        if (result &&
+            (shc.sslConfig.clientAuthType == CLIENT_AUTH_REQUIRED)) {
+            try {
+                s.getPeerPrincipal();
+            } catch (SSLPeerUnverifiedException e) {
+                if (SSLLogger.isOn &&
+                        SSLLogger.isOn("ssl,handshake,verbose")) {
+                    SSLLogger.finest(
+                        "Can't resume, " +
+                        "client authentication is required");
+                }
+                result = false;
+            }
+
+            // Make sure the list of supported signature algorithms matches
+            Collection<SignatureScheme> sessionSigAlgs =
+                s.getLocalSupportedSignatureSchemes();
+            if (result &&
+                !shc.localSupportedSignAlgs.containsAll(sessionSigAlgs)) {
+
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Can't resume. Session uses different " +
+                        "signature algorithms");
+                }
+                result = false;
+            }
+        }
+
+        // Ensure cipher suite can be negotiated
+        if (result && (!shc.isNegotiable(s.getSuite()) ||
+            !clientHello.cipherSuites.contains(s.getSuite()))) {
+            if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+                SSLLogger.finest(
+                    "Can't resume, unavailable session cipher suite");
+            }
+            result = false;
+        }
+
+        return result;
     }
 
     private static final
@@ -547,6 +608,18 @@ final class PreSharedKeyExtension {
                 return null;
             }
 
+            // Make sure the list of supported signature algorithms matches
+            Collection<SignatureScheme> sessionSigAlgs =
+                chc.resumingSession.getLocalSupportedSignatureSchemes();
+            if (!chc.localSupportedSignAlgs.containsAll(sessionSigAlgs)) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                    SSLLogger.fine("Existing session uses different " +
+                        "signature algorithms");
+                }
+                return null;
+            }
+
+            // The session must have a pre-shared key
             Optional<SecretKey> pskOpt = chc.resumingSession.getPreSharedKey();
             if (!pskOpt.isPresent()) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
@@ -658,7 +731,7 @@ final class PreSharedKeyExtension {
             } catch (NoSuchAlgorithmException | InvalidKeyException ex) {
                 throw new IOException(ex);
             }
-        } catch(GeneralSecurityException ex) {
+        } catch (GeneralSecurityException ex) {
             throw new IOException(ex);
         }
     }
