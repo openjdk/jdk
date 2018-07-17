@@ -46,8 +46,6 @@ public class HeapMonitorStatArrayCorrectnessTest {
   public static void main(String[] args) {
     int sizes[] = {1000, 10000, 100000};
 
-    HeapMonitor.enableSamplingEvents();
-
     for (int currentSize : sizes) {
       System.out.println("Testing size " + currentSize);
 
@@ -56,11 +54,15 @@ public class HeapMonitorStatArrayCorrectnessTest {
         throw new RuntimeException("Should not have any events stored yet.");
       }
 
+      HeapMonitor.enableSamplingEvents();
+
       // 111 is as good a number as any.
       final int samplingMultiplier = 111;
       HeapMonitor.setSamplingRate(samplingMultiplier * currentSize);
 
       allocate(currentSize);
+
+      HeapMonitor.disableSamplingEvents();
 
       // For simplifications, we ignore the array memory usage for array internals (with the array
       // sizes requested, it should be a negligible oversight).
