@@ -567,7 +567,7 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
         // Test with -nocomment and -nodeprecated options. The ClassDocs whould
         // not display definition lists for any member details.
         checkOutput("pkg1/C1.html", expectFound,
-                "<pre>public&nbsp;void&nbsp;readObject()\n" +
+                "<pre class=\"methodSignature\">public&nbsp;void&nbsp;readObject()\n" +
                 "                throws java.io.IOException</pre>\n" +
                 "</li>");
 
