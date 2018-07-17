@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@
 
 #if defined(_ALLBSD_SOURCE)
 #define dirent64 dirent
-#define readdir64_r readdir_r
+#define readdir64 readdir
 #endif
 
 #if !defined(__solaris__) || defined(__sparcv9) || defined(amd64)
@@ -122,32 +122,18 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     DIR *dirp = NULL;
     struct stat statbuf;
     struct dirent64 *dp = NULL;
-    struct dirent64 *entry = NULL;
     char *pathname = NULL;
     int fd = -1;
     char *dbuf = NULL;
     char *tz = NULL;
     int res;
-    long name_max = 0;
 
     dirp = opendir(dir);
     if (dirp == NULL) {
         return NULL;
     }
 
-    name_max = pathconf(dir, _PC_NAME_MAX);
-    // If pathconf did not work, fall back to a mimimum buffer size.
-    if (name_max < 1024) {
-        name_max = 1024;
-    }
-
-    entry = (struct dirent64 *)malloc(offsetof(struct dirent64, d_name) + name_max + 1);
-    if (entry == NULL) {
-        (void) closedir(dirp);
-        return NULL;
-    }
-
-    while (readdir64_r(dirp, entry, &dp) == 0 && dp != NULL) {
+    while ((dp = readdir64(dirp)) != NULL) {
         /*
          * Skip '.' and '..' (and possibly other .* files)
          */
@@ -214,9 +200,6 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
         pathname = NULL;
     }
 
-    if (entry != NULL) {
-        free((void *) entry);
-    }
     if (dirp != NULL) {
         (void) closedir(dirp);
     }
