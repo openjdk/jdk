@@ -1807,6 +1807,7 @@ public class KeyStore {
                     keystore.load(dataStream, password);
                 } else {
                     keystore.keyStoreSpi.engineLoad(dataStream, param);
+                    keystore.initialized = true;
                 }
                 return keystore;
             }
