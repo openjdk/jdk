@@ -83,6 +83,7 @@ public enum HtmlStyle {
     memberNameLabel,
     memberNameLink,
     memberSummary,
+    methodSignature,
     moduleLabelInPackage,
     moduleLabelInType,
     nameValue,

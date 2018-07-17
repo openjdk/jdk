@@ -65,7 +65,7 @@ public class TestInterface extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg/Interface.html", true,
-                "<pre>int&nbsp;method()</pre>",
+                "<pre class=\"methodSignature\">int&nbsp;method()</pre>",
                 "<pre>static final&nbsp;int field</pre>",
                 // Make sure known implementing class list is correct and omits type parameters.
                 "<dl>\n"
@@ -141,7 +141,7 @@ public class TestInterface extends JavadocTester {
                 + "</td>\n",
 
                 "<h4>staticMethod</h4>\n"
-                + "<pre>public static&nbsp;void&nbsp;staticMethod()</pre>\n"
+                + "<pre class=\"methodSignature\">public static&nbsp;void&nbsp;staticMethod()</pre>\n"
                 + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"
                 + "Description copied from interface:&nbsp;<code>"
                 + "<a href=\"InterfaceWithStaticMembers.html#staticMethod()\">"
@@ -187,7 +187,7 @@ public class TestInterface extends JavadocTester {
                 + "</td>\n",
 
                 "<h4>staticMethod</h4>\n"
-                + "<pre>public static&nbsp;void&nbsp;staticMethod()</pre>\n"
+                + "<pre class=\"methodSignature\">public static&nbsp;void&nbsp;staticMethod()</pre>\n"
                 + "<div class=\"block\"><span class=\"descfrmTypeLabel\">"
                 + "Description copied from interface:&nbsp;<code>"
                 + "<a href=\"InterfaceWithStaticMembers.html#staticMethod--\">"

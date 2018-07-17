@@ -46,7 +46,7 @@ public class TestIndentation extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("p/Indent.html", true,
-                "<pre>public&nbsp;&lt;T&gt;&nbsp;void&nbsp;m&#8203;(T&nbsp;t1,",
+                "<pre class=\"methodSignature\">public&nbsp;&lt;T&gt;&nbsp;void&nbsp;m&#8203;(T&nbsp;t1,",
                 "\n"
                 + "                  T&nbsp;t2)",
                 "\n"

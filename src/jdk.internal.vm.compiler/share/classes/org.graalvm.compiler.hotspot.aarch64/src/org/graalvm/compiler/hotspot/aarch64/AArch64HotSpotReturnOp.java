@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 
 package org.graalvm.compiler.hotspot.aarch64;
 
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
-import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static jdk.vm.ci.aarch64.AArch64.lr;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
+import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 import org.graalvm.compiler.hotspot.GraalHotSpotVMConfig;
@@ -48,9 +48,11 @@ public final class AArch64HotSpotReturnOp extends AArch64HotSpotEpilogueOp {
 
     @Use({REG, ILLEGAL}) private Value result;
     private final boolean isStub;
+    private final boolean requiresReservedStackAccessCheck;
 
-    public AArch64HotSpotReturnOp(Value result, boolean isStub, GraalHotSpotVMConfig config, Register thread) {
+    public AArch64HotSpotReturnOp(Value result, boolean isStub, GraalHotSpotVMConfig config, Register thread, boolean requiresReservedStackAccessCheck) {
         super(TYPE, config, thread);
+        this.requiresReservedStackAccessCheck = requiresReservedStackAccessCheck;
         assert validReturnValue(result);
         this.result = result;
         this.isStub = isStub;
@@ -66,7 +68,7 @@ public final class AArch64HotSpotReturnOp extends AArch64HotSpotEpilogueOp {
     @Override
     public void emitCode(CompilationResultBuilder crb, AArch64MacroAssembler masm) {
         final boolean emitSafepoint = !isStub;
-        leaveFrame(crb, masm, emitSafepoint);
+        leaveFrame(crb, masm, emitSafepoint, requiresReservedStackAccessCheck);
         masm.ret(lr);
     }
 }
