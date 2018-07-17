@@ -55,7 +55,7 @@ public class TestMemberSummary extends JavadocTester {
                 + "<th class=\"colSecond\" scope=\"row\"><code><span class=\"memberNameLink\"><a href=\"#returnTypeTest()\">"
                 + "returnTypeTest</a></span>()</code>",
                 // Check return type in member detail.
-                "<pre>public&nbsp;<a href=\"PublicChild.html\" title=\"class in pkg\">"
+                "<pre class=\"methodSignature\">public&nbsp;<a href=\"PublicChild.html\" title=\"class in pkg\">"
                 + "PublicChild</a>&nbsp;returnTypeTest()</pre>",
                 "<th class=\"colConstructorName\" scope=\"row\"><code><span class=\"memberNameLink\">"
                 + "<a href=\"#%3Cinit%3E()\">PublicChild</a></span>()</code></th>");
