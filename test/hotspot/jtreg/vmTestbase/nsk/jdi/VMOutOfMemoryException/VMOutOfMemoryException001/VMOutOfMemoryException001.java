@@ -34,6 +34,7 @@
  *     in debuggee VM through 'ArrayType.newInstance()' till VMOutOfMemoryException. Any other exception
  *     thrown by 'ArrayType.newInstance()' is treated as product bug.
  *
+ * @requires !vm.graal.enabled
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .

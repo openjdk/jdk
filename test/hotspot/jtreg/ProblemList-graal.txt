@@ -114,7 +114,6 @@ vmTestbase/nsk/stress/strace/strace006.java                     8191047   generi
 vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java                         8191047   generic-all
 vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn009/forceEarlyReturn009.java   8191047   generic-all
 
-vmTestbase/nsk/jdi/ReferenceType/instances/instances001/instances001.java                          8195600   generic-all
 vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java       8195600   generic-all
 
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance001/TestDescription.java                              8203174   generic-all
@@ -124,14 +123,12 @@ vmTestbase/nsk/jdi/EventRequestManager/methodExitRequests/methexitreq002/TestDes
 vmTestbase/nsk/jdi/MonitorContendedEnteredRequest/MonitorContendedEnteredRequest001/TestDescription.java  8203174   generic-all
 vmTestbase/nsk/jdi/MonitorContendedEnteredRequest/MonitorContendedEnteredRequest002/TestDescription.java  8203174   generic-all
 vmTestbase/nsk/jdi/MonitorWaitedRequest/addClassExclusionFilter/TestDescription.java                      8203174   generic-all
-vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects001/referringObjects001.java          8203174   generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances002/instances002.java                                 8203174   generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances003/instances003.java                                 8203174   generic-all
 vmTestbase/nsk/jdi/stress/MonitorEvents/MonitorEvents002/TestDescription.java                             8203174   generic-all
 vmTestbase/nsk/jdi/stress/serial/heapwalking001/TestDescription.java                                      8203174   generic-all
 vmTestbase/nsk/jdi/stress/serial/heapwalking002/TestDescription.java                                      8203174   generic-all
 vmTestbase/nsk/jdi/stress/serial/mixed002/TestDescription.java                                            8203174   generic-all
-vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java        8203174   generic-all
 
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses026/TestDescription.java   8195627   generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses028/TestDescription.java   8195627   generic-all
