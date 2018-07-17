@@ -52,6 +52,7 @@
  *         referrers with supported type(Strong, PhantomReference, SoftReference, WeakReference)
  *
  * @requires vm.gc != "Z"
+ * @requires !vm.graal.enabled
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .

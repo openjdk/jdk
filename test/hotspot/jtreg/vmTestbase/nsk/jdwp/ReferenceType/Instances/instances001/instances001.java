@@ -61,6 +61,7 @@
  *     and exits too with the proper exit code.
  *
  * @requires vm.gc != "Z"
+ * @requires !vm.graal.enabled
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
