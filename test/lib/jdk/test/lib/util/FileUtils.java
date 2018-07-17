@@ -39,6 +39,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.ArrayDeque;
 import java.util.HashSet;
@@ -242,16 +243,15 @@ public final class FileUtils {
      * @throws UncheckedIOException if an error occurs
      */
     public static void listFileDescriptors(PrintStream ps) {
-        List<String> lsofDirs = List.of("/usr/bin", "/usr/sbin");
-        Optional<Path> lsof = lsofDirs.stream()
-                .map(s -> Paths.get(s, "lsof"))
-                .filter(f -> Files.isExecutable(f))
+
+        Optional<String[]> lsof = Arrays.stream(lsCommands)
+                .filter(args -> Files.isExecutable(Path.of(args[0])))
                 .findFirst();
-        lsof.ifPresent(exe -> {
+        lsof.ifPresent(args -> {
             try {
                 ps.printf("Open File Descriptors:%n");
                 long pid = ProcessHandle.current().pid();
-                ProcessBuilder pb = new ProcessBuilder(exe.toString(), "-p", Integer.toString((int) pid));
+                ProcessBuilder pb = new ProcessBuilder(args[0], args[1], Integer.toString((int) pid));
                 pb.redirectErrorStream(true);   // combine stderr and stdout
                 pb.redirectOutput(Redirect.PIPE);
 
@@ -273,4 +273,14 @@ public final class FileUtils {
             }
         });
     }
+
+    // Possible command locations and arguments
+    static String[][] lsCommands = new String[][] {
+            {"/usr/bin/lsof", "-p"},
+            {"/usr/sbin/lsof", "-p"},
+            {"/bin/lsof", "-p"},
+            {"/sbin/lsof", "-p"},
+            {"/usr/local/bin/lsof", "-p"},
+            {"/usr/bin/pfiles", "-F"},   // Solaris
+    };
 }
