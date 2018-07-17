@@ -41,9 +41,13 @@ public class HeapMonitorStatObjectCorrectnessTest {
   private native static boolean statsHaveExpectedNumberSamples(int expected, int percentError);
 
   private static void allocate() {
+    emptyStorage();
+
+    HeapMonitor.enableSamplingEvents();
     for (int j = 0; j < maxIteration; j++) {
       obj = new BigObject();
     }
+    HeapMonitor.disableSamplingEvents();
   }
 
   private static void testBigAllocationRate() {
@@ -53,7 +57,6 @@ public class HeapMonitorStatObjectCorrectnessTest {
     final int samplingMultiplier = 111;
     HeapMonitor.setSamplingRate(samplingMultiplier * sizeObject);
 
-    emptyStorage();
     allocate();
 
     // For simplifications, the code is allocating:
@@ -96,7 +99,6 @@ public class HeapMonitorStatObjectCorrectnessTest {
     // 0 means sample every allocation.
     HeapMonitor.setSamplingRate(0);
 
-    emptyStorage();
     allocate();
 
     double expected = maxIteration;
@@ -111,8 +113,6 @@ public class HeapMonitorStatObjectCorrectnessTest {
   }
 
   public static void main(String[] args) {
-    HeapMonitor.enableSamplingEvents();
-
     testBigAllocationRate();
     testEveryAllocationSampled();
   }

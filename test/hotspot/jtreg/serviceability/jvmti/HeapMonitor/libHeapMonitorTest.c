@@ -45,7 +45,7 @@ extern "C" {
 
 #define TRUE 1
 #define FALSE 0
-#define PRINT_OUT 0
+#define PRINT_OUT 1
 
 static jvmtiEnv *jvmti = NULL;
 static jvmtiEnv *second_jvmti = NULL;
