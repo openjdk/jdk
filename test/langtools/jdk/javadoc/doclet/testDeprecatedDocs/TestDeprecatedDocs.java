@@ -86,7 +86,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                 "<pre>@Deprecated(forRemoval=true)\n"
                 + "public&nbsp;DeprecatedClassByAnnotation()</pre>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated, for removal: This API element is subject to removal in a future version.</span></div>",
-                "<pre>@Deprecated\n"
+                "<pre class=\"methodSignature\">@Deprecated\n"
                 + "public&nbsp;void&nbsp;method()</pre>\n"
                 + "<div class=\"deprecationBlock\"><span class=\"deprecatedLabel\">Deprecated.</span></div>");
 

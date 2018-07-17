@@ -55,7 +55,7 @@ public class TestLambdaFeature extends JavadocTester {
 
         checkOutput("pkg/A.html", true,
                 "<td class=\"colFirst\"><code>default void</code></td>",
-                "<pre>default&nbsp;void&nbsp;defaultMethod()</pre>",
+                "<pre class=\"methodSignature\">default&nbsp;void&nbsp;defaultMethod()</pre>",
                 "<caption><span id=\"t0\" class=\"activeTableTab\"><span>"
                 + "All Methods</span><span class=\"tabEnd\">&nbsp;</span></span>"
                 + "<span id=\"t2\" class=\"tableTab\"><span>"
