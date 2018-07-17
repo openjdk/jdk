@@ -35,6 +35,7 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 
+#include <dirent.h>
 #include <dlfcn.h>
 #include <pthread.h>
 #include <signal.h>
@@ -525,6 +526,21 @@ void os::flockfile(FILE* fp) {
 
 void os::funlockfile(FILE* fp) {
   ::funlockfile(fp);
+}
+
+DIR* os::opendir(const char* dirname) {
+  assert(dirname != NULL, "just checking");
+  return ::opendir(dirname);
+}
+
+struct dirent* os::readdir(DIR* dirp) {
+  assert(dirp != NULL, "just checking");
+  return ::readdir(dirp);
+}
+
+int os::closedir(DIR *dirp) {
+  assert(dirp != NULL, "just checking");
+  return ::closedir(dirp);
 }
 
 // Builds a platform dependent Agent_OnLoad_<lib_name> function name

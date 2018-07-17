@@ -895,21 +895,14 @@ int SystemProcessInterface::SystemProcesses::ProcessIterator::current(SystemProc
 }
 
 int SystemProcessInterface::SystemProcesses::ProcessIterator::next_process() {
-  struct dirent* entry;
-
   if (!is_valid()) {
     return OS_ERR;
   }
 
   do {
-      entry = os::readdir(_dir, _entry);
-    if (entry == NULL) {
-      // error
-      _valid = false;
-      return OS_ERR;
-    }
+    _entry = os::readdir(_dir);
     if (_entry == NULL) {
-      // reached end
+      // Error or reached end.  Could use errno to distinguish those cases.
       _valid = false;
       return OS_ERR;
     }
@@ -926,11 +919,8 @@ SystemProcessInterface::SystemProcesses::ProcessIterator::ProcessIterator() {
 }
 
 bool SystemProcessInterface::SystemProcesses::ProcessIterator::initialize() {
-  _dir = opendir("/proc");
-  _entry = (struct dirent*)NEW_C_HEAP_ARRAY(char, sizeof(struct dirent) + NAME_MAX + 1, mtInternal);
-  if (NULL == _entry) {
-    return false;
-  }
+  _dir = os::opendir("/proc");
+  _entry = NULL;
   _valid = true;
   next_process();
 
@@ -938,11 +928,8 @@ bool SystemProcessInterface::SystemProcesses::ProcessIterator::initialize() {
 }
 
 SystemProcessInterface::SystemProcesses::ProcessIterator::~ProcessIterator() {
-  if (_entry != NULL) {
-    FREE_C_HEAP_ARRAY(char, _entry);
-  }
   if (_dir != NULL) {
-    closedir(_dir);
+    os::closedir(_dir);
   }
 }
 

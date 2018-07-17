@@ -873,4 +873,3 @@ com/sun/jdi/RedefineCrossEvent.java                             8194308    gener
 
 jdk/jfr/event/io/TestInstrumentation.java                       8202142    generic-all
 jdk/jfr/event/sampling/TestNative.java                          8202142    generic-all
-jdk/jfr/event/os/TestSystemProcess.java                         8202835    linux-all

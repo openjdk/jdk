@@ -318,9 +318,8 @@ static char* get_user_name_slow(int vmid) {
   // to determine the user name for the process id.
   //
   struct dirent* dentry;
-  char* tdbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(tmpdirname), mtInternal);
   errno = 0;
-  while ((dentry = os::readdir(tmpdirp, (struct dirent *)tdbuf)) != NULL) {
+  while ((dentry = os::readdir(tmpdirp)) != NULL) {
 
     // check if the directory entry is a hsperfdata file
     if (strncmp(dentry->d_name, PERFDATA_NAME, strlen(PERFDATA_NAME)) != 0) {
@@ -353,9 +352,8 @@ static char* get_user_name_slow(int vmid) {
     }
 
     struct dirent* udentry;
-    char* udbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(usrdir_name), mtInternal);
     errno = 0;
-    while ((udentry = os::readdir(subdirp, (struct dirent *)udbuf)) != NULL) {
+    while ((udentry = os::readdir(subdirp)) != NULL) {
 
       if (filename_to_pid(udentry->d_name) == vmid) {
         struct stat statbuf;
@@ -407,11 +405,9 @@ static char* get_user_name_slow(int vmid) {
       }
     }
     os::closedir(subdirp);
-    FREE_C_HEAP_ARRAY(char, udbuf);
     FREE_C_HEAP_ARRAY(char, usrdir_name);
   }
   os::closedir(tmpdirp);
-  FREE_C_HEAP_ARRAY(char, tdbuf);
 
   return(latest_user);
 }
@@ -642,9 +638,8 @@ static void cleanup_sharedmem_resources(const char* dirname) {
   // opendir/readdir.
   //
   struct dirent* entry;
-  char* dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(dirname), mtInternal);
   errno = 0;
-  while ((entry = os::readdir(dirp, (struct dirent *)dbuf)) != NULL) {
+  while ((entry = os::readdir(dirp)) != NULL) {
 
     int pid = filename_to_pid(entry->d_name);
 
@@ -685,7 +680,6 @@ static void cleanup_sharedmem_resources(const char* dirname) {
     errno = 0;
   }
   os::closedir(dirp);
-  FREE_C_HEAP_ARRAY(char, dbuf);
 }
 
 // create a file mapping object with the requested name, and size
