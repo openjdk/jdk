@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6380018 6392177 6993311
+ * @bug 6380018 6392177 6993311 8193462
  * @summary Test the ability to create and process package-info.java files
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
@@ -35,7 +35,6 @@
  */
 
 import java.util.Set;
-import java.util.HashSet;
 import java.util.Map;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -61,8 +60,8 @@ public class TestPackageInfo extends JavacTestingAbstractProcessor {
         round++;
 
         // Verify annotations are as expected
-        Set<TypeElement> expectedAnnotations = new HashSet<TypeElement>();
-        expectedAnnotations.add(eltUtils.getTypeElement("java.lang.Deprecated"));
+        Set<TypeElement> expectedAnnotations =
+            Set.of(eltUtils.getTypeElement("java.lang.Deprecated"));
 
         if (!roundEnv.processingOver()) {
             System.out.println("\nRound " + round);
@@ -91,11 +90,15 @@ public class TestPackageInfo extends JavacTestingAbstractProcessor {
                         throw new RuntimeException("Created class file for \"package-info\".");
                     } catch(FilerException fe) {}
 
-                    PrintWriter pw = new PrintWriter(filer.createSourceFile("foo.package-info").openWriter());
-                    pw.println("@Deprecated");
-                    pw.println("package foo;");
-                    pw.close();
+                    try(PrintWriter pw =
+                        new PrintWriter(filer.createSourceFile("foo.package-info").openWriter())) {
+                        pw.println("@Deprecated");
+                        pw.println("package foo;");
+                    }
 
+                    attemptReopening("foo.package-info");
+                    attemptReopening("TestPackageInfo");      // Initial input
+                    attemptReopening("foo.bar.package-info"); // Initial input
                 } catch(IOException ioe) {
                     throw new RuntimeException(ioe);
                 }
@@ -103,15 +106,15 @@ public class TestPackageInfo extends JavacTestingAbstractProcessor {
 
             case 2:
                 // Expect foo.package-info
-
-                Set<Element> expectedElement = new HashSet<Element>();
-                expectedElement.add(eltUtils.getPackageElement("foo"));
+                Set<Element> expectedElement = Set.of(eltUtils.getPackageElement("foo"));
                 if (!expectedElement.equals(roundEnv.getRootElements()))
                     throw new RuntimeException("Unexpected root element set " + roundEnv.getRootElements());
 
                 if (!expectedAnnotations.equals(annotations)) {
                     throw new RuntimeException("Unexpected annotations: " + annotations);
                 }
+
+                attemptReopening("foo.package-info");
 
                 break;
 
@@ -120,5 +123,27 @@ public class TestPackageInfo extends JavacTestingAbstractProcessor {
             }
         }
         return false;
+    }
+
+    private void attemptReopening(String name) {
+        final String SHOULD_NOT_REACH = "Should not reach: created ";
+        try {
+            try {
+                filer.createSourceFile(name);
+                throw new AssertionError(SHOULD_NOT_REACH + name + ".java");
+            } catch (FilerException fe) {
+                ; // Expected
+            }
+
+            try {
+                filer.createClassFile(name);
+                throw new AssertionError(SHOULD_NOT_REACH + name + ".class");
+            } catch (FilerException fe) {
+                ; // Expected
+            }
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
     }
 }
