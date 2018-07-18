@@ -628,7 +628,19 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_register_info(outputStream *st, const void *context) {
-  st->print("Not ported\n");
+  if (context == NULL) return;
+
+  const ucontext_t *uc = (const ucontext_t*)context;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.psw.addr);
+  for (int i = 0; i < 16; i++) {
+    st->print("r%-2d=", i);
+    print_location(st, uc->uc_mcontext.gregs[i]);
+  }
+  st->cr();
 }
 
 #ifndef PRODUCT

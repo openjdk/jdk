@@ -2129,8 +2129,8 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
       bool blob_initialized = (this_blob != NULL) && (this_blob->header_size() >= 0) && (this_blob->relocation_size() >= 0) &&
                               ((address)this_blob + this_blob->header_size() == (address)(this_blob->relocation_begin())) &&
                               ((address)this_blob + CodeBlob::align_code_offset(this_blob->header_size() + this_blob->relocation_size()) == (address)(this_blob->content_begin())) &&
-                              is_readable_pointer((address)(this_blob->relocation_begin())) &&
-                              is_readable_pointer(this_blob->content_begin());
+                              os::is_readable_pointer((address)(this_blob->relocation_begin())) &&
+                              os::is_readable_pointer(this_blob->content_begin());
       // blob could have been flushed, freed, and merged.
       // this_blob < last_blob is an indicator for that.
       if (blob_initialized && (this_blob > last_blob)) {
@@ -2145,7 +2145,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         }
         // this_blob->name() could return NULL if no name was given to CTOR. Inlined, maybe invisible on stack
         const char* blob_name = this_blob->name();
-        if ((blob_name == NULL) || !is_readable_pointer(blob_name)) {
+        if ((blob_name == NULL) || !os::is_readable_pointer(blob_name)) {
           blob_name = "<unavailable>";
         }
 
@@ -2170,7 +2170,7 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
         nmethod*    nm     = this_blob->as_nmethod_or_null();
         Method*     method = (nm == NULL) ? NULL : nm->method();  // may be uninitialized, i.e. != NULL, but invalid
         if ((nm != NULL) && (method != NULL) && (cbType != nMethod_dead) && (cbType != nMethod_inconstruction) &&
-            is_readable_pointer(method) && is_readable_pointer(method->constants())) {
+            os::is_readable_pointer(method) && os::is_readable_pointer(method->constants())) {
           ResourceMark rm;
           //---<  collect all data to locals as quickly as possible  >---
           unsigned int total_size = nm->total_size();
@@ -2369,7 +2369,7 @@ void CodeHeapState::print_line_delim(outputStream* out, bufferedStream* ast, cha
 }
 
 CodeHeapState::blobType CodeHeapState::get_cbType(CodeBlob* cb) {
-  if ((cb != NULL) && is_readable_pointer(cb)) {
+  if ((cb != NULL) && os::is_readable_pointer(cb)) {
     if (cb->is_runtime_stub())                return runtimeStub;
     if (cb->is_deoptimization_stub())         return deoptimizationStub;
     if (cb->is_uncommon_trap_stub())          return uncommonTrapStub;
@@ -2391,18 +2391,4 @@ CodeHeapState::blobType CodeHeapState::get_cbType(CodeBlob* cb) {
     }
   }
   return noType;
-}
-
-// Check if pointer can be read from (4-byte read access).
-// Helps to prove validity of a not-NULL pointer.
-// Returns true in very early stages of VM life when stub is not yet generated.
-#define SAFEFETCH_DEFAULT true
-bool CodeHeapState::is_readable_pointer(const void* p) {
-  if (!CanUseSafeFetch32()) {
-    return SAFEFETCH_DEFAULT;
-  }
-  int* const aligned = (int*) align_down((intptr_t)p, 4);
-  int cafebabe = 0xcafebabe;  // tester value 1
-  int deadbeef = 0xdeadbeef;  // tester value 2
-  return (SafeFetch32(aligned, cafebabe) != cafebabe) || (SafeFetch32(aligned, deadbeef) != deadbeef);
 }
