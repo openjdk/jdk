@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4845692
+ * @bug 4845692 8206863
  * @summary JarFile.getInputStream should not throw when jar file is signed
  * @author Martin Buchholz
  */
@@ -42,5 +42,27 @@ public class SignedJarFileGetInputStream {
             InputStream is = jar.getInputStream(new ZipEntry(entry.getName()));
             is.close();
         }
+
+        // read(), available() on closed stream should throw IOException
+        InputStream is = jar.getInputStream(new ZipEntry("Test.class"));
+        is.close();
+        byte[] buffer = new byte[1];
+
+        try {
+            is.read();
+            throw new AssertionError("Should have thrown IOException");
+        } catch (IOException success) {}
+        try {
+            is.read(buffer);
+            throw new AssertionError("Should have thrown IOException");
+        } catch (IOException success) {}
+        try {
+            is.read(buffer, 0, buffer.length);
+            throw new AssertionError("Should have thrown IOException");
+        } catch (IOException success) {}
+        try {
+            is.available();
+            throw new AssertionError("Should have thrown IOException");
+        } catch (IOException success) {}
     }
 }
