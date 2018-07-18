@@ -32,7 +32,8 @@ JttLoop       org.graalvm.compiler.jtt.loop
 Jtt.Micro     org.graalvm.compiler.jtt.micro
 JttOptimize   org.graalvm.compiler.jtt.optimize
 JttReflectAE  org.graalvm.compiler.jtt.reflect.[a-eA-E]
-JttReflectF   org.graalvm.compiler.jtt.reflect.[fF]
+JttReflectFieldGet org.graalvm.compiler.jtt.reflect.Field_get
+JttReflectFieldSet org.graalvm.compiler.jtt.reflect.Field_set
 JttReflectGZ  org.graalvm.compiler.jtt.reflect.[g-zG-Z]
 JttThreads    org.graalvm.compiler.jtt.threads
 LirJtt        org.graalvm.compiler.lir.jtt
