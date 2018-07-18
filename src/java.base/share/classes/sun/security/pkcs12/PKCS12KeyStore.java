@@ -2098,7 +2098,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     RetryWithZero.run(pass -> {
                         // Use JCE
                         SecretKey skey = getPBEKey(pass);
-                        Cipher cipher = Cipher.getInstance(algOid.toString());
+                        Cipher cipher = Cipher.getInstance(
+                                mapPBEParamsToAlgorithm(algOid, algParams));
                         cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
                         loadSafeContents(new DerInputStream(cipher.doFinal(rawData)));
                         return null;
