@@ -998,7 +998,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @param oos the ObjectOutputStream
      */
 
-    private synchronized void writeObject(ObjectOutputStream oos) throws IOException, ClassNotFoundException {
+    private synchronized void writeObject(ObjectOutputStream oos) throws IOException {
         serializing = true;
 
         synchronized (BeanContext.globalHierarchyLock) {

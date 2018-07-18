@@ -3943,7 +3943,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
     private static final long serialVersionUID = 1330973210523860834L;
 
     private void writeObject(java.io.ObjectOutputStream s)
-        throws java.lang.ClassNotFoundException, java.io.IOException
+        throws java.io.IOException
     {
         s.defaultWriteObject();
     }

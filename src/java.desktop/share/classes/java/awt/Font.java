@@ -1895,8 +1895,7 @@ public class Font implements java.io.Serializable
      * @see #readObject(java.io.ObjectInputStream)
      */
     private void writeObject(java.io.ObjectOutputStream s)
-      throws java.lang.ClassNotFoundException,
-             java.io.IOException
+      throws java.io.IOException
     {
         if (values != null) {
           synchronized(values) {
