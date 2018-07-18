@@ -369,7 +369,7 @@ static int event_storage_get_count(EventStorage* storage) {
   return result;
 }
 
-static double event_storage_get_average_rate(EventStorage* storage) {
+static double event_storage_get_average_interval(EventStorage* storage) {
   double accumulation = 0;
   int max_size;
   int i;
@@ -839,8 +839,8 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-Java_MyPackage_HeapMonitor_setSamplingRate(JNIEnv* env, jclass cls, jint value) {
-  (*jvmti)->SetHeapSamplingRate(jvmti, value);
+Java_MyPackage_HeapMonitor_setSamplingInterval(JNIEnv* env, jclass cls, jint value) {
+  (*jvmti)->SetHeapSamplingInterval(jvmti, value);
 }
 
 JNIEXPORT jboolean JNICALL
@@ -940,8 +940,8 @@ Java_MyPackage_HeapMonitorNoCapabilityTest_allSamplingMethodsFail(JNIEnv *env,
     return FALSE;
   }
 
-  if (check_capability_error((*jvmti)->SetHeapSamplingRate(jvmti, 1<<19),
-                             "Set Heap Sampling Rate")) {
+  if (check_capability_error((*jvmti)->SetHeapSamplingInterval(jvmti, 1<<19),
+                             "Set Heap Sampling Interval")) {
     return FALSE;
   }
   return TRUE;
@@ -950,23 +950,23 @@ Java_MyPackage_HeapMonitorNoCapabilityTest_allSamplingMethodsFail(JNIEnv *env,
 JNIEXPORT jboolean JNICALL
 Java_MyPackage_HeapMonitorIllegalArgumentTest_testIllegalArgument(JNIEnv *env,
                                                                   jclass cls) {
-  if (check_error((*jvmti)->SetHeapSamplingRate(jvmti, 0),
-                  "Sampling rate 0 failed\n")){
+  if (check_error((*jvmti)->SetHeapSamplingInterval(jvmti, 0),
+                  "Sampling interval 0 failed\n")){
     return FALSE;
   }
 
-  if (check_error((*jvmti)->SetHeapSamplingRate(jvmti, 1024),
-                  "Sampling rate 1024 failed\n")){
+  if (check_error((*jvmti)->SetHeapSamplingInterval(jvmti, 1024),
+                  "Sampling interval 1024 failed\n")){
     return FALSE;
   }
 
-  if (!check_error((*jvmti)->SetHeapSamplingRate(jvmti, -1),
-                   "Sampling rate -1 passed\n")){
+  if (!check_error((*jvmti)->SetHeapSamplingInterval(jvmti, -1),
+                   "Sampling interval -1 passed\n")){
     return FALSE;
   }
 
-  if (!check_error((*jvmti)->SetHeapSamplingRate(jvmti, -1024),
-                   "Sampling rate -1024 passed\n")){
+  if (!check_error((*jvmti)->SetHeapSamplingInterval(jvmti, -1024),
+                   "Sampling interval -1024 passed\n")){
     return FALSE;
   }
 
@@ -974,8 +974,8 @@ Java_MyPackage_HeapMonitorIllegalArgumentTest_testIllegalArgument(JNIEnv *env,
 }
 
 JNIEXPORT jdouble JNICALL
-Java_MyPackage_HeapMonitorStatRateTest_getAverageRate(JNIEnv *env, jclass cls) {
-  return event_storage_get_average_rate(&global_event_storage);
+Java_MyPackage_HeapMonitorStatIntervalTest_getAverageInterval(JNIEnv *env, jclass cls) {
+  return event_storage_get_average_interval(&global_event_storage);
 }
 
 typedef struct sThreadsFound {

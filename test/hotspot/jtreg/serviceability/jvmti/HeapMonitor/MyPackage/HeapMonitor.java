@@ -45,8 +45,8 @@ public class HeapMonitor {
     }
   }
 
-  /** Set a specific sampling rate, 0 samples every allocation. */
-  public native static void setSamplingRate(int rate);
+  /** Set a specific sampling interval, 0 samples every allocation. */
+  public native static void setSamplingInterval(int interval);
   public native static void enableSamplingEvents();
   public native static boolean enableSamplingEventsForTwoThreads(Thread firstThread, Thread secondThread);
   public native static void disableSamplingEvents();
@@ -131,7 +131,7 @@ public class HeapMonitor {
 
   public static int[][][] sampleEverything() {
     enableSamplingEvents();
-    setSamplingRate(0);
+    setSamplingInterval(0);
 
     // Loop around an allocation loop and wait until the tlabs have settled.
     final int maxTries = 10;

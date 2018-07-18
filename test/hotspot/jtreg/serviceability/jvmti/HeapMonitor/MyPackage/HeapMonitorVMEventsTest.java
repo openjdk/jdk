@@ -62,10 +62,10 @@ public class HeapMonitorVMEventsTest implements Cloneable {
     double diff = Math.abs(first - second) * 100;
     diff /= first;
 
-    // Accept a 10% error rate: with objects being allocated: this allows a bit of room in
+    // Accept a 10% error interval: with objects being allocated: this allows a bit of room in
     // case other items are getting allocated during the test.
     if (diff > 10) {
-      throw new RuntimeException("Error rate is over the accepted rate: " + diff
+      throw new RuntimeException("Error interval is over the accepted interval: " + diff
           + ": " + first + " , " + second);
     }
   }
