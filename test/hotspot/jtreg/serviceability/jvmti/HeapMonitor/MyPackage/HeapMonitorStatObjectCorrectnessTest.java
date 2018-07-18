@@ -50,12 +50,12 @@ public class HeapMonitorStatObjectCorrectnessTest {
     HeapMonitor.disableSamplingEvents();
   }
 
-  private static void testBigAllocationRate() {
+  private static void testBigAllocationInterval() {
     final int sizeObject = 1400;
 
     // 111 is as good a number as any.
     final int samplingMultiplier = 111;
-    HeapMonitor.setSamplingRate(samplingMultiplier * sizeObject);
+    HeapMonitor.setSamplingInterval(samplingMultiplier * sizeObject);
 
     allocate();
 
@@ -79,8 +79,8 @@ public class HeapMonitorStatObjectCorrectnessTest {
     expected /= samplingMultiplier;
 
     // 10% error ensures a sanity test without becoming flaky.
-    // Flakiness is due to the fact that this test is dependent on the sampling rate, which is a
-    // statistical geometric variable around the sampling rate. This means that the test could be
+    // Flakiness is due to the fact that this test is dependent on the sampling interval, which is a
+    // statistical geometric variable around the sampling interval. This means that the test could be
     // unlucky and not achieve the mean average fast enough for the test case.
     if (!HeapMonitor.statsHaveExpectedNumberSamples((int) expected, 10)) {
       throw new RuntimeException("Statistics should show about " + expected + " samples.");
@@ -97,15 +97,15 @@ public class HeapMonitorStatObjectCorrectnessTest {
 
   private static void testEveryAllocationSampled() {
     // 0 means sample every allocation.
-    HeapMonitor.setSamplingRate(0);
+    HeapMonitor.setSamplingInterval(0);
 
     allocate();
 
     double expected = maxIteration;
 
     // 10% error ensures a sanity test without becoming flaky.
-    // Flakiness is due to the fact that this test is dependent on the sampling rate, which is a
-    // statistical geometric variable around the sampling rate. This means that the test could be
+    // Flakiness is due to the fact that this test is dependent on the sampling interval, which is a
+    // statistical geometric variable around the sampling interval. This means that the test could be
     // unlucky and not achieve the mean average fast enough for the test case.
     if (!HeapMonitor.statsHaveExpectedNumberSamples((int) expected, 10)) {
       throw new RuntimeException("Statistics should show about " + expected + " samples.");
@@ -113,7 +113,7 @@ public class HeapMonitorStatObjectCorrectnessTest {
   }
 
   public static void main(String[] args) {
-    testBigAllocationRate();
+    testBigAllocationInterval();
     testEveryAllocationSampled();
   }
 

@@ -3644,13 +3644,13 @@ JvmtiEnv::GetAvailableProcessors(jint* processor_count_ptr) {
 } /* end GetAvailableProcessors */
 
 jvmtiError
-JvmtiEnv::SetHeapSamplingRate(jint sampling_rate) {
-  if (sampling_rate < 0) {
+JvmtiEnv::SetHeapSamplingInterval(jint sampling_interval) {
+  if (sampling_interval < 0) {
     return JVMTI_ERROR_ILLEGAL_ARGUMENT;
   }
-  ThreadHeapSampler::set_sampling_rate(sampling_rate);
+  ThreadHeapSampler::set_sampling_interval(sampling_interval);
   return JVMTI_ERROR_NONE;
-} /* end SetHeapSamplingRate */
+} /* end SetHeapSamplingInterval */
 
   //
   // System Properties functions
