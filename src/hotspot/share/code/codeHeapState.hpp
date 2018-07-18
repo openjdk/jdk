@@ -95,7 +95,6 @@ class CodeHeapState : public CHeapObj<mtCode> {
   static void print_line_delim(outputStream* out, bufferedStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static void print_line_delim(outputStream* out, outputStream *sst, char* low_bound, unsigned int ix, unsigned int gpl);
   static blobType get_cbType(CodeBlob* cb);
-  static bool is_readable_pointer(const void* p);
 
  public:
   static void discard(outputStream* out, CodeHeap* heap);

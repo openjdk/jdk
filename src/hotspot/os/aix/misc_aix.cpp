@@ -49,16 +49,3 @@ void MiscUtils::leave_critsect(MiscUtils::critsect_t* cs) {
   const int rc = pthread_mutex_unlock(cs);
   assert0(rc == 0);
 }
-
-bool MiscUtils::is_readable_pointer(const void* p) {
-  if (!CanUseSafeFetch32()) {
-    return true;
-  }
-  int* const aligned = (int*) align_down(p, 4);
-  int cafebabe = 0xcafebabe;
-  int deadbeef = 0xdeadbeef;
-  return (SafeFetch32(aligned, cafebabe) != cafebabe) ||
-         (SafeFetch32(aligned, deadbeef) != deadbeef);
-}
-
-

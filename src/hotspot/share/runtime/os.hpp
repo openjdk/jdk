@@ -412,6 +412,9 @@ class os: AllStatic {
   static void    make_polling_page_unreadable();
   static void    make_polling_page_readable();
 
+  // Check if pointer points to readable memory (by 4-byte read access)
+  static bool    is_readable_pointer(const void* p);
+
   // Routines used to serialize the thread state without using membars
   static void    serialize_thread_states();
 
