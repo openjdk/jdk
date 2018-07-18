@@ -393,6 +393,13 @@ class TransportContext implements ConnectionContext, Closeable {
     }
 
     void setUseClientMode(boolean useClientMode) {
+        // Once handshaking has begun, the mode can not be reset for the
+        // life of this engine.
+        if (handshakeContext != null || isNegotiated) {
+            throw new IllegalArgumentException(
+                    "Cannot change mode after SSL traffic has started");
+        }
+
         /*
          * If we need to change the client mode and the enabled
          * protocols and cipher suites haven't specifically been
@@ -400,13 +407,6 @@ class TransportContext implements ConnectionContext, Closeable {
          * default ones.
          */
         if (sslConfig.isClientMode != useClientMode) {
-            // Once handshaking has begun, the mode can not be reset for the
-            // life of this engine.
-            if (handshakeContext != null || isNegotiated) {
-                throw new IllegalArgumentException(
-                    "Cannot change mode after SSL traffic has started");
-            }
-
             if (sslContext.isDefaultProtocolVesions(
                     sslConfig.enabledProtocols)) {
                 sslConfig.enabledProtocols =

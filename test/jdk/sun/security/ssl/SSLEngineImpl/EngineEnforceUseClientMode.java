@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug 4980882
+ * @bug 4980882 8207250
  * @summary SSLEngine should enforce setUseClientMode
  * @run main/othervm EngineEnforceUseClientMode
  * @author Brad R. Wetmore
@@ -190,14 +190,18 @@ public class EngineEnforceUseClientMode {
                 checkTransfer(appOut1, appIn2);
                 checkTransfer(appOut2, appIn1);
 
+                // Should not be able to set mode now, no matter if
+                // it is the same of different.
                 System.out.println("Try changing modes...");
-                try {
-                    ssle2.setUseClientMode(true);
-                    throw new RuntimeException(
-                        "setUseClientMode():  " +
-                        "Didn't catch the exception properly");
-                } catch (IllegalArgumentException e) {
-                    System.out.println("Caught the correct exception.");
+                for (boolean b : new Boolean[] {true, false}) {
+                    try {
+                        ssle2.setUseClientMode(b);
+                        throw new RuntimeException(
+                                "setUseClientMode(" + b + "):  " +
+                                        "Didn't catch the exception properly");
+                    } catch (IllegalArgumentException e) {
+                        System.out.println("Caught the correct exception.");
+                    }
                 }
 
                 return;
