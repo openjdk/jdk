@@ -1157,12 +1157,12 @@ public final class ProcessBuilder
      * are forcibly destroyed.
      * <p>
      * The {@code startPipeline} method performs the same checks on
-     * each ProcessBuilder as does the {@link #start} method. The new process
-     * will invoke the command and arguments given by {@link #command()},
-     * in a working directory as given by {@link #directory()},
-     * with a process environment as given by {@link #environment()}.
+     * each ProcessBuilder as does the {@link #start} method. Each new process
+     * invokes the command and arguments given by the respective process builder's
+     * {@link #command()}, in a working directory as given by its {@link #directory()},
+     * with a process environment as given by its {@link #environment()}.
      * <p>
-     * This method checks that the command is a valid operating
+     * Each process builder's command is checked to be a valid operating
      * system command.  Which commands are valid is system-dependent,
      * but at the very least the command must be a non-empty list of
      * non-null strings.
@@ -1174,7 +1174,7 @@ public final class ProcessBuilder
      * <p>
      * If there is a security manager, its
      * {@link SecurityManager#checkExec checkExec}
-     * method is called with the first component of this object's
+     * method is called with the first component of each process builder's
      * {@code command} array as its argument. This may result in
      * a {@link SecurityException} being thrown.
      * <p>
@@ -1194,8 +1194,8 @@ public final class ProcessBuilder
      * If the operating system does not support the creation of
      * processes, an {@link UnsupportedOperationException} will be thrown.
      * <p>
-     * Subsequent modifications to this process builder will not
-     * affect the returned {@link Process}.
+     * Subsequent modifications to any of the specified builders
+     * will not affect the returned {@link Process}.
      * @apiNote
      * For example to count the unique imports for all the files in a file hierarchy
      * on a Unix compatible platform:
