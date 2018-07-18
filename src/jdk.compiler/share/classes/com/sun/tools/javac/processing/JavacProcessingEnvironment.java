@@ -243,15 +243,20 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
     }
 
     private Set<String> initPlatformAnnotations() {
-        Set<String> platformAnnotations = new HashSet<>();
-        platformAnnotations.add("java.lang.Deprecated");
-        platformAnnotations.add("java.lang.Override");
-        platformAnnotations.add("java.lang.SuppressWarnings");
-        platformAnnotations.add("java.lang.annotation.Documented");
-        platformAnnotations.add("java.lang.annotation.Inherited");
-        platformAnnotations.add("java.lang.annotation.Retention");
-        platformAnnotations.add("java.lang.annotation.Target");
-        return Collections.unmodifiableSet(platformAnnotations);
+        final String module_prefix =
+            Feature.MODULES.allowedInSource(source) ? "java.base/" : "";
+        return Set.of(module_prefix + "java.lang.Deprecated",
+                      module_prefix + "java.lang.FunctionalInterface",
+                      module_prefix + "java.lang.Override",
+                      module_prefix + "java.lang.SafeVarargs",
+                      module_prefix + "java.lang.SuppressWarnings",
+
+                      module_prefix + "java.lang.annotation.Documented",
+                      module_prefix + "java.lang.annotation.Inherited",
+                      module_prefix + "java.lang.annotation.Native",
+                      module_prefix + "java.lang.annotation.Repeatable",
+                      module_prefix + "java.lang.annotation.Retention",
+                      module_prefix + "java.lang.annotation.Target");
     }
 
     private void initProcessorLoader() {
