@@ -43,24 +43,30 @@ public class HeapMonitorStatRateTest {
     HeapMonitor.enableSamplingEvents();
 
     int allocationTotal = 10 * 1024 * 1024;
-    HeapMonitor.allocateSize(allocationTotal);
+    int allocationIterations = 10;
+
+    double actualCount = 0;
+    for (int i = 0; i < allocationIterations; i++) {
+      HeapMonitor.resetEventStorage();
+      HeapMonitor.allocateSize(allocationTotal);
+      actualCount += HeapMonitor.getEventStorageElementCount();
+    }
 
     HeapMonitor.disableSamplingEvents();
 
-    double actualCount = HeapMonitor.getEventStorageElementCount();
-    double expectedCount = allocationTotal / rate;
+    double expectedCount = allocationTotal * allocationIterations / rate;
 
     double error = Math.abs(actualCount - expectedCount);
     double errorPercentage = error / expectedCount * 100;
 
-    boolean failure = (errorPercentage > 10.0);
+    boolean success = (errorPercentage < 10.0);
 
-    if (failure && throwIfFailure) {
+    if (!success && throwIfFailure) {
       throw new RuntimeException("Rate average over 10% for rate " + rate + " -> " + actualCount
           + ", " + expectedCount);
     }
 
-    return failure;
+    return success;
   }
 
 
