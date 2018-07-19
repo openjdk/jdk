@@ -590,6 +590,12 @@ java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
 
+java/rmi/activation/ActivationSystem/modifyDescriptor/ModifyDescriptor.java         8206865 generic-all
+java/rmi/activation/Activatable/restartService/RestartService.java                  8206865 generic-all
+java/rmi/activation/Activatable/restartCrashedService/RestartCrashedService.java    8206865 generic-all
+java/rmi/activation/Activatable/forceLogSnapshot/ForceLogSnapshot.java              8206865 generic-all
+java/rmi/activation/Activatable/checkRegisterInLog/CheckRegisterInLog.java          8206865 generic-all
+
 ############################################################################
 
 # jdk_security
