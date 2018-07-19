@@ -25,6 +25,8 @@
 package java.lang.invoke;
 
 import java.io.Serializable;
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -223,7 +225,7 @@ public final class SerializedLambda implements Serializable {
         return capturedArgs[i];
     }
 
-    private Object readResolve() throws ReflectiveOperationException {
+    private Object readResolve() throws ObjectStreamException {
         try {
             Method deserialize = AccessController.doPrivileged(new PrivilegedExceptionAction<>() {
                 @Override
@@ -235,12 +237,13 @@ public final class SerializedLambda implements Serializable {
             });
 
             return deserialize.invoke(null, this);
-        }
-        catch (PrivilegedActionException e) {
+        } catch (ReflectiveOperationException roe) {
+            ObjectStreamException ose = new InvalidObjectException("ReflectiveOperationException during deserialization");
+            ose.initCause(roe);
+            throw ose;
+        } catch (PrivilegedActionException e) {
             Exception cause = e.getException();
-            if (cause instanceof ReflectiveOperationException)
-                throw (ReflectiveOperationException) cause;
-            else if (cause instanceof RuntimeException)
+            if (cause instanceof RuntimeException)
                 throw (RuntimeException) cause;
             else
                 throw new RuntimeException("Exception in SerializedLambda.readResolve", e);
