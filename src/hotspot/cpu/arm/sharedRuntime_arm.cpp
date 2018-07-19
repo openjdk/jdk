@@ -513,6 +513,7 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     case T_ARRAY:
     case T_OBJECT:
     case T_ADDRESS:
+    case T_METADATA:
 #ifndef __ABI_HARD__
     case T_FLOAT:
 #endif // !__ABI_HARD__
