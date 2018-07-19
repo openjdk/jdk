@@ -150,7 +150,7 @@ public class MetricsTester {
         try {
             return new Scanner(new File(fname)).useDelimiter("\\Z").next();
         } catch (FileNotFoundException e) {
-            System.err.println("Unale to open : " + fname);
+            System.err.println("Unable to open : " + fname);
             return "";
         }
     }
@@ -428,24 +428,27 @@ public class MetricsTester {
                 Arrays.toString(newVal));
         }
 
+        int [] cpuSets = metrics.getEffectiveCpuSetCpus();
 
-        oldVal = Arrays.stream(metrics.getEffectiveCpuSetCpus()).boxed().toArray(Integer[]::new);
-        Arrays.sort(oldVal);
-
-        cpusstr = getFileContents(SubSystem.CPUSET, "cpuset.effective_cpus");
-        newVal = Stream.of(cpusstr.split(",")).flatMap(a -> {
-            if (a.contains("-")) {
-                String[] range = a.split("-");
-                return IntStream.rangeClosed(Integer.parseInt(range[0]),
-                        Integer.parseInt(range[1])).boxed();
-            } else {
-                return Stream.of(Integer.parseInt(a));
+        // Skip this test if this metric is supported on this platform
+        if (cpuSets.length != 0) {
+            oldVal = Arrays.stream(cpuSets).boxed().toArray(Integer[]::new);
+            Arrays.sort(oldVal);
+            cpusstr = getFileContents(SubSystem.CPUSET, "cpuset.effective_cpus");
+            newVal = Stream.of(cpusstr.split(",")).flatMap(a -> {
+                if (a.contains("-")) {
+                    String[] range = a.split("-");
+                    return IntStream.rangeClosed(Integer.parseInt(range[0]),
+                            Integer.parseInt(range[1])).boxed();
+                } else {
+                    return Stream.of(Integer.parseInt(a));
+                }
+            }).toArray(Integer[]::new);
+            Arrays.sort(newVal);
+            if (Arrays.compare(oldVal, newVal) != 0) {
+                fail(SubSystem.CPUSET, "cpuset.effective_cpus", Arrays.toString(oldVal),
+                        Arrays.toString(newVal));
             }
-        }).toArray(Integer[]::new);
-        Arrays.sort(newVal);
-        if (Arrays.compare(oldVal, newVal) != 0) {
-            fail(SubSystem.CPUSET, "cpuset.effective_cpus", Arrays.toString(oldVal),
-                    Arrays.toString(newVal));
         }
 
         oldVal = Arrays.stream(metrics.getCpuSetMems()).boxed().toArray(Integer[]::new);
@@ -466,22 +469,27 @@ public class MetricsTester {
                     Arrays.toString(newVal));
         }
 
-        oldVal = Arrays.stream(metrics.getEffectiveCpuSetMems()).boxed().toArray(Integer[]::new);
-        Arrays.sort(oldVal);
-        cpusstr = getFileContents(SubSystem.CPUSET, "cpuset.effective_mems");
-        newVal = Stream.of(cpusstr.split(",")).flatMap(a -> {
-            if (a.contains("-")) {
-                String[] range = a.split("-");
-                return IntStream.rangeClosed(Integer.parseInt(range[0]),
-                        Integer.parseInt(range[1])).boxed();
-            } else {
-                return Stream.of(Integer.parseInt(a));
+        int [] cpuSetMems = metrics.getEffectiveCpuSetMems();
+
+        // Skip this test if this metric is supported on this platform
+        if (cpuSetMems.length != 0) {
+            oldVal = Arrays.stream(cpuSetMems).boxed().toArray(Integer[]::new);
+            Arrays.sort(oldVal);
+            cpusstr = getFileContents(SubSystem.CPUSET, "cpuset.effective_mems");
+            newVal = Stream.of(cpusstr.split(",")).flatMap(a -> {
+                if (a.contains("-")) {
+                    String[] range = a.split("-");
+                    return IntStream.rangeClosed(Integer.parseInt(range[0]),
+                            Integer.parseInt(range[1])).boxed();
+                } else {
+                    return Stream.of(Integer.parseInt(a));
+                }
+            }).toArray(Integer[]::new);
+            Arrays.sort(newVal);
+            if (Arrays.compare(oldVal, newVal) != 0) {
+                fail(SubSystem.CPUSET, "cpuset.effective_mems", Arrays.toString(oldVal),
+                        Arrays.toString(newVal));
             }
-        }).toArray(Integer[]::new);
-        Arrays.sort(newVal);
-        if (Arrays.compare(oldVal, newVal) != 0) {
-            fail(SubSystem.CPUSET, "cpuset.effective_mems", Arrays.toString(oldVal),
-                    Arrays.toString(newVal));
         }
 
         double oldValue = metrics.getCpuSetMemoryPressure();

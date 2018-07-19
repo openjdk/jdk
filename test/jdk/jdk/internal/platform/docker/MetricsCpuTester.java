@@ -95,10 +95,13 @@ public class MetricsCpuTester {
                     + Arrays.toString(ipCpuSet) + ", got : " + Arrays.toString(cpuSets));
         }
 
-        if (!Arrays.equals(ipCpuSet, effectiveCpus)) {
-            throw new RuntimeException("Effective Cpusets not equal, expected : "
-                    + Arrays.toString(ipCpuSet) + ", got : "
-                    + Arrays.toString(effectiveCpus));
+        // Check to see if this metric is supported on this platform
+        if (effectiveCpus.length != 0) {
+            if (!Arrays.equals(ipCpuSet, effectiveCpus)) {
+                throw new RuntimeException("Effective Cpusets not equal, expected : "
+                        + Arrays.toString(ipCpuSet) + ", got : "
+                        + Arrays.toString(effectiveCpus));
+            }
         }
         System.out.println("TEST PASSED!!!");
     }
@@ -127,10 +130,13 @@ public class MetricsCpuTester {
                     + Arrays.toString(cpuSets));
         }
 
-        if (!Arrays.equals(ipCpuSet, effectiveMems)) {
-            throw new RuntimeException("Effective mem nodes not equal, expected : "
-                    + Arrays.toString(ipCpuSet) + ", got : "
-                    + Arrays.toString(effectiveMems));
+        // Check to see if this metric is supported on this platform
+        if (effectiveMems.length != 0) {
+            if (!Arrays.equals(ipCpuSet, effectiveMems)) {
+                throw new RuntimeException("Effective mem nodes not equal, expected : "
+                        + Arrays.toString(ipCpuSet) + ", got : "
+                        + Arrays.toString(effectiveMems));
+            }
         }
         System.out.println("TEST PASSED!!!");
     }
