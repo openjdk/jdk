@@ -633,10 +633,15 @@ public class Main {
                         dir = (dir.endsWith(File.separator) ?
                                dir : (dir + File.separator));
                         dir = dir.replace(File.separatorChar, '/');
+
+                        boolean hasUNC = (File.separatorChar == '\\'&&  dir.startsWith("//"));
                         while (dir.indexOf("//") > -1) {
                             dir = dir.replace("//", "/");
                         }
-                        pathsMap.get(version).add(dir.replace(File.separatorChar, '/'));
+                        if (hasUNC) { // Restore Windows UNC path.
+                            dir = "/" + dir;
+                        }
+                        pathsMap.get(version).add(dir);
                         nameBuf[k++] = dir + args[++i];
                     } else if (args[i].startsWith("--release")) {
                         int v = BASE_VERSION;
