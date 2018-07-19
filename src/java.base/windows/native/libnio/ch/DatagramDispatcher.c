@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,10 @@ Java_sun_nio_ch_DatagramDispatcher_readv0(JNIEnv *env, jclass clazz,
     jint fd = fdval(env, fdo);
     struct iovec *iovp = (struct iovec *)address;
     WSABUF *bufs = malloc(len * sizeof(WSABUF));
+    if (bufs == NULL) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        return IOS_THROWN;
+    }
 
     /* copy iovec into WSABUF */
     for(i=0; i<len; i++) {
@@ -182,6 +186,10 @@ Java_sun_nio_ch_DatagramDispatcher_writev0(JNIEnv *env, jclass clazz,
     jint fd = fdval(env, fdo);
     struct iovec *iovp = (struct iovec *)address;
     WSABUF *bufs = malloc(len * sizeof(WSABUF));
+    if (bufs == NULL) {
+        JNU_ThrowOutOfMemoryError(env, NULL);
+        return IOS_THROWN;
+    }
 
     /* copy iovec into WSABUF */
     for(i=0; i<len; i++) {
