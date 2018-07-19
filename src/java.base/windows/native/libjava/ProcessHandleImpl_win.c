@@ -198,7 +198,7 @@ Java_java_lang_ProcessHandleImpl_parent0(JNIEnv *env,
     } else {
         JNU_ThrowByName(env,
             "java/lang/RuntimeException", "snapshot not available");
-        return -1;
+        ppid = (DWORD)-1;
     }
     CloseHandle(hProcessSnap); // Ignore return code
     return (jlong)ppid;
@@ -267,13 +267,13 @@ Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
                 break;
             }
             if (jparentArray != NULL) {
-                ppids  = (*env)->GetLongArrayElements(env, jparentArray, NULL);
+                ppids = (*env)->GetLongArrayElements(env, jparentArray, NULL);
                 if (ppids == NULL) {
                     break;
                 }
             }
             if (jstimesArray != NULL) {
-                stimes  = (*env)->GetLongArrayElements(env, jstimesArray, NULL);
+                stimes = (*env)->GetLongArrayElements(env, jstimesArray, NULL);
                 if (stimes == NULL) {
                     break;
                 }
@@ -315,7 +315,7 @@ Java_java_lang_ProcessHandleImpl_getProcessPids0(JNIEnv *env,
     } else {
         JNU_ThrowByName(env,
             "java/lang/RuntimeException", "snapshot not available");
-        return 0;
+        count = 0;
     }
     CloseHandle(hProcessSnap);
     // If more pids than array had size for;  count will be greater than array size
