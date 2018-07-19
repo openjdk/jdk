@@ -57,7 +57,7 @@ import static java.util.Arrays.asList;
 public class InheritedChannelTest {
 
     private static final String TEST_SRC = System.getProperty("test.src");
-    private static final String TEST_CLASSES = System.getProperty("test.classes");
+    private static final String TEST_CLASSES = System.getProperty("test.class.path");
     private static final Path POLICY_PASS = Paths.get(TEST_SRC, "java.policy.pass");
     private static final Path POLICY_FAIL = Paths.get(TEST_SRC, "java.policy.fail");
 

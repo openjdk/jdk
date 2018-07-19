@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,7 +268,7 @@ public class AMD64HotSpotLIRGenerator extends AMD64LIRGenerator implements HotSp
             pollOnReturnScratchRegister = findPollOnReturnScratchRegister();
         }
         Register thread = getProviders().getRegisters().getThreadRegister();
-        append(new AMD64HotSpotReturnOp(operand, getStub() != null, thread, pollOnReturnScratchRegister, config));
+        append(new AMD64HotSpotReturnOp(operand, getStub() != null, thread, pollOnReturnScratchRegister, config, getResult().requiresReservedStackAccessCheck()));
     }
 
     @Override

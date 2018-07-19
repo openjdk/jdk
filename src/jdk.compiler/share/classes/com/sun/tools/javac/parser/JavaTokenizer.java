@@ -206,8 +206,6 @@ public class JavaTokenizer {
         do {
             if (reader.ch != '_') {
                 reader.putChar(false);
-            } else {
-                checkSourceLevel(pos, Feature.UNDERSCORES_IN_LITERALS);
             }
             saveCh = reader.ch;
             savePos = reader.bp;
@@ -518,7 +516,6 @@ public class JavaTokenizer {
                         skipIllegalUnderscores();
                         scanNumber(pos, 16);
                     } else if (reader.ch == 'b' || reader.ch == 'B') {
-                        checkSourceLevel(pos, Feature.BINARY_LITERALS);
                         reader.scanChar();
                         skipIllegalUnderscores();
                         scanNumber(pos, 2);

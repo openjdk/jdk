@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@
 
 #if defined(_ALLBSD_SOURCE)
   #define dirent64 dirent
-  #define readdir64_r readdir_r
+  #define readdir64 readdir
   #define stat64 stat
   #ifndef MACOSX
     #define statvfs64 statvfs
@@ -312,7 +312,6 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
 {
     DIR *dir = NULL;
     struct dirent64 *ptr;
-    struct dirent64 *result;
     int len, maxlen;
     jobjectArray rv, old;
     jclass str_class;
@@ -325,13 +324,6 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
     } END_PLATFORM_STRING(env, path);
     if (dir == NULL) return NULL;
 
-    ptr = malloc(sizeof(struct dirent64) + (PATH_MAX + 1));
-    if (ptr == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
-        closedir(dir);
-        return NULL;
-    }
-
     /* Allocate an initial String array */
     len = 0;
     maxlen = 16;
@@ -339,7 +331,7 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
     if (rv == NULL) goto error;
 
     /* Scan the directory */
-    while ((readdir64_r(dir, ptr, &result) == 0)  && (result != NULL)) {
+    while ((ptr = readdir64(dir)) != NULL) {
         jstring name;
         if (!strcmp(ptr->d_name, ".") || !strcmp(ptr->d_name, ".."))
             continue;
@@ -360,7 +352,6 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
         (*env)->DeleteLocalRef(env, name);
     }
     closedir(dir);
-    free(ptr);
 
     /* Copy the final results into an appropriately-sized array */
     old = rv;
@@ -375,7 +366,6 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
 
  error:
     closedir(dir);
-    free(ptr);
     return NULL;
 }
 

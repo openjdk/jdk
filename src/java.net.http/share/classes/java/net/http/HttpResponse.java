@@ -1188,7 +1188,7 @@ public interface HttpResponse<T> {
 
         /**
          * Returns a response subscriber which publishes the response body
-         * through a {@link Publisher Publisher<List<ByteBuffer>>}.
+         * through a {@code Publisher<List<ByteBuffer>>}.
          *
          * <p> The {@link HttpResponse} using this subscriber is available
          * immediately after the response headers have been read, without

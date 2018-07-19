@@ -296,6 +296,9 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             } catch (Exception e) {
                 if (password.length == 0) {
                     // Retry using an empty password with a NUL terminator.
+                    if (debug != null) {
+                        debug.println("Retry with a NUL password");
+                    }
                     return f.tryOnce(new char[1]);
                 }
                 throw e;
@@ -376,7 +379,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
        try {
             PBEParameterSpec pbeSpec;
-            int ic = 0;
+            int ic;
 
             if (algParams != null) {
                 try {
@@ -390,65 +393,69 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 if (ic > MAX_ITERATION_COUNT) {
                     throw new IOException("PBE iteration count too large");
                 }
+            } else {
+                ic = 0;
             }
 
-            byte[] keyInfo = RetryWithZero.run(pass -> {
+            key = RetryWithZero.run(pass -> {
                 // Use JCE
                 SecretKey skey = getPBEKey(pass);
                 Cipher cipher = Cipher.getInstance(
                         mapPBEParamsToAlgorithm(algOid, algParams));
                 cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
-                return cipher.doFinal(encryptedKey);
+                byte[] keyInfo = cipher.doFinal(encryptedKey);
+                /*
+                 * Parse the key algorithm and then use a JCA key factory
+                 * to re-create the key.
+                 */
+                DerValue val = new DerValue(keyInfo);
+                DerInputStream in = val.toDerInputStream();
+                int i = in.getInteger();
+                DerValue[] value = in.getSequence(2);
+                AlgorithmId algId = new AlgorithmId(value[0].getOID());
+                String keyAlgo = algId.getName();
+
+                // decode private key
+                if (entry instanceof PrivateKeyEntry) {
+                    KeyFactory kfac = KeyFactory.getInstance(keyAlgo);
+                    PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(keyInfo);
+                    Key tmp = kfac.generatePrivate(kspec);
+
+                    if (debug != null) {
+                        debug.println("Retrieved a protected private key at alias" +
+                                " '" + alias + "' (" +
+                                new AlgorithmId(algOid).getName() +
+                                " iterations: " + ic + ")");
+                    }
+                    return tmp;
+                    // decode secret key
+                } else {
+                    byte[] keyBytes = in.getOctetString();
+                    SecretKeySpec secretKeySpec =
+                            new SecretKeySpec(keyBytes, keyAlgo);
+
+                    // Special handling required for PBE: needs a PBEKeySpec
+                    Key tmp;
+                    if (keyAlgo.startsWith("PBE")) {
+                        SecretKeyFactory sKeyFactory =
+                                SecretKeyFactory.getInstance(keyAlgo);
+                        KeySpec pbeKeySpec =
+                                sKeyFactory.getKeySpec(secretKeySpec, PBEKeySpec.class);
+                        tmp = sKeyFactory.generateSecret(pbeKeySpec);
+                    } else {
+                        tmp = secretKeySpec;
+                    }
+
+                    if (debug != null) {
+                        debug.println("Retrieved a protected secret key at alias " +
+                                "'" + alias + "' (" +
+                                new AlgorithmId(algOid).getName() +
+                                " iterations: " + ic + ")");
+                    }
+                    return tmp;
+                }
             }, password);
 
-            /*
-             * Parse the key algorithm and then use a JCA key factory
-             * to re-create the key.
-             */
-            DerValue val = new DerValue(keyInfo);
-            DerInputStream in = val.toDerInputStream();
-            int i = in.getInteger();
-            DerValue[] value = in.getSequence(2);
-            AlgorithmId algId = new AlgorithmId(value[0].getOID());
-            String keyAlgo = algId.getName();
-
-            // decode private key
-            if (entry instanceof PrivateKeyEntry) {
-                KeyFactory kfac = KeyFactory.getInstance(keyAlgo);
-                PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(keyInfo);
-                key = kfac.generatePrivate(kspec);
-
-                if (debug != null) {
-                    debug.println("Retrieved a protected private key at alias" +
-                        " '" + alias + "' (" +
-                        new AlgorithmId(algOid).getName() +
-                        " iterations: " + ic + ")");
-                }
-
-            // decode secret key
-            } else {
-                byte[] keyBytes = in.getOctetString();
-                SecretKeySpec secretKeySpec =
-                    new SecretKeySpec(keyBytes, keyAlgo);
-
-                // Special handling required for PBE: needs a PBEKeySpec
-                if (keyAlgo.startsWith("PBE")) {
-                    SecretKeyFactory sKeyFactory =
-                        SecretKeyFactory.getInstance(keyAlgo);
-                    KeySpec pbeKeySpec =
-                        sKeyFactory.getKeySpec(secretKeySpec, PBEKeySpec.class);
-                    key = sKeyFactory.generateSecret(pbeKeySpec);
-                } else {
-                    key = secretKeySpec;
-                }
-
-                if (debug != null) {
-                    debug.println("Retrieved a protected secret key at alias " +
-                        "'" + alias + "' (" +
-                        new AlgorithmId(algOid).getName() +
-                        " iterations: " + ic + ")");
-                }
-            }
         } catch (Exception e) {
             UnrecoverableKeyException uke =
                 new UnrecoverableKeyException("Get Key failed: " +
@@ -2019,7 +2026,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
          * Spin over the ContentInfos.
          */
         for (int i = 0; i < count; i++) {
-            byte[] safeContentsData;
             ContentInfo safeContents;
             DerInputStream sci;
             byte[] eAlgId = null;
@@ -2027,14 +2033,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             sci = new DerInputStream(safeContentsArray[i].toByteArray());
             safeContents = new ContentInfo(sci);
             contentType = safeContents.getContentType();
-            safeContentsData = null;
             if (contentType.equals(ContentInfo.DATA_OID)) {
 
                 if (debug != null) {
                     debug.println("Loading PKCS#7 data");
                 }
 
-                safeContentsData = safeContents.getData();
+                loadSafeContents(new DerInputStream(safeContents.getData()));
             } else if (contentType.equals(ContentInfo.ENCRYPTED_DATA_OID)) {
                 if (password == null) {
 
@@ -2058,7 +2063,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 if (seq[2].isConstructed())
                    newTag |= 0x20;
                 seq[2].resetTag(newTag);
-                safeContentsData = seq[2].getOctetString();
+                byte[] rawData = seq[2].getOctetString();
 
                 // parse Algorithm parameters
                 DerInputStream in = seq[1].toDerInputStream();
@@ -2089,14 +2094,15 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         " iterations: " + ic + ")");
                 }
 
-                byte[] rawData = safeContentsData;
                 try {
-                    safeContentsData = RetryWithZero.run(pass -> {
+                    RetryWithZero.run(pass -> {
                         // Use JCE
                         SecretKey skey = getPBEKey(pass);
-                        Cipher cipher = Cipher.getInstance(algOid.toString());
+                        Cipher cipher = Cipher.getInstance(
+                                mapPBEParamsToAlgorithm(algOid, algParams));
                         cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
-                        return cipher.doFinal(rawData);
+                        loadSafeContents(new DerInputStream(cipher.doFinal(rawData)));
+                        return null;
                     }, password);
                 } catch (Exception e) {
                     throw new IOException("keystore password was incorrect",
@@ -2107,8 +2113,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 throw new IOException("public key protected PKCS12" +
                                         " not supported");
             }
-            DerInputStream sc = new DerInputStream(safeContentsData);
-            loadSafeContents(sc, password);
         }
 
         // The MacData is optional.
@@ -2242,7 +2246,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         else return null;
     }
 
-    private void loadSafeContents(DerInputStream stream, char[] password)
+    private void loadSafeContents(DerInputStream stream)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
         DerValue[] safeBags = stream.getSequence(2);

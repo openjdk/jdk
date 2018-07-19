@@ -333,7 +333,6 @@ public class VerifyAccess {
      * @return whether they are in the same package
      */
     public static boolean isSamePackage(Class<?> class1, Class<?> class2) {
-        assert(!class1.isArray() && !class2.isArray());
         if (class1 == class2)
             return true;
         if (class1.getClassLoader() != class2.getClassLoader())

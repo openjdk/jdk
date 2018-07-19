@@ -29,7 +29,7 @@
  *     its usages, please look through README.
  *
  * @library /test/lib
- * @compile -source 1.6 -target 1.6 JdkUtils.java Parameter.java Server.java Client.java
+ * @compile -source 1.7 -target 1.7 JdkUtils.java Parameter.java Server.java Client.java
  * @run main/manual Compatibility
  */
 

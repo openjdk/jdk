@@ -57,14 +57,6 @@ inline bool os::must_commit_stack_guard_pages() {
   return true;
 }
 
-inline int os::readdir_buf_size(const char *path)
-{
-  /* As Windows doesn't use the directory entry buffer passed to
-     os::readdir() this can be as short as possible */
-
-  return 1;
-}
-
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::map_stack_shadow_pages(address sp) {
   // Write to each page of our new frame to force OS mapping.

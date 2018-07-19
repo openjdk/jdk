@@ -4564,7 +4564,7 @@ char *ADLParser::get_paren_expr(const char *description, bool include_location) 
 // string(still inside the file buffer).  Returns a pointer to the string or
 // NULL if some other token is found instead.
 char *ADLParser::get_ident_common(bool do_preproc) {
-  register char c;
+  char c;
   char *start;                    // Pointer to start of token
   char *end;                      // Pointer to end of token
 
@@ -4762,7 +4762,7 @@ char *ADLParser::get_unique_ident(FormDict& dict, const char* nameDescription){
 // invokes a parse_err if the next token is not an integer.
 // This routine does not leave the integer null-terminated.
 int ADLParser::get_int(void) {
-  register char c;
+  char          c;
   char         *start;            // Pointer to start of token
   char         *end;              // Pointer to end of token
   int           result;           // Storage for integer result

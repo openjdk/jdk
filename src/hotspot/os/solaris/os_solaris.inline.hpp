@@ -68,34 +68,6 @@ inline void os::dll_unload(void *lib) { ::dlclose(lib); }
 
 inline const int os::default_file_open_flags() { return 0;}
 
-inline DIR* os::opendir(const char* dirname) {
-  assert(dirname != NULL, "just checking");
-  return ::opendir(dirname);
-}
-
-inline int os::readdir_buf_size(const char *path) {
-  int size = pathconf(path, _PC_NAME_MAX);
-  return (size < 0 ? MAXPATHLEN : size) + sizeof(dirent) + 1;
-}
-
-inline struct dirent* os::readdir(DIR* dirp, dirent* dbuf) {
-  assert(dirp != NULL, "just checking");
-  dirent* p;
-  int status;
-
-  if((status = ::readdir_r(dirp, dbuf, &p)) != 0) {
-    errno = status;
-    return NULL;
-  } else {
-    return p;
-  }
-}
-
-inline int os::closedir(DIR *dirp) {
-  assert(dirp != NULL, "argument is NULL");
-  return ::closedir(dirp);
-}
-
 //////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 

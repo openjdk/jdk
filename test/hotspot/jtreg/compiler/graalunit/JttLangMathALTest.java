@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,18 @@
  * questions.
  */
 
-// key: compiler.err.feature.not.supported.in.source.plural
-// key: compiler.misc.feature.underscore.lit
-// options: -source 6 -Xlint:-options
-
-class UnsupportedUnderscoreLiteral {
-    int i = 123_456_789;
-}
+/*
+ * @test
+ * @summary
+ * @requires vm.opt.final.EnableJVMCI == true
+ *
+ * @modules jdk.internal.vm.compiler
+ *
+ * @library /test/lib /compiler/graalunit /
+ *
+ * @build compiler.graalunit.common.GraalUnitTestLauncher
+ *
+ * @run driver jdk.test.lib.FileInstaller ../../ProblemList-graal.txt ExcludeList.txt
+ *
+ * @run main/othervm compiler.graalunit.common.GraalUnitTestLauncher -prefix org.graalvm.compiler.jtt.lang.Math_[a-lA-L] -exclude ExcludeList.txt
+ */

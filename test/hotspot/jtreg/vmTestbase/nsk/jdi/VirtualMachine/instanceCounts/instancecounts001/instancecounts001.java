@@ -40,6 +40,7 @@
  *      - the debugger process checks that instanceCounts returns 0 and no
  *        com.sun.jdi.ObjectCollectedException is thrown
  *
+ * @requires !vm.graal.enabled
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .

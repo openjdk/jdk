@@ -41,8 +41,8 @@ public class HeapMonitorThreadTest {
     final int numThreads = 5;
     List<ThreadInformation> threadList = ThreadInformation.createThreadList(numThreads);
 
-    // Sample at a rate of 8k.
-    HeapMonitor.setSamplingRate(1 << 13);
+    // Sample at a interval of 8k.
+    HeapMonitor.setSamplingInterval(1 << 13);
     HeapMonitor.enableSamplingEvents();
 
     System.err.println("Starting threads");

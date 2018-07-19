@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.security.ProviderException;
 import java.util.Objects;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import sun.security.util.ArrayUtil;
 
 
 /**
@@ -145,9 +146,9 @@ class CipherBlockChaining extends FeedbackCipher  {
         if (plainLen <= 0) {
             return plainLen;
         }
-        cryptBlockSizeCheck(plainLen);
-        cryptNullAndBoundsCheck(plain, plainOffset, plainLen);
-        cryptNullAndBoundsCheck(cipher, cipherOffset, plainLen);
+        ArrayUtil.blockSizeCheck(plainLen, blockSize);
+        ArrayUtil.nullAndBoundsCheck(plain, plainOffset, plainLen);
+        ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, plainLen);
         return implEncrypt(plain, plainOffset, plainLen,
                            cipher, cipherOffset);
     }
@@ -196,9 +197,9 @@ class CipherBlockChaining extends FeedbackCipher  {
         if (cipherLen <= 0) {
             return cipherLen;
         }
-        cryptBlockSizeCheck(cipherLen);
-        cryptNullAndBoundsCheck(cipher, cipherOffset, cipherLen);
-        cryptNullAndBoundsCheck(plain, plainOffset, cipherLen);
+        ArrayUtil.blockSizeCheck(cipherLen, blockSize);
+        ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, cipherLen);
+        ArrayUtil.nullAndBoundsCheck(plain, plainOffset, cipherLen);
         return implDecrypt(cipher, cipherOffset, cipherLen, plain, plainOffset);
     }
 
@@ -217,24 +218,5 @@ class CipherBlockChaining extends FeedbackCipher  {
             System.arraycopy(cipher, cipherOffset, r, 0, blockSize);
         }
         return cipherLen;
-    }
-
-    private void cryptBlockSizeCheck(int len) {
-        if ((len % blockSize) != 0) {
-            throw new ProviderException("Internal error in input buffering");
-        }
-    }
-
-    private static void cryptNullAndBoundsCheck(byte[] array, int offset, int len) {
-        Objects.requireNonNull(array);
-
-        if (offset < 0 || offset >= array.length) {
-            throw new ArrayIndexOutOfBoundsException(offset);
-        }
-
-        int endIndex = offset + len - 1;
-        if (endIndex < 0 || endIndex >= array.length) {
-            throw new ArrayIndexOutOfBoundsException(endIndex);
-        }
     }
 }

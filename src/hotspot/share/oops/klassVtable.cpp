@@ -257,7 +257,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
     // Interfaces do not need interface methods in their vtables
     // This includes miranda methods and during later processing, default methods
     if (!ik()->is_interface()) {
-      initialized = fill_in_mirandas(initialized);
+      initialized = fill_in_mirandas(initialized, THREAD);
     }
 
     // In class hierarchies where the accessibility is not increasing (i.e., going from private ->
@@ -364,7 +364,7 @@ static void log_vtables(int i, bool overrides, const methodHandle& target_method
 bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHandle& target_method,
                                           int super_vtable_len, int default_index,
                                           bool checkconstraints, TRAPS) {
-  ResourceMark rm;
+  ResourceMark rm(THREAD);
   bool allocate_new = true;
   assert(klass->is_instance_klass(), "must be InstanceKlass");
 
@@ -506,24 +506,21 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, const methodHand
                                                         super_loader, true,
                                                         CHECK_(false));
             if (failed_type_symbol != NULL) {
-              const char* msg = "loader constraint violation for class %s: when selecting "
-                "overriding method %s the class loader %s of the "
-                "selected method's type %s, and the class loader %s for its super "
-                "type %s have different Class objects for the type %s used in the signature";
-              const char* curr_class = klass->external_name();
-              const char* method = target_method()->name_and_sig_as_C_string();
-              const char* loader1 = java_lang_ClassLoader::describe_external(target_loader());
-              const char* sel_class = target_klass->external_name();
-              const char* loader2 = java_lang_ClassLoader::describe_external(super_loader());
-              const char* super_class = super_klass->external_name();
-              const char* failed_type_name = failed_type_symbol->as_klass_external_name();
-              size_t buflen = strlen(msg) + strlen(curr_class) + strlen(method) +
-                strlen(loader1) + strlen(sel_class) + strlen(loader2) +
-                strlen(super_class) + strlen(failed_type_name);
-              char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-              jio_snprintf(buf, buflen, msg, curr_class, method, loader1, sel_class, loader2,
-                           super_class, failed_type_name);
-              THROW_MSG_(vmSymbols::java_lang_LinkageError(), buf, false);
+              stringStream ss;
+              ss.print("loader constraint violation for class %s: when selecting "
+                       "overriding method %s the class loader %s of the "
+                       "selected method's type %s, and the class loader %s for its super "
+                       "type %s have different Class objects for the type %s used in the signature (%s; %s)",
+                       klass->external_name(),
+                       target_method()->name_and_sig_as_C_string(),
+                       target_klass->class_loader_data()->loader_name_and_id(),
+                       target_klass->external_name(),
+                       super_klass->class_loader_data()->loader_name_and_id(),
+                       super_klass->external_name(),
+                       failed_type_symbol->as_klass_external_name(),
+                       target_klass->class_in_module_of_loader(false, true),
+                       super_klass->class_in_module_of_loader(false, true));
+              THROW_MSG_(vmSymbols::java_lang_LinkageError(), ss.as_string(), false);
             }
           }
         }
@@ -902,7 +899,8 @@ void klassVtable::get_mirandas(GrowableArray<Method*>* new_mirandas,
 // return the new value of initialized.
 // Miranda methods use vtable entries, but do not get assigned a vtable_index
 // The vtable_index is discovered by searching from the end of the vtable
-int klassVtable::fill_in_mirandas(int initialized) {
+int klassVtable::fill_in_mirandas(int initialized, TRAPS) {
+  ResourceMark rm(THREAD);
   GrowableArray<Method*> mirandas(20);
   get_mirandas(&mirandas, NULL, ik()->super(), ik()->methods(),
                ik()->default_methods(), ik()->local_interfaces(),
@@ -910,7 +908,6 @@ int klassVtable::fill_in_mirandas(int initialized) {
   for (int i = 0; i < mirandas.length(); i++) {
     if (log_develop_is_enabled(Trace, vtables)) {
       Method* meth = mirandas.at(i);
-      ResourceMark rm(Thread::current());
       LogTarget(Trace, vtables) lt;
       LogStream ls(lt);
       if (meth != NULL) {
@@ -1085,7 +1082,7 @@ void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
   if (_klass->is_interface()) {
     // This needs to go after vtable indices are assigned but
     // before implementors need to know the number of itable indices.
-    assign_itable_indices_for_interface(_klass);
+    assign_itable_indices_for_interface(_klass, THREAD);
   }
 
   // Cannot be setup doing bootstrapping, interfaces don't have
@@ -1098,6 +1095,7 @@ void klassItable::initialize_itable(bool checkconstraints, TRAPS) {
   guarantee(size_offset_table() >= 1, "too small");
   int num_interfaces = size_offset_table() - 1;
   if (num_interfaces > 0) {
+    ResourceMark rm(THREAD);
     log_develop_debug(itables)("%3d: Initializing itables for %s", ++initialize_count,
                        _klass->name()->as_C_string());
 
@@ -1130,8 +1128,9 @@ inline bool interface_method_needs_itable_index(Method* m) {
   return true;
 }
 
-int klassItable::assign_itable_indices_for_interface(Klass* klass) {
+int klassItable::assign_itable_indices_for_interface(Klass* klass, TRAPS) {
   // an interface does not have an itable, but its methods need to be numbered
+  ResourceMark rm(THREAD);
   log_develop_debug(itables)("%3d: Initializing itable indices for interface %s",
                              ++initialize_count, klass->name()->as_C_string());
   Array<Method*>* methods = InstanceKlass::cast(klass)->methods();
@@ -1143,7 +1142,6 @@ int klassItable::assign_itable_indices_for_interface(Klass* klass) {
       assert(!m->is_final_method(), "no final interface methods");
       // If m is already assigned a vtable index, do not disturb it.
       if (log_develop_is_enabled(Trace, itables)) {
-        ResourceMark rm;
         LogTarget(Trace, itables) lt;
         LogStream ls(lt);
         assert(m != NULL, "methods can never be null");
@@ -1241,25 +1239,22 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
                                                       interface_loader,
                                                       true, CHECK);
           if (failed_type_symbol != NULL) {
-            const char* msg = "loader constraint violation in interface itable"
-              " initialization for class %s: when selecting method %s the"
-              " class loader %s for super interface %s, and the class"
-              " loader %s of the selected method's type, %s have"
-              " different Class objects for the type %s used in the signature";
-            const char* current = _klass->external_name();
-            const char* sig = m->name_and_sig_as_C_string();
-            const char* loader1 = java_lang_ClassLoader::describe_external(interface_loader());
-            const char* iface = InstanceKlass::cast(interf)->external_name();
-            const char* loader2 = java_lang_ClassLoader::describe_external(method_holder_loader());
-            const char* mclass = target()->method_holder()->external_name();
-            const char* failed_type_name = failed_type_symbol->as_klass_external_name();
-            size_t buflen = strlen(msg) + strlen(current) + strlen(sig) +
-              strlen(loader1) + strlen(iface) + strlen(loader2) + strlen(mclass) +
-              strlen(failed_type_name);
-            char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-            jio_snprintf(buf, buflen, msg, current, sig, loader1, iface,
-                         loader2, mclass, failed_type_name);
-            THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
+            stringStream ss;
+            ss.print("loader constraint violation in interface itable"
+                     " initialization for class %s: when selecting method %s the"
+                     " class loader %s for super interface %s, and the class"
+                     " loader %s of the selected method's type, %s have"
+                     " different Class objects for the type %s used in the signature (%s; %s)",
+                     _klass->external_name(),
+                     m->name_and_sig_as_C_string(),
+                     interf->class_loader_data()->loader_name_and_id(),
+                     interf->external_name(),
+                     target()->method_holder()->class_loader_data()->loader_name_and_id(),
+                     target()->method_holder()->external_name(),
+                     failed_type_symbol->as_klass_external_name(),
+                     interf->class_in_module_of_loader(false, true),
+                     target()->method_holder()->class_in_module_of_loader(false, true));
+            THROW_MSG(vmSymbols::java_lang_LinkageError(), ss.as_string());
           }
         }
       }
@@ -1507,6 +1502,7 @@ void klassVtable::verify(outputStream* st, bool forced) {
   oop* end_of_obj = (oop*)_klass + _klass->size();
   oop* end_of_vtable = (oop *)&table()[_length];
   if (end_of_vtable > end_of_obj) {
+    ResourceMark rm;
     fatal("klass %s: klass object too short (vtable extends beyond end)",
           _klass->internal_name());
   }

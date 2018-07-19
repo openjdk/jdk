@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,6 @@ public class PackageVersionTest {
 
         verify6991164();
 
-        verifyPack("Test6.class", JAVA6_PACKAGE_MAJOR_VERSION,
-                JAVA6_PACKAGE_MINOR_VERSION);
-
         // a jar file devoid of indy classes must generate 160.1 package file
         verifyPack("Test7.class", JAVA6_PACKAGE_MAJOR_VERSION,
                 JAVA6_PACKAGE_MINOR_VERSION);
@@ -91,9 +88,10 @@ public class PackageVersionTest {
         String target = name.substring(name.length() - 1);
         String javacCmds[] = {
             "-source",
-            "6",
+            "7",
             "-target",
-            name.substring(name.length() - 1),
+            "7",
+            "-Xlint:-options",
             name + ".java"
         };
         Utils.compiler(javacCmds);

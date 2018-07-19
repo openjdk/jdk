@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  *          java.base/sun.security.util
  *          java.base/sun.security.x509
  * @library /test/lib /lib/testlibrary ../warnings
- * @compile -source 1.6 -target 1.6 JdkUtils.java
+ * @compile -source 1.7 -target 1.7 JdkUtils.java
  * @run main/manual/othervm Compatibility
  */
 

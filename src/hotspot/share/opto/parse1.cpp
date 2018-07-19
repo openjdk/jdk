@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1823,7 +1823,7 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
       // Instead, wire the new split into a MergeMem on the backedge.
       // The optimizer will sort it out, slicing the phi.
       if (remerge == NULL) {
-        assert(base != NULL, "");
+        guarantee(base != NULL, "");
         assert(base->in(0) != NULL, "should not be xformed away");
         remerge = MergeMemNode::make(base->in(pnum));
         gvn().set_type(remerge, Type::MEMORY);

@@ -995,6 +995,22 @@ void os::print_date_and_time(outputStream *st, char* buf, size_t buflen) {
   st->print_cr(" elapsed time: %d seconds (%dd %dh %dm %ds)", eltime, eldays, elhours, elmins, elsecs);
 }
 
+
+// Check if pointer can be read from (4-byte read access).
+// Helps to prove validity of a not-NULL pointer.
+// Returns true in very early stages of VM life when stub is not yet generated.
+#define SAFEFETCH_DEFAULT true
+bool os::is_readable_pointer(const void* p) {
+  if (!CanUseSafeFetch32()) {
+    return SAFEFETCH_DEFAULT;
+  }
+  int* const aligned = (int*) align_down((intptr_t)p, 4);
+  int cafebabe = 0xcafebabe;  // tester value 1
+  int deadbeef = 0xdeadbeef;  // tester value 2
+  return (SafeFetch32(aligned, cafebabe) != cafebabe) || (SafeFetch32(aligned, deadbeef) != deadbeef);
+}
+
+
 // moved from debug.cpp (used to be find()) but still called from there
 // The verbose parameter is only set by the debug code in one case
 void os::print_location(outputStream* st, intptr_t x, bool verbose) {
@@ -1094,21 +1110,26 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       return;
     }
   }
-  if (JNIHandles::is_global_handle((jobject) addr)) {
-    st->print_cr(INTPTR_FORMAT " is a global jni handle", p2i(addr));
-    return;
-  }
-  if (JNIHandles::is_weak_global_handle((jobject) addr)) {
-    st->print_cr(INTPTR_FORMAT " is a weak global jni handle", p2i(addr));
-    return;
-  }
+
+  bool accessible = is_readable_pointer(addr);
+
+  if (align_down((intptr_t)addr, sizeof(intptr_t)) != 0 && accessible) {
+    if (JNIHandles::is_global_handle((jobject) addr)) {
+      st->print_cr(INTPTR_FORMAT " is a global jni handle", p2i(addr));
+      return;
+    }
+    if (JNIHandles::is_weak_global_handle((jobject) addr)) {
+      st->print_cr(INTPTR_FORMAT " is a weak global jni handle", p2i(addr));
+      return;
+    }
 #ifndef PRODUCT
-  // we don't keep the block list in product mode
-  if (JNIHandles::is_local_handle((jobject) addr)) {
-    st->print_cr(INTPTR_FORMAT " is a local jni handle", p2i(addr));
-    return;
-  }
+    // we don't keep the block list in product mode
+    if (JNIHandles::is_local_handle((jobject) addr)) {
+      st->print_cr(INTPTR_FORMAT " is a local jni handle", p2i(addr));
+      return;
+    }
 #endif
+  }
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     // Check for privilege stack
@@ -1152,6 +1173,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 
   // Try an OS specific find
   if (os::find(addr, st)) {
+    return;
+  }
+
+  if (accessible) {
+    st->print_cr(INTPTR_FORMAT " points into unknown readable memory", p2i(addr));
     return;
   }
 

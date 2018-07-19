@@ -80,7 +80,7 @@ public class AddExportsTestWarningError {
 
         builder.compile("m1", MODS_DIR);
         builder.compile("m2", MODS_DIR, "--add-exports", "m1/p1=m2");
-        builder.compile("m3", MODS_DIR, "--add-exports", "m1/p1=m3");
+        builder.compile("m3", MODS_DIR, "--add-exports", "m1/p1=m3", "--add-reads", "m3=m1");
     }
 
 

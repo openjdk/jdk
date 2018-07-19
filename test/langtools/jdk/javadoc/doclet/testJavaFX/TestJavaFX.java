@@ -54,11 +54,11 @@ public class TestJavaFX extends JavadocTester {
                 "<dt><span class=\"seeLabel\">See Also:</span></dt>\n"
                 + "<dd><a href=\"#getRate()\"><code>getRate()</code></a>, \n"
                 + "<a href=\"#setRate(double)\"><code>setRate(double)</code></a></dd>",
-                "<pre>public final&nbsp;void&nbsp;setRate&#8203;(double&nbsp;value)</pre>\n"
+                "<pre class=\"methodSignature\">public final&nbsp;void&nbsp;setRate&#8203;(double&nbsp;value)</pre>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>",
-                "<pre>public final&nbsp;double&nbsp;getRate()</pre>\n"
+                "<pre class=\"methodSignature\">public final&nbsp;double&nbsp;getRate()</pre>\n"
                 + "<div class=\"block\">Gets the value of the property rate.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>",
@@ -88,10 +88,10 @@ public class TestJavaFX extends JavadocTester {
                 + "title=\"class in pkg1\">C.BooleanProperty</a> pausedProperty</pre>\n"
                 + "<div class=\"block\">Defines if paused. The second line.</div>",
                 "<h4>isPaused</h4>\n"
-                + "<pre>public final&nbsp;double&nbsp;isPaused()</pre>\n"
+                + "<pre class=\"methodSignature\">public final&nbsp;double&nbsp;isPaused()</pre>\n"
                 + "<div class=\"block\">Gets the value of the property paused.</div>",
                 "<h4>setPaused</h4>\n"
-                + "<pre>public final&nbsp;void&nbsp;setPaused&#8203;(boolean&nbsp;value)</pre>\n"
+                + "<pre class=\"methodSignature\">public final&nbsp;void&nbsp;setPaused&#8203;(boolean&nbsp;value)</pre>\n"
                 + "<div class=\"block\">Sets the value of the property paused.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
@@ -99,7 +99,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<dt><span class=\"simpleTagLabel\">Default value:</span></dt>\n"
                 + "<dd>false</dd>",
                 "<h4>isPaused</h4>\n"
-                + "<pre>public final&nbsp;double&nbsp;isPaused()</pre>\n"
+                + "<pre class=\"methodSignature\">public final&nbsp;double&nbsp;isPaused()</pre>\n"
                 + "<div class=\"block\">Gets the value of the property paused.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
@@ -113,7 +113,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<code>Timeline</code> is expected to\n"
                 + " be played. This is the second line.</div>",
                 "<h4>setRate</h4>\n"
-                + "<pre>public final&nbsp;void&nbsp;setRate&#8203;(double&nbsp;value)</pre>\n"
+                + "<pre class=\"methodSignature\">public final&nbsp;void&nbsp;setRate&#8203;(double&nbsp;value)</pre>\n"
                 + "<div class=\"block\">Sets the value of the property rate.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"
@@ -124,7 +124,7 @@ public class TestJavaFX extends JavadocTester {
                 + "<dt><span class=\"simpleTagLabel\">Since:</span></dt>\n"
                 + "<dd>JavaFX 8.0</dd>",
                 "<h4>getRate</h4>\n"
-                + "<pre>public final&nbsp;double&nbsp;getRate()</pre>\n"
+                + "<pre class=\"methodSignature\">public final&nbsp;double&nbsp;getRate()</pre>\n"
                 + "<div class=\"block\">Gets the value of the property rate.</div>\n"
                 + "<dl>\n"
                 + "<dt><span class=\"simpleTagLabel\">Property description:</span></dt>\n"

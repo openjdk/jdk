@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8044445 8194307
+ * @bug 8044445 8194307 8207318
  * @summary test new methods from JEP-229: Create PKCS12 Keystores by Default
  */
 
@@ -180,7 +180,8 @@ public class ProbeKeystores {
             throw new Exception("ERROR: expected a " + type + " keystore, " +
                 "got a " + ks.getType() + " keystore instead");
         } else {
-            System.out.println("Probed a " + type + " keystore named '" + file + "'");
+            System.out.println("Probed a " + type + " keystore named '" + file
+                    + "' with " + ks.size() + " entries");
         }
 
         // Next try with an incorrect password
@@ -197,7 +198,8 @@ public class ProbeKeystores {
             throw new Exception("ERROR: expected a " + type + " keystore, " +
                 "got a " + ks.getType() + " keystore instead");
         } else {
-            System.out.println("Probed a " + type + " keystore named '" + file + "'");
+            System.out.println("Probed a " + type + " keystore named '" + file
+                    + "' with " + ks.size() + " entries");
         }
 
         // Next try with an incorrect password within a LoadStoreParameter

@@ -739,13 +739,13 @@ ZIP_Open_Generic(const char *name, char **pmsg, int mode, jlong lastModified)
     jzfile *zip = NULL;
 
     /* Clear zip error message */
-    if (pmsg != 0) {
+    if (pmsg != NULL) {
         *pmsg = NULL;
     }
 
     zip = ZIP_Get_From_Cache(name, pmsg, lastModified);
 
-    if (zip == NULL && *pmsg == NULL) {
+    if (zip == NULL && pmsg != NULL && *pmsg == NULL) {
         ZFILE zfd = ZFILE_Open(name, mode);
         zip = ZIP_Put_In_Cache(name, zfd, pmsg, lastModified);
     }

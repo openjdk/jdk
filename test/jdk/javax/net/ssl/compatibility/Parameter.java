@@ -65,15 +65,15 @@ enum CipherSuite implements Parameter {
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_RSA_WITH_AES_256_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK6),
+            Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_DHE_RSA_WITH_AES_256_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK6),
+            Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_DHE_DSS_WITH_AES_256_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK6),
+            Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA(),
     TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA(),
     TLS_RSA_WITH_AES_256_CBC_SHA(),
@@ -86,15 +86,15 @@ enum CipherSuite implements Parameter {
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_RSA_WITH_AES_128_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK6),
+            Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256(
             Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_DHE_RSA_WITH_AES_128_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK6),
+            Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_DHE_DSS_WITH_AES_128_CBC_SHA256(
-            Protocol.TLSV1_2, JdkRelease.JDK6),
+            Protocol.TLSV1_2, JdkRelease.JDK7),
     TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA(),
     TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA(),
     TLS_RSA_WITH_AES_128_CBC_SHA(),
@@ -142,11 +142,11 @@ enum CipherSuite implements Parameter {
     SSL_RSA_WITH_RC4_128_SHA(),
     SSL_RSA_WITH_3DES_EDE_CBC_SHA(),
     SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA(
-            Protocol.SSLV3_0, JdkRelease.JDK6),
+            Protocol.SSLV3_0, JdkRelease.JDK7),
     SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA(
-            Protocol.SSLV3_0, JdkRelease.JDK6),
+            Protocol.SSLV3_0, JdkRelease.JDK7),
     SSL_RSA_WITH_RC4_128_MD5(
-            Protocol.SSLV3_0, JdkRelease.JDK6);
+            Protocol.SSLV3_0, JdkRelease.JDK7);
 
     private static final boolean FULL_CIPHER_SUITES
             = Utils.getBoolProperty("fullCipherSuites");
@@ -172,7 +172,7 @@ enum CipherSuite implements Parameter {
     }
 
     private CipherSuite() {
-        this(Protocol.TLSV1_0, null, JdkRelease.JDK6, null);
+        this(Protocol.TLSV1_0, null, JdkRelease.JDK7, null);
     }
 
     boolean supportedByProtocol(Protocol protocol) {

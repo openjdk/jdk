@@ -236,7 +236,7 @@ public class Check {
      *  @param pos        Position to be used for error reporting.
      */
     void warnUnsafeVararg(DiagnosticPosition pos, Warning warnKey) {
-        if (lint.isEnabled(LintCategory.VARARGS) && Feature.SIMPLIFIED_VARARGS.allowedInSource(source))
+        if (lint.isEnabled(LintCategory.VARARGS))
             log.warning(LintCategory.VARARGS, pos, warnKey);
     }
 
@@ -886,7 +886,6 @@ public class Check {
 
     void checkVarargsMethodDecl(Env<AttrContext> env, JCMethodDecl tree) {
         MethodSymbol m = tree.sym;
-        if (!Feature.SIMPLIFIED_VARARGS.allowedInSource(source)) return;
         boolean hasTrustMeAnno = m.attribute(syms.trustMeType.tsym) != null;
         Type varargElemType = null;
         if (m.isVarArgs()) {
@@ -998,15 +997,11 @@ public class Check {
         if (useVarargs) {
             Type argtype = owntype.getParameterTypes().last();
             if (!types.isReifiable(argtype) &&
-                (!Feature.SIMPLIFIED_VARARGS.allowedInSource(source) ||
-                 sym.baseSymbol().attribute(syms.trustMeType.tsym) == null ||
+                (sym.baseSymbol().attribute(syms.trustMeType.tsym) == null ||
                  !isTrustMeAllowedOnMethod(sym))) {
                 warnUnchecked(env.tree.pos(), Warnings.UncheckedGenericArrayCreation(argtype));
             }
             TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
-         }
-         if ((sym.flags() & SIGNATURE_POLYMORPHIC) != 0 && !target.hasMethodHandles()) {
-            log.error(env.tree, Errors.BadTargetSigpolyCall(target, Target.JDK1_7));
          }
          return owntype;
     }

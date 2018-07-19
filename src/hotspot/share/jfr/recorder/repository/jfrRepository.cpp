@@ -241,11 +241,7 @@ RepositoryIterator::RepositoryIterator(const char* repository, size_t repository
       return;
     }
     struct dirent* dentry;
-    char* dir_buffer = NEW_RESOURCE_ARRAY_RETURN_NULL(char, os::readdir_buf_size(_repo));
-    if (dir_buffer == NULL) {
-      return;
-    }
-    while ((dentry = os::readdir(dirp, (struct dirent*)dir_buffer)) != NULL) {
+    while ((dentry = os::readdir(dirp)) != NULL) {
       const char* const entry_path = filter(dentry->d_name);
       if (NULL != entry_path) {
         _files->append(entry_path);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,19 +65,21 @@ import jdk.internal.reflect.Reflection;
  * interface or class. A {@code ServiceLoader} is an object that locates and
  * loads service providers deployed in the run time environment at a time of an
  * application's choosing. Application code refers only to the service, not to
- * service providers, and is assumed to be capable of differentiating between
- * multiple service providers as well as handling the possibility that no service
- * providers are located.
+ * service providers, and is assumed to be capable of choosing between multiple
+ * service providers (based on the functionality they expose through the service),
+ * and handling the possibility that no service providers are located.
  *
  * <h3> Obtaining a service loader </h3>
  *
  * <p> An application obtains a service loader for a given service by invoking
- * one of the static {@code load} methods of ServiceLoader. If the application
- * is a module, then its module declaration must have a <i>uses</i> directive
- * that specifies the service; this helps to locate providers and ensure they
- * will execute reliably. In addition, if the service is not in the application
- * module, then the module declaration must have a <i>requires</i> directive
- * that specifies the module which exports the service.
+ * one of the static {@code load} methods of {@code ServiceLoader}. If the
+ * application is a module, then its module declaration must have a <i>uses</i>
+ * directive that specifies the service; this helps to locate providers and ensure
+ * they will execute reliably. In addition, if the application module does not
+ * contain the service, then its module declaration must have a <i>requires</i>
+ * directive that specifies the module which exports the service. It is strongly
+ * recommended that the application module does <b>not</b> require modules which
+ * contain providers of the service.
  *
  * <p> A service loader can be used to locate and instantiate providers of the
  * service by means of the {@link #iterator() iterator} method. {@code ServiceLoader}

@@ -25,61 +25,67 @@ package MyPackage;
 
 /**
  * @test
- * @summary Verifies the JVMTI Heap Monitor sampling rate average.
+ * @summary Verifies the JVMTI Heap Monitor sampling interval average.
  * @build Frame HeapMonitor
- * @compile HeapMonitorStatRateTest.java
+ * @compile HeapMonitorStatIntervalTest.java
  * @requires vm.compMode != "Xcomp"
- * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorStatRateTest
+ * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorStatIntervalTest
  */
 
-public class HeapMonitorStatRateTest {
+public class HeapMonitorStatIntervalTest {
 
-  private native static double getAverageRate();
+  private native static double getAverageInterval();
 
-  private static boolean testRateOnce(int rate, boolean throwIfFailure) {
+  private static boolean testIntervalOnce(int interval, boolean throwIfFailure) {
     HeapMonitor.resetEventStorage();
-    HeapMonitor.setSamplingRate(rate);
+    HeapMonitor.setSamplingInterval(interval);
 
     HeapMonitor.enableSamplingEvents();
 
     int allocationTotal = 10 * 1024 * 1024;
-    HeapMonitor.allocateSize(allocationTotal);
+    int allocationIterations = 10;
+
+    double actualCount = 0;
+    for (int i = 0; i < allocationIterations; i++) {
+      HeapMonitor.resetEventStorage();
+      HeapMonitor.allocateSize(allocationTotal);
+      actualCount += HeapMonitor.getEventStorageElementCount();
+    }
 
     HeapMonitor.disableSamplingEvents();
 
-    double actualCount = HeapMonitor.getEventStorageElementCount();
-    double expectedCount = allocationTotal / rate;
+    double expectedCount = allocationTotal * allocationIterations / interval;
 
     double error = Math.abs(actualCount - expectedCount);
     double errorPercentage = error / expectedCount * 100;
 
-    boolean failure = (errorPercentage > 10.0);
+    boolean success = (errorPercentage < 10.0);
 
-    if (failure && throwIfFailure) {
-      throw new RuntimeException("Rate average over 10% for rate " + rate + " -> " + actualCount
-          + ", " + expectedCount);
+    if (!success && throwIfFailure) {
+      throw new RuntimeException("Interval average over 10% for interval " + interval + " -> "
+          + actualCount + ", " + expectedCount);
     }
 
-    return failure;
+    return success;
   }
 
 
-  private static void testRate(int rate) {
-    // Test the rate twice, it can happen that the test is "unlucky" and the rate just goes above
+  private static void testInterval(int interval) {
+    // Test the interval twice, it can happen that the test is "unlucky" and the interval just goes above
     // the 10% mark. So try again to squash flakiness.
-    // Flakiness is due to the fact that this test is dependent on the sampling rate, which is a
-    // statistical geometric variable around the sampling rate. This means that the test could be
+    // Flakiness is due to the fact that this test is dependent on the sampling interval, which is a
+    // statistical geometric variable around the sampling interval. This means that the test could be
     // unlucky and not achieve the mean average fast enough for the test case.
-    if (!testRateOnce(rate, false)) {
-      testRateOnce(rate, true);
+    if (!testIntervalOnce(interval, false)) {
+      testIntervalOnce(interval, true);
     }
   }
 
   public static void main(String[] args) {
     int[] tab = {1024, 8192};
 
-    for (int rateIdx = 0; rateIdx < tab.length; rateIdx++) {
-      testRate(tab[rateIdx]);
+    for (int intervalIdx = 0; intervalIdx < tab.length; intervalIdx++) {
+      testInterval(tab[intervalIdx]);
     }
   }
 }

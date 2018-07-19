@@ -520,6 +520,7 @@ java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8081652 generic-all
+java/lang/management/ThreadMXBean/AllThreadIds.java             8131745 generic-all
 
 ############################################################################
 
@@ -585,6 +586,12 @@ java/rmi/activation/ActivationGroup/downloadActivationGroup/DownloadActivationGr
 java/rmi/activation/rmidViaInheritedChannel/InheritedChannelNotServerSocket.java 8170562 generic-all
 
 java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-all
+
+java/rmi/activation/ActivationSystem/modifyDescriptor/ModifyDescriptor.java         8206865 generic-all
+java/rmi/activation/Activatable/restartService/RestartService.java                  8206865 generic-all
+java/rmi/activation/Activatable/restartCrashedService/RestartCrashedService.java    8206865 generic-all
+java/rmi/activation/Activatable/forceLogSnapshot/ForceLogSnapshot.java              8206865 generic-all
+java/rmi/activation/Activatable/checkRegisterInLog/CheckRegisterInLog.java          8206865 generic-all
 
 ############################################################################
 
@@ -669,6 +676,7 @@ sun/security/pkcs11/tls/TestPremaster.java                      8204203 windows-
 javax/sound/sampled/DirectAudio/bug6372428.java                      8055097 generic-all
 javax/sound/sampled/Clip/bug5070081.java                             8055097 generic-all
 javax/sound/sampled/DataLine/LongFramePosition.java                  8055097 generic-all
+javax/sound/sampled/Clip/AutoCloseTimeCheck.java                     8207150 generic-all
 
 javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 
@@ -871,4 +879,3 @@ com/sun/jdi/RedefineCrossEvent.java                             8194308    gener
 
 jdk/jfr/event/io/TestInstrumentation.java                       8202142    generic-all
 jdk/jfr/event/sampling/TestNative.java                          8202142    generic-all
-jdk/jfr/event/os/TestSystemProcess.java                         8202835    linux-all

@@ -24,8 +24,7 @@
 
 /**
  * @test
- * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774
- * @requires java.runtime.name ~= "OpenJDK.*"
+ * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
  * @summary Check root CA entries in cacerts file
  */
 import java.io.File;
@@ -42,7 +41,7 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 83;
+    private static final int COUNT = 90;
 
     // map of cert alias to SHA-256 fingerprint
     private static final Map<String, String> FINGERPRINT_MAP
@@ -214,6 +213,20 @@ public class VerifyCACerts {
                     "03:76:AB:1D:54:C5:F9:80:3C:E4:B2:E2:01:A0:EE:7E:EF:7B:57:B6:36:E8:A9:3C:9B:8D:48:60:C9:6F:5F:A7");
             put("affirmtrustpremiumeccca [jdk]",
                     "BD:71:FD:F6:DA:97:E4:CF:62:D1:64:7A:DD:25:81:B0:7D:79:AD:F8:39:7E:B4:EC:BA:9C:5E:84:88:82:14:23");
+            put("deutschetelekomrootca2 [jdk]",
+                    "B6:19:1A:50:D0:C3:97:7F:7D:A9:9B:CD:AA:C8:6A:22:7D:AE:B9:67:9E:C7:0B:A3:B0:C9:D9:22:71:C1:70:D3");
+            put("ttelesecglobalrootclass3ca [jdk]",
+                    "FD:73:DA:D3:1C:64:4F:F1:B4:3B:EF:0C:CD:DA:96:71:0B:9C:D9:87:5E:CA:7E:31:70:7A:F3:E9:6D:52:2B:BD");
+            put("ttelesecglobalrootclass2ca [jdk]",
+                    "91:E2:F5:78:8D:58:10:EB:A7:BA:58:73:7D:E1:54:8A:8E:CA:CD:01:45:98:BC:0B:14:3E:04:1B:17:05:25:52");
+            put("starfieldservicesrootg2ca [jdk]",
+                    "56:8D:69:05:A2:C8:87:08:A4:B3:02:51:90:ED:CF:ED:B1:97:4A:60:6A:13:C6:E5:29:0F:CB:2A:E6:3E:DA:B5");
+            put("globalsignca [jdk]",
+                    "EB:D4:10:40:E4:BB:3E:C7:42:C9:E3:81:D3:1E:F2:A4:1A:48:B6:68:5C:96:E7:CE:F3:C1:DF:6C:D4:33:1C:99");
+            put("globalsignr3ca [jdk]",
+                    "CB:B5:22:D7:B7:F1:27:AD:6A:01:13:86:5B:DF:1C:D4:10:2E:7D:07:59:AF:63:5A:7C:F4:72:0D:C9:63:C5:3B");
+            put("globalsigneccrootcar5 [jdk]",
+                    "17:9F:BC:14:8A:3D:D0:0F:D2:4E:A1:34:58:CC:43:BF:A7:F5:9C:81:82:D7:83:A5:13:F6:EB:EC:10:0C:89:24");
         }
     };
 

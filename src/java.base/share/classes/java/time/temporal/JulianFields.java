@@ -222,8 +222,6 @@ public final class JulianFields {
         MODIFIED_JULIAN_DAY("ModifiedJulianDay", DAYS, FOREVER, 40587L),
         RATA_DIE("RataDie", DAYS, FOREVER, 719163L);
 
-        private static final long serialVersionUID = -7501623920830201812L;
-
         private final transient String name;
         private final transient TemporalUnit baseUnit;
         private final transient TemporalUnit rangeUnit;

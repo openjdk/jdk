@@ -305,9 +305,9 @@ void Dict::print() {
 // limited to MAXID characters in length.  Experimental evidence on 150K of
 // C text shows excellent spreading of values for any size hash table.
 int hashstr(const void *t) {
-  register char c, k = 0;
-  register int32_t sum = 0;
-  register const char *s = (const char *)t;
+  char c, k = 0;
+  int32_t sum = 0;
+  const char *s = (const char *)t;
 
   while( ((c = *s++) != '\0') && (k < MAXID-1) ) { // Get characters till null or MAXID-1
     c = (c<<1)+1;               // Characters are always odd!

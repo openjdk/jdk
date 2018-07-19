@@ -33,7 +33,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEParameterSpec;
-import sun.security.util.HexDumpEncoder;
 import sun.security.util.*;
 
 /**
@@ -260,21 +259,7 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         String kdfAlgo = null;
         String cipherAlgo = null;
 
-        DerValue pBES2Algorithms = new DerValue(encoded);
-        if (pBES2Algorithms.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBE parameter parsing error: "
-                                  + "not an ASN.1 SEQUENCE tag");
-        }
-        if (!pkcs5PBES2_OID.equals(pBES2Algorithms.data.getOID())) {
-            throw new IOException("PBE parameter parsing error: "
-                + "expecting the object identifier for PBES2");
-        }
-        if (pBES2Algorithms.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBE parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
-        }
-
-        DerValue pBES2_params = pBES2Algorithms.data.getDerValue();
+        DerValue pBES2_params = new DerValue(encoded);
         if (pBES2_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBE parameter parsing error: "
                 + "not an ASN.1 SEQUENCE tag");
@@ -293,7 +278,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
 
     @SuppressWarnings("deprecation")
     private String parseKDF(DerValue keyDerivationFunc) throws IOException {
-        String kdfAlgo = null;
 
         if (!pkcs5PBKDF2_OID.equals(keyDerivationFunc.data.getOID())) {
             throw new IOException("PBE parameter parsing error: "
@@ -318,34 +302,41 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
                 + "not an ASN.1 OCTET STRING tag");
         }
         iCount = pBKDF2_params.data.getInteger();
-        DerValue keyLength = pBKDF2_params.data.getDerValue();
-        if (keyLength.tag == DerValue.tag_Integer) {
-            keysize = keyLength.getInteger() * 8; // keysize (in bits)
-        }
-        if (pBKDF2_params.tag == DerValue.tag_Sequence) {
-            DerValue prf = pBKDF2_params.data.getDerValue();
-            kdfAlgo_OID = prf.data.getOID();
-            if (hmacWithSHA1_OID.equals(kdfAlgo_OID)) {
-                kdfAlgo = "HmacSHA1";
-            } else if (hmacWithSHA224_OID.equals(kdfAlgo_OID)) {
-                kdfAlgo = "HmacSHA224";
-            } else if (hmacWithSHA256_OID.equals(kdfAlgo_OID)) {
-                kdfAlgo = "HmacSHA256";
-            } else if (hmacWithSHA384_OID.equals(kdfAlgo_OID)) {
-                kdfAlgo = "HmacSHA384";
-            } else if (hmacWithSHA512_OID.equals(kdfAlgo_OID)) {
-                kdfAlgo = "HmacSHA512";
-            } else {
-                throw new IOException("PBE parameter parsing error: "
-                    + "expecting the object identifier for a HmacSHA key "
-                    + "derivation function");
+        // keyLength INTEGER (1..MAX) OPTIONAL,
+        if (pBKDF2_params.data.available() > 0) {
+            DerValue keyLength = pBKDF2_params.data.getDerValue();
+            if (keyLength.tag == DerValue.tag_Integer) {
+                keysize = keyLength.getInteger() * 8; // keysize (in bits)
             }
-            if (prf.data.available() != 0) {
-                // parameter is 'NULL' for all HmacSHA KDFs
-                DerValue parameter = prf.data.getDerValue();
-                if (parameter.tag != DerValue.tag_Null) {
+        }
+        // prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
+        String kdfAlgo = "HmacSHA1";
+        if (pBKDF2_params.data.available() > 0) {
+            if (pBKDF2_params.tag == DerValue.tag_Sequence) {
+                DerValue prf = pBKDF2_params.data.getDerValue();
+                kdfAlgo_OID = prf.data.getOID();
+                if (hmacWithSHA1_OID.equals(kdfAlgo_OID)) {
+                    kdfAlgo = "HmacSHA1";
+                } else if (hmacWithSHA224_OID.equals(kdfAlgo_OID)) {
+                    kdfAlgo = "HmacSHA224";
+                } else if (hmacWithSHA256_OID.equals(kdfAlgo_OID)) {
+                    kdfAlgo = "HmacSHA256";
+                } else if (hmacWithSHA384_OID.equals(kdfAlgo_OID)) {
+                    kdfAlgo = "HmacSHA384";
+                } else if (hmacWithSHA512_OID.equals(kdfAlgo_OID)) {
+                    kdfAlgo = "HmacSHA512";
+                } else {
                     throw new IOException("PBE parameter parsing error: "
-                        + "not an ASN.1 NULL tag");
+                            + "expecting the object identifier for a HmacSHA key "
+                            + "derivation function");
+                }
+                if (prf.data.available() != 0) {
+                    // parameter is 'NULL' for all HmacSHA KDFs
+                    DerValue parameter = prf.data.getDerValue();
+                    if (parameter.tag != DerValue.tag_Null) {
+                        throw new IOException("PBE parameter parsing error: "
+                                + "not an ASN.1 NULL tag");
+                    }
                 }
             }
         }
@@ -399,8 +390,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
 
     protected byte[] engineGetEncoded() throws IOException {
         DerOutputStream out = new DerOutputStream();
-        DerOutputStream pBES2Algorithms = new DerOutputStream();
-        pBES2Algorithms.putOID(pkcs5PBES2_OID);
 
         DerOutputStream pBES2_params = new DerOutputStream();
 
@@ -410,7 +399,10 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         DerOutputStream pBKDF2_params = new DerOutputStream();
         pBKDF2_params.putOctetString(salt); // choice: 'specified OCTET STRING'
         pBKDF2_params.putInteger(iCount);
-        pBKDF2_params.putInteger(keysize / 8); // derived key length (in octets)
+
+        if (keysize > 0) {
+            pBKDF2_params.putInteger(keysize / 8); // derived key length (in octets)
+        }
 
         DerOutputStream prf = new DerOutputStream();
         // algorithm is id-hmacWithSHA1/SHA224/SHA256/SHA384/SHA512
@@ -434,8 +426,7 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         }
         pBES2_params.write(DerValue.tag_Sequence, encryptionScheme);
 
-        pBES2Algorithms.write(DerValue.tag_Sequence, pBES2_params);
-        out.write(DerValue.tag_Sequence, pBES2Algorithms);
+        out.write(DerValue.tag_Sequence, pBES2_params);
 
         return out.toByteArray();
     }

@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "asm/macroAssembler.hpp"
+#include "compiler/disassembler.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
@@ -35,7 +36,7 @@
 #include "runtime/frame.inline.hpp"
 #include "utilities/preserveException.hpp"
 
-#define __ _masm->
+#define __ Disassembler::hook<MacroAssembler>(__FILE__, __LINE__, _masm)->
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */

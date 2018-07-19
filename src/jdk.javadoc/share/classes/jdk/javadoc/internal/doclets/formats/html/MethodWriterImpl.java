@@ -140,7 +140,8 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      */
     @Override
     public Content getSignature(ExecutableElement method) {
-        Content pre = new HtmlTree(HtmlTag.PRE);
+        HtmlTree pre = new HtmlTree(HtmlTag.PRE);
+        pre.setStyle(HtmlStyle.methodSignature);
         writer.addAnnotationInfo(method, pre);
         int annotationLength = pre.charCount();
         addModifiers(method, pre);

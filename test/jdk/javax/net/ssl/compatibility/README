@@ -1,4 +1,4 @@
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,6 @@ value sets.
 
 Example 2
 $ cat /path/to/jdkList
-/path/to/jdk6
 /path/to/jdk7
 /path/to/jdk8
 /path/to/jdk9
@@ -125,6 +124,6 @@ $ jtreg -jdk:/path/to/latest/jdk \
     -DjdkListFile=/path/to/jdkList \
     $JDK_WS/jdk/test/javax/net/ssl/compatibility/Compatibility.java
 The above example uses a file "/path/to/jdkList" to contain the paths of local
-different JDK builds through 6 to 10. The execution uses each of JDK builds as
+different JDK builds through 7 to 10. The execution uses each of JDK builds as
 server and client respectively. And it enables SSL debug flag, and tests the
 full parameter value set.

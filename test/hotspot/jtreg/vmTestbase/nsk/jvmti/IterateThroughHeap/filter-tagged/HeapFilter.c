@@ -163,7 +163,7 @@ jint JNICALL field_callback(jvmtiHeapReferenceKind kind,
                             void* user_data) {
   int object;
   int field;
-  if(!NSK_VERIFY(!verify_tag(object_class_tag, *object_tag_ptr))) {
+  if (!NSK_VERIFY(verify_tag(object_class_tag, *object_tag_ptr))) {
     nsk_jvmti_setFailStatus();
   }
 
@@ -190,7 +190,7 @@ jint JNICALL string_callback(jlong class_tag,
                              void* user_data) {
   int object;
   int field;
-  if(!NSK_VERIFY(!verify_tag(class_tag, *tag_ptr))) {
+  if (!NSK_VERIFY(verify_tag(class_tag, *tag_ptr))) {
     nsk_jvmti_setFailStatus();
   }
   for(object = 0; object < TEST_OBJECTS_COUNT; object++) {
@@ -221,7 +221,7 @@ jint JNICALL array_callback(jlong class_tag,
                             void* user_data) {
   int object;
   int field;
-  if(!NSK_VERIFY(!verify_tag(class_tag, *tag_ptr))) {
+  if (!NSK_VERIFY(verify_tag(class_tag, *tag_ptr))) {
     nsk_jvmti_setFailStatus();
   }
   for(object = 0; object < TEST_OBJECTS_COUNT; object++) {
@@ -247,7 +247,7 @@ jint JNICALL heap_callback(jlong class_tag,
                            jlong* tag_ptr,
                            jint length,
                            void* user_data) {
-  if(!NSK_VERIFY(!verify_tag(class_tag, *tag_ptr))) {
+  if (!NSK_VERIFY(verify_tag(class_tag, *tag_ptr))) {
     NSK_COMPLAIN0("Tag values invalid for selected heap filter were passed "
                   "to jvmtiHeapIterationCallback.\n");
     NSK_COMPLAIN2("\tClass tag: 0x%lX;\n\tObject tag: 0x%lX.\n", class_tag, *tag_ptr);
@@ -293,7 +293,7 @@ void set_expected_value(field_info_t *field, int tagged, int is_static) {
 
 /**
  * Read array of test objects.
- * Tag each of these objjects, their classes, non-primitive fields and non-primitive fields classes.
+ * Tag each of these objects, their classes, non-primitive fields and non-primitive fields classes.
  */
 int tag_objects(jvmtiEnv *jvmti, JNIEnv *jni) {
   jclass debugee;
@@ -502,7 +502,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     return;
   }
 
-  NSK_DISPLAY0("Verifying that all filds were found.\n");
+  NSK_DISPLAY0("Verifying that all fields were found.\n");
   verify_objects(1);
 
   if(!NSK_VERIFY(nsk_jvmti_resumeSync())) {
@@ -520,7 +520,7 @@ agent(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     return;
   }
 
-  NSK_DISPLAY0("Verifying that all filds were found.\n");
+  NSK_DISPLAY0("Verifying that all fields were found.\n");
   verify_objects(0);
 
   /*

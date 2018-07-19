@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3954,7 +3954,7 @@ void MoveResolver::resolve_mappings() {
     if (!processed_interval) {
       // no move could be processed because there is a cycle in the move list
       // (e.g. r1 -> r2, r2 -> r1), so one interval must be spilled to memory
-      assert(spill_candidate != -1, "no interval in register for spilling found");
+      guarantee(spill_candidate != -1, "no interval in register for spilling found");
 
       // create a new spill interval and assign a stack slot to it
       Interval* from_interval = _mapping_from.at(spill_candidate);
@@ -6301,7 +6301,8 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
                   assert(prev_branch->cond() == prev_cmp->condition(), "should be the same");
                 }
               }
-              assert(prev_cmp != NULL, "should have found comp instruction for branch");
+              // Guarantee because it is dereferenced below.
+              guarantee(prev_cmp != NULL, "should have found comp instruction for branch");
               if (prev_branch->block() == code->at(i + 1) && prev_branch->info() == NULL) {
 
                 TRACE_LINEAR_SCAN(3, tty->print_cr("Negating conditional branch and deleting unconditional branch at end of block B%d", block->block_id()));

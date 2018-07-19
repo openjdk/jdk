@@ -437,7 +437,7 @@ class JarVerifier {
                        InputStream is,
                        JarVerifier jv) throws IOException
         {
-            this.is = is;
+            this.is = Objects.requireNonNull(is);
             this.jv = jv;
             this.mev = new ManifestEntryVerifier(man);
             this.jv.beginEntry(je, mev);
@@ -448,6 +448,7 @@ class JarVerifier {
 
         public int read() throws IOException
         {
+            ensureOpen();
             if (numLeft > 0) {
                 int b = is.read();
                 jv.update(b, mev);
@@ -461,6 +462,7 @@ class JarVerifier {
         }
 
         public int read(byte b[], int off, int len) throws IOException {
+            ensureOpen();
             if ((numLeft > 0) && (numLeft < len)) {
                 len = (int)numLeft;
             }
@@ -488,9 +490,15 @@ class JarVerifier {
         }
 
         public int available() throws IOException {
+            ensureOpen();
             return is.available();
         }
 
+        private void ensureOpen() throws IOException {
+            if (is == null) {
+                throw new IOException("stream closed");
+            }
+        }
     }
 
     // Extended JavaUtilJarAccess CodeSource API Support

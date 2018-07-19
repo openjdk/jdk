@@ -207,43 +207,24 @@ class Bits {                            // package-private
         assert cnt >= 0 && reservedMem >= 0 && totalCap >= 0;
     }
 
-    // -- Monitoring of direct buffer usage --
-
-    static {
-        // setup access to this package in SharedSecrets
-        SharedSecrets.setJavaNioAccess(
-            new JavaNioAccess() {
-                @Override
-                public JavaNioAccess.BufferPool getDirectBufferPool() {
-                    return new JavaNioAccess.BufferPool() {
-                        @Override
-                        public String getName() {
-                            return "direct";
-                        }
-                        @Override
-                        public long getCount() {
-                            return Bits.COUNT.get();
-                        }
-                        @Override
-                        public long getTotalCapacity() {
-                            return Bits.TOTAL_CAPACITY.get();
-                        }
-                        @Override
-                        public long getMemoryUsed() {
-                            return Bits.RESERVED_MEMORY.get();
-                        }
-                    };
-                }
-                @Override
-                public ByteBuffer newDirectByteBuffer(long addr, int cap, Object ob) {
-                    return new DirectByteBuffer(addr, cap, ob);
-                }
-                @Override
-                public void truncate(Buffer buf) {
-                    buf.truncate();
-                }
-        });
-    }
+    static final JavaNioAccess.BufferPool BUFFER_POOL = new JavaNioAccess.BufferPool() {
+        @Override
+        public String getName() {
+            return "direct";
+        }
+        @Override
+        public long getCount() {
+            return Bits.COUNT.get();
+        }
+        @Override
+        public long getTotalCapacity() {
+            return Bits.TOTAL_CAPACITY.get();
+        }
+        @Override
+        public long getMemoryUsed() {
+            return Bits.RESERVED_MEMORY.get();
+        }
+    };
 
     // These numbers represent the point at which we have empirically
     // determined that the average cost of a JNI call exceeds the expense

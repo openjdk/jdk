@@ -67,8 +67,6 @@ gc/g1/plab/TestPLABResize.java                                  8191048   generi
 
 gc/TestNUMAPageSize.java                                        8194949   generic-all
 
-runtime/ReservedStack/ReservedStackTestCompiler.java            8181855   generic-all
-
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8195156   generic-all
 
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
@@ -116,20 +114,17 @@ vmTestbase/nsk/stress/strace/strace006.java                     8191047   generi
 vmTestbase/nsk/jvmti/scenarios/sampling/SP07/sp07t002/TestDescription.java                         8191047   generic-all
 vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn009/forceEarlyReturn009.java   8191047   generic-all
 
-vmTestbase/nsk/jdi/ReferenceType/instances/instances001/instances001.java                          8195600   generic-all
 vmTestbase/nsk/jdi/ThreadReference/forceEarlyReturn/forceEarlyReturn007/TestDescription.java       8195600   generic-all
 
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance001/TestDescription.java                              8203174   generic-all
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance002/TestDescription.java                              8203174   generic-all
 vmTestbase/nsk/jdi/ArrayType/newInstance/newinstance003/TestDescription.java                              8203174   generic-all
-vmTestbase/nsk/jdi/ObjectReference/referringObjects/referringObjects001/referringObjects001.java          8203174   generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances002/instances002.java                                 8203174   generic-all
 vmTestbase/nsk/jdi/ReferenceType/instances/instances003/instances003.java                                 8203174   generic-all
 vmTestbase/nsk/jdi/stress/MonitorEvents/MonitorEvents002/TestDescription.java                             8203174   generic-all
 vmTestbase/nsk/jdi/stress/serial/heapwalking001/TestDescription.java                                      8203174   generic-all
 vmTestbase/nsk/jdi/stress/serial/heapwalking002/TestDescription.java                                      8203174   generic-all
 vmTestbase/nsk/jdi/stress/serial/mixed002/TestDescription.java                                            8203174   generic-all
-vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemoryException001.java        8203174   generic-all
 
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses026/TestDescription.java   8195627   generic-all
 vmTestbase/nsk/jdi/VirtualMachine/redefineClasses/redefineclasses028/TestDescription.java   8195627   generic-all
@@ -175,6 +170,7 @@ org.graalvm.compiler.core.test.ProfilingInfoTest                                
 org.graalvm.compiler.hotspot.test.CompilationWrapperTest                         8205081
 org.graalvm.compiler.hotspot.test.HsErrLogTest                                   8205081
 org.graalvm.compiler.hotspot.test.OptionsInFileTest                              8205081
+org.graalvm.compiler.hotspot.test.ReservedStackAccessTest                        8205081
 org.graalvm.compiler.replacements.test.classfile.ClassfileBytecodeProviderTest   8205081
 org.graalvm.compiler.replacements.test.classfile.RedefineIntrinsicTest           8205081
 

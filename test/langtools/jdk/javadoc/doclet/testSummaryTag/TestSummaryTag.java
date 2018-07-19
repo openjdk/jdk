@@ -87,7 +87,7 @@ public class TestSummaryTag extends JavadocTester {
         checkOutput("p1/A.html", true,
              "<li class=\"blockList\">\n"
              + "<h4>m3</h4>\n"
-             + "<pre>public&nbsp;void&nbsp;m3()</pre>\n"
+             + "<pre class=\"methodSignature\">public&nbsp;void&nbsp;m3()</pre>\n"
              + "<div class=\"block\">First sentence  some text maybe second sentence.</div>\n"
              + "</li>\n"
         );

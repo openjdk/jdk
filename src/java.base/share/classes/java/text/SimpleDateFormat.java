@@ -831,7 +831,7 @@ public class SimpleDateFormat extends DateFormat {
                             break;
                         }
                     }
-                    compiledCode.append((char)(TAG_QUOTE_CHARS << 8 | (j - i)));
+                    encode(TAG_QUOTE_CHARS, j - i, compiledCode);
                     for (; i < j; i++) {
                         compiledCode.append(pattern.charAt(i));
                     }

@@ -432,8 +432,7 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * @see #readObject(java.io.ObjectInputStream)
      */
     private void writeObject(java.io.ObjectOutputStream s)
-      throws java.lang.ClassNotFoundException,
-             java.io.IOException
+      throws java.io.IOException
     {
       s.defaultWriteObject();
     }

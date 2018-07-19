@@ -121,7 +121,7 @@ public enum Source {
         this.name = name;
     }
 
-    public static final Source MIN = Source.JDK6;
+    public static final Source MIN = Source.JDK7;
 
     private static final Source MAX = values()[values().length - 1];
 
@@ -156,19 +156,9 @@ public enum Source {
     public enum Feature {
 
         DIAMOND(JDK7, Fragments.FeatureDiamond, DiagKind.NORMAL),
-        MULTICATCH(JDK7, Fragments.FeatureMulticatch, DiagKind.PLURAL),
-        IMPROVED_RETHROW_ANALYSIS(JDK7),
-        IMPROVED_CATCH_ANALYSIS(JDK7),
         MODULES(JDK9, Fragments.FeatureModules, DiagKind.PLURAL),
-        TRY_WITH_RESOURCES(JDK7, Fragments.FeatureTryWithResources, DiagKind.NORMAL),
         EFFECTIVELY_FINAL_VARIABLES_IN_TRY_WITH_RESOURCES(JDK9, Fragments.FeatureVarInTryWithResources, DiagKind.PLURAL),
-        BINARY_LITERALS(JDK7, Fragments.FeatureBinaryLit, DiagKind.PLURAL),
-        UNDERSCORES_IN_LITERALS(JDK7, Fragments.FeatureUnderscoreLit, DiagKind.PLURAL),
-        STRINGS_IN_SWITCH(JDK7, Fragments.FeatureStringSwitch, DiagKind.PLURAL),
         DEPRECATION_ON_IMPORT(MIN, JDK8),
-        SIMPLIFIED_VARARGS(JDK7),
-        OBJECT_TO_PRIMITIVE_CAST(JDK7),
-        ENFORCE_THIS_DOT_INIT(JDK7),
         POLY(JDK8),
         LAMBDA(JDK8, Fragments.FeatureLambda, DiagKind.PLURAL),
         METHOD_REFERENCES(JDK8, Fragments.FeatureMethodReferences, DiagKind.PLURAL),

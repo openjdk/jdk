@@ -25,13 +25,38 @@
  * @test
  * @bug 8193373
  * @summary Test reading ELF info direct from underlaying file
- * @requires (os.family == "linux")
+ * @requires (os.family == "linux") & (os.arch != "ppc64")
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail TestElfDirectRead
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+                     -XX:NativeMemoryTracking=detail TestElfDirectRead
+ */
+
+// This test intentionally disables caching of Elf sections during symbol lookup
+// with WhiteBox.disableElfSectionCache(). On platforms which do not use file
+// descriptors instead of plain function pointers this slows down the lookup just a
+// little bit, because all the symbols from an Elf file are still read consecutively
+// after one 'fseek()' call. But on platforms with file descriptors like ppc64
+// big-endian, we get two 'fseek()' calls for each symbol read from the Elf file
+// because reading the file descriptor table is nested inside the loop which reads
+// the symbols. This really trashes the I/O system and considerable slows down the
+// test, so we need an extra long timeout setting.
+
+/*
+ * @test
+ * @bug 8193373
+ * @summary Test reading ELF info direct from underlaying file
+ * @requires (os.family == "linux") & (os.arch == "ppc64")
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+                                 -XX:NativeMemoryTracking=detail TestElfDirectRead
  */
 
 import jdk.test.lib.process.ProcessTools;

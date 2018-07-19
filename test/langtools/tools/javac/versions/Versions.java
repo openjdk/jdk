@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -66,7 +66,7 @@ public class Versions {
     }
 
     public static final Set<String> RETIRED_SOURCES =
-        Set.of("1.2", "1.3", "1.4", "1.5" /*, 1.6 */);
+        Set.of("1.2", "1.3", "1.4", "1.5", "1.6");
 
     public static final Set<String> VALID_SOURCES =
         Set.of("1.7", "1.8", "1.9", "1.10", "11", "12");

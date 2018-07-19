@@ -100,8 +100,7 @@ public final class TransformAttribute implements Serializable {
     public static final TransformAttribute IDENTITY = new TransformAttribute(null);
 
     private void writeObject(java.io.ObjectOutputStream s)
-      throws java.lang.ClassNotFoundException,
-             java.io.IOException
+      throws java.io.IOException
     {
         // sigh -- 1.3 expects transform is never null, so we need to always write one out
         if (this.transform == null) {

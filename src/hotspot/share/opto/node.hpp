@@ -1689,9 +1689,10 @@ Compile::locate_node_notes(GrowableArray<Node_Notes*>* arr,
   int block_idx = (idx >> _log2_node_notes_block_size);
   int grow_by = (block_idx - (arr == NULL? 0: arr->length()));
   if (grow_by >= 0) {
-    if (!can_grow)  return NULL;
+    if (!can_grow) return NULL;
     grow_node_notes(arr, grow_by + 1);
   }
+  if (arr == NULL) return NULL;
   // (Every element of arr is a sub-array of length _node_notes_block_size.)
   return arr->at(block_idx) + (idx & (_node_notes_block_size-1));
 }

@@ -766,10 +766,11 @@ bool SystemDictionaryShared::add_verification_constraint(Klass* k, Symbol* name,
   SharedDictionaryEntry* entry = ((SharedDictionary*)(k->class_loader_data()->dictionary()))->find_entry_for(k);
   ResourceMark rm;
   // Lambda classes are not archived and will be regenerated at runtime.
-  if (entry == NULL && strstr(k->name()->as_C_string(), "Lambda$") != NULL) {
+  if (entry == NULL) {
+    guarantee(strstr(k->name()->as_C_string(), "Lambda$") != NULL,
+              "class should be in dictionary before being verified");
     return true;
   }
-  assert(entry != NULL, "class should be in dictionary before being verified");
   entry->add_verification_constraint(name, from_name, from_field_is_protected,
                                      from_is_array, from_is_object);
   if (entry->is_builtin()) {

@@ -5,7 +5,7 @@
  * @author gafter
  *
  * @compile/ref=SuppressDeprecation.out -Xlint:deprecation -XDrawDiagnostics SuppressDeprecation.java
- * @compile/ref=SuppressDeprecation8.out -source 8 -Xlint:deprecation -XDrawDiagnostics SuppressDeprecation.java
+ * @compile/ref=SuppressDeprecation8.out -source 8 -Xlint:deprecation -XDrawDiagnostics -Xlint:-options SuppressDeprecation.java
  */
 
 /* Test for the contexts in which deprecations warnings should

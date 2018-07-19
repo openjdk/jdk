@@ -719,7 +719,8 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
         ResourceMark rm(THREAD);
         LogStream ls(lt);
         current_frame.print_on(&ls);
-        lt.print("offset = %d,  opcode = %s", bci, Bytecodes::name(opcode));
+        lt.print("offset = %d,  opcode = %s", bci,
+                 opcode == Bytecodes::_illegal ? "illegal" : Bytecodes::name(opcode));
       }
 
       // Make sure wide instruction is in correct format

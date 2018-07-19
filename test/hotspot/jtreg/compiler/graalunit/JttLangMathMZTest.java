@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-import sun.hotspot.WhiteBox;
-
-public class CheckIfShared {
-  public static void main(String args[]) throws Exception {
-    WhiteBox wb = WhiteBox.getWhiteBox();
-    if ("true".equals(args[0])) {
-      if (!wb.isSharedClass(CheckIfShared.class)) {
-        throw new RuntimeException("wb.isSharedClass(CheckIfShared.class) should be true");
-      }
-    } else {
-      if (wb.isSharedClass(CheckIfShared.class)) {
-        throw new RuntimeException("wb.isSharedClass(CheckIfShared.class) should be false");
-      }
-    }
-  }
-}
+/*
+ * @test
+ * @summary
+ * @requires vm.opt.final.EnableJVMCI == true
+ *
+ * @modules jdk.internal.vm.compiler
+ *
+ * @library /test/lib /compiler/graalunit /
+ *
+ * @build compiler.graalunit.common.GraalUnitTestLauncher
+ *
+ * @run driver jdk.test.lib.FileInstaller ../../ProblemList-graal.txt ExcludeList.txt
+ *
+ * @run main/othervm compiler.graalunit.common.GraalUnitTestLauncher -prefix org.graalvm.compiler.jtt.lang.Math_[m-zM-Z] -exclude ExcludeList.txt
+ */

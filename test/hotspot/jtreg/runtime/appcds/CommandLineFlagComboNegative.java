@@ -71,8 +71,6 @@ public class CommandLineFlagComboNegative {
                 "Class data sharing is inconsistent with other specified options", 1) );
             testTable.add( new TestVector("-XX:+UseCompressedClassPointers", "-XX:-UseCompressedClassPointers",
                 "Class data sharing is inconsistent with other specified options", 1) );
-            testTable.add( new TestVector("-XX:-UseAppCDS", "-XX:+UseAppCDS",
-                "Ignoring obsolete option UseAppCDS; AppCDS is automatically enabled", 0) );
         }
     }
 

@@ -335,7 +335,7 @@ void Arena::set_size_in_bytes(size_t size) {
 // Total of all Chunks in arena
 size_t Arena::used() const {
   size_t sum = _chunk->length() - (_max-_hwm); // Size leftover in this Chunk
-  register Chunk *k = _first;
+  Chunk *k = _first;
   while( k != _chunk) {         // Whilst have Chunks in a row
     sum += k->length();         // Total size of this Chunk
     k = k->next();              // Bump along to next Chunk

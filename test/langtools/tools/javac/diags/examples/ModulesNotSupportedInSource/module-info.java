@@ -23,8 +23,7 @@
 
 // key: compiler.err.feature.not.supported.in.source.plural
 // key: compiler.misc.feature.modules
-// key: compiler.warn.source.no.bootclasspath
-// options: -source 8 -Xlint:-path
+// options: -source 8 -Xlint:-path,-options
 
 module ModulesNotSupportedInSource {
 }

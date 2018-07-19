@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,11 @@ import javax.naming.ldap.Control;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import javax.net.SocketFactory;
+import javax.net.ssl.SSLParameters;
 
 /**
   * A thread that creates a connection to an LDAP server.
@@ -158,7 +161,18 @@ public final class Connection implements Runnable {
 
     int readTimeout;
     int connectTimeout;
+    private static final boolean IS_HOSTNAME_VERIFICATION_DISABLED
+            = hostnameVerificationDisabledValue();
 
+    private static boolean hostnameVerificationDisabledValue() {
+        PrivilegedAction<String> act = () -> System.getProperty(
+                "com.sun.jndi.ldap.object.disableEndpointIdentification");
+        String prop = AccessController.doPrivileged(act);
+        if (prop == null) {
+            return false;
+        }
+        return prop.isEmpty() ? true : Boolean.parseBoolean(prop);
+    }
     // true means v3; false means v2
     // Called in LdapClient.authenticate() (which is synchronized)
     // when connection is "quiet" and not shared; no need to synchronize
@@ -321,15 +335,20 @@ public final class Connection implements Runnable {
         // the SSL handshake following socket connection as part of the timeout.
         // So explicitly set a socket read timeout, trigger the SSL handshake,
         // then reset the timeout.
-        if (connectTimeout > 0 && socket instanceof SSLSocket) {
+        if (socket instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket) socket;
             int socketTimeout = sslSocket.getSoTimeout();
-
-            sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
+            if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
+                SSLParameters param = sslSocket.getSSLParameters();
+                param.setEndpointIdentificationAlgorithm("LDAPS");
+                sslSocket.setSSLParameters(param);
+            }
+            if (connectTimeout > 0) {
+                sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
+            }
             sslSocket.startHandshake();
             sslSocket.setSoTimeout(socketTimeout);
         }
-
         return socket;
     }
 

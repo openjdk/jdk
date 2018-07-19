@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,11 @@ public interface StartElement extends XMLEvent {
   public QName getName();
 
   /**
-   * Returns an Iterator of non-namespace declared attributes declared on
-   * this START_ELEMENT,
-   * returns an empty iterator if there are no attributes.  The
-   * iterator must contain only implementations of the javax.xml.stream.Attribute
-   * interface.   Attributes are fundamentally unordered and may not be reported
+   * Returns an Iterator of non-namespace attributes declared on this START_ELEMENT.
+   * Returns an empty iterator if there are no attributes.
+   * The iterator must contain only implementations of the
+   * {@link Attribute} interface.
+   * Attributes are fundamentally unordered and may be reported
    * in any order.
    *
    * @return a readonly Iterator over Attribute interfaces, or an
@@ -68,9 +68,9 @@ public interface StartElement extends XMLEvent {
    * current context of namespace declarations.
    *
    * <p>The iterator must contain only implementations of the
-   * javax.xml.stream.Namespace interface.
+   * {@link Namespace} interface.
    *
-   * <p>A Namespace isA Attribute.  One
+   * <p>A {@link Namespace} is an {@link Attribute}.  One
    * can iterate over a list of namespaces as a list of attributes.
    * However this method returns only the list of namespaces
    * declared on this START_ELEMENT and does not
@@ -85,8 +85,8 @@ public interface StartElement extends XMLEvent {
   public Iterator<Namespace> getNamespaces();
 
   /**
-   * Returns the attribute referred to by this name
-   * @param name the qname of the desired name
+   * Returns the attribute referred to by the qname.
+   * @param name the qname of the desired attribute
    * @return the attribute corresponding to the name value or null
    */
   public Attribute getAttributeByName(QName name);

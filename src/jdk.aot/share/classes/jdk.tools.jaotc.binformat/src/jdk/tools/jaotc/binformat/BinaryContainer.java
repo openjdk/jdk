@@ -146,6 +146,7 @@ public final class BinaryContainer implements SymbolTable {
         {"SharedRuntime::exception_handler_for_return_address",        "_aot_exception_handler_for_return_address"},
         {"SharedRuntime::register_finalizer",                          "_aot_register_finalizer"},
         {"SharedRuntime::OSR_migration_end",                           "_aot_OSR_migration_end"},
+        {"SharedRuntime::enable_stack_reserved_zone",                  "_aot_enable_stack_reserved_zone"},
         {"CompilerRuntime::resolve_dynamic_invoke",                    "_aot_resolve_dynamic_invoke"},
         {"CompilerRuntime::resolve_string_by_symbol",                  "_aot_resolve_string_by_symbol"},
         {"CompilerRuntime::resolve_klass_by_symbol",                   "_aot_resolve_klass_by_symbol"},

@@ -164,7 +164,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(int, SoftwarePrefetchHintDistance, -1,                        \
           "Use prfm hint with specified distance in compiled code."     \
           "Value -1 means off.")                                        \
-          range(-1, 32760)
+          range(-1, 4096)
 #endif
 
 

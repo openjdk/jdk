@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.crypto.provider;
 
 import java.security.InvalidKeyException;
 import java.security.ProviderException;
+import sun.security.util.ArrayUtil;
 
 /**
  * This class represents ciphers in output-feedback (OFB) mode.
@@ -148,10 +149,10 @@ final class OutputFeedback extends FeedbackCipher {
      */
     int encrypt(byte[] plain, int plainOffset, int plainLen,
                 byte[] cipher, int cipherOffset) {
+        ArrayUtil.blockSizeCheck(plainLen, numBytes);
+        ArrayUtil.nullAndBoundsCheck(plain, plainOffset, plainLen);
+        ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, plainLen);
 
-        if ((plainLen % numBytes) != 0) {
-            throw new ProviderException("Internal error in input buffering");
-        }
         int nShift = blockSize - numBytes;
         int loopCount = plainLen / numBytes;
 
@@ -189,6 +190,9 @@ final class OutputFeedback extends FeedbackCipher {
      */
     int encryptFinal(byte[] plain, int plainOffset, int plainLen,
                      byte[] cipher, int cipherOffset) {
+        ArrayUtil.nullAndBoundsCheck(plain, plainOffset, plainLen);
+        ArrayUtil.nullAndBoundsCheck(cipher, cipherOffset, plainLen);
+
         int oddBytes = plainLen % numBytes;
         int len = encrypt(plain, plainOffset, (plainLen - oddBytes),
                           cipher, cipherOffset);

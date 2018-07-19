@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import jdk.test.lib.Utils;
+
 public class StateTest {
 
     private static int failures = 0;
@@ -66,7 +68,7 @@ public class StateTest {
          */
         ssc.configureBlocking(false);
         sk = ssc.register(sel, SelectionKey.OP_ACCEPT);
-        long to = 15*1000;
+        long to = Utils.adjustTimeout(15*1000);
         sc = null;
         for (;;) {
             long st = System.currentTimeMillis();
@@ -89,7 +91,7 @@ public class StateTest {
          */
         sc.configureBlocking(false);
         sk = sc.register(sel, SelectionKey.OP_READ);
-        to = 5000;
+        to = Utils.adjustTimeout(5000);
         ByteBuffer bb = ByteBuffer.allocateDirect(20);
         for (;;) {
             long st = System.currentTimeMillis();

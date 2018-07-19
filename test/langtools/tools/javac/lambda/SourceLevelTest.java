@@ -3,7 +3,7 @@
  * @bug 8003280
  * @summary Add lambda tests
  *  check that lambda features are not enabled with source < 8
- * @compile/fail/ref=SourceLevelTest.out -XDrawDiagnostics -source 7 SourceLevelTest.java
+ * @compile/fail/ref=SourceLevelTest.out -XDrawDiagnostics -source 7 -Xlint:-options SourceLevelTest.java
  */
 
 class SourceLevelTest {

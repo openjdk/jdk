@@ -48,14 +48,13 @@ ClassListParser::ClassListParser(const char* file) {
   _instance = this;
   _classlist_file = file;
   _file = fopen(file, "r");
-  _line_no = 0;
-  _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, true);
-
   if (_file == NULL) {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);
     vm_exit_during_initialization("Loading classlist failed", errmsg);
   }
+  _line_no = 0;
+  _interfaces = new (ResourceObj::C_HEAP, mtClass) GrowableArray<int>(10, true);
 }
 
 ClassListParser::~ClassListParser() {

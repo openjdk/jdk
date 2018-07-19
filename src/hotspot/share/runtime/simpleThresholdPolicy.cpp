@@ -266,8 +266,9 @@ CompileTask* SimpleThresholdPolicy::select_task(CompileQueue* compile_queue) {
     max_method = max_task->method();
   }
 
-  if (max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile
-      && is_method_profiled(max_method)) {
+  if (max_task != NULL && max_task->comp_level() == CompLevel_full_profile &&
+      TieredStopAtLevel > CompLevel_full_profile &&
+      max_method != NULL && is_method_profiled(max_method)) {
     max_task->set_comp_level(CompLevel_limited_profile);
     if (PrintTieredEvents) {
       print_event(UPDATE_IN_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());

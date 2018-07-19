@@ -3,7 +3,7 @@
  * @bug     6313164 8036953
  * @author mcimadamore
  * @summary  javac generates code that fails byte code verification for the varargs feature
- * @compile/fail/ref=T6313164Source7.out -source 7 -XDrawDiagnostics T6313164.java
+ * @compile/fail/ref=T6313164Source7.out -source 7 -XDrawDiagnostics  -Xlint:-options T6313164.java
  * @compile/fail/ref=T6313164Source8AndHigher.out -XDrawDiagnostics T6313164.java
  */
 import p1.*;

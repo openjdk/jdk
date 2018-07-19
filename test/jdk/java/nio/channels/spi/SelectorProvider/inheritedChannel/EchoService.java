@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+
+import jdk.test.lib.Utils;
 
 public class EchoService {
 
@@ -173,7 +175,7 @@ public class EchoService {
             SocketChannel sc;
             int count = 0;
             for (;;) {
-                 sel.select(5000);
+                 sel.select((int)Utils.adjustTimeout(5000));
                  if (sk.isAcceptable() && ((sc = ssc.accept()) != null)) {
                     Worker w = new Worker(sc);
                     (new Thread(w)).start();

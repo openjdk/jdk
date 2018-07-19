@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1386,7 +1386,7 @@ void SubstitutionResolver::block_do(BlockBegin* block) {
     n->values_do(this);
     // need to remove this instruction from the instruction stream
     if (n->subst() != n) {
-      assert(last != NULL, "must have last");
+      guarantee(last != NULL, "must have last");
       last->set_next(n->next());
     } else {
       last = n;

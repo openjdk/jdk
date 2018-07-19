@@ -1170,11 +1170,10 @@ DIR * os::opendir(const char *dirname) {
   return dirp;
 }
 
-// parameter dbuf unused on Windows
-struct dirent * os::readdir(DIR *dirp, dirent *dbuf) {
+struct dirent * os::readdir(DIR *dirp) {
   assert(dirp != NULL, "just checking");      // hotspot change
   if (dirp->handle == INVALID_HANDLE_VALUE) {
-    return 0;
+    return NULL;
   }
 
   strcpy(dirp->dirent.d_name, dirp->find_data.cFileName);
@@ -1182,7 +1181,7 @@ struct dirent * os::readdir(DIR *dirp, dirent *dbuf) {
   if (!FindNextFile(dirp->handle, &dirp->find_data)) {
     if (GetLastError() == ERROR_INVALID_HANDLE) {
       errno = EBADF;
-      return 0;
+      return NULL;
     }
     FindClose(dirp->handle);
     dirp->handle = INVALID_HANDLE_VALUE;
