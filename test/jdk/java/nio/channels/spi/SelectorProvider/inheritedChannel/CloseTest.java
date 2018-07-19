@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 
+import jdk.test.lib.Utils;
+
 public class CloseTest {
 
     public static void main(String args[]) throws Exception {
@@ -50,7 +52,7 @@ public class CloseTest {
 
         String service_args[] = new String[2];
         service_args[0] = String.valueOf(msg.length());
-        service_args[1] = String.valueOf( 15*1000 );
+        service_args[1] = String.valueOf( Utils.adjustTimeout(15*1000) );
 
 
         SocketChannel sc = Launcher.launchWithSocketChannel("EchoService", service_args);
@@ -65,7 +67,7 @@ public class CloseTest {
         Selector sel = sc.provider().openSelector();
         SelectionKey sk = sc.register(sel, SelectionKey.OP_READ);
 
-        long to = 12 * 1000;
+        long to = Utils.adjustTimeout(12*1000);
         for (;;) {
             long st = System.currentTimeMillis();
             sel.select(to);

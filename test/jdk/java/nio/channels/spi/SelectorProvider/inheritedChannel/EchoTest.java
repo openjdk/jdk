@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Random;
 
+import jdk.test.lib.Utils;
+
 public class EchoTest {
 
     private static int failures = 0;
@@ -80,7 +82,7 @@ public class EchoTest {
         Selector sel = sc.provider().openSelector();
         SelectionKey sk = sc.register(sel, SelectionKey.OP_READ);
         int nread = 0;
-        long to = 5000;
+        long to = Utils.adjustTimeout(5000);
         while (nread < size) {
             long st = System.currentTimeMillis();
             sel.select(to);
@@ -144,7 +146,7 @@ public class EchoTest {
         // and receive the echo
         byte b[] = new byte[msg.length() + 100];
         DatagramPacket pkt2 = new DatagramPacket(b, b.length);
-        dc.socket().setSoTimeout(5000);
+        dc.socket().setSoTimeout((int)Utils.adjustTimeout(5000));
         dc.socket().receive(pkt2);
 
         if (pkt2.getLength() != msg.length()) {
