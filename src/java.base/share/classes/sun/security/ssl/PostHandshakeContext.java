@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -45,6 +46,9 @@ final class PostHandshakeContext extends HandshakeContext {
             conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                 "Post-handshake not supported in " + negotiatedProtocol.name);
         }
+
+        this.localSupportedSignAlgs = new ArrayList<SignatureScheme>(
+            context.conSession.getLocalSupportedSignatureSchemes());
 
         handshakeConsumers = new LinkedHashMap<>(consumers);
         handshakeFinished = true;

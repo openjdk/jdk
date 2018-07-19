@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,11 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                     goto cleanupAndReturn;
                 }
                 setInetAddress_addr(env, iaObj, ntohl(((struct sockaddr_in*)iterator->ai_addr)->sin_addr.s_addr));
+                if ((*env)->ExceptionCheck(env))
+                    goto cleanupAndReturn;
                 setInetAddress_hostName(env, iaObj, host);
+                if ((*env)->ExceptionCheck(env))
+                    goto cleanupAndReturn;
                 (*env)->SetObjectArrayElement(env, ret, (inetIndex | originalIndex), iaObj);
                 inetIndex++;
             } else if (iterator->ai_family == AF_INET6) {
@@ -208,6 +212,8 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
                     setInet6Address_scopeid(env, iaObj, scope);
                 }
                 setInetAddress_hostName(env, iaObj, host);
+                if ((*env)->ExceptionCheck(env))
+                    goto cleanupAndReturn;
                 (*env)->SetObjectArrayElement(env, ret, (inet6Index | originalIndex), iaObj);
                 inet6Index++;
             }

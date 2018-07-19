@@ -207,7 +207,7 @@ public class TestOptions extends JavadocTester {
                 + "Properties</a>",
                 "<pre>public&nbsp;java.lang.Object <a href="
                 + "\"../src-html/linksource/Properties.html#line.31\">someProperty</a></pre>",
-                "<pre>public&nbsp;java.lang.Object&nbsp;<a href="
+                "<pre class=\"methodSignature\">public&nbsp;java.lang.Object&nbsp;<a href="
                 + "\"../src-html/linksource/Properties.html#line.31\">someProperty</a>()</pre>");
 
         checkOutput("src-html/linksource/Properties.html", true,
@@ -222,7 +222,7 @@ public class TestOptions extends JavadocTester {
                 + "field</a></pre>",
                 "<pre>public&nbsp;<a href=\"../src-html/linksource/SomeClass.html#line.33\">"
                 + "SomeClass</a>()</pre>",
-                "<pre>public&nbsp;int&nbsp;<a href=\"../src-html/linksource/SomeClass.html#line.36\">"
+                "<pre class=\"methodSignature\">public&nbsp;int&nbsp;<a href=\"../src-html/linksource/SomeClass.html#line.36\">"
                 + "method</a>()</pre>");
 
         checkOutput("src-html/linksource/SomeClass.html", true,

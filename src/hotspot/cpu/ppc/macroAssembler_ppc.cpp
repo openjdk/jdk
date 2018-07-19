@@ -2412,7 +2412,7 @@ void MacroAssembler::atomic_ori_int(Register addr, Register result, int uimm16) 
 
 // Update rtm_counters based on abort status
 // input: abort_status
-//        rtm_counters (RTMLockingCounters*)
+//        rtm_counters_Reg (RTMLockingCounters*)
 void MacroAssembler::rtm_counters_update(Register abort_status, Register rtm_counters_Reg) {
   // Mapping to keep PreciseRTMLockingStatistics similar to x86.
   // x86 ppc (! means inverted, ? means not the same)
@@ -2422,52 +2422,96 @@ void MacroAssembler::rtm_counters_update(Register abort_status, Register rtm_cou
   //  3   10  Set if an internal buffer overflowed.
   //  4  ?12  Set if a debug breakpoint was hit.
   //  5  ?32  Set if an abort occurred during execution of a nested transaction.
-  const  int tm_failure_bit[] = {Assembler::tm_tabort, // Note: Seems like signal handler sets this, too.
-                                 Assembler::tm_failure_persistent, // inverted: transient
-                                 Assembler::tm_trans_cf,
-                                 Assembler::tm_footprint_of,
-                                 Assembler::tm_non_trans_cf,
-                                 Assembler::tm_suspended};
-  const bool tm_failure_inv[] = {false, true, false, false, false, false};
-  assert(sizeof(tm_failure_bit)/sizeof(int) == RTMLockingCounters::ABORT_STATUS_LIMIT, "adapt mapping!");
+  const int failure_bit[] = {tm_tabort, // Signal handler will set this too.
+                             tm_failure_persistent,
+                             tm_non_trans_cf,
+                             tm_trans_cf,
+                             tm_footprint_of,
+                             tm_failure_code,
+                             tm_transaction_level};
 
-  const Register addr_Reg = R0;
-  // Keep track of offset to where rtm_counters_Reg had pointed to.
+  const int num_failure_bits = sizeof(failure_bit) / sizeof(int);
+  const int num_counters = RTMLockingCounters::ABORT_STATUS_LIMIT;
+
+  const int bit2counter_map[][num_counters] =
+  // 0 = no map; 1 = mapped, no inverted logic; -1 = mapped, inverted logic
+  // Inverted logic means that if a bit is set don't count it, or vice-versa.
+  // Care must be taken when mapping bits to counters as bits for a given
+  // counter must be mutually exclusive. Otherwise, the counter will be
+  // incremented more than once.
+  // counters:
+  // 0        1        2         3         4         5
+  // abort  , persist, conflict, overflow, debug   , nested         bits:
+  {{ 1      , 0      , 0       , 0       , 0       , 0      },   // abort
+   { 0      , -1     , 0       , 0       , 0       , 0      },   // failure_persistent
+   { 0      , 0      , 1       , 0       , 0       , 0      },   // non_trans_cf
+   { 0      , 0      , 1       , 0       , 0       , 0      },   // trans_cf
+   { 0      , 0      , 0       , 1       , 0       , 0      },   // footprint_of
+   { 0      , 0      , 0       , 0       , -1      , 0      },   // failure_code = 0xD4
+   { 0      , 0      , 0       , 0       , 0       , 1      }};  // transaction_level > 1
+  // ...
+
+  // Move abort_status value to R0 and use abort_status register as a
+  // temporary register because R0 as third operand in ld/std is treated
+  // as base address zero (value). Likewise, R0 as second operand in addi
+  // is problematic because it amounts to li.
+  const Register temp_Reg = abort_status;
+  const Register abort_status_R0 = R0;
+  mr(abort_status_R0, abort_status);
+
+  // Increment total abort counter.
   int counters_offs = RTMLockingCounters::abort_count_offset();
-  addi(addr_Reg, rtm_counters_Reg, counters_offs);
-  const Register temp_Reg = rtm_counters_Reg;
-
-  //atomic_inc_ptr(addr_Reg, temp_Reg); We don't increment atomically
-  ldx(temp_Reg, addr_Reg);
+  ld(temp_Reg, counters_offs, rtm_counters_Reg);
   addi(temp_Reg, temp_Reg, 1);
-  stdx(temp_Reg, addr_Reg);
+  std(temp_Reg, counters_offs, rtm_counters_Reg);
 
+  // Increment specific abort counters.
   if (PrintPreciseRTMLockingStatistics) {
-    int counters_offs_delta = RTMLockingCounters::abortX_count_offset() - counters_offs;
 
-    //mftexasr(abort_status); done by caller
-    for (int i = 0; i < RTMLockingCounters::ABORT_STATUS_LIMIT; i++) {
-      counters_offs += counters_offs_delta;
-      li(temp_Reg, counters_offs_delta); // can't use addi with R0
-      add(addr_Reg, addr_Reg, temp_Reg); // point to next counter
-      counters_offs_delta = sizeof(uintx);
+    // #0 counter offset.
+    int abortX_offs = RTMLockingCounters::abortX_count_offset();
 
-      Label check_abort;
-      rldicr_(temp_Reg, abort_status, tm_failure_bit[i], 0);
-      if (tm_failure_inv[i]) {
-        bne(CCR0, check_abort);
-      } else {
-        beq(CCR0, check_abort);
+    for (int nbit = 0; nbit < num_failure_bits; nbit++) {
+      for (int ncounter = 0; ncounter < num_counters; ncounter++) {
+        if (bit2counter_map[nbit][ncounter] != 0) {
+          Label check_abort;
+          int abort_counter_offs = abortX_offs + (ncounter << 3);
+
+          if (failure_bit[nbit] == tm_transaction_level) {
+            // Don't check outer transaction, TL = 1 (bit 63). Hence only
+            // 11 bits in the TL field are checked to find out if failure
+            // occured in a nested transaction. This check also matches
+            // the case when nesting_of = 1 (nesting overflow).
+            rldicr_(temp_Reg, abort_status_R0, failure_bit[nbit], 10);
+          } else if (failure_bit[nbit] == tm_failure_code) {
+            // Check failure code for trap or illegal caught in TM.
+            // Bits 0:7 are tested as bit 7 (persistent) is copied from
+            // tabort or treclaim source operand.
+            // On Linux: trap or illegal is TM_CAUSE_SIGNAL (0xD4).
+            rldicl(temp_Reg, abort_status_R0, 8, 56);
+            cmpdi(CCR0, temp_Reg, 0xD4);
+          } else {
+            rldicr_(temp_Reg, abort_status_R0, failure_bit[nbit], 0);
+          }
+
+          if (bit2counter_map[nbit][ncounter] == 1) {
+            beq(CCR0, check_abort);
+          } else {
+            bne(CCR0, check_abort);
+          }
+
+          // We don't increment atomically.
+          ld(temp_Reg, abort_counter_offs, rtm_counters_Reg);
+          addi(temp_Reg, temp_Reg, 1);
+          std(temp_Reg, abort_counter_offs, rtm_counters_Reg);
+
+          bind(check_abort);
+        }
       }
-      //atomic_inc_ptr(addr_Reg, temp_Reg); We don't increment atomically
-      ldx(temp_Reg, addr_Reg);
-      addi(temp_Reg, temp_Reg, 1);
-      stdx(temp_Reg, addr_Reg);
-      bind(check_abort);
     }
   }
-  li(temp_Reg, -counters_offs); // can't use addi with R0
-  add(rtm_counters_Reg, addr_Reg, temp_Reg); // restore
+  // Restore abort_status.
+  mr(abort_status, abort_status_R0);
 }
 
 // Branch if (random & (count-1) != 0), count is 2^n
@@ -2569,8 +2613,28 @@ void MacroAssembler::rtm_profiling(Register abort_status_Reg, Register temp_Reg,
 void MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register abort_status_Reg,
                                              Label& retryLabel, Label* checkRetry) {
   Label doneRetry;
+
+  // Don't retry if failure is persistent.
+  // The persistent bit is set when a (A) Disallowed operation is performed in
+  // transactional state, like for instance trying to write the TFHAR after a
+  // transaction is started; or when there is (B) a Nesting Overflow (too many
+  // nested transactions); or when (C) the Footprint overflows (too many
+  // addressess touched in TM state so there is no more space in the footprint
+  // area to track them); or in case of (D) a Self-Induced Conflict, i.e. a
+  // store is performed to a given address in TM state, then once in suspended
+  // state the same address is accessed. Failure (A) is very unlikely to occur
+  // in the JVM. Failure (D) will never occur because Suspended state is never
+  // used in the JVM. Thus mostly (B) a Nesting Overflow or (C) a Footprint
+  // Overflow will set the persistent bit.
   rldicr_(R0, abort_status_Reg, tm_failure_persistent, 0);
   bne(CCR0, doneRetry);
+
+  // Don't retry if transaction was deliberately aborted, i.e. caused by a
+  // tabort instruction.
+  rldicr_(R0, abort_status_Reg, tm_tabort, 0);
+  bne(CCR0, doneRetry);
+
+  // Retry if transaction aborted due to a conflict with another thread.
   if (checkRetry) { bind(*checkRetry); }
   addic_(retry_count_Reg, retry_count_Reg, -1);
   blt(CCR0, doneRetry);

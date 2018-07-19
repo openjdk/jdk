@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -265,7 +265,7 @@ static void AddFontsToX11FontPath ( fDirRecord *fDirP )
     }
 
 
-    newFontPath = SAFE_SIZE_ARRAY_ALLOC(malloc, totalDirCount, sizeof ( char **) );
+    newFontPath = SAFE_SIZE_ARRAY_ALLOC(malloc, totalDirCount, sizeof(char *));
     /* if it fails free things and get out */
     if ( newFontPath == NULL ) {
       free ( ( void *) appendDirList );

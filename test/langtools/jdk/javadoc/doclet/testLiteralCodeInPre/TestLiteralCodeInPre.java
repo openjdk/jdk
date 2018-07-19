@@ -89,7 +89,7 @@ public class TestLiteralCodeInPre extends JavadocTester {
                 + " <PRE>\n"
                 + " <b>id           </b>\n"
                 + " </PRE></div>",
-                "<pre>public&nbsp;void&nbsp;htmlAttrInPre1()</pre>\n"
+                "<pre class=\"methodSignature\">public&nbsp;void&nbsp;htmlAttrInPre1()</pre>\n"
                 + "<div class=\"block\">More html tag outliers.\n"
                 + " <pre>\n"
                 + " @Override\n"

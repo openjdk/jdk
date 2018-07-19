@@ -26,7 +26,7 @@ package MyPackage;
 /**
  * @test
  * @build Frame HeapMonitor
- * @summary Verifies the JVMTI Heap Monitor rate when allocating arrays.
+ * @summary Verifies the JVMTI Heap Monitor interval when allocating arrays.
  * @compile HeapMonitorStatArrayCorrectnessTest.java
  * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorStatArrayCorrectnessTest
  */
@@ -46,8 +46,6 @@ public class HeapMonitorStatArrayCorrectnessTest {
   public static void main(String[] args) {
     int sizes[] = {1000, 10000, 100000};
 
-    HeapMonitor.enableSamplingEvents();
-
     for (int currentSize : sizes) {
       System.out.println("Testing size " + currentSize);
 
@@ -56,11 +54,15 @@ public class HeapMonitorStatArrayCorrectnessTest {
         throw new RuntimeException("Should not have any events stored yet.");
       }
 
+      HeapMonitor.enableSamplingEvents();
+
       // 111 is as good a number as any.
       final int samplingMultiplier = 111;
-      HeapMonitor.setSamplingRate(samplingMultiplier * currentSize);
+      HeapMonitor.setSamplingInterval(samplingMultiplier * currentSize);
 
       allocate(currentSize);
+
+      HeapMonitor.disableSamplingEvents();
 
       // For simplifications, we ignore the array memory usage for array internals (with the array
       // sizes requested, it should be a negligible oversight).
@@ -77,8 +79,8 @@ public class HeapMonitorStatArrayCorrectnessTest {
       expected /= samplingMultiplier;
 
       // 10% error ensures a sanity test without becoming flaky.
-      // Flakiness is due to the fact that this test is dependent on the sampling rate, which is a
-      // statistical geometric variable around the sampling rate. This means that the test could be
+      // Flakiness is due to the fact that this test is dependent on the sampling interval, which is a
+      // statistical geometric variable around the sampling interval. This means that the test could be
       // unlucky and not achieve the mean average fast enough for the test case.
       if (!HeapMonitor.statsHaveExpectedNumberSamples((int) expected, 10)) {
         throw new RuntimeException("Statistics should show about " + expected + " samples.");

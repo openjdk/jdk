@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,18 @@
  * questions.
  */
 
-package MyPackage;
-
-/**
+/*
  * @test
- * @summary Verifies the JVMTI SetHeapSamplingInterval returns an illegal argument for negative ints.
- * @build Frame HeapMonitor
- * @compile HeapMonitorIllegalArgumentTest.java
- * @run main/othervm/native -agentlib:HeapMonitorTest MyPackage.HeapMonitorIllegalArgumentTest
+ * @summary
+ * @requires vm.opt.final.EnableJVMCI == true
+ *
+ * @modules jdk.internal.vm.compiler
+ *
+ * @library /test/lib /compiler/graalunit /
+ *
+ * @build compiler.graalunit.common.GraalUnitTestLauncher
+ *
+ * @run driver jdk.test.lib.FileInstaller ../../ProblemList-graal.txt ExcludeList.txt
+ *
+ * @run main/othervm compiler.graalunit.common.GraalUnitTestLauncher -prefix org.graalvm.compiler.jtt.lang.Math_[m-zM-Z] -exclude ExcludeList.txt
  */
-
-public class HeapMonitorIllegalArgumentTest {
-  private native static int testIllegalArgument();
-
-  public static void main(String[] args) {
-    int result = testIllegalArgument();
-
-    if (result == 0) {
-      throw new RuntimeException("Test illegal argument failed.");
-    }
-  }
-}

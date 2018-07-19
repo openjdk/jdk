@@ -827,7 +827,7 @@ ul.ui-autocomplete  li {
     margin: -100px 0 0 100px;
     z-index: 1;
 }
-.details pre {
+.methodSignature {
     white-space:normal;
 }
 

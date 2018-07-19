@@ -2029,6 +2029,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
   vep_start_pc = (intptr_t)__ pc();
 
+  if (UseRTMLocking) {
+    // Abort RTM transaction before calling JNI
+    // because critical section can be large and
+    // abort anyway. Also nmethod can be deoptimized.
+    __ tabort_();
+  }
+
   __ save_LR_CR(r_temp_1);
   __ generate_stack_overflow_check(frame_size_in_bytes); // Check before creating frame.
   __ mr(r_callers_sp, R1_SP);                            // Remember frame pointer.
@@ -2947,6 +2954,11 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   address start = __ pc();
 
+  if (UseRTMLocking) {
+    // Abort RTM transaction before possible nmethod deoptimization.
+    __ tabort_();
+  }
+
   Register unroll_block_reg = R21_tmp1;
   Register klass_index_reg  = R22_tmp2;
   Register unc_trap_reg     = R23_tmp3;
@@ -3088,6 +3100,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   } else {
     // Use thread()->saved_exception_pc() as return pc.
     return_pc_location = RegisterSaver::return_pc_is_thread_saved_exception_pc;
+  }
+
+  if (UseRTMLocking) {
+    // Abort RTM transaction before calling runtime
+    // because critical section can be large and so
+    // will abort anyway. Also nmethod can be deoptimized.
+    __ tabort_();
   }
 
   // Save registers, fpu state, and flags. Set R31 = return pc.

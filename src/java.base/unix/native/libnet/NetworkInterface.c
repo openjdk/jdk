@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,11 +329,11 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
   (JNIEnv *env, jclass cls, jobject iaObj)
 {
     netif *ifs, *curr;
-    int family = (getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4) ?
-        AF_INET : AF_INET6;
     jobject obj = NULL;
     jboolean match = JNI_FALSE;
-
+    int family = (getInetAddress_family(env, iaObj) == java_net_InetAddress_IPv4) ?
+        AF_INET : AF_INET6;
+    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
     ifs = enumInterfaces(env);
     if (ifs == NULL) {
         return NULL;
@@ -351,7 +351,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
                     int address1 = htonl(
                         ((struct sockaddr_in *)addrP->addr)->sin_addr.s_addr);
                     int address2 = getInetAddress_addr(env, iaObj);
-
+                    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
                     if (address1 == address2) {
                         match = JNI_TRUE;
                         break;
@@ -698,6 +698,7 @@ static jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
             if (iaObj) {
                 setInetAddress_addr(env, iaObj, htonl(
                     ((struct sockaddr_in*)addrP->addr)->sin_addr.s_addr));
+                JNU_CHECK_EXCEPTION_RETURN(env, NULL);
             } else {
                 return NULL;
             }
@@ -710,6 +711,7 @@ static jobject createNetworkInterface(JNIEnv *env, netif *ifs) {
                     if (ia2Obj) {
                         setInetAddress_addr(env, ia2Obj, htonl(
                             ((struct sockaddr_in*)addrP->brdcast)->sin_addr.s_addr));
+                        JNU_CHECK_EXCEPTION_RETURN(env, NULL);
                         (*env)->SetObjectField(env, ibObj, ni_ib4broadcastID, ia2Obj);
                     } else {
                         return NULL;

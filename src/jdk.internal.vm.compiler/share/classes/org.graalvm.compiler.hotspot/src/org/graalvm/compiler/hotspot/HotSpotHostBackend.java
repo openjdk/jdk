@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.runtime.JVMCICompiler;
+import org.graalvm.compiler.word.Word;
 
 /**
  * Common functionality of HotSpot host backends.
@@ -65,6 +66,10 @@ public abstract class HotSpotHostBackend extends HotSpotBackend {
      * Descriptor for {@code SharedRuntime::deopt_blob()->uncommon_trap()}.
      */
     public static final ForeignCallDescriptor UNCOMMON_TRAP_HANDLER = new ForeignCallDescriptor("uncommonTrapHandler", void.class);
+
+    public static final ForeignCallDescriptor ENABLE_STACK_RESERVED_ZONE = new ForeignCallDescriptor("enableStackReservedZoneEntry", void.class, Word.class);
+
+    public static final ForeignCallDescriptor THROW_DELAYED_STACKOVERFLOW_ERROR = new ForeignCallDescriptor("throwDelayedStackoverflowError", void.class);
 
     protected final GraalHotSpotVMConfig config;
 

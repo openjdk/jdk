@@ -603,7 +603,9 @@ void os::print_register_info(outputStream *st, const void *context) {
   st->print_cr("Register to memory mapping:");
   st->cr();
 
-  // this is only for the "general purpose" registers
+  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->nip);
+  st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->link);
+  st->print("ctr ="); print_location(st, (intptr_t)uc->uc_mcontext.regs->ctr);
   for (int i = 0; i < 32; i++) {
     st->print("r%-2d=", i);
     print_location(st, uc->uc_mcontext.regs->gpr[i]);

@@ -88,13 +88,6 @@ namespace MiscUtils {
       _pcsobj->leave();
     }
   };
-
-  // Returns true if pointer can be dereferenced without triggering a segment
-  // violation. Returns false if pointer is invalid.
-  // Note: Depends on stub routines; prior to stub routine generation, will
-  // always return true. Use CanUseSafeFetch32 to handle this case.
-  bool is_readable_pointer(const void* p);
-
 }
 
 #endif // OS_AIX_VM_MISC_AIX_HPP

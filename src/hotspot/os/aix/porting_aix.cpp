@@ -142,7 +142,7 @@ bool AixSymbols::get_function_name (
   // in that case I try reading the traceback table unsafe - I rather risk secondary crashes in
   // error files than not having a callstack.)
 #define CHECK_POINTER_READABLE(p) \
-  if (!MiscUtils::is_readable_pointer(p)) { \
+  if (!os::is_readable_pointer(p)) { \
     trcVerbose("pc not readable"); \
     return false; \
   }
@@ -230,7 +230,7 @@ bool AixSymbols::get_function_name (
       const short l = MIN2<short>(*((short*)pc2), namelen - 1);
       // Be very careful.
       int i = 0; char* const p = (char*)pc2 + sizeof(short);
-      while (i < l && MiscUtils::is_readable_pointer(p + i)) {
+      while (i < l && os::is_readable_pointer(p + i)) {
         p_name[i] = p[i];
         i++;
       }
@@ -489,7 +489,7 @@ static void print_info_for_pc (outputStream* st, codeptr_t pc, char* buf,
   const struct tbtable* tb = NULL;
   int displacement = -1;
 
-  if (!MiscUtils::is_readable_pointer(pc)) {
+  if (!os::is_readable_pointer(pc)) {
     st->print("(invalid)");
     return;
   }
@@ -697,7 +697,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   print_info_for_pc(st, cur_iar, buf, buf_size, demangle);
   st->cr();
 
-  if (cur_iar && MiscUtils::is_readable_pointer(cur_iar)) {
+  if (cur_iar && os::is_readable_pointer(cur_iar)) {
     decode_instructions_at_pc(
       "Decoded instructions at iar:",
       cur_iar, 32, 16, st);
@@ -710,7 +710,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   print_info_for_pc(st, cur_lr, buf, buf_size, demangle);
   st->cr();
 
-  if (cur_lr && MiscUtils::is_readable_pointer(cur_lr)) {
+  if (cur_lr && os::is_readable_pointer(cur_lr)) {
     decode_instructions_at_pc(
       "Decoded instructions at lr:",
       cur_lr, 32, 16, st);
@@ -729,7 +729,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
   // Check and print rtoc.
   st->print("rtoc: "  PTR64_FORMAT " ", p2i(cur_rtoc));
   if (cur_rtoc == NULL || cur_rtoc == (codeptr_t)-1 ||
-      !MiscUtils::is_readable_pointer(cur_rtoc)) {
+      !os::is_readable_pointer(cur_rtoc)) {
     st->print("(invalid)");
   } else if (((uintptr_t)cur_rtoc) & 0x7) {
     st->print("(unaligned)");

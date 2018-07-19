@@ -193,7 +193,11 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
             }
             setInetAddress_addr(env, iaObj, ntohl(((struct sockaddr_in *)
                                 (iterator->ai_addr))->sin_addr.s_addr));
+            if ((*env)->ExceptionCheck(env))
+                goto cleanupAndReturn;
             setInetAddress_hostName(env, iaObj, host);
+            if ((*env)->ExceptionCheck(env))
+                goto cleanupAndReturn;
             (*env)->SetObjectArrayElement(env, ret, i++, iaObj);
             iterator = iterator->ai_next;
         }

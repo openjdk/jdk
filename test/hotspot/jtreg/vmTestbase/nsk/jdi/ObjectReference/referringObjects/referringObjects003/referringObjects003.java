@@ -52,6 +52,7 @@
  *         can't force collection of thread group because of thread group always has 1 referrer - parent thread group, so
  *         just test disableCollection/enableCollection don't throw any unexpected exceptions
  *
+ * @requires !vm.graal.enabled
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .

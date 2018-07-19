@@ -34,5 +34,5 @@
  *
  * @run driver jdk.test.lib.FileInstaller ../../ProblemList-graal.txt ExcludeList.txt
  *
- * @run main/othervm compiler.graalunit.common.GraalUnitTestLauncher -prefix org.graalvm.compiler.jtt.reflect.[fF] -exclude ExcludeList.txt
+ * @run main/othervm compiler.graalunit.common.GraalUnitTestLauncher -prefix org.graalvm.compiler.jtt.lang.Math_[a-lA-L] -exclude ExcludeList.txt
  */

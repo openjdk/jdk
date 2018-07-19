@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
 
 package com.sun.crypto.provider;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import javax.crypto.IllegalBlockSizeException;
 import static com.sun.crypto.provider.AESConstants.AES_BLOCK_SIZE;
 
@@ -68,6 +70,15 @@ final class GCTR extends CounterMode {
         return "GCTR";
     }
 
+    // return the number of blocks until the lower 32 bits roll over
+    private long blocksUntilRollover() {
+        ByteBuffer buf = ByteBuffer.wrap(counter, counter.length - 4, 4);
+        buf.order(ByteOrder.BIG_ENDIAN);
+        long ctr32 = 0xFFFFFFFFL & buf.getInt();
+        long blocksLeft = (1L << 32) - ctr32;
+        return blocksLeft;
+    }
+
     // input must be multiples of 128-bit blocks when calling update
     int update(byte[] in, int inOfs, int inLen, byte[] out, int outOfs) {
         if (inLen - inOfs > in.length) {
@@ -80,7 +91,25 @@ final class GCTR extends CounterMode {
             throw new RuntimeException("output buffer too small");
         }
 
-        return encrypt(in, inOfs, inLen, out, outOfs);
+        long blocksLeft = blocksUntilRollover();
+        int numOfCompleteBlocks = inLen / AES_BLOCK_SIZE;
+        if (numOfCompleteBlocks >= blocksLeft) {
+            // Counter Mode encryption cannot be used because counter will
+            // roll over incorrectly. Use GCM-specific code instead.
+            byte[] encryptedCntr = new byte[AES_BLOCK_SIZE];
+            for (int i = 0; i < numOfCompleteBlocks; i++) {
+                embeddedCipher.encryptBlock(counter, 0, encryptedCntr, 0);
+                for (int n = 0; n < AES_BLOCK_SIZE; n++) {
+                    int index = (i * AES_BLOCK_SIZE + n);
+                    out[outOfs + index] =
+                        (byte) ((in[inOfs + index] ^ encryptedCntr[n]));
+                }
+                GaloisCounterMode.increment32(counter);
+            }
+            return inLen;
+        } else {
+            return encrypt(in, inOfs, inLen, out, outOfs);
+        }
     }
 
     // input can be arbitrary size when calling doFinal
