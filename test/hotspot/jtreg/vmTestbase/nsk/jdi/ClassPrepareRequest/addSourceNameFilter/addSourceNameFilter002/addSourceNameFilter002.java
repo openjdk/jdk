@@ -70,6 +70,7 @@ package nsk.jdi.ClassPrepareRequest.addSourceNameFilter.addSourceNameFilter002;
 import java.io.*;
 import java.util.ArrayList;
 
+import com.sun.jdi.ThreadReference;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
 import nsk.share.Consts;
@@ -79,6 +80,9 @@ import nsk.share.jdi.sde.*;
 import nsk.share.jpda.AbstractDebuggeeTest;
 
 public class addSourceNameFilter002 extends SDEDebugger {
+
+    private static final String DEBUGGEE_MAIN_THREAD = "main";
+
     public static void main(String argv[]) {
         System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
     }
@@ -86,6 +90,8 @@ public class addSourceNameFilter002 extends SDEDebugger {
     public static int run(String argv[], PrintStream out) {
         return new addSourceNameFilter002().runIt(argv, out);
     }
+
+    private static volatile int eventReceived;
 
     protected boolean canRunTest() {
         if (!vm.canUseSourceNameFilters()) {
@@ -124,14 +130,17 @@ public class addSourceNameFilter002 extends SDEDebugger {
 
     // listener counting ClassPrepareEvent
     public class ClassPrepareEventListener extends EventHandler.EventListener {
-        public int eventReceived;
 
         public boolean eventReceived(Event event) {
             if (event instanceof ClassPrepareEvent) {
                 ClassPrepareEvent classPrepareEvent = (ClassPrepareEvent) event;
-                eventReceived++;
+                ThreadReference thread = classPrepareEvent.thread();
+                if (thread != null && DEBUGGEE_MAIN_THREAD.equals(thread.name())) {
+                    eventReceived++;
+                }
 
-                log.display("Event received: " + event + " Class: " + classPrepareEvent.referenceType().name());
+                log.display("Event received: " + event + " Class: " + classPrepareEvent.referenceType().name() +
+                        " Thread:" + (thread != null ? thread.name() : ""));
 
                 vm.resume();
 
@@ -153,12 +162,8 @@ public class addSourceNameFilter002 extends SDEDebugger {
         request.addSourceNameFilter(sourceName);
         request.enable();
 
-        // this listener wait ClassPrepareEvent
-        ClassPrepareEventListener listener = new ClassPrepareEventListener();
-        eventHandler.addListener(listener);
-
-        log.display("Load class: " + className + ", use follows source filter: " + sourceName);
-
+        // Reset event counter
+        eventReceived = 0;
         // force debuggee load class
         pipe.println(AbstractDebuggeeTest.COMMAND_LOAD_CLASS + ":" + className);
 
@@ -167,16 +172,14 @@ public class addSourceNameFilter002 extends SDEDebugger {
 
         request.disable();
 
-        eventHandler.removeListener(listener);
-
         // check is event was correct filtered or not
         if (expectEvent) {
-            if (listener.eventReceived == 0) {
+            if (eventReceived == 0) {
                 setSuccess(false);
                 log.complain("Expected ClassPrepareEvent was not received");
             }
         } else {
-            if (listener.eventReceived > 0) {
+            if (eventReceived > 0) {
                 setSuccess(false);
                 log.complain("Unexpected ClassPrepareEvent was received");
             }
@@ -216,6 +219,11 @@ public class addSourceNameFilter002 extends SDEDebugger {
 
         eventHandler = new EventHandler(debuggee, log);
         eventHandler.startListening();
+
+        // Add a listener to count ClassPrepare events.
+        // The listener should be added after EventHandler.startListening()
+        // is called to ensure it will be the first to process events.
+        eventHandler.addListener(new ClassPrepareEventListener());
 
         // set valid source name
         testSourceFilter(className, sourceName, true);
