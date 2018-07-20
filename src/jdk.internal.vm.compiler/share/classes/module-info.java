@@ -32,6 +32,7 @@ module jdk.internal.vm.compiler {
 
     uses org.graalvm.compiler.code.DisassemblerProvider;
     uses org.graalvm.compiler.core.match.MatchStatementSet;
+    uses org.graalvm.compiler.debug.DebugHandlersFactory;
     uses org.graalvm.compiler.debug.TTYStreamProvider;
     uses org.graalvm.compiler.hotspot.CompilerConfigurationFactory;
     uses org.graalvm.compiler.hotspot.HotSpotBackendFactory;
