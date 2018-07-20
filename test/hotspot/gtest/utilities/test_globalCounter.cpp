@@ -27,7 +27,7 @@
 #include "runtime/os.hpp"
 #include "utilities/globalCounter.hpp"
 #include "utilities/globalCounter.inline.hpp"
-#include "utilitiesHelper.inline.hpp"
+#include "threadHelper.inline.hpp"
 
 #define GOOD_VALUE 1337
 #define BAD_VALUE  4711

@@ -330,9 +330,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   nonstatic_field(ConstMethod,                 _size_of_parameters,                           u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
-  volatile_nonstatic_field(Symbol,             _refcount,                                     short)                                 \
+  volatile_nonstatic_field(Symbol,             _length_and_refcount,                          unsigned int)                          \
   nonstatic_field(Symbol,                      _identity_hash,                                short)                                 \
-  nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
   nonstatic_field(Symbol,                      _body[0],                                      jbyte)                                 \
   nonstatic_field(TypeArrayKlass,              _max_length,                                   jint)                                  \

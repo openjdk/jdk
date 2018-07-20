@@ -96,9 +96,9 @@
 // type without virtual functions.
 class ClassLoaderData;
 
-// Set _refcount to PERM_REFCOUNT to prevent the Symbol from being GC'ed.
+// Set _refcount to PERM_REFCOUNT to prevent the Symbol from being freed.
 #ifndef PERM_REFCOUNT
-#define PERM_REFCOUNT -1
+#define PERM_REFCOUNT ((1 << 16) - 1)
 #endif
 
 class Symbol : public MetaspaceObj {
@@ -107,15 +107,15 @@ class Symbol : public MetaspaceObj {
   friend class MoveSymbols;
 
  private:
-  ATOMIC_SHORT_PAIR(
-    volatile short _refcount,  // needs atomic operation
-    unsigned short _length     // number of UTF8 characters in the symbol (does not need atomic op)
-  );
+
+  // This is an int because it needs atomic operation on the refcount.  Mask length
+  // in high half word. length is the number of UTF8 characters in the symbol
+  volatile uint32_t _length_and_refcount;
   short _identity_hash;
   jbyte _body[2];
 
   enum {
-    // max_symbol_length is constrained by type of _length
+    // max_symbol_length must fit into the top 16 bits of _length_and_refcount
     max_symbol_length = (1 << 16) -1
   };
 
@@ -129,7 +129,7 @@ class Symbol : public MetaspaceObj {
   }
 
   void byte_at_put(int index, int value) {
-    assert(index >=0 && index < _length, "symbol index overflow");
+    assert(index >=0 && index < length(), "symbol index overflow");
     _body[index] = value;
   }
 
@@ -139,6 +139,12 @@ class Symbol : public MetaspaceObj {
   void* operator new(size_t size, int len, ClassLoaderData* loader_data, TRAPS) throw();
 
   void  operator delete(void* p);
+
+  static int extract_length(uint32_t value)   { return value >> 16; }
+  static int extract_refcount(uint32_t value) { return value & 0xffff; }
+  static uint32_t pack_length_and_refcount(int length, int refcount);
+
+  int length() const   { return extract_length(_length_and_refcount); }
 
  public:
   // Low-level access (used with care, since not GC-safe)
@@ -155,28 +161,29 @@ class Symbol : public MetaspaceObj {
   unsigned identity_hash() const {
     unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogMinObjAlignmentInBytes + 3));
     return ((unsigned)_identity_hash & 0xffff) |
-           ((addr_bits ^ (_length << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
+           ((addr_bits ^ (length() << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
   }
 
   // For symbol table alternate hashing
   unsigned int new_hash(juint seed);
 
   // Reference counting.  See comments above this class for when to use.
-  int refcount() const      { return _refcount; }
+  int refcount() const { return extract_refcount(_length_and_refcount); }
+  bool try_increment_refcount();
   void increment_refcount();
   void decrement_refcount();
   bool is_permanent() {
-    return (_refcount == PERM_REFCOUNT);
+    return (refcount() == PERM_REFCOUNT);
   }
 
   int byte_at(int index) const {
-    assert(index >=0 && index < _length, "symbol index overflow");
+    assert(index >=0 && index < length(), "symbol index overflow");
     return base()[index];
   }
 
   const jbyte* bytes() const { return base(); }
 
-  int utf8_length() const { return _length; }
+  int utf8_length() const { return length(); }
 
   // Compares the symbol with a string.
   bool equals(const char* str, int len) const {

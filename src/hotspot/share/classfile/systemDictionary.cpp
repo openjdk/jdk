@@ -2226,12 +2226,14 @@ bool SystemDictionary::add_loader_constraint(Symbol* class_name,
   ClassLoaderData* loader_data2 = class_loader_data(class_loader2);
 
   Symbol* constraint_name = NULL;
+  // Needs to be in same scope as constraint_name in case a Symbol is created and
+  // assigned to constraint_name.
+  FieldArrayInfo fd;
   if (!FieldType::is_array(class_name)) {
     constraint_name = class_name;
   } else {
     // For array classes, their Klass*s are not kept in the
     // constraint table. The element classes are.
-    FieldArrayInfo fd;
     BasicType t = FieldType::get_array_info(class_name, fd, CHECK_(false));
     // primitive types always pass
     if (t != T_OBJECT) {

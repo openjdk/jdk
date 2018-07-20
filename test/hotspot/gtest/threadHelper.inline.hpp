@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef GTEST_UTILITIES_HELPER_INLINE_HPP
-#define GTEST_UTILITIES_HELPER_INLINE_HPP
+#ifndef GTEST_THREADHELPER_INLINE_HPP
+#define GTEST_THREADHELPER_INLINE_HPP
 
 #include "runtime/mutex.hpp"
 #include "runtime/semaphore.hpp"

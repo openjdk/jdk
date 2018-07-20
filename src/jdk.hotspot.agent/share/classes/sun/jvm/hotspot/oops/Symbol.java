@@ -45,16 +45,10 @@ public class Symbol extends VMObject {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type  = db.lookupType("Symbol");
-    length     = type.getCIntegerField("_length");
+    lengthAndRefcount = type.getCIntegerField("_length_and_refcount");
     baseOffset = type.getField("_body").getOffset();
     idHash = type.getCIntegerField("_identity_hash");
   }
-
-  // Format:
-  //   [header]
-  //   [klass ]
-  //   [length] byte size of uft8 string
-  //   ..body..
 
   public static Symbol create(Address addr) {
     if (addr == null) {
@@ -72,10 +66,13 @@ public class Symbol extends VMObject {
   private static long baseOffset; // tells where the array part starts
 
   // Fields
-  private static CIntegerField length;
+  private static CIntegerField lengthAndRefcount;
 
   // Accessors for declared fields
-  public long   getLength() { return          length.getValue(this.addr); }
+  public long getLength() {
+    long i = lengthAndRefcount.getValue(this.addr);
+    return (i >> 16) & 0xffff;
+  }
 
   public byte getByteAt(long index) {
     return addr.getJByteAt(baseOffset + index);
