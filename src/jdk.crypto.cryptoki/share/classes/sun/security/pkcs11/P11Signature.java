@@ -507,6 +507,10 @@ final class P11Signature extends SignatureSpi {
         if (len == 0) {
             return;
         }
+        // check for overflow
+        if (len + bytesProcessed < 0) {
+            throw new ProviderException("Processed bytes limits exceeded.");
+        }
         switch (type) {
         case T_UPDATE:
             try {
