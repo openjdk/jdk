@@ -548,12 +548,18 @@ public class SelectWithConsumer {
             // write to sink to ensure that the source is readable
             sink.write(messageBuffer());
 
-            sink.configureBlocking(false);
             source.configureBlocking(false);
-            SelectionKey key1 = sink.register(sel, SelectionKey.OP_WRITE);
-            SelectionKey key2 = source.register(sel, SelectionKey.OP_READ);
+            SelectionKey key1 = source.register(sel, SelectionKey.OP_READ);
+            // make sure pipe source is readable before we do following checks.
+            // this is sometime necessary on windows where pipe is implemented
+            // as a pair of connected socket, so there is no guarantee that written
+            // bytes on sink side is immediately available on source side.
+            sel.select();
 
+            sink.configureBlocking(false);
+            SelectionKey key2 = sink.register(sel, SelectionKey.OP_WRITE);
             sel.selectNow();
+
             assertTrue(sel.keys().contains(key1));
             assertTrue(sel.keys().contains(key2));
             assertTrue(sel.selectedKeys().contains(key1));
