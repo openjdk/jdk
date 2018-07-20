@@ -29,6 +29,7 @@ import jdk.test.lib.process.ProcessTools;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -50,11 +51,6 @@ import java.util.function.Predicate;
 /**
  * Use jcstress test suite to generate jtreg tests in 'test.src' or current
  * directory. Used version is defined in JcstressRunner class.
- *
- * Each generated jtreg test file will contain several tests. Subdirectories are
- * used to allow running all tests from a file using command line. 'copy',
- * 'acqrel', 'fences', 'atomicity', 'seqcst.sync', 'seqcst.volatiles' and
- * 'other' tests will be generated.
  *
  * This generator depends on testlibrary, therefore it should be compiled and
  * added to classpath. One can replace @notest by @test in jtreg test
@@ -97,58 +93,18 @@ public class TestGenerator {
                 " */\n\n", years);
     }
 
-    private static enum JcstressGroup {
-        MEMEFFECTS("memeffects"),
-        COPY("copy"),
-        ACQREL("acqrel"),
-        FENCES("fences"),
-        ATOMICITY("atomicity"),
-        SEQCST_SYNC("seqcst.sync"),
-        SEQCST_VOLATILES("seqcst.volatiles"),
-        OTHER("other", JcstressGroup.otherFilter());
-
-        private final String groupName;
-        private final Predicate<String> filter;
-
-        private JcstressGroup(String groupName, Predicate<String> filter) {
-            this.groupName = groupName;
-            this.filter = filter;
-        }
-
-        private JcstressGroup(String groupName) {
-            this(groupName, JcstressGroup.nameFilter(groupName));
-        }
-
-        private static Predicate<String> nameFilter(String group) {
-            return s -> s.startsWith("org.openjdk.jcstress.tests." + group + ".");
-        }
-
-        private static Predicate<String> otherFilter() {
-            return (s) -> {
-                for (JcstressGroup g : EnumSet.complementOf(EnumSet.of(OTHER))) {
-                    if (g.filter.test(s)) {
-                        return false;
-                    }
-                }
-                return true;
-            };
-        }
-    }
-
     public static String DESC_FORMAT = "\n"
             + "/**\n"
             + " * @test %1$s\n"
             + " * @library /test/lib /\n"
-            + " * @run driver/timeout=2400 " + JcstressRunner.class.getName()
+            + " * @run driver/timeout=21600 " + JcstressRunner.class.getName()
                     // verbose output
                     + " -v"
-                    // test mode preset
-                    + " -m default"
                     // test name
-                    + " -t %1$s\n"
+                    + " -t org.openjdk.jcstress.tests.%1$s\\.\n"
             + " */\n";
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) throws IOException {
         Path path = JcstressRunner.pathToArtifact();
         Path output;
         try {
@@ -162,56 +118,32 @@ public class TestGenerator {
         } catch (Exception e) {
             throw new Error("Can not get list of tests", e);
         }
-        for (JcstressGroup group : JcstressGroup.values()) {
-            try {
-                try (BufferedReader reader = Files.newBufferedReader(output)) {
-                    // skip first 4 lines: name, -{80}, revision and empty line
-                    for (int i = 0; i < 4; ++i) {
-                        reader.readLine();
-                    }
-                    new TestGenerator(group).generate(reader);
-                }
-            } catch (IOException e) {
-                throw new Error("Generating tests for " + group.name()
-                                + " has failed", e);
-            }
-        }
+
+        BufferedReader reader = Files.newBufferedReader(output);
+
+        reader.lines()
+                .skip(4) // skip first 4 lines: name, -{80}, revision and empty line
+                .map(s -> s.split("\\.")[4]) // group by the package name following "org.openjdk.jcstress.tests."
+                .distinct()
+                .filter(s -> !s.startsWith("sample")) // skip sample test
+                .forEach(TestGenerator::generate);
+
         output.toFile().delete();
     }
 
-    private final JcstressGroup group;
+    private static void generate(String group) {
+        Path testFile = Paths.get(Utils.TEST_SRC).resolve(group + ".java");
 
-    private TestGenerator(JcstressGroup group) {
-        this.group = group;
-    }
-
-    private void generate(BufferedReader reader) throws IOException {
-        // array is needed to change value inside a lambda
-        long[] count = {0L};
-        String root = Utils.TEST_SRC;
-        Path testFile = Paths.get(root)
-                             .resolve(group.groupName)
-                             .resolve("Test.java");
-        File testDir = testFile.getParent().toFile();
-        if (!testDir.mkdirs() && !testDir.exists()) {
-            throw new Error("Can not create directories for "
-                            + testFile.toString());
-        }
-
+        System.out.println("Generating " + testFile);
         try (PrintStream ps = new PrintStream(testFile.toFile())) {
             ps.print(COPYRIGHT);
             ps.printf("/* DO NOT MODIFY THIS FILE. GENERATED BY %s */\n",
-                      getClass().getName());
+                    TestGenerator.class.getName());
 
-            reader.lines()
-                  .filter(group.filter)
-                  .forEach(s -> {
-                      count[0]++;
-                      ps.printf(DESC_FORMAT, s);
-                  });
+            ps.printf(DESC_FORMAT, group);
             ps.print('\n');
+        } catch (FileNotFoundException e) {
+            System.out.println("Failed to generate tests for " + group);
         }
-        System.out.printf("%d tests generated in %s%n",
-                count[0], group.groupName);
     }
 }
