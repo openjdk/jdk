@@ -102,13 +102,45 @@ public class HeapMonitor {
     return sum;
   }
 
+  private static double averageOneElementSize;
+  private static native double getAverageSize();
+
+  // Calculate the size of a 1-element array in order to assess average sampling interval
+  // via the HeapMonitorStatIntervalTest. This is needed because various GCs could add
+  // extra memory to arrays.
+  // This is done by allocating a 1-element array and then looking in the heap monitoring
+  // samples for the average size of objects collected.
+  public static void calculateAverageOneElementSize() {
+    enableSamplingEvents();
+    // Assume a size of 24 for the average size.
+    averageOneElementSize = 24;
+
+    // Call allocateSize once, this allocates the internal array for the iterations.
+    int totalSize = 10 * 1024 * 1024;
+    allocateSize(totalSize);
+
+    // Reset the storage and now really track the size of the elements.
+    resetEventStorage();
+    allocateSize(totalSize);
+    disableSamplingEvents();
+
+    // Get the actual average size.
+    averageOneElementSize = getAverageSize();
+    if (averageOneElementSize == 0) {
+      throw new RuntimeException("Could not calculate the average size of a 1-element array.");
+    }
+  }
+
   public static int allocateSize(int totalSize) {
+    if (averageOneElementSize == 0) {
+      throw new RuntimeException("Average size of a 1-element array was not calculated.");
+    }
+
     int sum = 0;
 
-    // Let us assume that a 1-element array is 24 bytes.
-    int iterations = totalSize / 24;
+    int iterations = (int) (totalSize / averageOneElementSize);
 
-    if (arrays == null) {
+    if (arrays == null || arrays.length < iterations) {
       arrays = new int[iterations][];
     }
 
