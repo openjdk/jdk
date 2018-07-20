@@ -22,9 +22,11 @@
 #
 # @test
 # @key jfr
+# @requires vm.hasJFR
 # @library /test/lib
 # @build jdk.jfr.event.os.TestInitialEnvironmentVariable
 # @run shell TestInitialEnvironmentVariable.sh
+
 echo -------------------------------------------------------------
 echo "TESTCLASSES='$TESTCLASSES'"
 echo "TESTSRC='$TESTSRC'"

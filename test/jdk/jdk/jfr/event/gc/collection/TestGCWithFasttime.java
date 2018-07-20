@@ -33,9 +33,10 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.GCHelper;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
   * @requires vm.gc == "Parallel" | vm.gc == null
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UseParallelGC -XX:+UseParallelOldGC jdk.jfr.event.gc.collection.TestGCWithFasttime

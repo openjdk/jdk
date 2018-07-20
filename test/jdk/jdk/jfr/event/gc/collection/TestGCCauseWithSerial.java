@@ -26,9 +26,10 @@
 package jdk.jfr.event.gc.collection;
 import jdk.test.lib.jfr.GCHelper;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  *
  * @requires vm.gc == "Serial" | vm.gc == null
  * @library /test/lib /test/jdk

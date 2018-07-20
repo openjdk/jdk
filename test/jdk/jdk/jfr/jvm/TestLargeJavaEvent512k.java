@@ -43,9 +43,10 @@ import jdk.test.lib.jfr.EventTypePrototype;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.Stressor;
 
-/*
+/**
  * @test TestLargeJavaEvent512k
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  *    java.base/jdk.internal.org.objectweb.asm

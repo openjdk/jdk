@@ -35,10 +35,11 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Simple enable Event class.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.event.TestEnableName
  */

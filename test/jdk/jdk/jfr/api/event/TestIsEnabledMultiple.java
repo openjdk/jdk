@@ -30,10 +30,11 @@ import jdk.jfr.EventType;
 import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Test Event.isEnabled() with multiple recordings
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.event.TestIsEnabledMultiple
  */

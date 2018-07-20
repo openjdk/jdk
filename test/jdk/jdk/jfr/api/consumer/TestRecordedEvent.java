@@ -37,10 +37,11 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Verifies the methods of the RecordedEvent
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordedEvent
  */

@@ -43,10 +43,11 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.SimpleEvent;
 
-/*
+/**
  * @test
  * @summary A simple test for Recording.getStream()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.misc.TestGetStream
  */

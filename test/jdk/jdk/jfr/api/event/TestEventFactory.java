@@ -37,10 +37,11 @@ import jdk.jfr.ValueDescriptor;
 import jdk.test.lib.Asserts;
 
 
-/*
+/**
  * @test
  * @summary EventFactory simple test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.event.TestEventFactory
  */

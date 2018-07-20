@@ -33,10 +33,11 @@ import jdk.jfr.FlightRecorder;
 import jdk.test.lib.Asserts;
 
 
-/*
+/**
  * @test
  * @summary Verifies that EventFactory can register the same event twice
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.event.TestEventFactoryRegisterTwice
  */

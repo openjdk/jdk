@@ -38,9 +38,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.RecurseThread;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.profiling.TestFullStackTrace
  */

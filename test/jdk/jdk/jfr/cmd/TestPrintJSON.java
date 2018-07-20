@@ -38,10 +38,11 @@ import jdk.nashorn.api.scripting.JSObject;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Tests print --json
+ * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
  * @modules jdk.scripting.nashorn

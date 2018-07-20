@@ -37,10 +37,11 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.SimpleEventHelper;
 
-/*
+/**
  * @test
  * @summary Test setDestination with concurrent recordings
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -Xlog:jfr=trace jdk.jfr.api.recording.destination.TestDestMultiple
  */

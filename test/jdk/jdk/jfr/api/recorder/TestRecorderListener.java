@@ -31,10 +31,11 @@ import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 
-/*
+/**
  * @test TestRecorderListener
  *
  * @key jfr
+ * @requires vm.hasJFR
  * @run main/othervm jdk.jfr.api.recorder.TestRecorderListener
  */
 public class TestRecorderListener {

@@ -41,10 +41,11 @@ import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary Test jfr reconstruct
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.cmd.TestReconstruct

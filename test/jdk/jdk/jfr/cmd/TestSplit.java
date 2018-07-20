@@ -38,10 +38,11 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary Test jfr split
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.cmd.TestSplit
  */

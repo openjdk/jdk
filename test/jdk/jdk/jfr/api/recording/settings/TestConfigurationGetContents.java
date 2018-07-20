@@ -32,10 +32,11 @@ import java.util.List;
 import jdk.jfr.Configuration;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Verifies Configuration.getContents() for every configuration
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.settings.TestConfigurationGetContents
  */

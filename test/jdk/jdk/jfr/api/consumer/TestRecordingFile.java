@@ -49,10 +49,11 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test
  * @summary Verifies that all methods in RecordingFIle are working
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordingFile
  */

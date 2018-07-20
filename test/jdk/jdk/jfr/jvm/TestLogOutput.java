@@ -31,10 +31,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-/*
+/**
  * @test TestLogOutput
  * @key jfr
  * @summary Sanity test jfr logging output
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -Xlog:disable -Xlog:jfr*=trace:file=jfr_trace.txt -XX:StartFlightRecording=duration=1s,filename=recording.jfr jdk.jfr.jvm.TestLogOutput
  */

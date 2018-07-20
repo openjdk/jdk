@@ -34,9 +34,10 @@ import jdk.management.jfr.RecordingInfo;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.TestSetConfiguration
  */

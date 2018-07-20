@@ -30,9 +30,10 @@ import static jdk.test.lib.Asserts.assertNotNull;
 import jdk.jfr.internal.EventWriter;
 import jdk.jfr.internal.JVM;
 
-/*
+/**
  * @test TestGetEventWriter
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  *

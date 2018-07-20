@@ -29,9 +29,10 @@ import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.api.flightrecorder.TestListener
  */

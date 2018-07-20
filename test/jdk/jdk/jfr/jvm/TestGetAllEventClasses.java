@@ -30,9 +30,10 @@ import jdk.jfr.internal.JVM;
 
 import java.util.List;
 
-/*
+/**
  * @test TestGetAllEventClasses
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  *

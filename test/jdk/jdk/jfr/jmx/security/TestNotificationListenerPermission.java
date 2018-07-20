@@ -37,10 +37,11 @@ import jdk.test.lib.Asserts;
 
 import jdk.jfr.jmx.JmxHelper;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Test with minimal needed permissions. All functions should work.
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm/secure=java.lang.SecurityManager/java.security.policy=listener.policy jdk.jfr.jmx.security.TestNotificationListenerPermission
  */

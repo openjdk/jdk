@@ -35,10 +35,11 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Tests that a cloned event can be successfully committed.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.event.TestClonedEvent
  */

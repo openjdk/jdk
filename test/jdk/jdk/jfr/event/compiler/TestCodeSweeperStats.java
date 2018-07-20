@@ -41,9 +41,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test TestCodeSweeperStats
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @requires vm.compMode!="Xint"
  * @build sun.hotspot.WhiteBox

@@ -28,10 +28,11 @@ package jdk.jfr.api.metadata.valuedescriptor;
 import jdk.jfr.ValueDescriptor;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Test ValueDescriptor.getAnnotations()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.valuedescriptor.TestGetFields
  */

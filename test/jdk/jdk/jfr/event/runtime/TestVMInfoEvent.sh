@@ -22,6 +22,7 @@
 #
 # @test
 # @key jfr
+# @requires vm.hasJFR
 # @library /test/lib /test/jdk
 # @build jdk.jfr.event.runtime.TestVMInfoEvent
 # @run shell TestVMInfoEvent.sh

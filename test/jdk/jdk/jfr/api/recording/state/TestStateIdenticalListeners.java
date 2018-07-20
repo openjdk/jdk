@@ -31,10 +31,11 @@ import jdk.jfr.FlightRecorder;
 import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 
-/*
+/**
  * @test
  * @summary Test Recording state with concurrent recordings
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.state.TestStateIdenticalListeners
  */

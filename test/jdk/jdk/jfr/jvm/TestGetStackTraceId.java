@@ -29,9 +29,10 @@ import jdk.jfr.FlightRecorder;
 import jdk.jfr.internal.JVM;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test TestGetStackTraceId
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jvm.TestGetStackTraceId

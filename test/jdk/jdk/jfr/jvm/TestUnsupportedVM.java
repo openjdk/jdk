@@ -64,9 +64,10 @@ import jdk.management.jfr.RecordingInfo;
 import jdk.management.jfr.SettingDescriptorInfo;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test TestUnsupportedVM
  * @key jfr
+ * @requires vm.hasJFR
  *
  * @modules jdk.jfr
  *          jdk.management.jfr

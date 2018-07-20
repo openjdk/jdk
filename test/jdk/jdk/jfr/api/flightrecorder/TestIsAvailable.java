@@ -28,9 +28,10 @@ package jdk.jfr.api.flightrecorder;
 import jdk.jfr.FlightRecorder;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -XX:+FlightRecorder jdk.jfr.api.flightrecorder.TestIsAvailable true
  * @run main/othervm -XX:-FlightRecorder jdk.jfr.api.flightrecorder.TestIsAvailable  false

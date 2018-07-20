@@ -42,9 +42,10 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.SimpleSetting;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.annotations.TestName
  */

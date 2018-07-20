@@ -28,9 +28,10 @@ package jdk.jfr.event.gc.configuration;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventVerifier;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:NewRatio=4 jdk.jfr.event.gc.configuration.TestGCYoungGenerationConfigurationEventWithNewRatio
  */

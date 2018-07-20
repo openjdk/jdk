@@ -36,10 +36,11 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Test that when an object is allocated outside a TLAB an event will be triggered.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -XX:+UseTLAB -XX:-FastTLABRefill -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.compiler.TestAllocOutsideTLAB
  * @run main/othervm -XX:+UseTLAB -XX:-FastTLABRefill -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.compiler.TestAllocOutsideTLAB

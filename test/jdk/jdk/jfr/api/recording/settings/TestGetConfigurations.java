@@ -29,11 +29,12 @@ import java.util.List;
 import jdk.jfr.Configuration;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Verifies that there is the default config and that it has
  *          the expected parameters
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.settings.TestGetConfigurations
  */

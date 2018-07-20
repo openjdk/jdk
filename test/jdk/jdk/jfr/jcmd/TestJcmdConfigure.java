@@ -32,10 +32,11 @@ import java.util.List;
 import jdk.jfr.internal.Options;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary The test verifies JFR.configure command
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jcmd.TestJcmdConfigure

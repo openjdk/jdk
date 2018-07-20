@@ -41,9 +41,10 @@ import jdk.test.lib.management.ThreadMXBeanTool;
 import jdk.test.lib.thread.TestThread;
 
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  *
  * @run main/othervm jdk.jfr.event.runtime.TestThreadParkEvent

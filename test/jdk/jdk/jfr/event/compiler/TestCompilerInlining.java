@@ -43,11 +43,12 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.IntStream;
 
-/*
+/**
  * @test CompilerInliningTest
  * @bug 8073607
  * @key jfr
  * @summary Verifies that corresponding JFR events are emitted in case of inlining.
+ * @requires vm.hasJFR
  *
  * @requires vm.opt.Inline == true | vm.opt.Inline == null
  * @library /test/lib

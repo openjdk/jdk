@@ -23,10 +23,11 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @summary Intrinsic for JFR
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  *
  * @modules jdk.jfr/jdk.jfr.internal

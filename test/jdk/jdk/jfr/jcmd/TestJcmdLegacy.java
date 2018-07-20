@@ -38,9 +38,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.FileHelper;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test TestClassId
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jcmd.TestJcmdLegacy
