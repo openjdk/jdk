@@ -588,7 +588,7 @@ abstract class DSA extends SignatureSpi {
                 }
             }
             protected void engineUpdate(byte[] input, int offset, int len) {
-                if (ofs + len > digestBuffer.length) {
+                if (len > (digestBuffer.length - ofs)) {
                     ofs = Integer.MAX_VALUE;
                 } else {
                     System.arraycopy(input, offset, digestBuffer, ofs, len);
@@ -597,7 +597,7 @@ abstract class DSA extends SignatureSpi {
             }
             protected final void engineUpdate(ByteBuffer input) {
                 int inputLen = input.remaining();
-                if (ofs + inputLen > digestBuffer.length) {
+                if (inputLen > (digestBuffer.length - ofs)) {
                     ofs = Integer.MAX_VALUE;
                 } else {
                     input.get(digestBuffer, ofs, inputLen);

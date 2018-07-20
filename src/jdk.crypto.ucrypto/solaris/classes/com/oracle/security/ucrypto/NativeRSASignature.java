@@ -291,8 +291,9 @@ class NativeRSASignature extends SignatureSpi {
         throws SignatureException {
         boolean doCancel = true;
         try {
-            if (outbuf == null || (offset < 0) || (outbuf.length < (offset + sigLength))
-                || (len < sigLength)) {
+            if (outbuf == null || (offset < 0) ||
+                    ((outbuf.length - offset) < sigLength) ||
+                    (len < sigLength)) {
                 throw new SignatureException("Invalid output buffer. offset: " +
                     offset + ". len: " + len + ". sigLength: " + sigLength);
             }
@@ -357,8 +358,9 @@ class NativeRSASignature extends SignatureSpi {
         throws SignatureException {
         boolean doCancel = true;
         try {
-            if (sigBytes == null || (sigOfs < 0) || (sigBytes.length < (sigOfs + this.sigLength))
-                || (sigLen != this.sigLength)) {
+            if (sigBytes == null || (sigOfs < 0) ||
+                    ((sigBytes.length - sigOfs) < this.sigLength) ||
+                    (sigLen != this.sigLength)) {
                 throw new SignatureException("Invalid signature length: got " +
                     sigLen + " but was expecting " + this.sigLength);
             }
@@ -440,7 +442,7 @@ class NativeRSASignature extends SignatureSpi {
 
     // returns 0 (success) or negative (ucrypto error occurred)
     private int update(byte[] in, int inOfs, int inLen) {
-        if (inOfs < 0 || inOfs + inLen > in.length) {
+        if (inOfs < 0 || inOfs > (in.length - inLen)) {
             throw new ArrayIndexOutOfBoundsException("inOfs :" + inOfs +
                 ". inLen: " + inLen + ". in.length: " + in.length);
         }
