@@ -225,7 +225,7 @@ public class ActivationID implements Serializable {
      * specification.
      **/
     private void writeObject(ObjectOutputStream out)
-        throws IOException, ClassNotFoundException
+        throws IOException
     {
         out.writeObject(uid);
 

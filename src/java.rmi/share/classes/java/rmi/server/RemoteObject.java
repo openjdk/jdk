@@ -359,7 +359,7 @@ public abstract class RemoteObject implements Remote, java.io.Serializable {
      * <code>readExternal</code> method.
      */
     private void writeObject(java.io.ObjectOutputStream out)
-        throws java.io.IOException, java.lang.ClassNotFoundException
+        throws java.io.IOException
     {
         if (ref == null) {
             throw new java.rmi.MarshalException("Invalid remote object");
