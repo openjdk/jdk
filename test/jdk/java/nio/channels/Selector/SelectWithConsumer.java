@@ -411,8 +411,6 @@ public class SelectWithConsumer {
             int n = sel.select(k -> assertTrue(false), 60*1000);
             long duration = System.currentTimeMillis() - start;
             assertTrue(n == 0);
-            assertTrue(duration > 500 && duration < 5000,
-                    "select took " + duration + " ms");
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
