@@ -451,6 +451,9 @@ public class ReflectionFactory {
                     return true;
                 }
             }
+            if (Reflection.areNestMates(cl, superCl)) {
+                return true;
+            }
             return false;
         } else {
             // sanity check to ensure the parent is protected or public
