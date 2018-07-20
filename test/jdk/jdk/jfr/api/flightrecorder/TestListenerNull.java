@@ -29,9 +29,10 @@ import static jdk.test.lib.Asserts.fail;
 
 import jdk.jfr.FlightRecorder;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.flightrecorder.TestListenerNull
  */

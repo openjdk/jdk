@@ -51,9 +51,10 @@ import sun.hotspot.code.CodeBlob;
  * event is received, the event is verified. If an event is missing, we do NOT
  * fail.
  */
-/*
+/**
  * @test TestCodeSweeper
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

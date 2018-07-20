@@ -32,6 +32,7 @@ package jdk.jfr.event.gc.detailed;
  * fits exactly to one region, if not - G1 will allocate another almost empty
  * region as a continue of humongous. Thus we will exhaust memory very fast and
  * test will fail with OOME.
+ * @requires vm.hasJFR
  * @requires vm.gc == "null" | vm.gc == "G1"
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UseG1GC -XX:MaxNewSize=5m -Xmx256m -XX:G1HeapRegionSize=1048576 jdk.jfr.event.gc.detailed.TestStressBigAllocationGCEventsWithG1 1048544

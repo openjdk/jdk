@@ -38,10 +38,11 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 
-/*
+/**
  * @test
  * @summary Set destination to an existing file. File should be overwritten.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.destination.TestDestFileExist
  */

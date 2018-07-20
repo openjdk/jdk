@@ -33,9 +33,10 @@ import javax.management.ObjectName;
 
 import jdk.management.jfr.FlightRecorderMXBean;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.TestNotificationListener
  */

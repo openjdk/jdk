@@ -31,9 +31,10 @@ import java.util.Map;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.MetadataDefinition;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.annotations.TestDynamicAnnotation
  */

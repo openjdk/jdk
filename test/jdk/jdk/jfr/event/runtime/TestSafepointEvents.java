@@ -38,9 +38,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import sun.hotspot.WhiteBox;
 
-/*
+/**
  * @test TestSafepointEvents
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

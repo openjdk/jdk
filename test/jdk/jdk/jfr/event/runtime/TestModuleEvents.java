@@ -36,10 +36,11 @@ import jdk.jfr.consumer.RecordedObject;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Tests the JFR events related to modules
  * @key jfr
+ * @requires vm.hasJFR
  * @requires !vm.graal.enabled
  * @library /test/lib
  * @run main/othervm --limit-modules java.base,jdk.jfr jdk.jfr.event.runtime.TestModuleEvents

@@ -36,10 +36,11 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Load event class after recording started.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.test.lib.jfr.SimpleEvent
  * @run main/othervm jdk.jfr.api.recording.event.TestLoadEventAfterStart

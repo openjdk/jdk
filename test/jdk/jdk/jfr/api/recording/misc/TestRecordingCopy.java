@@ -33,10 +33,11 @@ import jdk.test.lib.jfr.SimpleEvent;
 
 import java.util.List;
 
-/*
+/**
  * @test
  * @summary A simple test for Recording.copy()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.misc.TestRecordingCopy
  */

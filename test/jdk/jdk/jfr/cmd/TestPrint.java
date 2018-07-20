@@ -32,10 +32,11 @@ import java.nio.file.Path;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary Test jfr print
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.cmd.TestPrint
  */

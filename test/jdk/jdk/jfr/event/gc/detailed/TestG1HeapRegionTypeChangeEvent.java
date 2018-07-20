@@ -35,9 +35,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.GCHelper;
 
-/*
+/**
  * @test
  * @bug 8149650
+ * @requires vm.hasJFR
  * @requires vm.gc == "G1" | vm.gc == null
  * @key jfr
  * @library /test/lib /test/jdk

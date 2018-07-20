@@ -35,10 +35,11 @@ import java.nio.file.Paths;
 import jdk.jfr.Recording;
 import jdk.test.lib.jfr.EventNames;
 
-/*
+/**
  * @test
  * @summary Test recording file size with Recording.getSize()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.misc.TestGetSize
  */

@@ -43,9 +43,10 @@ import jdk.jfr.consumer.RecordedThread;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr
  *          jdk.management

@@ -33,10 +33,11 @@ import jdk.jfr.EventType;
 import jdk.jfr.ValueDescriptor;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Test getFields()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.eventtype.TestGetFields
  */

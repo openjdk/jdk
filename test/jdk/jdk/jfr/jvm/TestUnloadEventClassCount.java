@@ -32,10 +32,11 @@ import jdk.jfr.Event;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.internal.JVM;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Unit test for JVM#getUnloadedEventClassCount
+ * @requires vm.hasJFR
  *
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal

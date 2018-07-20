@@ -30,10 +30,11 @@ import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
 import jdk.jfr.internal.JVM;
 
-/*
+/**
  * @test
  * @summary Checks that the JVM can rollback on native initialization failures.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jvm.TestCreateNative

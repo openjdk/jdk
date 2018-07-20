@@ -38,9 +38,10 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  *
  * @requires vm.gc == "G1" | vm.gc == null
  * @library /test/lib /test/jdk

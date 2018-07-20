@@ -31,10 +31,11 @@ import jdk.management.jfr.FlightRecorderMXBean;
 import jdk.test.lib.jfr.CommonHelper;
 import jdk.test.lib.jfr.VoidFunction;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Verify we get SecurityExceptions when missing management permission "monitor".
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm/secure=java.lang.SecurityManager/java.security.policy=nomonitor.policy jdk.jfr.jmx.security.TestNoMonitorPermission
  */

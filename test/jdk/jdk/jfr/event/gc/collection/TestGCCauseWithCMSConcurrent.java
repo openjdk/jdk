@@ -26,9 +26,10 @@
 package jdk.jfr.event.gc.collection;
 import jdk.test.lib.jfr.GCHelper;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @requires (vm.gc == "ConcMarkSweep" | vm.gc == null) & !vm.graal.enabled
  * @requires vm.opt.ExplicitGCInvokesConcurrent != false
  * @library /test/lib /test/jdk

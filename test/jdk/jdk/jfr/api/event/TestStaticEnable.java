@@ -33,10 +33,11 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Enable an event from a static function in the event.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.event.TestStaticEnable
  */

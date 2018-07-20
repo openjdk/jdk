@@ -29,10 +29,11 @@ import sun.hotspot.WhiteBox;
 import java.util.Objects;
 import jdk.test.lib.Platform;
 
-/*
+/**
  * @test
  * @bug 8153324
  * @summary Verify instrumented Throwable bytecode by compiling it with C1.
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management

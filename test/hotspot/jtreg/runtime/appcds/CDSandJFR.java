@@ -22,10 +22,10 @@
  *
  */
 
-/*
+/**
  * @test
  * @summary Make sure CDS and JFR work together.
- * @requires vm.cds
+ * @requires vm.hasJFR & vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds /test/hotspot/jtreg/runtime/appcds/test-classes test-classes
  * @modules jdk.jfr
  * @build Hello GetFlightRecorder

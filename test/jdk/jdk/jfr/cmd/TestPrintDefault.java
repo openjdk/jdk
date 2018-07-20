@@ -29,10 +29,11 @@ import java.nio.file.Path;
 
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Tests print --json
+ * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
  * @modules java.scripting

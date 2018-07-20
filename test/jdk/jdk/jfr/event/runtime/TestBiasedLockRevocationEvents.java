@@ -37,9 +37,10 @@ import java.util.*;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  *
  * @run main/othervm jdk.jfr.event.runtime.TestBiasedLockRevocationEvents
