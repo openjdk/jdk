@@ -81,7 +81,6 @@ runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 
 serviceability/sa/TestRevPtrsForInvokeDynamic.java   8191270 generic-all
 serviceability/sa/sadebugd/SADebugDTest.java         8163805 generic-all
-serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatRateTest.java 8207765 generic-all
 
 #############################################################################
 

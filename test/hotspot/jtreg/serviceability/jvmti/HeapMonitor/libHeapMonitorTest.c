@@ -45,7 +45,7 @@ extern "C" {
 
 #define TRUE 1
 #define FALSE 0
-#define PRINT_OUT 1
+#define PRINT_OUT 0
 
 static jvmtiEnv *jvmti = NULL;
 static jvmtiEnv *second_jvmti = NULL;
@@ -369,7 +369,7 @@ static int event_storage_get_count(EventStorage* storage) {
   return result;
 }
 
-static double event_storage_get_average_interval(EventStorage* storage) {
+static double event_storage_get_average_size(EventStorage* storage) {
   double accumulation = 0;
   int max_size;
   int i;
@@ -974,8 +974,8 @@ Java_MyPackage_HeapMonitorIllegalArgumentTest_testIllegalArgument(JNIEnv *env,
 }
 
 JNIEXPORT jdouble JNICALL
-Java_MyPackage_HeapMonitorStatIntervalTest_getAverageInterval(JNIEnv *env, jclass cls) {
-  return event_storage_get_average_interval(&global_event_storage);
+Java_MyPackage_HeapMonitor_getAverageSize(JNIEnv *env, jclass cls) {
+  return event_storage_get_average_size(&global_event_storage);
 }
 
 typedef struct sThreadsFound {
