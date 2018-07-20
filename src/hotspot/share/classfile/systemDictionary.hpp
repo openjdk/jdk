@@ -98,7 +98,7 @@ class OopStorage;
 // that makes some minor distinctions, like whether the klass
 // is preloaded, optional, release-specific, etc.
 // The order of these definitions is significant; it is the order in which
-// preloading is actually performed by initialize_preloaded_classes.
+// preloading is actually performed by resolve_preloaded_classes.
 
 #define WK_KLASSES_DO(do_klass)                                                                                          \
   /* well-known classes */                                                                                               \
@@ -417,11 +417,11 @@ public:
 
   JVMCI_ONLY(static InstanceKlass* check_klass_Jvmci(InstanceKlass* k) { return k; })
 
-  static bool initialize_wk_klass(WKID id, int init_opt, TRAPS);
-  static void initialize_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS);
-  static void initialize_wk_klasses_through(WKID end_id, WKID &start_id, TRAPS) {
+  static bool resolve_wk_klass(WKID id, int init_opt, TRAPS);
+  static void resolve_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS);
+  static void resolve_wk_klasses_through(WKID end_id, WKID &start_id, TRAPS) {
     int limit = (int)end_id + 1;
-    initialize_wk_klasses_until((WKID) limit, start_id, THREAD);
+    resolve_wk_klasses_until((WKID) limit, start_id, THREAD);
   }
 
 public:
@@ -708,8 +708,8 @@ protected:
                                   ClassLoaderData* loader_data,
                                   TRAPS);
 
-  // Initialization
-  static void initialize_preloaded_classes(TRAPS);
+  // Resolve preloaded classes so they can be used like SystemDictionary::String_klass()
+  static void resolve_preloaded_classes(TRAPS);
 
   // Class loader constraints
   static void check_constraints(unsigned int hash,
