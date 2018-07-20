@@ -2227,8 +2227,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
         const Address mdo_backedge_counter(rbx, in_bytes(MethodData::backedge_counter_offset()) +
                                            in_bytes(InvocationCounter::counter_offset()));
         const Address mask(rbx, in_bytes(MethodData::backedge_mask_offset()));
-        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask,
-                                   rax, false, Assembler::zero, &backedge_counter_overflow);
+        __ increment_mask_and_jump(mdo_backedge_counter, increment, mask, rax, false, Assembler::zero,
+                                   UseOnStackReplacement ? &backedge_counter_overflow : NULL);
         __ jmp(dispatch);
       }
       __ bind(no_mdo);
@@ -2236,7 +2236,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ movptr(rcx, Address(rcx, Method::method_counters_offset()));
       const Address mask(rcx, in_bytes(MethodCounters::backedge_mask_offset()));
       __ increment_mask_and_jump(Address(rcx, be_offset), increment, mask,
-                                 rax, false, Assembler::zero, &backedge_counter_overflow);
+                                 rax, false, Assembler::zero,
+                                 UseOnStackReplacement ? &backedge_counter_overflow : NULL);
     } else { // not TieredCompilation
       // increment counter
       __ movptr(rcx, Address(rcx, Method::method_counters_offset()));

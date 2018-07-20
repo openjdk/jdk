@@ -159,6 +159,14 @@ class Label {
   Label() {
     init();
   }
+
+  ~Label() {
+    assert(is_bound() || is_unused(), "Label was never bound to a location, but it was used as a jmp target");
+  }
+
+  void reset() {
+    init(); //leave _patch_overflow because it points to CodeBuffer.
+  }
 };
 
 // A NearLabel must be bound to a location near its users. Users can
