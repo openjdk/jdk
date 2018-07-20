@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,21 @@ char *getPosixLocale(int cat) {
 }
 
 #define LOCALEIDLENGTH  128
+#ifndef kCFCoreFoundationVersionNumber10_11_Max
+#define kCFCoreFoundationVersionNumber10_11_Max 1299
+#endif
 char *getMacOSXLocale(int cat) {
     const char* retVal = NULL;
     char languageString[LOCALEIDLENGTH];
     char localeString[LOCALEIDLENGTH];
+
+    // Since macOS 10.12, there is no separate language selection for
+    // "format" locale, e.g., date format. Use the preferred language
+    // for all LC_* categories.
+    if (kCFCoreFoundationVersionNumber >
+        kCFCoreFoundationVersionNumber10_11_Max) {
+        cat = LC_MESSAGES;
+    }
 
     switch (cat) {
     case LC_MESSAGES:
