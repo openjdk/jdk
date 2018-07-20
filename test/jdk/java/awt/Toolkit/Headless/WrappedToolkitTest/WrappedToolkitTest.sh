@@ -122,7 +122,7 @@ case "$OS" in
     fi
     ;;
 
-  SunOS | Linux )
+  AIX | Linux | SunOS )
     ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} \
                          --add-exports java.desktop/sun.awt=ALL-UNNAMED \
                          --add-exports java.desktop/sun.awt.X11=ALL-UNNAMED ${CP} \

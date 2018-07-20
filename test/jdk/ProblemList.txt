@@ -39,15 +39,18 @@
 #
 # Shell tests are othervm by default.
 #
-# List items  are testnames followed by labels, all MUST BE commented
+# List items are testnames followed by labels, all MUST BE commented
 #   as to why they are here and use a label:
 #     generic-all   Problems on all platforms
-#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, etc.
+#     generic-ARCH  Where ARCH is one of: sparc, sparcv9, x64, i586, ppc64,
+#                   ppc64le, s390x etc.
 #     OSNAME-all    Where OSNAME is one of: solaris, linux, windows, macosx, aix
 #     OSNAME-ARCH   Specific on to one OSNAME and ARCH, e.g. solaris-amd64
 #     OSNAME-REV    Specific on to one OSNAME and REV, e.g. solaris-5.8
 #
-# More than one label is allowed but must be on the same line.
+# More than one label is allowed but must be on the same line comma seperated,
+# without spaces.
+# If there are several lines mentioning the same test, the last one is used.
 #
 #############################################################################
 #
@@ -80,7 +83,7 @@
 # Fixing the tests:
 #
 # Some tests just may need to be run with "othervm", and that can easily be
-#   done my adding a @run line (or modifying any existing @run):
+#   done by adding a @run line (or modifying any existing @run):
 #      @run main/othervm NameOfMainClass
 #   Make sure this @run follows any use of @library.
 #   Otherwise, if the test is a samevm possibility, make sure the test is
@@ -553,7 +556,9 @@ javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java 8042215 
 java/net/MulticastSocket/NoLoopbackPackets.java                 7122846 macosx-all
 java/net/MulticastSocket/SetLoopbackMode.java                   7122846 macosx-all
 
-java/net/MulticastSocket/Test.java                              7145658 macosx-all
+java/net/MulticastSocket/Test.java                              7145658,8207404 macosx-all,aix-all
+java/net/MulticastSocket/JoinLeave.java                         8207404 aix-all
+java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8207404 aix-all
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 

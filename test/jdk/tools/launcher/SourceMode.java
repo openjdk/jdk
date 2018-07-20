@@ -21,7 +21,7 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug 8192920 8204588
  * @summary Test source mode
@@ -298,11 +298,11 @@ public class SourceMode extends TestHelper {
     @Test
     void testTerminalOptionInShebang() throws IOException {
         starting("testTerminalOptionInShebang");
-        if (skipShebangTest || isMacOSX || isSolaris) {
+        if (skipShebangTest || isAIX || isMacOSX || isSolaris) {
             // On MacOSX, we cannot distinguish between terminal options on the
             // shebang line and those on the command line.
             // On Solaris, all options after the first on the shebang line are
-            // ignored.
+            // ignored. Similar on AIX.
             log.println("SKIPPED");
             return;
         }
@@ -322,11 +322,11 @@ public class SourceMode extends TestHelper {
     @Test
     void testTerminalOptionInShebangAtFile() throws IOException {
         starting("testTerminalOptionInShebangAtFile");
-        if (skipShebangTest || isMacOSX || isSolaris) {
+        if (skipShebangTest || isAIX || isMacOSX || isSolaris) {
             // On MacOSX, we cannot distinguish between terminal options in a
             // shebang @-file and those on the command line.
             // On Solaris, all options after the first on the shebang line are
-            // ignored.
+            // ignored. Similar on AIX.
             log.println("SKIPPED");
             return;
         }
@@ -349,11 +349,11 @@ public class SourceMode extends TestHelper {
     @Test
     void testMainClassInShebang() throws IOException {
         starting("testMainClassInShebang");
-        if (skipShebangTest || isMacOSX || isSolaris) {
+        if (skipShebangTest || isAIX || isMacOSX || isSolaris) {
             // On MacOSX, we cannot distinguish between a main class on the
             // shebang line and one on the command line.
             // On Solaris, all options after the first on the shebang line are
-            // ignored.
+            // ignored. Similar on AIX.
             log.println("SKIPPED");
             return;
         }
