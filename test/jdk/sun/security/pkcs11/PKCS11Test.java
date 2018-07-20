@@ -409,7 +409,11 @@ public abstract class PKCS11Test {
             return nss3_version;
 
         try {
-            libfile = getNSSLibDir() + System.mapLibraryName(library);
+            String libdir = getNSSLibDir();
+            if (libdir == null) {
+                return 0.0;
+            }
+            libfile = libdir + System.mapLibraryName(library);
             try (FileInputStream is = new FileInputStream(libfile)) {
                 byte[] data = new byte[1000];
                 int read = 0;
