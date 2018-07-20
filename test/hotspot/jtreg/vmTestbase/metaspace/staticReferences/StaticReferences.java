@@ -67,7 +67,7 @@ import vm.share.gc.TriggerUnloadingWithWhiteBox;
 /**
  * Test checks that static fields will be initialized in new loaded class. Test performs in loop the following routine:
  * 1.) Load class either by regular classloader or by Unsafe.defineAnonymousClass.
- * 2.) Trigger unloading. Class must be alive. Next step will check that static fields would not lost.
+ * 2.) Trigger unloading. Class must be alive. Next step will check that static fields were not lost.
  * 3.) Change static fields.
  * 4.) Unload class.
  * 5.) Load class again as in step 1.
@@ -82,7 +82,7 @@ public class StaticReferences extends GCTestBase {
 
     private static String[] args;
 
-    private static final int LIMIT = 100;
+    private static final int LIMIT = 20;
 
     private List<Object> keepAlive = new LinkedList<Object>();
 
@@ -103,7 +103,7 @@ public class StaticReferences extends GCTestBase {
 
         @Override
     public void run() {
-                random = new Random(runParams.getSeed());
+        random = new Random(runParams.getSeed());
         ExecutionController stresser = new Stresser(args);
         stresser.start(1);
 
@@ -116,7 +116,7 @@ public class StaticReferences extends GCTestBase {
                         return;
                 }
             for (int j = 0; j < fieldQuantities.length; j++) {
-                fieldQuantities[j] = 1 + random.nextInt(2000);
+                fieldQuantities[j] = 1 + random.nextInt(20);
             }
             bytecodeList.add(generateAndCompile(fieldQuantities));
         }
@@ -209,9 +209,9 @@ public class StaticReferences extends GCTestBase {
         }
     }
 
-    private byte[] generateAndCompile(int[] filedQuantities) {
+    private byte[] generateAndCompile(int[] fieldQuantities) {
         Map<String, CharSequence> sources = new HashMap<String, CharSequence>();
-        sources.put("A", generateSource(filedQuantities));
+        sources.put("A", generateSource(fieldQuantities));
         return InMemoryJavaCompiler.compile(sources).values().iterator().next();
     }
 
