@@ -605,16 +605,15 @@ public class RSAPSSSignature extends SignatureSpi {
 
     @Override
     protected AlgorithmParameters engineGetParameters() {
-        if (this.sigParams == null) {
-            throw new ProviderException("Missing required PSS parameters");
+        AlgorithmParameters ap = null;
+        if (this.sigParams != null) {
+            try {
+                ap = AlgorithmParameters.getInstance("RSASSA-PSS");
+                ap.init(this.sigParams);
+            } catch (GeneralSecurityException gse) {
+                throw new ProviderException(gse.getMessage());
+            }
         }
-        try {
-            AlgorithmParameters ap =
-                AlgorithmParameters.getInstance("RSASSA-PSS");
-            ap.init(this.sigParams);
-            return ap;
-        } catch (GeneralSecurityException gse) {
-            throw new ProviderException(gse.getMessage());
-        }
+        return ap;
     }
 }

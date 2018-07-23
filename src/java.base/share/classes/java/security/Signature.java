@@ -700,7 +700,7 @@ public abstract class Signature extends SignatureSpi {
      * encoded or of the wrong type, if this signature algorithm is unable to
      * process the input data provided, etc.
      * @exception IllegalArgumentException if the {@code signature}
-     * byte array is null, or the {@code offset} or {@code length}
+     * byte array is {@code null}, or the {@code offset} or {@code length}
      * is less than 0, or the sum of the {@code offset} and
      * {@code length} is greater than the length of the
      * {@code signature} byte array.
@@ -897,14 +897,15 @@ public abstract class Signature extends SignatureSpi {
     /**
      * Returns the parameters used with this signature object.
      *
-     * <p>The returned parameters may be the same that were used to initialize
-     * this signature, or may contain a combination of default and randomly
-     * generated parameter values used by the underlying signature
-     * implementation if this signature requires algorithm parameters but
-     * was not initialized with any.
+     * <p> If this signature has been previously initialized with parameters
+     * (by calling the {@code setParameter} method), this method returns
+     * the same parameters. If this signature has not been initialized with
+     * parameters, this method may return a combination of default and
+     * randomly generated parameter values if the underlying
+     * signature implementation supports it and can successfully generate
+     * them. Otherwise, {@code null} is returned.
      *
-     * @return the parameters used with this signature, or null if this
-     * signature does not use any parameters.
+     * @return the parameters used with this signature, or {@code null}
      *
      * @see #setParameter(AlgorithmParameterSpec)
      * @since 1.4
@@ -925,7 +926,7 @@ public abstract class Signature extends SignatureSpi {
      *
      * @param param the string name of the parameter.
      *
-     * @return the object that represents the parameter value, or null if
+     * @return the object that represents the parameter value, or {@code null} if
      * there is none.
      *
      * @exception InvalidParameterException if {@code param} is an invalid

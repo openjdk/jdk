@@ -363,17 +363,16 @@ abstract class RSASignature extends java.security.SignatureSpi
 
         @Override
         protected AlgorithmParameters engineGetParameters() {
-            if (this.pssParams == null) {
-                throw new ProviderException("Missing required PSS parameters");
+            AlgorithmParameters ap = null;
+            if (this.pssParams != null) {
+                try {
+                    ap = AlgorithmParameters.getInstance("RSASSA-PSS");
+                    ap.init(this.pssParams);
+                } catch (GeneralSecurityException gse) {
+                    throw new ProviderException(gse.getMessage());
+                }
             }
-            try {
-                AlgorithmParameters ap =
-                        AlgorithmParameters.getInstance("RSASSA-PSS");
-                ap.init(this.pssParams);
-                return ap;
-            } catch (GeneralSecurityException gse) {
-                throw new ProviderException(gse.getMessage());
-            }
+            return ap;
         }
 
         private void ensureInit() throws SignatureException {
