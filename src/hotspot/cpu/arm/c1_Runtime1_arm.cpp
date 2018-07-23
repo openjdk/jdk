@@ -546,9 +546,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register result = R0;
         const Register klass  = R1;
 
-        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc() && id != new_instance_id) {
-          // We come here when TLAB allocation failed.
-          // In this case we try to allocate directly from eden.
+        // If TLAB is disabled, see if there is support for inlining contiguous
+        // allocations.
+        // Otherwise, just go to the slow path.
+        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc() && id != new_instance_id) {
           Label slow_case, slow_case_no_pop;
 
           // Make sure the class is fully initialized
@@ -616,9 +617,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register klass  = R1;
         const Register length = R2;
 
-        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
-          // We come here when TLAB allocation failed.
-          // In this case we try to allocate directly from eden.
+        // If TLAB is disabled, see if there is support for inlining contiguous
+        // allocations.
+        // Otherwise, just go to the slow path.
+        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Label slow_case, slow_case_no_pop;
 
 #ifdef AARCH64
