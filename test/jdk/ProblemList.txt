@@ -597,6 +597,16 @@ java/rmi/registry/readTest/CodebaseTest.java                    8173324 windows-
 
 ############################################################################
 
+# jdk_sctp
+
+com/sun/nio/sctp/SctpMultiChannel/SendFailed.java               8141694 linux-all
+
+com/sun/nio/sctp/SctpMultiChannel/SocketOptionTests.java        8141694 linux-all
+
+com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-all
+
+############################################################################
+
 # jdk_security
 
 sun/security/pkcs11/ec/TestKeyFactory.java                      8026976 generic-all
