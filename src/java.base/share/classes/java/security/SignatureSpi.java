@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,18 +326,18 @@ public abstract class SignatureSpi {
     }
 
     /**
-     * <p>This method is overridden by providers to return the
-     * parameters used with this signature engine, or null
-     * if this signature engine does not use any parameters.
+     * <p>This method is overridden by providers to return the parameters
+     * used with this signature engine.
      *
-     * <p>The returned parameters may be the same that were used to initialize
-     * this signature engine, or may contain a combination of default and
-     * randomly generated parameter values used by the underlying signature
-     * implementation if this signature engine requires algorithm parameters
-     * but was not initialized with any.
+     * <p> If this signature engine has been previously initialized with
+     * parameters (by calling the {@code engineSetParameter} method), this
+     * method returns the same parameters. If this signature engine has not been
+     * initialized with parameters, this method may return a combination of
+     * default and randomly generated parameter values if the underlying
+     * signature implementation supports it and can successfully generate
+     * them. Otherwise, {@code null} is returned.
      *
-     * @return the parameters used with this signature engine, or null if this
-     * signature engine does not use any parameters
+     * @return the parameters used with this signature engine, or {@code null}
      *
      * @exception UnsupportedOperationException if this method is
      * not overridden by a provider
@@ -360,7 +360,7 @@ public abstract class SignatureSpi {
      *
      * @param param the string name of the parameter.
      *
-     * @return the object that represents the parameter value, or null if
+     * @return the object that represents the parameter value, or {@code null} if
      * there is none.
      *
      * @exception InvalidParameterException if {@code param} is an
