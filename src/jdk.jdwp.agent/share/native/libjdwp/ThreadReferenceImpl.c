@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,12 +214,14 @@ static jboolean
 frames(PacketInputStream *in, PacketOutputStream *out)
 {
     jvmtiError error;
-    FrameNumber fnum;
+    FrameNumber index;
     jint count;
+    jint filledIn;
     JNIEnv *env;
     jthread thread;
     jint startIndex;
     jint length;
+    jvmtiFrameInfo* frames;
 
     env = getEnv();
 
@@ -273,37 +275,37 @@ frames(PacketInputStream *in, PacketOutputStream *out)
 
     (void)outStream_writeInt(out, length);
 
-    for(fnum = startIndex ; fnum < startIndex+length ; fnum++ ) {
+    frames = jvmtiAllocate(sizeof(jvmtiFrameInfo) * length);
 
-        WITH_LOCAL_REFS(env, 1) {
-
-            jclass clazz;
-            jmethodID method;
-            jlocation location;
-
-            /* Get location info */
-            error = JVMTI_FUNC_PTR(gdata->jvmti,GetFrameLocation)
-                (gdata->jvmti, thread, fnum, &method, &location);
-            if (error == JVMTI_ERROR_OPAQUE_FRAME) {
-                clazz = NULL;
-                location = -1L;
-                error = JVMTI_ERROR_NONE;
-            } else if ( error == JVMTI_ERROR_NONE ) {
-                error = methodClass(method, &clazz);
-                if ( error == JVMTI_ERROR_NONE ) {
-                    FrameID frame;
-                    frame = createFrameID(thread, fnum);
-                    (void)outStream_writeFrameID(out, frame);
-                    writeCodeLocation(out, clazz, method, location);
-                }
-            }
-
-        } END_WITH_LOCAL_REFS(env);
-
-        if (error != JVMTI_ERROR_NONE)
-            break;
-
+    if (frames == NULL) {
+        outStream_setError(out, JDWP_ERROR(OUT_OF_MEMORY));
+        return JNI_TRUE;
     }
+
+    error = JVMTI_FUNC_PTR(gdata->jvmti, GetStackTrace)
+                          (gdata->jvmti, thread, startIndex, length, frames,
+                           &filledIn);
+
+    /* Should not happen. */
+    if (error == JVMTI_ERROR_NONE && length != filledIn) {
+        error = JVMTI_ERROR_INTERNAL;
+    }
+
+    for (index = 0; index < filledIn && error == JVMTI_ERROR_NONE; ++index) {
+        WITH_LOCAL_REFS(env, 1) {
+            jclass clazz;
+            error = methodClass(frames[index].method, &clazz);
+
+            if (error == JVMTI_ERROR_NONE) {
+                FrameID frame = createFrameID(thread, index + startIndex);
+                outStream_writeFrameID(out, frame);
+                writeCodeLocation(out, clazz, frames[index].method,
+                                  frames[index].location);
+            }
+        } END_WITH_LOCAL_REFS(env);
+    }
+
+    jvmtiDeallocate(frames);
 
     if (error != JVMTI_ERROR_NONE) {
         outStream_setError(out, map2jdwpError(error));
