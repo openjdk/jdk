@@ -828,7 +828,6 @@ java/awt/im/memoryleak/InputContextMemoryLeakTest.java 8023814 linux-all,solaris
 # core_tools
 
 tools/pack200/CommandLineTests.java                             8059906 generic-all
-tools/jimage/JImageListTest.java                                8206445 windows-all
 
 ############################################################################
 
