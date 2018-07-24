@@ -432,7 +432,8 @@ public class VMProps implements Callable<Map<String, String>> {
                 System.getProperty("java.home") + "/release"))) {
             Properties properties = new Properties();
             properties.load(in);
-            return properties.getProperty("IMPLEMENTOR").replace("\"", "");
+            String implementorProperty = properties.getProperty("IMPLEMENTOR");
+            return (implementorProperty == null) ? "null" : implementorProperty.replace("\"", "");
         } catch (IOException e) {
             e.printStackTrace();
         }
