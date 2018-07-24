@@ -893,7 +893,7 @@ public class HtmlDocletWriter {
         return getDocLink(context, typeElement, element, label, strong, false);
     }
 
-   /**
+    /**
      * Return the link for the given member.
      *
      * @param context the id of the context where the link will be printed.
@@ -913,22 +913,26 @@ public class HtmlDocletWriter {
 
     public Content getDocLink(LinkInfoImpl.Kind context, TypeElement typeElement, Element element,
             Content label, boolean strong, boolean isProperty) {
-        if (! (utils.isIncluded(element) || utils.isLinkable(typeElement))) {
+        if (!utils.isLinkable(typeElement, element)) {
             return label;
-        } else if (utils.isExecutableElement(element)) {
+        }
+
+        if (utils.isExecutableElement(element)) {
             ExecutableElement ee = (ExecutableElement)element;
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(links.getName(getAnchor(ee, isProperty)))
                 .strong(strong));
-        } else if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
+        }
+
+        if (utils.isVariableElement(element) || utils.isTypeElement(element)) {
             return getLink(new LinkInfoImpl(configuration, context, typeElement)
                 .label(label)
                 .where(links.getName(element.getSimpleName().toString()))
                 .strong(strong));
-        } else {
-            return label;
         }
+
+        return label;
     }
 
     /**
@@ -982,7 +986,6 @@ public class HtmlDocletWriter {
     }
 
     public Content seeTagToContent(Element element, DocTree see) {
-
         Kind kind = see.getKind();
         if (!(kind == LINK || kind == SEE || kind == LINK_PLAIN)) {
             return new ContentBuilder();
