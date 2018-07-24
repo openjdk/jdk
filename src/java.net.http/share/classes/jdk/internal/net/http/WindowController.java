@@ -246,8 +246,9 @@ final class WindowController {
                     debug.log("WARNING: No entry found for streamid: %s. May be cancelled?",
                               streamid);
             } else {
-                size += amount;
-                if (size < 0)
+                int prev = size;
+                size = prev + amount;
+                if (size < prev)
                     return false;
                 streams.put(streamid, size);
                 if (debug.on())
@@ -314,17 +315,17 @@ final class WindowController {
         }
     }
 
-//    /** Returns the Send Window size for the given stream. */
-//    int streamWindowSize(int streamid) {
-//        controllerLock.lock();
-//        try {
-//            Integer size = streams.get(streamid);
-//            if (size == null)
-//                throw new InternalError("Expected entry for streamid: " + streamid);
-//            return size;
-//        } finally {
-//            controllerLock.unlock();
-//        }
-//    }
+    /** Returns the Send Window size for the given stream. */
+    int streamWindowSize(int streamid) {
+        controllerLock.lock();
+        try {
+            Integer size = streams.get(streamid);
+            if (size == null)
+                throw new InternalError("Expected entry for streamid: " + streamid);
+            return size;
+        } finally {
+            controllerLock.unlock();
+        }
+    }
 
 }
