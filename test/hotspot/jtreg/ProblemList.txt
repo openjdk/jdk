@@ -74,14 +74,43 @@ gc/stress/TestJNIBlockFullGC/TestJNIBlockFullGC.java 8192647 generic-all
 # :hotspot_runtime
 
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
+runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris
 
 #############################################################################
 
 # :hotspot_serviceability
 
-serviceability/sa/ClhsdbCDSCore.java                 8207832 linux-x64
-serviceability/sa/TestRevPtrsForInvokeDynamic.java   8191270 generic-all
-serviceability/sa/sadebugd/SADebugDTest.java         8163805 generic-all
+serviceability/sa/ClhsdbAttach.java 8193639 solaris
+serviceability/sa/ClhsdbCDSCore.java 8207832 linux-x64
+serviceability/sa/ClhsdbField.java 8193639 solaris
+serviceability/sa/ClhsdbFindPC.java 8193639 solaris
+serviceability/sa/ClhsdbInspect.java 8193639 solaris
+serviceability/sa/ClhsdbJdis.java 8193639 solaris
+serviceability/sa/ClhsdbJhisto.java 8193639 solaris
+serviceability/sa/ClhsdbJstack.java 8193639 solaris
+serviceability/sa/ClhsdbLongConstant.java 8193639 solaris
+serviceability/sa/ClhsdbPmap.java 8193639 solaris
+serviceability/sa/ClhsdbPrintAll.java 8193639 solaris
+serviceability/sa/ClhsdbPrintAs.java 8193639 solaris
+serviceability/sa/ClhsdbPrintStatics.java 8193639 solaris
+serviceability/sa/ClhsdbPstack.java 8193639 solaris
+serviceability/sa/ClhsdbRegionDetailsScanOopsForG1.java 8193639 solaris
+serviceability/sa/ClhsdbScanOops.java 8193639 solaris
+serviceability/sa/ClhsdbSource.java 8193639 solaris
+serviceability/sa/ClhsdbSymbol.java 8193639 solaris
+serviceability/sa/ClhsdbSymbolTable.java 8193639 solaris
+serviceability/sa/ClhsdbThread.java 8193639 solaris
+serviceability/sa/ClhsdbWhere.java 8193639 solaris
+serviceability/sa/DeadlockDetectionTest.java 8193639 solaris
+serviceability/sa/JhsdbThreadInfoTest.java 8193639 solaris
+serviceability/sa/sadebugd/SADebugDTest.java 8163805 generic-all
+serviceability/sa/TestClassDump.java 8193639 solaris
+serviceability/sa/TestCpoolForInvokeDynamic.java 8193639 solaris
+serviceability/sa/TestDefaultMethods.java 8193639 solaris
+serviceability/sa/TestG1HeapRegion.java 8193639 solaris
+serviceability/sa/TestRevPtrsForInvokeDynamic.java 8191270 generic-all
+serviceability/sa/TestType.java 8193639 solaris
+serviceability/sa/TestUniverse.java 8193639 solaris
 
 #############################################################################
 
