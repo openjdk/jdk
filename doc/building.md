@@ -233,9 +233,8 @@ difficult for a project such as the JDK to keep pace with a continuously updated
 machine running macOS. See the section on [Apple Xcode](#apple-xcode) on some
 strategies to deal with this.
 
-It is recommended that you use at least Mac OS X 10.9 (Mavericks). At the time
-of writing, the JDK has been successfully compiled on macOS versions up to
-10.12.5 (Sierra), using XCode 8.3.2 and `--disable-warnings-as-errors`.
+It is recommended that you use at least Mac OS X 10.13 (High Sierra). At the time
+of writing, the JDK has been successfully compiled on macOS 10.12 (Sierra).
 
 The standard macOS environment contains the basic tooling needed to build, but
 for external libraries a package manager is recommended. The JDK uses
@@ -292,9 +291,9 @@ issues.
  Operating system   Toolchain version
  ------------------ -------------------------------------------------------
  Linux              gcc 7.3.0
- macOS              Apple Xcode 6.3 (using clang 6.1.0)
+ macOS              Apple Xcode 9.4 (using clang 9.1.0)
  Solaris            Oracle Solaris Studio 12.4 (with compiler version 5.13)
- Windows            Microsoft Visual Studio 2013 update 4
+ Windows            Microsoft Visual Studio 2017 update 15.5.5
 
 ### gcc
 
@@ -315,7 +314,7 @@ To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 ### Apple Xcode
 
-The oldest supported version of Xcode is 5.
+The oldest supported version of Xcode is 8.
 
 You will need the Xcode command lines developers tools to be able to build
 the JDK. (Actually, *only* the command lines tools are needed, not the IDE.)
@@ -330,7 +329,7 @@ http://iosdevelopertips.com/xcode/install-multiple-versions-of-xcode.html) has
 good suggestions on managing multiple Xcode versions. To use a specific version
 of Xcode, use `xcode-select -s` before running `configure`, or use
 `--with-toolchain-path` to point to the version of Xcode to use, e.g.
-`configure --with-toolchain-path=/Applications/Xcode5.app/Contents/Developer/usr/bin`
+`configure --with-toolchain-path=/Applications/Xcode8.app/Contents/Developer/usr/bin`
 
 If you have recently (inadvertently) updated your OS and/or Xcode version, and
 the JDK can no longer be built, please see the section on [Problems with the
@@ -372,11 +371,11 @@ CC: Sun C++ 5.13 SunOS_i386 151846-10 2015/10/30
 
 The minimum accepted version of Visual Studio is 2010. Older versions will not
 be accepted by `configure`. The maximum accepted version of Visual Studio is
-2013.
+2017. Versions older than 2017 are unlikely to continue working for long.
 
 If you have multiple versions of Visual Studio installed, `configure` will by
 default pick the latest. You can request a specific version to be used by
-setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2010`.
+setting `--with-toolchain-version`, e.g. `--with-toolchain-version=2015`.
 
 If you get `LINK: fatal error LNK1123: failure during conversion to COFF: file
 invalid` when building using Visual Studio 2010, you have encountered
