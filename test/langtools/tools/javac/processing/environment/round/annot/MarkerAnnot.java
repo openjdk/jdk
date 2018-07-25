@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,16 @@
  * questions.
  */
 
-import annot.AnnotatedElementInfo;
+package annot;
+
+import java.lang.annotation.*;
+import static java.lang.annotation.RetentionPolicy.*;
+import static java.lang.annotation.ElementType.*;
 
 /**
- * Class to hold annotations for TestElementsAnnotatedWith.
+ * A marker annotation.
  */
-
-@AnnotatedElementInfo(annotationName="java.lang.SuppressWarnings",
-                      expectedSize=2,
-                      names={"SurfaceAnnotations",
-                             "foo"})
-@SuppressWarnings("")
-public class SurfaceAnnotations {
-    @SuppressWarnings("")
-    private void foo() {return;};
+@Retention(RUNTIME)
+@Target({TYPE, MODULE, PACKAGE})
+public @interface MarkerAnnot {
 }

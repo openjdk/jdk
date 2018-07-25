@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 6397298 6400986 6425592 6449798 6453386 6508401 6498938 6911854 8030049 8038080 8032230
- * @summary Tests that getElementsAnnotatedWith works properly.
+ * @bug 6397298 6400986 6425592 6449798 6453386 6508401 6498938 6911854 8030049 8038080 8032230 8190886
+ * @summary Tests that getElementsAnnotatedWith[Any] methods work properly.
  * @author  Joseph D. Darcy
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler
  * @build   JavacTestingAbstractProcessor
+ * @compile annot/AnnotatedElementInfo.java annot/MarkerAnnot.java
  * @compile TestElementsAnnotatedWith.java
  * @compile InheritedAnnotation.java
  * @compile TpAnno.java
@@ -41,11 +42,17 @@
  * @compile -processor TestElementsAnnotatedWith -proc:only Foo.java
  * @compile -processor TestElementsAnnotatedWith -proc:only TypeParameterAnnotations.java
  * @compile -processor TestElementsAnnotatedWith -proc:only ParameterAnnotations.java
+ * @compile -processor TestElementsAnnotatedWith -proc:only pkg/package-info.java
+ * @compile -processor TestElementsAnnotatedWith -proc:only mod/quux/package-info.java
+ * @compile -processor TestElementsAnnotatedWith -proc:only mod/quux/Quux.java
+ * @compile  mod/quux/Quux.java mod/quux/package-info.java
+ * @compile -processor TestElementsAnnotatedWith -proc:only -AsingleModuleMode=true mod/module-info.java
  * @compile/fail/ref=ErroneousAnnotations.out -processor TestElementsAnnotatedWith -proc:only -XDrawDiagnostics ErroneousAnnotations.java
  * @compile Foo.java
  * @compile/process -processor TestElementsAnnotatedWith -proc:only Foo
  */
 
+import annot.AnnotatedElementInfo;
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.Set;
@@ -148,8 +155,6 @@ public class TestElementsAnnotatedWith extends JavacTestingAbstractProcessor {
      * getElementsAnnotatedWith(X) UNION getElementsAnnotatedWith(Y).
      */
     void checkSetOfAnnotatedElements(RoundEnvironment re) {
-        TypeElement annotatedElemInfoElem =  elements.getTypeElement("AnnotatedElementInfo");
-
         // For the "Any" methods, search for both the expected
         // annotation and AnnotatedElementInfo and verify the return
         // set is the union of searching for AnnotatedElementInfo and
@@ -162,28 +167,45 @@ public class TestElementsAnnotatedWith extends JavacTestingAbstractProcessor {
         Set<? extends Element> resultsBaseAny      = Collections.emptySet();
         Set<? extends Element> resultsBaseAnyMulti = Collections.emptySet();
 
+
+        boolean singleModuleMode = processingEnv.getOptions().get("singleModuleMode") != null;
+
+        TypeElement annotatedElemInfoElem = null;
+
         if (!re.processingOver()) {
             testNonAnnotations(re);
 
             // Verify AnnotatedElementInfo is present on the first
             // specified type.
 
-            TypeElement firstType = typesIn(re.getRootElements()).iterator().next();
+            Element firstElement = re.getRootElements().iterator().next();
 
             AnnotatedElementInfo annotatedElemInfo =
-                firstType.getAnnotation(AnnotatedElementInfo.class);
+                firstElement.getAnnotation(AnnotatedElementInfo.class);
+
+            ModuleElement moduleContext;
+            if (singleModuleMode) {
+                // Should also be the case that firstElement.getKind() == ElementKind.MODULE
+                moduleContext = (ModuleElement)firstElement;
+            } else {
+                moduleContext = elements.getModuleElement(""); // unnamed module
+            }
+
+            annotatedElemInfoElem =
+                elements.getTypeElement(moduleContext, "annot.AnnotatedElementInfo");
 
             boolean failed = false;
 
             Objects.requireNonNull(annotatedElemInfo,
-                                   "Missing AnnotatedElementInfo annotation on " + firstType);
+                                   "Missing AnnotatedElementInfo annotation on " + firstElement);
 
             // Verify that the annotation information is as expected.
             Set<String> expectedNames =
                 new HashSet<>(Arrays.asList(annotatedElemInfo.names()));
 
             String annotationName = annotatedElemInfo.annotationName();
-            TypeElement annotationTypeElem = elements.getTypeElement(annotationName);
+            TypeElement annotationTypeElem = elements.getTypeElement(moduleContext,
+                                                                     annotationName);
 
             resultsMeta         = re.getElementsAnnotatedWith(annotationTypeElem);
             resultsMetaAny      = re.getElementsAnnotatedWithAny(annotationTypeElem);
@@ -229,7 +251,7 @@ public class TestElementsAnnotatedWith extends JavacTestingAbstractProcessor {
                 System.err.printf("Inconsistent Base with vs withAny results");
             }
 
-            if (!resultsMeta.equals(resultsBase)) {
+            if (!singleModuleMode && !resultsMeta.equals(resultsBase)) {
                 failed = true;
                 System.err.println("Base and Meta sets unequal;\n meta: " + resultsMeta +
                                    "\nbase: " + resultsBase);
@@ -241,7 +263,7 @@ public class TestElementsAnnotatedWith extends JavacTestingAbstractProcessor {
                                    "\nbase: " + resultsBase);
             }
 
-            if (!resultsBaseAnyMulti.equals(resultsMetaAnyMulti)) {
+            if (!singleModuleMode && !resultsBaseAnyMulti.equals(resultsMetaAnyMulti)) {
                 failed = true;
                 System.err.println("BaseMulti and MetaMulti sets unequal;\n meta: " + resultsMeta +
                                    "\nbase: " + resultsBase);
@@ -255,10 +277,16 @@ public class TestElementsAnnotatedWith extends JavacTestingAbstractProcessor {
             // If processing is over without an error, the specified
             // elements should be empty so an empty set should be
             // returned.
-            throwOnNonEmpty(re.getElementsAnnotatedWith(annotatedElemInfoElem), "resultsMeta");
-            throwOnNonEmpty(re.getElementsAnnotatedWithAny(annotatedElemInfoElem), "resultsMetaAny");
+
             throwOnNonEmpty(re.getElementsAnnotatedWith(AnnotatedElementInfo.class),    "resultsBase");
             throwOnNonEmpty(re.getElementsAnnotatedWithAny(Set.of(AnnotatedElementInfo.class)), "resultsBaseAny");
+
+            if (!singleModuleMode) {
+                // Could also use two-argument form of getTypeElement with an unnamed module argument.
+                annotatedElemInfoElem = elements.getTypeElement("annot.AnnotatedElementInfo");
+                throwOnNonEmpty(re.getElementsAnnotatedWith(annotatedElemInfoElem), "resultsMeta");
+                throwOnNonEmpty(re.getElementsAnnotatedWithAny(annotatedElemInfoElem), "resultsMetaAny");
+            }
         }
     }
 

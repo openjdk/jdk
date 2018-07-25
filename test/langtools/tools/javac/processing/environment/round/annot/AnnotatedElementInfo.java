@@ -21,18 +21,20 @@
  * questions.
  */
 
-import annot.AnnotatedElementInfo;
+package annot;
+
+import java.lang.annotation.*;
+import static java.lang.annotation.ElementType.*;
+import static java.lang.annotation.RetentionPolicy.*;
 
 /**
- * Class to hold annotations for TestElementsAnnotatedWith.
+ * Hold information about the set of elements expected to be annotated
+ * with a given annotation.
  */
-
-@AnnotatedElementInfo(annotationName="java.lang.SuppressWarnings",
-                      expectedSize=2,
-                      names={"SurfaceAnnotations",
-                             "foo"})
-@SuppressWarnings("")
-public class SurfaceAnnotations {
-    @SuppressWarnings("")
-    private void foo() {return;};
+@Retention(RUNTIME)
+@Target({TYPE, MODULE, PACKAGE})
+public @interface AnnotatedElementInfo {
+    String annotationName();
+    int expectedSize();
+    String[] names();
 }

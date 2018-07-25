@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,10 @@
  * questions.
  */
 
-import annot.AnnotatedElementInfo;
+package quux;
 
-/**
- * Class to hold annotations for TestElementsAnnotatedWith.
- */
-
-@AnnotatedElementInfo(annotationName="java.lang.SuppressWarnings",
-                      expectedSize=2,
-                      names={"SurfaceAnnotations",
-                             "foo"})
+@annot.AnnotatedElementInfo(annotationName="annot.MarkerAnnot", expectedSize=1, names={"Quux"})
 @SuppressWarnings("")
-public class SurfaceAnnotations {
-    @SuppressWarnings("")
-    private void foo() {return;};
+@annot.MarkerAnnot
+public class Quux {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,13 @@
  * questions.
  */
 
-import java.lang.annotation.*;
-import static java.lang.annotation.RetentionPolicy.*;
-
 /**
- * Hold information about the set of elements expected to be annotated
- * with a given annotation.
+ * A module
  */
-@Retention(RUNTIME)
-public @interface AnnotatedElementInfo {
-    String annotationName();
-    int expectedSize();
-    String[] names();
+@annot.AnnotatedElementInfo(annotationName="annot.MarkerAnnot",
+                            expectedSize=1,
+                            names={"mod"})
+@annot.MarkerAnnot
+module mod {
+    exports quux;
 }
