@@ -891,9 +891,10 @@ enum CipherSuite {
 
         List<CipherSuite> cipherSuites = new ArrayList<>(names.length);
         for (String name : names) {
-            if (name == null) {
+            if (name == null || name.isEmpty()) {
                 throw new IllegalArgumentException(
-                    "The specified CipherSuites array contain null element");
+                        "The specified CipherSuites array contains " +
+                        "invalid null or empty string elements");
             }
 
             boolean found = false;
