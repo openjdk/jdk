@@ -74,7 +74,7 @@ private:
   ciMetadata* create_new_metadata(Metadata* o);
 
   static bool is_equal(NonPermObject* p, oop key) {
-    return p->object()->get_oop() == key;
+    return oopDesc::equals(p->object()->get_oop(), key);
   }
 
   NonPermObject* &find_non_perm(oop key);
