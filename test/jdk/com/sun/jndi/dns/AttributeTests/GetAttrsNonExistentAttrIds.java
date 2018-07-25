@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,40 @@
 
 /*
  * @test
- * @bug 8195976
- * @summary Tests that we can get the attributes of a DNS entry using special
- *          qualifiers.
+ * @bug 8198882
+ * @summary Tests that we can get the attributes of a DNS entry.
+ *          Supply at least one nonexistent attribute name in attrIds
+ *          (should be ignored).
  * @modules java.base/sun.security.util
  * @library ../lib/
- * @run main GetAny
+ * @run main GetAttrsNonExistentAttrIds
  */
 
 import javax.naming.directory.Attributes;
 
-public class GetAny extends GetAttrsBase {
+public class GetAttrsNonExistentAttrIds extends GetAttrsBase {
 
     public static void main(String[] args) throws Exception {
-        new GetAny().run(args);
-    }
-
-    @Override public Attributes getAttributes() {
-        return null;
+        new GetAttrsNonExistentAttrIds().run(args);
     }
 
     @Override public void runTest() throws Exception {
         initContext();
-
-        // Any type from IN class
-        Attributes retAttrs = context()
-                .getAttributes(getKey(), new String[] { "*" });
+        Attributes retAttrs = getAttributes();
         verifyAttributes(retAttrs);
+    }
 
-        retAttrs = context().getAttributes(getKey(), new String[] { "* *" });
-        verifyAttributes(retAttrs);
+    /*
+     * Tests that we can get the attributes of a DNS entry.
+     * Supply at least one nonexistent attribute name in attrIds
+     * (should be ignored).
+     */
+    @Override public Attributes getAttributes() throws Exception {
+        String[] attrIds = new String[getMandatoryAttrs().length + 1];
+        attrIds[0] = "SOA";
+        System.arraycopy(getMandatoryAttrs(), 0, attrIds, 1,
+                getMandatoryAttrs().length);
 
-        retAttrs = context().getAttributes(getKey(), new String[] { "IN *" });
-        verifyAttributes(retAttrs);
+        return context().getAttributes(getKey(), attrIds);
     }
 }

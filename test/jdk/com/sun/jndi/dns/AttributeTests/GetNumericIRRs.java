@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,41 @@
 
 /*
  * @test
- * @bug 8195976
- * @summary Tests that we can get the attributes of a DNS entry using special
- *          qualifiers.
+ * @bug 8198882
+ * @summary Tests that we can get the attributes of a DNS entry by naming
+ *          specific RRs by their type codes and "IN" for internet class.
+ *          Omit NAPTR for now because bind doesn't support it.
  * @modules java.base/sun.security.util
  * @library ../lib/
- * @run main GetAny
+ * @run main GetNumericIRRs
  */
 
 import javax.naming.directory.Attributes;
 
-public class GetAny extends GetAttrsBase {
+public class GetNumericIRRs extends GetRRsBase {
 
     public static void main(String[] args) throws Exception {
-        new GetAny().run(args);
+        new GetNumericIRRs().run(args);
     }
 
-    @Override public Attributes getAttributes() {
-        return null;
-    }
-
+    /*
+     * Tests that we can get the attributes of a DNS entry by naming
+     * specific RRs by their type codes and "IN" for internet class.
+     * Omit NAPTR for now because bind doesn't support it.
+     */
     @Override public void runTest() throws Exception {
         initContext();
 
-        // Any type from IN class
-        Attributes retAttrs = context()
-                .getAttributes(getKey(), new String[] { "*" });
-        verifyAttributes(retAttrs);
+        for (int i = 0; i < ROOT_LIMIT; i++) {
+            Attributes retAttrs = getAttributes(getKeys()[i], getNumAttrs()[i]);
+            verifyAttributes(retAttrs, getAttrs()[i]);
+        }
 
-        retAttrs = context().getAttributes(getKey(), new String[] { "* *" });
-        verifyAttributes(retAttrs);
+        switchToRootUrl();
 
-        retAttrs = context().getAttributes(getKey(), new String[] { "IN *" });
-        verifyAttributes(retAttrs);
+        for (int i = ROOT_LIMIT; i < getKeys().length; i++) {
+            Attributes retAttrs = getAttributes(getKeys()[i], getNumAttrs()[i]);
+            verifyAttributes(retAttrs, getAttrs()[i]);
+        }
     }
 }

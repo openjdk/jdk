@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,38 @@
 
 /*
  * @test
- * @bug 8195976
- * @summary Tests that we can get the attributes of a DNS entry using special
- *          qualifiers.
+ * @bug 8198882
+ * @summary Tests that we can get the attributes of a DNS entry.
+ *          Specify that no attributes are to be returned.
  * @modules java.base/sun.security.util
  * @library ../lib/
- * @run main GetAny
+ * @run main GetAttrsEmptyAttrIds
  */
 
 import javax.naming.directory.Attributes;
 
-public class GetAny extends GetAttrsBase {
+public class GetAttrsEmptyAttrIds extends GetAttrsBase {
 
-    public static void main(String[] args) throws Exception {
-        new GetAny().run(args);
+    public GetAttrsEmptyAttrIds() {
+        // set new test data instead of default value
+        setMandatoryAttrs(new String[] {});
     }
 
-    @Override public Attributes getAttributes() {
-        return null;
+    public static void main(String[] args) throws Exception {
+        new GetAttrsEmptyAttrIds().run(args);
     }
 
     @Override public void runTest() throws Exception {
         initContext();
-
-        // Any type from IN class
-        Attributes retAttrs = context()
-                .getAttributes(getKey(), new String[] { "*" });
+        Attributes retAttrs = getAttributes();
         verifyAttributes(retAttrs);
+    }
 
-        retAttrs = context().getAttributes(getKey(), new String[] { "* *" });
-        verifyAttributes(retAttrs);
-
-        retAttrs = context().getAttributes(getKey(), new String[] { "IN *" });
-        verifyAttributes(retAttrs);
+    /*
+     * Tests that we can get the attributes of a DNS entry.
+     * Specify that no attributes are to be returned.
+     */
+    @Override public Attributes getAttributes() throws Exception {
+        return context().getAttributes(getKey(), new String[] {});
     }
 }
