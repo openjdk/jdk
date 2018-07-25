@@ -66,6 +66,7 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_RedefineClasses_redefclass028_isRedefi
         (JNIEnv *jni_env, jclass cls)
 {
     if (fire == 1) {
+        NSK_DISPLAY0("isRedefinitionOccurred is called: fired!\n");
         return JNI_TRUE;
     } else {
         return JNI_FALSE;
@@ -76,7 +77,10 @@ JNIEXPORT jboolean JNICALL Java_nsk_jvmti_RedefineClasses_redefclass028_isRedefi
 JNIEXPORT void JNICALL Java_nsk_jvmti_RedefineClasses_redefclass028_notifyNativeAgent
         (JNIEnv *jni_env, jclass cls)
 {
-    enteredHotMethod = 1;
+    if (enteredHotMethod == 0) {
+        NSK_DISPLAY0("notifyNativeAgent is called\n");
+        enteredHotMethod = 1;
+    }
 }
 
 /** pass bytecode to native agent for redefinition **/
@@ -103,11 +107,11 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
         nsk_jvmti_setFailStatus();
         return;
     }
-    NSK_DISPLAY5("\tmethod: name=\"%s\" signature=\"%s\"\n\
-\tcompiled code size=%d\n\
-\tstarting native address=0x%p\n\
-\tnumber of address location map entries=%d\n",
-        name, sig, code_size, code_addr, map_length);
+    NSK_DISPLAY5("\tmethod: name=\"%s\" signature=\"%s\"\n"
+                 "\tcompiled code size=%d\n"
+                 "\tstarting native address=0x%p\n"
+                 "\tnumber of address location map entries=%d\n",
+                 name, sig, code_size, code_addr, map_length);
 
     if ((strcmp(name, expHSMethod) == 0) &&
             (strcmp(sig, expHSSignature) == 0)) {
@@ -118,8 +122,7 @@ CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method, jint code_size,
             hsMethodID = method;
             fire = 1;
         } else {
-            NSK_DISPLAY0("Compilation occured before method execution");
-            fire = -1;
+            NSK_DISPLAY0("Compilation occured before method execution. Ignoring.\n");
         }
     }
 }
@@ -174,9 +177,9 @@ agentProc(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg) {
         THREAD_sleep(1);
         tries++;
         if (tries > MAX_ATTEMPTS) {
-            printf("WARNING: CompiledMethodLoad event is still not received for \"%s\" after %d attempts\n\
-\tThe test has no results\n\n",
-                expHSMethod, MAX_ATTEMPTS);
+            printf("WARNING: CompiledMethodLoad event is still not received for \"%s\" after %d attempts\n"
+                   "\tThe test has no results\n\n",
+                   expHSMethod, MAX_ATTEMPTS);
             nsk_jvmti_resumeSync();
             exit(95 + PASSED);
         }
@@ -184,43 +187,37 @@ agentProc(jvmtiEnv* jvmti_env, JNIEnv* jni_env, void* arg) {
 
     NSK_DISPLAY0("agentProc: hotspot method compiled\n\n");
 
-    // CR 6604375: check whether it is appropriate to perform redefinition
-    if (fire == 1) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetMethodDeclaringClass,
-                        jvmti_env, hsMethodID, &decl_cls))) {
-            nsk_jvmti_setFailStatus();
-            nsk_jvmti_resumeSync();
-            return;
-        }
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature,
-                        jvmti_env, decl_cls, &cls_sig, NULL))) {
-            nsk_jvmti_setFailStatus();
-            nsk_jvmti_resumeSync();
-            return;
-        }
-        else
-            NSK_DISPLAY1("agentProc: hotspot method class signature: \"%s\"\n\n",
-                    cls_sig);
-
-        /* fill the structure jvmtiClassDefinition */
-        classDef.klass = decl_cls;
-        classDef.class_byte_count = bytesCount;
-        classDef.class_bytes = (unsigned char*) clsBytes;
-
-        NSK_DISPLAY1("agentProc: >>>>>>>> Invoke RedefineClasses():\n\
-                \tnew class byte count=%d\n",
-                classDef.class_byte_count);
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RedefineClasses,
-                        jvmti, 1, &classDef))) {
-            nsk_jvmti_setFailStatus();
-            nsk_jvmti_resumeSync();
-            return;
-        }
-        NSK_DISPLAY0("agentProc: <<<<<<<< RedefineClasses() is successfully done\n");
-    } else {
-        // fire == -1
-        NSK_DISPLAY0("agentProc: \"hot\" method wasn't executed. Don't perform redefinition\n");
+    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetMethodDeclaringClass,
+                                        jvmti_env, hsMethodID, &decl_cls))) {
+        nsk_jvmti_setFailStatus();
+        nsk_jvmti_resumeSync();
+        return;
     }
+    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature,
+                                        jvmti_env, decl_cls, &cls_sig, NULL))) {
+        nsk_jvmti_setFailStatus();
+        nsk_jvmti_resumeSync();
+        return;
+    } else {
+        NSK_DISPLAY1("agentProc: hotspot method class signature: \"%s\"\n\n",
+                     cls_sig);
+    }
+
+    /* fill the structure jvmtiClassDefinition */
+    classDef.klass = decl_cls;
+    classDef.class_byte_count = bytesCount;
+    classDef.class_bytes = (unsigned char*) clsBytes;
+
+    NSK_DISPLAY1("agentProc: >>>>>>>> Invoke RedefineClasses():\n"
+                 "\tnew class byte count=%d\n",
+                 classDef.class_byte_count);
+    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RedefineClasses,
+                                        jvmti, 1, &classDef))) {
+        nsk_jvmti_setFailStatus();
+        nsk_jvmti_resumeSync();
+        return;
+    }
+    NSK_DISPLAY0("agentProc: <<<<<<<< RedefineClasses() is successfully done\n");
 
     /* testing sync */
     NSK_DISPLAY1("agentProc: waiting for the debuggee finish for %d msecs...\n\n",
