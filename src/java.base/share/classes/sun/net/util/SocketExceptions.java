@@ -44,7 +44,7 @@ public final class SocketExceptions {
      * The property value is a comma separated list of
      * case insignificant category names.
      */
-    private static final String enhancedTextPropname = "jdk.net.includeInExceptions";
+    private static final String enhancedTextPropname = "jdk.includeInExceptions";
 
     private static final boolean enhancedExceptionText = initTextProp();
 
