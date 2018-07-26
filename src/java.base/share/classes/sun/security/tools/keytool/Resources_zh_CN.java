@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,12 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"option.1.set.twice", "\u591A\u6B21\u6307\u5B9A\u4E86 %s \u9009\u9879\u3002\u9664\u6700\u540E\u4E00\u4E2A\u4E4B\u5916, \u5176\u4F59\u7684\u5C06\u5168\u90E8\u5FFD\u7565\u3002"},
         {"multiple.commands.1.2", "\u53EA\u5141\u8BB8\u4E00\u4E2A\u547D\u4EE4: \u540C\u65F6\u6307\u5B9A\u4E86 %1$s \u548C %2$s\u3002"},
         {"Use.keytool.help.for.all.available.commands",
-                 "\u4F7F\u7528 \"keytool -help\" \u83B7\u53D6\u6240\u6709\u53EF\u7528\u547D\u4EE4"},
+                 "\u4F7F\u7528 \"keytool -?, -h, or --help\" \u53EF\u8F93\u51FA\u6B64\u5E2E\u52A9\u6D88\u606F"},
         {"Key.and.Certificate.Management.Tool",
                  "\u5BC6\u94A5\u548C\u8BC1\u4E66\u7BA1\u7406\u5DE5\u5177"},
         {"Commands.", "\u547D\u4EE4:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "\u4F7F\u7528 \"keytool -command_name -help\" \u53EF\u83B7\u53D6 command_name \u7684\u7528\u6CD5\u3002\n\u4F7F\u7528 -conf <url> \u9009\u9879\u53EF\u6307\u5B9A\u9884\u914D\u7F6E\u7684\u9009\u9879\u6587\u4EF6\u3002"},
+                "\u4F7F\u7528 \"keytool -command_name --help\" \u53EF\u83B7\u53D6 command_name \u7684\u7528\u6CD5\u3002\n\u4F7F\u7528 -conf <url> \u9009\u9879\u53EF\u6307\u5B9A\u9884\u914D\u7F6E\u7684\u9009\u9879\u6587\u4EF6\u3002"},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "\u751F\u6210\u8BC1\u4E66\u8BF7\u6C42"}, //-certreq

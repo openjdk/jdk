@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class DriverResource_ja extends ListResourceBundle {
     public static final String MORE_INFO = "MORE_INFO";
     public static final String DUPLICATE_OPTION = "DUPLICATE_OPTION";
     public static final String BAD_SPEC = "BAD_SPEC";
+    public static final String DEPRECATED = "DEPRECATED";
 
     /*
      * The following are the output of 'pack200' and 'unpack200' commands.
@@ -89,7 +90,7 @@ public class DriverResource_ja extends ListResourceBundle {
                 "  -q\u3001--quiet                     \u5197\u9577\u6027\u3092\u6700\u4F4E\u30EC\u30D9\u30EB\u306B\u8A2D\u5B9A\u3057\u307E\u3059",
                 "  -l{F}\u3001--log-file={F}           \u6307\u5B9A\u306E\u30ED\u30B0\u30FB\u30D5\u30A1\u30A4\u30EB\u307E\u305F\u306FSystem.out ",
                 "                                  ('-'\u306E\u5834\u5408)\u306B\u51FA\u529B\u3057\u307E\u3059",
-                "  -?\u3001-h\u3001--help                  \u3053\u306E\u30E1\u30C3\u30BB\u30FC\u30B8\u3092\u51FA\u529B\u3057\u307E\u3059",
+                "  -?\u3001-h\u3001--help                  \u3053\u306E\u30D8\u30EB\u30D7\u30FB\u30E1\u30C3\u30BB\u30FC\u30B8\u3092\u51FA\u529B\u3057\u307E\u3059",
                 "  -V\u3001--version                   \u30D7\u30ED\u30B0\u30E9\u30E0\u306E\u30D0\u30FC\u30B8\u30E7\u30F3\u3092\u51FA\u529B\u3057\u307E\u3059",
                 "  -J{X}                           \u30AA\u30D7\u30B7\u30E7\u30F3X\u3092\u57FA\u790E\u3068\u306A\u308BJava VM\u306B\u6E21\u3057\u307E\u3059",
                 "",
@@ -118,7 +119,7 @@ public class DriverResource_ja extends ListResourceBundle {
                 "  -q\u3001--quiet                   \u5197\u9577\u6027\u3092\u6700\u4F4E\u30EC\u30D9\u30EB\u306B\u8A2D\u5B9A\u3057\u307E\u3059",
                 "  -l{F}\u3001--log-file={F}           \u6307\u5B9A\u306E\u30ED\u30B0\u30FB\u30D5\u30A1\u30A4\u30EB\u307E\u305F\u306F",
                 "                                  System.out ('-'\u306E\u5834\u5408)\u306B\u51FA\u529B\u3057\u307E\u3059",
-                "  -?\u3001-h\u3001--help                \u3053\u306E\u30E1\u30C3\u30BB\u30FC\u30B8\u3092\u51FA\u529B\u3057\u307E\u3059",
+                "  -?\u3001-h\u3001--help                \u3053\u306E\u30D8\u30EB\u30D7\u30FB\u30E1\u30C3\u30BB\u30FC\u30B8\u3092\u51FA\u529B\u3057\u307E\u3059",
                 "  -V\u3001--version                 \u30D7\u30ED\u30B0\u30E9\u30E0\u306E\u30D0\u30FC\u30B8\u30E7\u30F3\u3092\u51FA\u529B\u3057\u307E\u3059",
                 "  -J{X}                         \u30AA\u30D7\u30B7\u30E7\u30F3X\u3092\u57FA\u790E\u3068\u306A\u308BJava VM\u306B\u6E21\u3057\u307E\u3059"
             }
@@ -126,6 +127,7 @@ public class DriverResource_ja extends ListResourceBundle {
         {MORE_INFO, "(\u8A73\u7D30\u306F\u3001{0} --help\u3092\u5B9F\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002)"}, // parameter 0:command name
         {DUPLICATE_OPTION, "\u91CD\u8907\u30AA\u30D7\u30B7\u30E7\u30F3: {0}"}, // parameter 0:option
         {BAD_SPEC, "{0}\u306E\u7121\u52B9\u306A\u4ED5\u69D8: {1}"}, // parameter 0:option;parameter 1:specifier
+        {DEPRECATED, "\n\u8B66\u544A: {0}\u30C4\u30FC\u30EB\u306F\u975E\u63A8\u5968\u3067\u3042\u308A\u3001\u4ECA\u5F8C\u306EJDK\u30EA\u30EA\u30FC\u30B9\u3067\u524A\u9664\u3055\u308C\u308B\u4E88\u5B9A\u3067\u3059\u3002\n"} // parameter 0:command name
     };
 
     protected Object[][] getContents() {
