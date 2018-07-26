@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,16 +47,21 @@ public class TestECGenSpec extends PKCS11Test {
     }
 
     @Override
-    public void main(Provider p) throws Exception {
+    protected boolean skipTest(Provider p) {
         if (p.getService("Signature", "SHA1withECDSA") == null) {
             System.out.println("Provider does not support ECDSA, skipping...");
-            return;
+            return true;
         }
 
         if (isBadNSSVersion(p)) {
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+    @Override
+    public void main(Provider p) throws Exception {
         String[] names = { "secp256r1", "NIST P-192", "sect163k1", "1.3.132.0.26",
             "X9.62 c2tnb239v1"};
         int curves = 1;

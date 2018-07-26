@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,12 +47,17 @@ public class TestDSAKeyLength extends PKCS11Test {
     }
 
     @Override
-    public void main(Provider provider) throws Exception {
+    protected boolean skipTest(Provider provider) {
         if (isNSS(provider) && getNSSVersion() >= 3.14) {
             System.out.println("Skip testing NSS " + getNSSVersion());
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+    @Override
+    public void main(Provider provider) throws Exception {
         /*
          * Use Solaris SPARC 11.2 or later to avoid an intermittent failure
          * when running SunPKCS11-Solaris (8044554)
