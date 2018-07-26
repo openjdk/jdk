@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,12 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"option.1.set.twice", "%s\u30AA\u30D7\u30B7\u30E7\u30F3\u304C\u8907\u6570\u56DE\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u3059\u3002\u6700\u5F8C\u306E\u3082\u306E\u4EE5\u5916\u306F\u3059\u3079\u3066\u7121\u8996\u3055\u308C\u307E\u3059\u3002"},
         {"multiple.commands.1.2", "1\u3064\u306E\u30B3\u30DE\u30F3\u30C9\u306E\u307F\u8A31\u53EF\u3055\u308C\u307E\u3059: %1$s\u3068%2$s\u306E\u4E21\u65B9\u304C\u6307\u5B9A\u3055\u308C\u307E\u3057\u305F\u3002"},
         {"Use.keytool.help.for.all.available.commands",
-                 "\u4F7F\u7528\u53EF\u80FD\u306A\u3059\u3079\u3066\u306E\u30B3\u30DE\u30F3\u30C9\u306B\u3064\u3044\u3066\u306F\"keytool -help\"\u3092\u4F7F\u7528\u3057\u3066\u304F\u3060\u3055\u3044"},
+                 "\u3053\u306E\u30D8\u30EB\u30D7\u30FB\u30E1\u30C3\u30BB\u30FC\u30B8\u3092\u8868\u793A\u3059\u308B\u306B\u306F\"keytool -?\u3001-h\u307E\u305F\u306F--help\"\u3092\u4F7F\u7528\u3057\u307E\u3059"},
         {"Key.and.Certificate.Management.Tool",
                  "\u30AD\u30FC\u304A\u3088\u3073\u8A3C\u660E\u66F8\u7BA1\u7406\u30C4\u30FC\u30EB"},
         {"Commands.", "\u30B3\u30DE\u30F3\u30C9:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "command_name\u306E\u4F7F\u7528\u65B9\u6CD5\u306B\u3064\u3044\u3066\u306F\u3001\"keytool -command_name -help\"\u3092\u4F7F\u7528\u3057\u307E\u3059\u3002\n\u4E8B\u524D\u69CB\u6210\u6E08\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u30FB\u30D5\u30A1\u30A4\u30EB\u3092\u6307\u5B9A\u3059\u308B\u306B\u306F\u3001-conf <url>\u30AA\u30D7\u30B7\u30E7\u30F3\u3092\u4F7F\u7528\u3057\u307E\u3059\u3002"},
+                "command_name\u306E\u4F7F\u7528\u65B9\u6CD5\u306B\u3064\u3044\u3066\u306F\u3001\"keytool -command_name --help\"\u3092\u4F7F\u7528\u3057\u307E\u3059\u3002\n\u4E8B\u524D\u69CB\u6210\u6E08\u306E\u30AA\u30D7\u30B7\u30E7\u30F3\u30FB\u30D5\u30A1\u30A4\u30EB\u3092\u6307\u5B9A\u3059\u308B\u306B\u306F\u3001-conf <url>\u30AA\u30D7\u30B7\u30E7\u30F3\u3092\u4F7F\u7528\u3057\u307E\u3059\u3002"},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "\u8A3C\u660E\u66F8\u30EA\u30AF\u30A8\u30B9\u30C8\u3092\u751F\u6210\u3057\u307E\u3059"}, //-certreq
@@ -455,7 +455,7 @@ public class Resources_ja extends java.util.ListResourceBundle {
         {"with.weak", "%s (\u5F31)"},
         {"key.bit", "%1$d\u30D3\u30C3\u30C8%2$s\u9375"},
         {"key.bit.weak", "%1$d\u30D3\u30C3\u30C8%2$s\u9375(\u5F31)"},
-        {"unknown.size.1", "\u4E0D\u660E\u30B5\u30A4\u30BA\u306E%s\u9375"},
+        {"unknown.size.1", "\u4E0D\u660E\u306A\u30B5\u30A4\u30BA\u306E%s\u30AD\u30FC"},
         {".PATTERN.printX509Cert.with.weak",
                 "\u6240\u6709\u8005: {0}\n\u767A\u884C\u8005: {1}\n\u30B7\u30EA\u30A2\u30EB\u756A\u53F7: {2}\n\u6709\u52B9\u671F\u9593\u306E\u958B\u59CB\u65E5: {3}\u7D42\u4E86\u65E5: {4}\n\u8A3C\u660E\u66F8\u306E\u30D5\u30A3\u30F3\u30AC\u30D7\u30EA\u30F3\u30C8:\n\t SHA1: {5}\n\t SHA256: {6}\n\u7F72\u540D\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0\u540D: {7}\n\u30B5\u30D6\u30B8\u30A7\u30AF\u30C8\u516C\u958B\u9375\u30A2\u30EB\u30B4\u30EA\u30BA\u30E0: {8}\n\u30D0\u30FC\u30B8\u30E7\u30F3: {9}"},
         {"PKCS.10.with.weak",

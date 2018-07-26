@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class DriverResource_zh_CN extends ListResourceBundle {
     public static final String MORE_INFO = "MORE_INFO";
     public static final String DUPLICATE_OPTION = "DUPLICATE_OPTION";
     public static final String BAD_SPEC = "BAD_SPEC";
+    public static final String DEPRECATED = "DEPRECATED";
 
     /*
      * The following are the output of 'pack200' and 'unpack200' commands.
@@ -89,7 +90,7 @@ public class DriverResource_zh_CN extends ListResourceBundle {
                 "  -q, --quiet                     \u5C06\u8BE6\u7EC6\u7A0B\u5EA6\u8BBE\u7F6E\u4E3A\u6700\u4F4E\u7EA7\u522B",
                 "  -l{F}, --log-file={F}           \u8F93\u51FA\u5230\u7ED9\u5B9A\u65E5\u5FD7\u6587\u4EF6, ",
                 "                                  \u6216\u5BF9\u4E8E System.out \u6307\u5B9A '-'",
-                "  -?, -h, --help                  \u8F93\u51FA\u6B64\u6D88\u606F",
+                "  -?, -h, --help                  \u8F93\u51FA\u6B64\u5E2E\u52A9\u6D88\u606F",
                 "  -V, --version                   \u8F93\u51FA\u7A0B\u5E8F\u7248\u672C",
                 "  -J{X}                           \u5C06\u9009\u9879 X \u4F20\u9012\u7ED9\u57FA\u7840 Java VM",
                 "",
@@ -118,7 +119,7 @@ public class DriverResource_zh_CN extends ListResourceBundle {
                 "  -q, --quiet                     \u5C06\u8BE6\u7EC6\u7A0B\u5EA6\u8BBE\u7F6E\u4E3A\u6700\u4F4E\u7EA7\u522B",
                 "  -l{F}, --log-file={F}         \u8F93\u51FA\u5230\u7ED9\u5B9A\u65E5\u5FD7\u6587\u4EF6, \u6216",
                 "                                \u5BF9\u4E8E System.out \u6307\u5B9A '-'",
-                "  -?, -h, --help                \u8F93\u51FA\u6B64\u6D88\u606F",
+                "  -?, -h, --help                \u8F93\u51FA\u6B64\u5E2E\u52A9\u6D88\u606F",
                 "  -V, --version                 \u8F93\u51FA\u7A0B\u5E8F\u7248\u672C",
                 "  -J{X}                         \u5C06\u9009\u9879 X \u4F20\u9012\u7ED9\u57FA\u7840 Java VM"
             }
@@ -126,6 +127,7 @@ public class DriverResource_zh_CN extends ListResourceBundle {
         {MORE_INFO, "(\u6709\u5173\u8BE6\u7EC6\u4FE1\u606F, \u8BF7\u8FD0\u884C {0} --help\u3002)"}, // parameter 0:command name
         {DUPLICATE_OPTION, "\u91CD\u590D\u7684\u9009\u9879: {0}"}, // parameter 0:option
         {BAD_SPEC, "{0}\u7684\u89C4\u8303\u9519\u8BEF: {1}"}, // parameter 0:option;parameter 1:specifier
+        {DEPRECATED, "\n\u8B66\u544A\uFF1A{0} \u5DE5\u5177\u5DF2\u8FC7\u65F6\uFF0C\u8BA1\u5212\u5728\u672A\u6765\u7684 JDK \u53D1\u884C\u7248\u4E2D\u5220\u9664\u3002\n"} // parameter 0:command name
     };
 
     protected Object[][] getContents() {
