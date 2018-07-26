@@ -69,8 +69,6 @@ gc/g1/plab/TestPLABResize.java                                  8191048   generi
 
 gc/TestNUMAPageSize.java                                        8194949   generic-all
 
-serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8195156   generic-all
-
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
 
 gc/g1/ihop/TestIHOPStatic.java                                  8199486   generic-all
