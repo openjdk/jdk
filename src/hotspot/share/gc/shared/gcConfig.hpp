@@ -50,6 +50,7 @@ public:
   static bool is_gc_selected_ergonomically();
 
   static const char* hs_err_name();
+  static const char* hs_err_name(CollectedHeap::Name name);
 
   static GCArguments* arguments();
 };

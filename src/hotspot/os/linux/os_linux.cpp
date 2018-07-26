@@ -2826,9 +2826,10 @@ size_t os::numa_get_leaf_groups(int *ids, size_t size) {
 
   // Map all node ids in which it is possible to allocate memory. Also nodes are
   // not always consecutively available, i.e. available from 0 to the highest
-  // node number.
+  // node number. If the nodes have been bound explicitly using numactl membind,
+  // then allocate memory from those nodes only.
   for (int node = 0; node <= highest_node_number; node++) {
-    if (Linux::isnode_in_configured_nodes((unsigned int)node)) {
+    if (Linux::isnode_in_bound_nodes((unsigned int)node)) {
       ids[i++] = node;
     }
   }
@@ -2929,6 +2930,8 @@ bool os::Linux::libnuma_init() {
                                                libnuma_dlsym(handle, "numa_bitmask_isbitset")));
       set_numa_distance(CAST_TO_FN_PTR(numa_distance_func_t,
                                        libnuma_dlsym(handle, "numa_distance")));
+      set_numa_get_membind(CAST_TO_FN_PTR(numa_get_membind_func_t,
+                                          libnuma_v2_dlsym(handle, "numa_get_membind")));
 
       if (numa_available() != -1) {
         set_numa_all_nodes((unsigned long*)libnuma_dlsym(handle, "numa_all_nodes"));
@@ -2993,17 +2996,23 @@ void os::Linux::rebuild_cpu_to_node_map() {
   unsigned long *cpu_map = NEW_C_HEAP_ARRAY(unsigned long, cpu_map_size, mtInternal);
   for (size_t i = 0; i < node_num; i++) {
     // Check if node is configured (not a memory-less node). If it is not, find
-    // the closest configured node.
-    if (!isnode_in_configured_nodes(nindex_to_node()->at(i))) {
+    // the closest configured node. Check also if node is bound, i.e. it's allowed
+    // to allocate memory from the node. If it's not allowed, map cpus in that node
+    // to the closest node from which memory allocation is allowed.
+    if (!isnode_in_configured_nodes(nindex_to_node()->at(i)) ||
+        !isnode_in_bound_nodes(nindex_to_node()->at(i))) {
       closest_distance = INT_MAX;
       // Check distance from all remaining nodes in the system. Ignore distance
-      // from itself and from another non-configured node.
+      // from itself, from another non-configured node, and from another non-bound
+      // node.
       for (size_t m = 0; m < node_num; m++) {
-        if (m != i && isnode_in_configured_nodes(nindex_to_node()->at(m))) {
+        if (m != i &&
+            isnode_in_configured_nodes(nindex_to_node()->at(m)) &&
+            isnode_in_bound_nodes(nindex_to_node()->at(m))) {
           distance = numa_distance(nindex_to_node()->at(i), nindex_to_node()->at(m));
           // If a closest node is found, update. There is always at least one
-          // configured node in the system so there is always at least one node
-          // close.
+          // configured and bound node in the system so there is always at least
+          // one node close.
           if (distance != 0 && distance < closest_distance) {
             closest_distance = distance;
             closest_node = nindex_to_node()->at(m);
@@ -3053,6 +3062,7 @@ os::Linux::numa_interleave_memory_v2_func_t os::Linux::_numa_interleave_memory_v
 os::Linux::numa_set_bind_policy_func_t os::Linux::_numa_set_bind_policy;
 os::Linux::numa_bitmask_isbitset_func_t os::Linux::_numa_bitmask_isbitset;
 os::Linux::numa_distance_func_t os::Linux::_numa_distance;
+os::Linux::numa_get_membind_func_t os::Linux::_numa_get_membind;
 unsigned long* os::Linux::_numa_all_nodes;
 struct bitmask* os::Linux::_numa_all_nodes_ptr;
 struct bitmask* os::Linux::_numa_nodes_ptr;
@@ -5034,8 +5044,9 @@ jint os::init_2(void) {
     if (!Linux::libnuma_init()) {
       UseNUMA = false;
     } else {
-      if ((Linux::numa_max_node() < 1)) {
-        // There's only one node(they start from 0), disable NUMA.
+      if ((Linux::numa_max_node() < 1) || Linux::isbound_to_single_node()) {
+        // If there's only one node (they start from 0) or if the process
+        // is bound explicitly to a single node using membind, disable NUMA.
         UseNUMA = false;
       }
     }

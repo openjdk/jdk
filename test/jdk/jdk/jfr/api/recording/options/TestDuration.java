@@ -33,10 +33,11 @@ import jdk.jfr.RecordingState;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.CommonHelper;
 
-/*
+/**
  * @test
  * @summary Test setDuration(). Verify recording is stopped automatically.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.options.TestDuration
  */

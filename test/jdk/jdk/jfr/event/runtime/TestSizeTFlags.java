@@ -34,9 +34,10 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @bug 8058552
+ * @requires vm.hasJFR
  * @requires vm.gc == "G1" | vm.gc == null
  * @key jfr
  * @summary Test checks that flags of type size_t are being sent to the jfr

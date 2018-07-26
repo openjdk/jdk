@@ -1013,7 +1013,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
-        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) && UseTLAB
+        // If TLAB is disabled, see if there is support for inlining contiguous
+        // allocations.
+        // Otherwise, just go to the slow path.
+        if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) && !UseTLAB
             && Universe::heap()->supports_inline_contig_alloc()) {
           Label slow_path;
           Register obj_size = rcx;
@@ -1046,13 +1049,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           }
 #endif // ASSERT
 
-          // if we got here then the TLAB allocation failed, so try
-          // refilling the TLAB or allocating directly from eden.
-          Label retry_tlab, try_eden;
           const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread);
           NOT_LP64(__ get_thread(thread));
 
-          __ bind(try_eden);
           // get the instance size (size is postive so movl is fine for 64bit)
           __ movl(obj_size, Address(klass, Klass::layout_helper_offset()));
 
@@ -1133,9 +1132,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         }
 #endif // ASSERT
 
-        // If we got here, the TLAB allocation failed, so try allocating from
-        // eden if inline contiguous allocations are supported.
-        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
+        // If TLAB is disabled, see if there is support for inlining contiguous
+        // allocations.
+        // Otherwise, just go to the slow path.
+        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Register arr_size = rsi;
           Register t1       = rcx;  // must be rcx for use as shift count
           Register t2       = rdi;

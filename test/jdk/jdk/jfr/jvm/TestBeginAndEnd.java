@@ -27,9 +27,10 @@ package jdk.jfr.jvm;
 
 import jdk.jfr.internal.JVM;
 
-/*
+/**
  * @test TestBeginAndEnd
  * @key jfr
+ * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jvm.TestBeginAndEnd
  */

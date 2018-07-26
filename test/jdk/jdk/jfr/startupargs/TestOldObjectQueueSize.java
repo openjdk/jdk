@@ -34,9 +34,10 @@ import jdk.jfr.internal.test.WhiteBox;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Test -XX:FlightRecorderOptions=old-object-queue-size
+ * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @library /test/lib
  * @key jfr

@@ -35,9 +35,10 @@ import jdk.management.jfr.FlightRecorderMXBean;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.SimpleEventHelper;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.TestCopyTo
  */

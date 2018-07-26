@@ -23,9 +23,10 @@
  * questions.
  */
 package jdk.jfr.event.gc.stacktrace;
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  *
  * @requires vm.gc == "null" | vm.gc == "G1"
  * @requires !(vm.compMode == "Xcomp" & os.arch == "aarch64")

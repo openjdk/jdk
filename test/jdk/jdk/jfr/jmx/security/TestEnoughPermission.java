@@ -35,10 +35,11 @@ import jdk.management.jfr.ConfigurationInfo;
 import jdk.management.jfr.FlightRecorderMXBean;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Test with minimal needed permissions. All functions should work.
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm/secure=java.lang.SecurityManager/java.security.policy=enough.policy jdk.jfr.jmx.security.TestEnoughPermission
  */

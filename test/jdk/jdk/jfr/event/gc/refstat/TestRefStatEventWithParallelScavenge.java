@@ -26,9 +26,10 @@
 package jdk.jfr.event.gc.refstat;
 import jdk.test.lib.jfr.GCHelper;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -Xlog:gc+heap=trace,gc*=debug -Xmx50m -Xmn2m -XX:-UseLargePages -XX:+UseParallelGC -XX:-UseAdaptiveSizePolicy jdk.jfr.event.gc.refstat.TestRefStatEventWithParallelScavenge

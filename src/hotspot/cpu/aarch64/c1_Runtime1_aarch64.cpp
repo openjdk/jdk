@@ -687,8 +687,11 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           __ set_info("fast new_instance init check", dont_gc_arguments);
         }
 
+        // If TLAB is disabled, see if there is support for inlining contiguous
+        // allocations.
+        // Otherwise, just go to the slow path.
         if ((id == fast_new_instance_id || id == fast_new_instance_init_check_id) &&
-            UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
+            !UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Label slow_path;
           Register obj_size = r2;
           Register t1       = r19;
@@ -799,7 +802,10 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         }
 #endif // ASSERT
 
-        if (UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
+        // If TLAB is disabled, see if there is support for inlining contiguous
+        // allocations.
+        // Otherwise, just go to the slow path.
+        if (!UseTLAB && Universe::heap()->supports_inline_contig_alloc()) {
           Register arr_size = r4;
           Register t1       = r2;
           Register t2       = r5;

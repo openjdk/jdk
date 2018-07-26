@@ -31,9 +31,10 @@ import jdk.jfr.MetadataDefinition;
 import jdk.jfr.Timestamp;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.annotations.TestHasValue
  */

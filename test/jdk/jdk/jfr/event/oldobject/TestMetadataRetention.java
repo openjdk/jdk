@@ -41,9 +41,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.TestClassLoader;
 
-/*
+/**
  * @test
  * @summary The test verifies that an old object sample maintains references to "stale" metadata
+ * @requires vm.hasJFR
  * @requires vm.gc == "null"
  * @key jfr
  * @modules jdk.jfr/jdk.jfr.internal.test

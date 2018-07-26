@@ -38,10 +38,11 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary The test verifies JFR.dump command
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:FlightRecorderOptions:maxchunksize=1M jdk.jfr.jcmd.TestJcmdDump
  */

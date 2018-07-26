@@ -35,8 +35,9 @@ import jdk.test.lib.jfr.Events;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.BlobType;
 
-/*
+/**
  * @test TestCodeCacheFull
+ * @requires vm.hasJFR
  *
  * @library /test/lib
  * @modules jdk.jfr

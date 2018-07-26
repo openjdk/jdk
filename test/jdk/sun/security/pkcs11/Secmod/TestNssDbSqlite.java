@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2017, 2018, Red Hat, Inc. and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,6 +26,8 @@
  * @test
  * @bug 8165996
  * @summary Test NSS DB Sqlite
+ * @comment There is no NSS on Aix.
+ * @requires os.family != "aix"
  * @library ../
  * @modules java.base/sun.security.rsa
  *          java.base/sun.security.provider
@@ -64,7 +66,9 @@ public final class TestNssDbSqlite extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
 
-        initialize();
+        if (!initialize()) {
+            return;
+        }
 
         if (enableDebug) {
             System.out.println("SunPKCS11 provider: " +
@@ -106,14 +110,15 @@ public final class TestNssDbSqlite extends SecmodTest {
         }
     }
 
-    private static void initialize() throws Exception {
-        initializeProvider();
+    private static boolean initialize() throws Exception {
+        return initializeProvider();
     }
 
-    private static void initializeProvider () throws Exception {
+    private static boolean initializeProvider() throws Exception {
         useSqlite(true);
         if (!initSecmod()) {
-            return;
+            System.out.println("Cannot init security module database, skipping");
+            return false;
         }
 
         sunPKCS11NSSProvider = getSunPKCS11(BASE + SEP + "nss-sqlite.cfg");
@@ -130,5 +135,7 @@ public final class TestNssDbSqlite extends SecmodTest {
         gen.generate(2048);
         privateKey = gen.getPrivateKey();
         certificate = gen.getSelfCertificate(new X500Name("CN=Me"), 365);
+
+        return true;
     }
 }

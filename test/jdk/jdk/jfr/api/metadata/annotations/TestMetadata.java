@@ -38,9 +38,10 @@ import jdk.jfr.ValueDescriptor;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.annotations.TestMetadata
  */

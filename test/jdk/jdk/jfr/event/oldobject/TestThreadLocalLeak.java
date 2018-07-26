@@ -34,9 +34,10 @@ import jdk.jfr.internal.test.WhiteBox;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestThreadLocalLeak

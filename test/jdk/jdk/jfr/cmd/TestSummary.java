@@ -31,10 +31,11 @@ import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary Test jfr info
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.cmd.TestSummary
  */

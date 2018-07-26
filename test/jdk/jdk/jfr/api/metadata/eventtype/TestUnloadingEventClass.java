@@ -38,10 +38,11 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.internal.JVM;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Test that verifies event metadata is removed when an event class is unloaded.
+ * @requires vm.hasJFR
  *
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal

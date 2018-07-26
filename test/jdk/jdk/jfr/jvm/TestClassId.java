@@ -31,9 +31,10 @@ import static jdk.test.lib.Asserts.assertNE;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.Type;
 
-/*
+/**
  * @test TestClassId
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jvm.TestClassId

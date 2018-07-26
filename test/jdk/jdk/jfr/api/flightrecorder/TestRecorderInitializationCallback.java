@@ -32,10 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.FlightRecorderListener;
 
-/*
+/**
  * @test
  * @summary Test Flight Recorder initialization callback is only called once
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.flightrecorder.TestRecorderInitializationCallback
  */

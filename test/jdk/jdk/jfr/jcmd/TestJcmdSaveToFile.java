@@ -30,10 +30,11 @@ import java.io.File;
 import jdk.test.lib.jfr.FileHelper;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary The test verifies that recording can be written to a file both with JFR.start and JFR.stop
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jcmd.TestJcmdSaveToFile
  */

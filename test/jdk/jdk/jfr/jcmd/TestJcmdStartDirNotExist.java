@@ -30,10 +30,11 @@ import java.nio.file.Paths;
 
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary Verify error when starting with a dir that does not exist.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jcmd.TestJcmdStartDirNotExist
  */

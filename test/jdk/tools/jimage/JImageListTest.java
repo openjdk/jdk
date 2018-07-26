@@ -224,6 +224,8 @@ public class JImageListTest extends JImageCliTest {
 
     public static void main(String[] args) throws Throwable {
         new JImageListTest().runTests();
+        // Just to ensure that jimage files will be unmapped
+        System.gc();
     }
 }
 

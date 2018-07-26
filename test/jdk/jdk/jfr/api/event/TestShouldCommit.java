@@ -31,10 +31,11 @@ import jdk.jfr.Event;
 import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Test enable/disable event and verify recording has expected events.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -Xlog:jfr+event+setting=trace jdk.jfr.api.event.TestShouldCommit
  */

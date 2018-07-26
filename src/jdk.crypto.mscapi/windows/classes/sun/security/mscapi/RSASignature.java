@@ -129,7 +129,7 @@ abstract class RSASignature extends java.security.SignatureSpi
         @Override
         protected void engineUpdate(byte[] b, int off, int len)
                 throws SignatureException {
-            if (offset + len > precomputedDigest.length) {
+            if (len > (precomputedDigest.length - offset)) {
                 offset = RAW_RSA_MAX + 1;
                 return;
             }
@@ -144,7 +144,7 @@ abstract class RSASignature extends java.security.SignatureSpi
             if (len <= 0) {
                 return;
             }
-            if (offset + len > precomputedDigest.length) {
+            if (len > (precomputedDigest.length - offset)) {
                 offset = RAW_RSA_MAX + 1;
                 return;
             }
@@ -363,17 +363,16 @@ abstract class RSASignature extends java.security.SignatureSpi
 
         @Override
         protected AlgorithmParameters engineGetParameters() {
-            if (this.pssParams == null) {
-                throw new ProviderException("Missing required PSS parameters");
+            AlgorithmParameters ap = null;
+            if (this.pssParams != null) {
+                try {
+                    ap = AlgorithmParameters.getInstance("RSASSA-PSS");
+                    ap.init(this.pssParams);
+                } catch (GeneralSecurityException gse) {
+                    throw new ProviderException(gse.getMessage());
+                }
             }
-            try {
-                AlgorithmParameters ap =
-                        AlgorithmParameters.getInstance("RSASSA-PSS");
-                ap.init(this.pssParams);
-                return ap;
-            } catch (GeneralSecurityException gse) {
-                throw new ProviderException(gse.getMessage());
-            }
+            return ap;
         }
 
         private void ensureInit() throws SignatureException {

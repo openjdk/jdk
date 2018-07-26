@@ -24,9 +24,10 @@
  */
 package jdk.jfr.event.gc.stacktrace;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  *
  * @requires vm.gc == "null" | vm.gc == "Serial"
  * @requires !(vm.compMode == "Xcomp" & os.arch == "aarch64")

@@ -32,10 +32,11 @@ import jdk.test.lib.jfr.CommonHelper;
 import jdk.test.lib.jfr.VoidFunction;
 
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Call functions with invalid argument id. Verify Exception.
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.TestWrongId
  */

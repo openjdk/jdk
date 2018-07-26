@@ -34,9 +34,10 @@ import jdk.test.lib.jfr.SimpleEvent;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.startupargs.TestRetransformUsingLog
  */

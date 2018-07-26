@@ -156,7 +156,7 @@ public class Http2TestServerConnection {
     };
 
     private SettingsFrame getServerSettingProperties() {
-        SettingsFrame s = SettingsFrame.getDefaultSettings();
+        SettingsFrame s = SettingsFrame.defaultRFCSettings();
         if (properties == null)
             return s;
         for (int i=0; i<propIDs.length; i++) {

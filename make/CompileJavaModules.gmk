@@ -621,9 +621,14 @@ $(JDK_OUTPUTDIR)/modules/%_zh_HK.properties: $(JDK_OUTPUTDIR)/modules/%_zh_TW.pr
 	$(install-file)
 
 CreateHkTargets = \
-    $(patsubst $(TOPDIR)/src/%, $(JDK_OUTPUTDIR)/modules/%, \
-      $(subst /share/classes,, \
-        $(subst _zh_TW,_zh_HK, $(filter %_zh_TW.properties, $1))))
+    $(call FilterExcludedTranslations, \
+       $(patsubst $(TOPDIR)/src/%, $(JDK_OUTPUTDIR)/modules/%, \
+         $(subst /share/classes,, \
+            $(subst _zh_TW,_zh_HK, $(filter %_zh_TW.properties, $1)) \
+         ) \
+       ), \
+       .properties \
+    )
 
 ifeq ($(MODULE), java.sql.rowset)
   TARGETS += $(call CreateHkTargets, $(java.sql.rowset_CLEAN_FILES))

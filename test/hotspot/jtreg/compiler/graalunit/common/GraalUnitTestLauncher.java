@@ -124,9 +124,12 @@ public class GraalUnitTestLauncher {
             throw new Exception("Failed to find tests, VM crashed with exit code " + exitCode);
         }
 
-        System.out.println("INFO: command output: [" + out.getOutput() + "]");
+        String outStr = out.getOutput().trim();
+        System.out.println("INFO: command output: [" + outStr + "]");
 
-        String[] lines = out.getStdout().split(" ");
+        String[] lines = outStr.split(" ");
+        Arrays.sort(lines);
+
         if (lines.length > 1) { // first line contains jar file name
             for (int i = 1; i < lines.length; i++) {
                 String className = lines[i];

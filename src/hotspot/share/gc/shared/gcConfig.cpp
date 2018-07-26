@@ -226,6 +226,15 @@ const char* GCConfig::hs_err_name() {
   return "unknown gc";
 }
 
+const char* GCConfig::hs_err_name(CollectedHeap::Name name) {
+  FOR_EACH_SUPPORTED_GC(gc) {
+    if (gc->_name == name) {
+      return gc->_hs_err_name;
+    }
+  }
+  return "unknown gc";
+}
+
 GCArguments* GCConfig::arguments() {
   assert(_arguments != NULL, "Not initialized");
   return _arguments;

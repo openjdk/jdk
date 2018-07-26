@@ -34,10 +34,11 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.FileHelper;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary Start a recording without name.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jcmd.TestJcmdStartStopDefault
  */

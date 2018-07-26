@@ -34,9 +34,10 @@ import jdk.jfr.internal.test.WhiteBox;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @requires vm.gc == "null"
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test

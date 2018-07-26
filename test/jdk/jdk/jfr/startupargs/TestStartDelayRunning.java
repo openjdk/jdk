@@ -32,10 +32,11 @@ import jdk.jfr.RecordingState;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.CommonHelper;
 
-/*
+/**
  * @test
  * @summary Verify that a recopding with a delay is started.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:StartFlightRecording=name=TestStartDelay,delay=1s jdk.jfr.startupargs.TestStartDelayRunning
  */

@@ -332,7 +332,7 @@ public final class RSACipher extends CipherSpi {
         if ((inLen == 0) || (in == null)) {
             return;
         }
-        if (bufOfs + inLen > buffer.length) {
+        if (inLen > (buffer.length - bufOfs)) {
             bufOfs = buffer.length + 1;
             return;
         }
