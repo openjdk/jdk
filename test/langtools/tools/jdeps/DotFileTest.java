@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
  * @summary Basic tests for jdeps -dotoutput option
  * @modules java.management
  *          jdk.jdeps/com.sun.tools.jdeps
- * @build Test p.Foo p.Bar
+ * @library /tools/lib
+ * @build toolbox.ToolBox Test p.Foo p.Bar
  * @run main DotFileTest
  */
 
@@ -43,6 +44,8 @@ import java.util.*;
 import java.util.regex.*;
 import java.util.stream.Collectors;
 
+import toolbox.ToolBox;
+
 public class DotFileTest {
     public static void main(String... args) throws Exception {
         int errors = 0;
@@ -51,9 +54,11 @@ public class DotFileTest {
             throw new Exception(errors + " errors found");
     }
 
+    final ToolBox toolBox;
     final Path dir;
     final Path dotoutput;
     DotFileTest() {
+        this.toolBox = new ToolBox();
         this.dir = Paths.get(System.getProperty("test.classes", "."));
         this.dotoutput = dir.resolve("dots");
     }
@@ -169,12 +174,10 @@ public class DotFileTest {
 
     Map<String,String> jdeps(List<String> args, Path dotfile) throws IOException {
         if (Files.exists(dotoutput)) {
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dotoutput)) {
-                for (Path p : stream) {
-                    Files.delete(p);
-                }
-            }
-            Files.delete(dotoutput);
+            // delete contents of directory, then directory,
+            // waiting for confirmation on Windows
+            toolBox.cleanDirectory(dotoutput);
+            toolBox.deleteFiles(dotoutput);
         }
         // invoke jdeps
         StringWriter sw = new StringWriter();
