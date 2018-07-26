@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <elf.h>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/ptrace.h>
@@ -374,7 +375,7 @@ static ps_prochandle_ops process_ops = {
 
 // attach to the process. One and only one exposed stuff
 JNIEXPORT struct ps_prochandle* JNICALL
-Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
+Pgrab(pid_t pid, char* err_buf, size_t err_buf_len, bool is_in_container) {
   struct ps_prochandle* ph = NULL;
   thread_info* thr = NULL;
 
@@ -401,7 +402,32 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   read_lib_info(ph);
 
   // read thread info
-  read_thread_info(ph, add_new_thread);
+  if (is_in_container) {
+    /*
+     * If the process is running in the container, SA scans all tasks in
+     * /proc/<PID>/task to read all threads info.
+     */
+    char taskpath[PATH_MAX];
+    DIR *dirp;
+    struct dirent *entry;
+
+    snprintf(taskpath, PATH_MAX, "/proc/%d/task", ph->pid);
+    dirp = opendir(taskpath);
+    int lwp_id;
+    while ((entry = readdir(dirp)) != NULL) {
+      if (*entry->d_name == '.') {
+        continue;
+      }
+      lwp_id = atoi(entry->d_name);
+      if (lwp_id == ph->pid) {
+        continue;
+      }
+      add_new_thread(ph, -1, lwp_id);
+    }
+    closedir(dirp);
+  } else {
+    read_thread_info(ph, add_new_thread);
+  }
 
   // attach to the threads
   thr = ph->threads;

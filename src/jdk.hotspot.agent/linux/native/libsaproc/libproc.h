@@ -87,7 +87,7 @@ struct ps_prochandle;
 
 // attach to a process
 JNIEXPORT struct ps_prochandle* JNICALL
-Pgrab(pid_t pid, char* err_buf, size_t err_buf_len);
+Pgrab(pid_t pid, char* err_buf, size_t err_buf_len, bool is_in_container);
 
 // attach to a core dump
 JNIEXPORT struct ps_prochandle* JNICALL

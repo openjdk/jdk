@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,16 @@
 package sun.jvm.hotspot.debugger.linux;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 import sun.jvm.hotspot.debugger.Address;
 import sun.jvm.hotspot.debugger.DebuggerBase;
@@ -72,6 +80,10 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
     private List threadList;
     private List loadObjectList;
 
+    // PID namespace support
+    // It maps the LWPID in the host to the LWPID in the container.
+    private Map<Integer, Integer> nspidMap;
+
     // called by native method lookupByAddress0
     private ClosestSymbol createClosestSymbol(String name, long offset) {
        return new ClosestSymbol(name, offset);
@@ -89,7 +101,8 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
 
     private native static void init0()
                                 throws DebuggerException;
-    private native void attach0(int pid)
+    private native void setSAAltRoot0(String altroot);
+    private native void attach0(int pid, boolean isInContainer)
                                 throws DebuggerException;
     private native void attach0(String execName, String coreName)
                                 throws DebuggerException;
@@ -254,15 +267,63 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         }
     }
 
+    // Get namespace PID from /proc/<PID>/status.
+    private int getNamespacePID(Path statusPath) {
+        try (var lines = Files.lines(statusPath)) {
+            return lines.map(s -> s.split("\\s+"))
+                        .filter(a -> a.length == 3)
+                        .filter(a -> a[0].equals("NSpid:"))
+                        .mapToInt(a -> Integer.valueOf(a[2]))
+                        .findFirst()
+                        .getAsInt();
+        } catch (IOException | NoSuchElementException e) {
+            return Integer.valueOf(statusPath.getParent()
+                                             .toFile()
+                                             .getName());
+        }
+    }
+
+    // Get LWPID in the host from the container's LWPID.
+    // Returns -1 if the process is running in the host.
+    public int getHostPID(int id) {
+        return (nspidMap == null) ? -1 : nspidMap.get(id);
+    }
+
+    // Fill namespace PID map from procfs.
+    // This method scans all tasks (/proc/<PID>/task) in the process.
+    private void fillNSpidMap(Path proc) {
+        Path task = Paths.get(proc.toString(), "task");
+        try (var tasks = Files.list(task)) {
+            nspidMap = tasks.filter(p -> !p.toString().startsWith("."))
+                            .collect(Collectors.toMap(p -> Integer.valueOf(getNamespacePID(Paths.get(p.toString(), "status"))),
+                                                      p -> Integer.valueOf(p.toFile().getName())));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     /** From the Debugger interface via JVMDebugger */
     public synchronized void attach(int processID) throws DebuggerException {
         checkAttached();
         threadList = new ArrayList();
         loadObjectList = new ArrayList();
+
+        Path proc = Paths.get("/proc", Integer.toString(processID));
+        int NSpid = getNamespacePID(Paths.get(proc.toString(), "status"));
+        if (NSpid != processID) {
+            // If PID different from namespace PID, we can assume the process
+            // is running in the container.
+            // So we need to set SA_ALTROOT environment variable that SA reads
+            // binaries in the container.
+            setSAAltRoot0(Paths.get(proc.toString(), "root").toString());
+            fillNSpidMap(proc);
+        }
+
         class AttachTask implements WorkerThreadTask {
            int pid;
+           boolean isInContainer;
            public void doit(LinuxDebuggerLocal debugger) {
-              debugger.attach0(pid);
+              debugger.attach0(pid, isInContainer);
               debugger.attached = true;
               debugger.isCore = false;
               findABIVersion();
@@ -271,6 +332,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
 
         AttachTask task = new AttachTask();
         task.pid = processID;
+        task.isInContainer = (processID != NSpid);
         workerThread.execute(task);
     }
 
