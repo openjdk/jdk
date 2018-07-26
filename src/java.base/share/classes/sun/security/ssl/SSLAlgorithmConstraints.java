@@ -71,32 +71,35 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
     SSLAlgorithmConstraints(SSLSocket socket,
             boolean withDefaultCertPathConstraints) {
-        AlgorithmConstraints configuredConstraints = null;
-        if (socket != null) {
-            // Note that the KeyManager or TrustManager implementation may be
-            // not implemented in the same provider as SSLSocket/SSLEngine.
-            // Please check the instance before casting to use SSLSocketImpl.
-            if (socket instanceof SSLSocketImpl) {
-                HandshakeContext hc =
-                        ((SSLSocketImpl)socket).conContext.handshakeContext;
-                if (hc != null) {
-                    configuredConstraints = hc.sslConfig.algorithmConstraints;
-                } else {
-                    configuredConstraints = null;
-                }
-            } else {
-                configuredConstraints =
-                        socket.getSSLParameters().getAlgorithmConstraints();
-            }
-        }
-        this.userSpecifiedConstraints = configuredConstraints;
+        this.userSpecifiedConstraints = getConstraints(socket);
         this.peerSpecifiedConstraints = null;
         this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
     }
 
     SSLAlgorithmConstraints(SSLEngine engine,
             boolean withDefaultCertPathConstraints) {
-        AlgorithmConstraints configuredConstraints = null;
+        this.userSpecifiedConstraints = getConstraints(engine);
+        this.peerSpecifiedConstraints = null;
+        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
+    }
+
+    SSLAlgorithmConstraints(SSLSocket socket, String[] supportedAlgorithms,
+            boolean withDefaultCertPathConstraints) {
+        this.userSpecifiedConstraints = getConstraints(socket);
+        this.peerSpecifiedConstraints =
+                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms);
+        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
+    }
+
+    SSLAlgorithmConstraints(SSLEngine engine, String[] supportedAlgorithms,
+            boolean withDefaultCertPathConstraints) {
+        this.userSpecifiedConstraints = getConstraints(engine);
+        this.peerSpecifiedConstraints =
+                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms);
+        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
+    }
+
+    private static AlgorithmConstraints getConstraints(SSLEngine engine) {
         if (engine != null) {
             // Note that the KeyManager or TrustManager implementation may be
             // not implemented in the same provider as SSLSocket/SSLEngine.
@@ -105,60 +108,33 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                 HandshakeContext hc =
                         ((SSLEngineImpl)engine).conContext.handshakeContext;
                 if (hc != null) {
-                    configuredConstraints = hc.sslConfig.algorithmConstraints;
-                } else {
-                    configuredConstraints = null;
+                    return hc.sslConfig.algorithmConstraints;
                 }
             } else {
-                configuredConstraints =
-                        engine.getSSLParameters().getAlgorithmConstraints();
+                return engine.getSSLParameters().getAlgorithmConstraints();
             }
         }
-        this.userSpecifiedConstraints = configuredConstraints;
-        this.peerSpecifiedConstraints = null;
-        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
+
+        return null;
     }
 
-    SSLAlgorithmConstraints(SSLSocket socket, String[] supportedAlgorithms,
-            boolean withDefaultCertPathConstraints) {
-        AlgorithmConstraints configuredConstraints = null;
-        AlgorithmConstraints negotiatedConstraints = null;
+    private static AlgorithmConstraints getConstraints(SSLSocket socket) {
         if (socket != null) {
-            HandshakeContext hc =
-                    ((SSLSocketImpl)socket).conContext.handshakeContext;
-            if (hc != null) {
-                configuredConstraints = hc.sslConfig.algorithmConstraints;
+            // Note that the KeyManager or TrustManager implementation may be
+            // not implemented in the same provider as SSLSocket/SSLEngine.
+            // Please check the instance before casting to use SSLSocketImpl.
+            if (socket instanceof SSLSocketImpl) {
+                HandshakeContext hc =
+                        ((SSLSocketImpl)socket).conContext.handshakeContext;
+                if (hc != null) {
+                    return hc.sslConfig.algorithmConstraints;
+                }
             } else {
-                configuredConstraints = null;
+                return socket.getSSLParameters().getAlgorithmConstraints();
             }
-
-            negotiatedConstraints =
-                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms);
         }
-        this.userSpecifiedConstraints = configuredConstraints;
-        this.peerSpecifiedConstraints = negotiatedConstraints;
-        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
-    }
 
-    SSLAlgorithmConstraints(SSLEngine engine, String[] supportedAlgorithms,
-            boolean withDefaultCertPathConstraints) {
-        AlgorithmConstraints configuredConstraints = null;
-        AlgorithmConstraints negotiatedConstraints = null;
-        if (engine != null) {
-            HandshakeContext hc =
-                    ((SSLEngineImpl)engine).conContext.handshakeContext;
-            if (hc != null) {
-                configuredConstraints = hc.sslConfig.algorithmConstraints;
-            } else {
-                configuredConstraints = null;
-            }
-
-            negotiatedConstraints =
-                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms);
-        }
-        this.userSpecifiedConstraints = configuredConstraints;
-        this.peerSpecifiedConstraints = negotiatedConstraints;
-        this.enabledX509DisabledAlgConstraints = withDefaultCertPathConstraints;
+        return null;
     }
 
     @Override
