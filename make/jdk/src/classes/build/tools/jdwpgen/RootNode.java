@@ -52,14 +52,16 @@ class RootNode extends AbstractNamedNode {
         writer.println("</style>");
         writer.println("</head>");
         writer.println("<body>");
-        writer.println("<ul>");
+        writer.println("<ul role=\"navigation\">");
         for (Node node : components) {
             node.documentIndex(writer);
         }
         writer.println("</ul>");
+        writer.println("<div role=\"main\">");
         for (Node node : components) {
             node.document(writer);
         }
+        writer.println("</div>");
         writer.println("</body></html>");
     }
 
