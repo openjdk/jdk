@@ -154,7 +154,15 @@ public abstract class PKCS11Test {
 
     public abstract void main(Provider p) throws Exception;
 
+    protected boolean skipTest(Provider p) {
+        return false;
+    }
+
     private void premain(Provider p) throws Exception {
+        if (skipTest(p)) {
+            return;
+        }
+
         // set a security manager and policy before a test case runs,
         // and disable them after the test case finished
         try {
@@ -327,9 +335,10 @@ public abstract class PKCS11Test {
     }
 
     static boolean isBadNSSVersion(Provider p) {
-        if (isNSS(p) && badNSSVersion) {
+        double nssVersion = getNSSVersion();
+        if (isNSS(p) && nssVersion >= 3.11 && nssVersion < 3.12) {
             System.out.println("NSS 3.11 has a DER issue that recent " +
-                    "version do not.");
+                    "version do not, skipping");
             return true;
         }
         return false;
@@ -666,9 +675,6 @@ public abstract class PKCS11Test {
     }
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();
-
-    static final boolean badNSSVersion =
-            getNSSVersion() >= 3.11 && getNSSVersion() < 3.12;
 
     private static final String distro = distro();
 
