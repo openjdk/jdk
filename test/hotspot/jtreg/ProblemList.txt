@@ -44,6 +44,7 @@ compiler/ciReplay/TestSAServer.java 8029528 generic-all
 compiler/codecache/stress/OverloadCompileQueueTest.java 8166554 generic-all
 compiler/codegen/Test6896617.java 8193479 generic-all
 compiler/compilercontrol/jcmd/ClearDirectivesFileStackTest.java 8140405 generic-all
+compiler/jvmci/compilerToVM/GetFlagValueTest.java 8204459 generic-all
 compiler/jvmci/compilerToVM/GetResolvedJavaTypeTest.java 8158860 generic-all
 compiler/jvmci/compilerToVM/InvalidateInstalledCodeTest.java 8163894 generic-all
 compiler/tiered/LevelTransitionTest.java 8067651 generic-all
