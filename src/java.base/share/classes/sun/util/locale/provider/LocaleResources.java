@@ -44,12 +44,14 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.text.MessageFormat;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import sun.security.action.GetPropertyAction;
@@ -308,26 +310,37 @@ public class LocaleResources {
         Set<String> keyset = getZoneIDs();
         // Use a LinkedHashSet to preseve the order
         Set<String[]> value = new LinkedHashSet<>();
+        Set<String> tzIds = new HashSet<>(Set.of(TimeZone.getAvailableIDs()));
         for (String key : keyset) {
             if (!key.startsWith(TZNB_EXCITY_PREFIX)) {
                 value.add(rb.getStringArray(key));
+                tzIds.remove(key);
             }
         }
 
-        // Add aliases data for CLDR
         if (type == LocaleProviderAdapter.Type.CLDR) {
-            // Note: TimeZoneNamesBundle creates a String[] on each getStringArray call.
+            // Add aliases data for CLDR
             Map<String, String> aliases = ZoneInfo.getAliasTable();
-            for (String alias : aliases.keySet()) {
-                if (!keyset.contains(alias)) {
-                    String tzid = aliases.get(alias);
-                    if (keyset.contains(tzid)) {
-                        String[] val = rb.getStringArray(tzid);
-                        val[0] = alias;
+            // Note: TimeZoneNamesBundle creates a String[] on each getStringArray call.
+
+            // Add timezones which are not present in this keyset,
+            // so that their fallback names will be generated at runtime.
+            tzIds.stream().filter(i -> (!i.startsWith("Etc/GMT")
+                    && !i.startsWith("GMT")
+                    && !i.startsWith("SystemV")))
+                    .forEach(tzid -> {
+                        String[] val = new String[7];
+                        if (keyset.contains(tzid)) {
+                            val = rb.getStringArray(tzid);
+                        } else {
+                            String tz = aliases.get(tzid);
+                            if (keyset.contains(tz)) {
+                                val = rb.getStringArray(tz);
+                            }
+                        }
+                        val[0] = tzid;
                         value.add(val);
-                    }
-                }
-            }
+                    });
         }
         return value.toArray(new String[0][]);
     }
