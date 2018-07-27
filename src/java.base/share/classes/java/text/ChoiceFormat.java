@@ -459,24 +459,30 @@ public class ChoiceFormat extends NumberFormat {
      * If {@code NaN}, returns same value.
      * <p>Used to make half-open intervals.
      *
+     * @implNote This is equivalent to calling
+     * {@link Math#nextUp(double) Math.nextUp(d)}
+     *
      * @param d the reference value
      * @return the least double value greather than {@code d}
      * @see #previousDouble
      */
     public static final double nextDouble (double d) {
-        return nextDouble(d,true);
+        return Math.nextUp(d);
     }
 
     /**
      * Finds the greatest double less than {@code d}.
      * If {@code NaN}, returns same value.
      *
+     * @implNote This is equivalent to calling
+     * {@link Math#nextDown(double) Math.nextDown(d)}
+     *
      * @param d the reference value
      * @return the greatest double value less than {@code d}
      * @see #nextDouble
      */
     public static final double previousDouble (double d) {
-        return nextDouble(d,false);
+        return Math.nextDown(d);
     }
 
     /**
@@ -548,33 +554,6 @@ public class ChoiceFormat extends NumberFormat {
      */
     private String[] choiceFormats;
 
-    /*
-    static final long SIGN          = 0x8000000000000000L;
-    static final long EXPONENT      = 0x7FF0000000000000L;
-    static final long SIGNIFICAND   = 0x000FFFFFFFFFFFFFL;
-
-    private static double nextDouble (double d, boolean positive) {
-        if (Double.isNaN(d) || Double.isInfinite(d)) {
-                return d;
-            }
-        long bits = Double.doubleToLongBits(d);
-        long significand = bits & SIGNIFICAND;
-        if (bits < 0) {
-            significand |= (SIGN | EXPONENT);
-        }
-        long exponent = bits & EXPONENT;
-        if (positive) {
-            significand += 1;
-            // FIXME fix overflow & underflow
-        } else {
-            significand -= 1;
-            // FIXME fix overflow & underflow
-        }
-        bits = exponent | (significand & ~EXPONENT);
-        return Double.longBitsToDouble(bits);
-    }
-    */
-
     static final long SIGN                = 0x8000000000000000L;
     static final long EXPONENT            = 0x7FF0000000000000L;
     static final long POSITIVEINFINITY    = 0x7FF0000000000000L;
@@ -585,11 +564,8 @@ public class ChoiceFormat extends NumberFormat {
      * {@code positive} is {@code false}).
      * If {@code NaN}, returns same value.
      *
-     * Does not affect floating-point flags,
-     * provided these member functions do not:
-     *          Double.longBitsToDouble(long)
-     *          Double.doubleToLongBits(double)
-     *          Double.isNaN(double)
+     * @implNote This is equivalent to calling
+     * {@code positive ? Math.nextUp(d) : Math.nextDown(d)}
      *
      * @param d        the reference value
      * @param positive {@code true} if the least double is desired;
@@ -597,44 +573,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the least or greater double value
      */
     public static double nextDouble (double d, boolean positive) {
-
-        /* filter out NaN's */
-        if (Double.isNaN(d)) {
-            return d;
-        }
-
-        /* zero's are also a special case */
-        if (d == 0.0) {
-            double smallestPositiveDouble = Double.longBitsToDouble(1L);
-            if (positive) {
-                return smallestPositiveDouble;
-            } else {
-                return -smallestPositiveDouble;
-            }
-        }
-
-        /* if entering here, d is a nonzero value */
-
-        /* hold all bits in a long for later use */
-        long bits = Double.doubleToLongBits(d);
-
-        /* strip off the sign bit */
-        long magnitude = bits & ~SIGN;
-
-        /* if next double away from zero, increase magnitude */
-        if ((bits > 0) == positive) {
-            if (magnitude != POSITIVEINFINITY) {
-                magnitude += 1;
-            }
-        }
-        /* else decrease magnitude */
-        else {
-            magnitude -= 1;
-        }
-
-        /* restore sign bit and return */
-        long signbit = bits & SIGN;
-        return Double.longBitsToDouble (magnitude | signbit);
+        return positive ? Math.nextUp(d) : Math.nextDown(d);
     }
 
     private static double[] doubleArraySize(double[] array) {
