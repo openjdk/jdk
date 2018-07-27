@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/EventQueue/remove_l/remove_l005.
  * VM Testbase keywords: [jpda, jdi, quarantine]
- * VM Testbase comments: JDK-8068225
+ * VM Testbase comments: 8068225
  * VM Testbase readme:
  * DESCRIPTION:
  *     The test checks up the method

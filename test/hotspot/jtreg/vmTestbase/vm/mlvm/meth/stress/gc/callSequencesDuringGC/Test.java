@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/gc/callSequencesDuringGC.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, quarantine]
- * VM Testbase comments: 8079714
+ * VM Testbase comments: 8208255
  * VM Testbase readme:
  * DESCRIPTION
  *     The test verifies that MH logic is not affected by garbage collector and garbage collector

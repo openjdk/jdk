@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi001.
  * VM Testbase keywords: [monitoring, stress, stressopt, feature_136, nonconcurrent, vm6, quarantine]
- * VM Testbase comments: JDK-7187073
+ * VM Testbase comments: 7187073
  *
  * @library /vmTestbase
  *          /test/lib

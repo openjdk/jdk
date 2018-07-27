@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/ThreadReference/isSuspended/issuspended002.
  * VM Testbase keywords: [jpda, jdi, quarantine]
- * VM Testbase comments: JDK-4903717
+ * VM Testbase comments: 4903717
  * VM Testbase readme:
  * DESCRIPTION:
  *     The test for the implementation of an object of the type

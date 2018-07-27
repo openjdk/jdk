@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase vm/mlvm/meth/func/java/throwException.
  * VM Testbase keywords: [feature_mlvm, quarantine]
- * VM Testbase comments: 8079714
+ * VM Testbase comments: 8208255
  * VM Testbase readme:
  * DESCRIPTION
  *     The test creates a sequence of MHs (see vm/mlvm/mh/func/sequences test for details)
