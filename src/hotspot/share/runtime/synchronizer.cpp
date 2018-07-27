@@ -1906,52 +1906,20 @@ const char* ObjectSynchronizer::inflate_cause_name(const InflateCause cause) {
 //------------------------------------------------------------------------------
 // Debugging code
 
-void ObjectSynchronizer::sanity_checks(const bool verbose,
-                                       const uint cache_line_size,
-                                       int *error_cnt_ptr,
-                                       int *warning_cnt_ptr) {
-  u_char *addr_begin      = (u_char*)&GVars;
-  u_char *addr_stwRandom  = (u_char*)&GVars.stwRandom;
-  u_char *addr_hcSequence = (u_char*)&GVars.hcSequence;
+u_char* ObjectSynchronizer::get_gvars_addr() {
+  return (u_char*)&GVars;
+}
 
-  if (verbose) {
-    tty->print_cr("INFO: sizeof(SharedGlobals)=" SIZE_FORMAT,
-                  sizeof(SharedGlobals));
-  }
+u_char* ObjectSynchronizer::get_gvars_hcSequence_addr() {
+  return (u_char*)&GVars.hcSequence;
+}
 
-  uint offset_stwRandom = (uint)(addr_stwRandom - addr_begin);
-  if (verbose) tty->print_cr("INFO: offset(stwRandom)=%u", offset_stwRandom);
+size_t ObjectSynchronizer::get_gvars_size() {
+  return sizeof(SharedGlobals);
+}
 
-  uint offset_hcSequence = (uint)(addr_hcSequence - addr_begin);
-  if (verbose) {
-    tty->print_cr("INFO: offset(_hcSequence)=%u", offset_hcSequence);
-  }
-
-  if (cache_line_size != 0) {
-    // We were able to determine the L1 data cache line size so
-    // do some cache line specific sanity checks
-
-    if (offset_stwRandom < cache_line_size) {
-      tty->print_cr("WARNING: the SharedGlobals.stwRandom field is closer "
-                    "to the struct beginning than a cache line which permits "
-                    "false sharing.");
-      (*warning_cnt_ptr)++;
-    }
-
-    if ((offset_hcSequence - offset_stwRandom) < cache_line_size) {
-      tty->print_cr("WARNING: the SharedGlobals.stwRandom and "
-                    "SharedGlobals.hcSequence fields are closer than a cache "
-                    "line which permits false sharing.");
-      (*warning_cnt_ptr)++;
-    }
-
-    if ((sizeof(SharedGlobals) - offset_hcSequence) < cache_line_size) {
-      tty->print_cr("WARNING: the SharedGlobals.hcSequence field is closer "
-                    "to the struct end than a cache line which permits false "
-                    "sharing.");
-      (*warning_cnt_ptr)++;
-    }
-  }
+u_char* ObjectSynchronizer::get_gvars_stwRandom_addr() {
+  return (u_char*)&GVars.stwRandom;
 }
 
 #ifndef PRODUCT
