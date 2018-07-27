@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/StackFrame/_bounds_/bounds001.
  * VM Testbase keywords: [jpda, jdi, quarantine]
- * VM Testbase comments: JDK-6604963
+ * VM Testbase comments: 6604963
  * VM Testbase readme:
  * DESCRIPTION:
  *     The test checks up the methods:

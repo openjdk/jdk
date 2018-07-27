@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/EventRequest/setEnabled/setenabled003.
  * VM Testbase keywords: [jpda, jdi, quarantine]
- * VM Testbase comments: JDK-8066993
+ * VM Testbase comments: 8066993
  * VM Testbase readme:
  * DESCRIPTION:
  *     The test for the implementation of an object of the type

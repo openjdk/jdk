@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/ObjectReference/invokeMethod/invokemethod006.
  * VM Testbase keywords: [jpda, jdi, quarantine]
- * VM Testbase comments: JDK-4698670
+ * VM Testbase comments: 4698670
  * VM Testbase readme:
  * DESCRIPTION
  *     This test checks that the JDI method

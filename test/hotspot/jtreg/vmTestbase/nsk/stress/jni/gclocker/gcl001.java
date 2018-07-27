@@ -28,7 +28,7 @@
  *
  * @summary converted from VM testbase nsk/stress/jni/gclocker/gcl001.
  * VM testbase keywords: [stress, quick, feature_283, nonconcurrent, exclude]
- * VM testbase comments: JDK-8199562
+ * VM testbase comments: 8208207
  * VM testbase readme:
  * DESCRIPTION
  *     Check compatibility of GC Locker improvements with JNI CS
@@ -47,7 +47,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @ignore JDK-8199562
+ * @ignore 8208207
  * @run main/othervm/native/timeout=480
  *      -XX:-UseGCOverheadLimit
  *      nsk.stress.jni.gclocker.gcl001

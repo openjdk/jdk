@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/compiler/i2c_c2i.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, quarantine]
- * VM Testbase comments: 8079714
+ * VM Testbase comments: 8208255
  * VM Testbase readme:
  * DESCRIPTION
  *     The test attempts to check MethodHandle i2c and c2i adapters by using sequences.

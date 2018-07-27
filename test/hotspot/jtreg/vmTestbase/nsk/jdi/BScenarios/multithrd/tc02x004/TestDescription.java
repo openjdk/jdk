@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/BScenarios/multithrd/tc02x004.
  * VM Testbase keywords: [quick, jpda, jdi, quarantine]
- * VM Testbase comments: JDK-4751860
+ * VM Testbase comments: 4751860
  * VM Testbase readme:
  * DESCRIPTION:
  *     This test is from the group of so-called Borland's scenarios and

@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase vm/mlvm/meth/func/jdi/breakpointOtherStratum.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, fds, jdk, quarantine]
- * VM Testbase comments: 8079713 8079714
+ * VM Testbase comments: 8208257 8208255
  * VM Testbase readme:
  * DESCRIPTION
  *     Performs debugging of invokedynamic call in vm.mlvm.share.jdi.INDIFY_Debuggee (with added

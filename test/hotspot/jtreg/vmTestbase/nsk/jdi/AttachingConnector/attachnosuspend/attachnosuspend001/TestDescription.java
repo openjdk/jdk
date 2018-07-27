@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/AttachingConnector/attachnosuspend/attachnosuspend001.
  * VM Testbase keywords: [quarantine]
- * VM Testbase comments: JDK-8153613
+ * VM Testbase comments: 8153613
  * VM Testbase readme:
  * DESCRIPTION
  *     This test exactly as attach001 except using options:
