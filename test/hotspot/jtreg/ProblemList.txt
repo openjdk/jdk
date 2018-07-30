@@ -101,6 +101,7 @@ serviceability/sa/ClhsdbSource.java 8193639 solaris
 serviceability/sa/ClhsdbSymbol.java 8193639 solaris
 serviceability/sa/ClhsdbSymbolTable.java 8193639 solaris
 serviceability/sa/ClhsdbThread.java 8193639 solaris
+serviceability/sa/ClhsdbVmStructsDump.java 8193639 solaris
 serviceability/sa/ClhsdbWhere.java 8193639 solaris
 serviceability/sa/DeadlockDetectionTest.java 8193639 solaris
 serviceability/sa/JhsdbThreadInfoTest.java 8193639 solaris
@@ -109,6 +110,7 @@ serviceability/sa/TestClassDump.java 8193639 solaris
 serviceability/sa/TestCpoolForInvokeDynamic.java 8193639 solaris
 serviceability/sa/TestDefaultMethods.java 8193639 solaris
 serviceability/sa/TestG1HeapRegion.java 8193639 solaris
+serviceability/sa/TestHeapDumpForInvokeDynamic.java 8193639 solaris
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8191270 generic-all
 serviceability/sa/TestType.java 8193639 solaris
 serviceability/sa/TestUniverse.java 8193639 solaris
