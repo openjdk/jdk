@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Collection;
 import javax.crypto.Mac;
@@ -170,7 +171,7 @@ final class PreSharedKeyExtension {
 
         int getIdsEncodedLength() {
             int idEncodedLength = 0;
-            for (PskIdentity curId : identities) {
+            for(PskIdentity curId : identities) {
                 idEncodedLength += curId.getEncodedLength();
             }
 
@@ -193,7 +194,7 @@ final class PreSharedKeyExtension {
             byte[] buffer = new byte[encodedLength];
             ByteBuffer m = ByteBuffer.wrap(buffer);
             Record.putInt16(m, idsEncodedLength);
-            for (PskIdentity curId : identities) {
+            for(PskIdentity curId : identities) {
                 curId.writeEncoded(m);
             }
             Record.putInt16(m, bindersEncodedLength);
@@ -438,6 +439,23 @@ final class PreSharedKeyExtension {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("Can't resume. Session uses different " +
                         "signature algorithms");
+                }
+                result = false;
+            }
+        }
+
+        // ensure that the endpoint identification algorithm matches the
+        // one in the session
+        String identityAlg = shc.sslConfig.identificationProtocol;
+        if (result && identityAlg != null) {
+            String sessionIdentityAlg = s.getIdentificationProtocol();
+            if (!Objects.equals(identityAlg, sessionIdentityAlg)) {
+                if (SSLLogger.isOn &&
+                    SSLLogger.isOn("ssl,handshake,verbose")) {
+
+                    SSLLogger.finest("Can't resume, endpoint id" +
+                        " algorithm does not match, requested: " +
+                        identityAlg + ", cached: " + sessionIdentityAlg);
                 }
                 result = false;
             }

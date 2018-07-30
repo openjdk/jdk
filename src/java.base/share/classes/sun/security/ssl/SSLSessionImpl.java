@@ -132,6 +132,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     // Counter used to create unique nonces in NewSessionTicket
     private BigInteger ticketNonceCounter = BigInteger.ONE;
 
+    // The endpoint identification algorithm used to check certificates
+    // in this session.
+    private final String              identificationProtocol;
+
     /*
      * Create a new non-rejoinable session, using the default (null)
      * cipher spec.  This constructor returns a session which could
@@ -149,6 +153,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         this.requestedServerNames = Collections.<SNIServerName>emptyList();
         this.useExtendedMasterSecret = false;
         this.creationTime = System.currentTimeMillis();
+        this.identificationProtocol = null;
     }
 
     /*
@@ -198,6 +203,7 @@ final class SSLSessionImpl extends ExtendedSSLSession {
                 (!hc.negotiatedProtocol.useTLS13PlusSpec());
         }
         this.creationTime = creationTime;
+        this.identificationProtocol = hc.sslConfig.identificationProtocol;
 
         if (SSLLogger.isOn && SSLLogger.isOn("session")) {
              SSLLogger.finest("Session initialized:  " + this);
@@ -257,6 +263,10 @@ final class SSLSessionImpl extends ExtendedSSLSession {
 
     int getTicketAgeAdd() {
         return ticketAgeAdd;
+    }
+
+    String getIdentificationProtocol() {
+        return this.identificationProtocol;
     }
 
     /*
