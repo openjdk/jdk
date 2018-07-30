@@ -29,6 +29,7 @@
  *          same package if multiple jars). Then verify package versioning info
  * @library /lib/testlibrary
  * @library /test/lib
+ * @modules jdk.compiler
  * @run main PackageFromManifest setup test
  * @run main PackageFromManifest runJar test1.jar
  * @run main PackageFromManifest runJar test1.jar test2.jar foo.Foo1
