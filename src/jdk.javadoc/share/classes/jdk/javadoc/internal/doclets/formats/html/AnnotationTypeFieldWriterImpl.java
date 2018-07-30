@@ -221,8 +221,7 @@ public class AnnotationTypeFieldWriterImpl extends AbstractMemberWriter
                 .setCaption(caption)
                 .setHeader(header)
                 .setRowScopeColumn(1)
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
-                .setUseTBody(false);  // temporary? compatibility mode for TBody
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
     }
 
     /**

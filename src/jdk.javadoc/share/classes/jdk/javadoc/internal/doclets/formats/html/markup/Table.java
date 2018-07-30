@@ -81,10 +81,6 @@ public class Table {
     private final List<Integer> bodyRowMasks;
     private String rowIdPrefix = "i";
 
-    // compatibility flags
-    private boolean putIdFirst = false;
-    private boolean useTBody = true;
-
     /**
      * Creates a builder for an HTML table.
      *
@@ -302,37 +298,6 @@ public class Table {
     }
 
     /**
-     * Sets whether the {@code id} attribute should appear first in a {@code <tr>} tag.
-     * The default is {@code false}.
-     *
-     * <b>This is a compatibility feature that should be removed when all tables use a
-     * consistent policy.</b>
-     *
-     * @param first whether to put {@code id} attributes first
-     * @return this object
-     */
-    public Table setPutIdFirst(boolean first) {
-        this.putIdFirst = first;
-        return this;
-    }
-
-    /**
-     * Sets whether or not to use an explicit {@code <tbody>} element to enclose the rows
-     * of a table.
-     * The default is {@code true}.
-     *
-     * <b>This is a compatibility feature that should be removed when all tables use a
-     * consistent policy.</b>
-     *
-     * @param use whether o use a {@code <tbody> element
-     * @return this object
-     */
-    public Table setUseTBody(boolean use) {
-        this.useTBody = use;
-        return this;
-    }
-
-    /**
      * Add a row of data to the table.
      * Each item of content should be suitable for use as the content of a
      * {@code <th>} or {@code <td>} cell.
@@ -399,11 +364,6 @@ public class Table {
 
         HtmlTree row = new HtmlTree(HtmlTag.TR);
 
-        if (putIdFirst && tabMap != null) {
-            int index = bodyRows.size();
-            row.addAttr(HtmlAttr.ID, (rowIdPrefix + index));
-        }
-
         if (stripedStyles != null) {
             int rowIndex = bodyRows.size();
             row.addAttr(HtmlAttr.CLASS, stripedStyles.get(rowIndex % 2).name());
@@ -422,10 +382,8 @@ public class Table {
         bodyRows.add(row);
 
         if (tabMap != null) {
-            if (!putIdFirst) {
-                int index = bodyRows.size() - 1;
-                row.addAttr(HtmlAttr.ID, (rowIdPrefix + index));
-            }
+            int index = bodyRows.size() - 1;
+            row.addAttr(HtmlAttr.ID, (rowIdPrefix + index));
             int mask = 0;
             int maskBit = 1;
             for (Map.Entry<String, Predicate<Element>> e : tabMap.entrySet()) {
@@ -493,13 +451,10 @@ public class Table {
             table.addContent(caption);
         }
         table.addContent(header.toContent());
-        if (useTBody) {
-            Content tbody = new HtmlTree(HtmlTag.TBODY);
-            bodyRows.forEach(row -> tbody.addContent(row));
-            table.addContent(tbody);
-        } else {
-            bodyRows.forEach(row -> table.addContent(row));
-        }
+        Content tbody = new HtmlTree(HtmlTag.TBODY);
+        bodyRows.forEach(row -> tbody.addContent(row));
+        table.addContent(tbody);
+
         return table;
     }
 

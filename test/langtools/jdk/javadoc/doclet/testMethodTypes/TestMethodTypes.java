@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8002304 8024096 8193671 8196201
+ * @bug      8002304 8024096 8193671 8196201 8203791
  * @summary  Test for various method type tabs in the method summary table
  * @author   Bhavesh Patel
  * @library  ../lib
@@ -59,7 +59,7 @@ public class TestMethodTypes extends JavadocTester {
                 + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
                 + "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
                 + "</caption>",
-                "<tr id=\"i0\" class=\"altColor\">");
+                "<tr class=\"altColor\" id=\"i0\">");
 
         checkOutput("pkg1/B.html", true,
                 "var data = {\"i0\":6,\"i1\":18,\"i2\":18,\"i3\":1,\"i4\":1,"
@@ -88,7 +88,7 @@ public class TestMethodTypes extends JavadocTester {
                 + "<span id=\"t6\" class=\"tableTab\"><span><a href=\"javascript:show(32);\">"
                 + "Deprecated Methods</a></span><span class=\"tabEnd\">&nbsp;</span></span>"
                 + "</caption>",
-                "<tr id=\"i0\" class=\"altColor\">");
+                "<tr class=\"altColor\" id=\"i0\">");
 
         checkOutput("pkg1/A.html", false,
                 "<caption><span>Methods</span><span class=\"tabEnd\">&nbsp;</span>"

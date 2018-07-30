@@ -242,8 +242,7 @@ public class AnnotationTypeRequiredMemberWriterImpl extends AbstractMemberWriter
                 .setCaption(getCaption())
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
-                .setUseTBody(false);  // temporary? compatibility mode for TBody
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
     }
 
     /**
