@@ -125,7 +125,7 @@ public:
 
     // Find a symbol where there will probably be only one instance.
     for (int i = 0; i < 100; i++) {
-       snprintf(symbol_name, SYM_NAME_LENGTH, "some_symbol%d", i);
+       os::snprintf(symbol_name, SYM_NAME_LENGTH, "some_symbol%d", i);
        TempNewSymbol ts = SymbolTable::new_symbol(symbol_name, CATCH);
        if (ts->refcount() == 1) {
          EXPECT_TRUE(ts->refcount() == 1) << "Symbol is just created";
