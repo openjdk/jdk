@@ -984,7 +984,7 @@ class Method : public Metadata {
 
   // Check for valid method pointer
   static bool has_method_vptr(const void* ptr);
-  bool is_valid_method() const;
+  static bool is_valid_method(const Method* m);
 
   // Verify
   void verify() { verify_on(tty); }

@@ -431,7 +431,7 @@ bool JfrStackTrace::record_thread(JavaThread& thread, frame& frame) {
       break;
     }
     const Method* method = st.method();
-    if (!method->is_valid_method()) {
+    if (!Method::is_valid_method(method)) {
       // we throw away everything we've gathered in this sample since
       // none of it is safe
       return false;

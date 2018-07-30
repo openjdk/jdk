@@ -50,7 +50,7 @@ bool JfrGetCallTrace::find_top_frame(frame& top_frame, Method** method, frame& f
       const bool known_valid = (state == _thread_in_native || state == _thread_in_vm || state == _thread_blocked);
       if (known_valid || candidate.is_interpreted_frame_valid(_thread)) {
         Method* im = candidate.interpreter_frame_method();
-        if (known_valid && !im->is_valid_method()) {
+        if (known_valid && !Method::is_valid_method(im)) {
           return false;
         }
         *method = im;
