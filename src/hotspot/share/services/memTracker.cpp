@@ -32,6 +32,7 @@
 #include "services/memReporter.hpp"
 #include "services/mallocTracker.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/vmError.hpp"
 
@@ -50,6 +51,10 @@ bool MemTracker::_is_nmt_env_valid = true;
 
 
 NMT_TrackingLevel MemTracker::init_tracking_level() {
+  // Memory type is encoded into tracking header as a byte field,
+  // make sure that we don't overflow it.
+  STATIC_ASSERT(mt_number_of_types <= max_jubyte);
+
   NMT_TrackingLevel level = NMT_off;
   char buf[64];
   jio_snprintf(buf, sizeof(buf), "NMT_LEVEL_%d", os::current_process_id());

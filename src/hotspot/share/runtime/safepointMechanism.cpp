@@ -51,7 +51,7 @@ void SafepointMechanism::default_initialize() {
       const size_t allocation_size = 2 * page_size;
       char* polling_page = os::reserve_memory(allocation_size, NULL, page_size);
       os::commit_memory_or_exit(polling_page, allocation_size, false, "Unable to commit Safepoint polling page");
-      MemTracker::record_virtual_memory_type((address)polling_page, mtInternal);
+      MemTracker::record_virtual_memory_type((address)polling_page, mtSafepoint);
 
       char* bad_page  = polling_page;
       char* good_page = polling_page + page_size;
@@ -76,6 +76,7 @@ void SafepointMechanism::default_initialize() {
     char* polling_page = os::reserve_memory(page_size, NULL, page_size);
     os::commit_memory_or_exit(polling_page, page_size, false, "Unable to commit Safepoint polling page");
     os::protect_memory(polling_page, page_size, os::MEM_PROT_READ);
+    MemTracker::record_virtual_memory_type((address)polling_page, mtSafepoint);
 
     log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(polling_page));
     os::set_polling_page((address)(polling_page));
