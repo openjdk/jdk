@@ -226,8 +226,8 @@ class oopDesc {
   void release_address_field_put(int offset, address contents);
 
   // printing functions for VM debugging
-  void print_on(outputStream* st) const;         // First level print
-  void print_value_on(outputStream* st) const;   // Second level print.
+  void print_on(outputStream* st) const;        // First level print
+  void print_value_on(outputStream* st) const;  // Second level print.
   void print_address_on(outputStream* st) const; // Address printing
 
   // printing on default output stream
@@ -240,8 +240,8 @@ class oopDesc {
   char* print_value_string();
 
   // verification operations
-  void verify_on(outputStream* st);
-  void verify();
+  static void verify_on(outputStream* st, oopDesc* oop_desc);
+  static void verify(oopDesc* oopDesc);
 
   // locking operations
   inline bool is_locked()   const;

@@ -461,7 +461,7 @@ void ContiguousSpace::verify() const {
   HeapWord* t = top();
   HeapWord* prev_p = NULL;
   while (p < t) {
-    oop(p)->verify();
+    oopDesc::verify(oop(p));
     prev_p = p;
     p += oop(p)->size();
   }
@@ -708,7 +708,7 @@ void OffsetTableContigSpace::verify() const {
     }
 
     if (objs == OBJ_SAMPLE_INTERVAL) {
-      oop(p)->verify();
+      oopDesc::verify(oop(p));
       objs = 0;
     } else {
       objs++;

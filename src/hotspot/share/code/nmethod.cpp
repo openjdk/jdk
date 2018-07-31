@@ -2332,7 +2332,11 @@ void nmethod::print_recorded_oops() {
     if (o == (oop)Universe::non_oop_word()) {
       tty->print("non-oop word");
     } else {
-      o->print_value();
+      if (o != NULL) {
+        o->print_value();
+      } else {
+        tty->print_cr("NULL");
+      }
     }
     tty->cr();
   }

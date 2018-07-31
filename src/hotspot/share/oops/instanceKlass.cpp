@@ -3158,7 +3158,13 @@ void InstanceKlass::print_on(outputStream* st) const {
   }
   st->print(BULLET"inner classes:     "); inner_classes()->print_value_on(st);     st->cr();
   st->print(BULLET"nest members:     "); nest_members()->print_value_on(st);     st->cr();
-  st->print(BULLET"java mirror:       "); java_mirror()->print_value_on(st);       st->cr();
+  if (java_mirror() != NULL) {
+    st->print(BULLET"java mirror:       ");
+    java_mirror()->print_value_on(st);
+    st->cr();
+  } else {
+    st->print_cr(BULLET"java mirror:       NULL");
+  }
   st->print(BULLET"vtable length      %d  (start addr: " INTPTR_FORMAT ")", vtable_length(), p2i(start_of_vtable())); st->cr();
   if (vtable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_vtable(), vtable_length(), st);
   st->print(BULLET"itable length      %d (start addr: " INTPTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();

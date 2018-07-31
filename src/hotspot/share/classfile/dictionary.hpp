@@ -182,7 +182,7 @@ class DictionaryEntry : public HashtableEntry<InstanceKlass*, mtClass> {
     for (ProtectionDomainEntry* current = pd_set(); // accessed at a safepoint
                                 current != NULL;
                                 current = current->_next) {
-      current->_pd_cache->object_no_keepalive()->verify();
+      oopDesc::verify(current->_pd_cache->object_no_keepalive());
     }
   }
 

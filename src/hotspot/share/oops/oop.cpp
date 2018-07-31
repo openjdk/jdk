@@ -36,11 +36,7 @@
 bool always_do_update_barrier = false;
 
 void oopDesc::print_on(outputStream* st) const {
-  if (this == NULL) {
-    st->print_cr("NULL");
-  } else {
-    klass()->oop_print_on(oop(this), st);
-  }
+  klass()->oop_print_on(oop(this), st);
 }
 
 void oopDesc::print_address_on(outputStream* st) const {
@@ -71,9 +67,7 @@ char* oopDesc::print_value_string() {
 
 void oopDesc::print_value_on(outputStream* st) const {
   oop obj = oop(this);
-  if (this == NULL) {
-    st->print("NULL");
-  } else if (java_lang_String::is_instance(obj)) {
+  if (java_lang_String::is_instance(obj)) {
     java_lang_String::print(obj, st);
     print_address_on(st);
   } else {
@@ -82,15 +76,15 @@ void oopDesc::print_value_on(outputStream* st) const {
 }
 
 
-void oopDesc::verify_on(outputStream* st) {
-  if (this != NULL) {
-    klass()->oop_verify_on(this, st);
+void oopDesc::verify_on(outputStream* st, oopDesc* oop_desc) {
+  if (oop_desc != NULL) {
+    oop_desc->klass()->oop_verify_on(oop_desc, st);
   }
 }
 
 
-void oopDesc::verify() {
-  verify_on(tty);
+void oopDesc::verify(oopDesc* oop_desc) {
+  verify_on(tty, oop_desc);
 }
 
 intptr_t oopDesc::slow_identity_hash() {

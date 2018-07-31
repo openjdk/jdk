@@ -443,8 +443,18 @@ void SystemDictionary::validate_protection_domain(InstanceKlass* klass,
     // Print out trace information
     LogStream ls(lt);
     ls.print_cr("Checking package access");
-    ls.print("class loader: "); class_loader()->print_value_on(&ls);
-    ls.print(" protection domain: "); protection_domain()->print_value_on(&ls);
+    if (class_loader() != NULL) {
+      ls.print("class loader: ");
+      class_loader()->print_value_on(&ls);
+    } else {
+      ls.print_cr("class loader: NULL");
+    }
+    if (protection_domain() != NULL) {
+      ls.print(" protection domain: ");
+      protection_domain()->print_value_on(&ls);
+    } else {
+      ls.print_cr(" protection domain: NULL");
+    }
     ls.print(" loading: "); klass->print_value_on(&ls);
     ls.cr();
   }

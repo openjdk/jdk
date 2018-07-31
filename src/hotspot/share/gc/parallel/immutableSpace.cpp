@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ void ImmutableSpace::verify() {
   HeapWord* t = end();
   HeapWord* prev_p = NULL;
   while (p < t) {
-    oop(p)->verify();
+    oopDesc::verify(oop(p));
     prev_p = p;
     p += oop(p)->size();
   }

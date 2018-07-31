@@ -477,8 +477,12 @@ void ObjArrayKlass::oop_print_on(oop obj, outputStream* st) {
   int print_len = MIN2((intx) oa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
     st->print(" - %3d : ", index);
-    oa->obj_at(index)->print_value_on(st);
-    st->cr();
+    if (oa->obj_at(index) != NULL) {
+      oa->obj_at(index)->print_value_on(st);
+      st->cr();
+    } else {
+      st->print_cr("NULL");
+    }
   }
   int remaining = oa->length() - print_len;
   if (remaining > 0) {
@@ -494,7 +498,11 @@ void ObjArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
   element_klass()->print_value_on(st);
   int len = objArrayOop(obj)->length();
   st->print("[%d] ", len);
-  obj->print_address_on(st);
+  if (obj != NULL) {
+    obj->print_address_on(st);
+  } else {
+    st->print_cr("NULL");
+  }
 }
 
 const char* ObjArrayKlass::internal_name() const {

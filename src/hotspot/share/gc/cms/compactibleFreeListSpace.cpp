@@ -2406,7 +2406,7 @@ class VerifyAllBlksClosure: public BlkClosure {
       res = _sp->adjustObjectSize(p->size());
       if (_sp->obj_is_alive(addr)) {
         was_live = true;
-        p->verify();
+        oopDesc::verify(p);
       }
     } else {
       FreeChunk* fc = (FreeChunk*)addr;
@@ -2455,7 +2455,7 @@ class VerifyAllOopsClosure: public BasicOopIterateClosure {
                   _sp->block_is_obj((HeapWord*)obj),
                   "Should be an object");
         guarantee(oopDesc::is_oop(obj), "Should be an oop");
-        obj->verify();
+        oopDesc::verify(obj);
         if (_past_remark) {
           // Remark has been completed, the object should be marked
           _bit_map->isMarked((HeapWord*)obj);
@@ -2472,7 +2472,7 @@ class VerifyAllOopsClosure: public BasicOopIterateClosure {
     } else if (_sp->is_in_reserved(p)) {
       // the reference is from FLS, and points out of FLS
       guarantee(oopDesc::is_oop(obj), "Should be an oop");
-      obj->verify();
+      oopDesc::verify(obj);
     }
   }
 

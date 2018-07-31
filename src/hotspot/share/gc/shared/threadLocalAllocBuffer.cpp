@@ -311,7 +311,7 @@ void ThreadLocalAllocBuffer::verify() {
   HeapWord* t = top();
   HeapWord* prev_p = NULL;
   while (p < t) {
-    oop(p)->verify();
+    oopDesc::verify(oop(p));
     prev_p = p;
     p += oop(p)->size();
   }
