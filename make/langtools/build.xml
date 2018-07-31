@@ -76,6 +76,7 @@
     <property name="make.conf.dir" location="${make.dir}/conf"/>
     <property name="make.tools.dir" location="${make.dir}/tools"/>
     <property name="build.dir" location="build/langtools"/>
+    <property name="idea.support.dir" location="build/.idea-support"/>
     <property name="build.modules" location="${build.dir}/modules"/>
     <property name="build.gensrc" location="${build.dir}/gensrc"/>
     <property name="build.tools" location="${build.dir}/toolclasses"/>
@@ -274,6 +275,9 @@
                <exclude name="**/utils/**"/>
             </fileset>
         </copy>
+        <!-- move build.xml out of .idea, see IDEA-189915 -->
+        <mkdir dir="${idea.support.dir}"/>
+        <move todir="${idea.support.dir}" file=".idea/build.xml"/>
         <condition property="idea.jtreg.home" value="${jtreg.home}" else = "[jtreg.home]">
             <isset property="jtreg.home"/>
         </condition>
