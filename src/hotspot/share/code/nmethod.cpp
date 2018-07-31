@@ -2346,7 +2346,7 @@ void nmethod::print_recorded_metadata() {
     if (m == (Metadata*)Universe::non_oop_word()) {
       tty->print("non-metadata word");
     } else {
-      m->print_value_on_maybe_null(tty);
+      Metadata::print_value_on_maybe_null(tty, m);
     }
     tty->cr();
   }

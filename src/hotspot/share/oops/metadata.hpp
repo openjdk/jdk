@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,18 +56,11 @@ class Metadata : public MetaspaceObj {
   void print()       const { print_on(tty); }
   void print_value() const { print_value_on(tty); }
 
-  void print_maybe_null() const { print_on_maybe_null(tty); }
-  void print_on_maybe_null(outputStream* st) const {
-    if (this == NULL)
+  static void print_value_on_maybe_null(outputStream* st, const Metadata* m) {
+    if (NULL == m)
       st->print("NULL");
     else
-      print_on(st);
-  }
-  void print_value_on_maybe_null(outputStream* st) const {
-    if (this == NULL)
-      st->print("NULL");
-    else
-      print_value_on(st);
+      m->print_value_on(st);
   }
 
   virtual void print_on(outputStream* st) const;       // First level print

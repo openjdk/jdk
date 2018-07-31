@@ -3072,7 +3072,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
   st->print(BULLET"state:             "); st->print_cr("%s", state_names[_init_state]);
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
-  st->print(BULLET"super:             "); super()->print_value_on_maybe_null(st); st->cr();
+  st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
   st->print(BULLET"sub:               ");
   Klass* sub = subklass();
   int n;
@@ -3095,7 +3095,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
 
-  st->print(BULLET"arrays:            "); array_klasses()->print_value_on_maybe_null(st); st->cr();
+  st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
   st->print(BULLET"methods:           "); methods()->print_value_on(st);                  st->cr();
   if (Verbose || WizardMode) {
     Array<Method*>* method_array = methods();
@@ -3122,7 +3122,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     class_loader_data()->print_value_on(st);
     st->cr();
   }
-  st->print(BULLET"host class:        "); host_klass()->print_value_on_maybe_null(st); st->cr();
+  st->print(BULLET"host class:        "); Metadata::print_value_on_maybe_null(st, host_klass()); st->cr();
   if (source_file_name() != NULL) {
     st->print(BULLET"source file:       ");
     source_file_name()->print_value_on(st);
@@ -3229,11 +3229,11 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->cr();
     Klass* mirrored_klass = java_lang_Class::as_Klass(obj);
     st->print(BULLET"fake entry for mirror: ");
-    mirrored_klass->print_value_on_maybe_null(st);
+    Metadata::print_value_on_maybe_null(st, mirrored_klass);
     st->cr();
     Klass* array_klass = java_lang_Class::array_klass_acquire(obj);
     st->print(BULLET"fake entry for array: ");
-    array_klass->print_value_on_maybe_null(st);
+    Metadata::print_value_on_maybe_null(st, array_klass);
     st->cr();
     st->print_cr(BULLET"fake entry for oop_size: %d", java_lang_Class::oop_size(obj));
     st->print_cr(BULLET"fake entry for static_oop_field_count: %d", java_lang_Class::static_oop_field_count(obj));
