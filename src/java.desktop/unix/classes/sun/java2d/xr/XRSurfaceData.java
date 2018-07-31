@@ -25,17 +25,36 @@
 
 package sun.java2d.xr;
 
-import java.awt.*;
-import java.awt.geom.*;
-import java.awt.image.*;
-import sun.awt.*;
+import java.awt.AlphaComposite;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Image;
+import java.awt.Rectangle;
+import java.awt.Transparency;
+import java.awt.geom.AffineTransform;
+import java.awt.image.ColorModel;
+import java.awt.image.DirectColorModel;
+import java.awt.image.Raster;
+import sun.awt.SunHints;
+import sun.awt.SunToolkit;
+import sun.awt.X11ComponentPeer;
+import sun.awt.image.PixelConverter;
 import sun.java2d.InvalidPipeException;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.SurfaceDataProxy;
-import sun.java2d.loops.*;
-import sun.java2d.pipe.*;
-import sun.java2d.x11.*;
+import sun.java2d.loops.CompositeType;
+import sun.java2d.loops.MaskFill;
+import sun.java2d.loops.RenderLoops;
+import sun.java2d.loops.SurfaceType;
+import sun.java2d.loops.XORComposite;
+import sun.java2d.pipe.PixelToShapeConverter;
+import sun.java2d.pipe.Region;
+import sun.java2d.pipe.ShapeDrawPipe;
+import sun.java2d.pipe.TextPipe;
+import sun.java2d.pipe.ValidatePipe;
+import sun.java2d.x11.XSurfaceData;
 import sun.font.FontManagerNativeLibrary;
 
 public abstract class XRSurfaceData extends XSurfaceData {
@@ -63,7 +82,8 @@ public abstract class XRSurfaceData extends XSurfaceData {
     public static final SurfaceType
         ByteA8X11 = SurfaceType.ByteGray.deriveSubType(DESC_BYTE_A8_X11);
     public static final SurfaceType
-        IntRgbX11 = SurfaceType.IntRgb.deriveSubType(DESC_INT_RGB_X11);
+        IntRgbX11 = SurfaceType.IntRgb.deriveSubType(DESC_INT_RGB_X11,
+                                              PixelConverter.ArgbPre.instance);
     public static final SurfaceType
         IntArgbPreX11 = SurfaceType.IntArgbPre.deriveSubType(DESC_INT_ARGB_X11);
 
