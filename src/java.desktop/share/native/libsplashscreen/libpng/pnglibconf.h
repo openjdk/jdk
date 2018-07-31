@@ -38,9 +38,9 @@
  * file and, per its terms, should not be removed:
  */
 
-/* libpng version 1.6.34, September 29, 2017 */
+/* libpng version 1.6.35, July 15, 2018 */
 
-/* Copyright (c) 1998-2017 Glenn Randers-Pehrson */
+/* Copyright (c) 1998-2018 Glenn Randers-Pehrson */
 
 /* This code is released under the libpng license. */
 /* For conditions of distribution and use, see the disclaimer */

@@ -29,8 +29,8 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Last changed in libpng 1.6.33 [September 28, 2017]
- * Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson
+ * Last changed in libpng 1.6.35 [July 15, 2018]
+ * Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -297,8 +297,8 @@ png_do_invert(png_row_infop row_info, png_bytep row)
    if (row_info->color_type == PNG_COLOR_TYPE_GRAY)
    {
       png_bytep rp = row;
-      png_size_t i;
-      png_size_t istop = row_info->rowbytes;
+      size_t i;
+      size_t istop = row_info->rowbytes;
 
       for (i = 0; i < istop; i++)
       {
@@ -311,8 +311,8 @@ png_do_invert(png_row_infop row_info, png_bytep row)
       row_info->bit_depth == 8)
    {
       png_bytep rp = row;
-      png_size_t i;
-      png_size_t istop = row_info->rowbytes;
+      size_t i;
+      size_t istop = row_info->rowbytes;
 
       for (i = 0; i < istop; i += 2)
       {
@@ -326,8 +326,8 @@ png_do_invert(png_row_infop row_info, png_bytep row)
       row_info->bit_depth == 16)
    {
       png_bytep rp = row;
-      png_size_t i;
-      png_size_t istop = row_info->rowbytes;
+      size_t i;
+      size_t istop = row_info->rowbytes;
 
       for (i = 0; i < istop; i += 4)
       {
@@ -637,7 +637,7 @@ png_do_strip_channel(png_row_infop row_info, png_bytep row, int at_start)
       return; /* The filler channel has gone already */
 
    /* Fix the rowbytes value. */
-   row_info->rowbytes = (png_size_t)(dp-row);
+   row_info->rowbytes = (size_t)(dp-row);
 }
 #endif
 
