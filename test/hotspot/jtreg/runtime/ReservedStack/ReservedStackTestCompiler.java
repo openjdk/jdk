@@ -26,7 +26,7 @@
  * @summary Run ReservedStackTest with dedicated compilers C1 and C2.
  *
  * @requires vm.flavor == "server" & !vm.emulatedClient
- * @requires vm.opt.DeoptimizeALot == null | vm.opt.DeoptimizeALot == false
+ * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
