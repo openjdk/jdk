@@ -114,8 +114,8 @@ public class StressRedefine extends GCTestBase {
             try {
                 // Just for fun we transfer parameters to method
                 Object res = myClass.getMethod(name, double.class, int.class, Object.class)
-                                         .invoke(null, random.nextDouble(), random.nextInt(), new Object());
-             } catch (IllegalArgumentException | InvocationTargetException
+                                         .invoke(myClass.newInstance(), random.nextDouble(), random.nextInt(), new Object());
+             } catch (IllegalArgumentException | InvocationTargetException | InstantiationException
                      | IllegalAccessException | NoSuchMethodException e) {
                  // It's okay to get exception here since we are corrupting bytecode and can't expect
                  // class to work properly.
