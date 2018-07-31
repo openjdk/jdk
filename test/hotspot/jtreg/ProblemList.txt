@@ -57,6 +57,8 @@ applications/ctw/modules/java_desktop.java 8189604 windows-all
 applications/ctw/modules/java_desktop_2.java 8189604,8204842 generic-all
 applications/ctw/modules/jdk_jconsole.java 8189604 windows-all
 
+compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
+
 #############################################################################
 
 # :hotspot_gc
