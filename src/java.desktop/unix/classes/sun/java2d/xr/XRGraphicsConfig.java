@@ -30,9 +30,14 @@
 
 package sun.java2d.xr;
 
-import sun.awt.*;
-import sun.awt.image.*;
-import sun.java2d.*;
+import java.awt.Transparency;
+import sun.awt.X11GraphicsConfig;
+import sun.awt.X11ComponentPeer;
+import sun.awt.X11GraphicsDevice;
+import sun.awt.X11GraphicsEnvironment;
+import sun.awt.image.SurfaceManager;
+import sun.java2d.SurfaceData;
+import sun.java2d.loops.SurfaceType;
 
 public class XRGraphicsConfig extends X11GraphicsConfig implements
         SurfaceManager.ProxiedGraphicsConfig {
@@ -58,4 +63,14 @@ public class XRGraphicsConfig extends X11GraphicsConfig implements
     public Object getProxyKey() {
         return this;
     }
+
+    public synchronized SurfaceType getSurfaceType() {
+        if (surfaceType != null) {
+            return surfaceType;
+        }
+
+        surfaceType = XRSurfaceData.getSurfaceType(this, Transparency.OPAQUE);
+        return surfaceType;
+    }
+
 }
