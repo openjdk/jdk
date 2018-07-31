@@ -74,30 +74,35 @@ JNIEXPORT jlong JNICALL Java_CriticalNativeStress_sum2
   (JNIEnv *env, jclass jclazz, jlong a1, jintArray a2, jintArray a3, jlongArray a4, jintArray a5) {
   jlong sum = a1;
   jsize index;
-  jsize len = (*env)->GetArrayLength(env, a2);
-  jint* a2_arr = (jint*)(*env)->GetPrimitiveArrayCritical(env, a2, 0);
+  jsize len;
+  jint* a2_arr;
+  jint* a3_arr;
+  jlong* a4_arr;
+  jint* a5_arr;
+
+  len = (*env)->GetArrayLength(env, a2);
+  a2_arr = (jint*)(*env)->GetPrimitiveArrayCritical(env, a2, 0);
   for (index = 0; index < len; index ++) {
     sum += a2_arr[index];
   }
   (*env)->ReleasePrimitiveArrayCritical(env, a2, a2_arr, 0);
 
   len = (*env)->GetArrayLength(env, a3);
-  jint* a3_arr = (jint*)(*env)->GetPrimitiveArrayCritical(env, a3, 0);
+  a3_arr = (jint*)(*env)->GetPrimitiveArrayCritical(env, a3, 0);
   for (index = 0; index < len; index ++) {
     sum += a3_arr[index];
   }
   (*env)->ReleasePrimitiveArrayCritical(env, a3, a3_arr, 0);
 
-
   len = (*env)->GetArrayLength(env, a4);
-  jlong* a4_arr = (jlong*)(*env)->GetPrimitiveArrayCritical(env, a4, 0);
+  a4_arr = (jlong*)(*env)->GetPrimitiveArrayCritical(env, a4, 0);
   for (index = 0; index < len; index ++) {
     sum += a4_arr[index];
   }
   (*env)->ReleasePrimitiveArrayCritical(env, a4, a4_arr, 0);
 
   len = (*env)->GetArrayLength(env, a5);
-  jint* a5_arr = (jint*)(*env)->GetPrimitiveArrayCritical(env, a5, 0);
+  a5_arr = (jint*)(*env)->GetPrimitiveArrayCritical(env, a5, 0);
   for (index = 0; index < len; index ++) {
     sum += a5_arr[index];
   }
