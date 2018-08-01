@@ -554,10 +554,6 @@ public class ChoiceFormat extends NumberFormat {
      */
     private String[] choiceFormats;
 
-    static final long SIGN                = 0x8000000000000000L;
-    static final long EXPONENT            = 0x7FF0000000000000L;
-    static final long POSITIVEINFINITY    = 0x7FF0000000000000L;
-
     /**
      * Finds the least double greater than {@code d} (if {@code positive} is
      * {@code true}), or the greatest double less than {@code d} (if
