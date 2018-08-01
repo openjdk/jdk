@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.spi.CalendarNameProvider;
 public class CalendarDataUtility {
     public static final String FIRST_DAY_OF_WEEK = "firstDayOfWeek";
     public static final String MINIMAL_DAYS_IN_FIRST_WEEK = "minimalDaysInFirstWeek";
+    private static final Locale.Builder OVERRIDE_BUILDER = new Locale.Builder();
 
     // No instantiation
     private CalendarDataUtility() {
@@ -144,7 +145,9 @@ public class CalendarDataUtility {
                 rg.charAt(1) >= 0x0041 &&
                 rg.charAt(1) <= 0x005A &&
                 rg.substring(2).equals("ZZZZ")) {
-                override = new Locale.Builder().setLocale(l)
+                override = OVERRIDE_BUILDER
+                    .clear()
+                    .setLocale(l)
                     .setRegion(rg.substring(0, 2))
                     .build();
             }
