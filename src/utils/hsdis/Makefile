@@ -15,7 +15,7 @@
 # (a) the Software, and
 #
 # (b) any piece of software and/or hardware listed in the lrgrwrks.txt file
-# if one is included with the Software (each a “Larger Work” to which the
+# if one is included with the Software (each a "Larger Work" to which the
 # Software is contributed by such licensors),
 #
 # without restriction, including without limitation the rights to copy,
