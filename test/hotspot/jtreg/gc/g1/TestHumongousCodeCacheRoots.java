@@ -119,24 +119,8 @@ public class TestHumongousCodeCacheRoots {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs.toArray(new String[0]));
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    try {
-        output.shouldHaveExitValue(0);
-    } catch (RuntimeException e) {
-        // It's ok if there is no client vm in the jdk.
-        if (output.firstMatch("Unrecognized option: -client") == null) {
-            throw e;
-        }
-    }
-
+    output.shouldHaveExitValue(0);
     return output;
-  }
-
-  public static void runTest(String compiler, String[] other) throws Exception {
-    ArrayList<String> joined = new ArrayList<String>();
-    joined.add(compiler);
-    joined.addAll(Arrays.asList(other));
-    runWhiteBoxTest(joined.toArray(new String[0]), TestHumongousCodeCacheRootsHelper.class.getName(),
-      new String[] {}, false);
   }
 
   public static void main(String[] args) throws Exception {
@@ -146,8 +130,9 @@ public class TestHumongousCodeCacheRoots {
       "-XX:InitiatingHeapOccupancyPercent=1", // strong code root marking
       "-XX:+G1VerifyHeapRegionCodeRoots", "-XX:+VerifyAfterGC", // make sure that verification is run
     };
-    runTest("-client", baseArguments);
-    runTest("-server", baseArguments);
+
+    runWhiteBoxTest(baseArguments, TestHumongousCodeCacheRootsHelper.class.getName(),
+      new String[] {}, false);
   }
 }
 
