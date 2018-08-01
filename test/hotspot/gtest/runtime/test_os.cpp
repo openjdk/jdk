@@ -236,11 +236,11 @@ static int vsnprintf_wrapper(char* buf, size_t len, const char* fmt, ...) {
   return result;
 }
 
-TEST(os, vsnprintf) {
+TEST_VM(os, vsnprintf) {
   test_snprintf(vsnprintf_wrapper, true);
 }
 
-TEST(os, snprintf) {
+TEST_VM(os, snprintf) {
   test_snprintf(os::snprintf, true);
 }
 
@@ -260,10 +260,10 @@ static int jio_vsnprintf_wrapper(char* buf, size_t len, const char* fmt, ...) {
   return result;
 }
 
-TEST(os, jio_vsnprintf) {
+TEST_VM(os, jio_vsnprintf) {
   test_snprintf(jio_vsnprintf_wrapper, false);
 }
 
-TEST(os, jio_snprintf) {
+TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
 }

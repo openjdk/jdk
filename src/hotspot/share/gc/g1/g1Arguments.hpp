@@ -31,7 +31,7 @@
 class CollectedHeap;
 
 class G1Arguments : public GCArguments {
-  friend class G1HeapVerifierTest_parse_Test;
+  friend class G1HeapVerifierTest;
 
 private:
   static void initialize_verification_types();
