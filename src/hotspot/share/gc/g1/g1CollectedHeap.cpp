@@ -52,6 +52,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
+#include "gc/g1/g1SATBMarkQueueFilter.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1YCTypes.hpp"
@@ -1668,7 +1669,9 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init(this, &_collection_set);
 
-  G1BarrierSet::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
+  G1SATBMarkQueueFilter* satb_filter = new G1SATBMarkQueueFilter(this);
+  G1BarrierSet::satb_mark_queue_set().initialize(satb_filter,
+                                                 SATB_Q_CBL_mon,
                                                  SATB_Q_FL_lock,
                                                  G1SATBProcessCompletedThreshold,
                                                  Shared_SATB_Q_lock);

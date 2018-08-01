@@ -52,103 +52,9 @@ void SATBMarkQueue::flush() {
   flush_impl();
 }
 
-// Return true if a SATB buffer entry refers to an object that
-// requires marking.
-//
-// The entry must point into the G1 heap.  In particular, it must not
-// be a NULL pointer.  NULL pointers are pre-filtered and never
-// inserted into a SATB buffer.
-//
-// An entry that is below the NTAMS pointer for the containing heap
-// region requires marking. Such an entry must point to a valid object.
-//
-// An entry that is at least the NTAMS pointer for the containing heap
-// region might be any of the following, none of which should be marked.
-//
-// * A reference to an object allocated since marking started.
-//   According to SATB, such objects are implicitly kept live and do
-//   not need to be dealt with via SATB buffer processing.
-//
-// * A reference to a young generation object. Young objects are
-//   handled separately and are not marked by concurrent marking.
-//
-// * A stale reference to a young generation object. If a young
-//   generation object reference is recorded and not filtered out
-//   before being moved by a young collection, the reference becomes
-//   stale.
-//
-// * A stale reference to an eagerly reclaimed humongous object.  If a
-//   humongous object is recorded and then reclaimed, the reference
-//   becomes stale.
-//
-// The stale reference cases are implicitly handled by the NTAMS
-// comparison. Because of the possibility of stale references, buffer
-// processing must be somewhat circumspect and not assume entries
-// in an unfiltered buffer refer to valid objects.
-
-inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
-  // Includes rejection of NULL pointers.
-  assert(heap->is_in_reserved(entry),
-         "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
-
-  HeapRegion* region = heap->heap_region_containing(entry);
-  assert(region != NULL, "No region for " PTR_FORMAT, p2i(entry));
-  if (entry >= region->next_top_at_mark_start()) {
-    return false;
-  }
-
-  assert(oopDesc::is_oop(oop(entry), true /* ignore mark word */),
-         "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(entry));
-
-  return true;
-}
-
-inline bool retain_entry(const void* entry, G1CollectedHeap* heap) {
-  return requires_marking(entry, heap) && !heap->is_marked_next((oop)entry);
-}
-
-// This method removes entries from a SATB buffer that will not be
-// useful to the concurrent marking threads.  Entries are retained if
-// they require marking and are not already marked. Retained entries
-// are compacted toward the top of the buffer.
-
-void SATBMarkQueue::filter() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  void** buf = _buf;
-
-  if (buf == NULL) {
-    // nothing to do
-    return;
-  }
-
-  // Two-fingered compaction toward the end.
-  void** src = &buf[index()];
-  void** dst = &buf[capacity()];
-  assert(src <= dst, "invariant");
-  for ( ; src < dst; ++src) {
-    // Search low to high for an entry to keep.
-    void* entry = *src;
-    if (retain_entry(entry, g1h)) {
-      // Found keeper.  Search high to low for an entry to discard.
-      while (src < --dst) {
-        if (!retain_entry(*dst, g1h)) {
-          *dst = entry;         // Replace discard with keeper.
-          break;
-        }
-      }
-      // If discard search failed (src == dst), the outer loop will also end.
-    }
-  }
-  // dst points to the lowest retained entry, or the end of the buffer
-  // if all the entries were filtered out.
-  set_index(dst - buf);
-}
-
-// This method will first apply the above filtering to the buffer. If
-// post-filtering a large enough chunk of the buffer has been cleared
-// we can re-use the buffer (instead of enqueueing it) and we can just
-// allow the mutator to carry on executing using the same buffer
-// instead of replacing it.
+// This method will first apply filtering to the buffer. If filtering
+// retains a small enough collection in the buffer, we can continue to
+// use the buffer as-is, instead of enqueueing and replacing it.
 
 bool SATBMarkQueue::should_enqueue_buffer() {
   assert(_lock == NULL || _lock->owned_by_self(),
@@ -198,13 +104,17 @@ void SATBMarkQueue::print(const char* name) {
 
 SATBMarkQueueSet::SATBMarkQueueSet() :
   PtrQueueSet(),
-  _shared_satb_queue(this, true /* permanent */) { }
+  _shared_satb_queue(this, true /* permanent */),
+  _filter(NULL)
+{}
 
-void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
+void SATBMarkQueueSet::initialize(SATBMarkQueueFilter* filter,
+                                  Monitor* cbl_mon, Mutex* fl_lock,
                                   int process_completed_threshold,
                                   Mutex* lock) {
   PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold, -1);
   _shared_satb_queue.set_lock(lock);
+  _filter = filter;
 }
 
 void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
