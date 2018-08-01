@@ -1,4 +1,4 @@
-Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
   
 The Universal Permissive License (UPL), Version 1.0
@@ -54,11 +54,12 @@ you do not have a version that is new enough.
 
 * Building
 
-To build this project you a copy of GNU binutils to build against.  It
-is known to work with binutils 2.17 and binutils 2.19.1.  Download a
+To build this project you need a copy of GNU binutils to build against.
+It is known to work with binutils 2.29.1, 2.30, and 2.31.1. Building
+against versions older than 2.29 is no longer supported. Download a
 copy of the software from http://directory.fsf.org/project/binutils or
-one of it's mirrors.  Builds targetting windows should use at least
-2.19 and currently requires the use of a cross compiler.
+one of its mirrors.  Builds targetting windows currently require the
+use of a cross compiler.
 
 Binutils should be configured with the '--disable-nls' flag to disable
 Native Language Support, otherwise you might get an "undefined
@@ -107,9 +108,9 @@ your path named i586-mingw32msvc-gcc or x86_64-pc-mingw32-gcc.  Tell
 the makefile what prefix to use to find the mingw tools by using
 MINGW=.  For example:
 
-make MINGW=i586-mingw32msvc BINTUILS=build/binutils-2.19.1
+make MINGW=i586-mingw32msvc BINUTILS=build/binutils-2.31.1
 
-will build the Win32 cross compiled version of hsdis based on 2.19.1.
+will build the Win32 cross compiled version of hsdis based on 2.31.1.
 
 * Installing
 
