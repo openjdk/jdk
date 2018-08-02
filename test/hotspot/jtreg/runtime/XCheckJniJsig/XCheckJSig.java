@@ -37,7 +37,6 @@ import java.util.Map;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jtreg.SkippedException;
 
 public class XCheckJSig {
     public static void main(String args[]) throws Throwable {
