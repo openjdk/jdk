@@ -29,10 +29,12 @@
  *          is different from object alignment for creating a CDS file
  *          should fail when loading.
  * @requires vm.cds
+ * @requires vm.bits == 64
  * @library /test/lib
  * @bug 8025642
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @run main CdsDifferentObjectAlignment
  */
 
 import jdk.test.lib.cds.CDSTestUtils;
@@ -40,19 +42,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 
 public class CdsDifferentObjectAlignment {
-    public static void main(String[] args) throws Exception {
-        String nativeWordSize = System.getProperty("sun.arch.data.model");
-        if (!Platform.is64bit()) {
-            System.out.println("ObjectAlignmentInBytes for CDS is only " +
-                "supported on 64bit platforms; this plaform is " +
-                nativeWordSize);
-            System.out.println("Skipping the test");
-        } else {
-            createAndLoadSharedArchive(16, 64);
-            createAndLoadSharedArchive(64, 32);
-        }
-    }
 
+    public static void main(String[] args) throws Exception {
+        createAndLoadSharedArchive(16, 64);
+        createAndLoadSharedArchive(64, 32);
+    }
 
     // Parameters are object alignment expressed in bytes
     private static void

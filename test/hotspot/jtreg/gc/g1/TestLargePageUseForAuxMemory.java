@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
+import jtreg.SkippedException;
 import sun.hotspot.WhiteBox;
 
 public class TestLargePageUseForAuxMemory {
@@ -134,13 +135,11 @@ public class TestLargePageUseForAuxMemory {
         final long heapAlignment = lcm(cardSize * smallPageSize, largePageSize);
 
         if (largePageSize == 0) {
-            System.out.println("Skip tests because large page support does not seem to be available on this platform.");
-            return;
+            throw new SkippedException("Large page support does not seem to be available on this platform.");
         }
         if (largePageSize == smallPageSize) {
-            System.out.println("Skip tests because large page support does not seem to be available on this platform." +
-                               "Small and large page size are the same.");
-            return;
+            throw new SkippedException("Large page support does not seem to be available on this platform."
+                    + "Small and large page size are the same.");
         }
 
         // To get large pages for the card table etc. we need at least a 1G heap (with 4k page size).

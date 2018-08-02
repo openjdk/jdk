@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package gc.g1.unloading;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -33,12 +34,13 @@ import gc.g1.unloading.check.Assertion;
 import gc.g1.unloading.check.AssertionContainer;
 import gc.g1.unloading.check.ClassAssertion;
 import gc.g1.unloading.configuration.*;
+import gc.g1.unloading.loading.*;
 import nsk.share.gc.GCTestBase;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import nsk.share.test.Tests;
 
-import gc.g1.unloading.loading.*;
+import jtreg.SkippedException;
 
 /**
  * This class contains main method. It's entry point for all configurations.
@@ -165,8 +167,7 @@ public class UnloadingTest extends GCTestBase {
     private void checkIfG1Used() {
         for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
             if (!bean.getName().contains("G1")) {
-                System.err.println("This test was created to cover G1 class unloading feature. It should be ran with -XX:+UseG1GC. Skipping silently.");
-                System.exit(0);
+                throw new SkippedException("This test was created to cover G1 class unloading feature. It should be ran with -XX:+UseG1GC");
             }
         }
     }

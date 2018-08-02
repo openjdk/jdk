@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import java.util.List;
 import java.text.NumberFormat;
 import gc.testlibrary.Helpers;
 import static jdk.test.lib.Asserts.*;
+import jtreg.SkippedException;
 
 public class TestHumongousShrinkHeap {
 
@@ -61,13 +62,11 @@ public class TestHumongousShrinkHeap {
 
     public static void main(String[] args) {
         if (HUMON_COUNT == 0) {
-            System.out.println("Skipped. Heap is too small");
-            return;
+            throw new SkippedException("Heap is too small");
         }
 
         if (TOTAL_MEMORY + REGION_SIZE * HUMON_COUNT > MAX_MEMORY) {
-            System.out.println("Skipped. Initial heap size is to close to max heap size.");
-            return;
+            throw new SkippedException("Initial heap size is to close to max heap size.");
         }
 
         System.out.format("Running with %s initial heap size of %s maximum heap size. "

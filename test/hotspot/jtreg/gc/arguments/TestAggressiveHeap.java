@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.management.ObjectName;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 public class TestAggressiveHeap {
 
@@ -88,9 +89,7 @@ public class TestAggressiveHeap {
 
     private static boolean canUseAggressiveHeapOption() throws Exception {
         if (!haveRequiredMemory()) {
-            System.out.println(
-                "Skipping test of " + option + " : insufficient memory");
-            return false;
+            throw new SkippedException("Skipping test of " + option + " : insufficient memory");
         }
         return true;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /* @test TestLargePagesFlags
  * @summary Tests how large pages are choosen depending on the given large pages flag combinations.
  * @requires vm.gc != "Z"
+ * @requires vm.family == "linux"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -33,16 +34,12 @@
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
+
 import java.util.ArrayList;
 
 public class TestLargePagesFlags {
 
   public static void main(String [] args) throws Exception {
-    if (!Platform.isLinux()) {
-      System.out.println("Skipping. TestLargePagesFlags has only been implemented for Linux.");
-      return;
-    }
-
     testUseTransparentHugePages();
     testUseHugeTLBFS();
     testUseSHM();

@@ -26,29 +26,24 @@
  * @summary Testing CDS (class data sharing) using varying object alignment.
  *          Using same object alignment for each dump/load pair
  * @requires vm.cds
+ * @requires vm.bits == 64
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @run main CdsSameObjectAlignment
  */
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 
 public class CdsSameObjectAlignment {
     public static void main(String[] args) throws Exception {
-        String nativeWordSize = System.getProperty("sun.arch.data.model");
-        if (!Platform.is64bit()) {
-            System.out.println("ObjectAlignmentInBytes for CDS is only " +
-                "supported on 64bit platforms; this plaform is " +
-                nativeWordSize);
-            System.out.println("Skipping the test");
-        } else {
-            dumpAndLoadSharedArchive(8);
-            dumpAndLoadSharedArchive(16);
-            dumpAndLoadSharedArchive(32);
-            dumpAndLoadSharedArchive(64);
-        }
+        dumpAndLoadSharedArchive(8);
+        dumpAndLoadSharedArchive(16);
+        dumpAndLoadSharedArchive(32);
+        dumpAndLoadSharedArchive(64);
     }
 
     private static void

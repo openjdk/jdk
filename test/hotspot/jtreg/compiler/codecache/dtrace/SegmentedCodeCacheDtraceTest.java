@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
+import jtreg.SkippedException;
 
 import java.io.IOException;
 import java.lang.reflect.Executable;
@@ -119,12 +120,11 @@ public class SegmentedCodeCacheDtraceTest {
     }
 
     public static void main(String args[]) {
+        if (!DtraceRunner.dtraceAvailable()) {
+            throw new SkippedException("There is no dtrace avaiable.");
+        }
         int iterations
                 = Integer.getInteger("jdk.test.lib.iterations", 1);
-        if (!DtraceRunner.dtraceAvailable()) {
-            System.out.println("INFO: There is no dtrace avaiable. Skipping.");
-            return;
-        }
         int[] availableLevels = CompilerUtils.getAvailableCompilationLevels();
         // adding one more entry(zero) for interpeter
         availableLevels

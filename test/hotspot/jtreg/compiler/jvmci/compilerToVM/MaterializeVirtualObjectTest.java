@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,7 @@ import jdk.vm.ci.code.stack.InspectedFrame;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jtreg.SkippedException;
 import sun.hotspot.WhiteBox;
 
 import java.lang.reflect.Method;
@@ -143,11 +144,10 @@ public class MaterializeVirtualObjectTest {
         int levels[] = CompilerUtils.getAvailableCompilationLevels();
         // we need compilation level 4 to use EscapeAnalysis
         if (levels.length < 1 || levels[levels.length - 1] != 4) {
-            System.out.println("INFO: Test needs compilation level 4 to"
-                    + " be available. Skipping.");
-        } else {
-            new MaterializeVirtualObjectTest().test();
+            throw new SkippedException("Test needs compilation level 4");
         }
+
+        new MaterializeVirtualObjectTest().test();
     }
 
     private static String getName() {

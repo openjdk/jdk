@@ -25,6 +25,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -40,8 +41,7 @@ public class SigTestDriver {
     public static void main(String[] args) {
         // No signal tests on Windows yet; so setting to no-op
         if (Platform.isWindows()) {
-            System.out.println("SKIPPED: no signal tests on Windows, ignore.");
-            return;
+            throw new SkippedException("no signal tests on Windows");
         }
 
         // At least one argument should be specified
@@ -54,16 +54,13 @@ public class SigTestDriver {
             case "SIGWAITING":
             case "SIGKILL":
             case "SIGSTOP": {
-                System.out.println("SKIPPED: signals SIGWAITING, SIGKILL and SIGSTOP can't be tested, ignore.");
-                return;
+                throw new SkippedException("signals SIGWAITING, SIGKILL and SIGSTOP can't be tested");
             }
             case "SIGUSR2": {
                 if (Platform.isLinux()) {
-                    System.out.println("SKIPPED: SIGUSR2 can't be tested on Linux, ignore.");
-                    return;
+                    throw new SkippedException("SIGUSR2 can't be tested on Linux");
                 } else if (Platform.isOSX()) {
-                    System.out.println("SKIPPED: SIGUSR2 can't be tested on OS X, ignore.");
-                    return;
+                    throw new SkippedException("SIGUSR2 can't be tested on OS X");
                 }
             }
         }

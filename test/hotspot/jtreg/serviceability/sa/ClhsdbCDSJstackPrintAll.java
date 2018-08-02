@@ -37,6 +37,7 @@ import java.util.HashMap;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.apps.LingeredApp;
+import jtreg.SkippedException;
 
 public class ClhsdbCDSJstackPrintAll {
 
@@ -64,17 +65,15 @@ public class ClhsdbCDSJstackPrintAll {
                                                     null, null);
 
             if (useSharedSpacesOutput == null) {
-                // Attach permission issues.
-                System.out.println("Could not determine the UseSharedSpaces value - test skipped.");
                 LingeredApp.stopApp(theApp);
-                return;
+                // Attach permission issues.
+                throw new SkippedException("Could not determine the UseSharedSpaces value");
             }
 
             if (!useSharedSpacesOutput.contains("true")) {
                 // CDS archive is not mapped. Skip the rest of the test.
-                System.out.println("The CDS archive is not mapped - test skipped.");
                 LingeredApp.stopApp(theApp);
-                return;
+                throw new SkippedException("The CDS archive is not mapped");
             }
 
             cmds = List.of("jstack -v", "printall", "where -a");
@@ -113,6 +112,8 @@ public class ClhsdbCDSJstackPrintAll {
                 "illegal code",
                 "Failure occurred at bci"));
             test.run(theApp.getPid(), cmds, expStrMap, unExpStrMap);
+        } catch (SkippedException e) {
+            throw e;
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {

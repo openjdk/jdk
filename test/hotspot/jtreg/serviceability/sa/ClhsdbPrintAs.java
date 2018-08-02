@@ -21,12 +21,6 @@
  * questions.
  */
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.ArrayList;
-import jdk.test.lib.apps.LingeredApp;
-
 /**
  * @test
  * @bug 8192985
@@ -35,6 +29,13 @@ import jdk.test.lib.apps.LingeredApp;
  * @library /test/lib
  * @run main/othervm ClhsdbPrintAs
  */
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import jdk.test.lib.apps.LingeredApp;
+import jtreg.SkippedException;
 
 public class ClhsdbPrintAs {
 
@@ -55,10 +56,8 @@ public class ClhsdbPrintAs {
             String jstackOutput = test.run(theApp.getPid(), cmds, null, null);
 
             if (jstackOutput == null) {
-                // Output could be null due to attach permission issues
-                // and if we are skipping this.
                 LingeredApp.stopApp(theApp);
-                return;
+                throw new SkippedException("attach permission issues");
             }
 
             String[] snippets = jstackOutput.split("LingeredApp.main");
@@ -118,6 +117,8 @@ public class ClhsdbPrintAs {
             expStrMap.put(cmd, List.of
                 ("ConstantPoolCache", "_pool_holder", "InstanceKlass*"));
             test.run(theApp.getPid(), cmds, expStrMap, null);
+        } catch (SkippedException e) {
+            throw e;
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         } finally {
