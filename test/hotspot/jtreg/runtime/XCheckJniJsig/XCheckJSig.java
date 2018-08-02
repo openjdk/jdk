@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.family == "solaris" | vm.family == "linux" | vm.family == "mac"
+ * @requires os.family == "solaris" | os.family == "linux" | os.family == "mac"
  * @run main XCheckJSig
  */
 

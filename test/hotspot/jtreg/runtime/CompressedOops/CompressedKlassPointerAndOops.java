@@ -29,7 +29,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requiers vm.bits == 64
+ * @requires vm.bits == 64
  * @run main CompressedKlassPointerAndOops
  */
 
