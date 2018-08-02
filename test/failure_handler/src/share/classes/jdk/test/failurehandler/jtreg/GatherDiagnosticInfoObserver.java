@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,10 +119,10 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
     public void startingTestRun(Parameters params) {
         // TODO find a better way to get JDKs
         InterviewParameters rp = (InterviewParameters) params;
-        Map<?,?> map = new HashMap<>();
+        Map<String, String> map = new HashMap<>();
         rp.save(map);
-        compileJdk = (String) map.get("regtest.compilejdk");
-        testJdk = (String) map.get("regtest.testjdk");
+        compileJdk = map.get("regtest.compilejdk");
+        testJdk = map.get("regtest.testjdk");
     }
 
     @Override
