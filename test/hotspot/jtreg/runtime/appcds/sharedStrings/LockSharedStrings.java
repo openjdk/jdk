@@ -34,6 +34,8 @@
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main LockSharedStrings
+ * @run main/othervm -XX:+UseStringDeduplication LockSharedStrings
+ * @run main/othervm -XX:-CompactStrings LockSharedStrings
  */
 
 public class LockSharedStrings {

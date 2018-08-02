@@ -33,6 +33,8 @@
  * @build HelloStringPlus sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main SharedStringsBasicPlus
+ * @run main/othervm -XX:+UseStringDeduplication SharedStringsBasicPlus
+ * @run main/othervm -XX:-CompactStrings SharedStringsBasicPlus
  */
 
 public class SharedStringsBasicPlus {

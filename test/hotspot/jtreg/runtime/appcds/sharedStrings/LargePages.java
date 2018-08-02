@@ -32,6 +32,8 @@
  *          jdk.jartool/sun.tools.jar
  * @build HelloString
  * @run main LargePages
+ * @run main/othervm -XX:+UseStringDeduplication LargePages
+ * @run main/othervm -XX:-CompactStrings LargePages
  */
 public class LargePages {
     public static void main(String[] args) throws Exception {

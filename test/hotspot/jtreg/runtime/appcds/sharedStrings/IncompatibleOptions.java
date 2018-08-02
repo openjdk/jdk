@@ -36,6 +36,8 @@
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @build HelloString
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions
+ * @run main/othervm -XX:+UseStringDeduplication -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions
+ * @run main/othervm -XX:-CompactStrings -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions
  */
 
 import jdk.test.lib.Asserts;

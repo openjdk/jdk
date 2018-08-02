@@ -30,6 +30,8 @@
  * @modules jdk.jartool/sun.tools.jar
  * @build HelloString
  * @run main SharedStringsStress
+ * @run main/othervm -XX:+UseStringDeduplication SharedStringsStress
+ * @run main/othervm -XX:-CompactStrings SharedStringsStress
  */
 import java.io.File;
 import java.io.FileOutputStream;

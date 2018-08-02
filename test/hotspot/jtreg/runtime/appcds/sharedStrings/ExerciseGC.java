@@ -33,6 +33,8 @@
  * @build HelloStringGC sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ExerciseGC
+ * @run main/othervm -XX:+UseStringDeduplication ExerciseGC
+ * @run main/othervm -XX:-CompactStrings ExerciseGC
  */
 public class ExerciseGC {
     public static void main(String[] args) throws Exception {
