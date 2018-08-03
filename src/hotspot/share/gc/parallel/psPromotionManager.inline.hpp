@@ -322,8 +322,8 @@ inline void PSPromotionManager::process_popped_location_depth(StarTask p) {
   }
 }
 
-inline bool PSPromotionManager::steal_depth(int queue_num, int* seed, StarTask& t) {
-  return stack_array_depth()->steal(queue_num, seed, t);
+inline bool PSPromotionManager::steal_depth(int queue_num, StarTask& t) {
+  return stack_array_depth()->steal(queue_num, t);
 }
 
 #if TASKQUEUE_STATS

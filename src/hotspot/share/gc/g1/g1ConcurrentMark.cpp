@@ -2466,8 +2466,8 @@ void G1CMTask::print_stats() {
                        hits, misses, percent_of(hits, hits + misses));
 }
 
-bool G1ConcurrentMark::try_stealing(uint worker_id, int* hash_seed, G1TaskQueueEntry& task_entry) {
-  return _task_queues->steal(worker_id, hash_seed, task_entry);
+bool G1ConcurrentMark::try_stealing(uint worker_id, G1TaskQueueEntry& task_entry) {
+  return _task_queues->steal(worker_id, task_entry);
 }
 
 /*****************************************************************************
@@ -2773,7 +2773,7 @@ void G1CMTask::do_marking_step(double time_target_ms,
            "only way to reach here");
     while (!has_aborted()) {
       G1TaskQueueEntry entry;
-      if (_cm->try_stealing(_worker_id, &_hash_seed, entry)) {
+      if (_cm->try_stealing(_worker_id, entry)) {
         scan_task_entry(entry);
 
         // And since we're towards the end, let's totally drain the
@@ -2915,7 +2915,6 @@ G1CMTask::G1CMTask(uint worker_id,
   _refs_reached(0),
   _refs_reached_limit(0),
   _real_refs_reached_limit(0),
-  _hash_seed(17),
   _has_aborted(false),
   _has_timed_out(false),
   _draining_satb_buffers(false),

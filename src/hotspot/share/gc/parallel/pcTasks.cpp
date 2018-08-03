@@ -183,13 +183,12 @@ void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
 
   oop obj = NULL;
   ObjArrayTask task;
-  int random_seed = 17;
   do {
-    while (ParCompactionManager::steal_objarray(which, &random_seed, task)) {
+    while (ParCompactionManager::steal_objarray(which,  task)) {
       cm->follow_contents((objArrayOop)task.obj(), task.index());
       cm->follow_marking_stacks();
     }
-    while (ParCompactionManager::steal(which, &random_seed, obj)) {
+    while (ParCompactionManager::steal(which, obj)) {
       cm->follow_contents(obj);
       cm->follow_marking_stacks();
     }
@@ -217,10 +216,9 @@ void CompactionWithStealingTask::do_it(GCTaskManager* manager, uint which) {
   guarantee(cm->region_stack()->is_empty(), "Not empty");
 
   size_t region_index = 0;
-  int random_seed = 17;
 
   while(true) {
-    if (ParCompactionManager::steal(which, &random_seed, region_index)) {
+    if (ParCompactionManager::steal(which, region_index)) {
       PSParallelCompact::fill_and_update_region(cm, region_index);
       cm->drain_region_stacks();
     } else {

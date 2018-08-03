@@ -159,7 +159,7 @@ class PSPromotionManager {
   static PSPromotionManager* gc_thread_promotion_manager(uint index);
   static PSPromotionManager* vm_thread_promotion_manager();
 
-  static bool steal_depth(int queue_num, int* seed, StarTask& t);
+  static bool steal_depth(int queue_num, StarTask& t);
 
   PSPromotionManager();
 

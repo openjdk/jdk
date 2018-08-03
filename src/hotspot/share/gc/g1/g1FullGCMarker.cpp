@@ -46,15 +46,14 @@ G1FullGCMarker::~G1FullGCMarker() {
 void G1FullGCMarker::complete_marking(OopQueueSet* oop_stacks,
                                       ObjArrayTaskQueueSet* array_stacks,
                                       ParallelTaskTerminator* terminator) {
-  int hash_seed = 17;
   do {
     drain_stack();
     ObjArrayTask steal_array;
-    if (array_stacks->steal(_worker_id, &hash_seed, steal_array)) {
+    if (array_stacks->steal(_worker_id, steal_array)) {
       follow_array_chunk(objArrayOop(steal_array.obj()), steal_array.index());
     } else {
       oop steal_oop;
-      if (oop_stacks->steal(_worker_id, &hash_seed, steal_oop)) {
+      if (oop_stacks->steal(_worker_id, steal_oop)) {
         follow_object(steal_oop);
       }
     }
