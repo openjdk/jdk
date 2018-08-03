@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,18 +133,20 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
             throw new UnrecoverableKeyException("Password must not be null");
         }
 
-        KeyProtector keyProtector = new KeyProtector(password);
+        byte[] passwordBytes = convertToBytes(password);
+        KeyProtector keyProtector = new KeyProtector(passwordBytes);
         byte[] encrBytes = ((KeyEntry)entry).protectedPrivKey;
         EncryptedPrivateKeyInfo encrInfo;
-        byte[] plain;
         try {
             encrInfo = new EncryptedPrivateKeyInfo(encrBytes);
+            return keyProtector.recover(encrInfo);
         } catch (IOException ioe) {
             throw new UnrecoverableKeyException("Private key not stored as "
                                                 + "PKCS #8 "
                                                 + "EncryptedPrivateKeyInfo");
+        } finally {
+            Arrays.fill(passwordBytes, (byte) 0x00);
         }
-        return keyProtector.recover(encrInfo);
     }
 
     /**
@@ -253,7 +255,8 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                                   Certificate[] chain)
         throws KeyStoreException
     {
-        KeyProtector keyProtector = null;
+        KeyProtector keyProtector;
+        byte[] passwordBytes = null;
 
         if (!(key instanceof java.security.PrivateKey)) {
             throw new KeyStoreException("Cannot store non-PrivateKeys");
@@ -264,7 +267,8 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
                 entry.date = new Date();
 
                 // Protect the encoding of the key
-                keyProtector = new KeyProtector(password);
+                passwordBytes = convertToBytes(password);
+                keyProtector = new KeyProtector(passwordBytes);
                 entry.protectedPrivKey = keyProtector.protect(key);
 
                 // clone the chain
@@ -280,7 +284,8 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
         } catch (NoSuchAlgorithmException nsae) {
             throw new KeyStoreException("Key protection algorithm not found");
         } finally {
-            keyProtector = null;
+            if (passwordBytes != null)
+                Arrays.fill(passwordBytes, (byte) 0x00);
         }
     }
 
@@ -793,19 +798,27 @@ public abstract class JavaKeyStore extends KeyStoreSpi {
     private MessageDigest getPreKeyedHash(char[] password)
         throws NoSuchAlgorithmException, UnsupportedEncodingException
     {
-        int i, j;
 
         MessageDigest md = MessageDigest.getInstance("SHA");
+        byte[] passwdBytes = convertToBytes(password);
+        md.update(passwdBytes);
+        Arrays.fill(passwdBytes, (byte) 0x00);
+        md.update("Mighty Aphrodite".getBytes("UTF8"));
+        return md;
+    }
+
+    /**
+     * Helper method to convert char[] to byte[]
+     */
+
+    private byte[] convertToBytes(char[] password) {
+        int i, j;
         byte[] passwdBytes = new byte[password.length * 2];
         for (i=0, j=0; i<password.length; i++) {
             passwdBytes[j++] = (byte)(password[i] >> 8);
             passwdBytes[j++] = (byte)password[i];
         }
-        md.update(passwdBytes);
-        for (i=0; i<passwdBytes.length; i++)
-            passwdBytes[i] = 0;
-        md.update("Mighty Aphrodite".getBytes("UTF8"));
-        return md;
+        return passwdBytes;
     }
 
     /**

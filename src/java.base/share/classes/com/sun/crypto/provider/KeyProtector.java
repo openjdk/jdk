@@ -37,12 +37,15 @@ import java.security.UnrecoverableKeyException;
 import java.security.AlgorithmParameters;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.SealedObject;
 import javax.crypto.spec.*;
+import javax.security.auth.DestroyFailedException;
+
 import sun.security.x509.AlgorithmId;
 import sun.security.util.ObjectIdentifier;
 
@@ -103,15 +106,20 @@ final class KeyProtector {
 
         // create PBE key from password
         PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);
-        SecretKey sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
-        pbeKeySpec.clearPassword();
-
-        // encrypt private key
+        SecretKey sKey = null;
         PBEWithMD5AndTripleDESCipher cipher;
-        cipher = new PBEWithMD5AndTripleDESCipher();
-        cipher.engineInit(Cipher.ENCRYPT_MODE, sKey, pbeSpec, null);
+        try {
+            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
+            // encrypt private key
+            cipher = new PBEWithMD5AndTripleDESCipher();
+            cipher.engineInit(Cipher.ENCRYPT_MODE, sKey, pbeSpec, null);
+        } finally {
+            pbeKeySpec.clearPassword();
+            if (sKey != null) sKey.destroy();
+        }
         byte[] plain = key.getEncoded();
         byte[] encrKey = cipher.engineDoFinal(plain, 0, plain.length);
+        Arrays.fill(plain, (byte) 0x00);
 
         // wrap encrypted private key in EncryptedPrivateKeyInfo
         // (as defined in PKCS#8)
@@ -131,8 +139,8 @@ final class KeyProtector {
     Key recover(EncryptedPrivateKeyInfo encrInfo)
         throws UnrecoverableKeyException, NoSuchAlgorithmException
     {
-        byte[] plain;
-
+        byte[] plain = null;
+        SecretKey sKey = null;
         try {
             String encrAlg = encrInfo.getAlgorithm().getOID().toString();
             if (!encrAlg.equals(PBE_WITH_MD5_AND_DES3_CBC_OID)
@@ -160,8 +168,7 @@ final class KeyProtector {
 
                 // create PBE key from password
                 PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);
-                SecretKey sKey =
-                    new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
+                sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
                 pbeKeySpec.clearPassword();
 
                 // decrypt private key
@@ -178,7 +185,6 @@ final class KeyProtector {
                 (new PrivateKeyInfo(plain).getAlgorithm().getOID()).getName();
             KeyFactory kFac = KeyFactory.getInstance(oidName);
             return kFac.generatePrivate(new PKCS8EncodedKeySpec(plain));
-
         } catch (NoSuchAlgorithmException ex) {
             // Note: this catch needed to be here because of the
             // later catch of GeneralSecurityException
@@ -187,6 +193,15 @@ final class KeyProtector {
             throw new UnrecoverableKeyException(ioe.getMessage());
         } catch (GeneralSecurityException gse) {
             throw new UnrecoverableKeyException(gse.getMessage());
+        } finally {
+            if (plain != null) Arrays.fill(plain, (byte) 0x00);
+            if (sKey != null) {
+                try {
+                    sKey.destroy();
+                } catch (DestroyFailedException e) {
+                    //shouldn't happen
+                }
+            }
         }
     }
 
@@ -262,7 +277,7 @@ final class KeyProtector {
         // of <code>protectedKey</code>. If the two digest values are
         // different, throw an exception.
         md.update(passwdBytes);
-        java.util.Arrays.fill(passwdBytes, (byte)0x00);
+        Arrays.fill(passwdBytes, (byte)0x00);
         passwdBytes = null;
         md.update(plainKey);
         digest = md.digest();
@@ -291,17 +306,21 @@ final class KeyProtector {
 
         // create PBE key from password
         PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);
-        SecretKey sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
+        SecretKey sKey = null;
+        Cipher cipher;
+        try {
+            sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
         pbeKeySpec.clearPassword();
 
         // seal key
-        Cipher cipher;
-
         PBEWithMD5AndTripleDESCipher cipherSpi;
         cipherSpi = new PBEWithMD5AndTripleDESCipher();
         cipher = new CipherForKeyProtector(cipherSpi, SunJCE.getInstance(),
                                            "PBEWithMD5AndTripleDES");
         cipher.init(Cipher.ENCRYPT_MODE, sKey, pbeSpec);
+        } finally {
+            if (sKey != null) sKey.destroy();
+        }
         return new SealedObjectForKeyProtector(key, cipher);
     }
 
@@ -309,12 +328,13 @@ final class KeyProtector {
      * Unseals the sealed key.
      */
     Key unseal(SealedObject so)
-        throws NoSuchAlgorithmException, UnrecoverableKeyException
-    {
+        throws NoSuchAlgorithmException, UnrecoverableKeyException {
+        SecretKey sKey = null;
         try {
             // create PBE key from password
             PBEKeySpec pbeKeySpec = new PBEKeySpec(this.password);
-            SecretKey skey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES");
+            sKey = new PBEKey(pbeKeySpec,
+                    "PBEWithMD5AndTripleDES", false);
             pbeKeySpec.clearPassword();
 
             SealedObjectForKeyProtector soForKeyProtector = null;
@@ -342,7 +362,7 @@ final class KeyProtector {
             Cipher cipher = new CipherForKeyProtector(cipherSpi,
                                                       SunJCE.getInstance(),
                                                       "PBEWithMD5AndTripleDES");
-            cipher.init(Cipher.DECRYPT_MODE, skey, params);
+            cipher.init(Cipher.DECRYPT_MODE, sKey, params);
             return soForKeyProtector.getKey(cipher);
         } catch (NoSuchAlgorithmException ex) {
             // Note: this catch needed to be here because of the
@@ -354,6 +374,14 @@ final class KeyProtector {
             throw new UnrecoverableKeyException(cnfe.getMessage());
         } catch (GeneralSecurityException gse) {
             throw new UnrecoverableKeyException(gse.getMessage());
+        } finally {
+            if (sKey != null) {
+                try {
+                    sKey.destroy();
+                } catch (DestroyFailedException e) {
+                    //shouldn't happen
+                }
+            }
         }
     }
 }

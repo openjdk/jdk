@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.util.*;
 
-import jdk.internal.ref.CleanerFactory;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.pkcs.EncryptedPrivateKeyInfo;
 import sun.security.x509.AlgorithmId;
@@ -120,32 +119,15 @@ final class KeyProtector {
     /**
      * Creates an instance of this class, and initializes it with the given
      * password.
-     *
-     * <p>The password is expected to be in printable ASCII.
-     * Normal rules for good password selection apply: at least
-     * seven characters, mixed case, with punctuation encouraged.
-     * Phrases or words which are easily guessed, for example by
-     * being found in dictionaries, are bad.
      */
-    public KeyProtector(char[] password)
+    public KeyProtector(byte[] passwordBytes)
         throws NoSuchAlgorithmException
     {
-        int i, j;
-
-        if (password == null) {
+        if (passwordBytes == null) {
            throw new IllegalArgumentException("password can't be null");
         }
         md = MessageDigest.getInstance(DIGEST_ALG);
-        // Convert password to byte array, so that it can be digested
-        passwdBytes = new byte[password.length * 2];
-        for (i=0, j=0; i<password.length; i++) {
-            passwdBytes[j++] = (byte)(password[i] >> 8);
-            passwdBytes[j++] = (byte)password[i];
-        }
-        // Use the cleaner to zero the password when no longer referenced
-        final byte[] k = this.passwdBytes;
-        CleanerFactory.cleaner().register(this,
-                () -> java.util.Arrays.fill(k, (byte)0x00));
+        this.passwdBytes = passwordBytes;
     }
 
     /*
