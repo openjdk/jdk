@@ -40,6 +40,7 @@
 package compiler.tiered;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
+import jtreg.SkippedException;
 
 import java.lang.reflect.Executable;
 import java.util.concurrent.Callable;
