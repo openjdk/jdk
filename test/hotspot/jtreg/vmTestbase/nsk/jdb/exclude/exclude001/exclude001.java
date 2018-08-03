@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdb/exclude/exclude001.
  * VM Testbase keywords: [jpda, jdb, quarantine]
- * VM Testbase comments: JDK-8191037
+ * VM Testbase comments: 8191037
  * VM Testbase readme:
  * DECSRIPTION
  * A positive test for the 'exclude' command.

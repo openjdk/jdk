@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/EventRequestManager/createStepRequest/crstepreq001.
  * VM Testbase keywords: [jpda, jdi, quarantine]
- * VM Testbase comments: JDK-4447344
+ * VM Testbase comments: 4447344
  * VM Testbase readme:
  * DESCRIPTION
  *     This test checks that only one pending JDI step request is

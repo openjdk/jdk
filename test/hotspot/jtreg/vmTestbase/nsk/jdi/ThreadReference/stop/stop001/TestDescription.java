@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/ThreadReference/stop/stop001.
  * VM Testbase keywords: [quick, jpda, jdi, quarantine]
- * VM Testbase comments: JDK-7034630
+ * VM Testbase comments: 7034630
  * VM Testbase readme:
  * DESCRIPTION:
  *     The test for the implementation of an object of the type

@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/jdi/breakpointInCompiledCode.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, jdk, quarantine]
- * VM Testbase comments: 8079714
+ * VM Testbase comments: 8208255
  * VM Testbase readme:
  * DESCRIPTION
  *     Execute a MethodHandle 10000 times to trigger Hotspot compilation. Set a debugger breakpoint on MH.

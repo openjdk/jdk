@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/VirtualMachine/redefineClasses/redefineclasses023.
  * VM Testbase keywords: [jpda, jdi, redefine, quarantine]
- * VM Testbase comments: JDK-8065773
+ * VM Testbase comments: 8065773
  * VM Testbase readme:
  * DESCRIPTION:
  *     The test against the method com.sun.jdi.VirtualMachine.redefineClasses()

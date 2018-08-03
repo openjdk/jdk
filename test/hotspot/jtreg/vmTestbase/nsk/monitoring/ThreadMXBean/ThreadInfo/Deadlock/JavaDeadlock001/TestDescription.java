@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/monitoring/ThreadMXBean/ThreadInfo/Deadlock/JavaDeadlock001.
  * VM Testbase keywords: [quick, monitoring, feature_136, vm6, quarantine]
- * VM Testbase comments: JDK-8060733
+ * VM Testbase comments: 8060733
  *
  * @library /vmTestbase
  *          /test/lib

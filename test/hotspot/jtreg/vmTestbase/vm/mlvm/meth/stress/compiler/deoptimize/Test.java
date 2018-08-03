@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/compiler/deoptimize.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, quarantine]
- * VM Testbase comments: 8079642 8079714
+ * VM Testbase comments: 8079642 8208255
  * VM Testbase readme:
  * DESCRIPTION
  *     The test creates and calls MH sequences (see vm/mlvm/mh/func/sequences test) causing compilation

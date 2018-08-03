@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/monitoring/MemoryPoolMBean/isUsageThresholdExceeded/isexceeded005.
  * VM Testbase keywords: [quick, monitoring, quarantine]
- * VM Testbase comments: JDK-8153598
+ * VM Testbase comments: 8153598
  * VM Testbase readme:
  * DESCRIPTION
  *     The test checks that

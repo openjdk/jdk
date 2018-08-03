@@ -26,7 +26,7 @@
  *
  * @summary converted from VM Testbase nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001.
  * VM Testbase keywords: [jpda, jdwp, feature_jdk6_jpda, vm6, monitoring, quarantine]
- * VM Testbase comments: JDK-7199837
+ * VM Testbase comments: 7199837
  * VM Testbase readme:
  * DESCRIPTION
  *     This test performs checking for

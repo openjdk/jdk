@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,10 @@ public class JvmtiGetAllModulesTest {
         // remove the unnamed modules here, so the resulting report can be expected
         // to be equal to what Java reports
         modules.removeIf(mod -> !mod.isNamed());
+
+        // jdk.proxy1 and jdk.proxy2 modules are dynamically initialized by Graal code in case Graal VM is used.
+        // We need to filter them out because they are not part of boot modules. See more details in JDK-8195156.
+        modules.removeIf(mod -> mod.getName().startsWith("jdk.proxy"));
 
         return modules;
     }

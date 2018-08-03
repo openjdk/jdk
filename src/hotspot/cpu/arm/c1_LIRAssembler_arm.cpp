@@ -1778,8 +1778,12 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
 #else
   // FIXME: membar_release
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore | MacroAssembler::LoadStore), Rtemp);
+  Register addr = op->addr()->is_register() ?
+    op->addr()->as_pointer_register() :
+    op->addr()->as_address_ptr()->base()->as_pointer_register();
+  assert(op->addr()->is_register() || op->addr()->as_address_ptr()->disp() == 0, "unexpected disp");
+  assert(op->addr()->is_register() || op->addr()->as_address_ptr()->index() == LIR_OprDesc::illegalOpr(), "unexpected index");
   if (op->code() == lir_cas_int || op->code() == lir_cas_obj) {
-    Register addr = op->addr()->as_register();
     Register cmpval = op->cmp_value()->as_register();
     Register newval = op->new_value()->as_register();
     Register dest = op->result_opr()->as_register();
@@ -1790,7 +1794,6 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     __ mov(dest, 0, ne);
   } else if (op->code() == lir_cas_long) {
     assert(VM_Version::supports_cx8(), "wrong machine");
-    Register addr = op->addr()->as_pointer_register();
     Register cmp_value_lo = op->cmp_value()->as_register_lo();
     Register cmp_value_hi = op->cmp_value()->as_register_hi();
     Register new_value_lo = op->new_value()->as_register_lo();
@@ -3468,7 +3471,12 @@ void LIR_Assembler::peephole(LIR_List* lir) {
 }
 
 void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr dest, LIR_Opr tmp) {
+#ifdef AARCH64
   Register ptr = src->as_pointer_register();
+#else
+  assert(src->is_address(), "sanity");
+  Address addr = as_Address(src->as_address_ptr());
+#endif
 
   if (code == lir_xchg) {
 #ifdef AARCH64
@@ -3493,15 +3501,15 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
 #ifdef AARCH64
     __ ldaxr_w(dst, ptr);
 #else
-    __ ldrex(dst, Address(ptr));
+    __ ldrex(dst, addr);
 #endif
     if (code == lir_xadd) {
       Register tmp_reg = tmp->as_register();
       if (data->is_constant()) {
-        assert_different_registers(dst, ptr, tmp_reg);
+        assert_different_registers(dst, tmp_reg);
         __ add_32(tmp_reg, dst, data->as_constant_ptr()->as_jint());
       } else {
-        assert_different_registers(dst, ptr, tmp_reg, data->as_register());
+        assert_different_registers(dst, tmp_reg, data->as_register());
         __ add_32(tmp_reg, dst, data->as_register());
       }
       new_val = tmp_reg;
@@ -3511,12 +3519,12 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       } else {
         new_val = data->as_register();
       }
-      assert_different_registers(dst, ptr, new_val);
+      assert_different_registers(dst, new_val);
     }
 #ifdef AARCH64
     __ stlxr_w(Rtemp, new_val, ptr);
 #else
-    __ strex(Rtemp, new_val, Address(ptr));
+    __ strex(Rtemp, new_val, addr);
 #endif // AARCH64
 
 #ifdef AARCH64
@@ -3551,7 +3559,7 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
     assert((dst_lo->encoding() & 0x1) == 0, "misaligned register pair");
 
     __ bind(retry);
-    __ ldrexd(dst_lo, Address(ptr));
+    __ ldrexd(dst_lo, addr);
     if (code == lir_xadd) {
       Register tmp_lo = tmp->as_register_lo();
       Register tmp_hi = tmp->as_register_hi();
@@ -3562,7 +3570,7 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
       if (data->is_constant()) {
         jlong c = data->as_constant_ptr()->as_jlong();
         assert((jlong)((jint)c) == c, "overflow");
-        assert_different_registers(dst_lo, dst_hi, ptr, tmp_lo, tmp_hi);
+        assert_different_registers(dst_lo, dst_hi, tmp_lo, tmp_hi);
         __ adds(tmp_lo, dst_lo, (jint)c);
         __ adc(tmp_hi, dst_hi, 0);
       } else {
@@ -3570,18 +3578,18 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
         Register new_val_hi = data->as_register_hi();
         __ adds(tmp_lo, dst_lo, new_val_lo);
         __ adc(tmp_hi, dst_hi, new_val_hi);
-        assert_different_registers(dst_lo, dst_hi, ptr, tmp_lo, tmp_hi, new_val_lo, new_val_hi);
+        assert_different_registers(dst_lo, dst_hi, tmp_lo, tmp_hi, new_val_lo, new_val_hi);
       }
       new_val_lo = tmp_lo;
     } else {
       new_val_lo = data->as_register_lo();
       Register new_val_hi = data->as_register_hi();
 
-      assert_different_registers(dst_lo, dst_hi, ptr, new_val_lo, new_val_hi);
+      assert_different_registers(dst_lo, dst_hi, new_val_lo, new_val_hi);
       assert(new_val_hi->encoding() == new_val_lo->encoding() + 1, "non aligned register pair");
       assert((new_val_lo->encoding() & 0x1) == 0, "misaligned register pair");
     }
-    __ strexd(Rtemp, new_val_lo, Address(ptr));
+    __ strexd(Rtemp, new_val_lo, addr);
 #endif // AARCH64
   } else {
     ShouldNotReachHere();

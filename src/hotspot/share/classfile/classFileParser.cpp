@@ -3572,6 +3572,9 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
                          "Nest-host class_info_index %u has bad constant type in class file %s",
                          class_info_index, CHECK);
           _nest_host = class_info_index;
+        } else {
+          // Unknown attribute
+          cfs->skip_u1(attribute_length, CHECK);
         }
       } else {
         // Unknown attribute

@@ -26,7 +26,7 @@
  *
  * @summary converted from VM Testbase runtime/jbe/subcommon/subcommon02.
  * VM Testbase keywords: [runtime]
- * VM Testbase comments: JDK-7190319
+ * VM Testbase comments: 7190319
  *
  * @library /vmTestbase
  *          /test/lib

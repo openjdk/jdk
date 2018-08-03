@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/AttachingConnector/attach/attach002.
  * VM Testbase keywords: [quick, jpda, jdi, quarantine]
- * VM Testbase comments: JDK-8054463
+ * VM Testbase comments: 8054463
  * VM Testbase readme:
  * DESCRIPTION
  *     The test checks that debugger may establish connection with

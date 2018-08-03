@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/BScenarios/hotswap/tc10x001.
  * VM Testbase keywords: [quick, jpda, jdi, redefine, quarantine]
- * VM Testbase comments: JDK-8013728
+ * VM Testbase comments: 8013728
  * VM Testbase readme:
  * DESCRIPTION:
  *     This test is from the group of so-called Borland's scenarios and

@@ -28,7 +28,7 @@
  *
  * @summary converted from VM Testbase vm/gc/containers/TreeMap_Arrays.
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, monitoring, quarantine]
- * VM Testbase comments: JDK-8014075
+ * VM Testbase comments: 8014075
  *
  * @library /vmTestbase
  *          /test/lib

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,24 @@
  * questions.
  */
 
-
 /*
  * @test
- * @key stress
- *
- * @summary converted from VM Testbase nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005.
- * VM Testbase keywords: [monitoring, stress, stressopt, feature_136, nonconcurrent, vm6, quarantine]
- * VM Testbase comments: 7187073
- *
- * @library /vmTestbase
- *          /test/lib
- * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm
- *      nsk.monitoring.ThreadMXBean.ThreadInfo.Multi.Multi001.Multi001
- *      -testMode=proxy
- *      -MBeanServer=custom
+ * @bug 8207944
+ * @summary Unknown attribute erroneously causes ClassFormatError exception.
+ * @compile UnknownAttr.jcod
+ * @run main UnknownAttrTest
  */
 
+// Test that an unknown class attribute is ignored and no exception is thrown.
+public class UnknownAttrTest {
+    public static void main(String args[]) throws Throwable {
+
+        System.out.println("Regression test for bug 8207944");
+        try {
+            Class newClass = Class.forName("UnknownAttr");
+        } catch (java.lang.Throwable e) {
+            throw new RuntimeException(
+                "Unexpected exception: " + e.getMessage());
+        }
+    }
+}
