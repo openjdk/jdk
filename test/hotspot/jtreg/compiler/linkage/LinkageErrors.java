@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,24 @@ class X {
 public class LinkageErrors {
     final static MethodHandles.Lookup L = MethodHandles.lookup();
 
-    static void test(MethodHandle mh) {
+    static void testICCE(MethodHandle mh) {
         try {
             mh.invokeExact();
             throw new AssertionError("No exception thrown");
-        } catch (LinkageError e) {
+        } catch (IncompatibleClassChangeError e) {
+            return; // expected
+        } catch (AssertionError e) {
+            throw e; // rethrow
+        } catch (Throwable e) {
+            throw new AssertionError("Unexpected exception", e);
+        }
+    }
+
+    static void testNSME(MethodHandle mh) {
+        try {
+            mh.invokeExact();
+            throw new AssertionError("No exception thrown");
+        } catch (NoSuchMethodError e) {
             return; // expected
         } catch (AssertionError e) {
             throw e; // rethrow
@@ -93,18 +106,18 @@ public class LinkageErrors {
         MethodHandle testX3_null = testX3.bindTo(null);
 
         for (int i = 0; i < 20_000; i++) {
-            test(testI1_A);
-            test(testI1_null);
-            test(testX1_X);
-            test(testX1_null);
+            testNSME(testI1_A);
+            testNSME(testI1_null);
+            testNSME(testX1_X);
+            testNSME(testX1_null);
 
-            test(testI2);
-            test(testX2);
+            testICCE(testI2);
+            testICCE(testX2);
 
-            test(testI3_A);
-            test(testI3_null);
-            test(testX3_X);
-            test(testX3_null);
+            testICCE(testI3_A);
+            testICCE(testI3_null);
+            testICCE(testX3_X);
+            testICCE(testX3_null);
         }
 
         System.out.println("TEST PASSED");
