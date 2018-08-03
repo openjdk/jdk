@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase vm/mlvm/meth/stress/java/sequences.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, quarantine]
- * VM Testbase comments: 8079714
+ * VM Testbase comments: 8208255
  * VM Testbase readme:
  * DESCRIPTION
  *     Creates a sequence of method handles that manipulates arguments. The following manipulations are used:

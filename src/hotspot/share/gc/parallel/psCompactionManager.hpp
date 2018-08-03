@@ -159,9 +159,9 @@ private:
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(uint index);
 
-  static bool steal(int queue_num, int* seed, oop& t);
-  static bool steal_objarray(int queue_num, int* seed, ObjArrayTask& t);
-  static bool steal(int queue_num, int* seed, size_t& region);
+  static bool steal(int queue_num, oop& t);
+  static bool steal_objarray(int queue_num, ObjArrayTask& t);
+  static bool steal(int queue_num, size_t& region);
 
   // Process tasks remaining on any marking stack
   void follow_marking_stacks();

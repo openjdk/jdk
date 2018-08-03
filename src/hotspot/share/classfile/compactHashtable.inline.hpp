@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ inline Symbol* CompactHashtable<T, N>::decode_entry(CompactHashtable<Symbol*, ch
                                                     u4 offset, const char* name, int len) {
   Symbol* sym = (Symbol*)(_base_address + offset);
   if (sym->equals(name, len)) {
-    assert(sym->refcount() == -1, "must be shared");
+    assert(sym->refcount() == PERM_REFCOUNT, "must be shared");
     return sym;
   }
 

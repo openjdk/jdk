@@ -153,12 +153,11 @@ class ObjectSynchronizer : AllStatic {
   static void thread_local_used_oops_do(Thread* thread, OopClosure* f);
 
   // debugging
-  static void sanity_checks(const bool verbose,
-                            const unsigned int cache_line_size,
-                            int *error_cnt_ptr, int *warning_cnt_ptr);
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 
  private:
+  friend class SynchronizerTest;
+
   enum { _BLOCKSIZE = 128 };
   // global list of blocks of monitors
   static PaddedEnd<ObjectMonitor> * volatile gBlockList;
@@ -177,6 +176,11 @@ class ObjectSynchronizer : AllStatic {
   // Process oops in monitors on the given list
   static void list_oops_do(ObjectMonitor* list, OopClosure* f);
 
+  // Support for SynchronizerTest access to GVars fields:
+  static u_char* get_gvars_addr();
+  static u_char* get_gvars_hcSequence_addr();
+  static size_t get_gvars_size();
+  static u_char* get_gvars_stwRandom_addr();
 };
 
 // ObjectLocker enforced balanced locking and can never thrown an

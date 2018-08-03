@@ -43,9 +43,10 @@ import java.util.Map;
 import static java.util.stream.Collectors.averagingLong;
 import static java.util.stream.Collectors.groupingBy;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  *
  * @run main/othervm jdk.jfr.event.runtime.TestNetworkUtilizationEvent

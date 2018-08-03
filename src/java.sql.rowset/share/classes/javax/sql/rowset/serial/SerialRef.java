@@ -237,7 +237,7 @@ public class SerialRef implements Ref, Serializable, Cloneable {
      * to a stream.
      */
     private void writeObject(ObjectOutputStream s)
-            throws IOException, ClassNotFoundException {
+            throws IOException {
 
         ObjectOutputStream.PutField fields = s.putFields();
         fields.put("baseTypeName", baseTypeName);

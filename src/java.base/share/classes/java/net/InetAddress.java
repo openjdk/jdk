@@ -1709,8 +1709,7 @@ class InetAddress implements java.io.Serializable {
         return (InetAddressImpl) impl;
     }
 
-    private void readObjectNoData () throws
-                         IOException, ClassNotFoundException {
+    private void readObjectNoData () {
         if (getClass().getClassLoader() != null) {
             throw new SecurityException ("invalid address type");
         }

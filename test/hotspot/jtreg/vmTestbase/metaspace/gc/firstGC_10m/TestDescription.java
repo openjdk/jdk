@@ -28,7 +28,7 @@
  *
  * @summary converted from VM Testbase metaspace/gc/firstGC_10m.
  * VM Testbase keywords: [nonconcurrent, quarantine]
- * VM Testbase comments: JDK-8160008
+ * VM Testbase comments: 8208250
  *
  * @library /vmTestbase /test/lib
  * @run driver jdk.test.lib.FileInstaller . .

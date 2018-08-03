@@ -34,9 +34,10 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @bug 8009538
+ * @requires vm.hasJFR
  * @requires vm.gc == "G1" | vm.gc == null
  * @key jfr
  * @library /test/lib /test/jdk

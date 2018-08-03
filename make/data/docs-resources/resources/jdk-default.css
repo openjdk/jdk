@@ -75,7 +75,7 @@ h4 {
 }
 
 a:link {
-  color: #437291;
+  color: #4A6782;
 }
 
 a:visited {
@@ -117,7 +117,7 @@ caption  {
 }
 
 tr:nth-child(even), tr:nth-child(even) th[scope=row] {
-  background: #DDD;
+  background: #E3E3E3;
 }
 
 tr:nth-child(odd), tr:nth-child(odd) th[scope=row] {

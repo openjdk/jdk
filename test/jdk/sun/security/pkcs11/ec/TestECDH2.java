@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,16 +111,21 @@ public class TestECDH2 extends PKCS11Test {
     }
 
     @Override
-    public void main(Provider provider) throws Exception {
+    protected boolean skipTest(Provider provider) {
         if (provider.getService("KeyAgreement", "ECDH") == null) {
             System.out.println("ECDH not supported, skipping");
-            return;
+            return true;
         }
 
         if (isBadNSSVersion(provider)) {
-            return;
+            return true;
         }
 
+        return false;
+    }
+
+    @Override
+    public void main(Provider provider) throws Exception {
         kf = KeyFactory.getInstance("EC", provider);
         kpg = KeyPairGenerator.getInstance("EC", provider);
 

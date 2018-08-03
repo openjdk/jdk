@@ -52,10 +52,11 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Tests print --xml
+ * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
  * @modules java.scripting

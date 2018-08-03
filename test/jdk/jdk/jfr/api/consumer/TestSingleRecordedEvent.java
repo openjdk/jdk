@@ -34,10 +34,11 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Verifies that a single JFR event is recorded as expected
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestSingleRecordedEvent
  */

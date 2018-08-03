@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public interface RoundEnvironment {
      * created.
      * Likewise, elements of a module are not considered included
      * simply because a {@code module-info} file for that module was
-     * created
+     * created.
      *
      * @param a  annotation type being requested
      * @return the elements annotated with the given annotation type,
@@ -141,7 +141,7 @@ public interface RoundEnvironment {
      * created.
      * Likewise, elements of a module are not considered included
      * simply because a {@code module-info} file for that module was
-     * created
+     * created.
      *
      * @param a  annotation type being requested
      * @return the elements annotated with the given annotation type,

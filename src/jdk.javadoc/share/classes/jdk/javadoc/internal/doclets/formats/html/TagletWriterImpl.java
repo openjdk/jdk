@@ -273,11 +273,9 @@ public class TagletWriterImpl extends TagletWriter {
      */
     public Content seeTagOutput(Element holder, List<? extends DocTree> seeTags) {
         ContentBuilder body = new ContentBuilder();
-        if (!seeTags.isEmpty()) {
-            for (DocTree dt : seeTags) {
-                appendSeparatorIfNotEmpty(body);
-                body.addContent(htmlWriter.seeTagToContent(holder, dt));
-            }
+        for (DocTree dt : seeTags) {
+            appendSeparatorIfNotEmpty(body);
+            body.addContent(htmlWriter.seeTagToContent(holder, dt));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
                 htmlWriter instanceof ClassWriterImpl) {

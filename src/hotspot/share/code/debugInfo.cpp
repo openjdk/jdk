@@ -251,7 +251,11 @@ void ConstantOopReadValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ConstantOopReadValue::print_on(outputStream* st) const {
-  value()()->print_value_on(st);
+  if (value()() != NULL) {
+    value()()->print_value_on(st);
+  } else {
+    st->print_cr("NULL");
+  }
 }
 
 

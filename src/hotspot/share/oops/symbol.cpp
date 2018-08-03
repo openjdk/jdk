@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,22 @@
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 
+uint32_t Symbol::pack_length_and_refcount(int length, int refcount) {
+  STATIC_ASSERT(max_symbol_length == ((1 << 16) - 1));
+  STATIC_ASSERT(PERM_REFCOUNT == ((1 << 16) - 1));
+  assert(length >= 0, "negative length");
+  assert(length <= max_symbol_length, "too long symbol");
+  assert(refcount >= 0, "negative refcount");
+  assert(refcount <= PERM_REFCOUNT, "invalid refcount");
+  uint32_t hi = length;
+  uint32_t lo = refcount;
+  return (hi << 16) | lo;
+}
+
 Symbol::Symbol(const u1* name, int length, int refcount) {
-  _refcount = refcount;
-  _length = length;
+  _length_and_refcount =  pack_length_and_refcount(length, refcount);
   _identity_hash = (short)os::random();
-  for (int i = 0; i < _length; i++) {
+  for (int i = 0; i < length; i++) {
     byte_at_put(i, name[i]);
   }
 }
@@ -207,26 +218,68 @@ unsigned int Symbol::new_hash(juint seed) {
   return AltHashing::murmur3_32(seed, (const jbyte*)as_C_string(), utf8_length());
 }
 
-void Symbol::increment_refcount() {
-  // Only increment the refcount if non-negative.  If negative either
-  // overflow has occurred or it is a permanent symbol in a read only
-  // shared archive.
-  if (_refcount >= 0) { // not a permanent symbol
-    Atomic::inc(&_refcount);
-    NOT_PRODUCT(Atomic::inc(&_total_count);)
+// Increment refcount while checking for zero.  If the Symbol's refcount becomes zero
+// a thread could be concurrently removing the Symbol.  This is used during SymbolTable
+// lookup to avoid reviving a dead Symbol.
+bool Symbol::try_increment_refcount() {
+  uint32_t found = _length_and_refcount;
+  while (true) {
+    uint32_t old_value = found;
+    int refc = extract_refcount(old_value);
+    if (refc == PERM_REFCOUNT) {
+      return true;  // sticky max or created permanent
+    } else if (refc == 0) {
+      return false; // dead, can't revive.
+    } else {
+      found = Atomic::cmpxchg(old_value + 1, &_length_and_refcount, old_value);
+      if (found == old_value) {
+        return true; // successfully updated.
+      }
+      // refcount changed, try again.
+    }
   }
 }
 
-void Symbol::decrement_refcount() {
-  if (_refcount >= 0) { // not a permanent symbol
-    short new_value = Atomic::add(short(-1), &_refcount);
+// The increment_refcount() is called when not doing lookup. It is assumed that you
+// have a symbol with a non-zero refcount and it can't become zero while referenced by
+// this caller.
+void Symbol::increment_refcount() {
+  if (!try_increment_refcount()) {
 #ifdef ASSERT
-    if (new_value == -1) { // we have transitioned from 0 -> -1
-      print();
-      assert(false, "reference count underflow for symbol");
-    }
+    print();
+    fatal("refcount has gone to zero");
 #endif
-    (void)new_value;
+  }
+#ifndef PRODUCT
+  if (refcount() != PERM_REFCOUNT) { // not a permanent symbol
+    NOT_PRODUCT(Atomic::inc(&_total_count);)
+  }
+#endif
+}
+
+// Decrement refcount potentially while racing increment, so we need
+// to check the value after attempting to decrement so that if another
+// thread increments to PERM_REFCOUNT the value is not decremented.
+void Symbol::decrement_refcount() {
+  uint32_t found = _length_and_refcount;
+  while (true) {
+    uint32_t old_value = found;
+    int refc = extract_refcount(old_value);
+    if (refc == PERM_REFCOUNT) {
+      return;  // refcount is permanent, permanent is sticky
+    } else if (refc == 0) {
+#ifdef ASSERT
+      print();
+      fatal("refcount underflow");
+#endif
+      return;
+    } else {
+      found = Atomic::cmpxchg(old_value - 1, &_length_and_refcount, old_value);
+      if (found == old_value) {
+        return;  // successfully updated.
+      }
+      // refcount changed, try again.
+    }
   }
 }
 

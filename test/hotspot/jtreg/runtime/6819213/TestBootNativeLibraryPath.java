@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,14 @@
 /*
  * @test TestBootNativeLibraryPath.java
  * @bug 6819213
- * @modules java.compiler
- * @compile -XDignore.symbol.file TestBootNativeLibraryPath.java
  * @summary verify sun.boot.native.library.path is expandable on 32 bit systems
- * @run main TestBootNativeLibraryPath
  * @author ksrini
-*/
+ * @modules java.compiler
+ * @library /test/lib
+ * @requires vm.bits == 32
+ * @compile -XDignore.symbol.file TestBootNativeLibraryPath.java
+ * @run main TestBootNativeLibraryPath
+ */
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -108,10 +110,6 @@ public class TestBootNativeLibraryPath {
 
     public static void main(String[] args) {
         try {
-            if (!System.getProperty("sun.arch.data.model").equals("32")) {
-                System.out.println("Warning: test skipped for 64-bit systems\n");
-                return;
-            }
             String osname = System.getProperty("os.name");
             if (osname.startsWith("Windows")) {
                 osname = "Windows";

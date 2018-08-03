@@ -232,8 +232,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 .setCaption(contents.properties)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast)
-                .setRowScopeColumn(1)
-                .setUseTBody(false);
+                .setRowScopeColumn(1);
     }
 
     /**

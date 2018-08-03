@@ -65,7 +65,7 @@ TEST(SpinYield, two_yields) {
   check_report(&spinner, "yields = 2");
 }
 
-TEST(SpinYield, one_sleep) {
+TEST_VM(SpinYield, one_sleep) {
   SpinYield spinner(0, 0);
   spinner.wait();
 
@@ -77,7 +77,7 @@ TEST(SpinYield, one_sleep) {
   ASSERT_TRUE(strncmp(expected, buffer, strlen(expected)) == 0);
 }
 
-TEST(SpinYield, one_spin_one_sleep) {
+TEST_VM(SpinYield, one_spin_one_sleep) {
   SpinYield spinner(1, 0);
   spinner.wait();
   spinner.wait();

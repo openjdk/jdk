@@ -31,9 +31,10 @@ import java.util.List;
 import jdk.management.jfr.RecordingInfo;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.TestGetRecordingsMultiple
  */

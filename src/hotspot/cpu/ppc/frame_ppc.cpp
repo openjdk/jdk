@@ -49,14 +49,134 @@ void RegisterMap::check_location_valid() {
 
 bool frame::safe_for_sender(JavaThread *thread) {
   bool safe = false;
-  address   cursp = (address)sp();
-  address   curfp = (address)fp();
-  if ((cursp != NULL && curfp != NULL &&
-      (cursp <= thread->stack_base() && cursp >= thread->stack_base() - thread->stack_size())) &&
-      (curfp <= thread->stack_base() && curfp >= thread->stack_base() - thread->stack_size())) {
-      safe = true;
+  address sp = (address)_sp;
+  address fp = (address)_fp;
+  address unextended_sp = (address)_unextended_sp;
+
+  // Consider stack guards when trying to determine "safe" stack pointers
+  static size_t stack_guard_size = os::uses_stack_guard_pages() ?
+    JavaThread::stack_red_zone_size() + JavaThread::stack_yellow_reserved_zone_size() : 0;
+  size_t usable_stack_size = thread->stack_size() - stack_guard_size;
+
+  // sp must be within the usable part of the stack (not in guards)
+  bool sp_safe = (sp < thread->stack_base()) &&
+                 (sp >= thread->stack_base() - usable_stack_size);
+
+
+  if (!sp_safe) {
+    return false;
   }
-  return safe;
+
+  // Unextended sp must be within the stack and above or equal sp
+  bool unextended_sp_safe = (unextended_sp < thread->stack_base()) && (unextended_sp >= sp);
+
+  if (!unextended_sp_safe) {
+    return false;
+  }
+
+  // An fp must be within the stack and above (but not equal) sp.
+  bool fp_safe = (fp <= thread->stack_base()) &&  (fp > sp);
+  // an interpreter fp must be within the stack and above (but not equal) sp
+  bool fp_interp_safe = (fp <= thread->stack_base()) &&  (fp > sp) &&
+    ((fp - sp) >= (ijava_state_size + top_ijava_frame_abi_size));
+
+  // We know sp/unextended_sp are safe, only fp is questionable here
+
+  // If the current frame is known to the code cache then we can attempt to
+  // to construct the sender and do some validation of it. This goes a long way
+  // toward eliminating issues when we get in frame construction code
+
+  if (_cb != NULL ){
+    // Entry frame checks
+    if (is_entry_frame()) {
+      // An entry frame must have a valid fp.
+      return fp_safe && is_entry_frame_valid(thread);
+    }
+
+    // Now check if the frame is complete and the test is
+    // reliable. Unfortunately we can only check frame completeness for
+    // runtime stubs and nmethods. Other generic buffer blobs are more
+    // problematic so we just assume they are OK. Adapter blobs never have a
+    // complete frame and are never OK
+    if (!_cb->is_frame_complete_at(_pc)) {
+      if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
+        return false;
+      }
+    }
+
+    // Could just be some random pointer within the codeBlob.
+    if (!_cb->code_contains(_pc)) {
+      return false;
+    }
+
+    if (is_interpreted_frame() && !fp_interp_safe) {
+      return false;
+    }
+
+    abi_minframe* sender_abi = (abi_minframe*) fp;
+    intptr_t* sender_sp = (intptr_t*) fp;
+    address   sender_pc = (address) sender_abi->lr;;
+
+    // We must always be able to find a recognizable pc.
+    CodeBlob* sender_blob = CodeCache::find_blob_unsafe(sender_pc);
+    if (sender_blob == NULL) {
+      return false;
+    }
+
+    // Could be a zombie method
+    if (sender_blob->is_zombie() || sender_blob->is_unloaded()) {
+      return false;
+    }
+
+    // It should be safe to construct the sender though it might not be valid.
+
+    frame sender(sender_sp, sender_pc);
+
+    // Do we have a valid fp?
+    address sender_fp = (address) sender.fp();
+
+    // sender_fp must be within the stack and above (but not
+    // equal) current frame's fp.
+    if (sender_fp > thread->stack_base() || sender_fp <= fp) {
+        return false;
+    }
+
+    // If the potential sender is the interpreter then we can do some more checking.
+    if (Interpreter::contains(sender_pc)) {
+      return sender.is_interpreted_frame_valid(thread);
+    }
+
+    // Could just be some random pointer within the codeBlob.
+    if (!sender.cb()->code_contains(sender_pc)) {
+      return false;
+    }
+
+    // We should never be able to see an adapter if the current frame is something from code cache.
+    if (sender_blob->is_adapter_blob()) {
+      return false;
+    }
+
+    if (sender.is_entry_frame()) {
+      return sender.is_entry_frame_valid(thread);
+    }
+
+    // Frame size is always greater than zero. If the sender frame size is zero or less,
+    // something is really weird and we better give up.
+    if (sender_blob->frame_size() <= 0) {
+      return false;
+    }
+
+    return true;
+  }
+
+  // Must be native-compiled frame. Since sender will try and use fp to find
+  // linkages it must be safe
+
+  if (!fp_safe) {
+    return false;
+  }
+
+  return true;
 }
 
 bool frame::is_interpreted_frame() const  {

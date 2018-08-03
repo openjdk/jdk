@@ -41,7 +41,7 @@ import javax.swing.plaf.metal.MetalLookAndFeel;
 
 /**
  * @test
- * @bug 8132119 8168992 8169897
+ * @bug 8132119 8168992 8169897 8207941
  * @author Alexandr Scherbatiy
  * @summary Provide public API for text related methods in SwingBasicGraphicsUtils2
  */
@@ -277,14 +277,33 @@ public class bug8132119 {
         return comp;
     }
 
+    private static String getFontName(String fn, String[] fontNames) {
+        String fontName = null;
+        for (String name : fontNames) {
+            if (fn.equals(name)) {
+                fontName = name;
+                break;
+            }
+        }
+        return fontName;
+    }
+
     private static Font getFont() {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         String[] fontNames = ge.getAvailableFontFamilyNames();
-        String fontName = fontNames[0];
-        for (String name : fontNames) {
-            if ("Arial".equals(name)) {
-                fontName = name;
-                break;
+
+        // We do not have Arial on all systems so provide some reasonable fallbacks.
+        // In case the fallbacks are not available as well, choose as last fallback
+        // the first font - however this might be a problematic choice.
+        String fontName = getFontName("Arial", fontNames);
+        if (fontName == null) {
+            fontName = getFontName("Bitstream Charter", fontNames);
+            if (fontName == null) {
+                fontName = getFontName("Dialog", fontNames);
+                if (fontName == null) {
+                    fontName = fontNames[0];
+                    System.out.println("warning - preferred fonts not on the system, fall back to first font " + fontName);
+                }
             }
         }
         return new Font(fontName, Font.PLAIN, 30);

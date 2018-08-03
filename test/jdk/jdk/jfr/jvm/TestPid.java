@@ -29,9 +29,10 @@ import static jdk.test.lib.Asserts.assertEquals;
 
 import jdk.jfr.internal.JVM;
 
-/*
+/**
  * @test TestPid
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jvm.TestPid

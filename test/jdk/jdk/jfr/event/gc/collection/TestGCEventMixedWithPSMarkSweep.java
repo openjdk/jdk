@@ -25,9 +25,10 @@
 
 package jdk.jfr.event.gc.collection;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  *
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @library /test/lib /test/jdk

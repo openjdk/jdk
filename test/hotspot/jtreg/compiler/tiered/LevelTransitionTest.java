@@ -43,6 +43,7 @@ package compiler.tiered;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 import compiler.whitebox.SimpleTestCase;
+import jtreg.SkippedException;
 
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
@@ -57,7 +58,9 @@ public class LevelTransitionTest extends TieredLevelsTest {
     private int transitionCount;
 
     public static void main(String[] args) throws Throwable {
-        assert (!CompilerWhiteBoxTest.skipOnTieredCompilation(false));
+        if (CompilerWhiteBoxTest.skipOnTieredCompilation(false)) {
+            throw new SkippedException("Test isn't applicable for non-tiered mode");
+        }
 
         CompilerWhiteBoxTest.main(LevelTransitionTest::new, args);
         // run extended test cases

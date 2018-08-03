@@ -2764,30 +2764,32 @@ public final class String
     }
 
     /**
-     * Returns a stream of substrings extracted from this string
-     * partitioned by line terminators.
+     * Returns a stream of lines extracted from this string,
+     * separated by line terminators.
      * <p>
-     * Line terminators recognized are line feed
-     * {@code "\n"} ({@code U+000A}),
-     * carriage return
-     * {@code "\r"} ({@code U+000D})
-     * and a carriage return followed immediately by a line feed
-     * {@code "\r\n"} ({@code U+000D U+000A}).
+     * A <i>line terminator</i> is one of the following:
+     * a line feed character {@code "\n"} (U+000A),
+     * a carriage return character {@code "\r"} (U+000D),
+     * or a carriage return followed immediately by a line feed
+     * {@code "\r\n"} (U+000D U+000A).
      * <p>
-     * The stream returned by this method contains each line of
-     * this string that is terminated by a line terminator except that
-     * the last line can either be terminated by a line terminator or the
-     * end of the string.
-     * The lines in the stream are in the order in which
-     * they occur in this string and do not include the line terminators
-     * partitioning the lines.
+     * A <i>line</i> is either a sequence of zero or more characters
+     * followed by a line terminator, or it is a sequence of one or
+     * more characters followed by the end of the string. A
+     * line does not include the line terminator.
+     * <p>
+     * The stream returned by this method contains the lines from
+     * this string in the order in which they occur.
+     *
+     * @apiNote This definition of <i>line</i> implies that an empty
+     *          string has zero lines and that there is no empty line
+     *          following a line terminator at the end of a string.
      *
      * @implNote This method provides better performance than
      *           split("\R") by supplying elements lazily and
      *           by faster search of new line terminators.
      *
-     * @return  the stream of strings extracted from this string
-     *          partitioned by line terminators
+     * @return  the stream of lines extracted from this string
      *
      * @since 11
      */

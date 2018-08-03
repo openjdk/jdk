@@ -37,10 +37,11 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.FileHelper;
 
-/*
+/**
  * @test
  * @summary Set destination to a long path
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.destination.TestDestLongPath
  */

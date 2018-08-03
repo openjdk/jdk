@@ -40,9 +40,10 @@ import jdk.jfr.ValueDescriptor;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 
-/*
+/**
  * @test TestGetThreadId
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jvm.TestJavaEvent

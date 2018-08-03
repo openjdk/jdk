@@ -40,6 +40,7 @@ import jdk.test.lib.process.ProcessTools;
 /*
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main/native jdk.jfr.event.sampling.TestNative

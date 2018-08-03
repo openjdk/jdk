@@ -36,10 +36,11 @@ import jdk.jfr.Configuration;
 import jdk.management.jfr.ConfigurationInfo;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Test for ConfigurationInfo. Compare infos from java API and jmx API.
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.info.TestConfigurationInfo
  */

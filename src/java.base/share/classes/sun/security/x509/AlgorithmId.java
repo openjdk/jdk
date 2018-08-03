@@ -1039,7 +1039,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @return the default alg, might be null if unsupported
      */
     public static String getDefaultSigAlgForKey(PrivateKey k) {
-        switch (k.getAlgorithm().toUpperCase(Locale.ROOT)) {
+        switch (k.getAlgorithm().toUpperCase(Locale.ENGLISH)) {
             case "EC":
                 return ecStrength(KeyUtil.getKeySize(k))
                     + "withECDSA";

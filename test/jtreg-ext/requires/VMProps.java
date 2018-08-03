@@ -79,6 +79,9 @@ public class VMProps implements Callable<Map<String, String>> {
         // vm.hasSAandCanAttach is "true" if the VM contains the serviceability agent
         // and jhsdb and it can attach to the VM.
         map.put("vm.hasSAandCanAttach", vmHasSAandCanAttach());
+        // vm.hasJFR is "true" if JFR is included in the build of the VM and
+        // so tests can be executed.
+        map.put("vm.hasJFR", vmHasJFR());
         map.put("vm.cpu.features", cpuFeatures());
         map.put("vm.rtm.cpu", vmRTMCPU());
         map.put("vm.rtm.os", vmRTMOS());
@@ -288,6 +291,14 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
+     * @return "true" if the VM is compiled with Java Flight Recorder (JFR)
+     * support.
+     */
+    protected String vmHasJFR() {
+        return "" + WB.isJFRIncludedInVmBuild();
+    }
+
+    /**
      * @return true if VM runs RTM supported OS and false otherwise.
      */
     protected String vmRTMOS() {
@@ -432,7 +443,8 @@ public class VMProps implements Callable<Map<String, String>> {
                 System.getProperty("java.home") + "/release"))) {
             Properties properties = new Properties();
             properties.load(in);
-            return properties.getProperty("IMPLEMENTOR").replace("\"", "");
+            String implementorProperty = properties.getProperty("IMPLEMENTOR");
+            return (implementorProperty == null) ? "null" : implementorProperty.replace("\"", "");
         } catch (IOException e) {
             e.printStackTrace();
         }

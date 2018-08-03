@@ -1061,14 +1061,22 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
   java.base/java.security.KeyRep$Type;java.base/javax.crypto.spec.SecretKeySpec;!*
 
 #
-# Enhanced exception message text
+# Enhanced exception message information
 #
-# By default, socket exception messages do not include potentially sensitive
-# information such as hostnames or port numbers. This property may be set to one
-# or more values, separated by commas, and with no white-space. Each value
-# represents a category of enhanced information. Currently, the only category defined
-# is "hostInfo" which enables more detailed information in the IOExceptions
-# thrown by java.net.Socket and also the socket types in the java.nio.channels package.
-# The setting in this file can be overridden by a system property of the same name
-# and with the same syntax and possible values.
-#jdk.net.includeInExceptions=hostInfo
+# By default, exception messages should not include potentially sensitive
+# information such as file names, host names, or port numbers. This property
+# accepts one or more comma separated values, each of which represents a
+# category of enhanced exception message information to enable. Values are
+# case-insensitive. Leading and trailing whitespaces, surrounding each value,
+# are ignored. Unknown values are ignored.
+#
+# The categories are:
+#
+#  hostInfo - IOExceptions thrown by java.net.Socket and the socket types in the
+#             java.nio.channels package will contain enhanced exception
+#             message information
+#
+# The property setting in this file can be overridden by a system property of
+# the same name, with the same syntax and possible values.
+#
+#jdk.includeInExceptions=hostInfo

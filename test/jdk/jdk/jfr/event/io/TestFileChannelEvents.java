@@ -39,9 +39,10 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.event.io.TestFileChannelEvents
  */

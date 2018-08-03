@@ -52,6 +52,7 @@
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
+#include "gc/g1/g1SATBMarkQueueFilter.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1YCTypes.hpp"
@@ -1668,7 +1669,9 @@ jint G1CollectedHeap::initialize() {
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init(this, &_collection_set);
 
-  G1BarrierSet::satb_mark_queue_set().initialize(SATB_Q_CBL_mon,
+  G1SATBMarkQueueFilter* satb_filter = new G1SATBMarkQueueFilter(this);
+  G1BarrierSet::satb_mark_queue_set().initialize(satb_filter,
+                                                 SATB_Q_CBL_mon,
                                                  SATB_Q_FL_lock,
                                                  G1SATBProcessCompletedThreshold,
                                                  Shared_SATB_Q_lock);
@@ -3716,15 +3719,12 @@ public:
 
 class G1CopyingKeepAliveClosure: public OopClosure {
   G1CollectedHeap*         _g1h;
-  OopClosure*              _copy_non_heap_obj_cl;
   G1ParScanThreadState*    _par_scan_state;
 
 public:
   G1CopyingKeepAliveClosure(G1CollectedHeap* g1h,
-                            OopClosure* non_heap_obj_cl,
                             G1ParScanThreadState* pss):
     _g1h(g1h),
-    _copy_non_heap_obj_cl(non_heap_obj_cl),
     _par_scan_state(pss)
   {}
 
@@ -3744,22 +3744,10 @@ public:
       // If the referent has not been forwarded then we have to keep
       // it alive by policy. Therefore we have copy the referent.
       //
-      // If the reference field is in the G1 heap then we can push
-      // on the PSS queue. When the queue is drained (after each
-      // phase of reference processing) the object and it's followers
-      // will be copied, the reference field set to point to the
-      // new location, and the RSet updated. Otherwise we need to
-      // use the the non-heap or metadata closures directly to copy
-      // the referent object and update the pointer, while avoiding
-      // updating the RSet.
-
-      if (_g1h->is_in_g1_reserved(p)) {
-        _par_scan_state->push_on_queue(p);
-      } else {
-        assert(!Metaspace::contains((const void*)p),
-               "Unexpectedly found a pointer from metadata: " PTR_FORMAT, p2i(p));
-        _copy_non_heap_obj_cl->do_oop(p);
-      }
+      // When the queue is drained (after each phase of reference processing)
+      // the object and it's followers will be copied, the reference field set
+      // to point to the new location, and the RSet updated.
+      _par_scan_state->push_on_queue(p);
     }
   }
 };
@@ -3851,7 +3839,7 @@ public:
     pss->set_ref_discoverer(NULL);
 
     // Keep alive closure.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, pss->closures()->raw_strong_oops(), pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, pss);
 
     // Complete GC closure
     G1ParEvacuateFollowersClosure drain_queue(_g1h, pss, _task_queues, _terminator);
@@ -3903,7 +3891,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   assert(pss->queue_is_empty(), "pre-condition");
 
   // Keep alive closure.
-  G1CopyingKeepAliveClosure keep_alive(this, pss->closures()->raw_strong_oops(), pss);
+  G1CopyingKeepAliveClosure keep_alive(this, pss);
 
   // Serial Complete GC closure
   G1STWDrainQueueClosure drain_queue(this, pss);

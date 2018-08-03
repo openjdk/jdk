@@ -30,10 +30,11 @@ import jdk.jfr.RecordingState;
 import jdk.test.lib.jfr.CommonHelper;
 import jdk.test.lib.jfr.VoidFunction;
 
-/*
+/**
  * @test
  * @summary Test start/stop/close recording from different recording states.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.state.TestStateInvalid
  */

@@ -32,8 +32,13 @@
 #include "services/memReporter.hpp"
 #include "services/mallocTracker.inline.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/vmError.hpp"
+
+#ifdef _WINDOWS
+#include <windows.h>
+#endif
 
 #ifdef SOLARIS
   volatile bool NMT_stack_walkable = false;
@@ -48,24 +53,35 @@ MemBaseline MemTracker::_baseline;
 Mutex*      MemTracker::_query_lock = NULL;
 bool MemTracker::_is_nmt_env_valid = true;
 
+static const size_t buffer_size = 64;
 
 NMT_TrackingLevel MemTracker::init_tracking_level() {
+  // Memory type is encoded into tracking header as a byte field,
+  // make sure that we don't overflow it.
+  STATIC_ASSERT(mt_number_of_types <= max_jubyte);
+
+  char nmt_env_variable[buffer_size];
+  jio_snprintf(nmt_env_variable, sizeof(nmt_env_variable), "NMT_LEVEL_%d", os::current_process_id());
+  const char* nmt_env_value;
+#ifdef _WINDOWS
+  // Read the NMT environment variable from the PEB instead of the CRT
+  char value[buffer_size];
+  nmt_env_value = GetEnvironmentVariable(nmt_env_variable, value, (DWORD)sizeof(value)) != 0 ? value : NULL;
+#else
+  nmt_env_value = ::getenv(nmt_env_variable);
+#endif
   NMT_TrackingLevel level = NMT_off;
-  char buf[64];
-  jio_snprintf(buf, sizeof(buf), "NMT_LEVEL_%d", os::current_process_id());
-  const char *nmt_option = ::getenv(buf);
-  if (nmt_option != NULL) {
-    if (strcmp(nmt_option, "summary") == 0) {
+  if (nmt_env_value != NULL) {
+    if (strcmp(nmt_env_value, "summary") == 0) {
       level = NMT_summary;
-    } else if (strcmp(nmt_option, "detail") == 0) {
+    } else if (strcmp(nmt_env_value, "detail") == 0) {
       level = NMT_detail;
-    } else if (strcmp(nmt_option, "off") != 0) {
-      // The option value is invalid
+    } else if (strcmp(nmt_env_value, "off") != 0) {
+      // The value of the environment variable is invalid
       _is_nmt_env_valid = false;
     }
-
     // Remove the environment variable to avoid leaking to child processes
-    os::unsetenv(buf);
+    os::unsetenv(nmt_env_variable);
   }
 
   if (!MallocTracker::initialize(level) ||

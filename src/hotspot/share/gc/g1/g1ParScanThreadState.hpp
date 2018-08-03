@@ -57,7 +57,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   uint              _tenuring_threshold;
   G1ScanEvacuatedObjClosure  _scanner;
 
-  int  _hash_seed;
   uint _worker_id;
 
   // Upper and lower threshold to start and end work queue draining.

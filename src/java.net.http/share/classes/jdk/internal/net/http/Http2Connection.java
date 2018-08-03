@@ -297,7 +297,7 @@ class Http2Connection  {
         this.framesDecoder = new FramesDecoder(this::processFrame,
                 clientSettings.getParameter(SettingsFrame.MAX_FRAME_SIZE));
         // serverSettings will be updated by server
-        this.serverSettings = SettingsFrame.getDefaultSettings();
+        this.serverSettings = SettingsFrame.defaultRFCSettings();
         this.hpackOut = new Encoder(serverSettings.getParameter(HEADER_TABLE_SIZE));
         this.hpackIn = new Decoder(clientSettings.getParameter(HEADER_TABLE_SIZE));
         if (debugHpack.on()) {
@@ -430,12 +430,12 @@ class Http2Connection  {
 
         assert numReservedClientStreams >= 0;
         assert numReservedServerStreams >= 0;
-        if (clientInitiated && numReservedClientStreams >= getMaxConcurrentClientStreams()) {
+        if (clientInitiated &&numReservedClientStreams >= maxConcurrentClientInitiatedStreams()) {
             throw new IOException("too many concurrent streams");
         } else if (clientInitiated) {
             numReservedClientStreams++;
         }
-        if (!clientInitiated && numReservedServerStreams >= getMaxConcurrentServerStreams()) {
+        if (!clientInitiated && numReservedServerStreams >= maxConcurrentServerInitiatedStreams()) {
             return false;
         } else if (!clientInitiated) {
             numReservedServerStreams++;
@@ -580,11 +580,11 @@ class Http2Connection  {
         return serverSettings.getParameter(INITIAL_WINDOW_SIZE);
     }
 
-    final int getMaxConcurrentClientStreams() {
+    final int maxConcurrentClientInitiatedStreams() {
         return serverSettings.getParameter(MAX_CONCURRENT_STREAMS);
     }
 
-    final int getMaxConcurrentServerStreams() {
+    final int maxConcurrentServerInitiatedStreams() {
         return clientSettings.getParameter(MAX_CONCURRENT_STREAMS);
     }
 

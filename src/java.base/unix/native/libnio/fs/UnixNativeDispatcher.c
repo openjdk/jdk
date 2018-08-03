@@ -875,7 +875,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_readlink0(JNIEnv* env, jclass this,
     } else {
         jsize len;
         if (n == sizeof(target)) {
-            n--;
+            /* Traditionally readlink(2) should not return more than */
+            /* PATH_MAX bytes (no terminating null byte is appended). */
+            throwUnixException(env, ENAMETOOLONG);
+            return NULL;
         }
         target[n] = '\0';
         len = (jsize)strlen(target);

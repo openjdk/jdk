@@ -31,10 +31,11 @@ import java.util.function.Consumer;
 import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Test options in different states
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.state.TestOptionState
  */

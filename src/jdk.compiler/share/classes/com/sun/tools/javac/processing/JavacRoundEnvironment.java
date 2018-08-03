@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,6 +170,18 @@ public class JavacRoundEnvironment implements RoundEnvironment {
             e.accept(this, annotation);
             return annotatedElements;
         }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public Set<Element> visitModule(ModuleElement e, TypeElement annotation) {
+            // Do not scan a module
+            return annotatedElements;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public Set<Element> visitPackage(PackageElement e, TypeElement annotation) {
+            // Do not scan a package
+            return annotatedElements;
+        }
     }
 
     // Could be written as a local class inside getElementsAnnotatedWithAny
@@ -191,6 +203,18 @@ public class JavacRoundEnvironment implements RoundEnvironment {
                 }
             }
             e.accept(this, annotations);
+            return annotatedElements;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public Set<Element> visitModule(ModuleElement e, Set<TypeElement> annotations) {
+            // Do not scan a module
+            return annotatedElements;
+        }
+
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public Set<Element> visitPackage(PackageElement e, Set<TypeElement> annotations) {
+            // Do not scan a package
             return annotatedElements;
         }
     }
@@ -224,10 +248,12 @@ public class JavacRoundEnvironment implements RoundEnvironment {
     public Set<? extends Element> getElementsAnnotatedWith(Class<? extends Annotation> a) {
         throwIfNotAnnotation(a);
         String name = a.getCanonicalName();
+
         if (name == null)
             return Collections.emptySet();
         else {
-            TypeElement annotationType = eltUtils.getTypeElement(name);
+            TypeElement annotationType = annotationToElement(a);
+
             if (annotationType == null)
                 return Collections.emptySet();
             else
@@ -244,10 +270,27 @@ public class JavacRoundEnvironment implements RoundEnvironment {
             String name = annotation.getCanonicalName();
             if (name == null)
                 continue;
-            annotationsAsElements.add(eltUtils.getTypeElement(name));
+            annotationsAsElements.add(annotationToElement(annotation));
         }
 
         return getElementsAnnotatedWithAny(annotationsAsElements.toArray(new TypeElement[0]));
+    }
+
+    private TypeElement annotationToElement(Class<? extends Annotation> annotation) {
+        // First, try an element lookup based on the annotation's
+        // canonical name. If that fails or is ambiguous, try a lookup
+        // using a particular module, perhaps an unnamed one. This
+        // offers more compatibility for compiling in single-module
+        // mode where the runtime module of an annotation type may
+        // differ from the single module being compiled.
+        String name = annotation.getCanonicalName();
+        TypeElement annotationElement = eltUtils.getTypeElement(name);
+        if (annotationElement != null)
+            return annotationElement;
+        else {
+            String moduleName = Objects.requireNonNullElse(annotation.getModule().getName(), "");
+            return eltUtils.getTypeElement(eltUtils.getModuleElement(moduleName), name);
+        }
     }
 
     private Element mirrorAsElement(AnnotationMirror annotationMirror) {

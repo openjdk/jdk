@@ -32,6 +32,8 @@
  *          jdk.jartool/sun.tools.jar
  * @build HelloString
  * @run main SharedStringsBasic
+ * @run main/othervm -XX:+UseStringDeduplication SharedStringsBasic
+ * @run main/othervm -XX:-CompactStrings SharedStringsBasic
  */
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;

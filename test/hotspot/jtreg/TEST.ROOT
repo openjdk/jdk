@@ -54,6 +54,7 @@ requires.properties= \
     vm.debug \
     vm.hasSA \
     vm.hasSAandCanAttach \
+    vm.hasJFR \
     vm.rtm.cpu \
     vm.rtm.os \
     vm.aot \
@@ -64,7 +65,7 @@ requires.properties= \
     docker.support
 
 # Minimum jtreg version
-requiredVersion=4.2 b12
+requiredVersion=4.2 b13
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them

@@ -33,9 +33,6 @@ package MyPackage;
  */
 
 public class HeapMonitorStatIntervalTest {
-
-  private native static double getAverageInterval();
-
   private static boolean testIntervalOnce(int interval, boolean throwIfFailure) {
     HeapMonitor.resetEventStorage();
     HeapMonitor.setSamplingInterval(interval);
@@ -83,6 +80,8 @@ public class HeapMonitorStatIntervalTest {
 
   public static void main(String[] args) {
     int[] tab = {1024, 8192};
+
+    HeapMonitor.calculateAverageOneElementSize();
 
     for (int intervalIdx = 0; intervalIdx < tab.length; intervalIdx++) {
       testInterval(tab[intervalIdx]);

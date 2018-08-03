@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/EventRequestManager/deleteEventRequest/delevtreq002.
  * VM Testbase keywords: [jpda, jdi, quarantine]
- * VM Testbase comments: JDK-4613913
+ * VM Testbase comments: 4613913
  * VM Testbase readme:
  * DESCRIPTION:
  *     The test for the implementation of an object of the type

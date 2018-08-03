@@ -35,10 +35,11 @@ import jdk.jfr.EventType;
 import jdk.jfr.Label;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Test getAnnotations()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.eventtype.TestGetAnnotation
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ServiceLoader;
@@ -110,22 +111,52 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
      * Delegate interface. All the implementations have to have the class name
      * following "<provider class name>Delegate" convention.
      */
-    interface Delegate<P extends LocaleServiceProvider> {
-        public void addImpl(P impl);
-        public P getImpl(Locale locale);
-    }
-
-    /*
-     * Obtain the real SPI implementation, using locale fallback
-     */
-    private static <P extends LocaleServiceProvider> P getImpl(Map<Locale, P> map, Locale locale) {
-        for (Locale l : LocaleServiceProviderPool.getLookupLocales(locale)) {
-            P ret = map.get(l);
-            if (ret != null) {
-                return ret;
+    private interface Delegate<P extends LocaleServiceProvider> {
+        default public void addImpl(P impl) {
+            for (Locale l : impl.getAvailableLocales()) {
+                getDelegateMap().putIfAbsent(l, impl);
             }
         }
-        return null;
+
+        /*
+         * Obtain the real SPI implementation, using locale fallback
+         */
+        default public P getImpl(Locale locale) {
+            for (Locale l : LocaleServiceProviderPool.getLookupLocales(locale.stripExtensions())) {
+                P ret = getDelegateMap().get(l);
+                if (ret != null) {
+                    return ret;
+                }
+            }
+            return null;
+        }
+
+        public Map<Locale, P> getDelegateMap();
+
+        default public Locale[] getAvailableLocalesDelegate() {
+            return getDelegateMap().keySet().stream().toArray(Locale[]::new);
+        }
+
+        default public boolean isSupportedLocaleDelegate(Locale locale) {
+            Map<Locale, P> map = getDelegateMap();
+            Locale override = CalendarDataUtility.findRegionOverride(locale);
+
+            // First, call the method with extensions (if any)
+            P impl = map.get(override);
+            if (impl != null) {
+                return impl.isSupportedLocale(override);
+            } else {
+                // The default behavior
+                Locale overrideNoExt = override.stripExtensions();
+                impl = map.get(overrideNoExt);
+                if (impl != null) {
+                    return Arrays.stream(impl.getAvailableLocales())
+                                .anyMatch(overrideNoExt::equals);
+                }
+            }
+
+            return false;
+        }
     }
 
     /*
@@ -133,50 +164,47 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
      */
     static class BreakIteratorProviderDelegate extends BreakIteratorProvider
                                         implements Delegate<BreakIteratorProvider> {
-        private final ConcurrentMap<Locale, BreakIteratorProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, BreakIteratorProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(BreakIteratorProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public BreakIteratorProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, BreakIteratorProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public BreakIterator getWordInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             BreakIteratorProvider bip = getImpl(locale);
             return bip.getWordInstance(locale);
         }
 
         @Override
         public BreakIterator getLineInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             BreakIteratorProvider bip = getImpl(locale);
             return bip.getLineInstance(locale);
         }
 
         @Override
         public BreakIterator getCharacterInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             BreakIteratorProvider bip = getImpl(locale);
             return bip.getCharacterInstance(locale);
         }
 
         @Override
         public BreakIterator getSentenceInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             BreakIteratorProvider bip = getImpl(locale);
             return bip.getSentenceInstance(locale);
         }
@@ -184,32 +212,26 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
     }
 
     static class CollatorProviderDelegate extends CollatorProvider implements Delegate<CollatorProvider> {
-        private final ConcurrentMap<Locale, CollatorProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, CollatorProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(CollatorProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public CollatorProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, CollatorProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public Collator getInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             CollatorProvider cp = getImpl(locale);
             return cp.getInstance(locale);
         }
@@ -217,44 +239,40 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class DateFormatProviderDelegate extends DateFormatProvider
                                      implements Delegate<DateFormatProvider> {
-        private final ConcurrentMap<Locale, DateFormatProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, DateFormatProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(DateFormatProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public DateFormatProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, DateFormatProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public DateFormat getTimeInstance(int style, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             DateFormatProvider dfp = getImpl(locale);
             return dfp.getTimeInstance(style, locale);
         }
 
         @Override
         public DateFormat getDateInstance(int style, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             DateFormatProvider dfp = getImpl(locale);
             return dfp.getDateInstance(style, locale);
         }
 
         @Override
         public DateFormat getDateTimeInstance(int dateStyle, int timeStyle, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             DateFormatProvider dfp = getImpl(locale);
             return dfp.getDateTimeInstance(dateStyle, timeStyle, locale);
         }
@@ -262,32 +280,26 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class DateFormatSymbolsProviderDelegate extends DateFormatSymbolsProvider
                                             implements Delegate<DateFormatSymbolsProvider> {
-        private final ConcurrentMap<Locale, DateFormatSymbolsProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, DateFormatSymbolsProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(DateFormatSymbolsProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public DateFormatSymbolsProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, DateFormatSymbolsProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public DateFormatSymbols getInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             DateFormatSymbolsProvider dfsp = getImpl(locale);
             return dfsp.getInstance(locale);
         }
@@ -295,32 +307,26 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class DecimalFormatSymbolsProviderDelegate extends DecimalFormatSymbolsProvider
                                                implements Delegate<DecimalFormatSymbolsProvider> {
-        private final ConcurrentMap<Locale, DecimalFormatSymbolsProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, DecimalFormatSymbolsProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(DecimalFormatSymbolsProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public DecimalFormatSymbolsProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, DecimalFormatSymbolsProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public DecimalFormatSymbols getInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             DecimalFormatSymbolsProvider dfsp = getImpl(locale);
             return dfsp.getInstance(locale);
         }
@@ -328,50 +334,47 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class NumberFormatProviderDelegate extends NumberFormatProvider
                                        implements Delegate<NumberFormatProvider> {
-        private final ConcurrentMap<Locale, NumberFormatProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, NumberFormatProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(NumberFormatProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public NumberFormatProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, NumberFormatProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public NumberFormat getCurrencyInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             NumberFormatProvider nfp = getImpl(locale);
             return nfp.getCurrencyInstance(locale);
         }
 
         @Override
         public NumberFormat getIntegerInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             NumberFormatProvider nfp = getImpl(locale);
             return nfp.getIntegerInstance(locale);
         }
 
         @Override
         public NumberFormat getNumberInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             NumberFormatProvider nfp = getImpl(locale);
             return nfp.getNumberInstance(locale);
         }
 
         @Override
         public NumberFormat getPercentInstance(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             NumberFormatProvider nfp = getImpl(locale);
             return nfp.getPercentInstance(locale);
         }
@@ -379,38 +382,33 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class CalendarDataProviderDelegate extends CalendarDataProvider
                                        implements Delegate<CalendarDataProvider> {
-        private final ConcurrentMap<Locale, CalendarDataProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, CalendarDataProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(CalendarDataProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public CalendarDataProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, CalendarDataProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public int getFirstDayOfWeek(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             CalendarDataProvider cdp = getImpl(locale);
             return cdp.getFirstDayOfWeek(locale);
         }
 
         @Override
         public int getMinimalDaysInFirstWeek(Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             CalendarDataProvider cdp = getImpl(locale);
             return cdp.getMinimalDaysInFirstWeek(locale);
         }
@@ -418,34 +416,28 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class CalendarNameProviderDelegate extends CalendarNameProvider
                                        implements Delegate<CalendarNameProvider> {
-        private final ConcurrentMap<Locale, CalendarNameProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, CalendarNameProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(CalendarNameProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public CalendarNameProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, CalendarNameProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public String getDisplayName(String calendarType,
                                               int field, int value,
                                               int style, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             CalendarNameProvider cdp = getImpl(locale);
             return cdp.getDisplayName(calendarType, field, value, style, locale);
         }
@@ -454,6 +446,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
         public Map<String, Integer> getDisplayNames(String calendarType,
                                                              int field, int style,
                                                              Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             CalendarNameProvider cdp = getImpl(locale);
             return cdp.getDisplayNames(calendarType, field, style, locale);
         }
@@ -461,38 +454,33 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class CurrencyNameProviderDelegate extends CurrencyNameProvider
                                        implements Delegate<CurrencyNameProvider> {
-        private final ConcurrentMap<Locale, CurrencyNameProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, CurrencyNameProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(CurrencyNameProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public CurrencyNameProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, CurrencyNameProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public String getSymbol(String currencyCode, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             CurrencyNameProvider cnp = getImpl(locale);
             return cnp.getSymbol(currencyCode, locale);
         }
 
         @Override
         public String getDisplayName(String currencyCode, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             CurrencyNameProvider cnp = getImpl(locale);
             return cnp.getDisplayName(currencyCode, locale);
         }
@@ -500,62 +488,61 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class LocaleNameProviderDelegate extends LocaleNameProvider
                                      implements Delegate<LocaleNameProvider> {
-        private final ConcurrentMap<Locale, LocaleNameProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, LocaleNameProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(LocaleNameProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public LocaleNameProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, LocaleNameProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public String getDisplayLanguage(String languageCode, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             LocaleNameProvider lnp = getImpl(locale);
             return lnp.getDisplayLanguage(languageCode, locale);
         }
 
         @Override
         public String getDisplayScript(String scriptCode, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             LocaleNameProvider lnp = getImpl(locale);
             return lnp.getDisplayScript(scriptCode, locale);
         }
 
         @Override
         public String getDisplayCountry(String countryCode, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             LocaleNameProvider lnp = getImpl(locale);
             return lnp.getDisplayCountry(countryCode, locale);
         }
 
         @Override
         public String getDisplayVariant(String variant, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             LocaleNameProvider lnp = getImpl(locale);
             return lnp.getDisplayVariant(variant, locale);
         }
 
         @Override
         public String getDisplayUnicodeExtensionKey(String key, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             LocaleNameProvider lnp = getImpl(locale);
             return lnp.getDisplayUnicodeExtensionKey(key, locale);
         }
 
         @Override
         public String getDisplayUnicodeExtensionType(String extType, String key, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             LocaleNameProvider lnp = getImpl(locale);
             return lnp.getDisplayUnicodeExtensionType(extType, key, locale);
         }
@@ -563,38 +550,33 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class TimeZoneNameProviderDelegate extends TimeZoneNameProvider
                                      implements Delegate<TimeZoneNameProvider> {
-        private final ConcurrentMap<Locale, TimeZoneNameProvider> map = new ConcurrentHashMap<>();
+        private final Map<Locale, TimeZoneNameProvider> map = new ConcurrentHashMap<>();
 
         @Override
-        public void addImpl(TimeZoneNameProvider impl) {
-            for (Locale l : impl.getAvailableLocales()) {
-                map.putIfAbsent(l, impl);
-            }
-        }
-
-        @Override
-        public TimeZoneNameProvider getImpl(Locale locale) {
-            return SPILocaleProviderAdapter.getImpl(map, locale);
+        public Map<Locale, TimeZoneNameProvider> getDelegateMap() {
+            return map;
         }
 
         @Override
         public Locale[] getAvailableLocales() {
-            return map.keySet().toArray(new Locale[0]);
+            return getAvailableLocalesDelegate();
         }
 
         @Override
         public boolean isSupportedLocale(Locale locale) {
-            return map.containsKey(locale);
+            return isSupportedLocaleDelegate(locale);
         }
 
         @Override
         public String getDisplayName(String ID, boolean daylight, int style, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             TimeZoneNameProvider tznp = getImpl(locale);
             return tznp.getDisplayName(ID, daylight, style, locale);
         }
 
         @Override
         public String getGenericDisplayName(String ID, int style, Locale locale) {
+            locale = CalendarDataUtility.findRegionOverride(locale);
             TimeZoneNameProvider tznp = getImpl(locale);
             return tznp.getGenericDisplayName(ID, style, locale);
         }

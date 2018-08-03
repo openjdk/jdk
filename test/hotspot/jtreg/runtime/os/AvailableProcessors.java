@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,10 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.File;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import java.util.ArrayList;
 
 /*
  * @test
@@ -34,6 +30,14 @@ import java.util.ArrayList;
  * @library /test/lib
  * @run driver AvailableProcessors
  */
+
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
+
+import java.util.ArrayList;
+import java.io.File;
+
 public class AvailableProcessors {
 
     static final String SUCCESS_STRING = "Found expected processors: ";
@@ -47,20 +51,18 @@ public class AvailableProcessors {
             String taskset;
             final String taskset1 = "/bin/taskset";
             final String taskset2 = "/usr/bin/taskset";
-            if (new File(taskset1).exists())
+            if (new File(taskset1).exists()) {
                 taskset = taskset1;
-            else if (new File(taskset2).exists())
+            } else if (new File(taskset2).exists()) {
                 taskset = taskset2;
-            else {
-                System.out.println("Skipping test: could not find taskset command");
-                return;
+            } else {
+                throw new SkippedException("Could not find taskset command");
             }
 
             int available = Runtime.getRuntime().availableProcessors();
 
             if (available == 1) {
-                System.out.println("Skipping test: only one processor available");
-                return;
+                throw new SkippedException("only one processor available");
             }
 
             // Get the java command we want to execute

@@ -31,10 +31,11 @@ import java.util.Map;
 import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Verify that each recording get unique a id
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm  jdk.jfr.api.recording.misc.TestGetId
  */

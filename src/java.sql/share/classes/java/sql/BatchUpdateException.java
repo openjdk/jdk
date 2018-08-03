@@ -553,7 +553,7 @@ public class BatchUpdateException extends SQLException {
      * to a stream.
      */
     private void writeObject(ObjectOutputStream s)
-            throws IOException, ClassNotFoundException {
+            throws IOException {
 
         ObjectOutputStream.PutField fields = s.putFields();
         fields.put("updateCounts", updateCounts);

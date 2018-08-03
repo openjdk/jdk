@@ -34,10 +34,11 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.CommonHelper;
 import jdk.test.lib.jfr.VoidFunction;
 
-/*
+/**
  * @test
  * @summary Test Recording state
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.state.TestStateDuration
  */

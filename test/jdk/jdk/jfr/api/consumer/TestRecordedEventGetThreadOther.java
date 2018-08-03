@@ -36,10 +36,11 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test
  * @summary Tests that the RecordedEvent.getThread() returns th expected info
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordedEventGetThreadOther
  */

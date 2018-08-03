@@ -27,10 +27,11 @@ package jdk.jfr.cmd;
 
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary Test help
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.cmd.TestHelp
  */

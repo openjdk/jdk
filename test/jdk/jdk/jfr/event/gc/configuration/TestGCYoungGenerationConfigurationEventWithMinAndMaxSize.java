@@ -30,9 +30,10 @@ import jdk.test.lib.jfr.EventVerifier;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run driver jdk.jfr.event.gc.configuration.TestGCYoungGenerationConfigurationEventWithMinAndMaxSize
  */

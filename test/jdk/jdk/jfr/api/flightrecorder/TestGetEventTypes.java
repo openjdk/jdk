@@ -38,9 +38,10 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm/timeout=600 jdk.jfr.api.flightrecorder.TestGetEventTypes
  */

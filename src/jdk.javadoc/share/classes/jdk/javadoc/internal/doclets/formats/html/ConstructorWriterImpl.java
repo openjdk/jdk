@@ -268,8 +268,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(rowScopeColumn)
-                .setColumnStyles(bodyRowStyles)
-                .setUseTBody(false);  // temporary? compatibility mode for TBody
+                .setColumnStyles(bodyRowStyles);
     }
 
     /**

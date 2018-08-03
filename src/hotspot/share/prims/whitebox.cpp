@@ -1785,6 +1785,14 @@ WB_ENTRY(jboolean, WB_IsJavaHeapArchiveSupported(JNIEnv* env))
 WB_END
 
 
+WB_ENTRY(jboolean, WB_IsJFRIncludedInVmBuild(JNIEnv* env))
+#if INCLUDE_JFR
+  return true;
+#else
+  return false;
+#endif // INCLUDE_JFR
+WB_END
+
 #if INCLUDE_CDS
 
 WB_ENTRY(jint, WB_GetOffsetForName(JNIEnv* env, jobject o, jstring name))
@@ -2163,6 +2171,7 @@ static JNINativeMethod methods[] = {
   {CC"getResolvedReferences", CC"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
   {CC"isCDSIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsCDSIncludedInVmBuild },
+  {CC"isJFRIncludedInVmBuild",            CC"()Z",    (void*)&WB_IsJFRIncludedInVmBuild },
   {CC"isJavaHeapArchiveSupported",      CC"()Z",      (void*)&WB_IsJavaHeapArchiveSupported },
 
   {CC"clearInlineCaches0",  CC"(Z)V",                 (void*)&WB_ClearInlineCaches },

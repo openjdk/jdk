@@ -715,7 +715,7 @@ void JVMCIRuntime::initialize_well_known_classes(TRAPS) {
   if (JVMCIRuntime::_well_known_classes_initialized == false) {
     guarantee(can_initialize_JVMCI(), "VM is not yet sufficiently booted to initialize JVMCI");
     SystemDictionary::WKID scan = SystemDictionary::FIRST_JVMCI_WKID;
-    SystemDictionary::initialize_wk_klasses_through(SystemDictionary::LAST_JVMCI_WKID, scan, CHECK);
+    SystemDictionary::resolve_wk_klasses_through(SystemDictionary::LAST_JVMCI_WKID, scan, CHECK);
     JVMCIJavaClasses::compute_offsets(CHECK);
     JVMCIRuntime::_well_known_classes_initialized = true;
   }

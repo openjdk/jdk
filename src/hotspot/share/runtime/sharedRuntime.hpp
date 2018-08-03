@@ -486,6 +486,10 @@ class SharedRuntime: AllStatic {
   // Block before entering a JNI critical method
   static void block_for_jni_critical(JavaThread* thread);
 
+  // Pin/Unpin object
+  static oopDesc* pin_object(JavaThread* thread, oopDesc* obj);
+  static void unpin_object(JavaThread* thread, oopDesc* obj);
+
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
   static void fixup_callers_callsite(Method* moop, address ret_pc);

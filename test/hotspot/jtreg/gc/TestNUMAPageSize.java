@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @key gc regression
  * @summary Make sure that start up with NUMA support does not cause problems.
  * @bug 8061467
- * @requires (vm.opt.AggressiveOpts == null) | (vm.opt.AggressiveOpts == false)
+ * @requires vm.opt.AggressiveOpts != true
  * @run main/othervm -Xmx128m -XX:+UseNUMA TestNUMAPageSize
  */
 

@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/ThreadReference/resume/resume001.
  * VM Testbase keywords: [quick, jpda, jdi, quarantine]
- * VM Testbase comments: JDK-8072701
+ * VM Testbase comments: 8072701
  * VM Testbase readme:
  * DESCRIPTION:
  *     The test for the implementation of an object of the type

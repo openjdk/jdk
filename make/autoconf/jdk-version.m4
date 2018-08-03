@@ -139,15 +139,18 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     AC_MSG_ERROR([--with-version-string must have a value])
   elif test "x$with_version_string" != x; then
     # Additional [] needed to keep m4 from mangling shell constructs.
-    if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
+    if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
       VERSION_FEATURE=${BASH_REMATCH[[1]]}
       VERSION_INTERIM=${BASH_REMATCH[[3]]}
       VERSION_UPDATE=${BASH_REMATCH[[5]]}
       VERSION_PATCH=${BASH_REMATCH[[7]]}
-      VERSION_PRE=${BASH_REMATCH[[9]]}
-      version_plus_separator=${BASH_REMATCH[[11]]}
-      VERSION_BUILD=${BASH_REMATCH[[12]]}
-      VERSION_OPT=${BASH_REMATCH[[14]]}
+      VERSION_EXTRA1=${BASH_REMATCH[[9]]}
+      VERSION_EXTRA2=${BASH_REMATCH[[11]]}
+      VERSION_EXTRA3=${BASH_REMATCH[[13]]}
+      VERSION_PRE=${BASH_REMATCH[[15]]}
+      version_plus_separator=${BASH_REMATCH[[17]]}
+      VERSION_BUILD=${BASH_REMATCH[[18]]}
+      VERSION_OPT=${BASH_REMATCH[[20]]}
       # Unspecified numerical fields are interpreted as 0.
       if test "x$VERSION_INTERIM" = x; then
         VERSION_INTERIM=0
@@ -157,6 +160,15 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       fi
       if test "x$VERSION_PATCH" = x; then
         VERSION_PATCH=0
+      fi
+      if test "x$VERSION_EXTRA1" = x; then
+        VERSION_EXTRA1=0
+      fi
+      if test "x$VERSION_EXTRA2" = x; then
+        VERSION_EXTRA2=0
+      fi
+      if test "x$VERSION_EXTRA3" = x; then
+        VERSION_EXTRA3=0
       fi
       if test "x$version_plus_separator" != x \
           && test "x$VERSION_BUILD$VERSION_OPT" = x; then
@@ -327,6 +339,72 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   fi
 
+  # The 1st version extra number, if any
+  AC_ARG_WITH(version-extra1, [AS_HELP_STRING([--with-version-extra1],
+      [Set 1st version extra number @<:@not specified@:>@])],
+      [with_version_extra1_present=true], [with_version_extra1_present=false])
+
+  if test "x$with_version_extra1_present" = xtrue; then
+    if test "x$with_version_extra1" = xyes; then
+      AC_MSG_ERROR([--with-version-extra1 must have a value])
+    elif test "x$with_version_extra1" = xno; then
+      # Interpret --without-* as empty string (i.e. 0) instead of the literal "no"
+      VERSION_EXTRA1=0
+    elif test "x$with_version_extra1" = x; then
+      VERSION_EXTRA1=0
+    else
+      JDKVER_CHECK_AND_SET_NUMBER(VERSION_EXTRA1, $with_version_extra1)
+    fi
+  else
+    if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
+      VERSION_EXTRA1=$DEFAULT_VERSION_EXTRA1
+    fi
+  fi
+
+  # The 2nd version extra number, if any
+  AC_ARG_WITH(version-extra2, [AS_HELP_STRING([--with-version-extra2],
+      [Set 2nd version extra number @<:@not specified@:>@])],
+      [with_version_extra2_present=true], [with_version_extra2_present=false])
+
+  if test "x$with_version_extra2_present" = xtrue; then
+    if test "x$with_version_extra2" = xyes; then
+      AC_MSG_ERROR([--with-version-extra2 must have a value])
+    elif test "x$with_version_extra2" = xno; then
+      # Interpret --without-* as empty string (i.e. 0) instead of the literal "no"
+      VERSION_EXTRA2=0
+    elif test "x$with_version_extra2" = x; then
+      VERSION_EXTRA2=0
+    else
+      JDKVER_CHECK_AND_SET_NUMBER(VERSION_EXTRA2, $with_version_extra2)
+    fi
+  else
+    if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
+      VERSION_EXTRA2=$DEFAULT_VERSION_EXTRA2
+    fi
+  fi
+
+  # The 3rd version extra number, if any
+  AC_ARG_WITH(version-extra3, [AS_HELP_STRING([--with-version-extra3],
+      [Set 3rd version extra number @<:@not specified@:>@])],
+      [with_version_extra3_present=true], [with_version_extra3_present=false])
+
+  if test "x$with_version_extra3_present" = xtrue; then
+    if test "x$with_version_extra3" = xyes; then
+      AC_MSG_ERROR([--with-version-extra3 must have a value])
+    elif test "x$with_version_extra3" = xno; then
+      # Interpret --without-* as empty string (i.e. 0) instead of the literal "no"
+      VERSION_EXTRA3=0
+    elif test "x$with_version_extra3" = x; then
+      VERSION_EXTRA3=0
+    else
+      JDKVER_CHECK_AND_SET_NUMBER(VERSION_EXTRA3, $with_version_extra3)
+    fi
+  else
+    if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
+      VERSION_EXTRA3=$DEFAULT_VERSION_EXTRA3
+    fi
+  fi
+
   # Calculate derived version properties
 
   # Set VERSION_IS_GA based on if VERSION_PRE has a value
@@ -339,9 +417,12 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   # VERSION_NUMBER but always with exactly 4 positions, with 0 for empty positions.
   VERSION_NUMBER_FOUR_POSITIONS=$VERSION_FEATURE.$VERSION_INTERIM.$VERSION_UPDATE.$VERSION_PATCH
 
-  stripped_version_number=$VERSION_NUMBER_FOUR_POSITIONS
+  # VERSION_NUMBER but always with all positions, with 0 for empty positions.
+  VERSION_NUMBER_ALL_POSITIONS=$VERSION_NUMBER_FOUR_POSITIONS.$VERSION_EXTRA1.$VERSION_EXTRA2.$VERSION_EXTRA3
+
+  stripped_version_number=$VERSION_NUMBER_ALL_POSITIONS
   # Strip trailing zeroes from stripped_version_number
-  for i in 1 2 3 ; do stripped_version_number=${stripped_version_number%.0} ; done
+  for i in 1 2 3 4 5 6 ; do stripped_version_number=${stripped_version_number%.0} ; done
   VERSION_NUMBER=$stripped_version_number
 
   # The complete version string, with additional build information
@@ -392,6 +473,9 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(VERSION_INTERIM)
   AC_SUBST(VERSION_UPDATE)
   AC_SUBST(VERSION_PATCH)
+  AC_SUBST(VERSION_EXTRA1)
+  AC_SUBST(VERSION_EXTRA2)
+  AC_SUBST(VERSION_EXTRA3)
   AC_SUBST(VERSION_PRE)
   AC_SUBST(VERSION_BUILD)
   AC_SUBST(VERSION_OPT)

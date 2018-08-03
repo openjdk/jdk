@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase metaspace/shrink_grow/CompressedClassSpaceSize.
  * VM Testbase keywords: [monitoring, quarantine]
- * VM Testbase comments: JDK-8058967
+ * VM Testbase comments: 8058967
  *
  * @requires vm.opt.final.ClassUnloading
  * @library /vmTestbase /test/lib

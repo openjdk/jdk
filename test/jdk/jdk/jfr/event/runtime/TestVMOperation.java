@@ -34,8 +34,9 @@ import jdk.jfr.consumer.RecordedThread;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
+ * @requires vm.hasJFR
  * @requires vm.gc == "Parallel" | vm.gc == null
  * @key jfr
  * @library /test/lib

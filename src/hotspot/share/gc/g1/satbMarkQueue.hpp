@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,14 @@ class SATBMarkQueue: public PtrQueue {
 
 private:
   // Filter out unwanted entries from the buffer.
-  void filter();
+  inline void filter();
 
 public:
   SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent = false);
+
+  // Removes entries from the buffer that are no longer needed.
+  template<typename Filter>
+  inline void apply_filter(Filter filter_out);
 
   // Process queue entries and free resources.
   void flush();
@@ -86,8 +90,15 @@ public:
 
 };
 
+class SATBMarkQueueFilter : public CHeapObj<mtGC> {
+public:
+  virtual ~SATBMarkQueueFilter() {}
+  virtual void filter(SATBMarkQueue* queue) = 0;
+};
+
 class SATBMarkQueueSet: public PtrQueueSet {
   SATBMarkQueue _shared_satb_queue;
+  SATBMarkQueueFilter* _filter;
 
 #ifdef ASSERT
   void dump_active_states(bool expected_active);
@@ -97,7 +108,8 @@ class SATBMarkQueueSet: public PtrQueueSet {
 public:
   SATBMarkQueueSet();
 
-  void initialize(Monitor* cbl_mon, Mutex* fl_lock,
+  void initialize(SATBMarkQueueFilter* filter,
+                  Monitor* cbl_mon, Mutex* fl_lock,
                   int process_completed_threshold,
                   Mutex* lock);
 
@@ -108,6 +120,10 @@ public:
   // SATB queues of all threads it visits, as well as the SATB queue
   // set itself, has an active value same as expected_active.
   void set_active_all_threads(bool active, bool expected_active);
+
+  void filter(SATBMarkQueue* queue) {
+    _filter->filter(queue);
+  }
 
   // Filter all the currently-active SATB buffers.
   void filter_thread_buffers();
@@ -128,5 +144,46 @@ public:
   // If a marking is being abandoned, reset any unprocessed log buffers.
   void abandon_partial_marking();
 };
+
+inline void SATBMarkQueue::filter() {
+  static_cast<SATBMarkQueueSet*>(qset())->filter(this);
+}
+
+// Removes entries from the buffer that are no longer needed, as
+// determined by filter. If e is a void* entry in the buffer,
+// filter_out(e) must be a valid expression whose value is convertible
+// to bool. Entries are removed (filtered out) if the result is true,
+// retained if false.
+template<typename Filter>
+inline void SATBMarkQueue::apply_filter(Filter filter_out) {
+  void** buf = this->_buf;
+
+  if (buf == NULL) {
+    // nothing to do
+    return;
+  }
+
+  // Two-fingered compaction toward the end.
+  void** src = &buf[this->index()];
+  void** dst = &buf[this->capacity()];
+  assert(src <= dst, "invariant");
+  for ( ; src < dst; ++src) {
+    // Search low to high for an entry to keep.
+    void* entry = *src;
+    if (!filter_out(entry)) {
+      // Found keeper.  Search high to low for an entry to discard.
+      while (src < --dst) {
+        if (filter_out(*dst)) {
+          *dst = entry;         // Replace discard with keeper.
+          break;
+        }
+      }
+      // If discard search failed (src == dst), the outer loop will also end.
+    }
+  }
+  // dst points to the lowest retained entry, or the end of the buffer
+  // if all the entries were filtered out.
+  this->set_index(dst - buf);
+}
 
 #endif // SHARE_VM_GC_G1_SATBMARKQUEUE_HPP

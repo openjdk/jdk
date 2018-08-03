@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHARED_TASKQUEUE_HPP
 
 #include "memory/allocation.hpp"
+#include "memory/padded.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/stack.hpp"
@@ -298,12 +299,30 @@ public:
   template<typename Fn> void iterate(Fn fn);
 
 private:
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
   // Element array.
   volatile E* _elems;
+
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(E*));
+  // Queue owner local variables. Not to be accessed by other threads.
+
+  static const uint InvalidQueueId = uint(-1);
+  uint _last_stolen_queue_id; // The id of the queue we last stole from
+
+  int _seed; // Current random seed used for selecting a random queue during stealing.
+
+  DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(uint) + sizeof(int));
+public:
+  int next_random_queue_id();
+
+  void set_last_stolen_queue_id(uint id)     { _last_stolen_queue_id = id; }
+  uint last_stolen_queue_id() const          { return _last_stolen_queue_id; }
+  bool is_last_stolen_queue_id_valid() const { return _last_stolen_queue_id != InvalidQueueId; }
+  void invalidate_last_stolen_queue_id()     { _last_stolen_queue_id = InvalidQueueId; }
 };
 
 template<class E, MEMFLAGS F, unsigned int N>
-GenericTaskQueue<E, F, N>::GenericTaskQueue() {
+GenericTaskQueue<E, F, N>::GenericTaskQueue() : _last_stolen_queue_id(InvalidQueueId), _seed(17 /* random number */) {
   assert(sizeof(Age) == sizeof(size_t), "Depends on this.");
 }
 
@@ -348,8 +367,6 @@ private:
 };
 
 class TaskQueueSetSuper {
-protected:
-  static int randomParkAndMiller(int* seed0);
 public:
   // Returns "true" if some TaskQueue in the set contains a task.
   virtual bool peek() = 0;
@@ -367,22 +384,19 @@ private:
   uint _n;
   T** _queues;
 
-  bool steal_best_of_2(uint queue_num, int* seed, E& t);
+  bool steal_best_of_2(uint queue_num, E& t);
 
 public:
-  GenericTaskQueueSet(int n);
+  GenericTaskQueueSet(uint n);
   ~GenericTaskQueueSet();
 
   void register_queue(uint i, T* q);
 
   T* queue(uint n);
 
-  // The thread with queue number "queue_num" (and whose random number seed is
-  // at "seed") is trying to steal a task from some other queue.  (It may try
-  // several queues, according to some configuration parameter.)  If some steal
-  // succeeds, returns "true" and sets "t" to the stolen task, otherwise returns
-  // false.
-  bool steal(uint queue_num, int* seed, E& t);
+  // Try to steal a task from some other queue than queue_num. It may perform several attempts at doing so.
+  // Returns if stealing succeeds, and sets "t" to the stolen task.
+  bool steal(uint queue_num, E& t);
 
   bool peek();
 

@@ -39,10 +39,11 @@ import jdk.test.lib.jfr.CommonHelper;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.VoidFunction;
 
-/*
+/**
  * @test
  * @summary Test setDestination to invalid paths
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.destination.TestDestInvalid
  */

@@ -29,8 +29,8 @@
  * However, the following notice accompanied the original version of this
  * file and, per its terms, should not be removed:
  *
- * Last changed in libpng 1.6.33 [September 28, 2017]
- * Copyright (c) 1998-2002,2004,2006-2017 Glenn Randers-Pehrson
+ * Last changed in libpng 1.6.35 [July 15, 2018]
+ * Copyright (c) 1998-2002,2004,2006-2018 Glenn Randers-Pehrson
  * (Version 0.96 Copyright (c) 1996, 1997 Andreas Dilger)
  * (Version 0.88 Copyright (c) 1995, 1996 Guy Eric Schalnat, Group 42, Inc.)
  *
@@ -130,7 +130,7 @@ png_get_int_32)(png_const_bytep buf)
 png_uint_16 (PNGAPI
 png_get_uint_16)(png_const_bytep buf)
 {
-   /* ANSI-C requires an int value to accomodate at least 16 bits so this
+   /* ANSI-C requires an int value to accommodate at least 16 bits so this
     * works and allows the compiler not to worry about possible narrowing
     * on 32-bit systems.  (Pre-ANSI systems did not make integers smaller
     * than 16 bits either.)
@@ -148,7 +148,7 @@ png_get_uint_16)(png_const_bytep buf)
 void /* PRIVATE */
 png_read_sig(png_structrp png_ptr, png_inforp info_ptr)
 {
-   png_size_t num_checked, num_to_check;
+   size_t num_checked, num_to_check;
 
    /* Exit if the user application does not expect a signature. */
    if (png_ptr->sig_bytes >= 8)
@@ -1676,7 +1676,7 @@ png_handle_sPLT(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
    int entry_size, i;
    png_uint_32 skip = 0;
    png_uint_32 dl;
-   png_size_t max_dl;
+   size_t max_dl;
 
    png_debug(1, "in png_handle_sPLT");
 
@@ -2025,6 +2025,15 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    else if ((png_ptr->color_type & PNG_COLOR_MASK_COLOR) == 0) /* GRAY */
    {
+      if (png_ptr->bit_depth <= 8)
+      {
+         if (buf[0] != 0 || buf[1] >= (unsigned int)(1 << png_ptr->bit_depth))
+         {
+            png_chunk_benign_error(png_ptr, "invalid gray level");
+            return;
+         }
+      }
+
       background.index = 0;
       background.red =
       background.green =
@@ -2034,6 +2043,15 @@ png_handle_bKGD(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    else
    {
+      if (png_ptr->bit_depth <= 8)
+      {
+         if (buf[0] != 0 || buf[2] != 0 || buf[4] != 0)
+         {
+            png_chunk_benign_error(png_ptr, "invalid color");
+            return;
+         }
+      }
+
       background.index = 0;
       background.red = png_get_uint_16(buf);
       background.green = png_get_uint_16(buf + 2);
@@ -2387,7 +2405,7 @@ void /* PRIVATE */
 png_handle_sCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 {
    png_bytep buffer;
-   png_size_t i;
+   size_t i;
    int state;
 
    png_debug(1, "in png_handle_sCAL");
@@ -2457,7 +2475,7 @@ png_handle_sCAL(png_structrp png_ptr, png_inforp info_ptr, png_uint_32 length)
 
    else
    {
-      png_size_t heighti = i;
+      size_t heighti = i;
 
       state = 0;
       if (png_check_fp_number((png_const_charp)buffer, length,
@@ -2895,7 +2913,7 @@ png_cache_unknown_chunk(png_structrp png_ptr, png_uint_32 length)
    {
       PNG_CSTRING_FROM_CHUNK(png_ptr->unknown_chunk.name, png_ptr->chunk_name);
       /* The following is safe because of the PNG_SIZE_MAX init above */
-      png_ptr->unknown_chunk.size = (png_size_t)length/*SAFE*/;
+      png_ptr->unknown_chunk.size = (size_t)length/*SAFE*/;
       /* 'mode' is a flag array, only the bottom four bits matter here */
       png_ptr->unknown_chunk.location = (png_byte)png_ptr->mode/*SAFE*/;
 
@@ -3177,10 +3195,13 @@ png_check_chunk_length(png_const_structrp png_ptr, const png_uint_32 length)
    {
       png_alloc_size_t idat_limit = PNG_UINT_31_MAX;
       size_t row_factor =
-         (png_ptr->width * png_ptr->channels * (png_ptr->bit_depth > 8? 2: 1)
-          + 1 + (png_ptr->interlaced? 6: 0));
+         (size_t)png_ptr->width
+         * (size_t)png_ptr->channels
+         * (png_ptr->bit_depth > 8? 2: 1)
+         + 1
+         + (png_ptr->interlaced? 6: 0);
       if (png_ptr->height > PNG_UINT_32_MAX/row_factor)
-         idat_limit=PNG_UINT_31_MAX;
+         idat_limit = PNG_UINT_31_MAX;
       else
          idat_limit = png_ptr->height * row_factor;
       row_factor = row_factor > 32566? 32566 : row_factor;
@@ -3707,8 +3728,8 @@ png_do_read_interlace(png_row_infop row_info, png_bytep row, int pass,
       {
          case 1:
          {
-            png_bytep sp = row + (png_size_t)((row_info->width - 1) >> 3);
-            png_bytep dp = row + (png_size_t)((final_width - 1) >> 3);
+            png_bytep sp = row + (size_t)((row_info->width - 1) >> 3);
+            png_bytep dp = row + (size_t)((final_width - 1) >> 3);
             unsigned int sshift, dshift;
             unsigned int s_start, s_end;
             int s_inc;
@@ -3834,8 +3855,8 @@ png_do_read_interlace(png_row_infop row_info, png_bytep row, int pass,
 
          case 4:
          {
-            png_bytep sp = row + (png_size_t)((row_info->width - 1) >> 1);
-            png_bytep dp = row + (png_size_t)((final_width - 1) >> 1);
+            png_bytep sp = row + (size_t)((row_info->width - 1) >> 1);
+            png_bytep dp = row + (size_t)((final_width - 1) >> 1);
             unsigned int sshift, dshift;
             unsigned int s_start, s_end;
             int s_inc;
@@ -3897,12 +3918,12 @@ png_do_read_interlace(png_row_infop row_info, png_bytep row, int pass,
 
          default:
          {
-            png_size_t pixel_bytes = (row_info->pixel_depth >> 3);
+            size_t pixel_bytes = (row_info->pixel_depth >> 3);
 
-            png_bytep sp = row + (png_size_t)(row_info->width - 1)
+            png_bytep sp = row + (size_t)(row_info->width - 1)
                 * pixel_bytes;
 
-            png_bytep dp = row + (png_size_t)(final_width - 1) * pixel_bytes;
+            png_bytep dp = row + (size_t)(final_width - 1) * pixel_bytes;
 
             int jstop = (int)png_pass_inc[pass];
             png_uint_32 i;
@@ -3939,8 +3960,8 @@ static void
 png_read_filter_row_sub(png_row_infop row_info, png_bytep row,
     png_const_bytep prev_row)
 {
-   png_size_t i;
-   png_size_t istop = row_info->rowbytes;
+   size_t i;
+   size_t istop = row_info->rowbytes;
    unsigned int bpp = (row_info->pixel_depth + 7) >> 3;
    png_bytep rp = row + bpp;
 
@@ -3957,8 +3978,8 @@ static void
 png_read_filter_row_up(png_row_infop row_info, png_bytep row,
     png_const_bytep prev_row)
 {
-   png_size_t i;
-   png_size_t istop = row_info->rowbytes;
+   size_t i;
+   size_t istop = row_info->rowbytes;
    png_bytep rp = row;
    png_const_bytep pp = prev_row;
 
@@ -3973,11 +3994,11 @@ static void
 png_read_filter_row_avg(png_row_infop row_info, png_bytep row,
     png_const_bytep prev_row)
 {
-   png_size_t i;
+   size_t i;
    png_bytep rp = row;
    png_const_bytep pp = prev_row;
    unsigned int bpp = (row_info->pixel_depth + 7) >> 3;
-   png_size_t istop = row_info->rowbytes - bpp;
+   size_t istop = row_info->rowbytes - bpp;
 
    for (i = 0; i < bpp; i++)
    {
@@ -4413,7 +4434,7 @@ png_read_start_row(png_structrp png_ptr)
    static PNG_CONST png_byte png_pass_yinc[7] = {8, 8, 8, 4, 4, 2, 2};
 
    unsigned int max_pixel_depth;
-   png_size_t row_bytes;
+   size_t row_bytes;
 
    png_debug(1, "in png_read_start_row");
 

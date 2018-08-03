@@ -35,9 +35,10 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @requires vm.gc == "Serial" | vm.gc == null
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:-UseFastUnorderedTimeStamps -XX:+UseSerialGC -XX:-UseCompressedOops -XX:MarkSweepDeadRatio=0 -XX:+IgnoreUnrecognizedVMOptions jdk.jfr.event.gc.objectcount.TestObjectCountEvent

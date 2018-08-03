@@ -379,6 +379,7 @@ public class Enter extends JCTree.Visitor {
             c.completer = Completer.NULL_COMPLETER;
                 c.members_field = WriteableScope.create(c);
                 tree.packge.package_info = c;
+                tree.packge.sourcefile = tree.sourcefile;
             }
             classEnter(tree.defs, topEnv);
             if (addEnv) {

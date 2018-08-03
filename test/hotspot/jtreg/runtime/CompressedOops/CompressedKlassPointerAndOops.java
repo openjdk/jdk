@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.bits == 64
+ * @run main CompressedKlassPointerAndOops
  */
 
 import jdk.test.lib.Platform;
@@ -38,13 +40,6 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class CompressedKlassPointerAndOops {
 
     public static void main(String[] args) throws Exception {
-
-        if (!Platform.is64bit()) {
-            // Can't test this on 32 bit, just pass
-            System.out.println("Skipping test on 32bit");
-            return;
-        }
-
         runWithAlignment(16);
         runWithAlignment(32);
         runWithAlignment(64);

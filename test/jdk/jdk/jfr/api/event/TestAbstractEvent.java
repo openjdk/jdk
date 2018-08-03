@@ -37,10 +37,11 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Tests that abstract events are not part of metadata
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.event.TestAbstractEvent
  */

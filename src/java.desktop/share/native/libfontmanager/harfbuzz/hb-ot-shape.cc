@@ -193,8 +193,10 @@ _hb_ot_shaper_shape_plan_data_create (hb_shape_plan_t    *shape_plan,
 
   if (plan->shaper->data_create) {
     plan->data = plan->shaper->data_create (plan);
-    if (unlikely (!plan->data))
+    if (unlikely (!plan->data)) {
+      free(plan);
       return nullptr;
+    }
   }
 
   return plan;

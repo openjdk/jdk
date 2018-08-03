@@ -106,8 +106,9 @@ public class strace001 {
                         printStackTrace(snapshot);
                         testFailed = true;
                     }
-                } else
+                } else {
                     log.display("Thread " + j + " is dead, skipping it.");
+                }
             }
 
             // Let all threads to complete their job

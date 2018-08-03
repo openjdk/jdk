@@ -32,6 +32,8 @@
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @run main SysDictCrash
+ * @run main/othervm -XX:+UseStringDeduplication SysDictCrash
+ * @run main/othervm -XX:-CompactStrings SysDictCrash
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

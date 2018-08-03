@@ -121,8 +121,7 @@ public class NestedClassWriterImpl extends AbstractMemberWriter
                 .setCaption(contents.getContent("doclet.Nested_Classes"))
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)
-                .setColumnStyles(bodyRowStyles)
-                .setUseTBody(false);  // temporary? compatibility mode for TBody
+                .setColumnStyles(bodyRowStyles);
     }
 
     /**

@@ -42,10 +42,11 @@ import jdk.test.lib.jfr.SimpleEvent;
 import jdk.test.lib.jfr.SimpleEventHelper;
 import jdk.test.lib.jfr.VoidFunction;
 
-/*
+/**
  * @test
  * @summary call copyTo() with recording in all states.
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.dump.TestDumpState
  */

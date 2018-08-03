@@ -30,9 +30,10 @@ import java.util.List;
 import jdk.management.jfr.FlightRecorderMXBean;
 import jdk.management.jfr.RecordingInfo;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.TestGetRecordings
  */

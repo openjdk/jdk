@@ -34,9 +34,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.TestClassLoader;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @build jdk.jfr.event.runtime.TestClasses
  * @run main/othervm jdk.jfr.event.runtime.TestClassLoadingStatisticsEvent

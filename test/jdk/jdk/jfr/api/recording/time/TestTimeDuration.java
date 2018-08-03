@@ -31,10 +31,11 @@ import java.time.Instant;
 import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Test Recording.setDuration() and Recording.get*Time()
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.time.TestTimeDuration
  */

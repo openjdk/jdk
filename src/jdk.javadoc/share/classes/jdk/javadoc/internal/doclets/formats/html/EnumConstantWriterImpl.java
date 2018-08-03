@@ -212,8 +212,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
                 .setSummary(summary)
                 .setCaption(contents.getContent("doclet.Enum_Constants"))
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
-                .setUseTBody(false);
+                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
     }
 
     /**

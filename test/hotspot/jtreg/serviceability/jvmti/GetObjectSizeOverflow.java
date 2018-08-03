@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.io.PrintWriter;
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Platform;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 /*
  * Test to verify GetObjectSize does not overflow on a 600M element int[]
@@ -37,17 +32,22 @@ import jdk.test.lib.process.ProcessTools;
  *          java.instrument
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
+ * @requires vm.bits == 64
  * @build GetObjectSizeOverflowAgent
  * @run driver ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow
  */
+
+import java.io.PrintWriter;
+
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
+
 public class GetObjectSizeOverflow {
     public static void main(String[] args) throws Exception  {
-
-        if (!Platform.is64bit()) {
-            System.out.println("Test needs a 4GB heap and can only be run as a 64bit process, skipping.");
-            return;
-        }
 
         PrintWriter pw = new PrintWriter("MANIFEST.MF");
         pw.println("Premain-Class: GetObjectSizeOverflowAgent");
@@ -63,8 +63,7 @@ public class GetObjectSizeOverflow {
         if (output.getStdout().contains("Could not reserve enough space") || output.getStderr().contains("java.lang.OutOfMemoryError")) {
             System.out.println("stdout: " + output.getStdout());
             System.out.println("stderr: " + output.getStderr());
-            System.out.println("Test could not reserve or allocate enough space, skipping");
-            return;
+            throw new SkippedException("Test could not reserve or allocate enough space");
         }
 
         output.stdoutShouldContain("GetObjectSizeOverflow passed");

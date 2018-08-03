@@ -54,6 +54,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import jdk.internal.misc.Unsafe;
 import java.util.Scanner;
+import jtreg.SkippedException;
 
 class CrashApp {
     public static void main(String[] args) {
@@ -121,7 +122,7 @@ public class ClhsdbCDSCore {
                                 "Core files might not be generated. Please reset /proc/sys/kernel/core_pattern\n" +
                                 "to enable core generation. Skipping this test.");
                             cleanup();
-                            return;
+                            throw new SkippedException("This system uses a crash report tool");
                         }
                     }
                 }
@@ -144,16 +145,14 @@ public class ClhsdbCDSCore {
 
             if (useSharedSpacesOutput == null) {
                 // Output could be null due to attach permission issues.
-                System.out.println("Could not determine the UseSharedSpaces value - test skipped.");
                 cleanup();
-                return;
+                throw new SkippedException("Could not determine the UseSharedSpaces value");
             }
 
             if (!useSharedSpacesOutput.contains("true")) {
                 // CDS archive is not mapped. Skip the rest of the test.
-                System.out.println("The CDS archive is not mapped - test skipped.");
                 cleanup();
-                return;
+                throw new SkippedException("The CDS archive is not mapped");
             }
 
             cmds = List.of("printmdo -a", "printall");
@@ -183,6 +182,8 @@ public class ClhsdbCDSCore {
                 "Failure occurred at bci",
                 "No suitable match for type of address"));
             test.runOnCore(TEST_CDS_CORE_FILE_NAME, cmds, expStrMap, unExpStrMap);
+        } catch (SkippedException e) {
+            throw e;
         } catch (Exception ex) {
             throw new RuntimeException("Test ERROR " + ex, ex);
         }

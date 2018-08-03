@@ -30,9 +30,10 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.LogLevel;
 
-/*
+/**
  * @test TestLogImplementation
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @run main/othervm jdk.jfr.jvm.TestLogImplementation

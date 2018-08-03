@@ -40,10 +40,11 @@ import java.util.Map;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 
-/*
+/**
  * @test
  * @summary Basic tests for Recording
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.misc.TestRecordingBase
  */

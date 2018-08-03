@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,16 @@ class LinuxThread implements ThreadProxy {
         // FIXME: size of data fetched here should be configurable.
         // However, making it so would produce a dependency on the "types"
         // package from the debugger package, which is not desired.
-        this.lwp_id = (int) addr.getCIntegerAt(0, 4, true);
+        int pid = (int)addr.getCIntegerAt(0, 4, true);
+        if (debugger instanceof LinuxDebuggerLocal) {
+            int hostPID = ((LinuxDebuggerLocal)debugger).getHostPID(pid);
+            // Debuggee is not running in the container
+            if (hostPID != -1) {
+                pid = hostPID;
+            }
+        }
+        this.lwp_id = pid;
+
     }
 
     LinuxThread(LinuxDebugger debugger, long id) {

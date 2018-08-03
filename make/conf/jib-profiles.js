@@ -242,7 +242,8 @@ var getJibProfilesCommon = function (input, data) {
         dependencies: ["boot_jdk", "gnumake", "jtreg", "jib", "autoconf"],
         default_make_targets: ["product-bundles", "test-bundles"],
         configure_args: concat(["--enable-jtreg-failure-handler"],
-            "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I",
+            "--with-exclude-translations=de,es,fr,it,ko,pt_BR,sv,ca,tr,cs,sk,ja_JP_A,ja_JP_HA,ja_JP_HI,ja_JP_I,zh_TW,zh_HK",
+            "--disable-manpages",
             versionArgs(input, common))
     };
     // Extra settings for debug profiles
@@ -900,7 +901,7 @@ var getJibProfilesDependencies = function (input, common) {
         jtreg: {
             server: "javare",
             revision: "4.2",
-            build_number: "b12",
+            build_number: "b13",
             checksum_file: "MD5_VALUES",
             file: "jtreg_bin-4.2.zip",
             environment_name: "JT_HOME",

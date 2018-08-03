@@ -40,6 +40,8 @@ compiler/compilercontrol/jcmd/AddExcludeTest.java               8181753   generi
 compiler/compilercontrol/jcmd/AddLogTest.java                   8181753   generic-all
 compiler/compilercontrol/mixed/RandomValidCommandsTest.java     8181753   generic-all
 
+compiler/graalunit/JttThreadsTest.java                          8208066   generic-all
+
 compiler/intrinsics/mathexact/LongMulOverflowTest.java          8196568   generic-all
 
 compiler/jvmci/SecurityRestrictionsTest.java                    8181837   generic-all
@@ -66,8 +68,6 @@ gc/g1/plab/TestPLABPromotion.java                               8191048   generi
 gc/g1/plab/TestPLABResize.java                                  8191048   generic-all
 
 gc/TestNUMAPageSize.java                                        8194949   generic-all
-
-serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8195156   generic-all
 
 compiler/compilercontrol/directives/LogTest.java                8181753   generic-all
 

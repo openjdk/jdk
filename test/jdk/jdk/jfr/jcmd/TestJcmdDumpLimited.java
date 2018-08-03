@@ -43,10 +43,11 @@ import jdk.jfr.Recording;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 
-/*
+/**
  * @test
  * @summary The test verifies JFR.dump command
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jcmd.TestJcmdDumpLimited
  */

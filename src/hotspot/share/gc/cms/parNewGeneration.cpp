@@ -106,7 +106,6 @@ ParScanThreadState::ParScanThreadState(Space* to_space_,
   #endif // TASKQUEUE_STATS
 
   _survivor_chunk_array = (ChunkArray*) old_gen()->get_data_recorder(thread_num());
-  _hash_seed = 17;  // Might want to take time-based random value.
   _start = os::elapsedTime();
   _old_gen_closure.set_generation(old_gen_);
   _old_gen_root_closure.set_generation(old_gen_);
@@ -438,7 +437,7 @@ void ParScanThreadStateSet::print_taskqueue_stats_hdr(outputStream* const st) {
 }
 
 void ParScanThreadStateSet::print_taskqueue_stats() {
-  if (!log_develop_is_enabled(Trace, gc, task, stats)) {
+  if (!log_is_enabled(Trace, gc, task, stats)) {
     return;
   }
   Log(gc, task, stats) log;
@@ -550,7 +549,6 @@ void ParEvacuateFollowersClosure::do_void() {
 
     // Attempt to steal work from promoted.
     if (task_queues()->steal(par_scan_state()->thread_num(),
-                             par_scan_state()->hash_seed(),
                              obj_to_scan)) {
       bool res = work_q->push(obj_to_scan);
       assert(res, "Empty queue should have room for a push.");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,21 +102,32 @@ public class TestECDSA2 extends PKCS11Test {
     }
 
     @Override
+    protected boolean skipTest(Provider provider) {
+        boolean testP256 =
+                provider.getService("Signature", "SHA256withECDSA") != null;
+
+        boolean testP384 =
+                provider.getService("Signature", "SHA384withECDSA") != null;
+
+        if (!testP256 && !testP384) {
+            System.out.println("ECDSA not supported, skipping");
+            return true;
+        }
+
+        if (isBadNSSVersion(provider)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
     public void main(Provider provider) throws Exception {
         boolean testP256 =
             (provider.getService("Signature", "SHA256withECDSA") != null);
 
         boolean testP384 =
             (provider.getService("Signature", "SHA384withECDSA") != null);
-
-        if (!testP256 && !testP384) {
-            System.out.println("ECDSA not supported, skipping");
-            return;
-        }
-
-        if (isBadNSSVersion(provider)) {
-            return;
-        }
 
         kf = KeyFactory.getInstance("EC", provider);
 

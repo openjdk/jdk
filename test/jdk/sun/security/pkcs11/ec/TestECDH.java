@@ -91,17 +91,22 @@ public class TestECDH extends PKCS11Test {
     private final static String privBrainpoolP512r1b = "3062020100301406072a8648ce3d020106092b240303020801010d044730450201010440230e18e1bcc88a362fa54e4ea3902009292f7f8033624fd471b5d8ace49d12cfabbc19963dab8e2f1eba00bffb29e4d72d13f2224562f405cb80503666b25429";
     private final static String secretBrainpoolP512r1 = "a7927098655f1f9976fa50a9d566865dc530331846381c87256baf3226244b76d36403c024d7bbf0aa0803eaff405d3d24f11a9b5c0bef679fe1454b21c4cd1f";
 
-    @Override public void main(Provider p) throws Exception {
+    @Override
+    protected boolean skipTest(Provider p) {
         if (p.getService("KeyAgreement", "ECDH") == null) {
             System.out.println("Provider does not support ECDH, skipping");
-            return;
+            return true;
         }
 
         if (isNSS(p) && getNSSECC() == ECCState.Basic) {
-            System.out.println("NSS only supports Basic ECC.  Skipping..");
-            return;
+            System.out.println("NSS only supports Basic ECC, skipping");
+            return true;
         }
 
+        return false;
+    }
+
+    @Override public void main(Provider p) throws Exception {
         /*
          * PKCS11Test.main will remove this provider if needed
          */

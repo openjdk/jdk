@@ -42,9 +42,10 @@ import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.test.lib.jfr.Events;
 
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  *
  * @library /test/lib
  * @modules java.scripting

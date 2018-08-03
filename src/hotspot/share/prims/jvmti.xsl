@@ -59,10 +59,10 @@
         </style>
   </head>
   <body>
-    <div class="centered">
+    <div class="centered" role="banner">
       <xsl:apply-templates select="title"/>
     </div>
-    <ul>
+    <ul role="navigation">
       <li>
         <a href="#SpecificationIntro"><b>Introduction</b></a>
         <ul>
@@ -167,6 +167,7 @@
       </li>
     </ul>
     <!-- end table of contents, begin body -->
+    <div role="main">
     <div class="sep"/>
     <hr class="thick"/>
     <div class="sep"/>
@@ -202,6 +203,7 @@
     </xsl:if>
     <p id="ChangeHistory"/>
       <xsl:apply-templates select="changehistory"/>
+    </div>
   </body>
 </html>
 </xsl:template>

@@ -248,7 +248,7 @@ static bool is_decipherable_interpreted_frame(JavaThread* thread,
     // a valid method. Then again we may have caught an interpreter
     // frame in the middle of construction and the bci field is
     // not yet valid.
-    if (!method->is_valid_method()) return false;
+    if (!Method::is_valid_method(method)) return false;
     *method_p = method; // If the Method* found is invalid, it is
                         // ignored by forte_fill_call_trace_given_top().
                         // So set method_p only if the Method is valid.
@@ -434,7 +434,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
   // Check if a Java Method has been found.
   if (method == NULL) return;
 
-  if (!method->is_valid_method()) {
+  if (!Method::is_valid_method(method)) {
     trace->num_frames = ticks_GC_active; // -2
     return;
   }
@@ -445,7 +445,7 @@ static void forte_fill_call_trace_given_top(JavaThread* thd,
     bci = st.bci();
     method = st.method();
 
-    if (!method->is_valid_method()) {
+    if (!Method::is_valid_method(method)) {
       // we throw away everything we've gathered in this sample since
       // none of it is safe
       trace->num_frames = ticks_GC_active; // -2

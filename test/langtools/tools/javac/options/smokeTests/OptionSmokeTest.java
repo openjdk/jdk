@@ -27,6 +27,7 @@
  * @summary use the new error diagnostic approach at javac.Main
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.javap
@@ -38,6 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.code.Source;
 
 import toolbox.TestRunner;
 import toolbox.ToolBox;
@@ -65,9 +67,7 @@ public class OptionSmokeTest extends TestRunner {
 
     @Test
     public void optionA1(Path base) throws Exception {
-        doTest(base,
-                "error: -A requires an argument; use '-Akey' or '-Akey=value'",
-                "-A");
+        doTest(base, "error: -A requires an argument; use '-Akey' or '-Akey=value'", "-A");
     }
 
     @Test
@@ -85,25 +85,23 @@ public class OptionSmokeTest extends TestRunner {
     @Test
     public void profileAndBSP(Path base) throws Exception {
         doTest(base, "error: profile and bootclasspath options cannot be used together",
-                "-profile compact1 -bootclasspath . -target 8 -source 8");
+                String.format("-profile compact1 -bootclasspath . -target %s -source %s", Source.DEFAULT.name, Source.DEFAULT.name));
     }
 
     @Test
     public void invalidProfile(Path base) throws Exception {
-        doTest(base, "error: invalid profile: noProfile",
-                "-profile noProfile");
+        doTest(base, "error: invalid profile: noProfile", "-profile noProfile");
     }
 
     @Test
     public void invalidTarget(Path base) throws Exception {
-        doTest(base, "error: invalid target release: 999999",
-                "-target 999999");
+        doTest(base, "error: invalid target release: 999999", "-target 999999");
     }
 
     @Test
     public void optionNotAvailableWithTarget(Path base) throws Exception {
-        doTest(base, "error: option -profile not allowed with target 11",
-                "-profile compact1 -target 11");
+        doTest(base, String.format("error: option -profile not allowed with target %s", Source.DEFAULT.name),
+                String.format("-profile compact1 -target %s", Source.DEFAULT.name));
     }
 
     @Test
@@ -114,7 +112,7 @@ public class OptionSmokeTest extends TestRunner {
 
     @Test
     public void noSrcFiles(Path base) throws Exception {
-        doTestNoSource(base, "error: no source files", "-target 11");
+        doTestNoSource(base, "error: no source files", String.format("-target %s", Source.DEFAULT.name));
     }
 
     @Test
@@ -135,20 +133,20 @@ public class OptionSmokeTest extends TestRunner {
 
     @Test
     public void sourceAndTargetMismatch(Path base) throws Exception {
-        doTest(base, "warning: source release 11 requires target release 11",
-                "-source 11 -target 10");
+        doTest(base, String.format("warning: source release %s requires target release %s", Source.DEFAULT.name, Source.DEFAULT.name),
+                String.format("-source %s -target %s", Source.DEFAULT.name, Source.MIN.name));
     }
 
     @Test
     public void targetConflictsWithDefaultSource(Path base) throws Exception {
-        doTest(base, "warning: target release 10 conflicts with default source release 11",
-                "-target 10");
+        doTest(base, String.format("warning: target release %s conflicts with default source release %s", Source.MIN.name, Source.DEFAULT.name),
+                String.format("-target %s", Source.MIN.name));
     }
 
     @Test
     public void profileNotValidForTarget(Path base) throws Exception {
-        doTest(base, "warning: profile compact2 is not valid for target release 1.7",
-                "-profile compact2 -target 7 -source 7");
+        doTest(base, String.format("warning: profile compact2 is not valid for target release %s", Source.MIN.name),
+                String.format("-profile compact2 -target %s -source %s", Source.MIN.name, Source.MIN.name));
     }
 
     @Test
@@ -158,16 +156,16 @@ public class OptionSmokeTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        Assert.check(log.startsWith("error: file not found: notExistent" + fileSeparator + "T.java"),
-                "real value of log:" + log);
+        Assert.check(log.startsWith(String.format("error: file not found: notExistent%sT.java", fileSeparator)),
+                String.format("real value of log:%s", log));
     }
 
     static final String fileSeparator = System.getProperty("file.separator");
 
     @Test
     public void notADirectory(Path base) throws Exception {
-        doTest(base, "error: not a directory: notADirectory" + fileSeparator + "src" + fileSeparator + "Dummy.java",
-                "-d notADirectory" + fileSeparator + "src" + fileSeparator + "Dummy.java");
+        doTest(base, String.format("error: not a directory: notADirectory%ssrc%sDummy.java", fileSeparator, fileSeparator),
+                String.format("-d notADirectory%ssrc%sDummy.java", fileSeparator, fileSeparator));
     }
 
     @Test
@@ -180,7 +178,7 @@ public class OptionSmokeTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        Assert.check(log.startsWith("error: not a file: notAFile" + fileSeparator + "dir.java"));
+        Assert.check(log.startsWith(String.format("error: not a file: notAFile%sdir.java", fileSeparator)));
     }
 
     @Test
@@ -200,7 +198,8 @@ public class OptionSmokeTest extends TestRunner {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, "class Dummy {}");
         String log = new JavacTask(tb, Task.Mode.EXEC)
-                .envVar("JDK_JAVAC_OPTIONS", "--add-exports jdk.compiler" + fileSeparator + "com.sun.tools.javac.jvm=\"ALL-UNNAMED")
+                .envVar("JDK_JAVAC_OPTIONS",
+                        String.format("--add-exports jdk.compiler%scom.sun.tools.javac.jvm=\"ALL-UNNAMED", fileSeparator))
                 .files(findJavaFiles(src))
                 .run(Task.Expect.FAIL)
                 .writeAll()
@@ -211,7 +210,7 @@ public class OptionSmokeTest extends TestRunner {
     @Test
     public void optionCantBeUsedWithRelease(Path base) throws Exception {
         doTestNoSource(base, "error: option -source cannot be used together with --release",
-                "--release 7 -source 7");
+                String.format("--release %s -source %s", Source.DEFAULT.name, Source.DEFAULT.name));
     }
 
     @Test
@@ -224,23 +223,23 @@ public class OptionSmokeTest extends TestRunner {
     @Test
     public void releaseAndBootclasspath(Path base) throws Exception {
         doTestNoSource(base, "error: option --boot-class-path cannot be used together with --release",
-                "--release 7 -bootclasspath any");
+                String.format("--release %s -bootclasspath any", Source.DEFAULT.name));
         doTestNoSource(base, "error: option -Xbootclasspath: cannot be used together with --release",
-                "--release 7 -Xbootclasspath:any");
+                String.format("--release %s -Xbootclasspath:any", Source.DEFAULT.name));
         doTestNoSource(base, "error: option -Xbootclasspath/p: cannot be used together with --release",
-                "--release 7 -Xbootclasspath/p:any");
+                String.format("--release %s -Xbootclasspath/p:any", Source.DEFAULT.name));
         doTestNoSource(base, "error: option -endorseddirs cannot be used together with --release",
-                "--release 7 -endorseddirs any");
+                String.format("--release %s -endorseddirs any", Source.DEFAULT.name));
         doTestNoSource(base, "error: option -extdirs cannot be used together with --release",
-                "--release 7 -extdirs any");
+                String.format("--release %s -extdirs any", Source.DEFAULT.name));
         doTestNoSource(base, "error: option -source cannot be used together with --release",
-                "--release 7 -source 8");
+                String.format("--release %s -source %s", Source.MIN.name, Source.DEFAULT.name));
         doTestNoSource(base, "error: option -target cannot be used together with --release",
-                "--release 7 -target 8");
+                String.format("--release %s -target %s", Source.MIN.name, Source.DEFAULT.name));
         doTestNoSource(base, "error: option --system cannot be used together with --release",
-                "--release 9 --system none");
+                String.format("--release %s --system none", Source.DEFAULT.name));
         doTestNoSource(base, "error: option --upgrade-module-path cannot be used together with --release",
-                "--release 9 --upgrade-module-path any");
+                String.format("--release %s --upgrade-module-path any", Source.DEFAULT.name));
     }
 
     void doTest(Path base, String output, String options) throws Exception {
@@ -252,7 +251,7 @@ public class OptionSmokeTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        Assert.check(log.startsWith(output), "expected:\n" + output + '\n' + "found:\n" + log);
+        Assert.check(log.startsWith(output), String.format("expected:\n%s\nfound:\n%s", output, log));
     }
 
     void doTestNoSource(Path base, String output, String options) throws Exception {
@@ -261,6 +260,6 @@ public class OptionSmokeTest extends TestRunner {
                 .run(Task.Expect.FAIL)
                 .writeAll()
                 .getOutput(Task.OutputKind.DIRECT);
-        Assert.check(log.startsWith(output), "expected:\n" + output + '\n' + "found:\n" + log);
+        Assert.check(log.startsWith(output), String.format("expected:\n%s\nfound:\n%s", output, log));
     }
 }

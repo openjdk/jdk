@@ -32,9 +32,10 @@ import jdk.jfr.Configuration;
 import jdk.management.jfr.ConfigurationInfo;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.TestConfigurationInfo
  */

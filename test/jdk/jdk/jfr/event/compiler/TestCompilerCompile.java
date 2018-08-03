@@ -39,9 +39,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import sun.hotspot.WhiteBox;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @requires vm.compMode!="Xint"
  * @library /test/lib
  * @build sun.hotspot.WhiteBox

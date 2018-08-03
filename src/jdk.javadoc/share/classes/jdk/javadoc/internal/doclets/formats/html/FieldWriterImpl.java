@@ -218,8 +218,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                 .setCaption(contents.fields)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setRowScopeColumn(1)
-                .setColumnStyles(bodyRowStyles)
-                .setUseTBody(false);  // temporary? compatibility mode for TBody
+                .setColumnStyles(bodyRowStyles);
     }
 
     /**

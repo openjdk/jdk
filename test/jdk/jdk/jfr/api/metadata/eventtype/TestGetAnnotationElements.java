@@ -62,10 +62,11 @@ import jdk.jfr.Unsigned;
 import jdk.jfr.ValueDescriptor;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Test for AnnotationElement.getAnnotationElements()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.eventtype.TestGetAnnotationElements
  */

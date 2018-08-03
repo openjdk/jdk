@@ -29,7 +29,7 @@
  *
  * @library /vmTestbase /test/lib
  * @run driver jdk.test.lib.FileInstaller . .
- * @run main/othervm metaspace.stressDictionary.StressDictionary
+ * @run main/othervm metaspace.stressDictionary.StressDictionary -stressTime 30
  */
 
 package metaspace.stressDictionary;
@@ -57,15 +57,16 @@ import vm.share.InMemoryJavaCompiler;
  */
 public class StressDictionary extends GCTestBase {
 
+    private static byte[] bytecode;
+
     private class FillingDictionaryWorker implements Callable<Object> {
         @Override
         public Object call() throws Exception {
             while (stresser.continueExecution()) {
                 try {
-                    byte[] bytecode = generateAndCompile();
-                    bytecode[random.nextInt(bytecode.length)] = (byte) 42;
-                    classloader.define(bytecode);
-                    changeClassloaderIfRequired();
+                    byte[] badBytecode = bytecode.clone();
+                    badBytecode[random.nextInt(badBytecode.length)] = (byte) 42;
+                    classloader.define(badBytecode);
                 } catch (Throwable e) {
                     // We can get ClassFormatError, ClassNotFoundException or anything else here
                 }
@@ -78,18 +79,14 @@ public class StressDictionary extends GCTestBase {
         @Override
         public Object call() throws Exception {
             while (stresser.continueExecution()) {
-                byte[] bytecode = generateAndCompile();
                 Class<?> c = classloader.define(bytecode);
                 testClass(c);
-                changeClassloaderIfRequired();
             }
             return null;
         }
     }
 
     private static String[] args;
-
-    private static final int DROP_CLASSLOADER_LIMIT = 50000;
 
     private static final String methodName = "myMethod";
 
@@ -116,6 +113,8 @@ public class StressDictionary extends GCTestBase {
         random = new Random(runParams.getSeed());
         stresser = new Stresser(args);
         stresser.start(1);
+        // Generate some bytecodes.
+        bytecode = generateAndCompile();
         List<Callable<Object>> tasks = new LinkedList<Callable<Object>>();
         for (int i = 0; i < NUMBER_OF_CORRUPTING_THREADS; i++) {
             tasks.add(this.new FillingDictionaryWorker());
@@ -128,13 +127,6 @@ public class StressDictionary extends GCTestBase {
             executorService.invokeAll(tasks);
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void changeClassloaderIfRequired() {
-        if (ManagementFactory.getClassLoadingMXBean().getLoadedClassCount() > DROP_CLASSLOADER_LIMIT) {
-          ClassloaderUnderTest newOne = new ClassloaderUnderTest();
-          classloader = newOne;
         }
     }
 

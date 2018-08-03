@@ -604,3 +604,29 @@ AC_DEFUN([JDKOPT_EXCLUDE_TRANSLATIONS],
 
   AC_SUBST(EXCLUDE_TRANSLATIONS)
 ])
+
+################################################################################
+#
+# Optionally disable man pages
+#
+AC_DEFUN([JDKOPT_ENABLE_DISABLE_MANPAGES],
+[
+  AC_ARG_ENABLE([manpages], [AS_HELP_STRING([--disable-manpages],
+      [Set to disable building of man pages @<:@enabled@:>@])])
+
+  BUILD_MANPAGES="true"
+  AC_MSG_CHECKING([if man pages should be built])
+  if test "x$enable_manpages" = "x"; then
+    AC_MSG_RESULT([yes])
+  elif test "x$enable_manpages" = "xyes"; then
+    AC_MSG_RESULT([yes, forced])
+  elif test "x$enable_manpages" = "xno"; then
+    AC_MSG_RESULT([no, forced])
+    BUILD_MANPAGES="false"
+  else
+    AC_MSG_RESULT([no])
+    AC_MSG_ERROR([--enable-manpages can only yes/no or empty])
+  fi
+
+  AC_SUBST(BUILD_MANPAGES)
+])

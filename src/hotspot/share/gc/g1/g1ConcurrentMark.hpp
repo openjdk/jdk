@@ -519,7 +519,7 @@ public:
   }
 
   // Attempts to steal an object from the task queues of other tasks
-  bool try_stealing(uint worker_id, int* hash_seed, G1TaskQueueEntry& task_entry);
+  bool try_stealing(uint worker_id, G1TaskQueueEntry& task_entry);
 
   G1ConcurrentMark(G1CollectedHeap* g1h,
                    G1RegionToSpaceMapper* prev_bitmap_storage,
@@ -685,8 +685,6 @@ private:
   // it was decreased).
   size_t                      _real_refs_reached_limit;
 
-  // Used by the work stealing
-  int                         _hash_seed;
   // If true, then the task has aborted for some reason
   bool                        _has_aborted;
   // Set when the task aborts because it has met its time quota

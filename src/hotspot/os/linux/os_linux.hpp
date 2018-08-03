@@ -228,6 +228,7 @@ class Linux {
   typedef int (*numa_tonode_memory_func_t)(void *start, size_t size, int node);
   typedef void (*numa_interleave_memory_func_t)(void *start, size_t size, unsigned long *nodemask);
   typedef void (*numa_interleave_memory_v2_func_t)(void *start, size_t size, struct bitmask* mask);
+  typedef struct bitmask* (*numa_get_membind_func_t)(void);
 
   typedef void (*numa_set_bind_policy_func_t)(int policy);
   typedef int (*numa_bitmask_isbitset_func_t)(struct bitmask *bmp, unsigned int n);
@@ -244,6 +245,7 @@ class Linux {
   static numa_set_bind_policy_func_t _numa_set_bind_policy;
   static numa_bitmask_isbitset_func_t _numa_bitmask_isbitset;
   static numa_distance_func_t _numa_distance;
+  static numa_get_membind_func_t _numa_get_membind;
   static unsigned long* _numa_all_nodes;
   static struct bitmask* _numa_all_nodes_ptr;
   static struct bitmask* _numa_nodes_ptr;
@@ -259,6 +261,7 @@ class Linux {
   static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
   static void set_numa_bitmask_isbitset(numa_bitmask_isbitset_func_t func) { _numa_bitmask_isbitset = func; }
   static void set_numa_distance(numa_distance_func_t func) { _numa_distance = func; }
+  static void set_numa_get_membind(numa_get_membind_func_t func) { _numa_get_membind = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
   static void set_numa_all_nodes_ptr(struct bitmask **ptr) { _numa_all_nodes_ptr = (ptr == NULL ? NULL : *ptr); }
   static void set_numa_nodes_ptr(struct bitmask **ptr) { _numa_nodes_ptr = (ptr == NULL ? NULL : *ptr); }
@@ -299,7 +302,7 @@ class Linux {
     if (_numa_bitmask_isbitset != NULL && _numa_all_nodes_ptr != NULL) {
       return _numa_bitmask_isbitset(_numa_all_nodes_ptr, n);
     } else
-      return 0;
+      return false;
   }
   // Check if numa node exists in the system (including zero memory nodes).
   static bool isnode_in_existing_nodes(unsigned int n) {
@@ -318,7 +321,42 @@ class Linux {
       // substitute.
       return _numa_bitmask_isbitset(_numa_all_nodes_ptr, n);
     } else
-      return 0;
+      return false;
+  }
+  // Check if node is in bound node set.
+  static bool isnode_in_bound_nodes(int node) {
+    if (_numa_get_membind != NULL && _numa_bitmask_isbitset != NULL) {
+      return _numa_bitmask_isbitset(_numa_get_membind(), node);
+    } else {
+      return false;
+    }
+  }
+  // Check if bound to only one numa node.
+  // Returns true if bound to a single numa node, otherwise returns false.
+  static bool isbound_to_single_node() {
+    int nodes = 0;
+    struct bitmask* bmp = NULL;
+    unsigned int node = 0;
+    unsigned int highest_node_number = 0;
+
+    if (_numa_get_membind != NULL && _numa_max_node != NULL && _numa_bitmask_isbitset != NULL) {
+      bmp = _numa_get_membind();
+      highest_node_number = _numa_max_node();
+    } else {
+      return false;
+    }
+
+    for (node = 0; node <= highest_node_number; node++) {
+      if (_numa_bitmask_isbitset(bmp, node)) {
+        nodes++;
+      }
+    }
+
+    if (nodes == 1) {
+      return true;
+    } else {
+      return false;
+    }
   }
 };
 

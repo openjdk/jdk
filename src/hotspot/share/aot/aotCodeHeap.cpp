@@ -29,7 +29,7 @@
 #include "classfile/javaAssertions.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gcConfig.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/abstractInterpreter.hpp"
 #include "jvmci/compilerRuntime.hpp"
@@ -160,10 +160,15 @@ void AOTLib::verify_config() {
   // Check configuration size
   verify_flag(_config->_config_size, AOTConfiguration::CONFIG_SIZE, "AOT configuration size");
 
+  // Check GC
+  CollectedHeap::Name gc = (CollectedHeap::Name)_config->_gc;
+  if (_valid && !GCConfig::is_gc_selected(gc)) {
+    handle_config_error("Shared file %s error: used '%s' is different from current '%s'", _name, GCConfig::hs_err_name(gc), GCConfig::hs_err_name());
+  }
+
   // Check flags
   verify_flag(_config->_useCompressedOops, UseCompressedOops, "UseCompressedOops");
   verify_flag(_config->_useCompressedClassPointers, UseCompressedClassPointers, "UseCompressedClassPointers");
-  verify_flag(_config->_useG1GC, UseG1GC, "UseG1GC");
   verify_flag(_config->_useTLAB, UseTLAB, "UseTLAB");
   verify_flag(_config->_useBiasedLocking, UseBiasedLocking, "UseBiasedLocking");
   verify_flag(_config->_objectAlignment, ObjectAlignmentInBytes, "ObjectAlignmentInBytes");

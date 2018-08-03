@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase vm/mlvm/mixed/stress/java/findDeadlock.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent, quarantine, monitoring]
- * VM Testbase comments: 8055376
+ * VM Testbase comments: 8208278
  * VM Testbase readme:
  * DESCRIPTION
  *    The test does the following in a loop:

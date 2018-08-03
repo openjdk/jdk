@@ -111,24 +111,6 @@ void TaskQueueStats::verify() const
 #endif // ASSERT
 #endif // TASKQUEUE_STATS
 
-int TaskQueueSetSuper::randomParkAndMiller(int *seed0) {
-  const int a =      16807;
-  const int m = 2147483647;
-  const int q =     127773;  /* m div a */
-  const int r =       2836;  /* m mod a */
-  assert(sizeof(int) == 4, "I think this relies on that");
-  int seed = *seed0;
-  int hi   = seed / q;
-  int lo   = seed % q;
-  int test = a * lo - r * hi;
-  if (test > 0)
-    seed = test;
-  else
-    seed = test + m;
-  *seed0 = seed;
-  return seed;
-}
-
 ParallelTaskTerminator::
 ParallelTaskTerminator(uint n_threads, TaskQueueSetSuper* queue_set) :
   _n_threads(n_threads),

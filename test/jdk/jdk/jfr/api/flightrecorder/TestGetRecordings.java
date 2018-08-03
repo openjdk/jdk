@@ -34,9 +34,10 @@ import java.util.List;
 import jdk.jfr.FlightRecorder;
 import jdk.jfr.Recording;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.flightrecorder.TestGetRecordings
  */

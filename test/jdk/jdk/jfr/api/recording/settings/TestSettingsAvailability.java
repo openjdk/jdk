@@ -39,10 +39,11 @@ import jdk.jfr.SettingDescriptor;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.jfr.EventNames;
 
-/*
+/**
  * @test
  * @summary Verifies that event types has the correct type of settings
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.settings.TestSettingsAvailability
  */

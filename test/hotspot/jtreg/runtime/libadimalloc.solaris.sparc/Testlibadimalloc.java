@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /*
  * @test Testlibadimalloc.java
  * @bug 8141445
@@ -37,6 +36,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 public class Testlibadimalloc {
 
@@ -50,8 +50,7 @@ public class Testlibadimalloc {
 
         // If the libadimalloc.so file does not exist, pass the test
         if (!(Files.isRegularFile(path) || Files.isSymbolicLink(path))) {
-            System.out.println("Test skipped; libadimalloc.so does not exist");
-            return;
+            throw new SkippedException("libadimalloc.so does not exist");
         }
 
         // Get the JDK, library and class path properties

@@ -33,10 +33,11 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.SimpleEvent;
 
-/*
+/**
  * @test
  * @summary Tests that an instant event gets recorded with its start time equal to its end time
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordedInstantEventTimestamp
  */

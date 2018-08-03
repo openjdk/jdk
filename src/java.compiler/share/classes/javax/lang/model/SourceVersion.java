@@ -57,7 +57,8 @@ public enum SourceVersion {
      * 1.8: lambda expressions and default methods
      *   9: modules, small cleanups to 1.7 and 1.8 changes
      *  10: local-variable type inference (var)
-     *  11: to be determined changes
+     *  11: local-variable syntax for lambda parameters
+     *  12: TBD
      */
 
     /**
@@ -168,6 +169,9 @@ public enum SourceVersion {
     /**
      * The version recognized by the Java Platform, Standard Edition
      * 11.
+     *
+     * Additions in this release include local-variable syntax for
+     * lambda parameters.
      *
      * @since 11
      */

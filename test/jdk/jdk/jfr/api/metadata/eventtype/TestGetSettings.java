@@ -31,10 +31,11 @@ import jdk.jfr.EventType;
 import jdk.jfr.SettingDescriptor;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Test getSettings()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.api.metadata.eventtype.TestGetSettings
  */

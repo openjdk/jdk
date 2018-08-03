@@ -28,10 +28,11 @@ package jdk.jfr.api.flightrecorder;
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorder;
 
-/*
+/**
  * @test
  * @summary Check that an IllegalArgumentException is thrown if event is added twice
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.flightrecorder.TestPeriodicEventsSameHook
  */

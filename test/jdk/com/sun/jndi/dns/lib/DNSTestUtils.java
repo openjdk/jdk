@@ -25,12 +25,17 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
 import java.io.PrintStream;
-import java.net.DatagramSocket;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Hashtable;
 
+/**
+ * This is utility class for DNS test, it contains many helper methods to
+ * support test construction.
+ *
+ * For basic test sequence see TestBase and DNSTestBase.
+ */
 public class DNSTestUtils {
     public static final String TEST_DNS_SERVER_THREAD = "test.dns.server.thread";
     public static final String TEST_DNS_ROOT_URL = "test.dns.root.url";
@@ -38,9 +43,14 @@ public class DNSTestUtils {
 
     protected static boolean debug = true;
 
-    /*
-     * Check that attrs contains the mandatory attributes and the right
-     * objectclass attribute
+    /**
+     * Check that attributes contains the mandatory attributes and the right
+     * objectclass attribute.
+     *
+     * @param attrs     given attributes to verify
+     * @param mandatory given mandatory for verification
+     * @param optional  given optional for verification
+     * @return <tt>true</tt>  if check ok
      */
     public static boolean checkSchema(Attributes attrs, String[] mandatory,
             String[] optional) {
@@ -70,10 +80,18 @@ public class DNSTestUtils {
         return true;
     }
 
-    /*
-     * Process command line arguments and init env
+    /**
+     * Process command line arguments and init env.
+     * This method will prepare default environments which to be used to initial
+     * DirContext.
+     *
+     * @param localServer <tt>true</tt> if this test will run against with local
+     *                    server against dump message playback
+     * @param testname    test case name to identify playback file
+     * @param args        additional arguments for env preparation
+     * @return prepared env which will be used later to initial DirContext
      */
-    public static Hashtable<Object, Object> initEnv(DatagramSocket socket,
+    public static Hashtable<Object, Object> initEnv(boolean localServer,
             String testname, String[] args) {
 
         Hashtable<Object, Object> env = new Hashtable<>();
@@ -89,14 +107,12 @@ public class DNSTestUtils {
 
         boolean traceEnable = false;
         boolean loopPlayback = false;
-        for (int i = 0; i < args.length; i++) {
-            if ((args[i].equals("-D")) && (args.length > i + 1)) {
-                extractProperty(args[++i], env);
-            } else if (args[i].startsWith("-D")) {
-                extractProperty(args[i].substring(2), env);
-            } else if (args[i].equalsIgnoreCase("-trace")) {
+        for (String arg : args) {
+            if (arg.startsWith("-D")) {
+                extractProperty(arg.substring(2), env);
+            } else if (arg.equalsIgnoreCase("-trace")) {
                 traceEnable = true;
-            } else if (args[i].equalsIgnoreCase("-loop")) {
+            } else if (arg.equalsIgnoreCase("-loop")) {
                 loopPlayback = true;
             }
         }
@@ -111,23 +127,25 @@ public class DNSTestUtils {
             env.put(Context.PROVIDER_URL, url + "/" + env.get("DNS_DOMAIN"));
         }
 
-        Runnable inst = null;
+        Thread inst = null;
         if (traceEnable) {
-            inst = createDNSTracer(socket, testname, env);
+            // if trace is enabled, create DNSTracer to dump those message
+            inst = createDNSTracer(testname, env);
         } else {
-            if (socket != null) {
-                inst = createDNSServer(socket, testname, loopPlayback);
+            if (localServer) {
+                // if use local server, create local DNSServer for playback
+                inst = createDNSServer(testname, loopPlayback);
             } else {
                 // for tests which run against remote server
                 // or no server required
-                debug("Skip local DNS Server creation "
-                        + "since DatagramSocket is null");
+                debug("Skip local DNS Server creation ");
             }
         }
 
         if (inst != null) {
-            env.put(TEST_DNS_SERVER_THREAD, startServer(inst));
-            String url = "dns://localhost:" + socket.getLocalPort();
+            inst.start();
+            env.put(TEST_DNS_SERVER_THREAD, inst);
+            String url = "dns://localhost:" + ((Server) inst).getPort();
 
             env.put(TEST_DNS_ROOT_URL, url);
             env.put(Context.PROVIDER_URL, url + "/" + env.get("DNS_DOMAIN"));
@@ -136,8 +154,10 @@ public class DNSTestUtils {
         return env;
     }
 
-    /*
-     * Clean-up the directory context.
+    /**
+     * Clean-up the given directory context.
+     *
+     * @param ctx given context object
      */
     public static void cleanup(Context ctx) {
         if (ctx != null) {
@@ -162,17 +182,19 @@ public class DNSTestUtils {
         }
     }
 
-    public static DNSTracer createDNSTracer(DatagramSocket socket,
-            String testname, Hashtable<Object, Object> env) {
-        if (socket == null) {
-            throw new RuntimeException("Error: failed to create DNSTracer "
-                    + "since DatagramSocket is null");
-        }
-
+    /**
+     * Return new created DNS tracer.
+     *
+     * @param testname test case name to identify playback file
+     * @param env      given env for initialization
+     * @return created DNS tracer
+     * @see DNSTracer
+     */
+    public static DNSTracer createDNSTracer(String testname,
+            Hashtable<Object, Object> env) {
         try {
             PrintStream outStream = new PrintStream(getCaptureFile(testname));
-            return new DNSTracer(socket, outStream,
-                    (String) env.get("DNS_SERVER"),
+            return new DNSTracer(outStream, (String) env.get("DNS_SERVER"),
                     Integer.parseInt((String) env.get("DNS_PORT")));
         } catch (Exception e) {
             throw new RuntimeException(
@@ -180,16 +202,24 @@ public class DNSTestUtils {
         }
     }
 
-    public static DNSServer createDNSServer(DatagramSocket socket,
-            String testname, boolean loop) {
-        if (socket == null) {
-            throw new RuntimeException("Error: failed to create DNSServer "
-                    + "since DatagramSocket is null");
-        }
-
+    /**
+     * Return new created local DNS Server.
+     *
+     * @param testname test case name to identify playback file
+     * @param loop     <tt>true</tt> if DNS server required playback message in loop
+     * @return created local DNS Server
+     * @see DNSServer
+     */
+    public static DNSServer createDNSServer(String testname, boolean loop) {
         String path = getCaptureFile(testname);
         if (Files.exists(Paths.get(path))) {
-            return new DNSServer(socket, path, loop);
+            try {
+                return new DNSServer(path, loop);
+            } catch (Exception e) {
+                throw new RuntimeException(
+                        "Error: failed to create DNSServer : " + e.getMessage(),
+                        e);
+            }
         } else {
             throw new RuntimeException(
                     "Error: failed to create DNSServer, not found dns "
@@ -197,22 +227,32 @@ public class DNSTestUtils {
         }
     }
 
-    public static Thread startServer(Runnable runnable) {
-        Thread thread = new Thread(runnable);
-        thread.start();
-        return thread;
-    }
-
+    /**
+     * Return dns message capture file path.
+     *
+     * @param testname test case name to identify playback file
+     * @return capture file path
+     */
     public static String getCaptureFile(String testname) {
         return Paths.get(System.getProperty("test.src"))
                 .resolve(testname + ".dns").toString();
     }
 
+    /**
+     * Enable hosts file.
+     *
+     * @param hostsFile given hosts file
+     */
     public static void enableHostsFile(String hostsFile) {
         System.out.println("Enable jdk.net.hosts.file = " + hostsFile);
         System.setProperty("jdk.net.hosts.file", hostsFile);
     }
 
+    /**
+     * Enable hosts file by given searching depth.
+     *
+     * @param depth given depth for searching hosts file
+     */
     public static void enableHostsFile(int depth) {
         Path path = Paths.get(System.getProperty("test.src", "."))
                 .toAbsolutePath();
@@ -230,17 +270,58 @@ public class DNSTestUtils {
         }
     }
 
+    /**
+     * Print given object if debug enabled.
+     *
+     * @param object given object to print
+     */
     public static void debug(Object object) {
         if (debug) {
             System.out.println(object);
         }
     }
 
+    /**
+     * Verify attributes contains the mandatory attributes and the right
+     * objectclass attribute, will throw RuntimeException if verify failed.
+     *
+     * @param attrs     given attributes to verify
+     * @param mandatory given mandatory for verification
+     * @param optional  given optional for verification
+     */
     public static void verifySchema(Attributes attrs, String[] mandatory,
             String[] optional) {
         debug(attrs);
         if (!checkSchema(attrs, mandatory, optional)) {
             throw new RuntimeException("Check schema failed.");
         }
+    }
+
+    /**
+     * Return dns root url.
+     *
+     * @param env given env
+     * @return dns root url
+     */
+    public static String getRootUrl(Hashtable<Object, Object> env) {
+        return (String) env.get(TEST_DNS_ROOT_URL);
+    }
+
+    /**
+     * Assemble a fully-qualified domain name from the base component and the
+     * domain name.
+     *
+     * @param base    given base component
+     * @param env     given env
+     * @param primary <tt>true</tt> if primary domain
+     * @return assembled fully-qualified domain name
+     */
+    public static String buildFqdn(String base, Hashtable<Object, Object> env,
+            boolean primary) {
+        String domain = (String) (primary ?
+                env.get("DNS_DOMAIN") :
+                env.get("FOREIGN_DOMAIN"));
+
+        return base + "." + domain;
     }
 }

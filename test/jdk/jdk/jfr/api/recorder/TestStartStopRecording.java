@@ -34,10 +34,11 @@ import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
 import jdk.test.lib.Utils;
 
-/*
+/**
  * @test TestStartStopRecording
  *
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recorder.TestStartStopRecording
  */

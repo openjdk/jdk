@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4904075 4774450 5015144 8043698 8196201
+ * @bug      4904075 4774450 5015144 8043698 8196201 8203791
  * @summary  Reference unnamed package as "Unnamed", not empty string.
  *           Generate a package summary for the unnamed package.
  * @author   jamieh
@@ -71,12 +71,14 @@ public class TestUnnamedPackage extends JavadocTester {
                 + "<th class=\"colFirst\" scope=\"col\">Class</th>\n"
                 + "<th class=\"colLast\" scope=\"col\">Description</th>\n"
                 + "</tr>\n"
-                + "<tr id=\"i0\" class=\"altColor\">\n"
+                + "<tbody>\n"
+                + "<tr class=\"altColor\" id=\"i0\">\n"
                 + "<td class=\"colFirst\"><a href=\"C.html\" title=\"class in &lt;Unnamed&gt;\">C</a></td>\n"
                 + "<th class=\"colLast\" scope=\"row\">\n"
                 + "<div class=\"block\">This is a class in the unnamed package.</div>\n"
                 + "</th>\n"
                 + "</tr>\n"
+                + "</tbody>\n"
                 + "</table>");
 
         checkOutput("allpackages-index.html", true,

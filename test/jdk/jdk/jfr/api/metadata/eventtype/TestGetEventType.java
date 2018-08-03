@@ -29,10 +29,11 @@ import jdk.jfr.Event;
 import jdk.jfr.EventType;
 import jdk.test.lib.Asserts;
 
-/*
+/**
  * @test
  * @summary Test getEventType()
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.metadata.eventtype.TestGetEventType
  */

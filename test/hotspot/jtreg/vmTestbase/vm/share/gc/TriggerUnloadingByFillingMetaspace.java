@@ -39,7 +39,13 @@ public class TriggerUnloadingByFillingMetaspace implements
     private static class FillMetaspace {
         private volatile boolean gotOOME = false;
         private ExecutionController stresser;
-        private GeneratedClassProducer generatedClassProducer = new GeneratedClassProducer("metaspace.stressHierarchy.common.HumongousClass");
+        private final ThreadLocal<GeneratedClassProducer> generatedClassProducer =
+            new ThreadLocal<GeneratedClassProducer>() {
+              @Override
+              protected GeneratedClassProducer initialValue() {
+                return new GeneratedClassProducer("metaspace.stressHierarchy.common.HumongousClass");
+              }
+            };
 
         public FillMetaspace(ExecutionController stresser) { this.stresser = stresser; }
 
@@ -48,7 +54,7 @@ public class TriggerUnloadingByFillingMetaspace implements
             public Object call() throws Exception {
                 while (stresser.continueExecution() && ! gotOOME) {
                     try {
-                        generatedClassProducer.create(-100500); //argument is not used.
+                        generatedClassProducer.get().create(-100500); //argument is not used.
                     } catch (OutOfMemoryError oome) {
                         if (!isInMetaspace(oome)) {
                             throw new GotWrongOOMEException("Got OOME in heap while gaining OOME in metaspace. Test result can't be valid.");

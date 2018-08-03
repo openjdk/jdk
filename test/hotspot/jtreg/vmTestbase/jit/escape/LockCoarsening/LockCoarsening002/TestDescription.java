@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase jit/escape/LockCoarsening/LockCoarsening002.
  * VM Testbase keywords: [jit, quick, quarantine]
- * VM Testbase comments: JDK-8079666
+ * VM Testbase comments: 8208259
  *
  * @library /vmTestbase
  *          /test/lib

@@ -47,10 +47,11 @@ import jdk.jfr.consumer.RecordedThread;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @summary Verifies the methods of the RecordedObject
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.consumer.TestRecordedObject
  */

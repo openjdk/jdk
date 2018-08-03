@@ -29,9 +29,10 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  *
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ createJavaFile()
 public class $classname {
     public static void main(String[] args) {
         java.util.List<Object> l = java.util.Arrays.asList(null, "a");
-        System.out.println("java.util.Arrays.asList(null, \"a\") returns: " + l);
+        System.out.println("java.util.Arrays.asList(null, \\"a\\") returns: " + l);
         return;    // @1 breakpoint
     }
 }

@@ -31,6 +31,7 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLProtocolException;
 
 /**
  * SSL/(D)TLS Alter description
@@ -121,8 +122,11 @@ enum Alert {
             reason = (cause != null) ? cause.getMessage() : "";
         }
 
-        SSLException ssle = handshakeOnly ?
-                new SSLHandshakeException(reason) : new SSLException(reason);
+        SSLException ssle = (this == UNEXPECTED_MESSAGE) ?
+                new SSLProtocolException(reason) :
+                (handshakeOnly ?
+                        new SSLHandshakeException(reason) :
+                        new SSLException(reason));
         if (cause != null) {
             ssle.initCause(cause);
         }

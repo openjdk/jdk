@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,6 +190,7 @@ void SymbolTable::rehash_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   // This should never happen with -Xshare:dump but it might in testing mode.
   if (DumpSharedSpaces) return;
+
   // Create a new symbol table
   SymbolTable* new_table = new SymbolTable();
 
@@ -212,10 +213,16 @@ Symbol* SymbolTable::lookup_dynamic(int index, const char* name,
     count++;  // count all entries in this bucket, not just ones with same hash
     if (e->hash() == hash) {
       Symbol* sym = e->literal();
-      if (sym->equals(name, len)) {
-        // something is referencing this symbol now.
-        sym->increment_refcount();
-        return sym;
+      // Skip checking already dead symbols in the bucket.
+      if (sym->refcount() == 0) {
+        count--;   // Don't count this symbol towards rehashing.
+      } else if (sym->equals(name, len)) {
+        if (sym->try_increment_refcount()) {
+          // something is referencing this symbol now.
+          return sym;
+        } else {
+          count--;   // don't count this symbol.
+        }
       }
     }
   }

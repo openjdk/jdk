@@ -46,6 +46,7 @@ import java.util.concurrent.CountDownLatch;
  * @summary This test runs JFR with a javaagent that reads/writes files and
  * sockets during every class definition. This is to verify that the i/o
  * instrumentation in JFR does not interfere with javaagents.
+ * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
  * @modules java.instrument

@@ -41,9 +41,10 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.lib.thread.TestThread;
 import jdk.test.lib.thread.XRun;
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.event.io.TestSocketChannelEvents
  */

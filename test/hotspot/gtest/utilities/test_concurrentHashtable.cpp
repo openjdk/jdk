@@ -29,7 +29,7 @@
 #include "runtime/vm_operations.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
 #include "utilities/concurrentHashTableTasks.inline.hpp"
-#include "utilitiesHelper.inline.hpp"
+#include "threadHelper.inline.hpp"
 #include "unittest.hpp"
 
 // NOTE: On win32 gtest asserts are not mt-safe.

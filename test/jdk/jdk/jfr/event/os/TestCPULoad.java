@@ -33,9 +33,10 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 
-/*
+/**
  * @test
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.os.TestCPULoad
  */

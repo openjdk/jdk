@@ -49,7 +49,7 @@
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
- * @requires vm.opt.DeoptimizeALot == null | vm.opt.DeoptimizeALot == false
+ * @requires vm.opt.DeoptimizeALot != true
  * @run main/othervm nsk.stress.stack.stack014
  */
 

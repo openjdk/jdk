@@ -22,14 +22,14 @@
  *
  */
 
-/*
+/**
  * @test
  * @bug 8145221
  * @summary After creating an AppCDS archive, run the test with the JFR profiler
  *          enabled, and keep calling a method in the archive in a tight loop.
  *          This is to test the safe handling of trampoline functions by the
  *          profiler.
- * @requires vm.cds
+ * @requires vm.hasJFR & vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  *          java.management

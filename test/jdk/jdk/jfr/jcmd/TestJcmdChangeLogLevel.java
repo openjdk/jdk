@@ -35,10 +35,11 @@ import java.util.List;
 import jdk.test.lib.dcmd.JcmdExecutor;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 
-/*
+/**
  * @test TestJcmdLogLevelChange
  * @key jfr
  * @summary Test changing log level
+ * @requires vm.hasJFR
  *
  * @library /test/lib /test/jdk
  *

@@ -27,10 +27,11 @@ package jdk.jfr.event.runtime;
 
 import java.util.concurrent.TimeUnit;
 
-/*
+/**
  * @test
  * @key jfr
  * @bug 8013122
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.runtime.TestExceptionSubclass
  */

@@ -25,6 +25,7 @@ package nsk.jdi.AttachingConnector.attach.attach004;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
+import jtreg.SkippedException;
 import nsk.share.jdi.ArgumentHandler;
 
 import java.io.BufferedReader;
@@ -63,23 +64,23 @@ public class TestDriver {
                 "-arch=" + arch
         };
 
-        if (isTransportSupported(jdiArgs)) {
-            System.out.println("Transport is supported on this platform, execute test");
-            String suspend = args[2];
-            Process debuggee = startDebuggee(jdiArgs, transport, suspend);
-            Process debugger = startDebugger(jdiArgs, Arrays.copyOfRange(args, 3, args.length), debuggee.pid());
+        if (!isTransportSupported(jdiArgs)) {
+            throw new SkippedException("Transport isn't supported on this platform");
+        }
 
-            int debuggerExit = debugger.waitFor();
-            if (debuggerExit != 95) {
-                throw new Error("debugger exit code is " + debuggerExit);
-            }
+        System.out.println("Transport is supported on this platform, execute test");
+        String suspend = args[2];
+        Process debuggee = startDebuggee(jdiArgs, transport, suspend);
+        Process debugger = startDebugger(jdiArgs, Arrays.copyOfRange(args, 3, args.length), debuggee.pid());
 
-            int debuggeeExit = debuggee.waitFor();
-            if (debuggeeExit != 95) {
-                throw new Error("debuggee exit code is " + debuggeeExit);
-            }
-        } else {
-            System.out.println("SKIPPED: Transport isn't supported on this platform, treat test as passed");
+        int debuggerExit = debugger.waitFor();
+        if (debuggerExit != 95) {
+            throw new Error("debugger exit code is " + debuggerExit);
+        }
+
+        int debuggeeExit = debuggee.waitFor();
+        if (debuggeeExit != 95) {
+            throw new Error("debuggee exit code is " + debuggeeExit);
         }
     }
 

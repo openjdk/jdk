@@ -28,54 +28,33 @@
  *          qualifiers.
  * @modules java.base/sun.security.util
  * @library ../lib/
- * @build DNSTestUtils DNSServer DNSTracer
  * @run main GetAny
  */
 
 import javax.naming.directory.Attributes;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.util.Hashtable;
 
-public class GetAny {
-    private static final String KEY = "host1";
+public class GetAny extends GetAttrsBase {
 
-    private static final String[] MANDATORY = { "A", "MX", "HINFO", "TXT", "29"
-            // "LOC"
-    };
+    public static void main(String[] args) throws Exception {
+        new GetAny().run(args);
+    }
 
-    private static final String[] OPTIONAL = {};
+    @Override public Attributes getAttributes() {
+        return null;
+    }
 
-    public static void main(String argv[]) throws Exception {
-        // Create socket on localhost only to avoid possible noise packet
-        DatagramSocket socket = new DatagramSocket(0,
-                InetAddress.getLoopbackAddress());
+    @Override public void runTest() throws Exception {
+        initContext();
 
-        // initialize test
-        Hashtable<Object, Object> env;
+        // Any type from IN class
+        Attributes retAttrs = context()
+                .getAttributes(getKey(), new String[] { "*" });
+        verifyAttributes(retAttrs);
 
-        env = DNSTestUtils.initEnv(socket, GetAny.class.getName(), argv);
+        retAttrs = context().getAttributes(getKey(), new String[] { "* *" });
+        verifyAttributes(retAttrs);
 
-        DirContext ctx = null;
-
-        try {
-            // connect to server
-            ctx = new InitialDirContext(env);
-
-            // Any type from IN class
-            Attributes retAttrs = ctx.getAttributes(KEY, new String[] { "*" });
-            DNSTestUtils.verifySchema(retAttrs, MANDATORY, OPTIONAL);
-
-            retAttrs = ctx.getAttributes(KEY, new String[] { "* *" });
-            DNSTestUtils.verifySchema(retAttrs, MANDATORY, OPTIONAL);
-
-            retAttrs = ctx.getAttributes(KEY, new String[] { "IN *" });
-            DNSTestUtils.verifySchema(retAttrs, MANDATORY, OPTIONAL);
-
-        } finally {
-            DNSTestUtils.cleanup(ctx);
-        }
+        retAttrs = context().getAttributes(getKey(), new String[] { "IN *" });
+        verifyAttributes(retAttrs);
     }
 }

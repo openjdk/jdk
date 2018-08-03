@@ -34,10 +34,11 @@ import jdk.test.lib.jfr.Events;
 
 import static jdk.test.lib.Asserts.assertEquals;
 
-/*
+/**
  * @test
  * @summary The test uses SettingControl
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.api.settings.TestFilterEvents
  */

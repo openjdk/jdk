@@ -31,10 +31,11 @@ import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.test.lib.jfr.CommonHelper;
 
-/*
+/**
  * @test
  * @summary Test Recording state
  * @key jfr
+ * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.api.recording.state.TestState
  */

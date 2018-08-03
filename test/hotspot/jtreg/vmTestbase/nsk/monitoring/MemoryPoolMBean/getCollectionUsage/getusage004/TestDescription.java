@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/monitoring/MemoryPoolMBean/getCollectionUsage/getusage004.
  * VM Testbase keywords: [quick, monitoring, quarantine]
- * VM Testbase comments: JDK-8016181
+ * VM Testbase comments: 8016181
  * VM Testbase readme:
  * DESCRIPTION
  *     The test checks that

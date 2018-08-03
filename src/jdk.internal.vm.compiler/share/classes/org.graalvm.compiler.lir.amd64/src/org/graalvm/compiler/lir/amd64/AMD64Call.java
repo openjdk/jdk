@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,13 @@
 
 package org.graalvm.compiler.lir.amd64;
 
+import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static jdk.vm.ci.code.ValueUtil.isRegister;
+import static org.graalvm.compiler.core.common.GraalOptions.GeneratePIC;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import static org.graalvm.compiler.lir.LIRValueUtil.differentRegisters;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
-import static jdk.vm.ci.code.ValueUtil.isRegister;
 
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
@@ -195,7 +196,7 @@ public class AMD64Call {
         }
         int before = masm.position();
         int callPCOffset;
-        if (scratch != null) {
+        if (scratch != null && !GeneratePIC.getValue(crb.getOptions())) {
             // offset might not fit a 32-bit immediate, generate an
             // indirect call with a 64-bit immediate
             masm.movq(scratch, 0L);
@@ -222,12 +223,27 @@ public class AMD64Call {
         }
     }
 
-    public static void directJmp(CompilationResultBuilder crb, AMD64MacroAssembler masm, InvokeTarget target) {
+    public static int directJmp(CompilationResultBuilder crb, AMD64MacroAssembler masm, InvokeTarget target) {
+        return directJmp(crb, masm, target, null);
+    }
+
+    public static int directJmp(CompilationResultBuilder crb, AMD64MacroAssembler masm, InvokeTarget target, Register scratch) {
         int before = masm.position();
-        masm.jmp(0, true);
+        int callPCOffset;
+        if (scratch != null && !GeneratePIC.getValue(crb.getOptions())) {
+            // offset might not fit a 32-bit immediate, generate an
+            // indirect call with a 64-bit immediate
+            masm.movq(scratch, 0L);
+            callPCOffset = masm.position();
+            masm.jmp(scratch);
+        } else {
+            callPCOffset = masm.position();
+            masm.jmp(0, true);
+        }
         int after = masm.position();
         crb.recordDirectCall(before, after, target, null);
         masm.ensureUniquePC();
+        return callPCOffset;
     }
 
     public static void directConditionalJmp(CompilationResultBuilder crb, AMD64MacroAssembler masm, InvokeTarget target, ConditionFlag cond) {

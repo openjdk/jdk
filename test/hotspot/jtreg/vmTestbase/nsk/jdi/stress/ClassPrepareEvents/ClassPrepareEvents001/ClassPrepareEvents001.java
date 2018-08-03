@@ -27,7 +27,7 @@
  *
  * @summary converted from VM Testbase nsk/jdi/stress/ClassPrepareEvents/ClassPrepareEvents001.
  * VM Testbase keywords: [stress, quick, jpda, jdi, feature_jdk6_jpda, vm6, quarantine]
- * VM Testbase comments: JDK-6426321
+ * VM Testbase comments: 6426321
  * VM Testbase readme:
  * DESCRIPTION
  *         Test covers bug 6426321. Test stress event queue forcing loading of 3000 classes in debuggee.

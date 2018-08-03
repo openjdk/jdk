@@ -42,10 +42,11 @@ import jdk.management.jfr.SettingDescriptorInfo;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.Events;
 
-/*
+/**
  * @test
  * @key jfr
  * @summary Verifies that EventTypes from jmx and FlightRecorder are the same.
+ * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.jmx.TestEventTypes
  */
