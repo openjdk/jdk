@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,7 +673,12 @@ final class CipherCore {
             if (len == output.length) {
                 return output;
             } else {
-                return Arrays.copyOf(output, len);
+                byte[] copy = Arrays.copyOf(output, len);
+                if (decrypting) {
+                    // Zero out internal buffer which is no longer required
+                    Arrays.fill(output, (byte) 0x00);
+                }
+                return copy;
             }
         } catch (ShortBufferException e) {
             // should never happen
@@ -767,11 +772,14 @@ final class CipherCore {
                         inputLen -= temp;
                         buffered = Math.addExact(buffered, temp);
                     }
-                    // process 'buffer'
+                    // process 'buffer'. When finished we can null out 'buffer'
+                    // Only necessary to null out if buffer holds data for encryption
                     if (decrypting) {
                          outLen = cipher.decrypt(buffer, 0, buffered, output, outputOffset);
                     } else {
                          outLen = cipher.encrypt(buffer, 0, buffered, output, outputOffset);
+                         //encrypt mode. Zero out internal (input) buffer
+                         Arrays.fill(buffer, (byte) 0x00);
                     }
                     outputOffset = Math.addExact(outputOffset, outLen);
                     buffered = 0;
@@ -846,7 +854,12 @@ final class CipherCore {
             output = new byte[getOutputSizeByOperation(inputLen, true)];
             int len = doFinal(input, inputOffset, inputLen, output, 0);
             if (len < output.length) {
-                return Arrays.copyOf(output, len);
+                byte[] copy = Arrays.copyOf(output, len);
+                if (decrypting) {
+                    // Zero out internal (ouput) array
+                    Arrays.fill(output, (byte) 0x00);
+                }
+                return copy;
             } else {
                 return output;
             }
@@ -959,6 +972,11 @@ final class CipherCore {
             finalOffset = 0;
             if (buffered != 0) {
                 System.arraycopy(buffer, 0, finalBuf, 0, buffered);
+                if (!decrypting) {
+                    // done with input buffer. We should zero out the
+                    // data if we're in encrypt mode.
+                    Arrays.fill(buffer, (byte) 0x00);
+                }
             }
             if (inputLen != 0) {
                 System.arraycopy(input, inputOffset, finalBuf,
@@ -1005,6 +1023,8 @@ final class CipherCore {
             }
             // copy the result into user-supplied output buffer
             System.arraycopy(outWithPadding, 0, output, outputOffset, outLen);
+            // decrypt mode. Zero out output data that's not required
+            Arrays.fill(outWithPadding, (byte) 0x00);
         } else { // encrypting
             try {
                 outLen = finalNoPadding(finalBuf, finalOffset, output,
@@ -1012,6 +1032,10 @@ final class CipherCore {
             } finally {
                 // reset after doFinal() for GCM encryption
                 requireReinit = (cipherMode == GCM_MODE);
+                if (finalBuf != input) {
+                    // done with internal finalBuf array. Copied to output
+                    Arrays.fill(finalBuf, (byte) 0x00);
+                }
             }
         }
 
