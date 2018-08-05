@@ -233,7 +233,7 @@ public final class ModuleInfo {
         Set<String> allPackages = null;
         String mainClass = null;
         ModuleTarget moduleTarget = null;
-        ModuleHashes moduelHashes = null;
+        ModuleHashes moduleHashes = null;
         ModuleResolution moduleResolution = null;
 
         for (int i = 0; i < attributes_count ; i++) {
@@ -267,7 +267,7 @@ public final class ModuleInfo {
 
                 case MODULE_HASHES :
                     if (parseHashes) {
-                        moduelHashes = readModuleHashesAttribute(in, cpool);
+                        moduleHashes = readModuleHashesAttribute(in, cpool);
                     } else {
                         in.skipBytes(length);
                     }
@@ -331,7 +331,7 @@ public final class ModuleInfo {
         ModuleDescriptor descriptor = builder.build();
         return new Attributes(descriptor,
                               moduleTarget,
-                              moduelHashes,
+                              moduleHashes,
                               moduleResolution);
     }
 
