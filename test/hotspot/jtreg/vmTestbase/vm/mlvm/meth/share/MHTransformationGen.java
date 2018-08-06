@@ -47,7 +47,6 @@ import vm.mlvm.meth.share.transform.v2.MHMacroTF;
 import vm.mlvm.meth.share.transform.v2.MHOutboundCallTF;
 import vm.mlvm.meth.share.transform.v2.MHOutboundVirtualCallTF;
 import vm.mlvm.meth.share.transform.v2.MHPermuteTF;
-import vm.mlvm.meth.share.transform.v2.MHSamTF;
 import vm.mlvm.meth.share.transform.v2.MHTF;
 import vm.mlvm.meth.share.transform.v2.MHTFPair;
 import vm.mlvm.meth.share.transform.v2.MHThrowCatchTFPair;
@@ -62,7 +61,6 @@ public class MHTransformationGen {
 
     private static final boolean FILTER_OUT_KNOWN_BUGS = false;
 
-    private static final boolean USE_SAM = false; // Disabled in JDK7
     private static final boolean USE_THROW_CATCH = false; // Test bugs
 
     public static class ThrowCatchTestException extends Throwable {
@@ -104,7 +102,7 @@ public class MHTransformationGen {
             MHTF tf = null;
             MHTFPair tfPair = null;
 
-            int nextCase = nextInt(12);
+            int nextCase = nextInt(11);
 
             Env.traceDebug("Adding case #" + nextCase);
             try {
@@ -339,15 +337,7 @@ public class MHTransformationGen {
                     }
                     break;
 
-                    case 9: { // SAM
-                        if ( ! USE_SAM )
-                            break;
-
-                        tf = new MHSamTF(lastCall);
-                    }
-                    break;
-
-                    case 10: { // Envelope argument into array
+                    case 9: { // Envelope argument into array
                         if ( lastArgs.length >= 0 )
                             break;
 
@@ -358,7 +348,7 @@ public class MHTransformationGen {
                     }
                     break;
 
-                    case 11: { // Collect + spread
+                    case 10: { // Collect + spread
                         if ( nextInt(1) == 0 )
                             tf = new MHCollectSpreadTF(lastCall);
                         else
