@@ -194,7 +194,8 @@ class Direct$Type$Buffer$RW$$BO$
 #if[byte]
         cleaner = null;
 #end[byte]
-        att = db;
+        Object attachment = db.attachment();
+        att = (attachment == null ? db : attachment);
 #else[rw]
         super(db, mark, pos, lim, cap, off);
         this.isReadOnly = true;
