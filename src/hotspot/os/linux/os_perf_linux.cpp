@@ -1107,7 +1107,7 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
 
   NetworkInterface* ret = NULL;
   for (cur_address = addresses; cur_address != NULL; cur_address = cur_address->ifa_next) {
-    if (cur_address->ifa_addr->sa_family != AF_PACKET) {
+    if ((cur_address->ifa_addr == NULL) || (cur_address->ifa_addr->sa_family != AF_PACKET)) {
       continue;
     }
 
@@ -1118,6 +1118,7 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
     ret = cur;
   }
 
+  freeifaddrs(addresses);
   *network_interfaces = ret;
 
   return OS_OK;

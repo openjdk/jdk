@@ -816,6 +816,7 @@ int NetworkPerformanceInterface::NetworkPerformance::network_utilization(Network
     }
   }
 
+  kstat_close(ctl);
   *network_interfaces = ret;
 
   return OS_OK;
