@@ -27,9 +27,6 @@
 #
 #############################################################################
 
-compiler/c2/cr7200264/TestSSE2IntVect.java                      8194958   generic-all
-compiler/c2/cr7200264/TestSSE4IntVect.java                      8194958   generic-all
-
 compiler/ciReplay/TestServerVM.java                             8181747   generic-all
 compiler/ciReplay/TestVMNoCompLevel.java                        8181747   generic-all
 
