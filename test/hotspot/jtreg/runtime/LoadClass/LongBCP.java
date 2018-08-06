@@ -32,6 +32,9 @@
  * @run main LongBCP
  */
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.FileStore;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -85,8 +88,15 @@ public class LongBCP {
         // We currently cannot handle relative path specified in the
         // -Xbootclasspath/a on windows.
         //
-        // relative path length within the 256 limit
-        char[] chars = new char[255];
+        // relative path length within the file system limit
+        int fn_max_length = 255;
+        // In AUFS file system, the maximal file name length is 242
+        FileStore store = Files.getFileStore(new File(".").toPath());
+        String fs_type = store.type();
+        if ("aufs".equals(fs_type)) {
+            fn_max_length = 242;
+        }
+        char[] chars = new char[fn_max_length];
         Arrays.fill(chars, 'y');
         String subPath = new String(chars);
         destDir = Paths.get(".", subPath);
