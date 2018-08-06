@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public interface DSAPublicKey extends DSAKey, java.security.PublicKey {
     * serialization compatibility with a previous
     * version of the class.
     */
+    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
     static final long serialVersionUID = 1234526332779022332L;
 
     /**

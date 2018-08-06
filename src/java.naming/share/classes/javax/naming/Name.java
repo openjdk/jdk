@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public interface Name
     * serialization compatibility with a previous
     * version of the class.
     */
+    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
     static final long serialVersionUID = -3617482732056931635L;
 
     /**

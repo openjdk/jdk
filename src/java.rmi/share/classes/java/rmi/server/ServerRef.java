@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.rmi.*;
 public interface ServerRef extends RemoteRef {
 
     /** indicate compatibility with JDK 1.1.x version of class. */
+    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
     static final long serialVersionUID = -4557750989390278438L;
 
     /**
