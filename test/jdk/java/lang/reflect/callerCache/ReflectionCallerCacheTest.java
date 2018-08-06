@@ -25,8 +25,9 @@
  * @test
  * @bug 8202113
  * @summary Test the caller class loader is not kept strongly reachable
-  *         by reflection API
+ *         by reflection API
  * @library /test/lib/
+ * @modules jdk.compiler
  * @build ReflectionCallerCacheTest Members jdk.test.lib.compiler.CompilerUtils
  * @run testng/othervm ReflectionCallerCacheTest
  */
