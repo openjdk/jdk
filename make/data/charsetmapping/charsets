@@ -1241,6 +1241,16 @@ charset x-IBM1124 IBM1124
     alias   ibm-1124
     alias   1124
 
+charset x-IBM1129 IBM1129
+    package sun.nio.cs.ext
+    type    sbcs
+    hisname Cp1129
+    ascii   false
+    alias   cp1129               # JDK historical
+    alias   ibm1129
+    alias   ibm-1129
+    alias   1129
+
 charset x-IBM1364 IBM1364
     package sun.nio.cs.ext
     type    ebcdic
