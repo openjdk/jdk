@@ -24,13 +24,12 @@
 
 /*
  * @test MultiReleaseJars
- * @bug 8170105
  * @summary Test multi-release jar with AppCDS.
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
- * @run main/othervm MultiReleaseJars
+ * @run main/othervm/timeout=2400 MultiReleaseJars
  */
 
 import java.io.File;
@@ -156,7 +155,6 @@ public class MultiReleaseJars {
         String appClasses[]       = {"version/Main", "version/Version"};
         String appJar             = TestCommon.getTestJar("version.jar");
         String appJar2            = TestCommon.getTestJar("version2.jar");
-        String verboseMode        = "-verbose:class";
         String enableMultiRelease = "-Djdk.util.jar.enableMultiRelease=true";
         String jarVersion         = null;
         String expectedOutput     = null;
@@ -168,7 +166,7 @@ public class MultiReleaseJars {
         output.shouldContain("Loading classes to share: done.");
         output.shouldHaveExitValue(0);
 
-        output = TestCommon.exec(appJar, verboseMode, mainClass);
+        output = TestCommon.exec(appJar, mainClass);
         checkExecOutput(output, "I am running on version " + MAJOR_VERSION_STRING);
 
         // 2. Test versions 7 and the current major version.
@@ -183,7 +181,7 @@ public class MultiReleaseJars {
             output.shouldContain("Loading classes to share: done.");
             output.shouldHaveExitValue(0);
 
-            output = TestCommon.exec(appJar, verboseMode, mainClass);
+            output = TestCommon.exec(appJar, mainClass);
             checkExecOutput(output, expectedOutput);
         }
 
@@ -197,7 +195,7 @@ public class MultiReleaseJars {
             // jdk corelib which doesn't emit the following warning message.
             //output.shouldContain("JDK" + i + " is not supported in multiple version jars");
 
-            output = TestCommon.exec(appJar, verboseMode, mainClass);
+            output = TestCommon.exec(appJar, mainClass);
             if (i == 5)
                 checkExecOutput(output, "I am running on version 7");
             else
@@ -212,7 +210,7 @@ public class MultiReleaseJars {
             output = TestCommon.dump(appJar, appClasses, "-Djdk.util.jar.enableMultiRelease=false", jarVersion);
             output.shouldHaveExitValue(0);
 
-            output = TestCommon.exec(appJar, verboseMode, mainClass);
+            output = TestCommon.exec(appJar, mainClass);
             expectedOutput = "I am running on version 7";
             checkExecOutput(output, expectedOutput);
         }
@@ -224,7 +222,7 @@ public class MultiReleaseJars {
         output.shouldContain("Loading classes to share: done.");
         output.shouldHaveExitValue(0);
 
-        output = TestCommon.exec(appJar, "-Xbootclasspath/a:" + appJar, verboseMode, mainClass);
+        output = TestCommon.exec(appJar, "-Xbootclasspath/a:" + appJar, mainClass);
         checkExecOutput(output, "I am running on version 7");
 
         // 6. Sanity test case-insensitive "Multi-Release" attribute name
@@ -232,7 +230,7 @@ public class MultiReleaseJars {
         output.shouldContain("Loading classes to share: done.");
         output.shouldHaveExitValue(0);
 
-        output = TestCommon.exec(appJar2, verboseMode, mainClass);
+        output = TestCommon.exec(appJar2, mainClass);
         checkExecOutput(output, "I am running on version " + MAJOR_VERSION_STRING);
     }
 }
