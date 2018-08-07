@@ -102,7 +102,7 @@ public class ModuleDescriptor
      * @since 9
      * @spec JPMS
      */
-    public static enum Modifier {
+    public enum Modifier {
         /**
          * An open module. An open module does not declare any open packages
          * but the resulting module is treated as if all packages are open.
@@ -149,7 +149,7 @@ public class ModuleDescriptor
          * @since 9
          * @spec JPMS
          */
-        public static enum Modifier {
+        public enum Modifier {
 
             /**
              * The dependence causes any module which depends on the <i>current
@@ -185,12 +185,7 @@ public class ModuleDescriptor
 
         private Requires(Set<Modifier> ms, String mn, Version v, String vs) {
             assert v == null || vs == null;
-            if (ms.isEmpty()) {
-                ms = Collections.emptySet();
-            } else {
-                ms = Collections.unmodifiableSet(EnumSet.copyOf(ms));
-            }
-            this.mods = ms;
+            this.mods = Set.copyOf(ms);
             this.name = mn;
             this.compiledVersion = v;
             this.rawCompiledVersion = vs;
@@ -384,7 +379,7 @@ public class ModuleDescriptor
          * @since 9
          * @spec JPMS
          */
-        public static enum Modifier {
+        public enum Modifier {
 
             /**
              * The export was not explicitly or implicitly declared in the
@@ -408,14 +403,9 @@ public class ModuleDescriptor
          * Constructs an export
          */
         private Exports(Set<Modifier> ms, String source, Set<String> targets) {
-            if (ms.isEmpty()) {
-                ms = Collections.emptySet();
-            } else {
-                ms = Collections.unmodifiableSet(EnumSet.copyOf(ms));
-            }
-            this.mods = ms;
+            this.mods = Set.copyOf(ms);
             this.source = source;
-            this.targets = emptyOrUnmodifiableSet(targets);
+            this.targets = Set.copyOf(targets);
         }
 
         private Exports(Set<Modifier> ms,
@@ -596,7 +586,7 @@ public class ModuleDescriptor
          * @since 9
          * @spec JPMS
          */
-        public static enum Modifier {
+        public enum Modifier {
 
             /**
              * The open package was not explicitly or implicitly declared in
@@ -620,14 +610,9 @@ public class ModuleDescriptor
          * Constructs an Opens
          */
         private Opens(Set<Modifier> ms, String source, Set<String> targets) {
-            if (ms.isEmpty()) {
-                ms = Collections.emptySet();
-            } else {
-                ms = Collections.unmodifiableSet(EnumSet.copyOf(ms));
-            }
-            this.mods = ms;
+            this.mods = Set.copyOf(ms);
             this.source = source;
-            this.targets = emptyOrUnmodifiableSet(targets);
+            this.targets = Set.copyOf(targets);
         }
 
         private Opens(Set<Modifier> ms,
@@ -800,7 +785,7 @@ public class ModuleDescriptor
 
         private Provides(String service, List<String> providers) {
             this.service = service;
-            this.providers = Collections.unmodifiableList(providers);
+            this.providers = List.copyOf(providers);
         }
 
         private Provides(String service, List<String> providers, boolean unused) {
@@ -1264,18 +1249,18 @@ public class ModuleDescriptor
         this.name = name;
         this.version = version;
         this.rawVersionString = rawVersionString;
-        this.modifiers = emptyOrUnmodifiableSet(modifiers);
+        this.modifiers = Set.copyOf(modifiers);
         this.open = modifiers.contains(Modifier.OPEN);
         this.automatic = modifiers.contains(Modifier.AUTOMATIC);
         assert (requires.stream().map(Requires::name).distinct().count()
                 == requires.size());
-        this.requires = emptyOrUnmodifiableSet(requires);
-        this.exports = emptyOrUnmodifiableSet(exports);
-        this.opens = emptyOrUnmodifiableSet(opens);
-        this.uses = emptyOrUnmodifiableSet(uses);
-        this.provides = emptyOrUnmodifiableSet(provides);
+        this.requires = Set.copyOf(requires);
+        this.exports = Set.copyOf(exports);
+        this.opens = Set.copyOf(opens);
+        this.uses = Set.copyOf(uses);
+        this.provides = Set.copyOf(provides);
 
-        this.packages = emptyOrUnmodifiableSet(packages);
+        this.packages = Set.copyOf(packages);
         this.mainClass = mainClass;
     }
 
@@ -1734,16 +1719,14 @@ public class ModuleDescriptor
                                String pn,
                                Set<String> targets)
         {
-            Exports e = new Exports(ms, pn, targets);
-
-            // check targets
-            targets = e.targets();
+            targets = new HashSet<>(targets);
             if (targets.isEmpty())
                 throw new IllegalArgumentException("Empty target set");
             if (strict) {
-                requirePackageName(e.source());
+                requirePackageName(pn);
                 targets.forEach(Checks::requireModuleName);
             }
+            Exports e = new Exports(ms, pn, targets);
             return exports(e);
         }
 
@@ -1769,7 +1752,7 @@ public class ModuleDescriptor
             if (strict) {
                 requirePackageName(pn);
             }
-            Exports e = new Exports(ms, pn, Collections.emptySet());
+            Exports e = new Exports(ms, pn, Set.of());
             return exports(e);
         }
 
@@ -1794,7 +1777,7 @@ public class ModuleDescriptor
          *         or this builder is for an automatic module
          */
         public Builder exports(String pn, Set<String> targets) {
-            return exports(Collections.emptySet(), pn, targets);
+            return exports(Set.of(), pn, targets);
         }
 
         /**
@@ -1813,7 +1796,7 @@ public class ModuleDescriptor
          *         or this builder is for an automatic module
          */
         public Builder exports(String pn) {
-            return exports(Collections.emptySet(), pn);
+            return exports(Set.of(), pn);
         }
 
         /**
@@ -1870,16 +1853,14 @@ public class ModuleDescriptor
                              String pn,
                              Set<String> targets)
         {
-            Opens opens = new Opens(ms, pn, targets);
-
-            // check targets
-            targets = opens.targets();
+            targets = new HashSet<>(targets);
             if (targets.isEmpty())
                 throw new IllegalArgumentException("Empty target set");
             if (strict) {
-                requirePackageName(opens.source());
+                requirePackageName(pn);
                 targets.forEach(Checks::requireModuleName);
             }
+            Opens opens = new Opens(ms, pn, targets);
             return opens(opens);
         }
 
@@ -1905,7 +1886,7 @@ public class ModuleDescriptor
             if (strict) {
                 requirePackageName(pn);
             }
-            Opens e = new Opens(ms, pn, Collections.emptySet());
+            Opens e = new Opens(ms, pn, Set.of());
             return opens(e);
         }
 
@@ -1929,7 +1910,7 @@ public class ModuleDescriptor
          *         builder for an open module or automatic module
          */
         public Builder opens(String pn, Set<String> targets) {
-            return opens(Collections.emptySet(), pn, targets);
+            return opens(Set.of(), pn, targets);
         }
 
         /**
@@ -1948,7 +1929,7 @@ public class ModuleDescriptor
          *         builder for an open module or automatic module
          */
         public Builder opens(String pn) {
-            return opens(Collections.emptySet(), pn);
+            return opens(Set.of(), pn);
         }
 
         /**
@@ -2021,15 +2002,12 @@ public class ModuleDescriptor
          *         declared
          */
         public Builder provides(String service, List<String> providers) {
-            Provides p = new Provides(service, providers);
-
-            // check providers after the set has been copied.
-            List<String> providerNames = p.providers();
-            if (providerNames.isEmpty())
+            providers = new ArrayList<>(providers);
+            if (providers.isEmpty())
                 throw new IllegalArgumentException("Empty providers set");
             if (strict) {
-                requireServiceTypeName(p.service());
-                providerNames.forEach(Checks::requireServiceProviderName);
+                requireServiceTypeName(service);
+                providers.forEach(Checks::requireServiceProviderName);
             } else {
                 // Disallow service/providers in unnamed package
                 String pn = packageName(service);
@@ -2037,7 +2015,7 @@ public class ModuleDescriptor
                     throw new IllegalArgumentException(service
                                                        + ": unnamed package");
                 }
-                for (String name : providerNames) {
+                for (String name : providers) {
                     pn = packageName(name);
                     if (pn.isEmpty()) {
                         throw new IllegalArgumentException(name
@@ -2045,6 +2023,7 @@ public class ModuleDescriptor
                     }
                 }
             }
+            Provides p = new Provides(service, providers);
             return provides(p);
         }
 
@@ -2574,27 +2553,6 @@ public class ModuleDescriptor
         return ModuleInfo.read(bb, null).descriptor();
     }
 
-    private static <K,V> Map<K,V> emptyOrUnmodifiableMap(Map<K,V> map) {
-        if (map.isEmpty()) {
-            return Collections.emptyMap();
-        } else if (map.size() == 1) {
-            Map.Entry<K, V> entry = map.entrySet().iterator().next();
-            return Collections.singletonMap(entry.getKey(), entry.getValue());
-        } else {
-            return Collections.unmodifiableMap(map);
-        }
-    }
-
-    private static <T> Set<T> emptyOrUnmodifiableSet(Set<T> set) {
-        if (set.isEmpty()) {
-            return Collections.emptySet();
-        } else if (set.size() == 1) {
-            return Collections.singleton(set.iterator().next());
-        } else {
-            return Collections.unmodifiableSet(set);
-        }
-    }
-
     private static String packageName(String cn) {
         int index = cn.lastIndexOf('.');
         return (index == -1) ? "" : cn.substring(0, index);
@@ -2674,7 +2632,7 @@ public class ModuleDescriptor
 
                 @Override
                 public Exports newExports(Set<Exports.Modifier> ms, String source) {
-                    return new Exports(ms, source, Collections.emptySet(), true);
+                    return new Exports(ms, source, Set.of(), true);
                 }
 
                 @Override
@@ -2693,7 +2651,7 @@ public class ModuleDescriptor
 
                 @Override
                 public Opens newOpens(Set<Opens.Modifier> ms, String source) {
-                    return new Opens(ms, source, Collections.emptySet(), true);
+                    return new Opens(ms, source, Set.of(), true);
                 }
 
                 @Override

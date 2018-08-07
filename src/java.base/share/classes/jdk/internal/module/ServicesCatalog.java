@@ -28,7 +28,6 @@ package jdk.internal.module;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -147,7 +146,7 @@ public final class ServicesCatalog {
      * the given service type.
      */
     public List<ServiceProvider> findServices(String service) {
-        return map.getOrDefault(service, Collections.emptyList());
+        return map.getOrDefault(service, List.of());
     }
 
     /**

@@ -568,7 +568,7 @@ public final class ModuleBootstrap {
         // the system property is removed after decoding
         String value = getAndRemoveProperty(prefix + index);
         if (value == null) {
-            return Collections.emptySet();
+            return Set.of();
         } else {
             Set<String> modules = new HashSet<>();
             while (value != null) {
@@ -588,7 +588,7 @@ public final class ModuleBootstrap {
     private static Set<String> limitModules() {
         String value = getAndRemoveProperty("jdk.module.limitmods");
         if (value == null) {
-            return Collections.emptySet();
+            return Set.of();
         } else {
             Set<String> names = new HashSet<>();
             for (String name : value.split(",")) {
@@ -840,7 +840,7 @@ public final class ModuleBootstrap {
         // the system property is removed after decoding
         String value = getAndRemoveProperty(prefix + index);
         if (value == null)
-            return Collections.emptyMap();
+            return Map.of();
 
         Map<String, List<String>> map = new HashMap<>();
 

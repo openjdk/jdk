@@ -30,7 +30,6 @@ import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Version;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -148,11 +147,11 @@ final class Builder {
 
     Builder(String name) {
         this.name = name;
-        this.requires = Collections.emptySet();
-        this.exports = Collections.emptySet();
-        this.opens = Collections.emptySet();
-        this.provides = Collections.emptySet();
-        this.uses = Collections.emptySet();
+        this.requires = Set.of();
+        this.exports = Set.of();
+        this.opens = Set.of();
+        this.provides = Set.of();
+        this.uses = Set.of();
     }
 
     Builder open(boolean value) {
@@ -253,7 +252,7 @@ final class Builder {
         if (synthetic) n++;
         if (mandated) n++;
         if (n == 0) {
-            return Collections.emptySet();
+            return Set.of();
         } else {
             ModuleDescriptor.Modifier[] mods = new ModuleDescriptor.Modifier[n];
             if (open) mods[--n] = ModuleDescriptor.Modifier.OPEN;

@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -119,10 +118,10 @@ public final class Configuration {
     String targetPlatform() { return targetPlatform; }
 
     private Configuration() {
-        this.parents = Collections.emptyList();
-        this.graph = Collections.emptyMap();
-        this.modules = Collections.emptySet();
-        this.nameToModule = Collections.emptyMap();
+        this.parents = List.of();
+        this.graph = Map.of();
+        this.modules = Set.of();
+        this.nameToModule = Map.of();
         this.targetPlatform = null;
     }
 
@@ -140,7 +139,7 @@ public final class Configuration {
             i++;
         }
 
-        this.parents = Collections.unmodifiableList(parents);
+        this.parents = List.copyOf(parents);
         this.graph = g;
         this.modules = Set.of(moduleArray);
         this.nameToModule = Map.ofEntries(nameEntries);
@@ -554,7 +553,7 @@ public final class Configuration {
 
     Set<ModuleDescriptor> descriptors() {
         if (modules.isEmpty()) {
-            return Collections.emptySet();
+            return Set.of();
         } else {
             return modules.stream()
                     .map(ResolvedModule::reference)
@@ -596,7 +595,7 @@ public final class Configuration {
                     }
                 }
             }
-            this.allConfigurations = Collections.unmodifiableList(allConfigurations);
+            this.allConfigurations = allConfigurations; // no need to do defensive copy
         }
         return allConfigurations.stream();
     }

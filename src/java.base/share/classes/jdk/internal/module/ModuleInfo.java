@@ -40,7 +40,6 @@ import java.lang.module.ModuleDescriptor.Opens;
 import java.nio.ByteBuffer;
 import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -374,7 +373,7 @@ public final class ModuleInfo {
             int requires_flags = in.readUnsignedShort();
             Set<Requires.Modifier> mods;
             if (requires_flags == 0) {
-                mods = Collections.emptySet();
+                mods = Set.of();
             } else {
                 mods = new HashSet<>();
                 if ((requires_flags & ACC_TRANSITIVE) != 0)
@@ -430,7 +429,7 @@ public final class ModuleInfo {
                 Set<Exports.Modifier> mods;
                 int exports_flags = in.readUnsignedShort();
                 if (exports_flags == 0) {
-                    mods = Collections.emptySet();
+                    mods = Set.of();
                 } else {
                     mods = new HashSet<>();
                     if ((exports_flags & ACC_SYNTHETIC) != 0)
@@ -470,7 +469,7 @@ public final class ModuleInfo {
                 Set<Opens.Modifier> mods;
                 int opens_flags = in.readUnsignedShort();
                 if (opens_flags == 0) {
-                    mods = Collections.emptySet();
+                    mods = Set.of();
                 } else {
                     mods = new HashSet<>();
                     if ((opens_flags & ACC_SYNTHETIC) != 0)
