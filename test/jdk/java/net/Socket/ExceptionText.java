@@ -25,8 +25,10 @@
  * @test
  * @library /test/lib
  * @build jdk.test.lib.Utils
- * @bug 8204233 8207846
+ * @bug 8204233 8207846 8208691
  * @summary Add configurable option for enhanced socket IOException messages
+ * @run main/othervm
+ *       ExceptionText
  * @run main/othervm
  *       ExceptionText
  *       WITHOUT_Enhanced_Text
@@ -62,6 +64,7 @@ import java.net.Socket;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
+import java.security.Security;
 import java.util.concurrent.ExecutionException;
 import jdk.test.lib.Utils;
 
@@ -70,19 +73,32 @@ public class ExceptionText {
     enum TestTarget {SOCKET, CHANNEL, ASYNC_CHANNEL};
 
     public static void main(String args[]) throws Exception {
-        String passOrFail = args[0];
-        boolean expectEnhancedText;
-        if (passOrFail.equals("expectEnhancedText")) {
-            expectEnhancedText = true;
+        if (args.length == 0) {
+            testSecProp();
         } else {
-            expectEnhancedText = false;
+            String passOrFail = args[0];
+            boolean expectEnhancedText;
+            if (passOrFail.equals("expectEnhancedText")) {
+                expectEnhancedText = true;
+            } else {
+                expectEnhancedText = false;
+            }
+            test(expectEnhancedText);
         }
-        test(expectEnhancedText);
     }
 
     static final InetSocketAddress dest  = Utils.refusingEndpoint();
     static final String PORT = ":" + Integer.toString(dest.getPort());
     static final String HOST = dest.getHostString();
+
+    static void testSecProp() {
+        String incInExc = Security.getProperty("jdk.includeInExceptions");
+        if (incInExc != null) {
+            throw new RuntimeException("Test failed: default value of " +
+                "jdk.includeInExceptions security property is not null: " +
+                incInExc);
+        }
+    }
 
     static void test(boolean withProperty) {
         // Socket
