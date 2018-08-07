@@ -73,7 +73,7 @@ class ArrayKlass: public Klass {
   // type of elements (T_OBJECT for both oop arrays and array-arrays)
   BasicType element_type() const        { return layout_helper_element_type(layout_helper()); }
 
-  virtual Klass* java_super() const;//{ return SystemDictionary::Object_klass(); }
+  virtual InstanceKlass* java_super() const;//{ return SystemDictionary::Object_klass(); }
 
   // Allocation
   // Sizes points to the first dimension of the array, subsequent dimensions
@@ -100,7 +100,7 @@ class ArrayKlass: public Klass {
   }
 
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
-                                                  Array<Klass*>* transitive_interfaces);
+                                                  Array<InstanceKlass*>* transitive_interfaces);
   bool compute_is_subtype_of(Klass* k);
 
   // Sizing

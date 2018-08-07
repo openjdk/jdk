@@ -219,7 +219,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
   assert(info.resolved_appendix().is_null(), "only normal methods here");
   methodHandle m = info.resolved_method();
   assert(m.not_null(), "null method handle");
-  Klass* m_klass = m->method_holder();
+  InstanceKlass* m_klass = m->method_holder();
   assert(m_klass != NULL, "null holder for method handle");
   int flags = (jushort)( m->access_flags().as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
   int vmindex = Method::invalid_vtable_index;
@@ -257,7 +257,8 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
       // This is a vtable call to an interface method (abstract "miranda method" or default method).
       // The vtable index is meaningless without a class (not interface) receiver type, so get one.
       // (LinkResolver should help us figure this out.)
-      Klass* m_klass_non_interface = info.resolved_klass();
+      assert(info.resolved_klass()->is_instance_klass(), "subtype of interface must be an instance klass");
+      InstanceKlass* m_klass_non_interface = InstanceKlass::cast(info.resolved_klass());
       if (m_klass_non_interface->is_interface()) {
         m_klass_non_interface = SystemDictionary::Object_klass();
 #ifdef ASSERT

@@ -505,9 +505,9 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
       {
         MutexLocker mu(SystemDictionary_lock, THREAD);
-        Klass* check = find_class(d_hash, name, dictionary);
+        InstanceKlass* check = find_class(d_hash, name, dictionary);
         if (check != NULL) {
-          return InstanceKlass::cast(check);
+          return check;
         }
       }
 
@@ -524,10 +524,9 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
   assert(UseSharedSpaces, "must be");
   assert(shared_dictionary() != NULL, "already checked");
-  Klass* k = shared_dictionary()->find_class_for_builtin_loader(class_name);
+  InstanceKlass* ik = shared_dictionary()->find_class_for_builtin_loader(class_name);
 
-  if (k != NULL) {
-    InstanceKlass* ik = InstanceKlass::cast(k);
+  if (ik != NULL) {
     if ((ik->is_shared_app_class() &&
          SystemDictionary::is_system_class_loader(class_loader()))  ||
         (ik->is_shared_platform_class() &&
@@ -594,7 +593,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(const Symbol* class_na
   }
 
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
-  Klass* k;
+  InstanceKlass* k;
 
   { // UNREGISTERED loader
     if (!shared_dictionary()->class_exists_for_unregistered_loader(class_name)) {
@@ -613,7 +612,7 @@ InstanceKlass* SystemDictionaryShared::lookup_from_stream(const Symbol* class_na
     return NULL;
   }
 
-  return acquire_class_for_current_thread(InstanceKlass::cast(k), class_loader,
+  return acquire_class_for_current_thread(k, class_loader,
                                           protection_domain, THREAD);
 }
 
@@ -672,7 +671,7 @@ bool SystemDictionaryShared::add_non_builtin_klass(Symbol* name,
 // java/lang/Object id: 0
 // Interface   id: 2 super: 0 source: cust.jar
 // ChildClass  id: 4 super: 0 interfaces: 2 source: cust.jar
-Klass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
+InstanceKlass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
     Symbol* child_name, Symbol* class_name, Handle class_loader,
     Handle protection_domain, bool is_superclass, TRAPS) {
 
@@ -700,14 +699,14 @@ Klass* SystemDictionaryShared::dump_time_resolve_super_or_fail(
 }
 
 struct SharedMiscInfo {
-  Klass* _klass;
+  InstanceKlass* _klass;
   int _clsfile_size;
   int _clsfile_crc32;
 };
 
 static GrowableArray<SharedMiscInfo>* misc_info_array = NULL;
 
-void SystemDictionaryShared::set_shared_class_misc_info(Klass* k, ClassFileStream* cfs) {
+void SystemDictionaryShared::set_shared_class_misc_info(InstanceKlass* k, ClassFileStream* cfs) {
   assert(DumpSharedSpaces, "only when dumping");
   int clsfile_size  = cfs->length();
   int clsfile_crc32 = ClassLoader::crc32(0, (const char*)cfs->buffer(), cfs->length());
@@ -731,7 +730,7 @@ void SystemDictionaryShared::set_shared_class_misc_info(Klass* k, ClassFileStrea
   misc_info_array->append(misc_info);
 }
 
-void SystemDictionaryShared::init_shared_dictionary_entry(Klass* k, DictionaryEntry* ent) {
+void SystemDictionaryShared::init_shared_dictionary_entry(InstanceKlass* k, DictionaryEntry* ent) {
   SharedDictionaryEntry* entry = (SharedDictionaryEntry*)ent;
   entry->_id = -1;
   entry->_clsfile_size = -1;
@@ -752,7 +751,7 @@ void SystemDictionaryShared::init_shared_dictionary_entry(Klass* k, DictionaryEn
   }
 }
 
-bool SystemDictionaryShared::add_verification_constraint(Klass* k, Symbol* name,
+bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbol* name,
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   assert(DumpSharedSpaces, "called at dump time only");
 
@@ -796,7 +795,7 @@ void SystemDictionaryShared::check_verification_constraints(InstanceKlass* klass
   entry->check_verification_constraints(klass, THREAD);
 }
 
-SharedDictionaryEntry* SharedDictionary::find_entry_for(Klass* klass) {
+SharedDictionaryEntry* SharedDictionary::find_entry_for(InstanceKlass* klass) {
   Symbol* class_name = klass->name();
   unsigned int hash = compute_hash(class_name);
   int index = hash_to_index(hash);
@@ -970,7 +969,7 @@ bool SharedDictionary::add_non_builtin_klass(const Symbol* class_name,
                               entry != NULL;
                               entry = entry->next()) {
     if (entry->hash() == hash) {
-      Klass* klass = (Klass*)entry->literal();
+      InstanceKlass* klass = entry->instance_klass();
       if (klass->name() == class_name && klass->class_loader_data() == loader_data) {
         // There is already a class defined with the same name
         return false;
@@ -993,22 +992,22 @@ bool SharedDictionary::add_non_builtin_klass(const Symbol* class_name,
 //-----------------
 
 
-Klass* SharedDictionary::find_class_for_builtin_loader(const Symbol* name) const {
+InstanceKlass* SharedDictionary::find_class_for_builtin_loader(const Symbol* name) const {
   SharedDictionaryEntry* entry = get_entry_for_builtin_loader(name);
-  return entry != NULL ? entry->instance_klass() : (Klass*)NULL;
+  return entry != NULL ? entry->instance_klass() : (InstanceKlass*)NULL;
 }
 
-Klass* SharedDictionary::find_class_for_unregistered_loader(const Symbol* name,
+InstanceKlass* SharedDictionary::find_class_for_unregistered_loader(const Symbol* name,
                                                             int clsfile_size,
                                                             int clsfile_crc32) const {
 
   const SharedDictionaryEntry* entry = get_entry_for_unregistered_loader(name,
                                                                          clsfile_size,
                                                                          clsfile_crc32);
-  return entry != NULL ? entry->instance_klass() : (Klass*)NULL;
+  return entry != NULL ? entry->instance_klass() : NULL;
 }
 
-void SharedDictionary::update_entry(Klass* klass, int id) {
+void SharedDictionary::update_entry(InstanceKlass* klass, int id) {
   assert(DumpSharedSpaces, "supported only when dumping");
   Symbol* class_name = klass->name();
   unsigned int hash = compute_hash(class_name);

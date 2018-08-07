@@ -439,24 +439,24 @@ void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
 
 void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
                                           const Klass* super_klass,
-                                          Array<Klass*>* local_interfaces,
-                                          Array<Klass*>* transitive_interfaces) {
+                                          Array<InstanceKlass*>* local_interfaces,
+                                          Array<InstanceKlass*>* transitive_interfaces) {
   // Only deallocate transitive interfaces if not empty, same as super class
   // or same as local interfaces.  See code in parseClassFile.
-  Array<Klass*>* ti = transitive_interfaces;
-  if (ti != Universe::the_empty_klass_array() && ti != local_interfaces) {
+  Array<InstanceKlass*>* ti = transitive_interfaces;
+  if (ti != Universe::the_empty_instance_klass_array() && ti != local_interfaces) {
     // check that the interfaces don't come from super class
-    Array<Klass*>* sti = (super_klass == NULL) ? NULL :
+    Array<InstanceKlass*>* sti = (super_klass == NULL) ? NULL :
                     InstanceKlass::cast(super_klass)->transitive_interfaces();
     if (ti != sti && ti != NULL && !ti->is_shared()) {
-      MetadataFactory::free_array<Klass*>(loader_data, ti);
+      MetadataFactory::free_array<InstanceKlass*>(loader_data, ti);
     }
   }
 
   // local interfaces can be empty
-  if (local_interfaces != Universe::the_empty_klass_array() &&
+  if (local_interfaces != Universe::the_empty_instance_klass_array() &&
       local_interfaces != NULL && !local_interfaces->is_shared()) {
-    MetadataFactory::free_array<Klass*>(loader_data, local_interfaces);
+    MetadataFactory::free_array<InstanceKlass*>(loader_data, local_interfaces);
   }
 }
 
@@ -517,7 +517,8 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   // interfaces.
   if (secondary_supers() != NULL &&
       secondary_supers() != Universe::the_empty_klass_array() &&
-      secondary_supers() != transitive_interfaces() &&
+      // see comments in compute_secondary_supers about the following cast
+      (address)(secondary_supers()) != (address)(transitive_interfaces()) &&
       !secondary_supers()->is_shared()) {
     MetadataFactory::free_array<Klass*>(loader_data, secondary_supers());
   }
@@ -755,10 +756,10 @@ bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
   }
 
   // link all interfaces implemented by this class before linking this class
-  Array<Klass*>* interfaces = local_interfaces();
+  Array<InstanceKlass*>* interfaces = local_interfaces();
   int num_interfaces = interfaces->length();
   for (int index = 0; index < num_interfaces; index++) {
-    InstanceKlass* interk = InstanceKlass::cast(interfaces->at(index));
+    InstanceKlass* interk = interfaces->at(index);
     interk->link_class_impl(throw_verifyerror, CHECK_false);
   }
 
@@ -872,8 +873,7 @@ void InstanceKlass::link_methods(TRAPS) {
 void InstanceKlass::initialize_super_interfaces(TRAPS) {
   assert (has_nonstatic_concrete_methods(), "caller should have checked this");
   for (int i = 0; i < local_interfaces()->length(); ++i) {
-    Klass* iface = local_interfaces()->at(i);
-    InstanceKlass* ik = InstanceKlass::cast(iface);
+    InstanceKlass* ik = local_interfaces()->at(i);
 
     // Initialization is depth first search ie. we start with top of the inheritance tree
     // has_nonstatic_concrete_methods drives searching superinterfaces since it
@@ -1117,18 +1117,21 @@ bool InstanceKlass::can_be_primary_super_slow() const {
 }
 
 GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots,
-                                                               Array<Klass*>* transitive_interfaces) {
+                                                               Array<InstanceKlass*>* transitive_interfaces) {
   // The secondaries are the implemented interfaces.
-  Array<Klass*>* interfaces = transitive_interfaces;
+  Array<InstanceKlass*>* interfaces = transitive_interfaces;
   int num_secondaries = num_extra_slots + interfaces->length();
   if (num_secondaries == 0) {
     // Must share this for correct bootstrapping!
     set_secondary_supers(Universe::the_empty_klass_array());
     return NULL;
   } else if (num_extra_slots == 0) {
-    // The secondary super list is exactly the same as the transitive interfaces.
+    // The secondary super list is exactly the same as the transitive interfaces, so
+    // let's use it instead of making a copy.
     // Redefine classes has to be careful not to delete this!
-    set_secondary_supers(interfaces);
+    // We need the cast because Array<Klass*> is NOT a supertype of Array<InstanceKlass*>,
+    // (but it's safe to do here because we won't write into _secondary_supers from this point on).
+    set_secondary_supers((Array<Klass*>*)(address)interfaces);
     return NULL;
   } else {
     // Copy transitive interfaces to a temporary growable array to be constructed
@@ -1791,11 +1794,11 @@ Method* InstanceKlass::lookup_method_in_ordered_interfaces(Symbol* name,
 Method* InstanceKlass::lookup_method_in_all_interfaces(Symbol* name,
                                                        Symbol* signature,
                                                        DefaultsLookupMode defaults_mode) const {
-  Array<Klass*>* all_ifs = transitive_interfaces();
+  Array<InstanceKlass*>* all_ifs = transitive_interfaces();
   int num_ifs = all_ifs->length();
   InstanceKlass *ik = NULL;
   for (int i = 0; i < num_ifs; i++) {
-    ik = InstanceKlass::cast(all_ifs->at(i));
+    ik = all_ifs->at(i);
     Method* m = ik->lookup_method(name, signature);
     if (m != NULL && m->is_public() && !m->is_static() &&
         ((defaults_mode != skip_defaults) || !m->is_default_method())) {
@@ -2142,11 +2145,11 @@ bool InstanceKlass::supers_have_passed_fingerprint_checks() {
     return false;
   }
 
-  Array<Klass*>* local_interfaces = this->local_interfaces();
+  Array<InstanceKlass*>* local_interfaces = this->local_interfaces();
   if (local_interfaces != NULL) {
     int length = local_interfaces->length();
     for (int i = 0; i < length; i++) {
-      InstanceKlass* intf = InstanceKlass::cast(local_interfaces->at(i));
+      InstanceKlass* intf = local_interfaces->at(i);
       if (!intf->has_passed_fingerprint_check()) {
         ResourceMark rm;
         log_trace(class, fingerprint)("%s : interface %s not fingerprinted", external_name(), intf->external_name());
@@ -2353,10 +2356,10 @@ bool InstanceKlass::check_sharing_error_state() {
       }
     }
     if (!bad) {
-      Array<Klass*>* interfaces = transitive_interfaces();
+      Array<InstanceKlass*>* interfaces = transitive_interfaces();
       for (int i = 0; i < interfaces->length(); i++) {
-        Klass* iface = interfaces->at(i);
-        if (InstanceKlass::cast(iface)->is_in_error_state()) {
+        InstanceKlass* iface = interfaces->at(i);
+        if (iface->is_in_error_state()) {
           bad = true;
           break;
         }
@@ -3254,6 +3257,12 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
   }
 }
 
+bool InstanceKlass::verify_itable_index(int i) {
+  int method_count = klassItable::method_count_for_interface(this);
+  assert(i >= 0 && i < method_count, "index out of bounds");
+  return true;
+}
+
 #endif //PRODUCT
 
 void InstanceKlass::oop_print_value_on(oop obj, outputStream* st) {
@@ -3498,18 +3507,18 @@ void InstanceKlass::verify_on(outputStream* st) {
 
   // Verify local interfaces
   if (local_interfaces()) {
-    Array<Klass*>* local_interfaces = this->local_interfaces();
+    Array<InstanceKlass*>* local_interfaces = this->local_interfaces();
     for (int j = 0; j < local_interfaces->length(); j++) {
-      Klass* e = local_interfaces->at(j);
+      InstanceKlass* e = local_interfaces->at(j);
       guarantee(e->is_klass() && e->is_interface(), "invalid local interface");
     }
   }
 
   // Verify transitive interfaces
   if (transitive_interfaces() != NULL) {
-    Array<Klass*>* transitive_interfaces = this->transitive_interfaces();
+    Array<InstanceKlass*>* transitive_interfaces = this->transitive_interfaces();
     for (int j = 0; j < transitive_interfaces->length(); j++) {
-      Klass* e = transitive_interfaces->at(j);
+      InstanceKlass* e = transitive_interfaces->at(j);
       guarantee(e->is_klass() && e->is_interface(), "invalid transitive interface");
     }
   }

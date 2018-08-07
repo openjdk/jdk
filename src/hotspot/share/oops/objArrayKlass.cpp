@@ -67,7 +67,7 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
       bool supers_exist = super_klass != NULL;
       // Also, see if the element has secondary supertypes.
       // We need an array type for each.
-      Array<Klass*>* element_supers = element_klass->secondary_supers();
+      const Array<Klass*>* element_supers = element_klass->secondary_supers();
       for( int i = element_supers->length()-1; i >= 0; i-- ) {
         Klass* elem_super = element_supers->at(i);
         if (elem_super->array_klass_or_null() == NULL) {
@@ -382,10 +382,10 @@ bool ObjArrayKlass::can_be_primary_super_slow() const {
 }
 
 GrowableArray<Klass*>* ObjArrayKlass::compute_secondary_supers(int num_extra_slots,
-                                                               Array<Klass*>* transitive_interfaces) {
+                                                               Array<InstanceKlass*>* transitive_interfaces) {
   assert(transitive_interfaces == NULL, "sanity");
   // interfaces = { cloneable_klass, serializable_klass, elemSuper[], ... };
-  Array<Klass*>* elem_supers = element_klass()->secondary_supers();
+  const Array<Klass*>* elem_supers = element_klass()->secondary_supers();
   int num_elem_supers = elem_supers == NULL ? 0 : elem_supers->length();
   int num_secondaries = num_extra_slots + 2 + num_elem_supers;
   if (num_secondaries == 2) {
@@ -397,7 +397,7 @@ GrowableArray<Klass*>* ObjArrayKlass::compute_secondary_supers(int num_extra_slo
     secondaries->push(SystemDictionary::Cloneable_klass());
     secondaries->push(SystemDictionary::Serializable_klass());
     for (int i = 0; i < num_elem_supers; i++) {
-      Klass* elem_super = (Klass*) elem_supers->at(i);
+      Klass* elem_super = elem_supers->at(i);
       Klass* array_super = elem_super->array_klass_or_null();
       assert(array_super != NULL, "must already have been created");
       secondaries->push(array_super);

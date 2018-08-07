@@ -92,7 +92,7 @@ class klassVtable {
                                                    u2 major_version,
                                                    Handle classloader,
                                                    Symbol* classname,
-                                                   Array<Klass*>* local_interfaces,
+                                                   Array<InstanceKlass*>* local_interfaces,
                                                    TRAPS);
 
 #if INCLUDE_JVMTI
@@ -159,7 +159,7 @@ class klassVtable {
       const Klass* super,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
-      Array<Klass*>* local_interfaces,
+      Array<InstanceKlass*>* local_interfaces,
       bool is_interface);
   void verify_against(outputStream* st, klassVtable* vt, int index);
   inline InstanceKlass* ik() const;
@@ -235,17 +235,17 @@ class itableMethodEntry;
 
 class itableOffsetEntry {
  private:
-  Klass* _interface;
+  InstanceKlass* _interface;
   int      _offset;
  public:
-  Klass* interface_klass() const { return _interface; }
-  Klass**interface_klass_addr()  { return &_interface; }
+  InstanceKlass* interface_klass() const { return _interface; }
+  InstanceKlass**interface_klass_addr()  { return &_interface; }
   int      offset() const          { return _offset; }
 
   static itableMethodEntry* method_entry(Klass* k, int offset) { return (itableMethodEntry*)(((address)k) + offset); }
   itableMethodEntry* first_method_entry(Klass* k)              { return method_entry(k, _offset); }
 
-  void initialize(Klass* interf, int offset) { _interface = interf; _offset = offset; }
+  void initialize(InstanceKlass* interf, int offset) { _interface = interf; _offset = offset; }
 
   // Static size and offset accessors
   static int size()                       { return sizeof(itableOffsetEntry) / wordSize; }    // size in words
@@ -300,7 +300,7 @@ class klassItable {
   int                  _size_offset_table; // size of offset table (in itableOffset entries)
   int                  _size_method_table; // size of methodtable (in itableMethodEntry entries)
 
-  void initialize_itable_for_interface(int method_table_offset, Klass* interf_h, bool checkconstraints, TRAPS);
+  void initialize_itable_for_interface(int method_table_offset, InstanceKlass* interf_h, bool checkconstraints, TRAPS);
  public:
   klassItable(InstanceKlass* klass);
 
@@ -328,13 +328,13 @@ class klassItable {
 #endif // INCLUDE_JVMTI
 
   // Setup of itable
-  static int assign_itable_indices_for_interface(Klass* klass, TRAPS);
-  static int method_count_for_interface(Klass* klass);
-  static int compute_itable_size(Array<Klass*>* transitive_interfaces);
+  static int assign_itable_indices_for_interface(InstanceKlass* klass, TRAPS);
+  static int method_count_for_interface(InstanceKlass* klass);
+  static int compute_itable_size(Array<InstanceKlass*>* transitive_interfaces);
   static void setup_itable_offset_table(InstanceKlass* klass);
 
   // Resolving of method to index
-  static Method* method_for_itable_index(Klass* klass, int itable_index);
+  static Method* method_for_itable_index(InstanceKlass* klass, int itable_index);
 
   // Debugging/Statistics
   static void print_statistics() PRODUCT_RETURN;

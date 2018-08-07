@@ -493,7 +493,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpo
       switch (invoke_code) {
       case Bytecodes::_invokeinterface:
         assert(f1->is_klass(), "");
-        return klassItable::method_for_itable_index((Klass*)f1, f2_as_index());
+        return klassItable::method_for_itable_index((InstanceKlass*)f1, f2_as_index());
       case Bytecodes::_invokestatic:
       case Bytecodes::_invokespecial:
         assert(!has_appendix(), "");

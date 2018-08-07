@@ -621,7 +621,7 @@ bool VM_GetOrSetLocal::is_assignable(const char* ty_sign, Klass* klass, Thread* 
     }
   }
   // Compare secondary supers
-  Array<Klass*>* sec_supers = klass->secondary_supers();
+  const Array<Klass*>* sec_supers = klass->secondary_supers();
   for (idx = 0; idx < sec_supers->length(); idx++) {
     if (((Klass*) sec_supers->at(idx))->name() == ty_sym) {
       return true;

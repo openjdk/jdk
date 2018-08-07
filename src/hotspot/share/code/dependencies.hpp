@@ -716,7 +716,7 @@ class DepChange : public StackObj {
     // iteration variables:
     ChangeType  _change_type;
     Klass*      _klass;
-    Array<Klass*>* _ti_base;    // i.e., transitive_interfaces
+    Array<InstanceKlass*>* _ti_base;    // i.e., transitive_interfaces
     int         _ti_index;
     int         _ti_limit;
 

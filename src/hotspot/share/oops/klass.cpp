@@ -229,7 +229,7 @@ bool Klass::can_be_primary_super_slow() const {
     return true;
 }
 
-void Klass::initialize_supers(Klass* k, Array<Klass*>* transitive_interfaces, TRAPS) {
+void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
   if (FastSuperclassLimit == 0) {
     // None of the other machinery matters.
     set_super(k);
@@ -348,7 +348,7 @@ void Klass::initialize_supers(Klass* k, Array<Klass*>* transitive_interfaces, TR
 }
 
 GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
-                                                       Array<Klass*>* transitive_interfaces) {
+                                                       Array<InstanceKlass*>* transitive_interfaces) {
   assert(num_extra_slots == 0, "override for complex klasses");
   assert(transitive_interfaces == NULL, "sanity");
   set_secondary_supers(Universe::the_empty_klass_array());
@@ -762,13 +762,6 @@ ByteSize Klass::vtable_start_offset() {
 bool Klass::verify_vtable_index(int i) {
   int limit = vtable_length()/vtableEntry::size();
   assert(i >= 0 && i < limit, "index %d out of bounds %d", i, limit);
-  return true;
-}
-
-bool Klass::verify_itable_index(int i) {
-  assert(is_instance_klass(), "");
-  int method_count = klassItable::method_count_for_interface(this);
-  assert(i >= 0 && i < method_count, "index out of bounds");
   return true;
 }
 
