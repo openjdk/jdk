@@ -609,26 +609,6 @@
 #define COMPILER_HEADER(basename)        XSTR(COMPILER_HEADER_STEM(basename).hpp)
 #define COMPILER_HEADER_INLINE(basename) XSTR(COMPILER_HEADER_STEM(basename).inline.hpp)
 
-// To use Atomic::inc(jshort* dest) and Atomic::dec(jshort* dest), the address must be specially
-// aligned, such that (*dest) occupies the upper 16 bits of an aligned 32-bit word. The best way to
-// achieve is to place your short value next to another short value, which doesn't need atomic ops.
-//
-// Example
-//  ATOMIC_SHORT_PAIR(
-//    volatile short _refcount,  // needs atomic operation
-//    unsigned short _length     // number of UTF8 characters in the symbol (does not need atomic op)
-//  );
-
-#ifdef VM_LITTLE_ENDIAN
-  #define ATOMIC_SHORT_PAIR(atomic_decl, non_atomic_decl)  \
-    non_atomic_decl;                                       \
-    atomic_decl
-#else
-  #define ATOMIC_SHORT_PAIR(atomic_decl, non_atomic_decl)  \
-    atomic_decl;                                           \
-    non_atomic_decl
-#endif
-
 #if INCLUDE_CDS && INCLUDE_G1GC && defined(_LP64) && !defined(_WINDOWS)
 #define INCLUDE_CDS_JAVA_HEAP 1
 #define CDS_JAVA_HEAP_ONLY(x) x
