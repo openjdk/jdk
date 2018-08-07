@@ -1070,6 +1070,11 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 # case-insensitive. Leading and trailing whitespaces, surrounding each value,
 # are ignored. Unknown values are ignored.
 #
+# NOTE: Use caution before setting this property. Setting this property
+# exposes sensitive information in Exceptions, which could, for example,
+# propagate to untrusted code or be emitted in stack traces that are
+# inadvertently disclosed and made accessible over a public network.
+#
 # The categories are:
 #
 #  hostInfo - IOExceptions thrown by java.net.Socket and the socket types in the
