@@ -24,7 +24,7 @@
  */
 
 /**
- * Defines the core Java SE API.
+ * Defines the API of the Java SE Platform.
  * <P>
  *
  * <dl>
