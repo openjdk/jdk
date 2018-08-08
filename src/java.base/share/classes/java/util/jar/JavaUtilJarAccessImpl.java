@@ -65,4 +65,7 @@ class JavaUtilJarAccessImpl implements JavaUtilJarAccess {
         return man.getTrustedAttributes(name);
     }
 
+    public void ensureInitialization(JarFile jar) {
+        jar.ensureInitialization();
+    }
 }

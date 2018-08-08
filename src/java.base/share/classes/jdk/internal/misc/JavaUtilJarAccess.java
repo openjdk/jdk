@@ -44,4 +44,5 @@ public interface JavaUtilJarAccess {
     public void setEagerValidation(JarFile jar, boolean eager);
     public List<Object> getManifestDigests(JarFile jar);
     public Attributes getTrustedAttributes(Manifest man, String name);
+    public void ensureInitialization(JarFile jar);
 }

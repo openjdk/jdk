@@ -866,8 +866,10 @@ public class URLClassPath {
                     { return jar.getInputStream(entry); }
                 public int getContentLength()
                     { return (int)entry.getSize(); }
-                public Manifest getManifest() throws IOException
-                    { return jar.getManifest(); };
+                public Manifest getManifest() throws IOException {
+                    SharedSecrets.javaUtilJarAccess().ensureInitialization(jar);
+                    return jar.getManifest();
+                }
                 public Certificate[] getCertificates()
                     { return entry.getCertificates(); };
                 public CodeSigner[] getCodeSigners()

@@ -169,6 +169,10 @@ public class Manifest implements Cloneable {
      *      does not exist in SF files of all signers).
      */
     Attributes getTrustedAttributes(String name) {
+        // Note: Before the verification of MANIFEST.MF/.SF/.RSA files is done,
+        // jv.isTrustedManifestEntry() isn't able to detect MANIFEST.MF change.
+        // Users of this method should call SharedSecrets.javaUtilJarAccess()
+        // .ensureInitialization() first.
         Attributes result = getAttributes(name);
         if (result != null && jv != null && ! jv.isTrustedManifestEntry(name)) {
             throw new SecurityException("Untrusted manifest entry: " + name);
