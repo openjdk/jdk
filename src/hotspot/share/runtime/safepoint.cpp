@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -719,6 +719,7 @@ public:
         post_safepoint_cleanup_task_event(&event, name);
       }
     }
+
     _subtasks.all_tasks_completed(_num_workers);
   }
 };
@@ -748,8 +749,18 @@ void SafepointSynchronize::do_cleanup_tasks() {
     cleanup.work(0);
   }
 
+  // Needs to be done single threaded by the VMThread.  This walks
+  // the thread stacks looking for references to metadata before
+  // deciding to remove it from the metaspaces.
+  if (ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) {
+    const char* name = "cleanup live ClassLoaderData metaspaces";
+    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+    ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces();
+  }
+
   // Finish monitor deflation.
   ObjectSynchronizer::finish_deflate_idle_monitors(&deflate_counters);
+
 }
 
 

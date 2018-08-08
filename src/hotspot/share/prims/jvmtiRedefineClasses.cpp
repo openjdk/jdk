@@ -237,6 +237,9 @@ void VM_RedefineClasses::doit() {
 #ifdef PRODUCT
   }
 #endif
+
+  // Clean up any metadata now unreferenced while MetadataOnStackMark is set.
+  ClassLoaderDataGraph::clean_deallocate_lists(false);
 }
 
 void VM_RedefineClasses::doit_epilogue() {

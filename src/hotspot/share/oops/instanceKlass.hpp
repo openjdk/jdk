@@ -839,6 +839,7 @@ public:
   }
 
   static bool has_previous_versions_and_reset();
+  static bool has_previous_versions() { return _has_previous_versions; }
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {

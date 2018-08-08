@@ -3665,7 +3665,7 @@ bool InstanceKlass::_has_previous_versions = false;
 // unloading only. Also resets the flag to false. purge_previous_version
 // will set the flag to true if there are any left, i.e., if there's any
 // work to do for next time. This is to avoid the expensive code cache
-// walk in CLDG::do_unloading().
+// walk in CLDG::clean_deallocate_lists().
 bool InstanceKlass::has_previous_versions_and_reset() {
   bool ret = _has_previous_versions;
   log_trace(redefine, class, iklass, purge)("Class unloading: has_previous_versions = %s",

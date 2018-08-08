@@ -2490,9 +2490,9 @@ void ConstantPool::print_value_on(outputStream* st) const {
   if (has_preresolution()) st->print("/preresolution");
   if (operands() != NULL)  st->print("/operands[%d]", operands()->length());
   print_address_on(st);
-  st->print(" for ");
-  pool_holder()->print_value_on(st);
   if (pool_holder() != NULL) {
+    st->print(" for ");
+    pool_holder()->print_value_on(st);
     bool extra = (pool_holder()->constants() != this);
     if (extra)  st->print(" (extra)");
   }
