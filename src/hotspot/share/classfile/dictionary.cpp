@@ -53,16 +53,16 @@ size_t Dictionary::entry_size() {
 }
 
 Dictionary::Dictionary(ClassLoaderData* loader_data, int table_size, bool resizable)
-  : _loader_data(loader_data), _resizable(resizable), _needs_resizing(false),
-  Hashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size()) {
+  : Hashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size()),
+    _resizable(resizable), _needs_resizing(false), _loader_data(loader_data) {
 };
 
 
 Dictionary::Dictionary(ClassLoaderData* loader_data,
                        int table_size, HashtableBucket<mtClass>* t,
                        int number_of_entries, bool resizable)
-  : _loader_data(loader_data), _resizable(resizable), _needs_resizing(false),
-  Hashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size(), t, number_of_entries) {
+  : Hashtable<InstanceKlass*, mtClass>(table_size, (int)entry_size(), t, number_of_entries),
+    _resizable(resizable), _needs_resizing(false), _loader_data(loader_data) {
 };
 
 Dictionary::~Dictionary() {

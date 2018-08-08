@@ -421,7 +421,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(ThreadsList * t_list, 
   return deadlocks;
 }
 
-ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snapshots(NULL), _next(NULL), _last(NULL), _setter() {
+ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snapshots(NULL), _last(NULL), _next(NULL), _setter() {
 
   // Create a new ThreadDumpResult object and append to the list.
   // If GC happens before this function returns, Method*
@@ -429,7 +429,7 @@ ThreadDumpResult::ThreadDumpResult() : _num_threads(0), _num_snapshots(0), _snap
   ThreadService::add_thread_dump(this);
 }
 
-ThreadDumpResult::ThreadDumpResult(int num_threads) : _num_threads(num_threads), _num_snapshots(0), _snapshots(NULL), _next(NULL), _last(NULL), _setter() {
+ThreadDumpResult::ThreadDumpResult(int num_threads) : _num_threads(num_threads), _num_snapshots(0), _snapshots(NULL), _last(NULL), _next(NULL), _setter() {
   // Create a new ThreadDumpResult object and append to the list.
   // If GC happens before this function returns, oops
   // will be visited.

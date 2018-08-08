@@ -2051,7 +2051,7 @@ class JNIMethodBlock : public CHeapObj<mtClass> {
 // Something that can't be mistaken for an address or a markOop
 Method* const JNIMethodBlock::_free_method = (Method*)55;
 
-JNIMethodBlockNode::JNIMethodBlockNode(int num_methods) : _next(NULL), _top(0) {
+JNIMethodBlockNode::JNIMethodBlockNode(int num_methods) : _top(0), _next(NULL) {
   _number_of_methods = MAX2(num_methods, min_block_size);
   _methods = NEW_C_HEAP_ARRAY(Method*, _number_of_methods, mtInternal);
   for (int i = 0; i < _number_of_methods; i++) {

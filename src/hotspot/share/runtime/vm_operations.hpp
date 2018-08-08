@@ -414,8 +414,8 @@ class VM_FindDeadlocks: public VM_Operation {
                               // which protects the JavaThreads in _deadlocks.
 
  public:
-  VM_FindDeadlocks(bool concurrent_locks) :  _concurrent_locks(concurrent_locks), _out(NULL), _deadlocks(NULL), _setter() {};
-  VM_FindDeadlocks(outputStream* st) : _concurrent_locks(true), _out(st), _deadlocks(NULL) {};
+  VM_FindDeadlocks(bool concurrent_locks) :  _concurrent_locks(concurrent_locks), _deadlocks(NULL), _out(NULL), _setter() {};
+  VM_FindDeadlocks(outputStream* st) : _concurrent_locks(true), _deadlocks(NULL), _out(st) {};
   ~VM_FindDeadlocks();
 
   DeadlockCycle* result()      { return _deadlocks; };

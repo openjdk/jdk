@@ -192,7 +192,7 @@ class KlassInfoEntry: public CHeapObj<mtInternal> {
 
  public:
   KlassInfoEntry(Klass* k, KlassInfoEntry* next) :
-    _klass(k), _instance_count(0), _instance_words(0), _next(next), _index(-1),
+    _next(next), _klass(k), _instance_count(0), _instance_words(0), _index(-1),
     _do_print(false), _subclasses(NULL)
   {}
   ~KlassInfoEntry();

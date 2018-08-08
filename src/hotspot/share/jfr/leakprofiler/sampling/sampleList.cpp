@@ -31,9 +31,9 @@ SampleList::SampleList(size_t limit, size_t cache_size) :
   _free_list(),
   _in_use_list(),
   _last_resolved(NULL),
+  _allocated(0),
   _limit(limit),
-  _cache_size(cache_size),
-  _allocated(0) {
+  _cache_size(cache_size) {
 }
 
 SampleList::~SampleList() {

@@ -32,7 +32,7 @@
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 
-LogTestFixture::LogTestFixture() : _configuration_snapshot(NULL), _n_snapshots(0) {
+LogTestFixture::LogTestFixture() : _n_snapshots(0), _configuration_snapshot(NULL) {
   // Set up TestLogFileName to include PID, testcase name and test name
   int ret = jio_snprintf(_filename, sizeof(_filename), "testlog.pid%d.%s.%s.log",
                          os::current_process_id(),

@@ -2005,7 +2005,7 @@ class BacktraceBuilder: public StackObj {
  public:
 
   // constructor for new backtrace
-  BacktraceBuilder(TRAPS): _methods(NULL), _bcis(NULL), _head(NULL), _mirrors(NULL), _names(NULL) {
+  BacktraceBuilder(TRAPS): _head(NULL), _methods(NULL), _bcis(NULL), _mirrors(NULL), _names(NULL) {
     expand(CHECK);
     _backtrace = Handle(THREAD, _head);
     _index = 0;
@@ -2102,7 +2102,7 @@ struct BacktraceElement : public StackObj {
   Symbol* _name;
   Handle _mirror;
   BacktraceElement(Handle mirror, int mid, int version, int bci, Symbol* name) :
-                   _mirror(mirror), _method_id(mid), _version(version), _bci(bci), _name(name) {}
+                   _method_id(mid), _bci(bci), _version(version), _name(name), _mirror(mirror) {}
 };
 
 class BacktraceIterator : public StackObj {

@@ -560,9 +560,9 @@ int ClassHistogramDCmd::num_arguments() {
 #define DEFAULT_COLUMNS "InstBytes,KlassBytes,CpAll,annotations,MethodCount,Bytecodes,MethodAll,ROAll,RWAll,Total"
 ClassStatsDCmd::ClassStatsDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
-  _csv("-csv", "Print in CSV (comma-separated values) format for spreadsheets",
-       "BOOLEAN", false, "false"),
   _all("-all", "Show all columns",
+       "BOOLEAN", false, "false"),
+  _csv("-csv", "Print in CSV (comma-separated values) format for spreadsheets",
        "BOOLEAN", false, "false"),
   _help("-help", "Show meaning of all the columns",
        "BOOLEAN", false, "false"),

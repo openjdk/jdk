@@ -88,8 +88,8 @@ class MemBaseline {
  public:
   // create a memory baseline
   MemBaseline():
-    _baseline_type(Not_baselined),
-    _instance_class_count(0), _array_class_count(0) {
+    _instance_class_count(0), _array_class_count(0),
+    _baseline_type(Not_baselined) {
   }
 
   bool baseline(bool summaryOnly = true);

@@ -213,8 +213,9 @@ private:
 
 public:
   // Dummy snapshot
-  ThreadSnapshot() : _thread(NULL), _threadObj(NULL), _stack_trace(NULL), _concurrent_locks(NULL), _next(NULL),
-                     _blocker_object(NULL), _blocker_object_owner(NULL) {};
+  ThreadSnapshot() : _thread(NULL), _threadObj(NULL),
+                     _blocker_object(NULL), _blocker_object_owner(NULL),
+                     _stack_trace(NULL), _concurrent_locks(NULL), _next(NULL) {};
   ThreadSnapshot(ThreadsList * t_list, JavaThread* thread);
   ~ThreadSnapshot();
 
@@ -560,7 +561,7 @@ class JavaThreadBlockedOnMonitorEnterState : public JavaThreadStatusChanger {
   }
 
   JavaThreadBlockedOnMonitorEnterState(JavaThread *java_thread, ObjectMonitor *obj_m) :
-    _stat(NULL), _active(false), JavaThreadStatusChanger(java_thread) {
+    JavaThreadStatusChanger(java_thread), _stat(NULL), _active(false) {
     assert((java_thread != NULL), "Java thread should not be null here");
     // Change thread status and collect contended enter stats for monitor contended
     // enter done for external java world objects and it is contended. All other cases

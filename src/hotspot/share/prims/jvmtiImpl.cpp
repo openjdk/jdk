@@ -531,8 +531,8 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, B
   , _depth(depth)
   , _index(index)
   , _type(type)
-  , _set(false)
   , _jvf(NULL)
+  , _set(false)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -545,8 +545,8 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, jint depth, jint index, B
   , _index(index)
   , _type(type)
   , _value(value)
-  , _set(true)
   , _jvf(NULL)
+  , _set(true)
   , _result(JVMTI_ERROR_NONE)
 {
 }
@@ -558,8 +558,8 @@ VM_GetOrSetLocal::VM_GetOrSetLocal(JavaThread* thread, JavaThread* calling_threa
   , _depth(depth)
   , _index(index)
   , _type(T_OBJECT)
-  , _set(false)
   , _jvf(NULL)
+  , _set(false)
   , _result(JVMTI_ERROR_NONE)
 {
 }

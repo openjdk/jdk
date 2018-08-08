@@ -87,8 +87,8 @@ public:
     _chunk_sz(0),
     _block_sz(0),
     _classes_count(0),
-    _anon_block_sz(0),
     _anon_chunk_sz(0),
+    _anon_block_sz(0),
     _anon_classes_count(0) {
   }
 };
@@ -118,11 +118,11 @@ protected:
 public:
   ClassLoaderStatsClosure(outputStream* out) :
     _out(out),
+    _stats(new StatsTable()),
     _total_loaders(0),
-    _total_block_sz(0),
-    _total_chunk_sz(0),
     _total_classes(0),
-    _stats(new StatsTable()) {
+    _total_chunk_sz(0),
+    _total_block_sz(0) {
   }
 
   virtual void do_cld(ClassLoaderData* cld);

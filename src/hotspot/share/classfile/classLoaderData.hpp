@@ -185,7 +185,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
       volatile juint _size;
       Chunk* _next;
 
-      Chunk(Chunk* c) : _next(c), _size(0) { }
+      Chunk(Chunk* c) : _size(0), _next(c) { }
     };
 
     Chunk* volatile _head;

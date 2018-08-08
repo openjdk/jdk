@@ -966,7 +966,7 @@ class SymbolHashMapEntry : public CHeapObj<mtSymbol> {
   void       set_value(u2 value)          { _value = value; }
 
   SymbolHashMapEntry(unsigned int hash, Symbol* symbol, u2 value)
-    : _hash(hash), _symbol(symbol), _value(value), _next(NULL) {}
+    : _hash(hash), _next(NULL), _symbol(symbol), _value(value) {}
 
 }; // End SymbolHashMapEntry class
 

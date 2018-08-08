@@ -72,7 +72,7 @@ class LogMessageBuffer : public StackObj {
 
    public:
     Iterator(const LogMessageBuffer& message, LogLevelType level, LogDecorations& decorations)
-        : _message(message), _level(level), _decorations(decorations), _current_line_index(0) {
+        : _message(message), _current_line_index(0), _level(level), _decorations(decorations) {
       skip_messages_with_finer_level();
     }
 

@@ -78,8 +78,8 @@ class JfrStackTrace : public StackObj {
                                                         _id(0),
                                                         _nr_of_frames(0),
                                                         _hash(0),
-                                                        _reached_root(false),
                                                         _max_frames(max_frames),
+                                                        _reached_root(false),
                                                         _lineno(false) {}
   bool record_thread(JavaThread& thread, frame& frame);
   bool record_safe(JavaThread* thread, int skip, bool leakp = false);

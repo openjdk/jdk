@@ -142,19 +142,22 @@ void ClassLoaderData::initialize_name(Handle class_loader) {
 }
 
 ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_anonymous) :
-  _is_anonymous(is_anonymous),
+  _metaspace(NULL),
+  _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
+                            Monitor::_safepoint_check_never)),
+  _unloading(false), _is_anonymous(is_anonymous),
+  _modified_oops(true), _accumulated_modified_oops(false),
   // An anonymous class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the anonymous class.
   // The null-class-loader should always be kept alive.
   _keep_alive((is_anonymous || h_class_loader.is_null()) ? 1 : 0),
-  _metaspace(NULL), _unloading(false), _klasses(NULL),
-  _modules(NULL), _packages(NULL), _unnamed_module(NULL), _dictionary(NULL),
-  _claimed(0), _modified_oops(true), _accumulated_modified_oops(false),
-  _jmethod_ids(NULL), _handles(), _deallocate_list(NULL),
+  _claimed(0),
+  _handles(),
+  _klasses(NULL), _packages(NULL), _modules(NULL), _unnamed_module(NULL), _dictionary(NULL),
+  _jmethod_ids(NULL),
+  _deallocate_list(NULL),
   _next(NULL),
-  _class_loader_klass(NULL), _name(NULL), _name_and_id(NULL),
-  _metaspace_lock(new Mutex(Monitor::leaf+1, "Metaspace allocation lock", true,
-                            Monitor::_safepoint_check_never)) {
+  _class_loader_klass(NULL), _name(NULL), _name_and_id(NULL) {
 
   if (!h_class_loader.is_null()) {
     _class_loader = _handles.add(h_class_loader());

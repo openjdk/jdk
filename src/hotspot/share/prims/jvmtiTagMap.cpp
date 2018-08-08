@@ -779,7 +779,7 @@ class ClassFieldDescriptor: public CHeapObj<mtInternal> {
   char _field_type;
  public:
   ClassFieldDescriptor(int index, char type, int offset) :
-    _field_index(index), _field_type(type), _field_offset(offset) {
+    _field_index(index), _field_offset(offset), _field_type(type) {
   }
   int field_index()  const  { return _field_index; }
   char field_type()  const  { return _field_type; }

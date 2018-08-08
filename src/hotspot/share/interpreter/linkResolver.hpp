@@ -159,21 +159,21 @@ class LinkInfo : public StackObj {
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, Klass* current_klass,
            AccessCheck check_access = needs_access_check,
            constantTag tag = JVM_CONSTANT_Invalid) :
-    _resolved_klass(resolved_klass),
-    _name(name), _signature(signature), _current_klass(current_klass), _current_method(methodHandle()),
+    _name(name),
+    _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_klass), _current_method(methodHandle()),
     _check_access(check_access == needs_access_check), _tag(tag) {}
 
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, const methodHandle& current_method,
            AccessCheck check_access = needs_access_check,
            constantTag tag = JVM_CONSTANT_Invalid) :
-    _resolved_klass(resolved_klass),
-    _name(name), _signature(signature), _current_klass(current_method->method_holder()), _current_method(current_method),
+    _name(name),
+    _signature(signature), _resolved_klass(resolved_klass), _current_klass(current_method->method_holder()), _current_method(current_method),
     _check_access(check_access == needs_access_check), _tag(tag) {}
 
   // Case where we just find the method and don't check access against the current class
   LinkInfo(Klass* resolved_klass, Symbol*name, Symbol* signature) :
-    _resolved_klass(resolved_klass),
-    _name(name), _signature(signature), _current_klass(NULL), _current_method(methodHandle()),
+    _name(name),
+    _signature(signature), _resolved_klass(resolved_klass), _current_klass(NULL), _current_method(methodHandle()),
     _check_access(false), _tag(JVM_CONSTANT_Invalid) {}
 
   // accessors

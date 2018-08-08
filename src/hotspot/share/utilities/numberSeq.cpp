@@ -104,7 +104,7 @@ double AbsSeq::dsd() const {
 }
 
 NumberSeq::NumberSeq(double alpha) :
-  AbsSeq(alpha), _maximum(0.0), _last(0.0) {
+  AbsSeq(alpha), _last(0.0), _maximum(0.0) {
 }
 
 bool NumberSeq::check_nums(NumberSeq *total, int n, NumberSeq **parts) {

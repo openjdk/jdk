@@ -53,13 +53,13 @@ size_t Metachunk::overhead() {
 Metachunk::Metachunk(ChunkIndex chunktype, bool is_class, size_t word_size,
                      VirtualSpaceNode* container)
     : Metabase<Metachunk>(word_size),
+    _container(container),
+    _top(NULL),
+    _sentinel(CHUNK_SENTINEL),
     _chunk_type(chunktype),
     _is_class(is_class),
-    _sentinel(CHUNK_SENTINEL),
     _origin(origin_normal),
-    _use_count(0),
-    _top(NULL),
-    _container(container)
+    _use_count(0)
 {
   _top = initial_top();
   set_is_tagged_free(false);

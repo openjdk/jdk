@@ -122,7 +122,7 @@ class StringTableLookupJchar : StackObj {
 
  public:
   StringTableLookupJchar(Thread* thread, uintx hash, const jchar* key, int len)
-    : _thread(thread), _hash(hash), _str(key), _len(len) {
+    : _thread(thread), _hash(hash), _len(len), _str(key) {
   }
   uintx get_hash() const {
     return _hash;

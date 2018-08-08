@@ -402,13 +402,13 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
 
 InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, KlassID id) :
   Klass(id),
+  _nest_members(NULL),
+  _nest_host_index(0),
+  _nest_host(NULL),
   _static_field_size(parser.static_field_size()),
   _nonstatic_oop_map_size(nonstatic_oop_map_size(parser.total_oop_map_count())),
   _itable_len(parser.itable_size()),
-  _reference_type(parser.reference_type()),
-  _nest_members(NULL),
-  _nest_host_index(0),
-  _nest_host(NULL) {
+  _reference_type(parser.reference_type()) {
     set_vtable_length(parser.vtable_size());
     set_kind(kind);
     set_access_flags(parser.access_flags());

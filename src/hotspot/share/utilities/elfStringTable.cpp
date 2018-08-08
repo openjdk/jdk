@@ -34,7 +34,7 @@
 // We will try to load whole string table into memory if we can.
 // Otherwise, fallback to more expensive file operation.
 ElfStringTable::ElfStringTable(FILE* const file, Elf_Shdr& shdr, int index) :
-  _section(file, shdr), _index(index), _fd(file), _next(NULL) {
+  _next(NULL), _index(index), _section(file, shdr), _fd(file) {
   _status = _section.status();
 }
 

@@ -31,7 +31,7 @@
 #include "utilities/elfFuncDescTable.hpp"
 
 ElfFuncDescTable::ElfFuncDescTable(FILE* file, Elf_Shdr shdr, int index) :
-  _file(file), _index(index), _section(file, shdr) {
+  _section(file, shdr), _file(file), _index(index) {
   assert(file, "null file handle");
   // The actual function address (i.e. function entry point) is always the
   // first value in the function descriptor (on IA64 and PPC64 they look as follows):

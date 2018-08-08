@@ -86,11 +86,11 @@ template <class T> class EventLogBase : public EventLog {
 
  public:
   EventLogBase<T>(const char* name, int length = LogEventsBufferEntries):
+    _mutex(Mutex::event, name, false, Monitor::_safepoint_check_never),
     _name(name),
     _length(length),
-    _count(0),
     _index(0),
-    _mutex(Mutex::event, name, false, Monitor::_safepoint_check_never) {
+    _count(0) {
     _records = new EventRecord<T>[length];
   }
 

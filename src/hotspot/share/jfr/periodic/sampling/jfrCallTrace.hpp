@@ -37,7 +37,7 @@ class JfrGetCallTrace : public StackObj {
   bool _in_java;
 
  public:
-  JfrGetCallTrace(bool in_java, JavaThread* thread) : _in_java(in_java), _thread(thread) {}
+  JfrGetCallTrace(bool in_java, JavaThread* thread) : _thread(thread), _in_java(in_java) {}
   bool find_top_frame(frame& topframe, Method** method, frame& first_frame);
   bool get_topframe(void* ucontext, frame& top);
 };

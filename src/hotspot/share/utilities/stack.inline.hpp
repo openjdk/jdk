@@ -33,8 +33,8 @@
 template <MEMFLAGS F> StackBase<F>::StackBase(size_t segment_size, size_t max_cache_size,
                      size_t max_size):
   _seg_size(segment_size),
-  _max_cache_size(max_cache_size),
-  _max_size(adjust_max_size(max_size, segment_size))
+  _max_size(adjust_max_size(max_size, segment_size)),
+  _max_cache_size(max_cache_size)
 {
   assert(_max_size % _seg_size == 0, "not a multiple");
 }

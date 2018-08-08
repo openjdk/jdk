@@ -614,8 +614,7 @@ private:
 
 public:
   ParallelSPCleanupThreadClosure(DeflateMonitorCounters* counters) :
-    _counters(counters),
-    _nmethod_cl(NMethodSweeper::prepare_mark_active_nmethods()) {}
+    _nmethod_cl(NMethodSweeper::prepare_mark_active_nmethods()), _counters(counters) {}
 
   void do_thread(Thread* thread) {
     ObjectSynchronizer::deflate_thread_local_monitors(thread, _counters);
@@ -636,9 +635,9 @@ private:
 public:
   ParallelSPCleanupTask(uint num_workers, DeflateMonitorCounters* counters) :
     AbstractGangTask("Parallel Safepoint Cleanup"),
+    _subtasks(SubTasksDone(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS)),
     _cleanup_threads_cl(ParallelSPCleanupThreadClosure(counters)),
     _num_workers(num_workers),
-    _subtasks(SubTasksDone(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS)),
     _counters(counters) {}
 
   void work(uint worker_id) {

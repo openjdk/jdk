@@ -79,7 +79,7 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 
   VirtualSpaceNode(bool is_class, size_t byte_size);
   VirtualSpaceNode(bool is_class, ReservedSpace rs) :
-    _is_class(is_class), _top(NULL), _next(NULL), _rs(rs), _container_count(0), _occupancy_map(NULL) {}
+    _next(NULL), _is_class(is_class), _rs(rs), _top(NULL), _container_count(0), _occupancy_map(NULL) {}
   ~VirtualSpaceNode();
 
   // Convenience functions for logical bottom and end
