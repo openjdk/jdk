@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -716,14 +716,6 @@ public abstract class Buffer {
                 @Override
                 public JavaNioAccess.BufferPool getDirectBufferPool() {
                     return Bits.BUFFER_POOL;
-                }
-                @Override
-                public ByteBuffer newDirectByteBuffer(long addr, int cap, Object ob) {
-                    return new DirectByteBuffer(addr, cap, ob);
-                }
-                @Override
-                public void truncate(Buffer buf) {
-                    buf.truncate();
                 }
             });
     }
