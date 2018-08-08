@@ -31,7 +31,7 @@
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
- * @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace,all=trace:file=all.log RedefineRunningMethods
+ * @run main/othervm/timeout=180 -javaagent:redefineagent.jar -Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace,all=trace:file=all.log RedefineRunningMethods
  */
 // Test is executed with full trace logging redirected to a file to ensure there is no crash during logging anonymous classes - see JDK-8197901
 
