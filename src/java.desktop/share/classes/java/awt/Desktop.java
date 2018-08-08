@@ -42,7 +42,6 @@ import java.io.FilePermission;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Objects;
@@ -84,10 +83,6 @@ import sun.security.util.SecurityConstants;
  * <p> Note: when some action is invoked and the associated
  * application is executed, it will be executed on the same system as
  * the one on which the Java application was launched.
- *
- * <p> Note: the methods in the {@code Desktop} class may require
- * platform-dependent permissions in addition to those described in the
- * specification.
  *
  * @see Action
  *
@@ -389,11 +384,12 @@ public class Desktop {
 
 
     /**
-     *  Calls to the security manager's {@code checkPermission} method with
-     *  an {@code AWTPermission("showWindowWithoutWarningBanner")}
-     *  permission.
+     * Calls to the security manager's {@code checkPermission} method with an
+     * {@code AWTPermission("showWindowWithoutWarningBanner")} permission. This
+     * permission is needed, because we cannot add a security warning icon to
+     * the windows of the external native application.
      */
-    private void checkAWTPermission(){
+    private void checkAWTPermission() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new AWTPermission(
@@ -938,7 +934,11 @@ public class Desktop {
      * and registered in the Info.plist with CFBundleHelpBookFolder
      *
      * @throws SecurityException if a security manager exists and it denies the
-     * {@code RuntimePermission("canProcessApplicationEvents")} permission.
+     *         {@code RuntimePermission("canProcessApplicationEvents")}
+     *         permission, or it denies the
+     *         {@code AWTPermission("showWindowWithoutWarningBanner")}
+     *         permission, or the calling thread is not allowed to create a
+     *         subprocess
      * @throws UnsupportedOperationException if the current platform
      * does not support the {@link Desktop.Action#APP_HELP_VIEWER} action
      * @since 9
@@ -982,12 +982,15 @@ public class Desktop {
      * @param file the file
      * @throws SecurityException If a security manager exists and its
      *         {@link SecurityManager#checkRead(java.lang.String)} method
-     *         denies read access to the file
+     *         denies read access to the file or to its parent, or it denies the
+     *         {@code AWTPermission("showWindowWithoutWarningBanner")}
+     *         permission, or the calling thread is not allowed to create a
+     *         subprocess
      * @throws UnsupportedOperationException if the current platform
      *         does not support the {@link Desktop.Action#BROWSE_FILE_DIR} action
      * @throws NullPointerException if {@code file} is {@code null}
-     * @throws IllegalArgumentException if the specified file doesn't
-     * exist
+     * @throws IllegalArgumentException if the specified file or its parent
+     *         doesn't exist
      * @since 9
      */
     public void browseFileDirectory(File file) {
@@ -1014,8 +1017,7 @@ public class Desktop {
      * @throws UnsupportedOperationException if the current platform
      *         does not support the {@link Desktop.Action#MOVE_TO_TRASH} action
      * @throws NullPointerException if {@code file} is {@code null}
-     * @throws IllegalArgumentException if the specified file doesn't
-     * exist
+     * @throws IllegalArgumentException if the specified file doesn't exist
      *
      * @since 9
      */
