@@ -449,57 +449,57 @@ bool CMSCollector::_foregroundGCShouldWait = false;
 CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
                            CardTableRS*                   ct,
                            ConcurrentMarkSweepPolicy*     cp):
+  _overflow_list(NULL),
+  _conc_workers(NULL),     // may be set later
+  _completed_initialization(false),
+  _collection_count_start(0),
+  _should_unload_classes(CMSClassUnloadingEnabled),
+  _concurrent_cycles_since_last_unload(0),
+  _roots_scanning_options(GenCollectedHeap::SO_None),
+  _verification_mark_bm(0, Mutex::leaf + 1, "CMS_verification_mark_bm_lock"),
+  _verifying(false),
+  _collector_policy(cp),
+  _inter_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
+  _intra_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
+  _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) CMSTracer()),
+  _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
+  _cms_start_registered(false),
   _cmsGen(cmsGen),
   // Adjust span to cover old (cms) gen
   _span(cmsGen->reserved()),
   _ct(ct),
-  _span_based_discoverer(_span),
-  _ref_processor(NULL),    // will be set later
-  _conc_workers(NULL),     // may be set later
-  _abort_preclean(false),
-  _start_sampling(false),
-  _between_prologue_and_epilogue(false),
   _markBitMap(0, Mutex::leaf + 1, "CMS_markBitMap_lock"),
   _modUnionTable((CardTable::card_shift - LogHeapWordSize),
                  -1 /* lock-free */, "No_lock" /* dummy */),
-  _modUnionClosurePar(&_modUnionTable),
-  // Construct the is_alive_closure with _span & markBitMap
-  _is_alive_closure(_span, &_markBitMap),
   _restart_addr(NULL),
-  _overflow_list(NULL),
-  _stats(cmsGen),
-  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true,
-                             //verify that this lock should be acquired with safepoint check.
-                             Monitor::_safepoint_check_sometimes)),
-  _eden_chunk_array(NULL),     // may be set in ctor body
-  _eden_chunk_capacity(0),     // -- ditto --
-  _eden_chunk_index(0),        // -- ditto --
-  _survivor_plab_array(NULL),  // -- ditto --
-  _survivor_chunk_array(NULL), // -- ditto --
-  _survivor_chunk_capacity(0), // -- ditto --
-  _survivor_chunk_index(0),    // -- ditto --
   _ser_pmc_preclean_ovflw(0),
-  _ser_kac_preclean_ovflw(0),
   _ser_pmc_remark_ovflw(0),
   _par_pmc_remark_ovflw(0),
+  _ser_kac_preclean_ovflw(0),
   _ser_kac_ovflw(0),
   _par_kac_ovflw(0),
 #ifndef PRODUCT
   _num_par_pushes(0),
 #endif
-  _collection_count_start(0),
-  _verifying(false),
-  _verification_mark_bm(0, Mutex::leaf + 1, "CMS_verification_mark_bm_lock"),
-  _completed_initialization(false),
-  _collector_policy(cp),
-  _should_unload_classes(CMSClassUnloadingEnabled),
-  _concurrent_cycles_since_last_unload(0),
-  _roots_scanning_options(GenCollectedHeap::SO_None),
-  _inter_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
-  _intra_sweep_estimate(CMS_SweepWeight, CMS_SweepPadding),
-  _gc_tracer_cm(new (ResourceObj::C_HEAP, mtGC) CMSTracer()),
-  _gc_timer_cm(new (ResourceObj::C_HEAP, mtGC) ConcurrentGCTimer()),
-  _cms_start_registered(false)
+  _span_based_discoverer(_span),
+  _ref_processor(NULL),    // will be set later
+  // Construct the is_alive_closure with _span & markBitMap
+  _is_alive_closure(_span, &_markBitMap),
+  _modUnionClosurePar(&_modUnionTable),
+  _between_prologue_and_epilogue(false),
+  _abort_preclean(false),
+  _start_sampling(false),
+  _stats(cmsGen),
+  _eden_chunk_lock(new Mutex(Mutex::leaf + 1, "CMS_eden_chunk_lock", true,
+                             //verify that this lock should be acquired with safepoint check.
+                             Monitor::_safepoint_check_sometimes)),
+  _eden_chunk_array(NULL),     // may be set in ctor body
+  _eden_chunk_index(0),        // -- ditto --
+  _eden_chunk_capacity(0),     // -- ditto --
+  _survivor_chunk_array(NULL), // -- ditto --
+  _survivor_chunk_index(0),    // -- ditto --
+  _survivor_chunk_capacity(0), // -- ditto --
+  _survivor_plab_array(NULL)   // -- ditto --
 {
   // Now expand the span and allocate the collection support structures
   // (MUT, marking bit map etc.) to cover both generations subject to
@@ -3037,11 +3037,12 @@ class CMSConcMarkingTask: public YieldingFlexibleGangTask {
                  OopTaskQueueSet* task_queues):
     YieldingFlexibleGangTask("Concurrent marking done multi-threaded"),
     _collector(collector),
+    _n_workers(0),
+    _result(true),
     _cms_space(cms_space),
-    _n_workers(0), _result(true),
+    _bit_map_lock(collector->bitMapLock()),
     _task_queues(task_queues),
-    _term(_n_workers, task_queues, _collector),
-    _bit_map_lock(collector->bitMapLock())
+    _term(_n_workers, task_queues, _collector)
   {
     _requested_size = _n_workers;
     _term.set_task(this);
@@ -3320,9 +3321,9 @@ class ParConcMarkingClosure: public MetadataVisitingOopIterateClosure {
     _collector(collector),
     _task(task),
     _span(collector->_span),
-    _work_queue(work_queue),
     _bit_map(bit_map),
-    _overflow_stack(overflow_stack)
+    _overflow_stack(overflow_stack),
+    _work_queue(work_queue)
   { }
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
@@ -5024,8 +5025,10 @@ public:
     AbstractGangTaskWOopQueues("Process referents by policy in parallel",
       task_queues,
       workers->active_workers()),
-    _task(task),
-    _collector(collector), _span(span), _mark_bit_map(mark_bit_map)
+    _collector(collector),
+    _mark_bit_map(mark_bit_map),
+    _span(span),
+    _task(task)
   {
     assert(_collector->_span.equals(_span) && !_span.is_empty(),
            "Inconsistency in _span");
@@ -5064,8 +5067,8 @@ void CMSRefProcTaskProxy::work(uint worker_id) {
 CMSParKeepAliveClosure::CMSParKeepAliveClosure(CMSCollector* collector,
   MemRegion span, CMSBitMap* bit_map, OopTaskQueue* work_queue):
    _span(span),
-   _bit_map(bit_map),
    _work_queue(work_queue),
+   _bit_map(bit_map),
    _mark_and_push(collector, span, bit_map, work_queue),
    _low_water_mark(MIN2((work_queue->max_elems()/4),
                         ((uint)CMSWorkQueueDrainThreshold * ParallelGCThreads)))
@@ -5602,8 +5605,8 @@ HeapWord* CMSCollector::next_card_start_after_block(HeapWord* addr) const {
 // bit vector itself. That is done by a separate call CMSBitMap::allocate()
 // further below.
 CMSBitMap::CMSBitMap(int shifter, int mutex_rank, const char* mutex_name):
-  _bm(),
   _shifter(shifter),
+  _bm(),
   _lock(mutex_rank >= 0 ? new Mutex(mutex_rank, mutex_name, true,
                                     Monitor::_safepoint_check_sometimes) : NULL)
 {
@@ -5852,15 +5855,15 @@ MarkRefsIntoAndScanClosure::MarkRefsIntoAndScanClosure(MemRegion span,
                                                        CMSCollector* collector,
                                                        bool should_yield,
                                                        bool concurrent_precleaning):
-  _collector(collector),
   _span(span),
   _bit_map(bit_map),
   _mark_stack(mark_stack),
   _pushAndMarkClosure(collector, span, rd, bit_map, mod_union_table,
                       mark_stack, concurrent_precleaning),
+  _collector(collector),
+  _freelistLock(NULL),
   _yield(should_yield),
-  _concurrent_precleaning(concurrent_precleaning),
-  _freelistLock(NULL)
+  _concurrent_precleaning(concurrent_precleaning)
 {
   // FIXME: Should initialize in base class constructor.
   assert(rd != NULL, "ref_discoverer shouldn't be NULL");
@@ -6957,10 +6960,10 @@ SweepClosure::SweepClosure(CMSCollector* collector,
   _limit(_sp->sweep_limit()),
   _freelistLock(_sp->freelistLock()),
   _bitMap(bitMap),
-  _yield(should_yield),
   _inFreeRange(false),           // No free range at beginning of sweep
   _freeRangeInFreeLists(false),  // No free range at beginning of sweep
   _lastFreeRangeCoalesced(false),
+  _yield(should_yield),
   _freeFinger(g->used_region().start())
 {
   NOT_PRODUCT(
@@ -7514,15 +7517,14 @@ bool CMSIsAliveClosure::do_object_b(oop obj) {
          (!_span.contains(addr) || _bit_map->isMarked(addr));
 }
 
-
 CMSKeepAliveClosure::CMSKeepAliveClosure( CMSCollector* collector,
                       MemRegion span,
                       CMSBitMap* bit_map, CMSMarkStack* mark_stack,
                       bool cpc):
   _collector(collector),
   _span(span),
-  _bit_map(bit_map),
   _mark_stack(mark_stack),
+  _bit_map(bit_map),
   _concurrent_precleaning(cpc) {
   assert(!_span.is_empty(), "Empty span could spell trouble");
 }
@@ -7610,8 +7612,8 @@ CMSInnerParMarkAndPushClosure::CMSInnerParMarkAndPushClosure(
                                 OopTaskQueue* work_queue):
   _collector(collector),
   _span(span),
-  _bit_map(bit_map),
-  _work_queue(work_queue) { }
+  _work_queue(work_queue),
+  _bit_map(bit_map) { }
 
 void CMSInnerParMarkAndPushClosure::do_oop(oop obj) {
   HeapWord* addr = (HeapWord*)obj;

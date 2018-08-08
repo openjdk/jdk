@@ -1407,52 +1407,70 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
   _verifier->verify_region_sets_optional();
 }
 
-// Public methods.
-
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
   _young_gen_sampling_thread(NULL),
+  _workers(NULL),
   _collector_policy(collector_policy),
-  _soft_ref_policy(),
   _card_table(NULL),
+  _soft_ref_policy(),
   _memory_manager("G1 Young Generation", "end of minor GC"),
   _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
   _eden_pool(NULL),
   _survivor_pool(NULL),
   _old_pool(NULL),
+  _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
+  _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
+  _bot(NULL),
+  _listener(),
+  _hrm(),
+  _allocator(NULL),
+  _verifier(NULL),
+  _summary_bytes_used(0),
+  _archive_allocator(NULL),
+  _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
+  _old_evac_stats("Old", OldPLABSize, PLABWeight),
+  _expand_heap_after_alloc_failure(true),
+  _g1mm(NULL),
+  _humongous_reclaim_candidates(),
+  _has_humongous_reclaim_candidates(false),
+  _hr_printer(),
+  _collector_state(),
+  _old_marking_cycles_started(0),
+  _old_marking_cycles_completed(0),
+  _eden(),
+  _survivor(),
   _gc_timer_stw(new (ResourceObj::C_HEAP, mtGC) STWGCTimer()),
   _gc_tracer_stw(new (ResourceObj::C_HEAP, mtGC) G1NewTracer()),
   _g1_policy(new G1Policy(_gc_timer_stw)),
+  _heap_sizing_policy(NULL),
   _collection_set(this, _g1_policy),
+  _hot_card_cache(NULL),
+  _g1_rem_set(NULL),
   _dirty_card_queue_set(false),
+  _cm(NULL),
+  _cm_thread(NULL),
+  _cr(NULL),
+  _task_queues(NULL),
+  _evacuation_failed(false),
+  _evacuation_failed_info_array(NULL),
+  _preserved_marks_set(true /* in_c_heap */),
+#ifndef PRODUCT
+  _evacuation_failure_alot_for_current_gc(false),
+  _evacuation_failure_alot_gc_number(0),
+  _evacuation_failure_alot_count(0),
+#endif
   _ref_processor_stw(NULL),
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
   _ref_processor_cm(NULL),
   _is_alive_closure_cm(this),
   _is_subject_to_discovery_cm(this),
-  _bot(NULL),
-  _hot_card_cache(NULL),
-  _g1_rem_set(NULL),
-  _cr(NULL),
-  _g1mm(NULL),
-  _preserved_marks_set(true /* in_c_heap */),
-  _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
-  _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
-  _humongous_reclaim_candidates(),
-  _has_humongous_reclaim_candidates(false),
-  _archive_allocator(NULL),
-  _summary_bytes_used(0),
-  _survivor_evac_stats("Young", YoungPLABSize, PLABWeight),
-  _old_evac_stats("Old", OldPLABSize, PLABWeight),
-  _expand_heap_after_alloc_failure(true),
-  _old_marking_cycles_started(0),
-  _old_marking_cycles_completed(0),
   _in_cset_fast_test() {
 
   _workers = new WorkGang("GC Thread", ParallelGCThreads,
-                          /* are_GC_task_threads */true,
-                          /* are_ConcurrentGC_threads */false);
+                          true /* are_GC_task_threads */,
+                          false /* are_ConcurrentGC_threads */);
   _workers->initialize_workers();
   _verifier = new G1HeapVerifier(this);
 
@@ -3576,10 +3594,10 @@ public:
   // The constructor is run in the VMThread.
   G1ParallelCleaningTask(BoolObjectClosure* is_alive, uint num_workers, bool unloading_occurred) :
       AbstractGangTask("Parallel Cleaning"),
+      _unloading_occurred(unloading_occurred),
       _string_symbol_task(is_alive, true, true, G1StringDedup::is_enabled()),
       _code_cache_task(num_workers, is_alive, unloading_occurred),
       _klass_cleaning_task(),
-      _unloading_occurred(unloading_occurred),
       _resolved_method_cleaning_task() {
   }
 
@@ -4325,11 +4343,11 @@ private:
 public:
   G1FreeCollectionSetTask(G1CollectionSet* collection_set, EvacuationInfo* evacuation_info, const size_t* surviving_young_words) :
     AbstractGangTask("G1 Free Collection Set"),
-    _cl(evacuation_info, surviving_young_words),
     _collection_set(collection_set),
+    _cl(evacuation_info, surviving_young_words),
     _surviving_young_words(surviving_young_words),
-    _serial_work_claim(0),
     _rs_lengths(0),
+    _serial_work_claim(0),
     _parallel_work_claim(0),
     _num_work_items(collection_set->region_length()),
     _work_items(NEW_C_HEAP_ARRAY(WorkItem, _num_work_items, mtGC)) {

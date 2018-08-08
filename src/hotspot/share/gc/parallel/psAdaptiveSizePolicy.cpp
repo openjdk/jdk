@@ -50,10 +50,10 @@ PSAdaptiveSizePolicy::PSAdaptiveSizePolicy(size_t init_eden_size,
                         gc_pause_goal_sec,
                         gc_cost_ratio),
      _collection_cost_margin_fraction(AdaptiveSizePolicyCollectionCostMargin / 100.0),
-     _space_alignment(space_alignment),
-     _live_at_last_full_gc(init_promo_size),
-     _gc_minor_pause_goal_sec(gc_minor_pause_goal_sec),
      _latest_major_mutator_interval_seconds(0),
+     _space_alignment(space_alignment),
+     _gc_minor_pause_goal_sec(gc_minor_pause_goal_sec),
+     _live_at_last_full_gc(init_promo_size),
      _young_gen_change_for_major_pause_count(0)
 {
   // Sizing policy statistics

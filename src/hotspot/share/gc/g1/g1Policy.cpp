@@ -53,21 +53,32 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _mmu_tracker(new G1MMUTrackerQueue(GCPauseIntervalMillis / 1000.0, MaxGCPauseMillis / 1000.0)),
   _ihop_control(create_ihop_control(&_predictor)),
   _policy_counters(new GCPolicyCounters("GarbageFirst", 1, 2)),
+  _full_collection_start_sec(0.0),
+  _collection_pause_end_millis(os::javaTimeNanos() / NANOSECS_PER_MILLISEC),
+  _young_list_target_length(0),
   _young_list_fixed_length(0),
+  _young_list_max_length(0),
   _short_lived_surv_rate_group(new SurvRateGroup()),
   _survivor_surv_rate_group(new SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
   _reserve_regions(0),
+  _young_gen_sizer(),
+  _free_regions_at_end_of_collection(0),
+  _max_rs_lengths(0),
   _rs_lengths_prediction(0),
+  _pending_cards(0),
   _bytes_allocated_in_old_since_last_gc(0),
   _initial_mark_to_mixed(),
   _collection_set(NULL),
+  _bytes_copied_during_gc(0),
   _g1h(NULL),
   _phase_times(new G1GCPhaseTimes(gc_timer, ParallelGCThreads)),
+  _mark_remark_start_sec(0),
+  _mark_cleanup_start_sec(0),
   _tenuring_threshold(MaxTenuringThreshold),
   _max_survivor_regions(0),
-  _survivors_age_table(true),
-  _collection_pause_end_millis(os::javaTimeNanos() / NANOSECS_PER_MILLISEC) {
+  _survivors_age_table(true)
+{
 }
 
 G1Policy::~G1Policy() {

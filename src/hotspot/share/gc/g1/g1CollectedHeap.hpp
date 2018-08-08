@@ -181,9 +181,6 @@ private:
   // Start a new incremental collection set for the next pause.
   void start_new_collection_set();
 
-  // The number of regions we could create by expansion.
-  uint _expansion_regions;
-
   // The block offset table for the G1 heap.
   G1BlockOffsetTable* _bot;
 
@@ -1434,9 +1431,9 @@ public:
                                 G1ParScanThreadState* par_scan_state,
                                 RefToScanQueueSet* queues,
                                 ParallelTaskTerminator* terminator)
-    : _g1h(g1h), _par_scan_state(par_scan_state),
-      _queues(queues), _terminator(terminator),
-      _start_term(0.0), _term_time(0.0), _term_attempts(0) {}
+    : _start_term(0.0), _term_time(0.0), _term_attempts(0),
+      _g1h(g1h), _par_scan_state(par_scan_state),
+      _queues(queues), _terminator(terminator) {}
 
   void do_void();
 

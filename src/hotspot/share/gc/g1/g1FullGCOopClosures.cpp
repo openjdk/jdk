@@ -39,10 +39,10 @@ void G1FullKeepAliveClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 
 G1VerifyOopClosure::G1VerifyOopClosure(VerifyOption option) :
    _g1h(G1CollectedHeap::heap()),
+   _failures(false),
    _containing_obj(NULL),
    _verify_option(option),
-   _cc(0),
-   _failures(false) {
+   _cc(0) {
 }
 
 void G1VerifyOopClosure::print_object(outputStream* out, oop obj) {

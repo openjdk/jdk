@@ -29,7 +29,10 @@
 #include "runtime/atomic.hpp"
 
 G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
-  _g1h(g1h), _hot_cache(NULL), _use_cache(false), _card_counts(g1h) {}
+  _g1h(g1h), _use_cache(false), _card_counts(g1h),
+  _hot_cache(NULL), _hot_cache_size(0), _hot_cache_par_chunk_size(0),
+  _hot_cache_idx(0), _hot_cache_par_claimed_idx(0)
+{}
 
 void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
   if (default_use_cache()) {

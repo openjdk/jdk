@@ -83,9 +83,12 @@ void HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {
 }
 
 HeapRegionSetBase::HeapRegionSetBase(const char* name, bool humongous, bool free, HRSMtSafeChecker* mt_safety_checker)
-  : _name(name), _verify_in_progress(false),
-    _is_humongous(humongous), _is_free(free), _mt_safety_checker(mt_safety_checker),
-    _length(0)
+  : _is_humongous(humongous),
+    _is_free(free),
+    _mt_safety_checker(mt_safety_checker),
+    _length(0),
+    _name(name),
+    _verify_in_progress(false)
 { }
 
 void FreeRegionList::set_unrealistically_long_length(uint len) {

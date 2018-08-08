@@ -42,7 +42,7 @@ class G1PreBarrierStub: public CodeStub {
   // addr (the address of the field to be read) must be a LIR_Address
   // pre_val (a temporary register) must be a register;
   G1PreBarrierStub(LIR_Opr addr, LIR_Opr pre_val, LIR_PatchCode patch_code, CodeEmitInfo* info) :
-    _addr(addr), _pre_val(pre_val), _do_load(true),
+    _do_load(true), _addr(addr), _pre_val(pre_val),
     _patch_code(patch_code), _info(info)
   {
     assert(_pre_val->is_register(), "should be temporary register");
@@ -52,7 +52,7 @@ class G1PreBarrierStub: public CodeStub {
   // Version that _does not_ generate load of the previous value; the
   // previous value is assumed to have already been loaded into pre_val.
   G1PreBarrierStub(LIR_Opr pre_val) :
-    _addr(LIR_OprFact::illegalOpr), _pre_val(pre_val), _do_load(false),
+    _do_load(false), _addr(LIR_OprFact::illegalOpr), _pre_val(pre_val),
     _patch_code(lir_patch_none), _info(NULL)
   {
     assert(_pre_val->is_register(), "should be a register");

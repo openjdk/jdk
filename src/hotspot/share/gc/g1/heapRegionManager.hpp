@@ -128,10 +128,13 @@ public:
 
  public:
   // Empty constructor, we'll initialize it with the initialize() method.
-  HeapRegionManager() : _regions(), _heap_mapper(NULL), _num_committed(0),
-                    _next_bitmap_mapper(NULL), _prev_bitmap_mapper(NULL), _bot_mapper(NULL),
-                    _allocated_heapregions_length(0), _available_map(mtGC),
-                    _free_list("Free list", new MasterFreeRegionListMtSafeChecker())
+  HeapRegionManager() :
+   _regions(), _heap_mapper(NULL),
+   _prev_bitmap_mapper(NULL), _next_bitmap_mapper(NULL), _bot_mapper(NULL),
+   _cardtable_mapper(NULL), _card_counts_mapper(NULL),
+   _free_list("Free list", new MasterFreeRegionListMtSafeChecker()),
+   _available_map(mtGC), _num_committed(0),
+   _allocated_heapregions_length(0)
   { }
 
   void initialize(G1RegionToSpaceMapper* heap_storage,

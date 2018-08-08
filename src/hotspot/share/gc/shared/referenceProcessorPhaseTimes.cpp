@@ -164,7 +164,7 @@ RefProcPhaseTimeTracker::~RefProcPhaseTimeTracker() {
 RefProcTotalPhaseTimesTracker::RefProcTotalPhaseTimesTracker(ReferenceProcessor::RefProcPhases phase_number,
                                                              ReferenceProcessorPhaseTimes* phase_times,
                                                              ReferenceProcessor* rp) :
-  _rp(rp), RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times) {
+  RefProcPhaseTimeBaseTracker(phase_enum_2_phase_string(phase_number), phase_number, phase_times), _rp(rp) {
 }
 
 RefProcTotalPhaseTimesTracker::~RefProcTotalPhaseTimesTracker() {
@@ -173,7 +173,7 @@ RefProcTotalPhaseTimesTracker::~RefProcTotalPhaseTimesTracker() {
 }
 
 ReferenceProcessorPhaseTimes::ReferenceProcessorPhaseTimes(GCTimer* gc_timer, uint max_gc_threads) :
-  _gc_timer(gc_timer), _processing_is_mt(false) {
+  _processing_is_mt(false), _gc_timer(gc_timer) {
 
   for (uint i = 0; i < ReferenceProcessor::RefSubPhaseMax; i++) {
     _sub_phases_worker_time_sec[i] = new WorkerDataArray<double>(max_gc_threads, SubPhasesParWorkTitle[i]);

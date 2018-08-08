@@ -187,12 +187,13 @@ class MutexGangTaskDispatcher : public GangTaskDispatcher {
   Monitor* _monitor;
 
  public:
-  MutexGangTaskDispatcher()
-      : _task(NULL),
-        _monitor(new Monitor(Monitor::leaf, "WorkGang dispatcher lock", false, Monitor::_safepoint_check_never)),
-        _started(0),
-        _finished(0),
-        _num_workers(0) {}
+  MutexGangTaskDispatcher() :
+    _task(NULL),
+    _started(0),
+    _finished(0),
+    _num_workers(0),
+    _monitor(new Monitor(Monitor::leaf, "WorkGang dispatcher lock", false, Monitor::_safepoint_check_never)) {
+  }
 
   ~MutexGangTaskDispatcher() {
     delete _monitor;
@@ -408,7 +409,7 @@ void WorkGangBarrierSync::abort() {
 // SubTasksDone functions.
 
 SubTasksDone::SubTasksDone(uint n) :
-  _n_tasks(n), _tasks(NULL) {
+  _tasks(NULL), _n_tasks(n), _threads_completed(0) {
   _tasks = NEW_C_HEAP_ARRAY(uint, n, mtInternal);
   guarantee(_tasks != NULL, "alloc failure");
   clear();

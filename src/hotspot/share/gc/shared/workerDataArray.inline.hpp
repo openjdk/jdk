@@ -31,10 +31,10 @@
 
 template <typename T>
 WorkerDataArray<T>::WorkerDataArray(uint length, const char* title) :
- _title(title),
- _length(0) {
+ _data(NULL),
+ _length(length),
+ _title(title) {
   assert(length > 0, "Must have some workers to store data for");
-  _length = length;
   _data = NEW_C_HEAP_ARRAY(T, _length, mtGC);
   for (uint i = 0; i < MaxThreadWorkItems; i++) {
     _thread_work_items[i] = NULL;

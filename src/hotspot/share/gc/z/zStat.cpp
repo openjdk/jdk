@@ -83,8 +83,8 @@ public:
   ZStatSamplerHistoryInterval() :
       _next(0),
       _samples(),
-      _total(),
-      _accumulated() {}
+      _accumulated(),
+      _total() {}
 
   bool add(const ZStatSamplerData& new_sample) {
     // Insert sample

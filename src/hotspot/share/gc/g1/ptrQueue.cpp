@@ -92,14 +92,20 @@ void BufferNode::deallocate(BufferNode* node) {
 
 PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
   _buffer_size(0),
-  _max_completed_queue(0),
-  _cbl_mon(NULL), _fl_lock(NULL),
-  _notify_when_complete(notify_when_complete),
+  _cbl_mon(NULL),
   _completed_buffers_head(NULL),
   _completed_buffers_tail(NULL),
   _n_completed_buffers(0),
-  _process_completed_threshold(0), _process_completed(false),
-  _buf_free_list(NULL), _buf_free_list_sz(0)
+  _process_completed_threshold(0),
+  _process_completed(false),
+  _fl_lock(NULL),
+  _buf_free_list(NULL),
+  _buf_free_list_sz(0),
+  _fl_owner(NULL),
+  _all_active(false),
+  _notify_when_complete(notify_when_complete),
+  _max_completed_queue(0),
+  _completed_queue_padding(0)
 {
   _fl_owner = this;
 }

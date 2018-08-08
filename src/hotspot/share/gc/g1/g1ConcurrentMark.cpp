@@ -625,7 +625,7 @@ private:
     G1CMBitMap* _bitmap;
     G1ConcurrentMark* _cm;
   public:
-    G1ClearBitmapHRClosure(G1CMBitMap* bitmap, G1ConcurrentMark* cm) : HeapRegionClosure(), _cm(cm), _bitmap(bitmap) {
+    G1ClearBitmapHRClosure(G1CMBitMap* bitmap, G1ConcurrentMark* cm) : HeapRegionClosure(), _bitmap(bitmap), _cm(cm) {
     }
 
     virtual bool do_heap_region(HeapRegion* r) {
@@ -1095,7 +1095,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public AbstractGangTask {
 
   public:
     G1UpdateRemSetTrackingBeforeRebuild(G1CollectedHeap* g1h, G1ConcurrentMark* cm, G1PrintRegionLivenessInfoClosure* cl) :
-      _g1h(g1h), _cm(cm), _num_regions_selected_for_rebuild(0), _cl(cl) { }
+      _g1h(g1h), _cm(cm), _cl(cl), _num_regions_selected_for_rebuild(0) { }
 
     virtual bool do_heap_region(HeapRegion* r) {
       update_remset_before_rebuild(r);
@@ -1415,10 +1415,9 @@ class G1CMKeepAliveAndDrainClosure : public OopClosure {
   bool              _is_serial;
 public:
   G1CMKeepAliveAndDrainClosure(G1ConcurrentMark* cm, G1CMTask* task, bool is_serial) :
-    _cm(cm), _task(task), _is_serial(is_serial),
-    _ref_counter_limit(G1RefProcDrainInterval) {
+    _cm(cm), _task(task), _ref_counter_limit(G1RefProcDrainInterval),
+    _ref_counter(_ref_counter_limit), _is_serial(is_serial) {
     assert(!_is_serial || _task->worker_id() == 0, "only task 0 for serial code");
-    _ref_counter = _ref_counter_limit;
   }
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }

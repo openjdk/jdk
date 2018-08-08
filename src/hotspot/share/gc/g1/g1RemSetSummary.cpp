@@ -247,9 +247,10 @@ private:
   HeapRegion* max_code_root_mem_sz_region() const { return _max_code_root_mem_sz_region; }
 
 public:
-  HRRSStatsIter() : _all("All"), _young("Young"), _humongous("Humongous"),
-    _free("Free"), _old("Old"), _max_code_root_mem_sz_region(NULL), _max_rs_mem_sz_region(NULL),
-    _max_rs_mem_sz(0), _max_code_root_mem_sz(0)
+  HRRSStatsIter() : _young("Young"), _humongous("Humongous"),
+    _free("Free"), _old("Old"), _all("All"),
+    _max_rs_mem_sz(0), _max_rs_mem_sz_region(NULL),
+    _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(NULL)
   {}
 
   bool do_heap_region(HeapRegion* r) {

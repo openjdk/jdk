@@ -33,7 +33,7 @@
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 
-MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _top(NULL), _alignment(alignment) {
+MutableSpace::MutableSpace(size_t alignment): ImmutableSpace(), _alignment(alignment), _top(NULL) {
   assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
   _mangler = new MutableSpaceMangler(this);

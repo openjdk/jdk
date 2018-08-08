@@ -27,8 +27,9 @@
 #include "gc/g1/heapRegion.hpp"
 #include "logging/log.hpp"
 
-G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true),
-        _min_desired_young_length(0), _max_desired_young_length(0) {
+G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
+  _min_desired_young_length(0), _max_desired_young_length(0), _adaptive_size(true) {
+
   if (FLAG_IS_CMDLINE(NewRatio)) {
     if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
       log_warning(gc, ergo)("-XX:NewSize and -XX:MaxNewSize override -XX:NewRatio");

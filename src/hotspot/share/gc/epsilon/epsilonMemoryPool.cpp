@@ -27,11 +27,11 @@
 #include "gc/epsilon/epsilonMemoryPool.hpp"
 
 EpsilonMemoryPool::EpsilonMemoryPool(EpsilonHeap* heap) :
-        _heap(heap),
         CollectedMemoryPool("Epsilon Heap",
                             heap->capacity(),
                             heap->max_capacity(),
-                            false) {
+                            false),
+        _heap(heap) {
   assert(UseEpsilonGC, "sanity");
 }
 

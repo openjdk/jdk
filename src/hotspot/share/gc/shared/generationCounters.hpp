@@ -56,7 +56,7 @@ private:
   // constructor. The need for such an constructor should be eliminated
   // when VirtualSpace and PSVirtualSpace are unified.
   GenerationCounters()
-             : _name_space(NULL), _current_size(NULL), _virtual_space(NULL) {}
+             : _current_size(NULL), _virtual_space(NULL), _name_space(NULL) {}
 
   // This constructor is used for subclasses that do not have a space
   // associated with them (e.g, in G1).

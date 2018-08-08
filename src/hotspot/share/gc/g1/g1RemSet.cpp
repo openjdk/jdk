@@ -282,13 +282,13 @@ public:
 G1RemSet::G1RemSet(G1CollectedHeap* g1h,
                    G1CardTable* ct,
                    G1HotCardCache* hot_card_cache) :
-  _g1h(g1h),
   _scan_state(new G1RemSetScanState()),
+  _prev_period_summary(),
+  _g1h(g1h),
   _num_conc_refined_cards(0),
   _ct(ct),
   _g1p(_g1h->g1_policy()),
-  _hot_card_cache(hot_card_cache),
-  _prev_period_summary() {
+  _hot_card_cache(hot_card_cache) {
 }
 
 G1RemSet::~G1RemSet() {
@@ -316,8 +316,8 @@ G1ScanRSForRegionClosure::G1ScanRSForRegionClosure(G1RemSetScanState* scan_state
   _scan_objs_on_card_cl(scan_obj_on_card),
   _scan_state(scan_state),
   _worker_i(worker_i),
-  _cards_claimed(0),
   _cards_scanned(0),
+  _cards_claimed(0),
   _cards_skipped(0),
   _rem_set_root_scan_time(),
   _rem_set_trim_partially_time(),
@@ -976,8 +976,8 @@ public:
                       uint n_workers,
                       uint worker_id_offset) :
       AbstractGangTask("G1 Rebuild Remembered Set"),
-      _cm(cm),
       _hr_claimer(n_workers),
+      _cm(cm),
       _worker_id_offset(worker_id_offset) {
   }
 

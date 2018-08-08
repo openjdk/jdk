@@ -34,8 +34,8 @@
 #include "utilities/bitMap.inline.hpp"
 
 G1PageBasedVirtualSpace::G1PageBasedVirtualSpace(ReservedSpace rs, size_t used_size, size_t page_size) :
-  _low_boundary(NULL), _high_boundary(NULL), _committed(mtGC), _page_size(0), _special(false),
-  _dirty(mtGC), _executable(false) {
+  _low_boundary(NULL), _high_boundary(NULL), _tail_size(0), _page_size(0),
+  _committed(mtGC), _dirty(mtGC), _special(false), _executable(false) {
   initialize_with_page_size(rs, used_size, page_size);
 }
 

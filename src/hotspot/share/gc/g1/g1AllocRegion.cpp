@@ -251,10 +251,12 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 
 G1AllocRegion::G1AllocRegion(const char* name,
                              bool bot_updates)
-  : _name(name), _bot_updates(bot_updates),
-    _alloc_region(NULL), _count(0),
-    _used_bytes_before(0) { }
-
+  : _alloc_region(NULL),
+    _count(0),
+    _used_bytes_before(0),
+    _bot_updates(bot_updates),
+    _name(name)
+ { }
 
 HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,
                                                     bool force) {

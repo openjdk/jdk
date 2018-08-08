@@ -34,11 +34,12 @@
 
 G1ConcurrentRefineThread::G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id) :
   ConcurrentGCThread(),
+  _vtime_start(0.0),
+  _vtime_accum(0.0),
   _worker_id(worker_id),
   _active(false),
   _monitor(NULL),
-  _cr(cr),
-  _vtime_accum(0.0)
+  _cr(cr)
 {
   // Each thread has its own monitor. The i-th thread is responsible for signaling
   // to thread i+1 if the number of buffers in the queue exceeds a threshold for this
