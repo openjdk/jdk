@@ -66,11 +66,11 @@ class StringConcat : public ResourceObj {
   };
 
   StringConcat(PhaseStringOpts* stringopts, CallStaticJavaNode* end):
-    _end(end),
-    _begin(NULL),
-    _multiple(false),
+    _stringopts(stringopts),
     _string_alloc(NULL),
-    _stringopts(stringopts) {
+    _begin(NULL),
+    _end(end),
+    _multiple(false) {
     _arguments = new Node(1);
     _arguments->del_req(0);
   }

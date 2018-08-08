@@ -44,11 +44,11 @@ InlineTree::InlineTree(Compile* c,
                        float site_invoke_ratio, int max_inline_level) :
   C(c),
   _caller_jvms(caller_jvms),
-  _caller_tree((InlineTree*) caller_tree),
   _method(callee),
+  _caller_tree((InlineTree*) caller_tree),
+  _count_inline_bcs(method()->code_size_for_inlining()),
   _site_invoke_ratio(site_invoke_ratio),
   _max_inline_level(max_inline_level),
-  _count_inline_bcs(method()->code_size_for_inlining()),
   _subtrees(c->comp_arena(), 2, 0, NULL),
   _msg(NULL)
 {

@@ -549,9 +549,10 @@ class Invariance : public StackObj {
 
  public:
   Invariance(Arena* area, IdealLoopTree* lpt) :
-    _lpt(lpt), _phase(lpt->_phase),
-    _visited(area), _invariant(area), _stack(area, 10 /* guess */),
-    _clone_visited(area), _old_new(area)
+    _visited(area), _invariant(area),
+    _stack(area, 10 /* guess */),
+    _clone_visited(area), _old_new(area),
+    _lpt(lpt), _phase(lpt->_phase)
   {
     LoopNode* head = _lpt->_head->as_Loop();
     Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);

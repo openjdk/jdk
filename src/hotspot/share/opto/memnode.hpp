@@ -190,7 +190,7 @@ protected:
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
-    : MemNode(c,mem,adr,at), _type(rt), _mo(mo), _control_dependency(control_dependency) {
+    : MemNode(c,mem,adr,at), _control_dependency(control_dependency), _mo(mo), _type(rt) {
     init_class_id(Class_Load);
   }
   inline bool is_unordered() const { return !is_acquire(); }

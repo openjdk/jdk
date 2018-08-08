@@ -57,25 +57,25 @@ const uint Matcher::_end_rematerialize   = _END_REMATERIALIZE;
 //---------------------------Matcher-------------------------------------------
 Matcher::Matcher()
 : PhaseTransform( Phase::Ins_Select ),
-#ifdef ASSERT
-  _old2new_map(C->comp_arena()),
-  _new2old_map(C->comp_arena()),
-#endif
-  _shared_nodes(C->comp_arena()),
+  _states_arena(Chunk::medium_size, mtCompiler),
+  _visited(&_states_arena),
+  _shared(&_states_arena),
+  _dontcare(&_states_arena),
   _reduceOp(reduceOp), _leftOp(leftOp), _rightOp(rightOp),
   _swallowed(swallowed),
   _begin_inst_chain_rule(_BEGIN_INST_CHAIN_RULE),
   _end_inst_chain_rule(_END_INST_CHAIN_RULE),
   _must_clone(must_clone),
+  _shared_nodes(C->comp_arena()),
+#ifdef ASSERT
+  _old2new_map(C->comp_arena()),
+  _new2old_map(C->comp_arena()),
+#endif
+  _allocation_started(false),
+  _ruleName(ruleName),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
-  _register_save_type(register_save_type),
-  _ruleName(ruleName),
-  _allocation_started(false),
-  _states_arena(Chunk::medium_size, mtCompiler),
-  _visited(&_states_arena),
-  _shared(&_states_arena),
-  _dontcare(&_states_arena) {
+  _register_save_type(register_save_type) {
   C->set_matcher(this);
 
   idealreg2spillmask  [Op_RegI] = NULL;

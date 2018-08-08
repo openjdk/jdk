@@ -1633,12 +1633,12 @@ class ComputeMoveOrder: public StackObj {
    public:
     MoveOperation(int src_index, VMRegPair src, int dst_index, VMRegPair dst):
       _src(src)
-    , _src_index(src_index)
     , _dst(dst)
+    , _src_index(src_index)
     , _dst_index(dst_index)
+    , _processed(false)
     , _next(NULL)
-    , _prev(NULL)
-    , _processed(false) {
+    , _prev(NULL) {
     }
 
     VMRegPair src() const              { return _src; }

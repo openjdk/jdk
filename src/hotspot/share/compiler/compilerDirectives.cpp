@@ -31,7 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 
-CompilerDirectives::CompilerDirectives() :_match(NULL), _next(NULL), _ref_count(0) {
+CompilerDirectives::CompilerDirectives() : _next(NULL), _match(NULL), _ref_count(0) {
   _c1_store = new DirectiveSet(this);
   _c2_store = new DirectiveSet(this);
 };

@@ -47,8 +47,8 @@ class InstructionPrinter: public InstructionVisitor {
 
  public:
   InstructionPrinter(bool print_phis = true, outputStream* output = tty)
-    : _print_phis(print_phis)
-    , _output(output)
+    : _output(output)
+    , _print_phis(print_phis)
   {}
 
   outputStream* output() { return _output; }

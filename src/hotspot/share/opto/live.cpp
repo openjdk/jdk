@@ -44,11 +44,11 @@
 // live-out sets.  This separate compilation is done in the outer loop below.
 PhaseLive::PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena, bool keep_deltas)
   : Phase(LIVE),
+  _live(0),
+  _livein(0),
   _cfg(cfg),
   _names(names),
   _arena(arena),
-  _live(0),
-  _livein(0),
   _keep_deltas(keep_deltas) {
 }
 

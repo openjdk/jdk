@@ -120,7 +120,7 @@ class ProfileBooleanNode : public Node {
   virtual uint cmp( const Node &n ) const;
   public:
   ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(0, n),
-          _false_cnt(false_cnt), _true_cnt(true_cnt), _delay_removal(true), _consumed(false) {}
+          _false_cnt(false_cnt), _true_cnt(true_cnt), _consumed(false), _delay_removal(true) {}
 
   uint false_count() const { return _false_cnt; }
   uint  true_count() const { return  _true_cnt; }

@@ -77,8 +77,8 @@ private:
   NamedCounter(const char *n, CounterTag tag = NoTag):
     _name(n == NULL ? NULL : os::strdup(n)),
     _count(0),
-    _next(NULL),
-    _tag(tag) {}
+    _tag(tag),
+    _next(NULL) {}
 
   ~NamedCounter() {
     if (_name != NULL) {

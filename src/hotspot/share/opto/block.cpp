@@ -359,10 +359,10 @@ void Block::dump(const PhaseCFG* cfg) const {
 
 PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 : Phase(CFG)
+, _root(root)
 , _block_arena(arena)
 , _regalloc(NULL)
 , _scheduling_for_pressure(false)
-, _root(root)
 , _matcher(matcher)
 , _node_to_block_mapping(arena)
 , _node_latency(NULL)

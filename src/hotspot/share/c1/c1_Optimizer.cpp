@@ -47,7 +47,7 @@ class CE_Eliminator: public BlockClosure {
   int _has_substitution;
 
  public:
-  CE_Eliminator(IR* hir) : _cee_count(0), _ifop_count(0), _hir(hir) {
+  CE_Eliminator(IR* hir) : _hir(hir), _cee_count(0), _ifop_count(0) {
     _has_substitution = false;
     _hir->iterate_preorder(this);
     if (_has_substitution) {
@@ -592,10 +592,10 @@ class NullCheckEliminator: public ValueVisitor {
   // constructor
   NullCheckEliminator(Optimizer* opt)
     : _opt(opt)
+    , _work_list(new BlockList())
     , _set(new ValueSet())
-    , _last_explicit_null_check(NULL)
     , _block_states(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL)
-    , _work_list(new BlockList()) {
+    , _last_explicit_null_check(NULL) {
     _visitable_instructions = new ValueSet();
     _visitor.set_eliminator(this);
     CompileLog* log = _opt->ir()->compilation()->log();

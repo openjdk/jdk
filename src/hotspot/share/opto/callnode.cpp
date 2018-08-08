@@ -1278,11 +1278,11 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
                                                      uint first_index,
                                                      uint n_fields) :
   TypeNode(tp, 1), // 1 control input -- seems required.  Get from root.
-#ifdef ASSERT
-  _alloc(alloc),
-#endif
   _first_index(first_index),
   _n_fields(n_fields)
+#ifdef ASSERT
+  , _alloc(alloc)
+#endif
 {
   init_class_id(Class_SafePointScalarObject);
 }

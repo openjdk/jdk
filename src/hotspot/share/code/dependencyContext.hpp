@@ -53,7 +53,7 @@ class nmethodBucket: public CHeapObj<mtClass> {
 
  public:
   nmethodBucket(nmethod* nmethod, nmethodBucket* next) :
-   _nmethod(nmethod), _next(next), _count(1) {}
+   _nmethod(nmethod), _count(1), _next(next) {}
 
   int count()                             { return _count; }
   int increment()                         { _count += 1; return _count; }

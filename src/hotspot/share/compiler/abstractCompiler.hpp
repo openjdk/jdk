@@ -91,7 +91,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
 #endif
 
  public:
-  AbstractCompiler(CompilerType type) : _type(type), _compiler_state(uninitialized), _num_compiler_threads(0) {}
+  AbstractCompiler(CompilerType type) : _num_compiler_threads(0), _compiler_state(uninitialized), _type(type) {}
 
   // This function determines the compiler thread that will perform the
   // shutdown of the corresponding compiler runtime.

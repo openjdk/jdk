@@ -345,13 +345,13 @@ void ciMethodBlocks::dump() {
 }
 #endif
 
-
 ciBlock::ciBlock(ciMethod *method, int index, int start_bci) :
+                         _idx(index), _start_bci(start_bci), _limit_bci(-1), _control_bci(fall_through_bci),
+                         _flags(0), _ex_start_bci(-1), _ex_limit_bci(-1)
 #ifndef PRODUCT
-                         _method(method),
+                         , _method(method)
 #endif
-                         _idx(index), _flags(0), _start_bci(start_bci), _limit_bci(-1), _control_bci(fall_through_bci),
-                         _ex_start_bci(-1), _ex_limit_bci(-1) {
+{
 }
 
 void ciBlock::set_exception_range(int start_bci, int limit_bci)  {

@@ -147,7 +147,7 @@ class ImplicitExceptionTable {
   implicit_null_entry *adr( uint idx ) const { return &_data[2*idx]; }
   ReallocMark          _nesting;  // assertion check for reallocations
 public:
-  ImplicitExceptionTable( ) :  _data(0), _size(0), _len(0) { }
+  ImplicitExceptionTable( ) :  _size(0), _len(0), _data(0) { }
   // (run-time) construction from nmethod
   ImplicitExceptionTable( const nmethod *nm );
 

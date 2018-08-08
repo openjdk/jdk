@@ -33,9 +33,9 @@
 
 ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled, bool has_negative_length_guard)
   : CallNode(arraycopy_type(), NULL, TypeRawPtr::BOTTOM),
+    _kind(None),
     _alloc_tightly_coupled(alloc_tightly_coupled),
     _has_negative_length_guard(has_negative_length_guard),
-    _kind(None),
     _arguments_validated(false),
     _src_type(TypeOopPtr::BOTTOM),
     _dest_type(TypeOopPtr::BOTTOM) {

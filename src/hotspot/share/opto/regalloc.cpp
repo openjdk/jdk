@@ -37,11 +37,13 @@ int PhaseRegAlloc::_max_framesize = 0;
 PhaseRegAlloc::PhaseRegAlloc( uint unique, PhaseCFG &cfg,
                               Matcher &matcher,
                               void (*pr_stats)() ):
-               Phase(Register_Allocation), _cfg(cfg), _matcher(matcher),
-               _node_oops(Thread::current()->resource_area()),
+               Phase(Register_Allocation),
                _node_regs(0),
                _node_regs_max_index(0),
-               _framesize(0xdeadbeef)
+               _node_oops(Thread::current()->resource_area()),
+               _cfg(cfg),
+               _framesize(0xdeadbeef),
+               _matcher(matcher)
 {
     int i;
 

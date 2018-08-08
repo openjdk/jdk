@@ -132,8 +132,8 @@ BlockBegin* IRScope::build_graph(Compilation* compilation, int osr_bci) {
 
 
 IRScope::IRScope(Compilation* compilation, IRScope* caller, int caller_bci, ciMethod* method, int osr_bci, bool create_graph)
-: _callees(2)
-, _compilation(compilation)
+: _compilation(compilation)
+, _callees(2)
 , _requires_phi_function(method->max_locals())
 {
   _caller             = caller;
@@ -184,11 +184,11 @@ bool IRScopeDebugInfo::should_reexecute() {
 
 // Stack must be NON-null
 CodeEmitInfo::CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers, bool deoptimize_on_exception)
-  : _scope(stack->scope())
-  , _scope_debug_info(NULL)
+  : _scope_debug_info(NULL)
+  , _scope(stack->scope())
+  , _exception_handlers(exception_handlers)
   , _oop_map(NULL)
   , _stack(stack)
-  , _exception_handlers(exception_handlers)
   , _is_method_handle_invoke(false)
   , _deoptimize_on_exception(deoptimize_on_exception) {
   assert(_stack != NULL, "must be non null");
@@ -196,9 +196,9 @@ CodeEmitInfo::CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers, boo
 
 
 CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack)
-  : _scope(info->_scope)
+  : _scope_debug_info(NULL)
+  , _scope(info->_scope)
   , _exception_handlers(NULL)
-  , _scope_debug_info(NULL)
   , _oop_map(NULL)
   , _stack(stack == NULL ? info->_stack : stack)
   , _is_method_handle_invoke(info->_is_method_handle_invoke)
@@ -526,14 +526,14 @@ ComputeLinearScanOrder::ComputeLinearScanOrder(Compilation* c, BlockBegin* start
   _num_blocks(0),
   _num_loops(0),
   _iterative_dominators(false),
+  _linear_scan_order(NULL), // initialized later with correct size
   _visited_blocks(_max_block_id),
   _active_blocks(_max_block_id),
   _dominator_blocks(_max_block_id),
   _forward_branches(_max_block_id, _max_block_id, 0),
   _loop_end_blocks(8),
-  _work_list(8),
-  _linear_scan_order(NULL), // initialized later with correct size
   _loop_map(0),             // initialized later with correct size
+  _work_list(8),
   _compilation(c)
 {
   TRACE_LINEAR_SCAN(2, tty->print_cr("***** computing linear-scan block order"));

@@ -126,7 +126,7 @@ class CompiledICInfo : public StackObj {
   }
 
   CompiledICInfo(): _entry(NULL), _cached_value(NULL), _is_icholder(false),
-                    _to_interpreter(false), _to_aot(false), _is_optimized(false), _release_icholder(false) {
+                    _is_optimized(false), _to_interpreter(false), _to_aot(false), _release_icholder(false) {
   }
   ~CompiledICInfo() {
     // In rare cases the info is computed but not used, so release any

@@ -268,10 +268,10 @@ public:
     _content_offset(0),
     _code_offset(0),
     _data_offset(0),
-    _content_begin(content_begin),
-    _content_end(content_end),
     _code_begin(code_begin),
     _code_end(code_end),
+    _content_begin(content_begin),
+    _content_end(content_end),
     _data_end(data_end),
     _relocation_begin(relocation_begin),
     _relocation_end(relocation_end)

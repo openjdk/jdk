@@ -44,15 +44,14 @@
 #define NODE_HASH_MINIMUM_SIZE    255
 //------------------------------NodeHash---------------------------------------
 NodeHash::NodeHash(uint est_max_size) :
-  _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
   _a(Thread::current()->resource_area()),
-  _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ), // (Node**)_a->Amalloc(_max * sizeof(Node*)) ),
-  _inserts(0), _insert_limit( insert_limit() )
+  _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
+  _inserts(0), _insert_limit( insert_limit() ),
+  _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ) // (Node**)_a->Amalloc(_max * sizeof(Node*)) ),
 #ifndef PRODUCT
-  ,_look_probes(0), _lookup_hits(0), _lookup_misses(0),
-  _delete_probes(0), _delete_hits(0), _delete_misses(0),
-  _total_insert_probes(0), _total_inserts(0),
-  _insert_probes(0), _grows(0)
+  , _grows(0),_look_probes(0), _lookup_hits(0), _lookup_misses(0),
+  _insert_probes(0), _delete_probes(0), _delete_hits(0), _delete_misses(0),
+   _total_inserts(0), _total_insert_probes(0)
 #endif
 {
   // _sentinel must be in the current node space
@@ -62,15 +61,14 @@ NodeHash::NodeHash(uint est_max_size) :
 
 //------------------------------NodeHash---------------------------------------
 NodeHash::NodeHash(Arena *arena, uint est_max_size) :
-  _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
   _a(arena),
-  _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ),
-  _inserts(0), _insert_limit( insert_limit() )
+  _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
+  _inserts(0), _insert_limit( insert_limit() ),
+  _table( NEW_ARENA_ARRAY( _a , Node* , _max ) )
 #ifndef PRODUCT
-  ,_look_probes(0), _lookup_hits(0), _lookup_misses(0),
-  _delete_probes(0), _delete_hits(0), _delete_misses(0),
-  _total_insert_probes(0), _total_inserts(0),
-  _insert_probes(0), _grows(0)
+  , _grows(0),_look_probes(0), _lookup_hits(0), _lookup_misses(0),
+  _insert_probes(0), _delete_probes(0), _delete_hits(0), _delete_misses(0),
+   _total_inserts(0), _total_insert_probes(0)
 #endif
 {
   // _sentinel must be in the current node space
@@ -890,30 +888,31 @@ void PhaseGVN::dead_loop_check( Node *n ) {
 //=============================================================================
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize hash table to fresh and clean for +VerifyOpto
-PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn, const char *dummy ) : PhaseGVN(igvn,dummy), _worklist( ),
+PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn, const char *dummy ) : PhaseGVN(igvn,dummy),
+                                                                      _delay_transform(false),
                                                                       _stack(C->live_nodes() >> 1),
-                                                                      _delay_transform(false) {
+                                                                      _worklist( ) {
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseIterGVN info; used by PhaseCCP
 PhaseIterGVN::PhaseIterGVN( PhaseIterGVN *igvn ) : PhaseGVN(igvn),
-                                                   _worklist( igvn->_worklist ),
+                                                   _delay_transform(igvn->_delay_transform),
                                                    _stack( igvn->_stack ),
-                                                   _delay_transform(igvn->_delay_transform)
+                                                   _worklist( igvn->_worklist )
 {
 }
 
 //------------------------------PhaseIterGVN-----------------------------------
 // Initialize with previous PhaseGVN info from Parser
 PhaseIterGVN::PhaseIterGVN( PhaseGVN *gvn ) : PhaseGVN(gvn),
-                                              _worklist(*C->for_igvn()),
+                                              _delay_transform(false),
 // TODO: Before incremental inlining it was allocated only once and it was fine. Now that
 //       the constructor is used in incremental inlining, this consumes too much memory:
 //                                            _stack(C->live_nodes() >> 1),
 //       So, as a band-aid, we replace this by:
                                               _stack(C->comp_arena(), 32),
-                                              _delay_transform(false)
+                                              _worklist(*C->for_igvn())
 {
   uint max;
 

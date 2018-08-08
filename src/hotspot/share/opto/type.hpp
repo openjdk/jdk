@@ -802,8 +802,8 @@ protected:
   TypePtr(TYPES t, PTR ptr, int offset,
           const TypePtr* speculative = NULL,
           int inline_depth = InlineDepthBottom) :
-    Type(t), _ptr(ptr), _offset(offset), _speculative(speculative),
-    _inline_depth(inline_depth) {}
+    Type(t), _speculative(speculative), _inline_depth(inline_depth), _offset(offset),
+    _ptr(ptr) {}
   static const PTR ptr_meet[lastPTR][lastPTR];
   static const PTR ptr_dual[lastPTR];
   static const char * const ptr_msg[lastPTR];
@@ -1359,8 +1359,8 @@ class TypeNarrowPtr : public Type {
 protected:
   const TypePtr* _ptrtype; // Could be TypePtr::NULL_PTR
 
-  TypeNarrowPtr(TYPES t, const TypePtr* ptrtype): _ptrtype(ptrtype),
-                                                  Type(t) {
+  TypeNarrowPtr(TYPES t, const TypePtr* ptrtype): Type(t),
+                                                  _ptrtype(ptrtype) {
     assert(ptrtype->offset() == 0 ||
            ptrtype->offset() == OffsetBot ||
            ptrtype->offset() == OffsetTop, "no real offsets");
