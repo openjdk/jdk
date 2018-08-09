@@ -135,11 +135,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         /** Switch statements, of type Switch.
          */
-        SWITCH,
+        _SWITCH,
 
         /** Case parts in switch statements, of type Case.
          */
-        CASE,
+        _CASE,
 
         /** Synchronized statements, of type Synchonized.
          */
@@ -159,7 +159,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
 
         /** Conditional statements, of type If.
          */
-        IF,
+        _IF,
 
         /** Expression statements, of type Exec.
          */
@@ -311,8 +311,11 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         BITOR,                           // |
         BITXOR,                          // ^
         BITAND,                          // &
+        CONCAT,                          // #
         EQ,                              // ==
+        EQ_EQ,                           // ===
         NE,                              // !=
+        NE_EQ,                           // !==
         LT,                              // <
         GT,                              // >
         LE,                              // <=
@@ -340,6 +343,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         MUL_ASG(MUL),                    // *=
         DIV_ASG(DIV),                    // /=
         MOD_ASG(MOD),                    // %=
+        LE_ASG(LE),                      // <==
 
         /** A synthetic let expression, of type LetExpr.
          */
@@ -1080,7 +1084,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitSwitch(this); }
 
-        public Kind getKind() { return Kind.SWITCH; }
+        public Kind getKind() { return Kind._SWITCH; }
         public JCExpression getExpression() { return selector; }
         public List<JCCase> getCases() { return cases; }
         @Override
@@ -1089,7 +1093,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         @Override
         public Tag getTag() {
-            return SWITCH;
+            return _SWITCH;
         }
     }
 
@@ -1106,7 +1110,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitCase(this); }
 
-        public Kind getKind() { return Kind.CASE; }
+        public Kind getKind() { return Kind._CASE; }
         public JCExpression getExpression() { return pat; }
         public List<JCStatement> getStatements() { return stats; }
         @Override
@@ -1115,7 +1119,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         @Override
         public Tag getTag() {
-            return CASE;
+            return _CASE;
         }
     }
 
@@ -1262,7 +1266,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         @Override
         public void accept(Visitor v) { v.visitIf(this); }
 
-        public Kind getKind() { return Kind.IF; }
+        public Kind getKind() { return Kind._IF; }
         public JCExpression getCondition() { return cond; }
         public JCStatement getThenStatement() { return thenpart; }
         public JCStatement getElseStatement() { return elsepart; }
@@ -1272,7 +1276,7 @@ public abstract class JCTree implements Tree, Cloneable, DiagnosticPosition {
         }
         @Override
         public Tag getTag() {
-            return IF;
+            return _IF;
         }
     }
 

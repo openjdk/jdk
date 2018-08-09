@@ -1653,7 +1653,7 @@ public class Attr extends JCTree.Visitor {
                     case FOREACHLOOP:
                         if (label == null) return env1.tree;
                         break;
-                    case SWITCH:
+                    case _SWITCH:
                         if (label == null && tag == BREAK) return env1.tree;
                         break;
                     case LAMBDA:

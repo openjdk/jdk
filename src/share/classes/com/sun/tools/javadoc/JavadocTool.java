@@ -145,7 +145,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                     ? (StandardJavaFileManager) docenv.fileManager : null;
             for (List<String> it = javaNames; it.nonEmpty(); it = it.tail) {
                 String name = it.head;
-                if (!docClasses && fm != null && name.endsWith(".java") && new File(name).exists()) {
+                if (!docClasses && fm != null && (name.endsWith(".java") || name.endsWith(".maxj")) && new File(name).exists()) {
                     JavaFileObject fo = fm.getJavaFileObjects(name).iterator().next();
                     docenv.notice("main.Loading_source_file", name);
                     JCCompilationUnit tree = parse(fo);
@@ -377,7 +377,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
      * and false otherwise.
      */
     private static boolean isValidJavaSourceFile(String file) {
-        if (!file.endsWith(".java")) return false;
+        if (! (file.endsWith(".java") || file.endsWith(".maxj"))) return false;
         String clazzName = file.substring(0, file.length() - ".java".length());
         return isValidClassName(clazzName);
     }

@@ -450,12 +450,12 @@ public enum Option {
     SOURCEFILE("sourcefile", null, HIDDEN, INFO) {
         @Override
         public boolean matches(String s) {
-            return s.endsWith(".java")  // Java source file
+            return s.endsWith(".java") || s.endsWith(".maxj") // Java source file
                 || SourceVersion.isName(s);   // Legal type name
         }
         @Override
         public boolean process(OptionHelper helper, String option) {
-            if (option.endsWith(".java") ) {
+            if (option.endsWith(".java") || option.endsWith(".maxj")) {
                 File f = new File(option);
                 if (!f.exists()) {
                     helper.error("err.file.not.found", f);

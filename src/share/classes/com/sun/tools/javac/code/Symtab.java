@@ -636,6 +636,11 @@ public class Symtab {
         enterBinop("+", longType, longType, longType, ladd);
         enterBinop("+", intType, intType, intType, iadd);
 
+        enterBinop("#", doubleType, doubleType, doubleType, dadd);
+        enterBinop("#", floatType, floatType, floatType, fadd);
+        enterBinop("#", longType, longType, longType, ladd);
+        enterBinop("#", intType, intType, intType, iadd);
+
         enterBinop("-", doubleType, doubleType, doubleType, dsub);
         enterBinop("-", floatType, floatType, floatType, fsub);
         enterBinop("-", longType, longType, longType, lsub);

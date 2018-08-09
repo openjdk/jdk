@@ -795,8 +795,8 @@ public class DeferredAttr extends JCTree.Visitor {
     static class LambdaReturnScanner extends FilterScanner {
 
         LambdaReturnScanner() {
-            super(EnumSet.of(BLOCK, CASE, CATCH, DOLOOP, FOREACHLOOP,
-                    FORLOOP, RETURN, SYNCHRONIZED, SWITCH, TRY, WHILELOOP));
+            super(EnumSet.of(BLOCK, _CASE, CATCH, DOLOOP, FOREACHLOOP,
+                    FORLOOP, RETURN, SYNCHRONIZED, _SWITCH, TRY, WHILELOOP));
         }
 
         @Override
