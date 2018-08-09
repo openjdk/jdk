@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP
-#define SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP
+#ifndef SHARE_VM_RUNTIME_TIEREDTHRESHOLDPOLICY_HPP
+#define SHARE_VM_RUNTIME_TIEREDTHRESHOLDPOLICY_HPP
 
 #include "code/nmethod.hpp"
 #include "oops/methodData.hpp"
@@ -162,7 +162,7 @@ class CompileQueue;
  *   to be zero if no events occurred in TieredRateUpdateMaxTime.
  */
 
-class SimpleThresholdPolicy : public CompilationPolicy {
+class TieredThresholdPolicy : public CompilationPolicy {
   jlong _start_time;
   int _c1_count, _c2_count;
 
@@ -173,7 +173,7 @@ class SimpleThresholdPolicy : public CompilationPolicy {
   // Call and loop predicates determine whether a transition to a higher compilation
   // level should be performed (pointers to predicate functions are passed to common_TF().
   // Predicates also take compiler load into account.
-  typedef bool (SimpleThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level, Method* method);
+  typedef bool (TieredThresholdPolicy::*Predicate)(int i, int b, CompLevel cur_level, Method* method);
   bool call_predicate(int i, int b, CompLevel cur_level, Method* method);
   bool loop_predicate(int i, int b, CompLevel cur_level, Method* method);
   // Common transition function. Given a predicate determines if a method should transition to another level.
@@ -250,7 +250,7 @@ protected:
   jlong start_time() const     { return _start_time; }
 
 public:
-  SimpleThresholdPolicy() : _start_time(0), _c1_count(0), _c2_count(0) { }
+  TieredThresholdPolicy() : _start_time(0), _c1_count(0), _c2_count(0) { }
   virtual int compiler_count(CompLevel comp_level) {
     if (is_c1_compile(comp_level)) return c1_count();
     if (is_c2_compile(comp_level)) return c2_count();
@@ -274,4 +274,4 @@ public:
 
 #endif // TIERED
 
-#endif // SHARE_VM_RUNTIME_SIMPLETHRESHOLDPOLICY_HPP
+#endif // SHARE_VM_RUNTIME_TIEREDTHRESHOLDPOLICY_HPP

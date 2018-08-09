@@ -37,9 +37,9 @@
 #include "runtime/frame.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/rframe.hpp"
-#include "runtime/simpleThresholdPolicy.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.hpp"
+#include "runtime/tieredThresholdPolicy.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vm_operations.hpp"
@@ -68,7 +68,7 @@ void compilationPolicy_init() {
     break;
   case 2:
 #ifdef TIERED
-    CompilationPolicy::set_policy(new SimpleThresholdPolicy());
+    CompilationPolicy::set_policy(new TieredThresholdPolicy());
 #else
     Unimplemented();
 #endif

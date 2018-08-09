@@ -24,20 +24,94 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
-#include "runtime/simpleThresholdPolicy.hpp"
-#include "runtime/simpleThresholdPolicy.inline.hpp"
+#include "runtime/tieredThresholdPolicy.hpp"
 #include "code/scopeDesc.hpp"
+#include "oops/method.inline.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
 #endif
 
 #ifdef TIERED
 
-void SimpleThresholdPolicy::print_counters(const char* prefix, const methodHandle& mh) {
+template<CompLevel level>
+bool TieredThresholdPolicy::call_predicate_helper(int i, int b, double scale, Method* method) {
+  double threshold_scaling;
+  if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
+    scale *= threshold_scaling;
+  }
+  switch(level) {
+  case CompLevel_aot:
+    return (i >= Tier3AOTInvocationThreshold * scale) ||
+           (i >= Tier3AOTMinInvocationThreshold * scale && i + b >= Tier3AOTCompileThreshold * scale);
+  case CompLevel_none:
+  case CompLevel_limited_profile:
+    return (i >= Tier3InvocationThreshold * scale) ||
+           (i >= Tier3MinInvocationThreshold * scale && i + b >= Tier3CompileThreshold * scale);
+  case CompLevel_full_profile:
+   return (i >= Tier4InvocationThreshold * scale) ||
+          (i >= Tier4MinInvocationThreshold * scale && i + b >= Tier4CompileThreshold * scale);
+  }
+  return true;
+}
+
+template<CompLevel level>
+bool TieredThresholdPolicy::loop_predicate_helper(int i, int b, double scale, Method* method) {
+  double threshold_scaling;
+  if (CompilerOracle::has_option_value(method, "CompileThresholdScaling", threshold_scaling)) {
+    scale *= threshold_scaling;
+  }
+  switch(level) {
+  case CompLevel_aot:
+    return b >= Tier3AOTBackEdgeThreshold * scale;
+  case CompLevel_none:
+  case CompLevel_limited_profile:
+    return b >= Tier3BackEdgeThreshold * scale;
+  case CompLevel_full_profile:
+    return b >= Tier4BackEdgeThreshold * scale;
+  }
+  return true;
+}
+
+// Simple methods are as good being compiled with C1 as C2.
+// Determine if a given method is such a case.
+bool TieredThresholdPolicy::is_trivial(Method* method) {
+  if (method->is_accessor() ||
+      method->is_constant_getter()) {
+    return true;
+  }
+#if INCLUDE_JVMCI
+  if (UseJVMCICompiler) {
+    AbstractCompiler* comp = CompileBroker::compiler(CompLevel_full_optimization);
+    if (TieredCompilation && comp != NULL && comp->is_trivial(method)) {
+      return true;
+    }
+  }
+#endif
+  if (method->has_loops() || method->code_size() >= 15) {
+    return false;
+  }
+  MethodData* mdo = method->method_data();
+  if (mdo != NULL && !mdo->would_profile() &&
+      (method->code_size() < 5  || (mdo->num_blocks() < 4))) {
+    return true;
+  }
+  return false;
+}
+
+CompLevel TieredThresholdPolicy::comp_level(Method* method) {
+  CompiledMethod *nm = method->code();
+  if (nm != NULL && nm->is_in_use()) {
+    return (CompLevel)nm->comp_level();
+  }
+  return CompLevel_none;
+}
+
+void TieredThresholdPolicy::print_counters(const char* prefix, const methodHandle& mh) {
   int invocation_count = mh->invocation_count();
   int backedge_count = mh->backedge_count();
   MethodData* mdh = mh->method_data();
@@ -58,7 +132,7 @@ void SimpleThresholdPolicy::print_counters(const char* prefix, const methodHandl
 }
 
 // Print an event.
-void SimpleThresholdPolicy::print_event(EventType type, const methodHandle& mh, const methodHandle& imh,
+void TieredThresholdPolicy::print_event(EventType type, const methodHandle& mh, const methodHandle& imh,
                                         int bci, CompLevel level) {
   bool inlinee_event = mh() != imh();
 
@@ -139,7 +213,7 @@ void SimpleThresholdPolicy::print_event(EventType type, const methodHandle& mh, 
   tty->print_cr("]");
 }
 
-void SimpleThresholdPolicy::initialize() {
+void TieredThresholdPolicy::initialize() {
   int count = CICompilerCount;
 #ifdef _LP64
   // Turn on ergonomic compiler count selection
@@ -193,14 +267,14 @@ void SimpleThresholdPolicy::initialize() {
   set_start_time(os::javaTimeMillis());
 }
 
-void SimpleThresholdPolicy::set_carry_if_necessary(InvocationCounter *counter) {
+void TieredThresholdPolicy::set_carry_if_necessary(InvocationCounter *counter) {
   if (!counter->carry() && counter->count() > InvocationCounter::count_limit / 2) {
     counter->set_carry_flag();
   }
 }
 
 // Set carry flags on the counters if necessary
-void SimpleThresholdPolicy::handle_counter_overflow(Method* method) {
+void TieredThresholdPolicy::handle_counter_overflow(Method* method) {
   MethodCounters *mcs = method->method_counters();
   if (mcs != NULL) {
     set_carry_if_necessary(mcs->invocation_counter());
@@ -214,7 +288,7 @@ void SimpleThresholdPolicy::handle_counter_overflow(Method* method) {
 }
 
 // Called with the queue locked and with at least one element
-CompileTask* SimpleThresholdPolicy::select_task(CompileQueue* compile_queue) {
+CompileTask* TieredThresholdPolicy::select_task(CompileQueue* compile_queue) {
   CompileTask *max_blocking_task = NULL;
   CompileTask *max_task = NULL;
   Method* max_method = NULL;
@@ -278,7 +352,7 @@ CompileTask* SimpleThresholdPolicy::select_task(CompileQueue* compile_queue) {
   return max_task;
 }
 
-void SimpleThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
+void TieredThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
   for (ScopeDesc* sd = trap_scope;; sd = sd->sender()) {
     if (PrintTieredEvents) {
       methodHandle mh(sd->method());
@@ -292,7 +366,7 @@ void SimpleThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
   }
 }
 
-nmethod* SimpleThresholdPolicy::event(const methodHandle& method, const methodHandle& inlinee,
+nmethod* TieredThresholdPolicy::event(const methodHandle& method, const methodHandle& inlinee,
                                       int branch_bci, int bci, CompLevel comp_level, CompiledMethod* nm, JavaThread* thread) {
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events() &&
@@ -329,7 +403,7 @@ nmethod* SimpleThresholdPolicy::event(const methodHandle& method, const methodHa
 }
 
 // Check if the method can be compiled, change level if necessary
-void SimpleThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
+void TieredThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
   assert(level <= TieredStopAtLevel, "Invalid compilation level");
   if (level == CompLevel_none) {
     return;
@@ -374,14 +448,14 @@ void SimpleThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel l
 }
 
 // Update the rate and submit compile
-void SimpleThresholdPolicy::submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
+void TieredThresholdPolicy::submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
   int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
   update_rate(os::javaTimeMillis(), mh());
   CompileBroker::compile_method(mh, bci, level, mh, hot_count, CompileTask::Reason_Tiered, thread);
 }
 
 // Print an event.
-void SimpleThresholdPolicy::print_specific(EventType type, const methodHandle& mh, const methodHandle& imh,
+void TieredThresholdPolicy::print_specific(EventType type, const methodHandle& mh, const methodHandle& imh,
                                              int bci, CompLevel level) {
   tty->print(" rate=");
   if (mh->prev_time() == 0) tty->print("n/a");
@@ -393,7 +467,7 @@ void SimpleThresholdPolicy::print_specific(EventType type, const methodHandle& m
 }
 
 // update_rate() is called from select_task() while holding a compile queue lock.
-void SimpleThresholdPolicy::update_rate(jlong t, Method* m) {
+void TieredThresholdPolicy::update_rate(jlong t, Method* m) {
   // Skip update if counters are absent.
   // Can't allocate them since we are holding compile queue lock.
   if (m->method_counters() == NULL)  return;
@@ -431,7 +505,7 @@ void SimpleThresholdPolicy::update_rate(jlong t, Method* m) {
 
 // Check if this method has been stale from a given number of milliseconds.
 // See select_task().
-bool SimpleThresholdPolicy::is_stale(jlong t, jlong timeout, Method* m) {
+bool TieredThresholdPolicy::is_stale(jlong t, jlong timeout, Method* m) {
   jlong delta_s = t - SafepointSynchronize::end_of_last_safepoint();
   jlong delta_t = t - m->prev_time();
   if (delta_t > timeout && delta_s > timeout) {
@@ -445,17 +519,17 @@ bool SimpleThresholdPolicy::is_stale(jlong t, jlong timeout, Method* m) {
 
 // We don't remove old methods from the compile queue even if they have
 // very low activity. See select_task().
-bool SimpleThresholdPolicy::is_old(Method* method) {
+bool TieredThresholdPolicy::is_old(Method* method) {
   return method->invocation_count() > 50000 || method->backedge_count() > 500000;
 }
 
-double SimpleThresholdPolicy::weight(Method* method) {
+double TieredThresholdPolicy::weight(Method* method) {
   return (double)(method->rate() + 1) *
     (method->invocation_count() + 1) * (method->backedge_count() + 1);
 }
 
 // Apply heuristics and return true if x should be compiled before y
-bool SimpleThresholdPolicy::compare_methods(Method* x, Method* y) {
+bool TieredThresholdPolicy::compare_methods(Method* x, Method* y) {
   if (x->highest_comp_level() > y->highest_comp_level()) {
     // recompilation after deopt
     return true;
@@ -469,7 +543,7 @@ bool SimpleThresholdPolicy::compare_methods(Method* x, Method* y) {
 }
 
 // Is method profiled enough?
-bool SimpleThresholdPolicy::is_method_profiled(Method* method) {
+bool TieredThresholdPolicy::is_method_profiled(Method* method) {
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     int i = mdo->invocation_count_delta();
@@ -479,7 +553,7 @@ bool SimpleThresholdPolicy::is_method_profiled(Method* method) {
   return false;
 }
 
-double SimpleThresholdPolicy::threshold_scale(CompLevel level, int feedback_k) {
+double TieredThresholdPolicy::threshold_scale(CompLevel level, int feedback_k) {
   double queue_size = CompileBroker::queue_size(level);
   int comp_count = compiler_count(level);
   double k = queue_size / (feedback_k * comp_count) + 1;
@@ -503,7 +577,7 @@ double SimpleThresholdPolicy::threshold_scale(CompLevel level, int feedback_k) {
 // Tier?LoadFeedback is basically a coefficient that determines of
 // how many methods per compiler thread can be in the queue before
 // the threshold values double.
-bool SimpleThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Method* method) {
+bool TieredThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
   case CompLevel_aot: {
     double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
@@ -523,7 +597,7 @@ bool SimpleThresholdPolicy::loop_predicate(int i, int b, CompLevel cur_level, Me
   }
 }
 
-bool SimpleThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Method* method) {
+bool TieredThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Method* method) {
   switch(cur_level) {
   case CompLevel_aot: {
     double k = threshold_scale(CompLevel_full_profile, Tier3LoadFeedback);
@@ -544,7 +618,7 @@ bool SimpleThresholdPolicy::call_predicate(int i, int b, CompLevel cur_level, Me
 }
 
 // Determine is a method is mature.
-bool SimpleThresholdPolicy::is_mature(Method* method) {
+bool TieredThresholdPolicy::is_mature(Method* method) {
   if (is_trivial(method)) return true;
   MethodData* mdo = method->method_data();
   if (mdo != NULL) {
@@ -560,7 +634,7 @@ bool SimpleThresholdPolicy::is_mature(Method* method) {
 // If a method is old enough and is still in the interpreter we would want to
 // start profiling without waiting for the compiled method to arrive.
 // We also take the load on compilers into the account.
-bool SimpleThresholdPolicy::should_create_mdo(Method* method, CompLevel cur_level) {
+bool TieredThresholdPolicy::should_create_mdo(Method* method, CompLevel cur_level) {
   if (cur_level == CompLevel_none &&
       CompileBroker::queue_size(CompLevel_full_optimization) <=
       Tier3DelayOn * compiler_count(CompLevel_full_optimization)) {
@@ -574,7 +648,7 @@ bool SimpleThresholdPolicy::should_create_mdo(Method* method, CompLevel cur_leve
 
 // Inlining control: if we're compiling a profiled method with C1 and the callee
 // is known to have OSRed in a C2 version, don't inline it.
-bool SimpleThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
+bool TieredThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
   CompLevel comp_level = (CompLevel)env->comp_level();
   if (comp_level == CompLevel_full_profile ||
       comp_level == CompLevel_limited_profile) {
@@ -584,7 +658,7 @@ bool SimpleThresholdPolicy::should_not_inline(ciEnv* env, ciMethod* callee) {
 }
 
 // Create MDO if necessary.
-void SimpleThresholdPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
+void TieredThresholdPolicy::create_mdo(const methodHandle& mh, JavaThread* THREAD) {
   if (mh->is_native() ||
       mh->is_abstract() ||
       mh->is_accessor() ||
@@ -636,7 +710,7 @@ void SimpleThresholdPolicy::create_mdo(const methodHandle& mh, JavaThread* THREA
  */
 
 // Common transition function. Given a predicate determines if a method should transition to another level.
-CompLevel SimpleThresholdPolicy::common(Predicate p, Method* method, CompLevel cur_level, bool disable_feedback) {
+CompLevel TieredThresholdPolicy::common(Predicate p, Method* method, CompLevel cur_level, bool disable_feedback) {
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
@@ -740,10 +814,10 @@ CompLevel SimpleThresholdPolicy::common(Predicate p, Method* method, CompLevel c
 }
 
 // Determine if a method should be compiled with a normal entry point at a different level.
-CompLevel SimpleThresholdPolicy::call_event(Method* method, CompLevel cur_level, JavaThread * thread) {
+CompLevel TieredThresholdPolicy::call_event(Method* method, CompLevel cur_level, JavaThread * thread) {
   CompLevel osr_level = MIN2((CompLevel) method->highest_osr_comp_level(),
-                             common(&SimpleThresholdPolicy::loop_predicate, method, cur_level, true));
-  CompLevel next_level = common(&SimpleThresholdPolicy::call_predicate, method, cur_level);
+                             common(&TieredThresholdPolicy::loop_predicate, method, cur_level, true));
+  CompLevel next_level = common(&TieredThresholdPolicy::call_predicate, method, cur_level);
 
   // If OSR method level is greater than the regular method level, the levels should be
   // equalized by raising the regular method level in order to avoid OSRs during each
@@ -766,8 +840,8 @@ CompLevel SimpleThresholdPolicy::call_event(Method* method, CompLevel cur_level,
 }
 
 // Determine if we should do an OSR compilation of a given method.
-CompLevel SimpleThresholdPolicy::loop_event(Method* method, CompLevel cur_level, JavaThread* thread) {
-  CompLevel next_level = common(&SimpleThresholdPolicy::loop_predicate, method, cur_level, true);
+CompLevel TieredThresholdPolicy::loop_event(Method* method, CompLevel cur_level, JavaThread* thread) {
+  CompLevel next_level = common(&TieredThresholdPolicy::loop_predicate, method, cur_level, true);
   if (cur_level == CompLevel_none) {
     // If there is a live OSR method that means that we deopted to the interpreter
     // for the transition.
@@ -784,7 +858,7 @@ CompLevel SimpleThresholdPolicy::loop_event(Method* method, CompLevel cur_level,
   return next_level;
 }
 
-bool SimpleThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread) {
+bool TieredThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLevel cur_level, CompLevel next_level, JavaThread* thread) {
   if (UseAOT && !delay_compilation_during_startup()) {
     if (cur_level == CompLevel_full_profile || cur_level == CompLevel_none) {
       // If the current level is full profile or interpreter and we're switching to any other level,
@@ -805,7 +879,7 @@ bool SimpleThresholdPolicy::maybe_switch_to_aot(const methodHandle& mh, CompLeve
 
 
 // Handle the invocation event.
-void SimpleThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
+void TieredThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
                                                       CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
@@ -824,7 +898,7 @@ void SimpleThresholdPolicy::method_invocation_event(const methodHandle& mh, cons
 
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
-void SimpleThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
+void TieredThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
                                                      int bci, CompLevel level, CompiledMethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
