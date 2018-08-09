@@ -56,22 +56,24 @@ bool ZMarkStackSpace::is_initialized() const {
   return _top != 0;
 }
 
-bool ZMarkStackSpace::expand() {
+void ZMarkStackSpace::expand() {
   const size_t max = ZMarkStackSpaceStart + ZMarkStacksMax;
   if (_end + ZMarkStackSpaceExpandSize > max) {
-    // Expansion limit reached
-    return false;
+    // Expansion limit reached. This is a fatal error since we
+    // currently can't recover from running out of mark stack space.
+    fatal("Mark stack overflow (current size " SIZE_FORMAT "M, max size " SIZE_FORMAT "M),"
+          " use -XX:ZMarkStacksMax=<size> to increase this limit",
+          (_end - ZMarkStackSpaceStart) / M, ZMarkStacksMax / M);
   }
 
   void* const res = mmap((void*)_end, ZMarkStackSpaceExpandSize,
                          PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_FIXED, -1, 0);
   if (res == MAP_FAILED) {
+    // Failed to map memory. This is a fatal error since we
+    // currently can't recover from running out of mark stack space.
     ZErrno err;
-    log_error(gc, marking)("Failed to map memory for marking stacks (%s)", err.to_string());
-    return false;
+    fatal("Failed to map memory for marking stacks (%s)", err.to_string());
   }
-
-  return true;
 }
 
 uintptr_t ZMarkStackSpace::alloc_space(size_t size) {
@@ -105,14 +107,7 @@ uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
   }
 
   // Expand stack space
-  if (!expand()) {
-    // We currently can't handle the situation where we
-    // are running out of mark stack space.
-    fatal("Mark stack overflow (allocated " SIZE_FORMAT "M, size " SIZE_FORMAT "M, max " SIZE_FORMAT "M),"
-          " use -XX:ZMarkStacksMax=? to increase this limit",
-          (_end - ZMarkStackSpaceStart) / M, size / M, ZMarkStacksMax / M);
-    return 0;
-  }
+  expand();
 
   log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M",
                          (_end - ZMarkStackSpaceStart) / M,

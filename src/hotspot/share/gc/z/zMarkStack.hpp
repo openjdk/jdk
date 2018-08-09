@@ -79,7 +79,7 @@ private:
   volatile uintptr_t _top;
   volatile uintptr_t _end;
 
-  bool expand();
+  void expand();
 
   uintptr_t alloc_space(size_t size);
   uintptr_t expand_and_alloc_space(size_t size);
