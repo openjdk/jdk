@@ -28,6 +28,8 @@ package jdk.internal.net.http;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
+import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SSLTube;
 import jdk.internal.net.http.common.Utils;
 
@@ -49,14 +51,9 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
     }
 
     @Override
-    PlainHttpConnection plainConnection() {
-        return plainConnection;
-    }
-
-    @Override
-    public CompletableFuture<Void> connectAsync() {
+    public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
         return plainConnection
-                .connectAsync()
+                .connectAsync(exchange)
                 .thenApply( unused -> {
                     // create the SSLTube wrapping the SocketTube, with the given engine
                     flow = new SSLTube(engine,
@@ -64,6 +61,21 @@ class AsyncSSLConnection extends AbstractAsyncSSLConnection {
                                        client().getSSLBufferSupplier()::recycle,
                                        plainConnection.getConnectionFlow());
                     return null; } );
+    }
+
+    @Override
+    public CompletableFuture<Void> finishConnect() {
+        // The actual ALPN value, which may be the empty string, is not
+        // interesting at this point, only that the handshake has completed.
+        return getALPN()
+                .handle((String unused, Throwable ex) -> {
+                    if (ex == null) {
+                        return plainConnection.finishConnect();
+                    } else {
+                        plainConnection.close();
+                        return MinimalFuture.<Void>failedFuture(ex);
+                    } })
+                .thenCompose(Function.identity());
     }
 
     @Override

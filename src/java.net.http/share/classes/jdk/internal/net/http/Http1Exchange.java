@@ -233,7 +233,8 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
         CompletableFuture<Void> connectCF;
         if (!connection.connected()) {
             if (debug.on()) debug.log("initiating connect async");
-            connectCF = connection.connectAsync();
+            connectCF = connection.connectAsync(exchange)
+                    .thenCompose(unused -> connection.finishConnect());
             Throwable cancelled;
             synchronized (lock) {
                 if ((cancelled = failed) == null) {

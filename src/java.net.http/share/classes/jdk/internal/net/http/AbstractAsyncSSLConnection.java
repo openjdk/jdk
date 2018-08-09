@@ -80,11 +80,9 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
         engine = createEngine(context, serverName.getName(), port, sslParameters);
     }
 
-    abstract HttpConnection plainConnection();
     abstract SSLTube getConnectionFlow();
 
     final CompletableFuture<String> getALPN() {
-        assert connected();
         return getConnectionFlow().getALPN();
     }
 

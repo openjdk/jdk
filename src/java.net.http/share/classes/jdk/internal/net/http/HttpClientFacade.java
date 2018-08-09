@@ -30,6 +30,7 @@ import java.lang.ref.Reference;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -67,6 +68,11 @@ final class HttpClientFacade extends HttpClient implements Trackable {
     @Override
     public Optional<CookieHandler> cookieHandler() {
         return impl.cookieHandler();
+    }
+
+    @Override
+    public Optional<Duration> connectTimeout() {
+        return impl.connectTimeout();
     }
 
     @Override

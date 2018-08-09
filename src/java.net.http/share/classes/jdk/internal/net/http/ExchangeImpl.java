@@ -85,7 +85,7 @@ abstract class ExchangeImpl<T> {
         } else {
             Http2ClientImpl c2 = exchange.client().client2(); // #### improve
             HttpRequestImpl request = exchange.request();
-            CompletableFuture<Http2Connection> c2f = c2.getConnectionFor(request);
+            CompletableFuture<Http2Connection> c2f = c2.getConnectionFor(request, exchange);
             if (debug.on())
                 debug.log("get: Trying to get HTTP/2 connection");
             return c2f.handle((h2c, t) -> createExchangeImpl(h2c, t, exchange, connection))

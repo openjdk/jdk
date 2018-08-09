@@ -164,6 +164,7 @@ public class TimeoutBasic {
                     throw new RuntimeException("Unexpected response: " + resp.statusCode());
                 } catch (CompletionException e) {
                     if (!(e.getCause() instanceof HttpTimeoutException)) {
+                        e.printStackTrace(out);
                         throw new RuntimeException("Unexpected exception: " + e.getCause());
                     } else {
                         out.println("Caught expected timeout: " + e.getCause());
