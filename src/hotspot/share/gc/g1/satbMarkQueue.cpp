@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
@@ -117,17 +116,13 @@ void SATBMarkQueueSet::initialize(SATBMarkQueueFilter* filter,
   _filter = filter;
 }
 
-void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
-  G1ThreadLocalData::satb_mark_queue(t).handle_zero_index();
-}
-
 #ifdef ASSERT
 void SATBMarkQueueSet::dump_active_states(bool expected_active) {
   log_error(gc, verify)("Expected SATB active state: %s", expected_active ? "ACTIVE" : "INACTIVE");
   log_error(gc, verify)("Actual SATB active states:");
   log_error(gc, verify)("  Queue set: %s", is_active() ? "ACTIVE" : "INACTIVE");
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    log_error(gc, verify)("  Thread \"%s\" queue: %s", t->name(), G1ThreadLocalData::satb_mark_queue(t).is_active() ? "ACTIVE" : "INACTIVE");
+    log_error(gc, verify)("  Thread \"%s\" queue: %s", t->name(), satb_queue_for_thread(t).is_active() ? "ACTIVE" : "INACTIVE");
   }
   log_error(gc, verify)("  Shared queue: %s", shared_satb_queue()->is_active() ? "ACTIVE" : "INACTIVE");
 }
@@ -141,7 +136,7 @@ void SATBMarkQueueSet::verify_active_states(bool expected_active) {
 
   // Verify thread queue states
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    if (G1ThreadLocalData::satb_mark_queue(t).is_active() != expected_active) {
+    if (satb_queue_for_thread(t).is_active() != expected_active) {
       dump_active_states(expected_active);
       guarantee(false, "Thread SATB queue has an unexpected active state");
     }
@@ -162,14 +157,14 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
 #endif // ASSERT
   _all_active = active;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).set_active(active);
+    satb_queue_for_thread(t).set_active(active);
   }
   shared_satb_queue()->set_active(active);
 }
 
 void SATBMarkQueueSet::filter_thread_buffers() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).filter();
+    satb_queue_for_thread(t).filter();
   }
   shared_satb_queue()->filter();
 }
@@ -223,7 +218,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
     jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
-    G1ThreadLocalData::satb_mark_queue(t).print(buffer);
+    satb_queue_for_thread(t).print(buffer);
   }
 
   shared_satb_queue()->print("Shared");
@@ -254,7 +249,7 @@ void SATBMarkQueueSet::abandon_partial_marking() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   // So we can safely manipulate these queues.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).reset();
+    satb_queue_for_thread(t).reset();
   }
   shared_satb_queue()->reset();
 }

@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_G1_G1BARRIERSET_HPP
 
 #include "gc/g1/dirtyCardQueue.hpp"
-#include "gc/g1/satbMarkQueue.hpp"
+#include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 
 class DirtyCardQueueSet;
@@ -39,7 +39,7 @@ class G1CardTable;
 class G1BarrierSet: public CardTableBarrierSet {
   friend class VMStructs;
  private:
-  static SATBMarkQueueSet  _satb_mark_queue_set;
+  static G1SATBMarkQueueSet _satb_mark_queue_set;
   static DirtyCardQueueSet _dirty_card_queue_set;
 
  public:

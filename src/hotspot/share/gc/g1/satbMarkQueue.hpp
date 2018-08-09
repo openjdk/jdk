@@ -113,7 +113,7 @@ public:
                   int process_completed_threshold,
                   Mutex* lock);
 
-  static void handle_zero_index_for_thread(JavaThread* t);
+  virtual SATBMarkQueue& satb_queue_for_thread(JavaThread* const t) const = 0;
 
   // Apply "set_active(active)" to all SATB queues in the set. It should be
   // called only with the world stopped. The method will assert that the

@@ -48,7 +48,7 @@
 class G1BarrierSetC1;
 class G1BarrierSetC2;
 
-SATBMarkQueueSet G1BarrierSet::_satb_mark_queue_set;
+G1SATBMarkQueueSet G1BarrierSet::_satb_mark_queue_set;
 DirtyCardQueueSet G1BarrierSet::_dirty_card_queue_set;
 
 G1BarrierSet::G1BarrierSet(G1CardTable* card_table) :
