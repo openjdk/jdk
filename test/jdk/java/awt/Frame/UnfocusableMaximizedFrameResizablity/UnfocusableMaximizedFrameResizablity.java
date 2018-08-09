@@ -24,7 +24,7 @@
 /*
   @test
   @key headful
-  @bug 4980161 7158623 8204860
+  @bug 4980161 7158623 8204860 8208125
   @summary Setting focusable window state to false makes the maximized frame resizable
   @compile UnfocusableMaximizedFrameResizablity.java
   @run main UnfocusableMaximizedFrameResizablity
@@ -36,13 +36,10 @@ import java.awt.Rectangle;
 import java.awt.AWTException;
 import java.awt.event.InputEvent;
 import java.awt.Robot;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
 
 public class UnfocusableMaximizedFrameResizablity {
 
     private static Frame frame;
-    private static JFrame jframe;
     private static Robot robot;
     private static boolean isProgInterruption = false;
     private static Thread mainThread = null;
@@ -55,65 +52,13 @@ public class UnfocusableMaximizedFrameResizablity {
             return;
         }
 
-        //Case 1: Setting frame resizable to true followed by focusable to false
-        frame = createFrame("Resizable Unfocusable frame");
-        frame.setResizable(true);
-        frame.setFocusableWindowState(false);
-        tryToResizeFrame(frame);
-
-        //Case 2: Setting frame focusable to false followed by resizable to true
-        frame = createFrame("Unfocusable Resizable frame");
-        frame.setFocusableWindowState(false);
-        frame.setResizable(true);
-        tryToResizeFrame(frame);
-
-        //Case 3: Testing JFrame fullscreen behaviour only on Mac OS
-        if (System.getProperty("os.name").toLowerCase().startsWith("mac")) {
-            SwingUtilities.invokeAndWait(new Runnable() {
-
-                Override
-                public void run() {
-                    jframe = createJFrame("Unfocusable Resizable JFrame");
-                    jframe.setFocusableWindowState(false);
-                    jframe.setResizable(true);
-                    Object prop1 = jframe.getRootPane().getClientProperty("apple.awt.fullscreenable");
-                    jframe.setVisible(false);
-                    jframe.setVisible(true);
-                    Object prop2 = jframe.getRootPane().getClientProperty("apple.awt.fullscreenable");
-
-                    if((prop1 != null && prop2 != null) && (!prop1.equals(prop2))) {
-                        jframe.dispose();
-                        cleanup();
-                        throw new RuntimeException("Non-focusable resizable JFrame is fullscreenable!!");
-                    }
-                }
-            });
-        }
-
-        cleanup();
-    }
-
-    private static JFrame createJFrame(String title) {
-        JFrame jframe = new JFrame(title);
-        jframe.setMaximizedBounds(new Rectangle(0, 0, 300, 300));
-        jframe.setSize(200, 200);
-        jframe.setVisible(true);
-        jframe.setExtendedState(Frame.MAXIMIZED_BOTH);
-
-        return jframe;
-    }
-
-    private static Frame createFrame(String title) {
-        Frame frame = new Frame(title);
+        frame = new Frame("Unfocusable frame");
         frame.setMaximizedBounds(new Rectangle(0, 0, 300, 300));
         frame.setSize(200, 200);
         frame.setVisible(true);
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);
+        frame.setFocusableWindowState(false);
 
-        return frame;
-    }
-
-    private static void tryToResizeFrame(Frame frame) {
         try {
             robot = new Robot();
         } catch (AWTException e) {
@@ -144,11 +89,11 @@ public class UnfocusableMaximizedFrameResizablity {
             cleanup();
             throw new RuntimeException("The maximized unfocusable frame can be resized.");
         }
-
-        frame.dispose();
+        cleanup();
     }
 
     private static void cleanup() {
+        frame.dispose();
         isProgInterruption = true;
         mainThread.interrupt();
     }
