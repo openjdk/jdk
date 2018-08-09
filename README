@@ -1,3 +1,13 @@
+-------
+MAXELER
+-------
+
+This is a fork of OpenJDK repository http://hg.openjdk.java.net/jdk8/jdk8/langtools/
+
+This was done to allow the javadoc tool to work with maxj syntax. To do this, the javac was changed so that it can parse maxj, it cannot compile the code, but it can build the syntax tree required for javadoc to function correctly. Additonaly, the ability to accept .maxj extensions was added.
+
+-------
+
 Building the "langtools" workspace.
 
 The "langtools" workspace can be built from the command line with Ant.
