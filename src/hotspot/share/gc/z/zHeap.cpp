@@ -96,7 +96,7 @@ size_t ZHeap::heap_max_reserve_size() const {
 }
 
 bool ZHeap::is_initialized() const {
-  return _page_allocator.is_initialized();
+  return _page_allocator.is_initialized() && _mark.is_initialized();
 }
 
 size_t ZHeap::min_capacity() const {
