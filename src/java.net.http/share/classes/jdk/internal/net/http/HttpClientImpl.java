@@ -35,6 +35,7 @@ import java.net.Authenticator;
 import java.net.ConnectException;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
@@ -47,6 +48,7 @@ import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -154,6 +156,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     private final CookieHandler cookieHandler;
+    private final Duration connectTimeout;
     private final Redirect followRedirects;
     private final Optional<ProxySelector> userProxySelector;
     private final ProxySelector proxySelector;
@@ -278,6 +281,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         facadeRef = new WeakReference<>(facadeFactory.createFacade(this));
         client2 = new Http2ClientImpl(this);
         cookieHandler = builder.cookieHandler;
+        connectTimeout = builder.connectTimeout;
         followRedirects = builder.followRedirects == null ?
                 Redirect.NEVER : builder.followRedirects;
         this.userProxySelector = Optional.ofNullable(builder.proxy);
@@ -547,6 +551,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 throw new IllegalArgumentException(msg, throwable);
             } else if (throwable instanceof SecurityException) {
                 throw new SecurityException(msg, throwable);
+            } else if (throwable instanceof HttpConnectTimeoutException) {
+                HttpConnectTimeoutException hcte = new HttpConnectTimeoutException(msg);
+                hcte.initCause(throwable);
+                throw hcte;
             } else if (throwable instanceof HttpTimeoutException) {
                 throw new HttpTimeoutException(msg);
             } else if (throwable instanceof ConnectException) {
@@ -1121,6 +1129,11 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     @Override
     public Optional<CookieHandler> cookieHandler() {
         return Optional.ofNullable(cookieHandler);
+    }
+
+    @Override
+    public Optional<Duration> connectTimeout() {
+        return Optional.ofNullable(connectTimeout);
     }
 
     @Override

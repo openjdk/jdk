@@ -31,6 +31,7 @@ import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -284,7 +285,8 @@ public class ConnectionPoolTest {
 
         // All these throw errors
         @Override public HttpPublisher publisher() {return error();}
-        @Override public CompletableFuture<Void> connectAsync() {return error();}
+        @Override public CompletableFuture<Void> connectAsync(Exchange<?> e) {return error();}
+        @Override public CompletableFuture<Void> finishConnect() {return error();}
         @Override SocketChannel channel() {return error();}
         @Override
         FlowTube getConnectionFlow() {return flow;}
@@ -296,6 +298,7 @@ public class ConnectionPoolTest {
         }
         final ConnectionPool pool;
         @Override public Optional<CookieHandler> cookieHandler() {return error();}
+        @Override public Optional<Duration> connectTimeout() {return error();}
         @Override public HttpClient.Redirect followRedirects() {return error();}
         @Override public Optional<ProxySelector> proxy() {return error();}
         @Override public SSLContext sslContext() {return error();}

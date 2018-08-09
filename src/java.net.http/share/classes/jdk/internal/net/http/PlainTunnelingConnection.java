@@ -26,11 +26,13 @@
 package jdk.internal.net.http;
 
 import java.io.IOException;
-import java.lang.System.Logger.Level;
 import java.net.InetSocketAddress;
+import java.net.http.HttpTimeoutException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Function;
 import java.net.http.HttpHeaders;
 import jdk.internal.net.http.common.FlowTube;
@@ -60,9 +62,10 @@ final class PlainTunnelingConnection extends HttpConnection {
     }
 
     @Override
-    public CompletableFuture<Void> connectAsync() {
+    public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
         if (debug.on()) debug.log("Connecting plain connection");
-        return delegate.connectAsync()
+        return delegate.connectAsync(exchange)
+            .thenCompose(unused -> delegate.finishConnect())
             .thenCompose((Void v) -> {
                 if (debug.on()) debug.log("sending HTTP/1.1 CONNECT");
                 HttpClientImpl client = client();
@@ -70,7 +73,7 @@ final class PlainTunnelingConnection extends HttpConnection {
                 HttpRequestImpl req = new HttpRequestImpl("CONNECT", address, proxyHeaders);
                 MultiExchange<Void> mulEx = new MultiExchange<>(null, req,
                         client, discarding(), null, null);
-                Exchange<Void> connectExchange = new Exchange<>(req, mulEx);
+                Exchange<Void> connectExchange = mulEx.getExchange();
 
                 return connectExchange
                         .responseAsyncImpl(delegate)
@@ -96,12 +99,34 @@ final class PlainTunnelingConnection extends HttpConnection {
                                 ByteBuffer b = ((Http1Exchange<?>)connectExchange.exchImpl).drainLeftOverBytes();
                                 int remaining = b.remaining();
                                 assert remaining == 0: "Unexpected remaining: " + remaining;
-                                connected = true;
                                 cf.complete(null);
                             }
                             return cf;
-                        });
+                        })
+                        .handle((result, ex) -> {
+                            if (ex == null) {
+                                return MinimalFuture.completedFuture(result);
+                            } else {
+                                if (debug.on())
+                                    debug.log("tunnel failed with \"%s\"", ex.toString());
+                                Throwable t = ex;
+                                if (t instanceof CompletionException)
+                                    t = t.getCause();
+                                if (t instanceof HttpTimeoutException) {
+                                    String msg = "proxy tunneling CONNECT request timed out";
+                                    t = new HttpTimeoutException(msg);
+                                    t.initCause(ex);
+                                }
+                                return MinimalFuture.<Void>failedFuture(t);
+                            }
+                        })
+                        .thenCompose(Function.identity());
             });
+    }
+
+    public CompletableFuture<Void> finishConnect() {
+        connected = true;
+        return MinimalFuture.completedFuture(null);
     }
 
     @Override

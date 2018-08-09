@@ -83,6 +83,10 @@ final class Exchange<T> {
     final PushGroup<T> pushGroup;
     final String dbgTag;
 
+    // Keeps track of the underlying connection when establishing an HTTP/2
+    // exchange so that it can be aborted/timed out mid setup.
+    final ConnectionAborter connectionAborter = new ConnectionAborter();
+
     Exchange(HttpRequestImpl request, MultiExchange<T> multi) {
         this.request = request;
         this.upgrading = false;
@@ -125,6 +129,27 @@ final class Exchange<T> {
         return client;
     }
 
+    // Keeps track of the underlying connection when establishing an HTTP/2
+    // exchange so that it can be aborted/timed out mid setup.
+    static final class ConnectionAborter {
+        private volatile HttpConnection connection;
+
+        void connection(HttpConnection connection) {
+            this.connection = connection;
+        }
+
+        void closeConnection() {
+            HttpConnection connection = this.connection;
+            this.connection = null;
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (Throwable t) {
+                    // ignore
+                }
+            }
+        }
+    }
 
     public CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler) {
         // If we received a 407 while establishing the exchange
@@ -179,6 +204,7 @@ final class Exchange<T> {
     }
 
     public void cancel(IOException cause) {
+        if (debug.on()) debug.log("cancel exchImpl: %s, with \"%s\"", exchImpl, cause);
         // If the impl is non null, propagate the exception right away.
         // Otherwise record it so that it can be propagated once the
         // exchange impl has been established.
@@ -190,6 +216,11 @@ final class Exchange<T> {
         } else {
             // no impl yet. record the exception
             failed = cause;
+
+            // abort/close the connection if setting up the exchange. This can
+            // be important when setting up HTTP/2
+            connectionAborter.closeConnection();
+
             // now call checkCancelled to recheck the impl.
             // if the failed state is set and the impl is not null, reset
             // the failed state and propagate the exception to the impl.
