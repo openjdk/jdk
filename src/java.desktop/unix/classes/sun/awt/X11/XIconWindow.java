@@ -281,8 +281,9 @@ public class XIconWindow extends XBaseWindow {
                 ColorData cdata = adata.get_color_data(0);
                 int num_colors = cdata.get_awt_numICMcolors();
                 for (int i = 0; i < buf.length; i++) {
-                    buf[i] = (buf[i] >= num_colors) ?
-                        0 : cdata.get_awt_icmLUT2Colors(buf[i]);
+                    int b = Byte.toUnsignedInt(buf[i]);
+                    buf[i] = (b >= num_colors) ?
+                        0 : cdata.get_awt_icmLUT2Colors(b);
                 }
                 bytes = Native.toData(buf);
             } else if (srcBuf instanceof DataBufferInt) {
