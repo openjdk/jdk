@@ -33,13 +33,13 @@
 class ZOldGenerationCounters : public GenerationCounters {
 public:
   ZOldGenerationCounters(const char* name, size_t min_capacity, size_t max_capacity) :
-    // The "1, 1" parameters are for the n-th generation (=1) with 1 space.
-    GenerationCounters(name,
-                       1 /* ordinal */,
-                       1 /* spaces */,
-                       min_capacity /* min_capacity */,
-                       max_capacity /* max_capacity */,
-                       min_capacity /* curr_capacity */) {}
+      // The "1, 1" parameters are for the n-th generation (=1) with 1 space.
+      GenerationCounters(name,
+                         1 /* ordinal */,
+                         1 /* spaces */,
+                         min_capacity /* min_capacity */,
+                         max_capacity /* max_capacity */,
+                         min_capacity /* curr_capacity */) {}
 
   virtual void update_all() {
     size_t committed = ZHeap::heap()->capacity();
@@ -50,26 +50,36 @@ public:
 // Class to expose perf counters used by jstat.
 class ZServiceabilityCounters : public CHeapObj<mtGC> {
 private:
-  ZOldGenerationCounters _old_collection_counters;
+  ZOldGenerationCounters _old_generation_counters;
   HSpaceCounters         _old_space_counters;
+  CollectorCounters      _collector_counters;
 
 public:
   ZServiceabilityCounters(size_t min_capacity, size_t max_capacity);
+
+  CollectorCounters* collector_counters();
 
   void update_sizes();
 };
 
 ZServiceabilityCounters::ZServiceabilityCounters(size_t min_capacity, size_t max_capacity) :
     // generation.1
-    _old_collection_counters("old",
+    _old_generation_counters("old",
                              min_capacity,
                              max_capacity),
     // generation.1.space.0
-    _old_space_counters(_old_collection_counters.name_space(),
+    _old_space_counters(_old_generation_counters.name_space(),
                         "space",
                         0 /* ordinal */,
                         max_capacity /* max_capacity */,
-                        min_capacity /* init_capacity */) {}
+                        min_capacity /* init_capacity */),
+    // gc.collector.2
+    _collector_counters("stop-the-world",
+                        2 /* ordinal */) {}
+
+CollectorCounters* ZServiceabilityCounters::collector_counters() {
+  return &_collector_counters;
+}
 
 void ZServiceabilityCounters::update_sizes() {
   if (UsePerfData) {
@@ -79,7 +89,7 @@ void ZServiceabilityCounters::update_sizes() {
     _old_space_counters.update_capacity(capacity);
     _old_space_counters.update_used(used);
 
-    _old_collection_counters.update_all();
+    _old_generation_counters.update_all();
 
     MetaspaceCounters::update_performance_counters();
     CompressedClassSpaceCounters::update_performance_counters();
@@ -147,10 +157,8 @@ ZServiceabilityManagerStatsTracer::ZServiceabilityManagerStatsTracer(bool is_gc_
            is_gc_end   /* recordGCEndTime */,
            is_gc_end   /* countCollection */) {}
 
-ZServiceabilityCountersTracer::ZServiceabilityCountersTracer() {
-  // Nothing to trace with TraceCollectorStats, since ZGC has
-  // neither a young collector nor a full collector.
-}
+ZServiceabilityCountersTracer::ZServiceabilityCountersTracer() :
+    _stats(ZHeap::heap()->serviceability_counters()->collector_counters()) {}
 
 ZServiceabilityCountersTracer::~ZServiceabilityCountersTracer() {
   ZHeap::heap()->serviceability_counters()->update_sizes();

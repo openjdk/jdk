@@ -98,7 +98,7 @@ public:
     ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
 
     // JVMTI support
-    SvcGCMarker sgcm(SvcGCMarker::OTHER);
+    SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
 
     // Setup GC id
     GCIdMark gcid(_gc_id);
