@@ -29,6 +29,8 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CompletableFuture;
 import java.net.http.HttpHeaders;
+import java.util.function.Function;
+import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SSLTube;
 import jdk.internal.net.http.common.Utils;
 
@@ -53,13 +55,13 @@ class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
     }
 
     @Override
-    public CompletableFuture<Void> connectAsync() {
+    public CompletableFuture<Void> connectAsync(Exchange<?> exchange) {
         if (debug.on()) debug.log("Connecting plain tunnel connection");
         // This will connect the PlainHttpConnection flow, so that
         // its HttpSubscriber and HttpPublisher are subscribed to the
         // SocketTube
         return plainConnection
-                .connectAsync()
+                .connectAsync(exchange)
                 .thenApply( unused -> {
                     if (debug.on()) debug.log("creating SSLTube");
                     // create the SSLTube wrapping the SocketTube, with the given engine
@@ -68,6 +70,21 @@ class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
                                        client().getSSLBufferSupplier()::recycle,
                                        plainConnection.getConnectionFlow());
                     return null;} );
+    }
+
+    @Override
+    public CompletableFuture<Void> finishConnect() {
+        // The actual ALPN value, which may be the empty string, is not
+        // interesting at this point, only that the handshake has completed.
+        return getALPN()
+                .handle((String unused, Throwable ex) -> {
+                    if (ex == null) {
+                        return plainConnection.finishConnect();
+                    } else {
+                        plainConnection.close();
+                        return MinimalFuture.<Void>failedFuture(ex);
+                    } })
+                .thenCompose(Function.identity());
     }
 
     @Override
@@ -84,11 +101,6 @@ class AsyncSSLTunnelConnection extends AbstractAsyncSSLConnection {
     @Override
     public String toString() {
         return "AsyncSSLTunnelConnection: " + super.toString();
-    }
-
-    @Override
-    PlainTunnelingConnection plainConnection() {
-        return plainConnection;
     }
 
     @Override

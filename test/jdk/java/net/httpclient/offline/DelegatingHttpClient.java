@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -48,6 +49,11 @@ public class DelegatingHttpClient extends HttpClient {
     @Override
     public Optional<CookieHandler> cookieHandler() {
         return client.cookieHandler();
+    }
+
+    @Override
+    public Optional<Duration> connectTimeout() {
+        return client.connectTimeout();
     }
 
     @Override

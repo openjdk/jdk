@@ -108,9 +108,20 @@ abstract class HttpConnection implements Closeable {
         return client;
     }
 
-    //public abstract void connect() throws IOException, InterruptedException;
+    /**
+     * Initiates the connect phase.
+     *
+     * Returns a CompletableFuture that completes when the underlying
+     * TCP connection has been established or an error occurs.
+     */
+    public abstract CompletableFuture<Void> connectAsync(Exchange<?> exchange);
 
-    public abstract CompletableFuture<Void> connectAsync();
+    /**
+     * Finishes the connection phase.
+     *
+     * Returns a CompletableFuture that completes when any additional,
+     * type specific, setup has been done. Must be called after connectAsync. */
+    public abstract CompletableFuture<Void> finishConnect();
 
     /** Tells whether, or not, this connection is connected to its destination. */
     abstract boolean connected();

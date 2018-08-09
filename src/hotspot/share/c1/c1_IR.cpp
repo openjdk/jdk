@@ -497,6 +497,7 @@ class ComputeLinearScanOrder : public StackObj {
   // computation of final block order
   BlockBegin* common_dominator(BlockBegin* a, BlockBegin* b);
   void compute_dominator(BlockBegin* cur, BlockBegin* parent);
+  void compute_dominator_impl(BlockBegin* cur, BlockBegin* parent);
   int  compute_weight(BlockBegin* cur);
   bool ready_for_processing(BlockBegin* cur);
   void sort_into_work_list(BlockBegin* b);
@@ -770,6 +771,14 @@ BlockBegin* ComputeLinearScanOrder::common_dominator(BlockBegin* a, BlockBegin* 
 }
 
 void ComputeLinearScanOrder::compute_dominator(BlockBegin* cur, BlockBegin* parent) {
+  init_visited();
+  compute_dominator_impl(cur, parent);
+}
+
+void ComputeLinearScanOrder::compute_dominator_impl(BlockBegin* cur, BlockBegin* parent) {
+  // Mark as visited to avoid recursive calls with same parent
+  set_visited(cur);
+
   if (cur->dominator() == NULL) {
     TRACE_LINEAR_SCAN(4, tty->print_cr("DOM: initializing dominator of B%d to B%d", cur->block_id(), parent->block_id()));
     cur->set_dominator(parent);
@@ -788,7 +797,9 @@ void ComputeLinearScanOrder::compute_dominator(BlockBegin* cur, BlockBegin* pare
   int num_cur_xhandler = cur->number_of_exception_handlers();
   for (int j = 0; j < num_cur_xhandler; j++) {
     BlockBegin* xhandler = cur->exception_handler_at(j);
-    compute_dominator(xhandler, parent);
+    if (!is_visited(xhandler)) {
+      compute_dominator_impl(xhandler, parent);
+    }
   }
 }
 

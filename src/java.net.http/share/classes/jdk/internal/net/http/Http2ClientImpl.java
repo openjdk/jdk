@@ -90,7 +90,8 @@ class Http2ClientImpl {
      * 3. completes normally with null: no connection in cache for h2c or h2 failed previously
      * 4. completes normally with connection: h2 or h2c connection in cache. Use it.
      */
-    CompletableFuture<Http2Connection> getConnectionFor(HttpRequestImpl req) {
+    CompletableFuture<Http2Connection> getConnectionFor(HttpRequestImpl req,
+                                                        Exchange<?> exchange) {
         URI uri = req.uri();
         InetSocketAddress proxy = req.proxy();
         String key = Http2Connection.keyFor(uri, proxy);
@@ -123,7 +124,7 @@ class Http2ClientImpl {
             }
         }
         return Http2Connection
-                .createAsync(req, this)
+                .createAsync(req, this, exchange)
                 .whenComplete((conn, t) -> {
                     synchronized (Http2ClientImpl.this) {
                         if (conn != null) {

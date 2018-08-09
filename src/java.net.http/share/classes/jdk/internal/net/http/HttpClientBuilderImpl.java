@@ -28,6 +28,7 @@ package jdk.internal.net.http;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
+import java.time.Duration;
 import java.util.concurrent.Executor;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -38,6 +39,7 @@ import static java.util.Objects.requireNonNull;
 public class HttpClientBuilderImpl implements HttpClient.Builder {
 
     CookieHandler cookieHandler;
+    Duration connectTimeout;
     HttpClient.Redirect followRedirects;
     ProxySelector proxy;
     Authenticator authenticator;
@@ -55,6 +57,14 @@ public class HttpClientBuilderImpl implements HttpClient.Builder {
         return this;
     }
 
+    @Override
+    public HttpClientBuilderImpl connectTimeout(Duration duration) {
+        requireNonNull(duration);
+        if (duration.isNegative() || Duration.ZERO.equals(duration))
+            throw new IllegalArgumentException("Invalid duration: " + duration);
+        this.connectTimeout = duration;
+        return this;
+    }
 
     @Override
     public HttpClientBuilderImpl sslContext(SSLContext sslContext) {

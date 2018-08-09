@@ -27,7 +27,7 @@ package jdk.internal.net.http;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.time.Duration;
+import java.net.http.HttpConnectTimeoutException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.security.AccessControlContext;
@@ -88,7 +88,7 @@ class MultiExchange<T> {
     );
 
     private final LinkedList<HeaderFilter> filters;
-    TimedEvent timedEvent;
+    ResponseTimerEvent responseTimerEvent;
     volatile boolean cancelled;
     final PushGroup<T> pushGroup;
 
@@ -134,7 +134,7 @@ class MultiExchange<T> {
         this.exchange = new Exchange<>(request, this);
     }
 
-    private synchronized Exchange<T> getExchange() {
+    synchronized Exchange<T> getExchange() {
         return exchange;
     }
 
@@ -157,8 +157,8 @@ class MultiExchange<T> {
     }
 
     private void cancelTimer() {
-        if (timedEvent != null) {
-            client.cancelTimer(timedEvent);
+        if (responseTimerEvent != null) {
+            client.cancelTimer(responseTimerEvent);
         }
     }
 
@@ -220,8 +220,8 @@ class MultiExchange<T> {
             cf = failedFuture(new IOException("Too many retries", retryCause));
         } else {
             if (currentreq.timeout().isPresent()) {
-                timedEvent = new TimedEvent(currentreq.timeout().get());
-                client.registerTimer(timedEvent);
+                responseTimerEvent = ResponseTimerEvent.of(this);
+                client.registerTimer(responseTimerEvent);
             }
             try {
                 // 1. apply request filters
@@ -344,7 +344,9 @@ class MultiExchange<T> {
             }
         }
         if (cancelled && t instanceof IOException) {
-            t = new HttpTimeoutException("request timed out");
+            if (!(t instanceof HttpTimeoutException)) {
+                t = toTimeoutException((IOException)t);
+            }
         } else if (retryOnFailure(t)) {
             Throwable cause = retryCause(t);
 
@@ -378,17 +380,24 @@ class MultiExchange<T> {
         return failedFuture(t);
     }
 
-    class TimedEvent extends TimeoutEvent {
-        TimedEvent(Duration duration) {
-            super(duration);
-        }
-        @Override
-        public void handle() {
-            if (debug.on()) {
-                debug.log("Cancelling MultiExchange due to timeout for request %s",
-                        request);
+    private HttpTimeoutException toTimeoutException(IOException ioe) {
+        HttpTimeoutException t = null;
+
+        // more specific, "request timed out", when connected
+        Exchange<?> exchange = getExchange();
+        if (exchange != null) {
+            ExchangeImpl<?> exchangeImpl = exchange.exchImpl;
+            if (exchangeImpl != null) {
+                if (exchangeImpl.connection().connected()) {
+                    t = new HttpTimeoutException("request timed out");
+                    t.initCause(ioe);
+                }
             }
-            cancel(new HttpTimeoutException("request timed out"));
         }
+        if (t == null) {
+            t = new HttpConnectTimeoutException("HTTP connect timed out");
+            t.initCause(new ConnectException("HTTP connect timed out"));
+        }
+        return t;
     }
 }
