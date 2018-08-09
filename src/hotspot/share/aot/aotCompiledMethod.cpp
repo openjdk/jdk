@@ -206,6 +206,7 @@ bool AOTCompiledMethod::make_not_entrant_helper(int new_state) {
   return true;
 }
 
+#ifdef TIERED
 bool AOTCompiledMethod::make_entrant() {
   assert(!method()->is_old(), "reviving evolved method!");
   assert(*_state_adr != not_entrant, "%s", method()->has_aot_code() ? "has_aot_code() not cleared" : "caller didn't check has_aot_code()");
@@ -240,6 +241,7 @@ bool AOTCompiledMethod::make_entrant() {
 
   return true;
 }
+#endif // TIERED
 
 // We don't have full dependencies for AOT methods, so flushing is
 // more conservative than for nmethods.

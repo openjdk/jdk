@@ -442,7 +442,7 @@ void DirectivesStack::init() {
   char str[] = "*.*";
   const char* error_msg = NULL;
   _default_directives->add_match(str, error_msg);
-#ifdef COMPILER1
+#if defined(COMPILER1) || INCLUDE_JVMCI
   _default_directives->_c1_store->EnableOption = true;
 #endif
 #ifdef COMPILER2

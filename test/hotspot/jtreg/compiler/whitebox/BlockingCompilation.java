@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8150646 8153013
  * @summary Add support for blocking compiles through whitebox API
+ * @requires vm.compiler1.enabled | !vm.graal.enabled
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @build sun.hotspot.WhiteBox
