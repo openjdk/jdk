@@ -312,17 +312,17 @@ void ObjArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d,
     size_t src_offset = (size_t) objArrayOopDesc::obj_at_offset<narrowOop>(src_pos);
     size_t dst_offset = (size_t) objArrayOopDesc::obj_at_offset<narrowOop>(dst_pos);
     assert(arrayOopDesc::obj_offset_to_raw<narrowOop>(s, src_offset, NULL) ==
-           objArrayOop(s)->obj_at_addr<narrowOop>(src_pos), "sanity");
+           objArrayOop(s)->obj_at_addr_raw<narrowOop>(src_pos), "sanity");
     assert(arrayOopDesc::obj_offset_to_raw<narrowOop>(d, dst_offset, NULL) ==
-           objArrayOop(d)->obj_at_addr<narrowOop>(dst_pos), "sanity");
+           objArrayOop(d)->obj_at_addr_raw<narrowOop>(dst_pos), "sanity");
     do_copy(s, src_offset, d, dst_offset, length, CHECK);
   } else {
     size_t src_offset = (size_t) objArrayOopDesc::obj_at_offset<oop>(src_pos);
     size_t dst_offset = (size_t) objArrayOopDesc::obj_at_offset<oop>(dst_pos);
     assert(arrayOopDesc::obj_offset_to_raw<oop>(s, src_offset, NULL) ==
-           objArrayOop(s)->obj_at_addr<oop>(src_pos), "sanity");
+           objArrayOop(s)->obj_at_addr_raw<oop>(src_pos), "sanity");
     assert(arrayOopDesc::obj_offset_to_raw<oop>(d, dst_offset, NULL) ==
-           objArrayOop(d)->obj_at_addr<oop>(dst_pos), "sanity");
+           objArrayOop(d)->obj_at_addr_raw<oop>(dst_pos), "sanity");
     do_copy(s, src_offset, d, dst_offset, length, CHECK);
   }
 }
