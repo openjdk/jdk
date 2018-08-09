@@ -48,6 +48,7 @@ public class VerifierTest implements Opcodes {
     static final String PASS_RESULT = "Hi, how are you?";
     static final String VFY_INFO_MESSAGE =
         "All non-system classes will be verified (-Xverify:remote) during CDS dump time.";
+    static final String CDS_LOGGING = "-Xlog:cds,cds+hashtables";
 
     enum Testset1Part {
         A, B
@@ -104,6 +105,7 @@ public class VerifierTest implements Opcodes {
         // Dumping should fail if the IgnoreUnverifiableClassesDuringDump
         // option is not enabled.
         OutputAnalyzer output = TestCommon.dump(jar, appClasses,
+                            CDS_LOGGING,
                             "-XX:+UnlockDiagnosticVMOptions",
                             "-XX:-IgnoreUnverifiableClassesDuringDump");
         output.shouldContain("Please remove the unverifiable classes");
@@ -186,6 +188,7 @@ public class VerifierTest implements Opcodes {
             if (!dump_setting.equals(prev_dump_setting)) {
                 OutputAnalyzer dumpOutput = TestCommon.dump(
                                                             jar, dump_list, dump_setting,
+                                                            CDS_LOGGING,
                                                             // FIXME: the following options are for working around a GC
                                                             // issue - assert failure when dumping archive with the -Xverify:all
                                                             "-Xms256m",
@@ -243,6 +246,7 @@ public class VerifierTest implements Opcodes {
             if (!dump_setting.equals(prev_dump_setting)) {
                 OutputAnalyzer dumpOutput = TestCommon.dump(
                                                             jar, appClasses, dump_setting,
+                                                            CDS_LOGGING,
                                                             // FIXME: the following options are for working around a GC
                                                             // issue - assert failure when dumping archive with the -Xverify:all
                                                             "-Xms256m",

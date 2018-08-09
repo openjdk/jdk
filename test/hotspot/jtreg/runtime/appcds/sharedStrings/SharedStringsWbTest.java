@@ -45,7 +45,7 @@ public class SharedStringsWbTest {
         SharedStringsUtils.buildJarAndWhiteBox("SharedStringsWb");
 
         SharedStringsUtils.dumpWithWhiteBox(TestCommon.list("SharedStringsWb"),
-            "SharedStringsBasic.txt");
+            "SharedStringsBasic.txt", "-Xlog:cds,cds+hashtables");
 
         SharedStringsUtils.runWithArchiveAndWhiteBox("SharedStringsWb");
     }

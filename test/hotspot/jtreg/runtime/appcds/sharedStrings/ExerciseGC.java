@@ -41,7 +41,7 @@ public class ExerciseGC {
         SharedStringsUtils.buildJarAndWhiteBox("HelloStringGC");
 
         SharedStringsUtils.dumpWithWhiteBox(TestCommon.list("HelloStringGC"),
-            "SharedStringsBasic.txt");
+            "SharedStringsBasic.txt", "-Xlog:cds,cds+hashtables");
 
         SharedStringsUtils.runWithArchiveAndWhiteBox("HelloStringGC",
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+VerifyBeforeGC");

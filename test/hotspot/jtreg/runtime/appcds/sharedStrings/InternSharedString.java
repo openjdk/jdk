@@ -43,7 +43,7 @@ public class InternSharedString {
         SharedStringsUtils.buildJarAndWhiteBox("InternStringTest");
 
         SharedStringsUtils.dumpWithWhiteBox(TestCommon.list("InternStringTest"),
-            "ExtraSharedInput.txt");
+            "ExtraSharedInput.txt", "-Xlog:cds,cds+hashtables");
 
         String[] extraMatches = new String[]   {
             InternStringTest.passed_output1,

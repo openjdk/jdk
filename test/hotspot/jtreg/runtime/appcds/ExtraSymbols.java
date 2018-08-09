@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,17 +38,19 @@ import java.io.*;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class ExtraSymbols {
+    static final String CDS_LOGGING = "-Xlog:cds,cds+hashtables";
     public static void main(String[] args) throws Exception {
         String appJar = JarBuilder.getOrCreateHelloJar();
 
         // 1. Dump without extra symbols.
-        OutputAnalyzer output = TestCommon.dump(appJar, TestCommon.list("Hello"));
+        OutputAnalyzer output = TestCommon.dump(appJar, TestCommon.list("Hello"),
+                                                CDS_LOGGING);
         checkOutput(output);
         int numEntries1 = numOfEntries(output);
 
         // 2. Dump an archive with extra symbols. All symbols in
         // ExtraSymbols.symbols.txt are valid. Dumping should succeed.
-        output = TestCommon.dump(appJar, TestCommon.list("Hello"),
+        output = TestCommon.dump(appJar, TestCommon.list("Hello"), CDS_LOGGING,
             "-XX:SharedArchiveConfigFile=" + TestCommon.getSourceFile("ExtraSymbols.symbols.txt"));
         checkOutput(output);
         int numEntries2 = numOfEntries(output);
