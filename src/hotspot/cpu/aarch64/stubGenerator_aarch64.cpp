@@ -265,7 +265,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       Label L;
       __ ldr(rscratch1, Address(rthread, in_bytes(Thread::pending_exception_offset())));
-      __ cmp(rscratch1, (unsigned)NULL_WORD);
+      __ cmp(rscratch1, (u1)NULL_WORD);
       __ br(Assembler::EQ, L);
       __ stop("StubRoutines::call_stub: entered with pending exception");
       __ BIND(L);
@@ -322,13 +322,13 @@ class StubGenerator: public StubCodeGenerator {
     __ ldr(j_rarg2, result);
     Label is_long, is_float, is_double, exit;
     __ ldr(j_rarg1, result_type);
-    __ cmp(j_rarg1, T_OBJECT);
+    __ cmp(j_rarg1, (u1)T_OBJECT);
     __ br(Assembler::EQ, is_long);
-    __ cmp(j_rarg1, T_LONG);
+    __ cmp(j_rarg1, (u1)T_LONG);
     __ br(Assembler::EQ, is_long);
-    __ cmp(j_rarg1, T_FLOAT);
+    __ cmp(j_rarg1, (u1)T_FLOAT);
     __ br(Assembler::EQ, is_float);
-    __ cmp(j_rarg1, T_DOUBLE);
+    __ cmp(j_rarg1, (u1)T_DOUBLE);
     __ br(Assembler::EQ, is_double);
 
     // handle T_INT case
@@ -743,7 +743,7 @@ class StubGenerator: public StubCodeGenerator {
     // Make sure we are never given < 8 words
     {
       Label L;
-      __ cmp(count, 8);
+      __ cmp(count, (u1)8);
       __ br(Assembler::GE, L);
       __ stop("genrate_copy_longs called with < 8 words");
       __ bind(L);
@@ -1103,19 +1103,19 @@ class StubGenerator: public StubCodeGenerator {
 
     if (PrefetchCopyIntervalInBytes > 0)
       __ prfm(Address(s, 0), PLDL1KEEP);
-    __ cmp(count, (UseSIMDForMemoryOps ? 96:80)/granularity);
+    __ cmp(count, u1((UseSIMDForMemoryOps ? 96:80)/granularity));
     __ br(Assembler::HI, copy_big);
 
     __ lea(send, Address(s, count, Address::lsl(exact_log2(granularity))));
     __ lea(dend, Address(d, count, Address::lsl(exact_log2(granularity))));
 
-    __ cmp(count, 16/granularity);
+    __ cmp(count, u1(16/granularity));
     __ br(Assembler::LS, copy16);
 
-    __ cmp(count, 64/granularity);
+    __ cmp(count, u1(64/granularity));
     __ br(Assembler::HI, copy80);
 
-    __ cmp(count, 32/granularity);
+    __ cmp(count, u1(32/granularity));
     __ br(Assembler::LS, copy32);
 
     // 33..64 bytes
@@ -1170,7 +1170,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // 0..16 bytes
     __ bind(copy16);
-    __ cmp(count, 8/granularity);
+    __ cmp(count, u1(8/granularity));
     __ br(Assembler::LO, copy8);
 
     // 8..16 bytes
@@ -3270,7 +3270,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // The pipelined loop needs at least 16 elements for 1 iteration
     // It does check this, but it is more effective to skip to the cleanup loop
-    __ cmp(len, 16);
+    __ cmp(len, (u1)16);
     __ br(Assembler::HS, L_nmax);
     __ cbz(len, L_combine);
 
@@ -3654,7 +3654,7 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_has_negatives(address &has_negatives_long) {
     StubCodeMark mark(this, "StubRoutines", "has_negatives");
-    const int large_loop_size = 64;
+    const u1 large_loop_size = 64;
     const uint64_t UPPER_BIT_MASK=0x8080808080808080;
     int dcache_line = VM_Version::dcache_line_size();
 
@@ -3668,7 +3668,7 @@ class StubGenerator: public StubCodeGenerator {
   Label RET_TRUE, RET_TRUE_NO_POP, RET_FALSE, ALIGNED, LOOP16, CHECK_16, DONE,
         LARGE_LOOP, POST_LOOP16, LEN_OVER_15, LEN_OVER_8, POST_LOOP16_LOAD_TAIL;
 
-  __ cmp(len, 15);
+  __ cmp(len, (u1)15);
   __ br(Assembler::GT, LEN_OVER_15);
   // The only case when execution falls into this code is when pointer is near
   // the end of memory page and we have to avoid reading next page
@@ -3764,7 +3764,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::GE, LARGE_LOOP);
 
   __ bind(CHECK_16); // small 16-byte load pre-loop
-    __ cmp(len, 16);
+    __ cmp(len, (u1)16);
     __ br(Assembler::LT, POST_LOOP16);
 
   __ bind(LOOP16); // small 16-byte load loop
@@ -3773,11 +3773,11 @@ class StubGenerator: public StubCodeGenerator {
     __ orr(tmp2, tmp2, tmp3);
     __ tst(tmp2, UPPER_BIT_MASK);
     __ br(Assembler::NE, RET_TRUE);
-    __ cmp(len, 16);
+    __ cmp(len, (u1)16);
     __ br(Assembler::GE, LOOP16); // 16-byte load loop end
 
   __ bind(POST_LOOP16); // 16-byte aligned, so we can read unconditionally
-    __ cmp(len, 8);
+    __ cmp(len, (u1)8);
     __ br(Assembler::LE, POST_LOOP16_LOAD_TAIL);
     __ ldr(tmp3, Address(__ post(ary1, 8)));
     __ sub(len, len, 8);
@@ -3942,7 +3942,7 @@ class StubGenerator: public StubCodeGenerator {
         __ br(__ LE, NO_PREFETCH_LARGE_LOOP);
         generate_large_array_equals_loop_simd(prefetchLoopThreshold,
             /* prfm = */ true, NOT_EQUAL);
-        __ cmp(cnt1, nonPrefetchLoopThreshold);
+        __ subs(zr, cnt1, nonPrefetchLoopThreshold);
         __ br(__ LT, TAIL);
       }
       __ bind(NO_PREFETCH_LARGE_LOOP);
@@ -3955,7 +3955,7 @@ class StubGenerator: public StubCodeGenerator {
         __ br(__ LE, NO_PREFETCH_LARGE_LOOP);
         generate_large_array_equals_loop_nonsimd(prefetchLoopThreshold,
             /* prfm = */ true, NOT_EQUAL);
-        __ cmp(cnt1, nonPrefetchLoopThreshold);
+        __ subs(zr, cnt1, nonPrefetchLoopThreshold);
         __ br(__ LT, TAIL);
       }
       __ bind(NO_PREFETCH_LARGE_LOOP);
@@ -4106,7 +4106,7 @@ class StubGenerator: public StubCodeGenerator {
     __ ldr(tmp3, Address(__ post(cnt1, 8)));
 
     if (SoftwarePrefetchHintDistance >= 0) {
-      __ cmp(cnt2, prefetchLoopExitCondition);
+      __ subs(rscratch2, cnt2, prefetchLoopExitCondition);
       __ br(__ LT, SMALL_LOOP);
       __ bind(LARGE_LOOP_PREFETCH);
         __ prfm(Address(tmp2, SoftwarePrefetchHintDistance));
@@ -4123,7 +4123,7 @@ class StubGenerator: public StubCodeGenerator {
           __ subs(tmp4, tmp4, 1);
           __ br(__ GT, LARGE_LOOP_PREFETCH_REPEAT2);
           __ sub(cnt2, cnt2, 64);
-          __ cmp(cnt2, prefetchLoopExitCondition);
+          __ subs(rscratch2, cnt2, prefetchLoopExitCondition);
           __ br(__ GE, LARGE_LOOP_PREFETCH);
     }
     __ cbz(cnt2, LOAD_LAST); // no characters left except last load
@@ -4137,7 +4137,7 @@ class StubGenerator: public StubCodeGenerator {
       __ br(__ GE, SMALL_LOOP);
       __ cbz(cnt2, LOAD_LAST);
     __ bind(TAIL); // 1..15 characters left
-      __ cmp(cnt2, -8);
+      __ subs(zr, cnt2, -8);
       __ br(__ GT, TAIL_LOAD_16);
       __ ldrd(vtmp, Address(tmp2));
       __ zip1(vtmp3, __ T8B, vtmp, vtmpZ);
@@ -4240,7 +4240,7 @@ class StubGenerator: public StubCodeGenerator {
         compare_string_16_bytes_same(DIFF, DIFF2);
         __ sub(cnt2, cnt2, isLL ? 64 : 32);
         compare_string_16_bytes_same(DIFF, DIFF2);
-        __ cmp(cnt2, largeLoopExitCondition);
+        __ subs(rscratch2, cnt2, largeLoopExitCondition);
         compare_string_16_bytes_same(DIFF, DIFF2);
         __ br(__ GT, LARGE_LOOP_PREFETCH);
         __ cbz(cnt2, LAST_CHECK_AND_LENGTH_DIFF); // no more chars left?
@@ -4416,7 +4416,7 @@ class StubGenerator: public StubCodeGenerator {
       __ add(result, result, wordSize/str2_chr_size);
       __ br(__ GE, L_LOOP);
     __ BIND(L_POST_LOOP);
-      __ cmp(cnt2, -wordSize/str2_chr_size); // no extra characters to check
+      __ subs(zr, cnt2, -wordSize/str2_chr_size); // no extra characters to check
       __ br(__ LE, NOMATCH);
       __ ldr(ch2, Address(str2));
       __ sub(cnt2, zr, cnt2, __ LSL, LogBitsPerByte + str2_chr_shift);
@@ -4446,7 +4446,7 @@ class StubGenerator: public StubCodeGenerator {
       __ br(__ EQ, NOMATCH);
     __ BIND(L_SMALL_HAS_ZERO_LOOP);
       __ clz(tmp4, tmp2); // potentially long. Up to 4 cycles on some cpu's
-      __ cmp(cnt1, wordSize/str2_chr_size);
+      __ cmp(cnt1, u1(wordSize/str2_chr_size));
       __ br(__ LE, L_SMALL_CMP_LOOP_LAST_CMP2);
       if (str2_isL) { // LL
         __ add(str2, str2, tmp4, __ LSR, LogBitsPerByte); // address of "index"
@@ -4659,7 +4659,7 @@ class StubGenerator: public StubCodeGenerator {
     __ zip1(v2, __ T16B, v2, v0);
     __ st1(v1, v2, __ T16B, __ post(dst, 32));
     __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
-    __ cmp(octetCounter, large_loop_threshold);
+    __ subs(rscratch1, octetCounter, large_loop_threshold);
     __ br(__ LE, LOOP_START);
     __ b(LOOP_PRFM_START);
     __ bind(LOOP_PRFM);
@@ -4667,17 +4667,17 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(LOOP_PRFM_START);
       __ prfm(Address(src, SoftwarePrefetchHintDistance));
       __ sub(octetCounter, octetCounter, 8);
-      __ cmp(octetCounter, large_loop_threshold);
+      __ subs(rscratch1, octetCounter, large_loop_threshold);
       inflate_and_store_2_fp_registers(true, v3, v4);
       inflate_and_store_2_fp_registers(true, v5, v6);
       __ br(__ GT, LOOP_PRFM);
-      __ cmp(octetCounter, 8);
+      __ cmp(octetCounter, (u1)8);
       __ br(__ LT, DONE);
     __ bind(LOOP);
       __ ld1(v3, v4, v5, v6, __ T16B, Address(__ post(src, 64)));
       __ bind(LOOP_START);
       __ sub(octetCounter, octetCounter, 8);
-      __ cmp(octetCounter, 8);
+      __ cmp(octetCounter, (u1)8);
       inflate_and_store_2_fp_registers(false, v3, v4);
       inflate_and_store_2_fp_registers(false, v5, v6);
       __ br(__ GE, LOOP);
@@ -5308,7 +5308,7 @@ class StubGenerator: public StubCodeGenerator {
       {
         ldr(Rn, Address(Pn_base, 0));
         mul(Rlo_mn, Rn, inv);
-        cmp(Rlo_mn, -1);
+        subs(zr, Rlo_mn, -1);
         Label ok;
         br(EQ, ok); {
           stop("broken inverse in Montgomery multiply");

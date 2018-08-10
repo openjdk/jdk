@@ -292,7 +292,7 @@ void MacroAssembler::fast_log(FloatRegister vtmp0, FloatRegister vtmp1,
     // vtmp1 = AS_DOUBLE_BITS(0x77F0 << 48 | mantissa(X)) == mx
     fmovd(vtmp1, tmp4);
     subw(tmp2, tmp2, 16);
-    cmp(tmp2, 0x8000);
+    subs(zr, tmp2, 0x8000);
     br(GE, SMALL_VALUE);
   bind(MAIN);
     fmovs(tmp3, vtmp5);                        // int intB0 = AS_INT_BITS(B);

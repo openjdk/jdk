@@ -712,7 +712,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           {
             Label ok, not_ok;
             __ ldrw(obj_size, Address(klass, Klass::layout_helper_offset()));
-            __ cmp(obj_size, 0u);
+            __ cmp(obj_size, (u1)0);
             __ br(Assembler::LE, not_ok);  // make sure it's an instance (LH > 0)
             __ tstw(obj_size, Klass::_lh_instance_slow_path_bit);
             __ br(Assembler::EQ, ok);

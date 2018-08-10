@@ -1360,7 +1360,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ ldrw(t, Address(rthread, JavaThread::thread_state_offset()));
-    __ cmp(t, _thread_in_Java);
+    __ cmp(t, (u1)_thread_in_Java);
     __ br(Assembler::EQ, L);
     __ stop("Wrong thread state in native stub");
     __ bind(L);
@@ -1467,7 +1467,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label no_reguard;
     __ lea(rscratch1, Address(rthread, in_bytes(JavaThread::stack_guard_state_offset())));
     __ ldrw(rscratch1, Address(rscratch1));
-    __ cmp(rscratch1, JavaThread::stack_guard_yellow_reserved_disabled);
+    __ cmp(rscratch1, (u1)JavaThread::stack_guard_yellow_reserved_disabled);
     __ br(Assembler::NE, no_reguard);
 
     __ pusha(); // XXX only save smashed registers

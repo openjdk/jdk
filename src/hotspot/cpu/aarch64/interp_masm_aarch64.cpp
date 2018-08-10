@@ -1636,7 +1636,7 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, const Address& md
 
   ldr(rscratch1, mdo_addr);
   cbz(rscratch1, none);
-  cmp(rscratch1, TypeEntries::null_seen);
+  cmp(rscratch1, (u1)TypeEntries::null_seen);
   br(Assembler::EQ, none);
   // There is a chance that the checks above (re-reading profiling
   // data from memory) fail if another thread has just set the
@@ -1670,7 +1670,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
     int off_to_start = is_virtual ? in_bytes(VirtualCallData::virtual_call_data_size()) : in_bytes(CounterData::counter_data_size());
 
     ldrb(rscratch1, Address(mdp, in_bytes(DataLayout::tag_offset()) - off_to_start));
-    cmp(rscratch1, is_virtual ? DataLayout::virtual_call_type_data_tag : DataLayout::call_type_data_tag);
+    cmp(rscratch1, u1(is_virtual ? DataLayout::virtual_call_type_data_tag : DataLayout::call_type_data_tag));
     br(Assembler::NE, profile_continue);
 
     if (MethodData::profile_arguments()) {
@@ -1682,7 +1682,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
           // If return value type is profiled we may have no argument to profile
           ldr(tmp, Address(mdp, in_bytes(TypeEntriesAtCall::cell_count_offset())));
           sub(tmp, tmp, i*TypeStackSlotEntries::per_arg_count());
-          cmp(tmp, TypeStackSlotEntries::per_arg_count());
+          cmp(tmp, (u1)TypeStackSlotEntries::per_arg_count());
           add(rscratch1, mdp, off_to_args);
           br(Assembler::LT, done);
         }
@@ -1752,13 +1752,13 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       // length
       Label do_profile;
       ldrb(rscratch1, Address(rbcp, 0));
-      cmp(rscratch1, Bytecodes::_invokedynamic);
+      cmp(rscratch1, (u1)Bytecodes::_invokedynamic);
       br(Assembler::EQ, do_profile);
-      cmp(rscratch1, Bytecodes::_invokehandle);
+      cmp(rscratch1, (u1)Bytecodes::_invokehandle);
       br(Assembler::EQ, do_profile);
       get_method(tmp);
       ldrh(rscratch1, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
-      cmp(rscratch1, vmIntrinsics::_compiledLambdaForm);
+      subs(zr, rscratch1, vmIntrinsics::_compiledLambdaForm);
       br(Assembler::NE, profile_continue);
 
       bind(do_profile);

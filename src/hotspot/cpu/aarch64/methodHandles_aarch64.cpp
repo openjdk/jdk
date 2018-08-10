@@ -196,7 +196,7 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
     Label L;
     BLOCK_COMMENT("verify_intrinsic_id {");
     __ ldrh(rscratch1, Address(rmethod, Method::intrinsic_id_offset_in_bytes()));
-    __ cmp(rscratch1, (int) iid);
+    __ subs(zr, rscratch1, (int) iid);
     __ br(Assembler::EQ, L);
     if (iid == vmIntrinsics::_linkToVirtual ||
         iid == vmIntrinsics::_linkToSpecial) {
