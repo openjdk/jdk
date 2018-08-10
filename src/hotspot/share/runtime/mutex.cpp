@@ -370,11 +370,6 @@ int Monitor::TrySpin(Thread * const Self) {
       // CONSIDER: Delay += 1 + (Delay/4); Delay &= 0x7FF ;
     }
 
-    // Consider checking _owner's schedctl state, if OFFPROC abort spin.
-    // If the owner is OFFPROC then it's unlike that the lock will be dropped
-    // in a timely fashion, which suggests that spinning would not be fruitful
-    // or profitable.
-
     // Stall for "Delay" time units - iterations in the current implementation.
     // Avoid generating coherency traffic while stalled.
     // Possible ways to delay:
@@ -553,7 +548,6 @@ void Monitor::IUnlock(bool RelaxAssert) {
   // Only the holder of OnDeck can manipulate EntryList or detach the RATs from cxq.
   // Avoid ABA - allow multiple concurrent producers (enqueue via push-CAS)
   // but only one concurrent consumer (detacher of RATs).
-  // Consider protecting this critical section with schedctl on Solaris.
   // Unlike a normal lock, however, the exiting thread "locks" OnDeck,
   // picks a successor and marks that thread as OnDeck.  That successor
   // thread will then clear OnDeck once it eventually acquires the outer lock.

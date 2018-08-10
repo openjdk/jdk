@@ -3609,11 +3609,6 @@ OSReturn os::get_native_priority(const Thread* const thread,
   return OS_OK;
 }
 
-
-// Hint to the underlying OS that a task switch would not be good.
-// Void return because it's a hint and can fail.
-void os::hint_no_preempt() {}
-
 void os::interrupt(Thread* thread) {
   debug_only(Thread::check_for_dangling_thread_pointer(thread);)
 

@@ -726,8 +726,6 @@ protected:
   jint _hashStateX;                           // thread-specific hashCode generator state
   jint _hashStateY;
   jint _hashStateZ;
-  void * _schedctl;
-
 
   volatile jint rng[4];                      // RNG for spin loop
 

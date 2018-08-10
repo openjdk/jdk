@@ -2078,12 +2078,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "(-1 means no change)")                                           \
           range(-1, 127)                                                    \
                                                                             \
-  product(bool, CompilerThreadHintNoPreempt, false,                         \
-          "(Solaris only) Give compiler threads an extra quanta")           \
-                                                                            \
-  product(bool, VMThreadHintNoPreempt, false,                               \
-          "(Solaris only) Give VM thread an extra quanta")                  \
-                                                                            \
   product(intx, JavaPriority1_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
           range(-1, 127)                                                    \
