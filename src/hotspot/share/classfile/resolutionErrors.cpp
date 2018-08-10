@@ -100,7 +100,7 @@ ResolutionErrorTable::ResolutionErrorTable(int table_size)
 // RedefineClasses support - remove matching entry of a
 // constant pool that is going away
 void ResolutionErrorTable::delete_entry(ConstantPool* c) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  assert_locked_or_safepoint(SystemDictionary_lock);
   for (int i = 0; i < table_size(); i++) {
     for (ResolutionErrorEntry** p = bucket_addr(i); *p != NULL; ) {
       ResolutionErrorEntry* entry = *p;
@@ -118,7 +118,7 @@ void ResolutionErrorTable::delete_entry(ConstantPool* c) {
 
 // Remove unloaded entries from the table
 void ResolutionErrorTable::purge_resolution_errors() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  assert_locked_or_safepoint(SystemDictionary_lock);
   for (int i = 0; i < table_size(); i++) {
     for (ResolutionErrorEntry** p = bucket_addr(i); *p != NULL; ) {
       ResolutionErrorEntry* entry = *p;

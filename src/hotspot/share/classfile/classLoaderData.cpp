@@ -1418,33 +1418,38 @@ bool ClassLoaderDataGraph::do_unloading(bool do_cleaning) {
   }
 
   if (seen_dead_loader) {
-    data = _head;
-    while (data != NULL) {
-      // Remove entries in the dictionary of live class loader that have
-      // initiated loading classes in a dead class loader.
-      if (data->dictionary() != NULL) {
-        data->dictionary()->do_unloading();
-      }
-      // Walk a ModuleEntry's reads, and a PackageEntry's exports
-      // lists to determine if there are modules on those lists that are now
-      // dead and should be removed.  A module's life cycle is equivalent
-      // to its defining class loader's life cycle.  Since a module is
-      // considered dead if its class loader is dead, these walks must
-      // occur after each class loader's aliveness is determined.
-      if (data->packages() != NULL) {
-        data->packages()->purge_all_package_exports();
-      }
-      if (data->modules_defined()) {
-        data->modules()->purge_all_module_reads();
-      }
-      data = data->next();
-    }
     JFR_ONLY(post_class_unload_events();)
   }
 
   log_debug(class, loader, data)("do_unloading: loaders processed %u, loaders removed %u", loaders_processed, loaders_removed);
 
   return seen_dead_loader;
+}
+
+// There's at least one dead class loader.  Purge refererences of healthy module
+// reads lists and package export lists to modules belonging to dead loaders.
+void ClassLoaderDataGraph::clean_module_and_package_info() {
+  ClassLoaderData* data = _head;
+  while (data != NULL) {
+    // Remove entries in the dictionary of live class loader that have
+    // initiated loading classes in a dead class loader.
+    if (data->dictionary() != NULL) {
+      data->dictionary()->do_unloading();
+    }
+    // Walk a ModuleEntry's reads, and a PackageEntry's exports
+    // lists to determine if there are modules on those lists that are now
+    // dead and should be removed.  A module's life cycle is equivalent
+    // to its defining class loader's life cycle.  Since a module is
+    // considered dead if its class loader is dead, these walks must
+    // occur after each class loader's aliveness is determined.
+    if (data->packages() != NULL) {
+      data->packages()->purge_all_package_exports();
+    }
+    if (data->modules_defined()) {
+      data->modules()->purge_all_module_reads();
+    }
+    data = data->next();
+  }
 }
 
 void ClassLoaderDataGraph::purge() {

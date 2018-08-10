@@ -97,6 +97,7 @@ class ClassLoaderDataGraph : public AllStatic {
 
  public:
   static ClassLoaderData* find_or_create(Handle class_loader);
+  static void clean_module_and_package_info();
   static void purge();
   static void clear_claimed_marks();
   // oops do

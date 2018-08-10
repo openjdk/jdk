@@ -1853,6 +1853,9 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer,
 
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
     unloading_occurred = ClassLoaderDataGraph::do_unloading(do_cleaning);
+    if (unloading_occurred) {
+      ClassLoaderDataGraph::clean_module_and_package_info();
+    }
   }
 
   if (unloading_occurred) {

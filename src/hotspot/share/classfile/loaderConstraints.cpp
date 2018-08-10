@@ -65,7 +65,7 @@ void LoaderConstraintTable::free_entry(LoaderConstraintEntry *entry) {
 
 LoaderConstraintEntry** LoaderConstraintTable::find_loader_constraint(
                                     Symbol* name, Handle loader) {
-
+  assert_lock_strong(SystemDictionary_lock);
   unsigned int hash = compute_hash(name);
   int index = hash_to_index(hash);
   LoaderConstraintEntry** pp = bucket_addr(index);
@@ -89,7 +89,7 @@ LoaderConstraintEntry** LoaderConstraintTable::find_loader_constraint(
 
 
 void LoaderConstraintTable::purge_loader_constraints() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  assert_locked_or_safepoint(SystemDictionary_lock);
   LogTarget(Info, class, loader, constraints) lt;
   // Remove unloaded entries from constraint table
   for (int index = 0; index < table_size(); index++) {

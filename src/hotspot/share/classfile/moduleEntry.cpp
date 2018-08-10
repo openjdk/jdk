@@ -436,7 +436,7 @@ ModuleEntry* ModuleEntryTable::lookup_only(Symbol* name) {
 // Remove dead modules from all other alive modules' reads list.
 // This should only occur at class unloading.
 void ModuleEntryTable::purge_all_module_reads() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  assert_locked_or_safepoint(Module_lock);
   for (int i = 0; i < table_size(); i++) {
     for (ModuleEntry* entry = bucket(i);
                       entry != NULL;
