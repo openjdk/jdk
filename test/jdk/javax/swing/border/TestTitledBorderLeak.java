@@ -31,6 +31,7 @@ import javax.swing.SwingUtilities;
 
 /**
  * @test
+ * @key headful
  * @bug 8204963
  * @summary Verifies TitledBorder's memory leak
  * @run main TestTitledBorderLeak
