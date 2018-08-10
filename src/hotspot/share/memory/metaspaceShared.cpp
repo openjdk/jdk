@@ -438,6 +438,7 @@ void MetaspaceShared::serialize_well_known_classes(SerializeClosure* soc) {
   java_lang_Thread::serialize(soc);
   java_lang_ThreadGroup::serialize(soc);
   java_lang_AssertionStatusDirectives::serialize(soc);
+  java_lang_module_Configuration::serialize(soc);
   java_lang_ref_SoftReference::serialize(soc);
   java_lang_invoke_MethodHandle::serialize(soc);
   java_lang_invoke_DirectMethodHandle::serialize(soc);
@@ -461,6 +462,9 @@ void MetaspaceShared::serialize_well_known_classes(SerializeClosure* soc) {
   java_lang_StackFrameInfo::serialize(soc);
   java_lang_LiveStackFrameInfo::serialize(soc);
   java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize(soc);
+  java_util_ImmutableCollections_ListN::serialize(soc);
+  java_util_ImmutableCollections_MapN::serialize(soc);
+  java_util_ImmutableCollections_SetN::serialize(soc);
   jdk_internal_module_ArchivedModuleGraph::serialize(soc);
 }
 

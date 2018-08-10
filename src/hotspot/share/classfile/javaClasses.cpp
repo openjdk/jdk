@@ -4250,6 +4250,11 @@ int reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
 int jdk_internal_module_ArchivedModuleGraph::_archivedSystemModules_offset;
 int jdk_internal_module_ArchivedModuleGraph::_archivedModuleFinder_offset;
 int jdk_internal_module_ArchivedModuleGraph::_archivedMainModule_offset;
+int jdk_internal_module_ArchivedModuleGraph::_archivedConfiguration_offset;
+int java_lang_module_Configuration::_EMPTY_CONFIGURATION_offset;
+int java_util_ImmutableCollections_ListN::_EMPTY_LIST_offset;
+int java_util_ImmutableCollections_SetN::_EMPTY_SET_offset;
+int java_util_ImmutableCollections_MapN::_EMPTY_MAP_offset;
 
 #define STACKTRACEELEMENT_FIELDS_DO(macro) \
   macro(declaringClassObject_offset,  k, "declaringClassObject", class_signature, false); \
@@ -4412,20 +4417,81 @@ static int member_offset(int hardcoded_offset) {
   return (hardcoded_offset * heapOopSize) + instanceOopDesc::base_offset_in_bytes();
 }
 
-#define MODULEBOOTSTRAP_FIELDS_DO(macro) \
+#define ARCHIVEDMODULEGRAPH_FIELDS_DO(macro) \
   macro(_archivedSystemModules_offset,      k, "archivedSystemModules", systemModules_signature, true); \
   macro(_archivedModuleFinder_offset,       k, "archivedModuleFinder",  moduleFinder_signature,  true); \
-  macro(_archivedMainModule_offset,         k, "archivedMainModule",    string_signature,        true)
+  macro(_archivedMainModule_offset,         k, "archivedMainModule",    string_signature,        true); \
+  macro(_archivedConfiguration_offset,      k, "archivedConfiguration", configuration_signature, true)
 
 void jdk_internal_module_ArchivedModuleGraph::compute_offsets() {
   InstanceKlass* k = SystemDictionary::ArchivedModuleGraph_klass();
   assert(k != NULL, "must be loaded");
-  MODULEBOOTSTRAP_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  ARCHIVEDMODULEGRAPH_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void jdk_internal_module_ArchivedModuleGraph::serialize(SerializeClosure* f) {
-  MODULEBOOTSTRAP_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  ARCHIVEDMODULEGRAPH_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+#define CONFIGURATION_FIELDS_DO(macro) \
+  macro(_EMPTY_CONFIGURATION_offset, k, "EMPTY_CONFIGURATION", configuration_signature, true)
+
+void java_lang_module_Configuration::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::Configuration_klass();
+  assert(k != NULL, "must be loaded");
+  CONFIGURATION_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_module_Configuration::serialize(SerializeClosure* f) {
+  CONFIGURATION_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+#define LISTN_FIELDS_DO(macro) \
+  macro(_EMPTY_LIST_offset, k, "EMPTY_LIST", list_signature, true)
+
+void java_util_ImmutableCollections_ListN::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::ImmutableCollections_ListN_klass();
+  assert(k != NULL, "must be loaded");
+  LISTN_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_util_ImmutableCollections_ListN::serialize(SerializeClosure* f) {
+  LISTN_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+#define SETN_FIELDS_DO(macro) \
+  macro(_EMPTY_SET_offset, k, "EMPTY_SET", set_signature, true)
+
+void java_util_ImmutableCollections_SetN::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::ImmutableCollections_SetN_klass();
+  assert(k != NULL, "must be loaded");
+  SETN_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_util_ImmutableCollections_SetN::serialize(SerializeClosure* f) {
+  SETN_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+#define MAPN_FIELDS_DO(macro) \
+  macro(_EMPTY_MAP_offset, k, "EMPTY_MAP", map_signature, true)
+
+void java_util_ImmutableCollections_MapN::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::ImmutableCollections_MapN_klass();
+  assert(k != NULL, "must be loaded");
+  MAPN_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_util_ImmutableCollections_MapN::serialize(SerializeClosure* f) {
+  MAPN_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
@@ -4487,6 +4553,10 @@ void JavaClasses::compute_offsets() {
   java_lang_LiveStackFrameInfo::compute_offsets();
   java_util_concurrent_locks_AbstractOwnableSynchronizer::compute_offsets();
 
+  java_lang_module_Configuration::compute_offsets();
+  java_util_ImmutableCollections_ListN::compute_offsets();
+  java_util_ImmutableCollections_MapN::compute_offsets();
+  java_util_ImmutableCollections_SetN::compute_offsets();
   jdk_internal_module_ArchivedModuleGraph::compute_offsets();
 
   // generated interpreter code wants to know about the offsets we just computed:

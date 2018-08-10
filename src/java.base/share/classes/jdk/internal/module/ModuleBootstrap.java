@@ -172,6 +172,7 @@ public final class ModuleBootstrap {
 
         boolean haveModulePath = (appModulePath != null || upgradeModulePath != null);
         boolean needResolution = true;
+        boolean canArchive = false;
 
         // If the java heap was archived at CDS dump time and the environment
         // at dump time matches the current environment then use the archived
@@ -186,7 +187,6 @@ public final class ModuleBootstrap {
             systemModuleFinder = archivedModuleGraph.finder();
             needResolution = (traceOutput != null);
         } else {
-            boolean canArchive = false;
             if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
                 systemModules = SystemModuleFinders.systemModules(mainModule);
                 if (systemModules != null && !isPatched) {
@@ -205,12 +205,6 @@ public final class ModuleBootstrap {
                 // exploded build or testing
                 systemModules = new ExplodedSystemModules();
                 systemModuleFinder = SystemModuleFinders.ofSystem();
-            }
-
-            // Module graph can be archived at CDS dump time. Only allow the
-            // unnamed module case for now.
-            if (canArchive && (mainModule == null)) {
-                ArchivedModuleGraph.archive(mainModule, systemModules, systemModuleFinder);
             }
         }
 
@@ -353,8 +347,12 @@ public final class ModuleBootstrap {
         if (needResolution) {
             cf = JLMA.resolveAndBind(finder, roots, traceOutput);
         } else {
-            Map<String, Set<String>> map = systemModules.moduleReads();
-            cf = JLMA.newConfiguration(systemModuleFinder, map);
+            if (archivedModuleGraph != null) {
+                cf = archivedModuleGraph.configuration();
+            } else {
+                Map<String, Set<String>> map = systemModules.moduleReads();
+                cf = JLMA.newConfiguration(systemModuleFinder, map);
+            }
         }
 
         // check that modules specified to --patch-module are resolved
@@ -434,6 +432,13 @@ public final class ModuleBootstrap {
             unlimitedFinder = new SafeModuleFinder(savedModuleFinder);
             if (savedModuleFinder != finder)
                 limitedFinder = new SafeModuleFinder(finder);
+        }
+
+        // Module graph can be archived at CDS dump time. Only allow the
+        // unnamed module case for now.
+        if (canArchive && (mainModule == null)) {
+            ArchivedModuleGraph.archive(mainModule, systemModules,
+                                        systemModuleFinder, cf);
         }
 
         // total time to initialize

@@ -104,6 +104,13 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k, Klass *relocate
   }
 
   assert(relocated_k->is_shared(), "must be a shared class");
+
+  if (_k == relocated_k) {
+    // Don't add the Klass containing the sub-graph to it's own klass
+    // initialization list.
+    return;
+  }
+
   if (relocated_k->is_instance_klass()) {
     assert(InstanceKlass::cast(relocated_k)->is_shared_boot_class(),
           "must be boot class");
@@ -498,7 +505,12 @@ void HeapShared::archive_reachable_objects_from_static_field(Klass *k,
 #define do_module_object_graph(archive_object_graph_do) \
   archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedSystemModules_offset(), T_OBJECT, CHECK); \
   archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedModuleFinder_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedMainModule_offset(), T_OBJECT, CHECK)
+  archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedMainModule_offset(), T_OBJECT, CHECK); \
+  archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedConfiguration_offset(), T_OBJECT, CHECK); \
+  archive_object_graph_do(SystemDictionary::ImmutableCollections_ListN_klass(), java_util_ImmutableCollections_ListN::EMPTY_LIST_offset(), T_OBJECT, CHECK); \
+  archive_object_graph_do(SystemDictionary::ImmutableCollections_MapN_klass(),  java_util_ImmutableCollections_MapN::EMPTY_MAP_offset(), T_OBJECT, CHECK); \
+  archive_object_graph_do(SystemDictionary::ImmutableCollections_SetN_klass(),  java_util_ImmutableCollections_SetN::EMPTY_SET_offset(), T_OBJECT, CHECK); \
+  archive_object_graph_do(SystemDictionary::Configuration_klass(),       java_lang_module_Configuration::EMPTY_CONFIGURATION_offset(), T_OBJECT, CHECK)
 
 void HeapShared::archive_module_graph_objects(Thread* THREAD) {
   do_module_object_graph(archive_reachable_objects_from_static_field);

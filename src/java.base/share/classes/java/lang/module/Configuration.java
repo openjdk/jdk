@@ -41,8 +41,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleTarget;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A configuration that is the result of <a href="package-summary.html#resolution">
@@ -103,7 +105,17 @@ import jdk.internal.module.ModuleTarget;
 public final class Configuration {
 
     // @see Configuration#empty()
-    private static final Configuration EMPTY_CONFIGURATION = new Configuration();
+    // EMPTY_CONFIGURATION may be initialized from the CDS archive.
+    private static @Stable Configuration EMPTY_CONFIGURATION;
+
+    static {
+        // Initialize EMPTY_CONFIGURATION from the archive.
+        VM.initializeFromArchive(Configuration.class);
+        // Create a new empty Configuration if there is no archived version.
+        if (EMPTY_CONFIGURATION == null) {
+            EMPTY_CONFIGURATION = new Configuration();
+        }
+    }
 
     // parent configurations, in search order
     private final List<Configuration> parents;

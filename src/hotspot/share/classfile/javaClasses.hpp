@@ -1490,10 +1490,48 @@ class jdk_internal_module_ArchivedModuleGraph: AllStatic {
   static int _archivedSystemModules_offset;
   static int _archivedModuleFinder_offset;
   static int _archivedMainModule_offset;
+  static int _archivedConfiguration_offset;
  public:
   static int  archivedSystemModules_offset()      { return _archivedSystemModules_offset; }
   static int  archivedModuleFinder_offset()       { return _archivedModuleFinder_offset; }
   static int  archivedMainModule_offset()         { return _archivedMainModule_offset; }
+  static int  archivedConfiguration_offset()      { return _archivedConfiguration_offset; }
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+class java_lang_module_Configuration: AllStatic {
+ private:
+  static int _EMPTY_CONFIGURATION_offset;
+ public:
+  static int EMPTY_CONFIGURATION_offset() { return _EMPTY_CONFIGURATION_offset; }
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+class java_util_ImmutableCollections_ListN : AllStatic {
+ private:
+  static int _EMPTY_LIST_offset;
+ public:
+  static int EMPTY_LIST_offset() { return _EMPTY_LIST_offset; }
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+class java_util_ImmutableCollections_SetN : AllStatic {
+ private:
+  static int _EMPTY_SET_offset;
+ public:
+  static int EMPTY_SET_offset() { return _EMPTY_SET_offset; }
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
+class java_util_ImmutableCollections_MapN : AllStatic {
+ private:
+  static int _EMPTY_MAP_offset;
+ public:
+  static int EMPTY_MAP_offset() { return _EMPTY_MAP_offset; }
   static void compute_offsets();
   static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 };
