@@ -1051,6 +1051,38 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
   }
 }
 
+Klass* InstanceKlass::implementor() const {
+  assert_locked_or_safepoint(Compile_lock);
+  Klass** k = adr_implementor();
+  if (k == NULL) {
+    return NULL;
+  } else {
+    return *k;
+  }
+}
+
+void InstanceKlass::set_implementor(Klass* k) {
+  assert_lock_strong(Compile_lock);
+  assert(is_interface(), "not interface");
+  Klass** addr = adr_implementor();
+  assert(addr != NULL, "null addr");
+  if (addr != NULL) {
+    *addr = k;
+  }
+}
+
+int  InstanceKlass::nof_implementors() const {
+  assert_lock_strong(Compile_lock);
+  Klass* k = implementor();
+  if (k == NULL) {
+    return 0;
+  } else if (k != this) {
+    return 1;
+  } else {
+    return 2;
+  }
+}
+
 // The embedded _implementor field can only record one implementor.
 // When there are more than one implementors, the _implementor field
 // is set to the interface Klass* itself. Following are the possible
@@ -1061,7 +1093,7 @@ void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS)
 //
 // The _implementor field only exists for interfaces.
 void InstanceKlass::add_implementor(Klass* k) {
-  assert(Compile_lock->owned_by_self(), "");
+  assert_lock_strong(Compile_lock);
   assert(is_interface(), "not interface");
   // Filter out my subinterfaces.
   // (Note: Interfaces are never on the subklass list.)
@@ -2270,7 +2302,10 @@ void InstanceKlass::remove_unshareable_info() {
   if (is_linked()) {
     unlink_class();
   }
-  init_implementor();
+  {
+    MutexLocker ml(Compile_lock);
+    init_implementor();
+  }
 
   constants()->remove_unshareable_info();
 
@@ -3089,6 +3124,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->cr();
 
   if (is_interface()) {
+    MutexLocker ml(Compile_lock);
     st->print_cr(BULLET"nof implementors:  %d", nof_implementors());
     if (nof_implementors() == 1) {
       st->print_cr(BULLET"implementor:    ");
@@ -3496,14 +3532,8 @@ void InstanceKlass::verify_on(outputStream* st) {
     guarantee(sib->super() == super, "siblings should have same superklass");
   }
 
-  // Verify implementor fields
-  Klass* im = implementor();
-  if (im != NULL) {
-    guarantee(is_interface(), "only interfaces should have implementor set");
-    guarantee(im->is_klass(), "should be klass");
-    guarantee(!im->is_interface() || im == this,
-      "implementors cannot be interfaces");
-  }
+  // Verify implementor fields requires the Compile_lock, but this is sometimes
+  // called inside a safepoint, so don't verify.
 
   // Verify local interfaces
   if (local_interfaces()) {

@@ -1014,36 +1014,9 @@ public:
 #endif
 
   // Access to the implementor of an interface.
-  Klass* implementor() const
-  {
-    Klass** k = adr_implementor();
-    if (k == NULL) {
-      return NULL;
-    } else {
-      return *k;
-    }
-  }
-
-  void set_implementor(Klass* k) {
-    assert(is_interface(), "not interface");
-    Klass** addr = adr_implementor();
-    assert(addr != NULL, "null addr");
-    if (addr != NULL) {
-      *addr = k;
-    }
-  }
-
-  int  nof_implementors() const       {
-    Klass* k = implementor();
-    if (k == NULL) {
-      return 0;
-    } else if (k != this) {
-      return 1;
-    } else {
-      return 2;
-    }
-  }
-
+  Klass* implementor() const;
+  void set_implementor(Klass* k);
+  int  nof_implementors() const;
   void add_implementor(Klass* k);  // k is a new class that implements this interface
   void init_implementor();           // initialize
 
