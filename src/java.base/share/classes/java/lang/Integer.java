@@ -997,7 +997,8 @@ public final class Integer extends Number implements Comparable<Integer> {
     private static class IntegerCache {
         static final int low = -128;
         static final int high;
-        static final Integer cache[];
+        static final Integer[] cache;
+        static Integer[] archivedCache;
 
         static {
             // high value may be configured by property
@@ -1016,11 +1017,19 @@ public final class Integer extends Number implements Comparable<Integer> {
             }
             high = h;
 
-            cache = new Integer[(high - low) + 1];
-            int j = low;
-            for(int k = 0; k < cache.length; k++)
-                cache[k] = new Integer(j++);
+            // Load IntegerCache.archivedCache from archive, if possible
+            VM.initializeFromArchive(IntegerCache.class);
+            int size = (high - low) + 1;
 
+            // Use the archived cache if it exists and is large enough
+            if (archivedCache == null || size > archivedCache.length) {
+                Integer[] c = new Integer[size];
+                int j = low;
+                for(int k = 0; k < c.length; k++)
+                    c[k] = new Integer(j++);
+                archivedCache = c;
+            }
+            cache = archivedCache;
             // range [-128, 127] must be interned (JLS7 5.1.7)
             assert IntegerCache.high >= 127;
         }

@@ -1485,6 +1485,15 @@ class java_util_concurrent_locks_AbstractOwnableSynchronizer : AllStatic {
   static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
 };
 
+class java_lang_Integer_IntegerCache: AllStatic {
+ private:
+  static int _archivedCache_offset;
+ public:
+  static int archivedCache_offset()  { return _archivedCache_offset; }
+  static void compute_offsets();
+  static void serialize(SerializeClosure* f) NOT_CDS_RETURN;
+};
+
 class jdk_internal_module_ArchivedModuleGraph: AllStatic {
  private:
   static int _archivedSystemModules_offset;

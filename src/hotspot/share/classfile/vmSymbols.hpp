@@ -438,6 +438,7 @@
   template(fileToEncodedURL_signature,                "(Ljava/io/File;)Ljava/net/URL;")           \
   template(getProtectionDomain_name,                  "getProtectionDomain")                      \
   template(getProtectionDomain_signature,             "(Ljava/security/CodeSource;)Ljava/security/ProtectionDomain;") \
+  template(java_lang_Integer_array_signature,         "[Ljava/lang/Integer;")                     \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \

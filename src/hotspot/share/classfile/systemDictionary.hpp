@@ -215,6 +215,7 @@ class OopStorage;
   do_klass(Byte_klass,                                  java_lang_Byte,                            Pre                 ) \
   do_klass(Short_klass,                                 java_lang_Short,                           Pre                 ) \
   do_klass(Integer_klass,                               java_lang_Integer,                         Pre                 ) \
+  do_klass(Integer_IntegerCache_klass,                  java_lang_Integer_IntegerCache,            Pre                 ) \
   do_klass(Long_klass,                                  java_lang_Long,                            Pre                 ) \
                                                                                                                          \
   /* JVMCI classes. These are loaded on-demand. */                                                                       \

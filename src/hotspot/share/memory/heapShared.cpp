@@ -510,6 +510,7 @@ void HeapShared::archive_reachable_objects_from_static_field(Klass *k,
   archive_object_graph_do(SystemDictionary::ImmutableCollections_ListN_klass(), java_util_ImmutableCollections_ListN::EMPTY_LIST_offset(), T_OBJECT, CHECK); \
   archive_object_graph_do(SystemDictionary::ImmutableCollections_MapN_klass(),  java_util_ImmutableCollections_MapN::EMPTY_MAP_offset(), T_OBJECT, CHECK); \
   archive_object_graph_do(SystemDictionary::ImmutableCollections_SetN_klass(),  java_util_ImmutableCollections_SetN::EMPTY_SET_offset(), T_OBJECT, CHECK); \
+  archive_object_graph_do(SystemDictionary::Integer_IntegerCache_klass(), java_lang_Integer_IntegerCache::archivedCache_offset(), T_OBJECT, CHECK); \
   archive_object_graph_do(SystemDictionary::Configuration_klass(),       java_lang_module_Configuration::EMPTY_CONFIGURATION_offset(), T_OBJECT, CHECK)
 
 void HeapShared::archive_module_graph_objects(Thread* THREAD) {

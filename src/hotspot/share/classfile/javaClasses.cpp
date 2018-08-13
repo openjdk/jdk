@@ -4251,6 +4251,7 @@ int jdk_internal_module_ArchivedModuleGraph::_archivedSystemModules_offset;
 int jdk_internal_module_ArchivedModuleGraph::_archivedModuleFinder_offset;
 int jdk_internal_module_ArchivedModuleGraph::_archivedMainModule_offset;
 int jdk_internal_module_ArchivedModuleGraph::_archivedConfiguration_offset;
+int java_lang_Integer_IntegerCache::_archivedCache_offset;
 int java_lang_module_Configuration::_EMPTY_CONFIGURATION_offset;
 int java_util_ImmutableCollections_ListN::_EMPTY_LIST_offset;
 int java_util_ImmutableCollections_SetN::_EMPTY_SET_offset;
@@ -4417,6 +4418,21 @@ static int member_offset(int hardcoded_offset) {
   return (hardcoded_offset * heapOopSize) + instanceOopDesc::base_offset_in_bytes();
 }
 
+#define INTEGERCACHE_FIELDS_DO(macro) \
+  macro(_archivedCache_offset,  k, "archivedCache",  java_lang_Integer_array_signature, true)
+
+void java_lang_Integer_IntegerCache::compute_offsets() {
+  InstanceKlass* k = SystemDictionary::Integer_IntegerCache_klass();
+  assert(k != NULL, "must be loaded");
+  INTEGERCACHE_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_Integer_IntegerCache::serialize(SerializeClosure* f) {
+  INTEGERCACHE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
 #define ARCHIVEDMODULEGRAPH_FIELDS_DO(macro) \
   macro(_archivedSystemModules_offset,      k, "archivedSystemModules", systemModules_signature, true); \
   macro(_archivedModuleFinder_offset,       k, "archivedModuleFinder",  moduleFinder_signature,  true); \
@@ -4553,6 +4569,7 @@ void JavaClasses::compute_offsets() {
   java_lang_LiveStackFrameInfo::compute_offsets();
   java_util_concurrent_locks_AbstractOwnableSynchronizer::compute_offsets();
 
+  java_lang_Integer_IntegerCache::compute_offsets();
   java_lang_module_Configuration::compute_offsets();
   java_util_ImmutableCollections_ListN::compute_offsets();
   java_util_ImmutableCollections_MapN::compute_offsets();
