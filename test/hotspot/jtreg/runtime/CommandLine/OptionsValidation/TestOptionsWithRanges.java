@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8205633
  * @summary Test VM Options with ranges
  * @library /test/lib /runtime/CommandLine/OptionsValidation/common
  * @modules java.base/jdk.internal.misc
@@ -108,6 +109,7 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("NewSize");
         excludeTestMaxRange("OldSize");
         excludeTestMaxRange("ParallelGCThreads");
+        excludeTestMaxRange("TLABSize");
 
         /*
          * Remove parameters controlling the code cache. As these
