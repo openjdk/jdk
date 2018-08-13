@@ -39,8 +39,12 @@ class G1CardTable;
 class G1BarrierSet: public CardTableBarrierSet {
   friend class VMStructs;
  private:
-  static G1SATBMarkQueueSet _satb_mark_queue_set;
-  static DirtyCardQueueSet _dirty_card_queue_set;
+  G1SATBMarkQueueSet _satb_mark_queue_set;
+  DirtyCardQueueSet _dirty_card_queue_set;
+
+  static G1BarrierSet* g1_barrier_set() {
+    return barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
+  }
 
  public:
   G1BarrierSet(G1CardTable* table);
@@ -75,12 +79,12 @@ class G1BarrierSet: public CardTableBarrierSet {
   virtual void on_thread_attach(JavaThread* thread);
   virtual void on_thread_detach(JavaThread* thread);
 
-  static SATBMarkQueueSet& satb_mark_queue_set() {
-    return _satb_mark_queue_set;
+  static G1SATBMarkQueueSet& satb_mark_queue_set() {
+    return g1_barrier_set()->_satb_mark_queue_set;
   }
 
   static DirtyCardQueueSet& dirty_card_queue_set() {
-    return _dirty_card_queue_set;
+    return g1_barrier_set()->_dirty_card_queue_set;
   }
 
   // Callbacks for runtime accesses.
