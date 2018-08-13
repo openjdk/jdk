@@ -733,6 +733,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
 
     default:
       ShouldNotReachHere();
+      return;
   }
 #else
   switch (x->op()) {
@@ -757,6 +758,7 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
         break;
       default:
         ShouldNotReachHere();
+        return;
       }
       LIR_Opr result = call_runtime(x->y(), x->x(), entry, x->type(), NULL);
       set_result(x, result);
@@ -824,7 +826,7 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
       if (x->op() == Bytecodes::_irem) {
         out_reg = FrameMap::R0_opr;
         __ irem(left_arg->result(), right_arg->result(), out_reg, tmp, info);
-      } else if (x->op() == Bytecodes::_idiv) {
+      } else { // (x->op() == Bytecodes::_idiv)
         out_reg = FrameMap::R1_opr;
         __ idiv(left_arg->result(), right_arg->result(), out_reg, tmp, info);
       }
