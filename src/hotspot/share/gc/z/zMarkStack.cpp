@@ -28,60 +28,45 @@
 #include "gc/z/zMarkStack.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
-#include <sys/mman.h>
-#include <sys/types.h>
+uintptr_t ZMarkStackSpaceStart;
 
 ZMarkStackSpace::ZMarkStackSpace() :
     _expand_lock(),
+    _start(0),
     _top(0),
     _end(0) {
-  assert(ZMarkStacksMax >= ZMarkStackSpaceExpandSize, "ZMarkStacksMax too small");
-  assert(ZMarkStacksMax <= ZMarkStackSpaceSize, "ZMarkStacksMax too large");
+  assert(ZMarkStackSpaceLimit >= ZMarkStackSpaceExpandSize, "ZMarkStackSpaceLimit too small");
 
   // Reserve address space
-  const void* res = mmap((void*)ZMarkStackSpaceStart, ZMarkStackSpaceSize,
-                         PROT_NONE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_NORESERVE, -1, 0);
-  if (res != (void*)ZMarkStackSpaceStart) {
-    log_error(gc, marking)("Failed to reserve address space for marking stacks");
+  const size_t size = ZMarkStackSpaceLimit;
+  const size_t alignment = (size_t)os::vm_allocation_granularity();
+  const uintptr_t addr = (uintptr_t)os::reserve_memory(size, NULL, alignment, mtGC);
+  if (addr == 0) {
+    log_error(gc, marking)("Failed to reserve address space for mark stacks");
     return;
   }
 
   // Successfully initialized
-  _top = _end = ZMarkStackSpaceStart;
+  _start = _top = _end = addr;
+
+  // Register mark stack space start
+  ZMarkStackSpaceStart = _start;
 }
 
 bool ZMarkStackSpace::is_initialized() const {
-  return _top != 0;
-}
-
-void ZMarkStackSpace::expand() {
-  const size_t max = ZMarkStackSpaceStart + ZMarkStacksMax;
-  if (_end + ZMarkStackSpaceExpandSize > max) {
-    // Expansion limit reached. This is a fatal error since we
-    // currently can't recover from running out of mark stack space.
-    fatal("Mark stack overflow (current size " SIZE_FORMAT "M, max size " SIZE_FORMAT "M),"
-          " use -XX:ZMarkStacksMax=<size> to increase this limit",
-          (_end - ZMarkStackSpaceStart) / M, ZMarkStacksMax / M);
-  }
-
-  void* const res = mmap((void*)_end, ZMarkStackSpaceExpandSize,
-                         PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE|MAP_FIXED, -1, 0);
-  if (res == MAP_FAILED) {
-    // Failed to map memory. This is a fatal error since we
-    // currently can't recover from running out of mark stack space.
-    ZErrno err;
-    fatal("Failed to map memory for marking stacks (%s)", err.to_string());
-  }
+  return _start != 0;
 }
 
 uintptr_t ZMarkStackSpace::alloc_space(size_t size) {
-  uintptr_t top = _top;
+  uintptr_t top = Atomic::load(&_top);
 
   for (;;) {
+    const uintptr_t end = Atomic::load(&_end);
     const uintptr_t new_top = top + size;
-    if (new_top > _end) {
+    if (new_top > end) {
       // Not enough space left
       return 0;
     }
@@ -106,17 +91,28 @@ uintptr_t ZMarkStackSpace::expand_and_alloc_space(size_t size) {
     return addr;
   }
 
-  // Expand stack space
-  expand();
+  // Check expansion limit
+  const size_t expand_size = ZMarkStackSpaceExpandSize;
+  const size_t old_size = _end - _start;
+  const size_t new_size = old_size + expand_size;
+  if (new_size > ZMarkStackSpaceLimit) {
+    // Expansion limit reached. This is a fatal error since we
+    // currently can't recover from running out of mark stack space.
+    fatal("Mark stack space exhausted. Use -XX:ZMarkStackSpaceLimit=<size> to increase the "
+          "maximum number of bytes allocated for mark stacks. Current limit is " SIZE_FORMAT "M.",
+          ZMarkStackSpaceLimit / M);
+  }
 
   log_debug(gc, marking)("Expanding mark stack space: " SIZE_FORMAT "M->" SIZE_FORMAT "M",
-                         (_end - ZMarkStackSpaceStart) / M,
-                         (_end - ZMarkStackSpaceStart + ZMarkStackSpaceExpandSize) / M);
+                         old_size / M, new_size / M);
+
+  // Expand
+  os::commit_memory_or_exit((char*)_end, expand_size, false /* executable */, "Mark stack space");
 
   // Increment top before end to make sure another
   // thread can't steal out newly expanded space.
   addr = Atomic::add(size, &_top) - size;
-  _end += ZMarkStackSpaceExpandSize;
+  Atomic::add(expand_size, &_end);
 
   return addr;
 }

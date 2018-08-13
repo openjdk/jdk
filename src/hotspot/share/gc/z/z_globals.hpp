@@ -53,9 +53,9 @@
           "Allow Java threads to stall and wait for GC to complete "        \
           "instead of immediately throwing an OutOfMemoryError")            \
                                                                             \
-  product(size_t, ZMarkStacksMax, NOT_LP64(512*M) LP64_ONLY(8*G),           \
-          "Maximum number of bytes allocated for marking stacks")           \
-          range(32*M, NOT_LP64(512*M) LP64_ONLY(1024*G))                    \
+  product(size_t, ZMarkStackSpaceLimit, 8*G,                                \
+          "Maximum number of bytes allocated for mark stacks")              \
+          range(32*M, 1024*G)                                               \
                                                                             \
   product(uint, ZCollectionInterval, 0,                                     \
           "Force GC at a fixed time interval (in seconds)")                 \

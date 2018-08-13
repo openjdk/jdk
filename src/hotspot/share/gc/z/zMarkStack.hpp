@@ -76,6 +76,7 @@ typedef ZStackList<ZMarkStackMagazine>               ZMarkStackMagazineList;
 class ZMarkStackSpace {
 private:
   ZLock              _expand_lock;
+  uintptr_t          _start;
   volatile uintptr_t _top;
   volatile uintptr_t _end;
 
