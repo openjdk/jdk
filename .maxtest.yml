@@ -1,0 +1,9 @@
+suite: Maxjdoc
+tests:
+- name: build
+  tags:
+    - daily
+  commands:
+    - cd make && ant build
+  sharedEnviroment:
+      MAXJDOC: ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc

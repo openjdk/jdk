@@ -1222,6 +1222,7 @@ public class JavacParser implements Parser {
                         return illegal(annos.head.pos);
 
                     switch (token.kind) {
+                        // MAXELER entering array [
                     case LBRACKET:
                         nextToken();
                         if (token.kind == RBRACKET) {
@@ -1247,11 +1248,13 @@ public class JavacParser implements Parser {
                                 if (!annos.isEmpty()) t = illegal(annos.head.pos);
                                 t = to(F.at(pos).Indexed(t, t1));
                             }
+                            // MAXELER -- for range slice in dfeVar indexing [:]
                             if(token.kind == COLON){
                                 accept(COLON);
                                 if ((mode & EXPR) != 0) {
                                     mode = EXPR;
                                     JCExpression t1 = term();
+                                    if (!annos.isEmpty()) t = illegal(annos.head.pos);
                                     t = to(F.at(pos).Indexed(t, t1));
                                 }
                             }

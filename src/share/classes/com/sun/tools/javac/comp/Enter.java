@@ -436,8 +436,9 @@ public class Enter extends JCTree.Visitor {
          */
         private static boolean classNameMatchesFileName(ClassSymbol c,
                                                         Env<AttrContext> env) {
-            return env.toplevel.sourcefile.isNameCompatible(c.name.toString(),
-                                                            JavaFileObject.Kind.SOURCE);
+            return env.toplevel.sourcefile.isNameCompatible(c.name.toString(), JavaFileObject.Kind.SOURCE)
+                    || env.toplevel.sourcefile.getName().endsWith(".maxj");
+            // MAXELER -- quick hack, to do properly requires editing preceding function
         }
 
     /** Complain about a duplicate class. */
