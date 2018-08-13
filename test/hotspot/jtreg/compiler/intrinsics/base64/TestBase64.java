@@ -25,8 +25,12 @@
  * @test
  * @author Eric Wang <yiming.wang@oracle.com>
  * @summary tests java.util.Base64
+ * @library /test/lib /
+ * @build sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  *
  * @run main/othervm/timeout=600 -Xbatch -DcheckOutput=true
+ *       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      compiler.intrinsics.base64.TestBase64
  */
 
@@ -45,12 +49,18 @@ import java.util.Base64.Encoder;
 import java.util.Objects;
 import java.util.Random;
 
+import compiler.whitebox.CompilerWhiteBoxTest;
+import sun.hotspot.code.Compiler;
+import jtreg.SkippedException;
 
 public class TestBase64 {
     static boolean checkOutput = Boolean.getBoolean("checkOutput");
 
     public static void main(String[] args) throws Exception {
-        int iters = (args.length > 0 ? Integer.valueOf(args[0]) : 1000000);
+        if (!Compiler.isIntrinsicAvailable(CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION, "java.util.Base64$Encoder", "encodeBlock", byte[].class, int.class, int.class, byte[].class, int.class, boolean.class)) {
+            throw new SkippedException("Base64 intrinsic is not available");
+        }
+        int iters = (args.length > 0 ? Integer.valueOf(args[0]) : 100000);
         System.out.println(iters + " iterations");
 
         test0(Base64Type.BASIC, Base64.getEncoder(), Base64.getDecoder(),"plain.txt", "baseEncode.txt", iters);
