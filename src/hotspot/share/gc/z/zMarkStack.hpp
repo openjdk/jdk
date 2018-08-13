@@ -25,9 +25,7 @@
 #define SHARE_GC_Z_ZMARKSTACK_HPP
 
 #include "gc/z/zGlobals.hpp"
-#include "gc/z/zLock.hpp"
 #include "gc/z/zMarkStackEntry.hpp"
-#include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 template <typename T, size_t S>
@@ -73,43 +71,6 @@ typedef ZStackList<ZMarkStack>                       ZMarkStackList;
 typedef ZStack<ZMarkStack*, ZMarkStackMagazineSlots> ZMarkStackMagazine;
 typedef ZStackList<ZMarkStackMagazine>               ZMarkStackMagazineList;
 
-class ZMarkStackSpace {
-private:
-  ZLock              _expand_lock;
-  uintptr_t          _start;
-  volatile uintptr_t _top;
-  volatile uintptr_t _end;
-
-  void expand();
-
-  uintptr_t alloc_space(size_t size);
-  uintptr_t expand_and_alloc_space(size_t size);
-
-public:
-  ZMarkStackSpace();
-
-  bool is_initialized() const;
-
-  uintptr_t alloc(size_t size);
-};
-
-class ZMarkStackAllocator {
-private:
-  ZMarkStackMagazineList _freelist ATTRIBUTE_ALIGNED(ZCacheLineSize);
-  ZMarkStackSpace        _space    ATTRIBUTE_ALIGNED(ZCacheLineSize);
-
-  void prime_freelist();
-  ZMarkStackMagazine* create_magazine_from_space(uintptr_t addr, size_t size);
-
-public:
-  ZMarkStackAllocator();
-
-  bool is_initialized() const;
-
-  ZMarkStackMagazine* alloc_magazine();
-  void free_magazine(ZMarkStackMagazine* magazine);
-};
-
 class ZMarkStripe {
 private:
   ZMarkStackList _published  ATTRIBUTE_ALIGNED(ZCacheLineSize);
@@ -144,6 +105,8 @@ public:
   ZMarkStripe* stripe_for_worker(uint nworkers, uint worker_id);
   ZMarkStripe* stripe_for_addr(uintptr_t addr);
 };
+
+class ZMarkStackAllocator;
 
 class ZMarkThreadLocalStacks {
 private:

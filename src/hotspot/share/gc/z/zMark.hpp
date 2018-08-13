@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMARK_HPP
 
 #include "gc/z/zMarkStack.hpp"
+#include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zMarkTerminate.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
