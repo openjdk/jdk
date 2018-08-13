@@ -359,12 +359,12 @@
   //            ...
   //
 
-  // frame pointer for this frame
-  intptr_t* _fp;
-
   // The frame's stack pointer before it has been extended by a c2i adapter;
   // needed by deoptimization
   intptr_t* _unextended_sp;
+
+  // frame pointer for this frame
+  intptr_t* _fp;
 
  public:
 
