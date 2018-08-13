@@ -295,7 +295,7 @@ class PrePost {
   int _offset;
   Register _r;
 public:
-  PrePost(Register reg, int o) : _r(reg), _offset(o) { }
+  PrePost(Register reg, int o) : _offset(o), _r(reg) { }
   int offset() { return _offset; }
   Register reg() { return _r; }
 };
@@ -353,7 +353,7 @@ class Address {
     ext::operation _op;
   public:
     extend() { }
-    extend(int s, int o, ext::operation op) : _shift(s), _option(o), _op(op) { }
+    extend(int s, int o, ext::operation op) : _option(o), _shift(s), _op(op) { }
     int option() const{ return _option; }
     int shift() const { return _shift; }
     ext::operation op() const { return _op; }
@@ -398,26 +398,25 @@ class Address {
   Address()
     : _mode(no_mode) { }
   Address(Register r)
-    : _mode(base_plus_offset), _base(r), _offset(0), _index(noreg), _target(0) { }
+    : _base(r), _index(noreg), _offset(0), _mode(base_plus_offset), _target(0) { }
   Address(Register r, int o)
-    : _mode(base_plus_offset), _base(r), _offset(o), _index(noreg), _target(0) { }
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
   Address(Register r, long o)
-    : _mode(base_plus_offset), _base(r), _offset(o), _index(noreg), _target(0) { }
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
   Address(Register r, unsigned long o)
-    : _mode(base_plus_offset), _base(r), _offset(o), _index(noreg), _target(0) { }
+    : _base(r), _index(noreg), _offset(o), _mode(base_plus_offset), _target(0) { }
 #ifdef ASSERT
   Address(Register r, ByteSize disp)
-    : _mode(base_plus_offset), _base(r), _offset(in_bytes(disp)),
-      _index(noreg), _target(0) { }
+    : _base(r), _index(noreg), _offset(in_bytes(disp)), _mode(base_plus_offset), _target(0) { }
 #endif
   Address(Register r, Register r1, extend ext = lsl())
-    : _mode(base_plus_offset_reg), _base(r), _index(r1),
-    _ext(ext), _offset(0), _target(0) { }
+    : _base(r), _index(r1), _offset(0), _mode(base_plus_offset_reg),
+      _ext(ext), _target(0) { }
   Address(Pre p)
-    : _mode(pre), _base(p.reg()), _offset(p.offset()) { }
+    : _base(p.reg()), _offset(p.offset()), _mode(pre) { }
   Address(Post p)
-    : _mode(p.idx_reg() == NULL ? post : post_reg), _base(p.reg()),
-      _offset(p.offset()), _target(0), _index(p.idx_reg()) { }
+    : _base(p.reg()),  _index(p.idx_reg()), _offset(p.offset()),
+      _mode(p.idx_reg() == NULL ? post : post_reg), _target(0) { }
   Address(address target, RelocationHolder const& rspec)
     : _mode(literal),
       _rspec(rspec),
@@ -426,7 +425,7 @@ class Address {
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
   Address(Register base, RegisterOrConstant index, extend ext = lsl())
     : _base (base),
-      _ext(ext), _offset(0), _target(0) {
+      _offset(0), _ext(ext), _target(0) {
     if (index.is_register()) {
       _mode = base_plus_offset_reg;
       _index = index.as_register();
