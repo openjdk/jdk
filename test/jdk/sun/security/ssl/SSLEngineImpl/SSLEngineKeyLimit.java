@@ -127,8 +127,7 @@ public class SSLEngineKeyLimit {
                     output.shouldNotContain("KeyUpdate: write key updated");
                     output.shouldNotContain("KeyUpdate: read key updated");
                 } else {
-                    output.shouldContain("KeyUpdate: triggered, read side");
-                    output.shouldContain("KeyUpdate: triggered, write side");
+                    output.shouldContain("trigger key update");
                     output.shouldContain("KeyUpdate: write key updated");
                     output.shouldContain("KeyUpdate: read key updated");
                 }

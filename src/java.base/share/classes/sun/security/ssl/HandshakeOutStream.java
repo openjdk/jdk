@@ -27,6 +27,7 @@ package sun.security.ssl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * Output stream for handshake data.  This is used only internally
@@ -57,7 +58,14 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
         }
 
         if (outputRecord != null) {
-            outputRecord.encodeHandshake(buf, 0, count);
+            if (!outputRecord.isClosed()) {
+                outputRecord.encodeHandshake(buf, 0, count);
+            } else {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning("outbound has closed, ignore outbound " +
+                        "handshake messages", ByteBuffer.wrap(buf, 0, count));
+                }
+            }
 
             // reset the byte array output stream
             reset();

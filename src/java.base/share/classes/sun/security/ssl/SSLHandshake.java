@@ -366,6 +366,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
     SSLHandshake(byte id, String name,
         Map.Entry<SSLConsumer, ProtocolVersion[]>[] handshakeConsumers,
         Map.Entry<HandshakeProducer, ProtocolVersion[]>[] handshakeProducers) {
+
         this(id, name, handshakeConsumers, handshakeProducers,
                 (Map.Entry<HandshakeAbsence, ProtocolVersion[]>[])(
                         new Map.Entry[0]));
@@ -375,6 +376,7 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
         Map.Entry<SSLConsumer, ProtocolVersion[]>[] handshakeConsumers,
         Map.Entry<HandshakeProducer, ProtocolVersion[]>[] handshakeProducers,
         Map.Entry<HandshakeAbsence, ProtocolVersion[]>[] handshakeAbsence) {
+
         this.id = id;
         this.name = name;
         this.handshakeConsumers = handshakeConsumers;
@@ -404,7 +406,12 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
         ProtocolVersion protocolVersion;
         if ((hc.negotiatedProtocol == null) ||
                 (hc.negotiatedProtocol == ProtocolVersion.NONE)) {
-            protocolVersion = hc.maximumActiveProtocol;
+            if (hc.conContext.isNegotiated &&
+                    hc.conContext.protocolVersion != ProtocolVersion.NONE) {
+                protocolVersion = hc.conContext.protocolVersion;
+            } else {
+                protocolVersion = hc.maximumActiveProtocol;
+            }
         } else {
             protocolVersion = hc.negotiatedProtocol;
         }
@@ -444,7 +451,12 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
         ProtocolVersion protocolVersion;
         if ((hc.negotiatedProtocol == null) ||
                 (hc.negotiatedProtocol == ProtocolVersion.NONE)) {
-            protocolVersion = hc.maximumActiveProtocol;
+            if (hc.conContext.isNegotiated &&
+                    hc.conContext.protocolVersion != ProtocolVersion.NONE) {
+                protocolVersion = hc.conContext.protocolVersion;
+            } else {
+                protocolVersion = hc.maximumActiveProtocol;
+            }
         } else {
             protocolVersion = hc.negotiatedProtocol;
         }

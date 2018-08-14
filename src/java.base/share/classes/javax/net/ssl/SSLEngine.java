@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ import java.util.function.BiFunction;
  *     application messages are encrypted and integrity protected,
  *     and inbound messages reverse the process.
  *
- *     <li>  Rehandshaking - Either side may request a renegotiation of
+ *     <li> Rehandshaking - Either side may request a renegotiation of
  *     the session at any time during the Application Data phase.  New
  *     handshaking data can be intermixed among the application data.
  *     Before starting the rehandshake phase, the application may
@@ -156,12 +156,20 @@ import java.util.function.BiFunction;
  *     configuration settings will not be used until the next
  *     handshake.
  *
- *     <li>  Closure - When the connection is no longer needed, the
- *     application should close the {@code SSLEngine} and should
- *     send/receive any remaining messages to the peer before
- *     closing the underlying transport mechanism.  Once an engine is
- *     closed, it is not reusable:  a new {@code SSLEngine} must
- *     be created.
+ *     <li> Closure - When the connection is no longer needed, the client
+ *     and the server applications should each close both sides of their
+ *     respective connections.  For {@code SSLEngine} objects, an
+ *     application should call {@link SSLEngine#closeOutbound()} and
+ *     send any remaining messages to the peer.  Likewise, an application
+ *     should receive any remaining messages from the peer before calling
+ *     {@link SSLEngine#closeInbound()}.  The underlying transport mechanism
+ *     can then be closed after both sides of the {@code SSLEngine} have
+ *     been closed.  If the connection is not closed in an orderly manner
+ *     (for example {@link SSLEngine#closeInbound()} is called before the
+ *     peer's write closure notification has been received), exceptions
+ *     will be raised to indicate that an error has occurred.  Once an
+ *     engine is closed, it is not reusable: a new {@code SSLEngine}
+ *     must be created.
  * </OL>
  * An {@code SSLEngine} is created by calling {@link
  * SSLContext#createSSLEngine()} from an initialized

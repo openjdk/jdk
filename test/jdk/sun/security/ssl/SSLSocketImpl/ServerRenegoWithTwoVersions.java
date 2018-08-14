@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,17 +28,36 @@
 
 /*
  * @test
- * @bug 4814140
- * @summary AppInputStream: read can block a close
- * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true ReadBlocksClose
- * @author Brad Wetmore
+ * @bug 8208642
+ * @summary Server initiated TLSv1.2 renegotiation fails if Java
+ *      client allows TLSv1.3
+ * @run main/othervm ServerRenegoWithTwoVersions TLSv1 SSLv3
+ * @run main/othervm ServerRenegoWithTwoVersions TLSv1 TLSv1.1
+ * @run main/othervm ServerRenegoWithTwoVersions TLSv1.2 TLSv1.1
+ * @run main/othervm ServerRenegoWithTwoVersions TLSv1.3 TLSv1.2
  */
 
 import java.io.*;
 import java.net.*;
+import java.security.Security;
 import javax.net.ssl.*;
 
-public class ReadBlocksClose {
+public class ServerRenegoWithTwoVersions implements
+        HandshakeCompletedListener {
+
+    static byte handshakesCompleted = 0;
+
+    /*
+     * Define what happens when handshaking is completed
+     */
+    public void handshakeCompleted(HandshakeCompletedEvent event) {
+        synchronized (this) {
+            handshakesCompleted++;
+            System.out.println("Session: " + event.getSession().toString());
+            System.out.println("Seen handshake completed #" +
+                handshakesCompleted);
+        }
+    }
 
     /*
      * =============================================================
@@ -88,7 +107,7 @@ public class ReadBlocksClose {
      */
     void doServerSide() throws Exception {
         SSLServerSocketFactory sslssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+            (SSLServerSocketFactory)SSLServerSocketFactory.getDefault();
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
 
@@ -99,16 +118,28 @@ public class ReadBlocksClose {
          */
         serverReady = true;
 
-        SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+        SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept();
+        sslSocket.setEnabledProtocols(new String[] { serverProtocol });
+        sslSocket.addHandshakeCompletedListener(this);
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
 
-        try {
+        for (int i = 0; i < 10; i++) {
             sslIS.read();
-        } catch (IOException e) {
-            // this is ok, we expect this to time out anyway if the bug
-            // is not fixed.  This is just to make sure that we
-            // don't inadvertantly fail.
+            sslOS.write(85);
+            sslOS.flush();
+        }
+
+        System.out.println("invalidating");
+        sslSocket.getSession().invalidate();
+        System.out.println("starting new handshake");
+        sslSocket.startHandshake();
+
+        for (int i = 0; i < 10; i++) {
+            System.out.println("sending/receiving data, iteration: " + i);
+            sslIS.read();
+            sslOS.write(85);
+            sslOS.flush();
         }
 
         sslSocket.close();
@@ -130,40 +161,25 @@ public class ReadBlocksClose {
         }
 
         SSLSocketFactory sslsf =
-            (SSLSocketFactory) SSLSocketFactory.getDefault();
+            (SSLSocketFactory)SSLSocketFactory.getDefault();
         SSLSocket sslSocket = (SSLSocket)
             sslsf.createSocket("localhost", serverPort);
+        sslSocket.setEnabledProtocols(
+            new String[] { serverProtocol, clientProtocol });
 
-        final InputStream sslIS = sslSocket.getInputStream();
-        final OutputStream sslOS = sslSocket.getOutputStream();
+        InputStream sslIS = sslSocket.getInputStream();
+        OutputStream sslOS = sslSocket.getOutputStream();
 
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    System.out.println("Closing Thread started");
-                    Thread.sleep(3000);
-                    System.out.println("Closing Thread closing");
-                    sslOS.close();
-                    System.out.println("Closing Thread closed");
-                } catch (Exception e) {
-                    RuntimeException rte =
-                        new RuntimeException("Check this out");
-                    rte.initCause(e);
-                    throw rte;
-                }
-            }
-        }).start();
-
-        try {
-            /*
-             * This should timeout and fail the test
-             */
-            System.out.println("Client starting read");
+        for (int i = 0; i < 10; i++) {
+            sslOS.write(280);
+            sslOS.flush();
             sslIS.read();
-        } catch (IOException e) {
-            // this is ok, we expect this to time out anyway if the bug
-            // is not fixed.  This is just to make sure that we
-            // don't inadvertantly fail.
+        }
+
+        for (int i = 0; i < 10; i++) {
+            sslOS.write(280);
+            sslOS.flush();
+            sslIS.read();
         }
 
         sslSocket.close();
@@ -180,6 +196,10 @@ public class ReadBlocksClose {
     volatile Exception serverException = null;
     volatile Exception clientException = null;
 
+    // the specified protocol
+    private static String clientProtocol;
+    private static String serverProtocol;
+
     public static void main(String[] args) throws Exception {
         String keyFilename =
             System.getProperty("test.src", "./") + "/" + pathToStores +
@@ -193,13 +213,19 @@ public class ReadBlocksClose {
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
-        if (debug)
+        if (debug) {
             System.setProperty("javax.net.debug", "all");
+        }
+
+        Security.setProperty("jdk.tls.disabledAlgorithms", "");
+
+        clientProtocol = args[0];
+        serverProtocol = args[1];
 
         /*
          * Start the tests.
          */
-        new ReadBlocksClose();
+        new ServerRenegoWithTwoVersions();
     }
 
     Thread clientThread = null;
@@ -210,17 +236,13 @@ public class ReadBlocksClose {
      *
      * Fork off the other side, then do your work.
      */
-    ReadBlocksClose() throws Exception {
-        try {
-            if (separateServerThread) {
-                startServer(true);
-                startClient(false);
-            } else {
-                startClient(true);
-                startServer(false);
-            }
-        } catch (Exception e) {
-            // swallow for now.  Show later
+    ServerRenegoWithTwoVersions() throws Exception {
+        if (separateServerThread) {
+            startServer(true);
+            startClient(false);
+        } else {
+            startClient(true);
+            startServer(false);
         }
 
         /*
@@ -234,39 +256,29 @@ public class ReadBlocksClose {
 
         /*
          * When we get here, the test is pretty much over.
-         * Which side threw the error?
+         *
+         * If the main thread excepted, that propagates back
+         * immediately.  If the other thread threw an exception, we
+         * should report back.
          */
-        Exception local;
-        Exception remote;
-        String whichRemote;
-
-        if (separateServerThread) {
-            remote = serverException;
-            local = clientException;
-            whichRemote = "server";
-        } else {
-            remote = clientException;
-            local = serverException;
-            whichRemote = "client";
+        if (serverException != null) {
+            System.out.print("Server Exception:");
+            throw serverException;
+        }
+        if (clientException != null) {
+            System.out.print("Client Exception:");
+            throw clientException;
         }
 
         /*
-         * If both failed, return the curthread's exception, but also
-         * print the remote side Exception
+         * Give the Handshaker Thread a chance to run
          */
-        if ((local != null) && (remote != null)) {
-            System.out.println(whichRemote + " also threw:");
-            remote.printStackTrace();
-            System.out.println();
-            throw local;
-        }
+        Thread.sleep(1000);
 
-        if (remote != null) {
-            throw remote;
-        }
-
-        if (local != null) {
-            throw local;
+        synchronized (this) {
+            if (handshakesCompleted != 2) {
+                throw new Exception("Didn't see 2 handshake completed events.");
+            }
         }
     }
 
@@ -290,13 +302,7 @@ public class ReadBlocksClose {
             };
             serverThread.start();
         } else {
-            try {
-                doServerSide();
-            } catch (Exception e) {
-                serverException = e;
-            } finally {
-                serverReady = true;
-            }
+            doServerSide();
         }
     }
 
@@ -317,11 +323,7 @@ public class ReadBlocksClose {
             };
             clientThread.start();
         } else {
-            try {
-                doClientSide();
-            } catch (Exception e) {
-                clientException = e;
-            }
+            doClientSide();
         }
     }
 }

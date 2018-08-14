@@ -36,6 +36,7 @@
 
 import javax.net.ssl.*;
 import java.io.*;
+import java.net.SocketException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -123,6 +124,9 @@ public class AsyncSSLSocketClose implements Runnable {
                 os.write(ba);
                 System.out.println(count + " bytes written");
             }
+        } catch (SocketException se) {
+            // the closing may be in progress
+            System.out.println("interrupted? " + se);
         } catch (Exception e) {
             if (socket.isClosed() || socket.isOutputShutdown()) {
                 System.out.println("interrupted, the socket is closed");

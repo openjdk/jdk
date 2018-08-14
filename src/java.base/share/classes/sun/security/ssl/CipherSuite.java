@@ -805,7 +805,7 @@ enum CipherSuite {
         this.id = id;
         this.isDefaultEnabled = isDefaultEnabled;
         this.name = name;
-        if (aliases.isEmpty()) {
+        if (!aliases.isEmpty()) {
             this.aliases = Arrays.asList(aliases.split(","));
         } else {
             this.aliases = Collections.emptyList();

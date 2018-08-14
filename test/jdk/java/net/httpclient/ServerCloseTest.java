@@ -31,7 +31,7 @@
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
- * @run testng/othervm ServerCloseTest
+ * @run testng/othervm -Djdk.tls.acknowledgeCloseNotify=true ServerCloseTest
  */
 //*        -Djdk.internal.httpclient.debug=true
 
