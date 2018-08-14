@@ -231,6 +231,10 @@ public:
 
   // For reading from/writing to the CDS archive
   void serialize(SerializeClosure* soc);
+
+  inline bool empty() {
+    return (_entry_count == 0);
+  }
 };
 
 template <class T, class N> class CompactHashtable : public SimpleCompactHashtable {

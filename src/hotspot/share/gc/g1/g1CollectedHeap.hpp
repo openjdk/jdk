@@ -1324,9 +1324,8 @@ public:
   // Partial cleaning used when class unloading is disabled.
   // Let the caller choose what structures to clean out:
   // - StringTable
-  // - SymbolTable
   // - StringDeduplication structures
-  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_symbols, bool unlink_string_dedup);
+  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_string_dedup);
 
   // Complete cleaning used when class unloading is enabled.
   // Cleans out all structures handled by partial_cleaning and also the CodeCache.

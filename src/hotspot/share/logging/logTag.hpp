@@ -147,6 +147,7 @@
   LOG_TAG(stats) \
   LOG_TAG(stringdedup) \
   LOG_TAG(stringtable) \
+  LOG_TAG(symboltable) \
   LOG_TAG(stackmap) \
   LOG_TAG(subclass) \
   LOG_TAG(survivor) \

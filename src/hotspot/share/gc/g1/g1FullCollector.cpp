@@ -226,8 +226,8 @@ void G1FullCollector::phase1_mark_live_objects() {
     _heap->complete_cleaning(&_is_alive, purged_class);
   } else {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: String and Symbol Tables Cleanup", scope()->timer());
-    // If no class unloading just clean out strings and symbols.
-    _heap->partial_cleaning(&_is_alive, true, true, G1StringDedup::is_enabled());
+    // If no class unloading just clean out strings.
+    _heap->partial_cleaning(&_is_alive, true, G1StringDedup::is_enabled());
   }
 
   scope()->tracer()->report_object_count_after_gc(&_is_alive);

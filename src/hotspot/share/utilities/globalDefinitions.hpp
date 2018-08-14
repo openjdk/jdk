@@ -422,13 +422,14 @@ const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
 
 //----------------------------------------------------------------------------------------------------
-// Default and minimum StringTableSize values
+// Default and minimum StringTable and SymbolTable size values
+// Must be a power of 2
 
-const int defaultStringTableSize = NOT_LP64(1024) LP64_ONLY(65536);
-const int minimumStringTableSize = 128;
+const size_t defaultStringTableSize = NOT_LP64(1024) LP64_ONLY(65536);
+const size_t minimumStringTableSize = 128;
 
-const int defaultSymbolTableSize = 20011;
-const int minimumSymbolTableSize = 1009;
+const size_t defaultSymbolTableSize = 32768; // 2^15
+const size_t minimumSymbolTableSize = 1024;
 
 
 //----------------------------------------------------------------------------------------------------

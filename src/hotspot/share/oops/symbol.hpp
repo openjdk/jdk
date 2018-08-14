@@ -256,7 +256,7 @@ class Symbol : public MetaspaceObj {
   // only for getting its vtable pointer.
   Symbol() { }
 
-  static int _total_count;
+  static size_t _total_count;
 #endif
 };
 

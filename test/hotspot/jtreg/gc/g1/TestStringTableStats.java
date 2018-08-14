@@ -22,9 +22,9 @@
  */
 
 /*
- * @test TestStringSymbolTableStats.java
+ * @test TestStringTableStats.java
  * @bug 8027476 8027455
- * @summary Ensure that the G1TraceStringSymbolTableScrubbing prints the expected message.
+ * @summary Ensure that the G1TraceStringTableScrubbing prints the expected message.
  * @key gc
  * @requires vm.gc.G1
  * @library /test/lib
@@ -35,7 +35,7 @@
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-public class TestStringSymbolTableStats {
+public class TestStringTableStats {
   public static void main(String[] args) throws Exception {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
@@ -47,7 +47,7 @@ public class TestStringSymbolTableStats {
 
     System.out.println("Output:\n" + output.getOutput());
 
-    output.shouldMatch("GC\\(\\d+\\) Cleaned string and symbol table");
+    output.shouldMatch("GC\\(\\d+\\) Cleaned string table");
     output.shouldHaveExitValue(0);
   }
 

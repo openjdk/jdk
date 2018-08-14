@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
@@ -3256,56 +3255,40 @@ void G1CollectedHeap::print_termination_stats(uint worker_id,
                undo_waste * HeapWordSize / K);
 }
 
-class G1StringAndSymbolCleaningTask : public AbstractGangTask {
+class G1StringCleaningTask : public AbstractGangTask {
 private:
   BoolObjectClosure* _is_alive;
   G1StringDedupUnlinkOrOopsDoClosure _dedup_closure;
   OopStorage::ParState<false /* concurrent */, false /* const */> _par_state_string;
 
   int _initial_string_table_size;
-  int _initial_symbol_table_size;
 
   bool  _process_strings;
   int _strings_processed;
   int _strings_removed;
 
-  bool  _process_symbols;
-  int _symbols_processed;
-  int _symbols_removed;
-
   bool _process_string_dedup;
 
 public:
-  G1StringAndSymbolCleaningTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, bool process_string_dedup) :
-    AbstractGangTask("String/Symbol Unlinking"),
+  G1StringCleaningTask(BoolObjectClosure* is_alive, bool process_strings, bool process_string_dedup) :
+    AbstractGangTask("String Unlinking"),
     _is_alive(is_alive),
     _dedup_closure(is_alive, NULL, false),
     _par_state_string(StringTable::weak_storage()),
     _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
-    _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0),
     _process_string_dedup(process_string_dedup) {
 
     _initial_string_table_size = (int) StringTable::the_table()->table_size();
-    _initial_symbol_table_size = SymbolTable::the_table()->table_size();
-    if (process_symbols) {
-      SymbolTable::clear_parallel_claimed_index();
-    }
     if (process_strings) {
       StringTable::reset_dead_counter();
     }
   }
 
-  ~G1StringAndSymbolCleaningTask() {
-    guarantee(!_process_symbols || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
-              "claim value %d after unlink less than initial symbol table size %d",
-              SymbolTable::parallel_claimed_index(), _initial_symbol_table_size);
-
+  ~G1StringCleaningTask() {
     log_info(gc, stringtable)(
-        "Cleaned string and symbol table, "
-        "strings: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed, "
-        "symbols: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
-        strings_processed(), strings_removed(),
-        symbols_processed(), symbols_removed());
+        "Cleaned string table, "
+        "strings: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
+        strings_processed(), strings_removed());
     if (_process_strings) {
       StringTable::finish_dead_counter();
     }
@@ -3314,17 +3297,10 @@ public:
   void work(uint worker_id) {
     int strings_processed = 0;
     int strings_removed = 0;
-    int symbols_processed = 0;
-    int symbols_removed = 0;
     if (_process_strings) {
       StringTable::possibly_parallel_unlink(&_par_state_string, _is_alive, &strings_processed, &strings_removed);
       Atomic::add(strings_processed, &_strings_processed);
       Atomic::add(strings_removed, &_strings_removed);
-    }
-    if (_process_symbols) {
-      SymbolTable::possibly_parallel_unlink(&symbols_processed, &symbols_removed);
-      Atomic::add(symbols_processed, &_symbols_processed);
-      Atomic::add(symbols_removed, &_symbols_removed);
     }
     if (_process_string_dedup) {
       G1StringDedup::parallel_unlink(&_dedup_closure, worker_id);
@@ -3333,9 +3309,6 @@ public:
 
   size_t strings_processed() const { return (size_t)_strings_processed; }
   size_t strings_removed()   const { return (size_t)_strings_removed; }
-
-  size_t symbols_processed() const { return (size_t)_symbols_processed; }
-  size_t symbols_removed()   const { return (size_t)_symbols_removed; }
 };
 
 class G1CodeCacheUnloadingTask {
@@ -3585,7 +3558,7 @@ public:
 class G1ParallelCleaningTask : public AbstractGangTask {
 private:
   bool                          _unloading_occurred;
-  G1StringAndSymbolCleaningTask _string_symbol_task;
+  G1StringCleaningTask          _string_task;
   G1CodeCacheUnloadingTask      _code_cache_task;
   G1KlassCleaningTask           _klass_cleaning_task;
   G1ResolvedMethodCleaningTask  _resolved_method_cleaning_task;
@@ -3595,7 +3568,7 @@ public:
   G1ParallelCleaningTask(BoolObjectClosure* is_alive, uint num_workers, bool unloading_occurred) :
       AbstractGangTask("Parallel Cleaning"),
       _unloading_occurred(unloading_occurred),
-      _string_symbol_task(is_alive, true, true, G1StringDedup::is_enabled()),
+      _string_task(is_alive, true, G1StringDedup::is_enabled()),
       _code_cache_task(num_workers, is_alive, unloading_occurred),
       _klass_cleaning_task(),
       _resolved_method_cleaning_task() {
@@ -3609,8 +3582,8 @@ public:
     // Let the threads mark that the first pass is done.
     _code_cache_task.barrier_mark(worker_id);
 
-    // Clean the Strings and Symbols.
-    _string_symbol_task.work(worker_id);
+    // Clean the Strings.
+    _string_task.work(worker_id);
 
     // Clean unreferenced things in the ResolvedMethodTable
     _resolved_method_cleaning_task.work();
@@ -3642,16 +3615,14 @@ void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
 
 void G1CollectedHeap::partial_cleaning(BoolObjectClosure* is_alive,
                                        bool process_strings,
-                                       bool process_symbols,
                                        bool process_string_dedup) {
-  if (!process_strings && !process_symbols && !process_string_dedup) {
+  if (!process_strings && !process_string_dedup) {
     // Nothing to clean.
     return;
   }
 
-  G1StringAndSymbolCleaningTask g1_unlink_task(is_alive, process_strings, process_symbols, process_string_dedup);
+  G1StringCleaningTask g1_unlink_task(is_alive, process_strings, process_string_dedup);
   workers()->run_task(&g1_unlink_task);
-
 }
 
 class G1RedirtyLoggedCardsTask : public AbstractGangTask {
@@ -4045,7 +4016,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   process_discovered_references(per_thread_states);
 
   // FIXME
-  // CM's reference processing also cleans up the string and symbol tables.
+  // CM's reference processing also cleans up the string table.
   // Should we do that here also? We could, but it is a serial operation
   // and could significantly increase the pause time.
 
