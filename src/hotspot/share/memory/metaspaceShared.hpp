@@ -79,6 +79,7 @@ class MetaspaceShared : AllStatic {
     // mapped java heap regions
     first_string = od + 1, // index of first string region
     max_strings = 2, // max number of string regions in string space
+    last_string = first_string + max_strings - 1,
     first_open_archive_heap_region = first_string + max_strings,
     max_open_archive_heap_region = 2,
 
@@ -111,7 +112,7 @@ class MetaspaceShared : AllStatic {
   }
   static oop find_archived_heap_object(oop obj);
   static oop archive_heap_object(oop obj, Thread* THREAD);
-  static oop materialize_archived_object(oop obj);
+  static oop materialize_archived_object(narrowOop v);
   static void archive_klass_objects(Thread* THREAD);
 #endif
 
@@ -220,8 +221,6 @@ class MetaspaceShared : AllStatic {
     CDS_ONLY(return _remapped_readwrite);
     NOT_CDS(return false);
   }
-
-  static void print_shared_spaces();
 
   static bool try_link_class(InstanceKlass* ik, TRAPS);
   static void link_and_cleanup_shared_classes(TRAPS);

@@ -1213,7 +1213,7 @@ oop java_lang_Class::process_archived_mirror(Klass* k, oop mirror,
 bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle class_loader, Handle module,
                                               Handle protection_domain, TRAPS) {
-  oop m = MetaspaceShared::materialize_archived_object(k->archived_java_mirror_raw());
+  oop m = MetaspaceShared::materialize_archived_object(k->archived_java_mirror_raw_narrow());
 
   if (m == NULL) {
     return false;

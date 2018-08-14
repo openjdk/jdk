@@ -777,7 +777,7 @@ oop ConstantPoolCache::archived_references() {
   if (CompressedOops::is_null(_archived_references)) {
     return NULL;
   }
-  return MetaspaceShared::materialize_archived_object(CompressedOops::decode_not_null(_archived_references));
+  return MetaspaceShared::materialize_archived_object(_archived_references);
 }
 
 void ConstantPoolCache::set_archived_references(oop o) {

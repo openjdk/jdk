@@ -39,7 +39,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/filemap.hpp"
-#include "memory/heapShared.hpp"
+#include "memory/heapShared.inline.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -61,6 +61,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "utilities/align.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
 #if INCLUDE_G1GC
@@ -227,7 +228,7 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   // Map in spaces now also
   if (mapinfo->initialize() && map_shared_spaces(mapinfo)) {
     size_t cds_total = core_spaces_size();
-    cds_address = (address)mapinfo->header()->region_addr(0);
+    cds_address = (address)mapinfo->region_addr(0);
 #ifdef _LP64
     if (Metaspace::using_class_space()) {
       char* cds_end = (char*)(cds_address + cds_total);
@@ -309,10 +310,10 @@ void MetaspaceShared::initialize_dumptime_shared_and_meta_spaces() {
   Universe::set_narrow_klass_range(cds_total);
 
   Metaspace::initialize_class_space(tmp_class_space);
-  tty->print_cr("narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
+  log_info(cds)("narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
                 p2i(Universe::narrow_klass_base()), Universe::narrow_klass_shift());
 
-  tty->print_cr("Allocated temporary class space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
+  log_info(cds)("Allocated temporary class space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 CompressedClassSpaceSize, p2i(tmp_class_space.base()));
 #endif
 
@@ -424,6 +425,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(--tag);
 
   JavaClasses::serialize_offsets(soc);
+  InstanceMirrorKlass::serialize_offsets(soc);
   soc->do_tag(--tag);
 
   soc->do_tag(666);
@@ -1017,7 +1019,13 @@ private:
   GrowableArray<MemRegion> *_closed_archive_heap_regions;
   GrowableArray<MemRegion> *_open_archive_heap_regions;
 
+  GrowableArray<ArchiveHeapOopmapInfo> *_closed_archive_heap_oopmaps;
+  GrowableArray<ArchiveHeapOopmapInfo> *_open_archive_heap_oopmaps;
+
   void dump_java_heap_objects() NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_archive_heap_oopmaps() NOT_CDS_JAVA_HEAP_RETURN;
+  void dump_archive_heap_oopmaps(GrowableArray<MemRegion>* regions,
+                                 GrowableArray<ArchiveHeapOopmapInfo>* oopmaps);
   void dump_symbols();
   char* dump_read_only_tables();
   void print_region_stats();
@@ -1329,6 +1337,9 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   WriteClosure wc(&_ro_region);
   MetaspaceShared::serialize(&wc);
 
+  // Write the bitmaps for patching the archive heap regions
+  dump_archive_heap_oopmaps();
+
   char* newtop = _ro_region.top();
   ArchiveCompactor::alloc_stats()->record_other_type(int(newtop - oldtop), true);
   return buckets_top;
@@ -1471,10 +1482,12 @@ void VM_PopulateDumpSharedSpace::doit() {
 
     _total_string_region_size = mapinfo->write_archive_heap_regions(
                                         _closed_archive_heap_regions,
+                                        _closed_archive_heap_oopmaps,
                                         MetaspaceShared::first_string,
                                         MetaspaceShared::max_strings);
     _total_open_archive_region_size = mapinfo->write_archive_heap_regions(
                                         _open_archive_heap_regions,
+                                        _open_archive_heap_oopmaps,
                                         MetaspaceShared::first_open_archive_heap_region,
                                         MetaspaceShared::max_open_archive_heap_region);
   }
@@ -1810,6 +1823,36 @@ void VM_PopulateDumpSharedSpace::dump_java_heap_objects() {
   G1HeapVerifier::verify_archive_regions();
 }
 
+void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps() {
+  if (MetaspaceShared::is_heap_object_archiving_allowed()) {
+    _closed_archive_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
+    dump_archive_heap_oopmaps(_closed_archive_heap_regions, _closed_archive_heap_oopmaps);
+
+    _open_archive_heap_oopmaps = new GrowableArray<ArchiveHeapOopmapInfo>(2);
+    dump_archive_heap_oopmaps(_open_archive_heap_regions, _open_archive_heap_oopmaps);
+  }
+}
+
+void VM_PopulateDumpSharedSpace::dump_archive_heap_oopmaps(GrowableArray<MemRegion>* regions,
+                                                           GrowableArray<ArchiveHeapOopmapInfo>* oopmaps) {
+  for (int i=0; i<regions->length(); i++) {
+    ResourceBitMap oopmap = HeapShared::calculate_oopmap(regions->at(i));
+    size_t size_in_bits = oopmap.size();
+    size_t size_in_bytes = oopmap.size_in_bytes();
+    uintptr_t* buffer = (uintptr_t*)_ro_region.allocate(size_in_bytes, sizeof(intptr_t));
+    oopmap.write_to(buffer, size_in_bytes);
+    log_info(cds)("Oopmap = " INTPTR_FORMAT " (" SIZE_FORMAT_W(6) " bytes) for heap region "
+                  INTPTR_FORMAT " (" SIZE_FORMAT_W(8) " bytes)",
+                  p2i(buffer), size_in_bytes,
+                  p2i(regions->at(i).start()), regions->at(i).byte_size());
+
+    ArchiveHeapOopmapInfo info;
+    info._oopmap = (address)buffer;
+    info._oopmap_size_in_bits = size_in_bits;
+    oopmaps->append(info);
+  }
+}
+
 void MetaspaceShared::dump_closed_archive_heap_objects(
                                     GrowableArray<MemRegion> * closed_archive) {
   assert(is_heap_object_archiving_allowed(), "Cannot dump java heap objects");
@@ -1896,8 +1939,9 @@ oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
   return archived_oop;
 }
 
-oop MetaspaceShared::materialize_archived_object(oop obj) {
-  if (obj != NULL) {
+oop MetaspaceShared::materialize_archived_object(narrowOop v) {
+  if (!CompressedOops::is_null(v)) {
+    oop obj = HeapShared::decode_with_archived_oop_encoding_mode(v);
     return G1CollectedHeap::heap()->materialize_archived_object(obj);
   }
   return NULL;
@@ -1973,7 +2017,7 @@ public:
              "Archived heap object is not allowed");
       assert(MetaspaceShared::open_archive_heap_region_mapped(),
              "Open archive heap region is not mapped");
-      *p = CompressedOops::decode_not_null(o);
+      *p = HeapShared::decode_with_archived_oop_encoding_mode(o);
     }
   }
 
@@ -2002,13 +2046,6 @@ bool MetaspaceShared::is_in_trampoline_frame(address addr) {
   }
   return false;
 }
-
-void MetaspaceShared::print_shared_spaces() {
-  if (UseSharedSpaces) {
-    FileMapInfo::current_info()->print_shared_spaces();
-  }
-}
-
 
 // Map shared spaces at requested addresses and return if succeeded.
 bool MetaspaceShared::map_shared_spaces(FileMapInfo* mapinfo) {
@@ -2119,6 +2156,8 @@ void MetaspaceShared::initialize_shared_spaces() {
 
   // Initialize the run-time symbol table.
   SymbolTable::create_table();
+
+  mapinfo->patch_archived_heap_embedded_pointers();
 
   // Close the mapinfo file
   mapinfo->close();

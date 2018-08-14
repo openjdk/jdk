@@ -672,6 +672,11 @@ void BitMap::print_on_error(outputStream* st, const char* prefix) const {
       prefix, p2i(map()), p2i((char*)map() + (size() >> LogBitsPerByte)));
 }
 
+void BitMap::write_to(bm_word_t* buffer, size_t buffer_size_in_bytes) const {
+  assert(buffer_size_in_bytes == size_in_bytes(), "must be");
+  memcpy(buffer, _map, size_in_bytes());
+}
+
 #ifndef PRODUCT
 
 void BitMap::print_on(outputStream* st) const {

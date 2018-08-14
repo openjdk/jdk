@@ -88,6 +88,11 @@ public:
   }
 };
 
+struct ArchiveHeapOopmapInfo {
+  address _oopmap;               // bitmap for relocating embedded oops
+  size_t  _oopmap_size_in_bits;
+};
+
 struct FileMapHeader : public CDSFileMapHeaderBase {
   size_t _alignment;                // how shared archive should be aligned
   int    _obj_alignment;            // value of ObjectAlignmentInBytes
@@ -104,6 +109,7 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   size_t  _cds_i2i_entry_code_buffers_size;
   size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
                                     // (mc, md, ro, rw and od).
+  MemRegion _heap_reserved;         // reserved region for the entire heap at dump time.
 
   // The following fields are all sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -152,13 +158,15 @@ struct FileMapHeader : public CDSFileMapHeaderBase {
   jshort max_used_path_index()       { return _max_used_path_index; }
   jshort app_module_paths_start_index() { return _app_module_paths_start_index; }
 
-  char* region_addr(int idx);
-
   bool validate();
   void populate(FileMapInfo* info, size_t alignment);
   int compute_crc();
-};
 
+  CDSFileMapRegion* space_at(int i) {
+    assert(i >= 0 && i < NUM_CDS_REGIONS, "invalid region");
+    return &_space[i];
+  }
+};
 
 class FileMapInfo : public CHeapObj<mtInternal> {
 private:
@@ -194,6 +202,7 @@ public:
   char* _paths_misc_info;
 
   static FileMapInfo* _current_info;
+  static bool _heap_pointers_need_patching;
 
   bool  init_from_file(int fd);
   void  align_file_position();
@@ -253,12 +262,19 @@ public:
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
   size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
+                                    GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
                                     int first_region_id, int max_num_regions);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   char* map_region(int i, char** top_ret);
+  void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_archived_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_archived_heap_embedded_pointers(MemRegion* ranges, int num_ranges,
+                                              int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
+  bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
+  MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   void  unmap_region(int i);
   bool  verify_region_checksum(int i);
   void  close();
@@ -274,7 +290,6 @@ public:
   static void fail_continue(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
 
   bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
-  void print_shared_spaces() NOT_CDS_RETURN;
 
   // Stop CDS sharing and unmap CDS regions.
   static void stop_sharing_and_unmap(const char* msg);
@@ -303,6 +318,8 @@ public:
     return _shared_path_table_size;
   }
 
+  char* region_addr(int idx);
+
  private:
   bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
                       bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
@@ -310,9 +327,24 @@ public:
   void  dealloc_archive_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
 
   CDSFileMapRegion* space_at(int i) {
-    assert(i >= 0 && i < NUM_CDS_REGIONS, "invalid region");
-    return &_header->_space[i];
+    return _header->space_at(i);
   }
+
+  narrowOop offset_of_space(CDSFileMapRegion* spc) {
+    return (narrowOop)(spc->_addr._offset);
+  }
+
+  // The starting address of spc, as calculated with CompressedOop::decode_non_null()
+  address start_address_with_current_oop_encoding_mode(CDSFileMapRegion* spc) {
+    return decode_start_address(spc, true);
+  }
+
+  // The starting address of spc, as calculated with HeapShared::decode_with_archived_oop_encoding_mode()
+  address start_address_with_archived_oop_encoding_mode(CDSFileMapRegion* spc) {
+    return decode_start_address(spc, false);
+  }
+
+  address decode_start_address(CDSFileMapRegion* spc, bool with_current_oop_encoding_mode);
 };
 
 #endif // SHARE_VM_MEMORY_FILEMAP_HPP

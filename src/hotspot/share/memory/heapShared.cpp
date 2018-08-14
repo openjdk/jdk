@@ -29,7 +29,7 @@
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
 #include "logging/logStream.hpp"
-#include "memory/heapShared.hpp"
+#include "memory/heapShared.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -38,6 +38,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
+#include "utilities/bitMap.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 KlassSubGraphInfo* HeapShared::_subgraph_info_list = NULL;
@@ -71,6 +72,9 @@ KlassSubGraphInfo* HeapShared::get_subgraph_info(Klass* k) {
   _subgraph_info_list = info;
   return info;
 }
+
+address   HeapShared::_narrow_oop_base;
+int       HeapShared::_narrow_oop_shift;
 
 int HeapShared::num_of_subgraph_infos() {
   int num = 0;
@@ -320,7 +324,7 @@ void HeapShared::initialize_from_archived_subgraph(Klass* k) {
           // point. All objects in the subgraph reachable from the object are
           // also 'known' by GC.
           oop v = MetaspaceShared::materialize_archived_object(
-            CompressedOops::decode(entry_field_records->at(i+1)));
+            entry_field_records->at(i+1));
           m->obj_field_put(field_offset, v);
           i += 2;
         }
@@ -601,4 +605,96 @@ void HeapShared::archive_module_graph_objects(Thread* THREAD) {
     archive_reachable_objects_from_static_field(info->klass, info->offset, info->type, CHECK);
   }
 }
+
+// At dump-time, find the location of all the non-null oop pointers in an archived heap
+// region. This way we can quickly relocate all the pointers without using
+// BasicOopIterateClosure at runtime.
+class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
+  narrowOop* _start;
+  BitMap *_oopmap;
+  int _num_total_oops;
+  int _num_null_oops;
+ public:
+  FindEmbeddedNonNullPointers(narrowOop* start, BitMap* oopmap)
+    : _start(start), _oopmap(oopmap), _num_total_oops(0),  _num_null_oops(0) {}
+
+  virtual bool should_verify_oops(void) {
+    return false;
+  }
+  virtual void do_oop(narrowOop* p) {
+    _num_total_oops ++;
+    narrowOop v = *p;
+    if (!CompressedOops::is_null(v)) {
+      size_t idx = p - _start;
+      _oopmap->set_bit(idx);
+    } else {
+      _num_null_oops ++;
+    }
+  }
+  virtual void do_oop(oop *p) {
+    ShouldNotReachHere();
+  }
+  int num_total_oops() const { return _num_total_oops; }
+  int num_null_oops()  const { return _num_null_oops; }
+};
+
+ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
+  assert(UseCompressedOops, "must be");
+  size_t num_bits = region.byte_size() / sizeof(narrowOop);
+  ResourceBitMap oopmap(num_bits);
+
+  HeapWord* p   = region.start();
+  HeapWord* end = region.end();
+  FindEmbeddedNonNullPointers finder((narrowOop*)p, &oopmap);
+
+  int num_objs = 0;
+  while (p < end) {
+    oop o = (oop)p;
+    o->oop_iterate(&finder);
+    p += o->size();
+    ++ num_objs;
+  }
+
+  log_info(cds, heap)("calculate_oopmap: objects = %6d, embedded oops = %7d, nulls = %7d",
+                      num_objs, finder.num_total_oops(), finder.num_null_oops());
+  return oopmap;
+}
+
+void HeapShared::init_narrow_oop_decoding(address base, int shift) {
+  _narrow_oop_base = base;
+  _narrow_oop_shift = shift;
+}
+
+// Patch all the embedded oop pointers inside an archived heap region,
+// to be consistent with the runtime oop encoding.
+class PatchEmbeddedPointers: public BitMapClosure {
+  narrowOop* _start;
+
+ public:
+  PatchEmbeddedPointers(narrowOop* start) : _start(start) {}
+
+  bool do_bit(size_t offset) {
+    narrowOop* p = _start + offset;
+    narrowOop v = *p;
+    assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
+    oop o = HeapShared::decode_with_archived_oop_encoding_mode(v);
+    RawAccess<IS_NOT_NULL>::oop_store(p, o);
+    return true;
+  }
+};
+
+void HeapShared::patch_archived_heap_embedded_pointers(MemRegion region, address oopmap,
+                                                       size_t oopmap_size_in_bits) {
+  BitMapView bm((BitMap::bm_word_t*)oopmap, oopmap_size_in_bits);
+
+#ifndef PRODUCT
+  ResourceMark rm;
+  ResourceBitMap checkBm = calculate_oopmap(region);
+  assert(bm.is_same(checkBm), "sanity");
+#endif
+
+  PatchEmbeddedPointers patcher((narrowOop*)region.start());
+  bm.iterate(&patcher);
+}
+
 #endif // INCLUDE_CDS_JAVA_HEAP

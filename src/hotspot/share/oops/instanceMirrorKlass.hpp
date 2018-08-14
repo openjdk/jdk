@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,8 @@ class InstanceMirrorKlass: public InstanceKlass {
   void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
   void oop_pc_update_pointers(oop obj, ParCompactionManager* cm);
 #endif
+
+  static void serialize_offsets(class SerializeClosure* f) NOT_CDS_RETURN;
 
   // Oop fields (and metadata) iterators
   //

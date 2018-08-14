@@ -571,6 +571,11 @@ oop Klass::archived_java_mirror_raw() {
   return CompressedOops::decode(_archived_mirror);
 }
 
+narrowOop Klass::archived_java_mirror_raw_narrow() {
+  assert(has_raw_archived_mirror(), "must have raw archived mirror");
+  return _archived_mirror;
+}
+
 // No GC barrier
 void Klass::set_archived_java_mirror_raw(oop m) {
   assert(DumpSharedSpaces, "called only during runtime");

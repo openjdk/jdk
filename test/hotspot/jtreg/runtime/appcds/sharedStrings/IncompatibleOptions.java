@@ -141,10 +141,10 @@ public class IncompatibleOptions {
         // main class param, and fails with "Could not find or load main class"
         if (!extraOption.isEmpty()) {
             output = TestCommon.exec(appJar, "-XX:+UseCompressedOops",
-                collectorOption, extraOption, "HelloString");
+                collectorOption, "-Xlog:cds", extraOption, "HelloString");
         } else {
             output = TestCommon.exec(appJar, "-XX:+UseCompressedOops",
-                collectorOption, "HelloString");
+                collectorOption, "-Xlog:cds", "HelloString");
         }
 
         if (expectedWarning != null)

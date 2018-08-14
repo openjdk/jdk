@@ -35,7 +35,7 @@
 
 #define NUM_CDS_REGIONS 9
 #define CDS_ARCHIVE_MAGIC 0xf00baba2
-#define CURRENT_CDS_ARCHIVE_VERSION 4
+#define CURRENT_CDS_ARCHIVE_VERSION 5
 #define INVALID_CDS_ARCHIVE_VERSION -1
 
 struct CDSFileMapRegion {
@@ -49,6 +49,8 @@ struct CDSFileMapRegion {
   size_t     _used;          // for setting space top on read
   int        _read_only;     // read only space?
   int        _allow_exec;    // executable code in space?
+  void*      _oopmap;        // bitmap for relocating embedded oops
+  size_t     _oopmap_size_in_bits;
 };
 
 struct CDSFileMapHeaderBase {
