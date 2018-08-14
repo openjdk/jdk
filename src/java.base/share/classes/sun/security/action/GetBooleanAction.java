@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package sun.security.action;
+
+import java.security.AccessController;
 
 /**
  * A convenience class for retrieving the boolean value of a system property
@@ -68,5 +70,26 @@ public class GetBooleanAction
      */
     public Boolean run() {
         return Boolean.getBoolean(theProp);
+    }
+
+    /**
+     * Convenience method to get a property without going through doPrivileged
+     * if no security manager is present. This is unsafe for inclusion in a
+     * public API but allowable here since this class is now encapsulated.
+     *
+     * Note that this method performs a privileged action using caller-provided
+     * inputs. The caller of this method should take care to ensure that the
+     * inputs are not tainted and the returned property is not made accessible
+     * to untrusted code if it contains sensitive information.
+     *
+     * @param theProp the name of the system property.
+     */
+    public static boolean privilegedGetProperty(String theProp) {
+        if (System.getSecurityManager() == null) {
+            return Boolean.getBoolean(theProp);
+        } else {
+            return AccessController.doPrivileged(
+                    new GetBooleanAction(theProp));
+        }
     }
 }

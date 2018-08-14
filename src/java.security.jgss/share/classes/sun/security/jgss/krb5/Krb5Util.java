@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,13 @@
 package sun.security.jgss.krb5;
 
 import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlContext;
+
+import sun.security.action.GetBooleanAction;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.GSSCaller;
 
@@ -39,20 +40,16 @@ import sun.security.krb5.Credentials;
 import sun.security.krb5.EncryptionKey;
 import sun.security.krb5.KrbException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import sun.security.krb5.KerberosSecrets;
 import sun.security.krb5.PrincipalName;
+
 /**
  * Utilities for obtaining and converting Kerberos tickets.
- *
  */
 public class Krb5Util {
 
-    static final boolean DEBUG =
-        java.security.AccessController.doPrivileged(
-            new sun.security.action.GetBooleanAction
-            ("sun.security.krb5.debug")).booleanValue();
+    static final boolean DEBUG = GetBooleanAction
+            .privilegedGetProperty("sun.security.krb5.debug");
 
     /**
      * Default constructor

@@ -55,8 +55,8 @@ public final class KerberosString {
     public static final boolean MSNAME;
 
     static {
-        String prop = GetPropertyAction.privilegedGetProperty(
-                "sun.security.krb5.msinterop.kstring", "true");
+        String prop = GetPropertyAction
+                .privilegedGetProperty("sun.security.krb5.msinterop.kstring", "true");
         MSNAME = Boolean.parseBoolean(prop);
     }
 

@@ -31,6 +31,8 @@ import java.util.Enumeration;
 import java.util.Locale;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
+
+import sun.security.action.GetPropertyAction;
 import sun.security.util.Cache;
 
 
@@ -196,15 +198,9 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     private static int getDefaultCacheLimit() {
         int defaultCacheLimit = 0;
         try {
-            String s = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<String>() {
-                    @Override
-                    public String run() {
-                        return System.getProperty(
-                            "javax.net.ssl.sessionCacheSize");
-                    }
-                });
-                defaultCacheLimit = (s != null) ? Integer.parseInt(s) : 0;
+            String s = GetPropertyAction
+                    .privilegedGetProperty("javax.net.ssl.sessionCacheSize");
+            defaultCacheLimit = (s != null) ? Integer.parseInt(s) : 0;
         } catch (Exception e) {
             // swallow the exception
         }

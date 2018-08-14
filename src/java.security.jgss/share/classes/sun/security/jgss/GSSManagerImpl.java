@@ -26,10 +26,9 @@
 package sun.security.jgss;
 
 import org.ietf.jgss.*;
+import sun.security.action.GetBooleanAction;
 import sun.security.jgss.spi.*;
 import java.security.Provider;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * This class provides the default implementation of the GSSManager
@@ -38,20 +37,8 @@ import java.security.PrivilegedAction;
 public class GSSManagerImpl extends GSSManager {
 
     // Undocumented property
-    private static final String USE_NATIVE_PROP =
-        "sun.security.jgss.native";
-    private static final Boolean USE_NATIVE;
-
-    static {
-        USE_NATIVE =
-            AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                    public Boolean run() {
-                        return Boolean.valueOf(System.getProperty
-                                (USE_NATIVE_PROP));
-                    }
-            });
-
-    }
+    private static final Boolean USE_NATIVE = GetBooleanAction
+            .privilegedGetProperty("sun.security.jgss.native");
 
     private ProviderList list;
 

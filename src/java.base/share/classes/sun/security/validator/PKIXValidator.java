@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,9 +57,8 @@ public final class PKIXValidator extends Validator {
      * manager. Typically, this will only work if the PKIX implementation
      * supports CRL distribution points as we do not manually setup CertStores.
      */
-    private static final boolean checkTLSRevocation =
-        AccessController.doPrivileged
-            (new GetBooleanAction("com.sun.net.ssl.checkRevocation"));
+    private static final boolean checkTLSRevocation = GetBooleanAction
+            .privilegedGetProperty("com.sun.net.ssl.checkRevocation");
 
     private final Set<X509Certificate> trustedCerts;
     private final PKIXBuilderParameters parameterTemplate;

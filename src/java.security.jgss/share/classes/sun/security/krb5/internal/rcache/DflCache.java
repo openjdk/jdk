@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFilePermission;
-import java.security.AccessController;
 import java.util.*;
 
 import sun.security.action.GetPropertyAction;
@@ -117,8 +116,7 @@ public class DflCache extends ReplayCache {
     }
 
     private static String defaultPath() {
-        return AccessController.doPrivileged(
-                new GetPropertyAction("java.io.tmpdir"));
+        return GetPropertyAction.privilegedGetProperty("java.io.tmpdir");
     }
 
     private static String defaultFile(String server) {

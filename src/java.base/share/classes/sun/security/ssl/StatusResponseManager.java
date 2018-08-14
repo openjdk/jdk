@@ -96,10 +96,10 @@ final class StatusResponseManager {
         }
         defaultResponder = tmpURI;
 
-        respOverride = AccessController.doPrivileged(
-                new GetBooleanAction("jdk.tls.stapling.responderOverride"));
-        ignoreExtensions = AccessController.doPrivileged(
-                new GetBooleanAction("jdk.tls.stapling.ignoreExtensions"));
+        respOverride = GetBooleanAction
+                .privilegedGetProperty("jdk.tls.stapling.responderOverride");
+        ignoreExtensions = GetBooleanAction
+                .privilegedGetProperty("jdk.tls.stapling.ignoreExtensions");
 
         threadMgr = new ScheduledThreadPoolExecutor(DEFAULT_CORE_THREADS,
                 new ThreadFactory() {

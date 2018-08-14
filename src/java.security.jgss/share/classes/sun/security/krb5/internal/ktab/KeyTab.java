@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 package sun.security.krb5.internal.ktab;
 
+import sun.security.action.GetPropertyAction;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.crypto.*;
@@ -203,14 +204,12 @@ public class KeyTab implements KeyTabConstants {
             }
 
             if (kname == null) {
-                String user_home =
-                        java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetPropertyAction("user.home"));
+                String user_home = GetPropertyAction
+                        .privilegedGetProperty("user.home");
 
                 if (user_home == null) {
-                    user_home =
-                        java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetPropertyAction("user.dir"));
+                    user_home = GetPropertyAction
+                            .privilegedGetProperty("user.dir");
                 }
 
                 kname = user_home + File.separator  + "krb5.keytab";

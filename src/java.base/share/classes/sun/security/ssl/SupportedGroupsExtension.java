@@ -482,8 +482,8 @@ final class SupportedGroupsExtension {
             //
             // If the System Property is not defined or the value is empty, the
             // default groups and preferences will be used.
-            String property = AccessController.doPrivileged(
-                        new GetPropertyAction("jdk.tls.namedGroups"));
+            String property = GetPropertyAction
+                    .privilegedGetProperty("jdk.tls.namedGroups");
             if (property != null && property.length() != 0) {
                 // remove double quote marks from beginning/end of the property
                 if (property.length() > 1 && property.charAt(0) == '"' &&

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
  */
 
 package sun.security.krb5.internal;
+
+import sun.security.action.GetBooleanAction;
 
 import java.util.Hashtable;
 
@@ -303,9 +305,9 @@ public class Krb5 {
     }
 
 
-    public static final boolean DEBUG =
-        java.security.AccessController.doPrivileged(
-              new sun.security.action.GetBooleanAction("sun.security.krb5.debug"));
+    public static final boolean DEBUG = GetBooleanAction
+            .privilegedGetProperty("sun.security.krb5.debug");
+
     public static final sun.security.util.HexDumpEncoder hexDumper =
         new sun.security.util.HexDumpEncoder();
 

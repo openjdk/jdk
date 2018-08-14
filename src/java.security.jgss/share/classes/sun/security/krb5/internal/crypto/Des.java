@@ -53,9 +53,8 @@ public final class Des {
     // string-to-key encoding. When set, the specified charset
     // name is used. Otherwise, the system default charset.
 
-    private final static String CHARSET =
-            java.security.AccessController.doPrivileged(
-            new GetPropertyAction("sun.security.krb5.msinterop.des.s2kcharset"));
+    private final static String CHARSET = GetPropertyAction
+            .privilegedGetProperty("sun.security.krb5.msinterop.des.s2kcharset");
 
     private static final long[] bad_keys = {
         0x0101010101010101L, 0xfefefefefefefefeL,
