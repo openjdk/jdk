@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779
+ * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779 8209452
  * @summary Check root CA entries in cacerts file
  */
 import java.io.File;
@@ -231,6 +231,7 @@ public class VerifyCACerts {
     };
 
     // Exception list to 90 days expiry policy
+    // No error will be reported if certificate in this list expires
     private static final HashSet<String> EXPIRY_EXC_ENTRIES
             = new HashSet<String>(Arrays.asList(
                     "gtecybertrustglobalca [jdk]"
@@ -293,8 +294,10 @@ public class VerifyCACerts {
             try {
                 cert.checkValidity();
             } catch (CertificateExpiredException cee) {
-                atLeastOneFailed = true;
-                System.err.println("ERROR: cert is expired");
+                if (!EXPIRY_EXC_ENTRIES.contains(alias)) {
+                    atLeastOneFailed = true;
+                    System.err.println("ERROR: cert is expired");
+                }
             } catch (CertificateNotYetValidException cne) {
                 atLeastOneFailed = true;
                 System.err.println("ERROR: cert is not yet valid");
