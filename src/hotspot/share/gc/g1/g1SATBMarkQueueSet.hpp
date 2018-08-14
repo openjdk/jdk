@@ -39,6 +39,7 @@ public:
   void initialize(G1CollectedHeap* g1h,
                   Monitor* cbl_mon, Mutex* fl_lock,
                   int process_completed_threshold,
+                  uint buffer_enqueue_threshold_percentage,
                   Mutex* lock);
 
   static void handle_zero_index_for_thread(JavaThread* t);

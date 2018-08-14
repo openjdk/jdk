@@ -1691,6 +1691,7 @@ jint G1CollectedHeap::initialize() {
                                                  SATB_Q_CBL_mon,
                                                  SATB_Q_FL_lock,
                                                  G1SATBProcessCompletedThreshold,
+                                                 G1SATBBufferEnqueueingThresholdPercent,
                                                  Shared_SATB_Q_lock);
 
   jint ecode = initialize_concurrent_refinement();

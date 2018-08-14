@@ -92,6 +92,7 @@ public:
 
 class SATBMarkQueueSet: public PtrQueueSet {
   SATBMarkQueue _shared_satb_queue;
+  size_t _buffer_enqueue_threshold;
 
 #ifdef ASSERT
   void dump_active_states(bool expected_active);
@@ -109,6 +110,7 @@ protected:
 
   void initialize(Monitor* cbl_mon, Mutex* fl_lock,
                   int process_completed_threshold,
+                  uint buffer_enqueue_threshold_percentage,
                   Mutex* lock);
 
 public:
@@ -120,6 +122,7 @@ public:
   // set itself, has an active value same as expected_active.
   void set_active_all_threads(bool active, bool expected_active);
 
+  size_t buffer_enqueue_threshold() const { return _buffer_enqueue_threshold; }
   virtual void filter(SATBMarkQueue* queue) = 0;
 
   // Filter all the currently-active SATB buffers.
