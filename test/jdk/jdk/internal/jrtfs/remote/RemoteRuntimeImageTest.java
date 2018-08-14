@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -55,7 +54,7 @@ public class RemoteRuntimeImageTest {
             return;
         }
 
-        Path jdk8Path = getJdk8Path(jdk8Home);
+        Path jdk8Path = Paths.get(jdk8Home);
         if (!isJdk8(jdk8Path)) {
             System.err.println("This test is only for JDK 8. Skip testing");
             return;
@@ -102,16 +101,14 @@ public class RemoteRuntimeImageTest {
         }
     }
 
-    private static Path getJdk8Path(String jdk8Home) {
-        Path jdk8Path = Paths.get(jdk8Home);
-        // It is possible to point to the path of java executable by ${JT_JAVA}
-        return Files.isDirectory(jdk8Path)? jdk8Path : jdk8Path.getParent().getParent();
-    }
-
-    private static boolean isJdk8(Path jdk8Home) throws FileNotFoundException, IOException {
-        File file = jdk8Home.resolve("release").toFile();
+    private static boolean isJdk8(Path jdk8HomePath) throws IOException {
+        File releaseFile = jdk8HomePath.resolve("release").toFile();
+        if (!releaseFile.exists()) {
+            throw new RuntimeException(releaseFile.getPath() +
+                    " doesn't exist");
+        }
         Properties props = new Properties();
-        try (FileInputStream in = new FileInputStream(file)) {
+        try (FileInputStream in = new FileInputStream(releaseFile)) {
             props.load(in);
         }
 
