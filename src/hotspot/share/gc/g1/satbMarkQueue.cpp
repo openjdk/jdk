@@ -24,9 +24,9 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -103,17 +103,14 @@ void SATBMarkQueue::print(const char* name) {
 
 SATBMarkQueueSet::SATBMarkQueueSet() :
   PtrQueueSet(),
-  _shared_satb_queue(this, true /* permanent */),
-  _filter(NULL)
+  _shared_satb_queue(this, true /* permanent */)
 {}
 
-void SATBMarkQueueSet::initialize(SATBMarkQueueFilter* filter,
-                                  Monitor* cbl_mon, Mutex* fl_lock,
+void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
                                   int process_completed_threshold,
                                   Mutex* lock) {
   PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold, -1);
   _shared_satb_queue.set_lock(lock);
-  _filter = filter;
 }
 
 #ifdef ASSERT

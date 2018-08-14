@@ -49,12 +49,12 @@ private:
   // Filter out unwanted entries from the buffer.
   inline void filter();
 
-public:
-  SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent = false);
-
   // Removes entries from the buffer that are no longer needed.
   template<typename Filter>
   inline void apply_filter(Filter filter_out);
+
+public:
+  SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent = false);
 
   // Process queue entries and free resources.
   void flush();
@@ -90,29 +90,28 @@ public:
 
 };
 
-class SATBMarkQueueFilter : public CHeapObj<mtGC> {
-public:
-  virtual ~SATBMarkQueueFilter() {}
-  virtual void filter(SATBMarkQueue* queue) = 0;
-};
-
 class SATBMarkQueueSet: public PtrQueueSet {
   SATBMarkQueue _shared_satb_queue;
-  SATBMarkQueueFilter* _filter;
 
 #ifdef ASSERT
   void dump_active_states(bool expected_active);
   void verify_active_states(bool expected_active);
 #endif // ASSERT
 
-public:
+protected:
   SATBMarkQueueSet();
+  ~SATBMarkQueueSet() {}
 
-  void initialize(SATBMarkQueueFilter* filter,
-                  Monitor* cbl_mon, Mutex* fl_lock,
+  template<typename Filter>
+  void apply_filter(Filter filter, SATBMarkQueue* queue) {
+    queue->apply_filter(filter);
+  }
+
+  void initialize(Monitor* cbl_mon, Mutex* fl_lock,
                   int process_completed_threshold,
                   Mutex* lock);
 
+public:
   virtual SATBMarkQueue& satb_queue_for_thread(JavaThread* const t) const = 0;
 
   // Apply "set_active(active)" to all SATB queues in the set. It should be
@@ -121,9 +120,7 @@ public:
   // set itself, has an active value same as expected_active.
   void set_active_all_threads(bool active, bool expected_active);
 
-  void filter(SATBMarkQueue* queue) {
-    _filter->filter(queue);
-  }
+  virtual void filter(SATBMarkQueue* queue) = 0;
 
   // Filter all the currently-active SATB buffers.
   void filter_thread_buffers();
