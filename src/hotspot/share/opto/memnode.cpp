@@ -3158,8 +3158,8 @@ Node *MemBarNode::match( const ProjNode *proj, const Matcher *m ) {
 
 //---------------------------InitializeNode------------------------------------
 InitializeNode::InitializeNode(Compile* C, int adr_type, Node* rawoop)
-  : _is_complete(Incomplete), _does_not_escape(false),
-    MemBarNode(C, adr_type, rawoop)
+  : MemBarNode(C, adr_type, rawoop),
+    _is_complete(Incomplete), _does_not_escape(false)
 {
   init_class_id(Class_Initialize);
 

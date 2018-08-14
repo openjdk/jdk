@@ -228,16 +228,15 @@ void SpaceManager::print_on(outputStream* st) const {
 SpaceManager::SpaceManager(Metaspace::MetadataType mdtype,
                            Metaspace::MetaspaceType space_type,//
                            Mutex* lock) :
+  _lock(lock),
   _mdtype(mdtype),
   _space_type(space_type),
+  _chunk_list(NULL),
+  _current_chunk(NULL),
+  _overhead_words(0),
   _capacity_words(0),
   _used_words(0),
-  _overhead_words(0),
-  _block_freelists(NULL),
-  _lock(lock),
-  _chunk_list(NULL),
-  _current_chunk(NULL)
-{
+  _block_freelists(NULL) {
   Metadebug::init_allocation_fail_alot_count();
   memset(_num_chunks_by_type, 0, sizeof(_num_chunks_by_type));
   log_trace(gc, metaspace, freelist)("SpaceManager(): " PTR_FORMAT, p2i(this));

@@ -45,15 +45,15 @@ CardTable::CardTable(MemRegion whole_heap, bool conc_scan) :
   _scanned_concurrently(conc_scan),
   _whole_heap(whole_heap),
   _guard_index(0),
-  _guard_region(),
   _last_valid_index(0),
   _page_size(os::vm_page_size()),
   _byte_map_size(0),
+  _byte_map(NULL),
+  _byte_map_base(NULL),
+  _cur_covered_regions(0),
   _covered(NULL),
   _committed(NULL),
-  _cur_covered_regions(0),
-  _byte_map(NULL),
-  _byte_map_base(NULL)
+  _guard_region()
 {
   assert((uintptr_t(_whole_heap.start())  & (card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (card_size - 1))  == 0, "heap must end at card boundary");

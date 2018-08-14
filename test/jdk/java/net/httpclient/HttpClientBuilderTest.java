@@ -50,6 +50,7 @@ import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import jdk.testlibrary.SimpleSSLContext;
 import org.testng.annotations.Test;
+import static java.time.Duration.*;
 import static org.testng.Assert.*;
 
 /*
@@ -74,6 +75,7 @@ public class HttpClientBuilderTest {
             // Empty optionals and defaults
             assertFalse(client.authenticator().isPresent());
             assertFalse(client.cookieHandler().isPresent());
+            assertFalse(client.connectTimeout().isPresent());
             assertFalse(client.executor().isPresent());
             assertFalse(client.proxy().isPresent());
             assertTrue(client.sslParameters() != null);
@@ -88,6 +90,7 @@ public class HttpClientBuilderTest {
         HttpClient.Builder builder = HttpClient.newBuilder();
         assertThrows(NPE, () -> builder.authenticator(null));
         assertThrows(NPE, () -> builder.cookieHandler(null));
+        assertThrows(NPE, () -> builder.connectTimeout(null));
         assertThrows(NPE, () -> builder.executor(null));
         assertThrows(NPE, () -> builder.proxy(null));
         assertThrows(NPE, () -> builder.sslParameters(null));
@@ -126,6 +129,26 @@ public class HttpClientBuilderTest {
         CookieManager c = new CookieManager();
         builder.cookieHandler(c);
         assertTrue(builder.build().cookieHandler().get() == c);
+    }
+
+    @Test
+    public void testConnectTimeout() {
+        HttpClient.Builder builder = HttpClient.newBuilder();
+        Duration a = Duration.ofSeconds(5);
+        builder.connectTimeout(a);
+        assertTrue(builder.build().connectTimeout().get() == a);
+        Duration b = Duration.ofMinutes(1);
+        builder.connectTimeout(b);
+        assertTrue(builder.build().connectTimeout().get() == b);
+        assertThrows(NPE, () -> builder.cookieHandler(null));
+        Duration c = Duration.ofHours(100);
+        builder.connectTimeout(c);
+        assertTrue(builder.build().connectTimeout().get() == c);
+
+        assertThrows(IAE, () -> builder.connectTimeout(ZERO));
+        assertThrows(IAE, () -> builder.connectTimeout(ofSeconds(0)));
+        assertThrows(IAE, () -> builder.connectTimeout(ofSeconds(-1)));
+        assertThrows(IAE, () -> builder.connectTimeout(ofNanos(-100)));
     }
 
     static class TestExecutor implements Executor {
@@ -292,6 +315,7 @@ public class HttpClientBuilderTest {
 
     static class MockHttpClient extends HttpClient {
         @Override public Optional<CookieHandler> cookieHandler() { return null; }
+        @Override public Optional<Duration> connectTimeout() { return null; }
         @Override public Redirect followRedirects() { return null; }
         @Override public Optional<ProxySelector> proxy() { return null; }
         @Override public SSLContext sslContext() { return null; }

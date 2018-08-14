@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 
 package sun.security.internal.spec;
 
+import sun.security.action.GetBooleanAction;
+
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 /**
  * Parameters for SSL/TLS RSA premaster secret.
@@ -51,25 +51,11 @@ public class TlsRsaPremasterSecretParameterSpec
      * requested in its client hello version). However, we (and other
      * implementations) used to send the active negotiated version. The
      * system property below allows to toggle the behavior.
-     */
-    private static final String PROP_NAME =
-                                "com.sun.net.ssl.rsaPreMasterSecretFix";
-
-    /*
      * Default is "false" (old behavior) for compatibility reasons in
      * SSLv3/TLSv1.  Later protocols (TLSv1.1+) do not use this property.
      */
-    private static final boolean rsaPreMasterSecretFix =
-            AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
-                public Boolean run() {
-                    String value = System.getProperty(PROP_NAME);
-                    if (value != null && value.equalsIgnoreCase("true")) {
-                        return Boolean.TRUE;
-                    }
-
-                    return Boolean.FALSE;
-                }
-            });
+    private static final boolean rsaPreMasterSecretFix = GetBooleanAction
+            .privilegedGetProperty("com.sun.net.ssl.rsaPreMasterSecretFix");
 
     private final int clientVersion;
     private final int serverVersion;

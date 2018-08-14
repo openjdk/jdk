@@ -509,9 +509,9 @@ class Dependencies: public ResourceObj {
     bool  _valid;
     void* _value;
    public:
-    DepArgument() : _is_oop(false), _value(NULL), _valid(false) {}
-    DepArgument(oop v): _is_oop(true), _value(v), _valid(true) {}
-    DepArgument(Metadata* v): _is_oop(false), _value(v), _valid(true) {}
+    DepArgument() : _is_oop(false), _valid(false), _value(NULL) {}
+    DepArgument(oop v): _is_oop(true), _valid(true), _value(v) {}
+    DepArgument(Metadata* v): _is_oop(false), _valid(true), _value(v) {}
 
     bool is_null() const               { return _value == NULL; }
     bool is_oop() const                { return _is_oop; }
@@ -582,15 +582,15 @@ class Dependencies: public ResourceObj {
 
   public:
     DepStream(Dependencies* deps)
-      : _deps(deps),
-        _code(NULL),
+      : _code(NULL),
+        _deps(deps),
         _bytes(deps->content_bytes())
     {
       initial_asserts(deps->size_in_bytes());
     }
     DepStream(nmethod* code)
-      : _deps(NULL),
-        _code(code),
+      : _code(code),
+        _deps(NULL),
         _bytes(code->dependencies_begin())
     {
       initial_asserts(code->dependencies_size());
@@ -716,7 +716,7 @@ class DepChange : public StackObj {
     // iteration variables:
     ChangeType  _change_type;
     Klass*      _klass;
-    Array<Klass*>* _ti_base;    // i.e., transitive_interfaces
+    Array<InstanceKlass*>* _ti_base;    // i.e., transitive_interfaces
     int         _ti_index;
     int         _ti_limit;
 

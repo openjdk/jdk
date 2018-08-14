@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #define SHARE_GC_Z_ZMARK_HPP
 
 #include "gc/z/zMarkStack.hpp"
+#include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zMarkTerminate.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -101,6 +102,8 @@ private:
 
 public:
   ZMark(ZWorkers* workers, ZPageTable* pagetable);
+
+  bool is_initialized() const;
 
   template <bool finalizable, bool publish> void mark_object(uintptr_t addr);
 

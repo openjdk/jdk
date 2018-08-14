@@ -31,8 +31,9 @@ AdjoiningVirtualSpaces::AdjoiningVirtualSpaces(ReservedSpace rs,
                                                size_t min_low_byte_size,
                                                size_t min_high_byte_size,
                                                size_t alignment) :
+  _high(NULL), _low(NULL),
   _reserved_space(rs), _min_low_byte_size(min_low_byte_size),
-  _min_high_byte_size(min_high_byte_size), _low(0), _high(0),
+  _min_high_byte_size(min_high_byte_size),
   _alignment(alignment) {}
 
 // The maximum byte sizes are for the initial layout of the

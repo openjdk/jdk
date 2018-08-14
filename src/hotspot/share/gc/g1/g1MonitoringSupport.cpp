@@ -80,20 +80,24 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _incremental_collection_counters(NULL),
   _full_collection_counters(NULL),
   _conc_collection_counters(NULL),
+  _young_collection_counters(NULL),
   _old_collection_counters(NULL),
   _old_space_counters(NULL),
-  _young_collection_counters(NULL),
   _eden_counters(NULL),
   _from_counters(NULL),
   _to_counters(NULL),
 
   _overall_reserved(0),
-  _overall_committed(0),    _overall_used(0),
+  _overall_committed(0),
+  _overall_used(0),
   _young_region_num(0),
   _young_gen_committed(0),
-  _eden_committed(0),       _eden_used(0),
-  _survivor_committed(0),   _survivor_used(0),
-  _old_committed(0),        _old_used(0) {
+  _eden_committed(0),
+  _eden_used(0),
+  _survivor_committed(0),
+  _survivor_used(0),
+  _old_committed(0),
+  _old_used(0) {
 
   _overall_reserved = g1h->max_capacity();
   recalculate_sizes();

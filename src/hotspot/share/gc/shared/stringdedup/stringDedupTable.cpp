@@ -224,8 +224,8 @@ volatile size_t          StringDedupTable::_claimed_index = 0;
 StringDedupTable::StringDedupTable(size_t size, jint hash_seed) :
   _size(size),
   _entries(0),
-  _grow_threshold((uintx)(size * _grow_load_factor)),
   _shrink_threshold((uintx)(size * _shrink_load_factor)),
+  _grow_threshold((uintx)(size * _grow_load_factor)),
   _rehash_needed(false),
   _hash_seed(hash_seed) {
   assert(is_power_of_2(size), "Table size must be a power of 2");

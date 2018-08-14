@@ -290,13 +290,10 @@
 #  endif
 #endif /* PNG_MIPS_MSA_OPT > 0 */
 
-#ifdef PNG_POWERPC_VSX_API_SUPPORTED
 #if PNG_POWERPC_VSX_OPT > 0
 #  define PNG_FILTER_OPTIMIZATIONS png_init_filter_functions_vsx
 #  define PNG_POWERPC_VSX_IMPLEMENTATION 1
 #endif
-#endif
-
 
 /* Is this a build of a DLL where compilation of the object modules requires
  * different preprocessor settings to those required for a simple library?  If

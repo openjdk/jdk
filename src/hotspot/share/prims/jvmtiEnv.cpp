@@ -2630,11 +2630,11 @@ JvmtiEnv::GetImplementedInterfaces(oop k_mirror, jint* interface_count_ptr, jcla
       return JVMTI_ERROR_NONE;
     }
 
-    Array<Klass*>* interface_list = InstanceKlass::cast(k)->local_interfaces();
+    Array<InstanceKlass*>* interface_list = InstanceKlass::cast(k)->local_interfaces();
     const int result_length = (interface_list == NULL ? 0 : interface_list->length());
     jclass* result_list = (jclass*) jvmtiMalloc(result_length * sizeof(jclass));
     for (int i_index = 0; i_index < result_length; i_index += 1) {
-      Klass* klass_at = interface_list->at(i_index);
+      InstanceKlass* klass_at = interface_list->at(i_index);
       assert(klass_at->is_klass(), "interfaces must be Klass*s");
       assert(klass_at->is_interface(), "interfaces must be interfaces");
       oop mirror_at = klass_at->java_mirror();

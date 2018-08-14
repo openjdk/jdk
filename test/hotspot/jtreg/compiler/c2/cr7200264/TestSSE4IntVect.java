@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 7200264
  * @summary 7192963 changes disabled shift vectors
  * @requires vm.cpu.features ~= ".*sse4\\.1.*" & vm.debug & vm.flavor == "server"
- * @requires !vm.emulatedClient
+ * @requires !vm.emulatedClient & !vm.graal.enabled
  * @library /test/lib /
  * @run driver compiler.c2.cr7200264.TestSSE4IntVect
  */

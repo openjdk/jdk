@@ -59,14 +59,17 @@ DiscoveredListIterator::DiscoveredListIterator(DiscoveredList&    refs_list,
   _prev_discovered_addr(refs_list.adr_head()),
   _prev_discovered(NULL),
   _current_discovered(refs_list.head()),
+  _current_discovered_addr(NULL),
+  _next_discovered(NULL),
+  _referent_addr(NULL),
+  _referent(NULL),
+  _keep_alive(keep_alive),
+  _is_alive(is_alive),
 #ifdef ASSERT
   _first_seen(refs_list.head()),
 #endif
   _processed(0),
-  _removed(0),
-  _next_discovered(NULL),
-  _keep_alive(keep_alive),
-  _is_alive(is_alive) {
+  _removed(0) {
 }
 
 #endif // SHARE_VM_GC_SHARED_REFERENCEPROCESSOR_INLINE_HPP

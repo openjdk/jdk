@@ -218,7 +218,7 @@ class ImplicitNullCheckStub: public CodeStub {
 
  public:
   ImplicitNullCheckStub(int offset, CodeEmitInfo* info)
-    : _offset(offset), _info(info) {
+    : _info(info), _offset(offset) {
   }
   virtual void emit_code(LIR_Assembler* e);
   virtual CodeEmitInfo* info() const             { return _info; }
@@ -479,7 +479,7 @@ class SimpleExceptionStub: public CodeStub {
 
  public:
   SimpleExceptionStub(Runtime1::StubID stub, LIR_Opr obj, CodeEmitInfo* info):
-    _obj(obj), _info(info), _stub(stub) {
+    _obj(obj), _stub(stub), _info(info) {
   }
 
   void set_obj(LIR_Opr obj) {

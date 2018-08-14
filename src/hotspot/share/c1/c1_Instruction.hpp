@@ -410,19 +410,20 @@ class Instruction: public CompilationResourceObj {
 
   // creation
   Instruction(ValueType* type, ValueStack* state_before = NULL, bool type_is_constant = false)
-  : _use_count(0)
+  :
 #ifndef PRODUCT
-  , _printable_bci(-99)
+  _printable_bci(-99),
 #endif
+    _use_count(0)
   , _pin_state(0)
   , _type(type)
   , _next(NULL)
-  , _block(NULL)
   , _subst(NULL)
-  , _flags(0)
   , _operand(LIR_OprFact::illegalOpr)
+  , _flags(0)
   , _state_before(state_before)
   , _exception_handlers(NULL)
+  , _block(NULL)
   {
     check_state(state_before);
     assert(type != NULL && (!type->is_constant() || type_is_constant), "type must exist");
@@ -705,8 +706,8 @@ LEAF(Local, Instruction)
   Local(ciType* declared, ValueType* type, int index, bool receiver)
     : Instruction(type)
     , _java_index(index)
-    , _declared_type(declared)
     , _is_receiver(receiver)
+    , _declared_type(declared)
   {
     NOT_PRODUCT(set_printable_bci(-1));
   }
@@ -1664,19 +1665,21 @@ LEAF(BlockBegin, StateSplit)
   , _bci(bci)
   , _depth_first_number(-1)
   , _linear_scan_number(-1)
-  , _loop_depth(0)
-  , _flags(0)
   , _dominator_depth(-1)
+  , _loop_depth(0)
+  , _loop_index(-1)
+  , _flags(0)
+  , _total_preds(0)
+  , _stores_to_locals()
+  , _successors(2)
+  , _predecessors(2)
+  , _dominates(2)
   , _dominator(NULL)
   , _end(NULL)
-  , _predecessors(2)
-  , _successors(2)
-  , _dominates(2)
   , _exception_handlers(1)
   , _exception_states(NULL)
   , _exception_handler_pco(-1)
   , _lir(NULL)
-  , _loop_index(-1)
   , _live_in()
   , _live_out()
   , _live_gen()
@@ -1685,8 +1688,6 @@ LEAF(BlockBegin, StateSplit)
   , _fpu_stack_state(NULL)
   , _first_lir_instruction_id(-1)
   , _last_lir_instruction_id(-1)
-  , _total_preds(0)
-  , _stores_to_locals()
   {
     _block = this;
 #ifndef PRODUCT
@@ -1872,18 +1873,18 @@ LEAF(Goto, BlockEnd)
   // creation
   Goto(BlockBegin* sux, ValueStack* state_before, bool is_safepoint = false)
     : BlockEnd(illegalType, state_before, is_safepoint)
-    , _direction(none)
     , _profiled_method(NULL)
-    , _profiled_bci(0) {
+    , _profiled_bci(0)
+    , _direction(none) {
     BlockList* s = new BlockList(1);
     s->append(sux);
     set_sux(s);
   }
 
   Goto(BlockBegin* sux, bool is_safepoint) : BlockEnd(illegalType, NULL, is_safepoint)
-                                           , _direction(none)
                                            , _profiled_method(NULL)
-                                           , _profiled_bci(0) {
+                                           , _profiled_bci(0)
+                                           , _direction(none) {
     BlockList* s = new BlockList(1);
     s->append(sux);
     set_sux(s);
@@ -2550,9 +2551,9 @@ LEAF(RuntimeCall, Instruction)
  public:
   RuntimeCall(ValueType* type, const char* entry_name, address entry, Values* args, bool pass_thread = true)
     : Instruction(type)
+    , _entry_name(entry_name)
     , _entry(entry)
     , _args(args)
-    , _entry_name(entry_name)
     , _pass_thread(pass_thread) {
     ASSERT_VALUES
     pin();

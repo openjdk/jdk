@@ -29,12 +29,14 @@
 
 G1FullGCMarker::G1FullGCMarker(uint worker_id, PreservedMarks* preserved_stack, G1CMBitMap* bitmap) :
     _worker_id(worker_id),
+    _bitmap(bitmap),
+    _oop_stack(),
+    _objarray_stack(),
+    _preserved_stack(preserved_stack),
     _mark_closure(worker_id, this, G1CollectedHeap::heap()->ref_processor_stw()),
     _verify_closure(VerifyOption_G1UseFullMarking),
-    _cld_closure(mark_closure()),
     _stack_closure(this),
-    _preserved_stack(preserved_stack),
-    _bitmap(bitmap) {
+    _cld_closure(mark_closure()) {
   _oop_stack.initialize();
   _objarray_stack.initialize();
 }

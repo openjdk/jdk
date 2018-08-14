@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 
 package sun.security.krb5;
 
+import sun.security.action.GetPropertyAction;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.ccache.CredentialsCache;
 import sun.security.krb5.internal.crypto.EType;
@@ -288,8 +289,7 @@ public class Credentials {
 
         if (ticketCache == null) {
             // The default ticket cache on Windows and Mac is not a file.
-            String os = java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetPropertyAction("os.name"));
+            String os = GetPropertyAction.privilegedGetProperty("os.name");
             if (os.toUpperCase(Locale.ENGLISH).startsWith("WINDOWS") ||
                     os.toUpperCase(Locale.ENGLISH).contains("OS X")) {
                 Credentials creds = acquireDefaultCreds();

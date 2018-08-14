@@ -299,7 +299,7 @@ public:
 
   LoaderTreeNode(const oop loader_oop)
     : _loader_oop(loader_oop), _cld(NULL), _child(NULL), _next(NULL),
-      _classes(NULL), _anon_classes(NULL), _num_classes(0), _num_anon_classes(0),
+      _classes(NULL), _num_classes(0), _anon_classes(NULL), _num_anon_classes(0),
       _num_folded(0)
     {}
 

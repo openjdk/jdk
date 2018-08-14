@@ -147,7 +147,12 @@ public class ModuleDescriptorTest {
     public void testRequiresWithRequires() {
         Requires r1 = requires("foo");
         ModuleDescriptor descriptor = ModuleDescriptor.newModule("m").requires(r1).build();
-        Requires r2 = descriptor.requires().iterator().next();
+        assertEquals(descriptor.requires().size(), 2);
+        var iterator = descriptor.requires().iterator();
+        Requires r2 = iterator.next();
+        if (r2.name().equals("java.base")) {
+            r2 = iterator.next();
+        }
         assertEquals(r1, r2);
     }
 

@@ -14471,7 +14471,7 @@ instruct overflowSubL_reg_imm(rFlagsReg cr, iRegL op1, immLAddSub op2)
   format %{ "cmp   $op1, $op2\t# overflow check long" %}
   ins_cost(INSN_COST);
   ins_encode %{
-    __ cmp($op1$$Register, $op2$$constant);
+    __ subs(zr, $op1$$Register, $op2$$constant);
   %}
 
   ins_pipe(icmp_reg_imm);

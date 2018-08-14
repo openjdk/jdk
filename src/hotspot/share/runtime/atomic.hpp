@@ -635,29 +635,6 @@ struct Atomic::AddImpl<
   }
 };
 
-// Most platforms do not support atomic add on a 2-byte value. However,
-// if the value occupies the most significant 16 bits of an aligned 32-bit
-// word, then we can do this with an atomic add of (add_value << 16)
-// to the 32-bit word.
-//
-// The least significant parts of this 32-bit word will never be affected, even
-// in case of overflow/underflow.
-//
-// Use the ATOMIC_SHORT_PAIR macro (see macros.hpp) to get the desired alignment.
-template<>
-struct Atomic::AddImpl<short, short> {
-  short operator()(short add_value, short volatile* dest, atomic_memory_order order) const {
-#ifdef VM_LITTLE_ENDIAN
-    assert((intx(dest) & 0x03) == 0x02, "wrong alignment");
-    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest-1), order);
-#else
-    assert((intx(dest) & 0x03) == 0x00, "wrong alignment");
-    int new_value = Atomic::add(add_value << 16, (volatile int*)(dest), order);
-#endif
-    return (short)(new_value >> 16); // preserves sign
-  }
-};
-
 template<typename Derived>
 template<typename I, typename D>
 inline D Atomic::FetchAndAdd<Derived>::operator()(I add_value, D volatile* dest,

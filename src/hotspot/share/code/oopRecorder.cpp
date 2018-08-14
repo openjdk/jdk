@@ -162,7 +162,7 @@ template class ValueRecorder<jobject>;
 
 oop ObjectLookup::ObjectEntry::oop_value() const { return JNIHandles::resolve(_value); }
 
-ObjectLookup::ObjectLookup(): _gc_count(Universe::heap()->total_collections()), _values(4) {}
+ObjectLookup::ObjectLookup(): _values(4), _gc_count(Universe::heap()->total_collections()) {}
 
 void ObjectLookup::maybe_resort() {
   // The values are kept sorted by address which may be invalidated

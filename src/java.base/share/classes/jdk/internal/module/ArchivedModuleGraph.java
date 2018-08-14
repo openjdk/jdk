@@ -25,6 +25,7 @@
 
 package jdk.internal.module;
 
+import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
 import java.util.Objects;
 import jdk.internal.misc.VM;
@@ -36,13 +37,18 @@ final class ArchivedModuleGraph {
     private static String archivedMainModule;
     private static SystemModules archivedSystemModules;
     private static ModuleFinder archivedModuleFinder;
+    private static Configuration archivedConfiguration;
 
     private final SystemModules systemModules;
     private final ModuleFinder finder;
+    private final Configuration configuration;
 
-    private ArchivedModuleGraph(SystemModules modules, ModuleFinder finder) {
+    private ArchivedModuleGraph(SystemModules modules,
+                                ModuleFinder finder,
+                                Configuration configuration) {
         this.systemModules = modules;
         this.finder = finder;
+        this.configuration = configuration;
     }
 
     SystemModules systemModules() {
@@ -53,27 +59,36 @@ final class ArchivedModuleGraph {
         return finder;
     }
 
+    Configuration configuration() {
+        return configuration;
+    }
+
     // A factory method that ModuleBootstrap can use to obtain the
     // ArchivedModuleGraph.
     static ArchivedModuleGraph get(String mainModule) {
         if (Objects.equals(mainModule, archivedMainModule)
                 && archivedSystemModules != null
-                && archivedModuleFinder != null) {
+                && archivedModuleFinder != null
+                && archivedConfiguration != null) {
             return new ArchivedModuleGraph(archivedSystemModules,
-                                           archivedModuleFinder);
+                                           archivedModuleFinder,
+                                           archivedConfiguration);
         } else {
             return null;
         }
     }
 
     // Used at CDS dump time
-    static void archive(String mainModule, SystemModules systemModules,
-                        ModuleFinder finder) {
+    static void archive(String mainModule,
+                        SystemModules systemModules,
+                        ModuleFinder finder,
+                        Configuration configuration) {
         if (archivedMainModule != null)
             throw new UnsupportedOperationException();
         archivedMainModule = mainModule;
         archivedSystemModules = systemModules;
         archivedModuleFinder = finder;
+        archivedConfiguration = configuration;
     }
 
     static {

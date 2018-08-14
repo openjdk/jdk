@@ -38,7 +38,7 @@ PrintCLDMetaspaceInfoClosure::PrintCLDMetaspaceInfoClosure(outputStream* out, si
     bool do_print_classes, bool break_down_by_chunktype)
 : _out(out), _scale(scale), _do_print(do_print), _do_print_classes(do_print_classes)
 , _break_down_by_chunktype(break_down_by_chunktype)
-, _num_loaders(0), _num_loaders_unloading(0), _num_loaders_without_metaspace(0)
+, _num_loaders(0), _num_loaders_without_metaspace(0), _num_loaders_unloading(0)
 {
   memset(_num_loaders_by_spacetype, 0, sizeof(_num_loaders_by_spacetype));
 }

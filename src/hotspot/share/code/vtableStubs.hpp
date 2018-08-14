@@ -49,8 +49,8 @@ class VtableStub {
   void* operator new(size_t size, int code_size) throw();
 
   VtableStub(bool is_vtable_stub, int index)
-        : _next(NULL), _is_vtable_stub(is_vtable_stub),
-          _index(index), _ame_offset(-1), _npe_offset(-1) {}
+        : _next(NULL), _index(index), _ame_offset(-1), _npe_offset(-1),
+          _is_vtable_stub(is_vtable_stub) {}
   VtableStub* next() const                       { return _next; }
   int index() const                              { return _index; }
   static VMReg receiver_location()               { return _receiver_location; }

@@ -489,7 +489,7 @@ void G1EvacPhaseWithTrimTimeTracker::stop() {
 }
 
 G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id) :
-    _phase_times(phase_times), _phase(phase), _worker_id(worker_id) {
+  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id) {
   if (_phase_times != NULL) {
     _start_time = Ticks::now();
   }

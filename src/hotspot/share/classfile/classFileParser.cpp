@@ -922,10 +922,10 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
   assert(has_nonstatic_concrete_methods != NULL, "invariant");
 
   if (itfs_len == 0) {
-    _local_interfaces = Universe::the_empty_klass_array();
+    _local_interfaces = Universe::the_empty_instance_klass_array();
   } else {
     assert(itfs_len > 0, "only called for len>0");
-    _local_interfaces = MetadataFactory::new_array<Klass*>(_loader_data, itfs_len, NULL, CHECK);
+    _local_interfaces = MetadataFactory::new_array<InstanceKlass*>(_loader_data, itfs_len, NULL, CHECK);
 
     int index;
     for (index = 0; index < itfs_len; index++) {
@@ -966,7 +966,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
       if (InstanceKlass::cast(interf)->has_nonstatic_concrete_methods()) {
         *has_nonstatic_concrete_methods = true;
       }
-      _local_interfaces->at_put(index, interf);
+      _local_interfaces->at_put(index, InstanceKlass::cast(interf));
     }
 
     if (!_need_verify || itfs_len <= 1) {
@@ -984,8 +984,8 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
     {
       debug_only(NoSafepointVerifier nsv;)
       for (index = 0; index < itfs_len; index++) {
-        const Klass* const k = _local_interfaces->at(index);
-        name = InstanceKlass::cast(k)->name();
+        const InstanceKlass* const k = _local_interfaces->at(index);
+        name = k->name();
         // If no duplicates, add (name, NULL) in hashtable interface_names.
         if (!put_after_lookup(name, NULL, interface_names)) {
           dup = true;
@@ -4496,7 +4496,7 @@ static void record_defined_class_dependencies(const InstanceKlass* defined_klass
     }
 
     // add super interface dependencies
-    const Array<Klass*>* const local_interfaces = defined_klass->local_interfaces();
+    const Array<InstanceKlass*>* const local_interfaces = defined_klass->local_interfaces();
     if (local_interfaces != NULL) {
       const int length = local_interfaces->length();
       for (int i = 0; i < length; i++) {
@@ -4508,21 +4508,21 @@ static void record_defined_class_dependencies(const InstanceKlass* defined_klass
 
 // utility methods for appending an array with check for duplicates
 
-static void append_interfaces(GrowableArray<Klass*>* result,
-                              const Array<Klass*>* const ifs) {
+static void append_interfaces(GrowableArray<InstanceKlass*>* result,
+                              const Array<InstanceKlass*>* const ifs) {
   // iterate over new interfaces
   for (int i = 0; i < ifs->length(); i++) {
-    Klass* const e = ifs->at(i);
-    assert(e->is_klass() && InstanceKlass::cast(e)->is_interface(), "just checking");
+    InstanceKlass* const e = ifs->at(i);
+    assert(e->is_klass() && e->is_interface(), "just checking");
     // add new interface
     result->append_if_missing(e);
   }
 }
 
-static Array<Klass*>* compute_transitive_interfaces(const InstanceKlass* super,
-                                                    Array<Klass*>* local_ifs,
-                                                    ClassLoaderData* loader_data,
-                                                    TRAPS) {
+static Array<InstanceKlass*>* compute_transitive_interfaces(const InstanceKlass* super,
+                                                            Array<InstanceKlass*>* local_ifs,
+                                                            ClassLoaderData* loader_data,
+                                                            TRAPS) {
   assert(local_ifs != NULL, "invariant");
   assert(loader_data != NULL, "invariant");
 
@@ -4537,15 +4537,15 @@ static Array<Klass*>* compute_transitive_interfaces(const InstanceKlass* super,
   // Add local interfaces' super interfaces
   const int local_size = local_ifs->length();
   for (int i = 0; i < local_size; i++) {
-    Klass* const l = local_ifs->at(i);
-    max_transitive_size += InstanceKlass::cast(l)->transitive_interfaces()->length();
+    InstanceKlass* const l = local_ifs->at(i);
+    max_transitive_size += l->transitive_interfaces()->length();
   }
   // Finally add local interfaces
   max_transitive_size += local_size;
   // Construct array
   if (max_transitive_size == 0) {
     // no interfaces, use canonicalized array
-    return Universe::the_empty_klass_array();
+    return Universe::the_empty_instance_klass_array();
   } else if (max_transitive_size == super_size) {
     // no new local interfaces added, share superklass' transitive interface array
     return super->transitive_interfaces();
@@ -4554,7 +4554,7 @@ static Array<Klass*>* compute_transitive_interfaces(const InstanceKlass* super,
     return local_ifs;
   } else {
     ResourceMark rm;
-    GrowableArray<Klass*>* const result = new GrowableArray<Klass*>(max_transitive_size);
+    GrowableArray<InstanceKlass*>* const result = new GrowableArray<InstanceKlass*>(max_transitive_size);
 
     // Copy down from superclass
     if (super != NULL) {
@@ -4563,8 +4563,8 @@ static Array<Klass*>* compute_transitive_interfaces(const InstanceKlass* super,
 
     // Copy down from local interfaces' superinterfaces
     for (int i = 0; i < local_size; i++) {
-      Klass* const l = local_ifs->at(i);
-      append_interfaces(result, InstanceKlass::cast(l)->transitive_interfaces());
+      InstanceKlass* const l = local_ifs->at(i);
+      append_interfaces(result, l->transitive_interfaces());
     }
     // Finally add local interfaces
     append_interfaces(result, local_ifs);
@@ -4572,10 +4572,10 @@ static Array<Klass*>* compute_transitive_interfaces(const InstanceKlass* super,
     // length will be less than the max_transitive_size if duplicates were removed
     const int length = result->length();
     assert(length <= max_transitive_size, "just checking");
-    Array<Klass*>* const new_result =
-      MetadataFactory::new_array<Klass*>(loader_data, length, CHECK_NULL);
+    Array<InstanceKlass*>* const new_result =
+      MetadataFactory::new_array<InstanceKlass*>(loader_data, length, CHECK_NULL);
     for (int i = 0; i < length; i++) {
-      Klass* const e = result->at(i);
+      InstanceKlass* const e = result->at(i);
       assert(e != NULL, "just checking");
       new_result->at_put(i, e);
     }
@@ -4643,17 +4643,17 @@ static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
 
 static void check_super_interface_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != NULL, "invariant");
-  const Array<Klass*>* const local_interfaces = this_klass->local_interfaces();
+  const Array<InstanceKlass*>* const local_interfaces = this_klass->local_interfaces();
   const int lng = local_interfaces->length();
   for (int i = lng - 1; i >= 0; i--) {
-    Klass* const k = local_interfaces->at(i);
+    InstanceKlass* const k = local_interfaces->at(i);
     assert (k != NULL && k->is_interface(), "invalid interface");
     Reflection::VerifyClassAccessResults vca_result =
-      Reflection::verify_class_access(this_klass, InstanceKlass::cast(k), false);
+      Reflection::verify_class_access(this_klass, k, false);
     if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
       char* msg = Reflection::verify_class_access_msg(this_klass,
-                                                      InstanceKlass::cast(k),
+                                                      k,
                                                       vca_result);
       if (msg == NULL) {
         bool same_module = (this_klass->module() == k->module());
@@ -5735,11 +5735,11 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
                    ik->java_super()->external_name());
       }
       // print out each of the interface classes referred to by this class.
-      const Array<Klass*>* const local_interfaces = ik->local_interfaces();
+      const Array<InstanceKlass*>* const local_interfaces = ik->local_interfaces();
       if (local_interfaces != NULL) {
         const int length = local_interfaces->length();
         for (int i = 0; i < length; i++) {
-          const Klass* const k = local_interfaces->at(i);
+          const InstanceKlass* const k = local_interfaces->at(i);
           const char * to = k->external_name();
           log_debug(class, resolve)("%s %s (interface)", from, to);
         }
@@ -6272,7 +6272,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   assert(_loader_data != NULL, "invariant");
 
   if (_class_name == vmSymbols::java_lang_Object()) {
-    check_property(_local_interfaces == Universe::the_empty_klass_array(),
+    check_property(_local_interfaces == Universe::the_empty_instance_klass_array(),
                    "java.lang.Object cannot implement an interface in class file %s",
                    CHECK);
   }

@@ -331,16 +331,16 @@ void TemplateTable::ldc(bool wide)
   __ ldarb(r3, r3);
 
   // unresolved class - get the resolved class
-  __ cmp(r3, JVM_CONSTANT_UnresolvedClass);
+  __ cmp(r3, (u1)JVM_CONSTANT_UnresolvedClass);
   __ br(Assembler::EQ, call_ldc);
 
   // unresolved class in error state - call into runtime to throw the error
   // from the first resolution attempt
-  __ cmp(r3, JVM_CONSTANT_UnresolvedClassInError);
+  __ cmp(r3, (u1)JVM_CONSTANT_UnresolvedClassInError);
   __ br(Assembler::EQ, call_ldc);
 
   // resolved class - need to call vm to get java mirror of the class
-  __ cmp(r3, JVM_CONSTANT_Class);
+  __ cmp(r3, (u1)JVM_CONSTANT_Class);
   __ br(Assembler::NE, notClass);
 
   __ bind(call_ldc);
@@ -351,7 +351,7 @@ void TemplateTable::ldc(bool wide)
   __ b(Done);
 
   __ bind(notClass);
-  __ cmp(r3, JVM_CONSTANT_Float);
+  __ cmp(r3, (u1)JVM_CONSTANT_Float);
   __ br(Assembler::NE, notFloat);
   // ftos
   __ adds(r1, r2, r1, Assembler::LSL, 3);
@@ -361,7 +361,7 @@ void TemplateTable::ldc(bool wide)
 
   __ bind(notFloat);
 
-  __ cmp(r3, JVM_CONSTANT_Integer);
+  __ cmp(r3, (u1)JVM_CONSTANT_Integer);
   __ br(Assembler::NE, notInt);
 
   // itos
@@ -2333,7 +2333,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
   __ get_cache_and_index_and_bytecode_at_bcp(Rcache, index, temp, byte_no, 1, index_size);
-  __ cmp(temp, (int) code);  // have we resolved this bytecode?
+  __ subs(zr, temp, (int) code);  // have we resolved this bytecode?
   __ br(Assembler::EQ, resolved);
 
   // resolve first time through
@@ -2515,7 +2515,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notByte);
-  __ cmp(flags, ztos);
+  __ cmp(flags, (u1)ztos);
   __ br(Assembler::NE, notBool);
 
   // ztos (same code as btos)
@@ -2529,7 +2529,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notBool);
-  __ cmp(flags, atos);
+  __ cmp(flags, (u1)atos);
   __ br(Assembler::NE, notObj);
   // atos
   do_oop_load(_masm, field, r0, IN_HEAP);
@@ -2540,7 +2540,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notObj);
-  __ cmp(flags, itos);
+  __ cmp(flags, (u1)itos);
   __ br(Assembler::NE, notInt);
   // itos
   __ access_load_at(T_INT, IN_HEAP, r0, field, noreg, noreg);
@@ -2552,7 +2552,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notInt);
-  __ cmp(flags, ctos);
+  __ cmp(flags, (u1)ctos);
   __ br(Assembler::NE, notChar);
   // ctos
   __ access_load_at(T_CHAR, IN_HEAP, r0, field, noreg, noreg);
@@ -2564,7 +2564,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notChar);
-  __ cmp(flags, stos);
+  __ cmp(flags, (u1)stos);
   __ br(Assembler::NE, notShort);
   // stos
   __ access_load_at(T_SHORT, IN_HEAP, r0, field, noreg, noreg);
@@ -2576,7 +2576,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notShort);
-  __ cmp(flags, ltos);
+  __ cmp(flags, (u1)ltos);
   __ br(Assembler::NE, notLong);
   // ltos
   __ access_load_at(T_LONG, IN_HEAP, r0, field, noreg, noreg);
@@ -2588,7 +2588,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notLong);
-  __ cmp(flags, ftos);
+  __ cmp(flags, (u1)ftos);
   __ br(Assembler::NE, notFloat);
   // ftos
   __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
@@ -2601,7 +2601,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ cmp(flags, dtos);
+  __ cmp(flags, (u1)dtos);
   __ br(Assembler::NE, notDouble);
 #endif
   // dtos
@@ -2751,7 +2751,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notByte);
-  __ cmp(flags, ztos);
+  __ cmp(flags, (u1)ztos);
   __ br(Assembler::NE, notBool);
 
   // ztos
@@ -2766,7 +2766,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notBool);
-  __ cmp(flags, atos);
+  __ cmp(flags, (u1)atos);
   __ br(Assembler::NE, notObj);
 
   // atos
@@ -2782,7 +2782,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notObj);
-  __ cmp(flags, itos);
+  __ cmp(flags, (u1)itos);
   __ br(Assembler::NE, notInt);
 
   // itos
@@ -2797,7 +2797,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notInt);
-  __ cmp(flags, ctos);
+  __ cmp(flags, (u1)ctos);
   __ br(Assembler::NE, notChar);
 
   // ctos
@@ -2812,7 +2812,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notChar);
-  __ cmp(flags, stos);
+  __ cmp(flags, (u1)stos);
   __ br(Assembler::NE, notShort);
 
   // stos
@@ -2827,7 +2827,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notShort);
-  __ cmp(flags, ltos);
+  __ cmp(flags, (u1)ltos);
   __ br(Assembler::NE, notLong);
 
   // ltos
@@ -2842,7 +2842,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notLong);
-  __ cmp(flags, ftos);
+  __ cmp(flags, (u1)ftos);
   __ br(Assembler::NE, notFloat);
 
   // ftos
@@ -2858,7 +2858,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ cmp(flags, dtos);
+  __ cmp(flags, (u1)dtos);
   __ br(Assembler::NE, notDouble);
 #endif
 
@@ -3534,7 +3534,7 @@ void TemplateTable::_new() {
   __ lea(rscratch1, Address(r0, r3, Address::lsl(0)));
   __ lea(rscratch1, Address(rscratch1, tags_offset));
   __ ldarb(rscratch1, rscratch1);
-  __ cmp(rscratch1, JVM_CONSTANT_Class);
+  __ cmp(rscratch1, (u1)JVM_CONSTANT_Class);
   __ br(Assembler::NE, slow_case);
 
   // get InstanceKlass
@@ -3543,7 +3543,7 @@ void TemplateTable::_new() {
   // make sure klass is initialized & doesn't have finalizer
   // make sure klass is fully initialized
   __ ldrb(rscratch1, Address(r4, InstanceKlass::init_state_offset()));
-  __ cmp(rscratch1, InstanceKlass::fully_initialized);
+  __ cmp(rscratch1, (u1)InstanceKlass::fully_initialized);
   __ br(Assembler::NE, slow_case);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
@@ -3683,7 +3683,7 @@ void TemplateTable::checkcast()
   __ add(rscratch1, r3, Array<u1>::base_offset_in_bytes());
   __ lea(r1, Address(rscratch1, r19));
   __ ldarb(r1, r1);
-  __ cmp(r1, JVM_CONSTANT_Class);
+  __ cmp(r1, (u1)JVM_CONSTANT_Class);
   __ br(Assembler::EQ, quicked);
 
   __ push(atos); // save receiver for result, and for GC
@@ -3737,7 +3737,7 @@ void TemplateTable::instanceof() {
   __ add(rscratch1, r3, Array<u1>::base_offset_in_bytes());
   __ lea(r1, Address(rscratch1, r19));
   __ ldarb(r1, r1);
-  __ cmp(r1, JVM_CONSTANT_Class);
+  __ cmp(r1, (u1)JVM_CONSTANT_Class);
   __ br(Assembler::EQ, quicked);
 
   __ push(atos); // save receiver for result, and for GC
@@ -3840,6 +3840,8 @@ void TemplateTable::monitorenter()
   // check for NULL object
   __ null_check(r0);
 
+  __ resolve(IS_NOT_NULL, r0);
+
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   const Address monitor_block_bot(
@@ -3938,6 +3940,8 @@ void TemplateTable::monitorexit()
 
   // check for NULL object
   __ null_check(r0);
+
+  __ resolve(IS_NOT_NULL, r0);
 
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

@@ -201,20 +201,20 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
        NULL
 #endif
        )
-  , _lrg_map(Thread::current()->resource_area(), unique)
   , _live(0)
   , _spilled_once(Thread::current()->resource_area())
   , _spilled_twice(Thread::current()->resource_area())
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
   , _oldphi(unique)
+#ifndef PRODUCT
+  , _trace_spilling(C->directive()->TraceSpillingOption)
+#endif
+  , _lrg_map(Thread::current()->resource_area(), unique)
   , _scheduling_info_generated(scheduling_info_generated)
   , _sched_int_pressure(0, INTPRESSURE)
   , _sched_float_pressure(0, FLOATPRESSURE)
   , _scratch_int_pressure(0, INTPRESSURE)
   , _scratch_float_pressure(0, FLOATPRESSURE)
-#ifndef PRODUCT
-  , _trace_spilling(C->directive()->TraceSpillingOption)
-#endif
 {
   Compile::TracePhase tp("ctorChaitin", &timers[_t_ctorChaitin]);
 

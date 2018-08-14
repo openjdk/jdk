@@ -75,8 +75,7 @@ class VM_Handshake: public VM_Operation {
   HandshakeThreadsOperation* const _op;
 
   VM_Handshake(HandshakeThreadsOperation* op) :
-      _op(op),
-      _handshake_timeout(TimeHelper::millis_to_counter(HandshakeTimeout)) {}
+      _handshake_timeout(TimeHelper::millis_to_counter(HandshakeTimeout)), _op(op) {}
 
   void set_handshake(JavaThread* target) {
     target->set_handshake_operation(_op);

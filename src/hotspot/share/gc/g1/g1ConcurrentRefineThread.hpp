@@ -41,7 +41,6 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
   double _vtime_start;  // Initial virtual time.
   double _vtime_accum;  // Accumulated virtual time.
   uint _worker_id;
-  uint _worker_id_offset;
 
   bool _active;
   Monitor* _monitor;

@@ -2088,8 +2088,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
 // NotRunnable() -- informed spinning
 //
 // Don't bother spinning if the owner is not eligible to drop the lock.
-// Peek at the owner's schedctl.sc_state and Thread._thread_values and
-// spin only if the owner thread is _thread_in_Java or _thread_in_vm.
+// Spin only if the owner thread is _thread_in_Java or _thread_in_vm.
 // The thread must be runnable in order to drop the lock in timely fashion.
 // If the _owner is not runnable then spinning will not likely be
 // successful (profitable).
@@ -2097,7 +2096,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
 // Beware -- the thread referenced by _owner could have died
 // so a simply fetch from _owner->_thread_state might trap.
 // Instead, we use SafeFetchXX() to safely LD _owner->_thread_state.
-// Because of the lifecycle issues the schedctl and _thread_state values
+// Because of the lifecycle issues, the _thread_state values
 // observed by NotRunnable() might be garbage.  NotRunnable must
 // tolerate this and consider the observed _thread_state value
 // as advisory.
@@ -2105,18 +2104,12 @@ int ObjectMonitor::TrySpin(Thread * Self) {
 // Beware too, that _owner is sometimes a BasicLock address and sometimes
 // a thread pointer.
 // Alternately, we might tag the type (thread pointer vs basiclock pointer)
-// with the LSB of _owner.  Another option would be to probablistically probe
+// with the LSB of _owner.  Another option would be to probabilistically probe
 // the putative _owner->TypeTag value.
 //
 // Checking _thread_state isn't perfect.  Even if the thread is
 // in_java it might be blocked on a page-fault or have been preempted
-// and sitting on a ready/dispatch queue.  _thread state in conjunction
-// with schedctl.sc_state gives us a good picture of what the
-// thread is doing, however.
-//
-// TODO: check schedctl.sc_state.
-// We'll need to use SafeFetch32() to read from the schedctl block.
-// See RFE #5004247 and http://sac.sfbay.sun.com/Archives/CaseLog/arc/PSARC/2005/351/
+// and sitting on a ready/dispatch queue.
 //
 // The return value from NotRunnable() is *advisory* -- the
 // result is based on sampling and is not necessarily coherent.

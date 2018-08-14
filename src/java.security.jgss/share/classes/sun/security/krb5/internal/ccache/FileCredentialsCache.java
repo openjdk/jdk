@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@
  */
 package sun.security.krb5.internal.ccache;
 
+import sun.security.action.GetPropertyAction;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import java.util.StringTokenizer;
@@ -381,9 +382,7 @@ public class FileCredentialsCache extends CredentialsCache
         }
 
         // get cache name from system.property
-        String osname =
-            java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetPropertyAction("os.name"));
+        String osname = GetPropertyAction.privilegedGetProperty("os.name");
 
         /*
          * For Unix platforms we use the default cache name to be
@@ -417,18 +416,12 @@ public class FileCredentialsCache extends CredentialsCache
 
         // we did not get the uid;
 
-        String user_name =
-            java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetPropertyAction("user.name"));
+        String user_name = GetPropertyAction.privilegedGetProperty("user.name");
 
-        String user_home =
-            java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetPropertyAction("user.home"));
+        String user_home = GetPropertyAction.privilegedGetProperty("user.home");
 
         if (user_home == null) {
-            user_home =
-                java.security.AccessController.doPrivileged(
-                        new sun.security.action.GetPropertyAction("user.dir"));
+            user_home = GetPropertyAction.privilegedGetProperty("user.dir");
         }
 
         if (user_name != null) {

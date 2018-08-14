@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,8 +41,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleTarget;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * A configuration that is the result of <a href="package-summary.html#resolution">
@@ -104,7 +105,17 @@ import jdk.internal.module.ModuleTarget;
 public final class Configuration {
 
     // @see Configuration#empty()
-    private static final Configuration EMPTY_CONFIGURATION = new Configuration();
+    // EMPTY_CONFIGURATION may be initialized from the CDS archive.
+    private static @Stable Configuration EMPTY_CONFIGURATION;
+
+    static {
+        // Initialize EMPTY_CONFIGURATION from the archive.
+        VM.initializeFromArchive(Configuration.class);
+        // Create a new empty Configuration if there is no archived version.
+        if (EMPTY_CONFIGURATION == null) {
+            EMPTY_CONFIGURATION = new Configuration();
+        }
+    }
 
     // parent configurations, in search order
     private final List<Configuration> parents;
@@ -119,10 +130,10 @@ public final class Configuration {
     String targetPlatform() { return targetPlatform; }
 
     private Configuration() {
-        this.parents = Collections.emptyList();
-        this.graph = Collections.emptyMap();
-        this.modules = Collections.emptySet();
-        this.nameToModule = Collections.emptyMap();
+        this.parents = List.of();
+        this.graph = Map.of();
+        this.modules = Set.of();
+        this.nameToModule = Map.of();
         this.targetPlatform = null;
     }
 
@@ -140,7 +151,7 @@ public final class Configuration {
             i++;
         }
 
-        this.parents = Collections.unmodifiableList(parents);
+        this.parents = List.copyOf(parents);
         this.graph = g;
         this.modules = Set.of(moduleArray);
         this.nameToModule = Map.ofEntries(nameEntries);
@@ -554,7 +565,7 @@ public final class Configuration {
 
     Set<ModuleDescriptor> descriptors() {
         if (modules.isEmpty()) {
-            return Collections.emptySet();
+            return Set.of();
         } else {
             return modules.stream()
                     .map(ResolvedModule::reference)
@@ -596,7 +607,7 @@ public final class Configuration {
                     }
                 }
             }
-            this.allConfigurations = Collections.unmodifiableList(allConfigurations);
+            this.allConfigurations = allConfigurations; // no need to do defensive copy
         }
         return allConfigurations.stream();
     }

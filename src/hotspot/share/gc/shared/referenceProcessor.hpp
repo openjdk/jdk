@@ -39,7 +39,7 @@ class ReferenceProcessorPhaseTimes;
 // List of discovered references.
 class DiscoveredList {
 public:
-  DiscoveredList() : _len(0), _compressed_head(0), _oop_head(NULL) { }
+  DiscoveredList() : _oop_head(NULL), _compressed_head(0), _len(0) { }
   inline oop head() const;
   HeapWord* adr_head() {
     return UseCompressedOops ? (HeapWord*)&_compressed_head :

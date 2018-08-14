@@ -26,7 +26,6 @@
 package jdk.internal.module;
 
 import java.lang.module.ModuleDescriptor;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -72,11 +71,11 @@ class ExplodedSystemModules implements SystemModules {
 
     @Override
     public  Map<String, Set<String>> concealedPackagesToOpen() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 
     @Override
     public  Map<String, Set<String>> exportedPackagesToOpen() {
-        return Collections.emptyMap();
+        return Map.of();
     }
 }

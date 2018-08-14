@@ -173,7 +173,7 @@ public final class ModuleLayer {
 
         Map<String, Module> map;
         if (parents.isEmpty()) {
-            map = Collections.emptyMap();
+            map = Map.of();
         } else {
             map = Module.defineModules(cf, clf, this);
         }
@@ -811,8 +811,7 @@ public final class ModuleLayer {
     public Set<Module> modules() {
         Set<Module> modules = this.modules;
         if (modules == null) {
-            this.modules = modules =
-                Collections.unmodifiableSet(new HashSet<>(nameToModule.values()));
+            this.modules = modules = Set.copyOf(nameToModule.values());
         }
         return modules;
     }

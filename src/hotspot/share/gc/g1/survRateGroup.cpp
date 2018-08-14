@@ -31,9 +31,14 @@
 #include "memory/allocation.hpp"
 
 SurvRateGroup::SurvRateGroup() :
-    _accum_surv_rate_pred(NULL),
-    _surv_rate_pred(NULL),
-    _stats_arrays_length(0) {
+  _stats_arrays_length(0),
+  _accum_surv_rate_pred(NULL),
+  _last_pred(0.0),
+  _surv_rate_pred(NULL),
+  _all_regions_allocated(0),
+  _region_num(0),
+  _setup_seq_num(0)
+{
   reset();
   start_adding_regions();
 }

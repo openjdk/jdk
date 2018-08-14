@@ -70,6 +70,10 @@ ZMark::ZMark(ZWorkers* workers, ZPageTable* pagetable) :
     _ncontinue(0),
     _nworkers(0) {}
 
+bool ZMark::is_initialized() const {
+  return _allocator.is_initialized();
+}
+
 size_t ZMark::calculate_nstripes(uint nworkers) const {
   // Calculate the number of stripes from the number of workers we use,
   // where the number of stripes must be a power of two and we want to

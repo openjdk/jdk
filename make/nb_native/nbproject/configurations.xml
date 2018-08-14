@@ -116,6 +116,7 @@
             <in>IBM1122.map</in>
             <in>IBM1123.map</in>
             <in>IBM1124.map</in>
+            <in>IBM1129.map</in>
             <in>IBM1140.map</in>
             <in>IBM1141.map</in>
             <in>IBM1142.map</in>
@@ -16281,6 +16282,11 @@
             flavor2="0">
       </item>
       <item path="../../make/data/charsetmapping/IBM1124.map"
+            ex="false"
+            tool="3"
+            flavor2="0">
+      </item>
+      <item path="../../make/data/charsetmapping/IBM1129.map"
             ex="false"
             tool="3"
             flavor2="0">

@@ -41,7 +41,7 @@ private:
   Thread*   _cur_thread;
 
 public:
-  LoadedClassesClosure(Thread* thread, JvmtiEnv* env) : _cur_thread(thread), _env(env) {
+  LoadedClassesClosure(Thread* thread, JvmtiEnv* env) : _env(env), _cur_thread(thread) {
     assert(_cur_thread == Thread::current(), "must be current thread");
   }
 

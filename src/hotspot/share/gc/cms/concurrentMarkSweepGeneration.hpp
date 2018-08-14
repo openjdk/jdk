@@ -1452,9 +1452,9 @@ class MarkFromDirtyCardsClosure: public MemRegionClosure {
                             CMSMarkStack* mark_stack,
                             MarkRefsIntoAndScanClosure* cl):
     _space(space),
-    _num_dirty_cards(0),
     _scan_cl(collector, span, collector->ref_processor(), bit_map,
-                 mark_stack, cl) { }
+                 mark_stack, cl),
+    _num_dirty_cards(0) { }
 
   MarkFromDirtyCardsClosure(CMSCollector* collector,
                             MemRegion span,
@@ -1463,9 +1463,9 @@ class MarkFromDirtyCardsClosure: public MemRegionClosure {
                             OopTaskQueue* work_queue,
                             ParMarkRefsIntoAndScanClosure* cl):
     _space(space),
-    _num_dirty_cards(0),
     _scan_cl(collector, span, collector->ref_processor(), bit_map,
-             work_queue, cl) { }
+             work_queue, cl),
+    _num_dirty_cards(0) { }
 
   void do_MemRegion(MemRegion mr);
   void set_space(CompactibleFreeListSpace* space) { _space = space; }
@@ -1707,8 +1707,8 @@ class CMSDrainMarkingStackClosure: public VoidClosure {
                       bool cpc):
     _collector(collector),
     _span(span),
-    _bit_map(bit_map),
     _mark_stack(mark_stack),
+    _bit_map(bit_map),
     _keep_alive(keep_alive),
     _concurrent_precleaning(cpc) {
     assert(_concurrent_precleaning == _keep_alive->concurrent_precleaning(),
@@ -1732,8 +1732,8 @@ class CMSParDrainMarkingStackClosure: public VoidClosure {
                                  OopTaskQueue* work_queue):
     _collector(collector),
     _span(span),
-    _bit_map(bit_map),
     _work_queue(work_queue),
+    _bit_map(bit_map),
     _mark_and_push(collector, span, bit_map, work_queue) { }
 
  public:

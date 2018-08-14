@@ -180,8 +180,9 @@ class MacroAssembler: public Assembler {
 
   template<class T>
   inline void cmpw(Register Rd, T imm)  { subsw(zr, Rd, imm); }
-  // imm is limited to 12 bits.
-  inline void cmp(Register Rd, unsigned imm)  { subs(zr, Rd, imm); }
+
+  inline void cmp(Register Rd, unsigned char imm8)  { subs(zr, Rd, imm8); }
+  inline void cmp(Register Rd, unsigned imm) __attribute__ ((deprecated));
 
   inline void cmnw(Register Rd, unsigned imm) { addsw(zr, Rd, imm); }
   inline void cmn(Register Rd, unsigned imm) { adds(zr, Rd, imm); }
@@ -794,6 +795,10 @@ public:
 
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register src,
                        Register tmp1, Register tmp_thread);
+
+  // Resolves obj for access. Result is placed in the same register.
+  // All other registers are preserved.
+  void resolve(DecoratorSet decorators, Register obj);
 
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg,
                      Register thread_tmp = noreg, DecoratorSet decorators = 0);

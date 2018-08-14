@@ -40,7 +40,6 @@ import java.net.URI;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1123,7 +1122,7 @@ public final class Module implements AnnotatedElement {
             Set<Module> reads = new HashSet<>();
 
             // name -> source Module when in parent layer
-            Map<String, Module> nameToSource = Collections.emptyMap();
+            Map<String, Module> nameToSource = Map.of();
 
             for (ResolvedModule other : resolvedModule.reads()) {
                 Module m2 = null;

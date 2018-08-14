@@ -516,36 +516,36 @@ class LIR_Address: public LIR_OprPtr {
        _base(base)
      , _index(index)
      , _scale(times_1)
-     , _type(type)
-     , _disp(0) { verify(); }
+     , _disp(0)
+     , _type(type) { verify(); }
 
   LIR_Address(LIR_Opr base, intx disp, BasicType type):
        _base(base)
      , _index(LIR_OprDesc::illegalOpr())
      , _scale(times_1)
-     , _type(type)
-     , _disp(disp) { verify(); }
+     , _disp(disp)
+     , _type(type) { verify(); }
 
   LIR_Address(LIR_Opr base, BasicType type):
        _base(base)
      , _index(LIR_OprDesc::illegalOpr())
      , _scale(times_1)
-     , _type(type)
-     , _disp(0) { verify(); }
+     , _disp(0)
+     , _type(type) { verify(); }
 
   LIR_Address(LIR_Opr base, LIR_Opr index, intx disp, BasicType type):
        _base(base)
      , _index(index)
      , _scale(times_1)
-     , _type(type)
-     , _disp(disp) { verify(); }
+     , _disp(disp)
+     , _type(type) { verify(); }
 
   LIR_Address(LIR_Opr base, LIR_Opr index, Scale scale, intx disp, BasicType type):
        _base(base)
      , _index(index)
      , _scale(scale)
-     , _type(type)
-     , _disp(disp) { verify(); }
+     , _disp(disp)
+     , _type(type) { verify(); }
 
   LIR_Opr base()  const                          { return _base;  }
   LIR_Opr index() const                          { return _index; }
@@ -1058,30 +1058,32 @@ class LIR_Op: public CompilationResourceObj {
 
  public:
   LIR_Op()
-    : _result(LIR_OprFact::illegalOpr)
+    :
+#ifdef ASSERT
+      _file(NULL)
+    , _line(0),
+#endif
+      _result(LIR_OprFact::illegalOpr)
     , _code(lir_none)
     , _flags(0)
     , _info(NULL)
-#ifdef ASSERT
-    , _file(NULL)
-    , _line(0)
-#endif
+    , _id(-1)
     , _fpu_pop_count(0)
-    , _source(NULL)
-    , _id(-1)                             {}
+    , _source(NULL) {}
 
   LIR_Op(LIR_Code code, LIR_Opr result, CodeEmitInfo* info)
-    : _result(result)
+    :
+#ifdef ASSERT
+      _file(NULL)
+    , _line(0),
+#endif
+      _result(result)
     , _code(code)
     , _flags(0)
     , _info(info)
-#ifdef ASSERT
-    , _file(NULL)
-    , _line(0)
-#endif
+    , _id(-1)
     , _fpu_pop_count(0)
-    , _source(NULL)
-    , _id(-1)                             {}
+    , _source(NULL) {}
 
   CodeEmitInfo* info() const                  { return _info;   }
   LIR_Code code()      const                  { return (LIR_Code)_code;   }
@@ -1153,8 +1155,8 @@ class LIR_OpCall: public LIR_Op {
   LIR_OpCall(LIR_Code code, address addr, LIR_Opr result,
              LIR_OprList* arguments, CodeEmitInfo* info = NULL)
     : LIR_Op(code, result, info)
-    , _arguments(arguments)
-    , _addr(addr) {}
+    , _addr(addr)
+    , _arguments(arguments) {}
 
  public:
   address addr() const                           { return _addr; }
@@ -1180,8 +1182,8 @@ class LIR_OpJavaCall: public LIR_OpCall {
                  address addr, LIR_OprList* arguments,
                  CodeEmitInfo* info)
   : LIR_OpCall(code, addr, result, arguments, info)
-  , _receiver(receiver)
   , _method(method)
+  , _receiver(receiver)
   , _method_handle_invoke_SP_save_opr(LIR_OprFact::illegalOpr)
   { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
 
@@ -1189,8 +1191,8 @@ class LIR_OpJavaCall: public LIR_OpCall {
                  LIR_Opr receiver, LIR_Opr result, intptr_t vtable_offset,
                  LIR_OprList* arguments, CodeEmitInfo* info)
   : LIR_OpCall(code, (address)vtable_offset, result, arguments, info)
-  , _receiver(receiver)
   , _method(method)
+  , _receiver(receiver)
   , _method_handle_invoke_SP_save_opr(LIR_OprFact::illegalOpr)
   { assert(is_in_range(code, begin_opJavaCall, end_opJavaCall), "code check"); }
 
@@ -1345,14 +1347,14 @@ class LIR_Op1: public LIR_Op {
   LIR_Op1(LIR_Code code, LIR_Opr opr, LIR_Opr result = LIR_OprFact::illegalOpr, BasicType type = T_ILLEGAL, LIR_PatchCode patch = lir_patch_none, CodeEmitInfo* info = NULL)
     : LIR_Op(code, result, info)
     , _opr(opr)
-    , _patch(patch)
-    , _type(type)                      { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
+    , _type(type)
+    , _patch(patch)                    { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
 
   LIR_Op1(LIR_Code code, LIR_Opr opr, LIR_Opr result, BasicType type, LIR_PatchCode patch, CodeEmitInfo* info, LIR_MoveKind kind)
     : LIR_Op(code, result, info)
     , _opr(opr)
-    , _patch(patch)
-    , _type(type)                      {
+    , _type(type)
+    , _patch(patch)                    {
     assert(code == lir_move, "must be");
     set_kind(kind);
   }
@@ -1360,8 +1362,8 @@ class LIR_Op1: public LIR_Op {
   LIR_Op1(LIR_Code code, LIR_Opr opr, CodeEmitInfo* info)
     : LIR_Op(code, LIR_OprFact::illegalOpr, info)
     , _opr(opr)
-    , _patch(lir_patch_none)
-    , _type(T_ILLEGAL)                 { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
+    , _type(T_ILLEGAL)
+    , _patch(lir_patch_none)           { assert(is_in_range(code, begin_op1, end_op1), "code check"); }
 
   LIR_Opr in_opr()           const               { return _opr;   }
   LIR_PatchCode patch_code() const               { return _patch; }
@@ -1462,8 +1464,8 @@ class LIR_OpConvert: public LIR_Op1 {
  public:
    LIR_OpConvert(Bytecodes::Code code, LIR_Opr opr, LIR_Opr result, ConversionStub* stub)
      : LIR_Op1(lir_convert, opr, result)
-     , _stub(stub)
-     , _bytecode(code)                           {}
+     , _bytecode(code)
+     , _stub(stub)                               {}
 
   Bytecodes::Code bytecode() const               { return _bytecode; }
   ConversionStub* stub() const                   { return _stub; }
@@ -1501,8 +1503,8 @@ class LIR_OpAllocObj : public LIR_Op1 {
     , _tmp4(t4)
     , _hdr_size(hdr_size)
     , _obj_size(obj_size)
-    , _init_check(init_check)
-    , _stub(stub)                                { }
+    , _stub(stub)
+    , _init_check(init_check)                    { }
 
   LIR_Opr klass()        const                   { return in_opr();     }
   LIR_Opr obj()          const                   { return result_opr(); }
@@ -1611,31 +1613,31 @@ class LIR_Op2: public LIR_Op {
  public:
   LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, CodeEmitInfo* info = NULL)
     : LIR_Op(code, LIR_OprFact::illegalOpr, info)
+    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _type(T_ILLEGAL)
-    , _condition(condition)
-    , _fpu_stack_size(0)
     , _tmp1(LIR_OprFact::illegalOpr)
     , _tmp2(LIR_OprFact::illegalOpr)
     , _tmp3(LIR_OprFact::illegalOpr)
     , _tmp4(LIR_OprFact::illegalOpr)
-    , _tmp5(LIR_OprFact::illegalOpr) {
+    , _tmp5(LIR_OprFact::illegalOpr)
+    , _condition(condition) {
     assert(code == lir_cmp || code == lir_assert, "code check");
   }
 
   LIR_Op2(LIR_Code code, LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, BasicType type)
     : LIR_Op(code, result, NULL)
+    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _type(type)
-    , _condition(condition)
-    , _fpu_stack_size(0)
     , _tmp1(LIR_OprFact::illegalOpr)
     , _tmp2(LIR_OprFact::illegalOpr)
     , _tmp3(LIR_OprFact::illegalOpr)
     , _tmp4(LIR_OprFact::illegalOpr)
-    , _tmp5(LIR_OprFact::illegalOpr) {
+    , _tmp5(LIR_OprFact::illegalOpr)
+    , _condition(condition) {
     assert(code == lir_cmove, "code check");
     assert(type != T_ILLEGAL, "cmove should have type");
   }
@@ -1643,32 +1645,32 @@ class LIR_Op2: public LIR_Op {
   LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result = LIR_OprFact::illegalOpr,
           CodeEmitInfo* info = NULL, BasicType type = T_ILLEGAL)
     : LIR_Op(code, result, info)
+    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _type(type)
-    , _condition(lir_cond_unknown)
-    , _fpu_stack_size(0)
     , _tmp1(LIR_OprFact::illegalOpr)
     , _tmp2(LIR_OprFact::illegalOpr)
     , _tmp3(LIR_OprFact::illegalOpr)
     , _tmp4(LIR_OprFact::illegalOpr)
-    , _tmp5(LIR_OprFact::illegalOpr) {
+    , _tmp5(LIR_OprFact::illegalOpr)
+    , _condition(lir_cond_unknown) {
     assert(code != lir_cmp && is_in_range(code, begin_op2, end_op2), "code check");
   }
 
   LIR_Op2(LIR_Code code, LIR_Opr opr1, LIR_Opr opr2, LIR_Opr result, LIR_Opr tmp1, LIR_Opr tmp2 = LIR_OprFact::illegalOpr,
           LIR_Opr tmp3 = LIR_OprFact::illegalOpr, LIR_Opr tmp4 = LIR_OprFact::illegalOpr, LIR_Opr tmp5 = LIR_OprFact::illegalOpr)
     : LIR_Op(code, result, NULL)
+    , _fpu_stack_size(0)
     , _opr1(opr1)
     , _opr2(opr2)
     , _type(T_ILLEGAL)
-    , _condition(lir_cond_unknown)
-    , _fpu_stack_size(0)
     , _tmp1(tmp1)
     , _tmp2(tmp2)
     , _tmp3(tmp3)
     , _tmp4(tmp4)
-    , _tmp5(tmp5) {
+    , _tmp5(tmp5)
+    , _condition(lir_cond_unknown) {
     assert(code != lir_cmp && is_in_range(code, begin_op2, end_op2), "code check");
   }
 
@@ -1833,8 +1835,8 @@ class LIR_OpAssert : public LIR_Op2 {
  public:
   LIR_OpAssert(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, const char* msg, bool halt)
     : LIR_Op2(lir_assert, condition, opr1, opr2)
-    , _halt(halt)
-    , _msg(msg) {
+    , _msg(msg)
+    , _halt(halt) {
   }
 
   const char* msg() const                        { return _msg; }
@@ -1942,9 +1944,9 @@ class LIR_OpProfileType : public LIR_Op {
     : LIR_Op(lir_profile_type, LIR_OprFact::illegalOpr, NULL)  // no result, no info
     , _mdp(mdp)
     , _obj(obj)
+    , _tmp(tmp)
     , _exact_klass(exact_klass)
     , _current_klass(current_klass)
-    , _tmp(tmp)
     , _not_null(not_null)
     , _no_conflict(no_conflict) { }
 

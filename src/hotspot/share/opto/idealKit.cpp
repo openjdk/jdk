@@ -39,7 +39,7 @@ const uint IdealKit::first_var = TypeFunc::Parms + 1;
 
 //----------------------------IdealKit-----------------------------------------
 IdealKit::IdealKit(GraphKit* gkit, bool delay_all_transforms, bool has_declarations) :
-  _gvn(gkit->gvn()), C(gkit->C) {
+  C(gkit->C), _gvn(gkit->gvn()) {
   _initial_ctrl = gkit->control();
   _initial_memory = gkit->merged_memory();
   _initial_i_o = gkit->i_o();

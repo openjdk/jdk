@@ -47,8 +47,8 @@
 //------------------------------SuperWord---------------------------
 SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _phase(phase),
-  _igvn(phase->_igvn),
   _arena(phase->C->comp_arena()),
+  _igvn(phase->_igvn),
   _packset(arena(), 8,  0, NULL),         // packs for the current block
   _bb_idx(arena(), (int)(1.10 * phase->C->unique()), 0, 0), // node idx to index in bb
   _block(arena(), 8,  0, NULL),           // nodes in current block
@@ -65,18 +65,18 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _visited(arena()),                      // visited node set
   _post_visited(arena()),                 // post visited node set
   _n_idx_list(arena(), 8),                // scratch list of (node,index) pairs
-  _stk(arena(), 8, 0, NULL),              // scratch stack of nodes
   _nlist(arena(), 8, 0, NULL),            // scratch list of nodes
+  _stk(arena(), 8, 0, NULL),              // scratch stack of nodes
   _lpt(NULL),                             // loop tree node
   _lp(NULL),                              // LoopNode
   _bb(NULL),                              // basic block
   _iv(NULL),                              // induction var
   _race_possible(false),                  // cases where SDMU is true
   _early_return(true),                    // analysis evaluations routine
-  _num_work_vecs(0),                      // amount of vector work we have
-  _num_reductions(0),                     // amount of reduction work we have
   _do_vector_loop(phase->C->do_vector_loop()),  // whether to do vectorization/simd style
   _do_reserve_copy(DoReserveCopyInSuperWord),
+  _num_work_vecs(0),                      // amount of vector work we have
+  _num_reductions(0),                     // amount of reduction work we have
   _ii_first(-1),                          // first loop generation index - only if do_vector_loop()
   _ii_last(-1),                           // last loop generation index - only if do_vector_loop()
   _ii_order(arena(), 8, 0, 0)

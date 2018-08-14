@@ -543,14 +543,14 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   fi
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     WARNING_CFLAGS_JDK="-Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2"
-    WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wunused-value -Woverloaded-virtual"
+    WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wunused-value -Woverloaded-virtual -Wreorder"
 
     if ! HOTSPOT_CHECK_JVM_VARIANT(zero); then
       # Non-zero builds have stricter warnings
       WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wreturn-type"
     fi
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wno-deprecated"
+    WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wno-deprecated -Wreorder"
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wno-sometimes-uninitialized"
       WARNING_CFLAGS_JDK="-Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2"

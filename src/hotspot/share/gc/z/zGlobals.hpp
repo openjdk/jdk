@@ -117,11 +117,8 @@ extern uintptr_t  ZAddressWeakBadMask;
 // Marked state
 extern uintptr_t  ZAddressMetadataMarked;
 
-// Address space for mark stack allocations
-const size_t      ZMarkStackSpaceSizeShift      = 40; // 1TB
-const size_t      ZMarkStackSpaceSize           = (size_t)1 << ZMarkStackSpaceSizeShift;
-const uintptr_t   ZMarkStackSpaceStart          = ZAddressSpaceEnd + ZMarkStackSpaceSize;
-const uintptr_t   ZMarkStackSpaceEnd            = ZMarkStackSpaceStart + ZMarkStackSpaceSize;
+// Mark stack space
+extern uintptr_t  ZMarkStackSpaceStart;
 const size_t      ZMarkStackSpaceExpandSize     = (size_t)1 << 25; // 32M
 
 // Mark stack and magazine sizes

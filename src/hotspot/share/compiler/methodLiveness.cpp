@@ -569,11 +569,11 @@ void MethodLiveness::print_times() {
 
 
 MethodLiveness::BasicBlock::BasicBlock(MethodLiveness *analyzer, int start, int limit) :
-         _gen(analyzer->arena(),            analyzer->bit_map_size_bits()),
-         _kill(analyzer->arena(),           analyzer->bit_map_size_bits()),
          _entry(analyzer->arena(),          analyzer->bit_map_size_bits()),
          _normal_exit(analyzer->arena(),    analyzer->bit_map_size_bits()),
          _exception_exit(analyzer->arena(), analyzer->bit_map_size_bits()),
+         _gen(analyzer->arena(),            analyzer->bit_map_size_bits()),
+         _kill(analyzer->arena(),           analyzer->bit_map_size_bits()),
          _last_bci(-1) {
   _analyzer = analyzer;
   _start_bci = start;

@@ -28,6 +28,7 @@ package build.tools.module;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import build.tools.module.GenModuleInfoSource.Statement;
 
@@ -42,29 +44,36 @@ import build.tools.module.GenModuleInfoSource.Statement;
  * Sanity test for GenModuleInfoSource tool
  */
 public class ModuleInfoExtraTest {
-    private static final Path DIR = Paths.get("test");
+    private static final Path DIR = Paths.get("gen-module-info-test");
+    private static boolean verbose = false;
     public static void main(String... args) throws Exception {
         if (args.length != 0)
-            GenModuleInfoSource.verbose = true;
+            verbose = true;
 
+        GenModuleInfoSource.verbose = verbose;
         ModuleInfoExtraTest test = new ModuleInfoExtraTest("m", "m1", "m2", "m3");
-        test.run();
+        test.testModuleInfo();
+        test.errorCases();
     }
 
     String[] moduleInfo = new String[] {
-        "exports p",
-        "to",
-        "   // comment",
-        "   /* comment */ m1",
+        "module m {",
+        "    requires m1;",
+        "    requires transitive m2;",
+        "    exports p",
+        "    to",
+        "               // comment ... ",
+        "    /* comment */ m1",
         ",",
-        "m2,m3",
-        "   ;",
-        "exports q to m1;",
-        "provides s with /* ",
-        "  comment */ impl     ;    // comment",
-        "provides s1",
-        "    with  ",
-        "    impl1, impl2;"
+        "       m2,m3",
+        "  ;",
+        "    exports q to m1;",
+        "    provides s with /*   ",
+        "    comment */ impl     ;    // comment",
+        "    provides s1",
+        "       with  ",
+        "       impl1, impl2;",
+        "}"
     };
 
     String[] moduleInfoExtra = new String[] {
@@ -76,43 +85,13 @@ public class ModuleInfoExtraTest {
         "opens p.q ",
         "   to /* comment */ m3",
         "   , // m1",
-        "   /* comment */, m4;",
-        "provides s1 with impl3;"
-    };
-
-    String[] test1 = new String[] {
-        "exports p1 to m1;",
-        "exports p2"
-    };
-
-    String[] test2 = new String[] {
-        "exports to m1;"
-    };
-
-    String[] test3 = new String[]{
-        "exports p3 to m1;",
-        "    m2, m3;"
-    };
-
-    String[] test4 = new String[]{
-        "provides s with impl1;",   // typo ; should be ,
-        "   impl2, impl3;"
-    };
-
-    String[] test5 = new String[]{
-        "uses s3",
-        "provides s3 with impl1,",
-        "   impl2, impl3;"
+        "   /* comment */ m4; uses p.I",
+        ";   provides s1 with impl3;"
     };
 
     final Builder builder;
     ModuleInfoExtraTest(String name, String... modules) {
         this.builder = new Builder(name).modules(modules);
-    }
-
-    void run() throws IOException {
-        testModuleInfo();
-        errorCases();
     }
 
 
@@ -155,7 +134,9 @@ public class ModuleInfoExtraTest {
                Set<String> opensPQ,
                Set<String> providerS,
                Set<String> providerS1) {
-        source.moduleInfo.print(new PrintWriter(System.out, true));
+        if (verbose)
+            source.moduleInfo.print(new PrintWriter(System.out, true));
+
         Statement export = source.moduleInfo.exports.get("p");
         if (!export.targets.equals(targetsP)) {
             throw new Error("unexpected: " + export);
@@ -177,24 +158,112 @@ public class ModuleInfoExtraTest {
         }
     }
 
+    final Map<String[], String> badModuleInfos = Map.of(
+        new String[] {
+            "module x {",
+            "   exports p1 to ",
+            "           m1",
+            "}"
+        },                      ".*, line .*, missing semicolon.*",
+        new String[] {
+            "module x ",
+            "   exports p1;"
+        },                      ".*, line .*, missing \\{.*",
+        new String[] {
+            "module x {",
+            "   requires m1;",
+            "   requires",
+            "}"
+        },                      ".*, line .*, <identifier> missing.*",
+        new String[] {
+            "module x {",
+            "   requires transitive m1",
+            "}"
+        },                      ".*, line .*, missing semicolon.*",
+        new String[] {
+            "module x {",
+            "   exports p1 to m1;",
+            "   exports p1 to m2;",
+            "}"
+        },                      ".*, line .*, multiple exports p1.*"
+    );
 
+    final Map<String[], String> badExtraFiles = Map.of(
+            new String[] {
+                "requires m2;"     // not allowed
+            },                      ".*, line .*, cannot declare requires .*",
+            new String[] {
+                "exports p1 to m1;",
+                "exports p2"            // missing semicolon
+            },                      ".*, line .*, reach end of file.*",
+            new String[] {
+                "exports to m1;"        // missing <identifier>
+            },                      ".*, line .*, <identifier> missing.*",
+            new String[] {
+                "exports p3 to m1;",
+                "    m2, m3;"           // missing keyword
+            },                      ".*, line .*, missing keyword.*",
+            new String[] {
+                "provides s with impl1;",   // typo ; should be ,
+                "   impl2, impl3;"
+            },                      ".*, line .*, missing keyword.*",
+            new String[] {
+                "uses s3",                  // missing semicolon
+                "provides s3 with impl1,",
+                "   impl2, impl3;"
+            },                      ".*, line .*, missing semicolon.*",
+            new String[] {
+                "opens p1 to m1,, m2;"     // missing identifier
+            },                      ".*, line .*, <identifier> missing.*"
+    );
 
-    void errorCases() throws IOException {
-        fail(test1);
-        fail(test2);
-        fail(test3);
-        fail(test4);
-        fail(test5);
+    final Map<String[], String> duplicates = Map.of(
+            new String[] {
+                "   exports p1 to m1, m2;",
+                "   exports p1 to m3;",
+            },                      ".*, line .*, multiple exports p1.*",
+            new String[] {
+                "   opens p1 to m1, m2;",
+                "   exports p1 to m3;",
+                "   opens p1 to m3;"
+            },                      ".*, line .*, multiple opens p1.*",
+            new String[] {
+                "   uses s;",
+                "   uses s;"
+            },                      ".*, line .*, multiple uses s.*"
+    );
+
+    void errorCases() {
+        badModuleInfos.entrySet().stream().forEach(e -> badModuleInfoFile(e.getKey(), e.getValue()));
+        badExtraFiles.entrySet().stream().forEach(e -> badExtraFile(e.getKey(), e.getValue()));
+        duplicates.entrySet().stream().forEach(e -> badExtraFile(e.getKey(), e.getValue()));
     }
 
-    void fail(String... extras) throws IOException {
-        Path file = DIR.resolve("test1");
-        Files.write(file, Arrays.asList(extras));
+    void badModuleInfoFile(String[] lines, String regex)  {
+        Builder builder = new Builder("x").modules("m1", "m2", "m3");
         try {
+            GenModuleInfoSource source = builder.sourceFile(lines).build();
+            throw new RuntimeException("Expected error: " + Arrays.toString(lines));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (Error e) {
+            if (!e.getMessage().matches(regex)) {
+                throw e;
+            }
+        }
+    }
+
+    void badExtraFile(String[] extras, String regex)  {
+        Path file = DIR.resolve("test1");
+        try {
+            Files.write(file, Arrays.asList(extras));
             builder.build(file);
-        } catch (RuntimeException e) {
-            if (!e.getMessage().matches("test/test1, line .* is malformed.*") &&
-                !e.getMessage().matches("test/test1, line .* missing keyword.*")) {
+            Files.deleteIfExists(file);
+            throw new RuntimeException("Expected error: " + Arrays.toString(extras));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        } catch (Error e) {
+            if (!e.getMessage().matches(regex)) {
                 throw e;
             }
         }
@@ -218,11 +287,9 @@ public class ModuleInfoExtraTest {
             Files.createDirectories(sourceFile.getParent());
             try (BufferedWriter bw = Files.newBufferedWriter(sourceFile);
                  PrintWriter writer = new PrintWriter(bw)) {
-                writer.format("module %s {%n", moduleName);
                 for (String l : lines) {
                     writer.println(l);
                 }
-                writer.println("}");
             }
             return this;
         }

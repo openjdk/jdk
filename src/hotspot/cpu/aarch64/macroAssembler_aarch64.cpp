@@ -494,7 +494,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
     ldr(swap_reg, mark_addr);
   }
   andr(tmp_reg, swap_reg, markOopDesc::biased_lock_mask_in_place);
-  cmp(tmp_reg, markOopDesc::biased_lock_pattern);
+  cmp(tmp_reg, (u1)markOopDesc::biased_lock_pattern);
   br(Assembler::NE, cas_label);
   // The bias pattern is present in the object's header. Need to check
   // whether the bias owner and the epoch are both still current.
@@ -633,7 +633,7 @@ void MacroAssembler::biased_locking_exit(Register obj_reg, Register temp_reg, La
   // the bias bit would be clear.
   ldr(temp_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
   andr(temp_reg, temp_reg, markOopDesc::biased_lock_mask_in_place);
-  cmp(temp_reg, markOopDesc::biased_lock_pattern);
+  cmp(temp_reg, (u1)markOopDesc::biased_lock_pattern);
   br(Assembler::EQ, done);
 }
 
@@ -1137,7 +1137,7 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
 
   if (super_check_offset.is_register()) {
     br(Assembler::EQ, *L_success);
-    cmp(super_check_offset.as_register(), sc_offset);
+    subs(zr, super_check_offset.as_register(), sc_offset);
     if (L_failure == &L_fallthrough) {
       br(Assembler::EQ, *L_slow_path);
     } else {
@@ -3312,7 +3312,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     add(table3, table0, 3*256*sizeof(juint));
 
   if (UseNeon) {
-      cmp(len, 64);
+      cmp(len, (u1)64);
       br(Assembler::LT, L_by16);
       eor(v16, T16B, v16, v16);
 
@@ -3990,6 +3990,15 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
   }
 }
 
+void MacroAssembler::resolve(DecoratorSet decorators, Register obj) {
+  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
+  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
+    decorators |= ACCESS_READ | ACCESS_WRITE;
+  }
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  return bs->resolve(this, decorators, obj);
+}
+
 void MacroAssembler::load_heap_oop(Register dst, Address src, Register tmp1,
                                    Register thread_tmp, DecoratorSet decorators) {
   access_load_at(T_OBJECT, IN_HEAP | decorators, dst, src, tmp1, thread_tmp);
@@ -4362,10 +4371,10 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
 
   if (icnt1 == -1) {
     sub(result_tmp, cnt2, cnt1);
-    cmp(cnt1, 8);             // Use Linear Scan if cnt1 < 8 || cnt1 >= 256
+    cmp(cnt1, (u1)8);             // Use Linear Scan if cnt1 < 8 || cnt1 >= 256
     br(LT, LINEARSEARCH);
     dup(v0, T16B, cnt1); // done in separate FPU pipeline. Almost no penalty
-    cmp(cnt1, 256);
+    subs(zr, cnt1, 256);
     lsr(tmp1, cnt2, 2);
     ccmp(cnt1, tmp1, 0b0000, LT); // Source must be 4 * pattern for BM
     br(GE, LINEARSTUB);
@@ -4471,7 +4480,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
     BIND(BCLOOP);
       (this->*str1_load_1chr)(ch1, Address(post(tmp3, str1_chr_size)));
       if (!str1_isL) {
-        cmp(ch1, ASIZE);
+        subs(zr, ch1, ASIZE);
         br(HS, BCSKIP);
       }
       strb(ch2, Address(sp, ch1));
@@ -4535,7 +4544,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
         } else {
           mov(result_tmp, 1);
         }
-        cmp(skipch, ASIZE);
+        subs(zr, skipch, ASIZE);
         br(HS, BMADV);
       }
       ldrb(result_tmp, Address(sp, skipch)); // load skip distance
@@ -4556,7 +4565,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
       b(DONE);
 
     BIND(LINEARSTUB);
-    cmp(cnt1, 16); // small patterns still should be handled by simple algorithm
+    cmp(cnt1, (u1)16); // small patterns still should be handled by simple algorithm
     br(LT, LINEAR_MEDIUM);
     mov(result, zr);
     RuntimeAddress stub = NULL;
@@ -4585,7 +4594,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
     {
         Label DOSHORT, FIRST_LOOP, STR2_NEXT, STR1_LOOP, STR1_NEXT;
 
-        cmp(cnt1, str1_isL == str2_isL ? 4 : 2);
+        cmp(cnt1, u1(str1_isL == str2_isL ? 4 : 2));
         br(LT, DOSHORT);
       BIND(LINEAR_MEDIUM);
         (this->*str1_load_1chr)(first, Address(str1));
@@ -4620,7 +4629,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
 
       BIND(DOSHORT);
       if (str1_isL == str2_isL) {
-        cmp(cnt1, 2);
+        cmp(cnt1, (u1)2);
         br(LT, DO1);
         br(GT, DO3);
       }
@@ -4695,7 +4704,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
 
       BIND(DO1);
         (this->*str1_load_1chr)(ch1, str1);
-        cmp(cnt2, 8);
+        cmp(cnt2, (u1)8);
         br(LT, DO1_SHORT);
 
         sub(result_tmp, cnt2, 8/str2_chr_size);
@@ -4718,7 +4727,7 @@ void MacroAssembler::string_indexof(Register str2, Register str1,
         adds(cnt2_neg, cnt2_neg, 8);
         br(LT, CH1_LOOP);
 
-        cmp(cnt2_neg, 8);
+        cmp(cnt2_neg, (u1)8);
         mov(cnt2_neg, 0);
         br(LT, CH1_LOOP);
         b(NOMATCH);
@@ -4761,7 +4770,7 @@ void MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   Register ch1 = rscratch1;
   Register result_tmp = rscratch2;
 
-  cmp(cnt1, 4);
+  cmp(cnt1, (u1)4);
   br(LT, DO1_SHORT);
 
   orr(ch, ch, ch, LSL, 16);
@@ -4784,7 +4793,7 @@ void MacroAssembler::string_indexof_char(Register str1, Register cnt1,
     adds(cnt1_neg, cnt1_neg, 8);
     br(LT, CH1_LOOP);
 
-    cmp(cnt1_neg, 8);
+    cmp(cnt1_neg, (u1)8);
     mov(cnt1_neg, 0);
     br(LT, CH1_LOOP);
     b(NOMATCH);
@@ -4821,7 +4830,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       DIFFERENCE, NEXT_WORD, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT,
       SHORT_LOOP_START, TAIL_CHECK;
 
-  const int STUB_THRESHOLD = 64 + 8;
+  const u1 STUB_THRESHOLD = 64 + 8;
   bool isLL = ae == StrIntrinsicNode::LL;
   bool isLU = ae == StrIntrinsicNode::LU;
   bool isUL = ae == StrIntrinsicNode::UL;
@@ -5216,10 +5225,10 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
     ldrw(cnt2, Address(a2, length_offset));
     // on most CPUs a2 is still "locked"(surprisingly) in ldrw and it's
     // faster to perform another branch before comparing a1 and a2
-    cmp(cnt1, elem_per_word);
+    cmp(cnt1, (u1)elem_per_word);
     br(LE, SHORT); // short or same
     ldr(tmp3, Address(pre(a1, base_offset)));
-    cmp(cnt1, stubBytesThreshold);
+    subs(zr, cnt1, stubBytesThreshold);
     br(GE, STUB);
     ldr(tmp4, Address(pre(a2, base_offset)));
     sub(tmp5, zr, cnt1, LSL, 3 + log_elem_size);
@@ -5236,7 +5245,7 @@ void MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
       cbnz(tmp4, DONE);
       ldr(tmp3, Address(pre(a1, wordSize)));
       ldr(tmp4, Address(pre(a2, wordSize)));
-      cmp(cnt1, elem_per_word);
+      cmp(cnt1, (u1)elem_per_word);
       br(LE, TAIL2);
       cmp(tmp1, tmp2);
     } br(EQ, NEXT_DWORD);
@@ -5409,7 +5418,7 @@ void MacroAssembler::zero_words(Register ptr, Register cnt)
   assert(ptr == r10 && cnt == r11, "mismatch in register usage");
 
   BLOCK_COMMENT("zero_words {");
-  cmp(cnt, zero_words_block_size);
+  cmp(cnt, (u1)zero_words_block_size);
   Label around, done, done16;
   br(LO, around);
   {
@@ -5590,15 +5599,15 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
       mov(result, len); // Save initial len
 
 #ifndef BUILTIN_SIM
-      cmp(len, 8); // handle shortest strings first
+      cmp(len, (u1)8); // handle shortest strings first
       br(LT, LOOP_1);
-      cmp(len, 32);
+      cmp(len, (u1)32);
       br(LT, NEXT_8);
       // The following code uses the SIMD 'uzp1' and 'uzp2' instructions
       // to convert chars to bytes
       if (SoftwarePrefetchHintDistance >= 0) {
         ld1(Vtmp1, Vtmp2, Vtmp3, Vtmp4, T8H, src);
-        cmp(len, SoftwarePrefetchHintDistance/2 + 16);
+        subs(tmp2, len, SoftwarePrefetchHintDistance/2 + 16);
         br(LE, NEXT_32_START);
         b(NEXT_32_PRFM_START);
         BIND(NEXT_32_PRFM);
@@ -5618,9 +5627,9 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
           sub(len, len, 32);
           add(dst, dst, 32);
           add(src, src, 64);
-          cmp(len, SoftwarePrefetchHintDistance/2 + 16);
+          subs(tmp2, len, SoftwarePrefetchHintDistance/2 + 16);
           br(GE, NEXT_32_PRFM);
-          cmp(len, 32);
+          cmp(len, (u1)32);
           br(LT, LOOP_8);
         BIND(NEXT_32);
           ld1(Vtmp1, Vtmp2, Vtmp3, Vtmp4, T8H, src);
@@ -5643,12 +5652,12 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
       sub(len, len, 32);
       add(dst, dst, 32);
       add(src, src, 64);
-      cmp(len, 32);
+      cmp(len, (u1)32);
       br(GE, NEXT_32);
       cbz(len, DONE);
 
     BIND(LOOP_8);
-      cmp(len, 8);
+      cmp(len, (u1)8);
       br(LT, LOOP_1);
     BIND(NEXT_8);
       ld1(Vtmp1, T8H, src);
@@ -5661,7 +5670,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst,
       sub(len, len, 8);
       add(dst, dst, 8);
       add(src, src, 16);
-      cmp(len, 8);
+      cmp(len, (u1)8);
       br(GE, NEXT_8);
 
     BIND(LOOP_1);
@@ -5738,7 +5747,7 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
       const int large_loop_threshold = (64 + 16)/8;
       ldrd(vtmp2, post(src, 8));
       andw(len, len, 7);
-      cmp(tmp4, large_loop_threshold);
+      cmp(tmp4, (u1)large_loop_threshold);
       br(GE, to_stub);
       b(loop_start);
 

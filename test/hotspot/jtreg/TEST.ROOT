@@ -62,6 +62,8 @@ requires.properties= \
     vm.cds.custom.loaders \
     vm.cds.archived.java.heap \
     vm.graal.enabled \
+    vm.compiler1.enabled \
+    vm.compiler2.enabled \
     docker.support
 
 # Minimum jtreg version

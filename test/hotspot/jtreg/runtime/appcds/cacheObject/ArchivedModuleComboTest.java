@@ -54,41 +54,49 @@ public class ArchivedModuleComboTest {
         Path userDir = Paths.get(System.getProperty("user.dir"));
         Path moduleDir = Files.createTempDirectory(userDir, "mods");
 
-        // Dump without --module-path
+        //
+        // Dump without --module-path, without --show-module-resolution
+        //
         OutputAnalyzer output = TestCommon.dump(appJar,
                                     TestCommon.list("CheckArchivedModuleApp"),
                                     use_whitebox_jar);
         TestCommon.checkDump(output);
 
         // Test case 1)
-        // - Dump without --module-path
-        // - Run from -cp only, archived boot layer module ModuleDescriptors
-        //   should be used.
+        // - Dump without --module-path, without --show-module-resolution
+        // - Run from -cp only and without --show-module-resolution
+        //     + archived boot layer module ModuleDescriptors should be used
+        //     + archived boot layer configuration should be used
         System.out.println("----------------------- Test case 1 ----------------------");
         output = TestCommon.exec(appJar, use_whitebox_jar,
                                  "-XX:+UnlockDiagnosticVMOptions",
                                  "-XX:+WhiteBoxAPI",
                                  "CheckArchivedModuleApp",
+                                 "yes",
                                  "yes");
         TestCommon.checkExec(output);
 
         // Test case 2)
-        // - Dump without --module-path
-        // - Run from -cp only, archived boot layer module ModuleDescriptors
-        //   should be used with --show-module-resolution (requires resolution).
+        // - Dump without --module-path, without --show-module-resolution
+        // - Run from -cp only and with --show-module-resolution
+        //     + archived boot layer module ModuleDescriptors should be used with
+        //       --show-module-resolution (requires resolution)
+        //     + archived boot layer Configuration should not be disabled
         System.out.println("----------------------- Test case 2 ----------------------");
         output = TestCommon.exec(appJar, use_whitebox_jar,
                                  "--show-module-resolution",
                                  "-XX:+UnlockDiagnosticVMOptions",
                                  "-XX:+WhiteBoxAPI",
                                  "CheckArchivedModuleApp",
-                                 "yes");
-        TestCommon.checkExec(output);
+                                 "yes",
+                                 "no");
+        TestCommon.checkExec(output, "root java.base jrt:/java.base");
 
         // Test case 3)
-        // - Dump without --module-path
-        // - Run with --module-path, archived boot layer module ModuleDescriptors
-        //   should be disabled.
+        // - Dump without --module-path, without --show-module-resolution
+        // - Run with --module-path
+        //    + archived boot layer module ModuleDescriptors should be disabled
+        //    + archived boot layer Configuration should be disabled
         System.out.println("----------------------- Test case 3 ----------------------");
         output = TestCommon.exec(appJar, use_whitebox_jar,
                                  "--module-path",
@@ -96,12 +104,15 @@ public class ArchivedModuleComboTest {
                                  "-XX:+UnlockDiagnosticVMOptions",
                                  "-XX:+WhiteBoxAPI",
                                  "CheckArchivedModuleApp",
+                                 "no",
                                  "no");
         TestCommon.checkExec(output);
 
+        //
         // Dump with --module-path specified (test case 4, 5). Use an
         // empty directory as it's simple and still triggers the case
         // where system module objects are not archived.
+        //
         output = TestCommon.dump(appJar,
                                  TestCommon.list("CheckArchivedModuleApp"),
                                  "--module-path",
@@ -112,19 +123,20 @@ public class ArchivedModuleComboTest {
         // Test case 4)
         // - Dump with --module-path
         // - Run from -cp only, no archived boot layer module ModuleDescriptors
-        //   should be found.
+        //   and Configuration should be found.
         System.out.println("----------------------- Test case 4 ----------------------");
         output = TestCommon.exec(appJar, use_whitebox_jar,
                                  "-XX:+UnlockDiagnosticVMOptions",
                                  "-XX:+WhiteBoxAPI",
                                  "CheckArchivedModuleApp",
+                                 "no",
                                  "no");
         TestCommon.checkExec(output);
 
         // Test case 5)
         // - Dump with --module-path
         // - Run with --module-path, no archived boot layer module ModuleDescriptors
-        //   should be found.
+        //   and Configuration should be found.
         System.out.println("----------------------- Test case 5 ----------------------");
         output = TestCommon.exec(appJar, use_whitebox_jar,
                                  "--module-path",
@@ -132,7 +144,47 @@ public class ArchivedModuleComboTest {
                                  "-XX:+UnlockDiagnosticVMOptions",
                                  "-XX:+WhiteBoxAPI",
                                  "CheckArchivedModuleApp",
+                                 "no",
                                  "no");
         TestCommon.checkExec(output);
+
+        //
+        // Dump without --module-path, with --show-module-resolution
+        //
+        output = TestCommon.dump(appJar,
+                                 TestCommon.list("CheckArchivedModuleApp"),
+                                 "--show-module-resolution",
+                                 use_whitebox_jar);
+        TestCommon.checkDump(output, "root java.base jrt:/java.base");
+
+        // Test case 6)
+        // - Dump without --module-path, with --show-module-resolution
+        // - Run from -cp only and without --show-module-resolution
+        //     + archived boot layer module ModuleDescriptors should be used
+        //     + archived boot layer Configuration should be used
+        System.out.println("----------------------- Test case 6 ----------------------");
+        output = TestCommon.exec(appJar, use_whitebox_jar,
+                                 "-XX:+UnlockDiagnosticVMOptions",
+                                 "-XX:+WhiteBoxAPI",
+                                 "CheckArchivedModuleApp",
+                                 "yes",
+                                 "yes");
+        TestCommon.checkExec(output);
+
+        // Test case 7)
+        // - Dump without --module-path, with --show-module-resolution
+        // - Run from -cp only and with --show-module-resolution
+        //     + archived boot layer module ModuleDescriptors should be used with
+        //       --show-module-resolution (requires resolution)
+        //     + archived boot layer Configuration should be disabled
+        System.out.println("----------------------- Test case 7 ----------------------");
+        output = TestCommon.exec(appJar, use_whitebox_jar,
+                                 "--show-module-resolution",
+                                 "-XX:+UnlockDiagnosticVMOptions",
+                                 "-XX:+WhiteBoxAPI",
+                                 "CheckArchivedModuleApp",
+                                 "yes",
+                                 "no");
+        TestCommon.checkExec(output, "root java.base jrt:/java.base");
     }
 }

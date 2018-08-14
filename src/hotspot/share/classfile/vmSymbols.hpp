@@ -438,6 +438,7 @@
   template(fileToEncodedURL_signature,                "(Ljava/io/File;)Ljava/net/URL;")           \
   template(getProtectionDomain_name,                  "getProtectionDomain")                      \
   template(getProtectionDomain_signature,             "(Ljava/security/CodeSource;)Ljava/security/ProtectionDomain;") \
+  template(java_lang_Integer_array_signature,         "[Ljava/lang/Integer;")                     \
   template(url_code_signer_array_void_signature,      "(Ljava/net/URL;[Ljava/security/CodeSigner;)V") \
   template(module_entry_name,                         "module_entry")                             \
   template(resolved_references_name,                  "<resolved_references>")                    \
@@ -648,13 +649,20 @@
   JFR_TEMPLATES(template)                                                                                         \
                                                                                                                   \
   /* cds */                                                                                                       \
+  template(configuration_signature,                "Ljava/lang/module/Configuration;")                            \
+  template(java_lang_module_Configuration,         "java/lang/module/Configuration")                              \
+  template(java_util_ImmutableCollections_ListN,   "java/util/ImmutableCollections$ListN")                        \
+  template(java_util_ImmutableCollections_MapN,    "java/util/ImmutableCollections$MapN")                         \
+  template(java_util_ImmutableCollections_SetN,    "java/util/ImmutableCollections$SetN")                         \
   template(jdk_internal_loader_ClassLoaders,       "jdk/internal/loader/ClassLoaders")                            \
-  template(jdk_vm_cds_SharedClassInfo,             "jdk/vm/cds/SharedClassInfo")                                  \
-  template(url_void_signature,                     "(Ljava/net/URL;)V")                                           \
+  template(list_signature,                         "Ljava/util/List;")                                            \
+  template(map_signature,                          "Ljava/util/Map;")                                             \
+  template(moduleFinder_signature,                 "Ljava/lang/module/ModuleFinder;")                             \
+  template(set_signature,                          "Ljava/util/Set;")                                             \
+  template(systemModules_signature,                "Ljdk/internal/module/SystemModules;")                         \
   template(toFileURL_name,                         "toFileURL")                                                   \
   template(toFileURL_signature,                    "(Ljava/lang/String;)Ljava/net/URL;")                          \
-  template(moduleFinder_signature,                 "Ljava/lang/module/ModuleFinder;")                             \
-  template(systemModules_signature,                "Ljdk/internal/module/SystemModules;")                         \
+  template(url_void_signature,                     "(Ljava/net/URL;)V")                                           \
                                                                                                                   \
   /*end*/
 

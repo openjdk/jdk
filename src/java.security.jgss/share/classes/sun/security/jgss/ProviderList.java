@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package sun.security.jgss;
 
 import java.lang.reflect.InvocationTargetException;
 import org.ietf.jgss.*;
-import java.security.AccessController;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
@@ -93,10 +92,6 @@ public final class ProviderList {
     private static final String SPI_MECH_FACTORY_TYPE
         = "sun.security.jgss.spi.MechanismFactory";
 
-    // Undocumented property?
-    private static final String DEFAULT_MECH_PROP =
-        "sun.security.jgss.mechanism";
-
     public static final Oid DEFAULT_MECH_OID;
 
     static {
@@ -106,8 +101,8 @@ public final class ProviderList {
          * with a valid OID value
          */
         Oid defOid = null;
-        String defaultOidStr = AccessController.doPrivileged
-            (new GetPropertyAction(DEFAULT_MECH_PROP));
+        String defaultOidStr = GetPropertyAction
+                .privilegedGetProperty("sun.security.jgss.mechanism");
         if (defaultOidStr != null) {
             defOid = GSSUtil.createOid(defaultOidStr);
         }

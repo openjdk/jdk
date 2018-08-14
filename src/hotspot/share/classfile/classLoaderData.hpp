@@ -79,6 +79,12 @@ class ClassLoaderDataGraph : public AllStatic {
   static ClassLoaderData* _saved_head;
   static ClassLoaderData* _saved_unloading;
   static bool _should_purge;
+
+  // Set if there's anything to purge in the deallocate lists or previous versions
+  // during a safepoint after class unloading in a full GC.
+  static bool _should_clean_deallocate_lists;
+  static bool _safepoint_cleanup_needed;
+
   // OOM has been seen in metaspace allocation. Used to prevent some
   // allocations until class unloading
   static bool _metaspace_oom;
@@ -88,8 +94,10 @@ class ClassLoaderDataGraph : public AllStatic {
 
   static ClassLoaderData* add_to_graph(Handle class_loader, bool anonymous);
   static ClassLoaderData* add(Handle class_loader, bool anonymous);
+
  public:
   static ClassLoaderData* find_or_create(Handle class_loader);
+  static void clean_module_and_package_info();
   static void purge();
   static void clear_claimed_marks();
   // oops do
@@ -116,7 +124,13 @@ class ClassLoaderDataGraph : public AllStatic {
   static void packages_unloading_do(void f(PackageEntry*));
   static void loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
-  static bool do_unloading(bool clean_previous_versions);
+  static bool do_unloading(bool do_cleaning);
+
+  // Expose state to avoid logging overhead in safepoint cleanup tasks.
+  static inline bool should_clean_metaspaces_and_reset();
+  static void set_should_clean_deallocate_lists() { _should_clean_deallocate_lists = true; }
+  static void clean_deallocate_lists(bool purge_previous_versions);
+  static void walk_metadata_and_clean_metaspaces();
 
   // dictionary do
   // Iterate over all klasses in dictionary, but
@@ -185,7 +199,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
       volatile juint _size;
       Chunk* _next;
 
-      Chunk(Chunk* c) : _next(c), _size(0) { }
+      Chunk(Chunk* c) : _size(0), _next(c) { }
     };
 
     Chunk* volatile _head;
@@ -297,8 +311,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void packages_do(void f(PackageEntry*));
 
   // Deallocate free list during class unloading.
-  void free_deallocate_list();      // for the classes that are not unloaded
-  void unload_deallocate_list();    // for the classes that are unloaded
+  void free_deallocate_list();                      // for the classes that are not unloaded
+  void free_deallocate_list_C_heap_structures();    // for the classes that are unloaded
 
   // Allocate out of this class loader data
   MetaWord* allocate(size_t size);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package sun.security.jgss.spnego;
 import java.io.*;
 import java.security.Provider;
 import org.ietf.jgss.*;
+import sun.security.action.GetBooleanAction;
 import sun.security.jgss.*;
 import sun.security.jgss.spi.*;
 import sun.security.util.*;
@@ -81,10 +82,8 @@ public class SpNegoContext implements GSSContextSpi {
     final private SpNegoMechFactory factory;
 
     // debug property
-    static final boolean DEBUG =
-        java.security.AccessController.doPrivileged(
-            new sun.security.action.GetBooleanAction
-            ("sun.security.spnego.debug")).booleanValue();
+    static final boolean DEBUG = GetBooleanAction
+            .privilegedGetProperty("sun.security.spnego.debug");
 
     /**
      * Constructor for SpNegoContext to be called on the context initiator's

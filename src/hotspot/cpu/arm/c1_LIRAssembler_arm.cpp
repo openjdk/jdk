@@ -3086,7 +3086,7 @@ void LIR_Assembler::emit_assert(LIR_OpAssert* op) {
 
   Label ok;
   if (op->condition() != lir_cond_always) {
-    AsmCondition acond;
+    AsmCondition acond = al;
     switch (op->condition()) {
       case lir_cond_equal:        acond = eq; break;
       case lir_cond_notEqual:     acond = ne; break;

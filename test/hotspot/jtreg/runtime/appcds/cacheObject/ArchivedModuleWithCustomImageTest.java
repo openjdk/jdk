@@ -130,6 +130,7 @@ public class ArchivedModuleWithCustomImageTest {
                            "-XX:+UnlockDiagnosticVMOptions",
                            "-XX:+WhiteBoxAPI",
                            "CheckArchivedModuleApp",
+                           "yes",
                            "yes"};
         printCommand(runCmd);
         ProcessBuilder pbRun = new ProcessBuilder();

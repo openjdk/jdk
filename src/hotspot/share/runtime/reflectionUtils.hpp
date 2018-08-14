@@ -48,7 +48,7 @@ class KlassStream {
  protected:
   InstanceKlass*      _klass;           // current klass/interface iterated over
   InstanceKlass*      _base_klass;      // initial klass/interface to iterate over
-  Array<Klass*>*      _interfaces;      // transitive interfaces for initial class
+  Array<InstanceKlass*>*_interfaces;    // transitive interfaces for initial class
   int                 _interface_index; // current interface being processed
   bool                _local_only;      // process initial class/interface only
   bool                _classes_only;    // process classes only (no interfaces)

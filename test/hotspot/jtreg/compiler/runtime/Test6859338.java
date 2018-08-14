@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 6859338
  * @summary Assertion failure in sharedRuntime.cpp
  *
+ * @requires vm.compiler1.enabled | !vm.graal.enabled
  * @run main/othervm -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:-InlineObjectHash -Xbatch -XX:-ProfileInterpreter
  *      compiler.runtime.Test6859338

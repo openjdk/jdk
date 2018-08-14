@@ -51,6 +51,7 @@ public interface RSAMultiPrimePrivateCrtKey extends RSAPrivateKey {
      * serialization compatibility with a previous
      * version of the type.
      */
+    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
     static final long serialVersionUID = 618058533534628008L;
 
     /**

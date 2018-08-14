@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@ import org.ietf.jgss.Oid;
 
 import sun.net.www.protocol.http.HttpCallerInfo;
 import sun.net.www.protocol.http.Negotiator;
+import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
 import sun.security.jgss.GSSManagerImpl;
 import sun.security.jgss.GSSContextImpl;
 import sun.security.jgss.GSSUtil;
@@ -50,8 +52,7 @@ import sun.security.jgss.HttpCaller;
 public class NegotiatorImpl extends Negotiator {
 
     private static final boolean DEBUG =
-        java.security.AccessController.doPrivileged(
-              new sun.security.action.GetBooleanAction("sun.security.krb5.debug"));
+            GetBooleanAction.privilegedGetProperty("sun.security.krb5.debug");
 
     private GSSContext context;
     private byte[] oneToken;
@@ -71,14 +72,8 @@ public class NegotiatorImpl extends Negotiator {
             // we can only use Kerberos mech when the scheme is kerberos
             oid = GSSUtil.GSS_KRB5_MECH_OID;
         } else {
-            String pref = java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction<String>() {
-                        public String run() {
-                            return System.getProperty(
-                                "http.auth.preference",
-                                "spnego");
-                        }
-                    });
+            String pref = GetPropertyAction
+                    .privilegedGetProperty("http.auth.preference", "spnego");
             if (pref.equalsIgnoreCase("kerberos")) {
                 oid = GSSUtil.GSS_KRB5_MECH_OID;
             } else {

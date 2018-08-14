@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6891750
  * @summary deopt blob kills values in O5
- * @run main compiler.runtime.cr6891750.Test6891750
+ * @run main/othervm compiler.runtime.cr6891750.Test6891750
  */
 
 package compiler.runtime.cr6891750;

@@ -31,7 +31,7 @@
 #include "utilities/elfSymbolTable.hpp"
 
 ElfSymbolTable::ElfSymbolTable(FILE* const file, Elf_Shdr& shdr) :
-  _section(file, shdr), _fd(file), _next(NULL) {
+  _next(NULL), _fd(file), _section(file, shdr) {
   assert(file != NULL, "null file handle");
   _status = _section.status();
 

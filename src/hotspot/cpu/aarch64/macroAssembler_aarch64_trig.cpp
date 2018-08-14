@@ -297,7 +297,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
       fmsubd(v3, v2, v6, v31); // v3 = r = t - fn * pio2_1
       fmuld(v26, v2, v7);      // v26 = w = fn * pio2_1t
       fsubd(v4, v3, v26);      // y[0] = r - w. Calculated before branch
-      cmp(n, 32);
+      cmp(n, (u1)32);
       br(GT, LARGE_ELSE);
       subw(tmp5, n, 1);        // tmp5 = n - 1
       ldrw(jv, Address(ih, tmp5, Address::lsl(2)));
@@ -312,7 +312,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
           sub(tmp3, tmp5, jx, LSR, 32 + 20 + 1);   // r7 = j-(((*(i0+(int*)&y[0]))>>20)&0x7ff);
 
           block_comment("if(i>16)"); {
-            cmp(tmp3, 16);
+            cmp(tmp3, (u1)16);
             br(LE, X_IS_MEDIUM_BRANCH_DONE);
             // i > 16. 2nd iteration needed
             ldpd(v6, v7, Address(ih, -32));
@@ -328,7 +328,7 @@ void MacroAssembler::generate__ieee754_rem_pio2(address npio2_hw,
             sub(tmp3, tmp5, jx, LSR, 32 + 20 + 1); // r7 = j-(((*(i0+(int*)&y[0]))>>20)&0x7ff);
 
             block_comment("if(i>49)"); {
-              cmp(tmp3, 49);
+              cmp(tmp3, (u1)49);
               br(LE, X_IS_MEDIUM_BRANCH_DONE);
               // 3rd iteration need, 151 bits acc
               ldpd(v6, v7, Address(ih, -16));

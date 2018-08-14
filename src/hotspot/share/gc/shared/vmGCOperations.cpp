@@ -186,7 +186,7 @@ VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData
                                                                  uint full_gc_count_before,
                                                                  GCCause::Cause gc_cause)
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
-      _loader_data(loader_data), _size(size), _mdtype(mdtype), _result(NULL) {
+      _result(NULL), _size(size), _mdtype(mdtype), _loader_data(loader_data) {
   assert(_size != 0, "An allocation should always be requested with this operation.");
   AllocTracer::send_allocation_requiring_gc_event(_size * HeapWordSize, GCId::peek());
 }
@@ -282,7 +282,7 @@ void VM_CollectForMetadataAllocation::doit() {
 }
 
 VM_CollectForAllocation::VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause)
-    : VM_GC_Operation(gc_count_before, cause), _result(NULL), _word_size(word_size) {
+    : VM_GC_Operation(gc_count_before, cause), _word_size(word_size), _result(NULL) {
   // Only report if operation was really caused by an allocation.
   if (_word_size != 0) {
     AllocTracer::send_allocation_requiring_gc_event(_word_size * HeapWordSize, GCId::peek());

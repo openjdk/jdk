@@ -28,7 +28,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 
-JfrSymbolId::JfrSymbolId() : _symbol_id_counter(0), _sym_table(new SymbolTable(this)), _cstring_table(new CStringTable(this)) {
+JfrSymbolId::JfrSymbolId() : _sym_table(new SymbolTable(this)), _cstring_table(new CStringTable(this)), _symbol_id_counter(0) {
   assert(_sym_table != NULL, "invariant");
   assert(_cstring_table != NULL, "invariant");
   initialize();

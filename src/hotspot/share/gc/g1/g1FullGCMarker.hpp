@@ -45,7 +45,6 @@ typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC> ObjArrayTaskQueueSet;
 class G1CMBitMap;
 
 class G1FullGCMarker : public CHeapObj<mtGC> {
-private:
   uint               _worker_id;
   // Backing mark bitmap
   G1CMBitMap*        _bitmap;

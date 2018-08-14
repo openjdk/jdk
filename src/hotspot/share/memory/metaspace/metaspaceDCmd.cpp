@@ -35,14 +35,14 @@ MetaspaceDCmd::MetaspaceDCmd(outputStream* output, bool heap)
   : DCmdWithParser(output, heap)
   , _basic("basic", "Prints a basic summary (does not need a safepoint).", "BOOLEAN", false, "false")
   , _show_loaders("show-loaders", "Shows usage by class loader.", "BOOLEAN", false, "false")
-  , _show_classes("show-classes", "If show-loaders is set, shows loaded classes for each loader.", "BOOLEAN", false, "false")
-  , _by_chunktype("by-chunktype", "Break down numbers by chunk type.", "BOOLEAN", false, "false")
   , _by_spacetype("by-spacetype", "Break down numbers by loader type.", "BOOLEAN", false, "false")
+  , _by_chunktype("by-chunktype", "Break down numbers by chunk type.", "BOOLEAN", false, "false")
   , _show_vslist("vslist", "Shows details about the underlying virtual space.", "BOOLEAN", false, "false")
   , _show_vsmap("vsmap", "Shows chunk composition of the underlying virtual spaces", "BOOLEAN", false, "false")
   , _scale("scale", "Memory usage in which to scale. Valid values are: 1, KB, MB or GB (fixed scale) "
            "or \"dynamic\" for a dynamically choosen scale.",
-     "STRING", false, "dynamic")
+           "STRING", false, "dynamic")
+  , _show_classes("show-classes", "If show-loaders is set, shows loaded classes for each loader.", "BOOLEAN", false, "false")
 {
   _dcmdparser.add_dcmd_option(&_basic);
   _dcmdparser.add_dcmd_option(&_show_loaders);

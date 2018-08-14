@@ -482,13 +482,6 @@ void VMThread::loop() {
       EventMark em("Executing VM operation: %s", vm_operation()->name());
       assert(_cur_vm_operation != NULL, "we should have found an operation to execute");
 
-      // Give the VM thread an extra quantum.  Jobs tend to be bursty and this
-      // helps the VM thread to finish up the job.
-      // FIXME: When this is enabled and there are many threads, this can degrade
-      // performance significantly.
-      if( VMThreadHintNoPreempt )
-        os::hint_no_preempt();
-
       // If we are at a safepoint we will evaluate all the operations that
       // follow that also require a safepoint
       if (_cur_vm_operation->evaluate_at_safepoint()) {

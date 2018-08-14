@@ -48,8 +48,8 @@ class ConcurrentHashTable<VALUE, CONFIG, F>::BucketsOperation {
   bool   _is_mt;
 
   BucketsOperation(ConcurrentHashTable<VALUE, CONFIG, F>* cht, bool is_mt = false)
-    : _cht(cht), _is_mt(is_mt), _next_to_claim(0), _task_size_log2(DEFAULT_TASK_SIZE_LOG2),
-    _stop_task(0), _size_log2(0) {}
+    : _cht(cht), _next_to_claim(0), _task_size_log2(DEFAULT_TASK_SIZE_LOG2),
+    _stop_task(0), _size_log2(0), _is_mt(is_mt) {}
 
   // Returns true if you succeeded to claim the range start -> (stop-1).
   bool claim(size_t* start, size_t* stop) {

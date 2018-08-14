@@ -64,6 +64,7 @@ public class JavadocExamples {
         HttpClient client = HttpClient.newBuilder()
                 .version(Version.HTTP_1_1)
                 .followRedirects(Redirect.NORMAL)
+                .connectTimeout(Duration.ofSeconds(20))
                 .proxy(ProxySelector.of(new InetSocketAddress("proxy.example.com", 80)))
                 .authenticator(Authenticator.getDefault())
                 .build();
@@ -74,7 +75,7 @@ public class JavadocExamples {
         //Asynchronous Example
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://foo.com/"))
-                .timeout(Duration.ofMinutes(1))
+                .timeout(Duration.ofMinutes(2))
                 .header("Content-Type", "application/json")
                 .POST(BodyPublishers.ofFile(Paths.get("file.json")))
                 .build();

@@ -362,6 +362,12 @@ public class TestMeetIncompatibleInterfaceArrays extends ClassLoader {
                     System.out.println((j + 1) + ". invokation of " + baseClassName + i + "ASM.test() [::" +
                                        r.getName() + "() should be '" + tier[pass][j] + "' compiled]");
 
+                    // Skip Profiling compilation (C1) when Tiered is disabled.
+                    boolean profile = (level[pass][j] == CompilerWhiteBoxTest.COMP_LEVEL_FULL_PROFILE);
+                    if (profile && CompilerWhiteBoxTest.skipOnTieredCompilation(false)) {
+                        continue;
+                    }
+
                     WB.enqueueMethodForCompilation(r, level[pass][j]);
 
                     try {

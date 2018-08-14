@@ -350,9 +350,9 @@ public:
   }
 
   LiveRangeMap(Arena* arena, uint unique)
-  : _names(arena, unique, unique, 0)
+  :  _max_lrg_id(0)
   , _uf_map(arena, unique, unique, 0)
-  , _max_lrg_id(0) {}
+  , _names(arena, unique, unique, 0) {}
 
   uint find_id( const Node *n ) {
     uint retval = live_range_id(n);

@@ -601,13 +601,13 @@ public:
 inline PointsToNode::PointsToNode(ConnectionGraph *CG, Node* n, EscapeState es, NodeType type):
   _edges(CG->_compile->comp_arena(), 2, 0, NULL),
   _uses (CG->_compile->comp_arena(), 2, 0, NULL),
-  _node(n),
-  _idx(n->_idx),
-  _pidx(CG->next_pidx()),
   _type((u1)type),
+  _flags(ScalarReplaceable),
   _escape((u1)es),
   _fields_escape((u1)es),
-  _flags(ScalarReplaceable) {
+  _node(n),
+  _idx(n->_idx),
+  _pidx(CG->next_pidx()) {
   assert(n != NULL && es != UnknownEscape, "sanity");
 }
 

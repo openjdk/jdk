@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,15 +68,8 @@ public class GSSUtil {
     public static final Oid NT_GSS_KRB5_PRINCIPAL =
                 GSSUtil.createOid("1.2.840.113554.1.2.2.1");
 
-    private static final String DEFAULT_HANDLER =
-            "auth.login.defaultCallbackHandler";
-
-    static final boolean DEBUG;
-    static {
-        DEBUG = (AccessController.doPrivileged
-                        (new GetBooleanAction("sun.security.jgss.debug"))).
-                                booleanValue();
-    }
+    static final boolean DEBUG =
+            GetBooleanAction.privilegedGetProperty("sun.security.jgss.debug");
 
     static void debug(String message) {
         if (DEBUG) {
@@ -240,8 +233,8 @@ public class GSSUtil {
             cb = new sun.net.www.protocol.http.spnego.NegotiateCallbackHandler(
                     ((HttpCaller)caller).info());
         } else {
-            String defaultHandler =
-                    java.security.Security.getProperty(DEFAULT_HANDLER);
+            String defaultHandler = java.security.Security
+                    .getProperty("auth.login.defaultCallbackHandler");
             // get the default callback handler
             if ((defaultHandler != null) && (defaultHandler.length() != 0)) {
                 cb = null;
@@ -270,8 +263,8 @@ public class GSSUtil {
      */
     public static boolean useSubjectCredsOnly(GSSCaller caller) {
 
-        String propValue = GetPropertyAction.privilegedGetProperty(
-                "javax.security.auth.useSubjectCredsOnly");
+        String propValue = GetPropertyAction
+                .privilegedGetProperty("javax.security.auth.useSubjectCredsOnly");
 
         // Invalid values should be ignored and the default assumed.
         if (caller instanceof HttpCaller) {
@@ -295,9 +288,8 @@ public class GSSUtil {
          * Don't use GetBooleanAction because the default value in the JRE
          * (when this is unset) has to treated as true.
          */
-        String propValue = AccessController.doPrivileged(
-                new GetPropertyAction("sun.security.spnego.msinterop",
-                "true"));
+        String propValue = GetPropertyAction
+                .privilegedGetProperty("sun.security.spnego.msinterop", "true");
         /*
          * This property has to be explicitly set to "false". Invalid
          * values should be ignored and the default "true" assumed.

@@ -32,10 +32,11 @@ G1MemoryPoolSuper::G1MemoryPoolSuper(G1CollectedHeap* g1h,
                                      size_t init_size,
                                      size_t max_size,
                                      bool support_usage_threshold) :
-  _g1mm(g1h->g1mm()), CollectedMemoryPool(name,
-                                          init_size,
-                                          max_size,
-                                          support_usage_threshold) {
+  CollectedMemoryPool(name,
+                      init_size,
+                      max_size,
+                      support_usage_threshold),
+  _g1mm(g1h->g1mm()) {
   assert(UseG1GC, "sanity");
 }
 

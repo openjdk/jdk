@@ -27,6 +27,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/weakHandle.inline.hpp"
@@ -90,6 +91,15 @@ void ClassLoaderDataGraph::inc_array_classes(size_t count) {
 void ClassLoaderDataGraph::dec_array_classes(size_t count) {
   assert(count <= _num_array_classes, "Sanity");
   Atomic::sub(count, &_num_array_classes);
+}
+
+bool ClassLoaderDataGraph::should_clean_metaspaces_and_reset() {
+  bool do_cleaning = _safepoint_cleanup_needed && _should_clean_deallocate_lists;
+#if INCLUDE_JVMTI
+  do_cleaning = do_cleaning || InstanceKlass::has_previous_versions();
+#endif
+  _safepoint_cleanup_needed = false;  // reset
+  return do_cleaning;
 }
 
 #endif // SHARE_VM_CLASSFILE_CLASSLOADERDATA_INLINE_HPP

@@ -230,16 +230,19 @@ HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetTable* bot,
                        MemRegion mr) :
     G1ContiguousSpace(bot),
+    _rem_set(NULL),
     _hrm_index(hrm_index),
+    _type(),
     _humongous_start_region(NULL),
     _evacuation_failed(false),
-    _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
     _next(NULL), _prev(NULL),
 #ifdef ASSERT
     _containing_set(NULL),
-#endif // ASSERT
-     _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
-    _rem_set(NULL), _recorded_rs_length(0), _predicted_elapsed_time_ms(0)
+#endif
+    _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
+    _young_index_in_cset(-1), _surv_rate_group(NULL), _age_index(-1),
+    _prev_top_at_mark_start(NULL), _next_top_at_mark_start(NULL),
+    _recorded_rs_length(0), _predicted_elapsed_time_ms(0)
 {
   _rem_set = new HeapRegionRemSet(bot, this);
 

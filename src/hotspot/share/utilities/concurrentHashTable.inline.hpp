@@ -999,8 +999,8 @@ inline size_t ConcurrentHashTable<VALUE, CONFIG, F>::
 template <typename VALUE, typename CONFIG, MEMFLAGS F>
 inline ConcurrentHashTable<VALUE, CONFIG, F>::
   ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint)
-    : _new_table(NULL), _log2_start_size(log2size),
-       _log2_size_limit(log2size_limit), _grow_hint(grow_hint),
+    : _new_table(NULL), _log2_size_limit(log2size_limit),
+       _log2_start_size(log2size), _grow_hint(grow_hint),
        _size_limit_reached(false), _resize_lock_owner(NULL),
        _invisible_epoch(0)
 {

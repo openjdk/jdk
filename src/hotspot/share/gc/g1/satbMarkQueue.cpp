@@ -23,14 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "jvm.h"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadSMR.hpp"
@@ -41,7 +40,8 @@ SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent) :
   // them with their active field set to false. If a thread is
   // created during a cycle and its SATB queue needs to be activated
   // before the thread starts running, we'll need to set its active
-  // field to true. This is done in G1SBarrierSet::on_thread_attach().
+  // field to true. This must be done in the collector-specific
+  // BarrierSet::on_thread_attach() implementation.
   PtrQueue(qset, permanent, false /* active */)
 { }
 
@@ -60,8 +60,6 @@ bool SATBMarkQueue::should_enqueue_buffer() {
   assert(_lock == NULL || _lock->owned_by_self(),
          "we should have taken the lock before calling this");
 
-  // If G1SATBBufferEnqueueingThresholdPercent == 0 we could skip filtering.
-
   // This method should only be called if there is a non-NULL buffer
   // that is full.
   assert(index() == 0, "pre-condition");
@@ -69,10 +67,15 @@ bool SATBMarkQueue::should_enqueue_buffer() {
 
   filter();
 
-  size_t cap = capacity();
-  size_t percent_used = ((cap - index()) * 100) / cap;
-  bool should_enqueue = percent_used > G1SATBBufferEnqueueingThresholdPercent;
-  return should_enqueue;
+  SATBMarkQueueSet* satb_qset = static_cast<SATBMarkQueueSet*>(qset());
+  size_t threshold = satb_qset->buffer_enqueue_threshold();
+  // Ensure we'll enqueue completely full buffers.
+  assert(threshold > 0, "enqueue threshold = 0");
+  // Ensure we won't enqueue empty buffers.
+  assert(threshold <= capacity(),
+         "enqueue threshold " SIZE_FORMAT " exceeds capacity " SIZE_FORMAT,
+         threshold, capacity());
+  return index() < threshold;
 }
 
 void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
@@ -105,20 +108,20 @@ void SATBMarkQueue::print(const char* name) {
 SATBMarkQueueSet::SATBMarkQueueSet() :
   PtrQueueSet(),
   _shared_satb_queue(this, true /* permanent */),
-  _filter(NULL)
+  _buffer_enqueue_threshold(0)
 {}
 
-void SATBMarkQueueSet::initialize(SATBMarkQueueFilter* filter,
-                                  Monitor* cbl_mon, Mutex* fl_lock,
+void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
                                   int process_completed_threshold,
+                                  uint buffer_enqueue_threshold_percentage,
                                   Mutex* lock) {
   PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold, -1);
   _shared_satb_queue.set_lock(lock);
-  _filter = filter;
-}
-
-void SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
-  G1ThreadLocalData::satb_mark_queue(t).handle_zero_index();
+  assert(buffer_size() != 0, "buffer size not initialized");
+  // Minimum threshold of 1 ensures enqueuing of completely full buffers.
+  size_t size = buffer_size();
+  size_t enqueue_qty = (size * buffer_enqueue_threshold_percentage) / 100;
+  _buffer_enqueue_threshold = MAX2(size - enqueue_qty, (size_t)1);
 }
 
 #ifdef ASSERT
@@ -127,7 +130,7 @@ void SATBMarkQueueSet::dump_active_states(bool expected_active) {
   log_error(gc, verify)("Actual SATB active states:");
   log_error(gc, verify)("  Queue set: %s", is_active() ? "ACTIVE" : "INACTIVE");
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    log_error(gc, verify)("  Thread \"%s\" queue: %s", t->name(), G1ThreadLocalData::satb_mark_queue(t).is_active() ? "ACTIVE" : "INACTIVE");
+    log_error(gc, verify)("  Thread \"%s\" queue: %s", t->name(), satb_queue_for_thread(t).is_active() ? "ACTIVE" : "INACTIVE");
   }
   log_error(gc, verify)("  Shared queue: %s", shared_satb_queue()->is_active() ? "ACTIVE" : "INACTIVE");
 }
@@ -141,7 +144,7 @@ void SATBMarkQueueSet::verify_active_states(bool expected_active) {
 
   // Verify thread queue states
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    if (G1ThreadLocalData::satb_mark_queue(t).is_active() != expected_active) {
+    if (satb_queue_for_thread(t).is_active() != expected_active) {
       dump_active_states(expected_active);
       guarantee(false, "Thread SATB queue has an unexpected active state");
     }
@@ -162,14 +165,14 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
 #endif // ASSERT
   _all_active = active;
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).set_active(active);
+    satb_queue_for_thread(t).set_active(active);
   }
   shared_satb_queue()->set_active(active);
 }
 
 void SATBMarkQueueSet::filter_thread_buffers() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).filter();
+    satb_queue_for_thread(t).filter();
   }
   shared_satb_queue()->filter();
 }
@@ -215,15 +218,15 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   int i = 0;
   while (nd != NULL) {
     void** buf = BufferNode::make_buffer_from_node(nd);
-    jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
+    os::snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
     print_satb_buffer(buffer, buf, nd->index(), buffer_size());
     nd = nd->next();
     i += 1;
   }
 
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
-    G1ThreadLocalData::satb_mark_queue(t).print(buffer);
+    os::snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Thread: %s", t->name());
+    satb_queue_for_thread(t).print(buffer);
   }
 
   shared_satb_queue()->print("Shared");
@@ -254,7 +257,7 @@ void SATBMarkQueueSet::abandon_partial_marking() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
   // So we can safely manipulate these queues.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    G1ThreadLocalData::satb_mark_queue(t).reset();
+    satb_queue_for_thread(t).reset();
   }
   shared_satb_queue()->reset();
 }

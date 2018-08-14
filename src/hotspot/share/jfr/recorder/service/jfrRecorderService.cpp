@@ -239,8 +239,8 @@ JfrRecorderService::JfrRecorderService() :
   _checkpoint_manager(JfrCheckpointManager::instance()),
   _chunkwriter(JfrRepository::chunkwriter()),
   _repository(JfrRepository::instance()),
-  _storage(JfrStorage::instance()),
   _stack_trace_repository(JfrStackTraceRepository::instance()),
+  _storage(JfrStorage::instance()),
   _string_pool(JfrStringPool::instance()) {}
 
 void JfrRecorderService::start() {

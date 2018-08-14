@@ -688,8 +688,8 @@ class FindMethodsByErasedSig : public HierarchyVisitor<FindMethodsByErasedSig> {
 
  public:
   FindMethodsByErasedSig(Symbol* name, Symbol* signature, bool is_interf) :
-      _method_name(name), _method_signature(signature), _cur_class_is_interface(is_interf),
-      _family(NULL) {}
+      _method_name(name), _method_signature(signature), _family(NULL),
+      _cur_class_is_interface(is_interf) {}
 
   void get_discovered_family(MethodFamily** family) {
       if (_family != NULL) {

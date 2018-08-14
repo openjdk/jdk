@@ -237,8 +237,9 @@ public:
     return hr;
   }
 
-  FreeRegionListIterator(FreeRegionList* list) : _curr(NULL), _list(list) {
-    _curr = list->_head;
+  FreeRegionListIterator(FreeRegionList* list)
+  : _list(list),
+    _curr(list->_head) {
   }
 };
 

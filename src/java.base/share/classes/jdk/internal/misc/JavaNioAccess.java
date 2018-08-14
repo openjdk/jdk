@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,18 +39,4 @@ public interface JavaNioAccess {
         long getMemoryUsed();
     }
     BufferPool getDirectBufferPool();
-
-    /**
-     * Constructs a direct ByteBuffer referring to the block of memory starting
-     * at the given memory address and extending {@code cap} bytes.
-     * The {@code ob} parameter is an arbitrary object that is attached
-     * to the resulting buffer.
-     */
-    ByteBuffer newDirectByteBuffer(long addr, int cap, Object ob);
-
-    /**
-     * Truncates a buffer by changing its capacity to 0.
-     */
-    void truncate(Buffer buf);
-
 }

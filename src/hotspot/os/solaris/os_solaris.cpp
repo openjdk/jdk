@@ -78,7 +78,6 @@
 # include <link.h>
 # include <poll.h>
 # include <pthread.h>
-# include <schedctl.h>
 # include <setjmp.h>
 # include <signal.h>
 # include <stdio.h>
@@ -742,7 +741,6 @@ extern "C" void* thread_native_entry(void* thread_addr) {
   OSThread* osthr = thread->osthread();
 
   osthr->set_lwp_id(_lwp_self());  // Store lwp in case we are bound
-  thread->_schedctl = (void *) schedctl_init();
 
   log_info(os, thread)("Thread is alive (tid: " UINTX_FORMAT ").",
     os::current_thread_id());
@@ -812,7 +810,6 @@ static OSThread* create_os_thread(Thread* thread, thread_t thread_id) {
   // Store info on the Solaris thread into the OSThread
   osthread->set_thread_id(thread_id);
   osthread->set_lwp_id(_lwp_self());
-  thread->_schedctl = (void *) schedctl_init();
 
   if (UseNUMA) {
     int lgrp_id = os::numa_get_group_id();
@@ -3405,13 +3402,6 @@ OSReturn os::get_native_priority(const Thread* const thread,
   }
   *priority_ptr = p;
   return OS_OK;
-}
-
-
-// Hint to the underlying OS that a task switch would not be good.
-// Void return because it's a hint and can fail.
-void os::hint_no_preempt() {
-  schedctl_start(schedctl_init());
 }
 
 ////////////////////////////////////////////////////////////////////////////////

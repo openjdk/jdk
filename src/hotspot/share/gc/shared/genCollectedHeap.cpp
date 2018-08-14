@@ -73,7 +73,6 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy,
                                    Generation::Name old,
                                    const char* policy_counters_name) :
   CollectedHeap(),
-  _rem_set(NULL),
   _young_gen_spec(new GenerationSpec(young,
                                      policy->initial_young_size(),
                                      policy->max_young_size(),
@@ -82,11 +81,12 @@ GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy,
                                    policy->initial_old_size(),
                                    policy->max_old_size(),
                                    policy->gen_alignment())),
+  _rem_set(NULL),
   _gen_policy(policy),
   _soft_ref_gen_policy(),
   _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
-  _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),
-  _full_collections_completed(0) {
+  _full_collections_completed(0),
+  _process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)) {
 }
 
 jint GenCollectedHeap::initialize() {

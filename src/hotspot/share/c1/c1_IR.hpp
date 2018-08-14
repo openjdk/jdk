@@ -215,8 +215,8 @@ class IRScopeDebugInfo: public CompilationResourceObj {
                    GrowableArray<MonitorValue*>* monitors,
                    IRScopeDebugInfo*             caller):
       _scope(scope)
-    , _locals(locals)
     , _bci(bci)
+    , _locals(locals)
     , _expressions(expressions)
     , _monitors(monitors)
     , _caller(caller) {}

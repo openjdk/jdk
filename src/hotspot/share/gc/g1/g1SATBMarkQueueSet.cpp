@@ -24,14 +24,35 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1SATBMarkQueueFilter.hpp"
+#include "gc/g1/g1SATBMarkQueueSet.hpp"
+#include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/satbMarkQueue.hpp"
 #include "oops/oop.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-G1SATBMarkQueueFilter::G1SATBMarkQueueFilter(G1CollectedHeap* g1h) : _g1h(g1h) {}
+G1SATBMarkQueueSet::G1SATBMarkQueueSet() : _g1h(NULL) {}
+
+void G1SATBMarkQueueSet::initialize(G1CollectedHeap* g1h,
+                                    Monitor* cbl_mon, Mutex* fl_lock,
+                                    int process_completed_threshold,
+                                    uint buffer_enqueue_threshold_percentage,
+                                    Mutex* lock) {
+  SATBMarkQueueSet::initialize(cbl_mon, fl_lock,
+                               process_completed_threshold,
+                               buffer_enqueue_threshold_percentage,
+                               lock);
+  _g1h = g1h;
+}
+
+void G1SATBMarkQueueSet::handle_zero_index_for_thread(JavaThread* t) {
+  G1ThreadLocalData::satb_mark_queue(t).handle_zero_index();
+}
+
+SATBMarkQueue& G1SATBMarkQueueSet::satb_queue_for_thread(JavaThread* const t) const{
+  return G1ThreadLocalData::satb_mark_queue(t);
+}
 
 // Return true if a SATB buffer entry refers to an object that
 // requires marking.
@@ -102,6 +123,7 @@ public:
   }
 };
 
-void G1SATBMarkQueueFilter::filter(SATBMarkQueue* queue) {
-  queue->apply_filter(G1SATBMarkQueueFilterFn(_g1h));
+void G1SATBMarkQueueSet::filter(SATBMarkQueue* queue) {
+  assert(_g1h != NULL, "SATB queue set not initialized");
+  apply_filter(G1SATBMarkQueueFilterFn(_g1h), queue);
 }

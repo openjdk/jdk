@@ -306,7 +306,7 @@ public interface ModuleFinder {
 
                 @Override
                 public Set<ModuleReference> findAll() {
-                    return Collections.emptySet();
+                    return Set.of();
                 }
             };
         }

@@ -46,7 +46,7 @@ private:
 
 public:
   UpdateRSetDeferred(DirtyCardQueue* dcq) :
-    _g1h(G1CollectedHeap::heap()), _ct(_g1h->card_table()), _dcq(dcq) {}
+    _g1h(G1CollectedHeap::heap()), _dcq(dcq), _ct(_g1h->card_table()) {}
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(      oop* p) { do_oop_work(p); }
@@ -203,10 +203,10 @@ public:
   RemoveSelfForwardPtrHRClosure(uint worker_id,
                                 HeapRegionClaimer* hrclaimer) :
     _g1h(G1CollectedHeap::heap()),
-    _dcq(&_g1h->dirty_card_queue_set()),
-    _update_rset_cl(&_dcq),
     _worker_id(worker_id),
-    _hrclaimer(hrclaimer) {
+    _hrclaimer(hrclaimer),
+    _dcq(&_g1h->dirty_card_queue_set()),
+    _update_rset_cl(&_dcq){
   }
 
   size_t remove_self_forward_ptr_by_walking_hr(HeapRegion* hr,

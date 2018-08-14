@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,6 @@ public final class KdcComm {
 
     private static final boolean DEBUG = Krb5.DEBUG;
 
-    private static final String BAD_POLICY_KEY = "krb5.kdc.bad.policy";
-
     /**
      * What to do when a KDC is unavailable, specified in the
      * java.security file with key krb5.kdc.bad.policy.
@@ -100,7 +98,7 @@ public final class KdcComm {
         String value = AccessController.doPrivileged(
         new PrivilegedAction<String>() {
             public String run() {
-                return Security.getProperty(BAD_POLICY_KEY);
+                return Security.getProperty("krb5.kdc.bad.policy");
             }
         });
         if (value != null) {
@@ -120,7 +118,7 @@ public final class KdcComm {
                         // Ignored. Please note that tryLess is recognized and
                         // used, parameters using default values
                         if (DEBUG) {
-                            System.out.println("Invalid " + BAD_POLICY_KEY +
+                            System.out.println("Invalid krb5.kdc.bad.policy" +
                                     " parameter for tryLess: " +
                                     value + ", use default");
                         }

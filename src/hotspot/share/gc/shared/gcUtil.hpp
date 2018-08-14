@@ -73,8 +73,8 @@ class AdaptiveWeightedAverage : public CHeapObj<mtGC> {
  public:
   // Input weight must be between 0 and 100
   AdaptiveWeightedAverage(unsigned weight, float avg = 0.0) :
-    _average(avg), _sample_count(0), _weight(weight), _last_sample(0.0),
-    _is_old(false) {
+    _average(avg), _sample_count(0), _weight(weight),
+    _is_old(false), _last_sample(0.0) {
   }
 
   void clear() {

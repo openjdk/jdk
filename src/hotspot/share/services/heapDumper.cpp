@@ -989,7 +989,7 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
   writer->write_u4(STACK_TRACE_ID);
 
   // super class ID
-  Klass* java_super = ik->java_super();
+  InstanceKlass* java_super = ik->java_super();
   if (java_super == NULL) {
     writer->write_objectID(oop(NULL));
   } else {
@@ -1059,7 +1059,7 @@ void DumperSupport::dump_basic_type_array_class(DumpWriter* writer, Klass* k) {
     writer->write_u4(STACK_TRACE_ID);
 
     // super class of array classes is java.lang.Object
-    Klass* java_super = klass->java_super();
+    InstanceKlass* java_super = klass->java_super();
     assert(java_super != NULL, "checking");
     writer->write_classID(java_super);
 

@@ -733,7 +733,7 @@ protected:
   const int _base_off;
 
   TypeEntries(int base_off)
-    : _base_off(base_off), _pd(NULL) {}
+    : _pd(NULL), _base_off(base_off) {}
 
   void set_intptr_at(int index, intptr_t value) {
     _pd->set_intptr_at(index, value);

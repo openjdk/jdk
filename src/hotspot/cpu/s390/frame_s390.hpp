@@ -444,11 +444,11 @@
 
   // NOTE: Stack pointer is now held in the base class, so remove it from here.
 
-  // Frame pointer for this frame.
-  intptr_t* _fp;
-
   // Needed by deoptimization.
   intptr_t* _unextended_sp;
+
+  // Frame pointer for this frame.
+  intptr_t* _fp;
 
  public:
 

@@ -79,14 +79,14 @@ inline void GCTraceTimeImpl::time_stamp(Ticks& ticks) {
 }
 
 inline GCTraceTimeImpl::GCTraceTimeImpl(LogTargetHandle out_start, LogTargetHandle out_stop, const char* title, GCTimer* timer, GCCause::Cause gc_cause, bool log_heap_usage) :
-  _enabled(out_stop.is_enabled()),
   _out_start(out_start),
   _out_stop(out_stop),
+  _enabled(out_stop.is_enabled()),
   _start_ticks(),
-  _heap_usage_before(SIZE_MAX),
   _title(title),
   _gc_cause(gc_cause),
-  _timer(timer) {
+  _timer(timer),
+  _heap_usage_before(SIZE_MAX) {
 
   time_stamp(_start_ticks);
   if (_enabled) {

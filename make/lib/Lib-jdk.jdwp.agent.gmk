@@ -30,8 +30,7 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
     NAME := dt_socket, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP \
-        $(LIBDT_SOCKET_CPPFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(LIBDT_SOCKET_CPPFLAGS), \
     EXTRA_HEADER_DIRS := \
         include \
         libjdwp/export, \

@@ -133,7 +133,6 @@ public class TestCommon extends CDSTestUtils {
         }
 
         cmd.add("-Xshare:dump");
-        cmd.add("-Xlog:cds,cds+hashtables");
         cmd.add("-XX:ExtraSharedClassListFile=" + classList.getPath());
 
         if (opts.archiveName == null)

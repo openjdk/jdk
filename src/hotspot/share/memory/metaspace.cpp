@@ -1364,8 +1364,8 @@ bool Metaspace::contains_non_shared(const void* ptr) {
 // ClassLoaderMetaspace
 
 ClassLoaderMetaspace::ClassLoaderMetaspace(Mutex* lock, Metaspace::MetaspaceType type)
-  : _lock(lock)
-  , _space_type(type)
+  : _space_type(type)
+  , _lock(lock)
   , _vsm(NULL)
   , _class_vsm(NULL)
 {

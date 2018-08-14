@@ -237,6 +237,9 @@ void VM_RedefineClasses::doit() {
 #ifdef PRODUCT
   }
 #endif
+
+  // Clean up any metadata now unreferenced while MetadataOnStackMark is set.
+  ClassLoaderDataGraph::clean_deallocate_lists(false);
 }
 
 void VM_RedefineClasses::doit_epilogue() {
@@ -795,8 +798,8 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
   // technically a bit more difficult, and, more importantly, I am not sure at present that the
   // order of interfaces does not matter on the implementation level, i.e. that the VM does not
   // rely on it somewhere.
-  Array<Klass*>* k_interfaces = the_class->local_interfaces();
-  Array<Klass*>* k_new_interfaces = scratch_class->local_interfaces();
+  Array<InstanceKlass*>* k_interfaces = the_class->local_interfaces();
+  Array<InstanceKlass*>* k_new_interfaces = scratch_class->local_interfaces();
   int n_intfs = k_interfaces->length();
   if (n_intfs != k_new_interfaces->length()) {
     return JVMTI_ERROR_UNSUPPORTED_REDEFINITION_HIERARCHY_CHANGED;

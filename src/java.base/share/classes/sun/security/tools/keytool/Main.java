@@ -34,6 +34,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.Key;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.PrivateKey;
 import java.security.Signature;
@@ -159,7 +160,6 @@ public final class Main {
     private boolean srcprotectedPath = false;
     private boolean cacerts = false;
     private boolean nowarn = false;
-    private CertificateFactory cf = null;
     private KeyStore caks = null; // "cacerts" keystore
     private char[] srcstorePass = null;
     private String srcstoretype = null;
@@ -240,7 +240,9 @@ public final class Main {
             PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
             PROVIDERPATH, V, PROTECTED),
         PRINTCERT("Prints.the.content.of.a.certificate",
-            RFC, FILEIN, SSLSERVER, JARFILE, V),
+            RFC, FILEIN, SSLSERVER, JARFILE,
+            PROVIDERNAME, ADDPROVIDER, PROVIDERCLASS,
+            PROVIDERPATH, V),
         PRINTCERTREQ("Prints.the.content.of.a.certificate.request",
             FILEIN, V),
         PRINTCRL("Prints.the.content.of.a.CRL.file",
@@ -1065,12 +1067,6 @@ public final class Main {
                 System.err.println(form.format(source));
                 destKeyPass = storePass;
             }
-        }
-
-        // Create a certificate factory
-        if (command == PRINTCERT || command == IMPORTCERT
-                || command == IDENTITYDB || command == PRINTCRL) {
-            cf = CertificateFactory.getInstance("X509");
         }
 
         // -trustcacerts can only be specified on -importcert.
@@ -2596,7 +2592,7 @@ public final class Main {
     {
         Collection<? extends Certificate> c = null;
         try {
-            c = cf.generateCertificates(in);
+            c = generateCertificates(in);
         } catch (CertificateException ce) {
             throw new Exception(rb.getString("Failed.to.parse.input"), ce);
         }
@@ -2625,6 +2621,44 @@ public final class Main {
                 out.println();
             }
             checkWeak(oneInMany(rb.getString("the.certificate"), i, certs.length), x509Cert);
+        }
+    }
+
+    private Collection<? extends Certificate> generateCertificates(InputStream in)
+            throws CertificateException, IOException {
+        byte[] data = in.readAllBytes();
+        try {
+            return CertificateFactory.getInstance("X.509")
+                    .generateCertificates(new ByteArrayInputStream(data));
+        } catch (CertificateException e) {
+            if (providerName != null) {
+                try {
+                    return CertificateFactory.getInstance("X.509", providerName)
+                            .generateCertificates(new ByteArrayInputStream(data));
+                } catch (Exception e2) {
+                    e.addSuppressed(e2);
+                }
+            }
+            throw e;
+        }
+    }
+
+    private Certificate generateCertificate(InputStream in)
+            throws CertificateException, IOException {
+        byte[] data = in.readAllBytes();
+        try {
+            return CertificateFactory.getInstance("X.509")
+                    .generateCertificate(new ByteArrayInputStream(data));
+        } catch (CertificateException e) {
+            if (providerName != null) {
+                try {
+                    return CertificateFactory.getInstance("X.509", providerName)
+                            .generateCertificate(new ByteArrayInputStream(data));
+                } catch (Exception e2) {
+                    e.addSuppressed(e2);
+                }
+            }
+            throw e;
         }
     }
 
@@ -2922,7 +2956,7 @@ public final class Main {
         }
 
         // Read the certificates in the reply
-        Collection<? extends Certificate> c = cf.generateCertificates(in);
+        Collection<? extends Certificate> c = generateCertificates(in);
         if (c.isEmpty()) {
             throw new Exception(rb.getString("Reply.has.no.certificates"));
         }
@@ -2969,7 +3003,7 @@ public final class Main {
         // Read the certificate
         X509Certificate cert = null;
         try {
-            cert = (X509Certificate)cf.generateCertificate(in);
+            cert = (X509Certificate)generateCertificate(in);
         } catch (ClassCastException | CertificateException ce) {
             throw new Exception(rb.getString("Input.not.an.X.509.certificate"));
         }

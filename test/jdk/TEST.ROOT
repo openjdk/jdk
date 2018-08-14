@@ -39,6 +39,8 @@ requires.properties= \
     java.runtime.name \
     vm.gc.Z \
     vm.graal.enabled \
+    vm.compiler1.enabled \
+    vm.compiler2.enabled \
     vm.cds \
     vm.hasSA \
     vm.hasSAandCanAttach \

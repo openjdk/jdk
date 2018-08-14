@@ -202,21 +202,21 @@ protected:
 
   bool is_klass() const volatile { return true; }
 
-  // super
+  // super() cannot be InstanceKlass* -- Java arrays are covariant, and _super is used
+  // to implement that. NB: the _super of "[Ljava/lang/Integer;" is "[Ljava/lang/Number;"
+  // If this is not what your code expects, you're probably looking for Klass::java_super().
   Klass* super() const               { return _super; }
   void set_super(Klass* k)           { _super = k; }
 
   // initializes _super link, _primary_supers & _secondary_supers arrays
-  void initialize_supers(Klass* k, Array<Klass*>* transitive_interfaces, TRAPS);
-  void initialize_supers_impl1(Klass* k);
-  void initialize_supers_impl2(Klass* k);
+  void initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS);
 
   // klass-specific helper for initializing _secondary_supers
   virtual GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
-                                                          Array<Klass*>* transitive_interfaces);
+                                                          Array<InstanceKlass*>* transitive_interfaces);
 
   // java_super is the Java-level super type as specified by Class.getSuperClass.
-  virtual Klass* java_super() const  { return NULL; }
+  virtual InstanceKlass* java_super() const  { return NULL; }
 
   juint    super_check_offset() const  { return _super_check_offset; }
   void set_super_check_offset(juint o) { _super_check_offset = o; }
@@ -709,7 +709,6 @@ protected:
 
 #ifndef PRODUCT
   bool verify_vtable_index(int index);
-  bool verify_itable_index(int index);
 #endif
 
   virtual void oop_verify_on(oop obj, outputStream* st);

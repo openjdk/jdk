@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,6 @@ import sun.security.krb5.internal.rcache.AuthTimeWithHash;
 import sun.security.krb5.internal.rcache.MemoryCache;
 import sun.security.krb5.internal.rcache.DflCache;
 
-import java.security.AccessController;
-
 /**
  * Models the replay cache of an acceptor as described in
  * RFC 4120 3.2.3.
@@ -56,8 +54,8 @@ public abstract class ReplayCache {
         }
     }
     public static ReplayCache getInstance() {
-        String type = AccessController.doPrivileged(
-                new GetPropertyAction("sun.security.krb5.rcache"));
+        String type = GetPropertyAction
+                .privilegedGetProperty("sun.security.krb5.rcache");
         return getInstance(type);
     }
 

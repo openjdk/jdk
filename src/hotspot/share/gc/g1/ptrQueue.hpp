@@ -257,7 +257,6 @@ public:
 // set, and return completed buffers to the set.
 // All these variables are are protected by the TLOQ_CBL_mon. XXX ???
 class PtrQueueSet {
-private:
   // The size of all buffers in the set.
   size_t _buffer_size;
 

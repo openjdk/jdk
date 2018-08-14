@@ -74,6 +74,7 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _ir(ir)
  , _gen(gen)
  , _frame_map(frame_map)
+ , _cached_blocks(*ir->linear_scan_order())
  , _num_virtual_regs(gen->max_virtual_register_number())
  , _has_fpu_registers(false)
  , _num_calls(-1)
@@ -87,9 +88,8 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _block_of_op(0) // initialized later with correct length
  , _has_info(0)
  , _has_call(0)
- , _scope_value_cache(0) // initialized later with correct length
  , _interval_in_loop(0)  // initialized later with correct length
- , _cached_blocks(*ir->linear_scan_order())
+ , _scope_value_cache(0) // initialized later with correct length
 #ifdef X86
  , _fpu_stack_allocator(NULL)
 #endif
@@ -3717,13 +3717,13 @@ void RegisterVerifier::process_operations(LIR_List* ops, IntervalList* input_sta
 
 MoveResolver::MoveResolver(LinearScan* allocator) :
   _allocator(allocator),
-  _multiple_reads_allowed(false),
+  _insert_list(NULL),
+  _insert_idx(-1),
+  _insertion_buffer(),
   _mapping_from(8),
   _mapping_from_opr(8),
   _mapping_to(8),
-  _insert_list(NULL),
-  _insert_idx(-1),
-  _insertion_buffer()
+  _multiple_reads_allowed(false)
 {
   for (int i = 0; i < LinearScan::nof_regs; i++) {
     _register_blocked[i] = 0;
@@ -4127,9 +4127,9 @@ Interval::Interval(int reg_num) :
   _split_children(0),
   _canonical_spill_slot(-1),
   _insert_move_when_activated(false),
-  _register_hint(NULL),
   _spill_state(noDefinitionFound),
-  _spill_definition_pos(-1)
+  _spill_definition_pos(-1),
+  _register_hint(NULL)
 {
   _split_parent = this;
   _current_split_child = this;

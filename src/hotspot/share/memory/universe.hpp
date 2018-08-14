@@ -161,10 +161,11 @@ class Universe: AllStatic {
   // preallocated cause message for delayed StackOverflowError
   static oop          _delayed_stack_overflow_error_message;
 
-  static Array<int>*       _the_empty_int_array;    // Canonicalized int array
-  static Array<u2>*        _the_empty_short_array;  // Canonicalized short array
-  static Array<Klass*>*  _the_empty_klass_array;  // Canonicalized klass obj array
-  static Array<Method*>* _the_empty_method_array; // Canonicalized method obj array
+  static Array<int>*            _the_empty_int_array;            // Canonicalized int array
+  static Array<u2>*             _the_empty_short_array;          // Canonicalized short array
+  static Array<Klass*>*         _the_empty_klass_array;          // Canonicalized klass array
+  static Array<InstanceKlass*>* _the_empty_instance_klass_array; // Canonicalized instance klass array
+  static Array<Method*>*        _the_empty_method_array;         // Canonicalized method array
 
   static Array<Klass*>*  _the_array_interfaces_array;
 
@@ -357,10 +358,11 @@ class Universe: AllStatic {
   static bool         has_reference_pending_list();
   static oop          swap_reference_pending_list(oop list);
 
-  static Array<int>*       the_empty_int_array()    { return _the_empty_int_array; }
-  static Array<u2>*        the_empty_short_array()  { return _the_empty_short_array; }
-  static Array<Method*>* the_empty_method_array() { return _the_empty_method_array; }
-  static Array<Klass*>*  the_empty_klass_array()  { return _the_empty_klass_array; }
+  static Array<int>*             the_empty_int_array()    { return _the_empty_int_array; }
+  static Array<u2>*              the_empty_short_array()  { return _the_empty_short_array; }
+  static Array<Method*>*         the_empty_method_array() { return _the_empty_method_array; }
+  static Array<Klass*>*          the_empty_klass_array()  { return _the_empty_klass_array; }
+  static Array<InstanceKlass*>*  the_empty_instance_klass_array() { return _the_empty_instance_klass_array; }
 
   // OutOfMemoryError support. Returns an error with the required message. The returned error
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already

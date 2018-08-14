@@ -2678,10 +2678,10 @@ bool ClassVerifier::is_same_or_direct_interface(
     VerificationType klass_type,
     VerificationType ref_class_type) {
   if (ref_class_type.equals(klass_type)) return true;
-  Array<Klass*>* local_interfaces = klass->local_interfaces();
+  Array<InstanceKlass*>* local_interfaces = klass->local_interfaces();
   if (local_interfaces != NULL) {
     for (int x = 0; x < local_interfaces->length(); x++) {
-      Klass* k = local_interfaces->at(x);
+      InstanceKlass* k = local_interfaces->at(x);
       assert (k != NULL && k->is_interface(), "invalid interface");
       if (ref_class_type.equals(VerificationType::reference_type(k->name()))) {
         return true;

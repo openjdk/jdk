@@ -54,8 +54,8 @@ public:
 // doubled in size; the total amount of EXTRA times all hash functions are
 // computed for the doubling is no more than the current size - thus the
 // doubling in size costs no more than a constant factor in speed.
-Dict::Dict(CmpKey initcmp, Hash inithash) : _hash(inithash), _cmp(initcmp),
-  _arena(Thread::current()->resource_area()) {
+Dict::Dict(CmpKey initcmp, Hash inithash) : _arena(Thread::current()->resource_area()),
+  _hash(inithash), _cmp(initcmp) {
   int i;
 
   // Precompute table of null character hashes
@@ -74,7 +74,7 @@ Dict::Dict(CmpKey initcmp, Hash inithash) : _hash(inithash), _cmp(initcmp),
 }
 
 Dict::Dict(CmpKey initcmp, Hash inithash, Arena *arena, int size)
-: _hash(inithash), _cmp(initcmp), _arena(arena) {
+: _arena(arena), _hash(inithash), _cmp(initcmp) {
   int i;
 
   // Precompute table of null character hashes
@@ -161,7 +161,7 @@ void Dict::doubhash(void) {
 
 //------------------------------Dict-----------------------------------------
 // Deep copy a dictionary.
-Dict::Dict( const Dict &d ) : _size(d._size), _cnt(d._cnt), _hash(d._hash),_cmp(d._cmp), _arena(d._arena) {
+Dict::Dict( const Dict &d ) : _arena(d._arena), _size(d._size), _cnt(d._cnt), _hash(d._hash), _cmp(d._cmp) {
   _bin = (bucket*)_arena->Amalloc_4(sizeof(bucket)*_size);
   memcpy( (void*)_bin, (void*)d._bin, sizeof(bucket)*_size );
   for( uint i=0; i<_size; i++ ) {

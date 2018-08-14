@@ -221,6 +221,7 @@ protected:
 
 public:
   G1ArchiveAllocator(G1CollectedHeap* g1h, bool open) :
+    _open(open),
     _g1h(g1h),
     _allocation_region(NULL),
     _allocated_regions((ResourceObj::set_allocation_type((address) &_allocated_regions,
@@ -229,8 +230,7 @@ public:
     _summary_bytes_used(0),
     _bottom(NULL),
     _top(NULL),
-    _max(NULL),
-    _open(open) { }
+    _max(NULL) { }
 
   virtual ~G1ArchiveAllocator() {
     assert(_allocation_region == NULL, "_allocation_region not NULL");

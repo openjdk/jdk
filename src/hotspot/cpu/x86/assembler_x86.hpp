@@ -2219,8 +2219,8 @@ public:
       _evex_encoding(0),
       _is_clear_context(true),
       _is_extended_context(false),
-      _current_assembler(NULL),
-      _embedded_opmask_register_specifier(1) { // hard code k1, it will be initialized for now
+      _embedded_opmask_register_specifier(1), // hard code k1, it will be initialized for now
+      _current_assembler(NULL) {
     if (UseAVX < 3) _legacy_mode = true;
   }
 

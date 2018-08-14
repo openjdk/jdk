@@ -61,9 +61,9 @@ class G1MarkAndPushClosure : public OopIterateClosure {
 
 public:
   G1MarkAndPushClosure(uint worker, G1FullGCMarker* marker, ReferenceDiscoverer* ref) :
+    OopIterateClosure(ref),
     _marker(marker),
-    _worker_id(worker),
-    OopIterateClosure(ref) { }
+    _worker_id(worker) { }
 
   template <class T> inline void do_oop_work(T* p);
   virtual void do_oop(oop* p);

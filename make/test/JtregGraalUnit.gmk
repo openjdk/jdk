@@ -46,6 +46,20 @@ ifeq ($(INCLUDE_GRAAL), true)
     COMPILE_OUTPUTDIR := $(SUPPORT_OUTPUTDIR)/test/graalunit
     LIB_OUTPUTDIR := $(TEST_IMAGE_DIR)/hotspot/jtreg/graal
 
+    TEST_COMPILE_CP := \
+        $(JDK_OUTPUTDIR)/modules/jdk.internal.vm.compiler \
+        $(JDK_OUTPUTDIR)/modules/jdk.internal.vm.ci \
+        $(LIB_OUTPUTDIR)/junit-4.12.jar \
+        $(LIB_OUTPUTDIR)/asm-5.0.4.jar \
+        $(LIB_OUTPUTDIR)/asm-tree-5.0.4.jar \
+        $(LIB_OUTPUTDIR)/java-allocation-instrumenter.jar \
+        $(LIB_OUTPUTDIR)/hamcrest-core-1.3.jar
+
+    TEST_JAVAC_FLAGS := \
+        -Xlint:none \
+        -processorpath $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.replacements.verifier.jar \
+        --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
+
     ### Copy 3rd party libs
     $(eval $(call SetupCopyFiles, COPY_GRAALUNIT_LIBS, \
         FILES := $(wildcard $(GRAALUNIT_LIB)/*.jar), \
@@ -54,7 +68,7 @@ ifeq ($(INCLUDE_GRAAL), true)
 
     TARGETS_EXTRA_LIB += $(COPY_GRAALUNIT_LIBS)
 
-    ### Compile and build graalunit tests
+    ### Compile graalunit tests
     $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_TESTS, \
         SETUP := GENERATE_USINGJDKBYTECODE, \
         SRC := \
@@ -84,26 +98,41 @@ ifeq ($(INCLUDE_GRAAL), true)
             $(SRC_DIR)/org.graalvm.compiler.jtt/src \
             $(SRC_DIR)/org.graalvm.compiler.lir.jtt/src \
             , \
+        EXCLUDE_FILES := org/graalvm/compiler/core/test/VerifyDebugUsageTest.java, \
         BIN := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
-        JAR := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests.jar, \
-        CLASSPATH := \
-            $(JDK_OUTPUTDIR)/modules/jdk.internal.vm.compiler \
-            $(JDK_OUTPUTDIR)/modules/jdk.internal.vm.ci \
-            $(LIB_OUTPUTDIR)/junit-4.12.jar \
-            $(LIB_OUTPUTDIR)/asm-5.0.4.jar \
-            $(LIB_OUTPUTDIR)/asm-tree-5.0.4.jar \
-            $(LIB_OUTPUTDIR)/java-allocation-instrumenter.jar \
-            $(LIB_OUTPUTDIR)/hamcrest-core-1.3.jar \
-            , \
-        ADD_JAVAC_FLAGS := \
-            -Xlint:none -processorpath \
-            $(BUILDTOOLS_OUTPUTDIR)/jdk.vm.compiler.replacements.verifier.jar \
-            --add-exports jdk.unsupported/sun.misc=ALL-UNNAMED \
-            , \
+        CLASSPATH := $(TEST_COMPILE_CP), \
+        ADD_JAVAC_FLAGS := $(TEST_JAVAC_FLAGS), \
     ))
 
     TARGETS_BUILD += $(BUILD_VM_COMPILER_TESTS)
 
+    ### Compile graalunit tests which require -XDstringConcat=inline
+    $(eval $(call SetupJavaCompilation, BUILD_VM_COMPILER_TESTS_SET2, \
+        SETUP := GENERATE_USINGJDKBYTECODE, \
+        DEPENDS := $(BUILD_VM_COMPILER_TESTS), \
+        SRC := $(SRC_DIR)/org.graalvm.compiler.core.test/src, \
+        INCLUDE_FILES := org/graalvm/compiler/core/test/VerifyDebugUsageTest.java, \
+        BIN := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
+        CLASSPATH := \
+            $(TEST_COMPILE_CP) \
+            $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests \
+            , \
+        ADD_JAVAC_FLAGS := \
+            $(TEST_JAVAC_FLAGS) \
+            -XDstringConcat=inline \
+            , \
+    ))
+
+    TARGETS_BUILD += $(BUILD_VM_COMPILER_TESTS_SET2)
+
+    ### Generate jdk.vm.compiler.tests.jar
+    $(eval $(call SetupJarArchive, BUILD_VM_COMPILER_TESTS_JAR, \
+        DEPENDENCIES := $(BUILD_VM_COMPILER_TESTS) $(BUILD_VM_COMPILER_TESTS_SET2), \
+        SRCS := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests, \
+        JAR := $(COMPILE_OUTPUTDIR)/jdk.vm.compiler.tests.jar, \
+    ))
+
+    TARGETS_BUILD += $(BUILD_VM_COMPILER_TESTS_JAR)
 
     ### Compile and build mxtool
     $(eval $(call SetupJavaCompilation, BUILD_MXTOOL, \

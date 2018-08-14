@@ -279,10 +279,10 @@ class InstanceKlass: public Klass {
   Array<Method*>* _methods;
   // Default Method Array, concrete methods inherited from interfaces
   Array<Method*>* _default_methods;
-  // Interface (Klass*s) this class declares locally to implement.
-  Array<Klass*>* _local_interfaces;
-  // Interface (Klass*s) this class implements transitively.
-  Array<Klass*>* _transitive_interfaces;
+  // Interfaces (InstanceKlass*s) this class declares locally to implement.
+  Array<InstanceKlass*>* _local_interfaces;
+  // Interfaces (InstanceKlass*s) this class implements transitively.
+  Array<InstanceKlass*>* _transitive_interfaces;
   // Int array containing the original order of method in the class file (for JVMTI).
   Array<int>*     _method_ordering;
   // Int array containing the vtable_indices for default_methods
@@ -415,13 +415,13 @@ class InstanceKlass: public Klass {
   Array<int>* create_new_default_vtable_indices(int len, TRAPS);
 
   // interfaces
-  Array<Klass*>* local_interfaces() const          { return _local_interfaces; }
-  void set_local_interfaces(Array<Klass*>* a)      {
+  Array<InstanceKlass*>* local_interfaces() const          { return _local_interfaces; }
+  void set_local_interfaces(Array<InstanceKlass*>* a)      {
     guarantee(_local_interfaces == NULL || a == NULL, "Just checking");
     _local_interfaces = a; }
 
-  Array<Klass*>* transitive_interfaces() const     { return _transitive_interfaces; }
-  void set_transitive_interfaces(Array<Klass*>* a) {
+  Array<InstanceKlass*>* transitive_interfaces() const     { return _transitive_interfaces; }
+  void set_transitive_interfaces(Array<InstanceKlass*>* a) {
     guarantee(_transitive_interfaces == NULL || a == NULL, "Just checking");
     _transitive_interfaces = a;
   }
@@ -839,6 +839,7 @@ public:
   }
 
   static bool has_previous_versions_and_reset();
+  static bool has_previous_versions() { return _has_previous_versions; }
 
   // JVMTI: Support for caching a class file before it is modified by an agent that can do retransformation
   void set_cached_class_file(JvmtiCachedClassFileData *data) {
@@ -1013,36 +1014,9 @@ public:
 #endif
 
   // Access to the implementor of an interface.
-  Klass* implementor() const
-  {
-    Klass** k = adr_implementor();
-    if (k == NULL) {
-      return NULL;
-    } else {
-      return *k;
-    }
-  }
-
-  void set_implementor(Klass* k) {
-    assert(is_interface(), "not interface");
-    Klass** addr = adr_implementor();
-    assert(addr != NULL, "null addr");
-    if (addr != NULL) {
-      *addr = k;
-    }
-  }
-
-  int  nof_implementors() const       {
-    Klass* k = implementor();
-    if (k == NULL) {
-      return 0;
-    } else if (k != this) {
-      return 1;
-    } else {
-      return 2;
-    }
-  }
-
+  Klass* implementor() const;
+  void set_implementor(Klass* k);
+  int  nof_implementors() const;
   void add_implementor(Klass* k);  // k is a new class that implements this interface
   void init_implementor();           // initialize
 
@@ -1052,7 +1026,7 @@ public:
   // virtual operations from Klass
   bool is_leaf_class() const               { return _subklass == NULL; }
   GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
-                                                  Array<Klass*>* transitive_interfaces);
+                                                  Array<InstanceKlass*>* transitive_interfaces);
   bool compute_is_subtype_of(Klass* k);
   bool can_be_primary_super_slow() const;
   int oop_size(oop obj)  const             { return size_helper(); }
@@ -1080,7 +1054,7 @@ public:
     return static_cast<const InstanceKlass*>(k);
   }
 
-  InstanceKlass* java_super() const {
+  virtual InstanceKlass* java_super() const {
     return (super() == NULL) ? NULL : cast(super());
   }
 
@@ -1201,8 +1175,8 @@ public:
                                  Array<Method*>* methods);
   void static deallocate_interfaces(ClassLoaderData* loader_data,
                                     const Klass* super_klass,
-                                    Array<Klass*>* local_interfaces,
-                                    Array<Klass*>* transitive_interfaces);
+                                    Array<InstanceKlass*>* local_interfaces,
+                                    Array<InstanceKlass*>* transitive_interfaces);
 
   // The constant pool is on stack if any of the methods are executing or
   // referenced by handles.
@@ -1379,6 +1353,7 @@ public:
 
   void print_dependent_nmethods(bool verbose = false);
   bool is_dependent_nmethod(nmethod* nm);
+  bool verify_itable_index(int index);
 #endif
 
   const char* internal_name() const;

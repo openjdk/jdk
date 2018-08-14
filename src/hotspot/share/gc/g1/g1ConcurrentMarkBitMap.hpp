@@ -42,7 +42,7 @@ class G1CMBitMapClosure {
   G1ConcurrentMark* const _cm;
   G1CMTask* const _task;
 public:
-  G1CMBitMapClosure(G1CMTask *task, G1ConcurrentMark* cm) : _task(task), _cm(cm) { }
+  G1CMBitMapClosure(G1CMTask *task, G1ConcurrentMark* cm) : _cm(cm), _task(task) { }
 
   bool do_addr(HeapWord* const addr);
 };
@@ -88,7 +88,7 @@ public:
     return mark_distance();
   }
 
-  G1CMBitMap() : _covered(), _bm(), _shifter(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
+  G1CMBitMap() : _covered(), _shifter(LogMinObjAlignment), _bm(), _listener() { _listener.set_bitmap(this); }
 
   // Initializes the underlying BitMap to cover the given area.
   void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);

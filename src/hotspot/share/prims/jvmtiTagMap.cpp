@@ -779,7 +779,7 @@ class ClassFieldDescriptor: public CHeapObj<mtInternal> {
   char _field_type;
  public:
   ClassFieldDescriptor(int index, char type, int offset) :
-    _field_index(index), _field_type(type), _field_offset(offset) {
+    _field_index(index), _field_offset(offset), _field_type(type) {
   }
   int field_index()  const  { return _field_index; }
   char field_type()  const  { return _field_type; }
@@ -2838,7 +2838,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
     oop mirror = klass->java_mirror();
 
     // super (only if something more interesting than java.lang.Object)
-    Klass* java_super = ik->java_super();
+    InstanceKlass* java_super = ik->java_super();
     if (java_super != NULL && java_super != SystemDictionary::Object_klass()) {
       oop super = java_super->java_mirror();
       if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
@@ -2894,9 +2894,9 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
     // interfaces
     // (These will already have been reported as references from the constant pool
     //  but are specified by IterateOverReachableObjects and must be reported).
-    Array<Klass*>* interfaces = ik->local_interfaces();
+    Array<InstanceKlass*>* interfaces = ik->local_interfaces();
     for (i = 0; i < interfaces->length(); i++) {
-      oop interf = ((Klass*)interfaces->at(i))->java_mirror();
+      oop interf = interfaces->at(i)->java_mirror();
       if (interf == NULL) {
         continue;
       }

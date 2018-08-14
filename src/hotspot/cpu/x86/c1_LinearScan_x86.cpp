@@ -110,9 +110,9 @@ void LinearScan::allocate_fpu_stack() {
 
 FpuStackAllocator::FpuStackAllocator(Compilation* compilation, LinearScan* allocator)
   : _compilation(compilation)
+  , _allocator(allocator)
   , _lir(NULL)
   , _pos(-1)
-  , _allocator(allocator)
   , _sim(compilation)
   , _temp_sim(compilation)
 {}

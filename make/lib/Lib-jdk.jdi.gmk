@@ -32,7 +32,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SHMEM, \
       NAME := dt_shmem, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) -DUSE_MMAP, \
+      CFLAGS := $(CFLAGS_JDKLIB), \
       EXTRA_HEADER_DIRS := \
           jdk.jdwp.agent:include \
           jdk.jdwp.agent:libjdwp/export, \

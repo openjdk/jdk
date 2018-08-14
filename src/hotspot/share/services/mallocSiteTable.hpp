@@ -146,7 +146,7 @@ class MallocSiteTable : AllStatic {
     volatile int*  _lock;
    public:
     AccessLock(volatile int* lock) :
-      _lock(lock), _lock_state(NoLock) {
+      _lock_state(NoLock), _lock(lock) {
     }
 
     ~AccessLock() {

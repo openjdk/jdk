@@ -99,8 +99,8 @@ class ClassFileParser {
   Array<u2>* _inner_classes;
   Array<u2>* _nest_members;
   u2 _nest_host;
-  Array<Klass*>* _local_interfaces;
-  Array<Klass*>* _transitive_interfaces;
+  Array<InstanceKlass*>* _local_interfaces;
+  Array<InstanceKlass*>* _transitive_interfaces;
   Annotations* _combined_annotations;
   AnnotationArray* _annotations;
   AnnotationArray* _type_annotations;

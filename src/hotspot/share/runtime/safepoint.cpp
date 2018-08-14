@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderData.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -354,26 +354,24 @@ void SafepointSynchronize::begin() {
           // See the comments in synchronizer.cpp for additional remarks on spinning.
           //
           // In the future we might:
-          // 1. Modify the safepoint scheme to avoid potentially unbounded spinning.
+          // -- Modify the safepoint scheme to avoid potentially unbounded spinning.
           //    This is tricky as the path used by a thread exiting the JVM (say on
           //    on JNI call-out) simply stores into its state field.  The burden
           //    is placed on the VM thread, which must poll (spin).
-          // 2. Find something useful to do while spinning.  If the safepoint is GC-related
+          // -- Find something useful to do while spinning.  If the safepoint is GC-related
           //    we might aggressively scan the stacks of threads that are already safe.
-          // 3. Use Solaris schedctl to examine the state of the still-running mutators.
-          //    If all the mutators are ONPROC there's no reason to sleep or yield.
-          // 4. YieldTo() any still-running mutators that are ready but OFFPROC.
-          // 5. Check system saturation.  If the system is not fully saturated then
+          // -- YieldTo() any still-running mutators that are ready but OFFPROC.
+          // -- Check system saturation.  If the system is not fully saturated then
           //    simply spin and avoid sleep/yield.
-          // 6. As still-running mutators rendezvous they could unpark the sleeping
+          // -- As still-running mutators rendezvous they could unpark the sleeping
           //    VMthread.  This works well for still-running mutators that become
           //    safe.  The VMthread must still poll for mutators that call-out.
-          // 7. Drive the policy on time-since-begin instead of iterations.
-          // 8. Consider making the spin duration a function of the # of CPUs:
+          // -- Drive the policy on time-since-begin instead of iterations.
+          // -- Consider making the spin duration a function of the # of CPUs:
           //    Spin = (((ncpus-1) * M) + K) + F(still_running)
           //    Alternately, instead of counting iterations of the outer loop
           //    we could count the # of threads visited in the inner loop, above.
-          // 9. On windows consider using the return value from SwitchThreadTo()
+          // -- On windows consider using the return value from SwitchThreadTo()
           //    to drive subsequent spin/SwitchThreadTo()/Sleep(N) decisions.
 
           if (int(iterations) == -1) { // overflow - something is wrong.
@@ -561,20 +559,6 @@ void SafepointSynchronize::end() {
         // Start suspended threads
         jtiwh.rewind();
         for (; JavaThread *current = jtiwh.next(); ) {
-          // A problem occurring on Solaris is when attempting to restart threads
-          // the first #cpus - 1 go well, but then the VMThread is preempted when we get
-          // to the next one (since it has been running the longest).  We then have
-          // to wait for a cpu to become available before we can continue restarting
-          // threads.
-          // FIXME: This causes the performance of the VM to degrade when active and with
-          // large numbers of threads.  Apparently this is due to the synchronous nature
-          // of suspending threads.
-          //
-          // TODO-FIXME: the comments above are vestigial and no longer apply.
-          // Furthermore, using solaris' schedctl in this particular context confers no benefit
-          if (VMThreadHintNoPreempt) {
-            os::hint_no_preempt();
-          }
           ThreadSafepointState* cur_state = current->safepoint_state();
           assert(cur_state->type() != ThreadSafepointState::_running, "Thread not suspended at safepoint");
           cur_state->restart();
@@ -614,8 +598,7 @@ private:
 
 public:
   ParallelSPCleanupThreadClosure(DeflateMonitorCounters* counters) :
-    _counters(counters),
-    _nmethod_cl(NMethodSweeper::prepare_mark_active_nmethods()) {}
+    _nmethod_cl(NMethodSweeper::prepare_mark_active_nmethods()), _counters(counters) {}
 
   void do_thread(Thread* thread) {
     ObjectSynchronizer::deflate_thread_local_monitors(thread, _counters);
@@ -636,9 +619,9 @@ private:
 public:
   ParallelSPCleanupTask(uint num_workers, DeflateMonitorCounters* counters) :
     AbstractGangTask("Parallel Safepoint Cleanup"),
+    _subtasks(SubTasksDone(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS)),
     _cleanup_threads_cl(ParallelSPCleanupThreadClosure(counters)),
     _num_workers(num_workers),
-    _subtasks(SubTasksDone(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS)),
     _counters(counters) {}
 
   void work(uint worker_id) {
@@ -720,6 +703,7 @@ public:
         post_safepoint_cleanup_task_event(&event, name);
       }
     }
+
     _subtasks.all_tasks_completed(_num_workers);
   }
 };
@@ -749,8 +733,18 @@ void SafepointSynchronize::do_cleanup_tasks() {
     cleanup.work(0);
   }
 
+  // Needs to be done single threaded by the VMThread.  This walks
+  // the thread stacks looking for references to metadata before
+  // deciding to remove it from the metaspaces.
+  if (ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) {
+    const char* name = "cleanup live ClassLoaderData metaspaces";
+    TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
+    ClassLoaderDataGraph::walk_metadata_and_clean_metaspaces();
+  }
+
   // Finish monitor deflation.
   ObjectSynchronizer::finish_deflate_idle_monitors(&deflate_counters);
+
 }
 
 

@@ -252,6 +252,7 @@ bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecod
 
   if (TraceICs) {
     ResourceMark rm;
+    assert(!call_info->selected_method().is_null(), "Unexpected null selected method");
     tty->print_cr ("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
                    p2i(instruction_address()), call_info->selected_method()->print_value_string(), p2i(entry));
   }

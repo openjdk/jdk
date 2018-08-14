@@ -42,6 +42,9 @@
  * @comment build classPool.jar
  * @run driver gc.g1.unloading.GenClassesBuilder
  *
+ * @requires vm.gc.G1
+ * @requires vm.opt.ClassUnloading != false
+ * @requires vm.opt.ClassUnloadingWithConcurrentMark != false
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission

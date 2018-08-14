@@ -353,7 +353,8 @@ class Http2Connection  {
 
     // Requires TLS handshake. So, is really async
     static CompletableFuture<Http2Connection> createAsync(HttpRequestImpl request,
-                                                          Http2ClientImpl h2client) {
+                                                          Http2ClientImpl h2client,
+                                                          Exchange<?> exchange) {
         assert request.secure();
         AbstractAsyncSSLConnection connection = (AbstractAsyncSSLConnection)
         HttpConnection.getConnection(request.getAddress(),
@@ -361,7 +362,12 @@ class Http2Connection  {
                                      request,
                                      HttpClient.Version.HTTP_2);
 
-        return connection.connectAsync()
+        // Expose the underlying connection to the exchange's aborter so it can
+        // be closed if a timeout occurs.
+        exchange.connectionAborter.connection(connection);
+
+        return connection.connectAsync(exchange)
+                  .thenCompose(unused -> connection.finishConnect())
                   .thenCompose(unused -> checkSSLConfig(connection))
                   .thenCompose(notused-> {
                       CompletableFuture<Http2Connection> cf = new MinimalFuture<>();

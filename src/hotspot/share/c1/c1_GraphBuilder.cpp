@@ -102,11 +102,11 @@ BlockListBuilder::BlockListBuilder(Compilation* compilation, IRScope* scope, int
  , _scope(scope)
  , _blocks(16)
  , _bci2block(new BlockList(scope->method()->code_size(), NULL))
- , _next_block_number(0)
  , _active()         // size not known yet
  , _visited()        // size not known yet
- , _next_loop_index(0)
  , _loop_map() // size not known yet
+ , _next_loop_index(0)
+ , _next_block_number(0)
 {
   set_entries(osr_bci);
   set_leaders();
@@ -680,10 +680,10 @@ GraphBuilder::ScopeData::ScopeData(ScopeData* parent)
   , _has_handler(false)
   , _stream(NULL)
   , _work_list(NULL)
-  , _parsing_jsr(false)
-  , _jsr_xhandlers(NULL)
   , _caller_stack_size(-1)
   , _continuation(NULL)
+  , _parsing_jsr(false)
+  , _jsr_xhandlers(NULL)
   , _num_returns(0)
   , _cleanup_block(NULL)
   , _cleanup_return_prev(NULL)
@@ -3195,11 +3195,11 @@ ValueStack* GraphBuilder::state_at_entry() {
 
 GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   : _scope_data(NULL)
+  , _compilation(compilation)
+  , _memory(new MemoryBuffer())
+  , _inline_bailout_msg(NULL)
   , _instruction_count(0)
   , _osr_entry(NULL)
-  , _memory(new MemoryBuffer())
-  , _compilation(compilation)
-  , _inline_bailout_msg(NULL)
 {
   int osr_bci = compilation->osr_bci();
 

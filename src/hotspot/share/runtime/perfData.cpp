@@ -80,8 +80,7 @@ const char* PerfDataManager::_name_spaces[] = {
 };
 
 PerfData::PerfData(CounterNS ns, const char* name, Units u, Variability v)
-                  : _name(NULL), _u(u), _v(v), _valuep(NULL),
-                    _on_c_heap(false) {
+                  : _name(NULL), _v(v), _u(u), _on_c_heap(false), _valuep(NULL) {
 
   const char* prefix = PerfDataManager::ns_to_string(ns);
 

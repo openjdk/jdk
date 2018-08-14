@@ -75,12 +75,12 @@ void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
 //////////////////////////////////////////////////////////////////////
 
 G1BlockOffsetTablePart::G1BlockOffsetTablePart(G1BlockOffsetTable* array, G1ContiguousSpace* gsp) :
-  _bot(array),
-  _space(gsp),
   _next_offset_threshold(NULL),
-  _next_offset_index(0)
+  _next_offset_index(0),
+  DEBUG_ONLY(_object_can_span(false) COMMA)
+  _bot(array),
+  _space(gsp)
 {
-  debug_only(_object_can_span = false;)
 }
 
 // The arguments follow the normal convention of denoting

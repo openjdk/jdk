@@ -46,6 +46,11 @@ if grep "Client VM" $log; then
     exit 0
 fi
 
+if grep "TieredCompilation not supported in this VM" $log; then
+    echo "TEST PASSED: Non-tiered Server VM. The test is useless"
+    exit 0
+fi
+
 if ! egrep '^[0-9.]+: \[compile level=[0-9]' $log; then
     if [ "${tiered}" == "on" ]; then
         echo "TEST FAILED: No PrintTieredEvents output"

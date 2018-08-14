@@ -671,7 +671,7 @@ public abstract class PKCS11Test {
             "/usr/lib/arm-linux-gnueabi/nss/",
             "/usr/lib/arm-linux-gnueabihf/nss/"});
         osMap.put("Linux-aarch64-64", new String[]{
-            "/usr/lib/aarch64-linux-gnu/nss/"});
+            "/usr/lib/aarch64-linux-gnu/", "/usr/lib/aarch64-linux-gnu/nss/"});
     }
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();

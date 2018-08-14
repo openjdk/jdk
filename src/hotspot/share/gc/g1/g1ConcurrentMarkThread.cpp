@@ -74,15 +74,14 @@ public:
   };
 };
 
-// The CM thread is created when the G1 garbage collector is used
-
 G1ConcurrentMarkThread::G1ConcurrentMarkThread(G1ConcurrentMark* cm) :
   ConcurrentGCThread(),
+  _vtime_start(0.0),
+  _vtime_accum(0.0),
+  _vtime_mark_accum(0.0),
   _cm(cm),
   _state(Idle),
-  _phase_manager_stack(),
-  _vtime_accum(0.0),
-  _vtime_mark_accum(0.0) {
+  _phase_manager_stack() {
 
   set_name("G1 Main Marker");
   create_and_start();

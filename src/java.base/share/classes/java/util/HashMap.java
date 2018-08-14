@@ -2145,7 +2145,7 @@ public class HashMap<K,V> extends AbstractMap<K,V>
             if (replacement != p) {
                 TreeNode<K,V> pp = replacement.parent = p.parent;
                 if (pp == null)
-                    root = replacement;
+                    (root = replacement).red = false;
                 else if (p == pp.left)
                     pp.left = replacement;
                 else

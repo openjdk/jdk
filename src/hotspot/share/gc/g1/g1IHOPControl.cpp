@@ -32,8 +32,8 @@
 G1IHOPControl::G1IHOPControl(double initial_ihop_percent) :
   _initial_ihop_percent(initial_ihop_percent),
   _target_occupancy(0),
-  _last_allocated_bytes(0),
-  _last_allocation_time_s(0.0)
+  _last_allocation_time_s(0.0),
+  _last_allocated_bytes(0)
 {
   assert(_initial_ihop_percent >= 0.0 && _initial_ihop_percent <= 100.0, "Initial IHOP value must be between 0 and 100 but is %.3f", initial_ihop_percent);
 }
@@ -86,12 +86,12 @@ G1AdaptiveIHOPControl::G1AdaptiveIHOPControl(double ihop_percent,
                                              size_t heap_reserve_percent,
                                              size_t heap_waste_percent) :
   G1IHOPControl(ihop_percent),
+  _heap_reserve_percent(heap_reserve_percent),
+  _heap_waste_percent(heap_waste_percent),
   _predictor(predictor),
   _marking_times_s(10, 0.95),
   _allocation_rate_s(10, 0.95),
-  _last_unrestrained_young_size(0),
-  _heap_reserve_percent(heap_reserve_percent),
-  _heap_waste_percent(heap_waste_percent)
+  _last_unrestrained_young_size(0)
 {
 }
 

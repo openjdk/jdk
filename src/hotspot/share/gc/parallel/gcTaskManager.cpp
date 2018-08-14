@@ -373,9 +373,9 @@ SynchronizedGCTaskQueue::~SynchronizedGCTaskQueue() {
 //
 GCTaskManager::GCTaskManager(uint workers) :
   _workers(workers),
+  _created_workers(0),
   _active_workers(0),
-  _idle_workers(0),
-  _created_workers(0) {
+  _idle_workers(0) {
   initialize();
 }
 
@@ -962,7 +962,7 @@ void WaitForBarrierGCTask::do_it(GCTaskManager* manager, uint which) {
   _wait_helper.notify();
 }
 
-WaitHelper::WaitHelper() : _should_wait(true), _monitor(MonitorSupply::reserve()) {
+WaitHelper::WaitHelper() : _monitor(MonitorSupply::reserve()), _should_wait(true) {
   if (TraceGCTaskManager) {
     tty->print_cr("[" INTPTR_FORMAT "]"
                   " WaitHelper::WaitHelper()"

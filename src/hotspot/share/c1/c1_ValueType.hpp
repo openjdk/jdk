@@ -104,7 +104,7 @@ class ValueType: public CompilationResourceObj {
   const ValueTag _tag;
   ValueType();
  protected:
-  ValueType(ValueTag tag, int size): _tag(tag), _size(size) {}
+  ValueType(ValueTag tag, int size): _size(size), _tag(tag) {}
 
  public:
   // initialization

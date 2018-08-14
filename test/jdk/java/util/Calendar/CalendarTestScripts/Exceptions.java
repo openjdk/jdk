@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_G1_G1SATBMARKQUEUEFILTER_HPP
-#define SHARE_GC_G1_G1SATBMARKQUEUEFILTER_HPP
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
-#include "gc/g1/satbMarkQueue.hpp"
+public class Exceptions {
+    private static Map<String, Class> exceptions = new HashMap<String, Class>();
 
-class G1CollectedHeap;
+    static {
+        put("nullpointerexception", NullPointerException.class);
+        put("illegalargumentexception", IllegalArgumentException.class);
+    }
 
-class G1SATBMarkQueueFilter : public SATBMarkQueueFilter {
-  G1CollectedHeap* _g1h;
+    private static void put(String key, Class clazz) {
+        Class c = exceptions.put(key, clazz);
+        if (c != null) {
+            throw new RuntimeException(key + " already exisits");
+        }
+    }
 
-public:
-  G1SATBMarkQueueFilter(G1CollectedHeap* g1h);
-
-  virtual void filter(SATBMarkQueue* queue);
-};
-
-#endif // SHARE_GC_G1_G1SATBMARKQUEUEFILTER_HPP
+    public static Class get(String key) {
+        return exceptions.get(key.toLowerCase(Locale.ROOT));
+    }
+}

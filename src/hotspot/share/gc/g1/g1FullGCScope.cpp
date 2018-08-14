@@ -36,8 +36,8 @@ G1FullGCScope::G1FullGCScope(GCMemoryManager* memory_manager, bool explicit_gc, 
     _active(),
     _cpu_time(),
     _soft_refs(clear_soft, _g1h->soft_ref_policy()),
-    _memory_stats(memory_manager, _g1h->gc_cause()),
     _collector_stats(_g1h->g1mm()->full_collection_counters()),
+    _memory_stats(memory_manager, _g1h->gc_cause()),
     _heap_transition(_g1h) {
   _timer.register_gc_start();
   _tracer.report_gc_start(_g1h->gc_cause(), _timer.gc_start());

@@ -289,7 +289,7 @@ public:
   DirtyCardToOopClosure(Space* sp, OopIterateClosure* cl,
                         CardTable::PrecisionStyle precision,
                         HeapWord* boundary) :
-    _sp(sp), _cl(cl), _precision(precision), _boundary(boundary),
+    _cl(cl), _sp(sp), _precision(precision), _boundary(boundary),
     _min_done(NULL) {
     NOT_PRODUCT(_last_bottom = NULL);
     NOT_PRODUCT(_last_explicit_min_done = NULL);

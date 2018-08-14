@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package sun.security.krb5.internal.rcache;
 
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetBooleanAction;
 
 import java.util.Objects;
 
@@ -40,8 +40,7 @@ public class AuthTimeWithHash extends AuthTime
     public static final String DEFAULT_HASH_ALG;
 
     static {
-        if (GetPropertyAction.privilegedGetProperty(
-                "jdk.krb5.rcache.useMD5", "false").equals("true")) {
+        if (GetBooleanAction.privilegedGetProperty("jdk.krb5.rcache.useMD5")) {
             DEFAULT_HASH_ALG = "HASH";
         } else {
             DEFAULT_HASH_ALG = "SHA256";

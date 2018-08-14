@@ -43,9 +43,11 @@ abstract class TimeoutEvent implements Comparable<TimeoutEvent> {
     // we use id in compareTo to make compareTo consistent with equals
     // see TimeoutEvent::compareTo below;
     private final long id = COUNTER.incrementAndGet();
+    private final Duration duration;
     private final Instant deadline;
 
     TimeoutEvent(Duration duration) {
+        this.duration = duration;
         deadline = Instant.now().plus(duration);
     }
 
@@ -75,6 +77,7 @@ abstract class TimeoutEvent implements Comparable<TimeoutEvent> {
 
     @Override
     public String toString() {
-        return "TimeoutEvent[id=" + id + ", deadline=" + deadline + "]";
+        return "TimeoutEvent[id=" + id + ", duration=" + duration
+                + ", deadline=" + deadline + "]";
     }
 }

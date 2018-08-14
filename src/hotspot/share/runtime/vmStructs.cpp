@@ -225,8 +225,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                Klass*)                                \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
-  nonstatic_field(InstanceKlass,               _local_interfaces,                             Array<Klass*>*)                        \
-  nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<Klass*>*)                        \
+  nonstatic_field(InstanceKlass,               _local_interfaces,                             Array<InstanceKlass*>*)                \
+  nonstatic_field(InstanceKlass,               _transitive_interfaces,                        Array<InstanceKlass*>*)                \
   nonstatic_field(InstanceKlass,               _fields,                                       Array<u2>*)                            \
   nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \

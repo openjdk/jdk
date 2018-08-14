@@ -49,7 +49,7 @@ int ArrayKlass::static_size(int header_size) {
 }
 
 
-Klass* ArrayKlass::java_super() const {
+InstanceKlass* ArrayKlass::java_super() const {
   if (super() == NULL)  return NULL;  // bootstrap case
   // Array klasses have primary supertypes which are not reported to Java.
   // Example super chain:  String[][] -> Object[][] -> Object[] -> Object
@@ -90,7 +90,7 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassID id) :
     // the vtable of klass Object.
     set_vtable_length(Universe::base_vtable_size());
     set_name(name);
-    set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
+    set_super(Universe::is_bootstrapping() ? NULL : SystemDictionary::Object_klass());
     set_layout_helper(Klass::_lh_neutral_value);
     set_is_cloneable(); // All arrays are considered to be cloneable (See JLS 20.1.5)
     JFR_ONLY(INIT_ID(this);)
@@ -113,7 +113,7 @@ void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, 
 }
 
 GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
-                                                            Array<Klass*>* transitive_interfaces) {
+                                                            Array<InstanceKlass*>* transitive_interfaces) {
   // interfaces = { cloneable_klass, serializable_klass };
   assert(num_extra_slots == 0, "sanity of primitive array type");
   assert(transitive_interfaces == NULL, "sanity");

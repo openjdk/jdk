@@ -282,7 +282,6 @@ Thread::Thread() {
   _hashStateW = 273326509;
 
   _OnTrap   = 0;
-  _schedctl = NULL;
   _Stalled  = 0;
   _TypeTag  = 0x2BAD;
 
@@ -4802,7 +4801,6 @@ void Thread::SpinRelease(volatile int * adr) {
 //    (List, LOCKBIT:1).  We could also add a SUCCBIT or an explicit _succ variable
 //    to provide the usual futile-wakeup optimization.
 //    See RTStt for details.
-// *  Consider schedctl.sc_nopreempt to cover the critical section.
 //
 
 

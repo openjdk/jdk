@@ -604,7 +604,7 @@ int ImmutableOopMap::nr_of_bytes() const {
 }
 #endif
 
-ImmutableOopMapBuilder::ImmutableOopMapBuilder(const OopMapSet* set) : _set(set), _new_set(NULL), _empty(NULL), _last(NULL), _empty_offset(-1), _last_offset(-1), _offset(0), _required(-1) {
+ImmutableOopMapBuilder::ImmutableOopMapBuilder(const OopMapSet* set) : _set(set), _empty(NULL), _last(NULL), _empty_offset(-1), _last_offset(-1), _offset(0), _required(-1), _new_set(NULL) {
   _mapping = NEW_RESOURCE_ARRAY(Mapping, _set->size());
 }
 

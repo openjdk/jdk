@@ -808,12 +808,12 @@ void JvmtiClassFileReconstituter::write_class_file_format() {
 
   // JVMSpec|           u2 interfaces_count;
   // JVMSpec|           u2 interfaces[interfaces_count];
-  Array<Klass*>* interfaces =  ik()->local_interfaces();
+  Array<InstanceKlass*>* interfaces =  ik()->local_interfaces();
   int num_interfaces = interfaces->length();
   write_u2(num_interfaces);
   for (int index = 0; index < num_interfaces; index++) {
     HandleMark hm(thread());
-    InstanceKlass* iik = InstanceKlass::cast(interfaces->at(index));
+    InstanceKlass* iik = interfaces->at(index);
     write_u2(class_symbol_to_cpool_index(iik->name()));
   }
 

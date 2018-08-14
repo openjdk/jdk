@@ -714,7 +714,7 @@ void AOTCodeHeap::sweep_dependent_methods(InstanceKlass* ik) {
 void AOTCodeHeap::sweep_method(AOTCompiledMethod *aot) {
   int indexes[] = {aot->method_index()};
   sweep_dependent_methods(indexes, 1);
-  vmassert(aot->method()->code() != aot && aot->method()->aot_code() == NULL, "method still active");
+  vmassert(aot->method()->code() != aot TIERED_ONLY( && aot->method()->aot_code() == NULL), "method still active");
 }
 
 

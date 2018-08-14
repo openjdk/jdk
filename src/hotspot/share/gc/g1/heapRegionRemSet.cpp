@@ -68,9 +68,10 @@ protected:
 
   PerRegionTable(HeapRegion* hr) :
     _hr(hr),
-    _occupied(0),
     _bm(HeapRegion::CardsPerRegion, mtGC),
-    _collision_list_next(NULL), _next(NULL), _prev(NULL)
+    _occupied(0),
+    _next(NULL), _prev(NULL),
+    _collision_list_next(NULL)
   {}
 
   void add_card_work(CardIdx_t from_card, bool par) {
@@ -240,11 +241,14 @@ size_t OtherRegionsTable::_fine_eviction_sample_size = 0;
 
 OtherRegionsTable::OtherRegionsTable(HeapRegion* hr, Mutex* m) :
   _g1h(G1CollectedHeap::heap()),
-  _hr(hr), _m(m),
+  _m(m),
+  _hr(hr),
   _coarse_map(G1CollectedHeap::heap()->max_regions(), mtGC),
+  _n_coarse_entries(0),
   _fine_grain_regions(NULL),
-  _first_all_fine_prts(NULL), _last_all_fine_prts(NULL),
-  _n_fine_entries(0), _n_coarse_entries(0),
+  _n_fine_entries(0),
+  _first_all_fine_prts(NULL),
+  _last_all_fine_prts(NULL),
   _fine_eviction_start(0),
   _sparse_table(hr)
 {
@@ -621,10 +625,11 @@ OtherRegionsTable::do_cleanup_work(HRRSCleanupTask* hrrs_cleanup_task) {
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetTable* bot,
                                    HeapRegion* hr)
   : _bot(bot),
-    _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
     _code_roots(),
-    _state(Untracked),
-    _other_regions(hr, &_m) {
+    _m(Mutex::leaf, FormatBuffer<128>("HeapRegionRemSet lock #%u", hr->hrm_index()), true, Monitor::_safepoint_check_never),
+    _other_regions(hr, &_m),
+    _state(Untracked)
+{
 }
 
 void HeapRegionRemSet::setup_remset_size() {
@@ -716,18 +721,19 @@ size_t HeapRegionRemSet::strong_code_roots_mem_size() {
 
 HeapRegionRemSetIterator:: HeapRegionRemSetIterator(HeapRegionRemSet* hrrs) :
   _hrrs(hrrs),
-  _g1h(G1CollectedHeap::heap()),
   _coarse_map(&hrrs->_other_regions._coarse_map),
   _bot(hrrs->_bot),
+  _g1h(G1CollectedHeap::heap()),
+  _n_yielded_fine(0),
+  _n_yielded_coarse(0),
+  _n_yielded_sparse(0),
   _is(Sparse),
+  _cur_region_card_offset(0),
   // Set these values so that we increment to the first region.
   _coarse_cur_region_index(-1),
   _coarse_cur_region_cur_card(HeapRegion::CardsPerRegion-1),
-  _cur_card_in_prt(HeapRegion::CardsPerRegion),
   _fine_cur_prt(NULL),
-  _n_yielded_coarse(0),
-  _n_yielded_fine(0),
-  _n_yielded_sparse(0),
+  _cur_card_in_prt(HeapRegion::CardsPerRegion),
   _sparse_iter(&hrrs->_other_regions._sparse_table) {}
 
 bool HeapRegionRemSetIterator::coarse_has_next(size_t& card_index) {

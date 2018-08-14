@@ -282,8 +282,8 @@ public final class SystemModuleFinders {
 
         SystemModuleFinder(Set<ModuleReference> mrefs,
                            Map<String, ModuleReference> nameToModule) {
-            this.mrefs = Collections.unmodifiableSet(mrefs);
-            this.nameToModule = Collections.unmodifiableMap(nameToModule);
+            this.mrefs = Set.copyOf(mrefs);
+            this.nameToModule = Map.copyOf(nameToModule);
         }
 
         @Override
@@ -353,7 +353,7 @@ public final class SystemModuleFinders {
                 }
             }
         }
-        return (nameToHash != null) ? nameToHash : Collections.emptyMap();
+        return (nameToHash != null) ? nameToHash : Map.of();
     }
 
     /**

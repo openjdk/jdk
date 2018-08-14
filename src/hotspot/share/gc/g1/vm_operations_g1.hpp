@@ -49,7 +49,7 @@ public:
 
 class VM_G1CollectForAllocation: public VM_CollectForAllocation {
 private:
-  bool      _pause_succeeded;
+  bool         _pause_succeeded;
 
   bool         _should_initiate_conc_mark;
   bool         _should_retry_gc;

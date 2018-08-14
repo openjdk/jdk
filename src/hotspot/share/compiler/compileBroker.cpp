@@ -1777,12 +1777,6 @@ void CompileBroker::compiler_thread_loop() {
       possibly_add_compiler_threads();
     }
 
-    // Give compiler threads an extra quanta.  They tend to be bursty and
-    // this helps the compiler to finish up the job.
-    if (CompilerThreadHintNoPreempt) {
-      os::hint_no_preempt();
-    }
-
     // Assign the task to the current thread.  Mark this compilation
     // thread as active for the profiler.
     CompileTaskWrapper ctw(task);

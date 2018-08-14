@@ -166,16 +166,16 @@ ciMethod::ciMethod(ciInstanceKlass* holder,
   ciMetadata((Metadata*)NULL),
   _name(                   name),
   _holder(                 holder),
-  _intrinsic_id(           vmIntrinsics::_none),
-  _liveness(               NULL),
-  _can_be_statically_bound(false),
+  _method_data(            NULL),
   _method_blocks(          NULL),
-  _method_data(            NULL)
+  _intrinsic_id(           vmIntrinsics::_none),
+  _instructions_size(-1),
+  _can_be_statically_bound(false),
+  _liveness(               NULL)
 #if defined(COMPILER2)
   ,
   _flow(                   NULL),
-  _bcea(                   NULL),
-  _instructions_size(-1)
+  _bcea(                   NULL)
 #endif // COMPILER2
 {
   // Usually holder and accessor are the same type but in some cases

@@ -105,12 +105,12 @@ class StackMapFrame : public ResourceObj {
                 u2 max_stack,
                 VerificationType* locals,
                 VerificationType* stack,
-                ClassVerifier* v) : _offset(offset), _flags(flags),
+                ClassVerifier* v) : _offset(offset),
                                     _locals_size(locals_size),
                                     _stack_size(stack_size),
                                     _stack_mark(-1),
                                     _max_locals(max_locals),
-                                    _max_stack(max_stack),
+                                    _max_stack(max_stack),  _flags(flags),
                                     _locals(locals), _stack(stack),
                                     _verifier(v) { }
 

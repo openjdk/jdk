@@ -37,7 +37,9 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import static java.util.stream.Collectors.*;
 
@@ -131,7 +133,7 @@ public class GenModuleInfoSource {
         // parse module-info.java.extra
         this.extras = new ModuleInfo();
         for (Path file : extraFiles) {
-            extras.parse(file);
+            extras.parseExtra(file);
         }
 
         // merge with module-info.java.extra
@@ -177,6 +179,7 @@ public class GenModuleInfoSource {
         final Map<String, Statement> provides = new HashMap<>();
 
         Statement getStatement(String directive, String name) {
+            Objects.requireNonNull(name);
             switch (directive) {
                 case "exports":
                     if (moduleInfo.exports.containsKey(name) &&
@@ -223,49 +226,49 @@ public class GenModuleInfoSource {
             extraFiles.exports.entrySet()
                 .stream()
                 .filter(e -> exports.containsKey(e.getKey()) &&
-                                e.getValue().filter(modules))
+                    e.getValue().filter(modules))
                 .forEach(e -> mergeExportsOrOpens(exports.get(e.getKey()),
-                                                  e.getValue(),
-                                                  modules));
+                    e.getValue(),
+                    modules));
 
             // add exports that are not defined in the original module-info.java
             extraFiles.exports.entrySet()
                 .stream()
                 .filter(e -> !exports.containsKey(e.getKey()) &&
-                                e.getValue().filter(modules))
+                    e.getValue().filter(modules))
                 .forEach(e -> addTargets(getStatement("exports", e.getKey()),
-                                         e.getValue(),
-                                         modules));
+                    e.getValue(),
+                    modules));
 
             // API package opened in the original module-info.java
             extraFiles.opens.entrySet()
                 .stream()
                 .filter(e -> opens.containsKey(e.getKey()) &&
-                                e.getValue().filter(modules))
+                    e.getValue().filter(modules))
                 .forEach(e -> mergeExportsOrOpens(opens.get(e.getKey()),
-                                                  e.getValue(),
-                                                  modules));
+                    e.getValue(),
+                    modules));
 
             // add opens that are not defined in the original module-info.java
             extraFiles.opens.entrySet()
                 .stream()
                 .filter(e -> !opens.containsKey(e.getKey()) &&
-                                e.getValue().filter(modules))
+                    e.getValue().filter(modules))
                 .forEach(e -> addTargets(getStatement("opens", e.getKey()),
-                                         e.getValue(),
-                                         modules));
+                    e.getValue(),
+                    modules));
 
             // provides
             extraFiles.provides.keySet()
                 .stream()
                 .filter(service -> provides.containsKey(service))
                 .forEach(service -> mergeProvides(service,
-                                                  extraFiles.provides.get(service)));
+                    extraFiles.provides.get(service)));
             extraFiles.provides.keySet()
                 .stream()
                 .filter(service -> !provides.containsKey(service))
                 .forEach(service -> provides.put(service,
-                                                 extraFiles.provides.get(service)));
+                    extraFiles.provides.get(service)));
 
             // uses
             extraFiles.uses.keySet()
@@ -280,8 +283,8 @@ public class GenModuleInfoSource {
                                 Set<String> modules)
         {
             extra.targets.stream()
-                 .filter(mn -> modules.contains(mn))
-                 .forEach(mn -> statement.addTarget(mn));
+                .filter(mn -> modules.contains(mn))
+                .forEach(mn -> statement.addTarget(mn));
         }
 
         private void mergeExportsOrOpens(Statement statement,
@@ -319,7 +322,7 @@ public class GenModuleInfoSource {
             }
 
             extra.targets.stream()
-                 .forEach(mn -> statement.addTarget(mn));
+                .forEach(mn -> statement.addTarget(mn));
         }
 
 
@@ -358,189 +361,173 @@ public class GenModuleInfoSource {
                 .forEach(e -> writer.println(e.getValue()));
         }
 
-        private void parse(Path sourcefile) throws IOException {
-            List<String> lines = Files.readAllLines(sourcefile);
-            Statement statement = null;
-            boolean hasTargets = false;
 
-            for (int lineNumber = 1; lineNumber <= lines.size(); ) {
-                String l = lines.get(lineNumber-1).trim();
-                int index = 0;
-
-                if (l.isEmpty()) {
-                    lineNumber++;
-                    continue;
-                }
-
-                // comment block starts
-                if (l.startsWith("/*")) {
-                    while (l.indexOf("*/") == -1) { // end comment block
-                        l = lines.get(lineNumber++).trim();
-                    }
-                    index = l.indexOf("*/") + 2;
-                    if (index >= l.length()) {
-                        lineNumber++;
-                        continue;
-                    } else {
-                        // rest of the line
-                        l = l.substring(index, l.length()).trim();
-                        index = 0;
-                    }
-                }
-
-                // skip comment and annotations
-                if (l.startsWith("//") || l.startsWith("@")) {
-                    lineNumber++;
-                    continue;
-                }
-
-                int current = lineNumber;
-                int count = 0;
-                while (index < l.length()) {
-                    if (current == lineNumber && ++count > 20)
-                        throw new Error("Fail to parse line " + lineNumber + " " + sourcefile);
-
-                    int end = l.indexOf(';');
-                    if (end == -1)
-                        end = l.length();
-                    String content = l.substring(0, end).trim();
-                    if (content.isEmpty()) {
-                        index = end+1;
-                        if (index < l.length()) {
-                            // rest of the line
-                            l = l.substring(index, l.length()).trim();
-                            index = 0;
-                        }
-                        continue;
-                    }
-
-                    String[] s = content.split("\\s+");
-                    String keyword = s[0].trim();
-
-                    String name = s.length > 1 ? s[1].trim() : null;
-                    trace("%d: %s index=%d len=%d%n", lineNumber, l, index, l.length());
-                    switch (keyword) {
-                        case "module":
-                        case "requires":
-                        case "}":
-                            index = l.length();  // skip to the end
-                            continue;
-
-                        case "exports":
-                        case "opens":
-                        case "provides":
-                        case "uses":
-                            // assume name immediately after exports, opens, provides, uses
-                            statement = getStatement(keyword, name);
-                            hasTargets = false;
-
-                            int i = l.indexOf(name, keyword.length()+1) + name.length() + 1;
-                            l = i < l.length() ? l.substring(i, l.length()).trim() : "";
-                            index = 0;
-
-                            if (s.length >= 3) {
-                                if (!s[2].trim().equals(statement.qualifier)) {
-                                    throw new RuntimeException(sourcefile + ", line " +
-                                        lineNumber + ", is malformed: " + s[2]);
-                                }
-                            }
-
-                            break;
-
-                        case "to":
-                        case "with":
-                            if (statement == null) {
-                                throw new RuntimeException(sourcefile + ", line " +
-                                    lineNumber + ", is malformed");
-                            }
-
-                            hasTargets = true;
-                            String qualifier = statement.qualifier;
-                            i = l.indexOf(qualifier, index) + qualifier.length() + 1;
-                            l = i < l.length() ? l.substring(i, l.length()).trim() : "";
-                            index = 0;
-                            break;
-                    }
-
-                    if (index >= l.length()) {
-                        // skip to next line
-                        continue;
-                    }
-
-                        // comment block starts
-                    if (l.startsWith("/*")) {
-                        while (l.indexOf("*/") == -1) { // end comment block
-                            l = lines.get(lineNumber++).trim();
-                        }
-                        index = l.indexOf("*/") + 2;
-                        if (index >= l.length()) {
-                            continue;
-                        } else {
-                            // rest of the line
-                            l = l.substring(index, l.length()).trim();
-                            index = 0;
-                        }
-                    }
-
-                    if (l.startsWith("//")) {
-                        index = l.length();
-                        continue;
-                    }
-
-                    if (statement == null) {
-                        throw new RuntimeException(sourcefile + ", line " +
-                            lineNumber + ": missing keyword?");
-                    }
-
-                    if (!hasTargets) {
-                        continue;
-                    }
-
-                    if (index >= l.length()) {
-                        throw new RuntimeException(sourcefile + ", line " +
-                            lineNumber + ": " + l);
-                    }
-
-                    // parse the target module of exports, opens, or provides
-                    Statement stmt = statement;
-
-                    int terminal = l.indexOf(';', index);
-                    // determine up to which position to parse
-                    int pos = terminal != -1 ? terminal : l.length();
-                    // parse up to comments
-                    int pos1 = l.indexOf("//", index);
-                    if (pos1 != -1 && pos1 < pos) {
-                        pos = pos1;
-                    }
-                    int pos2 = l.indexOf("/*", index);
-                    if (pos2 != -1 && pos2 < pos) {
-                        pos = pos2;
-                    }
-                    // target module(s) for qualitifed exports or opens
-                    // or provider implementation class(es)
-                    String rhs = l.substring(index, pos).trim();
-                    index += rhs.length();
-                    trace("rhs: index=%d [%s] [line: %s]%n", index, rhs, l);
-
-                    String[] targets = rhs.split(",");
-                    for (String t : targets) {
-                        String n = t.trim();
-                        if (n.length() > 0)
-                            stmt.addTarget(n);
-                    }
-
-                    // start next statement
-                    if (pos == terminal) {
-                        statement = null;
-                        hasTargets = false;
-                        index = terminal + 1;
-                    }
-                    l = index < l.length() ? l.substring(index, l.length()).trim() : "";
-                    index = 0;
-                }
-
-                lineNumber++;
+        private void parse(Path file) throws IOException {
+            Parser parser = new Parser(file);
+            parser.run();
+            if (verbose) {
+                parser.dump();
             }
+            process(parser, false);
+        }
+
+        private void parseExtra(Path file) throws IOException {
+            Parser parser = new Parser(file);
+            parser.run();
+            if (verbose) {
+                parser.dump();
+            }
+            process(parser, true);
+        }
+
+
+        private void process(Parser parser, boolean extraFile) throws IOException {
+            // no duplicate statement local in each file
+            Map<String, Statement> exports = new HashMap<>();
+            Map<String, Statement> opens = new HashMap<>();
+            Map<String, Statement> uses = new HashMap<>();
+            Map<String, Statement> provides = new HashMap<>();
+
+            String token = null;
+            boolean hasCurlyBracket = false;
+            while ((token = parser.nextToken()) != null) {
+                if (token.equals("module")) {
+                    String modulename = nextIdentifier(parser);
+                    if (extraFile) {
+                        throw parser.newError("cannot declare module in " + parser.sourceFile);
+                    }
+                    skipTokenOrThrow(parser, "{", "missing {");
+                    hasCurlyBracket = true;
+                } else if (token.equals("requires")) {
+                    token = nextIdentifier(parser);
+                    if (token.equals("transitive")) {
+                        token = nextIdentifier(parser);
+                    }
+                    if (extraFile) {
+                        throw parser.newError("cannot declare requires in " + parser.sourceFile);
+                    }
+                    skipTokenOrThrow(parser, ";", "missing semicolon");
+                } else if (isExportsOpensProvidesUses(token)) {
+                    // new statement
+                    String keyword = token;
+                    String name = nextIdentifier(parser);
+                    Statement statement = getStatement(keyword, name);
+                    switch (keyword) {
+                        case "exports":
+                            if (exports.containsKey(name)) {
+                                throw parser.newError("multiple " + keyword + " " + name);
+                            }
+                            exports.put(name, statement);
+                            break;
+                        case "opens":
+                            if (opens.containsKey(name)) {
+                                throw parser.newError("multiple " + keyword + " " + name);
+                            }
+                            opens.put(name, statement);
+                            break;
+                        case "uses":
+                            if (uses.containsKey(name)) {
+                                throw parser.newError("multiple " + keyword + " " + name);
+                            }
+                            uses.put(name, statement);
+                            break;
+                        /*  Disable this check until jdk.internal.vm.compiler generated file is fixed.
+                        case "provides":
+                            if (provides.containsKey(name)) {
+                                throw parser.newError("multiple " + keyword + " " + name);
+                            }
+                            provides.put(name, statement);
+                            break;
+                        */
+                    }
+                    String lookAhead = lookAhead(parser);
+                    if (lookAhead.equals(statement.qualifier)) {
+                        parser.nextToken(); // skip qualifier
+                        while ((lookAhead = parser.peekToken()) != null) {
+                            // add target name
+                            name = nextIdentifier(parser);
+                            statement.addTarget(name);
+                            lookAhead = lookAhead(parser);
+                            if (lookAhead.equals(",") || lookAhead.equals(";")) {
+                                parser.nextToken();
+                            } else {
+                                throw parser.newError("missing semicolon");
+                            }
+                            if (lookAhead.equals(";")) {
+                                break;
+                            }
+                        }
+                    } else {
+                        skipTokenOrThrow(parser, ";", "missing semicolon");
+                    }
+                } else if (token.equals(";")) {
+                    continue;
+                } else if (hasCurlyBracket && token.equals("}")) {
+                    hasCurlyBracket = false;
+                    if (parser.peekToken() != null) {  // must be EOF
+                        throw parser.newError("is malformed");
+                    }
+                } else {
+                    throw parser.newError("missing keyword");
+                }
+            }
+            if (hasCurlyBracket) {
+                parser.newError("missing }");
+            }
+        }
+
+        private boolean isExportsOpensProvidesUses(String word) {
+            switch (word) {
+                case "exports":
+                case "opens":
+                case "provides":
+                case "uses":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private String lookAhead(Parser parser) {
+            String lookAhead = parser.peekToken();
+            if (lookAhead == null) { // EOF
+                throw parser.newError("reach end of file");
+            }
+            return lookAhead;
+        }
+
+        private String nextIdentifier(Parser parser) {
+            String lookAhead = parser.peekToken();
+            boolean maybeIdentifier = true;
+            switch (lookAhead) {
+                case "module":
+                case "requires":
+                case "exports":
+                case "opens":
+                case "provides":
+                case "uses":
+                case "to":
+                case "with":
+                case ",":
+                case ";":
+                case "{":
+                case "}":
+                    maybeIdentifier = false;
+            }
+            if (lookAhead == null || !maybeIdentifier) {
+                throw parser.newError("<identifier> missing");
+            }
+
+            return parser.nextToken();
+        }
+
+        private String skipTokenOrThrow(Parser parser, String token, String msg) {
+            // look ahead to report the proper line number
+            String lookAhead = parser.peekToken();
+            if (!token.equals(lookAhead)) {
+                throw parser.newError(msg);
+            }
+            return parser.nextToken();
         }
     }
 
@@ -620,4 +607,175 @@ public class GenModuleInfoSource {
             System.out.format(fmt, params);
         }
     }
+
+    static class Parser {
+        private static final List<String> EMPTY = List.of();
+
+        private final Path sourceFile;
+        private boolean inCommentBlock = false;
+        private List<List<String>> tokens = new ArrayList<>();
+        private int lineNumber = 1;
+        private int index = 0;
+
+        Parser(Path file) {
+            this.sourceFile = file;
+        }
+
+        void run() throws IOException {
+            List<String> lines = Files.readAllLines(sourceFile);
+            for (int lineNumber = 1; lineNumber <= lines.size(); lineNumber++) {
+                String l = lines.get(lineNumber - 1).trim();
+                tokenize(l);
+            }
+        }
+
+        /*
+         * Tokenize the given string.  Comments are skipped.
+         */
+        List<String> tokenize(String l) {
+            while (!l.isEmpty()) {
+                if (inCommentBlock) {
+                    int comment = l.indexOf("*/");
+                    if (comment == -1)
+                        return emptyTokens();
+
+                    // end comment block
+                    inCommentBlock = false;
+                    if ((comment + 2) >= l.length()) {
+                        return emptyTokens();
+                    }
+                    l = l.substring(comment + 2, l.length()).trim();
+                }
+
+                // skip comment
+                int comment = l.indexOf("//");
+                if (comment >= 0) {
+                    l = l.substring(0, comment).trim();
+                    if (l.isEmpty()) return emptyTokens();
+                }
+
+                if (l.isEmpty()) {
+                    return emptyTokens();
+                }
+
+                int beginComment = l.indexOf("/*");
+                int endComment = l.indexOf("*/");
+                if (beginComment == -1)
+                    return tokens(l);
+
+                String s1 = l.substring(0, beginComment).trim();
+                if (endComment > 0) {
+                    String s2 = l.substring(endComment + 2, l.length()).trim();
+                    if (s1.isEmpty()) {
+                        l = s2;
+                    } else if (s2.isEmpty()) {
+                        l = s1;
+                    } else {
+                        l = s1 + " " + s2;
+                    }
+                } else {
+                    inCommentBlock = true;
+                    return tokens(s1);
+                }
+            }
+            return tokens(l);
+        }
+
+        private List<String> emptyTokens() {
+            this.tokens.add(EMPTY);
+            return EMPTY;
+        }
+        private List<String> tokens(String l) {
+            List<String> tokens = new ArrayList<>();
+            for (String s : l.split("\\s+")) {
+                int pos=0;
+                s = s.trim();
+                if (s.isEmpty())
+                     continue;
+
+                int i = s.indexOf(',', pos);
+                int j = s.indexOf(';', pos);
+                while ((i >= 0 && i < s.length()) || (j >= 0 && j < s.length())) {
+                    if (j == -1 || (i >= 0 && i < j)) {
+                        String n = s.substring(pos, i).trim();
+                        if (!n.isEmpty()) {
+                            tokens.add(n);
+                        }
+                        tokens.add(s.substring(i, i + 1));
+                        pos = i + 1;
+                        i = s.indexOf(',', pos);
+                    } else {
+                        String n = s.substring(pos, j).trim();
+                        if (!n.isEmpty()) {
+                            tokens.add(n);
+                        }
+                        tokens.add(s.substring(j, j + 1));
+                        pos = j + 1;
+                        j = s.indexOf(';', pos);
+                    }
+                }
+
+                String n = s.substring(pos).trim();
+                if (!n.isEmpty()) {
+                    tokens.add(n);
+                }
+            }
+            this.tokens.add(tokens);
+            return tokens;
+        }
+
+        /*
+         * Returns next token.
+         */
+        String nextToken() {
+            while (lineNumber <= tokens.size()) {
+                List<String> l = tokens.get(lineNumber-1);
+                if (index < l.size()) {
+                    return l.get(index++);
+                } else {
+                    lineNumber++;
+                    index = 0;
+                }
+            }
+            return null;
+        }
+
+        /*
+         * Peeks next token.
+         */
+        String peekToken() {
+            int ln = lineNumber;
+            int i = index;
+            while (ln <= tokens.size()) {
+                List<String> l = tokens.get(ln-1);
+                if (i < l.size()) {
+                    return l.get(i++);
+                } else {
+                    ln++;
+                    i = 0;
+                }
+            }
+            return null;
+        }
+
+        Error newError(String msg) {
+            if (lineNumber <= tokens.size()) {
+                throw new Error(sourceFile + ", line " +
+                    lineNumber + ", " + msg + " \"" + lineAt(lineNumber) + "\"");
+            } else {
+                throw new Error(sourceFile + ", line " + lineNumber + ", " + msg);
+            }
+        }
+
+        void dump() {
+            for (int i = 1; i <= tokens.size(); i++) {
+                System.out.format("%d: %s%n", i, lineAt(i));
+            }
+        }
+
+        private String lineAt(int i) {
+            return tokens.get(i-1).stream().collect(Collectors.joining(" "));
+        }
+    }
 }
+

@@ -320,7 +320,12 @@ void CompactibleFreeListSpace::set_cms_values() {
 
 // Constructor
 CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs, MemRegion mr) :
+  _rescan_task_size(CardTable::card_size_in_words * BitsPerWord *
+                    CMSRescanMultiple),
+  _marking_task_size(CardTable::card_size_in_words * BitsPerWord *
+                    CMSConcMarkMultiple),
   _bt(bs, mr),
+  _collector(NULL),
   // free list locks are in the range of values taken by _lockRank
   // This range currently is [_leaf+2, _leaf+3]
   // Note: this requires that CFLspace c'tors
@@ -328,15 +333,10 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs, M
   // are acquired in the program text. This is true today.
   _freelistLock(_lockRank--, "CompactibleFreeListSpace._lock", true,
                 Monitor::_safepoint_check_sometimes),
+  _preconsumptionDirtyCardClosure(NULL),
   _parDictionaryAllocLock(Mutex::leaf - 1,  // == rank(ExpandHeap_lock) - 1
                           "CompactibleFreeListSpace._dict_par_lock", true,
-                          Monitor::_safepoint_check_never),
-  _rescan_task_size(CardTable::card_size_in_words * BitsPerWord *
-                    CMSRescanMultiple),
-  _marking_task_size(CardTable::card_size_in_words * BitsPerWord *
-                    CMSConcMarkMultiple),
-  _collector(NULL),
-  _preconsumptionDirtyCardClosure(NULL)
+                          Monitor::_safepoint_check_never)
 {
   assert(sizeof(FreeChunk) / BytesPerWord <= MinChunkSize,
          "FreeChunk is larger than expected");

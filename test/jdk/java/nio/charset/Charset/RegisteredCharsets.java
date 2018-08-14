@@ -138,6 +138,7 @@ public class RegisteredCharsets {
                             "x-IBM1122",
                             "x-IBM1123",
                             "x-IBM1124",
+                            "x-IBM1129",
                             "x-IBM1166",
                             "x-IBM875",
                             "x-IBM921",
@@ -876,6 +877,14 @@ public class RegisteredCharsets {
                     "ibm1124",
                     "ibm-1124",
                     "1124"
+                } );
+
+        aliasCheck("x-IBM1129" ,
+                new String[] {
+                    "cp1129", // JDK historical
+                    "ibm1129",
+                    "ibm-1129",
+                    "1129"
                 } );
 
         aliasCheck("x-IBM1166" ,

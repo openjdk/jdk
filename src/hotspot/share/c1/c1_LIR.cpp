@@ -321,9 +321,9 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, 
   , _tmp2(tmp2)
   , _tmp3(tmp3)
   , _fast_check(fast_check)
-  , _stub(stub)
   , _info_for_patch(info_for_patch)
   , _info_for_exception(info_for_exception)
+  , _stub(stub)
   , _profiled_method(NULL)
   , _profiled_bci(-1)
   , _should_profile(false)
@@ -348,9 +348,9 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
   , _tmp2(tmp2)
   , _tmp3(tmp3)
   , _fast_check(false)
-  , _stub(NULL)
   , _info_for_patch(NULL)
   , _info_for_exception(info_for_exception)
+  , _stub(NULL)
   , _profiled_method(NULL)
   , _profiled_bci(-1)
   , _should_profile(false)
@@ -367,14 +367,14 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
 LIR_OpArrayCopy::LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_Opr dst_pos, LIR_Opr length,
                                  LIR_Opr tmp, ciArrayKlass* expected_type, int flags, CodeEmitInfo* info)
   : LIR_Op(lir_arraycopy, LIR_OprFact::illegalOpr, info)
-  , _tmp(tmp)
   , _src(src)
   , _src_pos(src_pos)
   , _dst(dst)
   , _dst_pos(dst_pos)
-  , _flags(flags)
+  , _length(length)
+  , _tmp(tmp)
   , _expected_type(expected_type)
-  , _length(length) {
+  , _flags(flags) {
   _stub = new ArrayCopyStub(this);
 }
 

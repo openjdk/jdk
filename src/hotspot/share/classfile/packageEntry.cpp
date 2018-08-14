@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,7 +302,7 @@ bool PackageEntry::exported_pending_delete() const {
 
 // Remove dead entries from all packages' exported list
 void PackageEntryTable::purge_all_package_exports() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
+  assert_locked_or_safepoint(Module_lock);
   for (int i = 0; i < table_size(); i++) {
     for (PackageEntry* entry = bucket(i);
                        entry != NULL;

@@ -62,11 +62,11 @@
 #define RANGESLASH "[*" RANGEBASE "/]"
 
 MethodMatcher::MethodMatcher():
-    _class_mode(Exact)
-  , _method_mode(Exact)
-  , _class_name(NULL)
+    _class_name(NULL)
   , _method_name(NULL)
-  , _signature(NULL) {
+  , _signature(NULL)
+  , _class_mode(Exact)
+  , _method_mode(Exact) {
 }
 
 MethodMatcher::~MethodMatcher() {

@@ -569,7 +569,7 @@ private:
   const SpillType _spill_type;
 public:
   MachSpillCopyNode(SpillType spill_type, Node *n, const RegMask &in, const RegMask &out ) :
-    MachIdealNode(), _spill_type(spill_type), _in(&in), _out(&out), _type(n->bottom_type()) {
+    MachIdealNode(), _in(&in), _out(&out), _type(n->bottom_type()), _spill_type(spill_type) {
     init_class_id(Class_MachSpillCopy);
     init_flags(Flag_is_Copy);
     add_req(NULL);
@@ -1040,7 +1040,7 @@ public:
 
   uint _block_num;
 
-  labelOper() : _block_num(0), _label(0) {}
+  labelOper() : _label(0), _block_num(0) {}
 
   labelOper(Label* label, uint block_num) : _label(label), _block_num(block_num) {}
 

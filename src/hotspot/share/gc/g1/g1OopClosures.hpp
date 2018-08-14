@@ -162,7 +162,7 @@ class G1CLDScanClosure : public CLDClosure {
 public:
   G1CLDScanClosure(G1ParCopyHelper* closure,
                    bool process_only_dirty, bool must_claim)
-      : _process_only_dirty(process_only_dirty), _must_claim(must_claim), _closure(closure), _count(0) {}
+  : _closure(closure), _process_only_dirty(process_only_dirty), _must_claim(must_claim), _count(0) {}
   void do_cld(ClassLoaderData* cld);
 };
 

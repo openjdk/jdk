@@ -30,6 +30,7 @@
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
+#include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -520,7 +521,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ bind(refill);
   save_volatile_registers(sasm);
   __ z_lgr(tmp, pre_val); // save pre_val
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, SATBMarkQueueSet::handle_zero_index_for_thread),
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1SATBMarkQueueSet::handle_zero_index_for_thread),
                   Z_thread);
   __ z_lgr(pre_val, tmp); // restore pre_val
   restore_volatile_registers(sasm);

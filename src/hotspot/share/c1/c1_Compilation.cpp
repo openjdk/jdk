@@ -538,12 +538,13 @@ void Compilation::generate_exception_handler_table() {
   }
 }
 
-
 Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* method,
                          int osr_bci, BufferBlob* buffer_blob, DirectiveSet* directive)
-: _compiler(compiler)
-, _env(env)
+: _next_id(0)
+, _next_block_id(0)
+, _compiler(compiler)
 , _directive(directive)
+, _env(env)
 , _log(env->log())
 , _method(method)
 , _osr_bci(osr_bci)
@@ -553,19 +554,17 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _masm(NULL)
 , _has_exception_handlers(false)
 , _has_fpu_code(true)   // pessimistic assumption
-, _would_profile(false)
 , _has_unsafe_access(false)
+, _would_profile(false)
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
 , _bailout_msg(NULL)
 , _exception_info_list(NULL)
 , _allocator(NULL)
-, _next_id(0)
-, _next_block_id(0)
 , _code(buffer_blob)
 , _has_access_indexed(false)
-, _current_instruction(NULL)
 , _interpreter_frame_size(0)
+, _current_instruction(NULL)
 #ifndef PRODUCT
 , _last_instruction_printed(NULL)
 , _cfg_printer_output(NULL)

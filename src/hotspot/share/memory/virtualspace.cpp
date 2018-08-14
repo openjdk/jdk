@@ -36,7 +36,7 @@
 
 // Dummy constructor
 ReservedSpace::ReservedSpace() : _base(NULL), _size(0), _noaccess_prefix(0),
-    _alignment(0), _special(false), _executable(false), _fd_for_heap(-1) {
+    _alignment(0), _special(false), _fd_for_heap(-1), _executable(false) {
 }
 
 ReservedSpace::ReservedSpace(size_t size, size_t preferred_page_size) : _fd_for_heap(-1) {

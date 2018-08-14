@@ -104,10 +104,10 @@ ReferenceProcessor::ReferenceProcessor(BoolObjectClosure* is_subject_to_discover
   _is_subject_to_discovery(is_subject_to_discovery),
   _discovering_refs(false),
   _enqueuing_is_done(false),
-  _is_alive_non_header(is_alive_non_header),
   _processing_is_mt(mt_processing),
   _next_id(0),
-  _adjust_no_of_processing_threads(adjust_no_of_processing_threads)
+  _adjust_no_of_processing_threads(adjust_no_of_processing_threads),
+  _is_alive_non_header(is_alive_non_header)
 {
   assert(is_subject_to_discovery != NULL, "must be set");
 

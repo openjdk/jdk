@@ -265,8 +265,8 @@ class AnnotationElementIterator : public StackObj {
   AnnotationElementIterator(const InstanceKlass* ik, address buffer, u2 limit) : _ik(ik),
                                                                                  _buffer(buffer),
                                                                                  _limit(limit),
-                                                                                 _next(element_name_offset),
-                                                                                 _current(element_name_offset) {
+                                                                                 _current(element_name_offset),
+                                                                                 _next(element_name_offset) {
     assert(_buffer != NULL, "invariant");
     assert(_next == element_name_offset, "invariant");
     assert(_current == element_name_offset, "invariant");
@@ -319,10 +319,10 @@ class AnnotationIterator : public StackObj {
 
  public:
   AnnotationIterator(const InstanceKlass* ik, AnnotationArray* ar) : _ik(ik),
-                                                                     _current(0),
-                                                                     _next(0),
                                                                      _limit(ar != NULL ? ar->length() : 0),
-                                                                     _buffer(_limit > 2 ? ar->adr_at(2) : NULL) {
+                                                                     _buffer(_limit > 2 ? ar->adr_at(2) : NULL),
+                                                                     _current(0),
+                                                                     _next(0) {
     if (_buffer != NULL) {
       _limit -= 2; // subtract sizeof(u2) number of annotations field
     }
