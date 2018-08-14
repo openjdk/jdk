@@ -235,13 +235,22 @@ enum Alert {
             Level level = Level.valueOf(am.level);
             Alert alert = Alert.valueOf(am.id);
             if (alert == Alert.CLOSE_NOTIFY) {
-                if (tc.handshakeContext != null) {
+                tc.isInputCloseNotified = true;
+                tc.closeInbound();
+
+                if (tc.peerUserCanceled) {
+                    tc.closeOutbound();
+                } else if (tc.handshakeContext != null) {
                     tc.fatal(Alert.UNEXPECTED_MESSAGE,
                             "Received close_notify during handshake");
                 }
-
-                tc.isInputCloseNotified = true;
-                tc.closeInbound();
+            } else if (alert == Alert.USER_CANCELED) {
+                if (level == Level.WARNING) {
+                    tc.peerUserCanceled = true;
+                } else {
+                    tc.fatal(alert,
+                            "Received fatal close_notify alert", true, null);
+                }
             } else if ((level == Level.WARNING) && (alert != null)) {
                 // Terminate the connection if an alert with a level of warning
                 // is received during handshaking, except the no_certificate

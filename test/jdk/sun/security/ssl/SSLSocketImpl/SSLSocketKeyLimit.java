@@ -119,7 +119,7 @@ public class SSLSocketKeyLimit {
             System.setProperty("test.java.opts",
                     "-Dtest.src=" + System.getProperty("test.src") +
                             " -Dtest.jdk=" + System.getProperty("test.jdk") +
-                            " -Djavax.net.debug=ssl,handshake " +
+                            " -Djavax.net.debug=ssl,handshake" +
                             " -Djava.security.properties=" + f.getName());
 
             System.out.println("test.java.opts: " +
@@ -134,8 +134,7 @@ public class SSLSocketKeyLimit {
                     output.shouldNotContain("KeyUpdate: write key updated");
                     output.shouldNotContain("KeyUpdate: read key updated");
                 } else {
-                    output.shouldContain("KeyUpdate: triggered, read side");
-                    output.shouldContain("KeyUpdate: triggered, write side");
+                    output.shouldContain("trigger key update");
                     output.shouldContain("KeyUpdate: write key updated");
                     output.shouldContain("KeyUpdate: read key updated");
                 }

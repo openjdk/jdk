@@ -96,6 +96,10 @@ final class SSLConfiguration implements Cloneable {
     static final boolean useCompatibilityMode = Utilities.getBooleanProperty(
             "jdk.tls.client.useCompatibilityMode", true);
 
+    // Respond a close_notify alert if receiving close_notify alert.
+    static final boolean acknowledgeCloseNotify  = Utilities.getBooleanProperty(
+            "jdk.tls.acknowledgeCloseNotify", false);
+
 // TODO: Please remove after TLS 1.3 draft interop testing
 // delete me
 static int tls13VN;

@@ -280,6 +280,7 @@ public class SSLEngineDeadlock {
 
                 log("\tClosing clientEngine's *OUTBOUND*...");
                 clientEngine.closeOutbound();
+                serverEngine.closeOutbound();
                 dataDone = true;
             }
         }

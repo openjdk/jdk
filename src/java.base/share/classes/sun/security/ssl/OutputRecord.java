@@ -66,7 +66,7 @@ abstract class OutputRecord
     int                         fragmentSize;
 
     // closed or not?
-    boolean                     isClosed;
+    volatile boolean            isClosed;
 
     /*
      * Mappings from V3 cipher suite encodings to their pure V2 equivalents.
@@ -76,6 +76,8 @@ abstract class OutputRecord
         {-1, -1, -1, 0x02, 0x01, -1, 0x04, 0x05, -1, 0x06, 0x07};
     private static final int[] V3toV2CipherMap3 =
         {-1, -1, -1, 0x80, 0x80, -1, 0x80, 0x80, -1, 0x40, 0xC0};
+    private static final byte[] HANDSHAKE_MESSAGE_KEY_UPDATE =
+        {SSLHandshake.KEY_UPDATE.id, 0x00, 0x00, 0x01, 0x00};
 
     OutputRecord(HandshakeHash handshakeHash, SSLWriteCipher writeCipher) {
         this.writeCipher = writeCipher;
@@ -87,7 +89,7 @@ abstract class OutputRecord
         // Please set packetSize and protocolVersion in the implementation.
     }
 
-    void setVersion(ProtocolVersion protocolVersion) {
+    synchronized void setVersion(ProtocolVersion protocolVersion) {
         this.protocolVersion = protocolVersion;
     }
 
@@ -106,7 +108,7 @@ abstract class OutputRecord
         return false;
     }
 
-    boolean seqNumIsHuge() {
+    synchronized boolean seqNumIsHuge() {
         return (writeCipher.authenticator != null) &&
                         writeCipher.authenticator.seqNumIsHuge();
     }
@@ -145,8 +147,17 @@ abstract class OutputRecord
         throw new UnsupportedOperationException();
     }
 
-    void changeWriteCiphers(SSLWriteCipher writeCipher,
+    // Change write ciphers, may use change_cipher_spec record.
+    synchronized void changeWriteCiphers(SSLWriteCipher writeCipher,
             boolean useChangeCipherSpec) throws IOException {
+        if (isClosed()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                    "change_cipher_spec message");
+            }
+            return;
+        }
+
         if (useChangeCipherSpec) {
             encodeChangeCipherSpec();
         }
@@ -165,15 +176,39 @@ abstract class OutputRecord
         this.isFirstAppOutputRecord = true;
     }
 
-    void changePacketSize(int packetSize) {
+    // Change write ciphers using key_update handshake message.
+    synchronized void changeWriteCiphers(SSLWriteCipher writeCipher,
+            byte keyUpdateRequest) throws IOException {
+        if (isClosed()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                    "key_update handshake message");
+            }
+            return;
+        }
+
+        // encode the handshake message, KeyUpdate
+        byte[] hm = HANDSHAKE_MESSAGE_KEY_UPDATE.clone();
+        hm[hm.length - 1] = keyUpdateRequest;
+        encodeHandshake(hm, 0, hm.length);
+        flush();
+
+        // Dispose of any intermediate state in the underlying cipher.
+        writeCipher.dispose();
+
+        this.writeCipher = writeCipher;
+        this.isFirstAppOutputRecord = true;
+    }
+
+    synchronized void changePacketSize(int packetSize) {
         this.packetSize = packetSize;
     }
 
-    void changeFragmentSize(int fragmentSize) {
+    synchronized void changeFragmentSize(int fragmentSize) {
         this.fragmentSize = fragmentSize;
     }
 
-    int getMaxPacketSize() {
+    synchronized int getMaxPacketSize() {
         return packetSize;
     }
 
@@ -194,13 +229,15 @@ abstract class OutputRecord
 
     @Override
     public synchronized void close() throws IOException {
-        if (!isClosed) {
-            isClosed = true;
-            writeCipher.dispose();
+        if (isClosed) {
+            return;
         }
+
+        isClosed = true;
+        writeCipher.dispose();
     }
 
-    synchronized boolean isClosed() {
+    boolean isClosed() {
         return isClosed;
     }
 
@@ -241,7 +278,7 @@ abstract class OutputRecord
         }
     }
 
-    static long d13Encrypt(
+    private static long d13Encrypt(
             SSLWriteCipher encCipher, byte contentType, ByteBuffer destination,
             int headerOffset, int dstLim, int headerSize,
             ProtocolVersion protocolVersion) {
@@ -282,7 +319,7 @@ abstract class OutputRecord
         return Authenticator.toLong(sequenceNumber);
     }
 
-    static long t13Encrypt(
+    private static long t13Encrypt(
             SSLWriteCipher encCipher, byte contentType, ByteBuffer destination,
             int headerOffset, int dstLim, int headerSize,
             ProtocolVersion protocolVersion) {
@@ -321,7 +358,7 @@ abstract class OutputRecord
         return Authenticator.toLong(sequenceNumber);
     }
 
-    static long t10Encrypt(
+    private static long t10Encrypt(
             SSLWriteCipher encCipher, byte contentType, ByteBuffer destination,
             int headerOffset, int dstLim, int headerSize,
             ProtocolVersion protocolVersion) {
@@ -362,7 +399,7 @@ abstract class OutputRecord
         private static final byte[] zeros = new byte[16];
     }
 
-    long t13Encrypt(
+    private long t13Encrypt(
             SSLWriteCipher encCipher, byte contentType, int headerSize) {
         if (!encCipher.isNullCipher()) {
             // inner plaintext
@@ -375,9 +412,10 @@ abstract class OutputRecord
         int contentLen = count - position;
 
         // ensure the capacity
-        int packetSize = encCipher.calculatePacketSize(contentLen, headerSize);
-        if (packetSize > buf.length) {
-            byte[] newBuf = new byte[packetSize];
+        int requiredPacketSize =
+                encCipher.calculatePacketSize(contentLen, headerSize);
+        if (requiredPacketSize > buf.length) {
+            byte[] newBuf = new byte[requiredPacketSize];
             System.arraycopy(buf, 0, newBuf, 0, count);
             buf = newBuf;
         }
@@ -406,16 +444,17 @@ abstract class OutputRecord
         return Authenticator.toLong(sequenceNumber);
     }
 
-    long t10Encrypt(
+    private long t10Encrypt(
             SSLWriteCipher encCipher, byte contentType, int headerSize) {
         byte[] sequenceNumber = encCipher.authenticator.sequenceNumber();
         int position = headerSize + writeCipher.getExplicitNonceSize();
         int contentLen = count - position;
 
         // ensure the capacity
-        int packetSize = encCipher.calculatePacketSize(contentLen, headerSize);
-        if (packetSize > buf.length) {
-            byte[] newBuf = new byte[packetSize];
+        int requiredPacketSize =
+                encCipher.calculatePacketSize(contentLen, headerSize);
+        if (requiredPacketSize > buf.length) {
+            byte[] newBuf = new byte[requiredPacketSize];
             System.arraycopy(buf, 0, newBuf, 0, count);
             buf = newBuf;
         }

@@ -47,7 +47,6 @@ import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 import sun.security.ssl.SupportedGroupsExtension.NamedGroupType;
 import static sun.security.ssl.SupportedGroupsExtension.NamedGroupType.*;
 import sun.security.ssl.SupportedGroupsExtension.SupportedGroups;
-import sun.security.ssl.PskKeyExchangeModesExtension.PskKeyExchangeMode;
 
 abstract class HandshakeContext implements ConnectionContext {
     // System properties

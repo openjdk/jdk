@@ -28,11 +28,9 @@ package sun.security.ssl;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import javax.net.ssl.SSLHandshakeException;
-
-import sun.security.ssl.KeyUpdate.KeyUpdateMessage;
-import sun.security.ssl.KeyUpdate.KeyUpdateRequest;
 
 /**
  * {@code OutputRecord} implementation for {@code SSLSocket}.
@@ -53,7 +51,16 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     @Override
-    void encodeAlert(byte level, byte description) throws IOException {
+    synchronized void encodeAlert(
+            byte level, byte description) throws IOException {
+        if (isClosed()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                    "alert message: " + Alert.nameOf(description));
+            }
+            return;
+        }
+
         // use the buf of ByteArrayOutputStream
         int position = headerSize + writeCipher.getExplicitNonceSize();
         count = position;
@@ -63,6 +70,7 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
         if (SSLLogger.isOn && SSLLogger.isOn("record")) {
             SSLLogger.fine("WRITE: " + protocolVersion +
                     " " + ContentType.ALERT.name +
+                    "(" + Alert.nameOf(description) + ")" +
                     ", length = " + (count - headerSize));
         }
 
@@ -83,8 +91,17 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     @Override
-    void encodeHandshake(byte[] source,
+    synchronized void encodeHandshake(byte[] source,
             int offset, int length) throws IOException {
+        if (isClosed()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                        "handshake message",
+                        ByteBuffer.wrap(source, offset, length));
+            }
+            return;
+        }
+
         if (firstMessage) {
             firstMessage = false;
 
@@ -182,7 +199,14 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     @Override
-    void encodeChangeCipherSpec() throws IOException {
+    synchronized void encodeChangeCipherSpec() throws IOException {
+        if (isClosed()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                    "change_cipher_spec message");
+            }
+            return;
+        }
 
         // use the buf of ByteArrayOutputStream
         int position = headerSize + writeCipher.getExplicitNonceSize();
@@ -207,7 +231,7 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     @Override
-    public void flush() throws IOException {
+    public synchronized void flush() throws IOException {
         int position = headerSize + writeCipher.getExplicitNonceSize();
         if (count <= position) {
             return;
@@ -237,7 +261,12 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
     }
 
     @Override
-    void deliver(byte[] source, int offset, int length) throws IOException {
+    synchronized void deliver(
+            byte[] source, int offset, int length) throws IOException {
+        if (isClosed()) {
+            throw new SocketException("Connection or outbound has been closed");
+        }
+
         if (writeCipher.authenticator.seqNumOverflow()) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.fine(
@@ -304,23 +333,11 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
             }
 
             offset += fragLen;
-
-            // atKeyLimit() inactive when limits not checked, tc set when limits
-            // are active.
-            if (writeCipher.atKeyLimit()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("KeyUpdate: triggered, write side.");
-                }
-
-                PostHandshakeContext p = new PostHandshakeContext(tc);
-                KeyUpdate.handshakeProducer.produce(p,
-                        new KeyUpdateMessage(p, KeyUpdateRequest.REQUESTED));
-            }
         }
     }
 
     @Override
-    void setDeliverStream(OutputStream outputStream) {
+    synchronized void setDeliverStream(OutputStream outputStream) {
         this.deliverStream = outputStream;
     }
 
@@ -347,7 +364,7 @@ final class SSLSocketOutputRecord extends OutputRecord implements SSLRecord {
      * This avoids issues in the outbound direction.  For a full fix,
      * the peer must have similar protections.
      */
-    boolean needToSplitPayload() {
+    private boolean needToSplitPayload() {
         return (!protocolVersion.useTLS11PlusSpec()) &&
                 writeCipher.isCBCMode() && !isFirstAppOutputRecord &&
                 Record.enableCBCProtection;

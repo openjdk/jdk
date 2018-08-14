@@ -35,6 +35,7 @@
  * @build Http2TestServer
  * @build jdk.testlibrary.SimpleSSLContext
  * @run testng/othervm
+ *       -Djdk.tls.acknowledgeCloseNotify=true
  *       -Djdk.httpclient.HttpClient.log=trace,headers,requests
  *       CookieHeaderTest
  */
