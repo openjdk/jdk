@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation. Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -47,6 +49,7 @@ import org.netbeans.jemmy.Waitable;
 import org.netbeans.jemmy.Waiter;
 import org.netbeans.jemmy.util.DefaultVisualizer;
 import org.netbeans.jemmy.util.MouseVisualizer;
+import org.netbeans.jemmy.util.Platform;
 
 /**
  * Keeps all environment and low-level methods.
@@ -301,10 +304,9 @@ public abstract class Operator
         //Linux - new MouseVisualizer(MouseVisualizer.TOP, 0.5, 10, false)
         //solaris - new MouseVisualizer()
         //others - new DefaultVisualizer()
-        String os = System.getProperty("os.name").toUpperCase();
-        if (os.startsWith("LINUX")) {
+        if (Platform.isLinux()) {
             setDefaultComponentVisualizer(new MouseVisualizer(MouseVisualizer.TOP, 0.5, 10, false));
-        } else if (os.startsWith("SUNOS")) {
+        } else if (Platform.isSolaris()) {
             setDefaultComponentVisualizer(new MouseVisualizer());
         } else {
             setDefaultComponentVisualizer(new DefaultVisualizer());

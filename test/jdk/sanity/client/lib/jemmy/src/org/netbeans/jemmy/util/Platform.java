@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,49 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.netbeans.jemmy.drivers;
 
-import org.netbeans.jemmy.operators.ComponentOperator;
+package org.netbeans.jemmy.util;
 
 /**
- * Defines how to work with lists allowing multiple selection.
+ * Class to provide platform related utility APIs
  */
-public interface MultiSelListDriver extends ListDriver {
+public class Platform {
+
+    private static final String osName = System.getProperty("os.name");
 
     /**
-     * Selects some items.
-     *
-     * @param oper List operator.
-     * @param indices Item indices.
+     * Checking whether the platform is linux
+     * @return
      */
-    public void selectItems(ComponentOperator oper, int[] indices);
+    public static boolean isLinux() {
+        return isOs("linux");
+    }
+
+    /**
+     * Checking whether the platform is OSX
+     * @return
+     */
+    public static boolean isOSX() {
+        return isOs("mac");
+    }
+
+    /**
+     * Checking whether the platform is Solaris
+     * @return
+     */
+    public static boolean isSolaris() {
+        return isOs("sunos");
+    }
+
+    /**
+     * Checking whether the platform is Windows
+     * @return
+     */
+    public static boolean isWindows() {
+        return isOs("win");
+    }
+
+    private static boolean isOs(String osname) {
+        return osName.toLowerCase().startsWith(osname.toLowerCase());
+    }
 }

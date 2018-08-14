@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation. Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,18 +25,27 @@
 package org.netbeans.jemmy.operators;
 
 import java.awt.Container;
+import java.awt.IllegalComponentStateException;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Hashtable;
 
 import javax.swing.JEditorPane;
+import javax.swing.JScrollPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.text.Document;
 import javax.swing.text.EditorKit;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLDocument;
 
 import org.netbeans.jemmy.ComponentChooser;
+import org.netbeans.jemmy.ComponentSearcher;
 import org.netbeans.jemmy.TimeoutExpiredException;
+import org.netbeans.jemmy.util.EmptyVisualizer;
 
 /**
  * Class provides basic functions to operate with JEditorPane (selection,
@@ -293,6 +304,72 @@ public class JEditorPaneOperator extends JTextComponentOperator {
         return result;
     }
 
+    /**
+     * Clicks on a named reference location
+     *
+     * @param reference the named location to click
+     */
+    public void clickOnReference(String reference) {
+        int expectedCaretPos = getCaretPositionOfReference(reference);
+        Rectangle viewBounds = modelToView(expectedCaretPos);
+        Point expectedCaretPosLoc = new Point(viewBounds.x, viewBounds.y);
+        //TODO Extend DefaultVisualizer to show a portion of component and use
+        // that in here
+        JScrollPane scroll = (JScrollPane) getContainer(
+                new JScrollPaneOperator.JScrollPaneFinder(
+                        ComponentSearcher.getTrueChooser("JScrollPane")));
+        if (scroll != null) {
+            JScrollPaneOperator scroller = new JScrollPaneOperator(scroll);
+            scroller.copyEnvironment(this);
+            scroller.setVisualizer(new EmptyVisualizer());
+            scroller.scrollToComponentRectangle(getSource(),
+                    (int) viewBounds.getX(), (int) viewBounds.getY(),
+                    (int) viewBounds.getWidth(), (int) viewBounds.getHeight());
+            setCaretPosition(expectedCaretPos);
+        } else if (getVisibleRect().contains(expectedCaretPosLoc)) {
+            scrollToReference(reference);
+        } else {
+            throw new IllegalComponentStateException("Component doesn't "
+                    + "contain JScrollPane and Reference is out of"
+                    + " visible area");
+        }
+
+        waitStateOnQueue(comp -> expectedCaretPosLoc.equals(
+                ((JEditorPane)comp).getCaret().getMagicCaretPosition()));
+        waitCaretPosition(expectedCaretPos);
+        clickMouse(viewBounds.x, viewBounds.y, 1);
+    }
+
+    /**
+     * Gets the starting caret position of a named reference location
+     *
+     * @param reference the named location
+     * @return starting caret position of the named reference location
+     * @throws IllegalArgumentException if the named reference doesn't
+     *  exist in the document
+     */
+    private int getCaretPositionOfReference(String reference)
+            throws IllegalArgumentException {
+        int pos = -1;
+        Document doc = getDocument();
+        if (doc instanceof HTMLDocument) {
+            HTMLDocument.Iterator iter =
+                    ((HTMLDocument) doc).getIterator(HTML.Tag.A);
+            for (;iter.isValid();iter.next()) {
+                String nameAttr = (String) iter.getAttributes().
+                        getAttribute(HTML.Attribute.NAME);
+                if (reference.equals(nameAttr)) {
+                    pos = iter.getStartOffset();
+                }
+            }
+        }
+        if(pos ==-1) {
+            throw new IllegalArgumentException("Reference " + reference +
+                    " doesn't exist in the document " + doc + ".");
+        }
+        return pos;
+    }
+
     ////////////////////////////////////////////////////////
     //Mapping                                             //
     /**
@@ -451,6 +528,18 @@ public class JEditorPaneOperator extends JTextComponentOperator {
             @Override
             public void map() throws IOException {
                 ((JEditorPane) getSource()).setPage(uRL);
+            }
+        });
+    }
+
+    /**
+     * Maps {@code JEditorPane.scrollToReference(String)} through queue
+     */
+    public void scrollToReference(String reference) {
+        runMapping(new MapVoidAction("scrollToReference") {
+            @Override
+            public void map() throws IOException {
+                ((JEditorPane) getSource()).scrollToReference(reference);
             }
         });
     }

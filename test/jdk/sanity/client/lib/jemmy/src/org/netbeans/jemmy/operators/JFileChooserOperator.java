@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation. Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -37,6 +39,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.ListModel;
@@ -44,6 +47,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileSystemView;
 import javax.swing.filechooser.FileView;
 import javax.swing.plaf.FileChooserUI;
+import javax.swing.table.TableModel;
 
 import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.ComponentSearcher;
@@ -59,6 +63,7 @@ import org.netbeans.jemmy.Waiter;
 /**
  *
  * Class provides methods to cover main JFileChooser component functionality.
+ * Supports choosers using either JList or JTable as the component showing files.
  *
  * @author Alexandre Iline (alexandre.iline@oracle.com)
  *
@@ -330,29 +335,29 @@ public class JFileChooserOperator extends JComponentOperator
     }
 
     /**
-     * Returns file list.
+     * Returns either a JList or JTable, depending on the implementation.
      *
-     * @return a list being used to display directory content.
+     * @return a component being used to display directory content.
      */
-    public JList<?> getFileList() {
-        return ((JList) innerSearcher.
+    public Component getFileList() {
+        return innerSearcher.
                 findComponent(new ComponentChooser() {
                     @Override
                     public boolean checkComponent(Component comp) {
                         return (comp != null
-                                && comp instanceof JList);
+                                && (comp instanceof JList || comp instanceof JTable));
                     }
 
                     @Override
                     public String getDescription() {
-                        return "JList";
+                        return "JList or JTable used to show list of files";
                     }
 
                     @Override
                     public String toString() {
                         return "JFileChooserOperator.getFileList.ComponentChooser{description = " + getDescription() + '}';
                     }
-                }));
+                });
     }
 
     /**
@@ -445,14 +450,23 @@ public class JFileChooserOperator extends JComponentOperator
     public void clickOnFile(int index, int clickCount) {
         getQueueTool().waitEmpty();
         output.printTrace("Click " + Integer.toString(clickCount)
-                + "times on " + Integer.toString(index)
+                + " times on " + Integer.toString(index)
                 + "`th file in JFileChooser\n    : "
                 + toStringSource());
-        JListOperator listOper = new JListOperator(getFileList());
         waitPainted(index);
-        listOper.copyEnvironment(this);
-        listOper.setOutput(output.createErrorOutput());
-        listOper.clickOnItem(index, clickCount);
+        Component list = getFileList();
+        if(list instanceof JList) {
+            JListOperator listOper = new JListOperator((JList) list);
+            listOper.copyEnvironment(this);
+            listOper.setOutput(output.createErrorOutput());
+            listOper.clickOnItem(index, clickCount);
+        } else if(list instanceof JTable) {
+            JTableOperator tableOper = new JTableOperator((JTable) list);
+            tableOper.copyEnvironment(this);
+            tableOper.setOutput(output.createErrorOutput());
+            tableOper.clickOnCell(index, 0, clickCount);
+        } else
+            throw new IllegalStateException("Wrong component type");
     }
 
     /**
@@ -464,7 +478,7 @@ public class JFileChooserOperator extends JComponentOperator
      */
     public void clickOnFile(String file, StringComparator comparator, int clickCount) {
         output.printTrace("Click " + Integer.toString(clickCount)
-                + "times on \"" + file
+                + " times on \"" + file
                 + "\" file in JFileChooser\n    : "
                 + toStringSource());
         clickOnFile(findFileIndex(file, comparator), clickCount);
@@ -589,11 +603,19 @@ public class JFileChooserOperator extends JComponentOperator
     public void selectFile(String file, StringComparator comparator) {
         getQueueTool().waitEmpty();
         int index = findFileIndex(file, comparator);
-        JListOperator listOper = new JListOperator(getFileList());
-        waitPainted(index);
-        listOper.copyEnvironment(this);
-        listOper.setOutput(output.createErrorOutput());
-        listOper.setSelectedIndex(index);
+        Component list = getFileList();
+        if(list instanceof JList) {
+            JListOperator listOper = new JListOperator((JList) list);
+            listOper.copyEnvironment(this);
+            listOper.setOutput(output.createErrorOutput());
+            listOper.setSelectedIndex(index);
+        } else if(list instanceof JTable){
+            JTableOperator tableOper = new JTableOperator((JTable) list);
+            tableOper.copyEnvironment(this);
+            tableOper.setOutput(output.createErrorOutput());
+            tableOper.changeSelection(index, 0, false, false);
+        } else
+            throw new IllegalStateException("Wrong component type");
     }
 
     /**
@@ -749,7 +771,13 @@ public class JFileChooserOperator extends JComponentOperator
      */
     public int getFileCount() {
         waitPainted(-1);
-        return getFileList().getModel().getSize();
+        Component list = getFileList();
+        if(list instanceof JList)
+            return ((JList)list).getModel().getSize();
+        else if(list instanceof JTable)
+            return ((JTable)list).getModel().getRowCount();
+        else
+            throw new IllegalStateException("Wrong component type");
     }
 
     /**
@@ -759,12 +787,23 @@ public class JFileChooserOperator extends JComponentOperator
      */
     public File[] getFiles() {
         waitPainted(-1);
-        ListModel<?> listModel = getFileList().getModel();
-        File[] result = new File[listModel.getSize()];
-        for (int i = 0; i < listModel.getSize(); i++) {
-            result[i] = (File) listModel.getElementAt(i);
-        }
-        return result;
+        Component list = getFileList();
+        if(list instanceof JList) {
+            ListModel<?> listModel = ((JList)list).getModel();
+            File[] result = new File[listModel.getSize()];
+            for (int i = 0; i < listModel.getSize(); i++) {
+                result[i] = (File) listModel.getElementAt(i);
+            }
+            return result;
+        } else if(list instanceof JTable){
+            TableModel listModel = ((JTable)list).getModel();
+            File[] result = new File[listModel.getRowCount()];
+            for (int i = 0; i < listModel.getRowCount(); i++) {
+                result[i] = (File) listModel.getValueAt(i, 0);
+            }
+            return result;
+        } else
+            throw new IllegalStateException("Wrong component type");
     }
 
     /**
@@ -1487,18 +1526,31 @@ public class JFileChooserOperator extends JComponentOperator
         Waiter<Rectangle, Integer> drawingWaiter = new Waiter<>(new Waitable<Rectangle, Integer>() {
             @Override
             public Rectangle actionProduced(Integer param) {
-                JList<?> list = getFileList();
-                int last_one = list.getModel().getSize() - 1;
-                if (last_one == -1) {
+                Component list = getFileList();
+                int size;
+                if(list instanceof JList)
+                    size = ((JList) list).getModel().getSize();
+                else if(list instanceof JTable)
+                    size = ((JTable)list).getModel().getRowCount();
+                else
+                    throw new IllegalStateException("Wrong component type");
+                if (size == 0) {
                     return new Rectangle();
                 }
                 int current = (param != null) ? param : 0;
                 try {
-                    if (list.getCellBounds(current, current) != null) {
-                        return list.getCellBounds(last_one, last_one);
-                    } else {
-                        return null;
-                    }
+                    if(list instanceof JList)
+                        if (((JList) list).getCellBounds(current, current) != null)
+                            return ((JList) list).getCellBounds(size - 1, size - 1);
+                        else
+                            return null;
+                    else if(list instanceof JTable)
+                        if (((JTable)list).getCellRect(current, 0, false) != null)
+                            return ((JTable)list).getCellRect(size - 1, 0, false);
+                        else
+                            return null;
+                    else
+                        throw new IllegalStateException("Wrong component type");
                 } catch (NullPointerException e) {
                     //sometimes thrown from list.getCellBounds when item exists but not painted
                     return null;
