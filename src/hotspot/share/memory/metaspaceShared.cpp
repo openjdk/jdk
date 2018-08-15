@@ -1698,6 +1698,7 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     tty->print_cr("Rewriting and linking classes: done");
 
     SystemDictionary::clear_invoke_method_table();
+    HeapShared::init_archivable_static_fields(THREAD);
 
     VM_PopulateDumpSharedSpace op;
     VMThread::execute(&op);

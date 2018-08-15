@@ -129,6 +129,7 @@ class HeapShared: AllStatic {
   static void write_archived_subgraph_infos() NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_from_archived_subgraph(Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
 
+  static void init_archivable_static_fields(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
   static void archive_module_graph_objects(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
 };
 #endif // SHARE_VM_MEMORY_HEAPSHARED_HPP

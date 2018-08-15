@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
@@ -36,6 +37,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/fieldDescriptor.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 KlassSubGraphInfo* HeapShared::_subgraph_info_list = NULL;
@@ -476,7 +478,7 @@ void HeapShared::archive_reachable_objects_from_static_field(Klass *k,
     return;
   }
 
-  if (field_type == T_OBJECT) {
+  if (field_type == T_OBJECT || field_type == T_ARRAY) {
     // obtain k's subGraph Info
     KlassSubGraphInfo* subgraph_info = get_subgraph_info(k);
 
@@ -526,18 +528,77 @@ void HeapShared::archive_reachable_objects_from_static_field(Klass *k,
   }
 }
 
-#define do_module_object_graph(archive_object_graph_do) \
-  archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedSystemModules_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedModuleFinder_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedMainModule_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::ArchivedModuleGraph_klass(), jdk_internal_module_ArchivedModuleGraph::archivedConfiguration_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::ImmutableCollections_ListN_klass(), java_util_ImmutableCollections_ListN::EMPTY_LIST_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::ImmutableCollections_MapN_klass(),  java_util_ImmutableCollections_MapN::EMPTY_MAP_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::ImmutableCollections_SetN_klass(),  java_util_ImmutableCollections_SetN::EMPTY_SET_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::Integer_IntegerCache_klass(), java_lang_Integer_IntegerCache::archivedCache_offset(), T_OBJECT, CHECK); \
-  archive_object_graph_do(SystemDictionary::Configuration_klass(),       java_lang_module_Configuration::EMPTY_CONFIGURATION_offset(), T_OBJECT, CHECK)
+struct ArchivableStaticFieldInfo {
+  const char* class_name;
+  const char* field_name;
+  InstanceKlass* klass;
+  int offset;
+  BasicType type;
+};
+
+// If you add new entries to this table, you should know what you're doing!
+static ArchivableStaticFieldInfo archivable_static_fields[] = {
+  {"jdk/internal/module/ArchivedModuleGraph",  "archivedSystemModules"},
+  {"jdk/internal/module/ArchivedModuleGraph",  "archivedModuleFinder"},
+  {"jdk/internal/module/ArchivedModuleGraph",  "archivedMainModule"},
+  {"jdk/internal/module/ArchivedModuleGraph",  "archivedConfiguration"},
+  {"java/util/ImmutableCollections$ListN",     "EMPTY_LIST"},
+  {"java/util/ImmutableCollections$MapN",      "EMPTY_MAP"},
+  {"java/util/ImmutableCollections$SetN",      "EMPTY_SET"},
+  {"java/lang/Integer$IntegerCache",           "archivedCache"},
+  {"java/lang/module/Configuration",           "EMPTY_CONFIGURATION"},
+};
+
+const static int num_archivable_static_fields = sizeof(archivable_static_fields) / sizeof(ArchivableStaticFieldInfo);
+
+class ArchivableStaticFieldFinder: public FieldClosure {
+  InstanceKlass* _ik;
+  Symbol* _field_name;
+  bool _found;
+  int _offset;
+  BasicType _type;
+public:
+  ArchivableStaticFieldFinder(InstanceKlass* ik, Symbol* field_name) :
+    _ik(ik), _field_name(field_name), _found(false), _offset(-1), _type(T_ILLEGAL) {}
+
+  virtual void do_field(fieldDescriptor* fd) {
+    if (fd->name() == _field_name) {
+      assert(!_found, "fields cannot be overloaded");
+      _found = true;
+      _offset = fd->offset();
+      _type = fd->field_type();
+      assert(_type == T_OBJECT || _type == T_ARRAY, "can archive only obj or array fields");
+    }
+  }
+  bool found()     { return _found;  }
+  int offset()     { return _offset; }
+  BasicType type() { return _type;   }
+};
+
+void HeapShared::init_archivable_static_fields(Thread* THREAD) {
+  for (int i = 0; i < num_archivable_static_fields; i++) {
+    ArchivableStaticFieldInfo* info = &archivable_static_fields[i];
+    TempNewSymbol class_name =  SymbolTable::new_symbol(info->class_name, THREAD);
+    TempNewSymbol field_name =  SymbolTable::new_symbol(info->field_name, THREAD);
+
+    Klass* k = SystemDictionary::resolve_or_null(class_name, THREAD);
+    assert(k != NULL && !HAS_PENDING_EXCEPTION, "class must exist");
+    InstanceKlass* ik = InstanceKlass::cast(k);
+
+    ArchivableStaticFieldFinder finder(ik, field_name);
+    ik->do_local_static_fields(&finder);
+    assert(finder.found(), "field must exist");
+
+    info->klass = ik;
+    info->offset = finder.offset();
+    info->type = finder.type();
+  }
+}
 
 void HeapShared::archive_module_graph_objects(Thread* THREAD) {
-  do_module_object_graph(archive_reachable_objects_from_static_field);
+  for (int i = 0; i < num_archivable_static_fields; i++) {
+    ArchivableStaticFieldInfo* info = &archivable_static_fields[i];
+    archive_reachable_objects_from_static_field(info->klass, info->offset, info->type, CHECK);
+  }
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
