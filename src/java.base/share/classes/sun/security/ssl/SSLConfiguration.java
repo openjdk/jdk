@@ -100,10 +100,6 @@ final class SSLConfiguration implements Cloneable {
     static final boolean acknowledgeCloseNotify  = Utilities.getBooleanProperty(
             "jdk.tls.acknowledgeCloseNotify", false);
 
-// TODO: Please remove after TLS 1.3 draft interop testing
-// delete me
-static int tls13VN;
-
     // Is the extended_master_secret extension supported?
     static {
         boolean supportExtendedMasterSecret = Utilities.getBooleanProperty(
@@ -116,21 +112,6 @@ static int tls13VN;
             }
         }
         useExtendedMasterSecret = supportExtendedMasterSecret;
-
-// delete me
-try {
-    tls13VN =
-        AccessController.doPrivileged(
-            new PrivilegedExceptionAction<Integer>() {
-                @Override
-                public Integer run() throws Exception {
-                    return Integer.parseInt(
-                        System.getProperty("jdk.tls13.version", "0304"), 16);
-                }
-            });
-} catch (PrivilegedActionException ex) {
-    // blank
-}
     }
 
     SSLConfiguration(SSLContextImpl sslContext, boolean isClientMode) {
