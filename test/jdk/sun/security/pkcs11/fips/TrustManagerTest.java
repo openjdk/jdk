@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6323647
  * @summary Verify that the SunJSSE trustmanager works correctly in FIPS mode
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @modules java.base/com.sun.net.ssl.internal.ssl
  * @run main/othervm TrustManagerTest
  * @run main/othervm TrustManagerTest sm TrustManagerTest.policy

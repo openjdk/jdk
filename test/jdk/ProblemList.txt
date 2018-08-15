@@ -639,7 +639,7 @@ sun/security/pkcs11/KeyAgreement/UnsupportedDHKeys.java         8204203 windows-
 sun/security/pkcs11/KeyGenerator/DESParity.java                 8204203 windows-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java          8204203 windows-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java            8204203 windows-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8204203 windows-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8204203,8209398 generic-all
 sun/security/pkcs11/Mac/MacKAT.java                             8204203 windows-all
 sun/security/pkcs11/Mac/MacSameTest.java                        8204203 windows-all
 sun/security/pkcs11/Mac/ReinitMac.java                          8204203 windows-all

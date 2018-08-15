@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6414980
  * @summary Test that the PKCS#11 KeyStore handles RSA, DSA, and EC keys
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm AddPrivateKey
  * @run main/othervm AddPrivateKey sm policy
@@ -63,6 +63,11 @@ public class AddPrivateKey extends SecmodTest {
     private static final byte[] DATA = generateData(DATA_LENGTH);
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 1 && "sm".equals(args[0])) {
+            System.setProperty("java.security.policy",
+                    BASE + File.separator + args[1]);
+        }
+
         if (initSecmod() == false) {
             return;
         }
@@ -77,8 +82,6 @@ public class AddPrivateKey extends SecmodTest {
         Security.addProvider(p);
 
         if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
             System.setSecurityManager(new SecurityManager());
         }
 

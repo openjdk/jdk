@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 # @test
 # @bug 4938185
+# @library /test/lib
 # @summary KeyStore support for NSS cert/key databases
 #
 # @run shell Basic.sh
@@ -60,7 +61,8 @@ fi
 echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
-echo echo COMPILEJAVA=${COMPILEJAVA}
+echo COMPILEJAVA=${COMPILEJAVA}
+echo CPAPPEND=${CPAPPEND}
 echo ""
 
 # get command from input args -
@@ -168,16 +170,17 @@ fi
 
 if [ "${RECOMPILE}" = "yes" ] ; then
     ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-	-classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
-	-d ${TESTCLASSES} \
-	${TESTSRC}${FS}Basic.java \
-	${TESTSRC}${FS}..${FS}PKCS11Test.java
+  -classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
+  -d ${TESTCLASSES} \
+  ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jdk${FS}test${FS}lib${FS}artifacts${FS}*.java \
+  ${TESTSRC}${FS}Basic.java \
+  ${TESTSRC}${FS}..${FS}PKCS11Test.java
 fi
 
 # run test
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
+	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar${PS}${CPAPPEND} \
 	-DDIR=${TESTSRC}${FS}BasicData \
 	-DCUSTOM_DB_DIR=${TESTCLASSES} \
 	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}BasicData${FS}p11-${TOKEN}.txt \

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 # @bug 6599979
 # @summary Ensure that re-assigning the alias works
 #
-# @library ..
+# @library /test/lib ..
 # @build SecretKeysBasic
 # @run shell SecretKeysBasic.sh
 #
@@ -52,6 +52,7 @@ fi
 echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
+echo CPAPPEND=${CPAPPEND}
 echo ""
 
 #DEBUG=sunpkcs11,pkcs11keystore
@@ -130,9 +131,9 @@ then
     ${MKDIR} ${TESTCLASSES}${FS}pkcs11_softtoken${FS}public
 
     echo ${CP} ${TESTSRC}${FS}BasicData${FS}pkcs11_softtoken${FS}objstore_info \
-	${TESTCLASSES}${FS}pkcs11_softtoken
+    ${TESTCLASSES}${FS}pkcs11_softtoken
     ${CP} ${TESTSRC}${FS}BasicData${FS}pkcs11_softtoken${FS}objstore_info \
-	${TESTCLASSES}${FS}pkcs11_softtoken
+    ${TESTCLASSES}${FS}pkcs11_softtoken
 
     echo ${CHMOD} +w ${TESTCLASSES}${FS}pkcs11_softtoken${FS}objstore_info
     ${CHMOD} 600 ${TESTCLASSES}${FS}pkcs11_softtoken${FS}objstore_info
@@ -142,16 +143,16 @@ fi
 # run test
 cd ${TESTSRC}
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-	-DDIR=${TESTSRC}${FS}BasicData${FS} \
+        -DDIR=${TESTSRC}${FS}BasicData${FS} \
         -classpath \
-        ${TESTCLASSES}${PS}${TESTCLASSES}${FS}..${PS}${TESTSRC}${FS}loader.jar \
+        ${TESTCLASSES}${PS}${TESTCLASSES}${FS}..${PS}${TESTSRC}${FS}loader.jar${PS}${CPAPPEND} \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
         -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}BasicData${FS}p11-${token}.txt \
-	-DNO_DEFAULT=true \
-	-DNO_DEIMOS=true \
-	-DTOKEN=${token} \
-	-Djava.security.debug=${DEBUG} \
-	SecretKeysBasic
+        -DNO_DEFAULT=true \
+        -DNO_DEIMOS=true \
+        -DTOKEN=${token} \
+        -Djava.security.debug=${DEBUG} \
+        SecretKeysBasic
 
 #	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}BasicData${FS}p11-${token}.txt \
 
