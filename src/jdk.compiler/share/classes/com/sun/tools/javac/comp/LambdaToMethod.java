@@ -499,7 +499,8 @@ public class LambdaToMethod extends TreeTranslator {
                 break;
 
             case BOUND:             /** Expr :: instMethod */
-                init = tree.getQualifierExpression();
+                init = transTypes.coerce(attrEnv, tree.getQualifierExpression(),
+                    types.erasure(tree.sym.owner.type));
                 init = attr.makeNullCheck(init);
                 break;
 
