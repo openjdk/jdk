@@ -30,6 +30,7 @@
  * @test
  * @bug 6840752 8168078
  * @summary  Provide out-of-the-box support for ECC algorithms
+ * @library /test/lib
  * @library ../pkcs11
  * @library ../pkcs11/ec
  * @library ../pkcs11/sslecc
