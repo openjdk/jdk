@@ -1418,28 +1418,6 @@ bool ClassLoaderDataGraph::do_unloading(bool do_cleaning) {
   }
 
   if (seen_dead_loader) {
-    data = _head;
-    while (data != NULL) {
-      // Remove entries in the dictionary of live class loader that have
-      // initiated loading classes in a dead class loader.
-      if (data->dictionary() != NULL) {
-        data->dictionary()->do_unloading();
-      }
-      // Walk a ModuleEntry's reads, and a PackageEntry's exports
-      // lists to determine if there are modules on those lists that are now
-      // dead and should be removed.  A module's life cycle is equivalent
-      // to its defining class loader's life cycle.  Since a module is
-      // considered dead if its class loader is dead, these walks must
-      // occur after each class loader's aliveness is determined.
-      if (data->packages() != NULL) {
-        data->packages()->purge_all_package_exports();
-      }
-      if (data->modules_defined()) {
-        data->modules()->purge_all_module_reads();
-      }
-      data = data->next();
-    }
-    SymbolTable::do_check_concurrent_work();
     JFR_ONLY(post_class_unload_events();)
   }
 

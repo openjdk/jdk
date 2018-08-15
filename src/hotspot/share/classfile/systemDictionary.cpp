@@ -1858,10 +1858,19 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer,
     }
   }
 
+  // TODO: just return if !unloading_occurred.
   if (unloading_occurred) {
-    GCTraceTime(Debug, gc, phases) t("Dictionary", gc_timer);
-    constraints()->purge_loader_constraints();
-    resolution_errors()->purge_resolution_errors();
+    {
+      GCTraceTime(Debug, gc, phases) t("SymbolTable", gc_timer);
+      // Check if there's work to do in the SymbolTable
+      SymbolTable::do_check_concurrent_work();
+    }
+
+    {
+      GCTraceTime(Debug, gc, phases) t("Dictionary", gc_timer);
+      constraints()->purge_loader_constraints();
+      resolution_errors()->purge_resolution_errors();
+    }
   }
 
   {
