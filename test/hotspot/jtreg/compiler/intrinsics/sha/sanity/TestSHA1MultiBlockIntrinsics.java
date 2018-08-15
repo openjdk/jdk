@@ -68,7 +68,7 @@ import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA1MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new SHASanityTestBase(IntrinsicPredicates.SHA1_INTRINSICS_AVAILABLE,
+        new SHASanityTestBase(IntrinsicPredicates.isSHA1IntrinsicAvailable(),
                 SHASanityTestBase.MB_INTRINSIC_ID).test();
     }
 }

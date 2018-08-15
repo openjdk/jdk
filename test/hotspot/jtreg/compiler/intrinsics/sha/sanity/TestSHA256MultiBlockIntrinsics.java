@@ -95,7 +95,7 @@ import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
 
 public class TestSHA256MultiBlockIntrinsics {
     public static void main(String args[]) throws Exception {
-        new SHASanityTestBase(IntrinsicPredicates.SHA256_INTRINSICS_AVAILABLE,
+        new SHASanityTestBase(IntrinsicPredicates.isSHA256IntrinsicAvailable(),
                 SHASanityTestBase.MB_INTRINSIC_ID).test();
     }
 }
