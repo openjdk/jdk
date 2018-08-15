@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,11 @@ class NumberFormatException extends IllegalArgumentException {
      *
      * @param   s   the input causing the error
      */
-    static NumberFormatException forInputString(String s) {
-        return new NumberFormatException("For input string: \"" + s + "\"");
+    static NumberFormatException forInputString(String s, int radix) {
+        return new NumberFormatException("For input string: \"" + s + "\"" +
+                                         (radix == 10 ?
+                                          "" :
+                                          " under radix " + radix));
     }
 
     /**

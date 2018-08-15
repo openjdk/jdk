@@ -635,11 +635,11 @@ public final class Integer extends Number implements Comparable<Integer> {
                     negative = true;
                     limit = Integer.MIN_VALUE;
                 } else if (firstChar != '+') {
-                    throw NumberFormatException.forInputString(s);
+                    throw NumberFormatException.forInputString(s, radix);
                 }
 
                 if (len == 1) { // Cannot have lone "+" or "-"
-                    throw NumberFormatException.forInputString(s);
+                    throw NumberFormatException.forInputString(s, radix);
                 }
                 i++;
             }
@@ -649,17 +649,17 @@ public final class Integer extends Number implements Comparable<Integer> {
                 // Accumulating negatively avoids surprises near MAX_VALUE
                 int digit = Character.digit(s.charAt(i++), radix);
                 if (digit < 0 || result < multmin) {
-                    throw NumberFormatException.forInputString(s);
+                    throw NumberFormatException.forInputString(s, radix);
                 }
                 result *= radix;
                 if (result < limit + digit) {
-                    throw NumberFormatException.forInputString(s);
+                    throw NumberFormatException.forInputString(s, radix);
                 }
                 result -= digit;
             }
             return negative ? result : -result;
         } else {
-            throw NumberFormatException.forInputString(s);
+            throw NumberFormatException.forInputString(s, radix);
         }
     }
 
@@ -745,7 +745,7 @@ public final class Integer extends Number implements Comparable<Integer> {
             }
             return negative ? result : -result;
         } else {
-            throw NumberFormatException.forInputString("");
+            throw NumberFormatException.forInputString("", radix);
         }
     }
 
@@ -842,7 +842,7 @@ public final class Integer extends Number implements Comparable<Integer> {
                 }
             }
         } else {
-            throw NumberFormatException.forInputString(s);
+            throw NumberFormatException.forInputString(s, radix);
         }
     }
 
