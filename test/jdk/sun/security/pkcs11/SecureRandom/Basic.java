@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6246411
  * @summary basic test for PKCS#11 SecureRandom
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm Basic

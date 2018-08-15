@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6405536
  * @summary Test the P11ECKeyFactory
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestKeyFactory
  * @run main/othervm TestKeyFactory sm

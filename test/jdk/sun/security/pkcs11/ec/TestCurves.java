@@ -26,7 +26,7 @@
  * @bug 6405536 6414980
  * @summary Basic consistency test for all curves using ECDSA and ECDH
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @modules jdk.crypto.cryptoki/sun.security.pkcs11.wrapper
  * @run main/othervm TestCurves
  * @run main/othervm TestCurves sm

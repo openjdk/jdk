@@ -26,7 +26,7 @@
  * @bug 7200306 8029158
  * @summary verify that P11Signature impl will error out when initialized
  * with unsupported key sizes
- * @library ..
+ * @library /test/lib ..
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestDSAKeyLength

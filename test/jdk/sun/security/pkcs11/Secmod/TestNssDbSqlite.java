@@ -28,7 +28,7 @@
  * @summary Test NSS DB Sqlite
  * @comment There is no NSS on Aix.
  * @requires os.family != "aix"
- * @library ../
+ * @library /test/lib ../
  * @modules java.base/sun.security.rsa
  *          java.base/sun.security.provider
  *          java.base/sun.security.jca

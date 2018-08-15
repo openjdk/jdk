@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6269847
  * @summary store a NSS PKCS11 PrivateKeyEntry to JKS KeyStore throws confusing NPE
  * @author Wang Weijun
- * @library ..
+ * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm JksSetPrivateKey
  * @run main/othervm JksSetPrivateKey sm policy
@@ -46,6 +46,11 @@ import java.util.TreeSet;
 public class JksSetPrivateKey extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 1 && "sm".equals(args[0])) {
+            System.setProperty("java.security.policy",
+                    BASE + File.separator + args[1]);
+        }
+
         if (initSecmod() == false) {
             return;
         }
@@ -57,8 +62,6 @@ public class JksSetPrivateKey extends SecmodTest {
         Security.addProvider(p);
 
         if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
             System.setSecurityManager(new SecurityManager());
         }
 

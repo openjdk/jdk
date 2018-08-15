@@ -26,7 +26,7 @@
  * @bug 6405536
  * @summary Verify that we can use ECGenParameterSpec
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestECGenSpec
  * @run main/othervm TestECGenSpec sm
