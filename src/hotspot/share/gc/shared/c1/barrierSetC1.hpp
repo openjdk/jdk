@@ -127,6 +127,7 @@ protected:
 public:
   virtual void store_at(LIRAccess& access, LIR_Opr value);
   virtual void load_at(LIRAccess& access, LIR_Opr result);
+  virtual void load(LIRAccess& access, LIR_Opr result);
 
   virtual LIR_Opr atomic_cmpxchg_at(LIRAccess& access, LIRItem& cmp_value, LIRItem& new_value);
 
