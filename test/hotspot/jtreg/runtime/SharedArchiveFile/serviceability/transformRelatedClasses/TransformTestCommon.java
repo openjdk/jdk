@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-
 
 // This class contains methods common to all transformation test cases
 public class TransformTestCommon {
@@ -101,8 +100,7 @@ public class TransformTestCommon {
         // If we were not able to map an archive,
         // then do not perform other checks, since
         // there was no sharing at all
-        if (CDSTestUtils.isUnableToMap(out))
-            return;
+        CDSTestUtils.checkMappingFailure(out);
 
         String childVmName = child.replace('.', '/');
         String parentVmName = parent.replace('.', '/');

@@ -42,15 +42,14 @@ public class SharedSymbolTableBucketSize {
             CDSTestUtils.createArchive("-XX:SharedSymbolTableBucketSize="
                                        + Integer.valueOf(bucket_size));
         CDSTestUtils.checkDump(output);
+        CDSTestUtils.checkMappingFailure(output);
 
-        if (!CDSTestUtils.isUnableToMap(output)) {
-            String s = output.firstMatch("Average bucket size     : .*");
-            Float f = Float.parseFloat(s.substring(25));
-            int size = Math.round(f);
-            if (size != bucket_size) {
-                throw new Exception("FAILED: incorrect bucket size " + size +
-                                    ", expect " + bucket_size);
-            }
+        String s = output.firstMatch("Average bucket size     : .*");
+        Float f = Float.parseFloat(s.substring(25));
+        int size = Math.round(f);
+        if (size != bucket_size) {
+            throw new Exception("FAILED: incorrect bucket size " + size +
+                                ", expect " + bucket_size);
         }
 
         // Invalid SharedSymbolTableBucketSize input
