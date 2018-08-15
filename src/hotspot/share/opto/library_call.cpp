@@ -1815,7 +1815,7 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
       set_result(_gvn.transform(new MulDNode(base, base)));
       return true;
     }
-    return StubRoutines::dexp() != NULL ?
+    return StubRoutines::dpow() != NULL ?
       runtime_math(OptoRuntime::Math_DD_D_Type(), StubRoutines::dpow(),  "dpow") :
       runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
   }
