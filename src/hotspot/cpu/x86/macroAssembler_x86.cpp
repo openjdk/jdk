@@ -3123,6 +3123,16 @@ void MacroAssembler::store_double(Address dst) {
   }
 }
 
+void MacroAssembler::push_zmm(XMMRegister reg) {
+  lea(rsp, Address(rsp, -64)); // Use lea to not affect flags
+  evmovdqul(Address(rsp, 0), reg, Assembler::AVX_512bit);
+}
+
+void MacroAssembler::pop_zmm(XMMRegister reg) {
+  evmovdqul(reg, Address(rsp, 0), Assembler::AVX_512bit);
+  lea(rsp, Address(rsp, 64)); // Use lea to not affect flags
+}
+
 void MacroAssembler::fremr(Register tmp) {
   save_rax(tmp);
   { Label L;
@@ -3848,33 +3858,25 @@ void MacroAssembler::pcmpeqb(XMMRegister dst, XMMRegister src) {
   } else if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::pcmpeqb(dst, src);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::pcmpeqb(xmm0, src);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::pcmpeqb(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::pcmpeqb(xmm1, xmm0);
     movdqu(dst, xmm1);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -3886,33 +3888,25 @@ void MacroAssembler::pcmpeqw(XMMRegister dst, XMMRegister src) {
   } else if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::pcmpeqw(dst, src);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::pcmpeqw(xmm0, src);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::pcmpeqw(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::pcmpeqw(xmm1, xmm0);
     movdqu(dst, xmm1);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -3921,13 +3915,11 @@ void MacroAssembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
   if (dst_enc < 16) {
     Assembler::pcmpestri(dst, src, imm8);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::pcmpestri(xmm0, src, imm8);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   }
 }
 
@@ -3937,33 +3929,25 @@ void MacroAssembler::pcmpestri(XMMRegister dst, XMMRegister src, int imm8) {
   if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::pcmpestri(dst, src, imm8);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::pcmpestri(xmm0, src, imm8);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::pcmpestri(dst, xmm0, imm8);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::pcmpestri(xmm1, xmm0, imm8);
     movdqu(dst, xmm1);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -3975,33 +3959,25 @@ void MacroAssembler::pmovzxbw(XMMRegister dst, XMMRegister src) {
   } else if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::pmovzxbw(dst, src);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::pmovzxbw(xmm0, src);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::pmovzxbw(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::pmovzxbw(xmm1, xmm0);
     movdqu(dst, xmm1);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4012,13 +3988,11 @@ void MacroAssembler::pmovzxbw(XMMRegister dst, Address src) {
   } else if (dst_enc < 16) {
     Assembler::pmovzxbw(dst, src);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::pmovzxbw(xmm0, src);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4027,12 +4001,10 @@ void MacroAssembler::pmovmskb(Register dst, XMMRegister src) {
   if (src_enc < 16) {
     Assembler::pmovmskb(dst, src);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::pmovmskb(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4042,31 +4014,23 @@ void MacroAssembler::ptest(XMMRegister dst, XMMRegister src) {
   if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::ptest(dst, src);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::ptest(xmm0, src);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::ptest(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::ptest(xmm1, xmm0);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4221,13 +4185,11 @@ void MacroAssembler::vabsss(XMMRegister dst, XMMRegister nds, XMMRegister src, A
       evmovdqul(dst, xmm0, Assembler::AVX_512bit);
       evmovdqul(xmm0, src, Assembler::AVX_512bit);
     } else {
-      subptr(rsp, 64);
-      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      push_zmm(xmm0);
       evmovdqul(xmm0, nds, Assembler::AVX_512bit);
       vandps(xmm0, xmm0, negate_field, vector_len);
       evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-      addptr(rsp, 64);
+      pop_zmm(xmm0);
     }
   }
 }
@@ -4258,13 +4220,11 @@ void MacroAssembler::vabssd(XMMRegister dst, XMMRegister nds, XMMRegister src, A
       evmovdqul(dst, xmm0, Assembler::AVX_512bit);
       evmovdqul(xmm0, src, Assembler::AVX_512bit);
     } else {
-      subptr(rsp, 64);
-      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      push_zmm(xmm0);
       evmovdqul(xmm0, nds, Assembler::AVX_512bit);
       vandpd(xmm0, xmm0, negate_field, vector_len);
       evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-      addptr(rsp, 64);
+      pop_zmm(xmm0);
     }
   }
 }
@@ -4294,16 +4254,14 @@ void MacroAssembler::vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, i
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
   } else {
     // worse case scenario, all regs are in the upper bank
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm1);
     evmovdqul(nds, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm1, src, Assembler::AVX_512bit);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpaddb(xmm0, xmm0, xmm1, vector_len);
     evmovdqul(dst, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
   }
 }
 
@@ -4353,16 +4311,14 @@ void MacroAssembler::vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, i
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
   } else {
     // worse case scenario, all regs are in the upper bank
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm1);
     evmovdqul(nds, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm1, src, Assembler::AVX_512bit);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpaddw(xmm0, xmm0, xmm1, vector_len);
     evmovdqul(dst, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
   }
 }
 
@@ -4404,33 +4360,25 @@ void MacroAssembler::vpbroadcastw(XMMRegister dst, XMMRegister src) {
   } else if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::vpbroadcastw(dst, src);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpbroadcastw(xmm0, src);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::vpbroadcastw(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::vpbroadcastw(xmm1, xmm0);
     movdqu(dst, xmm1);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4442,33 +4390,25 @@ void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src,
   if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::vpcmpeqb(dst, nds, src, vector_len);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpcmpeqb(xmm0, xmm0, src, vector_len);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::vpcmpeqb(dst, dst, xmm0, vector_len);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::vpcmpeqb(xmm1, xmm1, xmm0, vector_len);
     movdqu(dst, xmm1);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4480,33 +4420,25 @@ void MacroAssembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src,
   if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::vpcmpeqw(dst, nds, src, vector_len);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpcmpeqw(xmm0, xmm0, src, vector_len);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::vpcmpeqw(dst, dst, xmm0, vector_len);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::vpcmpeqw(xmm1, xmm1, xmm0, vector_len);
     movdqu(dst, xmm1);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4517,13 +4449,11 @@ void MacroAssembler::vpmovzxbw(XMMRegister dst, Address src, int vector_len) {
   } else if (dst_enc < 16) {
     Assembler::vpmovzxbw(dst, src, vector_len);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpmovzxbw(xmm0, src, vector_len);
     movdqu(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4532,12 +4462,10 @@ void MacroAssembler::vpmovmskb(Register dst, XMMRegister src) {
   if (src_enc < 16) {
     Assembler::vpmovmskb(dst, src);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::vpmovmskb(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4566,16 +4494,14 @@ void MacroAssembler::vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, 
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
   } else {
     // worse case scenario, all regs are in the upper bank
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm1);
     evmovdqul(nds, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm1, src, Assembler::AVX_512bit);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpmullw(xmm0, xmm0, xmm1, vector_len);
     evmovdqul(dst, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
   }
 }
 
@@ -4625,16 +4551,14 @@ void MacroAssembler::vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, i
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
   } else {
     // worse case scenario, all regs are in the upper bank
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm1);
     evmovdqul(nds, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm1, src, Assembler::AVX_512bit);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpsubb(xmm0, xmm0, xmm1, vector_len);
     evmovdqul(dst, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
   }
 }
 
@@ -4684,16 +4608,14 @@ void MacroAssembler::vpsubw(XMMRegister dst, XMMRegister nds, XMMRegister src, i
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
   } else {
     // worse case scenario, all regs are in the upper bank
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm1);
     evmovdqul(nds, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm1, src, Assembler::AVX_512bit);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vpsubw(xmm0, xmm0, xmm1, vector_len);
     evmovdqul(dst, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
   }
 }
 
@@ -4751,8 +4673,7 @@ void MacroAssembler::vpsraw(XMMRegister dst, XMMRegister nds, XMMRegister shift,
     evmovdqul(dst, nds, Assembler::AVX_512bit);
   } else {
     // worse case scenario, all regs are in the upper bank
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm1);
     evmovdqul(nds, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm1, shift, Assembler::AVX_512bit);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
@@ -4760,8 +4681,7 @@ void MacroAssembler::vpsraw(XMMRegister dst, XMMRegister nds, XMMRegister shift,
     evmovdqul(xmm1, dst, Assembler::AVX_512bit);
     evmovdqul(dst, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
   }
 }
 
@@ -4819,8 +4739,7 @@ void MacroAssembler::vpsrlw(XMMRegister dst, XMMRegister nds, XMMRegister shift,
     evmovdqul(dst, nds, Assembler::AVX_512bit);
   } else {
     // worse case scenario, all regs are in the upper bank
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm1);
     evmovdqul(nds, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm1, shift, Assembler::AVX_512bit);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
@@ -4828,8 +4747,7 @@ void MacroAssembler::vpsrlw(XMMRegister dst, XMMRegister nds, XMMRegister shift,
     evmovdqul(xmm1, dst, Assembler::AVX_512bit);
     evmovdqul(dst, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
   }
 }
 
@@ -4887,8 +4805,7 @@ void MacroAssembler::vpsllw(XMMRegister dst, XMMRegister nds, XMMRegister shift,
     evmovdqul(dst, nds, Assembler::AVX_512bit);
   } else {
     // worse case scenario, all regs are in the upper bank
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm1);
     evmovdqul(nds, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm1, shift, Assembler::AVX_512bit);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
@@ -4896,8 +4813,7 @@ void MacroAssembler::vpsllw(XMMRegister dst, XMMRegister nds, XMMRegister shift,
     evmovdqul(xmm1, dst, Assembler::AVX_512bit);
     evmovdqul(dst, xmm0, Assembler::AVX_512bit);
     evmovdqul(xmm0, nds, Assembler::AVX_512bit);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
   }
 }
 
@@ -4928,31 +4844,23 @@ void MacroAssembler::vptest(XMMRegister dst, XMMRegister src) {
   if ((dst_enc < 16) && (src_enc < 16)) {
     Assembler::vptest(dst, src);
   } else if (src_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, dst, Assembler::AVX_512bit);
     Assembler::vptest(xmm0, src);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else if (dst_enc < 16) {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+    push_zmm(xmm0);
     evmovdqul(xmm0, src, Assembler::AVX_512bit);
     Assembler::vptest(dst, xmm0);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm0);
   } else {
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-    subptr(rsp, 64);
-    evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+    push_zmm(xmm0);
+    push_zmm(xmm1);
     movdqu(xmm0, src);
     movdqu(xmm1, dst);
     Assembler::vptest(xmm1, xmm0);
-    evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
-    evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-    addptr(rsp, 64);
+    pop_zmm(xmm1);
+    pop_zmm(xmm0);
   }
 }
 
@@ -4966,45 +4874,35 @@ void MacroAssembler::punpcklbw(XMMRegister dst, XMMRegister src) {
       if (dst_enc < 16) {
         Assembler::punpcklbw(dst, src);
       } else {
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+        push_zmm(xmm0);
         evmovdqul(xmm0, dst, Assembler::AVX_512bit);
         Assembler::punpcklbw(xmm0, xmm0);
         evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-        evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
+        pop_zmm(xmm0);
       }
     } else {
       if ((src_enc < 16) && (dst_enc < 16)) {
         Assembler::punpcklbw(dst, src);
       } else if (src_enc < 16) {
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+        push_zmm(xmm0);
         evmovdqul(xmm0, dst, Assembler::AVX_512bit);
         Assembler::punpcklbw(xmm0, src);
         evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-        evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
+        pop_zmm(xmm0);
       } else if (dst_enc < 16) {
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+        push_zmm(xmm0);
         evmovdqul(xmm0, src, Assembler::AVX_512bit);
         Assembler::punpcklbw(dst, xmm0);
-        evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
+        pop_zmm(xmm0);
       } else {
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+        push_zmm(xmm0);
+        push_zmm(xmm1);
         evmovdqul(xmm0, dst, Assembler::AVX_512bit);
         evmovdqul(xmm1, src, Assembler::AVX_512bit);
         Assembler::punpcklbw(xmm0, xmm1);
         evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-        evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
-        evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
+        pop_zmm(xmm1);
+        pop_zmm(xmm0);
       }
     }
   } else {
@@ -5020,12 +4918,10 @@ void MacroAssembler::pshufd(XMMRegister dst, Address src, int mode) {
     if (dst_enc < 16) {
       Assembler::pshufd(dst, src, mode);
     } else {
-      subptr(rsp, 64);
-      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      push_zmm(xmm0);
       Assembler::pshufd(xmm0, src, mode);
       evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-      addptr(rsp, 64);
+      pop_zmm(xmm0);
     }
   }
 }
@@ -5040,45 +4936,35 @@ void MacroAssembler::pshuflw(XMMRegister dst, XMMRegister src, int mode) {
       if (dst_enc < 16) {
         Assembler::pshuflw(dst, src, mode);
       } else {
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+        push_zmm(xmm0);
         evmovdqul(xmm0, dst, Assembler::AVX_512bit);
         Assembler::pshuflw(xmm0, xmm0, mode);
         evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-        evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
+        pop_zmm(xmm0);
       }
     } else {
       if ((src_enc < 16) && (dst_enc < 16)) {
         Assembler::pshuflw(dst, src, mode);
       } else if (src_enc < 16) {
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+        push_zmm(xmm0);
         evmovdqul(xmm0, dst, Assembler::AVX_512bit);
         Assembler::pshuflw(xmm0, src, mode);
         evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-        evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
+        pop_zmm(xmm0);
       } else if (dst_enc < 16) {
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+        push_zmm(xmm0);
         evmovdqul(xmm0, src, Assembler::AVX_512bit);
         Assembler::pshuflw(dst, xmm0, mode);
-        evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
+        pop_zmm(xmm0);
       } else {
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
-        subptr(rsp, 64);
-        evmovdqul(Address(rsp, 0), xmm1, Assembler::AVX_512bit);
+        push_zmm(xmm0);
+        push_zmm(xmm1);
         evmovdqul(xmm0, dst, Assembler::AVX_512bit);
         evmovdqul(xmm1, src, Assembler::AVX_512bit);
         Assembler::pshuflw(xmm0, xmm1, mode);
         evmovdqul(dst, xmm0, Assembler::AVX_512bit);
-        evmovdqul(xmm1, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
-        evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-        addptr(rsp, 64);
+        pop_zmm(xmm1);
+        pop_zmm(xmm0);
       }
     }
   } else {
@@ -5166,13 +5052,11 @@ void MacroAssembler::vnegatess(XMMRegister dst, XMMRegister nds, AddressLiteral 
   if (VM_Version::supports_avx512novl() &&
       (nds_upper_bank || dst_upper_bank)) {
     if (dst_upper_bank) {
-      subptr(rsp, 64);
-      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      push_zmm(xmm0);
       movflt(xmm0, nds);
       vxorps(xmm0, xmm0, src, Assembler::AVX_128bit);
       movflt(dst, xmm0);
-      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-      addptr(rsp, 64);
+      pop_zmm(xmm0);
     } else {
       movflt(dst, nds);
       vxorps(dst, dst, src, Assembler::AVX_128bit);
@@ -5190,13 +5074,11 @@ void MacroAssembler::vnegatesd(XMMRegister dst, XMMRegister nds, AddressLiteral 
   if (VM_Version::supports_avx512novl() &&
       (nds_upper_bank || dst_upper_bank)) {
     if (dst_upper_bank) {
-      subptr(rsp, 64);
-      evmovdqul(Address(rsp, 0), xmm0, Assembler::AVX_512bit);
+      push_zmm(xmm0);
       movdbl(xmm0, nds);
       vxorpd(xmm0, xmm0, src, Assembler::AVX_128bit);
       movdbl(dst, xmm0);
-      evmovdqul(xmm0, Address(rsp, 0), Assembler::AVX_512bit);
-      addptr(rsp, 64);
+      pop_zmm(xmm0);
     } else {
       movdbl(dst, nds);
       vxorpd(dst, dst, src, Assembler::AVX_128bit);
