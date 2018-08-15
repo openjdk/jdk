@@ -38,8 +38,7 @@ import java.util.List;
  * @since   1.4.1
  */
 enum ProtocolVersion {
-//    TLS13           (0x0304,    "TLSv1.3",      false),
-    TLS13           (SSLConfiguration.tls13VN,    "TLSv1.3",      false),
+    TLS13           (0x0304,    "TLSv1.3",      false),
     TLS12           (0x0303,    "TLSv1.2",      false),
     TLS11           (0x0302,    "TLSv1.1",      false),
     TLS10           (0x0301,    "TLSv1",        false),
