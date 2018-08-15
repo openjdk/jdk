@@ -191,6 +191,7 @@ public class SSLEngineAlpnTest {
         if (debug) {
             System.setProperty("javax.net.debug", "all");
         }
+        System.setProperty("jdk.tls.acknowledgeCloseNotify", "true");
         System.out.println("Test args: " + Arrays.toString(args));
 
         // Validate parameters
@@ -358,6 +359,7 @@ public class SSLEngineAlpnTest {
 
                 log("\tClosing clientEngine's *OUTBOUND*...");
                 clientEngine.closeOutbound();
+                // serverEngine.closeOutbound();
                 dataDone = true;
             }
         }

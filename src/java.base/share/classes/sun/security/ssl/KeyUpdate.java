@@ -223,8 +223,8 @@ final class KeyUpdate {
                         Authenticator.valueOf(hc.conContext.protocolVersion),
                         hc.conContext.protocolVersion, key, ivSpec,
                         hc.sslContext.getSecureRandom());
+                rc.baseSecret = nplus1;
                 hc.conContext.inputRecord.changeReadCiphers(rc);
-                hc.conContext.inputRecord.readCipher.baseSecret = nplus1;
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                     SSLLogger.fine("KeyUpdate: read key updated");
                 }
@@ -303,13 +303,12 @@ final class KeyUpdate {
                 return null;
             }
 
-            // Output the handshake message.
-            km.write(hc.handshakeOutput);
-            hc.handshakeOutput.flush();
-
-            // change write cipher
-            hc.conContext.outputRecord.changeWriteCiphers(wc, false);
-            hc.conContext.outputRecord.writeCipher.baseSecret = nplus1;
+            // Output the handshake message and change the write cipher.
+            //
+            // The KeyUpdate handshake message SHALL be delivered in the
+            // changeWriteCiphers() implementation.
+            wc.baseSecret = nplus1;
+            hc.conContext.outputRecord.changeWriteCiphers(wc, km.status.id);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                 SSLLogger.fine("KeyUpdate: write key updated");
             }

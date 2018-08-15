@@ -106,11 +106,11 @@ public class TLS13BeginHandshake {
                 checkTransfer(clientOut, serverIn);
                 System.out.println("\tClosing...");
                 clientEngine.closeOutbound();
+                serverEngine.closeOutbound();
                 done++;
                 continue;
             }
         }
-
     }
 
     private static boolean isEngineClosed(SSLEngine engine) {

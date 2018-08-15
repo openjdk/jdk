@@ -33,6 +33,7 @@
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
  * @run testng/othervm
+ *        -Djdk.tls.acknowledgeCloseNotify=true
  *        -Djdk.internal.httpclient.debug=true
  *        -Djdk.httpclient.HttpClient.log=headers,errors EncodedCharsInURI
  */

@@ -25,7 +25,14 @@
  * @test
  * @bug 5019096
  * @summary Add scatter/gather APIs for SSLEngine
- *
+ * @run main/othervm Arrays SSL
+ * @run main/othervm Arrays TLS
+ * @run main/othervm Arrays SSLv3
+ * @run main/othervm Arrays TLSv1
+ * @run main/othervm Arrays TLSv1.1
+ * @run main/othervm Arrays TLSv1.2
+ * @run main/othervm Arrays TLSv1.3
+ * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true Arrays TLSv1.3
  */
 
 import javax.net.ssl.*;
@@ -37,6 +44,8 @@ import java.nio.*;
 public class Arrays {
 
     private static boolean debug = false;
+    private static boolean acknowledgeCloseNotify =
+        "true".equals(System.getProperty("jdk.tls.acknowledgeCloseNotify"));
 
     private SSLContext sslc;
     private SSLEngine ssle1;    // client
@@ -131,11 +140,13 @@ public class Arrays {
 
                 for (int i = 0; i < appOutArray1.length; i++) {
                     if (appOutArray1[i].remaining() != 0) {
+                        log("1st out not done");
                         done = false;
                     }
                 }
 
                 if (appOut2.remaining() != 0) {
+                    log("2nd out not done");
                     done = false;
                 }
 
@@ -145,6 +156,19 @@ public class Arrays {
                         appOutArray1[i].rewind();
                     }
                     ssle1.closeOutbound();
+                    String protocol = ssle2.getSession().getProtocol();
+                    if (!acknowledgeCloseNotify) {
+                        switch (ssle2.getSession().getProtocol()) {
+                            case "SSLv3":
+                            case "TLSv1":
+                            case "TLSv1.1":
+                            case "TLSv1.2":
+                                break;
+                            default:    // TLSv1.3
+                                // TLS 1.3, half-close only.
+                                ssle2.closeOutbound();
+                        }
+                    }
                     dataDone = true;
                 }
             }
@@ -155,7 +179,9 @@ public class Arrays {
         checkTransfer(appInArray1, appOut2);
     }
 
+    private static String contextVersion;
     public static void main(String args[]) throws Exception {
+        contextVersion = args[0];
 
         Arrays test;
 
@@ -165,7 +191,7 @@ public class Arrays {
 
         test.runTest();
 
-        System.out.println("Test Passed.");
+        System.err.println("Test Passed.");
     }
 
     /*
@@ -198,7 +224,7 @@ public class Arrays {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
         tmf.init(ts);
 
-        SSLContext sslCtx = SSLContext.getInstance("TLS");
+        SSLContext sslCtx = SSLContext.getInstance(contextVersion);
 
         sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 
@@ -288,7 +314,7 @@ public class Arrays {
 
     private static void log(String str) {
         if (debug) {
-            System.out.println(str);
+            System.err.println(str);
         }
     }
 }

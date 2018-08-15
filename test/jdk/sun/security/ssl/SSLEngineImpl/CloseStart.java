@@ -68,11 +68,6 @@ public class CloseStart {
         }
     }
 
-    private static void runTest1(SSLEngine ssle) throws Exception {
-        ssle.closeInbound();
-        checkDone(ssle);
-    }
-
     private static void runTest2(SSLEngine ssle) throws Exception {
         ssle.closeOutbound();
         checkDone(ssle);
@@ -81,10 +76,16 @@ public class CloseStart {
     public static void main(String args[]) throws Exception {
 
         SSLEngine ssle = createSSLEngine(keyFilename, trustFilename);
-        runTest1(ssle);
+        ssle.closeInbound();
+        if (!ssle.isInboundDone()) {
+            throw new Exception("isInboundDone isn't done");
+        }
 
         ssle = createSSLEngine(keyFilename, trustFilename);
-        runTest2(ssle);
+        ssle.closeOutbound();
+        if (!ssle.isOutboundDone()) {
+            throw new Exception("isOutboundDone isn't done");
+        }
 
         System.out.println("Test Passed.");
     }

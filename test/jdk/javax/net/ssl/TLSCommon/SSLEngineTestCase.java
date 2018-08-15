@@ -936,6 +936,7 @@ abstract public class SSLEngineTestCase {
                 case SUPPORTED_NON_KRB_NON_SHA_CIPHERS:
                 case SUPPORTED_KRB_CIPHERS:
                 case ENABLED_NON_KRB_NOT_ANON_CIPHERS:
+                case TLS13_CIPHERS:
                     if (error != null) {
                         System.out.println("Test Failed: " + cs);
                         System.err.println("Test Exception for " + cs);

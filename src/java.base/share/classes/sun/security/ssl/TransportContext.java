@@ -25,7 +25,6 @@
 
 package sun.security.ssl;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -45,7 +44,7 @@ import sun.security.ssl.SupportedGroupsExtension.NamedGroup;
 /**
  * SSL/(D)TLS transportation context.
  */
-class TransportContext implements ConnectionContext, Closeable {
+class TransportContext implements ConnectionContext {
     final SSLTransport              transport;
 
     // registered plaintext consumers
@@ -62,7 +61,7 @@ class TransportContext implements ConnectionContext, Closeable {
     boolean                         isNegotiated = false;
     boolean                         isBroken = false;
     boolean                         isInputCloseNotified = false;
-    boolean                         isOutputCloseNotified = false;
+    boolean                         peerUserCanceled = false;
     Exception                       closeReason = null;
 
     // negotiated security parameters
@@ -229,10 +228,6 @@ class TransportContext implements ConnectionContext, Closeable {
         }
     }
 
-    void keyUpdate() throws IOException {
-        kickstart();
-    }
-
     boolean isPostHandshakeContext() {
         return handshakeContext != null &&
                 (handshakeContext instanceof PostHandshakeContext);
@@ -348,7 +343,7 @@ class TransportContext implements ConnectionContext, Closeable {
         //
         // If we haven't even started handshaking yet, or we are the recipient
         // of a fatal alert, no need to generate a fatal close alert.
-        if (!recvFatalAlert && !isOutboundDone() && !isBroken &&
+        if (!recvFatalAlert && !isOutboundClosed() && !isBroken &&
                 (isNegotiated || handshakeContext != null)) {
             try {
                 outputRecord.encodeAlert(Alert.Level.FATAL.level, alert.id);
@@ -436,35 +431,26 @@ class TransportContext implements ConnectionContext, Closeable {
         return outputRecord.isClosed();
     }
 
-    boolean isInboundDone() {
+    boolean isInboundClosed() {
         return inputRecord.isClosed();
     }
 
-    boolean isClosed() {
-        return isOutboundClosed() && isInboundDone();
-    }
-
-    @Override
-    public void close() throws IOException {
-        if (!isOutboundDone()) {
-            closeOutbound();
-        }
-
-        if (!isInboundDone()) {
-            closeInbound();
-        }
-    }
-
-    void closeInbound() {
-        if (isInboundDone()) {
+    // Close inbound, no more data should be delivered to the underlying
+    // transportation connection.
+    void closeInbound() throws SSLException {
+        if (isInboundClosed()) {
             return;
         }
 
         try {
-            if (isInputCloseNotified) {     // passive close
-                passiveInboundClose();
-            } else {                        // initiative close
+            // Important note: check if the initial handshake is started at
+            // first so that the passiveInboundClose() implementation need not
+            // to consider the case any more.
+            if (!isInputCloseNotified) {
+                // the initial handshake is not started
                 initiateInboundClose();
+            } else {
+                passiveInboundClose();
             }
         } catch (IOException ioe) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
@@ -473,8 +459,58 @@ class TransportContext implements ConnectionContext, Closeable {
         }
     }
 
+    // Close the connection passively.  The closure could be kickoff by
+    // receiving a close_notify alert or reaching end_of_file of the socket.
+    //
+    // Note that this method is called only if the initial handshake has
+    // started or completed.
+    private void passiveInboundClose() throws IOException {
+        if (!isInboundClosed()) {
+            inputRecord.close();
+        }
+
+        // For TLS 1.2 and prior version, it is required to respond with
+        // a close_notify alert of its own and close down the connection
+        // immediately, discarding any pending writes.
+        if (!isOutboundClosed()) {
+            boolean needCloseNotify = SSLConfiguration.acknowledgeCloseNotify;
+            if (!needCloseNotify) {
+                if (isNegotiated) {
+                    if (!protocolVersion.useTLS13PlusSpec()) {
+                        needCloseNotify = true;
+                    }
+                } else if (handshakeContext != null) {  // initial handshake
+                    ProtocolVersion pv = handshakeContext.negotiatedProtocol;
+                    if (pv == null || (!pv.useTLS13PlusSpec())) {
+                        needCloseNotify = true;
+                    }
+                }
+            }
+
+            if (needCloseNotify) {
+                synchronized (outputRecord) {
+                    try {
+                        // send a close_notify alert
+                        warning(Alert.CLOSE_NOTIFY);
+                    } finally {
+                        outputRecord.close();
+                    }
+                }
+            }
+        }
+    }
+
+    // Initiate a inbound close when the handshake is not started.
+    private void initiateInboundClose() throws IOException {
+        if (!isInboundClosed()) {
+            inputRecord.close();
+        }
+    }
+
+    // Close outbound, no more data should be received from the underlying
+    // transportation connection.
     void closeOutbound() {
-        if (isOutboundDone()) {
+        if (isOutboundClosed()) {
             return;
         }
 
@@ -487,87 +523,27 @@ class TransportContext implements ConnectionContext, Closeable {
         }
     }
 
-    // Close the connection passively.  The closure could be kickoff by
-    // receiving a close_notify alert or reaching end_of_file of the socket.
-    private void passiveInboundClose() throws IOException {
-        if (!isInboundDone()) {
-            inputRecord.close();
-        }
-
-        // For TLS 1.2 and prior version, it is required to respond with
-        // a close_notify alert of its own and close down the connection
-        // immediately, discarding any pending writes.
-        if (!isOutboundDone() && !isOutputCloseNotified) {
-            try {
-                // send a close_notify alert
-                warning(Alert.CLOSE_NOTIFY);
-            } finally {
-                // any data received after a closure alert is ignored.
-                isOutputCloseNotified = true;
-                outputRecord.close();
-            }
-        }
-
-        transport.shutdown();
-    }
-
-    // Initiate a close by sending a close_notify alert.
-    private void initiateInboundClose() throws IOException {
-        // TLS 1.3 does not define how to initiate and close a TLS connection
-        // gracefully.  We will always send a close_notify alert, and close
-        // the underlying transportation layer if needed.
-        if (!isInboundDone() && !isInputCloseNotified) {
-            try {
-                // send a close_notify alert
-                warning(Alert.CLOSE_NOTIFY);
-            } finally {
-                // any data received after a closure alert is ignored.
-                isInputCloseNotified = true;
-                inputRecord.close();
-            }
-        }
-
-        // For TLS 1.3, input closure is independent from output closure. Both
-        // parties need not wait to receive a "close_notify" alert before
-        // closing their read side of the connection.
-        //
-        // For TLS 1.2 and prior version, it is not required for the initiator
-        // of the close to wait for the responding close_notify alert before
-        // closing the read side of the connection.
-        try {
-            transport.shutdown();
-        } finally {
-            if (!isOutboundDone()) {
-                outputRecord.close();
-            }
-        }
-    }
-
     // Initiate a close by sending a close_notify alert.
     private void initiateOutboundClose() throws IOException {
-        if (!isOutboundDone() && !isOutputCloseNotified) {
-            try {     // close outputRecord
+        boolean useUserCanceled = false;
+        if (!isNegotiated && (handshakeContext != null) && !peerUserCanceled) {
+            // initial handshake
+            useUserCanceled = true;
+        }
+
+        // Need a lock here so that the user_canceled alert and the
+        // close_notify alert can be delivered together.
+        synchronized (outputRecord) {
+            try {
+                // send a user_canceled alert if needed.
+                if (useUserCanceled) {
+                    warning(Alert.USER_CANCELED);
+                }
+
                 // send a close_notify alert
                 warning(Alert.CLOSE_NOTIFY);
             } finally {
-                // any data received after a closure alert is ignored.
-                isOutputCloseNotified = true;
                 outputRecord.close();
-            }
-        }
-
-        // It is not required for the initiator of the close to wait for the
-        // responding close_notify alert before closing the read side of the
-        // connection.  However, if the application protocol using TLS
-        // provides that any data may be carried over the underlying transport
-        // after the TLS connection is closed, the TLS implementation MUST
-        // receive a "close_notify" alert before indicating end-of-data to the
-        // application-layer.
-        try {
-            transport.shutdown();
-        } finally {
-            if (!isInboundDone()) {
-                inputRecord.close();
             }
         }
     }
@@ -578,25 +554,28 @@ class TransportContext implements ConnectionContext, Closeable {
             // If no handshaking, special case to wrap alters or
             // post-handshake messages.
             return HandshakeStatus.NEED_WRAP;
+        } else if (isOutboundClosed() && isInboundClosed()) {
+            return HandshakeStatus.NOT_HANDSHAKING;
         } else if (handshakeContext != null) {
             if (!handshakeContext.delegatedActions.isEmpty()) {
                 return HandshakeStatus.NEED_TASK;
-            } else if (sslContext.isDTLS() &&
-                    !inputRecord.isEmpty()) {
-                return HandshakeStatus.NEED_UNWRAP_AGAIN;
-            } else {
-                return HandshakeStatus.NEED_UNWRAP;
+            } else if (!isInboundClosed()) {
+                if (sslContext.isDTLS() &&
+                        !inputRecord.isEmpty()) {
+                    return HandshakeStatus.NEED_UNWRAP_AGAIN;
+                } else {
+                    return HandshakeStatus.NEED_UNWRAP;
+                }
+            } else if (!isOutboundClosed()) {
+                // Special case that the inbound was closed, but outbound open.
+                return HandshakeStatus.NEED_WRAP;
             }
-        } else if (isOutboundDone() && !isInboundDone()) {
-            /*
-             * Special case where we're closing, but
-             * still need the close_notify before we
-             * can officially be closed.
-             *
-             * Note isOutboundDone is taken care of by
-             * hasOutboundData() above.
-             */
+        } else if (isOutboundClosed() && !isInboundClosed()) {
+            // Special case that the outbound was closed, but inbound open.
             return HandshakeStatus.NEED_UNWRAP;
+        } else if (!isOutboundClosed() && isInboundClosed()) {
+            // Special case that the inbound was closed, but outbound open.
+            return HandshakeStatus.NEED_WRAP;
         }
 
         return HandshakeStatus.NOT_HANDSHAKING;
@@ -607,8 +586,10 @@ class TransportContext implements ConnectionContext, Closeable {
             outputRecord.tc = this;
             inputRecord.tc = this;
             cipherSuite = handshakeContext.negotiatedCipherSuite;
-            inputRecord.readCipher.baseSecret = handshakeContext.baseReadSecret;
-            outputRecord.writeCipher.baseSecret = handshakeContext.baseWriteSecret;
+            inputRecord.readCipher.baseSecret =
+                    handshakeContext.baseReadSecret;
+            outputRecord.writeCipher.baseSecret =
+                    handshakeContext.baseWriteSecret;
         }
 
         handshakeContext = null;
