@@ -204,7 +204,6 @@ class MetaspaceShared : AllStatic {
   static void patch_cpp_vtable_pointers();
   static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
-  static void serialize_well_known_classes(SerializeClosure* soc) NOT_CDS_RETURN;
 
   static MetaspaceSharedStats* stats() {
     return &_stats;

@@ -423,49 +423,10 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   StringTable::serialize(soc);
   soc->do_tag(--tag);
 
-  serialize_well_known_classes(soc);
+  JavaClasses::serialize_offsets(soc);
   soc->do_tag(--tag);
 
   soc->do_tag(666);
-}
-
-void MetaspaceShared::serialize_well_known_classes(SerializeClosure* soc) {
-  java_lang_Class::serialize(soc);
-  java_lang_String::serialize(soc);
-  java_lang_System::serialize(soc);
-  java_lang_ClassLoader::serialize(soc);
-  java_lang_Throwable::serialize(soc);
-  java_lang_Thread::serialize(soc);
-  java_lang_ThreadGroup::serialize(soc);
-  java_lang_AssertionStatusDirectives::serialize(soc);
-  java_lang_module_Configuration::serialize(soc);
-  java_lang_ref_SoftReference::serialize(soc);
-  java_lang_invoke_MethodHandle::serialize(soc);
-  java_lang_invoke_DirectMethodHandle::serialize(soc);
-  java_lang_invoke_MemberName::serialize(soc);
-  java_lang_invoke_ResolvedMethodName::serialize(soc);
-  java_lang_invoke_LambdaForm::serialize(soc);
-  java_lang_invoke_MethodType::serialize(soc);
-  java_lang_invoke_CallSite::serialize(soc);
-  java_lang_invoke_MethodHandleNatives_CallSiteContext::serialize(soc);
-  java_security_AccessControlContext::serialize(soc);
-  java_lang_reflect_AccessibleObject::serialize(soc);
-  java_lang_reflect_Method::serialize(soc);
-  java_lang_reflect_Constructor::serialize(soc);
-  java_lang_reflect_Field::serialize(soc);
-  java_nio_Buffer::serialize(soc);
-  reflect_ConstantPool::serialize(soc);
-  reflect_UnsafeStaticFieldAccessorImpl::serialize(soc);
-  java_lang_reflect_Parameter::serialize(soc);
-  java_lang_Module::serialize(soc);
-  java_lang_StackTraceElement::serialize(soc);
-  java_lang_StackFrameInfo::serialize(soc);
-  java_lang_LiveStackFrameInfo::serialize(soc);
-  java_util_concurrent_locks_AbstractOwnableSynchronizer::serialize(soc);
-  java_util_ImmutableCollections_ListN::serialize(soc);
-  java_util_ImmutableCollections_MapN::serialize(soc);
-  java_util_ImmutableCollections_SetN::serialize(soc);
-  jdk_internal_module_ArchivedModuleGraph::serialize(soc);
 }
 
 address MetaspaceShared::cds_i2i_entry_code_buffers(size_t total_size) {
