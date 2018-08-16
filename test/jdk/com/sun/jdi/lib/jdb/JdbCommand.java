@@ -117,16 +117,10 @@ import java.util.stream.Collectors;
  */
 public class JdbCommand {
     final String cmd;
-    boolean allowSimplePrompt = false;
     boolean allowExit = false;
 
     public JdbCommand(String cmd) {
         this.cmd = cmd.endsWith(ls) ? cmd.substring(0, cmd.length() - 1) : cmd;
-    }
-
-    public JdbCommand allowSimplePrompt() {
-        allowSimplePrompt = true;
-        return this;
     }
 
     public JdbCommand allowExit() {
