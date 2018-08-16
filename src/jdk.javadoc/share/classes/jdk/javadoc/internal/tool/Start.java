@@ -54,6 +54,7 @@ import javax.tools.StandardLocation;
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.file.BaseFileManager;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.javac.main.OptionHelper;
@@ -549,6 +550,11 @@ public class Start extends ToolOption.Helper {
             ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
         }
 
+        if (fileManager.isSupportedOption(MULTIRELEASE.primaryName) == 1) {
+            Target target = Target.instance(context);
+            List<String> list = List.of(target.multiReleaseValue());
+            fileManager.handleOption(MULTIRELEASE.primaryName, list.iterator());
+        }
         compOpts.notifyListeners();
         List<String> modules = (List<String>) jdtoolOpts.computeIfAbsent(ToolOption.MODULE,
                 s -> Collections.EMPTY_LIST);
