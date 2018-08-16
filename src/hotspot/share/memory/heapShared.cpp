@@ -352,7 +352,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
       // A java.lang.Class instance can not be included in an archived
       // object sub-graph.
       if (java_lang_Class::is_instance(obj)) {
-        tty->print("Unknown java.lang.Class object is in the archived sub-graph\n");
+        log_error(cds, heap)("Unknown java.lang.Class object is in the archived sub-graph\n");
         vm_exit(1);
       }
 
@@ -392,6 +392,17 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
       Thread* THREAD = Thread::current();
       // Archive the current oop before iterating through its references
       archived = MetaspaceShared::archive_heap_object(obj, THREAD);
+      if (archived == NULL) {
+        ResourceMark rm;
+        LogTarget(Error, cds, heap) log_err;
+        LogStream ls_err(log_err);
+        outputStream* out_err = &ls_err;
+        log_err.print("Failed to archive %s object ("
+                      PTR_FORMAT "), size[" SIZE_FORMAT "] in sub-graph",
+                      obj->klass()->external_name(), p2i(obj), (size_t)obj->size());
+        obj->print_on(out_err);
+        vm_exit(1);
+      }
       assert(MetaspaceShared::is_archive_object(archived), "must be archived");
       log.print("=== archiving oop " PTR_FORMAT " ==> " PTR_FORMAT,
                  p2i(obj), p2i(archived));
@@ -480,6 +491,15 @@ void HeapShared::archive_reachable_objects_from_static_field(Klass *k,
 
       // get the archived copy of the field referenced object
       oop af = MetaspaceShared::archive_heap_object(f, THREAD);
+      if (af == NULL) {
+        // Skip archiving the sub-graph referenced from the current entry field.
+        ResourceMark rm;
+        log_info(cds, heap)(
+          "Cannot archive the sub-graph referenced from %s object ("
+          PTR_FORMAT ") size[" SIZE_FORMAT "], skipped.",
+          f->klass()->external_name(), p2i(f), (size_t)f->size());
+        return;
+      }
       if (!MetaspaceShared::is_archive_object(f)) {
         WalkOopAndArchiveClosure walker(1, subgraph_info, f, af);
         f->oop_iterate(&walker);
@@ -492,6 +512,10 @@ void HeapShared::archive_reachable_objects_from_static_field(Klass *k,
       Klass *relocated_k = af->klass();
       Klass *orig_k = f->klass();
       subgraph_info->add_subgraph_object_klass(orig_k, relocated_k);
+      ResourceMark rm;
+      log_info(cds, heap)(
+          "Archived the sub-graph referenced from %s object " PTR_FORMAT,
+          f->klass()->external_name(), p2i(f));
     } else {
       // The field contains null, we still need to record the entry point,
       // so it can be restored at runtime.

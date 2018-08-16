@@ -296,6 +296,11 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
     }
 
     oop archived = MetaspaceShared::archive_heap_object(rr, THREAD);
+    // If the resolved references array is not archived (too large),
+    // the 'archived' object is NULL. No need to explicitly check
+    // the return value of archive_heap_object here. At runtime, the
+    // resolved references will be created using the normal process
+    // when there is no archived value.
     _cache->set_archived_references(archived);
     set_resolved_references(NULL);
   }

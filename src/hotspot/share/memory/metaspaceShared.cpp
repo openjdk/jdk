@@ -1873,6 +1873,8 @@ oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
 
   int len = obj->size();
   if (G1CollectedHeap::heap()->is_archive_alloc_too_large(len)) {
+    log_debug(cds, heap)("Cannot archive, object (" PTR_FORMAT ") is too large: " SIZE_FORMAT,
+                         p2i(obj), (size_t)obj->size());
     return NULL;
   }
 
@@ -1883,9 +1885,14 @@ oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
     relocate_klass_ptr(archived_oop);
     ArchivedObjectCache* cache = MetaspaceShared::archive_object_cache();
     cache->put(obj, archived_oop);
+    log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT,
+                         p2i(obj), p2i(archived_oop));
+  } else {
+    log_error(cds, heap)(
+      "Cannot allocate space for object " PTR_FORMAT " in archived heap region",
+      p2i(obj));
+    vm_exit(1);
   }
-  log_debug(cds, heap)("Archived heap object " PTR_FORMAT " ==> " PTR_FORMAT,
-                       p2i(obj), p2i(archived_oop));
   return archived_oop;
 }
 

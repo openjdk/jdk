@@ -1038,6 +1038,7 @@ void java_lang_Class::archive_basic_type_mirrors(TRAPS) {
     if (m != NULL) {
       // Update the field at _array_klass_offset to point to the relocated array klass.
       oop archived_m = MetaspaceShared::archive_heap_object(m, THREAD);
+      assert(archived_m != NULL, "sanity");
       Klass *ak = (Klass*)(archived_m->metadata_field(_array_klass_offset));
       assert(ak != NULL || t == T_VOID, "should not be NULL");
       if (ak != NULL) {
