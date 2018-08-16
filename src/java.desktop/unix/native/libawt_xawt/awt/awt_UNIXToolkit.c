@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,7 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
     int len;
     char *stock_id_str = NULL;
     char *detail_str = NULL;
+    jboolean result = JNI_FALSE;
 
     if (stock_id == NULL)
     {
@@ -190,23 +191,15 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
         (*env)->GetStringUTFRegion(env, detail, 0, len, detail_str);
     }
 
-    if (!init_method(env, this) ) {
-        free(stock_id_str);
-        if (detail_str != NULL) {
-            free(detail_str);
-        }
-        return JNI_FALSE;
+    if (init_method(env, this)) {
+        result = gtk->get_icon_data(env, widget_type, stock_id_str,
+                                    icon_size, text_direction, detail_str,
+                                    icon_upcall_method, this);
     }
-    jboolean result = gtk->get_icon_data(env, widget_type, stock_id_str,
-                  icon_size, text_direction, detail_str,
-                  icon_upcall_method, this);
-
     /* Release the strings we've allocated. */
     free(stock_id_str);
-    if (detail_str != NULL)
-    {
-        free(detail_str);
-    }
+    free(detail_str);
+
     return result;
 #else /* HEADLESS */
     return JNI_FALSE;
