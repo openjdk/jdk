@@ -363,44 +363,44 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      */
     public Predicate<ResolvedJavaType> getIntrinsificationTrustPredicate(Class<?>... compilerLeafClasses) {
         if (intrinsificationTrustPredicate == null) {
-            intrinsificationTrustPredicate = new Predicate<ResolvedJavaType>() {
-                    @Override
-                    public boolean test(ResolvedJavaType type) {
-                        if (type instanceof HotSpotResolvedJavaType) {
-                            Class<?> mirror = getMirror((HotSpotResolvedJavaType) type);
-                            Module module = mirror.getModule();
-                            return getTrustedModules().contains(module);
-                        } else {
-                            return false;
-                        }
+            intrinsificationTrustPredicate = new Predicate<>() {
+                @Override
+                public boolean test(ResolvedJavaType type) {
+                    if (type instanceof HotSpotResolvedJavaType) {
+                        Class<?> mirror = getMirror(type);
+                        Module module = mirror.getModule();
+                        return getTrustedModules().contains(module);
+                    } else {
+                        return false;
                     }
+                }
 
-                    private volatile Set<Module> trustedModules;
+                private volatile Set<Module> trustedModules;
 
-                    private Set<Module> getTrustedModules() {
-                        Set<Module> modules = trustedModules;
-                        if (modules == null) {
-                            modules = new HashSet<>();
-                            for (Class<?> compilerConfiguration : compilerLeafClasses) {
-                                Module compilerConfigurationModule = compilerConfiguration.getModule();
-                                if (compilerConfigurationModule.getDescriptor().isAutomatic()) {
-                                    throw new IllegalArgumentException(String.format("The module '%s' defining the Graal compiler configuration class '%s' must not be an automatic module",
-                                                                                     compilerConfigurationModule.getName(), compilerConfiguration.getClass().getName()));
-                                }
-                                modules.add(compilerConfigurationModule);
-                                for (Requires require : compilerConfigurationModule.getDescriptor().requires()) {
-                                    for (Module module : compilerConfigurationModule.getLayer().modules()) {
-                                        if (module.getName().equals(require.name())) {
-                                            modules.add(module);
-                                        }
+                private Set<Module> getTrustedModules() {
+                    Set<Module> modules = trustedModules;
+                    if (modules == null) {
+                        modules = new HashSet<>();
+                        for (Class<?> compilerConfiguration : compilerLeafClasses) {
+                            Module compilerConfigurationModule = compilerConfiguration.getModule();
+                            if (compilerConfigurationModule.getDescriptor().isAutomatic()) {
+                                throw new IllegalArgumentException(String.format("The module '%s' defining the Graal compiler configuration class '%s' must not be an automatic module",
+                                                compilerConfigurationModule.getName(), compilerConfiguration.getClass().getName()));
+                            }
+                            modules.add(compilerConfigurationModule);
+                            for (Requires require : compilerConfigurationModule.getDescriptor().requires()) {
+                                for (Module module : compilerConfigurationModule.getLayer().modules()) {
+                                    if (module.getName().equals(require.name())) {
+                                        modules.add(module);
                                     }
                                 }
                             }
-                            trustedModules = modules;
                         }
-                        return modules;
+                        trustedModules = modules;
                     }
-                };
+                    return modules;
+                }
+            };
         }
         return intrinsificationTrustPredicate;
     }
@@ -413,6 +413,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      *         does not support mapping {@link ResolvedJavaType} instances to {@link Class}
      *         instances
      */
+    @SuppressWarnings("static-method")
     public Class<?> getMirror(ResolvedJavaType type) {
         return ((HotSpotResolvedJavaType) type).mirror();
     }
@@ -654,6 +655,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      *
      * @return the offset in bytes
      */
+    @SuppressWarnings("static-method")
     public int getArrayBaseOffset(JavaKind kind) {
         switch (kind) {
             case Boolean:
@@ -685,6 +687,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      *
      * @return the scale in order to convert the index into a byte offset
      */
+    @SuppressWarnings("static-method")
     public int getArrayIndexScale(JavaKind kind) {
         switch (kind) {
             case Boolean:
@@ -759,6 +762,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      *             {@code clazz} is already linked or the SVM JVMCI library does not contain a
      *             JNI-compliant symbol for a native method in {@code clazz}
      */
+    @SuppressWarnings({"static-method", "unused"})
     public void registerNativeMethods(Class<?> clazz) {
         throw new UnsatisfiedLinkError("SVM library is not available");
     }

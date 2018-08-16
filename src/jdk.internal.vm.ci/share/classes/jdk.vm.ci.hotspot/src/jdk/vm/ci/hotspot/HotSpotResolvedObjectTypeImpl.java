@@ -984,6 +984,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return UNSAFE.getInt(getMetaspaceKlass() + config().instanceKlassMiscFlagsOffset);
     }
 
+    @Override
     public boolean isAnonymous() {
         return (getMiscFlags() & config().instanceKlassMiscIsAnonymous) != 0;
     }

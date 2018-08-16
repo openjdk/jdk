@@ -145,7 +145,7 @@ class HotSpotJVMCIMetaAccessContext {
         }
     }
 
-    private final ClassValue<WeakReference<ResolvedJavaType>> resolvedJavaType = new ClassValue<WeakReference<ResolvedJavaType>>() {
+    private final ClassValue<WeakReference<ResolvedJavaType>> resolvedJavaType = new ClassValue<>() {
         @Override
         protected WeakReference<ResolvedJavaType> computeValue(Class<?> type) {
             return new WeakReference<>(createClass(type));
@@ -164,10 +164,9 @@ class HotSpotJVMCIMetaAccessContext {
             javaType = type.get();
             if (javaType == null) {
                 /*
-                 * If the referent has become null, clear out the current value
-                 * and let computeValue above create a new value.  Reload the
-                 * value in a loop because in theory the WeakReference referent
-                 * can be reclaimed at any point.
+                 * If the referent has become null, clear out the current value and let computeValue
+                 * above create a new value. Reload the value in a loop because in theory the
+                 * WeakReference referent can be reclaimed at any point.
                  */
                 resolvedJavaType.remove(javaClass);
             }

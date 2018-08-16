@@ -647,20 +647,22 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     }
 
     /*
-     * Converts a raw index from the bytecodes to a constant pool index
-     * (not a cache index).
+     * Converts a raw index from the bytecodes to a constant pool index (not a cache index).
      *
      * @param rawIndex index from the bytecode
+     *
      * @param opcode bytecode to convert the index for
+     *
      * @return constant pool index
      */
-    public int rawIndexToConstantPoolIndex(int index, int opcode) {
-        if (isInvokedynamicIndex(index)) {
+    public int rawIndexToConstantPoolIndex(int rawIndex, int opcode) {
+        int index;
+        if (isInvokedynamicIndex(rawIndex)) {
             assert opcode == Bytecodes.INVOKEDYNAMIC;
-            index = decodeInvokedynamicIndex(index) + config().constantPoolCpCacheIndexTag;
+            index = decodeInvokedynamicIndex(rawIndex) + config().constantPoolCpCacheIndexTag;
         } else {
             assert opcode != Bytecodes.INVOKEDYNAMIC;
-            index = rawIndexToConstantPoolCacheIndex(index, opcode);
+            index = rawIndexToConstantPoolCacheIndex(rawIndex, opcode);
         }
         return compilerToVM().constantPoolRemapInstructionOperandFromCache(this, index);
     }
@@ -772,19 +774,20 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
     }
 
     /**
-     * Check for a resolved dynamic adapter method at the specified index,
-     * resulting from either a resolved invokedynamic or invokevirtual on a signature polymorphic
-     * MethodHandle method (HotSpot invokehandle).
+     * Check for a resolved dynamic adapter method at the specified index, resulting from either a
+     * resolved invokedynamic or invokevirtual on a signature polymorphic MethodHandle method
+     * (HotSpot invokehandle).
      *
      * @param cpi the constant pool index
      * @param opcode the opcode of the instruction for which the lookup is being performed
-     * @return {@code true} if a signature polymorphic method reference was found, otherwise {@code false}
+     * @return {@code true} if a signature polymorphic method reference was found, otherwise
+     *         {@code false}
      */
     public boolean isResolvedDynamicInvoke(int cpi, int opcode) {
         if (Bytecodes.isInvokeHandleAlias(opcode)) {
             final int methodRefCacheIndex = rawIndexToConstantPoolCacheIndex(cpi, opcode);
             assert checkTag(compilerToVM().constantPoolRemapInstructionOperandFromCache(this, methodRefCacheIndex), JVM_CONSTANT.MethodRef);
-            int op =  compilerToVM().isResolvedInvokeHandleInPool(this, methodRefCacheIndex);
+            int op = compilerToVM().isResolvedInvokeHandleInPool(this, methodRefCacheIndex);
             return op == opcode;
         }
         return false;
