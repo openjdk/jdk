@@ -40,6 +40,7 @@ import java.util.function.Function;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import jdk.internal.net.http.ResponseContent.BodyParser;
+import jdk.internal.net.http.ResponseContent.UnknownLengthBodyParser;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
@@ -67,6 +68,7 @@ class Http1Response<T> {
     private final BodyReader bodyReader; // used to read the body
     private final Http1AsyncReceiver asyncReceiver;
     private volatile EOFException eof;
+    private volatile BodyParser bodyParser;
     // max number of bytes of (fixed length) body to ignore on redirect
     private final static int MAX_IGNORE = 1024;
 
@@ -230,6 +232,10 @@ class Http1Response<T> {
         return finished;
     }
 
+    /**
+     * Return known fixed content length or -1 if chunked, or -2 if no content-length
+     * information in which case, connection termination delimits the response body
+     */
     int fixupContentLen(int clen) {
         if (request.method().equalsIgnoreCase("HEAD") || responseCode == HTTP_NOT_MODIFIED) {
             return 0;
@@ -239,7 +245,11 @@ class Http1Response<T> {
                        .equalsIgnoreCase("chunked")) {
                 return -1;
             }
-            return 0;
+            if (responseCode == 101) {
+                // this is a h2c or websocket upgrade, contentlength must be zero
+                return 0;
+            }
+            return -2;
         }
         return clen;
     }
@@ -401,7 +411,7 @@ class Http1Response<T> {
                 // to prevent the SelectorManager thread from exiting until
                 // the body is fully read.
                 refCountTracker.acquire();
-                bodyReader.start(content.getBodyParser(
+                bodyParser = content.getBodyParser(
                     (t) -> {
                         try {
                             if (t != null) {
@@ -417,7 +427,8 @@ class Http1Response<T> {
                                 connection.close();
                             }
                         }
-                    }));
+                    });
+                bodyReader.start(bodyParser);
                 CompletableFuture<State> bodyReaderCF = bodyReader.completion();
                 asyncReceiver.subscribe(bodyReader);
                 assert bodyReaderCF != null : "parsing not started";
@@ -723,6 +734,11 @@ class Http1Response<T> {
 
         @Override
         public final void onReadError(Throwable t) {
+            if (t instanceof EOFException && bodyParser != null &&
+                    bodyParser instanceof UnknownLengthBodyParser) {
+                ((UnknownLengthBodyParser)bodyParser).complete();
+                return;
+            }
             t = wrapWithExtraDetail(t, parser::currentStateMessage);
             Http1Response.this.onReadError(t);
         }
