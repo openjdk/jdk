@@ -263,11 +263,6 @@ void mutex_init() {
   def(Terminator_lock              , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_sometimes);
   def(VtableStubs_lock             , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_always);
   def(Notify_lock                  , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_always);
-  // OopStorage-based JNI may lock the alloc_locks while releasing a handle,
-  // while previous JNI didn't need a lock for handle release.  This runs afoul
-  // of some places which hold other locks while releasing a handle, including
-  // the Patching_lock, which is of "special" rank.  As a temporary workaround,
-  // lower the JNI oopstorage lock ranks to make them super-special.
   def(JNIGlobalAlloc_lock          , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
   def(JNIGlobalActive_lock         , PaddedMutex  , nonleaf-1,   true,  Monitor::_safepoint_check_never);
   def(JNIWeakAlloc_lock            , PaddedMutex  , nonleaf,     true,  Monitor::_safepoint_check_never);
