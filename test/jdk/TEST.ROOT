@@ -31,8 +31,8 @@ groups=TEST.groups
 # Source files for classes that will be used at the beginning of each test suite run,
 # to determine additional characteristics of the system for use with the @requires tag.
 # Note: compiled bootlibs code will be located in the folder 'bootClasses'
-requires.extraPropDefns = ../../test/jtreg-ext/requires/VMProps.java [../../closed/test/jtreg-ext/requires/VMPropsExt.java]
-requires.extraPropDefns.bootlibs = ../../test/lib/sun ../../test/lib/jdk/test/lib/Platform.java
+requires.extraPropDefns = ../jtreg-ext/requires/VMProps.java
+requires.extraPropDefns.bootlibs = ../lib/sun ../lib/jdk/test/lib/Platform.java
 requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:bootClasses
 requires.properties= \
     sun.arch.data.model \
