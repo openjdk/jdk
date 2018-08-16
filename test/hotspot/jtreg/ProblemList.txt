@@ -88,7 +88,6 @@ runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
 # :hotspot_serviceability
 
 serviceability/sa/ClhsdbAttach.java 8193639 solaris-all
-serviceability/sa/ClhsdbCDSCore.java 8207832 linux-x64
 serviceability/sa/ClhsdbCDSJstackPrintAll.java 8193639 solaris-all
 serviceability/sa/ClhsdbField.java 8193639 solaris-all
 serviceability/sa/ClhsdbFindPC.java 8193639 solaris-all

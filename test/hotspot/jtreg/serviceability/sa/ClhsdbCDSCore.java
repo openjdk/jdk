@@ -201,6 +201,7 @@ public class ClhsdbCDSCore {
             .get();
         stringWithLocation = stringWithLocation.substring(stringWithLocation
             .indexOf(LOCATIONS_STRING) + LOCATIONS_STRING.length());
+        System.out.println("getCoreFileLocation found stringWithLocation = " + stringWithLocation);
         String coreWithPid;
         if (stringWithLocation.contains("or ")) {
             Matcher m = Pattern.compile("or.* ([^ ]+[^\\)])\\)?").matcher(stringWithLocation);
