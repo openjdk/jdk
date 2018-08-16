@@ -477,6 +477,21 @@ AWT_ASSERT_APPKIT_THREAD;
     return isBlocked;
 }
 
+// Test whether window is simple window and owned by embedded frame
+- (BOOL) isSimpleWindowOwnedByEmbeddedFrame {
+    BOOL isSimpleWindowOwnedByEmbeddedFrame = NO;
+
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
+    if (platformWindow != NULL) {
+        static JNF_MEMBER_CACHE(jm_isBlocked, jc_CPlatformWindow, "isSimpleWindowOwnedByEmbeddedFrame", "()Z");
+        isSimpleWindowOwnedByEmbeddedFrame = JNFCallBooleanMethod(env, platformWindow, jm_isBlocked) == JNI_TRUE ? YES : NO;
+        (*env)->DeleteLocalRef(env, platformWindow);
+    }
+
+    return isSimpleWindowOwnedByEmbeddedFrame;
+}
+
 // Tests whether the corresponding Java platform window is visible or not
 + (BOOL) isJavaPlatformWindowVisible:(NSWindow *)window {
     BOOL isVisible = NO;
@@ -543,7 +558,7 @@ AWT_ASSERT_APPKIT_THREAD;
 // NSWindow overrides
 - (BOOL) canBecomeKeyWindow {
 AWT_ASSERT_APPKIT_THREAD;
-    return self.isEnabled && IS(self.styleBits, SHOULD_BECOME_KEY);
+    return self.isEnabled && (IS(self.styleBits, SHOULD_BECOME_KEY) || [self isSimpleWindowOwnedByEmbeddedFrame]);
 }
 
 - (BOOL) canBecomeMainWindow {

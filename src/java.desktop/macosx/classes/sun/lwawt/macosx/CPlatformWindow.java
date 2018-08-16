@@ -1286,6 +1286,21 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         }
     }
 
+    private Window getOwnerFrameOrDialog(Window window) {
+        Window owner = window.getOwner();
+        while (owner != null && !(owner instanceof Frame || owner instanceof Dialog)) {
+            owner = owner.getOwner();
+        }
+        return owner;
+    }
+
+    private boolean isSimpleWindowOwnedByEmbeddedFrame() {
+        if (peer != null && peer.isSimpleWindow()) {
+            return (getOwnerFrameOrDialog(target) instanceof CEmbeddedFrame);
+        }
+        return false;
+    }
+
     // ----------------------------------------------------------------------
     //                          NATIVE CALLBACKS
     // ----------------------------------------------------------------------
