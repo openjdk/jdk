@@ -192,6 +192,7 @@ public:
 
     jshort _app_class_paths_start_index;  // Index of first app classpath entry
     jshort _app_module_paths_start_index; // Index of first module path entry
+    jshort _max_used_path_index;          // max path index referenced during CDS dump
     bool   _verify_local;                 // BytecodeVerificationLocal setting
     bool   _verify_remote;                // BytecodeVerificationRemote setting
     bool   _has_platform_or_app_classes;  // Archive contains app classes
@@ -200,6 +201,8 @@ public:
       _has_platform_or_app_classes = v;
     }
     bool has_platform_or_app_classes() { return _has_platform_or_app_classes; }
+    jshort max_used_path_index()       { return _max_used_path_index; }
+    jshort app_module_paths_start_index() { return _app_module_paths_start_index; }
 
     char* region_addr(int idx);
 

@@ -199,6 +199,7 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   ClassLoaderExt::finalize_shared_paths_misc_info();
   _app_class_paths_start_index = ClassLoaderExt::app_class_paths_start_index();
   _app_module_paths_start_index = ClassLoaderExt::app_module_paths_start_index();
+  _max_used_path_index = ClassLoaderExt::max_used_path_index();
 
   _verify_local = BytecodeVerificationLocal;
   _verify_remote = BytecodeVerificationRemote;
@@ -359,13 +360,13 @@ void FileMapInfo::check_nonempty_dir_in_shared_path_table() {
 
   bool has_nonempty_dir = false;
 
-  int end = _shared_path_table_size;
-  if (!ClassLoaderExt::has_platform_or_app_classes()) {
-    // only check the boot path if no app class is loaded
-    end = ClassLoaderExt::app_class_paths_start_index();
+  int last = _shared_path_table_size - 1;
+  if (last > ClassLoaderExt::max_used_path_index()) {
+     // no need to check any path beyond max_used_path_index
+     last = ClassLoaderExt::max_used_path_index();
   }
 
-  for (int i = 0; i < end; i++) {
+  for (int i = 0; i <= last; i++) {
     SharedClassPathEntry *e = shared_path(i);
     if (e->is_dir()) {
       const char* path = e->name();
@@ -467,13 +468,8 @@ bool FileMapInfo::validate_shared_path_table() {
 
   int module_paths_start_index = _header->_app_module_paths_start_index;
 
-  // If the shared archive contain app or platform classes, validate all entries
-  // in the shared path table. Otherwise, only validate the boot path entries (with
-  // entry index < _app_class_paths_start_index).
-  int count = _header->has_platform_or_app_classes() ?
-              _shared_path_table_size : _header->_app_class_paths_start_index;
-
-  for (int i=0; i<count; i++) {
+  // validate the path entries up to the _max_used_path_index
+  for (int i=0; i < _header->_max_used_path_index + 1; i++) {
     if (i < module_paths_start_index) {
       if (shared_path(i)->validate()) {
         log_info(class, path)("ok");

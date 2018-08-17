@@ -49,6 +49,8 @@ private:
   static jshort _app_class_paths_start_index;
   // index of first modular JAR in shared modulepath entry table
   static jshort _app_module_paths_start_index;
+  // the largest path index being used during CDS dump time
+  static jshort _max_used_path_index;
 
   static bool _has_app_classes;
   static bool _has_platform_classes;
@@ -90,6 +92,12 @@ public:
   static jshort app_class_paths_start_index() { return _app_class_paths_start_index; }
 
   static jshort app_module_paths_start_index() { return _app_module_paths_start_index; }
+
+  static jshort max_used_path_index() { return _max_used_path_index; }
+
+  static void set_max_used_path_index(jshort used_index) {
+    _max_used_path_index = used_index;
+  }
 
   static void init_paths_start_index(jshort app_start) {
     _app_class_paths_start_index = app_start;
