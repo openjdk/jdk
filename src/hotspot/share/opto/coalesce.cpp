@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/block.hpp"
+#include "opto/c2compiler.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
 #include "opto/coalesce.hpp"
@@ -294,9 +295,13 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
             } else {
               uint ireg = m->ideal_reg();
               if (ireg == 0 || ireg == Op_RegFlags) {
-                assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %u, spill_type: %s",
-                       m->_idx, m->Name(), ireg, MachSpillCopyNode::spill_type(MachSpillCopyNode::PhiInput));
-                C->record_method_not_compilable("attempted to spill a non-spillable item");
+                if (C->subsume_loads()) {
+                  C->record_failure(C2Compiler::retry_no_subsuming_loads());
+                } else {
+                  assert(false, "attempted to spill a non-spillable item: %d: %s, ireg = %u, spill_type: %s",
+                         m->_idx, m->Name(), ireg, MachSpillCopyNode::spill_type(MachSpillCopyNode::PhiInput));
+                  C->record_method_not_compilable("attempted to spill a non-spillable item");
+                }
                 return;
               }
               const RegMask *rm = C->matcher()->idealreg2spillmask[ireg];
