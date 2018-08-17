@@ -869,6 +869,8 @@ com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-
 # svc_tools
 
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
+sun/tools/jhsdb/BasicLauncherTest.java                          8193639 solaris-all
+sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-all
 
 
 ############################################################################
