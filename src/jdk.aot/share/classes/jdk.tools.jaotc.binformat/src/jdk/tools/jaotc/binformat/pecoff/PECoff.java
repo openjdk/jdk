@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.pecoff;
 
 /**
@@ -32,13 +34,13 @@ package jdk.tools.jaotc.binformat.pecoff;
 final class PECoff {
     //@formatter:off
     /**
-     * IMAGE_FILE_HEADER structure defines
+     * IMAGE_FILE_HEADER structure defines.
      */
     enum IMAGE_FILE_HEADER {
-                     Machine( 0, 2),
-            NumberOfSections( 2, 2),
-               TimeDateStamp( 4, 4),
-        PointerToSymbolTable( 8, 4),
+                     Machine(0, 2),
+            NumberOfSections(2, 2),
+               TimeDateStamp(4, 4),
+        PointerToSymbolTable(8, 4),
              NumberOfSymbols(12, 4),
         SizeOfOptionalHeader(16, 2),
              Characteristics(18, 2);
@@ -58,7 +60,7 @@ final class PECoff {
          */
 
         /**
-         * Machine
+         * Machine.
          */
         static final char IMAGE_FILE_MACHINE_UNKNOWN = 0x0;
         static final char IMAGE_FILE_MACHINE_AMD64   = 0x8664;
@@ -66,12 +68,12 @@ final class PECoff {
     }
 
     /**
-     * IMAGE_SECTION_HEADER structure defines
+     * IMAGE_SECTION_HEADER structure defines.
      */
     enum IMAGE_SECTION_HEADER {
-                        Name( 0, 8),
-             PhysicalAddress( 8, 4),
-                 VirtualSize( 8, 4),
+                        Name(0, 8),
+             PhysicalAddress(8, 4),
+                 VirtualSize(8, 4),
               VirtualAddress(12, 4),
                SizeOfRawData(16, 4),
             PointerToRawData(20, 4),
@@ -96,7 +98,7 @@ final class PECoff {
          */
 
         /**
-         * Characteristics
+         * Characteristics.
          */
         static final int IMAGE_SCN_CNT_CODE               = 0x20;
         static final int IMAGE_SCN_CNT_INITIALIZED_DATA   = 0x40;
@@ -129,15 +131,15 @@ final class PECoff {
     }
 
     /**
-     * Symbol table entry definitions
+     * Symbol table entry definitions.
      *
      * IMAGE_SYMBOL structure defines
      */
     enum IMAGE_SYMBOL {
-                   ShortName( 0, 8),
-                       Short( 0, 4),
-                        Long( 4, 4),
-                       Value( 8, 4),
+                   ShortName(0, 8),
+                       Short(0, 4),
+                        Long(4, 4),
+                       Value(8, 4),
                SectionNumber(12, 2),
                         Type(14, 2),
                 StorageClass(16, 1),
@@ -154,13 +156,13 @@ final class PECoff {
         static int totalsize = 18;
 
         /**
-         * Type
+         * Type.
          */
         static final int IMAGE_SYM_DTYPE_NONE     = 0x0;
         static final int IMAGE_SYM_DTYPE_FUNCTION = 0x20;
 
         /**
-         * StorageClass
+         * StorageClass.
          */
         static final int IMAGE_SYM_CLASS_NULL     = 0x0;
         static final int IMAGE_SYM_CLASS_EXTERNAL = 0x2;
@@ -170,12 +172,12 @@ final class PECoff {
     }
 
     /**
-     * IMAGE_RELOCATION structure defines
+     * IMAGE_RELOCATION structure defines.
      */
     enum IMAGE_RELOCATION {
-              VirtualAddress( 0, 4),
-            SymbolTableIndex( 4, 4),
-                        Type( 8, 2);
+              VirtualAddress(0, 4),
+            SymbolTableIndex(4, 4),
+                        Type(8, 2);
 
         final int off;
         final int sz;
@@ -188,7 +190,7 @@ final class PECoff {
         static int totalsize = 10;
 
         /**
-         * Relocation types
+         * Relocation types.
          */
         static final int IMAGE_REL_AMD64_ABSOLUTE = 0x0;
         static final int IMAGE_REL_AMD64_ADDR32   = 0x2;

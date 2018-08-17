@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,13 @@
 package org.graalvm.compiler.jtt.threads;
 
 import org.graalvm.compiler.jtt.JTTTest;
-import org.graalvm.compiler.jtt.hotspot.NotOnDebug;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
-import org.junit.rules.Timeout;
 
 public class Object_wait01 extends JTTTest {
 
-    @Rule public TestRule timeout = NotOnDebug.create(Timeout.seconds(20));
+    @Rule public TestRule timeout = createTimeoutSeconds(20);
 
     private static class TestClass implements Runnable {
         @Override
@@ -69,25 +67,21 @@ public class Object_wait01 extends JTTTest {
 
     @Test
     public void run0() throws Throwable {
-        initializeForTimeout();
         runTest("test", 0);
     }
 
     @Test
     public void run1() throws Throwable {
-        initializeForTimeout();
         runTest("test", 1);
     }
 
     @Test
     public void run2() throws Throwable {
-        initializeForTimeout();
         runTest("test", 3);
     }
 
     @Test
     public void run3() throws Throwable {
-        initializeForTimeout();
         runTest("test", 15);
     }
 

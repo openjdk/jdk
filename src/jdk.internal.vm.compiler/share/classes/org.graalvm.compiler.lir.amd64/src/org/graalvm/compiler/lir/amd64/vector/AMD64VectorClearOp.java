@@ -24,25 +24,25 @@
 
 package org.graalvm.compiler.lir.amd64.vector;
 
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexRVMOp.VPXOR;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexRVMOp.VXORPD;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexRVMOp.VXORPS;
-import static org.graalvm.compiler.asm.amd64.AVXKind.AVXSize.XMM;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRVMOp.VPXOR;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRVMOp.VXORPD;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRVMOp.VXORPS;
+import static org.graalvm.compiler.asm.amd64.AVXKind.AVXSize.XMM;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
+import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
+import org.graalvm.compiler.asm.amd64.AVXKind;
 import org.graalvm.compiler.lir.LIRInstruction;
 import org.graalvm.compiler.lir.LIRInstructionClass;
+import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
 import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
-
-import org.graalvm.compiler.asm.amd64.AMD64VectorAssembler;
-import org.graalvm.compiler.asm.amd64.AVXKind;
 
 import jdk.vm.ci.amd64.AMD64Kind;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.AllocatableValue;
 
-public class AMD64VectorClearOp extends AMD64VectorLIRInstruction {
+public class AMD64VectorClearOp extends AMD64LIRInstruction {
     public static final LIRInstructionClass<AMD64VectorClearOp> TYPE = LIRInstructionClass.create(AMD64VectorClearOp.class);
 
     protected @LIRInstruction.Def({REG}) AllocatableValue result;
@@ -57,23 +57,23 @@ public class AMD64VectorClearOp extends AMD64VectorLIRInstruction {
     }
 
     @Override
-    public void emitCode(CompilationResultBuilder crb, AMD64VectorAssembler vasm) {
+    public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
         AMD64Kind kind = (AMD64Kind) result.getPlatformKind();
         Register register = asRegister(result);
 
         switch (kind.getScalar()) {
             case SINGLE:
-                VXORPS.emit(vasm, AVXKind.getRegisterSize(kind), register, register, register);
+                VXORPS.emit(masm, AVXKind.getRegisterSize(kind), register, register, register);
                 break;
 
             case DOUBLE:
-                VXORPD.emit(vasm, AVXKind.getRegisterSize(kind), register, register, register);
+                VXORPD.emit(masm, AVXKind.getRegisterSize(kind), register, register, register);
                 break;
 
             default:
                 // on AVX1, YMM VPXOR is not supported - still it is possible to clear the whole YMM
                 // register as the upper 128-bit are implicitly cleared by the AVX1 instruction.
-                VPXOR.emit(vasm, XMM, register, register, register);
+                VPXOR.emit(masm, XMM, register, register, register);
         }
     }
 }

@@ -32,24 +32,24 @@ import org.graalvm.compiler.jtt.JTTTest;
  */
 public class ReferenceMap01 extends JTTTest {
 
-    public static Integer val1 = new Integer(3);
-    public static Integer val2 = new Integer(4);
+    public static Integer val1 = Integer.valueOf(3);
+    public static Integer val2 = Integer.valueOf(4);
 
     @SuppressWarnings("unused")
     private static String foo(String[] a) {
         String[] args = new String[]{"78"};
-        Integer i1 = new Integer(1);
-        Integer i2 = new Integer(2);
+        Integer i1 = Integer.valueOf(1);
+        Integer i2 = Integer.valueOf(2);
         Integer i3 = val1;
         Integer i4 = val2;
-        Integer i5 = new Integer(5);
-        Integer i6 = new Integer(6);
-        Integer i7 = new Integer(7);
-        Integer i8 = new Integer(8);
-        Integer i9 = new Integer(9);
-        Integer i10 = new Integer(10);
-        Integer i11 = new Integer(11);
-        Integer i12 = new Integer(12);
+        Integer i5 = Integer.valueOf(5);
+        Integer i6 = Integer.valueOf(6);
+        Integer i7 = Integer.valueOf(7);
+        Integer i8 = Integer.valueOf(8);
+        Integer i9 = Integer.valueOf(9);
+        Integer i10 = Integer.valueOf(10);
+        Integer i11 = Integer.valueOf(11);
+        Integer i12 = Integer.valueOf(12);
 
         System.gc();
         int sum = i1 + i2 + i3 + i4 + i5 + i6 + i7 + i8 + i9 + i10 + i11 + i12;

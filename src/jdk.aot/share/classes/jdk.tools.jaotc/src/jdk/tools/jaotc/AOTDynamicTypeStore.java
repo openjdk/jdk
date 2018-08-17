@@ -20,31 +20,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+
 package jdk.tools.jaotc;
-
-import org.graalvm.compiler.hotspot.meta.HotSpotInvokeDynamicPlugin.DynamicTypeStore;
-import org.graalvm.compiler.nodes.ConstantNode;
-import org.graalvm.compiler.nodes.StructuredGraph;
-import org.graalvm.compiler.nodes.ValueNode;
-import org.graalvm.compiler.nodes.graphbuilderconf.InvokeDynamicPlugin;
-import org.graalvm.compiler.nodes.graphbuilderconf.GraphBuilderContext;
-
-import jdk.vm.ci.hotspot.HotSpotConstantPool;
-import jdk.vm.ci.hotspot.HotSpotConstantPoolObject;
-import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
-import jdk.vm.ci.hotspot.HotSpotObjectConstant;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.vm.ci.meta.ConstantPool;
-import jdk.vm.ci.meta.ConstantReflectionProvider;
-import jdk.vm.ci.meta.JavaConstant;
-import jdk.vm.ci.meta.MetaAccessProvider;
-import jdk.vm.ci.meta.ResolvedJavaMethod;
-import jdk.vm.ci.meta.ResolvedJavaType;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.graalvm.compiler.hotspot.meta.HotSpotInvokeDynamicPlugin.DynamicTypeStore;
+
+import jdk.vm.ci.hotspot.HotSpotConstantPool;
+import jdk.vm.ci.hotspot.HotSpotConstantPoolObject;
+import jdk.vm.ci.hotspot.HotSpotObjectConstant;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+import jdk.vm.ci.meta.JavaConstant;
 
 final class AOTDynamicTypeStore implements DynamicTypeStore {
 
@@ -60,15 +51,22 @@ final class AOTDynamicTypeStore implements DynamicTypeStore {
         public HotSpotResolvedObjectType getHolder() {
             return holder;
         }
+
         public int getCpi() {
             return cpi;
         }
+
+        @Override
         public String toString() {
             return getHolder().getName() + "@" + cpi;
         }
+
+        @Override
         public int hashCode() {
             return holder.hashCode() + getClass().hashCode() + cpi;
         }
+
+        @Override
         public boolean equals(Object o) {
             if (this == o) {
                 return true;
@@ -76,7 +74,7 @@ final class AOTDynamicTypeStore implements DynamicTypeStore {
             if (getClass() != o.getClass()) {
                 return false;
             }
-            Location l = (Location)o;
+            Location l = (Location) o;
             return cpi == l.cpi && holder.equals(l.holder);
         }
     }
@@ -88,9 +86,12 @@ final class AOTDynamicTypeStore implements DynamicTypeStore {
             super(holder, cpi);
             this.methodId = methodId;
         }
+
         public int getMethodId() {
             return methodId;
         }
+
+        @Override
         public String toString() {
             return "adapter:" + methodId + "@" + super.toString();
         }
@@ -100,6 +101,8 @@ final class AOTDynamicTypeStore implements DynamicTypeStore {
         AppendixLocation(HotSpotResolvedObjectType holder, int cpi) {
             super(holder, cpi);
         }
+
+        @Override
         public String toString() {
             return "appendix@" + super.toString();
         }
@@ -122,7 +125,7 @@ final class AOTDynamicTypeStore implements DynamicTypeStore {
 
     @Override
     public void recordAdapter(int opcode, HotSpotResolvedObjectType holder, int index, HotSpotResolvedJavaMethod adapter) {
-        int cpi = ((HotSpotConstantPool)holder.getConstantPool()).rawIndexToConstantPoolIndex(index, opcode);
+        int cpi = ((HotSpotConstantPool) holder.getConstantPool()).rawIndexToConstantPoolIndex(index, opcode);
         int methodId = adapter.methodIdnum();
         HotSpotResolvedObjectType adapterType = adapter.getDeclaringClass();
         recordDynamicTypeLocation(new AdapterLocation(holder, cpi, methodId), adapterType);
@@ -130,8 +133,8 @@ final class AOTDynamicTypeStore implements DynamicTypeStore {
 
     @Override
     public JavaConstant recordAppendix(int opcode, HotSpotResolvedObjectType holder, int index, JavaConstant appendix) {
-        int cpi = ((HotSpotConstantPool)holder.getConstantPool()).rawIndexToConstantPoolIndex(index, opcode);
-        HotSpotResolvedObjectType appendixType = ((HotSpotObjectConstant)appendix).getType();
+        int cpi = ((HotSpotConstantPool) holder.getConstantPool()).rawIndexToConstantPoolIndex(index, opcode);
+        HotSpotResolvedObjectType appendixType = ((HotSpotObjectConstant) appendix).getType();
         recordDynamicTypeLocation(new AppendixLocation(holder, cpi), appendixType);
         // Make the constant locatable
         return HotSpotConstantPoolObject.forObject(holder, cpi, appendix);

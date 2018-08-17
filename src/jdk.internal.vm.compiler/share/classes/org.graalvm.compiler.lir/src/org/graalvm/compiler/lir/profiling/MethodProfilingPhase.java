@@ -51,7 +51,7 @@ public class MethodProfilingPhase extends PostAllocationOptimizationPhase {
         new Analyzer(target, lirGenRes.getCompilationUnitName(), lirGenRes.getLIR(), context.diagnosticLirGenTool).run();
     }
 
-    private class Analyzer {
+    private static class Analyzer {
         private final LIR lir;
         private final DiagnosticLIRGeneratorTool diagnosticLirGenTool;
         private final LIRInsertionBuffer buffer;

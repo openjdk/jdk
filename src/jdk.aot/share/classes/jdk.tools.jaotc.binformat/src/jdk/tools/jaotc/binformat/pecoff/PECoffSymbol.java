@@ -21,13 +21,14 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.pecoff;
 
 import java.nio.ByteBuffer;
 
 import jdk.tools.jaotc.binformat.NativeSymbol;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_SYMBOL;
-import jdk.tools.jaotc.binformat.pecoff.PECoffByteBuffer;
 
 final class PECoffSymbol extends NativeSymbol {
     private final ByteBuffer sym;

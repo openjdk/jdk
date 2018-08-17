@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,42 @@
  */
 
 
-package org.graalvm.compiler.jtt.hotspot;
+package org.graalvm.compiler.core.test;
 
-import org.junit.rules.DisableOnDebug;
-import org.junit.rules.TestRule;
-import org.junit.rules.Timeout;
+import org.junit.Test;
 
-public final class NotOnDebug {
-    public static TestRule create(Timeout seconds) {
-        try {
-            return new DisableOnDebug(seconds);
-        } catch (LinkageError ex) {
-            return null;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+
+public class EnumValuesTest extends GraalCompilerTest {
+
+    private static final int NANOS_INDEX = Arrays.asList(TimeUnit.values()).indexOf(TimeUnit.NANOSECONDS);
+
+    @SuppressWarnings("unused")
+    public static void iterateUnits() {
+        for (TimeUnit unit : TimeUnit.values()) {
+            // nop
         }
     }
 
+    public static void empty() {
+    }
+
+    @Test
+    public void test0() {
+        assertEquals(getFinalGraph("empty"), getFinalGraph("iterateUnits"));
+    }
+
+    public static TimeUnit getNanosValues() {
+        return TimeUnit.values()[NANOS_INDEX];
+    }
+
+    public static TimeUnit getNanos() {
+        return TimeUnit.NANOSECONDS;
+    }
+
+    @Test
+    public void test1() {
+        assertEquals(getFinalGraph("getNanos"), getFinalGraph("getNanosValues"));
+    }
 }

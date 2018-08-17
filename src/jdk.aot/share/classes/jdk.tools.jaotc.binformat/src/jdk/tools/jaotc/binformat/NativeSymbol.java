@@ -21,10 +21,12 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat;
 
 /**
- * This class represents ia native OS specific Symbol
+ * This class represents a native OS specific Symbol.
  */
 public abstract class NativeSymbol {
 

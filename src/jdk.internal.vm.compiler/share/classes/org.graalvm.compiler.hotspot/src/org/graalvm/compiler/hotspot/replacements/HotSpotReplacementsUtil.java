@@ -63,7 +63,6 @@ import org.graalvm.compiler.word.Word;
 import jdk.internal.vm.compiler.word.LocationIdentity;
 import jdk.internal.vm.compiler.word.WordFactory;
 
-import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.hotspot.HotSpotMetaspaceConstant;
@@ -186,13 +185,6 @@ public class HotSpotReplacementsUtil {
         return config.threadTlabEndOffset();
     }
 
-    public static final LocationIdentity TLAB_START_LOCATION = NamedLocationIdentity.mutable("TlabStart");
-
-    @Fold
-    static int threadTlabStartOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.threadTlabStartOffset();
-    }
-
     public static final LocationIdentity PENDING_EXCEPTION_LOCATION = NamedLocationIdentity.mutable("PendingException");
 
     /**
@@ -201,16 +193,6 @@ public class HotSpotReplacementsUtil {
     @Fold
     static int threadPendingExceptionOffset(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.pendingExceptionOffset;
-    }
-
-    public static final LocationIdentity PENDING_DEOPTIMIZATION_LOCATION = NamedLocationIdentity.mutable("PendingDeoptimization");
-
-    /**
-     * @see GraalHotSpotVMConfig#pendingDeoptimizationOffset
-     */
-    @Fold
-    static int threadPendingDeoptimizationOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.pendingDeoptimizationOffset;
     }
 
     public static final LocationIdentity OBJECT_RESULT_LOCATION = NamedLocationIdentity.mutable("ObjectResult");
@@ -250,19 +232,8 @@ public class HotSpotReplacementsUtil {
         return thread.readWord(threadTlabEndOffset(INJECTED_VMCONFIG), TLAB_END_LOCATION);
     }
 
-    public static Word readTlabStart(Word thread) {
-        return thread.readWord(threadTlabStartOffset(INJECTED_VMCONFIG), TLAB_START_LOCATION);
-    }
-
     public static void writeTlabTop(Word thread, Word top) {
         thread.writeWord(threadTlabTopOffset(INJECTED_VMCONFIG), top, TLAB_TOP_LOCATION);
-    }
-
-    @SuppressFBWarnings(value = "NP_NULL_PARAM_DEREF_NONVIRTUAL", justification = "foldable method parameters are injected")
-    public static void initializeTlab(Word thread, Word start, Word end) {
-        thread.writeWord(threadTlabStartOffset(INJECTED_VMCONFIG), start, TLAB_START_LOCATION);
-        thread.writeWord(threadTlabTopOffset(INJECTED_VMCONFIG), start, TLAB_TOP_LOCATION);
-        thread.writeWord(threadTlabEndOffset(INJECTED_VMCONFIG), end, TLAB_END_LOCATION);
     }
 
     /**
@@ -278,19 +249,13 @@ public class HotSpotReplacementsUtil {
     }
 
     /**
-     * Reads the pending deoptimization value for the given thread.
+     * Gets the pending exception for the given thread.
      *
-     * @return {@code true} if there was a pending deoptimization
+     * @return the pending exception, or null if there was none
      */
-    public static int readPendingDeoptimization(Word thread) {
-        return thread.readInt(threadPendingDeoptimizationOffset(INJECTED_VMCONFIG), PENDING_DEOPTIMIZATION_LOCATION);
-    }
-
-    /**
-     * Writes the pending deoptimization value for the given thread.
-     */
-    public static void writePendingDeoptimization(Word thread, int value) {
-        thread.writeInt(threadPendingDeoptimizationOffset(INJECTED_VMCONFIG), value, PENDING_DEOPTIMIZATION_LOCATION);
+    @SuppressFBWarnings(value = "NP_NULL_PARAM_DEREF_NONVIRTUAL", justification = "foldable method parameters are injected")
+    public static Object getPendingException(Word thread) {
+        return thread.readObject(threadPendingExceptionOffset(INJECTED_VMCONFIG), PENDING_EXCEPTION_LOCATION);
     }
 
     /**
@@ -342,21 +307,11 @@ public class HotSpotReplacementsUtil {
         return UNSAFE.pageSize();
     }
 
-    @Fold
-    public static int heapWordSize(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.heapWordSize;
-    }
-
     public static final LocationIdentity PROTOTYPE_MARK_WORD_LOCATION = NamedLocationIdentity.mutable("PrototypeMarkWord");
 
     @Fold
     public static int prototypeMarkWordOffset(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.prototypeMarkWordOffset;
-    }
-
-    @Fold
-    public static long arrayPrototypeMarkWord(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.arrayPrototypeMarkWord();
     }
 
     public static final LocationIdentity KLASS_ACCESS_FLAGS_LOCATION = NamedLocationIdentity.immutable("Klass::_access_flags");
@@ -388,11 +343,6 @@ public class HotSpotReplacementsUtil {
             return read;
         }
     };
-
-    @Fold
-    public static int klassLayoutHelperOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.klassLayoutHelperOffset;
-    }
 
     @NodeIntrinsic(value = KlassLayoutHelperNode.class)
     public static native int readLayoutHelper(KlassPointer object);
@@ -707,16 +657,6 @@ public class HotSpotReplacementsUtil {
     }
 
     @Fold
-    public static boolean useG1GC(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.useG1GC;
-    }
-
-    @Fold
-    public static boolean useCMSIncrementalMode(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.cmsIncrementalMode;
-    }
-
-    @Fold
     public static boolean useCompressedOops(@InjectedParameter GraalHotSpotVMConfig config) {
         return config.useCompressedOops;
     }
@@ -788,11 +728,6 @@ public class HotSpotReplacementsUtil {
     @NodeIntrinsic(value = LoadHubNode.class)
     public static native KlassPointer loadHubIntrinsic(Object object);
 
-    @Fold
-    public static int log2WordSize() {
-        return CodeUtil.log2(wordSize());
-    }
-
     public static final LocationIdentity CLASS_STATE_LOCATION = NamedLocationIdentity.mutable("ClassState");
 
     @Fold
@@ -832,11 +767,6 @@ public class HotSpotReplacementsUtil {
         }
     };
 
-    @Fold
-    public static int klassOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.klassOffset;
-    }
-
     public static final LocationIdentity CLASS_ARRAY_KLASS_LOCATION = new HotSpotOptimizingLocationIdentity("Class._array_klass") {
         @Override
         public ValueNode canonicalizeRead(ValueNode read, AddressNode location, ValueNode object, CanonicalizerTool tool) {
@@ -852,87 +782,6 @@ public class HotSpotReplacementsUtil {
     public static final LocationIdentity CLASS_MIRROR_LOCATION = NamedLocationIdentity.immutable("Klass::_java_mirror");
 
     public static final LocationIdentity CLASS_MIRROR_HANDLE_LOCATION = NamedLocationIdentity.immutable("Klass::_java_mirror handle");
-
-    public static final LocationIdentity HEAP_TOP_LOCATION = NamedLocationIdentity.mutable("HeapTop");
-
-    @Fold
-    public static long heapTopAddress(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.heapTopAddress;
-    }
-
-    public static final LocationIdentity HEAP_END_LOCATION = NamedLocationIdentity.mutable("HeapEnd");
-
-    @Fold
-    public static long heapEndAddress(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.heapEndAddress;
-    }
-
-    @Fold
-    public static long tlabIntArrayMarkWord(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.tlabIntArrayMarkWord();
-    }
-
-    @Fold
-    public static boolean inlineContiguousAllocationSupported(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.inlineContiguousAllocationSupported;
-    }
-
-    @Fold
-    public static int tlabAlignmentReserveInHeapWords(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.tlabAlignmentReserve;
-    }
-
-    public static final LocationIdentity TLAB_SIZE_LOCATION = NamedLocationIdentity.mutable("TlabSize");
-
-    @Fold
-    public static int threadTlabSizeOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.threadTlabSizeOffset();
-    }
-
-    public static final LocationIdentity TLAB_THREAD_ALLOCATED_BYTES_LOCATION = NamedLocationIdentity.mutable("TlabThreadAllocatedBytes");
-
-    @Fold
-    public static int threadAllocatedBytesOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.threadAllocatedBytesOffset;
-    }
-
-    public static final LocationIdentity TLAB_REFILL_WASTE_LIMIT_LOCATION = NamedLocationIdentity.mutable("RefillWasteLimit");
-
-    @Fold
-    public static int tlabRefillWasteLimitOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.tlabRefillWasteLimitOffset();
-    }
-
-    public static final LocationIdentity TLAB_NOF_REFILLS_LOCATION = NamedLocationIdentity.mutable("TlabNOfRefills");
-
-    @Fold
-    public static int tlabNumberOfRefillsOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.tlabNumberOfRefillsOffset();
-    }
-
-    public static final LocationIdentity TLAB_FAST_REFILL_WASTE_LOCATION = NamedLocationIdentity.mutable("TlabFastRefillWaste");
-
-    @Fold
-    public static int tlabFastRefillWasteOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.tlabFastRefillWasteOffset();
-    }
-
-    public static final LocationIdentity TLAB_SLOW_ALLOCATIONS_LOCATION = NamedLocationIdentity.mutable("TlabSlowAllocations");
-
-    @Fold
-    public static int tlabSlowAllocationsOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.tlabSlowAllocationsOffset();
-    }
-
-    @Fold
-    public static int tlabRefillWasteIncrement(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.tlabRefillWasteIncrement;
-    }
-
-    @Fold
-    public static boolean tlabStats(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.tlabStats;
-    }
 
     @Fold
     public static int layoutHelperHeaderSizeShift(@InjectedParameter GraalHotSpotVMConfig config) {
@@ -964,18 +813,8 @@ public class HotSpotReplacementsUtil {
         return config.layoutHelperElementTypeMask;
     }
 
-    @Fold
-    public static int layoutHelperElementTypePrimitiveInPlace(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.layoutHelperElementTypePrimitiveInPlace();
-    }
-
     @NodeIntrinsic(ForeignCallNode.class)
     public static native int identityHashCode(@ConstantNodeParameter ForeignCallDescriptor descriptor, Object object);
-
-    @Fold
-    public static int verifiedEntryPointOffset(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.nmethodEntryOffset;
-    }
 
     @Fold
     public static long gcTotalCollectionsAddress(@InjectedParameter GraalHotSpotVMConfig config) {
@@ -1023,9 +862,4 @@ public class HotSpotReplacementsUtil {
     public static final LocationIdentity METASPACE_ARRAY_LENGTH_LOCATION = NamedLocationIdentity.immutable("MetaspaceArrayLength");
 
     public static final LocationIdentity SECONDARY_SUPERS_ELEMENT_LOCATION = NamedLocationIdentity.immutable("SecondarySupersElement");
-
-    @Fold
-    public static boolean useFastTLABRefill(@InjectedParameter GraalHotSpotVMConfig config) {
-        return config.useFastTLABRefill;
-    }
 }

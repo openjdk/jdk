@@ -55,7 +55,7 @@ public final class InlineDuringParsingPlugin implements InlineInvokePlugin {
             method.canBeInlined()) {
 
             // Test force inlining first
-            if (method.shouldBeInlined()) {
+            if (method.shouldBeInlined() && checkInliningDepth(b)) {
                 return createStandardInlineInfo(method);
             }
 

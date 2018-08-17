@@ -68,7 +68,7 @@ public class BC_i2d extends JTTTest {
 
     @Test
     public void run6() throws Throwable {
-        runTest("test", new Integer(Short.MAX_VALUE));
+        runTest("test", Integer.valueOf(Short.MAX_VALUE));
     }
 
 }

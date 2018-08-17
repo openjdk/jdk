@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc;
 
 import jdk.tools.jaotc.amd64.AMD64InstructionDecoder;
@@ -38,13 +40,13 @@ public abstract class InstructionDecoder {
         if (architecture instanceof AMD64) {
             return new AMD64InstructionDecoder(target);
         } else if (architecture instanceof AArch64) {
-            return new AArch64InstructionDecoder(target);
+            return new AArch64InstructionDecoder();
         } else {
             throw new InternalError("Unsupported architecture " + architecture);
         }
     }
 
-    public abstract void decodePosition(final byte[] code, int pcOffset);
+    public abstract void decodePosition(byte[] code, int pcOffset);
 
     public abstract int currentEndOfInstruction();
 

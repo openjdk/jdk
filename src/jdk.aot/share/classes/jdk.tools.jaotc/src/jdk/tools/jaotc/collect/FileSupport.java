@@ -21,11 +21,21 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.collect;
 
 import java.io.IOException;
-import java.net.*;
-import java.nio.file.*;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 
 public class FileSupport {

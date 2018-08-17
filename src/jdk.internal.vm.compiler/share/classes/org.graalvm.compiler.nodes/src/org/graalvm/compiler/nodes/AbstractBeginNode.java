@@ -112,7 +112,7 @@ public abstract class AbstractBeginNode extends FixedWithNextNode implements LIR
         };
     }
 
-    private class BlockNodeIterator implements Iterator<FixedNode> {
+    private static class BlockNodeIterator implements Iterator<FixedNode> {
 
         private FixedNode current;
 

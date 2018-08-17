@@ -1216,7 +1216,8 @@ public class Graph {
 
                 // More strict node-type-specific check
                 if (performConsistencyCheck) {
-                    node.verifySourcePosition();
+                    // Disabled due to GR-10445.
+                    // node.verifySourcePosition();
                 }
             }
         }

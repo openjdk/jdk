@@ -59,6 +59,9 @@ import static org.graalvm.compiler.hotspot.HotSpotBackend.UNSAFE_ARRAYCOPY;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.UNWIND_EXCEPTION_TO_CALLER;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.VM_ERROR;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.WRONG_METHOD_HANDLER;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.REEXECUTABLE_ONLY_AFTER_EXCEPTION;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.NOT_REEXECUTABLE;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.DESTROYS_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF;
@@ -114,6 +117,8 @@ import org.graalvm.compiler.hotspot.stubs.ClassCastExceptionStub;
 import org.graalvm.compiler.hotspot.stubs.CreateExceptionStub;
 import org.graalvm.compiler.hotspot.stubs.DivisionByZeroExceptionStub;
 import org.graalvm.compiler.hotspot.stubs.ExceptionHandlerStub;
+import org.graalvm.compiler.hotspot.stubs.IntegerExactOverflowExceptionStub;
+import org.graalvm.compiler.hotspot.stubs.LongExactOverflowExceptionStub;
 import org.graalvm.compiler.hotspot.stubs.NewArrayStub;
 import org.graalvm.compiler.hotspot.stubs.NewInstanceStub;
 import org.graalvm.compiler.hotspot.stubs.NullPointerExceptionStub;
@@ -271,7 +276,7 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
         registerForeignCall(ARITHMETIC_FREM, c.fremAddress, NativeCall, DESTROYS_REGISTERS, LEAF, REEXECUTABLE, NO_LOCATIONS);
         registerForeignCall(ARITHMETIC_DREM, c.dremAddress, NativeCall, DESTROYS_REGISTERS, LEAF, REEXECUTABLE, NO_LOCATIONS);
 
-        registerForeignCall(LOAD_AND_CLEAR_EXCEPTION, c.loadAndClearExceptionAddress, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, any());
+        registerForeignCall(LOAD_AND_CLEAR_EXCEPTION, c.loadAndClearExceptionAddress, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
 
         registerForeignCall(EXCEPTION_HANDLER_FOR_PC, c.exceptionHandlerForPcAddress, NativeCall, DESTROYS_REGISTERS, SAFEPOINT, REEXECUTABLE, any());
         registerForeignCall(EXCEPTION_HANDLER_FOR_RETURN_ADDRESS, c.exceptionHandlerForReturnAddressAddress, NativeCall, DESTROYS_REGISTERS, SAFEPOINT, REEXECUTABLE, any());
@@ -287,33 +292,35 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
         registerForeignCall(VM_MESSAGE_C, c.vmMessageAddress, NativeCall, DESTROYS_REGISTERS, SAFEPOINT, REEXECUTABLE, NO_LOCATIONS);
         registerForeignCall(ASSERTION_VM_MESSAGE_C, c.vmMessageAddress, NativeCall, PRESERVES_REGISTERS, LEAF, REEXECUTABLE, NO_LOCATIONS);
 
-        link(new NewInstanceStub(options, providers, registerStubCall(NEW_INSTANCE, REEXECUTABLE, SAFEPOINT, TLAB_TOP_LOCATION, TLAB_END_LOCATION)));
-        link(new NewArrayStub(options, providers, registerStubCall(NEW_ARRAY, REEXECUTABLE, SAFEPOINT, TLAB_TOP_LOCATION, TLAB_END_LOCATION)));
+        link(new NewInstanceStub(options, providers, registerStubCall(NEW_INSTANCE, SAFEPOINT, REEXECUTABLE, TLAB_TOP_LOCATION, TLAB_END_LOCATION)));
+        link(new NewArrayStub(options, providers, registerStubCall(NEW_ARRAY, SAFEPOINT, REEXECUTABLE, TLAB_TOP_LOCATION, TLAB_END_LOCATION)));
         link(new ExceptionHandlerStub(options, providers, foreignCalls.get(EXCEPTION_HANDLER)));
-        link(new UnwindExceptionToCallerStub(options, providers, registerStubCall(UNWIND_EXCEPTION_TO_CALLER, NOT_REEXECUTABLE, SAFEPOINT, any())));
-        link(new VerifyOopStub(options, providers, registerStubCall(VERIFY_OOP, REEXECUTABLE, LEAF_NOFP, NO_LOCATIONS)));
+        link(new UnwindExceptionToCallerStub(options, providers, registerStubCall(UNWIND_EXCEPTION_TO_CALLER, SAFEPOINT, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any())));
+        link(new VerifyOopStub(options, providers, registerStubCall(VERIFY_OOP, LEAF_NOFP, REEXECUTABLE, NO_LOCATIONS)));
 
         EnumMap<BytecodeExceptionKind, ForeignCallDescriptor> exceptionRuntimeCalls = DefaultHotSpotLoweringProvider.RuntimeCalls.runtimeCalls;
-        link(new ArrayStoreExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.ARRAY_STORE), REEXECUTABLE, SAFEPOINT, any())));
-        link(new ClassCastExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.CLASS_CAST), REEXECUTABLE, SAFEPOINT, any())));
-        link(new NullPointerExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.NULL_POINTER), REEXECUTABLE, SAFEPOINT, any())));
-        link(new OutOfBoundsExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.OUT_OF_BOUNDS), REEXECUTABLE, SAFEPOINT, any())));
-        link(new DivisionByZeroExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.DIVISION_BY_ZERO), REEXECUTABLE, SAFEPOINT, any())));
+        link(new ArrayStoreExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.ARRAY_STORE), SAFEPOINT, REEXECUTABLE, any())));
+        link(new ClassCastExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.CLASS_CAST), SAFEPOINT, REEXECUTABLE, any())));
+        link(new NullPointerExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.NULL_POINTER), SAFEPOINT, REEXECUTABLE, any())));
+        link(new OutOfBoundsExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.OUT_OF_BOUNDS), SAFEPOINT, REEXECUTABLE, any())));
+        link(new DivisionByZeroExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.DIVISION_BY_ZERO), SAFEPOINT, REEXECUTABLE, any())));
+        link(new IntegerExactOverflowExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.INTEGER_EXACT_OVERFLOW), SAFEPOINT, REEXECUTABLE, any())));
+        link(new LongExactOverflowExceptionStub(options, providers, registerStubCall(exceptionRuntimeCalls.get(BytecodeExceptionKind.LONG_EXACT_OVERFLOW), SAFEPOINT, REEXECUTABLE, any())));
 
-        linkForeignCall(options, providers, IDENTITY_HASHCODE, c.identityHashCodeAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, MARK_WORD_LOCATION);
-        linkForeignCall(options, providers, REGISTER_FINALIZER, c.registerFinalizerAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
-        linkForeignCall(options, providers, MONITORENTER, c.monitorenterAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
-        linkForeignCall(options, providers, MONITOREXIT, c.monitorexitAddress, PREPEND_THREAD, STACK_INSPECTABLE_LEAF, NOT_REEXECUTABLE, any());
+        linkForeignCall(options, providers, IDENTITY_HASHCODE, c.identityHashCodeAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE_ONLY_AFTER_EXCEPTION, MARK_WORD_LOCATION);
+        linkForeignCall(options, providers, REGISTER_FINALIZER, c.registerFinalizerAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
+        linkForeignCall(options, providers, MONITORENTER, c.monitorenterAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
+        linkForeignCall(options, providers, MONITOREXIT, c.monitorexitAddress, PREPEND_THREAD, STACK_INSPECTABLE_LEAF, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
         linkForeignCall(options, providers, NEW_MULTI_ARRAY, c.newMultiArrayAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, TLAB_TOP_LOCATION, TLAB_END_LOCATION);
-        linkForeignCall(options, providers, NOTIFY, c.notifyAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
-        linkForeignCall(options, providers, NOTIFY_ALL, c.notifyAllAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
+        linkForeignCall(options, providers, NOTIFY, c.notifyAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
+        linkForeignCall(options, providers, NOTIFY_ALL, c.notifyAllAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
         linkForeignCall(options, providers, DYNAMIC_NEW_ARRAY, c.dynamicNewArrayAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE);
         linkForeignCall(options, providers, DYNAMIC_NEW_INSTANCE, c.dynamicNewInstanceAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE);
         linkForeignCall(options, providers, LOG_PRINTF, c.logPrintfAddress, PREPEND_THREAD, LEAF, REEXECUTABLE, NO_LOCATIONS);
         linkForeignCall(options, providers, LOG_OBJECT, c.logObjectAddress, PREPEND_THREAD, LEAF, REEXECUTABLE, NO_LOCATIONS);
         linkForeignCall(options, providers, LOG_PRIMITIVE, c.logPrimitiveAddress, PREPEND_THREAD, LEAF, REEXECUTABLE, NO_LOCATIONS);
         linkForeignCall(options, providers, VM_ERROR, c.vmErrorAddress, PREPEND_THREAD, LEAF_NOFP, REEXECUTABLE, NO_LOCATIONS);
-        linkForeignCall(options, providers, OSR_MIGRATION_END, c.osrMigrationEndAddress, DONT_PREPEND_THREAD, LEAF_NOFP, NOT_REEXECUTABLE, NO_LOCATIONS);
+        linkForeignCall(options, providers, OSR_MIGRATION_END, c.osrMigrationEndAddress, DONT_PREPEND_THREAD, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, NO_LOCATIONS);
         linkForeignCall(options, providers, G1WBPRECALL, c.writeBarrierPreAddress, PREPEND_THREAD, LEAF_NOFP, REEXECUTABLE, NO_LOCATIONS);
         linkForeignCall(options, providers, G1WBPOSTCALL, c.writeBarrierPostAddress, PREPEND_THREAD, LEAF_NOFP, REEXECUTABLE, NO_LOCATIONS);
         linkForeignCall(options, providers, VALIDATE_OBJECT, c.validateObject, PREPEND_THREAD, LEAF_NOFP, REEXECUTABLE, NO_LOCATIONS);
@@ -325,13 +332,13 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
             linkForeignCall(options, providers, RESOLVE_DYNAMIC_INVOKE, cr.resolveDynamicInvoke, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, any());
             linkForeignCall(options, providers, RESOLVE_KLASS_BY_SYMBOL, cr.resolveKlassBySymbol, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, any());
             linkForeignCall(options, providers, RESOLVE_METHOD_BY_SYMBOL_AND_LOAD_COUNTERS, cr.resolveMethodBySymbolAndLoadCounters, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, NO_LOCATIONS);
-            linkForeignCall(options, providers, INITIALIZE_KLASS_BY_SYMBOL, cr.initializeKlassBySymbol, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, any());
+            linkForeignCall(options, providers, INITIALIZE_KLASS_BY_SYMBOL, cr.initializeKlassBySymbol, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
             linkForeignCall(options, providers, INVOCATION_EVENT, cr.invocationEvent, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, NO_LOCATIONS);
             linkForeignCall(options, providers, BACKEDGE_EVENT, cr.backedgeEvent, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, NO_LOCATIONS);
         }
 
         // Cannot be a leaf as VM acquires Thread_lock which requires thread_in_vm state
-        linkForeignCall(options, providers, THREAD_IS_INTERRUPTED, c.threadIsInterruptedAddress, PREPEND_THREAD, SAFEPOINT, NOT_REEXECUTABLE, any());
+        linkForeignCall(options, providers, THREAD_IS_INTERRUPTED, c.threadIsInterruptedAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
 
         linkForeignCall(options, providers, TEST_DEOPTIMIZE_CALL_INT, c.testDeoptimizeCallInt, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, any());
 
@@ -349,32 +356,35 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
         registerCheckcastArraycopyDescriptor(true, c.checkcastArraycopyUninit);
         registerCheckcastArraycopyDescriptor(false, c.checkcastArraycopy);
 
-        registerForeignCall(GENERIC_ARRAYCOPY, c.genericArraycopy, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.any());
-        registerForeignCall(UNSAFE_ARRAYCOPY, c.unsafeArraycopy, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.any());
+        registerForeignCall(GENERIC_ARRAYCOPY, c.genericArraycopy, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, NamedLocationIdentity.any());
+        registerForeignCall(UNSAFE_ARRAYCOPY, c.unsafeArraycopy, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, NamedLocationIdentity.any());
 
         if (c.useMultiplyToLenIntrinsic()) {
-            registerForeignCall(MULTIPLY_TO_LEN, c.multiplyToLen, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.getArrayLocation(JavaKind.Int));
+            registerForeignCall(MULTIPLY_TO_LEN, c.multiplyToLen, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
+                            NamedLocationIdentity.getArrayLocation(JavaKind.Int));
         }
         if (c.useSHA1Intrinsics()) {
-            registerForeignCall(SHA_IMPL_COMPRESS, c.sha1ImplCompress, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.any());
+            registerForeignCall(SHA_IMPL_COMPRESS, c.sha1ImplCompress, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, NamedLocationIdentity.any());
         }
         if (c.useSHA256Intrinsics()) {
-            registerForeignCall(SHA2_IMPL_COMPRESS, c.sha256ImplCompress, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.any());
+            registerForeignCall(SHA2_IMPL_COMPRESS, c.sha256ImplCompress, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, NamedLocationIdentity.any());
         }
         if (c.useSHA512Intrinsics()) {
-            registerForeignCall(SHA5_IMPL_COMPRESS, c.sha512ImplCompress, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.any());
+            registerForeignCall(SHA5_IMPL_COMPRESS, c.sha512ImplCompress, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, NamedLocationIdentity.any());
         }
         if (c.useMulAddIntrinsic()) {
-            registerForeignCall(MUL_ADD, c.mulAdd, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.getArrayLocation(JavaKind.Int));
+            registerForeignCall(MUL_ADD, c.mulAdd, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, NamedLocationIdentity.getArrayLocation(JavaKind.Int));
         }
         if (c.useMontgomeryMultiplyIntrinsic()) {
-            registerForeignCall(MONTGOMERY_MULTIPLY, c.montgomeryMultiply, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.getArrayLocation(JavaKind.Int));
+            registerForeignCall(MONTGOMERY_MULTIPLY, c.montgomeryMultiply, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
+                            NamedLocationIdentity.getArrayLocation(JavaKind.Int));
         }
         if (c.useMontgomerySquareIntrinsic()) {
-            registerForeignCall(MONTGOMERY_SQUARE, c.montgomerySquare, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.getArrayLocation(JavaKind.Int));
+            registerForeignCall(MONTGOMERY_SQUARE, c.montgomerySquare, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
+                            NamedLocationIdentity.getArrayLocation(JavaKind.Int));
         }
         if (c.useSquareToLenIntrinsic()) {
-            registerForeignCall(SQUARE_TO_LEN, c.squareToLen, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.getArrayLocation(JavaKind.Int));
+            registerForeignCall(SQUARE_TO_LEN, c.squareToLen, NativeCall, DESTROYS_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, NamedLocationIdentity.getArrayLocation(JavaKind.Int));
         }
 
         if (c.useAESIntrinsics) {
@@ -385,9 +395,11 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
              */
             try {
                 // These stubs do callee saving
-                registerForeignCall(ENCRYPT_BLOCK, c.aescryptEncryptBlockStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
-                registerForeignCall(DECRYPT_BLOCK, c.aescryptDecryptBlockStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
-                registerForeignCall(DECRYPT_BLOCK_WITH_ORIGINAL_KEY, c.aescryptDecryptBlockStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE,
+                registerForeignCall(ENCRYPT_BLOCK, c.aescryptEncryptBlockStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
+                                NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
+                registerForeignCall(DECRYPT_BLOCK, c.aescryptDecryptBlockStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
+                                NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
+                registerForeignCall(DECRYPT_BLOCK_WITH_ORIGINAL_KEY, c.aescryptDecryptBlockStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
                                 NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
             } catch (GraalError e) {
                 if (!(e.getCause() instanceof ClassNotFoundException)) {
@@ -396,11 +408,11 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
             }
             try {
                 // These stubs do callee saving
-                registerForeignCall(ENCRYPT, c.cipherBlockChainingEncryptAESCryptStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE,
+                registerForeignCall(ENCRYPT, c.cipherBlockChainingEncryptAESCryptStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
                                 NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
-                registerForeignCall(DECRYPT, c.cipherBlockChainingDecryptAESCryptStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE,
+                registerForeignCall(DECRYPT, c.cipherBlockChainingDecryptAESCryptStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
                                 NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
-                registerForeignCall(DECRYPT_WITH_ORIGINAL_KEY, c.cipherBlockChainingDecryptAESCryptStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE,
+                registerForeignCall(DECRYPT_WITH_ORIGINAL_KEY, c.cipherBlockChainingDecryptAESCryptStub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION,
                                 NamedLocationIdentity.getArrayLocation(JavaKind.Byte));
             } catch (GraalError e) {
                 if (!(e.getCause() instanceof ClassNotFoundException)) {

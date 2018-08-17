@@ -386,7 +386,7 @@ public class InliningLog {
         }
     }
 
-    public final class PlaceholderInvokable implements Invokable {
+    public static final class PlaceholderInvokable implements Invokable {
         private int bci;
         private ResolvedJavaMethod method;
 

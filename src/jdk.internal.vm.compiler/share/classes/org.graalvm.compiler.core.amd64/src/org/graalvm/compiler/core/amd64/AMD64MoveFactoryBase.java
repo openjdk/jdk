@@ -25,8 +25,8 @@
 
 package org.graalvm.compiler.core.amd64;
 
-import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.QWORD;
-import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.WORD;
+import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize.QWORD;
+import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize.WORD;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import jdk.internal.vm.compiler.collections.Equivalence;

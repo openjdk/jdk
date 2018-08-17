@@ -98,8 +98,8 @@ public final class InterfaceMethodHandleTest extends GraalCompilerTest {
     }
 
     @Test
-    public void testInvokeInterface02() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        test("invokeInterfaceHandle", loader.findClass(NAME).newInstance());
+    public void testInvokeInterface02() throws Exception {
+        test("invokeInterfaceHandle", loader.findClass(NAME).getDeclaredConstructor().newInstance());
     }
 
     public static Object invokeInterfaceHandle2(I o, int a, int b, int c, int d, int e, int f, int g, int h, int i, int j) throws Throwable {

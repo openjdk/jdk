@@ -669,6 +669,8 @@ public class DefaultHotSpotLoweringProvider extends DefaultJavaLoweringProvider 
             runtimeCalls.put(BytecodeExceptionKind.NULL_POINTER, new ForeignCallDescriptor("createNullPointerException", NullPointerException.class));
             runtimeCalls.put(BytecodeExceptionKind.OUT_OF_BOUNDS, new ForeignCallDescriptor("createOutOfBoundsException", ArrayIndexOutOfBoundsException.class, int.class, int.class));
             runtimeCalls.put(BytecodeExceptionKind.DIVISION_BY_ZERO, new ForeignCallDescriptor("createDivisionByZeroException", ArithmeticException.class));
+            runtimeCalls.put(BytecodeExceptionKind.INTEGER_EXACT_OVERFLOW, new ForeignCallDescriptor("createIntegerExactOverflowException", ArithmeticException.class));
+            runtimeCalls.put(BytecodeExceptionKind.LONG_EXACT_OVERFLOW, new ForeignCallDescriptor("createLongExactOverflowException", ArithmeticException.class));
         }
     }
 

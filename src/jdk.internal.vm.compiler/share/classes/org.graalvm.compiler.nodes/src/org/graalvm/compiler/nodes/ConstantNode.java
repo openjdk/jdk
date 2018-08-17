@@ -43,11 +43,13 @@ import org.graalvm.compiler.lir.ConstantValue;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodeinfo.Verbosity;
 import org.graalvm.compiler.nodes.calc.FloatingNode;
+import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
 
 import jdk.vm.ci.code.CodeUtil;
 import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MetaAccessProvider;
@@ -57,7 +59,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
  * The {@code ConstantNode} represents a {@link Constant constant}.
  */
 @NodeInfo(nameTemplate = "C({p#rawvalue}) {p#stampKind}", cycles = CYCLES_0, size = SIZE_1)
-public final class ConstantNode extends FloatingNode implements LIRLowerable {
+public final class ConstantNode extends FloatingNode implements LIRLowerable, ArrayLengthProvider {
 
     public static final NodeClass<ConstantNode> TYPE = NodeClass.create(ConstantNode.class);
 
@@ -531,5 +533,17 @@ public final class ConstantNode extends FloatingNode implements LIRLowerable {
         } else {
             return super.toString(verbosity);
         }
+    }
+
+    @Override
+    public ValueNode findLength(FindLengthMode mode, ConstantReflectionProvider constantReflection) {
+        if (constantReflection == null || !(value instanceof JavaConstant) || ((JavaConstant) value).isNull()) {
+            return null;
+        }
+        Integer length = constantReflection.readArrayLength((JavaConstant) value);
+        if (length == null) {
+            return null;
+        }
+        return ConstantNode.forInt(length);
     }
 }

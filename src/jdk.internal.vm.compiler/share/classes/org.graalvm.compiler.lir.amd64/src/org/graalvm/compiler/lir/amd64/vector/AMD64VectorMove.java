@@ -27,14 +27,14 @@ package org.graalvm.compiler.lir.amd64.vector;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static jdk.vm.ci.code.ValueUtil.isRegister;
 import static jdk.vm.ci.code.ValueUtil.isStackSlot;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexMoveOp.VMOVD;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexMoveOp.VMOVDQU;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexMoveOp.VMOVQ;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexMoveOp.VMOVSD;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexMoveOp.VMOVSS;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexMoveOp.VMOVUPD;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexMoveOp.VMOVUPS;
-import static org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexRVMOp.VXORPD;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp.VMOVD;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp.VMOVDQU;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp.VMOVQ;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp.VMOVSD;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp.VMOVSS;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp.VMOVUPD;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp.VMOVUPS;
+import static org.graalvm.compiler.asm.amd64.AMD64Assembler.VexRVMOp.VXORPD;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.COMPOSITE;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.HINT;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
@@ -42,9 +42,8 @@ import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.STACK;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.UNINITIALIZED;
 
 import org.graalvm.compiler.asm.amd64.AMD64Address;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler.VexMoveOp;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
-import org.graalvm.compiler.asm.amd64.AMD64VectorAssembler;
-import org.graalvm.compiler.asm.amd64.AMD64VectorAssembler.VexMoveOp;
 import org.graalvm.compiler.asm.amd64.AVXKind;
 import org.graalvm.compiler.asm.amd64.AVXKind.AVXSize;
 import org.graalvm.compiler.debug.GraalError;
@@ -54,6 +53,7 @@ import org.graalvm.compiler.lir.Opcode;
 import org.graalvm.compiler.lir.StandardOp.LoadConstantOp;
 import org.graalvm.compiler.lir.StandardOp.ValueMoveOp;
 import org.graalvm.compiler.lir.amd64.AMD64AddressValue;
+import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
 import org.graalvm.compiler.lir.amd64.AMD64Move;
 import org.graalvm.compiler.lir.amd64.AMD64RestoreRegistersOp;
 import org.graalvm.compiler.lir.amd64.AMD64SaveRegistersOp;
@@ -71,7 +71,7 @@ import jdk.vm.ci.meta.Value;
 public class AMD64VectorMove {
 
     @Opcode("VMOVE")
-    public static final class MoveToRegOp extends AMD64VectorLIRInstruction implements ValueMoveOp {
+    public static final class MoveToRegOp extends AMD64LIRInstruction implements ValueMoveOp {
         public static final LIRInstructionClass<MoveToRegOp> TYPE = LIRInstructionClass.create(MoveToRegOp.class);
 
         @Def({REG, HINT}) protected AllocatableValue result;
@@ -84,8 +84,8 @@ public class AMD64VectorMove {
         }
 
         @Override
-        public void emitCode(CompilationResultBuilder crb, AMD64VectorAssembler vasm) {
-            move(crb, vasm, result, input);
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            move(crb, masm, result, input);
         }
 
         @Override
@@ -100,7 +100,7 @@ public class AMD64VectorMove {
     }
 
     @Opcode("VMOVE")
-    public static final class MoveFromRegOp extends AMD64VectorLIRInstruction implements ValueMoveOp {
+    public static final class MoveFromRegOp extends AMD64LIRInstruction implements ValueMoveOp {
         public static final LIRInstructionClass<MoveFromRegOp> TYPE = LIRInstructionClass.create(MoveFromRegOp.class);
 
         @Def({REG, STACK}) protected AllocatableValue result;
@@ -113,8 +113,8 @@ public class AMD64VectorMove {
         }
 
         @Override
-        public void emitCode(CompilationResultBuilder crb, AMD64VectorAssembler vasm) {
-            move(crb, vasm, result, input);
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
+            move(crb, masm, result, input);
         }
 
         @Override
@@ -129,7 +129,7 @@ public class AMD64VectorMove {
     }
 
     @Opcode("VMOVE")
-    public static class MoveFromConstOp extends AMD64VectorLIRInstruction implements LoadConstantOp {
+    public static class MoveFromConstOp extends AMD64LIRInstruction implements LoadConstantOp {
         public static final LIRInstructionClass<MoveFromConstOp> TYPE = LIRInstructionClass.create(MoveFromConstOp.class);
 
         @Def({REG, STACK}) protected AllocatableValue result;
@@ -142,12 +142,12 @@ public class AMD64VectorMove {
         }
 
         @Override
-        public void emitCode(CompilationResultBuilder crb, AMD64VectorAssembler vasm) {
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             if (isRegister(result)) {
-                const2reg(crb, vasm, (RegisterValue) result, input);
+                const2reg(crb, masm, (RegisterValue) result, input);
             } else {
                 assert isStackSlot(result);
-                AMD64Move.const2stack(crb, vasm, result, input);
+                AMD64Move.const2stack(crb, masm, result, input);
             }
         }
 
@@ -163,7 +163,7 @@ public class AMD64VectorMove {
     }
 
     @Opcode("VSTACKMOVE")
-    public static final class StackMoveOp extends AMD64VectorLIRInstruction implements ValueMoveOp {
+    public static final class StackMoveOp extends AMD64LIRInstruction implements ValueMoveOp {
         public static final LIRInstructionClass<StackMoveOp> TYPE = LIRInstructionClass.create(StackMoveOp.class);
 
         @Def({STACK}) protected AllocatableValue result;
@@ -191,7 +191,7 @@ public class AMD64VectorMove {
         }
 
         @Override
-        public void emitCode(CompilationResultBuilder crb, AMD64VectorAssembler masm) {
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             // backup scratch register
             move(crb, masm, backupSlot, scratch.asValue(backupSlot.getValueKind()));
             // move stack slot
@@ -203,7 +203,7 @@ public class AMD64VectorMove {
         }
     }
 
-    public abstract static class VectorMemOp extends AMD64VectorLIRInstruction {
+    public abstract static class VectorMemOp extends AMD64LIRInstruction {
 
         protected final AVXSize size;
         protected final VexMoveOp op;
@@ -219,14 +219,14 @@ public class AMD64VectorMove {
             this.state = state;
         }
 
-        protected abstract void emitMemAccess(AMD64VectorAssembler vasm);
+        protected abstract void emitMemAccess(AMD64MacroAssembler masm);
 
         @Override
-        public void emitCode(CompilationResultBuilder crb, AMD64VectorAssembler vasm) {
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             if (state != null) {
-                crb.recordImplicitException(vasm.position(), state);
+                crb.recordImplicitException(masm.position(), state);
             }
-            emitMemAccess(vasm);
+            emitMemAccess(masm);
         }
     }
 
@@ -241,8 +241,8 @@ public class AMD64VectorMove {
         }
 
         @Override
-        public void emitMemAccess(AMD64VectorAssembler vasm) {
-            op.emit(vasm, size, asRegister(result), address.toAddress());
+        public void emitMemAccess(AMD64MacroAssembler masm) {
+            op.emit(masm, size, asRegister(result), address.toAddress());
         }
     }
 
@@ -257,8 +257,8 @@ public class AMD64VectorMove {
         }
 
         @Override
-        public void emitMemAccess(AMD64VectorAssembler vasm) {
-            op.emit(vasm, size, address.toAddress(), asRegister(input));
+        public void emitMemAccess(AMD64MacroAssembler masm) {
+            op.emit(masm, size, address.toAddress(), asRegister(input));
         }
     }
 
@@ -282,7 +282,7 @@ public class AMD64VectorMove {
                 }
 
                 AMD64Address addr = (AMD64Address) crb.asAddress(result);
-                op.emit((AMD64VectorAssembler) masm, AVXKind.getRegisterSize(kind), addr, register);
+                op.emit(masm, AVXKind.getRegisterSize(kind), addr, register);
             } else {
                 super.saveRegister(crb, masm, result, register);
             }
@@ -309,7 +309,7 @@ public class AMD64VectorMove {
                 }
 
                 AMD64Address addr = (AMD64Address) crb.asAddress(input);
-                op.emit((AMD64VectorAssembler) masm, AVXKind.getRegisterSize(kind), register, addr);
+                op.emit(masm, AVXKind.getRegisterSize(kind), register, addr);
             } else {
                 super.restoreRegister(crb, masm, register, input);
             }
@@ -349,7 +349,7 @@ public class AMD64VectorMove {
         }
     }
 
-    private static void move(CompilationResultBuilder crb, AMD64VectorAssembler vasm, AllocatableValue result, Value input) {
+    private static void move(CompilationResultBuilder crb, AMD64MacroAssembler masm, AllocatableValue result, Value input) {
         VexMoveOp op;
         AVXSize size;
         AMD64Kind kind = (AMD64Kind) result.getPlatformKind();
@@ -372,23 +372,23 @@ public class AMD64VectorMove {
         if (isRegister(input)) {
             if (isRegister(result)) {
                 if (!asRegister(input).equals(asRegister(result))) {
-                    op.emit(vasm, size, asRegister(result), asRegister(input));
+                    op.emit(masm, size, asRegister(result), asRegister(input));
                 }
             } else {
                 assert isStackSlot(result);
-                op.emit(vasm, size, (AMD64Address) crb.asAddress(result), asRegister(input));
+                op.emit(masm, size, (AMD64Address) crb.asAddress(result), asRegister(input));
             }
         } else {
             assert isStackSlot(input) && isRegister(result);
-            op.emit(vasm, size, asRegister(result), (AMD64Address) crb.asAddress(input));
+            op.emit(masm, size, asRegister(result), (AMD64Address) crb.asAddress(input));
         }
     }
 
-    private static void const2reg(CompilationResultBuilder crb, AMD64VectorAssembler vasm, RegisterValue result, JavaConstant input) {
+    private static void const2reg(CompilationResultBuilder crb, AMD64MacroAssembler masm, RegisterValue result, JavaConstant input) {
         if (input.isDefaultForKind()) {
             AMD64Kind kind = (AMD64Kind) result.getPlatformKind();
             Register register = result.getRegister();
-            VXORPD.emit(vasm, AVXKind.getRegisterSize(kind), register, register, register);
+            VXORPD.emit(masm, AVXKind.getRegisterSize(kind), register, register, register);
             return;
         }
 
@@ -406,10 +406,10 @@ public class AMD64VectorMove {
                 throw GraalError.shouldNotReachHere();
         }
         VexMoveOp op = getScalarMoveOp((AMD64Kind) result.getPlatformKind());
-        op.emit(vasm, AVXSize.XMM, asRegister(result), address);
+        op.emit(masm, AVXSize.XMM, asRegister(result), address);
     }
 
-    public static final class AVXMoveToIntOp extends AMD64VectorLIRInstruction {
+    public static final class AVXMoveToIntOp extends AMD64LIRInstruction {
         public static final LIRInstructionClass<AVXMoveToIntOp> TYPE = LIRInstructionClass.create(AVXMoveToIntOp.class);
 
         @Opcode private final VexMoveOp opcode;
@@ -425,11 +425,11 @@ public class AMD64VectorMove {
         }
 
         @Override
-        public void emitCode(CompilationResultBuilder crb, AMD64VectorAssembler vasm) {
+        public void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
             if (isRegister(result)) {
-                opcode.emitReverse(vasm, AVXSize.XMM, asRegister(result), asRegister(input));
+                opcode.emitReverse(masm, AVXSize.XMM, asRegister(result), asRegister(input));
             } else {
-                opcode.emit(vasm, AVXSize.XMM, (AMD64Address) crb.asAddress(result), asRegister(input));
+                opcode.emit(masm, AVXSize.XMM, (AMD64Address) crb.asAddress(result), asRegister(input));
             }
         }
     }

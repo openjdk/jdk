@@ -199,6 +199,7 @@ public class Test6823354 {
         loadandrunclass(classname);
     }
 
+    @SuppressWarnings("deprecation")
     static void loadandrunclass(String classname) throws Exception {
         Class<?> cl = Class.forName(classname);
         URLClassLoader apploader = (URLClassLoader) cl.getClassLoader();

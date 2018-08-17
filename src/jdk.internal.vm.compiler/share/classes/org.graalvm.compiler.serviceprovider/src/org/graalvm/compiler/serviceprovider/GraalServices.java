@@ -206,27 +206,6 @@ public final class GraalServices {
     }
 
     /**
-     * Access to thread specific information made available via Java Management Extensions (JMX).
-     * Using this abstraction enables avoiding a dependency to the {@code java.management} and
-     * {@code jdk.management} modules on JDK 9 and later.
-     */
-    public abstract static class JMXService {
-        protected abstract long getThreadAllocatedBytes(long id);
-
-        protected abstract long getCurrentThreadCpuTime();
-
-        protected abstract boolean isThreadAllocatedMemorySupported();
-
-        protected abstract boolean isCurrentThreadCpuTimeSupported();
-
-        protected abstract List<String> getInputArguments();
-
-        // Placing this static field in JMXService (instead of GraalServices)
-        // allows for lazy initialization.
-        static final JMXService instance = loadSingle(JMXService.class, false);
-    }
-
-    /**
      * Returns an approximation of the total amount of memory, in bytes, allocated in heap memory
      * for the thread of the specified ID. The returned value is an approximation because some Java
      * virtual machine implementations may use object allocation mechanisms that result in a delay

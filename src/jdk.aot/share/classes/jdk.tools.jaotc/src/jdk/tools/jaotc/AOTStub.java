@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc;
 
 import org.graalvm.compiler.code.CompilationResult;
@@ -40,14 +42,17 @@ final class AOTStub implements JavaMethodInfo {
         this.backend = backend;
     }
 
+    @Override
     public String getSymbolName() {
         return stub.toString();
     }
 
+    @Override
     public String getNameAndSignature() {
         return stub.toString();
     }
 
+    @Override
     public HotSpotCompiledCode compiledCode(CompilationResult result) {
         return HotSpotCompiledCodeBuilder.createCompiledCode(backend.getCodeCache(), null, null, result);
     }

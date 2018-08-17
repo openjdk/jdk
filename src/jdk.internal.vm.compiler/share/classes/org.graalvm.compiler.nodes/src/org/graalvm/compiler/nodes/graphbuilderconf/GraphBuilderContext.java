@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import org.graalvm.compiler.core.common.type.ObjectStamp;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.StampPair;
+import org.graalvm.compiler.debug.GraalError;
+import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
 import org.graalvm.compiler.nodes.CallTargetNode;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
@@ -49,6 +51,7 @@ import org.graalvm.compiler.nodes.calc.IsNullNode;
 import org.graalvm.compiler.nodes.calc.NarrowNode;
 import org.graalvm.compiler.nodes.calc.SignExtendNode;
 import org.graalvm.compiler.nodes.calc.ZeroExtendNode;
+import org.graalvm.compiler.nodes.extended.BytecodeExceptionNode.BytecodeExceptionKind;
 import org.graalvm.compiler.nodes.type.StampTool;
 
 import jdk.vm.ci.code.BailoutException;
@@ -75,6 +78,16 @@ public interface GraphBuilderContext extends GraphBuilderTool {
      *            {@linkplain #append(ValueNode) appended}.
      */
     void push(JavaKind kind, ValueNode value);
+
+    /**
+     * Pops a value from the frame state stack using an explicit kind.
+     *
+     * @param slotKind the kind to use when type checking this operation
+     * @return the value on the top of the stack
+     */
+    default ValueNode pop(JavaKind slotKind) {
+        throw GraalError.unimplemented();
+    }
 
     /**
      * Adds a node to the graph. If the node is in the graph, returns immediately. If the node is a
@@ -318,6 +331,24 @@ public interface GraphBuilderContext extends GraphBuilderTool {
         } else {
             return append(SignExtendNode.create(narrow, 32, NodeView.DEFAULT));
         }
+    }
+
+    /**
+     * @return true if an explicit exception check should be emitted.
+     */
+    default boolean needsExplicitException() {
+        return false;
+    }
+
+    /**
+     * Generates an exception edge for the current bytecode. When {@link #needsExplicitException()}
+     * returns true, this method should return non-null begin nodes.
+     *
+     * @param exceptionKind the type of exception to be created.
+     * @return a begin node that precedes the actual exception instantiation code.
+     */
+    default AbstractBeginNode genExplicitExceptionEdge(@SuppressWarnings("ununsed") BytecodeExceptionKind exceptionKind) {
+        return null;
     }
 }
 

@@ -21,14 +21,14 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.elf;
 
 import java.nio.ByteBuffer;
 
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Ehdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Shdr;
-import jdk.tools.jaotc.binformat.elf.ElfTargetInfo;
-import jdk.tools.jaotc.binformat.elf.ElfByteBuffer;
 
 final class ElfHeader {
     private final ByteBuffer header;

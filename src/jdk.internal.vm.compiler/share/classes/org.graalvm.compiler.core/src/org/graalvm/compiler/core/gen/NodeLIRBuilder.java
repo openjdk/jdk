@@ -71,7 +71,6 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool.BlockScope;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.DeoptimizingNode;
 import org.graalvm.compiler.nodes.DirectCallTargetNode;
 import org.graalvm.compiler.nodes.FixedNode;
@@ -284,13 +283,6 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
         return values.toArray(new Value[values.size()]);
     }
 
-    /**
-     * @return {@code true} if object constant to stack moves are supported.
-     */
-    protected boolean allowObjectConstantToStackMove() {
-        return true;
-    }
-
     private Value[] createPhiOut(AbstractMergeNode merge, AbstractEndNode pred) {
         List<Value> values = new ArrayList<>();
         for (PhiNode phi : merge.valuePhis()) {
@@ -303,7 +295,7 @@ public abstract class NodeLIRBuilder implements NodeLIRBuilderTool, LIRGeneratio
                  * new Variable.
                  */
                 value = gen.emitMove(value);
-            } else if (!allowObjectConstantToStackMove() && node instanceof ConstantNode && !LIRKind.isValue(value)) {
+            } else if (node.isConstant() && !gen.getSpillMoveFactory().allowConstantToStackMove(node.asConstant()) && !LIRKind.isValue(value)) {
                 /*
                  * Some constants are not allowed as inputs for PHIs in certain backends. Explicitly
                  * create a copy of this value to force it into a register. The new variable is only

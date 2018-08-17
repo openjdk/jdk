@@ -29,6 +29,7 @@ import static jdk.vm.ci.aarch64.AArch64.r3;
 import static jdk.vm.ci.hotspot.HotSpotCallingConventionType.NativeCall;
 import static jdk.vm.ci.meta.Value.ILLEGAL;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.JUMP_ADDRESS;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.REEXECUTABLE_ONLY_AFTER_EXCEPTION;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF;
 import static org.graalvm.compiler.hotspot.replacements.CRC32CSubstitutions.UPDATE_BYTES_CRC32C;
@@ -75,15 +76,15 @@ public class AArch64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsP
         RegisterValue exception = r0.asValue(LIRKind.reference(word));
         RegisterValue exceptionPc = r3.asValue(LIRKind.value(word));
         CallingConvention exceptionCc = new CallingConvention(0, ILLEGAL, exception, exceptionPc);
-        register(new HotSpotForeignCallLinkageImpl(HotSpotBackend.EXCEPTION_HANDLER, 0L, PRESERVES_REGISTERS, LEAF, exceptionCc, null, NOT_REEXECUTABLE, any()));
-        register(new HotSpotForeignCallLinkageImpl(HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER, JUMP_ADDRESS, PRESERVES_REGISTERS, LEAF, exceptionCc, null, NOT_REEXECUTABLE, any()));
+        register(new HotSpotForeignCallLinkageImpl(HotSpotBackend.EXCEPTION_HANDLER, 0L, PRESERVES_REGISTERS, LEAF, REEXECUTABLE_ONLY_AFTER_EXCEPTION, exceptionCc, null, any()));
+        register(new HotSpotForeignCallLinkageImpl(HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER, JUMP_ADDRESS, PRESERVES_REGISTERS, LEAF, REEXECUTABLE_ONLY_AFTER_EXCEPTION, exceptionCc, null, any()));
 
         // These stubs do callee saving
         if (config.useCRC32Intrinsics) {
-            registerForeignCall(UPDATE_BYTES_CRC32, config.updateBytesCRC32Stub, NativeCall, PRESERVES_REGISTERS, LEAF, NOT_REEXECUTABLE, any());
+            registerForeignCall(UPDATE_BYTES_CRC32, config.updateBytesCRC32Stub, NativeCall, PRESERVES_REGISTERS, LEAF, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
         }
         if (config.useCRC32CIntrinsics) {
-            registerForeignCall(UPDATE_BYTES_CRC32C, config.updateBytesCRC32C, NativeCall, PRESERVES_REGISTERS, LEAF, NOT_REEXECUTABLE, any());
+            registerForeignCall(UPDATE_BYTES_CRC32C, config.updateBytesCRC32C, NativeCall, PRESERVES_REGISTERS, LEAF, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
         }
 
         super.initialize(providers, options);

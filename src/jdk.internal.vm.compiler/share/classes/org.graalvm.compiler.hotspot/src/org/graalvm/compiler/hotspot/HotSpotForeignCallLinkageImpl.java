@@ -90,7 +90,7 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
      */
     private final LocationIdentity[] killedLocations;
 
-    private final boolean reexecutable;
+    private final Reexecutability reexecutability;
 
     /**
      * Creates a {@link HotSpotForeignCallLinkage}.
@@ -102,17 +102,18 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
      * @param outgoingCcType outgoing (caller) calling convention type
      * @param incomingCcType incoming (callee) calling convention type (can be null)
      * @param transition specifies if this is a {@linkplain #needsDebugInfo() leaf} call
-     * @param reexecutable specifies if the call can be re-executed without (meaningful) side
+     * @param reexecutability specifies if the call can be re-executed without (meaningful) side
      *            effects. Deoptimization will not return to a point before a call that cannot be
      *            re-executed.
      * @param killedLocations the memory locations killed by the call
      */
     public static HotSpotForeignCallLinkage create(MetaAccessProvider metaAccess, CodeCacheProvider codeCache, WordTypes wordTypes, HotSpotForeignCallsProvider foreignCalls,
-                    ForeignCallDescriptor descriptor, long address, RegisterEffect effect, Type outgoingCcType, Type incomingCcType, Transition transition, boolean reexecutable,
+                    ForeignCallDescriptor descriptor, long address, RegisterEffect effect, Type outgoingCcType, Type incomingCcType, Transition transition, Reexecutability reexecutability,
                     LocationIdentity... killedLocations) {
         CallingConvention outgoingCc = createCallingConvention(metaAccess, codeCache, wordTypes, foreignCalls, descriptor, outgoingCcType);
         CallingConvention incomingCc = incomingCcType == null ? null : createCallingConvention(metaAccess, codeCache, wordTypes, foreignCalls, descriptor, incomingCcType);
-        HotSpotForeignCallLinkageImpl linkage = new HotSpotForeignCallLinkageImpl(descriptor, address, effect, transition, outgoingCc, incomingCc, reexecutable, killedLocations);
+        HotSpotForeignCallLinkageImpl linkage = new HotSpotForeignCallLinkageImpl(descriptor, address, effect, transition, reexecutability, outgoingCc, incomingCc,
+                        killedLocations);
         if (outgoingCcType == HotSpotCallingConventionType.NativeCall) {
             linkage.temporaries = foreignCalls.getNativeABICallerSaveRegisters();
         }
@@ -143,17 +144,17 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
         return javaType;
     }
 
-    public HotSpotForeignCallLinkageImpl(ForeignCallDescriptor descriptor, long address, RegisterEffect effect, Transition transition, CallingConvention outgoingCallingConvention,
-                    CallingConvention incomingCallingConvention, boolean reexecutable, LocationIdentity... killedLocations) {
+    public HotSpotForeignCallLinkageImpl(ForeignCallDescriptor descriptor, long address, RegisterEffect effect, Transition transition, Reexecutability reexecutability,
+                    CallingConvention outgoingCallingConvention, CallingConvention incomingCallingConvention, LocationIdentity... killedLocations) {
         super(address);
         this.descriptor = descriptor;
         this.address = address;
         this.effect = effect;
         this.transition = transition;
+        this.reexecutability = reexecutability;
         assert outgoingCallingConvention != null : "only incomingCallingConvention can be null";
         this.outgoingCallingConvention = outgoingCallingConvention;
         this.incomingCallingConvention = incomingCallingConvention != null ? incomingCallingConvention : outgoingCallingConvention;
-        this.reexecutable = reexecutable;
         this.killedLocations = killedLocations;
     }
 
@@ -174,7 +175,12 @@ public class HotSpotForeignCallLinkageImpl extends HotSpotForeignCallTarget impl
 
     @Override
     public boolean isReexecutable() {
-        return reexecutable;
+        return reexecutability == Reexecutability.REEXECUTABLE;
+    }
+
+    @Override
+    public boolean isReexecutableOnlyAfterException() {
+        return reexecutability == Reexecutability.REEXECUTABLE_ONLY_AFTER_EXCEPTION;
     }
 
     @Override

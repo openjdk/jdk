@@ -274,7 +274,7 @@ public class ArrayCopyIntrinsificationTest extends GraalCompilerTest {
     @Test
     public void testCopyRows() {
         Object[][] rows = {{"a1", "a2", "a3", "a4"}, {"b1", "b2", "b3", "b4"}, {"c1", "c2", "c3", "c4"}};
-        test("copyRows", rows, 4, new Integer(rows.length));
+        test("copyRows", rows, 4, Integer.valueOf(rows.length));
     }
 
     public static Object[][] copyRows(Object[][] rows, int rowSize, Integer rowCount) {

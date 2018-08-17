@@ -31,6 +31,8 @@ import static jdk.vm.ci.meta.Value.ILLEGAL;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER;
 import static org.graalvm.compiler.hotspot.HotSpotBackend.EXCEPTION_HANDLER_IN_CALLER;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.JUMP_ADDRESS;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.REEXECUTABLE;
+import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Reexecutability.REEXECUTABLE_ONLY_AFTER_EXCEPTION;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.RegisterEffect.PRESERVES_REGISTERS;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF;
 import static org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage.Transition.LEAF_NOFP;
@@ -87,23 +89,23 @@ public class AMD64HotSpotForeignCallsProvider extends HotSpotHostForeignCallsPro
         RegisterValue exception = rax.asValue(LIRKind.reference(word));
         RegisterValue exceptionPc = rdx.asValue(LIRKind.value(word));
         CallingConvention exceptionCc = new CallingConvention(0, ILLEGAL, exception, exceptionPc);
-        register(new HotSpotForeignCallLinkageImpl(EXCEPTION_HANDLER, 0L, PRESERVES_REGISTERS, LEAF_NOFP, exceptionCc, null, NOT_REEXECUTABLE, any()));
-        register(new HotSpotForeignCallLinkageImpl(EXCEPTION_HANDLER_IN_CALLER, JUMP_ADDRESS, PRESERVES_REGISTERS, LEAF_NOFP, exceptionCc, null, NOT_REEXECUTABLE, any()));
+        register(new HotSpotForeignCallLinkageImpl(EXCEPTION_HANDLER, 0L, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, exceptionCc, null, any()));
+        register(new HotSpotForeignCallLinkageImpl(EXCEPTION_HANDLER_IN_CALLER, JUMP_ADDRESS, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, exceptionCc, null, any()));
 
-        link(new AMD64MathStub(ARITHMETIC_LOG_STUB, options, providers, registerStubCall(ARITHMETIC_LOG_STUB, REEXECUTABLE, LEAF, NO_LOCATIONS)));
-        link(new AMD64MathStub(ARITHMETIC_LOG10_STUB, options, providers, registerStubCall(ARITHMETIC_LOG10_STUB, REEXECUTABLE, LEAF, NO_LOCATIONS)));
-        link(new AMD64MathStub(ARITHMETIC_SIN_STUB, options, providers, registerStubCall(ARITHMETIC_SIN_STUB, REEXECUTABLE, LEAF, NO_LOCATIONS)));
-        link(new AMD64MathStub(ARITHMETIC_COS_STUB, options, providers, registerStubCall(ARITHMETIC_COS_STUB, REEXECUTABLE, LEAF, NO_LOCATIONS)));
-        link(new AMD64MathStub(ARITHMETIC_TAN_STUB, options, providers, registerStubCall(ARITHMETIC_TAN_STUB, REEXECUTABLE, LEAF, NO_LOCATIONS)));
-        link(new AMD64MathStub(ARITHMETIC_EXP_STUB, options, providers, registerStubCall(ARITHMETIC_EXP_STUB, REEXECUTABLE, LEAF, NO_LOCATIONS)));
-        link(new AMD64MathStub(ARITHMETIC_POW_STUB, options, providers, registerStubCall(ARITHMETIC_POW_STUB, REEXECUTABLE, LEAF, NO_LOCATIONS)));
+        link(new AMD64MathStub(ARITHMETIC_LOG_STUB, options, providers, registerStubCall(ARITHMETIC_LOG_STUB, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64MathStub(ARITHMETIC_LOG10_STUB, options, providers, registerStubCall(ARITHMETIC_LOG10_STUB, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64MathStub(ARITHMETIC_SIN_STUB, options, providers, registerStubCall(ARITHMETIC_SIN_STUB, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64MathStub(ARITHMETIC_COS_STUB, options, providers, registerStubCall(ARITHMETIC_COS_STUB, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64MathStub(ARITHMETIC_TAN_STUB, options, providers, registerStubCall(ARITHMETIC_TAN_STUB, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64MathStub(ARITHMETIC_EXP_STUB, options, providers, registerStubCall(ARITHMETIC_EXP_STUB, LEAF, REEXECUTABLE, NO_LOCATIONS)));
+        link(new AMD64MathStub(ARITHMETIC_POW_STUB, options, providers, registerStubCall(ARITHMETIC_POW_STUB, LEAF, REEXECUTABLE, NO_LOCATIONS)));
 
         if (config.useCRC32Intrinsics) {
             // This stub does callee saving
-            registerForeignCall(UPDATE_BYTES_CRC32, config.updateBytesCRC32Stub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, any());
+            registerForeignCall(UPDATE_BYTES_CRC32, config.updateBytesCRC32Stub, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
         }
         if (config.useCRC32CIntrinsics) {
-            registerForeignCall(UPDATE_BYTES_CRC32C, config.updateBytesCRC32C, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, NOT_REEXECUTABLE, any());
+            registerForeignCall(UPDATE_BYTES_CRC32C, config.updateBytesCRC32C, NativeCall, PRESERVES_REGISTERS, LEAF_NOFP, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any());
         }
 
         super.initialize(providers, options);

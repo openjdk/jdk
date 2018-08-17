@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.collect;
 
 public final class SearchFor {

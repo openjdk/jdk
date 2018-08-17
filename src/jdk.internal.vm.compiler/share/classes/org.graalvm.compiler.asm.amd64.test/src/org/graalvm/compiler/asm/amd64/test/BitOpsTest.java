@@ -25,15 +25,22 @@
 
 package org.graalvm.compiler.asm.amd64.test;
 
+import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp.LZCNT;
 import static org.graalvm.compiler.asm.amd64.AMD64Assembler.AMD64RMOp.TZCNT;
-import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.DWORD;
-import static org.graalvm.compiler.asm.amd64.AMD64Assembler.OperandSize.QWORD;
-import static jdk.vm.ci.code.ValueUtil.asRegister;
+import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize.DWORD;
+import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.OperandSize.QWORD;
 import static org.junit.Assume.assumeTrue;
 
 import java.lang.reflect.Field;
 import java.util.EnumSet;
+
+import org.graalvm.compiler.asm.amd64.AMD64Address;
+import org.graalvm.compiler.asm.amd64.AMD64Assembler;
+import org.graalvm.compiler.asm.test.AssemblerTest;
+import org.graalvm.compiler.code.CompilationResult;
+import org.junit.Before;
+import org.junit.Test;
 
 import jdk.vm.ci.amd64.AMD64;
 import jdk.vm.ci.amd64.AMD64.CPUFeature;
@@ -42,14 +49,6 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.RegisterConfig;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import org.graalvm.compiler.asm.amd64.AMD64Address;
-import org.graalvm.compiler.asm.amd64.AMD64Assembler;
-import org.graalvm.compiler.asm.test.AssemblerTest;
-import org.graalvm.compiler.code.CompilationResult;
 
 public class BitOpsTest extends AssemblerTest {
     private static boolean lzcntSupported;

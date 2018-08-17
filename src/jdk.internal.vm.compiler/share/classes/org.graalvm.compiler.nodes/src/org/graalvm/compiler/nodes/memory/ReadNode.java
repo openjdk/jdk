@@ -125,7 +125,7 @@ public class ReadNode extends FloatableAccessNode implements LIRLowerableAccess,
                 }
             }
             if (locationIdentity.equals(ARRAY_LENGTH_LOCATION)) {
-                ValueNode length = GraphUtil.arrayLength(object, ArrayLengthProvider.FindLengthMode.CANONICALIZE_READ);
+                ValueNode length = GraphUtil.arrayLength(object, ArrayLengthProvider.FindLengthMode.CANONICALIZE_READ, tool.getConstantReflection());
                 if (length != null) {
                     return length;
                 }

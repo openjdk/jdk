@@ -32,6 +32,7 @@ import org.graalvm.compiler.jtt.JTTTest;
 
 public final class Class_newInstance02 extends JTTTest {
 
+    @SuppressWarnings("deprecation")
     public static boolean test(int i) throws IllegalAccessException, InstantiationException {
         if (i == 0) {
             // note: we rely on the other class here.

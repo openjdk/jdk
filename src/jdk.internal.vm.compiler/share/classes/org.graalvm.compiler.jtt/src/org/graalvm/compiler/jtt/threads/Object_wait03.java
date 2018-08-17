@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,8 @@ import org.graalvm.compiler.nodes.Cancellable;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
-import org.junit.rules.Timeout;
 
 import jdk.vm.ci.meta.ResolvedJavaMethod;
-import org.graalvm.compiler.jtt.hotspot.NotOnDebug;
 
 public class Object_wait03 extends JTTTest {
 
@@ -50,7 +48,7 @@ public class Object_wait03 extends JTTTest {
      */
     static final long TIMEOUT_MS = COMPILATION_TIMEOUT_MS * 2;
 
-    @Rule public TestRule timeout = NotOnDebug.create(Timeout.millis(TIMEOUT_MS));
+    @Rule public TestRule timeout = createTimeoutMillis(TIMEOUT_MS);
 
     private static class TestClass implements Runnable {
         @Override
@@ -121,7 +119,6 @@ public class Object_wait03 extends JTTTest {
     }
 
     private void run(int i) throws Throwable {
-        initializeForTimeout();
         try {
             runTest("test", i);
         } catch (CancellationBailoutException e) {

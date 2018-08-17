@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,42 @@
  */
 
 
-package org.graalvm.compiler.lir.amd64.vector;
+package org.graalvm.compiler.replacements.test;
 
-import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
-import org.graalvm.compiler.asm.amd64.AMD64VectorAssembler;
-import org.graalvm.compiler.lir.LIRInstructionClass;
-import org.graalvm.compiler.lir.amd64.AMD64LIRInstruction;
-import org.graalvm.compiler.lir.asm.CompilationResultBuilder;
+import org.graalvm.compiler.replacements.nodes.ArrayEqualsNode;
+import org.junit.Test;
 
-public abstract class AMD64VectorLIRInstruction extends AMD64LIRInstruction {
-    public static final LIRInstructionClass<AMD64VectorLIRInstruction> TYPE = LIRInstructionClass.create(AMD64VectorLIRInstruction.class);
+/**
+ * Tests compareTo method intrinsic.
+ */
+public class StringEqualsTest extends StringSubstitutionTestBase {
 
-    protected AMD64VectorLIRInstruction(LIRInstructionClass<? extends AMD64LIRInstruction> c) {
-        super(c);
+    public StringEqualsTest() {
+        initSubstitution(
+                        getResolvedJavaMethod(String.class, "equals"),
+                        getResolvedJavaMethod("stringEquals"),
+                        ArrayEqualsNode.class);
     }
 
+    public static boolean stringEquals(String a, String b) {
+        return a.equals(b);
+    }
+
+    @Test
     @Override
-    public final void emitCode(CompilationResultBuilder crb, AMD64MacroAssembler masm) {
-        emitCode(crb, (AMD64VectorAssembler) masm);
+    public void testEqualString() {
+        super.testEqualString();
     }
 
-    public abstract void emitCode(CompilationResultBuilder crb, AMD64VectorAssembler vasm);
+    @Test
+    @Override
+    public void testDifferentString() {
+        super.testDifferentString();
+    }
+
+    @Test
+    @Override
+    public void testAllStrings() {
+        super.testAllStrings();
+    }
 }

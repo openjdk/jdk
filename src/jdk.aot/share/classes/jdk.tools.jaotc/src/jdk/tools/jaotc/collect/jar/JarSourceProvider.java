@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.collect.jar;
 
 import jdk.tools.jaotc.collect.ClassSource;
@@ -37,7 +39,7 @@ import java.nio.file.ProviderNotFoundException;
 public final class JarSourceProvider implements SourceProvider {
     private final FileSystem fileSystem;
     private final FileSupport fileSupport;
-    public final static String TYPE = "jar";
+    public static final String TYPE = "jar";
 
     public JarSourceProvider() {
         this(new FileSupport());

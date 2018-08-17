@@ -308,7 +308,7 @@ public class FloatingReadPhase extends Phase {
                 processAccess((MemoryAccess) node, state);
             }
 
-            if (createFloatingReads & node instanceof FloatableAccessNode) {
+            if (createFloatingReads && node instanceof FloatableAccessNode) {
                 processFloatable((FloatableAccessNode) node, state);
             } else if (node instanceof MemoryCheckpoint.Single) {
                 processCheckpoint((MemoryCheckpoint.Single) node, state);

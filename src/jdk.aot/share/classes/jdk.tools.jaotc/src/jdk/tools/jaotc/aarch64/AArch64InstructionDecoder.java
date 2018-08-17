@@ -22,17 +22,17 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.aarch64;
 
 import jdk.tools.jaotc.InstructionDecoder;
-
-import jdk.vm.ci.code.TargetDescription;
 
 public final class AArch64InstructionDecoder extends InstructionDecoder {
 
     private int currentEndOfInstruction;
 
-    public AArch64InstructionDecoder(TargetDescription target) {
+    public AArch64InstructionDecoder() {
     }
 
     @Override

@@ -65,6 +65,8 @@ public enum NodeSize {
     SIZE_512(512),
     SIZE_1024(1024);
 
+    private static final NodeSize[] VALUES = values();
+
     public final int value;
 
     NodeSize(int value) {
@@ -80,10 +82,9 @@ public enum NodeSize {
         }
         assert base.ordinal() > SIZE_0.ordinal();
         int log2 = log2(base.value * opCount);
-        NodeSize[] values = values();
-        for (int i = base.ordinal(); i < values.length; i++) {
-            if (log2(values[i].value) == log2) {
-                return values[i];
+        for (int i = base.ordinal(); i < VALUES.length; i++) {
+            if (log2(VALUES[i].value) == log2) {
+                return VALUES[i];
             }
         }
         return SIZE_1024;
@@ -95,13 +96,12 @@ public enum NodeSize {
             return SIZE_0;
         }
         assert rawValue > 0;
-        NodeSize[] values = values();
-        for (int i = SIZE_0.ordinal(); i < values.length - 1; i++) {
-            if (values[i].value >= rawValue && rawValue <= values[i + 1].value) {
-                int r1 = values[i].value;
-                int r2 = values[i + 1].value;
+        for (int i = SIZE_0.ordinal(); i < VALUES.length - 1; i++) {
+            if (VALUES[i].value >= rawValue && rawValue <= VALUES[i + 1].value) {
+                int r1 = VALUES[i].value;
+                int r2 = VALUES[i + 1].value;
                 int diff = r2 - r1;
-                return rawValue - r1 > diff / 2 ? values[i + 1] : values[i];
+                return rawValue - r1 > diff / 2 ? VALUES[i + 1] : VALUES[i];
             }
         }
         return SIZE_1024;

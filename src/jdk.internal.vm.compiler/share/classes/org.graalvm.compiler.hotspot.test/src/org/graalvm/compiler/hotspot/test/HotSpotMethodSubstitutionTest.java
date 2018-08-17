@@ -231,7 +231,7 @@ public class HotSpotMethodSubstitutionTest extends MethodSubstitutionTest {
      */
     @Test
     public void testCast() {
-        test("testCastSnippet", 1, new Integer(1));
+        test("testCastSnippet", 1, Integer.valueOf(1));
     }
 
     /**

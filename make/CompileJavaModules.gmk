@@ -511,6 +511,10 @@ jdk.aot_ADD_JAVAC_FLAGS += -parameters -XDstringConcat=inline \
     --add-exports jdk.internal.vm.ci/jdk.vm.ci.sparc=jdk.internal.vm.compiler,jdk.aot \
     #
 
+jdk.aot_EXCLUDES += \
+    jdk.tools.jaotc.test
+    #
+
 ################################################################################
 
 sun.charsets_COPY += .dat

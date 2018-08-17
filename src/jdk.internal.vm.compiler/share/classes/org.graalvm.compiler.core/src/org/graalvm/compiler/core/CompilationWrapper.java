@@ -84,6 +84,8 @@ public abstract class CompilationWrapper<T> {
          */
         ExitVM;
 
+        private static final ExceptionAction[] VALUES = values();
+
         /**
          * Gets the action that is one level less verbose than this action, bottoming out at the
          * least verbose action.
@@ -91,7 +93,7 @@ public abstract class CompilationWrapper<T> {
         ExceptionAction quieter() {
             assert ExceptionAction.Silent.ordinal() == 0;
             int index = Math.max(ordinal() - 1, 0);
-            return values()[index];
+            return VALUES[index];
         }
     }
 

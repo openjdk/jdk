@@ -27,6 +27,7 @@ package org.graalvm.compiler.hotspot.stubs;
 import static jdk.vm.ci.meta.DeoptimizationReason.RuntimeConstraint;
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfigBase.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.clearPendingException;
+import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getPendingException;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getAndClearObjectResult;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.loadHubIntrinsic;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.verifyOops;
@@ -95,8 +96,8 @@ public class StubUtil {
         return new ForeignCallDescriptor(name, found.getReturnType(), cCallTypes);
     }
 
-    public static void handlePendingException(Word thread, boolean isObjectResult) {
-        if (clearPendingException(thread) != null) {
+    public static void handlePendingException(Word thread, boolean shouldClearException, boolean isObjectResult) {
+        if ((shouldClearException && clearPendingException(thread) != null) || (!shouldClearException && getPendingException(thread) != null)) {
             if (isObjectResult) {
                 getAndClearObjectResult(thread);
             }

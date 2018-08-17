@@ -48,7 +48,7 @@ public class HashMapGetTest extends GraalCompilerTest {
             map.put(i, i);
             mapGet(map, i);
         }
-        test(get, null, map, new Integer(0));
+        test(get, null, map, 0);
         for (IfNode ifNode : lastCompiledGraph.getNodes(IfNode.TYPE)) {
             LogicNode condition = ifNode.condition();
             if (ifNode.getTrueSuccessorProbability() < 0.4 && condition instanceof ObjectEqualsNode) {

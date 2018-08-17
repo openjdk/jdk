@@ -32,13 +32,11 @@ import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.ILLEGAL;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
+import java.util.EnumSet;
 
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.amd64.AMD64Address;
 import org.graalvm.compiler.asm.amd64.AMD64Address.Scale;
-import org.graalvm.compiler.asm.amd64.AMD64Assembler.AvxVectorLen;
 import org.graalvm.compiler.asm.amd64.AMD64Assembler.ConditionFlag;
 import org.graalvm.compiler.asm.amd64.AMD64MacroAssembler;
 import org.graalvm.compiler.core.common.LIRKind;
@@ -54,7 +52,6 @@ import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import sun.misc.Unsafe;
 
 /**
  * Emits code which compares two arrays lexicographically. If the CPU supports any vector
@@ -87,10 +84,8 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
         this.kind2 = kind2;
 
         // Both offsets should be the same but better be safe than sorry.
-        Class<?> array1Class = Array.newInstance(kind1.toJavaClass(), 0).getClass();
-        Class<?> array2Class = Array.newInstance(kind2.toJavaClass(), 0).getClass();
-        this.array1BaseOffset = UNSAFE.arrayBaseOffset(array1Class);
-        this.array2BaseOffset = UNSAFE.arrayBaseOffset(array2Class);
+        this.array1BaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind1);
+        this.array2BaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind2);
 
         this.resultValue = result;
         this.array1Value = array1;
@@ -126,9 +121,9 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
         return arch.getFeatures().contains(CPUFeature.AVX2);
     }
 
-    private static boolean supportsAVX512VLBW(@SuppressWarnings("unused") TargetDescription target) {
-        // TODO Add EVEX encoder in our assembler.
-        return false;
+    private static boolean supportsAVX512VLBW(TargetDescription target) {
+        EnumSet<CPUFeature> features = ((AMD64) target.arch).getFeatures();
+        return features.contains(CPUFeature.AVX512BW) && features.contains(CPUFeature.AVX512VL);
     }
 
     @Override
@@ -326,15 +321,15 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
                 masm.bind(COMPARE_WIDE_VECTORS_LOOP_AVX3); // the hottest loop
                 // if (ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UU) {
                 if (kind1 == kind2) {
-                    masm.evmovdquq(vec1, new AMD64Address(str1, result, scale), AvxVectorLen.AVX_512bit);
+                    masm.evmovdqu64(vec1, new AMD64Address(str1, result, scale));
                     // k7 == 11..11, if operands equal, otherwise k7 has some 0
-                    masm.evpcmpeqb(k7, vec1, new AMD64Address(str2, result, scale), AvxVectorLen.AVX_512bit);
+                    masm.evpcmpeqb(k7, vec1, new AMD64Address(str2, result, scale));
                 } else {
-                    masm.vpmovzxbw(vec1, new AMD64Address(str1, result, scale1), AvxVectorLen.AVX_512bit);
+                    masm.evpmovzxbw(vec1, new AMD64Address(str1, result, scale1));
                     // k7 == 11..11, if operands equal, otherwise k7 has some 0
-                    masm.evpcmpeqb(k7, vec1, new AMD64Address(str2, result, scale2), AvxVectorLen.AVX_512bit);
+                    masm.evpcmpeqb(k7, vec1, new AMD64Address(str2, result, scale2));
                 }
-                masm.kortestql(k7, k7);
+                masm.kortestq(k7, k7);
                 masm.jcc(ConditionFlag.AboveEqual, COMPARE_WIDE_VECTORS_LOOP_FAILED);     // miscompare
                 masm.addq(result, stride2x2);  // update since we already compared at this addr
                 masm.subl(cnt2, stride2x2);      // and sub the size too
@@ -350,7 +345,7 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
                 masm.vmovdqu(vec1, new AMD64Address(str1, result, scale));
                 masm.vpxor(vec1, vec1, new AMD64Address(str2, result, scale));
             } else {
-                masm.vpmovzxbw(vec1, new AMD64Address(str1, result, scale1), AvxVectorLen.AVX_256bit);
+                masm.vpmovzxbw(vec1, new AMD64Address(str1, result, scale1));
                 masm.vpxor(vec1, vec1, new AMD64Address(str2, result, scale2));
             }
             masm.vptest(vec1, vec1);
@@ -532,7 +527,7 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
         if (supportsAVX512VLBW(crb.target)) {
             masm.bind(COMPARE_WIDE_VECTORS_LOOP_FAILED);
 
-            masm.kmovql(cnt1, k7);
+            masm.kmovq(cnt1, k7);
             masm.notq(cnt1);
             masm.bsfq(cnt2, cnt1);
             // if (ae != StrIntrinsicNode::LL) {
@@ -582,22 +577,6 @@ public final class AMD64ArrayCompareToOp extends AMD64LIRInstruction {
         } else {
             masm.movzbl(elem1, new AMD64Address(str1, index, scale1, 0));
             masm.movzwl(elem2, new AMD64Address(str2, index, scale2, 0));
-        }
-    }
-
-    private static final Unsafe UNSAFE = initUnsafe();
-
-    private static Unsafe initUnsafe() {
-        try {
-            return Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                return (Unsafe) theUnsafe.get(Unsafe.class);
-            } catch (Exception e) {
-                throw new RuntimeException("exception while trying to get Unsafe", e);
-            }
         }
     }
 }

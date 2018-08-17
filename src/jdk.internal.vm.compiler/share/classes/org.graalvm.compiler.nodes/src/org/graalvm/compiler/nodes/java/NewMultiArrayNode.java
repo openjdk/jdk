@@ -27,6 +27,7 @@ package org.graalvm.compiler.nodes.java;
 import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_8;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_8;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
 import org.graalvm.compiler.core.common.type.StampFactory;
 import org.graalvm.compiler.core.common.type.TypeReference;
 import org.graalvm.compiler.graph.NodeClass;
@@ -89,7 +90,7 @@ public class NewMultiArrayNode extends DeoptimizingFixedWithNextNode implements 
     }
 
     @Override
-    public ValueNode findLength(ArrayLengthProvider.FindLengthMode mode) {
+    public ValueNode findLength(FindLengthMode mode, ConstantReflectionProvider constantReflection) {
         return dimension(0);
     }
 }

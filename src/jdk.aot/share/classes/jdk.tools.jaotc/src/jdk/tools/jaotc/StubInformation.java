@@ -21,15 +21,20 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc;
 
 public final class StubInformation {
     private int stubOffset;         // the offset inside the code (text + stubOffset)
     private int stubSize;           // the stub size
     private int dispatchJumpOffset; // offset after main dispatch jump instruction
-    private int resolveJumpOffset;  // offset after jump instruction to runtime call resolution function.
-    private int resolveJumpStart;   // offset of jump instruction to VM runtime call resolution function.
-    private int c2iJumpOffset;      // offset after jump instruction to c2i adapter for static calls.
+    private int resolveJumpOffset;  // offset after jump instruction to runtime call resolution
+                                    // function.
+    private int resolveJumpStart;   // offset of jump instruction to VM runtime call resolution
+                                    // function.
+    private int c2iJumpOffset;      // offset after jump instruction to c2i adapter for static
+                                    // calls.
     private int movOffset;          // offset after move instruction which loads from got cell:
                                     // - Method* for static call
                                     // - Klass* for virtual call

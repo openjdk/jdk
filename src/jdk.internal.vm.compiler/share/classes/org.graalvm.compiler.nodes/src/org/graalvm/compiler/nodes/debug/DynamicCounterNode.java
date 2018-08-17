@@ -60,18 +60,18 @@ public class DynamicCounterNode extends FixedWithNextNode implements LIRLowerabl
     public static final NodeClass<DynamicCounterNode> TYPE = NodeClass.create(DynamicCounterNode.class);
     @Input ValueNode increment;
 
-    protected final String name;
     protected final String group;
+    protected final String name;
     protected final boolean withContext;
 
-    public DynamicCounterNode(String name, String group, ValueNode increment, boolean withContext) {
-        this(TYPE, name, group, increment, withContext);
+    public DynamicCounterNode(String group, String name, ValueNode increment, boolean withContext) {
+        this(TYPE, group, name, increment, withContext);
     }
 
-    protected DynamicCounterNode(NodeClass<? extends DynamicCounterNode> c, String name, String group, ValueNode increment, boolean withContext) {
+    protected DynamicCounterNode(NodeClass<? extends DynamicCounterNode> c, String group, String name, ValueNode increment, boolean withContext) {
         super(c, StampFactory.forVoid());
-        this.name = name;
         this.group = group;
+        this.name = name;
         this.increment = increment;
         this.withContext = withContext;
     }
@@ -94,11 +94,11 @@ public class DynamicCounterNode extends FixedWithNextNode implements LIRLowerabl
 
     public static void addCounterBefore(String group, String name, long increment, boolean withContext, FixedNode position) {
         StructuredGraph graph = position.graph();
-        graph.addBeforeFixed(position, position.graph().add(new DynamicCounterNode(name, group, ConstantNode.forLong(increment, position.graph()), withContext)));
+        graph.addBeforeFixed(position, position.graph().add(new DynamicCounterNode(group, name, ConstantNode.forLong(increment, position.graph()), withContext)));
     }
 
     @NodeIntrinsic
-    public static native void counter(@ConstantNodeParameter String name, @ConstantNodeParameter String group, long increment, @ConstantNodeParameter boolean addContext);
+    public static native void counter(@ConstantNodeParameter String group, @ConstantNodeParameter String name, long increment, @ConstantNodeParameter boolean addContext);
 
     @Override
     public void generate(NodeLIRBuilderTool generator) {

@@ -57,6 +57,7 @@ public class EscapeAnalysisTest extends EATestBase {
         testEscapeAnalysis("test1Snippet", JavaConstant.forInt(101), false);
     }
 
+    @SuppressWarnings("deprecation")
     public static int test1Snippet() {
         Integer x = new Integer(101);
         return x.intValue();
@@ -87,6 +88,7 @@ public class EscapeAnalysisTest extends EATestBase {
         testEscapeAnalysis("testMonitorSnippet", JavaConstant.forInt(0), false);
     }
 
+    @SuppressWarnings("deprecation")
     public static int testMonitorSnippet() {
         Integer x = new Integer(0);
         Double y = new Double(0);
@@ -110,6 +112,7 @@ public class EscapeAnalysisTest extends EATestBase {
      * This test case differs from the last one in that it requires inlining within a synchronized
      * region.
      */
+    @SuppressWarnings("deprecation")
     public static int testMonitor2Snippet() {
         Integer x = new Integer(0);
         Double y = new Double(0);
@@ -331,6 +334,7 @@ public class EscapeAnalysisTest extends EATestBase {
 
     public volatile Object field;
 
+    @SuppressWarnings("deprecation")
     public int testChangeHandlingSnippet(int a) {
         Object obj;
         Integer one = 1;
