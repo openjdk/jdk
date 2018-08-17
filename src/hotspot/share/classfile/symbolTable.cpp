@@ -448,7 +448,7 @@ private:
 #ifdef ASSERT
     assert(sym->utf8_length() == _len, "%s [%d,%d]", where, sym->utf8_length(), _len);
     for (int i = 0; i < _len; i++) {
-      assert(sym->byte_at(i) == _name[i],
+      assert(sym->byte_at(i) == (jbyte) _name[i],
              "%s [%d,%d,%d]", where, i, sym->byte_at(i), _name[i]);
     }
 #endif
