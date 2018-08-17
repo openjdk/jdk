@@ -42,8 +42,12 @@ public interface ECPrivateKey extends PrivateKey, ECKey {
    /**
     * The class fingerprint that is set to indicate
     * serialization compatibility.
+    *
+    * @deprecated A {@code serialVersionUID} field in an interface is
+    * ineffectual. Do not use; no replacement.
     */
-    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
+    @Deprecated
+    @SuppressWarnings("serial")
     static final long serialVersionUID = -7896394956925609184L;
 
     /**

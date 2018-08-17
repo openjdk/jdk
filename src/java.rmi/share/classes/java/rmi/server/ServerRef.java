@@ -38,8 +38,13 @@ import java.rmi.*;
 @Deprecated
 public interface ServerRef extends RemoteRef {
 
-    /** indicate compatibility with JDK 1.1.x version of class. */
-    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
+    /** indicate compatibility with JDK 1.1.x version of class.
+     *
+     * @deprecated A {@code serialVersionUID} field in an interface is
+     * ineffectual. Do not use; no replacement.
+     */
+    @Deprecated
+    @SuppressWarnings("serial")
     static final long serialVersionUID = -4557750989390278438L;
 
     /**

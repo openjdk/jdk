@@ -63,7 +63,11 @@ public interface PrivateKey extends Key, javax.security.auth.Destroyable {
     /**
      * The class fingerprint that is set to indicate serialization
      * compatibility with a previous version of the class.
-     */
-    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
+     *
+     * @deprecated A {@code serialVersionUID} field in an interface is
+     * ineffectual. Do not use; no replacement.
+      */
+    @Deprecated
+    @SuppressWarnings("serial")
     static final long serialVersionUID = 6034044314589513430L;
 }

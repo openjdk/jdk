@@ -50,8 +50,12 @@ public interface RSAMultiPrimePrivateCrtKey extends RSAPrivateKey {
      * The type fingerprint that is set to indicate
      * serialization compatibility with a previous
      * version of the type.
+    *
+    * @deprecated A {@code serialVersionUID} field in an interface is
+    * ineffectual. Do not use; no replacement.
      */
-    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
+    @Deprecated
+    @SuppressWarnings("serial")
     static final long serialVersionUID = 618058533534628008L;
 
     /**
