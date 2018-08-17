@@ -338,7 +338,13 @@ void HandshakeState::cancel_inner(JavaThread* thread) {
 }
 
 bool HandshakeState::vmthread_can_process_handshake(JavaThread* target) {
-  return SafepointSynchronize::safepoint_safe(target, target->thread_state());
+  // SafepointSynchronize::safepoint_safe() does not consider an externally
+  // suspended thread to be safe. However, this function must be called with
+  // the Threads_lock held so an externally suspended thread cannot be
+  // resumed thus it is safe.
+  assert(Threads_lock->owned_by_self(), "Not holding Threads_lock.");
+  return SafepointSynchronize::safepoint_safe(target, target->thread_state()) ||
+         target->is_ext_suspended();
 }
 
 bool HandshakeState::claim_handshake_for_vmthread() {
