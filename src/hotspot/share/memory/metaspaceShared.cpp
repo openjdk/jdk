@@ -333,7 +333,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
     int size = FileMapInfo::get_number_of_shared_paths();
     if (size > 0) {
       SystemDictionaryShared::allocate_shared_data_arrays(size, THREAD);
-      FileMapInfo::FileMapHeader* header = FileMapInfo::current_info()->header();
+      FileMapHeader* header = FileMapInfo::current_info()->header();
       ClassLoaderExt::init_paths_start_index(header->_app_class_paths_start_index);
       ClassLoaderExt::init_app_module_paths_start_index(header->_app_module_paths_start_index);
     }

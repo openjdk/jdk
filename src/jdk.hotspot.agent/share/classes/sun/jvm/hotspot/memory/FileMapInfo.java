@@ -63,13 +63,13 @@ public class FileMapInfo {
     headerValue = headerAddress.getAddressAt(0);
 
     // FileMapHeader
-    type = db.lookupType("FileMapInfo::FileMapHeader");
+    type = db.lookupType("FileMapHeader");
     AddressField spaceField = type.getAddressField("_space[0]");
     Address spaceValue = headerValue.addOffsetTo(type.getField("_space[0]").getOffset());
     mdSpaceValue = spaceValue.addOffsetTo(3 * spaceField.getSize());
 
     // SpaceInfo
-    type = db.lookupType("FileMapInfo::FileMapHeader::space_info");
+    type = db.lookupType("CDSFileMapRegion");
     long mdRegionBaseAddressOffset = type.getField("_addr._base").getOffset();
     mdRegionBaseAddress = (mdSpaceValue.addOffsetTo(mdRegionBaseAddressOffset)).getAddressAt(0);
     long mdRegionSizeOffset = type.getField("_used").getOffset();

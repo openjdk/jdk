@@ -1095,11 +1095,11 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* FileMapInfo fields (CDS archive related) */                                                                                     \
   /********************************************/                                                                                     \
                                                                                                                                      \
-  CDS_ONLY(nonstatic_field(FileMapInfo,                            _header,                   FileMapInfo::FileMapHeader*))          \
-  CDS_ONLY(   static_field(FileMapInfo,                            _current_info,             FileMapInfo*))                         \
-  CDS_ONLY(nonstatic_field(FileMapInfo::FileMapHeader,             _space[0],                 FileMapInfo::FileMapHeader::space_info))\
-  CDS_ONLY(nonstatic_field(FileMapInfo::FileMapHeader::space_info, _addr._base,               char*))                                \
-  CDS_ONLY(nonstatic_field(FileMapInfo::FileMapHeader::space_info, _used,                     size_t))                               \
+  CDS_ONLY(nonstatic_field(FileMapInfo,        _header,                   FileMapHeader*))                                           \
+  CDS_ONLY(   static_field(FileMapInfo,        _current_info,             FileMapInfo*))                                             \
+  CDS_ONLY(nonstatic_field(FileMapHeader,      _space[0],                 CDSFileMapRegion))                                         \
+  CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _addr._base,               char*))                                                    \
+  CDS_ONLY(nonstatic_field(CDSFileMapRegion,   _used,                     size_t))                                                   \
                                                                                                                                      \
   /******************/                                                                                                               \
   /* VMError fields */                                                                                                               \
@@ -1978,9 +1978,8 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   declare_toplevel_type(Annotations*)                                     \
   declare_type(OopMapValue, StackObj)                                     \
   declare_type(FileMapInfo, CHeapObj<mtInternal>)                         \
-  declare_type(FileMapInfo::FileMapHeaderBase, CHeapObj<mtClass>)         \
-  declare_type(FileMapInfo::FileMapHeader, FileMapInfo::FileMapHeaderBase)\
-  declare_toplevel_type(FileMapInfo::FileMapHeader::space_info)           \
+  declare_toplevel_type(FileMapHeader)                                    \
+  declare_toplevel_type(CDSFileMapRegion)                                 \
                                                                           \
   /************/                                                          \
   /* GC types */                                                          \
