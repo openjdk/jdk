@@ -43,9 +43,6 @@ compiler/intrinsics/mathexact/LongMulOverflowTest.java          8196568   generi
 
 compiler/jvmci/SecurityRestrictionsTest.java                    8181837   generic-all
 
-compiler/jvmci/TestValidateModules.java                         8194942   generic-all
-gc/arguments/TestVerifyBeforeAndAfterGCFlags.java               8194942   generic-all
-
 compiler/unsafe/UnsafeGetConstantField.java                     8181833   generic-all
 compiler/unsafe/UnsafeGetStableArrayElement.java                8181833   generic-all
 compiler/unsafe/UnsafeOffHeapBooleanTest.java                   8181833   generic-all
@@ -56,6 +53,7 @@ compiler/whitebox/EnqueueMethodForCompilationTest.java          8181831   generi
 compiler/whitebox/MakeMethodNotCompilableTest.java              8181831   generic-all
 
 gc/arguments/TestNewSizeFlags.java                              8196611   generic-all
+gc/arguments/TestVerifyBeforeAndAfterGCFlags.java               8196611   generic-all
 gc/g1/TestConcurrentSystemGC.java                               8196611   generic-all
 vmTestbase/gc/lock/malloc/malloclock03/TestDescription.java     8196611   macosx-all
 
@@ -142,7 +140,26 @@ vmTestbase/nsk/jvmti/ForceEarlyReturn/ForceEarlyReturn002/TestDescription.java  
 
 vmTestbase/nsk/jvmti/unit/FollowReferences/followref003/TestDescription.java       8202342   generic-all
 
+runtime/appcds/cacheObject/RedefineClassTest.java                                  8204506   macosx-all
+vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t001/TestDescription.java        8204506   macosx-all
 vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java        8204506   macosx-all
+
+vmTestbase/nsk/jvmti/PopFrame/popframe001/TestDescription.java                     8207013   generic-all
+vmTestbase/nsk/jvmti/PopFrame/popframe003/TestDescription.java                     8207013   generic-all
+vmTestbase/nsk/jvmti/PopFrame/popframe005/TestDescription.java                     8207013   generic-all
+vmTestbase/nsk/jvmti/StopThread/stopthrd007/TestDescription.java                   8207013   generic-all
+
+vmTestbase/nsk/jvmti/scenarios/sampling/SP02/sp02t003/TestDescription.java         8051349   generic-all
+
+vmTestbase/nsk/jvmti/scenarios/sampling/SP02/sp02t001/TestDescription.java         8209585   generic-all
+vmTestbase/nsk/jvmti/scenarios/sampling/SP02/sp02t002/TestDescription.java         8209585   generic-all
+vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t001/TestDescription.java         8209585   generic-all
+vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t002/TestDescription.java         8209585   generic-all
+
+runtime/appcds/cacheObject/ArchivedModuleCompareTest.java                          8209534   generic-all
+runtime/appcds/cacheObject/ArchivedModuleComboTest.java                            8209534   generic-all
+
+serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                        8202482   generic-all
 
 compiler/stable/TestStableBoolean.java                           8204347   generic-all
 compiler/stable/TestStableByte.java                              8204347   generic-all
