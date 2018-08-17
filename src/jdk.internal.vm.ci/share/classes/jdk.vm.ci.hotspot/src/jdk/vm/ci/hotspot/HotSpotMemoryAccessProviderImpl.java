@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,37 +208,34 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         return ret;
     }
 
-    JavaConstant readFieldValue(HotSpotResolvedJavaField field, Object obj) {
+    JavaConstant readFieldValue(HotSpotResolvedJavaField field, Object obj, boolean isVolatile) {
         assert obj != null;
         assert !field.isStatic() || obj instanceof Class;
         long displacement = field.getOffset();
         assert checkRead(field.getJavaKind(), displacement, (HotSpotResolvedObjectType) runtime.getHostJVMCIBackend().getMetaAccess().lookupJavaType(obj.getClass()), obj,
                         runtime.getHostJVMCIBackend().getMetaAccess());
-        if (field.getJavaKind() == JavaKind.Object) {
-            Object o = UNSAFE.getObject(obj, displacement);
-            return HotSpotObjectConstantImpl.forObject(o);
-        } else {
-            JavaKind kind = field.getJavaKind();
-            switch (kind) {
-                case Boolean:
-                    return JavaConstant.forBoolean(UNSAFE.getBoolean(obj, displacement));
-                case Byte:
-                    return JavaConstant.forByte(UNSAFE.getByte(obj, displacement));
-                case Char:
-                    return JavaConstant.forChar(UNSAFE.getChar(obj, displacement));
-                case Short:
-                    return JavaConstant.forShort(UNSAFE.getShort(obj, displacement));
-                case Int:
-                    return JavaConstant.forInt(UNSAFE.getInt(obj, displacement));
-                case Long:
-                    return JavaConstant.forLong(UNSAFE.getLong(obj, displacement));
-                case Float:
-                    return JavaConstant.forFloat(UNSAFE.getFloat(obj, displacement));
-                case Double:
-                    return JavaConstant.forDouble(UNSAFE.getDouble(obj, displacement));
-                default:
-                    throw new IllegalArgumentException("Unsupported kind: " + kind);
-            }
+        JavaKind kind = field.getJavaKind();
+        switch (kind) {
+            case Boolean:
+                return JavaConstant.forBoolean(isVolatile ? UNSAFE.getBooleanVolatile(obj, displacement) : UNSAFE.getBoolean(obj, displacement));
+            case Byte:
+                return JavaConstant.forByte(isVolatile ? UNSAFE.getByteVolatile(obj, displacement) : UNSAFE.getByte(obj, displacement));
+            case Char:
+                return JavaConstant.forChar(isVolatile ? UNSAFE.getCharVolatile(obj, displacement) : UNSAFE.getChar(obj, displacement));
+            case Short:
+                return JavaConstant.forShort(isVolatile ? UNSAFE.getShortVolatile(obj, displacement) : UNSAFE.getShort(obj, displacement));
+            case Int:
+                return JavaConstant.forInt(isVolatile ? UNSAFE.getIntVolatile(obj, displacement) : UNSAFE.getInt(obj, displacement));
+            case Long:
+                return JavaConstant.forLong(isVolatile ? UNSAFE.getLongVolatile(obj, displacement) : UNSAFE.getLong(obj, displacement));
+            case Float:
+                return JavaConstant.forFloat(isVolatile ? UNSAFE.getFloatVolatile(obj, displacement) : UNSAFE.getFloat(obj, displacement));
+            case Double:
+                return JavaConstant.forDouble(isVolatile ? UNSAFE.getDoubleVolatile(obj, displacement) : UNSAFE.getDouble(obj, displacement));
+            case Object:
+                return HotSpotObjectConstantImpl.forObject(isVolatile ? UNSAFE.getObjectVolatile(obj, displacement) : UNSAFE.getObject(obj, displacement));
+            default:
+                throw new IllegalArgumentException("Unsupported kind: " + kind);
         }
     }
 
