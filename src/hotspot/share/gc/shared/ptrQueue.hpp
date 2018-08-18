@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_PTRQUEUE_HPP
-#define SHARE_VM_GC_G1_PTRQUEUE_HPP
+#ifndef SHARE_GC_SHARED_PTRQUEUE_HPP
+#define SHARE_GC_SHARED_PTRQUEUE_HPP
 
 #include "utilities/align.hpp"
 #include "utilities/sizes.hpp"
@@ -368,4 +368,4 @@ public:
   void notify_if_necessary();
 };
 
-#endif // SHARE_VM_GC_G1_PTRQUEUE_HPP
+#endif // SHARE_GC_SHARED_PTRQUEUE_HPP

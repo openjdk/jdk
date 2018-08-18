@@ -101,8 +101,10 @@
 # include "gc/shared/generationCounters.hpp"
 # include "gc/shared/jvmFlagConstraintsGC.hpp"
 # include "gc/shared/modRefBarrierSet.hpp"
+# include "gc/shared/ptrQueue.hpp"
 # include "gc/shared/referencePolicy.hpp"
 # include "gc/shared/referenceProcessor.hpp"
+# include "gc/shared/satbMarkQueue.hpp"
 # include "gc/shared/space.hpp"
 # include "gc/shared/spaceDecorator.hpp"
 # include "gc/shared/taskqueue.hpp"
@@ -309,8 +311,6 @@
 # include "gc/g1/g1OopClosures.hpp"
 # include "gc/g1/g1_globals.hpp"
 # include "gc/g1/jvmFlagConstraintsG1.hpp"
-# include "gc/g1/ptrQueue.hpp"
-# include "gc/g1/satbMarkQueue.hpp"
 #endif // INCLUDE_G1GC
 #if INCLUDE_PARALLELGC
 # include "gc/parallel/gcAdaptivePolicyCounters.hpp"

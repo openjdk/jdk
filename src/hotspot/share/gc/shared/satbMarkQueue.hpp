@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
-#define SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
+#ifndef SHARE_GC_SHARED_SATBMARKQUEUE_HPP
+#define SHARE_GC_SHARED_SATBMARKQUEUE_HPP
 
-#include "gc/g1/ptrQueue.hpp"
+#include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
 class JavaThread;
@@ -186,4 +186,4 @@ inline void SATBMarkQueue::apply_filter(Filter filter_out) {
   this->set_index(dst - buf);
 }
 
-#endif // SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
+#endif // SHARE_GC_SHARED_SATBMARKQUEUE_HPP
