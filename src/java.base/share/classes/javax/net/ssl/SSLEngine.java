@@ -237,7 +237,7 @@ import java.util.function.BiFunction;
  *   BUFFER_UNDERFLOW:
  *       int netSize = engine.getSession().getPacketBufferSize();
  *       // Resize buffer if needed.
- *       if (netSize > dst.capacity()) {
+ *       if (netSize > src.capacity()) {
  *           ByteBuffer b = ByteBuffer.allocate(netSize);
  *           src.flip();
  *           b.put(src);
