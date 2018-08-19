@@ -134,6 +134,8 @@ public:
   virtual LIR_Opr atomic_xchg_at(LIRAccess& access, LIRItem& value);
   virtual LIR_Opr atomic_add_at(LIRAccess& access, LIRItem& value);
 
+  virtual LIR_Opr resolve(LIRGenerator* gen, DecoratorSet decorators, LIR_Opr obj);
+
   virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob) {}
 };
 

@@ -334,3 +334,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
     }
   }
 }
+
+LIR_Opr BarrierSetC1::resolve(LIRGenerator* gen, DecoratorSet decorators, LIR_Opr obj) {
+  return obj;
+}
