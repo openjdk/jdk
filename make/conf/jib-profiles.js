@@ -1171,7 +1171,7 @@ var versionArgs = function(input, common) {
         args = concat(args,
                       // This needs to be changed when we start building release candidates
                       // with-version-pre must be set to ea for 'ea' and empty for fcs build
-                      "--with-version-pre=",
+                      "--with-version-pre=ea",
                       "--without-version-opt");
     } else {
         args = concat(args, "--with-version-opt=" + common.build_id);
