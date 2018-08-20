@@ -26,7 +26,7 @@
  * @bug 6405536
  * @summary basic test of ECDSA signatures for P-256 and P-384 from the
  * example data in "Suite B Implementer's Guide to FIPS 186-3".
- * @library ..
+ * @library /test/lib ..
  * @library ../../../../java/security/testlibrary
  * @modules java.base/sun.security.util
  *          jdk.crypto.cryptoki

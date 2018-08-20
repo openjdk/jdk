@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 # @bug 4938185 7106773
 # @summary KeyStore support for NSS cert/key databases
 #          512 bits RSA key cannot work with SHA384 and SHA512
-#
+# @library /test/lib
 # @run shell ClientAuth.sh
 
 # set a few environment variables so that the shell-script can run stand-alone
@@ -47,6 +47,7 @@ echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
 echo COMPILEJAVA=${COMPILEJAVA}
+echo CPAPPEND=${CPAPPEND}
 echo ""
 
 OS=`uname -s`
@@ -128,13 +129,14 @@ ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
     -classpath ${TESTSRC} \
     -d ${TESTCLASSES} \
+    ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jdk${FS}test${FS}lib${FS}artifacts${FS}*.java \
     ${TESTSRC}${FS}ClientAuth.java \
     ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
 # run test
 echo "Run ClientAuth TLSv1 ..."
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-    -classpath ${TESTCLASSES} \
+    -classpath ${TESTCLASSES}${PS}${CPAPPEND} \
     -DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
     -DCUSTOM_DB_DIR=${TESTCLASSES} \
     -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \
@@ -155,7 +157,7 @@ fi
 # run test
 echo "Run ClientAuth TLSv1.1 ..."
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-    -classpath ${TESTCLASSES} \
+    -classpath ${TESTCLASSES}${PS}${CPAPPEND} \
     -DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
     -DCUSTOM_DB_DIR=${TESTCLASSES} \
     -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \
@@ -176,7 +178,7 @@ fi
 # run test with specified TLS protocol and cipher suite
 echo "Run ClientAuth TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA"
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-    -classpath ${TESTCLASSES} \
+    -classpath ${TESTCLASSES}${PS}${CPAPPEND} \
     -DDIR=${TESTSRC}${FS}ClientAuthData${FS} \
     -DCUSTOM_DB_DIR=${TESTCLASSES} \
     -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ClientAuthData${FS}p11-nss.txt \

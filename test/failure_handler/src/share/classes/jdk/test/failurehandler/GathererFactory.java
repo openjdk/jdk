@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,8 @@ public final class GathererFactory {
         Properties osProperty = Utils.getProperties(osName);
         try {
             ActionHelper helper = new ActionHelper(workdir, "config", osProperty, jdks);
-            return new ToolKit(helper, log, osName, "common");
+            // os-specific action set must be last, b/c they can kill the process
+            return new ToolKit(helper, log, "common", osName);
         } catch (InvalidValueException e) {
             throw new IllegalStateException("can't create tool kit", e);
         }

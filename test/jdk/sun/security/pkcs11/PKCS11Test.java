@@ -53,6 +53,10 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import jdk.test.lib.artifacts.Artifact;
+import jdk.test.lib.artifacts.ArtifactResolver;
+import jdk.test.lib.artifacts.ArtifactResolverException;
+
 public abstract class PKCS11Test {
 
     private boolean enableSM = false;
@@ -300,15 +304,8 @@ public abstract class PKCS11Test {
     }
 
     static String getNSSLibDir(String library) throws Exception {
-        String osName = props.getProperty("os.name");
-        if (osName.startsWith("Win")) {
-            osName = "Windows";
-        } else if (osName.equals("Mac OS X")) {
-            osName = "MacOSX";
-        }
-        String osid = osName + "-"
-                + props.getProperty("os.arch") + "-" + props.getProperty("sun.arch.data.model");
-        String[] nssLibDirs = osMap.get(osid);
+        String osid = getOsId();
+        String[] nssLibDirs = getNssLibPaths(osid);
         if (nssLibDirs == null) {
             System.out.println("Warning: unsupported OS: " + osid
                     + ", please initialize NSS librarys location firstly, skipping test");
@@ -323,6 +320,7 @@ public abstract class PKCS11Test {
             if (new File(dir).exists() &&
                 new File(dir + System.mapLibraryName(library)).exists()) {
                 nssLibDir = dir;
+                System.out.println("nssLibDir: " + nssLibDir);
                 System.setProperty("pkcs11test.nss.libdir", nssLibDir);
                 break;
             }
@@ -332,6 +330,18 @@ public abstract class PKCS11Test {
             return null;
         }
         return nssLibDir;
+    }
+
+    private static String getOsId() {
+        String osName = props.getProperty("os.name");
+        if (osName.startsWith("Win")) {
+            osName = "Windows";
+        } else if (osName.equals("Mac OS X")) {
+            osName = "MacOSX";
+        }
+        String osid = osName + "-" + props.getProperty("os.arch") + "-"
+                + props.getProperty("sun.arch.data.model");
+        return osid;
     }
 
     static boolean isBadNSSVersion(Provider p) {
@@ -644,34 +654,74 @@ public abstract class PKCS11Test {
         return false;
     }
 
-    private static final Map<String,String[]> osMap;
+    private static Map<String,String[]> osMap;
 
     // Location of the NSS libraries on each supported platform
-    static {
+    private static Map<String, String[]> getOsMap() {
+        if (osMap != null) {
+            return osMap;
+        }
+
         osMap = new HashMap<>();
-        osMap.put("SunOS-sparc-32", new String[]{"/usr/lib/mps/"});
-        osMap.put("SunOS-sparcv9-64", new String[]{"/usr/lib/mps/64/"});
-        osMap.put("SunOS-x86-32", new String[]{"/usr/lib/mps/"});
-        osMap.put("SunOS-amd64-64", new String[]{"/usr/lib/mps/64/"});
-        osMap.put("Linux-i386-32", new String[]{
-            "/usr/lib/i386-linux-gnu/", "/usr/lib32/", "/usr/lib/"});
-        osMap.put("Linux-amd64-64", new String[]{
-            "/usr/lib/x86_64-linux-gnu/", "/usr/lib/x86_64-linux-gnu/nss/",
-            "/usr/lib64/"});
-        osMap.put("Linux-ppc64-64", new String[]{"/usr/lib64/"});
-        osMap.put("Linux-ppc64le-64", new String[]{"/usr/lib64/"});
-        osMap.put("Linux-s390x-64", new String[]{"/usr/lib64/"});
-        osMap.put("Windows-x86-32", new String[]{
-            PKCS11_BASE + "/nss/lib/windows-i586/".replace('/', SEP)});
-        osMap.put("Windows-amd64-64", new String[]{
-            PKCS11_BASE + "/nss/lib/windows-amd64/".replace('/', SEP)});
-        osMap.put("MacOSX-x86_64-64", new String[]{
-            PKCS11_BASE + "/nss/lib/macosx-x86_64/"});
-        osMap.put("Linux-arm-32", new String[]{
-            "/usr/lib/arm-linux-gnueabi/nss/",
-            "/usr/lib/arm-linux-gnueabihf/nss/"});
-        osMap.put("Linux-aarch64-64", new String[]{
-            "/usr/lib/aarch64-linux-gnu/", "/usr/lib/aarch64-linux-gnu/nss/"});
+        osMap.put("SunOS-sparc-32", new String[] { "/usr/lib/mps/" });
+        osMap.put("SunOS-sparcv9-64", new String[] { "/usr/lib/mps/64/" });
+        osMap.put("SunOS-x86-32", new String[] { "/usr/lib/mps/" });
+        osMap.put("SunOS-amd64-64", new String[] { "/usr/lib/mps/64/" });
+        osMap.put("Linux-i386-32", new String[] {
+                "/usr/lib/i386-linux-gnu/",
+                "/usr/lib32/",
+                "/usr/lib/" });
+        osMap.put("Linux-amd64-64", new String[] {
+                "/usr/lib/x86_64-linux-gnu/",
+                "/usr/lib/x86_64-linux-gnu/nss/",
+                "/usr/lib64/" });
+        osMap.put("Linux-ppc64-64", new String[] { "/usr/lib64/" });
+        osMap.put("Linux-ppc64le-64", new String[] { "/usr/lib64/" });
+        osMap.put("Linux-s390x-64", new String[] { "/usr/lib64/" });
+        osMap.put("Windows-x86-32", new String[] {});
+        osMap.put("Windows-amd64-64", new String[] {});
+        osMap.put("MacOSX-x86_64-64", new String[] {});
+        osMap.put("Linux-arm-32", new String[] {
+                "/usr/lib/arm-linux-gnueabi/nss/",
+                "/usr/lib/arm-linux-gnueabihf/nss/" });
+        osMap.put("Linux-aarch64-64", new String[] {
+                "/usr/lib/aarch64-linux-gnu/",
+                "/usr/lib/aarch64-linux-gnu/nss/" });
+        return osMap;
+    }
+
+    private static String[] getNssLibPaths(String osId) {
+        String[] preferablePaths = getPreferableNssLibPaths(osId);
+        if (preferablePaths.length != 0) {
+            return preferablePaths;
+        } else {
+            return getOsMap().get(osId);
+        }
+    }
+
+    private static String[] getPreferableNssLibPaths(String osId) {
+        List<String> nssLibPaths = new ArrayList<>();
+
+        String customNssLibPaths = System.getProperty("test.nss.lib.paths");
+        if (customNssLibPaths == null) {
+            // If custom local NSS lib path is not provided,
+            // try to download NSS libs from artifactory
+            String path = fetchNssLib(osId);
+            if (path != null) {
+                nssLibPaths.add(path);
+            }
+        } else {
+            String[] paths = customNssLibPaths.split(",");
+            for (String path : paths) {
+                if (!path.endsWith(File.separator)) {
+                    nssLibPaths.add(path + File.separator);
+                } else {
+                    nssLibPaths.add(path);
+                }
+            }
+        }
+
+        return nssLibPaths.toArray(new String[nssLibPaths.size()]);
     }
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();
@@ -797,4 +847,60 @@ public abstract class PKCS11Test {
         }
         return data;
     }
+
+    private static String fetchNssLib(String osId) {
+        switch (osId) {
+        case "Windows-x86-32":
+            return fetchNssLib(WINDOWS_X86.class);
+
+        case "Windows-amd64-64":
+            return fetchNssLib(WINDOWS_X64.class);
+
+        case "MacOSX-x86_64-64":
+            return fetchNssLib(MACOSX_X64.class);
+
+        default:
+            return null;
+        }
+    }
+
+    private static String fetchNssLib(Class<?> clazz) {
+        String path = null;
+        try {
+            path = ArtifactResolver.resolve(clazz).entrySet().stream()
+                    .findAny().get().getValue() + File.separator + "nsslib"
+                    + File.separator;
+        } catch (ArtifactResolverException e) {
+            Throwable cause = e.getCause();
+            if (cause == null) {
+                System.out.println("Cannot resolve artifact, "
+                        + "please check if JIB jar is present in classpath.");
+            } else {
+                throw new RuntimeException("Fetch artifact failed: " + clazz
+                        + "\nPlease make sure the artifact is available.");
+            }
+        }
+        return path;
+    }
+
+    @Artifact(
+            organization = "jpg.tests.jdk.nsslib",
+            name = "nsslib-windows_x64",
+            revision = "3.35",
+            extension = "zip")
+    private static class WINDOWS_X64 { }
+
+    @Artifact(
+            organization = "jpg.tests.jdk.nsslib",
+            name = "nsslib-windows_x86",
+            revision = "3.35",
+            extension = "zip")
+    private static class WINDOWS_X86 { }
+
+    @Artifact(
+            organization = "jpg.tests.jdk.nsslib",
+            name = "nsslib-macosx_x64",
+            revision = "3.35",
+            extension = "zip")
+    private static class MACOSX_X64 { }
 }

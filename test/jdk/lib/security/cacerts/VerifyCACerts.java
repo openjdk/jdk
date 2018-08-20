@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8189131 8198240 8191844 8189949 8191031 8196141 8204923 8195774 8199779 8209452
+ *      8209506
  * @summary Check root CA entries in cacerts file
  */
 import java.io.File;
@@ -41,7 +42,7 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 90;
+    private static final int COUNT = 92;
 
     // map of cert alias to SHA-256 fingerprint
     private static final Map<String, String> FINGERPRINT_MAP
@@ -227,6 +228,10 @@ public class VerifyCACerts {
                     "CB:B5:22:D7:B7:F1:27:AD:6A:01:13:86:5B:DF:1C:D4:10:2E:7D:07:59:AF:63:5A:7C:F4:72:0D:C9:63:C5:3B");
             put("globalsigneccrootcar5 [jdk]",
                     "17:9F:BC:14:8A:3D:D0:0F:D2:4E:A1:34:58:CC:43:BF:A7:F5:9C:81:82:D7:83:A5:13:F6:EB:EC:10:0C:89:24");
+            put("globalsigneccrootcar4 [jdk]",
+                    "BE:C9:49:11:C2:95:56:76:DB:6C:0A:55:09:86:D7:6E:3B:A0:05:66:7C:44:2C:97:62:B4:FB:B7:73:DE:22:8C");
+            put("globalsignr2ca [jdk]",
+                    "CA:42:DD:41:74:5F:D0:B8:1E:B9:02:36:2C:F9:D8:BF:71:9D:A1:BD:1B:1E:FC:94:6F:5B:4C:99:F4:2C:1B:9E");
         }
     };
 

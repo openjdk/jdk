@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 # @test
 # @bug 5038659
+# @library /test/lib
 # @summary Enable PKCS#11 KeyStore for SunPKCS11-Solaris
 #
 # @run shell Solaris.sh
@@ -138,17 +139,18 @@ if [ "${RECOMPILE}" = "yes" ] ; then
     cd ${TESTCLASSES}
     ${RM} *.class
     ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-	-classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
-	-d ${TESTCLASSES} \
-	${TESTSRC}${FS}Basic.java \
-	${TESTSRC}${FS}..${FS}PKCS11Test.java
+    -classpath ${TESTSRC}${FS}..${PS}${TESTSRC}${FS}loader.jar \
+    -d ${TESTCLASSES} \
+    ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jdk${FS}test${FS}lib${FS}artifacts${FS}*.java \
+    ${TESTSRC}${FS}Basic.java \
+    ${TESTSRC}${FS}..${FS}PKCS11Test.java
 fi
 
 # run test
 
 cd ${TESTSRC}
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar \
+	-classpath ${TESTCLASSES}${PS}${TESTSRC}${FS}loader.jar${PS}${CPAPPEND} \
 	-DDIR=${TESTSRC}${FS}BasicData${FS} \
 	-DCUSTOM_P11_CONFIG=${TESTSRC}${FS}BasicData${FS}p11-solaris.txt \
 	-DNO_DEFAULT=true \

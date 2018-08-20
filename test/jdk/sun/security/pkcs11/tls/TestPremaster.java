@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6316539 8136355
  * @summary Basic tests for TlsRsaPremasterSecret generator
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestPremaster

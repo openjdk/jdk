@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 # @test
 # @bug 8187023
 # @summary Pkcs11 config file should be assumed in ISO-8859-1
+# @library /test/lib
 # @build ReadConfInUTF16Env
 # @run shell ReadConfInUTF16Env.sh
 
