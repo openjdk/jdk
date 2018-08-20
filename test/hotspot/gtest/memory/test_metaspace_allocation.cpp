@@ -102,9 +102,9 @@ protected:
       _spaces[i].lock = new Mutex(Monitor::native, "gtest-MetaspaceAllocationTest-lock", false, Monitor::_safepoint_check_never);
       ASSERT_TRUE(_spaces[i].lock != NULL);
     }
-    // Let every ~10th space be an anonymous one to test different allocation patterns.
+    // Let every ~10th space be an unsafe anonymous one to test different allocation patterns.
     const Metaspace::MetaspaceType msType = (os::random() % 100 < 10) ?
-      Metaspace::AnonymousMetaspaceType : Metaspace::StandardMetaspaceType;
+      Metaspace::UnsafeAnonymousMetaspaceType : Metaspace::StandardMetaspaceType;
     {
       // Pull lock during space creation, since this is what happens in the VM too
       // (see ClassLoaderData::metaspace_non_null(), which we mimick here).

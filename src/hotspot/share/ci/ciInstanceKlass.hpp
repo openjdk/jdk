@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ private:
   bool                   _has_subklass;
   bool                   _has_nonstatic_fields;
   bool                   _has_nonstatic_concrete_methods;
-  bool                   _is_anonymous;
+  bool                   _is_unsafe_anonymous;
 
   ciFlags                _flags;
   jint                   _nonstatic_field_size;
@@ -179,8 +179,8 @@ public:
     return _has_nonstatic_concrete_methods;
   }
 
-  bool is_anonymous() {
-    return _is_anonymous;
+  bool is_unsafe_anonymous() {
+    return _is_unsafe_anonymous;
   }
 
   ciInstanceKlass* get_canonical_holder(int offset);
@@ -260,7 +260,7 @@ public:
     return NULL;
   }
 
-  ciInstanceKlass* host_klass();
+  ciInstanceKlass* unsafe_anonymous_host();
 
   bool can_be_instantiated() {
     assert(is_loaded(), "must be loaded");

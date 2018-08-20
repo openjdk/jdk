@@ -298,7 +298,7 @@ InstanceKlass* ClassLoaderExt::load_class(Symbol* name, const char* path, TRAPS)
                                                            name,
                                                            loader_data,
                                                            protection_domain,
-                                                           NULL, // host_klass
+                                                           NULL, // unsafe_anonymous_host
                                                            NULL, // cp_patches
                                                            THREAD);
 

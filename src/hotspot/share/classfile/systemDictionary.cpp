@@ -988,18 +988,18 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
                                               Handle class_loader,
                                               Handle protection_domain,
                                               ClassFileStream* st,
-                                              const InstanceKlass* host_klass,
+                                              const InstanceKlass* unsafe_anonymous_host,
                                               GrowableArray<Handle>* cp_patches,
                                               TRAPS) {
 
   EventClassLoad class_load_start_event;
 
   ClassLoaderData* loader_data;
-  if (host_klass != NULL) {
-    // Create a new CLD for anonymous class, that uses the same class loader
-    // as the host_klass
-    guarantee(oopDesc::equals(host_klass->class_loader(), class_loader()), "should be the same");
-    loader_data = ClassLoaderData::anonymous_class_loader_data(class_loader);
+  if (unsafe_anonymous_host != NULL) {
+    // Create a new CLD for an unsafe anonymous class, that uses the same class loader
+    // as the unsafe_anonymous_host
+    guarantee(oopDesc::equals(unsafe_anonymous_host->class_loader(), class_loader()), "should be the same");
+    loader_data = ClassLoaderData::unsafe_anonymous_class_loader_data(class_loader);
   } else {
     loader_data = ClassLoaderData::class_loader_data(class_loader());
   }
@@ -1016,12 +1016,12 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
                                                       class_name,
                                                       loader_data,
                                                       protection_domain,
-                                                      host_klass,
+                                                      unsafe_anonymous_host,
                                                       cp_patches,
                                                       CHECK_NULL);
 
-  if (host_klass != NULL && k != NULL) {
-    // Anonymous classes must update ClassLoaderData holder (was host_klass loader)
+  if (unsafe_anonymous_host != NULL && k != NULL) {
+    // Unsafe anonymous classes must update ClassLoaderData holder (was unsafe_anonymous_host loader)
     // so that they can be unloaded when the mirror is no longer referenced.
     k->class_loader_data()->initialize_holder(Handle(THREAD, k->java_mirror()));
 
@@ -1056,8 +1056,8 @@ InstanceKlass* SystemDictionary::parse_stream(Symbol* class_name,
       post_class_load_event(&class_load_start_event, k, loader_data);
     }
   }
-  assert(host_klass != NULL || NULL == cp_patches,
-         "cp_patches only found with host_klass");
+  assert(unsafe_anonymous_host != NULL || NULL == cp_patches,
+         "cp_patches only found with unsafe_anonymous_host");
 
   return k;
 }
@@ -1115,7 +1115,7 @@ InstanceKlass* SystemDictionary::resolve_from_stream(Symbol* class_name,
                                          class_name,
                                          loader_data,
                                          protection_domain,
-                                         NULL, // host_klass
+                                         NULL, // unsafe_anonymous_host
                                          NULL, // cp_patches
                                          CHECK_NULL);
   }
@@ -3010,7 +3010,7 @@ class CombineDictionariesClosure : public CLDClosure {
       _master_dictionary(master_dictionary) {}
     void do_cld(ClassLoaderData* cld) {
       ResourceMark rm;
-      if (cld->is_anonymous()) {
+      if (cld->is_unsafe_anonymous()) {
         return;
       }
       if (cld->is_system_class_loader_data() || cld->is_platform_class_loader_data()) {

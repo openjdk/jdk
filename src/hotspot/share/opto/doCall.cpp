@@ -510,8 +510,8 @@ void Parse::do_call() {
   if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_initializer()) {
     ciInstanceKlass* calling_klass = method()->holder();
     ciInstanceKlass* sender_klass =
-        calling_klass->is_anonymous() ? calling_klass->host_klass() :
-                                        calling_klass;
+        calling_klass->is_unsafe_anonymous() ? calling_klass->unsafe_anonymous_host() :
+                                               calling_klass;
     if (sender_klass->is_interface()) {
       receiver_constraint = sender_klass;
     }

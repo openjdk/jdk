@@ -45,14 +45,14 @@ public class ClassLoaderData extends VMObject {
     classLoaderField = type.getAddressField("_class_loader");
     nextField = type.getAddressField("_next");
     klassesField = new MetadataField(type.getAddressField("_klasses"), 0);
-    isAnonymousField = new CIntField(type.getCIntegerField("_is_anonymous"), 0);
+    isUnsafeAnonymousField = new CIntField(type.getCIntegerField("_is_unsafe_anonymous"), 0);
     dictionaryField = type.getAddressField("_dictionary");
   }
 
   private static AddressField   classLoaderField;
   private static AddressField nextField;
   private static MetadataField  klassesField;
-  private static CIntField isAnonymousField;
+  private static CIntField isUnsafeAnonymousField;
   private static AddressField dictionaryField;
 
   public ClassLoaderData(Address addr) {
@@ -81,8 +81,8 @@ public class ClassLoaderData extends VMObject {
     return null;
   }
 
-  public boolean getIsAnonymous() {
-    return isAnonymousField.getValue(this) != 0;
+  public boolean getisUnsafeAnonymous() {
+    return isUnsafeAnonymousField.getValue(this) != 0;
   }
 
   public ClassLoaderData next() {

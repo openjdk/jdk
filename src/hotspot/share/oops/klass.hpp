@@ -654,7 +654,7 @@ protected:
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
-  // Iff the class loader (or mirror for anonymous classes) is alive the
+  // Iff the class loader (or mirror for unsafe anonymous classes) is alive the
   // Klass is considered alive.  Has already been marked as unloading.
   bool is_loader_alive() const { return !class_loader_data()->is_unloading(); }
 

@@ -3786,7 +3786,7 @@ oop java_lang_invoke_ResolvedMethodName::find_resolved_method(const methodHandle
     }
     oop new_resolved_method = k->allocate_instance(CHECK_NULL);
     new_resolved_method->address_field_put(_vmtarget_offset, (address)m());
-    // Add a reference to the loader (actually mirror because anonymous classes will not have
+    // Add a reference to the loader (actually mirror because unsafe anonymous classes will not have
     // distinct loaders) to ensure the metadata is kept alive.
     // This mirror may be different than the one in clazz field.
     new_resolved_method->obj_field_put(_vmholder_offset, m->method_holder()->java_mirror());

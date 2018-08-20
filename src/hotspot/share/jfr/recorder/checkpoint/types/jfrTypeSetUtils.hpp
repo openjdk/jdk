@@ -236,9 +236,9 @@ class JfrSymbolId : public JfrCHeapObj {
   bool equals(const char* query, uintptr_t hash, const CStringEntry* entry);
 
  public:
-  static bool is_anonymous_klass(const Klass* k);
-  static const char* create_anonymous_klass_symbol(const InstanceKlass* ik, uintptr_t& hashcode);
-  static uintptr_t anonymous_klass_name_hash_code(const InstanceKlass* ik);
+  static bool is_unsafe_anonymous_klass(const Klass* k);
+  static const char* create_unsafe_anonymous_klass_symbol(const InstanceKlass* ik, uintptr_t& hashcode);
+  static uintptr_t unsafe_anonymous_klass_name_hash_code(const InstanceKlass* ik);
   static uintptr_t regular_klass_name_hash_code(const Klass* k);
 
   JfrSymbolId();
@@ -247,7 +247,7 @@ class JfrSymbolId : public JfrCHeapObj {
   void initialize();
   void clear();
 
-  traceid mark_anonymous_klass_name(const Klass* k);
+  traceid mark_unsafe_anonymous_klass_name(const Klass* k);
   traceid mark(const Symbol* sym, uintptr_t hash);
   traceid mark(const Klass* k);
   traceid mark(const Symbol* symbol);
@@ -259,7 +259,7 @@ class JfrSymbolId : public JfrCHeapObj {
 
   template <typename T>
   void symbol(T& functor, const Klass* k) {
-    if (is_anonymous_klass(k)) {
+    if (is_unsafe_anonymous_klass(k)) {
       return;
     }
     functor(map_symbol(regular_klass_name_hash_code(k)));
@@ -274,10 +274,10 @@ class JfrSymbolId : public JfrCHeapObj {
 
   template <typename T>
   void cstring(T& functor, const Klass* k) {
-    if (!is_anonymous_klass(k)) {
+    if (!is_unsafe_anonymous_klass(k)) {
       return;
     }
-    functor(map_cstring(anonymous_klass_name_hash_code((const InstanceKlass*)k)));
+    functor(map_cstring(unsafe_anonymous_klass_name_hash_code((const InstanceKlass*)k)));
   }
 
   template <typename T>
@@ -327,7 +327,7 @@ class JfrArtifactSet : public JfrCHeapObj {
   traceid mark(const Klass* klass);
   traceid mark(const Symbol* symbol);
   traceid mark(const char* const str, uintptr_t hash);
-  traceid mark_anonymous_klass_name(const Klass* klass);
+  traceid mark_unsafe_anonymous_klass_name(const Klass* klass);
 
   const JfrSymbolId::SymbolEntry* map_symbol(const Symbol* symbol) const;
   const JfrSymbolId::SymbolEntry* map_symbol(uintptr_t hash) const;

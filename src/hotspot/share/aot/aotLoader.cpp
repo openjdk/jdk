@@ -42,7 +42,7 @@ GrowableArray<AOTLib*>* AOTLoader::_libraries = new(ResourceObj::C_HEAP, mtCode)
 #define FOR_ALL_AOT_LIBRARIES(lib) for (GrowableArrayIterator<AOTLib*> lib = libraries()->begin(); lib != libraries()->end(); ++lib)
 
 void AOTLoader::load_for_klass(InstanceKlass* ik, Thread* thread) {
-  if (ik->is_anonymous()) {
+  if (ik->is_unsafe_anonymous()) {
     // don't even bother
     return;
   }
@@ -54,7 +54,7 @@ void AOTLoader::load_for_klass(InstanceKlass* ik, Thread* thread) {
 }
 
 uint64_t AOTLoader::get_saved_fingerprint(InstanceKlass* ik) {
-  if (ik->is_anonymous()) {
+  if (ik->is_unsafe_anonymous()) {
     // don't even bother
     return 0;
   }

@@ -62,7 +62,7 @@ static const char* space_type_name(Metaspace::MetaspaceType t) {
   switch (t) {
     case Metaspace::StandardMetaspaceType: s = "Standard"; break;
     case Metaspace::BootMetaspaceType: s = "Boot"; break;
-    case Metaspace::AnonymousMetaspaceType: s = "Anonymous"; break;
+    case Metaspace::UnsafeAnonymousMetaspaceType: s = "UnsafeAnonymous"; break;
     case Metaspace::ReflectionMetaspaceType: s = "Reflection"; break;
     default: ShouldNotReachHere();
   }

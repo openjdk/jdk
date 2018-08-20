@@ -527,7 +527,7 @@
                                                                           \
   declare_constant(InstanceKlass::linked)                                 \
   declare_constant(InstanceKlass::fully_initialized)                      \
-  declare_constant(InstanceKlass::_misc_is_anonymous)                     \
+  declare_constant(InstanceKlass::_misc_is_unsafe_anonymous)              \
                                                                           \
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \

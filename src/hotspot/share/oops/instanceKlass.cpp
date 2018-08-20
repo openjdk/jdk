@@ -341,8 +341,8 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
                                        parser.itable_size(),
                                        nonstatic_oop_map_size(parser.total_oop_map_count()),
                                        parser.is_interface(),
-                                       parser.is_anonymous(),
-                                       should_store_fingerprint(parser.is_anonymous()));
+                                       parser.is_unsafe_anonymous(),
+                                       should_store_fingerprint(parser.is_unsafe_anonymous()));
 
   const Symbol* const class_name = parser.class_name();
   assert(class_name != NULL, "invariant");
@@ -412,7 +412,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind, Klass
     set_vtable_length(parser.vtable_size());
     set_kind(kind);
     set_access_flags(parser.access_flags());
-    set_is_anonymous(parser.is_anonymous());
+    set_is_unsafe_anonymous(parser.is_unsafe_anonymous());
     set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
                                                     false));
 
@@ -2193,7 +2193,7 @@ bool InstanceKlass::supers_have_passed_fingerprint_checks() {
   return true;
 }
 
-bool InstanceKlass::should_store_fingerprint(bool is_anonymous) {
+bool InstanceKlass::should_store_fingerprint(bool is_unsafe_anonymous) {
 #if INCLUDE_AOT
   // We store the fingerprint into the InstanceKlass only in the following 2 cases:
   if (CalculateClassFingerprint) {
@@ -2204,8 +2204,8 @@ bool InstanceKlass::should_store_fingerprint(bool is_anonymous) {
     // (2) We are running -Xshare:dump to create a shared archive
     return true;
   }
-  if (UseAOT && is_anonymous) {
-    // (3) We are using AOT code from a shared library and see an anonymous class
+  if (UseAOT && is_unsafe_anonymous) {
+    // (3) We are using AOT code from a shared library and see an unsafe anonymous class
     return true;
   }
 #endif
@@ -2507,8 +2507,8 @@ const char* InstanceKlass::signature_name() const {
   int hash_len = 0;
   char hash_buf[40];
 
-  // If this is an anonymous class, append a hash to make the name unique
-  if (is_anonymous()) {
+  // If this is an unsafe anonymous class, append a hash to make the name unique
+  if (is_unsafe_anonymous()) {
     intptr_t hash = (java_mirror() != NULL) ? java_mirror()->identity_hash() : 0;
     jio_snprintf(hash_buf, sizeof(hash_buf), "/" UINTX_FORMAT, (uintx)hash);
     hash_len = (int)strlen(hash_buf);
@@ -2559,14 +2559,19 @@ Symbol* InstanceKlass::package_from_name(const Symbol* name, TRAPS) {
 }
 
 ModuleEntry* InstanceKlass::module() const {
+  // For an unsafe anonymous class return the host class' module
+  if (is_unsafe_anonymous()) {
+    assert(unsafe_anonymous_host() != NULL, "unsafe anonymous class must have a host class");
+    return unsafe_anonymous_host()->module();
+  }
+
+  // Class is in a named package
   if (!in_unnamed_package()) {
     return _package_entry->module();
   }
-  const Klass* host = host_klass();
-  if (host == NULL) {
-    return class_loader_data()->unnamed_module();
-  }
-  return host->class_loader_data()->unnamed_module();
+
+  // Class is in an unnamed package, return its loader's unnamed module
+  return class_loader_data()->unnamed_module();
 }
 
 void InstanceKlass::set_package(ClassLoaderData* loader_data, TRAPS) {
@@ -2813,7 +2818,7 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
       *inner_is_member = true;
     }
     if (NULL == outer_klass) {
-      // It may be anonymous; try for that.
+      // It may be unsafe anonymous; try for that.
       int encl_method_class_idx = enclosing_method_class_index();
       if (encl_method_class_idx != 0) {
         Klass* ok = i_cp->klass_at(encl_method_class_idx, CHECK_NULL);
@@ -3161,7 +3166,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     class_loader_data()->print_value_on(st);
     st->cr();
   }
-  st->print(BULLET"host class:        "); Metadata::print_value_on_maybe_null(st, host_klass()); st->cr();
+  st->print(BULLET"unsafe anonymous host class:        "); Metadata::print_value_on_maybe_null(st, unsafe_anonymous_host()); st->cr();
   if (source_file_name() != NULL) {
     st->print(BULLET"source file:       ");
     source_file_name()->print_value_on(st);
@@ -3612,9 +3617,9 @@ void InstanceKlass::verify_on(outputStream* st) {
   if (constants() != NULL) {
     guarantee(constants()->is_constantPool(), "should be constant pool");
   }
-  const Klass* host = host_klass();
-  if (host != NULL) {
-    guarantee(host->is_klass(), "should be klass");
+  const Klass* anonymous_host = unsafe_anonymous_host();
+  if (anonymous_host != NULL) {
+    guarantee(anonymous_host->is_klass(), "should be klass");
   }
 }
 

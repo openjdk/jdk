@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ final class AOTCompiledClass {
             this.dependentMethods = new ArrayList<>();
             this.classId = classId;
             this.type = type;
-            this.metadataName = type.isAnonymous() ? "anon<" + classId + ">" : type.getName();
+            this.metadataName = type.isUnsafeAnonymous() ? "anon<" + classId + ">" : type.getName();
             this.gotIndex = binaryContainer.addTwoSlotKlassSymbol(metadataName);
             this.compiledMethodsOffset = -1; // Not compiled classes do not have compiled methods.
             this.dependentMethodsOffset = -1;

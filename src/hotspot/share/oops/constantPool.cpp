@@ -221,7 +221,7 @@ void ConstantPool::initialize_unresolved_klasses(ClassLoaderData* loader_data, T
   allocate_resolved_klasses(loader_data, num_klasses, THREAD);
 }
 
-// Anonymous class support:
+// Unsafe anonymous class support:
 void ConstantPool::klass_at_put(int class_index, int name_index, int resolved_klass_index, Klass* k, Symbol* name) {
   assert(is_within_bounds(class_index), "index out of bounds");
   assert(is_within_bounds(name_index), "index out of bounds");
@@ -243,7 +243,7 @@ void ConstantPool::klass_at_put(int class_index, int name_index, int resolved_kl
   }
 }
 
-// Anonymous class support:
+// Unsafe anonymous class support:
 void ConstantPool::klass_at_put(int class_index, Klass* k) {
   assert(k != NULL, "must be valid klass");
   CPKlassSlot kslot = klass_slot_at(class_index);

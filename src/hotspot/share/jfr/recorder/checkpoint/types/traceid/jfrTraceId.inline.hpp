@@ -96,7 +96,7 @@ inline traceid JfrTraceId::use(const PackageEntry* package, bool leakp /* false 
 
 inline traceid JfrTraceId::use(const ClassLoaderData* cld, bool leakp /* false */) {
   assert(cld != NULL, "invariant");
-  return cld->is_anonymous() ? 0 : set_used_and_get_shifted(cld, leakp);
+  return cld->is_unsafe_anonymous() ? 0 : set_used_and_get_shifted(cld, leakp);
 }
 
 inline bool JfrTraceId::in_visible_set(const Klass* klass) {

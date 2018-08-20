@@ -58,7 +58,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
     cls = *cls_ptr;
   }
 
-  if (!cld->is_anonymous()) {
+  if (!cld->is_unsafe_anonymous()) {
     cls->_cld = cld;
   }
 
@@ -70,7 +70,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
 
   ClassStatsClosure csc;
   cld->classes_do(&csc);
-  if(cld->is_anonymous()) {
+  if(cld->is_unsafe_anonymous()) {
     cls->_anon_classes_count += csc._num_classes;
   } else {
     cls->_classes_count = csc._num_classes;
@@ -79,7 +79,7 @@ void ClassLoaderStatsClosure::do_cld(ClassLoaderData* cld) {
 
   ClassLoaderMetaspace* ms = cld->metaspace_or_null();
   if (ms != NULL) {
-    if(cld->is_anonymous()) {
+    if(cld->is_unsafe_anonymous()) {
       cls->_anon_chunk_sz += ms->allocated_chunks_bytes();
       cls->_anon_block_sz += ms->allocated_blocks_bytes();
     } else {

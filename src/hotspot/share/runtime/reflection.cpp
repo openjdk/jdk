@@ -424,18 +424,18 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
   return result;
 }
 
-static bool under_host_klass(const InstanceKlass* ik, const InstanceKlass* host_klass) {
+static bool under_unsafe_anonymous_host(const InstanceKlass* ik, const InstanceKlass* unsafe_anonymous_host) {
   DEBUG_ONLY(int inf_loop_check = 1000 * 1000 * 1000);
   for (;;) {
-    const InstanceKlass* hc = ik->host_klass();
+    const InstanceKlass* hc = ik->unsafe_anonymous_host();
     if (hc == NULL)        return false;
-    if (hc == host_klass)  return true;
+    if (hc == unsafe_anonymous_host)  return true;
     ik = hc;
 
     // There's no way to make a host class loop short of patching memory.
     // Therefore there cannot be a loop here unless there's another bug.
     // Still, let's check for it.
-    assert(--inf_loop_check > 0, "no host_klass loop");
+    assert(--inf_loop_check > 0, "no unsafe_anonymous_host loop");
   }
 }
 
@@ -446,10 +446,10 @@ static bool can_relax_access_check_for(const Klass* accessor,
   const InstanceKlass* accessor_ik = InstanceKlass::cast(accessor);
   const InstanceKlass* accessee_ik = InstanceKlass::cast(accessee);
 
-  // If either is on the other's host_klass chain, access is OK,
+  // If either is on the other's unsafe_anonymous_host chain, access is OK,
   // because one is inside the other.
-  if (under_host_klass(accessor_ik, accessee_ik) ||
-    under_host_klass(accessee_ik, accessor_ik))
+  if (under_unsafe_anonymous_host(accessor_ik, accessee_ik) ||
+    under_unsafe_anonymous_host(accessee_ik, accessor_ik))
     return true;
 
   if ((RelaxAccessControlCheck &&
@@ -676,13 +676,13 @@ bool Reflection::verify_member_access(const Klass* current_class,
   }
 
   const Klass* host_class = current_class;
-  if (host_class->is_instance_klass() &&
-      InstanceKlass::cast(host_class)->is_anonymous()) {
-    host_class = InstanceKlass::cast(host_class)->host_klass();
-    assert(host_class != NULL, "Anonymous class has null host class");
+  if (current_class->is_instance_klass() &&
+      InstanceKlass::cast(current_class)->is_unsafe_anonymous()) {
+    host_class = InstanceKlass::cast(current_class)->unsafe_anonymous_host();
+    assert(host_class != NULL, "Unsafe anonymous class has null host class");
     assert(!(host_class->is_instance_klass() &&
-           InstanceKlass::cast(host_class)->is_anonymous()),
-           "host_class should not be anonymous");
+           InstanceKlass::cast(host_class)->is_unsafe_anonymous()),
+           "unsafe_anonymous_host should not be unsafe anonymous itself");
   }
   if (host_class == member_class) {
     return true;
@@ -710,7 +710,7 @@ bool Reflection::verify_member_access(const Klass* current_class,
   }
 
   // private access between different classes needs a nestmate check, but
-  // not for anonymous classes - so check host_class
+  // not for unsafe anonymous classes - so check host_class
   if (access.is_private() && host_class == current_class) {
     if (current_class->is_instance_klass() && member_class->is_instance_klass() ) {
       InstanceKlass* cur_ik = const_cast<InstanceKlass*>(InstanceKlass::cast(current_class));
@@ -742,7 +742,7 @@ bool Reflection::is_same_class_package(const Klass* class1, const Klass* class2)
 // Checks that the 'outer' klass has declared 'inner' as being an inner klass. If not,
 // throw an incompatible class change exception
 // If inner_is_member, require the inner to be a member of the outer.
-// If !inner_is_member, require the inner to be anonymous (a non-member).
+// If !inner_is_member, require the inner to be unsafe anonymous (a non-member).
 // Caller is responsible for figuring out in advance which case must be true.
 void Reflection::check_for_inner_class(const InstanceKlass* outer, const InstanceKlass* inner,
                                        bool inner_is_member, TRAPS) {

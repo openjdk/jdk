@@ -579,14 +579,13 @@ static void relocate_cached_class_file() {
 }
 
 NOT_PRODUCT(
-static void assert_not_anonymous_class(InstanceKlass* k) {
-  assert(!(k->is_anonymous()), "cannot archive anonymous classes");
+static void assert_not_unsafe_anonymous_class(InstanceKlass* k) {
+  assert(!(k->is_unsafe_anonymous()), "cannot archive unsafe anonymous classes");
 }
 
-// Anonymous classes are not stored inside any dictionaries. They are created by
-// SystemDictionary::parse_stream() with a non-null host_klass.
-static void assert_no_anonymoys_classes_in_dictionaries() {
-  ClassLoaderDataGraph::dictionary_classes_do(assert_not_anonymous_class);
+// Unsafe anonymous classes are not stored inside any dictionaries.
+static void assert_no_unsafe_anonymous_classes_in_dictionaries() {
+  ClassLoaderDataGraph::dictionary_classes_do(assert_not_unsafe_anonymous_class);
 })
 
 // Objects of the Metadata types (such as Klass and ConstantPool) have C++ vtables.
@@ -1396,9 +1395,9 @@ void VM_PopulateDumpSharedSpace::doit() {
   remove_unshareable_in_classes();
   tty->print_cr("done. ");
 
-  // We don't support archiving anonymous classes. Verify that they are not stored in
-  // the any dictionaries.
-  NOT_PRODUCT(assert_no_anonymoys_classes_in_dictionaries());
+  // We don't support archiving unsafe anonymous classes. Verify that they are not stored in
+  // any dictionaries.
+  NOT_PRODUCT(assert_no_unsafe_anonymous_classes_in_dictionaries());
 
   SystemDictionaryShared::finalize_verification_constraints();
 

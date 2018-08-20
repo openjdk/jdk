@@ -2091,7 +2091,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
   // Privileged code can use all annotations.  Other code silently drops some.
   const bool privileged = loader_data->is_the_null_class_loader_data() ||
                           loader_data->is_platform_class_loader_data() ||
-                          loader_data->is_anonymous();
+                          loader_data->is_unsafe_anonymous();
   switch (sid) {
     case vmSymbols::VM_SYMBOL_ENUM_NAME(reflect_CallerSensitive_signature): {
       if (_location != _in_method)  break;  // only allow for methods
@@ -5591,7 +5591,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
 
   ik->set_this_class_index(_this_class_index);
 
-  if (is_anonymous()) {
+  if (is_unsafe_anonymous()) {
     // _this_class_index is a CONSTANT_Class entry that refers to this
     // anonymous class itself. If this class needs to refer to its own methods or
     // fields, it would use a CONSTANT_MethodRef, etc, which would reference
@@ -5607,9 +5607,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   ik->set_has_nonstatic_concrete_methods(_has_nonstatic_concrete_methods);
   ik->set_declares_nonstatic_concrete_methods(_declares_nonstatic_concrete_methods);
 
-  if (_host_klass != NULL) {
-    assert (ik->is_anonymous(), "should be the same");
-    ik->set_host_klass(_host_klass);
+  if (_unsafe_anonymous_host != NULL) {
+    assert (ik->is_unsafe_anonymous(), "should be the same");
+    ik->set_unsafe_anonymous_host(_unsafe_anonymous_host);
   }
 
   // Set PackageEntry for this_klass
@@ -5760,15 +5760,15 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loa
   debug_only(ik->verify();)
 }
 
-// For an anonymous class that is in the unnamed package, move it to its host class's
+// For an unsafe anonymous class that is in the unnamed package, move it to its host class's
 // package by prepending its host class's package name to its class name and setting
 // its _class_name field.
-void ClassFileParser::prepend_host_package_name(const InstanceKlass* host_klass, TRAPS) {
+void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anonymous_host, TRAPS) {
   ResourceMark rm(THREAD);
   assert(strrchr(_class_name->as_C_string(), '/') == NULL,
-         "Anonymous class should not be in a package");
+         "Unsafe anonymous class should not be in a package");
   const char* host_pkg_name =
-    ClassLoader::package_from_name(host_klass->name()->as_C_string(), NULL);
+    ClassLoader::package_from_name(unsafe_anonymous_host->name()->as_C_string(), NULL);
 
   if (host_pkg_name != NULL) {
     size_t host_pkg_len = strlen(host_pkg_name);
@@ -5778,7 +5778,7 @@ void ClassFileParser::prepend_host_package_name(const InstanceKlass* host_klass,
     // Copy host package name and trailing /.
     strncpy(new_anon_name, host_pkg_name, host_pkg_len);
     new_anon_name[host_pkg_len] = '/';
-    // Append anonymous class name. The anonymous class name can contain odd
+    // Append unsafe anonymous class name. The unsafe anonymous class name can contain odd
     // characters.  So, do a strncpy instead of using sprintf("%s...").
     strncpy(new_anon_name + host_pkg_len + 1, (char *)_class_name->base(), class_name_len);
 
@@ -5793,19 +5793,19 @@ void ClassFileParser::prepend_host_package_name(const InstanceKlass* host_klass,
 // nothing.  If the anonymous class is in the unnamed package then move it to its
 // host's package.  If the classes are in different packages then throw an IAE
 // exception.
-void ClassFileParser::fix_anonymous_class_name(TRAPS) {
-  assert(_host_klass != NULL, "Expected an anonymous class");
+void ClassFileParser::fix_unsafe_anonymous_class_name(TRAPS) {
+  assert(_unsafe_anonymous_host != NULL, "Expected an unsafe anonymous class");
 
   const jbyte* anon_last_slash = UTF8::strrchr(_class_name->base(),
                                                _class_name->utf8_length(), '/');
   if (anon_last_slash == NULL) {  // Unnamed package
-    prepend_host_package_name(_host_klass, CHECK);
+    prepend_host_package_name(_unsafe_anonymous_host, CHECK);
   } else {
-    if (!_host_klass->is_same_class_package(_host_klass->class_loader(), _class_name)) {
+    if (!_unsafe_anonymous_host->is_same_class_package(_unsafe_anonymous_host->class_loader(), _class_name)) {
       ResourceMark rm(THREAD);
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
         err_msg("Host class %s and anonymous class %s are in different packages",
-        _host_klass->name()->as_C_string(), _class_name->as_C_string()));
+        _unsafe_anonymous_host->name()->as_C_string(), _class_name->as_C_string()));
     }
   }
 }
@@ -5825,14 +5825,14 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
                                  Symbol* name,
                                  ClassLoaderData* loader_data,
                                  Handle protection_domain,
-                                 const InstanceKlass* host_klass,
+                                 const InstanceKlass* unsafe_anonymous_host,
                                  GrowableArray<Handle>* cp_patches,
                                  Publicity pub_level,
                                  TRAPS) :
   _stream(stream),
   _requested_name(name),
   _loader_data(loader_data),
-  _host_klass(host_klass),
+  _unsafe_anonymous_host(unsafe_anonymous_host),
   _cp_patches(cp_patches),
   _num_patched_klasses(0),
   _max_num_patched_klasses(0),
@@ -6140,8 +6140,8 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   // if this is an anonymous class fix up its name if it's in the unnamed
   // package.  Otherwise, throw IAE if it is in a different package than
   // its host class.
-  if (_host_klass != NULL) {
-    fix_anonymous_class_name(CHECK);
+  if (_unsafe_anonymous_host != NULL) {
+    fix_unsafe_anonymous_class_name(CHECK);
   }
 
   // Verification prevents us from creating names with dots in them, this
@@ -6166,9 +6166,9 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
         warning("DumpLoadedClassList and CDS are not supported in exploded build");
         DumpLoadedClassList = NULL;
       } else if (SystemDictionaryShared::is_sharing_possible(_loader_data) &&
-          _host_klass == NULL) {
+                 _unsafe_anonymous_host == NULL) {
         // Only dump the classes that can be stored into CDS archive.
-        // Anonymous classes such as generated LambdaForm classes are also not included.
+        // Unsafe anonymous classes such as generated LambdaForm classes are also not included.
         oop class_loader = _loader_data->class_loader();
         ResourceMark rm(THREAD);
         bool skip = false;

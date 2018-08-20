@@ -128,7 +128,7 @@ public:
 
 class LoaderTreeNode : public ResourceObj {
 
-  // We walk the CLDG and, for each CLD which is non-anonymous, add
+  // We walk the CLDG and, for each CLD which is non-unsafe_anonymous, add
   // a tree node.
   // To add a node we need its parent node; if the parent node does not yet
   // exist - because we have not yet encountered the CLD for the parent loader -
@@ -219,7 +219,7 @@ class LoaderTreeNode : public ResourceObj {
       if (print_classes) {
         if (_classes != NULL) {
           for (LoadedClassInfo* lci = _classes; lci; lci = lci->_next) {
-            // Non-anonymous classes should live in the primary CLD of its loader
+            // Non-unsafe anonymous classes should live in the primary CLD of its loader
             assert(lci->_cld == _cld, "must be");
 
             branchtracker.print(st);
@@ -252,12 +252,12 @@ class LoaderTreeNode : public ResourceObj {
           for (LoadedClassInfo* lci = _anon_classes; lci; lci = lci->_next) {
             branchtracker.print(st);
             if (lci == _anon_classes) { // first iteration
-              st->print("%*s ", indentation, "Anonymous Classes:");
+              st->print("%*s ", indentation, "Unsafe Anonymous Classes:");
             } else {
               st->print("%*s ", indentation, "");
             }
             st->print("%s", lci->_klass->external_name());
-            // For anonymous classes, also print CLD if verbose. Should be a different one than the primary CLD.
+            // For unsafe anonymous classes, also print CLD if verbose. Should be a different one than the primary CLD.
             assert(lci->_cld != _cld, "must be");
             if (verbose) {
               st->print("  (Loader Data: " PTR_FORMAT ")", p2i(lci->_cld));
@@ -266,7 +266,7 @@ class LoaderTreeNode : public ResourceObj {
           }
           branchtracker.print(st);
           st->print("%*s ", indentation, "");
-          st->print_cr("(%u anonymous class%s)", _num_anon_classes, (_num_anon_classes == 1) ? "" : "es");
+          st->print_cr("(%u unsafe anonymous class%s)", _num_anon_classes, (_num_anon_classes == 1) ? "" : "es");
 
           // Empty line
           branchtracker.print(st);
@@ -318,14 +318,14 @@ public:
     _next = info;
   }
 
-  void add_classes(LoadedClassInfo* first_class, int num_classes, bool anonymous) {
-    LoadedClassInfo** p_list_to_add_to = anonymous ? &_anon_classes : &_classes;
+  void add_classes(LoadedClassInfo* first_class, int num_classes, bool is_unsafe_anonymous) {
+    LoadedClassInfo** p_list_to_add_to = is_unsafe_anonymous ? &_anon_classes : &_classes;
     // Search tail.
     while ((*p_list_to_add_to) != NULL) {
       p_list_to_add_to = &(*p_list_to_add_to)->_next;
     }
     *p_list_to_add_to = first_class;
-    if (anonymous) {
+    if (is_unsafe_anonymous) {
       _num_anon_classes += num_classes;
     } else {
       _num_classes += num_classes;
@@ -420,7 +420,7 @@ class LoaderInfoScanClosure : public CLDClosure {
     LoadedClassCollectClosure lccc(cld);
     const_cast<ClassLoaderData*>(cld)->classes_do(&lccc);
     if (lccc._num_classes > 0) {
-      info->add_classes(lccc._list, lccc._num_classes, cld->is_anonymous());
+      info->add_classes(lccc._list, lccc._num_classes, cld->is_unsafe_anonymous());
     }
   }
 
@@ -480,7 +480,7 @@ public:
     assert(info != NULL, "must be");
 
     // Update CLD in node, but only if this is the primary CLD for this loader.
-    if (cld->is_anonymous() == false) {
+    if (cld->is_unsafe_anonymous() == false) {
       assert(info->cld() == NULL, "there should be only one primary CLD per loader");
       info->set_cld(cld);
     }

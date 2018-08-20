@@ -776,8 +776,8 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
 
   // Make sure it's the real host class, not another anonymous class.
   while (host_klass != NULL && host_klass->is_instance_klass() &&
-         InstanceKlass::cast(host_klass)->is_anonymous()) {
-    host_klass = InstanceKlass::cast(host_klass)->host_klass();
+         InstanceKlass::cast(host_klass)->is_unsafe_anonymous()) {
+    host_klass = InstanceKlass::cast(host_klass)->unsafe_anonymous_host();
   }
 
   // Primitive types have NULL Klass* fields in their java.lang.Class instances.

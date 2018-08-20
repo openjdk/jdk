@@ -183,7 +183,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                                                 Symbol* name,
                                                 ClassLoaderData* loader_data,
                                                 Handle protection_domain,
-                                                const InstanceKlass* host_klass,
+                                                const InstanceKlass* unsafe_anonymous_host,
                                                 GrowableArray<Handle>* cp_patches,
                                                 TRAPS) {
   assert(stream != NULL, "invariant");
@@ -201,7 +201,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
   THREAD->statistical_info().incr_define_class_count();
 
   // Skip this processing for VM anonymous classes
-  if (host_klass == NULL) {
+  if (unsafe_anonymous_host == NULL) {
     stream = check_class_file_load_hook(stream,
                                         name,
                                         loader_data,
@@ -214,7 +214,7 @@ InstanceKlass* KlassFactory::create_from_stream(ClassFileStream* stream,
                          name,
                          loader_data,
                          protection_domain,
-                         host_klass,
+                         unsafe_anonymous_host,
                          cp_patches,
                          ClassFileParser::BROADCAST, // publicity level
                          CHECK_NULL);

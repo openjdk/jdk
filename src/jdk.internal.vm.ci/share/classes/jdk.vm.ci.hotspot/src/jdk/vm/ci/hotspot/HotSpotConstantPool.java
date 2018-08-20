@@ -522,7 +522,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceWrapper
                 return lookupType(cpi, opcode);
             case String:
                 /*
-                 * Normally, we would expect a String here, but anonymous classes can have
+                 * Normally, we would expect a String here, but unsafe anonymous classes can have
                  * "pseudo strings" (arbitrary live objects) patched into a String entry. Such
                  * entries do not have a symbol in the constant pool slot.
                  */

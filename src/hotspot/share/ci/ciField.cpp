@@ -222,9 +222,9 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   // Even if general trusting is disabled, trust system-built closures in these packages.
   if (holder->is_in_package("java/lang/invoke") || holder->is_in_package("sun/invoke"))
     return true;
-  // Trust VM anonymous classes. They are private API (sun.misc.Unsafe) and can't be serialized,
-  // so there is no hacking of finals going on with them.
-  if (holder->is_anonymous())
+  // Trust VM unsafe anonymous classes. They are private API (jdk.internal.misc.Unsafe)
+  // and can't be serialized, so there is no hacking of finals going on with them.
+  if (holder->is_unsafe_anonymous())
     return true;
   // Trust final fields in all boxed classes
   if (holder->is_box_klass())

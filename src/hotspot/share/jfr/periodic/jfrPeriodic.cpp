@@ -476,9 +476,9 @@ public:
     event.set_classCount(cls->_classes_count);
     event.set_chunkSize(cls->_chunk_sz);
     event.set_blockSize(cls->_block_sz);
-    event.set_anonymousClassCount(cls->_anon_classes_count);
-    event.set_anonymousChunkSize(cls->_anon_chunk_sz);
-    event.set_anonymousBlockSize(cls->_anon_block_sz);
+    event.set_unsafeAnonymousClassCount(cls->_anon_classes_count);
+    event.set_unsafeAnonymousChunkSize(cls->_anon_chunk_sz);
+    event.set_unsafeAnonymousBlockSize(cls->_anon_block_sz);
     event.commit();
     return true;
   }

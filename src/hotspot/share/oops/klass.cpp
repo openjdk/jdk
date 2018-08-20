@@ -612,7 +612,7 @@ oop Klass::class_loader() const { return class_loader_data()->class_loader(); }
 const char* Klass::external_name() const {
   if (is_instance_klass()) {
     const InstanceKlass* ik = static_cast<const InstanceKlass*>(this);
-    if (ik->is_anonymous()) {
+    if (ik->is_unsafe_anonymous()) {
       char addr_buf[20];
       jio_snprintf(addr_buf, 20, "/" INTPTR_FORMAT, p2i(ik));
       size_t addr_len = strlen(addr_buf);
