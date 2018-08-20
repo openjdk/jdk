@@ -37,7 +37,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/fieldDescriptor.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 KlassSubGraphInfo* HeapShared::_subgraph_info_list = NULL;

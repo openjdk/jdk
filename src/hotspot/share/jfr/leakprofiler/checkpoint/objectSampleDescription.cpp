@@ -29,6 +29,7 @@
 #include "jfr/leakprofiler/checkpoint/objectSampleDescription.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 

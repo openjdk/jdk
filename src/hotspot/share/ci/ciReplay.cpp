@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 

@@ -50,7 +50,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/resolvedMethodTable.hpp"
-#include "runtime/fieldDescriptor.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"

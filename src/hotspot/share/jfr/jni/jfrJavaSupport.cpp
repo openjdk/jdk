@@ -39,7 +39,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/fieldDescriptor.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/synchronizer.hpp"

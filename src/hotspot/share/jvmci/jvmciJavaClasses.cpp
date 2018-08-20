@@ -27,6 +27,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 
 
 // This macro expands for non-inline functions, in class declarations.
