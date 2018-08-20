@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,47 +31,47 @@
  * @run main/othervm
  *      CustomizedCipherSuites Default true
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- *      SSL_RSA_WITH_DES_CBC_SHA
+ *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  * @run main/othervm
  *      -Djdk.tls.client.cipherSuites="unknown"
  *      CustomizedCipherSuites Default true
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- *      SSL_RSA_WITH_DES_CBC_SHA
+ *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  * @run main/othervm
  *      -Djdk.tls.client.cipherSuites=""
  *      CustomizedCipherSuites Default true
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- *      SSL_RSA_WITH_DES_CBC_SHA
+ *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  * @run main/othervm
- *      -Djdk.tls.client.cipherSuites="SSL_RSA_WITH_DES_CBC_SHA"
+ *      -Djdk.tls.client.cipherSuites="TLS_ECDH_anon_WITH_AES_128_CBC_SHA"
  *      CustomizedCipherSuites Default true
- *      SSL_RSA_WITH_DES_CBC_SHA
+ *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  *      TLS_RSA_WITH_AES_128_CBC_SHA
  * @run main/othervm
- *      -Djdk.tls.server.cipherSuites="SSL_RSA_WITH_DES_CBC_SHA"
+ *      -Djdk.tls.server.cipherSuites="TLS_ECDH_anon_WITH_AES_128_CBC_SHA"
  *      CustomizedCipherSuites Default false
- *      SSL_RSA_WITH_DES_CBC_SHA
+ *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  *      TLS_RSA_WITH_AES_128_CBC_SHA
  * @run main/othervm
- *      -Djdk.tls.client.cipherSuites="TLS_RSA_WITH_AES_128_CBC_SHA,unknown,SSL_RSA_WITH_DES_CBC_SHA"
+ *      -Djdk.tls.client.cipherSuites="TLS_RSA_WITH_AES_128_CBC_SHA,unknown,TLS_ECDH_anon_WITH_AES_128_CBC_SHA"
  *      CustomizedCipherSuites Default true
- *      SSL_RSA_WITH_DES_CBC_SHA
+ *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  *      ""
  * @run main/othervm
- *      -Djdk.tls.server.cipherSuites="TLS_RSA_WITH_AES_128_CBC_SHA,unknown,SSL_RSA_WITH_DES_CBC_SHA"
+ *      -Djdk.tls.server.cipherSuites="TLS_RSA_WITH_AES_128_CBC_SHA,unknown,TLS_ECDH_anon_WITH_AES_128_CBC_SHA"
  *      CustomizedCipherSuites Default false
  *      TLS_RSA_WITH_AES_128_CBC_SHA
  *      ""
  * @run main/othervm
- *      -Djdk.tls.server.cipherSuites="SSL_RSA_WITH_DES_CBC_SHA"
+ *      -Djdk.tls.server.cipherSuites="TLS_ECDH_anon_WITH_AES_128_CBC_SHA"
  *      CustomizedCipherSuites Default true
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- *      SSL_RSA_WITH_DES_CBC_SHA
+ *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  * @run main/othervm
- *      -Djdk.tls.client.cipherSuites="SSL_RSA_WITH_DES_CBC_SHA"
+ *      -Djdk.tls.client.cipherSuites="TLS_ECDH_anon_WITH_AES_128_CBC_SHA"
  *      CustomizedCipherSuites Default false
  *      TLS_RSA_WITH_AES_128_CBC_SHA
- *      SSL_RSA_WITH_DES_CBC_SHA
+ *      TLS_ECDH_anon_WITH_AES_128_CBC_SHA
  */
 
 import javax.net.ssl.*;
@@ -79,7 +79,7 @@ import javax.net.ssl.*;
 /**
  * Test the customized default cipher suites.
  *
- * This test is based on the behavior that SSL_RSA_WITH_DES_CBC_SHA is
+ * This test is based on the behavior that TLS_ECDH_anon_WITH_AES_128_CBC_SHA is
  * disabled by default, and TLS_RSA_WITH_AES_128_CBC_SHA is enabled by
  * default in JDK.  If the behavior is changed in the future, please
  * update the test cases above accordingly.
