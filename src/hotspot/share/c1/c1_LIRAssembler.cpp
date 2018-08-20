@@ -112,6 +112,9 @@ LIR_Assembler::LIR_Assembler(Compilation* c):
 
 
 LIR_Assembler::~LIR_Assembler() {
+  // The unwind handler label may be unnbound if this destructor is invoked because of a bail-out.
+  // Reset it here to avoid an assertion.
+  _unwind_handler_entry.reset();
 }
 
 
