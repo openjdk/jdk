@@ -127,9 +127,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         }
 
         // See if the handshaker needs to report back some SSLException.
-        if (conContext.outputRecord.isEmpty()) {
-            checkTaskThrown();
-        }   // Otherwise, deliver cached records before throwing task exception.
+        checkTaskThrown();
 
         // check parameters
         checkParams(srcs, srcsOffset, srcsLength, dsts, dstsOffset, dstsLength);
@@ -896,18 +894,58 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         return true;
     }
 
+    /*
+     * Depending on whether the error was just a warning and the
+     * handshaker wasn't closed, or fatal and the handshaker is now
+     * null, report back the Exception that happened in the delegated
+     * task(s).
+     */
     private synchronized void checkTaskThrown() throws SSLException {
+
+        Exception exc = null;
+
+        // First check the handshake context.
         HandshakeContext hc = conContext.handshakeContext;
-        if (hc != null && hc.delegatedThrown != null) {
-            try {
-                throw getTaskThrown(hc.delegatedThrown);
-            } finally {
-                hc.delegatedThrown = null;
+        if ((hc != null) && (hc.delegatedThrown != null)) {
+            exc = hc.delegatedThrown;
+            hc.delegatedThrown = null;
+        }
+
+        /*
+         * hc.delegatedThrown and conContext.delegatedThrown are most likely
+         * the same, but it's possible we could have had a non-fatal
+         * exception and thus the new HandshakeContext is still valid
+         * (alert warning).  If so, then we may have a secondary exception
+         * waiting to be reported from the TransportContext, so we will
+         * need to clear that on a successive call.  Otherwise, clear it now.
+         */
+        if (conContext.delegatedThrown != null) {
+            if (exc != null) {
+                // hc object comparison
+                if (conContext.delegatedThrown == exc) {
+                    // clear if/only if both are the same
+                    conContext.delegatedThrown = null;
+                } // otherwise report the hc delegatedThrown
+            } else {
+                // Nothing waiting in HandshakeContext, but one is in the
+                // TransportContext.
+                exc = conContext.delegatedThrown;
+                conContext.delegatedThrown = null;
             }
         }
 
-        if (conContext.isBroken && conContext.closeReason != null) {
-            throw getTaskThrown(conContext.closeReason);
+        // Anything to report?
+        if (exc == null) {
+            return;
+        }
+
+        // If it wasn't a RuntimeException/SSLException, need to wrap it.
+        if (exc instanceof SSLException) {
+            throw (SSLException)exc;
+        } else if (exc instanceof RuntimeException) {
+            throw (RuntimeException)exc;
+        } else {
+            throw getTaskThrown(exc);
         }
     }
 
@@ -963,20 +1001,41 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
                 } catch (PrivilegedActionException pae) {
                     // Get the handshake context again in case the
                     // handshaking has completed.
+                    Exception reportedException = pae.getException();
+
+                    // Report to both the TransportContext...
+                    if (engine.conContext.delegatedThrown == null) {
+                        engine.conContext.delegatedThrown = reportedException;
+                    }
+
+                    // ...and the HandshakeContext in case condition
+                    // wasn't fatal and the handshakeContext is still
+                    // around.
                     hc = engine.conContext.handshakeContext;
                     if (hc != null) {
-                        hc.delegatedThrown = pae.getException();
+                        hc.delegatedThrown = reportedException;
                     } else if (engine.conContext.closeReason != null) {
+                        // Update the reason in case there was a previous.
                         engine.conContext.closeReason =
-                                getTaskThrown(pae.getException());
+                                getTaskThrown(reportedException);
                     }
                 } catch (RuntimeException rte) {
                     // Get the handshake context again in case the
                     // handshaking has completed.
+
+                    // Report to both the TransportContext...
+                    if (engine.conContext.delegatedThrown == null) {
+                        engine.conContext.delegatedThrown = rte;
+                    }
+
+                    // ...and the HandshakeContext in case condition
+                    // wasn't fatal and the handshakeContext is still
+                    // around.
                     hc = engine.conContext.handshakeContext;
                     if (hc != null) {
                         hc.delegatedThrown = rte;
                     } else if (engine.conContext.closeReason != null) {
+                        // Update the reason in case there was a previous.
                         engine.conContext.closeReason = rte;
                     }
                 }
@@ -1000,13 +1059,6 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             @Override
             public Void run() throws Exception {
                 while (!context.delegatedActions.isEmpty()) {
-                    // Report back the task SSLException
-                    if (context.delegatedThrown != null) {
-                        Exception delegatedThrown = context.delegatedThrown;
-                        context.delegatedThrown = null;
-                        throw getTaskThrown(delegatedThrown);
-                    }
-
                     Map.Entry<Byte, ByteBuffer> me =
                             context.delegatedActions.poll();
                     if (me != null) {
