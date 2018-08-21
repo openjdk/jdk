@@ -131,7 +131,7 @@ public class FrameOutputWriter extends HtmlDocletWriter {
         DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
         Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
-                .setTimestamp(!configuration.notimestamp, false)
+                .setTimestamp(!configuration.notimestamp)
                 .setTitle(title)
                 .setCharset(configuration.charset)
                 .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets())

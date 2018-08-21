@@ -75,7 +75,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         DocType htmlDocType = DocType.forVersion(configuration.htmlVersion);
         Content htmlComment = contents.newPage;
         Head head = new Head(path, configuration.htmlVersion, configuration.docletVersion)
-                .setTimestamp(true, false)
+                .setTimestamp(true)
                 .addDefaultScript(false);
 
         String title = (configuration.windowtitle.length() > 0)
