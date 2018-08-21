@@ -1144,13 +1144,9 @@ void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
   }
 }
 
-void ClassLoaderDataGraph::keep_alive_cld_do(CLDClosure* cl) {
-  roots_cld_do(cl, NULL);
-}
-
 void ClassLoaderDataGraph::always_strong_cld_do(CLDClosure* cl) {
   if (ClassUnloading) {
-    keep_alive_cld_do(cl);
+    roots_cld_do(cl, NULL);
   } else {
     cld_do(cl);
   }

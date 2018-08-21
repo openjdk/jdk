@@ -104,7 +104,6 @@ class ClassLoaderDataGraph : public AllStatic {
   static void cld_do(CLDClosure* cl);
   static void cld_unloading_do(CLDClosure* cl);
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
-  static void keep_alive_cld_do(CLDClosure* cl);
   static void always_strong_cld_do(CLDClosure* cl);
   // klass do
   // Walking classes through the ClassLoaderDataGraph include array classes.  It also includes
