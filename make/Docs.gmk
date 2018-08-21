@@ -61,7 +61,7 @@ MODULES_SOURCE_PATH := $(call PathList, $(call GetModuleSrcPath) \
     $(SUPPORT_OUTPUTDIR)/rmic/* $(TOPDIR)/src/*/share/doc/stub)
 
 # URLs
-JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase10&amp;id=homepage
+JAVADOC_BASE_URL := http://www.oracle.com/pls/topic/lookup?ctx=javase$(VERSION_NUMBER)&amp;id=homepage
 BUG_SUBMIT_URL := http://bugreport.java.com/bugreport/
 COPYRIGHT_URL := {@docroot}/../legal/copyright.html
 LICENSE_URL := http://www.oracle.com/technetwork/java/javase/terms/license/java$(VERSION_NUMBER)speclicense.html
