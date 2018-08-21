@@ -100,11 +100,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void clean_module_and_package_info();
   static void purge();
   static void clear_claimed_marks();
-  // oops do
-  static void oops_do(OopClosure* f, bool must_claim);
-  static void keep_alive_oops_do(OopClosure* blk, bool must_claim);
-  static void always_strong_oops_do(OopClosure* blk, bool must_claim);
-  // cld do
+  // Iteration through CLDG inside a safepoint; GC support
   static void cld_do(CLDClosure* cl);
   static void cld_unloading_do(CLDClosure* cl);
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);

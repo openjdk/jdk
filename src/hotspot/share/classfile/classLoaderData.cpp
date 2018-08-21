@@ -1119,28 +1119,6 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_unsafe_anonymo
   return loader_data;
 }
 
-void ClassLoaderDataGraph::oops_do(OopClosure* f, bool must_claim) {
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    cld->oops_do(f, must_claim);
-  }
-}
-
-void ClassLoaderDataGraph::keep_alive_oops_do(OopClosure* f, bool must_claim) {
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    if (cld->keep_alive()) {
-      cld->oops_do(f, must_claim);
-    }
-  }
-}
-
-void ClassLoaderDataGraph::always_strong_oops_do(OopClosure* f, bool must_claim) {
-  if (ClassUnloading) {
-    keep_alive_oops_do(f, must_claim);
-  } else {
-    oops_do(f, must_claim);
-  }
-}
-
 void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
   for (ClassLoaderData* cld = _head; cl != NULL && cld != NULL; cld = cld->next()) {
     cl->do_cld(cld);
