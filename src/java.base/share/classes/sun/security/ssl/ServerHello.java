@@ -40,6 +40,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLProtocolException;
 import sun.security.ssl.CipherSuite.KeyExchange;
 import sun.security.ssl.ClientHello.ClientHelloMessage;
 import sun.security.ssl.SSLCipher.SSLReadCipher;
@@ -139,8 +140,11 @@ final class ServerHello {
 
             this.serverRandom = new RandomCookie(m);
             this.sessionId = new SessionId(Record.getBytes8(m));
-            sessionId.checkLength(serverVersion.id);
-
+            try {
+                sessionId.checkLength(serverVersion.id);
+            } catch (SSLProtocolException ex) {
+                handshakeContext.conContext.fatal(Alert.ILLEGAL_PARAMETER, ex);
+            }
 
             int cipherSuiteId = Record.getInt16(m);
             this.cipherSuite = CipherSuite.valueOf(cipherSuiteId);

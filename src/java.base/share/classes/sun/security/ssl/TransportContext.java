@@ -63,6 +63,7 @@ class TransportContext implements ConnectionContext {
     boolean                         isInputCloseNotified = false;
     boolean                         peerUserCanceled = false;
     Exception                       closeReason = null;
+    Exception                       delegatedThrown = null;
 
     // negotiated security parameters
     SSLSessionImpl                  conSession;
@@ -364,12 +365,12 @@ class TransportContext implements ConnectionContext {
             }
         }
 
-        // terminal handshake context
+        // terminate the handshake context
         if (handshakeContext != null) {
             handshakeContext = null;
         }
 
-        // terminal the transport
+        // terminate the transport
         try {
             transport.shutdown();
         } catch (IOException ioe) {

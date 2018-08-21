@@ -167,9 +167,10 @@ interface SSLTransport {
             if (plainText == null) {
                 plainText = Plaintext.PLAINTEXT_NULL;
             } else {
-                // File the destination buffers.
-                if (dsts != null && dstsLength > 0 &&
-                    plainText.contentType == ContentType.APPLICATION_DATA.id) {
+                // Fill the destination buffers.
+                if ((dsts != null) && (dstsLength > 0) &&
+                        (plainText.contentType ==
+                            ContentType.APPLICATION_DATA.id)) {
 
                     ByteBuffer fragment = plainText.fragment;
                     int remains = fragment.remaining();
