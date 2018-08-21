@@ -1883,7 +1883,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer,
 
   if (do_cleaning) {
     GCTraceTime(Debug, gc, phases) t("ResolvedMethodTable", gc_timer);
-    ResolvedMethodTable::unlink();
+    ResolvedMethodTable::trigger_cleanup();
   }
 
   return unloading_occurred;

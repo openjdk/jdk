@@ -57,6 +57,7 @@ ResolvedMethodTable::ResolvedMethodTable()
   : Hashtable<ClassLoaderWeakHandle, mtClass>(_table_size, sizeof(ResolvedMethodEntry)) { }
 
 oop ResolvedMethodTable::lookup(int index, unsigned int hash, Method* method) {
+  assert_locked_or_safepoint(ResolvedMethodTable_lock);
   for (ResolvedMethodEntry* p = bucket(index); p != NULL; p = p->next()) {
     if (p->hash() == hash) {
 
@@ -114,6 +115,7 @@ oop ResolvedMethodTable::basic_add(Method* method, Handle rmethod_name) {
 ResolvedMethodTable* ResolvedMethodTable::_the_table = NULL;
 
 oop ResolvedMethodTable::find_method(Method* method) {
+  MutexLocker ml(ResolvedMethodTable_lock);
   oop entry = _the_table->lookup(method);
   return entry;
 }
@@ -144,9 +146,19 @@ oop ResolvedMethodTable::add_method(Handle resolved_method_name) {
 int ResolvedMethodTable::_oops_removed = 0;
 int ResolvedMethodTable::_oops_counted = 0;
 
+// There are no dead entries at start
+bool ResolvedMethodTable::_dead_entries = false;
+
+void ResolvedMethodTable::trigger_cleanup() {
+  MutexLockerEx ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  _dead_entries = true;
+  Service_lock->notify_all();
+}
+
 // Serially invoke removed unused oops from the table.
-// This is done late during GC.
+// This is done by the ServiceThread after being notified on class unloading
 void ResolvedMethodTable::unlink() {
+  MutexLocker ml(ResolvedMethodTable_lock);
   _oops_removed = 0;
   _oops_counted = 0;
   for (int i = 0; i < _the_table->table_size(); ++i) {
@@ -173,10 +185,12 @@ void ResolvedMethodTable::unlink() {
   }
   log_debug(membername, table) ("ResolvedMethod entries counted %d removed %d",
                                 _oops_counted, _oops_removed);
+  _dead_entries = false;
 }
 
 #ifndef PRODUCT
 void ResolvedMethodTable::print() {
+  MutexLocker ml(ResolvedMethodTable_lock);
   for (int i = 0; i < table_size(); ++i) {
     ResolvedMethodEntry* entry = bucket(i);
     while (entry != NULL) {
