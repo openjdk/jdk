@@ -165,8 +165,14 @@ SingleStep(jvmtiEnv *jvmti_env,
         char * locStr;
     gIsSingleStepWorking = JNI_TRUE;
     locStr = locationToString(jvmti_env, method, location);
-    NSK_DISPLAY1("Single step event: %s\n", locStr);
-    free(locStr);
+
+    if (locStr == NULL) {
+        NSK_DISPLAY0("Error in Single step event: locationToString failed\n");
+        gIsErrorOccured = JNI_TRUE;
+    } else {
+        NSK_DISPLAY1("Single step event: %s\n", locStr);
+        free(locStr);
+    }
 
     popFrameLogic(jvmti_env, thread);
 }

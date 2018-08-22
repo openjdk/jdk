@@ -76,18 +76,31 @@ struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
 
 char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation location) {
     struct MethodName * pMN;
-    // gcc 7.3 claims that snprintf below can output between 6 and 531 bytes. Setting buffer size to 600.
-    char r[600];
+    int len;
+    char * result;
+    const char * const format = "%s .%s :" JLONG_FORMAT;
 
     pMN = getMethodName(pJvmtiEnv, method);
     if ( ! pMN )
         return strdup("NONE");
 
-    snprintf(r, sizeof(r), "%s .%s :%lx", pMN->classSig, pMN->methodName, (long) location);
+    len = snprintf(NULL, 0, format, pMN->classSig, pMN->methodName, location) + 1;
+
+    if (len <= 0) {
+        free(pMN);
+        return NULL;
+    }
+
+    result = malloc(len);
+    if (result == NULL) {
+        free(pMN);
+        return NULL;
+    }
+
+    snprintf(result, len, format, pMN->classSig, pMN->methodName, location);
 
     free(pMN);
-
-    return strdup(r);
+    return result;
 }
 
 void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate) {

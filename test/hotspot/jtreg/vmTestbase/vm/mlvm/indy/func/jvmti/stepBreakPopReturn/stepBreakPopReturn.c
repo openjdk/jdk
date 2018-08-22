@@ -37,6 +37,7 @@ static char * gszDebuggeeClassName = "NONE";
 static jboolean gIsMethodEntryWorking = JNI_FALSE;
 static jboolean gIsSingleStepWorking = JNI_FALSE;
 static jboolean gIsBreakpointWorking = JNI_FALSE;
+static jboolean gErrorHappened = JNI_FALSE;
 
 static jboolean gIsBreakpointSet = JNI_FALSE;
 static jboolean gIsFirstCall = JNI_TRUE;
@@ -63,7 +64,8 @@ Java_vm_mlvm_indy_func_jvmti_stepBreakPopReturn_INDIFY_1Test_checkStatus(JNIEnv 
     if ( ! gIsDebuggerCompatible )
         NSK_DISPLAY1("Breakpoint event fired? %i\n", gIsBreakpointWorking);
 
-    return gIsMethodEntryWorking && gIsSingleStepWorking && (gIsBreakpointWorking || gIsDebuggerCompatible);
+    return gIsMethodEntryWorking && !gErrorHappened && gIsSingleStepWorking
+        && (gIsBreakpointWorking || gIsDebuggerCompatible);
 }
 
 static void JNICALL
@@ -103,8 +105,14 @@ SingleStep(jvmtiEnv *jvmti_env,
     gIsSingleStepWorking = JNI_TRUE;
 
     locStr = locationToString(jvmti_env, method, location);
-    NSK_DISPLAY1("Single step event: %s\n", locStr);
-    free(locStr);
+
+    if (locStr == NULL) {
+        NSK_DISPLAY0("Error: Single step event has no location\n");
+        gErrorHappened = JNI_TRUE;
+    } else {
+        NSK_DISPLAY1("Single step event: %s\n", locStr);
+        free(locStr);
+    }
 
     NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode, gJvmtiEnv, JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL));
 
@@ -140,8 +148,13 @@ Breakpoint(jvmtiEnv *jvmti_env,
     gIsBreakpointWorking = JNI_TRUE;
 
     locStr = locationToString(jvmti_env, method, location);
-    NSK_DISPLAY1("Breakpoint event at: %s\n", locStr);
-    free(locStr);
+    if (locStr == NULL) {
+        NSK_DISPLAY0("Error: Breakpoint event has no location\n");
+        gErrorHappened = JNI_TRUE;
+    } else {
+        NSK_DISPLAY1("Breakpoint event at: %s\n", locStr);
+        free(locStr);
+    }
 
     NSK_JVMTI_VERIFY(NSK_CPP_STUB3(ClearBreakpoint, jvmti_env, method, location));
     NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode, gJvmtiEnv, JVMTI_DISABLE, JVMTI_EVENT_BREAKPOINT, NULL));
