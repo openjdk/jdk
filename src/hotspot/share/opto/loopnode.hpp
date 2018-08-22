@@ -922,11 +922,11 @@ public:
     _verify_me(NULL),
     _verify_only(true),
     _dom_lca_tags(arena()) { // Thread::resource_area
-    build_and_optimize(false, false);
+    build_and_optimize(LoopOptsVerify);
   }
 
   // build the loop tree and perform any requested optimizations
-  void build_and_optimize(bool do_split_if, bool skip_loop_opts, bool last_round = false);
+  void build_and_optimize(LoopOptsMode mode);
 
   // Dominators for the sea of nodes
   void Dominators();
@@ -936,23 +936,23 @@ public:
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
 
   // Compute the Ideal Node to Loop mapping
-  PhaseIdealLoop( PhaseIterGVN &igvn, bool do_split_ifs, bool skip_loop_opts = false, bool last_round = false) :
+  PhaseIdealLoop(PhaseIterGVN &igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
     _verify_me(NULL),
     _verify_only(false),
     _dom_lca_tags(arena()) { // Thread::resource_area
-    build_and_optimize(do_split_ifs, skip_loop_opts, last_round);
+    build_and_optimize(mode);
   }
 
   // Verify that verify_me made the same decisions as a fresh run.
-  PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me) :
+  PhaseIdealLoop(PhaseIterGVN &igvn, const PhaseIdealLoop *verify_me) :
     PhaseTransform(Ideal_Loop),
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(false),
     _dom_lca_tags(arena()) { // Thread::resource_area
-    build_and_optimize(false, false);
+    build_and_optimize(LoopOptsVerify);
   }
 
   // Build and verify the loop tree without modifying the graph.  This
