@@ -643,7 +643,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
         curr_region->set_closed_archive();
       }
       _hr_printer.alloc(curr_region);
-      _old_set.add(curr_region);
+      _archive_set.add(curr_region);
       HeapWord* top;
       HeapRegion* next_region;
       if (curr_region != last_region) {
@@ -800,7 +800,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
       guarantee(curr_region->is_archive(),
                 "Expected archive region at index %u", curr_region->hrm_index());
       uint curr_index = curr_region->hrm_index();
-      _old_set.remove(curr_region);
+      _archive_set.remove(curr_region);
       curr_region->set_free();
       curr_region->set_top(curr_region->bottom());
       if (curr_region != last_region) {
@@ -1417,8 +1417,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _eden_pool(NULL),
   _survivor_pool(NULL),
   _old_pool(NULL),
-  _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
-  _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
+  _old_set("Old Region Set", HeapRegionSetBase::ForOldRegions, new OldRegionSetMtSafeChecker()),
+  _archive_set("Archive Region Set", HeapRegionSetBase::ForArchiveRegions, new ArchiveRegionSetMtSafeChecker()),
+  _humongous_set("Humongous Region Set", HeapRegionSetBase::ForHumongousRegions, new HumongousRegionSetMtSafeChecker()),
   _bot(NULL),
   _listener(),
   _hrm(),
@@ -4593,7 +4594,6 @@ bool G1CollectedHeap::check_young_list_empty() {
 #endif // ASSERT
 
 class TearDownRegionSetsClosure : public HeapRegionClosure {
-private:
   HeapRegionSet *_old_set;
 
 public:
@@ -4606,9 +4606,9 @@ public:
       r->uninstall_surv_rate_group();
     } else {
       // We ignore free regions, we'll empty the free list afterwards.
-      // We ignore humongous regions, we're not tearing down the
-      // humongous regions set.
-      assert(r->is_free() || r->is_humongous(),
+      // We ignore humongous and archive regions, we're not tearing down these
+      // sets.
+      assert(r->is_archive() || r->is_free() || r->is_humongous(),
              "it cannot be another type");
     }
     return false;
@@ -4651,14 +4651,17 @@ void G1CollectedHeap::set_used(size_t bytes) {
 
 class RebuildRegionSetsClosure : public HeapRegionClosure {
 private:
-  bool            _free_list_only;
-  HeapRegionSet*   _old_set;
-  HeapRegionManager*   _hrm;
-  size_t          _total_used;
+  bool _free_list_only;
+
+  HeapRegionSet* _old_set;
+  HeapRegionManager* _hrm;
+
+  size_t _total_used;
 
 public:
   RebuildRegionSetsClosure(bool free_list_only,
-                           HeapRegionSet* old_set, HeapRegionManager* hrm) :
+                           HeapRegionSet* old_set,
+                           HeapRegionManager* hrm) :
     _free_list_only(free_list_only),
     _old_set(old_set), _hrm(hrm), _total_used(0) {
     assert(_hrm->num_free_regions() == 0, "pre-condition");
@@ -4676,11 +4679,11 @@ public:
       _hrm->insert_into_free_list(r);
     } else if (!_free_list_only) {
 
-      if (r->is_humongous()) {
-        // We ignore humongous regions. We left the humongous set unchanged.
+      if (r->is_archive() || r->is_humongous()) {
+        // We ignore archive and humongous regions. We left these sets unchanged.
       } else {
         assert(r->is_young() || r->is_free() || r->is_old(), "invariant");
-        // We now move all (non-humongous, non-old) regions to old gen, and register them as such.
+        // We now move all (non-humongous, non-old, non-archive) regions to old gen, and register them as such.
         r->move_to_old();
         _old_set->add(r);
       }
@@ -4805,7 +4808,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   alloc_region->note_end_of_copying(during_im);
   g1_policy()->record_bytes_copied_during_gc(allocated_bytes);
   if (dest.is_old()) {
-    _old_set.add(alloc_region);
+    old_set_add(alloc_region);
   }
   _hr_printer.retire(alloc_region);
 }

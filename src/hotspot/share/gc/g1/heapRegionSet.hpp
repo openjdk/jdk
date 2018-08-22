@@ -55,6 +55,7 @@ public:
 class MasterFreeRegionListMtSafeChecker    : public HRSMtSafeChecker { public: void check(); };
 class HumongousRegionSetMtSafeChecker      : public HRSMtSafeChecker { public: void check(); };
 class OldRegionSetMtSafeChecker            : public HRSMtSafeChecker { public: void check(); };
+class ArchiveRegionSetMtSafeChecker        : public HRSMtSafeChecker { public: void check(); };
 
 // Base class for all the classes that represent heap region sets. It
 // contains the basic attributes that each set needs to maintain
@@ -63,9 +64,16 @@ class OldRegionSetMtSafeChecker            : public HRSMtSafeChecker { public: v
 
 class HeapRegionSetBase {
   friend class VMStructs;
+public:
+  enum RegionSetKind {
+    ForOldRegions,
+    ForHumongousRegions,
+    ForArchiveRegions,
+    ForFreeRegions
+  };
+
 private:
-  bool _is_humongous;
-  bool _is_free;
+  RegionSetKind _region_kind;
   HRSMtSafeChecker* _mt_safety_checker;
 
 protected:
@@ -80,13 +88,11 @@ protected:
   // added to / removed from a set are consistent.
   void verify_region(HeapRegion* hr) PRODUCT_RETURN;
 
-  // Indicates whether all regions in the set should be humongous or
-  // not. Only used during verification.
-  bool regions_humongous() { return _is_humongous; }
-
-  // Indicates whether all regions in the set should be free or
-  // not. Only used during verification.
-  bool regions_free() { return _is_free; }
+  // Indicates whether all regions in the set should be of a given particular type.
+  // Only used for verification.
+  bool regions_humongous() const { return _region_kind == ForHumongousRegions; }
+  bool regions_archive() const { return _region_kind == ForArchiveRegions; }
+  bool regions_free() const { return _region_kind == ForFreeRegions; }
 
   void check_mt_safety() {
     if (_mt_safety_checker != NULL) {
@@ -94,7 +100,7 @@ protected:
     }
   }
 
-  HeapRegionSetBase(const char* name, bool humongous, bool free, HRSMtSafeChecker* mt_safety_checker);
+  HeapRegionSetBase(const char* name, RegionSetKind kind, HRSMtSafeChecker* mt_safety_checker);
 
 public:
   const char* name() { return _name; }
@@ -121,15 +127,6 @@ public:
   virtual void print_on(outputStream* out, bool print_contents = false);
 };
 
-#define hrs_assert_sets_match(_set1_, _set2_)                                  \
-  do {                                                                         \
-    assert(((_set1_)->regions_humongous() == (_set2_)->regions_humongous()) && \
-           ((_set1_)->regions_free() == (_set2_)->regions_free()),             \
-           "the contents of set %s and set %s should match",                   \
-           (_set1_)->name(),                                                   \
-           (_set2_)->name());                                                  \
-  } while (0)
-
 // This class represents heap region sets whose members are not
 // explicitly tracked. It's helpful to group regions using such sets
 // so that we can reason about all the region groups in the heap using
@@ -137,8 +134,10 @@ public:
 
 class HeapRegionSet : public HeapRegionSetBase {
 public:
-  HeapRegionSet(const char* name, bool humongous, HRSMtSafeChecker* mt_safety_checker):
-    HeapRegionSetBase(name, humongous, false /* free */, mt_safety_checker) { }
+  HeapRegionSet(const char* name, RegionSetKind kind, HRSMtSafeChecker* mt_safety_checker):
+    HeapRegionSetBase(name, kind, mt_safety_checker) {
+    assert(kind != ForFreeRegions, "Must not call this constructor for Free regions.");
+  }
 
   void bulk_remove(const uint removed) {
     _length -= removed;
@@ -174,7 +173,7 @@ protected:
 
 public:
   FreeRegionList(const char* name, HRSMtSafeChecker* mt_safety_checker = NULL):
-    HeapRegionSetBase(name, false /* humongous */, true /* empty */, mt_safety_checker) {
+    HeapRegionSetBase(name, ForFreeRegions, mt_safety_checker) {
     clear();
   }
 

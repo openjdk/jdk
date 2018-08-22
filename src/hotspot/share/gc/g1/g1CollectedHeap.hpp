@@ -169,10 +169,9 @@ private:
 
   static size_t _humongous_object_threshold_in_words;
 
-  // It keeps track of the old regions.
+  // These sets keep track of old, archive and humongous regions respectively.
   HeapRegionSet _old_set;
-
-  // It keeps track of the humongous regions.
+  HeapRegionSet _archive_set;
   HeapRegionSet _humongous_set;
 
   virtual void initialize_serviceability();
@@ -1046,8 +1045,10 @@ public:
   inline void old_set_add(HeapRegion* hr);
   inline void old_set_remove(HeapRegion* hr);
 
+  inline void archive_set_add(HeapRegion* hr);
+
   size_t non_young_capacity_bytes() {
-    return (_old_set.length() + _humongous_set.length()) * HeapRegion::GrainBytes;
+    return (old_regions_count() + _archive_set.length() + humongous_regions_count()) * HeapRegion::GrainBytes;
   }
 
   // Determine whether the given region is one that we are using as an
@@ -1232,20 +1233,11 @@ public:
 
   const G1SurvivorRegions* survivor() const { return &_survivor; }
 
-  uint survivor_regions_count() const {
-    return _survivor.length();
-  }
-
-  uint eden_regions_count() const {
-    return _eden.length();
-  }
-
-  uint young_regions_count() const {
-    return _eden.length() + _survivor.length();
-  }
-
+  uint eden_regions_count() const { return _eden.length(); }
+  uint survivor_regions_count() const { return _survivor.length(); }
+  uint young_regions_count() const { return _eden.length() + _survivor.length(); }
   uint old_regions_count() const { return _old_set.length(); }
-
+  uint archive_regions_count() const { return _archive_set.length(); }
   uint humongous_regions_count() const { return _humongous_set.length(); }
 
 #ifdef ASSERT

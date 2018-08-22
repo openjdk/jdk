@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ class G1HeapTransition {
     size_t _eden_length;
     size_t _survivor_length;
     size_t _old_length;
+    size_t _archive_length;
     size_t _humongous_length;
     size_t _metaspace_used_bytes;
 

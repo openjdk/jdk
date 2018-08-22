@@ -77,19 +77,17 @@ void HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {
   out->print_cr("Set: %s (" PTR_FORMAT ")", name(), p2i(this));
   out->print_cr("  Region Assumptions");
   out->print_cr("    humongous         : %s", BOOL_TO_STR(regions_humongous()));
+  out->print_cr("    archive           : %s", BOOL_TO_STR(regions_archive()));
   out->print_cr("    free              : %s", BOOL_TO_STR(regions_free()));
   out->print_cr("  Attributes");
   out->print_cr("    length            : %14u", length());
 }
 
-HeapRegionSetBase::HeapRegionSetBase(const char* name, bool humongous, bool free, HRSMtSafeChecker* mt_safety_checker)
-  : _is_humongous(humongous),
-    _is_free(free),
-    _mt_safety_checker(mt_safety_checker),
-    _length(0),
-    _name(name),
-    _verify_in_progress(false)
-{ }
+HeapRegionSetBase::HeapRegionSetBase(const char* name, RegionSetKind kind, HRSMtSafeChecker* mt_safety_checker)
+  : _region_kind(kind), _mt_safety_checker(mt_safety_checker), _length(0), _name(name), _verify_in_progress(false)
+{
+  assert(kind >= ForOldRegions && kind <= ForFreeRegions, "Invalid heap region set kind %d.", kind);
+}
 
 void FreeRegionList::set_unrealistically_long_length(uint len) {
   guarantee(_unrealistically_long_length == 0, "should only be set once");
@@ -364,4 +362,9 @@ void HumongousRegionSetMtSafeChecker::check() {
     guarantee(Heap_lock->owned_by_self(),
               "master humongous set MT safety protocol outside a safepoint");
   }
+}
+
+void ArchiveRegionSetMtSafeChecker::check() {
+  guarantee(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(),
+            "May only change archive regions during initialization or safepoint.");
 }

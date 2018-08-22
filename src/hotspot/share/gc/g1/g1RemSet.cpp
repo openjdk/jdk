@@ -132,7 +132,7 @@ private:
 
     virtual bool do_heap_region(HeapRegion* r) {
       uint hrm_index = r->hrm_index();
-      if (!r->in_collection_set() && r->is_old_or_humongous()) {
+      if (!r->in_collection_set() && r->is_old_or_humongous_or_archive()) {
         _scan_top[hrm_index] = r->top();
       } else {
         _scan_top[hrm_index] = r->bottom();
@@ -571,7 +571,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
   // In the normal (non-stale) case, the synchronization between the
   // enqueueing of the card and processing it here will have ensured
   // we see the up-to-date region type here.
-  if (!r->is_old_or_humongous()) {
+  if (!r->is_old_or_humongous_or_archive()) {
     return;
   }
 
@@ -600,7 +600,7 @@ void G1RemSet::refine_card_concurrently(jbyte* card_ptr,
       // Check whether the region formerly in the cache should be
       // ignored, as discussed earlier for the original card.  The
       // region could have been freed while in the cache.
-      if (!r->is_old_or_humongous()) {
+      if (!r->is_old_or_humongous_or_archive()) {
         return;
       }
     } // Else we still have the original card.

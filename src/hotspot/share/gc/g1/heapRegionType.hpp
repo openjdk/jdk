@@ -86,8 +86,8 @@ private:
     // Objects within these regions are allowed to have references to objects
     // contained in any other kind of regions.
     ArchiveMask           = 32,
-    OpenArchiveTag        = ArchiveMask | PinnedMask | OldMask,
-    ClosedArchiveTag      = ArchiveMask | PinnedMask | OldMask + 1
+    OpenArchiveTag        = ArchiveMask | PinnedMask,
+    ClosedArchiveTag      = ArchiveMask | PinnedMask + 1
   } Tag;
 
   volatile Tag _tag;
@@ -138,6 +138,8 @@ public:
   bool is_old() const { return (get() & OldMask) != 0; }
 
   bool is_old_or_humongous() const { return (get() & (OldMask | HumongousMask)) != 0; }
+
+  bool is_old_or_humongous_or_archive() const { return (get() & (OldMask | HumongousMask | ArchiveMask)) != 0; }
 
   // is_pinned regions may be archive or humongous
   bool is_pinned() const { return (get() & PinnedMask) != 0; }

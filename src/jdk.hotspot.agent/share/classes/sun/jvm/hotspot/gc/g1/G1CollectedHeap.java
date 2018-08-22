@@ -56,6 +56,8 @@ public class G1CollectedHeap extends CollectedHeap {
     static private AddressField g1mmField;
     // HeapRegionSet _old_set;
     static private long oldSetFieldOffset;
+    // HeapRegionSet _archive_set;
+    static private long archiveSetFieldOffset;
     // HeapRegionSet _humongous_set;
     static private long humongousSetFieldOffset;
 
@@ -74,6 +76,7 @@ public class G1CollectedHeap extends CollectedHeap {
         summaryBytesUsedField = type.getCIntegerField("_summary_bytes_used");
         g1mmField = type.getAddressField("_g1mm");
         oldSetFieldOffset = type.getField("_old_set").getOffset();
+        archiveSetFieldOffset = type.getField("_archive_set").getOffset();
         humongousSetFieldOffset = type.getField("_humongous_set").getOffset();
     }
 
@@ -104,6 +107,12 @@ public class G1CollectedHeap extends CollectedHeap {
         Address oldSetAddr = addr.addOffsetTo(oldSetFieldOffset);
         return (HeapRegionSetBase) VMObjectFactory.newObject(HeapRegionSetBase.class,
                                                              oldSetAddr);
+    }
+
+    public HeapRegionSetBase archiveSet() {
+        Address archiveSetAddr = addr.addOffsetTo(archiveSetFieldOffset);
+        return (HeapRegionSetBase) VMObjectFactory.newObject(HeapRegionSetBase.class,
+                                                             archiveSetAddr);
     }
 
     public HeapRegionSetBase humongousSet() {
