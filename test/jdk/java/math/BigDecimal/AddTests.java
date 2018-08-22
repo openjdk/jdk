@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6362557
+ * @bug 6362557 8200698
  * @summary Some tests of add(BigDecimal, mc)
  * @author Joseph D. Darcy
  */
@@ -290,12 +290,35 @@ public class AddTests {
         return failures;
     }
 
+    private static int arithmeticExceptionTest() {
+        int failures = 0;
+        BigDecimal x;
+        try {
+            //
+            // The string representation "1e2147483647", which is equivalent
+            // to 10^Integer.MAX_VALUE, is used to create an augend with an
+            // unscaled value of 1 and a scale of -Integer.MAX_VALUE. The
+            // addend "1" has an unscaled value of 1 with a scale of 0. The
+            // addition is performed exactly and is specified to have a
+            // preferred scale of max(-Integer.MAX_VALUE, 0). As the scale
+            // of the result is 0, a value with Integer.MAX_VALUE + 1 digits
+            // would need to be created. Therefore the next statement is
+            // expected to overflow with an ArithmeticException.
+            //
+            x = new BigDecimal("1e2147483647").add(new BigDecimal(1));
+            failures++;
+        } catch (ArithmeticException ae) {
+        }
+        return failures;
+    }
+
     public static void main(String argv[]) {
         int failures = 0;
 
         failures += extremaTests();
         failures += roundingGradationTests();
         failures += precisionConsistencyTest();
+        failures += arithmeticExceptionTest();
 
         if (failures > 0) {
             throw new RuntimeException("Incurred " + failures +
