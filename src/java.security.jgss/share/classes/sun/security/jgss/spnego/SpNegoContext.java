@@ -583,7 +583,8 @@ public class SpNegoContext implements GSSContextSpi {
                     }
                 } else {
                     negoResult = SpNegoToken.NegoResult.REJECT;
-                    state = STATE_DONE;
+                    state = STATE_DELETED;
+                    throw new GSSException(GSSException.FAILURE);
                 }
 
                 if (DEBUG) {
@@ -642,7 +643,8 @@ public class SpNegoContext implements GSSContextSpi {
                     }
                 } else {
                     negoResult = SpNegoToken.NegoResult.REJECT;
-                    state = STATE_DONE;
+                    state = STATE_DELETED;
+                    throw new GSSException(GSSException.FAILURE);
                 }
 
                 // generate SPNEGO token
