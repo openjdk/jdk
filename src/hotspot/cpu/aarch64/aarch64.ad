@@ -9623,6 +9623,24 @@ instruct msubI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, iRegIorL2I src3)
   ins_pipe(imac_reg_reg);
 %}
 
+// Combined Integer Multiply & Neg
+
+instruct mnegI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2, immI0 zero) %{
+  match(Set dst (MulI (SubI zero src1) src2));
+  match(Set dst (MulI src1 (SubI zero src2)));
+
+  ins_cost(INSN_COST * 3);
+  format %{ "mneg  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ mnegw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(imac_reg_reg);
+%}
+
 // Combined Long Multiply & Add/Sub
 
 instruct maddL(iRegLNoSp dst, iRegL src1, iRegL src2, iRegL src3) %{
@@ -9652,6 +9670,24 @@ instruct msubL(iRegLNoSp dst, iRegL src1, iRegL src2, iRegL src3) %{
             as_Register($src1$$reg),
             as_Register($src2$$reg),
             as_Register($src3$$reg));
+  %}
+
+  ins_pipe(lmac_reg_reg);
+%}
+
+// Combined Long Multiply & Neg
+
+instruct mnegL(iRegLNoSp dst, iRegL src1, iRegL src2, immL0 zero) %{
+  match(Set dst (MulL (SubL zero src1) src2));
+  match(Set dst (MulL src1 (SubL zero src2)));
+
+  ins_cost(INSN_COST * 5);
+  format %{ "mneg  $dst, $src1, $src2" %}
+
+  ins_encode %{
+    __ mneg(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
   %}
 
   ins_pipe(lmac_reg_reg);
