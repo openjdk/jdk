@@ -104,26 +104,31 @@ public class Jdb {
         }
 
         // launch jdb
-        ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jdb"));
-        pb.command().add("-connect");
-        pb.command().add("com.sun.jdi.SocketAttach:port=" + debuggeeListen[1]);
-        System.out.println("Launching jdb:" + pb.command().stream().collect(Collectors.joining(" ")));
         try {
-            jdb = pb.start();
-        } catch (IOException ex) {
-            throw new RuntimeException("failed to launch pdb", ex);
+            ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jdb"));
+            pb.command().add("-connect");
+            pb.command().add("com.sun.jdi.SocketAttach:port=" + debuggeeListen[1]);
+            System.out.println("Launching jdb:" + pb.command().stream().collect(Collectors.joining(" ")));
+            try {
+                jdb = pb.start();
+            } catch (IOException ex) {
+                throw new RuntimeException("failed to launch pdb", ex);
+            }
+            StreamPumper stdout = new StreamPumper(jdb.getInputStream());
+            StreamPumper stderr = new StreamPumper(jdb.getErrorStream());
+
+            stdout.addPump(new StreamPumper.StreamPump(outputHandler));
+            stderr.addPump(new StreamPumper.StreamPump(outputHandler));
+
+            stdout.process();
+            stderr.process();
+
+            inputWriter = new PrintWriter(jdb.getOutputStream(), true);
+        } catch (Throwable ex) {
+            // terminate debuggee if something went wrong
+            debuggee.destroy();
+            throw ex;
         }
-        StreamPumper stdout = new StreamPumper(jdb.getInputStream());
-        StreamPumper stderr = new StreamPumper(jdb.getErrorStream());
-
-        stdout.addPump(new StreamPumper.StreamPump(outputHandler));
-        stderr.addPump(new StreamPumper.StreamPump(outputHandler));
-
-        stdout.process();
-        stderr.process();
-
-        inputWriter = new PrintWriter(jdb.getOutputStream(), true);
-
     }
 
     private final Process jdb;
@@ -357,7 +362,8 @@ public class Jdb {
         // returned data becomes invalid after {@reset}.
         public synchronized List<String> get() {
             if (updated()) {
-                String[] newLines = outStream.toString().split(lineSeparator);
+                // we don't want to discard empty lines
+                String[] newLines = outStream.toString().split("\\R", -1);
                 if (!cachedData.isEmpty()) {
                     // concat the last line if previous data had no EOL
                     newLines[0] = cachedData.remove(cachedData.size()-1) + newLines[0];

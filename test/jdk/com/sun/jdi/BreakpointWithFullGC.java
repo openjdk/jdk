@@ -72,9 +72,8 @@ public class BreakpointWithFullGC extends JdbTest {
     }
 
     private static final String DEBUGGEE_CLASS = BreakpointWithFullGCTarg.class.getName();
-    // Hijacking the mode parameter to make sure we use a small amount
-    // of memory and can see what GC is doing.
-    private static final String[] DEBUGGEE_OPTIONS = {"-Xmx32m", "-verbose:gc"};
+    // We don't specify "-Xmx" for debuggee as we have full GCs with any value.
+    private static final String[] DEBUGGEE_OPTIONS = {"-verbose:gc"};
 
     @Override
     protected void runCases() {
@@ -99,9 +98,6 @@ public class BreakpointWithFullGC extends JdbTest {
                 // make sure we hit the last breakpoint
                 .stdoutShouldMatch("System\\..*end of test");
         new OutputAnalyzer(jdb.getDebuggeeOutput())
-                // make sure we had at least one full GC
-                // Prior to JDK9-B95, the pattern was 'Full GC'
-                .stdoutShouldContain("Pause Full (System.gc())")
                 // check for error message due to thread ID change
                 .stderrShouldNotContain("Exception in thread \"event-handler\" java.lang.NullPointerException");
     }

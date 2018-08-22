@@ -63,7 +63,9 @@ public abstract class JdbTest {
     protected abstract void runCases();
 
     protected void shutdown() {
-        jdb.shutdown();
+        if (jdb != null) {
+            jdb.shutdown();
+        }
     }
 
     protected static final String lineSeparator = System.getProperty("line.separator");
