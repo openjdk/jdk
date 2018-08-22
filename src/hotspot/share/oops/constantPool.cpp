@@ -769,10 +769,14 @@ Symbol* ConstantPool::exception_message(const constantPoolHandle& this_cp, int w
 void ConstantPool::throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS) {
   Symbol* message = NULL;
   Symbol* error = SystemDictionary::find_resolution_error(this_cp, which, &message);
-  assert(error != NULL && message != NULL, "checking");
+  assert(error != NULL, "checking");
   CLEAR_PENDING_EXCEPTION;
-  ResourceMark rm;
-  THROW_MSG(error, message->as_C_string());
+  if (message != NULL) {
+    ResourceMark rm;
+    THROW_MSG(error, message->as_C_string());
+  } else {
+    THROW(error);
+  }
 }
 
 // If resolution for Class, Dynamic constant, MethodHandle or MethodType fails, save the

@@ -477,7 +477,6 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
 
   Symbol* error = PENDING_EXCEPTION->klass()->name();
   Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
-  assert(message != NULL, "Missing detail message");
 
   SystemDictionary::add_resolution_error(cpool, index, error, message);
   set_indy_resolution_failed();

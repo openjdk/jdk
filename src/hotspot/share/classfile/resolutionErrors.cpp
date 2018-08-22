@@ -65,9 +65,10 @@ void ResolutionErrorEntry::set_error(Symbol* e) {
 }
 
 void ResolutionErrorEntry::set_message(Symbol* c) {
-  assert(c != NULL, "must set a value");
   _message = c;
-  _message->increment_refcount();
+  if (_message != NULL) {
+    _message->increment_refcount();
+  }
 }
 
 // create new error entry
@@ -87,7 +88,9 @@ void ResolutionErrorTable::free_entry(ResolutionErrorEntry *entry) {
   // decrement error refcount
   assert(entry->error() != NULL, "error should be set");
   entry->error()->decrement_refcount();
-  entry->message()->decrement_refcount();
+  if (entry->message() != NULL) {
+    entry->message()->decrement_refcount();
+  }
   Hashtable<ConstantPool*, mtClass>::free_entry(entry);
 }
 
