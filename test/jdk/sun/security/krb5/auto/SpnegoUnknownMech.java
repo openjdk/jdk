@@ -23,16 +23,16 @@
 
 /*
  * @test
- * @bug 8186186
+ * @bug 8186186 8209829
  * @library /test/lib
- * @compile -XDignore.symbol.file SpnegoRejected.java
+ * @compile -XDignore.symbol.file SpnegoUnknownMech.java
  * @run main jdk.test.lib.FileInstaller TestHosts TestHosts
- * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts SpnegoRejected
+ * @run main/othervm/fail -Djdk.net.hosts.file=TestHosts SpnegoUnknownMech
  */
 
 import sun.security.jgss.GSSUtil;
 
-public class SpnegoRejected {
+public class SpnegoUnknownMech {
 
     public static void main(String[] args) throws Exception {
 
