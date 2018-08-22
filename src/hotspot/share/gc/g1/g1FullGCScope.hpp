@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1HeapTransition.hpp"
-#include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
@@ -51,12 +50,11 @@ class G1FullGCScope : public StackObj {
   IsGCActiveMark          _active;
   GCTraceCPUTime          _cpu_time;
   ClearedAllSoftRefs      _soft_refs;
-  TraceCollectorStats     _collector_stats;
-  TraceMemoryManagerStats _memory_stats;
+  G1MonitoringScope       _monitoring_scope;
   G1HeapTransition        _heap_transition;
 
 public:
-  G1FullGCScope(GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft);
+  G1FullGCScope(G1MonitoringSupport* monitoring_support, bool explicit_gc, bool clear_soft);
   ~G1FullGCScope();
 
   bool is_explicit_gc();

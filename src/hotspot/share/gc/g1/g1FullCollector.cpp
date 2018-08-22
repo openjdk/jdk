@@ -103,9 +103,9 @@ uint G1FullCollector::calc_active_workers() {
   return worker_count;
 }
 
-G1FullCollector::G1FullCollector(G1CollectedHeap* heap, GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft_refs) :
+G1FullCollector::G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs) :
     _heap(heap),
-    _scope(memory_manager, explicit_gc, clear_soft_refs),
+    _scope(heap->g1mm(), explicit_gc, clear_soft_refs),
     _num_workers(calc_active_workers()),
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),

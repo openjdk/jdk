@@ -51,7 +51,6 @@
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "memory/memRegion.hpp"
-#include "services/memoryManager.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -67,6 +66,7 @@ class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1ParScanThreadState;
 class MemoryPool;
+class MemoryManager;
 class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
@@ -160,21 +160,12 @@ private:
 
   SoftRefPolicy      _soft_ref_policy;
 
-  GCMemoryManager _memory_manager;
-  GCMemoryManager _full_gc_memory_manager;
-
-  MemoryPool* _eden_pool;
-  MemoryPool* _survivor_pool;
-  MemoryPool* _old_pool;
-
   static size_t _humongous_object_threshold_in_words;
 
   // These sets keep track of old, archive and humongous regions respectively.
   HeapRegionSet _old_set;
   HeapRegionSet _archive_set;
   HeapRegionSet _humongous_set;
-
-  virtual void initialize_serviceability();
 
   void eagerly_reclaim_humongous_regions();
   // Start a new incremental collection set for the next pause.
@@ -969,6 +960,7 @@ public:
 
   virtual SoftRefPolicy* soft_ref_policy();
 
+  virtual void initialize_serviceability();
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 

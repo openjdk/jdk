@@ -72,7 +72,7 @@ class G1FullCollector : StackObj {
   ReferenceProcessorSubjectToDiscoveryMutator _is_subject_mutator;
 
 public:
-  G1FullCollector(G1CollectedHeap* heap, GCMemoryManager* memory_manager, bool explicit_gc, bool clear_soft_refs);
+  G1FullCollector(G1CollectedHeap* heap, bool explicit_gc, bool clear_soft_refs);
   ~G1FullCollector();
 
   void prepare_collection();

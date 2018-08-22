@@ -26,9 +26,10 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/shared/collectorCounters.hpp"
+#include "gc/g1/g1MemoryPool.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
 #include "memory/metaspaceCounters.hpp"
+#include "services/memoryPool.hpp"
 
 G1GenerationCounters::G1GenerationCounters(G1MonitoringSupport* g1mm,
                                            const char* name,
@@ -77,6 +78,11 @@ void G1OldGenerationCounters::update_all() {
 
 G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _g1h(g1h),
+  _memory_manager("G1 Young Generation", "end of minor GC"),
+  _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
+  _eden_pool(NULL),
+  _survivor_pool(NULL),
+  _old_pool(NULL),
   _incremental_collection_counters(NULL),
   _full_collection_counters(NULL),
   _conc_collection_counters(NULL),
@@ -183,6 +189,41 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   }
 }
 
+G1MonitoringSupport::~G1MonitoringSupport() {
+  delete _eden_pool;
+  delete _survivor_pool;
+  delete _old_pool;
+}
+
+void G1MonitoringSupport::initialize_serviceability() {
+  _eden_pool = new G1EdenPool(_g1h);
+  _survivor_pool = new G1SurvivorPool(_g1h);
+  _old_pool = new G1OldGenPool(_g1h);
+
+  _full_gc_memory_manager.add_pool(_eden_pool);
+  _full_gc_memory_manager.add_pool(_survivor_pool);
+  _full_gc_memory_manager.add_pool(_old_pool);
+
+  _memory_manager.add_pool(_eden_pool);
+  _memory_manager.add_pool(_survivor_pool);
+  _memory_manager.add_pool(_old_pool, false /* always_affected_by_gc */);
+}
+
+GrowableArray<GCMemoryManager*> G1MonitoringSupport::memory_managers() {
+  GrowableArray<GCMemoryManager*> memory_managers(2);
+  memory_managers.append(&_memory_manager);
+  memory_managers.append(&_full_gc_memory_manager);
+  return memory_managers;
+}
+
+GrowableArray<MemoryPool*> G1MonitoringSupport::memory_pools() {
+  GrowableArray<MemoryPool*> memory_pools(3);
+  memory_pools.append(_eden_pool);
+  memory_pools.append(_survivor_pool);
+  memory_pools.append(_old_pool);
+  return memory_pools;
+}
+
 void G1MonitoringSupport::recalculate_sizes() {
   // Recalculate all the sizes from scratch. We assume that this is
   // called at a point where no concurrent updates to the various
@@ -261,16 +302,16 @@ void G1MonitoringSupport::recalculate_eden_size() {
 void G1MonitoringSupport::update_sizes() {
   recalculate_sizes();
   if (UsePerfData) {
-    eden_counters()->update_capacity(pad_capacity(eden_space_committed()));
-    eden_counters()->update_used(eden_space_used());
-    // only the to survivor space (s1) is active, so we don't need to
-    // update the counters for the from survivor space (s0)
-    to_counters()->update_capacity(pad_capacity(survivor_space_committed()));
-    to_counters()->update_used(survivor_space_used());
-    old_space_counters()->update_capacity(pad_capacity(old_space_committed()));
-    old_space_counters()->update_used(old_space_used());
-    old_collection_counters()->update_all();
-    young_collection_counters()->update_all();
+    _eden_counters->update_capacity(pad_capacity(eden_space_committed()));
+    _eden_counters->update_used(eden_space_used());
+    // only the "to" survivor space is active, so we don't need to
+    // update the counters for the "from" survivor space
+    _to_counters->update_capacity(pad_capacity(survivor_space_committed()));
+    _to_counters->update_used(survivor_space_used());
+    _old_space_counters->update_capacity(pad_capacity(old_space_committed()));
+    _old_space_counters->update_used(old_space_used());
+    _old_collection_counters->update_all();
+    _young_collection_counters->update_all();
     MetaspaceCounters::update_performance_counters();
     CompressedClassSpaceCounters::update_performance_counters();
   }
@@ -279,6 +320,12 @@ void G1MonitoringSupport::update_sizes() {
 void G1MonitoringSupport::update_eden_size() {
   recalculate_eden_size();
   if (UsePerfData) {
-    eden_counters()->update_used(eden_space_used());
+    _eden_counters->update_used(eden_space_used());
   }
+}
+
+G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected) :
+  _tcs(full_gc ? g1mm->_full_collection_counters : g1mm->_incremental_collection_counters),
+  _tms(full_gc ? &g1mm->_full_gc_memory_manager : &g1mm->_memory_manager,
+       G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
 }

@@ -85,6 +85,8 @@ class MemoryPool : public CHeapObj<mtInternal> {
              bool support_usage_threshold,
              bool support_gc_threshold);
 
+  virtual ~MemoryPool() { }
+
   const char* name()                       { return _name; }
   bool        is_heap()                    { return _type == Heap; }
   bool        is_non_heap()                { return _type == NonHeap; }

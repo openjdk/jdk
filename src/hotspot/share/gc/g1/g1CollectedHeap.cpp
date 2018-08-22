@@ -1125,7 +1125,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, &_full_gc_memory_manager, explicit_gc, do_clear_all_soft_refs);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs);
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
 
   collector.prepare_collection();
@@ -1474,11 +1474,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _collector_policy(collector_policy),
   _card_table(NULL),
   _soft_ref_policy(),
-  _memory_manager("G1 Young Generation", "end of minor GC"),
-  _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
-  _eden_pool(NULL),
-  _survivor_pool(NULL),
-  _old_pool(NULL),
   _old_set("Old Region Set", new OldRegionSetChecker()),
   _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
@@ -1806,20 +1801,6 @@ jint G1CollectedHeap::initialize() {
   _collection_set.initialize(max_regions());
 
   return JNI_OK;
-}
-
-void G1CollectedHeap::initialize_serviceability() {
-  _eden_pool = new G1EdenPool(this);
-  _survivor_pool = new G1SurvivorPool(this);
-  _old_pool = new G1OldGenPool(this);
-
-  _full_gc_memory_manager.add_pool(_eden_pool);
-  _full_gc_memory_manager.add_pool(_survivor_pool);
-  _full_gc_memory_manager.add_pool(_old_pool);
-
-  _memory_manager.add_pool(_eden_pool);
-  _memory_manager.add_pool(_survivor_pool);
-  _memory_manager.add_pool(_old_pool, false /* always_affected_by_gc */);
 }
 
 void G1CollectedHeap::stop() {
@@ -2918,9 +2899,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     active_workers = workers()->update_active_workers(active_workers);
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 
-    TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
-    TraceMemoryManagerStats tms(&_memory_manager, gc_cause(),
-                                collector_state()->yc_type() == Mixed /* allMemoryPoolsAffected */);
+    G1MonitoringScope ms(g1mm(),
+                         false /* full_gc */,
+                         collector_state()->yc_type() == Mixed /* all_memory_pools_affected */);
 
     G1HeapTransition heap_transition(this);
     size_t heap_used_bytes_before_gc = used();
@@ -4995,17 +4976,14 @@ void G1CollectedHeap::rebuild_strong_code_roots() {
   CodeCache::blobs_do(&blob_cl);
 }
 
+void G1CollectedHeap::initialize_serviceability() {
+  _g1mm->initialize_serviceability();
+}
+
 GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {
-  GrowableArray<GCMemoryManager*> memory_managers(2);
-  memory_managers.append(&_memory_manager);
-  memory_managers.append(&_full_gc_memory_manager);
-  return memory_managers;
+  return _g1mm->memory_managers();
 }
 
 GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
-  GrowableArray<MemoryPool*> memory_pools(3);
-  memory_pools.append(_eden_pool);
-  memory_pools.append(_survivor_pool);
-  memory_pools.append(_old_pool);
-  return memory_pools;
+  return _g1mm->memory_pools();
 }

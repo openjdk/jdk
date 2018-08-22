@@ -25,11 +25,15 @@
 #ifndef SHARE_VM_GC_G1_G1MONITORINGSUPPORT_HPP
 #define SHARE_VM_GC_G1_G1MONITORINGSUPPORT_HPP
 
+#include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/generationCounters.hpp"
+#include "services/memoryManager.hpp"
+#include "services/memoryService.hpp"
 
 class CollectorCounters;
 class G1CollectedHeap;
 class HSpaceCounters;
+class MemoryPool;
 
 // Class for monitoring logical spaces in G1. It provides data for
 // both G1's jstat counters as well as G1's memory pools.
@@ -116,8 +120,17 @@ class HSpaceCounters;
 
 class G1MonitoringSupport : public CHeapObj<mtGC> {
   friend class VMStructs;
+  friend class G1MonitoringScope;
 
   G1CollectedHeap* _g1h;
+
+  // java.lang.management MemoryManager and MemoryPool support
+  GCMemoryManager _memory_manager;
+  GCMemoryManager _full_gc_memory_manager;
+
+  MemoryPool* _eden_pool;
+  MemoryPool* _survivor_pool;
+  MemoryPool* _old_pool;
 
   // jstat performance counters
   //  incremental collections both young and mixed
@@ -183,6 +196,11 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
 
  public:
   G1MonitoringSupport(G1CollectedHeap* g1h);
+  ~G1MonitoringSupport();
+
+  void initialize_serviceability();
+  GrowableArray<GCMemoryManager*> memory_managers();
+  GrowableArray<MemoryPool*> memory_pools();
 
   // Unfortunately, the jstat tool assumes that no space has 0
   // capacity. In our case, given that each space is logical, it's
@@ -206,25 +224,9 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   // allocated and update any jstat counters that need to be updated.
   void update_eden_size();
 
-  CollectorCounters* incremental_collection_counters() {
-    return _incremental_collection_counters;
-  }
-  CollectorCounters* full_collection_counters() {
-    return _full_collection_counters;
-  }
   CollectorCounters* conc_collection_counters() {
     return _conc_collection_counters;
   }
-  GenerationCounters* young_collection_counters() {
-    return _young_collection_counters;
-  }
-  GenerationCounters* old_collection_counters() {
-    return _old_collection_counters;
-  }
-  HSpaceCounters*      old_space_counters() { return _old_space_counters; }
-  HSpaceCounters*      eden_counters() { return _eden_counters; }
-  HSpaceCounters*      from_counters() { return _from_counters; }
-  HSpaceCounters*      to_counters() { return _to_counters; }
 
   // Monitoring support used by
   //   MemoryService
@@ -246,6 +248,14 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   size_t old_gen_max()                { return overall_reserved();    }
   size_t old_space_committed()        { return _old_committed;        }
   size_t old_space_used()             { return _old_used;             }
+};
+
+// Scope object for java.lang.management support.
+class G1MonitoringScope : public StackObj {
+  TraceCollectorStats _tcs;
+  TraceMemoryManagerStats _tms;
+public:
+  G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected);
 };
 
 class G1GenerationCounters: public GenerationCounters {
