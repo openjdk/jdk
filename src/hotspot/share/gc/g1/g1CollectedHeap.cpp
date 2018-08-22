@@ -1405,6 +1405,68 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
   _verifier->verify_region_sets_optional();
 }
 
+class OldRegionSetChecker : public HeapRegionSetChecker {
+public:
+  void check_mt_safety() {
+    // Master Old Set MT safety protocol:
+    // (a) If we're at a safepoint, operations on the master old set
+    // should be invoked:
+    // - by the VM thread (which will serialize them), or
+    // - by the GC workers while holding the FreeList_lock, if we're
+    //   at a safepoint for an evacuation pause (this lock is taken
+    //   anyway when an GC alloc region is retired so that a new one
+    //   is allocated from the free list), or
+    // - by the GC workers while holding the OldSets_lock, if we're at a
+    //   safepoint for a cleanup pause.
+    // (b) If we're not at a safepoint, operations on the master old set
+    // should be invoked while holding the Heap_lock.
+
+    if (SafepointSynchronize::is_at_safepoint()) {
+      guarantee(Thread::current()->is_VM_thread() ||
+                FreeList_lock->owned_by_self() || OldSets_lock->owned_by_self(),
+                "master old set MT safety protocol at a safepoint");
+    } else {
+      guarantee(Heap_lock->owned_by_self(), "master old set MT safety protocol outside a safepoint");
+    }
+  }
+  bool is_correct_type(HeapRegion* hr) { return hr->is_old(); }
+  const char* get_description() { return "Old Regions"; }
+};
+
+class ArchiveRegionSetChecker : public HeapRegionSetChecker {
+public:
+  void check_mt_safety() {
+    guarantee(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(),
+              "May only change archive regions during initialization or safepoint.");
+  }
+  bool is_correct_type(HeapRegion* hr) { return hr->is_archive(); }
+  const char* get_description() { return "Archive Regions"; }
+};
+
+class HumongousRegionSetChecker : public HeapRegionSetChecker {
+public:
+  void check_mt_safety() {
+    // Humongous Set MT safety protocol:
+    // (a) If we're at a safepoint, operations on the master humongous
+    // set should be invoked by either the VM thread (which will
+    // serialize them) or by the GC workers while holding the
+    // OldSets_lock.
+    // (b) If we're not at a safepoint, operations on the master
+    // humongous set should be invoked while holding the Heap_lock.
+
+    if (SafepointSynchronize::is_at_safepoint()) {
+      guarantee(Thread::current()->is_VM_thread() ||
+                OldSets_lock->owned_by_self(),
+                "master humongous set MT safety protocol at a safepoint");
+    } else {
+      guarantee(Heap_lock->owned_by_self(),
+                "master humongous set MT safety protocol outside a safepoint");
+    }
+  }
+  bool is_correct_type(HeapRegion* hr) { return hr->is_humongous(); }
+  const char* get_description() { return "Humongous Regions"; }
+};
+
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
   _young_gen_sampling_thread(NULL),
@@ -1417,9 +1479,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _eden_pool(NULL),
   _survivor_pool(NULL),
   _old_pool(NULL),
-  _old_set("Old Region Set", HeapRegionSetBase::ForOldRegions, new OldRegionSetMtSafeChecker()),
-  _archive_set("Archive Region Set", HeapRegionSetBase::ForArchiveRegions, new ArchiveRegionSetMtSafeChecker()),
-  _humongous_set("Humongous Region Set", HeapRegionSetBase::ForHumongousRegions, new HumongousRegionSetMtSafeChecker()),
+  _old_set("Old Region Set", new OldRegionSetChecker()),
+  _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
+  _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(NULL),
   _listener(),
   _hrm(),

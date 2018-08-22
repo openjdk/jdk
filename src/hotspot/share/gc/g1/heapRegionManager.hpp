@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,14 +128,7 @@ public:
 
  public:
   // Empty constructor, we'll initialize it with the initialize() method.
-  HeapRegionManager() :
-   _regions(), _heap_mapper(NULL),
-   _prev_bitmap_mapper(NULL), _next_bitmap_mapper(NULL), _bot_mapper(NULL),
-   _cardtable_mapper(NULL), _card_counts_mapper(NULL),
-   _free_list("Free list", new MasterFreeRegionListMtSafeChecker()),
-   _available_map(mtGC), _num_committed(0),
-   _allocated_heapregions_length(0)
-  { }
+  HeapRegionManager();
 
   void initialize(G1RegionToSpaceMapper* heap_storage,
                   G1RegionToSpaceMapper* prev_bitmap,

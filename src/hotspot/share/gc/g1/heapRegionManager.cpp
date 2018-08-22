@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,41 @@
 #include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "memory/allocation.hpp"
+
+class MasterFreeRegionListChecker : public HeapRegionSetChecker {
+public:
+  void check_mt_safety() {
+    // Master Free List MT safety protocol:
+    // (a) If we're at a safepoint, operations on the master free list
+    // should be invoked by either the VM thread (which will serialize
+    // them) or by the GC workers while holding the
+    // FreeList_lock.
+    // (b) If we're not at a safepoint, operations on the master free
+    // list should be invoked while holding the Heap_lock.
+
+    if (SafepointSynchronize::is_at_safepoint()) {
+      guarantee(Thread::current()->is_VM_thread() ||
+                FreeList_lock->owned_by_self(), "master free list MT safety protocol at a safepoint");
+    } else {
+      guarantee(Heap_lock->owned_by_self(), "master free list MT safety protocol outside a safepoint");
+    }
+  }
+  bool is_correct_type(HeapRegion* hr) { return hr->is_free(); }
+  const char* get_description() { return "Free Regions"; }
+};
+
+HeapRegionManager::HeapRegionManager() :
+  _regions(), _heap_mapper(NULL),
+  _prev_bitmap_mapper(NULL),
+  _next_bitmap_mapper(NULL),
+  _bot_mapper(NULL),
+  _cardtable_mapper(NULL),
+  _card_counts_mapper(NULL),
+  _free_list("Free list", new MasterFreeRegionListChecker()),
+  _available_map(mtGC),
+  _num_committed(0),
+  _allocated_heapregions_length(0)
+{ }
 
 void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
                                G1RegionToSpaceMapper* prev_bitmap,
