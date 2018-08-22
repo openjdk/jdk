@@ -53,7 +53,6 @@ class G1CollectedHeap;
 // (G1EdenPool, G1SurvivorPool, G1OldGenPool).
 class G1MemoryPoolSuper : public CollectedMemoryPool {
 protected:
-  const static size_t _undefined_max = (size_t) -1;
   G1MonitoringSupport* _g1mm;
 
   // Would only be called from subclasses.
@@ -67,42 +66,30 @@ protected:
 // Memory pool that represents the G1 eden.
 class G1EdenPool : public G1MemoryPoolSuper {
 public:
-  G1EdenPool(G1CollectedHeap* g1h);
+  G1EdenPool(G1CollectedHeap* g1h, size_t initial_size);
 
-  size_t used_in_bytes() {
-    return _g1mm->eden_space_used();
-  }
-  size_t max_size() const {
-    return _undefined_max;
-  }
+  size_t used_in_bytes() { return _g1mm->eden_space_used(); }
+
   MemoryUsage get_memory_usage();
 };
 
 // Memory pool that represents the G1 survivor.
 class G1SurvivorPool : public G1MemoryPoolSuper {
 public:
-  G1SurvivorPool(G1CollectedHeap* g1h);
+  G1SurvivorPool(G1CollectedHeap* g1h, size_t initial_size);
 
-  size_t used_in_bytes() {
-    return _g1mm->survivor_space_used();
-  }
-  size_t max_size() const {
-    return _undefined_max;
-  }
+  size_t used_in_bytes() { return _g1mm->survivor_space_used(); }
+
   MemoryUsage get_memory_usage();
 };
 
 // Memory pool that represents the G1 old gen.
 class G1OldGenPool : public G1MemoryPoolSuper {
 public:
-  G1OldGenPool(G1CollectedHeap* g1h);
+  G1OldGenPool(G1CollectedHeap* g1h, size_t initial_size, size_t max_size);
 
-  size_t used_in_bytes() {
-    return _g1mm->old_space_used();
-  }
-  size_t max_size() const {
-    return _g1mm->old_gen_max();
-  }
+  size_t used_in_bytes() { return _g1mm->old_gen_used(); }
+
   MemoryUsage get_memory_usage();
 };
 

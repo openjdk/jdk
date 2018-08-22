@@ -31,84 +31,90 @@
 #include "memory/metaspaceCounters.hpp"
 #include "services/memoryPool.hpp"
 
-G1GenerationCounters::G1GenerationCounters(G1MonitoringSupport* g1mm,
-                                           const char* name,
-                                           int ordinal, int spaces,
-                                           size_t min_capacity,
-                                           size_t max_capacity,
-                                           size_t curr_capacity)
+class G1GenerationCounters : public GenerationCounters {
+protected:
+  G1MonitoringSupport* _g1mm;
+
+public:
+  G1GenerationCounters(G1MonitoringSupport* g1mm,
+                       const char* name, int ordinal, int spaces,
+                       size_t min_capacity, size_t max_capacity,
+                       size_t curr_capacity)
   : GenerationCounters(name, ordinal, spaces, min_capacity,
                        max_capacity, curr_capacity), _g1mm(g1mm) { }
+};
 
-// We pad the capacity three times given that the young generation
-// contains three spaces (eden and two survivors).
-G1YoungGenerationCounters::G1YoungGenerationCounters(G1MonitoringSupport* g1mm,
-                                                     const char* name)
+class G1YoungGenerationCounters : public G1GenerationCounters {
+public:
+  // We pad the capacity three times given that the young generation
+  // contains three spaces (eden and two survivors).
+  G1YoungGenerationCounters(G1MonitoringSupport* g1mm, const char* name, size_t max_size)
   : G1GenerationCounters(g1mm, name, 0 /* ordinal */, 3 /* spaces */,
-               G1MonitoringSupport::pad_capacity(0, 3) /* min_capacity */,
-               G1MonitoringSupport::pad_capacity(g1mm->young_gen_max(), 3),
-               G1MonitoringSupport::pad_capacity(0, 3) /* curr_capacity */) {
-  if (UsePerfData) {
-    update_all();
+                         G1MonitoringSupport::pad_capacity(0, 3) /* min_capacity */,
+                         G1MonitoringSupport::pad_capacity(max_size, 3),
+                         G1MonitoringSupport::pad_capacity(0, 3) /* curr_capacity */) {
+    if (UsePerfData) {
+      update_all();
+    }
   }
-}
 
-G1OldGenerationCounters::G1OldGenerationCounters(G1MonitoringSupport* g1mm,
-                                                 const char* name)
+  virtual void update_all() {
+    size_t committed =
+              G1MonitoringSupport::pad_capacity(_g1mm->young_gen_committed(), 3);
+    _current_size->set_value(committed);
+  }
+};
+
+class G1OldGenerationCounters : public G1GenerationCounters {
+public:
+  G1OldGenerationCounters(G1MonitoringSupport* g1mm, const char* name, size_t max_size)
   : G1GenerationCounters(g1mm, name, 1 /* ordinal */, 1 /* spaces */,
-               G1MonitoringSupport::pad_capacity(0) /* min_capacity */,
-               G1MonitoringSupport::pad_capacity(g1mm->old_gen_max()),
-               G1MonitoringSupport::pad_capacity(0) /* curr_capacity */) {
-  if (UsePerfData) {
-    update_all();
+                         G1MonitoringSupport::pad_capacity(0) /* min_capacity */,
+                         G1MonitoringSupport::pad_capacity(max_size),
+                         G1MonitoringSupport::pad_capacity(0) /* curr_capacity */) {
+    if (UsePerfData) {
+      update_all();
+    }
   }
-}
 
-void G1YoungGenerationCounters::update_all() {
-  size_t committed =
-            G1MonitoringSupport::pad_capacity(_g1mm->young_gen_committed(), 3);
-  _current_size->set_value(committed);
-}
-
-void G1OldGenerationCounters::update_all() {
-  size_t committed =
-            G1MonitoringSupport::pad_capacity(_g1mm->old_gen_committed());
-  _current_size->set_value(committed);
-}
+  virtual void update_all() {
+    size_t committed =
+              G1MonitoringSupport::pad_capacity(_g1mm->old_gen_committed());
+    _current_size->set_value(committed);
+  }
+};
 
 G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _g1h(g1h),
-  _memory_manager("G1 Young Generation", "end of minor GC"),
+  _incremental_memory_manager("G1 Young Generation", "end of minor GC"),
   _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
-  _eden_pool(NULL),
-  _survivor_pool(NULL),
-  _old_pool(NULL),
+  _eden_space_pool(NULL),
+  _survivor_space_pool(NULL),
+  _old_gen_pool(NULL),
   _incremental_collection_counters(NULL),
   _full_collection_counters(NULL),
   _conc_collection_counters(NULL),
-  _young_collection_counters(NULL),
-  _old_collection_counters(NULL),
+  _young_gen_counters(NULL),
+  _old_gen_counters(NULL),
   _old_space_counters(NULL),
-  _eden_counters(NULL),
-  _from_counters(NULL),
-  _to_counters(NULL),
+  _eden_space_counters(NULL),
+  _from_space_counters(NULL),
+  _to_space_counters(NULL),
 
-  _overall_reserved(0),
   _overall_committed(0),
   _overall_used(0),
-  _young_region_num(0),
   _young_gen_committed(0),
-  _eden_committed(0),
-  _eden_used(0),
-  _survivor_committed(0),
-  _survivor_used(0),
-  _old_committed(0),
-  _old_used(0) {
+  _old_gen_committed(0),
 
-  _overall_reserved = g1h->max_capacity();
+  _eden_space_committed(0),
+  _eden_space_used(0),
+  _survivor_space_committed(0),
+  _survivor_space_used(0),
+  _old_gen_used(0) {
+
   recalculate_sizes();
 
-  // Counters for GC collections
+  // Counters for garbage collections
   //
   //  name "collector.0".  In a generational collector this would be the
   // young generation collection.
@@ -123,112 +129,96 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   _conc_collection_counters =
     new CollectorCounters("G1 stop-the-world phases", 2);
 
-  // timer sampling for all counters supporting sampling only update the
-  // used value.  See the take_sample() method.  G1 requires both used and
-  // capacity updated so sampling is not currently used.  It might
-  // be sufficient to update all counters in take_sample() even though
-  // take_sample() only returns "used".  When sampling was used, there
-  // were some anomolous values emitted which may have been the consequence
-  // of not updating all values simultaneously (i.e., see the calculation done
-  // in eden_space_used(), is it possible that the values used to
-  // calculate either eden_used or survivor_used are being updated by
-  // the collector when the sample is being done?).
-  const bool sampled = false;
-
   // "Generation" and "Space" counters.
   //
   //  name "generation.1" This is logically the old generation in
   // generational GC terms.  The "1, 1" parameters are for
   // the n-th generation (=1) with 1 space.
   // Counters are created from minCapacity, maxCapacity, and capacity
-  _old_collection_counters = new G1OldGenerationCounters(this, "old");
+  _old_gen_counters = new G1OldGenerationCounters(this, "old", _g1h->max_capacity());
 
   //  name  "generation.1.space.0"
   // Counters are created from maxCapacity, capacity, initCapacity,
   // and used.
-  _old_space_counters = new HSpaceCounters(_old_collection_counters->name_space(),
+  _old_space_counters = new HSpaceCounters(_old_gen_counters->name_space(),
     "space", 0 /* ordinal */,
-    pad_capacity(overall_reserved()) /* max_capacity */,
-    pad_capacity(old_space_committed()) /* init_capacity */);
+    pad_capacity(g1h->max_capacity()) /* max_capacity */,
+    pad_capacity(_old_gen_committed) /* init_capacity */);
 
   //   Young collection set
   //  name "generation.0".  This is logically the young generation.
   //  The "0, 3" are parameters for the n-th generation (=0) with 3 spaces.
   // See  _old_collection_counters for additional counters
-  _young_collection_counters = new G1YoungGenerationCounters(this, "young");
+  _young_gen_counters = new G1YoungGenerationCounters(this, "young", _g1h->max_capacity());
 
-  const char* young_collection_name_space = _young_collection_counters->name_space();
+  const char* young_collection_name_space = _young_gen_counters->name_space();
 
   //  name "generation.0.space.0"
   // See _old_space_counters for additional counters
-  _eden_counters = new HSpaceCounters(young_collection_name_space,
+  _eden_space_counters = new HSpaceCounters(young_collection_name_space,
     "eden", 0 /* ordinal */,
-    pad_capacity(overall_reserved()) /* max_capacity */,
-    pad_capacity(eden_space_committed()) /* init_capacity */);
+    pad_capacity(g1h->max_capacity()) /* max_capacity */,
+    pad_capacity(_eden_space_committed) /* init_capacity */);
 
   //  name "generation.0.space.1"
   // See _old_space_counters for additional counters
   // Set the arguments to indicate that this survivor space is not used.
-  _from_counters = new HSpaceCounters(young_collection_name_space,
+  _from_space_counters = new HSpaceCounters(young_collection_name_space,
     "s0", 1 /* ordinal */,
     pad_capacity(0) /* max_capacity */,
     pad_capacity(0) /* init_capacity */);
+  // Given that this survivor space is not used, we update it here
+  // once to reflect that its used space is 0 so that we don't have to
+  // worry about updating it again later.
+  _from_space_counters->update_used(0);
 
   //  name "generation.0.space.2"
   // See _old_space_counters for additional counters
-  _to_counters = new HSpaceCounters(young_collection_name_space,
+  _to_space_counters = new HSpaceCounters(young_collection_name_space,
     "s1", 2 /* ordinal */,
-    pad_capacity(overall_reserved()) /* max_capacity */,
-    pad_capacity(survivor_space_committed()) /* init_capacity */);
-
-  if (UsePerfData) {
-    // Given that this survivor space is not used, we update it here
-    // once to reflect that its used space is 0 so that we don't have to
-    // worry about updating it again later.
-    _from_counters->update_used(0);
-  }
+    pad_capacity(g1h->max_capacity()) /* max_capacity */,
+    pad_capacity(_survivor_space_committed) /* init_capacity */);
 }
 
 G1MonitoringSupport::~G1MonitoringSupport() {
-  delete _eden_pool;
-  delete _survivor_pool;
-  delete _old_pool;
+  delete _eden_space_pool;
+  delete _survivor_space_pool;
+  delete _old_gen_pool;
 }
 
 void G1MonitoringSupport::initialize_serviceability() {
-  _eden_pool = new G1EdenPool(_g1h);
-  _survivor_pool = new G1SurvivorPool(_g1h);
-  _old_pool = new G1OldGenPool(_g1h);
+  _eden_space_pool = new G1EdenPool(_g1h, _eden_space_committed);
+  _survivor_space_pool = new G1SurvivorPool(_g1h, _survivor_space_committed);
+  _old_gen_pool = new G1OldGenPool(_g1h, _old_gen_committed, _g1h->max_capacity());
 
-  _full_gc_memory_manager.add_pool(_eden_pool);
-  _full_gc_memory_manager.add_pool(_survivor_pool);
-  _full_gc_memory_manager.add_pool(_old_pool);
+  _full_gc_memory_manager.add_pool(_eden_space_pool);
+  _full_gc_memory_manager.add_pool(_survivor_space_pool);
+  _full_gc_memory_manager.add_pool(_old_gen_pool);
 
-  _memory_manager.add_pool(_eden_pool);
-  _memory_manager.add_pool(_survivor_pool);
-  _memory_manager.add_pool(_old_pool, false /* always_affected_by_gc */);
+  _incremental_memory_manager.add_pool(_eden_space_pool);
+  _incremental_memory_manager.add_pool(_survivor_space_pool);
+  _incremental_memory_manager.add_pool(_old_gen_pool, false /* always_affected_by_gc */);
 }
 
 GrowableArray<GCMemoryManager*> G1MonitoringSupport::memory_managers() {
   GrowableArray<GCMemoryManager*> memory_managers(2);
-  memory_managers.append(&_memory_manager);
+  memory_managers.append(&_incremental_memory_manager);
   memory_managers.append(&_full_gc_memory_manager);
   return memory_managers;
 }
 
 GrowableArray<MemoryPool*> G1MonitoringSupport::memory_pools() {
   GrowableArray<MemoryPool*> memory_pools(3);
-  memory_pools.append(_eden_pool);
-  memory_pools.append(_survivor_pool);
-  memory_pools.append(_old_pool);
+  memory_pools.append(_eden_space_pool);
+  memory_pools.append(_survivor_space_pool);
+  memory_pools.append(_old_gen_pool);
   return memory_pools;
 }
 
 void G1MonitoringSupport::recalculate_sizes() {
-  // Recalculate all the sizes from scratch. We assume that this is
-  // called at a point where no concurrent updates to the various
-  // values we read here are possible (i.e., at a STW phase at the end
-  // of a GC).
+  assert_heap_locked_or_at_safepoint(true);
+
+  // Recalculate all the sizes from scratch.
 
   uint young_list_length = _g1h->young_regions_count();
   uint survivor_list_length = _g1h->survivor_regions_count();
@@ -241,14 +231,13 @@ void G1MonitoringSupport::recalculate_sizes() {
   uint eden_list_max_length = young_list_max_length - survivor_list_length;
 
   _overall_used = _g1h->used_unlocked();
-  _eden_used = (size_t) eden_list_length * HeapRegion::GrainBytes;
-  _survivor_used = (size_t) survivor_list_length * HeapRegion::GrainBytes;
-  _young_region_num = young_list_length;
-  _old_used = subtract_up_to_zero(_overall_used, _eden_used + _survivor_used);
+  _eden_space_used = (size_t) eden_list_length * HeapRegion::GrainBytes;
+  _survivor_space_used = (size_t) survivor_list_length * HeapRegion::GrainBytes;
+  _old_gen_used = subtract_up_to_zero(_overall_used, _eden_space_used + _survivor_space_used);
 
   // First calculate the committed sizes that can be calculated independently.
-  _survivor_committed = _survivor_used;
-  _old_committed = HeapRegion::align_up_to_region_byte_size(_old_used);
+  _survivor_space_committed = _survivor_space_used;
+  _old_gen_committed = HeapRegion::align_up_to_region_byte_size(_old_gen_used);
 
   // Next, start with the overall committed size.
   _overall_committed = _g1h->capacity();
@@ -256,76 +245,64 @@ void G1MonitoringSupport::recalculate_sizes() {
 
   // Remove the committed size we have calculated so far (for the
   // survivor and old space).
-  assert(committed >= (_survivor_committed + _old_committed), "sanity");
-  committed -= _survivor_committed + _old_committed;
+  assert(committed >= (_survivor_space_committed + _old_gen_committed), "sanity");
+  committed -= _survivor_space_committed + _old_gen_committed;
 
   // Next, calculate and remove the committed size for the eden.
-  _eden_committed = (size_t) eden_list_max_length * HeapRegion::GrainBytes;
+  _eden_space_committed = (size_t) eden_list_max_length * HeapRegion::GrainBytes;
   // Somewhat defensive: be robust in case there are inaccuracies in
   // the calculations
-  _eden_committed = MIN2(_eden_committed, committed);
-  committed -= _eden_committed;
+  _eden_space_committed = MIN2(_eden_space_committed, committed);
+  committed -= _eden_space_committed;
 
   // Finally, give the rest to the old space...
-  _old_committed += committed;
+  _old_gen_committed += committed;
   // ..and calculate the young gen committed.
-  _young_gen_committed = _eden_committed + _survivor_committed;
+  _young_gen_committed = _eden_space_committed + _survivor_space_committed;
 
   assert(_overall_committed ==
-         (_eden_committed + _survivor_committed + _old_committed),
+         (_eden_space_committed + _survivor_space_committed + _old_gen_committed),
          "the committed sizes should add up");
   // Somewhat defensive: cap the eden used size to make sure it
   // never exceeds the committed size.
-  _eden_used = MIN2(_eden_used, _eden_committed);
+  _eden_space_used = MIN2(_eden_space_used, _eden_space_committed);
   // _survivor_committed and _old_committed are calculated in terms of
   // the corresponding _*_used value, so the next two conditions
   // should hold.
-  assert(_survivor_used <= _survivor_committed, "post-condition");
-  assert(_old_used <= _old_committed, "post-condition");
-}
-
-void G1MonitoringSupport::recalculate_eden_size() {
-  // When a new eden region is allocated, only the eden_used size is
-  // affected (since we have recalculated everything else at the last GC).
-
-  uint young_region_num = _g1h->young_regions_count();
-  if (young_region_num > _young_region_num) {
-    uint diff = young_region_num - _young_region_num;
-    _eden_used += (size_t) diff * HeapRegion::GrainBytes;
-    // Somewhat defensive: cap the eden used size to make sure it
-    // never exceeds the committed size.
-    _eden_used = MIN2(_eden_used, _eden_committed);
-    _young_region_num = young_region_num;
-  }
+  assert(_survivor_space_used <= _survivor_space_committed, "post-condition");
+  assert(_old_gen_used <= _old_gen_committed, "post-condition");
 }
 
 void G1MonitoringSupport::update_sizes() {
   recalculate_sizes();
   if (UsePerfData) {
-    _eden_counters->update_capacity(pad_capacity(eden_space_committed()));
-    _eden_counters->update_used(eden_space_used());
-    // only the "to" survivor space is active, so we don't need to
+    _eden_space_counters->update_capacity(pad_capacity(_eden_space_committed));
+    _eden_space_counters->update_used(_eden_space_used);
+   // only the "to" survivor space is active, so we don't need to
     // update the counters for the "from" survivor space
-    _to_counters->update_capacity(pad_capacity(survivor_space_committed()));
-    _to_counters->update_used(survivor_space_used());
-    _old_space_counters->update_capacity(pad_capacity(old_space_committed()));
-    _old_space_counters->update_used(old_space_used());
-    _old_collection_counters->update_all();
-    _young_collection_counters->update_all();
+    _to_space_counters->update_capacity(pad_capacity(_survivor_space_committed));
+    _to_space_counters->update_used(_survivor_space_used);
+    _old_space_counters->update_capacity(pad_capacity(_old_gen_committed));
+    _old_space_counters->update_used(_old_gen_used);
+
+    _young_gen_counters->update_all();
+    _old_gen_counters->update_all();
+
     MetaspaceCounters::update_performance_counters();
     CompressedClassSpaceCounters::update_performance_counters();
   }
 }
 
 void G1MonitoringSupport::update_eden_size() {
-  recalculate_eden_size();
+  // Recalculate everything - this is fast enough.
+  recalculate_sizes();
   if (UsePerfData) {
-    _eden_counters->update_used(eden_space_used());
+    _eden_space_counters->update_used(_eden_space_used);
   }
 }
 
 G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected) :
   _tcs(full_gc ? g1mm->_full_collection_counters : g1mm->_incremental_collection_counters),
-  _tms(full_gc ? &g1mm->_full_gc_memory_manager : &g1mm->_memory_manager,
+  _tms(full_gc ? &g1mm->_full_gc_memory_manager : &g1mm->_incremental_memory_manager,
        G1CollectedHeap::heap()->gc_cause(), all_memory_pools_affected) {
 }

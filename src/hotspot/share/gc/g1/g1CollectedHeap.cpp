@@ -4800,7 +4800,7 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
   _hr_printer.retire(alloc_region);
   // We update the eden sizes here, when the region is retired,
   // instead of when it's allocated, since this is the point that its
-  // used space has been recored in _summary_bytes_used.
+  // used space has been recorded in _summary_bytes_used.
   g1mm()->update_eden_size();
 }
 

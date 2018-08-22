@@ -125,12 +125,12 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
 
   // java.lang.management MemoryManager and MemoryPool support
-  GCMemoryManager _memory_manager;
+  GCMemoryManager _incremental_memory_manager;
   GCMemoryManager _full_gc_memory_manager;
 
-  MemoryPool* _eden_pool;
-  MemoryPool* _survivor_pool;
-  MemoryPool* _old_pool;
+  MemoryPool* _eden_space_pool;
+  MemoryPool* _survivor_space_pool;
+  MemoryPool* _old_gen_pool;
 
   // jstat performance counters
   //  incremental collections both young and mixed
@@ -142,37 +142,36 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   //  young collection set counters.  The _eden_counters,
   // _from_counters, and _to_counters are associated with
   // this "generational" counter.
-  GenerationCounters*  _young_collection_counters;
+  GenerationCounters*  _young_gen_counters;
   //  old collection set counters. The _old_space_counters
   // below are associated with this "generational" counter.
-  GenerationCounters*  _old_collection_counters;
+  GenerationCounters*  _old_gen_counters;
   // Counters for the capacity and used for
   //   the whole heap
   HSpaceCounters*      _old_space_counters;
   //   the young collection
-  HSpaceCounters*      _eden_counters;
+  HSpaceCounters*      _eden_space_counters;
   //   the survivor collection (only one, _to_counters, is actively used)
-  HSpaceCounters*      _from_counters;
-  HSpaceCounters*      _to_counters;
+  HSpaceCounters*      _from_space_counters;
+  HSpaceCounters*      _to_space_counters;
 
   // When it's appropriate to recalculate the various sizes (at the
   // end of a GC, when a new eden region is allocated, etc.) we store
   // them here so that we can easily report them when needed and not
   // have to recalculate them every time.
 
-  size_t _overall_reserved;
   size_t _overall_committed;
   size_t _overall_used;
 
-  uint   _young_region_num;
   size_t _young_gen_committed;
-  size_t _eden_committed;
-  size_t _eden_used;
-  size_t _survivor_committed;
-  size_t _survivor_used;
+  size_t _old_gen_committed;
 
-  size_t _old_committed;
-  size_t _old_used;
+  size_t _eden_space_committed;
+  size_t _eden_space_used;
+  size_t _survivor_space_committed;
+  size_t _survivor_space_used;
+
+  size_t _old_gen_used;
 
   // It returns x - y if x > y, 0 otherwise.
   // As described in the comment above, some of the inputs to the
@@ -191,10 +190,10 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
 
   // Recalculate all the sizes.
   void recalculate_sizes();
-  // Recalculate only what's necessary when a new eden region is allocated.
+
   void recalculate_eden_size();
 
- public:
+public:
   G1MonitoringSupport(G1CollectedHeap* g1h);
   ~G1MonitoringSupport();
 
@@ -220,8 +219,7 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   // Recalculate all the sizes from scratch and update all the jstat
   // counters accordingly.
   void update_sizes();
-  // Recalculate only what's necessary when a new eden region is
-  // allocated and update any jstat counters that need to be updated.
+
   void update_eden_size();
 
   CollectorCounters* conc_collection_counters() {
@@ -233,21 +231,15 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   //   jstat counters
   //   Tracing
 
-  size_t overall_reserved()           { return _overall_reserved;     }
-  size_t overall_committed()          { return _overall_committed;    }
-  size_t overall_used()               { return _overall_used;         }
+  size_t young_gen_committed()        { return _young_gen_committed; }
 
-  size_t young_gen_committed()        { return _young_gen_committed;  }
-  size_t young_gen_max()              { return overall_reserved();    }
-  size_t eden_space_committed()       { return _eden_committed;       }
-  size_t eden_space_used()            { return _eden_used;            }
-  size_t survivor_space_committed()   { return _survivor_committed;   }
-  size_t survivor_space_used()        { return _survivor_used;        }
+  size_t eden_space_committed()       { return _eden_space_committed; }
+  size_t eden_space_used()            { return _eden_space_used; }
+  size_t survivor_space_committed()   { return _survivor_space_committed; }
+  size_t survivor_space_used()        { return _survivor_space_used; }
 
-  size_t old_gen_committed()          { return old_space_committed(); }
-  size_t old_gen_max()                { return overall_reserved();    }
-  size_t old_space_committed()        { return _old_committed;        }
-  size_t old_space_used()             { return _old_used;             }
+  size_t old_gen_committed()          { return _old_gen_committed; }
+  size_t old_gen_used()               { return _old_gen_used; }
 };
 
 // Scope object for java.lang.management support.
@@ -256,29 +248,6 @@ class G1MonitoringScope : public StackObj {
   TraceMemoryManagerStats _tms;
 public:
   G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected);
-};
-
-class G1GenerationCounters: public GenerationCounters {
-protected:
-  G1MonitoringSupport* _g1mm;
-
-public:
-  G1GenerationCounters(G1MonitoringSupport* g1mm,
-                       const char* name, int ordinal, int spaces,
-                       size_t min_capacity, size_t max_capacity,
-                       size_t curr_capacity);
-};
-
-class G1YoungGenerationCounters: public G1GenerationCounters {
-public:
-  G1YoungGenerationCounters(G1MonitoringSupport* g1mm, const char* name);
-  virtual void update_all();
-};
-
-class G1OldGenerationCounters: public G1GenerationCounters {
-public:
-  G1OldGenerationCounters(G1MonitoringSupport* g1mm, const char* name);
-  virtual void update_all();
 };
 
 #endif // SHARE_VM_GC_G1_G1MONITORINGSUPPORT_HPP

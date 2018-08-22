@@ -59,12 +59,12 @@
   nonstatic_field(G1CollectedHeap, _archive_set,        HeapRegionSetBase)    \
   nonstatic_field(G1CollectedHeap, _humongous_set,      HeapRegionSetBase)    \
                                                                               \
-  nonstatic_field(G1MonitoringSupport, _eden_committed,     size_t)           \
-  nonstatic_field(G1MonitoringSupport, _eden_used,          size_t)           \
-  nonstatic_field(G1MonitoringSupport, _survivor_committed, size_t)           \
-  nonstatic_field(G1MonitoringSupport, _survivor_used,      size_t)           \
-  nonstatic_field(G1MonitoringSupport, _old_committed,      size_t)           \
-  nonstatic_field(G1MonitoringSupport, _old_used,           size_t)           \
+  nonstatic_field(G1MonitoringSupport, _eden_space_committed,     size_t)     \
+  nonstatic_field(G1MonitoringSupport, _eden_space_used,          size_t)     \
+  nonstatic_field(G1MonitoringSupport, _survivor_space_committed, size_t)     \
+  nonstatic_field(G1MonitoringSupport, _survivor_space_used,      size_t)     \
+  nonstatic_field(G1MonitoringSupport, _old_gen_committed,        size_t)     \
+  nonstatic_field(G1MonitoringSupport, _old_gen_used,             size_t)     \
                                                                               \
   nonstatic_field(HeapRegionSetBase,   _length,         uint)                 \
                                                                               \
