@@ -1634,6 +1634,8 @@ public class XMLDocumentFragmentScannerImpl
                     }
                 } else {
                     //CData partially returned due to the size limit
+                    fInCData = true;
+                    fCDataEnd = false;
                     break;
                 }
                 //by this time we have also read surrogate contents if any...
@@ -2928,7 +2930,11 @@ public class XMLDocumentFragmentScannerImpl
                         fUsebuffer = true;
                         //CDATA section is read up to the chunk size limit
                         scanCDATASection(fContentBuffer , true);
-                        setScannerState(SCANNER_STATE_CONTENT);
+                        if (!fCDataEnd) {
+                            setScannerState(SCANNER_STATE_CDATA);
+                        } else {
+                            setScannerState(SCANNER_STATE_CONTENT);
+                        }
                         //1. if fIsCoalesce is set to true we set the variable fLastSectionWasCData to true
                         //and just call fDispatche.next(). Since we have set the scanner state to
                         //SCANNER_STATE_CONTENT (super state) parser will automatically recover and
@@ -2941,9 +2947,6 @@ public class XMLDocumentFragmentScannerImpl
                             //there might be more data to coalesce.
                             continue;
                         } else if(fReportCdataEvent) {
-                            if (!fCDataEnd) {
-                                setScannerState(SCANNER_STATE_CDATA);
-                            }
                             return XMLEvent.CDATA;
                         } else {
                             return XMLEvent.CHARACTERS;
