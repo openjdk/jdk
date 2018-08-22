@@ -104,14 +104,18 @@ Node* BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) con
   bool pinned = (decorators & C2_PINNED_LOAD) != 0;
 
   bool in_native = (decorators & IN_NATIVE) != 0;
-  assert(!in_native, "not supported yet");
 
   MemNode::MemOrd mo = access.mem_node_mo();
   LoadNode::ControlDependency dep = pinned ? LoadNode::Pinned : LoadNode::DependsOnlyOnTest;
   Node* control = control_dependent ? kit->control() : NULL;
 
-  Node* load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
-                              dep, requires_atomic_access, unaligned, mismatched);
+  Node* load;
+  if (in_native) {
+    load = kit->make_load(control, adr, val_type, access.type(), mo);
+  } else {
+    load = kit->make_load(control, adr, val_type, access.type(), adr_type, mo,
+                          dep, requires_atomic_access, unaligned, mismatched);
+  }
   access.set_raw_access(load);
 
   return load;

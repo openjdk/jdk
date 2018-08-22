@@ -1595,6 +1595,23 @@ Node* GraphKit::access_load_at(Node* obj,   // containing obj
   }
 }
 
+Node* GraphKit::access_load(Node* adr,   // actual adress to load val at
+                            const Type* val_type,
+                            BasicType bt,
+                            DecoratorSet decorators) {
+  if (stopped()) {
+    return top(); // Dead path ?
+  }
+
+  C2AccessValuePtr addr(adr, NULL);
+  C2Access access(this, decorators | C2_READ_ACCESS, bt, NULL, addr);
+  if (access.is_raw()) {
+    return _barrier_set->BarrierSetC2::load_at(access, val_type);
+  } else {
+    return _barrier_set->load_at(access, val_type);
+  }
+}
+
 Node* GraphKit::access_atomic_cmpxchg_val_at(Node* ctl,
                                              Node* obj,
                                              Node* adr,

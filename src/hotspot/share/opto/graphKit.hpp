@@ -582,11 +582,16 @@ class GraphKit : public Phase {
                         DecoratorSet decorators);
 
   Node* access_load_at(Node* obj,   // containing obj
-                       Node* adr,   // actual adress to store val at
+                       Node* adr,   // actual adress to load val at
                        const TypePtr* adr_type,
                        const Type* val_type,
                        BasicType bt,
                        DecoratorSet decorators);
+
+  Node* access_load(Node* adr,   // actual adress to load val at
+                    const Type* val_type,
+                    BasicType bt,
+                    DecoratorSet decorators);
 
   Node* access_atomic_cmpxchg_val_at(Node* ctl,
                                      Node* obj,
