@@ -230,7 +230,11 @@ public class ModuleInfoExtraTest {
             new String[] {
                 "   uses s;",
                 "   uses s;"
-            },                      ".*, line .*, multiple uses s.*"
+            },                      ".*, line .*, multiple uses s.*",
+            new String[] {
+                "   provides s with impl1;",
+                "   provides s with impl2, impl3;"
+            },                      ".*, line .*, multiple provides s.*"
     );
 
     void errorCases() {

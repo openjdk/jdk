@@ -431,14 +431,12 @@ public class GenModuleInfoSource {
                             }
                             uses.put(name, statement);
                             break;
-                        /*  Disable this check until jdk.internal.vm.compiler generated file is fixed.
                         case "provides":
                             if (provides.containsKey(name)) {
                                 throw parser.newError("multiple " + keyword + " " + name);
                             }
                             provides.put(name, statement);
                             break;
-                        */
                     }
                     String lookAhead = lookAhead(parser);
                     if (lookAhead.equals(statement.qualifier)) {
