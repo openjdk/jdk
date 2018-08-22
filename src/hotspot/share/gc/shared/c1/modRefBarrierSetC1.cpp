@@ -86,7 +86,7 @@ LIR_Opr ModRefBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRItem& 
 LIR_Opr ModRefBarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_register) {
   DecoratorSet decorators = access.decorators();
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
-  bool is_write = (decorators & C1_WRITE_ACCESS) != 0;
+  bool is_write = (decorators & ACCESS_WRITE) != 0;
   bool is_array = (decorators & IS_ARRAY) != 0;
   bool on_anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
   bool precise = is_array || on_anonymous;

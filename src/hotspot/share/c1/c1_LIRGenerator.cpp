@@ -1615,7 +1615,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
 void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
                                   LIRItem& base, LIR_Opr offset, LIR_Opr result,
                                   CodeEmitInfo* patch_info, CodeEmitInfo* load_emit_info) {
-  decorators |= C1_READ_ACCESS;
+  decorators |= ACCESS_READ;
   LIRAccess access(this, decorators, base, offset, type, patch_info, load_emit_info);
   if (access.is_raw()) {
     _barrier_set->BarrierSetC1::load_at(access, result);
@@ -1626,7 +1626,7 @@ void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
 
 void LIRGenerator::access_load(DecoratorSet decorators, BasicType type,
                                LIR_Opr addr, LIR_Opr result) {
-  decorators |= C1_READ_ACCESS;
+  decorators |= ACCESS_READ;
   LIRAccess access(this, decorators, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, type);
   access.set_resolved_addr(addr);
   if (access.is_raw()) {
@@ -1639,7 +1639,7 @@ void LIRGenerator::access_load(DecoratorSet decorators, BasicType type,
 void LIRGenerator::access_store_at(DecoratorSet decorators, BasicType type,
                                    LIRItem& base, LIR_Opr offset, LIR_Opr value,
                                    CodeEmitInfo* patch_info, CodeEmitInfo* store_emit_info) {
-  decorators |= C1_WRITE_ACCESS;
+  decorators |= ACCESS_WRITE;
   LIRAccess access(this, decorators, base, offset, type, patch_info, store_emit_info);
   if (access.is_raw()) {
     _barrier_set->BarrierSetC1::store_at(access, value);
@@ -1650,9 +1650,9 @@ void LIRGenerator::access_store_at(DecoratorSet decorators, BasicType type,
 
 LIR_Opr LIRGenerator::access_atomic_cmpxchg_at(DecoratorSet decorators, BasicType type,
                                                LIRItem& base, LIRItem& offset, LIRItem& cmp_value, LIRItem& new_value) {
+  decorators |= ACCESS_READ;
+  decorators |= ACCESS_WRITE;
   // Atomic operations are SEQ_CST by default
-  decorators |= C1_READ_ACCESS;
-  decorators |= C1_WRITE_ACCESS;
   decorators |= ((decorators & MO_DECORATOR_MASK) != 0) ? MO_SEQ_CST : 0;
   LIRAccess access(this, decorators, base, offset, type);
   if (access.is_raw()) {
@@ -1664,9 +1664,9 @@ LIR_Opr LIRGenerator::access_atomic_cmpxchg_at(DecoratorSet decorators, BasicTyp
 
 LIR_Opr LIRGenerator::access_atomic_xchg_at(DecoratorSet decorators, BasicType type,
                                             LIRItem& base, LIRItem& offset, LIRItem& value) {
+  decorators |= ACCESS_READ;
+  decorators |= ACCESS_WRITE;
   // Atomic operations are SEQ_CST by default
-  decorators |= C1_READ_ACCESS;
-  decorators |= C1_WRITE_ACCESS;
   decorators |= ((decorators & MO_DECORATOR_MASK) != 0) ? MO_SEQ_CST : 0;
   LIRAccess access(this, decorators, base, offset, type);
   if (access.is_raw()) {
@@ -1678,9 +1678,9 @@ LIR_Opr LIRGenerator::access_atomic_xchg_at(DecoratorSet decorators, BasicType t
 
 LIR_Opr LIRGenerator::access_atomic_add_at(DecoratorSet decorators, BasicType type,
                                            LIRItem& base, LIRItem& offset, LIRItem& value) {
+  decorators |= ACCESS_READ;
+  decorators |= ACCESS_WRITE;
   // Atomic operations are SEQ_CST by default
-  decorators |= C1_READ_ACCESS;
-  decorators |= C1_WRITE_ACCESS;
   decorators |= ((decorators & MO_DECORATOR_MASK) != 0) ? MO_SEQ_CST : 0;
   LIRAccess access(this, decorators, base, offset, type);
   if (access.is_raw()) {
