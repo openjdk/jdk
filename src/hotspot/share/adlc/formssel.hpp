@@ -191,7 +191,6 @@ public:
   // loads from memory, so must check for anti-dependence
   virtual bool        needs_anti_dependence_check(FormDict &globals) const;
   virtual int         memory_operand(FormDict &globals) const;
-          bool        is_wide_memory_kill(FormDict &globals) const;
 
   enum memory_operand_type {
     NO_MEMORY_OPERAND = -1,

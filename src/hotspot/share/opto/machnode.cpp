@@ -811,6 +811,13 @@ JVMState *MachHaltNode::jvms() const {
   return &jvms_for_throw;
 }
 
+uint MachMemBarNode::size_of() const { return sizeof(*this); }
+
+const TypePtr *MachMemBarNode::adr_type() const {
+  return _adr_type;
+}
+
+
 //=============================================================================
 #ifndef PRODUCT
 void labelOper::int_format(PhaseRegAlloc *ra, const MachNode *node, outputStream *st) const {

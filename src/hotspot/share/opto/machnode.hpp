@@ -1000,6 +1000,19 @@ public:
   virtual JVMState* jvms() const;
 };
 
+class MachMemBarNode : public MachNode {
+  virtual uint size_of() const; // Size is bigger
+public:
+  const TypePtr* _adr_type;     // memory effects
+  MachMemBarNode() : MachNode() {
+    init_class_id(Class_MachMemBar);
+    _adr_type = TypePtr::BOTTOM; // the default: all of memory
+  }
+
+  void set_adr_type(const TypePtr* atp) { _adr_type = atp; }
+  virtual const TypePtr *adr_type() const;
+};
+
 
 //------------------------------MachTempNode-----------------------------------
 // Node used by the adlc to construct inputs to represent temporary registers
