@@ -152,7 +152,7 @@ abstract class DSA extends SignatureSpi {
 
         // check key size against hash output size for signing
         // skip this check for verification to minimize impact on existing apps
-        if (md.getAlgorithm() != "NullDigest20") {
+        if (!"NullDigest20".equals(md.getAlgorithm())) {
             checkKey(params, md.getDigestLength()*8, md.getAlgorithm());
         }
 
