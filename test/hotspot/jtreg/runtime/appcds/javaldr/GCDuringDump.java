@@ -56,7 +56,8 @@ public class GCDuringDump {
         String appJar =
             ClassFileInstaller.writeJar("GCDuringDumpApp.jar", appClasses);
 
-        String gcLog = "-Xlog:gc*=info,gc+region=trace,gc+alloc+region=debug";
+        String gcLog = Boolean.getBoolean("test.cds.verbose.gc") ?
+            "-Xlog:gc*=info,gc+region=trace,gc+alloc+region=debug" : "-showversion";
 
         for (int i=0; i<2; i++) {
             // i = 0 -- run without agent = no extra GCs

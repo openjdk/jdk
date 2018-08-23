@@ -90,7 +90,6 @@ public class MainModuleOnly {
         // the class in the modular jar in the -cp won't be archived.
         OutputAnalyzer output = TestCommon.createArchive(
                                         destJar.toString(), appClasses,
-                                        "-Xlog:class+load=trace",
                                         "--module-path", moduleDir.toString(),
                                         "-m", TEST_MODULE1);
         TestCommon.checkDump(output);
@@ -169,8 +168,7 @@ public class MainModuleOnly {
         // run with the archive and the jar with modified timestamp.
         // It should fail due to timestamp of the jar doesn't match the one
         // used during dump time.
-        TestCommon.run("-Xlog:class+load=trace",
-                       "-cp", destJar.toString(),
+        TestCommon.run("-cp", destJar.toString(),
                        "--module-path", moduleDir.toString(),
                        "-m", TEST_MODULE1)
             .assertAbnormalExit(

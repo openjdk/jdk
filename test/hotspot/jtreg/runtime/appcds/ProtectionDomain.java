@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,16 +57,16 @@ public class ProtectionDomain {
     OutputAnalyzer output;
 
     // First class is loaded from CDS, second class is loaded from JAR
-    output = TestCommon.exec(appJar, "-verbose:class", "ProtDomain");
+    output = TestCommon.exec(appJar, "ProtDomain");
     TestCommon.checkExec(output, "Protection Domains match");
 
     // First class is loaded from JAR, second class is loaded from CDS
-    output = TestCommon.exec(appJar, "-verbose:class", "ProtDomainB");
+    output = TestCommon.exec(appJar, "ProtDomainB");
     TestCommon.checkExec(output, "Protection Domains match");
 
     // Test ProtectionDomain for application and extension module classes from the
     // "modules" jimage
-    output = TestCommon.exec(appJar, "-verbose:class", "JimageClassProtDomain");
+    output = TestCommon.exec(appJar, "JimageClassProtDomain");
     output.shouldNotContain("Failed: Protection Domains do not match");
   }
 }

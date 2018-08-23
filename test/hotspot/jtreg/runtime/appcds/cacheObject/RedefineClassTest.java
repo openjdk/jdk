@@ -34,7 +34,7 @@
  *        RedefineClassApp
  *        InstrumentationClassFileTransformer
  *        InstrumentationRegisterClassFileTransformer
- * @run main/othervm RedefineClassTest
+ * @run main RedefineClassTest
  */
 
 import com.sun.tools.attach.VirtualMachine;
@@ -89,7 +89,7 @@ public class RedefineClassTest {
                 bootCP,
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
-                "-Xlog:gc+region=trace,cds=info",
+                "-Xlog:cds=info",
                 agentCmdArg,
                "RedefineClassApp", bootJar, appJar);
         out.reportDiagnosticSummary();
