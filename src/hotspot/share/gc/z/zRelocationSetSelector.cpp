@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,34 +63,34 @@ void ZRelocationSetSelectorGroup::semi_sort() {
   const size_t partition_size_shift = exact_log2(partition_size);
   const size_t npages = _registered_pages.size();
 
-  size_t partition_slots[npartitions];
-  size_t partition_finger[npartitions];
+  // Partition slots/fingers
+  size_t partitions[npartitions];
 
   // Allocate destination array
   _sorted_pages = REALLOC_C_HEAP_ARRAY(const ZPage*, _sorted_pages, npages, mtGC);
   debug_only(memset(_sorted_pages, 0, npages * sizeof(ZPage*)));
 
   // Calculate partition slots
-  memset(partition_slots, 0, sizeof(partition_slots));
+  memset(partitions, 0, sizeof(partitions));
   ZArrayIterator<const ZPage*> iter1(&_registered_pages);
   for (const ZPage* page; iter1.next(&page);) {
     const size_t index = page->live_bytes() >> partition_size_shift;
-    partition_slots[index]++;
+    partitions[index]++;
   }
 
-  // Calculate accumulated partition slots and fingers
-  size_t prev_partition_slots = 0;
+  // Calculate partition fingers
+  size_t finger = 0;
   for (size_t i = 0; i < npartitions; i++) {
-    partition_slots[i] += prev_partition_slots;
-    partition_finger[i] = prev_partition_slots;
-    prev_partition_slots = partition_slots[i];
+    const size_t slots = partitions[i];
+    partitions[i] = finger;
+    finger += slots;
   }
 
   // Sort pages into partitions
   ZArrayIterator<const ZPage*> iter2(&_registered_pages);
   for (const ZPage* page; iter2.next(&page);) {
     const size_t index = page->live_bytes() >> partition_size_shift;
-    const size_t finger = partition_finger[index]++;
+    const size_t finger = partitions[index]++;
     assert(_sorted_pages[finger] == NULL, "Invalid finger");
     _sorted_pages[finger] = page;
   }
