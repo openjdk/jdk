@@ -71,5 +71,7 @@ void GlobalCounter::write_synchronize() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
     ctc.do_thread(thread);
   }
-  ctc.do_thread(VMThread::vm_thread());
+  for (NamedThread::Iterator nti; !nti.end(); nti.step()) {
+    ctc.do_thread(nti.current());
+  }
 }

@@ -114,6 +114,7 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
+#include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
@@ -1206,15 +1207,61 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                           THREAD);
 }
 
+// List of all NamedThreads and safe iteration over that list.
+
+class NamedThread::List {
+public:
+  NamedThread* volatile _head;
+  SingleWriterSynchronizer _protect;
+
+  List() : _head(NULL), _protect() {}
+};
+
+NamedThread::List NamedThread::_the_list;
+
+NamedThread::Iterator::Iterator() :
+  _protect_enter(_the_list._protect.enter()),
+  _current(OrderAccess::load_acquire(&_the_list._head))
+{}
+
+NamedThread::Iterator::~Iterator() {
+  _the_list._protect.exit(_protect_enter);
+}
+
+void NamedThread::Iterator::step() {
+  assert(!end(), "precondition");
+  _current = OrderAccess::load_acquire(&_current->_next_named_thread);
+}
+
 // NamedThread --  non-JavaThread subclasses with multiple
 // uniquely named instances should derive from this.
-NamedThread::NamedThread() : Thread() {
-  _name = NULL;
-  _processed_thread = NULL;
-  _gc_id = GCId::undefined();
+NamedThread::NamedThread() :
+  Thread(),
+  _name(NULL),
+  _processed_thread(NULL),
+  _gc_id(GCId::undefined()),
+  _next_named_thread(NULL)
+{
+  // Add this thread to _the_list.
+  MutexLockerEx lock(NamedThreadsList_lock, Mutex::_no_safepoint_check_flag);
+  _next_named_thread = _the_list._head;
+  OrderAccess::release_store(&_the_list._head, this);
 }
 
 NamedThread::~NamedThread() {
+  // Remove this thread from _the_list.
+  {
+    MutexLockerEx lock(NamedThreadsList_lock, Mutex::_no_safepoint_check_flag);
+    NamedThread* volatile* p = &_the_list._head;
+    for (NamedThread* t = *p; t != NULL; p = &t->_next_named_thread, t = *p) {
+      if (t == this) {
+        *p = this->_next_named_thread;
+        // Wait for any in-progress iterators.
+        _the_list._protect.synchronize();
+        break;
+      }
+    }
+  }
   if (_name != NULL) {
     FREE_C_HEAP_ARRAY(char, _name);
     _name = NULL;
