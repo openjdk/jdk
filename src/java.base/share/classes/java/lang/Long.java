@@ -1782,16 +1782,9 @@ public final class Long extends Number implements Comparable<Long> {
      */
     @HotSpotIntrinsicCandidate
     public static int numberOfTrailingZeros(long i) {
-        // HD, Figure 5-14
-        int x, y;
-        if (i == 0) return 64;
-        int n = 63;
-        y = (int)i; if (y != 0) { n = n -32; x = y; } else x = (int)(i>>>32);
-        y = x <<16; if (y != 0) { n = n -16; x = y; }
-        y = x << 8; if (y != 0) { n = n - 8; x = y; }
-        y = x << 4; if (y != 0) { n = n - 4; x = y; }
-        y = x << 2; if (y != 0) { n = n - 2; x = y; }
-        return n - ((x << 1) >>> 31);
+        int x = (int)i;
+        return x == 0 ? 32 + Integer.numberOfTrailingZeros((int)(i >>> 32))
+                : Integer.numberOfTrailingZeros(x);
     }
 
     /**
