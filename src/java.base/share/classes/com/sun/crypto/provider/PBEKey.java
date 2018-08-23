@@ -73,7 +73,7 @@ final class PBEKey implements SecretKey {
         this.key = new byte[passwd.length];
         for (int i=0; i<passwd.length; i++)
             this.key[i] = (byte) (passwd[i] & 0x7f);
-        Arrays.fill(passwd, ' ');
+        Arrays.fill(passwd, '\0');
         type = keytype;
 
         // Use the cleaner to zero the key when no longer referenced

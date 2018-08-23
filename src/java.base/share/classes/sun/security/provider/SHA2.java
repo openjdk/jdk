@@ -25,6 +25,7 @@
 
 package sun.security.provider;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
@@ -83,13 +84,18 @@ abstract class SHA2 extends DigestBase {
         this.initialHashes = initialHashes;
         state = new int[8];
         W = new int[64];
-        implReset();
+        resetHashes();
     }
 
     /**
      * Resets the buffers and hash value to start a new hash.
      */
     void implReset() {
+        resetHashes();
+        Arrays.fill(W, 0);
+    }
+
+    private void resetHashes() {
         System.arraycopy(initialHashes, 0, state, 0, state.length);
     }
 

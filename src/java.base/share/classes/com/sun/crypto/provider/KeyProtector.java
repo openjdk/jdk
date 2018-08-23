@@ -310,14 +310,14 @@ final class KeyProtector {
         Cipher cipher;
         try {
             sKey = new PBEKey(pbeKeySpec, "PBEWithMD5AndTripleDES", false);
-        pbeKeySpec.clearPassword();
+            pbeKeySpec.clearPassword();
 
-        // seal key
-        PBEWithMD5AndTripleDESCipher cipherSpi;
-        cipherSpi = new PBEWithMD5AndTripleDESCipher();
-        cipher = new CipherForKeyProtector(cipherSpi, SunJCE.getInstance(),
-                                           "PBEWithMD5AndTripleDES");
-        cipher.init(Cipher.ENCRYPT_MODE, sKey, pbeSpec);
+            // seal key
+            PBEWithMD5AndTripleDESCipher cipherSpi;
+            cipherSpi = new PBEWithMD5AndTripleDESCipher();
+            cipher = new CipherForKeyProtector(cipherSpi, SunJCE.getInstance(),
+                                               "PBEWithMD5AndTripleDES");
+            cipher.init(Cipher.ENCRYPT_MODE, sKey, pbeSpec);
         } finally {
             if (sKey != null) sKey.destroy();
         }
