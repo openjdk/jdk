@@ -216,7 +216,7 @@ Java_nsk_jvmti_ThreadStart_threadstart003_check(JNIEnv *env,
                TranslateError(err), err);
         result = STATUS_FAILED;
     }
-    err = (*jvmti)->RawMonitorWait(jvmti, wait_lock, (jlong)WAIT_TIME);
+    err = (*jvmti)->RawMonitorWait(jvmti, wait_lock, 0);
     if (err != JVMTI_ERROR_NONE) {
         printf("(RawMonitorWait) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -235,7 +235,16 @@ Java_nsk_jvmti_ThreadStart_threadstart003_check(JNIEnv *env,
                TranslateError(err), err);
         result = STATUS_FAILED;
     }
-    err = (*jvmti)->RawMonitorWait(jvmti, wait_lock, (jlong)WAIT_TIME);
+    // Wait for up to 3 seconds for the thread end event
+    {
+        int i;
+        for (i = 0; i < 3 ; i++) {
+            err = (*jvmti)->RawMonitorWait(jvmti, wait_lock, (jlong)WAIT_TIME);
+            if (endsCount == endsExpected || err != JVMTI_ERROR_NONE) {
+                break;
+            }
+        }
+    }
     if (err != JVMTI_ERROR_NONE) {
         printf("(RawMonitorWait) unexpected error: %s (%d)\n",
                TranslateError(err), err);
