@@ -4386,7 +4386,8 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     if (!stopped()) {
       PreserveJVMState pjvms(this);
       CallJavaNode* slow_call = generate_method_call(vmIntrinsics::_clone, is_virtual);
-      Node* slow_result = set_results_for_java_call(slow_call);
+      // We need to deoptimize on exception (see comment above)
+      Node* slow_result = set_results_for_java_call(slow_call, false, /* deoptimize */ true);
       // this->control() comes from set_results_for_java_call
       result_reg->init_req(_slow_path, control());
       result_val->init_req(_slow_path, slow_result);

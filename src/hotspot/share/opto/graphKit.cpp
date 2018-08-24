@@ -1772,7 +1772,7 @@ void GraphKit::set_edges_for_java_call(CallJavaNode* call, bool must_throw, bool
   //return xcall;   // no need, caller already has it
 }
 
-Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_proj) {
+Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_proj, bool deoptimize) {
   if (stopped())  return top();  // maybe the call folded up?
 
   // Capture the return value, if any.
@@ -1785,7 +1785,7 @@ Node* GraphKit::set_results_for_java_call(CallJavaNode* call, bool separate_io_p
   // Note:  Since any out-of-line call can produce an exception,
   // we always insert an I_O projection from the call into the result.
 
-  make_slow_call_ex(call, env()->Throwable_klass(), separate_io_proj);
+  make_slow_call_ex(call, env()->Throwable_klass(), separate_io_proj, deoptimize);
 
   if (separate_io_proj) {
     // The caller requested separate projections be used by the fall
@@ -2571,7 +2571,7 @@ void GraphKit::make_slow_call_ex(Node* call, ciInstanceKlass* ex_klass, bool sep
                       Deoptimization::Action_none);
       } else {
         // Create an exception state also.
-        // Use an exact type if the caller has specified a specific exception.
+        // Use an exact type if the caller has a specific exception.
         const Type* ex_type = TypeOopPtr::make_from_klass_unique(ex_klass)->cast_to_ptr_type(TypePtr::NotNull);
         Node*       ex_oop  = new CreateExNode(ex_type, control(), i_o);
         add_exception_state(make_exception_state(_gvn.transform(ex_oop)));

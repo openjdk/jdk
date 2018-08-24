@@ -693,7 +693,7 @@ class GraphKit : public Phase {
   // Finish up a java call that was started by set_edges_for_java_call.
   // Call add_exception on any throw arising from the call.
   // Return the call result (transformed).
-  Node* set_results_for_java_call(CallJavaNode* call, bool separate_io_proj = false);
+  Node* set_results_for_java_call(CallJavaNode* call, bool separate_io_proj = false, bool deoptimize = false);
 
   // Similar to set_edges_for_java_call, but simplified for runtime calls.
   void  set_predefined_output_for_runtime_call(Node* call) {
