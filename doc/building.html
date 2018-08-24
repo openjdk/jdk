@@ -72,6 +72,7 @@
 <li><a href="#specifying-the-target-platform">Specifying the Target Platform</a></li>
 <li><a href="#toolchain-considerations">Toolchain Considerations</a></li>
 <li><a href="#native-libraries">Native Libraries</a></li>
+<li><a href="#creating-and-using-sysroots-with-qemu-deboostrap">Creating And Using Sysroots With qemu-deboostrap</a></li>
 <li><a href="#building-for-armaarch64">Building for ARM/aarch64</a></li>
 <li><a href="#verifying-the-build">Verifying the Build</a></li>
 </ul></li>
@@ -634,6 +635,72 @@ cp: cannot stat `arm-linux-gnueabihf/libSM.so&#39;: No such file or directory
 cp: cannot stat `arm-linux-gnueabihf/libXt.so&#39;: No such file or directory</code></pre></li>
 <li><p>If the X11 libraries are not properly detected by <code>configure</code>, you can point them out by <code>--with-x</code>.</p></li>
 </ul>
+<h3 id="creating-and-using-sysroots-with-qemu-deboostrap">Creating And Using Sysroots With qemu-deboostrap</h3>
+<p>Fortunately, you can create sysroots for foreign architectures with tools provided by your OS. On Debian/Ubuntu systems, one could use <code>qemu-deboostrap</code> to create the <em>target</em> system chroot, which would have the native libraries and headers specific to that <em>target</em> system. After that, we can use the cross-compiler on the <em>build</em> system, pointing into chroot to get the build dependencies right. This allows building for foreign architectures with native compilation speed.</p>
+<p>For example, cross-compiling to AArch64 from x86_64 could be done like this:</p>
+<ul>
+<li><p>Install cross-compiler on the <em>build</em> system:</p>
+<pre><code>apt install g++-aarch64-linux-gnu gcc-aarch64-linux-gnu</code></pre></li>
+<li><p>Create chroot on the <em>build</em> system, configuring it for <em>target</em> system:</p>
+<pre><code>sudo qemu-debootstrap --arch=arm64 --verbose \
+   --include=fakeroot,build-essential,libx11-dev,libxext-dev,libxrender-dev,libxtst-dev,libxt-dev,libcups2-dev,libfontconfig1-dev,libasound2-dev,libfreetype6-dev,libpng12-dev \
+   --resolve-deps jessie /chroots/arm64 http://httpredir.debian.org/debian/</code></pre></li>
+<li><p>Configure and build with newly created chroot as sysroot/toolchain-path:</p>
+<pre><code>CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ sh ./configure --openjdk-target=aarch64-linux-gnu --with-sysroot=/chroots/arm64/ --with-toolchain-path=/chroots/arm64/
+make images
+ls build/linux-aarch64-normal-server-release/</code></pre></li>
+</ul>
+<p>The build does not create new files in that chroot, so it can be reused for multiple builds without additional cleanup.</p>
+<p>Architectures that are known to successfully cross-compile like this are:</p>
+<table>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Target</th>
+<th style="text-align: left;"><code>CC</code></th>
+<th style="text-align: left;"><code>CXX</code></th>
+<th><code>--arch=...</code></th>
+<th><code>--openjdk-target=...</code></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">x86</td>
+<td style="text-align: left;">default</td>
+<td style="text-align: left;">default</td>
+<td>i386</td>
+<td>i386-linux-gnu</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">armhf</td>
+<td style="text-align: left;">gcc-arm-linux-gnueabihf</td>
+<td style="text-align: left;">g++-arm-linux-gnueabihf</td>
+<td>armhf</td>
+<td>arm-linux-gnueabihf</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">aarch64</td>
+<td style="text-align: left;">gcc-aarch64-linux-gnu</td>
+<td style="text-align: left;">g++-aarch64-linux-gnu</td>
+<td>arm64</td>
+<td>aarch64-linux-gnu</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">ppc64el</td>
+<td style="text-align: left;">gcc-powerpc64le-linux-gnu</td>
+<td style="text-align: left;">g++-powerpc64le-linux-gnu</td>
+<td>ppc64el</td>
+<td>powerpc64le-linux-gnu</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">s390x</td>
+<td style="text-align: left;">gcc-s390x-linux-gnu</td>
+<td style="text-align: left;">g++-s390x-linux-gnu</td>
+<td>s390x</td>
+<td>s390x-linux-gnu</td>
+</tr>
+</tbody>
+</table>
+<p>Additional architectures might be supported by Debian/Ubuntu Ports.</p>
 <h3 id="building-for-armaarch64">Building for ARM/aarch64</h3>
 <p>A common cross-compilation target is the ARM CPU. When building for ARM, it is useful to set the ABI profile. A number of pre-defined ABI profiles are available using <code>--with-abi-profile</code>: arm-vfp-sflt, arm-vfp-hflt, arm-sflt, armv5-vfp-sflt, armv6-vfp-hflt. Note that soft-float ABIs are no longer properly supported by the JDK.</p>
 <p>The JDK contains two different ports for the aarch64 platform, one is the original aarch64 port from the <a href="http://openjdk.java.net/projects/aarch64-port">AArch64 Port Project</a> and one is a 64-bit version of the Oracle contributed ARM port. When targeting aarch64, by the default the original aarch64 port is used. To select the Oracle ARM 64 port, use <code>--with-cpu-port=arm64</code>. Also set the corresponding value (<code>aarch64</code> or <code>arm64</code>) to --with-abi-profile, to ensure a consistent build.</p>
