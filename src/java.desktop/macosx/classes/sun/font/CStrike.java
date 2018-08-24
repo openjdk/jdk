@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -505,12 +505,6 @@ public final class CStrike extends PhysicalStrike {
         private final float[] firstLayerCache = new float[FIRST_LAYER_SIZE];
         private SparseBitShiftingTwoLayerArray secondLayerCache;
         private HashMap<Integer, Float> generalCache;
-
-        // Empty non private constructor was added because access to this
-        // class shouldn't be emulated by a synthetic accessor method.
-        GlyphAdvanceCache() {
-            super();
-        }
 
         public synchronized float get(final int index) {
             if (index < 0) {

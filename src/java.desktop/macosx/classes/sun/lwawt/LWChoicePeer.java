@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,12 +134,6 @@ final class LWChoicePeer extends LWComponentPeer<Choice, JComboBox<String>>
 
     @SuppressWarnings("serial")// Safe: outer class is non-serializable.
     private final class JComboBoxDelegate extends JComboBox<String> {
-
-        // Empty non private constructor was added because access to this
-        // class shouldn't be emulated by a synthetic accessor method.
-        JComboBoxDelegate() {
-            super();
-        }
 
         @Override
         public boolean hasFocus() {
