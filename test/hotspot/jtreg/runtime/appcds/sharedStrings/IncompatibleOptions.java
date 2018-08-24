@@ -29,15 +29,11 @@
  * @requires vm.cds.archived.java.heap
  * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
- * @modules java.base/jdk.internal.misc
- * @modules java.management
- *          jdk.jartool/sun.tools.jar
+ * @modules jdk.jartool/sun.tools.jar
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @build HelloString
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions
- * @run main/othervm -XX:+UseStringDeduplication -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions
- * @run main/othervm -XX:-CompactStrings -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. IncompatibleOptions
  */
 
 import jdk.test.lib.Asserts;
@@ -59,8 +55,10 @@ public class IncompatibleOptions {
         "The shared archive file's CompactStrings setting .* does not equal the current CompactStrings setting";
 
     static String appJar;
+    static String[] globalVmOptions;
 
     public static void main(String[] args) throws Exception {
+        globalVmOptions = args; // specified by "@run main" in IncompatibleOptions_*.java
         appJar = JarBuilder.build("IncompatibleOptions", "HelloString");
 
         // Uncompressed OOPs
@@ -116,14 +114,16 @@ public class IncompatibleOptions {
 
         System.out.println("Testcase: " + testCaseNr);
         OutputAnalyzer output = TestCommon.dump(appJar, TestCommon.list("Hello"),
-            "-XX:+UseCompressedOops",
-            collectorOption,
-            "-XX:SharedArchiveConfigFile=" + TestCommon.getSourceFile("SharedStringsBasic.txt"),
-            "-Xlog:cds,cds+hashtables",
-            extraOption);
+            TestCommon.concat(globalVmOptions,
+                "-XX:+UseCompressedOops",
+                collectorOption,
+                "-XX:SharedArchiveConfigFile=" + TestCommon.getSourceFile("SharedStringsBasic.txt"),
+                "-Xlog:cds,cds+hashtables",
+                extraOption));
 
-        if (expectedWarning != null)
+        if (expectedWarning != null) {
             output.shouldContain(expectedWarning);
+        }
 
         if (expectedToFail) {
             Asserts.assertNE(output.getExitValue(), 0,
@@ -140,19 +140,25 @@ public class IncompatibleOptions {
         // needed, otherwise system considers empty extra option as a
         // main class param, and fails with "Could not find or load main class"
         if (!extraOption.isEmpty()) {
-            output = TestCommon.exec(appJar, "-XX:+UseCompressedOops",
-                collectorOption, "-Xlog:cds", extraOption, "HelloString");
+            output = TestCommon.exec(appJar,
+                TestCommon.concat(globalVmOptions,
+                    "-XX:+UseCompressedOops",
+                    collectorOption, "-Xlog:cds", extraOption, "HelloString"));
         } else {
-            output = TestCommon.exec(appJar, "-XX:+UseCompressedOops",
-                collectorOption, "-Xlog:cds", "HelloString");
+            output = TestCommon.exec(appJar,
+                TestCommon.concat(globalVmOptions,
+                    "-XX:+UseCompressedOops",
+                    collectorOption, "-Xlog:cds", "HelloString"));
         }
 
-        if (expectedWarning != null)
+        if (expectedWarning != null) {
             output.shouldMatch(expectedWarning);
+        }
 
-        if (expectedToFail)
+        if (expectedToFail) {
             Asserts.assertNE(output.getExitValue(), 0);
-        else
+        } else {
             SharedStringsUtils.checkExec(output);
+        }
     }
 }
