@@ -134,7 +134,7 @@ SymbolTable::SymbolTable() :
 
 void SymbolTable::delete_symbol(Symbol* sym) {
   if (sym->refcount() == PERM_REFCOUNT) {
-    MutexLocker ml(SymbolTable_lock); // Protect arena
+    MutexLockerEx ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
     // Deleting permanent symbol should not occur very often (insert race condition),
     // so log it.
     log_trace_symboltable_helper(sym, "Freeing permanent symbol");
@@ -197,7 +197,7 @@ Symbol* SymbolTable::allocate_symbol(const char* name, int len, bool c_heap, TRA
     assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
   } else {
     // Allocate to global arena
-    MutexLocker ml(SymbolTable_lock); // Protect arena
+    MutexLockerEx ml(SymbolArena_lock, Mutex::_no_safepoint_check_flag); // Protect arena
     sym = new (len, arena(), THREAD) Symbol((const u1*)name, len, PERM_REFCOUNT);
   }
   return sym;
