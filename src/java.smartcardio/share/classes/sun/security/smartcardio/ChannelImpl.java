@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,7 +188,7 @@ final class ChannelImpl extends CardChannel {
                 byte[] response = SCardTransmit
                     (card.cardId, card.protocol, command, 0, n);
                 int rn = response.length;
-                if (getresponse && (rn >= 2)) {
+                if (getresponse && (rn >= 2) && (n >= 1)) {
                     // see ISO 7816/2005, 5.1.3
                     if ((rn == 2) && (response[0] == 0x6c)) {
                         // Resend command using SW2 as short Le field
@@ -201,6 +201,11 @@ final class ChannelImpl extends CardChannel {
                         if (rn > 2) {
                             result = concat(result, response, rn - 2);
                         }
+                        if (command.length < 5) {
+                            byte cla = command[0];
+                            command = new byte[5];
+                            command[0] = cla;
+                        }
                         command[1] = (byte)0xC0;
                         command[2] = 0;
                         command[3] = 0;
@@ -208,7 +213,6 @@ final class ChannelImpl extends CardChannel {
                         n = 5;
                         continue;
                     }
-
                 }
                 result = concat(result, response, rn);
                 break;
