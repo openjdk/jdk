@@ -235,7 +235,7 @@ void mutex_init() {
   def(InlineCacheBuffer_lock       , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);
   def(VMStatistic_lock             , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always);
   def(ExpandHeap_lock              , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);     // Used during compilation by VM thread
-  def(JNIHandleBlockFreeList_lock  , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);      // handles are used by VM thread
+  def(JNIHandleBlockFreeList_lock  , PaddedMutex  , leaf-1,      true,  Monitor::_safepoint_check_never);      // handles are used by VM thread
   def(SignatureHandlerLibrary_lock , PaddedMutex  , leaf,        false, Monitor::_safepoint_check_always);
   def(SymbolArena_lock             , PaddedMutex  , leaf+2,      true,  Monitor::_safepoint_check_never);
   def(StringTable_lock             , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_always);

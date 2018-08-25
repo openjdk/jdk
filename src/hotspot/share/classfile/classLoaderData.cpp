@@ -1254,15 +1254,6 @@ void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*, TRAPS), 
   }
 }
 
-// Walks all entries in the dictionary including entries initiated by this class loader.
-void ClassLoaderDataGraph::dictionary_all_entries_do(void f(InstanceKlass*, ClassLoaderData*)) {
-  Thread* thread = Thread::current();
-  FOR_ALL_DICTIONARY(cld) {
-    Handle holder(thread, cld->holder_phantom());
-    cld->dictionary()->all_entries_do(f);
-  }
-}
-
 void ClassLoaderDataGraph::verify_dictionary() {
   FOR_ALL_DICTIONARY(cld) {
     cld->dictionary()->verify();

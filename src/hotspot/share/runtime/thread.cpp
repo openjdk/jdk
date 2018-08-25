@@ -1567,7 +1567,6 @@ void JavaThread::initialize() {
   _is_method_handle_return = 0;
   _jvmti_thread_state= NULL;
   _should_post_on_exceptions_flag = JNI_FALSE;
-  _jvmti_get_loaded_classes_closure = NULL;
   _interp_only_mode    = 0;
   _special_runtime_exit_condition = _no_async_condition;
   _pending_async_exception = NULL;

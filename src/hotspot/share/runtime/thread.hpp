@@ -63,7 +63,6 @@ class ThreadsList;
 class ThreadsSMRSupport;
 
 class JvmtiThreadState;
-class JvmtiGetLoadedClassesClosure;
 class ThreadStatistics;
 class ConcurrentLocksDump;
 class ParkEvent;
@@ -1885,8 +1884,6 @@ class JavaThread: public Thread {
   // the specified JavaThread is exiting.
   JvmtiThreadState *jvmti_thread_state() const                                   { return _jvmti_thread_state; }
   static ByteSize jvmti_thread_state_offset()                                    { return byte_offset_of(JavaThread, _jvmti_thread_state); }
-  void set_jvmti_get_loaded_classes_closure(JvmtiGetLoadedClassesClosure* value) { _jvmti_get_loaded_classes_closure = value; }
-  JvmtiGetLoadedClassesClosure* get_jvmti_get_loaded_classes_closure() const     { return _jvmti_get_loaded_classes_closure; }
 
   // JVMTI PopFrame support
   // Setting and clearing popframe_condition
@@ -1938,7 +1935,6 @@ class JavaThread: public Thread {
 
  private:
   JvmtiThreadState *_jvmti_thread_state;
-  JvmtiGetLoadedClassesClosure* _jvmti_get_loaded_classes_closure;
 
   // Used by the interpreter in fullspeed mode for frame pop, method
   // entry, method exit and single stepping support. This field is
