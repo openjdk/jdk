@@ -62,7 +62,8 @@ public class GCSharedStringsDuringDump {
         String appJar =
             ClassFileInstaller.writeJar("GCSharedStringsDuringDumpApp.jar", appClasses);
 
-        String gcLog = "-Xlog:gc*=info,gc+region=trace,gc+alloc+region=debug";
+        String gcLog = Boolean.getBoolean("test.cds.verbose.gc") ?
+            "-Xlog:gc*=info,gc+region=trace,gc+alloc+region=debug" : "-showversion";
 
         String sharedArchiveCfgFile =
             System.getProperty("user.dir") + File.separator + "GCSharedStringDuringDump_gen.txt";

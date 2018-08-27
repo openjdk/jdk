@@ -191,7 +191,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         }
         try {
             return holder.mirror().getDeclaredField(getName());
-        } catch (NoSuchFieldException | NoClassDefFoundError e) {
+        } catch (NoSuchFieldException e) {
             return null;
         }
     }

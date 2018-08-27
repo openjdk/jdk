@@ -703,13 +703,12 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
           // a given bytecode or the state after, so we try both
           if (!Bytecodes::is_invoke(cur_code) && cur_code != Bytecodes::_athrow) {
             // Get expression stack size for the next bytecode
+            InterpreterOopMap next_mask;
+            OopMapCache::compute_one_oop_map(mh, str.bci(), &next_mask);
+            next_mask_expression_stack_size = next_mask.expression_stack_size();
             if (Bytecodes::is_invoke(next_code)) {
               Bytecode_invoke invoke(mh, str.bci());
-              next_mask_expression_stack_size = invoke.size_of_parameters();
-            } else {
-              InterpreterOopMap next_mask;
-              OopMapCache::compute_one_oop_map(mh, str.bci(), &next_mask);
-              next_mask_expression_stack_size = next_mask.expression_stack_size();
+              next_mask_expression_stack_size += invoke.size_of_parameters();
             }
             // Need to subtract off the size of the result type of
             // the bytecode because this is not described in the
@@ -739,28 +738,30 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
             (is_top_frame && (exec_mode == Unpack_uncommon_trap || exec_mode == Unpack_reexecute || el->should_reexecute()) &&
              (iframe->interpreter_frame_expression_stack_size() == mask.expression_stack_size() + cur_invoke_parameter_size))
             )) {
-        ttyLocker ttyl;
+        {
+          ttyLocker ttyl;
 
-        // Print out some information that will help us debug the problem
-        tty->print_cr("Wrong number of expression stack elements during deoptimization");
-        tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", i, cur_array->frames() - 1);
-        tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
-                      iframe->interpreter_frame_expression_stack_size());
-        tty->print_cr("  Interpreter oop map had %d expression stack elements", mask.expression_stack_size());
-        tty->print_cr("  try_next_mask = %d", try_next_mask);
-        tty->print_cr("  next_mask_expression_stack_size = %d", next_mask_expression_stack_size);
-        tty->print_cr("  callee_size_of_parameters = %d", callee_size_of_parameters);
-        tty->print_cr("  callee_max_locals = %d", callee_max_locals);
-        tty->print_cr("  top_frame_expression_stack_adjustment = %d", top_frame_expression_stack_adjustment);
-        tty->print_cr("  exec_mode = %d", exec_mode);
-        tty->print_cr("  cur_invoke_parameter_size = %d", cur_invoke_parameter_size);
-        tty->print_cr("  Thread = " INTPTR_FORMAT ", thread ID = %d", p2i(thread), thread->osthread()->thread_id());
-        tty->print_cr("  Interpreted frames:");
-        for (int k = 0; k < cur_array->frames(); k++) {
-          vframeArrayElement* el = cur_array->element(k);
-          tty->print_cr("    %s (bci %d)", el->method()->name_and_sig_as_C_string(), el->bci());
-        }
-        cur_array->print_on_2(tty);
+          // Print out some information that will help us debug the problem
+          tty->print_cr("Wrong number of expression stack elements during deoptimization");
+          tty->print_cr("  Error occurred while verifying frame %d (0..%d, 0 is topmost)", i, cur_array->frames() - 1);
+          tty->print_cr("  Fabricated interpreter frame had %d expression stack elements",
+                        iframe->interpreter_frame_expression_stack_size());
+          tty->print_cr("  Interpreter oop map had %d expression stack elements", mask.expression_stack_size());
+          tty->print_cr("  try_next_mask = %d", try_next_mask);
+          tty->print_cr("  next_mask_expression_stack_size = %d", next_mask_expression_stack_size);
+          tty->print_cr("  callee_size_of_parameters = %d", callee_size_of_parameters);
+          tty->print_cr("  callee_max_locals = %d", callee_max_locals);
+          tty->print_cr("  top_frame_expression_stack_adjustment = %d", top_frame_expression_stack_adjustment);
+          tty->print_cr("  exec_mode = %d", exec_mode);
+          tty->print_cr("  cur_invoke_parameter_size = %d", cur_invoke_parameter_size);
+          tty->print_cr("  Thread = " INTPTR_FORMAT ", thread ID = %d", p2i(thread), thread->osthread()->thread_id());
+          tty->print_cr("  Interpreted frames:");
+          for (int k = 0; k < cur_array->frames(); k++) {
+            vframeArrayElement* el = cur_array->element(k);
+            tty->print_cr("    %s (bci %d)", el->method()->name_and_sig_as_C_string(), el->bci());
+          }
+          cur_array->print_on_2(tty);
+        } // release tty lock before calling guarantee
         guarantee(false, "wrong number of expression stack elements during deopt");
       }
       VerifyOopClosure verify;

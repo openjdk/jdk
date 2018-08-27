@@ -433,10 +433,10 @@ JNIEXPORT void JNICALL
 Java_java_lang_ProcessImpl_waitForTimeoutInterruptibly(JNIEnv *env,
                                                        jclass ignored,
                                                        jlong handle,
-                                                       jlong timeout)
+                                                       jlong timeoutMillis)
 {
     HANDLE events[2];
-    DWORD dwTimeout = (DWORD)timeout;
+    DWORD dwTimeout = (DWORD)timeoutMillis;
     DWORD result;
     events[0] = (HANDLE) handle;
     events[1] = JVM_GetThreadInterruptEvent();

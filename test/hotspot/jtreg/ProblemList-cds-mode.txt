@@ -27,5 +27,3 @@
 #
 #############################################################################
 
-serviceability/sa/TestInstanceKlassSize.java                    8204308   generic-all
-serviceability/sa/TestInstanceKlassSizeForInterface.java        8204308   generic-all

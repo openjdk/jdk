@@ -25,6 +25,7 @@
 
 package sun.security.provider;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import static sun.security.provider.ByteArrayAccess.*;
@@ -62,7 +63,7 @@ public final class SHA extends DigestBase {
         super("SHA-1", 20, 64);
         state = new int[5];
         W = new int[80];
-        implReset();
+        resetHashes();
     }
 
     /*
@@ -79,6 +80,13 @@ public final class SHA extends DigestBase {
      * Resets the buffers and hash value to start a new hash.
      */
     void implReset() {
+        // Load magic initialization constants.
+        resetHashes();
+        // clear out old data
+        Arrays.fill(W, 0);
+    }
+
+    private void resetHashes() {
         state[0] = 0x67452301;
         state[1] = 0xefcdab89;
         state[2] = 0x98badcfe;

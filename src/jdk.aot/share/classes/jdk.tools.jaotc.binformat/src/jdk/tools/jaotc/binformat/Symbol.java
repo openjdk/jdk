@@ -21,14 +21,15 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat;
 
 import java.util.Objects;
 
-import jdk.tools.jaotc.binformat.NativeSymbol;
-
 public class Symbol {
 
+    // @formatter:off (workaround for Eclipse formatting bug)
     public enum Binding {
         UNDEFINED,
         LOCAL,
@@ -42,6 +43,7 @@ public class Symbol {
         OBJECT,
         NOTYPE
     }
+    // @formatter:on
 
     private final String name;
     private final int size;

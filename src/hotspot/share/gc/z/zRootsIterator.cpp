@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
@@ -74,7 +73,6 @@ static const ZStatSubPhase ZSubPhasePauseWeakRootsVMWeakHandles("Pause Weak Root
 static const ZStatSubPhase ZSubPhasePauseWeakRootsJNIWeakHandles("Pause Weak Roots JNIWeakHandles");
 static const ZStatSubPhase ZSubPhasePauseWeakRootsJVMTIWeakExport("Pause Weak Roots JVMTIWeakExport");
 static const ZStatSubPhase ZSubPhasePauseWeakRootsJFRWeak("Pause Weak Roots JFRWeak");
-static const ZStatSubPhase ZSubPhasePauseWeakRootsSymbolTable("Pause Weak Roots SymbolTable");
 static const ZStatSubPhase ZSubPhasePauseWeakRootsStringTable("Pause Weak Roots StringTable");
 
 static const ZStatSubPhase ZSubPhaseConcurrentWeakRoots("Concurrent Weak Roots");
@@ -302,11 +300,9 @@ ZWeakRootsIterator::ZWeakRootsIterator() :
     _jfr_weak(this),
     _vm_weak_handles(this),
     _jni_weak_handles(this),
-    _symbol_table(this),
     _string_table(this) {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   ZStatTimer timer(ZSubPhasePauseWeakRootsSetup);
-  SymbolTable::clear_parallel_claimed_index();
   StringTable::reset_dead_counter();
 }
 
@@ -335,12 +331,6 @@ void ZWeakRootsIterator::do_jfr_weak(BoolObjectClosure* is_alive, OopClosure* cl
   ZStatTimer timer(ZSubPhasePauseWeakRootsJFRWeak);
   Jfr::weak_oops_do(is_alive, cl);
 #endif
-}
-
-void ZWeakRootsIterator::do_symbol_table(BoolObjectClosure* is_alive, OopClosure* cl) {
-  ZStatTimer timer(ZSubPhasePauseWeakRootsSymbolTable);
-  int dummy;
-  SymbolTable::possibly_parallel_unlink(&dummy, &dummy);
 }
 
 class ZStringTableDeadCounterBoolObjectClosure : public BoolObjectClosure  {
@@ -375,9 +365,6 @@ void ZWeakRootsIterator::do_string_table(BoolObjectClosure* is_alive, OopClosure
 
 void ZWeakRootsIterator::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* cl) {
   ZStatTimer timer(ZSubPhasePauseWeakRoots);
-  if (ZSymbolTableUnloading) {
-    _symbol_table.weak_oops_do(is_alive, cl);
-  }
   if (ZWeakRoots) {
     _jvmti_weak_export.weak_oops_do(is_alive, cl);
     _jfr_weak.weak_oops_do(is_alive, cl);

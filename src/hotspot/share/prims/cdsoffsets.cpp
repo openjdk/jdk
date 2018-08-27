@@ -42,17 +42,17 @@ CDSOffsets* CDSOffsets::_all = NULL;
 #define ADD_NEXT(list, name, value) \
   list->add_end(new CDSOffsets(name, value, NULL))
 
-#define CREATE_OFFSET_MAPS                                                                                  \
-    _all = new CDSOffsets("size_t_size", sizeof(size_t), NULL);                                             \
-    ADD_NEXT(_all, "FileMapHeader::_magic", offset_of(FileMapInfo::FileMapHeader, _magic));                 \
-    ADD_NEXT(_all, "FileMapHeader::_crc", offset_of(FileMapInfo::FileMapHeader, _crc));                     \
-    ADD_NEXT(_all, "FileMapHeader::_version", offset_of(FileMapInfo::FileMapHeader, _version));             \
-    ADD_NEXT(_all, "FileMapHeader::_space[0]", offset_of(FileMapInfo::FileMapHeader, _space));              \
-    ADD_NEXT(_all, "space_info::_crc", offset_of(FileMapInfo::FileMapHeader::space_info, _crc));            \
-    ADD_NEXT(_all, "space_info::_used", offset_of(FileMapInfo::FileMapHeader::space_info, _used));          \
-    ADD_NEXT(_all, "FileMapHeader::_paths_misc_info_size", offset_of(FileMapInfo::FileMapHeader, _paths_misc_info_size)); \
-    ADD_NEXT(_all, "file_header_size", sizeof(FileMapInfo::FileMapHeader));                                 \
-    ADD_NEXT(_all, "space_info_size", sizeof(FileMapInfo::FileMapHeader::space_info));
+#define CREATE_OFFSET_MAPS                                                                  \
+    _all = new CDSOffsets("size_t_size", sizeof(size_t), NULL);                             \
+    ADD_NEXT(_all, "FileMapHeader::_magic", offset_of(FileMapHeader, _magic));              \
+    ADD_NEXT(_all, "FileMapHeader::_crc", offset_of(FileMapHeader, _crc));                  \
+    ADD_NEXT(_all, "FileMapHeader::_version", offset_of(FileMapHeader, _version));          \
+    ADD_NEXT(_all, "FileMapHeader::_space[0]", offset_of(FileMapHeader, _space));           \
+    ADD_NEXT(_all, "CDSFileMapRegion::_crc", offset_of(CDSFileMapRegion, _crc));            \
+    ADD_NEXT(_all, "CDSFileMapRegion::_used", offset_of(CDSFileMapRegion, _used));          \
+    ADD_NEXT(_all, "FileMapHeader::_paths_misc_info_size", offset_of(FileMapHeader, _paths_misc_info_size)); \
+    ADD_NEXT(_all, "file_header_size", sizeof(FileMapHeader));                              \
+    ADD_NEXT(_all, "CDSFileMapRegion_size", sizeof(CDSFileMapRegion));
 
 int CDSOffsets::find_offset(const char* name) {
   if (_all == NULL) {

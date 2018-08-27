@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,6 @@ public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer {
         pids.add(pid);
         for (Long p = pids.poll(); p != null; p = pids.poll()) {
             HtmlSection pidSection = section.createChildren("" + p);
-            for (ActionSet set : actions) {
-                set.gatherProcessInfo(pidSection, p);
-            }
             List<Long> children = helper.getChildren(pidSection, p);
             if (!children.isEmpty()) {
                 HtmlSection s = pidSection.createChildren("children");
@@ -66,6 +63,9 @@ public class ToolKit implements EnvironmentInfoGatherer, ProcessInfoGatherer {
                     s.link(section, c.toString(), c.toString());
                 }
                 pids.addAll(children);
+            }
+            for (ActionSet set : actions) {
+                set.gatherProcessInfo(pidSection, p);
             }
         }
     }

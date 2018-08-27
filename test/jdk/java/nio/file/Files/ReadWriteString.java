@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import static org.testng.Assert.assertTrue;
@@ -45,7 +46,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /* @test
- * @bug 8201276 8205058
+ * @bug 8201276 8205058 8209576
  * @build ReadWriteString PassThroughFileSystem
  * @run testng ReadWriteString
  * @summary Unit test for methods for Files readString and write methods.
@@ -55,8 +56,10 @@ import org.testng.annotations.Test;
 public class ReadWriteString {
 
     // data for text files
-    private static final String EN_STRING = "The quick brown fox jumps over the lazy dog";
+    final String TEXT_UNICODE = "\u201CHello\u201D";
+    final String TEXT_ASCII = "ABCDEFGHIJKLMNOPQRSTUVWXYZ\n abcdefghijklmnopqrstuvwxyz\n 1234567890\n";
     private static final String JA_STRING = "\u65e5\u672c\u8a9e\u6587\u5b57\u5217";
+
     // malformed input: a high surrogate without the low surrogate
     static char[] illChars = {
         '\u00fa', '\ud800'
@@ -80,9 +83,8 @@ public class ReadWriteString {
         }
     }
 
-    // file used by most tests
-    private Path tmpfile;
-
+    // file used by testReadWrite, testReadString and testWriteString
+    private Path[] testFiles = new Path[3];
 
     /*
      * DataProvider for malformed write test. Provides the following fields:
@@ -112,14 +114,48 @@ public class ReadWriteString {
         };
     }
 
+    /*
+     * DataProvider for writeString test
+     * Writes the data using both the existing and new method and compares the results.
+     */
+    @DataProvider(name = "testWriteString")
+    public Object[][] getWriteString() throws IOException {
+
+        return new Object[][]{
+            {testFiles[1], testFiles[2], TEXT_ASCII, US_ASCII, null},
+            {testFiles[1], testFiles[2], TEXT_ASCII, US_ASCII, US_ASCII},
+            {testFiles[1], testFiles[2], TEXT_UNICODE, UTF_8, null},
+            {testFiles[1], testFiles[2], TEXT_UNICODE, UTF_8, UTF_8}
+        };
+    }
+
+    /*
+     * DataProvider for readString test
+     * Reads the file using both the existing and new method and compares the results.
+     */
+    @DataProvider(name = "testReadString")
+    public Object[][] getReadString() throws IOException {
+        Path path = Files.createTempFile("readString_file1", null);
+        return new Object[][]{
+            {testFiles[1], TEXT_ASCII, US_ASCII, US_ASCII},
+            {testFiles[1], TEXT_ASCII, US_ASCII, UTF_8},
+            {testFiles[1], TEXT_UNICODE, UTF_8, null},
+            {testFiles[1], TEXT_UNICODE, UTF_8, UTF_8}
+        };
+    }
+
     @BeforeClass
     void setup() throws IOException {
-        tmpfile = Files.createTempFile("readWriteString", null);
+        testFiles[0] = Files.createTempFile("readWriteString", null);
+        testFiles[1] = Files.createTempFile("writeString_file1", null);
+        testFiles[2] = Files.createTempFile("writeString_file2", null);
     }
 
     @AfterClass
     void cleanup() throws IOException {
-        Files.deleteIfExists(tmpfile);
+        for (Path path : testFiles) {
+            Files.deleteIfExists(path);
+        }
     }
 
     /**
@@ -159,6 +195,42 @@ public class ReadWriteString {
             testReadWrite(size, UTF_8, true);
             size += 1024;
         }
+    }
+
+    /**
+     * Verifies fix for @bug 8209576 that the writeString method converts the
+     * bytes properly.
+     * This method compares the results written by the existing write method and
+     * the writeString method added since 11.
+     */
+    @Test(dataProvider = "testWriteString")
+    public void testWriteString(Path path, Path path2, String text, Charset cs, Charset cs2) throws IOException {
+        Files.write(path, text.getBytes(cs));
+
+        // writeString @since 11
+        if (cs2 == null) {
+            Files.writeString(path2, text);
+        } else {
+            Files.writeString(path2, text, cs2);
+        }
+        byte[] bytes = Files.readAllBytes(path);
+        byte[] bytes2 = Files.readAllBytes(path2);
+        assertTrue((Arrays.compare(bytes, bytes2) == 0), "The bytes should be the same");
+    }
+
+    /**
+     * Verifies that the readString method added since 11 behaves the same as
+     * constructing a string from the existing readAllBytes method.
+     */
+    @Test(dataProvider = "testReadString")
+    public void testReadString(Path path, String text, Charset cs, Charset cs2) throws IOException {
+        Files.write(path, text.getBytes(cs));
+        String str = new String(Files.readAllBytes(path), cs);
+
+        // readString @since 11
+        String str2 = (cs2 == null) ? Files.readString(path) :
+                                      Files.readString(path, cs2);
+        assertTrue((str.equals(str2)), "The strings should be the same");
     }
 
     /**
@@ -218,20 +290,20 @@ public class ReadWriteString {
         String str = generateString(size);
         Path result;
         if (cs == null) {
-            result = Files.writeString(tmpfile, str);
+            result = Files.writeString(testFiles[0], str);
         } else {
-            result = Files.writeString(tmpfile, str, cs);
+            result = Files.writeString(testFiles[0], str, cs);
         }
 
         //System.out.println(result.toUri().toASCIIString());
-        assertTrue(result == tmpfile);
+        assertTrue(result == testFiles[0]);
         if (append) {
             if (cs == null) {
-                Files.writeString(tmpfile, str, APPEND);
+                Files.writeString(testFiles[0], str, APPEND);
             } else {
-                Files.writeString(tmpfile, str, cs, APPEND);
+                Files.writeString(testFiles[0], str, cs, APPEND);
             }
-            assertTrue(Files.size(tmpfile) == size * 2);
+            assertTrue(Files.size(testFiles[0]) == size * 2);
         }
 
 

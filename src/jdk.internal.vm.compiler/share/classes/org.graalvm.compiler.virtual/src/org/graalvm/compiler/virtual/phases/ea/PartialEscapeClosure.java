@@ -115,22 +115,18 @@ public abstract class PartialEscapeClosure<BlockT extends PartialEscapeBlockStat
         /*
          * If there is a mismatch between the number of materializations and the number of
          * virtualizations, we need to apply effects, even if there were no other significant
-         * changes to the graph.
+         * changes to the graph. This applies to each block, since moving from one block to the
+         * other can also be important (if the probabilities of the block differ).
          */
-        int delta = 0;
         for (Block block : cfg.getBlocks()) {
             GraphEffectList effects = blockEffects.get(block);
             if (effects != null) {
-                delta += effects.getVirtualizationDelta();
+                if (effects.getVirtualizationDelta() != 0) {
+                    return true;
+                }
             }
         }
-        for (Loop<Block> loop : cfg.getLoops()) {
-            GraphEffectList effects = loopMergeEffects.get(loop);
-            if (effects != null) {
-                delta += effects.getVirtualizationDelta();
-            }
-        }
-        return delta != 0;
+        return false;
     }
 
     private final class CollectVirtualObjectsClosure extends NodeClosure<ValueNode> {

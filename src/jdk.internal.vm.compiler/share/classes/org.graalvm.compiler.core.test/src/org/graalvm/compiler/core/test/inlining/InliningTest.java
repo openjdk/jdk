@@ -480,7 +480,7 @@ public class InliningTest extends GraalCompilerTest {
 
     private static final class StaticFinalFields {
 
-        private static final Number NumberStaticFinalField = new Integer(1);
+        private static final Number NumberStaticFinalField = Integer.valueOf(1);
         private static final SuperClass SuperClassStaticFinalField = new SubClassA(2);
         private static final FinalSubClass FinalSubClassStaticFinalField = new FinalSubClass(3);
         private static final SingleImplementorInterface SingleImplementorStaticFinalField = new SubClassA(4);
@@ -492,7 +492,7 @@ public class InliningTest extends GraalCompilerTest {
 
     private static final class FinalFields {
 
-        private final Number numberFinalField = new Integer(1);
+        private final Number numberFinalField = Integer.valueOf(1);
         private final SuperClass superClassFinalField = new SubClassA(2);
         private final FinalSubClass finalSubClassFinalField = new FinalSubClass(3);
         private final SingleImplementorInterface singleImplementorFinalField = new SubClassA(4);
@@ -504,7 +504,7 @@ public class InliningTest extends GraalCompilerTest {
 
     private static final class Fields {
 
-        private Number numberField = new Integer(1);
+        private Number numberField = Integer.valueOf(1);
         private SuperClass superClassField = new SubClassA(2);
         private FinalSubClass finalSubClassField = new FinalSubClass(3);
         private SingleImplementorInterface singleImplementorField = new SubClassA(4);

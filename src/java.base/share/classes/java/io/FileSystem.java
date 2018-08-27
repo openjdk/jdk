@@ -231,18 +231,16 @@ abstract class FileSystem {
 
     // Flags for enabling/disabling performance optimizations for file
     // name canonicalization
-    static boolean useCanonCaches;
-    static boolean useCanonPrefixCache;
+    static final boolean useCanonCaches;
+    static final boolean useCanonPrefixCache;
 
     private static boolean getBooleanProperty(String prop, boolean defaultVal) {
-        return Boolean.parseBoolean(System.getProperty(prop,
-                String.valueOf(defaultVal)));
+        String value = System.getProperty(prop);
+        return (value != null) ? Boolean.parseBoolean(value) : defaultVal;
     }
 
     static {
-        useCanonCaches      = getBooleanProperty("sun.io.useCanonCaches",
-                                                 useCanonCaches);
-        useCanonPrefixCache = getBooleanProperty("sun.io.useCanonPrefixCache",
-                                                 useCanonPrefixCache);
+        useCanonCaches      = getBooleanProperty("sun.io.useCanonCaches", false);
+        useCanonPrefixCache = useCanonCaches && getBooleanProperty("sun.io.useCanonPrefixCache", false);
     }
 }

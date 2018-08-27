@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.elf;
 
 import java.io.IOException;
@@ -34,17 +36,12 @@ import jdk.tools.jaotc.binformat.ByteContainer;
 import jdk.tools.jaotc.binformat.CodeContainer;
 import jdk.tools.jaotc.binformat.ReadOnlyDataContainer;
 import jdk.tools.jaotc.binformat.Relocation;
-import jdk.tools.jaotc.binformat.Relocation.RelocType;
 import jdk.tools.jaotc.binformat.Symbol;
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
-
-import jdk.tools.jaotc.binformat.elf.ElfSymbol;
-import jdk.tools.jaotc.binformat.elf.ElfTargetInfo;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Ehdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Shdr;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Sym;
-import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Rela;
 
 public abstract class JELFRelocObject {
 
@@ -64,22 +61,22 @@ public abstract class JELFRelocObject {
         String archStr = System.getProperty("os.arch").toLowerCase();
         if (archStr.equals("amd64") || archStr.equals("x86_64")) {
             return new AMD64JELFRelocObject(binContainer, outputFileName);
-        } else  if (archStr.equals("aarch64")) {
+        } else if (archStr.equals("aarch64")) {
             return new AArch64JELFRelocObject(binContainer, outputFileName);
         }
         throw new InternalError("Unsupported platform: " + archStr);
     }
 
     private static ElfSection createByteSection(ArrayList<ElfSection> sections,
-                                                String sectName,
-                                                byte[] scnData,
-                                                boolean hasRelocs,
-                                                int align,
-                                                int scnFlags,
-                                                int scnType) {
+                    String sectName,
+                    byte[] scnData,
+                    boolean hasRelocs,
+                    int align,
+                    int scnFlags,
+                    int scnType) {
 
         ElfSection sect = new ElfSection(sectName, scnData, scnFlags, scnType,
-                                         hasRelocs, align, sections.size());
+                        hasRelocs, align, sections.size());
         // Add this section to our list
         sections.add(sect);
 
@@ -87,7 +84,7 @@ public abstract class JELFRelocObject {
     }
 
     private void createByteSection(ArrayList<ElfSection> sections,
-                                   ByteContainer c, int scnFlags) {
+                    ByteContainer c, int scnFlags) {
         ElfSection sect;
         boolean hasRelocs = c.hasRelocations();
         byte[] scnData = c.getByteArray();
@@ -107,8 +104,8 @@ public abstract class JELFRelocObject {
         }
 
         sect = createByteSection(sections, c.getContainerName(),
-                                 scnData, hasRelocs, segmentSize,
-                                 scnFlags, scnType);
+                        scnData, hasRelocs, segmentSize,
+                        scnFlags, scnType);
         c.setSectionId(sect.getSectionId());
     }
 
@@ -125,7 +122,7 @@ public abstract class JELFRelocObject {
     }
 
     /**
-     * Create an ELF relocatable object
+     * Creates an ELF relocatable object.
      *
      * @param relocationTable
      * @param symbols
@@ -166,18 +163,18 @@ public abstract class JELFRelocObject {
         // that order since symtab section needs to set the index of
         // strtab in sh_link field
         ElfSection strTabSection = createByteSection(sections, ".strtab",
-                                                     symtab.getStrtabArray(),
-                                                     false, 1, 0,
-                                                     Elf64_Shdr.SHT_STRTAB);
+                        symtab.getStrtabArray(),
+                        false, 1, 0,
+                        Elf64_Shdr.SHT_STRTAB);
 
         // Now create .symtab section with the symtab data constructed.
         // On Linux, sh_link of symtab contains the index of string table
         // its symbols reference and sh_info contains the index of first
         // non-local symbol
         ElfSection symTabSection = createByteSection(sections, ".symtab",
-                                                     symtab.getSymtabArray(),
-                                                     false, 8, 0,
-                                                     Elf64_Shdr.SHT_SYMTAB);
+                        symtab.getSymtabArray(),
+                        false, 8, 0,
+                        Elf64_Shdr.SHT_SYMTAB);
         symTabSection.setLink(strTabSection.getSectionId());
         symTabSection.setInfo(symtab.getNumLocalSyms());
 
@@ -187,35 +184,35 @@ public abstract class JELFRelocObject {
 
         // Now, finally, after creating all sections, create shstrtab section
         ElfSection shStrTabSection = createByteSection(sections, ".shstrtab",
-                                                       null, false, 1, 0,
-                                                       Elf64_Shdr.SHT_STRTAB);
+                        null, false, 1, 0,
+                        Elf64_Shdr.SHT_STRTAB);
         eh.setSectionStrNdx(shStrTabSection.getSectionId());
 
         // Update all section offsets and the Elf header section offset
         // Write the Header followed by the contents of each section
         // and then the section structures (section table).
-        int file_offset = Elf64_Ehdr.totalsize;
+        int fileOffset = Elf64_Ehdr.totalsize;
 
         // and round it up
-        file_offset = (file_offset + (sections.get(1).getDataAlign() - 1)) &
-                      ~((sections.get(1).getDataAlign() - 1));
+        fileOffset = (fileOffset + (sections.get(1).getDataAlign() - 1)) &
+                        ~((sections.get(1).getDataAlign() - 1));
 
         // Calc file offsets for section data skipping null section
         for (int i = 1; i < sections.size(); i++) {
             ElfSection sect = sections.get(i);
-            file_offset = (file_offset + (sect.getDataAlign() - 1)) &
-                          ~((sect.getDataAlign() - 1));
-            sect.setOffset(file_offset);
-            file_offset += sect.getSize();
+            fileOffset = (fileOffset + (sect.getDataAlign() - 1)) &
+                            ~((sect.getDataAlign() - 1));
+            sect.setOffset(fileOffset);
+            fileOffset += sect.getSize();
         }
 
         // Align the section table
-        file_offset = (file_offset + (ElfSection.getShdrAlign() - 1)) &
-                      ~((ElfSection.getShdrAlign() - 1));
+        fileOffset = (fileOffset + (ElfSection.getShdrAlign() - 1)) &
+                        ~((ElfSection.getShdrAlign() - 1));
 
         // Update the Elf Header with the offset of the first Elf64_Shdr
         // and the number of sections.
-        eh.setSectionOff(file_offset);
+        eh.setSectionOff(fileOffset);
         eh.setSectionNum(sections.size());
 
         // Write out the Header
@@ -237,8 +234,8 @@ public abstract class JELFRelocObject {
     }
 
     /**
-     * Construct ELF symbol data from BinaryContainer object's symbol tables. Both dynamic ELF symbol
-     * table and ELF symbol table are created from BinaryContainer's symbol info.
+     * Construct ELF symbol data from BinaryContainer object's symbol tables. Both dynamic ELF
+     * symbol table and ELF symbol table are created from BinaryContainer's symbol info.
      *
      * @param symbols
      */
@@ -283,11 +280,12 @@ public abstract class JELFRelocObject {
      * @param relocationTable
      */
     private ElfRelocTable createElfRelocTable(ArrayList<ElfSection> sections,
-                                              Map<Symbol, List<Relocation>> relocationTable) {
+                    Map<Symbol, List<Relocation>> relocationTable) {
 
         ElfRelocTable elfRelocTable = new ElfRelocTable(sections.size());
         /*
-         * For each of the symbols with associated relocation records, create a Elf relocation entry.
+         * For each of the symbols with associated relocation records, create a Elf relocation
+         * entry.
          */
         for (Map.Entry<Symbol, List<Relocation>> entry : relocationTable.entrySet()) {
             List<Relocation> relocs = entry.getValue();
@@ -306,8 +304,8 @@ public abstract class JELFRelocObject {
     }
 
     private static void createElfRelocSections(ArrayList<ElfSection> sections,
-                                               ElfRelocTable elfRelocTable,
-                                               int symtabsectidx) {
+                    ElfRelocTable elfRelocTable,
+                    int symtabsectidx) {
 
         // Grab count before we create new sections
         int count = sections.size();
@@ -317,8 +315,8 @@ public abstract class JELFRelocObject {
                 ElfSection sect = sections.get(i);
                 String relname = ".rela" + sect.getName();
                 ElfSection relocSection = createByteSection(sections, relname,
-                                                            elfRelocTable.getRelocData(i),
-                                                            false, 8, 0, Elf64_Shdr.SHT_RELA);
+                                elfRelocTable.getRelocData(i),
+                                false, 8, 0, Elf64_Shdr.SHT_RELA);
                 relocSection.setLink(symtabsectidx);
                 relocSection.setInfo(sect.getSectionId());
             }

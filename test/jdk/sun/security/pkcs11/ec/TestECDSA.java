@@ -26,7 +26,7 @@
  * @bug 6405536 8042967
  * @summary basic test of SHA1withECDSA and NONEwithECDSA signing/verifying
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @library ../../../../java/security/testlibrary
  * @key randomness
  * @modules jdk.crypto.cryptoki

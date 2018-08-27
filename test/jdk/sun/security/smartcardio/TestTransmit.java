@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6293769 6294527
+ * @bug 6293769 6294527 6474858
  * @summary test transmit() works
  * @author Andreas Sterbenz
  * @modules java.smartcardio/javax.smartcardio
@@ -88,6 +88,13 @@ public class TestTransmit extends Utils {
                     }
                 }
             } // else ignore
+        }
+
+        // JDK-6474858 : CardChannel.transmit(CommandAPDU) throws
+        //               unexpected ArrayIndexOutOfBoundsException
+        {
+            CommandAPDU capdu2 = new CommandAPDU(0x00, 0xA4, 0x00, 0x00);
+            channel.transmit(capdu2);
         }
 
         // disconnect

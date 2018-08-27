@@ -113,7 +113,6 @@ public class JvmtiAddPath {
                                     appJar,
                                     TestCommon.list("JvmtiApp", "ExtraClass", MAIN_CLASS),
                                     use_whitebox_jar,
-                                    "-Xlog:class+load=trace",
                                     modulePath);
         TestCommon.checkDump(output);
 
@@ -143,7 +142,6 @@ public class JvmtiAddPath {
         output = TestCommon.createArchive(
                      appJar, TestCommon.list("JvmtiApp", "ExtraClass"),
                      use_whitebox_jar,
-                     "-Xlog:class+load=trace",
                      modulePath);
         TestCommon.checkDump(output);
         run(twoAppJars, modulePath,

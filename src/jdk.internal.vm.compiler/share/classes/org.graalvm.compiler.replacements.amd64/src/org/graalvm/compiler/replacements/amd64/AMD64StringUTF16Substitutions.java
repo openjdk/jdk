@@ -25,10 +25,15 @@
 package org.graalvm.compiler.replacements.amd64;
 
 import org.graalvm.compiler.api.replacements.ClassSubstitution;
+import org.graalvm.compiler.api.replacements.Fold;
+import org.graalvm.compiler.api.replacements.Fold.InjectedParameter;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
+import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.replacements.nodes.ArrayCompareToNode;
 
 import jdk.vm.ci.meta.JavaKind;
+import org.graalvm.compiler.word.Word;
+import jdk.internal.vm.compiler.word.Pointer;
 
 // JaCoCo Exclude
 
@@ -39,6 +44,19 @@ import jdk.vm.ci.meta.JavaKind;
  */
 @ClassSubstitution(className = "java.lang.StringUTF16", optional = true)
 public class AMD64StringUTF16Substitutions {
+
+    @Fold
+    static int byteArrayBaseOffset(@InjectedParameter ArrayOffsetProvider arrayOffsetProvider) {
+        return arrayOffsetProvider.arrayBaseOffset(JavaKind.Byte);
+    }
+
+    @Fold
+    static int charArrayIndexScale(@InjectedParameter ArrayOffsetProvider arrayOffsetProvider) {
+        return arrayOffsetProvider.arrayScalingFactor(JavaKind.Char);
+    }
+
+    /** Marker value for the {@link InjectedParameter} injected parameter. */
+    static final ArrayOffsetProvider INJECTED = null;
 
     /**
      * @param value is char[]
@@ -62,4 +80,13 @@ public class AMD64StringUTF16Substitutions {
         return ArrayCompareToNode.compareTo(other, value, other.length, value.length, JavaKind.Char, JavaKind.Byte);
     }
 
+    @MethodSubstitution(optional = true)
+    public static int indexOfCharUnsafe(byte[] value, int ch, int fromIndex, int max) {
+        Pointer sourcePointer = Word.objectToTrackedPointer(value).add(byteArrayBaseOffset(INJECTED)).add(fromIndex * charArrayIndexScale(INJECTED));
+        int result = AMD64ArrayIndexOfNode.optimizedArrayIndexOf(sourcePointer, max - fromIndex, (char) ch, JavaKind.Char);
+        if (result != -1) {
+            return result + fromIndex;
+        }
+        return result;
+    }
 }

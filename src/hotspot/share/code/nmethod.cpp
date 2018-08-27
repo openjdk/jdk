@@ -422,7 +422,7 @@ void nmethod::init_defaults() {
 #if INCLUDE_JVMCI
   _jvmci_installed_code   = NULL;
   _speculation_log        = NULL;
-  _jvmci_installed_code_triggers_unloading = false;
+  _jvmci_installed_code_triggers_invalidation = false;
 #endif
 }
 
@@ -690,9 +690,9 @@ nmethod::nmethod(
     _speculation_log = speculation_log;
     oop obj = JNIHandles::resolve(installed_code);
     if (obj == NULL || (obj->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(obj))) {
-      _jvmci_installed_code_triggers_unloading = false;
+      _jvmci_installed_code_triggers_invalidation = false;
     } else {
-      _jvmci_installed_code_triggers_unloading = true;
+      _jvmci_installed_code_triggers_invalidation = true;
     }
 
     if (compiler->is_jvmci()) {
@@ -786,6 +786,13 @@ void nmethod::log_identity(xmlStream* log) const {
   if (TieredCompilation) {
     log->print(" level='%d'", comp_level());
   }
+#if INCLUDE_JVMCI
+    char buffer[O_BUFLEN];
+    char* jvmci_name = jvmci_installed_code_name(buffer, O_BUFLEN);
+    if (jvmci_name != NULL) {
+      log->print(" jvmci_installed_code_name='%s'", jvmci_name);
+    }
+#endif
 }
 
 
@@ -1083,7 +1090,7 @@ void nmethod::make_unloaded(oop cause) {
   _state = unloaded;
 
   // Log the unloading.
-  log_state_change();
+  log_state_change(cause);
 
 #if INCLUDE_JVMCI
   // The method can only be unloaded after the pointer to the installed code
@@ -1107,7 +1114,7 @@ void nmethod::invalidate_osr_method() {
   }
 }
 
-void nmethod::log_state_change() const {
+void nmethod::log_state_change(oop cause) const {
   if (LogCompilation) {
     if (xtty != NULL) {
       ttyLocker ttyl;  // keep the following output all in one block
@@ -1120,6 +1127,9 @@ void nmethod::log_state_change() const {
                          (_state == zombie ? " zombie='1'" : ""));
       }
       log_identity(xtty);
+      if (cause != NULL) {
+        xtty->print(" cause='%s'", cause->klass()->external_name());
+      }
       xtty->stamp();
       xtty->end_elem();
     }
@@ -1150,7 +1160,8 @@ bool nmethod::make_not_entrant_or_zombie(int state) {
   // Make sure neither the nmethod nor the method is flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
   methodHandle the_method(method());
-  NoSafepointVerifier nsv;
+  // This can be called while the system is already at a safepoint which is ok
+  NoSafepointVerifier nsv(true, !SafepointSynchronize::is_at_safepoint());
 
   // during patching, depending on the nmethod state we must notify the GC that
   // code has been unloaded, unregistering it. We cannot do this right while
@@ -1507,13 +1518,12 @@ bool nmethod::do_unloading_oops(address low_boundary, BoolObjectClosure* is_aliv
 bool nmethod::do_unloading_jvmci() {
   if (_jvmci_installed_code != NULL) {
     if (JNIHandles::is_global_weak_cleared(_jvmci_installed_code)) {
-      if (_jvmci_installed_code_triggers_unloading) {
-        // jweak reference processing has already cleared the referent
-        make_unloaded(NULL);
-        return true;
-      } else {
-        clear_jvmci_installed_code();
+      if (_jvmci_installed_code_triggers_invalidation) {
+        // The reference to the installed code has been dropped so invalidate
+        // this nmethod and allow the sweeper to reclaim it.
+        make_not_entrant();
       }
+      clear_jvmci_installed_code();
     }
   }
   return false;
@@ -2948,7 +2958,7 @@ oop nmethod::speculation_log() {
   return JNIHandles::resolve(_speculation_log);
 }
 
-char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) {
+char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) const {
   if (!this->is_compiled_by_jvmci()) {
     return NULL;
   }

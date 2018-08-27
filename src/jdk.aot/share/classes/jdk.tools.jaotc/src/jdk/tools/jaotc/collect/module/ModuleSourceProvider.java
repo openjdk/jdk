@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.collect.module;
 
 import jdk.tools.jaotc.collect.ClassSource;
@@ -38,7 +40,7 @@ public final class ModuleSourceProvider implements SourceProvider {
     private final FileSystem fileSystem;
     private final ClassLoader classLoader;
     private final FileSupport fileSupport;
-    public final static String TYPE = "module";
+    public static final String TYPE = "module";
 
     public ModuleSourceProvider() {
         this(FileSystems.getFileSystem(URI.create("jrt:/")), ClassLoader.getSystemClassLoader(), new FileSupport());

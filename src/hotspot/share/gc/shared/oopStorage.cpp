@@ -43,7 +43,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/spinYield.hpp"
 
 OopStorage::AllocationListEntry::AllocationListEntry() : _prev(NULL), _next(NULL) {}
 
@@ -495,48 +494,6 @@ bool OopStorage::expand_active_array() {
   return true;
 }
 
-OopStorage::ProtectActive::ProtectActive() : _enter(0), _exit() {}
-
-// Begin read-side critical section.
-uint OopStorage::ProtectActive::read_enter() {
-  return Atomic::add(2u, &_enter);
-}
-
-// End read-side critical section.
-void OopStorage::ProtectActive::read_exit(uint enter_value) {
-  Atomic::add(2u, &_exit[enter_value & 1]);
-}
-
-// Wait until all readers that entered the critical section before
-// synchronization have exited that critical section.
-void OopStorage::ProtectActive::write_synchronize() {
-  SpinYield spinner;
-  // Determine old and new exit counters, based on bit0 of the
-  // on-entry _enter counter.
-  uint value = OrderAccess::load_acquire(&_enter);
-  volatile uint* new_ptr = &_exit[(value + 1) & 1];
-  // Atomically change the in-use exit counter to the new counter, by
-  // adding 1 to the _enter counter (flipping bit0 between 0 and 1)
-  // and initializing the new exit counter to that enter value.  Note:
-  // The new exit counter is not being used by read operations until
-  // this change succeeds.
-  uint old;
-  do {
-    old = value;
-    *new_ptr = ++value;
-    value = Atomic::cmpxchg(value, &_enter, old);
-  } while (old != value);
-  // Readers that entered the critical section before we changed the
-  // selected exit counter will use the old exit counter.  Readers
-  // entering after the change will use the new exit counter.  Wait
-  // for all the critical sections started before the change to
-  // complete, e.g. for the value of old_ptr to catch up with old.
-  volatile uint* old_ptr = &_exit[old & 1];
-  while (old != OrderAccess::load_acquire(old_ptr)) {
-    spinner.wait();
-  }
-}
-
 // Make new_array the _active_array.  Increments new_array's refcount
 // to account for the new reference.  The assignment is atomic wrto
 // obtain_active_array; once this function returns, it is safe for the
@@ -548,7 +505,10 @@ void OopStorage::replace_active_array(ActiveArray* new_array) {
   // Install new_array, ensuring its initialization is complete first.
   OrderAccess::release_store(&_active_array, new_array);
   // Wait for any readers that could read the old array from _active_array.
-  _protect_active.write_synchronize();
+  // Can't use GlobalCounter here, because this is called from allocate(),
+  // which may be called in the scope of a GlobalCounter critical section
+  // when inserting a StringTable entry.
+  _protect_active.synchronize();
   // All obtain critical sections that could see the old array have
   // completed, having incremented the refcount of the old array.  The
   // caller can now safely relinquish the old array.
@@ -560,10 +520,9 @@ void OopStorage::replace_active_array(ActiveArray* new_array) {
 // _active_array.  The caller must relinquish the array when done
 // using it.
 OopStorage::ActiveArray* OopStorage::obtain_active_array() const {
-  uint enter_value = _protect_active.read_enter();
+  SingleWriterSynchronizer::CriticalSection cs(&_protect_active);
   ActiveArray* result = OrderAccess::load_acquire(&_active_array);
   result->increment_refcount();
-  _protect_active.read_exit(enter_value);
   return result;
 }
 

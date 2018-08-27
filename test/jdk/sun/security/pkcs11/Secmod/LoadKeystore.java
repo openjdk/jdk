@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8048622 8134232
  * @summary Checks that PKCS#11 keystore can't be loaded with wrong password
- * @library ../
+ * @library /test/lib ../
  * @modules jdk.crypto.cryptoki
  * @run main/othervm LoadKeystore
  * @run main/othervm LoadKeystore sm policy
@@ -43,6 +43,11 @@ import java.util.Collections;
 public class LoadKeystore extends SecmodTest {
 
     public static void main(String[] args) throws Exception {
+        if (args.length > 1 && "sm".equals(args[0])) {
+            System.setProperty("java.security.policy",
+                    BASE + File.separator + args[1]);
+        }
+
         if (!initSecmod()) {
             return;
         }
@@ -55,8 +60,6 @@ public class LoadKeystore extends SecmodTest {
         Security.addProvider(p);
 
         if (args.length > 1 && "sm".equals(args[0])) {
-            System.setProperty("java.security.policy",
-                    BASE + File.separator + args[1]);
             System.setSecurityManager(new SecurityManager());
         }
 

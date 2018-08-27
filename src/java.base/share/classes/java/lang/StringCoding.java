@@ -1068,7 +1068,7 @@ class StringCoding {
         byte[] val = s.value();
         byte coder = s.coder();
         if (cs == UTF_8) {
-            if (isASCII(val)) {
+            if (coder == LATIN1 && isASCII(val)) {
                 return val;
             }
             return encodeUTF8(coder, val, false);

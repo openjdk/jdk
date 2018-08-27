@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public abstract class JdbTest {
@@ -57,23 +56,15 @@ public abstract class JdbTest {
     protected void setup() {
         jdb = Jdb.launchLocal(jdbOptions);
         // wait while jdb is initialized
-        jdb.waitForSimplePrompt();
+        jdb.waitForPrompt(1, false);
 
     }
 
     protected abstract void runCases();
 
     protected void shutdown() {
-        try {
-            if (!jdb.terminated()) {
-                jdb.quit();
-                // wait some time after the command for the process termination
-                jdb.waitFor(10, TimeUnit.SECONDS);
-            }
-        } finally {
-            if (!jdb.terminated()) {
-                jdb.terminate();
-            }
+        if (jdb != null) {
+            jdb.shutdown();
         }
     }
 
@@ -106,8 +97,7 @@ public abstract class JdbTest {
     public static int setBreakpoints(Jdb jdb, String debuggeeClass, String sourcePath, int id) {
         List<Integer> bps = parseBreakpoints(sourcePath, id);
         for (int bp : bps) {
-            // usually we set breakpoints before the debuggee is run, so we allow simple prompt
-            String reply = jdb.command(JdbCommand.stopAt(debuggeeClass, bp).allowSimplePrompt()).stream()
+            String reply = jdb.command(JdbCommand.stopAt(debuggeeClass, bp)).stream()
                     .collect(Collectors.joining("\n"));
             if (reply.contains("Unable to set")) {
                 throw new RuntimeException("jdb failed to set breakpoint at " + debuggeeClass + ":" + bp);

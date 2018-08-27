@@ -26,6 +26,7 @@
 #define SHARE_VM_MEMORY_FILEMAP_HPP
 
 #include "classfile/classLoader.hpp"
+#include "include/cds.h"
 #include "memory/metaspaceShared.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/universe.hpp"
@@ -87,17 +88,94 @@ public:
   }
 };
 
+struct ArchiveHeapOopmapInfo {
+  address _oopmap;               // bitmap for relocating embedded oops
+  size_t  _oopmap_size_in_bits;
+};
+
+struct FileMapHeader : public CDSFileMapHeaderBase {
+  size_t _alignment;                // how shared archive should be aligned
+  int    _obj_alignment;            // value of ObjectAlignmentInBytes
+  address _narrow_oop_base;         // compressed oop encoding base
+  int    _narrow_oop_shift;         // compressed oop encoding shift
+  bool    _compact_strings;         // value of CompactStrings
+  uintx  _max_heap_size;            // java max heap size during dumping
+  Universe::NARROW_OOP_MODE _narrow_oop_mode; // compressed oop encoding mode
+  int     _narrow_klass_shift;      // save narrow klass base and shift
+  address _narrow_klass_base;
+  char*   _misc_data_patching_start;
+  char*   _read_only_tables_start;
+  address _cds_i2i_entry_code_buffers;
+  size_t  _cds_i2i_entry_code_buffers_size;
+  size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
+                                    // (mc, md, ro, rw and od).
+  MemRegion _heap_reserved;         // reserved region for the entire heap at dump time.
+
+  // The following fields are all sanity checks for whether this archive
+  // will function correctly with this JVM and the bootclasspath it's
+  // invoked with.
+  char  _jvm_ident[JVM_IDENT_MAX];      // identifier for jvm
+
+  // The _paths_misc_info is a variable-size structure that records "miscellaneous"
+  // information during dumping. It is generated and validated by the
+  // SharedPathsMiscInfo class. See SharedPathsMiscInfo.hpp for
+  // detailed description.
+  //
+  // The _paths_misc_info data is stored as a byte array in the archive file header,
+  // immediately after the _header field. This information is used only when
+  // checking the validity of the archive and is deallocated after the archive is loaded.
+  //
+  // Note that the _paths_misc_info does NOT include information for JAR files
+  // that existed during dump time. Their information is stored in _shared_path_table.
+  int _paths_misc_info_size;
+
+  // The following is a table of all the class path entries that were used
+  // during dumping. At run time, we require these files to exist and have the same
+  // size/modification time, or else the archive will refuse to load.
+  //
+  // All of these entries must be JAR files. The dumping process would fail if a non-empty
+  // directory was specified in the classpaths. If an empty directory was specified
+  // it is checked by the _paths_misc_info as described above.
+  //
+  // FIXME -- if JAR files in the tail of the list were specified but not used during dumping,
+  // they should be removed from this table, to save space and to avoid spurious
+  // loading failures during runtime.
+  int _shared_path_table_size;
+  size_t _shared_path_entry_size;
+  Array<u8>* _shared_path_table;
+
+  jshort _app_class_paths_start_index;  // Index of first app classpath entry
+  jshort _app_module_paths_start_index; // Index of first module path entry
+  jshort _max_used_path_index;          // max path index referenced during CDS dump
+  bool   _verify_local;                 // BytecodeVerificationLocal setting
+  bool   _verify_remote;                // BytecodeVerificationRemote setting
+  bool   _has_platform_or_app_classes;  // Archive contains app classes
+
+  void set_has_platform_or_app_classes(bool v) {
+    _has_platform_or_app_classes = v;
+  }
+  bool has_platform_or_app_classes() { return _has_platform_or_app_classes; }
+  jshort max_used_path_index()       { return _max_used_path_index; }
+  jshort app_module_paths_start_index() { return _app_module_paths_start_index; }
+
+  bool validate();
+  void populate(FileMapInfo* info, size_t alignment);
+  int compute_crc();
+
+  CDSFileMapRegion* space_at(int i) {
+    assert(i >= 0 && i < NUM_CDS_REGIONS, "invalid region");
+    return &_space[i];
+  }
+};
+
 class FileMapInfo : public CHeapObj<mtInternal> {
 private:
   friend class ManifestStream;
   friend class VMStructs;
-  enum {
-    _invalid_version = -1,
-    _current_version = 3
-  };
+  friend struct FileMapHeader;
 
-  bool  _file_open;
-  int   _fd;
+  bool    _file_open;
+  int     _fd;
   size_t  _file_offset;
 
 private:
@@ -116,97 +194,7 @@ public:
     // methods, we would get sizeof(FileMapHeaderBase) == 1 with gcc.
     intx _dummy;
   };
-  struct FileMapHeader : FileMapHeaderBase {
-    // Use data() and data_size() to memcopy to/from the FileMapHeader. We need to
-    // avoid read/writing the C++ vtable pointer.
-    static size_t data_size() {
-      return sizeof(FileMapHeader) - sizeof(FileMapInfo::FileMapHeaderBase);
-    }
-    char* data() {
-      return ((char*)this) + sizeof(FileMapHeaderBase);
-    }
 
-    int    _magic;                    // identify file type.
-    int    _crc;                      // header crc checksum.
-    int    _version;                  // (from enum, above.)
-    size_t _alignment;                // how shared archive should be aligned
-    int    _obj_alignment;            // value of ObjectAlignmentInBytes
-    address _narrow_oop_base;         // compressed oop encoding base
-    int    _narrow_oop_shift;         // compressed oop encoding shift
-    bool    _compact_strings;         // value of CompactStrings
-    uintx  _max_heap_size;            // java max heap size during dumping
-    Universe::NARROW_OOP_MODE _narrow_oop_mode; // compressed oop encoding mode
-    int     _narrow_klass_shift;      // save narrow klass base and shift
-    address _narrow_klass_base;
-    char*   _misc_data_patching_start;
-    char*   _read_only_tables_start;
-    address _cds_i2i_entry_code_buffers;
-    size_t  _cds_i2i_entry_code_buffers_size;
-    size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
-                                      // (mc, md, ro, rw and od).
-    struct space_info {
-      int    _crc;           // crc checksum of the current space
-      size_t _file_offset;   // sizeof(this) rounded to vm page size
-      union {
-        char*  _base;        // copy-on-write base address
-        intx   _offset;      // offset from the compressed oop encoding base, only used
-                             // by archive heap space
-      } _addr;
-      size_t _used;          // for setting space top on read
-      bool   _read_only;     // read only space?
-      bool   _allow_exec;    // executable code in space?
-    } _space[MetaspaceShared::n_regions];
-
-    // The following fields are all sanity checks for whether this archive
-    // will function correctly with this JVM and the bootclasspath it's
-    // invoked with.
-    char  _jvm_ident[JVM_IDENT_MAX];      // identifier for jvm
-
-    // The _paths_misc_info is a variable-size structure that records "miscellaneous"
-    // information during dumping. It is generated and validated by the
-    // SharedPathsMiscInfo class. See SharedPathsMiscInfo.hpp for
-    // detailed description.
-    //
-    // The _paths_misc_info data is stored as a byte array in the archive file header,
-    // immediately after the _header field. This information is used only when
-    // checking the validity of the archive and is deallocated after the archive is loaded.
-    //
-    // Note that the _paths_misc_info does NOT include information for JAR files
-    // that existed during dump time. Their information is stored in _shared_path_table.
-    int _paths_misc_info_size;
-
-    // The following is a table of all the class path entries that were used
-    // during dumping. At run time, we require these files to exist and have the same
-    // size/modification time, or else the archive will refuse to load.
-    //
-    // All of these entries must be JAR files. The dumping process would fail if a non-empty
-    // directory was specified in the classpaths. If an empty directory was specified
-    // it is checked by the _paths_misc_info as described above.
-    //
-    // FIXME -- if JAR files in the tail of the list were specified but not used during dumping,
-    // they should be removed from this table, to save space and to avoid spurious
-    // loading failures during runtime.
-    int _shared_path_table_size;
-    size_t _shared_path_entry_size;
-    Array<u8>* _shared_path_table;
-
-    jshort _app_class_paths_start_index;  // Index of first app classpath entry
-    jshort _app_module_paths_start_index; // Index of first module path entry
-    bool   _verify_local;                 // BytecodeVerificationLocal setting
-    bool   _verify_remote;                // BytecodeVerificationRemote setting
-    bool   _has_platform_or_app_classes;  // Archive contains app classes
-
-    void set_has_platform_or_app_classes(bool v) {
-      _has_platform_or_app_classes = v;
-    }
-    bool has_platform_or_app_classes() { return _has_platform_or_app_classes; }
-
-    char* region_addr(int idx);
-
-    bool validate();
-    void populate(FileMapInfo* info, size_t alignment);
-    int compute_crc();
-  };
 
   FileMapHeader * _header;
 
@@ -214,6 +202,7 @@ public:
   char* _paths_misc_info;
 
   static FileMapInfo* _current_info;
+  static bool _heap_pointers_need_patching;
 
   bool  init_from_file(int fd);
   void  align_file_position();
@@ -224,7 +213,6 @@ public:
   FileMapInfo();
   ~FileMapInfo();
 
-  static int current_version()        { return _current_version; }
   int    compute_header_crc()         { return _header->compute_crc(); }
   void   set_header_crc(int crc)      { _header->_crc = crc; }
   void   populate_header(size_t alignment);
@@ -274,12 +262,19 @@ public:
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
   size_t write_archive_heap_regions(GrowableArray<MemRegion> *heap_mem,
+                                    GrowableArray<ArchiveHeapOopmapInfo> *oopmaps,
                                     int first_region_id, int max_num_regions);
-  void  write_bytes(const void* buffer, int count);
-  void  write_bytes_aligned(const void* buffer, int count);
+  void  write_bytes(const void* buffer, size_t count);
+  void  write_bytes_aligned(const void* buffer, size_t count);
   char* map_region(int i, char** top_ret);
+  void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
   void  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
   void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_archived_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
+  void  patch_archived_heap_embedded_pointers(MemRegion* ranges, int num_ranges,
+                                              int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
+  bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
+  MemRegion get_heap_regions_range_with_current_oop_encoding_mode() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   void  unmap_region(int i);
   bool  verify_region_checksum(int i);
   void  close();
@@ -295,7 +290,6 @@ public:
   static void fail_continue(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
 
   bool is_in_shared_region(const void* p, int idx) NOT_CDS_RETURN_(false);
-  void print_shared_spaces() NOT_CDS_RETURN;
 
   // Stop CDS sharing and unmap CDS regions.
   static void stop_sharing_and_unmap(const char* msg);
@@ -324,11 +318,33 @@ public:
     return _shared_path_table_size;
   }
 
+  char* region_addr(int idx);
+
  private:
   bool  map_heap_data(MemRegion **heap_mem, int first, int max, int* num,
                       bool is_open = false) NOT_CDS_JAVA_HEAP_RETURN_(false);
   bool  verify_mapped_heap_regions(int first, int num) NOT_CDS_JAVA_HEAP_RETURN_(false);
   void  dealloc_archive_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
+
+  CDSFileMapRegion* space_at(int i) {
+    return _header->space_at(i);
+  }
+
+  narrowOop offset_of_space(CDSFileMapRegion* spc) {
+    return (narrowOop)(spc->_addr._offset);
+  }
+
+  // The starting address of spc, as calculated with CompressedOop::decode_non_null()
+  address start_address_with_current_oop_encoding_mode(CDSFileMapRegion* spc) {
+    return decode_start_address(spc, true);
+  }
+
+  // The starting address of spc, as calculated with HeapShared::decode_with_archived_oop_encoding_mode()
+  address start_address_with_archived_oop_encoding_mode(CDSFileMapRegion* spc) {
+    return decode_start_address(spc, false);
+  }
+
+  address decode_start_address(CDSFileMapRegion* spc, bool with_current_oop_encoding_mode);
 };
 
 #endif // SHARE_VM_MEMORY_FILEMAP_HPP

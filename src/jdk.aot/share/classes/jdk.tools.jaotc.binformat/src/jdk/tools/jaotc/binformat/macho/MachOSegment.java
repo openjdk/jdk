@@ -21,12 +21,13 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
 
 import jdk.tools.jaotc.binformat.macho.MachO.segment_command_64;
-import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
 public class MachOSegment {
     ByteBuffer segment;

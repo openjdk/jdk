@@ -90,6 +90,14 @@ class WarmCallInfo;
 class Node_Stack;
 struct Final_Reshape_Counts;
 
+enum LoopOptsMode {
+  LoopOptsDefault,
+  LoopOptsNone,
+  LoopOptsSkipSplitIf,
+  LoopOptsVerify,
+  LoopOptsLastRound
+};
+
 typedef unsigned int node_idx_t;
 class NodeCloneInfo {
  private:
@@ -1079,6 +1087,7 @@ class Compile : public Phase {
   void inline_incrementally(PhaseIterGVN& igvn);
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
+  bool optimize_loops(int& loop_opts_cnt, PhaseIterGVN& igvn, LoopOptsMode mode);
 
   // Matching, CFG layout, allocation, code generation
   PhaseCFG*         cfg()                       { return _cfg; }

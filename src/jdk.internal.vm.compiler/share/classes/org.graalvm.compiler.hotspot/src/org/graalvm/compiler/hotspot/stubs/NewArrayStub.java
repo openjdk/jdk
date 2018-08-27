@@ -26,7 +26,6 @@ package org.graalvm.compiler.hotspot.stubs;
 
 import static org.graalvm.compiler.hotspot.GraalHotSpotVMConfig.INJECTED_VMCONFIG;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayAllocationSize;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.arrayPrototypeMarkWord;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.getAndClearObjectResult;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.layoutHelperElementTypeMask;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.layoutHelperElementTypeShift;
@@ -36,11 +35,6 @@ import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.layoutHelperLog2ElementSizeShift;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.readLayoutHelper;
 import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.registerAsWord;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useCMSIncrementalMode;
-import static org.graalvm.compiler.hotspot.replacements.HotSpotReplacementsUtil.useFastTLABRefill;
-import static org.graalvm.compiler.hotspot.replacements.NewObjectSnippets.MAX_ARRAY_FAST_PATH_ALLOCATION_LENGTH;
-import static org.graalvm.compiler.hotspot.replacements.NewObjectSnippets.formatArray;
-import static org.graalvm.compiler.hotspot.stubs.NewInstanceStub.refillAllocate;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.handlePendingException;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.newDescriptor;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.printf;
@@ -54,18 +48,13 @@ import org.graalvm.compiler.graph.Node.ConstantNodeParameter;
 import org.graalvm.compiler.graph.Node.NodeIntrinsic;
 import org.graalvm.compiler.hotspot.HotSpotForeignCallLinkage;
 import org.graalvm.compiler.hotspot.meta.HotSpotProviders;
-import org.graalvm.compiler.hotspot.nodes.GraalHotSpotVMConfigNode;
 import org.graalvm.compiler.hotspot.nodes.StubForeignCallNode;
-import org.graalvm.compiler.hotspot.nodes.type.KlassPointerStamp;
 import org.graalvm.compiler.hotspot.replacements.NewObjectSnippets;
 import org.graalvm.compiler.hotspot.word.KlassPointer;
-import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.word.Word;
-import jdk.internal.vm.compiler.word.WordFactory;
 
 import jdk.vm.ci.code.Register;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 
 /**
  * Stub implementing the fast path for TLAB refill during instance class allocation. This stub is
@@ -81,15 +70,12 @@ public class NewArrayStub extends SnippetStub {
 
     @Override
     protected Object[] makeConstArgs() {
-        HotSpotResolvedObjectType intArrayType = (HotSpotResolvedObjectType) providers.getMetaAccess().lookupJavaType(int[].class);
         int count = method.getSignature().getParameterCount(false);
         Object[] args = new Object[count];
-        assert checkConstArg(3, "intArrayHub");
-        assert checkConstArg(4, "threadRegister");
-        assert checkConstArg(5, "options");
-        args[3] = ConstantNode.forConstant(KlassPointerStamp.klassNonNull(), intArrayType.klass(), null);
-        args[4] = providers.getRegisters().getThreadRegister();
-        args[5] = options;
+        assert checkConstArg(2, "threadRegister");
+        assert checkConstArg(3, "options");
+        args[2] = providers.getRegisters().getThreadRegister();
+        args[3] = options;
         return args;
     }
 
@@ -104,12 +90,9 @@ public class NewArrayStub extends SnippetStub {
      *
      * @param hub the hub of the object to be allocated
      * @param length the length of the array
-     * @param fillContents Should the array be filled with zeroes?
-     * @param intArrayHub the hub for {@code int[].class}
      */
     @Snippet
-    private static Object newArray(KlassPointer hub, int length, boolean fillContents, @ConstantParameter KlassPointer intArrayHub, @ConstantParameter Register threadRegister,
-                    @ConstantParameter OptionValues options) {
+    private static Object newArray(KlassPointer hub, int length, @ConstantParameter Register threadRegister, @ConstantParameter OptionValues options) {
         int layoutHelper = readLayoutHelper(hub);
         int log2ElementSize = (layoutHelper >> layoutHelperLog2ElementSizeShift(INJECTED_VMCONFIG)) & layoutHelperLog2ElementSizeMask(INJECTED_VMCONFIG);
         int headerSize = (layoutHelper >> layoutHelperHeaderSizeShift(INJECTED_VMCONFIG)) & layoutHelperHeaderSizeMask(INJECTED_VMCONFIG);
@@ -122,26 +105,13 @@ public class NewArrayStub extends SnippetStub {
             printf("newArray: hub=%p\n", hub.asWord().rawValue());
         }
 
-        // check that array length is small enough for fast path.
         Word thread = registerAsWord(threadRegister);
-        boolean inlineContiguousAllocationSupported = GraalHotSpotVMConfigNode.inlineContiguousAllocationSupported();
-        if (useFastTLABRefill(INJECTED_VMCONFIG) && inlineContiguousAllocationSupported && !useCMSIncrementalMode(INJECTED_VMCONFIG) && length >= 0 &&
-                        length <= MAX_ARRAY_FAST_PATH_ALLOCATION_LENGTH) {
-            Word memory = refillAllocate(thread, intArrayHub, sizeInBytes, logging(options));
-            if (memory.notEqual(0)) {
-                if (logging(options)) {
-                    printf("newArray: allocated new array at %p\n", memory.rawValue());
-                }
-                return verifyObject(
-                                formatArray(hub, sizeInBytes, length, headerSize, memory, WordFactory.unsigned(arrayPrototypeMarkWord(INJECTED_VMCONFIG)), fillContents, false, null));
-            }
-        }
         if (logging(options)) {
             printf("newArray: calling new_array_c\n");
         }
 
         newArrayC(NEW_ARRAY_C, thread, hub, length);
-        handlePendingException(thread, true);
+        handlePendingException(thread, true, true);
         return verifyObject(getAndClearObjectResult(thread));
     }
 

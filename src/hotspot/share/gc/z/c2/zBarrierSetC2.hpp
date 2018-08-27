@@ -101,7 +101,9 @@ public:
                          const TypePtr* t,
                          MemOrd mo,
                          ControlDependency control_dependency = DependsOnlyOnTest)
-    : LoadPNode(c, mem, adr, at, t, mo, control_dependency) {}
+    : LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
+    init_class_id(Class_LoadBarrierSlowReg);
+  }
 
   virtual const char * name() {
     return "LoadBarrierSlowRegNode";
@@ -123,7 +125,9 @@ public:
                              const TypePtr* t,
                              MemOrd mo,
                              ControlDependency control_dependency = DependsOnlyOnTest)
-    : LoadPNode(c, mem, adr, at, t, mo, control_dependency) {}
+    : LoadPNode(c, mem, adr, at, t, mo, control_dependency) {
+    init_class_id(Class_LoadBarrierWeakSlowReg);
+  }
 
   virtual const char * name() {
     return "LoadBarrierWeakSlowRegNode";
@@ -182,6 +186,7 @@ public:
                      bool oop_reload_allowed = true) const;
 
   virtual void* create_barrier_state(Arena* comp_arena) const;
+  virtual bool has_load_barriers() const { return true; }
   virtual bool is_gc_barrier_node(Node* node) const;
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const { }
   virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful) const;
@@ -190,7 +195,7 @@ public:
   virtual void register_potential_barrier_node(Node* node) const;
   virtual void unregister_potential_barrier_node(Node* node) const;
   virtual bool array_copy_requires_gc_barriers(BasicType type) const { return true; }
-  virtual Node* step_over_gc_barrier(Node* c) const { return c; }
+  virtual Node* step_over_gc_barrier(Node* c) const;
   // If the BarrierSetC2 state has kept macro nodes in its compilation unit state to be
   // expanded later, then now is the time to do so.
   virtual bool expand_macro_nodes(PhaseMacroExpand* macro) const;

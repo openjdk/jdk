@@ -36,7 +36,6 @@ import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
-
 public class PrintSharedArchiveAndExit {
     public static void main(String[] args) throws Exception {
         String archiveName = "PrintSharedArchiveAndExit.jsa";
@@ -49,20 +48,19 @@ public class PrintSharedArchiveAndExit {
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
                 "-XX:+PrintSharedArchiveAndExit", "-version");
         out = CDSTestUtils.executeAndLog(pb, "print-shared-archive-and-version");
-        if (!CDSTestUtils.isUnableToMap(out)) {
-            out.shouldContain("archive is valid")
-                .shouldNotContain("java version")     // Should not print JVM version
-                .shouldHaveExitValue(0);              // Should report success in error code.
-        }
+        CDSTestUtils.checkMappingFailure(out);
+
+        out.shouldContain("archive is valid")
+            .shouldNotContain("java version")     // Should not print JVM version
+            .shouldHaveExitValue(0);              // Should report success in error code.
 
         pb = ProcessTools.createJavaProcessBuilder(
                 "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./" + archiveName,
                 "-XX:+PrintSharedArchiveAndExit");
         out = CDSTestUtils.executeAndLog(pb, "print-shared-archive");
-        if (!CDSTestUtils.isUnableToMap(out)) {
-            out.shouldContain("archive is valid")
-                .shouldNotContain("Usage:")           // Should not print JVM help message
-                .shouldHaveExitValue(0);               // Should report success in error code.
-        }
+        CDSTestUtils.checkMappingFailure(out);
+        out.shouldContain("archive is valid")
+            .shouldNotContain("Usage:")           // Should not print JVM help message
+            .shouldHaveExitValue(0);              // Should report success in error code.
     }
 }

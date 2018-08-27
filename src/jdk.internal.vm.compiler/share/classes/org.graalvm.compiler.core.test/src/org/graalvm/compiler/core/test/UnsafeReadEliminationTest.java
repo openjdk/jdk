@@ -60,14 +60,16 @@ public class UnsafeReadEliminationTest extends GraalCompilerTest {
         longArrayBaseOffset = UNSAFE.arrayBaseOffset(long[].class);
     }
 
+    private static final long ARRAY_LONG_BASE_OFFSET = Unsafe.ARRAY_LONG_BASE_OFFSET;
+
     public static long test1Snippet(double a) {
         final Object m = Memory;
         if (a > 0) {
-            UNSAFE.putDouble(m, (long) Unsafe.ARRAY_LONG_BASE_OFFSET, a);
+            UNSAFE.putDouble(m, ARRAY_LONG_BASE_OFFSET, a);
         } else {
-            SideEffectL = UNSAFE.getLong(m, (long) Unsafe.ARRAY_LONG_BASE_OFFSET);
+            SideEffectL = UNSAFE.getLong(m, ARRAY_LONG_BASE_OFFSET);
         }
-        return UNSAFE.getLong(m, (long) Unsafe.ARRAY_LONG_BASE_OFFSET);
+        return UNSAFE.getLong(m, ARRAY_LONG_BASE_OFFSET);
     }
 
     public static class A {
@@ -80,14 +82,14 @@ public class UnsafeReadEliminationTest extends GraalCompilerTest {
         if (c != 0) {
             long[][] r = a.o;
             phi = r;
-            UNSAFE.putDouble(r, (long) Unsafe.ARRAY_LONG_BASE_OFFSET, 12d);
+            UNSAFE.putDouble(r, ARRAY_LONG_BASE_OFFSET, 12d);
         } else {
             long[][] r = a.p;
             phi = r;
-            UNSAFE.putLong(r, (long) Unsafe.ARRAY_LONG_BASE_OFFSET, 123);
+            UNSAFE.putLong(r, ARRAY_LONG_BASE_OFFSET, 123);
         }
         GraalDirectives.controlFlowAnchor();
-        SideEffectD = UNSAFE.getDouble(phi, (long) Unsafe.ARRAY_LONG_BASE_OFFSET);
+        SideEffectD = UNSAFE.getDouble(phi, ARRAY_LONG_BASE_OFFSET);
         return phi;
     }
 

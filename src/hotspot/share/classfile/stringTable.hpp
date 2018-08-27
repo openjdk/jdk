@@ -58,21 +58,22 @@ private:
   static StringTable* _the_table;
   // Shared string table
   static CompactHashtable<oop, char> _shared_table;
-  static bool _shared_string_mapped;
-  static bool _alt_hash;
+  static volatile bool _shared_string_mapped;
+  static volatile bool _alt_hash;
+
 private:
 
-   // Set if one bucket is out of balance due to hash algorithm deficiency
   StringTableHash* _local_table;
   size_t _current_size;
   volatile bool _has_work;
+  // Set if one bucket is out of balance due to hash algorithm deficiency
   volatile bool _needs_rehashing;
 
   OopStorage* _weak_handles;
 
-  volatile size_t _items;
+  volatile size_t _items_count;
   DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
-  volatile size_t _uncleaned_items;
+  volatile size_t _uncleaned_items_count;
   DEFINE_PAD_MINUS_SIZE(2, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile size_t));
 
   double get_load_factor();
@@ -83,7 +84,7 @@ private:
 
   static size_t item_added();
   static void item_removed();
-  size_t add_items_to_clean(size_t ndead);
+  size_t add_items_count_to_clean(size_t ndead);
 
   StringTable();
 
@@ -100,7 +101,7 @@ private:
  public:
   // The string table
   static StringTable* the_table() { return _the_table; }
-  size_t table_size(Thread* thread = NULL);
+  size_t table_size();
 
   static OopStorage* weak_storage() { return the_table()->_weak_handles; }
 
@@ -116,7 +117,7 @@ private:
 
   // Must be called before a parallel walk where strings might die.
   static void reset_dead_counter() {
-    the_table()->_uncleaned_items = 0;
+    the_table()->_uncleaned_items_count = 0;
   }
   // After the parallel walk this method must be called to trigger
   // cleaning. Note it might trigger a resize instead.
@@ -127,7 +128,7 @@ private:
   // If GC uses ParState directly it should add the number of cleared
   // strings to this method.
   static void inc_dead_counter(size_t ndead) {
-    the_table()->add_items_to_clean(ndead);
+    the_table()->add_items_count_to_clean(ndead);
   }
 
   //   Delete pointers to otherwise-unreachable objects.

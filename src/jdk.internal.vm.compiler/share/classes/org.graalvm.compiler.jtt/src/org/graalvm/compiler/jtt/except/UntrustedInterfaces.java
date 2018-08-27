@@ -151,8 +151,8 @@ public class UntrustedInterfaces extends JTTTest {
 
     // Checkstyle: stop
     @BeforeClass
-    public static void setUp() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        poisonPill = (Pill) new PoisonLoader().findClass(PoisonLoader.POISON_IMPL_NAME).newInstance();
+    public static void setUp() throws Exception {
+        poisonPill = (Pill) new PoisonLoader().findClass(PoisonLoader.POISON_IMPL_NAME).getDeclaredConstructor().newInstance();
     }
 
     // Checkstyle: resume

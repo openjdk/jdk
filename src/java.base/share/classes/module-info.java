@@ -284,8 +284,6 @@ module java.base {
         java.naming;
     exports sun.security.rsa to
         jdk.crypto.cryptoki;
-    exports sun.security.ssl to
-        java.security.jgss;
     exports sun.security.timestamp to
         jdk.jartool;
     exports sun.security.tools to

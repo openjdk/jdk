@@ -22,18 +22,19 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.elf;
 
-/**
- *
- * Support for the creation of Elf Object files. Current support is limited to 64 bit x86_64.
- *
- */
+//@Checkstyle: stop
+//@formatter:off
 
+/**
+ * Support for the creation of Elf Object files. Current support is limited to 64 bit x86_64.
+ */
 final class Elf {
-    //@formatter:off
     /**
-     * Elf64_Ehdr structure defines
+     * Elf64_Ehdr structure defines.
      */
     enum Elf64_Ehdr {
                e_ident( 0,16),
@@ -103,7 +104,7 @@ final class Elf {
     }
 
     /**
-     * Elf64_Shdr structure defines
+     * Elf64_Shdr structure defines.
      */
     enum Elf64_Shdr {
                sh_name( 0, 4),
@@ -190,7 +191,7 @@ final class Elf {
     }
 
     /**
-     * Elf64_Rel structure defines
+     * Elf64_Rel structure defines.
      */
     enum Elf64_Rel {
               r_offset( 0, 8),
@@ -207,7 +208,7 @@ final class Elf {
         static int totalsize = 16;
 
         /**
-         * Relocation types
+         * Relocation types.
          */
 
         static final int R_X86_64_NONE     = 0x0;
@@ -270,9 +271,7 @@ final class Elf {
         static final int R_AARCH64_LDST64_ABS_LO12_NC = 286;
 
         static long ELF64_R_INFO(int symidx, int type) {
-            return (((long)symidx << 32) + type);
+            return (((long) symidx << 32) + type);
         }
-
     }
-    //@formatter:on
 }

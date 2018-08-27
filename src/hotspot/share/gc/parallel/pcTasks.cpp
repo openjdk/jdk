@@ -107,8 +107,10 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
       SystemDictionary::oops_do(&mark_and_push_closure);
       break;
 
-    case class_loader_data:
-      ClassLoaderDataGraph::always_strong_oops_do(&mark_and_push_closure, true);
+    case class_loader_data: {
+        CLDToOopClosure cld_closure(&mark_and_push_closure);
+        ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
+      }
       break;
 
     case code_cache:

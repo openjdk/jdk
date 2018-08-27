@@ -3009,7 +3009,8 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
   // Preloaded classes and loader from the system dictionary
   blk.set_kind(JVMTI_HEAP_REFERENCE_SYSTEM_CLASS);
   SystemDictionary::oops_do(&blk);
-  ClassLoaderDataGraph::always_strong_oops_do(&blk, false);
+  CLDToOopClosure cld_closure(&blk, false);
+  ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
   if (blk.stopped()) {
     return false;
   }

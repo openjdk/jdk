@@ -26,7 +26,7 @@
 
 #include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
-#include "gc/g1/satbMarkQueue.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"

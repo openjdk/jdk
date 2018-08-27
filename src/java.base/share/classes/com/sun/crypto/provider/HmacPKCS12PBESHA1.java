@@ -73,62 +73,69 @@ public final class HmacPKCS12PBESHA1 extends HmacCore {
             salt = pbeKey.getSalt(); // maybe null if unspecified
             iCount = pbeKey.getIterationCount(); // maybe 0 if unspecified
         } else if (key instanceof SecretKey) {
-            byte[] passwdBytes = key.getEncoded();
-            if ((passwdBytes == null) ||
-                !(key.getAlgorithm().regionMatches(true, 0, "PBE", 0, 3))) {
+            byte[] passwdBytes;
+            if (!(key.getAlgorithm().regionMatches(true, 0, "PBE", 0, 3)) ||
+                    (passwdBytes = key.getEncoded()) == null) {
                 throw new InvalidKeyException("Missing password");
             }
             passwdChars = new char[passwdBytes.length];
             for (int i=0; i<passwdChars.length; i++) {
                 passwdChars[i] = (char) (passwdBytes[i] & 0x7f);
             }
+            Arrays.fill(passwdBytes, (byte)0x00);
         } else {
             throw new InvalidKeyException("SecretKey of PBE type required");
         }
-        if (params == null) {
-            // should not auto-generate default values since current
-            // javax.crypto.Mac api does not have any method for caller to
-            // retrieve the generated defaults.
-            if ((salt == null) || (iCount == 0)) {
+
+        byte[] derivedKey;
+        try {
+            if (params == null) {
+                // should not auto-generate default values since current
+                // javax.crypto.Mac api does not have any method for caller to
+                // retrieve the generated defaults.
+                if ((salt == null) || (iCount == 0)) {
+                    throw new InvalidAlgorithmParameterException
+                            ("PBEParameterSpec required for salt and iteration count");
+                }
+            } else if (!(params instanceof PBEParameterSpec)) {
                 throw new InvalidAlgorithmParameterException
-                    ("PBEParameterSpec required for salt and iteration count");
-            }
-        } else if (!(params instanceof PBEParameterSpec)) {
-            throw new InvalidAlgorithmParameterException
-                ("PBEParameterSpec type required");
-        } else {
-            PBEParameterSpec pbeParams = (PBEParameterSpec) params;
-            // make sure the parameter values are consistent
-            if (salt != null) {
-                if (!Arrays.equals(salt, pbeParams.getSalt())) {
-                    throw new InvalidAlgorithmParameterException
-                        ("Inconsistent value of salt between key and params");
-                }
+                        ("PBEParameterSpec type required");
             } else {
-                salt = pbeParams.getSalt();
-            }
-            if (iCount != 0) {
-                if (iCount != pbeParams.getIterationCount()) {
-                    throw new InvalidAlgorithmParameterException
-                        ("Different iteration count between key and params");
+                PBEParameterSpec pbeParams = (PBEParameterSpec) params;
+                // make sure the parameter values are consistent
+                if (salt != null) {
+                    if (!Arrays.equals(salt, pbeParams.getSalt())) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Inconsistent value of salt between key and params");
+                    }
+                } else {
+                    salt = pbeParams.getSalt();
                 }
-            } else {
-                iCount = pbeParams.getIterationCount();
+                if (iCount != 0) {
+                    if (iCount != pbeParams.getIterationCount()) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Different iteration count between key and params");
+                    }
+                } else {
+                    iCount = pbeParams.getIterationCount();
+                }
             }
+            // For security purpose, we need to enforce a minimum length
+            // for salt; just require the minimum salt length to be 8-byte
+            // which is what PKCS#5 recommends and openssl does.
+            if (salt.length < 8) {
+                throw new InvalidAlgorithmParameterException
+                        ("Salt must be at least 8 bytes long");
+            }
+            if (iCount <= 0) {
+                throw new InvalidAlgorithmParameterException
+                        ("IterationCount must be a positive number");
+            }
+            derivedKey = PKCS12PBECipherCore.derive(passwdChars, salt,
+                    iCount, engineGetMacLength(), PKCS12PBECipherCore.MAC_KEY);
+        } finally {
+            Arrays.fill(passwdChars, '\0');
         }
-        // For security purpose, we need to enforce a minimum length
-        // for salt; just require the minimum salt length to be 8-byte
-        // which is what PKCS#5 recommends and openssl does.
-        if (salt.length < 8) {
-            throw new InvalidAlgorithmParameterException
-                ("Salt must be at least 8 bytes long");
-        }
-        if (iCount <= 0) {
-            throw new InvalidAlgorithmParameterException
-                ("IterationCount must be a positive number");
-        }
-        byte[] derivedKey = PKCS12PBECipherCore.derive(passwdChars, salt,
-            iCount, engineGetMacLength(), PKCS12PBECipherCore.MAC_KEY);
         SecretKey cipherKey = new SecretKeySpec(derivedKey, "HmacSHA1");
         super.engineInit(cipherKey, null);
     }

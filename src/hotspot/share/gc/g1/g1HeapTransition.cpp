@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) {
   _eden_length = g1_heap->eden_regions_count();
   _survivor_length = g1_heap->survivor_regions_count();
   _old_length = g1_heap->old_regions_count();
+  _archive_length = g1_heap->archive_regions_count();
   _humongous_length = g1_heap->humongous_regions_count();
   _metaspace_used_bytes = MetaspaceUtils::used_bytes();
 }
@@ -43,16 +44,19 @@ struct DetailedUsage : public StackObj {
   size_t _eden_used;
   size_t _survivor_used;
   size_t _old_used;
+  size_t _archive_used;
   size_t _humongous_used;
 
   size_t _eden_region_count;
   size_t _survivor_region_count;
   size_t _old_region_count;
+  size_t _archive_region_count;
   size_t _humongous_region_count;
 
   DetailedUsage() :
-    _eden_used(0), _survivor_used(0), _old_used(0), _humongous_used(0),
-    _eden_region_count(0), _survivor_region_count(0), _old_region_count(0), _humongous_region_count(0) {}
+    _eden_used(0), _survivor_used(0), _old_used(0), _archive_used(0), _humongous_used(0),
+    _eden_region_count(0), _survivor_region_count(0), _old_region_count(0),
+    _archive_region_count(0), _humongous_region_count(0) {}
 };
 
 class DetailedUsageClosure: public HeapRegionClosure {
@@ -62,6 +66,9 @@ public:
     if (r->is_old()) {
       _usage._old_used += r->used();
       _usage._old_region_count++;
+    } else if (r->is_archive()) {
+      _usage._archive_used += r->used();
+      _usage._archive_region_count++;
     } else if (r->is_survivor()) {
       _usage._survivor_used += r->used();
       _usage._survivor_region_count++;
@@ -94,6 +101,8 @@ void G1HeapTransition::print() {
         after._survivor_length, usage._survivor_region_count);
     assert(usage._old_region_count == after._old_length, "Expected old to be " SIZE_FORMAT " but was " SIZE_FORMAT,
         after._old_length, usage._old_region_count);
+    assert(usage._archive_region_count == after._archive_length, "Expected archive to be " SIZE_FORMAT " but was " SIZE_FORMAT,
+        after._archive_length, usage._archive_region_count);
     assert(usage._humongous_region_count == after._humongous_length, "Expected humongous to be " SIZE_FORMAT " but was " SIZE_FORMAT,
         after._humongous_length, usage._humongous_region_count);
   }
@@ -111,6 +120,11 @@ void G1HeapTransition::print() {
                      _before._old_length, after._old_length);
   log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
       usage._old_used / K, ((after._old_length * HeapRegion::GrainBytes) - usage._old_used) / K);
+
+  log_info(gc, heap)("Archive regions: " SIZE_FORMAT "->" SIZE_FORMAT,
+                     _before._archive_length, after._archive_length);
+  log_trace(gc, heap)(" Used: " SIZE_FORMAT "K, Waste: " SIZE_FORMAT "K",
+      usage._archive_used / K, ((after._archive_length * HeapRegion::GrainBytes) - usage._archive_used) / K);
 
   log_info(gc, heap)("Humongous regions: " SIZE_FORMAT "->" SIZE_FORMAT,
                      _before._humongous_length, after._humongous_length);

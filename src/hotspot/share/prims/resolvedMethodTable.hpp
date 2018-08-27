@@ -59,6 +59,8 @@ class ResolvedMethodTable : public Hashtable<ClassLoaderWeakHandle, mtClass> {
   static int _oops_removed;
   static int _oops_counted;
 
+  static bool _dead_entries;
+
   static ResolvedMethodTable* _the_table;
 private:
   ResolvedMethodEntry* bucket(int i) {
@@ -89,6 +91,9 @@ public:
   // Called from java_lang_invoke_ResolvedMethodName
   static oop find_method(Method* method);
   static oop add_method(Handle rmethod_name);
+
+  static bool has_work() { return _dead_entries; }
+  static void trigger_cleanup();
 
 #if INCLUDE_JVMTI
   // It is called at safepoint only for RedefineClasses

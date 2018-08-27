@@ -100,17 +100,20 @@ public class IntrinsicPredicates {
                             IntrinsicPredicates.SHA256_INSTRUCTION_AVAILABLE,
                             IntrinsicPredicates.SHA512_INSTRUCTION_AVAILABLE));
 
-    public static final BooleanSupplier SHA1_INTRINSICS_AVAILABLE
-            = new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
-                               IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA", "implCompress0"));
+    public static BooleanSupplier isSHA1IntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA", "implCompress0"));
+    }
 
-    public static final BooleanSupplier SHA256_INTRINSICS_AVAILABLE
-            = new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
-                               IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA2", "implCompress0"));
+    public static BooleanSupplier isSHA256IntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA2", "implCompress0"));
+    }
 
-    public static final BooleanSupplier SHA512_INTRINSICS_AVAILABLE
-            = new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
-                               IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA5", "implCompress0"));
+    public static BooleanSupplier isSHA512IntrinsicAvailable() {
+        return new AndPredicate(IntrinsicPredicates.COMPILABLE_BY_C2,
+                                IntrinsicPredicates.isIntrinsicAvailable("sun.security.provider.SHA5", "implCompress0"));
+    }
 
     private static BooleanSupplier isIntrinsicAvailable(String klass, String method) {
         try {

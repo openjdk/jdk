@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.collect;
 
 import jdk.tools.jaotc.LoadedClass;
@@ -37,7 +39,9 @@ public final class ClassSearch {
     }
 
     public List<LoadedClass> search(List<SearchFor> search, SearchPath searchPath) {
-        return search(search, searchPath, (s, t) -> { throw new InternalError(s + " : " + t, t); } );
+        return search(search, searchPath, (s, t) -> {
+            throw new InternalError(s + " : " + t, t);
+        });
     }
 
     public List<LoadedClass> search(List<SearchFor> search, SearchPath searchPath, BiConsumer<String, Throwable> classLoadingErrorsHandler) {
@@ -53,7 +57,9 @@ public final class ClassSearch {
             if (source != null) {
                 source.eachClass((name, loader) -> {
                     LoadedClass x = loadClass(name, loader, classLoadingErrorsHandler);
-                    if (x != null) { loaded.add(x); }
+                    if (x != null) {
+                        loaded.add(x);
+                    }
                 });
             }
         }

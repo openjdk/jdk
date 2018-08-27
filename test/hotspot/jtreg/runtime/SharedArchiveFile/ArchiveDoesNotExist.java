@@ -51,18 +51,16 @@ public class ArchiveDoesNotExist {
 
         // -Xshare=on
         OutputAnalyzer out = CDSTestUtils.runWithArchive(opts);
-        if (!CDSTestUtils.isUnableToMap(out)) {
-            out.shouldContain("Specified shared archive not found")
-               .shouldHaveExitValue(1);
-        }
+        CDSTestUtils.checkMappingFailure(out);
+        out.shouldContain("Specified shared archive not found")
+            .shouldHaveExitValue(1);
 
         // -Xshare=auto
         opts.setXShareMode("auto");
         out = CDSTestUtils.runWithArchive(opts);
-        if (!CDSTestUtils.isUnableToMap(out)) {
-            out.shouldMatch("(java|openjdk) version")
-               .shouldNotContain("sharing")
-               .shouldHaveExitValue(0);
-        }
+        CDSTestUtils.checkMappingFailure(out);
+        out.shouldMatch("(java|openjdk) version")
+            .shouldNotContain("sharing")
+            .shouldHaveExitValue(0);
     }
 }

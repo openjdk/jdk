@@ -21,13 +21,14 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.elf;
 
 import java.nio.ByteBuffer;
 
 import jdk.tools.jaotc.binformat.NativeSymbol;
 import jdk.tools.jaotc.binformat.elf.Elf.Elf64_Sym;
-import jdk.tools.jaotc.binformat.elf.ElfByteBuffer;
 
 final class ElfSymbol extends NativeSymbol {
     private final ByteBuffer sym;

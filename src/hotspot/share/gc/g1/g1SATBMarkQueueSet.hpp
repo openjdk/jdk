@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_G1_G1SATBMARKQUEUE_HPP
 #define SHARE_VM_GC_G1_G1SATBMARKQUEUE_HPP
 
-#include "gc/g1/satbMarkQueue.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
 
 class G1CollectedHeap;
 class JavaThread;

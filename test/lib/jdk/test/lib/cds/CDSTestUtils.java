@@ -32,10 +32,15 @@ import java.util.Date;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-
+import jtreg.SkippedException;
 
 // This class contains common test utilities for testing CDS
 public class CDSTestUtils {
+    public static final String MSG_RANGE_NOT_WITHIN_HEAP =
+        "UseSharedSpaces: Unable to allocate region, range is not within java heap.";
+    public static final String MSG_RANGE_ALREADT_IN_USE =
+        "Unable to allocate region, java heap range is already in use.";
+
     public interface Checker {
         public void check(OutputAnalyzer output) throws Exception;
     }
@@ -114,17 +119,14 @@ public class CDSTestUtils {
     public static class Result {
         private final OutputAnalyzer output;
         private final CDSOptions options;
-        private final boolean hasMappingFailure;
-        private final boolean hasAbnormalExit;
         private final boolean hasNormalExit;
         private final String CDS_DISABLED = "warning: CDS is disabled when the";
 
         public Result(CDSOptions opts, OutputAnalyzer out) throws Exception {
-            options = opts;
-            output = out;
-            hasMappingFailure = CDSTestUtils.checkCommonExecExceptions(output);
-            hasAbnormalExit   = (!hasMappingFailure) && (output.getExitValue() != 0);
-            hasNormalExit     = (!hasMappingFailure) && (output.getExitValue() == 0);
+            checkMappingFailure(out);
+            this.options = opts;
+            this.output = out;
+            hasNormalExit = (output.getExitValue() == 0);
 
             if (hasNormalExit) {
                 if ("on".equals(options.xShareMode) &&
@@ -138,30 +140,22 @@ public class CDSTestUtils {
         }
 
         public Result assertNormalExit(Checker checker) throws Exception {
-            if (!hasMappingFailure) {
-                checker.check(output);
-                output.shouldHaveExitValue(0);
-            }
+            checker.check(output);
+            output.shouldHaveExitValue(0);
             return this;
         }
 
         public Result assertAbnormalExit(Checker checker) throws Exception {
-            if (!hasMappingFailure) {
-                checker.check(output);
-                output.shouldNotHaveExitValue(0);
-            }
+            checker.check(output);
+            output.shouldNotHaveExitValue(0);
             return this;
         }
 
         // When {--limit-modules, --patch-module, and/or --upgrade-module-path}
         // are specified, CDS is silently disabled for both -Xshare:auto and -Xshare:on.
         public Result assertSilentlyDisabledCDS(Checker checker) throws Exception {
-            if (hasMappingFailure) {
-                throw new RuntimeException("Unexpected mapping failure");
-            }
             // this comes from a JVM warning message.
             output.shouldContain(CDS_DISABLED);
-
             checker.check(output);
             return this;
         }
@@ -181,49 +175,50 @@ public class CDSTestUtils {
         }
 
         public Result ifAbnormalExit(Checker checker) throws Exception {
-            if (hasAbnormalExit) {
+            if (!hasNormalExit) {
                 checker.check(output);
             }
             return this;
         }
 
         public Result ifNoMappingFailure(Checker checker) throws Exception {
-            if (!hasMappingFailure) {
-                checker.check(output);
-            }
+            checker.check(output);
             return this;
         }
 
 
         public Result assertNormalExit(String... matches) throws Exception {
-            if (!hasMappingFailure) {
-                checkMatches(output, matches);
-                output.shouldHaveExitValue(0);
-            }
+            checkMatches(output, matches);
+            output.shouldHaveExitValue(0);
             return this;
         }
 
         public Result assertAbnormalExit(String... matches) throws Exception {
-            if (!hasMappingFailure) {
-                checkMatches(output, matches);
-                output.shouldNotHaveExitValue(0);
-            }
-
+            checkMatches(output, matches);
+            output.shouldNotHaveExitValue(0);
             return this;
         }
     }
 
-    // Specify this property to copy sdandard output of the child test process to
-    // the parent/main stdout of the test.
-    // By default such output is logged into a file, and is copied into the main stdout.
-    public static final boolean CopyChildStdoutToMainStdout =
-        Boolean.valueOf(System.getProperty("test.cds.copy.child.stdout", "true"));
+    // A number to be included in the filename of the stdout and the stderr output file.
+    static int logCounter = 0;
+
+    private static int getNextLogCounter() {
+        return logCounter++;
+    }
+
+    // By default, stdout of child processes are logged in files such as
+    // <testname>-0000-exec.stdout. If you want to also include the stdout
+    // inside jtr files, you can override this in the jtreg command line like
+    // "jtreg -Dtest.cds.copy.child.stdout=true ...."
+    public static final boolean copyChildStdoutToMainStdout =
+        Boolean.getBoolean("test.cds.copy.child.stdout");
 
     // This property is passed to child test processes
     public static final String TestTimeoutFactor = System.getProperty("test.timeout.factor", "1.0");
 
     public static final String UnableToMapMsg =
-        "Unable to map shared archive: test did not complete; assumed PASS";
+        "Unable to map shared archive: test did not complete";
 
     // Create bootstrap CDS archive,
     // use extra JVM command line args as a prefix.
@@ -295,16 +290,13 @@ public class CDSTestUtils {
     // of exceptions and common errors.
     // Exception e argument - an exception to be re-thrown if none of the common
     // exceptions match. Pass null if you wish not to re-throw any exception.
-    public static boolean checkCommonExecExceptions(OutputAnalyzer output, Exception e)
+    public static void checkCommonExecExceptions(OutputAnalyzer output, Exception e)
         throws Exception {
         if (output.getStdout().contains("http://bugreport.java.com/bugreport/crash.jsp")) {
             throw new RuntimeException("Hotspot crashed");
         }
         if (output.getStdout().contains("TEST FAILED")) {
             throw new RuntimeException("Test Failed");
-        }
-        if (output.getOutput().contains("shared class paths mismatch")) {
-//            throw new RuntimeException("shared class paths mismatch");
         }
         if (output.getOutput().contains("Unable to unmap shared space")) {
             throw new RuntimeException("Unable to unmap shared space");
@@ -314,18 +306,16 @@ public class CDSTestUtils {
         // at given address. This behavior is platform-specific, machine config-specific
         // and can be random (see ASLR).
         if (isUnableToMap(output)) {
-            System.out.println(UnableToMapMsg);
-            return true;
+            throw new SkippedException(UnableToMapMsg);
         }
 
         if (e != null) {
             throw e;
         }
-        return false;
     }
 
-    public static boolean checkCommonExecExceptions(OutputAnalyzer output) throws Exception {
-        return checkCommonExecExceptions(output, null);
+    public static void checkCommonExecExceptions(OutputAnalyzer output) throws Exception {
+        checkCommonExecExceptions(output, null);
     }
 
 
@@ -356,6 +346,12 @@ public class CDSTestUtils {
         }
 
         return false;
+    }
+
+    public static void checkMappingFailure(OutputAnalyzer out) throws SkippedException {
+        if (isUnableToMap(out)) {
+            throw new SkippedException(UnableToMapMsg);
+        }
     }
 
     public static Result run(String... cliPrefix) throws Exception {
@@ -446,8 +442,7 @@ public class CDSTestUtils {
                                              int expectedExitValue,
                                              String... extraMatches) throws Exception {
         if (isUnableToMap(output)) {
-            System.out.println(UnableToMapMsg);
-            return output;
+            throw new SkippedException(UnableToMapMsg);
         }
 
         output.shouldHaveExitValue(expectedExitValue);
@@ -562,13 +557,17 @@ public class CDSTestUtils {
     public static OutputAnalyzer executeAndLog(ProcessBuilder pb, String logName) throws Exception {
         long started = System.currentTimeMillis();
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        String outputFileNamePrefix =
+            getTestName() + "-" + String.format("%04d", getNextLogCounter()) + "-" + logName;
 
-        writeFile(getOutputFile(logName + ".stdout"), output.getStdout());
-        writeFile(getOutputFile(logName + ".stderr"), output.getStderr());
+        writeFile(getOutputFile(outputFileNamePrefix + ".stdout"), output.getStdout());
+        writeFile(getOutputFile(outputFileNamePrefix + ".stderr"), output.getStderr());
         System.out.println("[ELAPSED: " + (System.currentTimeMillis() - started) + " ms]");
+        System.out.println("[logging stdout to " + outputFileNamePrefix + ".stdout]");
+        System.out.println("[logging stderr to " + outputFileNamePrefix + ".stderr]");
         System.out.println("[STDERR]\n" + output.getStderr());
 
-        if (CopyChildStdoutToMainStdout)
+        if (copyChildStdoutToMainStdout)
             System.out.println("[STDOUT]\n" + output.getStdout());
 
         return output;

@@ -80,8 +80,8 @@ public class AMD64GraphBuilderPlugins {
                                 new JavaKind[]{JavaKind.Int, JavaKind.Long, JavaKind.Object, JavaKind.Boolean, JavaKind.Byte, JavaKind.Short, JavaKind.Char, JavaKind.Float, JavaKind.Double});
                 registerUnsafePlugins(invocationPlugins, replacementsBytecodeProvider, explicitUnsafeNullChecks);
                 registerStringPlugins(invocationPlugins, arch, replacementsBytecodeProvider);
-                registerStringLatin1Plugins(invocationPlugins, replacementsBytecodeProvider);
-                registerStringUTF16Plugins(invocationPlugins, replacementsBytecodeProvider);
+                registerStringLatin1Plugins(invocationPlugins, arch, replacementsBytecodeProvider);
+                registerStringUTF16Plugins(invocationPlugins, arch, replacementsBytecodeProvider);
                 registerMathPlugins(invocationPlugins, arch, arithmeticStubs, replacementsBytecodeProvider);
                 registerArraysEqualsPlugins(invocationPlugins, replacementsBytecodeProvider);
             }
@@ -198,25 +198,34 @@ public class AMD64GraphBuilderPlugins {
                 r.registerMethodSubstitution(AMD64StringSubstitutions.class, "indexOf", char[].class, int.class,
                                 int.class, char[].class, int.class, int.class, int.class);
             }
+            if (arch.getFeatures().contains(CPUFeature.SSSE3)) {
+                r.registerMethodSubstitution(AMD64StringSubstitutions.class, "indexOf", Receiver.class, int.class, int.class);
+            }
             r.registerMethodSubstitution(AMD64StringSubstitutions.class, "compareTo", Receiver.class, String.class);
         }
     }
 
-    private static void registerStringLatin1Plugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
+    private static void registerStringLatin1Plugins(InvocationPlugins plugins, AMD64 arch, BytecodeProvider replacementsBytecodeProvider) {
         if (JAVA_SPECIFICATION_VERSION >= 9) {
             Registration r = new Registration(plugins, "java.lang.StringLatin1", replacementsBytecodeProvider);
             r.setAllowOverwrite(true);
             r.registerMethodSubstitution(AMD64StringLatin1Substitutions.class, "compareTo", byte[].class, byte[].class);
             r.registerMethodSubstitution(AMD64StringLatin1Substitutions.class, "compareToUTF16", byte[].class, byte[].class);
+            if (arch.getFeatures().contains(CPUFeature.SSSE3)) {
+                r.registerMethodSubstitution(AMD64StringLatin1Substitutions.class, "indexOf", byte[].class, int.class, int.class);
+            }
         }
     }
 
-    private static void registerStringUTF16Plugins(InvocationPlugins plugins, BytecodeProvider replacementsBytecodeProvider) {
+    private static void registerStringUTF16Plugins(InvocationPlugins plugins, AMD64 arch, BytecodeProvider replacementsBytecodeProvider) {
         if (JAVA_SPECIFICATION_VERSION >= 9) {
             Registration r = new Registration(plugins, "java.lang.StringUTF16", replacementsBytecodeProvider);
             r.setAllowOverwrite(true);
             r.registerMethodSubstitution(AMD64StringUTF16Substitutions.class, "compareTo", byte[].class, byte[].class);
             r.registerMethodSubstitution(AMD64StringUTF16Substitutions.class, "compareToLatin1", byte[].class, byte[].class);
+            if (arch.getFeatures().contains(CPUFeature.SSSE3)) {
+                r.registerMethodSubstitution(AMD64StringUTF16Substitutions.class, "indexOfCharUnsafe", byte[].class, int.class, int.class, int.class);
+            }
         }
     }
 

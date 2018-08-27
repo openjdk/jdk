@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.collect.classname;
 
 import jdk.tools.jaotc.collect.ClassSource;
@@ -32,7 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class ClassNameSourceProvider implements SourceProvider {
-    public final static String TYPE = "class";
+    public static final String TYPE = "class";
     private final ClassLoader classLoader;
 
     public ClassNameSourceProvider(FileSupport fileSupport) {

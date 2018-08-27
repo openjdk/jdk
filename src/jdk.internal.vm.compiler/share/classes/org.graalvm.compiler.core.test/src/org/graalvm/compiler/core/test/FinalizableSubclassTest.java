@@ -63,6 +63,7 @@ public class FinalizableSubclassTest extends GraalCompilerTest {
 
     public static final class WithFinalizerAAAA extends NoFinalizerYetAAAA {
 
+        @SuppressWarnings("deprecation")
         @Override
         protected void finalize() throws Throwable {
             super.finalize();

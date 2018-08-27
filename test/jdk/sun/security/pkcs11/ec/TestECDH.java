@@ -26,7 +26,7 @@
  * @bug 6405536
  * @summary Basic known answer test for ECDH
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestECDH

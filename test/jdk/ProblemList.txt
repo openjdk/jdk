@@ -146,7 +146,7 @@ java/awt/event/KeyEvent/CorrectTime/CorrectTime.java 6626492 generic-all
 java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
 java/awt/Frame/ExceptionOnSetExtendedStateTest/ExceptionOnSetExtendedStateTest.java 8198237 macosx-all
 java/awt/Frame/ShapeNotSetSometimes/ShapeNotSetSometimes.java 8144030 macosx-all
-java/awt/Frame/UnfocusableMaximizedFrameResizablity/UnfocusableMaximizedFrameResizablity.java 7158623 macosx-all
+java/awt/Frame/UnfocusableMaximizedFrameResizablity/UnfocusableMaximizedFrameResizablity.java 8208290 macosx-all
 java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
 java/awt/KeyboardFocusmanager/TypeAhead/EnqueueWithDialogButtonTest/EnqueueWithDialogButtonTest.java 8198623 macosx-all
@@ -638,7 +638,7 @@ sun/security/pkcs11/KeyAgreement/UnsupportedDHKeys.java         8204203 windows-
 sun/security/pkcs11/KeyGenerator/DESParity.java                 8204203 windows-all
 sun/security/pkcs11/KeyGenerator/TestKeyGenerator.java          8204203 windows-all
 sun/security/pkcs11/KeyPairGenerator/TestDH2048.java            8204203 windows-all
-sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8204203 windows-all
+sun/security/pkcs11/KeyStore/SecretKeysBasic.sh                 8204203,8209398 generic-all
 sun/security/pkcs11/Mac/MacKAT.java                             8204203 windows-all
 sun/security/pkcs11/Mac/MacSameTest.java                        8204203 windows-all
 sun/security/pkcs11/Mac/ReinitMac.java                          8204203 windows-all
@@ -866,6 +866,8 @@ com/sun/jdi/NashornPopFrameTest.java                            8187143 generic-
 # svc_tools
 
 sun/tools/jstat/jstatClassloadOutput1.sh                        8173942 generic-all
+sun/tools/jhsdb/BasicLauncherTest.java                          8193639 solaris-all
+sun/tools/jhsdb/HeapDumpTest.java                               8193639 solaris-all
 
 
 ############################################################################

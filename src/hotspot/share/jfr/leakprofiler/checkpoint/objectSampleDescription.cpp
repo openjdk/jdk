@@ -29,6 +29,7 @@
 #include "jfr/leakprofiler/checkpoint/objectSampleDescription.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/ostream.hpp"
 
@@ -161,10 +162,10 @@ void ObjectSampleDescription::write_class_name() {
 
   if (k->is_instance_klass()) {
     const InstanceKlass* ik = InstanceKlass::cast(k);
-    if (ik->is_anonymous()) {
+    if (ik->is_unsafe_anonymous()) {
       return;
     }
-    assert(!ik->is_anonymous(), "invariant");
+    assert(!ik->is_unsafe_anonymous(), "invariant");
     const Symbol* name = ik->name();
     if (name != NULL) {
       write_text("Class Name: ");

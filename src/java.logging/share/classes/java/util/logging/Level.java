@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,10 +610,7 @@ public class Level implements java.io.Serializable {
         }
 
         private static void registerWithClassLoader(Level customLevel) {
-            PrivilegedAction<ClassLoader> pa =
-                  () -> customLevel.getClass().getClassLoader();
-            PrivilegedAction<String> pn =  customLevel.getClass()::getName;
-            final String name = AccessController.doPrivileged(pn);
+            PrivilegedAction<ClassLoader> pa = customLevel.getClass()::getClassLoader;
             final ClassLoader cl = AccessController.doPrivileged(pa);
             CUSTOM_LEVEL_CLV.computeIfAbsent(cl, (c, v) -> new ArrayList<>())
                 .add(customLevel);
@@ -624,19 +621,10 @@ public class Level implements java.io.Serializable {
             // the mirroredLevel object is always added to the list
             // before the custom Level instance
             KnownLevel o = new KnownLevel(l);
-            List<KnownLevel> list = nameToLevels.get(l.name);
-            if (list == null) {
-                list = new ArrayList<>();
-                nameToLevels.put(l.name, list);
-            }
-            list.add(o);
-
-            list = intToLevels.get(l.value);
-            if (list == null) {
-                list = new ArrayList<>();
-                intToLevels.put(l.value, list);
-            }
-            list.add(o);
+            nameToLevels.computeIfAbsent(l.name, (k) -> new ArrayList<>())
+                .add(o);
+            intToLevels.computeIfAbsent(l.value, (k) -> new ArrayList<>())
+                .add(o);
 
             // keep the custom level reachable from its class loader
             // This will ensure that custom level values are not GC'ed

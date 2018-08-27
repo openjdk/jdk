@@ -27,7 +27,7 @@ package org.graalvm.compiler.core.sparc;
 
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.FMOVDCC;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.FMOVSCC;
-import static org.graalvm.compiler.asm.sparc.SPARCAssembler.MOVicc;
+import static org.graalvm.compiler.asm.sparc.SPARCAssembler.MOVICC;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.CC.Fcc0;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Op3s.Subcc;
 import static org.graalvm.compiler.asm.sparc.SPARCAssembler.Opfs.Fcmpd;
@@ -287,7 +287,7 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
         } else if (valueKind.isInteger()) {
             actualTrueValue = loadSimm11(trueValue);
             actualFalseValue = loadSimm11(falseValue);
-            cmove = MOVicc;
+            cmove = MOVICC;
         } else {
             throw GraalError.shouldNotReachHere();
         }
@@ -368,7 +368,7 @@ public abstract class SPARCLIRGenerator extends LIRGenerator {
         Variable result = newVariable(trueValue.getValueKind());
         ConditionFlag flag = SPARCControlFlow.fromCondition(true, Condition.EQ, false);
         CC cc = CC.forKind(left.getPlatformKind());
-        append(new CondMoveOp(MOVicc, cc, flag, loadSimm11(trueValue), loadSimm11(falseValue), result));
+        append(new CondMoveOp(MOVICC, cc, flag, loadSimm11(trueValue), loadSimm11(falseValue), result));
         return result;
     }
 

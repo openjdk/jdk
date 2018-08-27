@@ -26,6 +26,7 @@ package org.graalvm.compiler.nodes.virtual;
 
 import java.nio.ByteOrder;
 
+import jdk.vm.ci.meta.ConstantReflectionProvider;
 import org.graalvm.compiler.core.common.spi.ArrayOffsetProvider;
 import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
@@ -138,7 +139,7 @@ public class VirtualArrayNode extends VirtualObjectNode implements ArrayLengthPr
     }
 
     @Override
-    public ValueNode findLength(ArrayLengthProvider.FindLengthMode mode) {
+    public ValueNode findLength(FindLengthMode mode, ConstantReflectionProvider constantReflection) {
         return ConstantNode.forInt(length);
     }
 }

@@ -21,12 +21,13 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.pecoff;
 
 import java.nio.ByteBuffer;
 
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_FILE_HEADER;
-import jdk.tools.jaotc.binformat.pecoff.PECoffByteBuffer;
 
 final class PECoffHeader {
     private final ByteBuffer header;

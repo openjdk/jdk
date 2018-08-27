@@ -49,6 +49,7 @@ echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
 echo COMPILEJAVA=${COMPILEJAVA}
+echo CPAPPEND=${CPAPPEND}
 echo ""
 
 # let java test exit if platform unsupported
@@ -114,13 +115,14 @@ ${CHMOD} +w ${TESTCLASSES}${FS}key3.db
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -classpath ${TESTSRC}${FS}.. \
         -d ${TESTCLASSES} \
+        ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jdk${FS}test${FS}lib${FS}artifacts${FS}*.java \
         ${TESTSRC}${FS}Login.java \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
 # run test
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-        -classpath ${TESTCLASSES} \
+        -classpath ${TESTCLASSES}${PS}${CPAPPEND} \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
         -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}Login-nss.txt \
         -DNO_DEFAULT=true \

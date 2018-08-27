@@ -267,6 +267,13 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   Node* predicate_c = NULL;
   Node* predicate_x = NULL;
   bool counted_loop = r->is_CountedLoop();
+  if (counted_loop) {
+    // Ignore counted loops for now because the split-if logic does not work
+    // in all the cases (for example, with strip mined loops). Also, above
+    // checks only pass for already degraded loops without a tripcount phi
+    // and these are essentially dead and will go away during igvn.
+    return NULL;
+  }
 
   Node *region_c = new RegionNode(req_c + 1);
   Node *phi_c    = con1;

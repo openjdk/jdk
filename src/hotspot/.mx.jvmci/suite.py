@@ -43,7 +43,8 @@ suite = {
     "jdk.vm.ci.services" : {
       "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
+      "checkstyleVersion" : "8.8",
       "workingSets" : "API,JVMCI",
     },
 
@@ -53,7 +54,7 @@ suite = {
       "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "API,JVMCI",
     },
 
@@ -61,7 +62,7 @@ suite = {
       "subDir" : "../jdk.internal.vm.ci/share/classes",
       "sourceDirs" : ["src"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "API,JVMCI",
     },
 
@@ -70,7 +71,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.meta"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "API,JVMCI",
     },
 
@@ -85,7 +86,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "API,JVMCI",
     },
 
@@ -97,7 +98,7 @@ suite = {
         "jdk.vm.ci.services",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "API,JVMCI",
     },
 
@@ -110,7 +111,7 @@ suite = {
         "jdk.vm.ci.runtime",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "API,JVMCI",
     },
 
@@ -121,7 +122,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "JVMCI,AArch64",
     },
 
@@ -130,7 +131,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "JVMCI,AMD64",
     },
 
@@ -139,7 +140,7 @@ suite = {
       "sourceDirs" : ["src"],
       "dependencies" : ["jdk.vm.ci.code"],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "JVMCI,SPARC",
     },
 
@@ -156,7 +157,7 @@ suite = {
         "jdk.internal.org.objectweb.asm",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "JVMCI",
     },
 
@@ -168,7 +169,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "API,JVMCI",
     },
 
@@ -180,7 +181,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "JVMCI,HotSpot,AArch64",
     },
 
@@ -192,7 +193,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "JVMCI,HotSpot,AMD64",
     },
 
@@ -204,7 +205,7 @@ suite = {
         "jdk.vm.ci.hotspot",
       ],
       "checkstyle" : "jdk.vm.ci.services",
-      "javaCompliance" : "9",
+      "javaCompliance" : "9+",
       "workingSets" : "JVMCI,HotSpot,SPARC",
     },
 

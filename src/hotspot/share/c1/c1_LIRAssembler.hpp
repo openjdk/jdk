@@ -71,11 +71,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void record_non_safepoint_debug_info();
 
   // unified bailout support
-  void bailout(const char* msg) {
-    // reset the label in case it hits assertion in destructor.
-    _unwind_handler_entry.reset();
-    compilation()->bailout(msg);
-  }
+  void bailout(const char* msg) const { compilation()->bailout(msg); }
   bool bailed_out() const                        { return compilation()->bailed_out(); }
 
   // code emission patterns and accessors

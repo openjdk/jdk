@@ -885,7 +885,7 @@ static void switchover_constant_pool(BytecodeConstantPool* bpool,
     ConstantPool* cp = bpool->create_constant_pool(CHECK);
     if (cp != klass->constants()) {
       // Copy resolved anonymous class into new constant pool.
-      if (klass->is_anonymous()) {
+      if (klass->is_unsafe_anonymous()) {
         cp->klass_at_put(klass->this_class_index(), klass);
       }
       klass->class_loader_data()->add_to_deallocate_list(klass->constants());

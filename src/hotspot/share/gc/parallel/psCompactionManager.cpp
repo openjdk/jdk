@@ -153,14 +153,14 @@ void InstanceMirrorKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* 
   // Follow the klass field in the mirror.
   Klass* klass = java_lang_Class::as_Klass(obj);
   if (klass != NULL) {
-    // An anonymous class doesn't have its own class loader, so the call
-    // to follow_klass will mark and push its java mirror instead of the
-    // class loader. When handling the java mirror for an anonymous class
-    // we need to make sure its class loader data is claimed, this is done
-    // by calling follow_class_loader explicitly. For non-anonymous classes
-    // the call to follow_class_loader is made when the class loader itself
-    // is handled.
-    if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_anonymous()) {
+    // An unsafe anonymous class doesn't have its own class loader,
+    // so the call to follow_klass will mark and push its java mirror instead of the
+    // class loader. When handling the java mirror for an unsafe anonymous
+    // class we need to make sure its class loader data is claimed, this is done
+    // by calling follow_class_loader explicitly. For non-anonymous classes the
+    // call to follow_class_loader is made when the class loader itself is handled.
+    if (klass->is_instance_klass() &&
+        InstanceKlass::cast(klass)->is_unsafe_anonymous()) {
       cm->follow_class_loader(klass->class_loader_data());
     } else {
       cm->follow_klass(klass);

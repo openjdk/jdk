@@ -45,6 +45,7 @@
 # include "prims/jvmtiEnter.inline.hpp"
 # include "prims/jvmtiRawMonitor.hpp"
 # include "prims/jvmtiUtil.hpp"
+# include "runtime/fieldDescriptor.inline.hpp"
 # include "runtime/threadSMR.hpp"
 
 </xsl:text>

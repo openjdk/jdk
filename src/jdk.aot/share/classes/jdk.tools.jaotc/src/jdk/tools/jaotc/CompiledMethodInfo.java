@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -147,7 +149,7 @@ final class CompiledMethodInfo {
     }
 
     /**
-     * Method name
+     * Method name.
      */
     private String name;
 

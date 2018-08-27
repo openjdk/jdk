@@ -2113,7 +2113,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
         // PhaseIdealLoop is expensive so we only try it once we are
         // out of live nodes and we only try it again if the previous
         // helped got the number of nodes down significantly
-        PhaseIdealLoop ideal_loop( igvn, false, true );
+        PhaseIdealLoop ideal_loop(igvn, LoopOptsNone);
         if (failing())  return;
         low_live_nodes = live_nodes();
         _major_progress = true;
@@ -2164,6 +2164,21 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 }
 
 
+bool Compile::optimize_loops(int& loop_opts_cnt, PhaseIterGVN& igvn, LoopOptsMode mode) {
+  if(loop_opts_cnt > 0) {
+    debug_only( int cnt = 0; );
+    while(major_progress() && (loop_opts_cnt > 0)) {
+      TracePhase tp("idealLoop", &timers[_t_idealLoop]);
+      assert( cnt++ < 40, "infinite cycle in loop optimization" );
+      PhaseIdealLoop ideal_loop(igvn, mode);
+      loop_opts_cnt--;
+      if (failing())  return false;
+      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
+    }
+  }
+  return true;
+}
+
 //------------------------------Optimize---------------------------------------
 // Given a graph, optimize it.
 void Compile::Optimize() {
@@ -2202,9 +2217,9 @@ void Compile::Optimize() {
     igvn.optimize();
   }
 
-  print_method(PHASE_ITER_GVN1, 2);
-
   if (failing())  return;
+
+  print_method(PHASE_ITER_GVN1, 2);
 
   inline_incrementally(igvn);
 
@@ -2254,7 +2269,7 @@ void Compile::Optimize() {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop ideal_loop( igvn, false, true );
+      PhaseIdealLoop ideal_loop(igvn, LoopOptsNone);
       if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
     }
@@ -2289,7 +2304,7 @@ void Compile::Optimize() {
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop ideal_loop( igvn, true );
+      PhaseIdealLoop ideal_loop(igvn, LoopOptsDefault);
       loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP1, 2);
       if (failing())  return;
@@ -2297,7 +2312,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop ideal_loop( igvn, false );
+      PhaseIdealLoop ideal_loop(igvn, LoopOptsSkipSplitIf);
       loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP2, 2);
       if (failing())  return;
@@ -2305,7 +2320,7 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      PhaseIdealLoop ideal_loop( igvn, false );
+      PhaseIdealLoop ideal_loop(igvn, LoopOptsSkipSplitIf);
       loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP3, 2);
     }
@@ -2341,16 +2356,8 @@ void Compile::Optimize() {
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
-  if(loop_opts_cnt > 0) {
-    debug_only( int cnt = 0; );
-    while(major_progress() && (loop_opts_cnt > 0)) {
-      TracePhase tp("idealLoop", &timers[_t_idealLoop]);
-      assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop( igvn, true);
-      loop_opts_cnt--;
-      if (major_progress()) print_method(PHASE_PHASEIDEALLOOP_ITERATIONS, 2);
-      if (failing())  return;
-    }
+  if (!optimize_loops(loop_opts_cnt, igvn, LoopOptsDefault)) {
+    return;
   }
 
 #if INCLUDE_ZGC
@@ -2766,6 +2773,17 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
             n->is_Load() && (n->as_Load()->bottom_type()->isa_oopptr() ||
                              LoadNode::is_immutable_value(n->in(MemNode::Address))),
             "raw memory operations should have control edge");
+  }
+  if (n->is_MemBar()) {
+    MemBarNode* mb = n->as_MemBar();
+    if (mb->trailing_store() || mb->trailing_load_store()) {
+      assert(mb->leading_membar()->trailing_membar() == mb, "bad membar pair");
+      Node* mem = mb->in(MemBarNode::Precedent);
+      assert((mb->trailing_store() && mem->is_Store() && mem->as_Store()->is_release()) ||
+             (mb->trailing_load_store() && mem->is_LoadStore()), "missing mem op");
+    } else if (mb->leading()) {
+      assert(mb->trailing_membar()->leading_membar() == mb, "bad membar pair");
+    }
   }
 #endif
   // Count FPU ops and common calls, implements item (3)

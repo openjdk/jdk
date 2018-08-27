@@ -50,10 +50,10 @@ public class CdsDifferentCompactStrings {
         CDSTestUtils.checkDump(out);
 
         out = CDSTestUtils.runWithArchive(loadCompactStringsArgument);
-        if (!CDSTestUtils.isUnableToMap(out)) {
-            out.shouldMatch("The shared archive file's CompactStrings " +
-                "setting .* does not equal the current CompactStrings setting")
-                .shouldHaveExitValue(1);
-        }
+        CDSTestUtils.checkMappingFailure(out);
+
+        out.shouldMatch("The shared archive file's CompactStrings " +
+                        "setting .* does not equal the current CompactStrings setting")
+            .shouldHaveExitValue(1);
     }
 }

@@ -79,20 +79,20 @@ public class ProhibitedPackage {
         // -Xshare:on
         TestCommon.run(
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, "-Xlog:class+load=info", "ProhibitedHelper")
+            "-cp", appJar, "ProhibitedHelper")
           .assertNormalExit("Prohibited package name: java.lang");
 
         // -Xshare:auto
         output = TestCommon.execAuto(
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, "-Xlog:class+load=info", "ProhibitedHelper");
+            "-cp", appJar, "ProhibitedHelper");
         CDSOptions opts = (new CDSOptions()).setXShareMode("auto");
         TestCommon.checkExec(output, opts, "Prohibited package name: java.lang");
 
         // -Xshare:off
         output = TestCommon.execOff(
             "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, "-Xlog:class+load=info", "ProhibitedHelper");
+            "-cp", appJar, "ProhibitedHelper");
         output.shouldContain("Prohibited package name: java.lang");
     }
 }

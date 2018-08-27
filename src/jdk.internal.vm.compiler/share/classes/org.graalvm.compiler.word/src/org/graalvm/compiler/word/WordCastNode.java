@@ -28,6 +28,7 @@ import static org.graalvm.compiler.nodeinfo.NodeCycles.CYCLES_1;
 import static org.graalvm.compiler.nodeinfo.NodeSize.SIZE_1;
 
 import org.graalvm.compiler.core.common.LIRKind;
+import org.graalvm.compiler.core.common.type.AbstractObjectStamp;
 import org.graalvm.compiler.core.common.type.AbstractPointerStamp;
 import org.graalvm.compiler.core.common.type.IntegerStamp;
 import org.graalvm.compiler.core.common.type.ObjectStamp;
@@ -45,6 +46,7 @@ import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.spi.LIRLowerable;
 import org.graalvm.compiler.nodes.spi.NodeLIRBuilderTool;
+import org.graalvm.compiler.nodes.type.NarrowOopStamp;
 
 import jdk.vm.ci.meta.AllocatableValue;
 import jdk.vm.ci.meta.JavaConstant;
@@ -76,6 +78,10 @@ public final class WordCastNode extends FixedWithNextNode implements LIRLowerabl
         return new WordCastNode(StampFactory.objectNonNull(), input);
     }
 
+    public static WordCastNode wordToNarrowObject(ValueNode input, NarrowOopStamp stamp) {
+        return new WordCastNode(stamp, input);
+    }
+
     public static WordCastNode addressToWord(ValueNode input, JavaKind wordKind) {
         assert input.stamp(NodeView.DEFAULT) instanceof AbstractPointerStamp;
         return new WordCastNode(StampFactory.forKind(wordKind), input);
@@ -88,6 +94,11 @@ public final class WordCastNode extends FixedWithNextNode implements LIRLowerabl
 
     public static WordCastNode objectToUntrackedPointer(ValueNode input, JavaKind wordKind) {
         assert input.stamp(NodeView.DEFAULT) instanceof ObjectStamp;
+        return new WordCastNode(StampFactory.forKind(wordKind), input, false);
+    }
+
+    public static WordCastNode narrowOopToUntrackedWord(ValueNode input, JavaKind wordKind) {
+        assert input.stamp(NodeView.DEFAULT) instanceof NarrowOopStamp;
         return new WordCastNode(StampFactory.forKind(wordKind), input, false);
     }
 
@@ -172,7 +183,7 @@ public final class WordCastNode extends FixedWithNextNode implements LIRLowerabl
             AllocatableValue result = generator.getLIRGeneratorTool().newVariable(kind);
             if (stamp.equals(StampFactory.object())) {
                 generator.getLIRGeneratorTool().emitConvertZeroToNull(result, value);
-            } else if (!trackedPointer && !((ObjectStamp) input.stamp(NodeView.DEFAULT)).nonNull()) {
+            } else if (!trackedPointer && !((AbstractObjectStamp) input.stamp(NodeView.DEFAULT)).nonNull()) {
                 generator.getLIRGeneratorTool().emitConvertNullToZero(result, value);
             } else {
                 generator.getLIRGeneratorTool().emitMove(result, value);

@@ -786,9 +786,25 @@ class MethodType implements java.io.Serializable {
      * @param x object to compare
      * @see Object#equals(Object)
      */
+    // This implementation may also return true if x is a WeakEntry containing
+    // a method type that is equal to this. This is an internal implementation
+    // detail to allow for faster method type lookups.
+    // See ConcurrentWeakInternSet.WeakEntry#equals(Object)
     @Override
     public boolean equals(Object x) {
-        return this == x || x instanceof MethodType && equals((MethodType)x);
+        if (this == x) {
+            return true;
+        }
+        if (x instanceof MethodType) {
+            return equals((MethodType)x);
+        }
+        if (x instanceof ConcurrentWeakInternSet.WeakEntry) {
+            Object o = ((ConcurrentWeakInternSet.WeakEntry)x).get();
+            if (o instanceof MethodType) {
+                return equals((MethodType)o);
+            }
+        }
+        return false;
     }
 
     private boolean equals(MethodType that) {
@@ -808,10 +824,10 @@ class MethodType implements java.io.Serializable {
      */
     @Override
     public int hashCode() {
-      int hashCode = 31 + rtype.hashCode();
-      for (Class<?> ptype : ptypes)
-          hashCode = 31*hashCode + ptype.hashCode();
-      return hashCode;
+        int hashCode = 31 + rtype.hashCode();
+        for (Class<?> ptype : ptypes)
+            hashCode = 31 * hashCode + ptype.hashCode();
+        return hashCode;
     }
 
     /**
@@ -1286,7 +1302,7 @@ s.writeObject(this.parameterArray());
             if (elem == null) throw new NullPointerException();
             expungeStaleElements();
 
-            WeakEntry<T> value = map.get(new WeakEntry<>(elem));
+            WeakEntry<T> value = map.get(elem);
             if (value != null) {
                 T res = value.get();
                 if (res != null) {
@@ -1338,19 +1354,25 @@ s.writeObject(this.parameterArray());
                 hashcode = key.hashCode();
             }
 
-            public WeakEntry(T key) {
-                super(key);
-                hashcode = key.hashCode();
-            }
-
+            /**
+             * This implementation returns {@code true} if {@code obj} is another
+             * {@code WeakEntry} whose referent is equals to this referent, or
+             * if {@code obj} is equals to the referent of this. This allows
+             * lookups to be made without wrapping in a {@code WeakEntry}.
+             *
+             * @param obj the object to compare
+             * @return true if {@code obj} is equals to this or the referent of this
+             * @see MethodType#equals(Object)
+             * @see Object#equals(Object)
+             */
             @Override
             public boolean equals(Object obj) {
+                Object mine = get();
                 if (obj instanceof WeakEntry) {
                     Object that = ((WeakEntry) obj).get();
-                    Object mine = get();
                     return (that == null || mine == null) ? (this == obj) : mine.equals(that);
                 }
-                return false;
+                return (mine == null) ? (obj == null) : mine.equals(obj);
             }
 
             @Override

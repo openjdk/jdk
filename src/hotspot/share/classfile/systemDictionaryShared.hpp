@@ -293,9 +293,6 @@ public:
 
   static void allocate_shared_data_arrays(int size, TRAPS);
   static void oops_do(OopClosure* f);
-  static void roots_oops_do(OopClosure* f) {
-    oops_do(f);
-  }
 
   // Check if sharing is supported for the class loader.
   static bool is_sharing_possible(ClassLoaderData* loader_data);

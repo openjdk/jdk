@@ -63,7 +63,6 @@ class ThreadsList;
 class ThreadsSMRSupport;
 
 class JvmtiThreadState;
-class JvmtiGetLoadedClassesClosure;
 class ThreadStatistics;
 class ConcurrentLocksDump;
 class ParkEvent;
@@ -103,6 +102,7 @@ class WorkerThread;
 //   - JavaThread
 //     - various subclasses eg CompilerThread, ServiceThread
 //   - WatcherThread
+//   - JfrSamplerThread
 
 class Thread: public ThreadShadow {
   friend class VMStructs;
@@ -776,6 +776,10 @@ class NamedThread: public Thread {
   // log JavaThread being processed by oops_do
   JavaThread* _processed_thread;
   uint _gc_id; // The current GC id when a thread takes part in GC
+  NamedThread* volatile _next_named_thread;
+
+  class List;
+  static List _the_list;
 
  public:
   NamedThread();
@@ -791,6 +795,31 @@ class NamedThread: public Thread {
 
   void set_gc_id(uint gc_id) { _gc_id = gc_id; }
   uint gc_id() { return _gc_id; }
+
+  class Iterator;
+};
+
+// Provides iteration over the list of NamedThreads.  Because list
+// management occurs in the NamedThread constructor and destructor,
+// entries in the list may not be fully constructed instances of a
+// derived class.  Threads created after an iterator is constructed
+// will not be visited by the iterator.  The scope of an iterator is a
+// critical section; there must be no safepoint checks in that scope.
+class NamedThread::Iterator : public StackObj {
+  uint _protect_enter;
+  NamedThread* _current;
+
+  // Noncopyable.
+  Iterator(const Iterator&);
+  Iterator& operator=(const Iterator&);
+
+public:
+  Iterator();
+  ~Iterator();
+
+  bool end() const { return _current == NULL; }
+  NamedThread* current() const { return _current; }
+  void step();
 };
 
 // Worker threads are named and have an id of an assigned work.
@@ -1855,8 +1884,6 @@ class JavaThread: public Thread {
   // the specified JavaThread is exiting.
   JvmtiThreadState *jvmti_thread_state() const                                   { return _jvmti_thread_state; }
   static ByteSize jvmti_thread_state_offset()                                    { return byte_offset_of(JavaThread, _jvmti_thread_state); }
-  void set_jvmti_get_loaded_classes_closure(JvmtiGetLoadedClassesClosure* value) { _jvmti_get_loaded_classes_closure = value; }
-  JvmtiGetLoadedClassesClosure* get_jvmti_get_loaded_classes_closure() const     { return _jvmti_get_loaded_classes_closure; }
 
   // JVMTI PopFrame support
   // Setting and clearing popframe_condition
@@ -1908,7 +1935,6 @@ class JavaThread: public Thread {
 
  private:
   JvmtiThreadState *_jvmti_thread_state;
-  JvmtiGetLoadedClassesClosure* _jvmti_get_loaded_classes_closure;
 
   // Used by the interpreter in fullspeed mode for frame pop, method
   // entry, method exit and single stepping support. This field is

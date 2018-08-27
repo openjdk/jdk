@@ -74,7 +74,7 @@ public:
 
   void classes_do(void f(InstanceKlass*));
   void classes_do(void f(InstanceKlass*, TRAPS), TRAPS);
-  void all_entries_do(void f(InstanceKlass*, ClassLoaderData*));
+  void all_entries_do(KlassClosure* closure);
   void classes_do(MetaspaceClosure* it);
 
   void unlink();

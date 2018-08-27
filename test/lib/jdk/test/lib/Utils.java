@@ -612,7 +612,7 @@ public final class Utils {
      * @param runnable what we run
      * @param expectedException expected exception
      */
-    public static void runAndCheckException(Runnable runnable, Class<? extends Throwable> expectedException) {
+    public static void runAndCheckException(ThrowingRunnable runnable, Class<? extends Throwable> expectedException) {
         runAndCheckException(runnable, t -> {
             if (t == null) {
                 if (expectedException != null) {
@@ -635,13 +635,14 @@ public final class Utils {
      * @param runnable what we run
      * @param checkException a consumer which checks that we got expected exception and raises a new exception otherwise
      */
-    public static void runAndCheckException(Runnable runnable, Consumer<Throwable> checkException) {
+    public static void runAndCheckException(ThrowingRunnable runnable, Consumer<Throwable> checkException) {
+        Throwable throwable = null;
         try {
             runnable.run();
-            checkException.accept(null);
         } catch (Throwable t) {
-            checkException.accept(t);
+            throwable = t;
         }
+        checkException.accept(throwable);
     }
 
     /**

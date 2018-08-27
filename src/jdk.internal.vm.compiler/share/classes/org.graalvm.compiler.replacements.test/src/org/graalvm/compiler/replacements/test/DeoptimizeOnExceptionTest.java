@@ -83,7 +83,7 @@ public class DeoptimizeOnExceptionTest extends GraalCompilerTest {
             ClassLoader testCl = new MyClassLoader();
             @SuppressWarnings("unchecked")
             Class<Runnable> c = (Class<Runnable>) testCl.loadClass(name);
-            Runnable r = c.newInstance();
+            Runnable r = c.getDeclaredConstructor().newInstance();
             ct = Long.MAX_VALUE;
             // warmup
             for (int i = 0; i < 100; i++) {

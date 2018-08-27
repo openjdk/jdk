@@ -38,9 +38,7 @@ import lib.jdb.JdbCommand;
 import lib.jdb.JdbTest;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 class BreakpointWithFullGCTarg {
     public static List<Object> objList = new ArrayList<>();
@@ -68,44 +66,39 @@ public class BreakpointWithFullGC extends JdbTest {
         new BreakpointWithFullGC().run();
     }
 
-    public BreakpointWithFullGC() {
+    private BreakpointWithFullGC() {
         super(new Jdb.LaunchOptions(DEBUGGEE_CLASS)
-                     .debuggeeOptions(DEBUGGEE_OPTIONS));
+                     .addDebuggeeOptions(DEBUGGEE_OPTIONS));
     }
 
     private static final String DEBUGGEE_CLASS = BreakpointWithFullGCTarg.class.getName();
-    // Hijacking the mode parameter to make sure we use a small amount
-    // of memory and can see what GC is doing.
-    private static final String DEBUGGEE_OPTIONS = "-Xmx32m -verbose:gc";
+    // We don't specify "-Xmx" for debuggee as we have full GCs with any value.
+    private static final String[] DEBUGGEE_OPTIONS = {"-verbose:gc"};
 
     @Override
     protected void runCases() {
         setBreakpoints(System.getProperty("test.src") + "/BreakpointWithFullGC.java", 1);
 
-        List<String> reply = new LinkedList<>();
-
         // get to the first loop breakpoint
-        reply.addAll(jdb.command(JdbCommand.run()));
+        jdb.command(JdbCommand.run());
         // 19 "cont" commands gets us through all the loop breakpoints.
         for (int i = 1; i <= 19; i++) {
-            reply.addAll(jdb.command(JdbCommand.cont()));
+            jdb.command(JdbCommand.cont());
         }
         // get to the last breakpoint
-        reply.addAll(jdb.command(JdbCommand.cont()));
+        jdb.command(JdbCommand.cont());
 
-        new OutputAnalyzer(reply.stream().collect(Collectors.joining(lineSeparator)))
+        jdb.contToExit(1);
+
+        new OutputAnalyzer(jdb.getJdbOutput())
                 // make sure we hit the first breakpoint at least once
                 .stdoutShouldMatch("System\\..*top of loop")
                 // make sure we hit the second breakpoint at least once
                 .stdoutShouldMatch("System\\..*bottom of loop")
                 // make sure we hit the last breakpoint
-                .stdoutShouldMatch("System\\..*end of test")
-                // make sure we had at least one full GC
-                // Prior to JDK9-B95, the pattern was 'Full GC'
-                .stdoutShouldContain("Pause Full (System.gc())")
+                .stdoutShouldMatch("System\\..*end of test");
+        new OutputAnalyzer(jdb.getDebuggeeOutput())
                 // check for error message due to thread ID change
                 .stderrShouldNotContain("Exception in thread \"event-handler\" java.lang.NullPointerException");
-
-        jdb.contToExit(1);
     }
 }

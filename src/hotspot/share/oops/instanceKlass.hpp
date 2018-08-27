@@ -54,7 +54,7 @@
 //      The embedded nonstatic oop-map blocks are short pairs (offset, length)
 //      indicating where oops are located in instances of this klass.
 //    [EMBEDDED implementor of the interface] only exist for interface
-//    [EMBEDDED host klass        ] only exist for an anonymous class (JSR 292 enabled)
+//    [EMBEDDED unsafe_anonymous_host klass] only exist for an unsafe anonymous class (JSR 292 enabled)
 //    [EMBEDDED fingerprint       ] only if should_store_fingerprint()==true
 
 
@@ -226,7 +226,7 @@ class InstanceKlass: public Klass {
     _misc_rewritten                           = 1 << 2,  // methods rewritten.
     _misc_has_nonstatic_fields                = 1 << 3,  // for sizing with UseCompressedOops
     _misc_should_verify_class                 = 1 << 4,  // allow caching of preverification
-    _misc_is_anonymous                        = 1 << 5,  // has embedded _host_klass field
+    _misc_is_unsafe_anonymous                 = 1 << 5,  // has embedded _unsafe_anonymous_host field
     _misc_is_contended                        = 1 << 6,  // marked with contended annotation
     _misc_has_nonstatic_concrete_methods      = 1 << 7,  // class/superclass/implemented interfaces has non-static, concrete methods
     _misc_declares_nonstatic_concrete_methods = 1 << 8,  // directly declares non-static, concrete methods
@@ -315,11 +315,11 @@ class InstanceKlass: public Klass {
   //     NULL: no implementor.
   //     A Klass* that's not itself: one implementor.
   //     Itself: more than one implementors.
-  // embedded host klass follows here
-  //   The embedded host klass only exists in an anonymous class for
+  // embedded unsafe_anonymous_host klass follows here
+  //   The embedded host klass only exists in an unsafe anonymous class for
   //   dynamic language support (JSR 292 enabled). The host class grants
   //   its access privileges to this class also. The host class is either
-  //   named, or a previously loaded anonymous class. A non-anonymous class
+  //   named, or a previously loaded unsafe anonymous class. A non-anonymous class
   //   or an anonymous class loaded through normal classloading does not
   //   have this embedded field.
   //
@@ -650,43 +650,40 @@ public:
   objArrayOop signers() const;
 
   // host class
-  InstanceKlass* host_klass() const              {
-    InstanceKlass** hk = adr_host_klass();
+  InstanceKlass* unsafe_anonymous_host() const {
+    InstanceKlass** hk = adr_unsafe_anonymous_host();
     if (hk == NULL) {
-      assert(!is_anonymous(), "Anonymous classes have host klasses");
+      assert(!is_unsafe_anonymous(), "Unsafe anonymous classes have host klasses");
       return NULL;
     } else {
       assert(*hk != NULL, "host klass should always be set if the address is not null");
-      assert(is_anonymous(), "Only anonymous classes have host klasses");
+      assert(is_unsafe_anonymous(), "Only unsafe anonymous classes have host klasses");
       return *hk;
     }
   }
-  void set_host_klass(const InstanceKlass* host) {
-    assert(is_anonymous(), "not anonymous");
-    const InstanceKlass** addr = (const InstanceKlass **)adr_host_klass();
+  void set_unsafe_anonymous_host(const InstanceKlass* host) {
+    assert(is_unsafe_anonymous(), "not unsafe anonymous");
+    const InstanceKlass** addr = (const InstanceKlass **)adr_unsafe_anonymous_host();
     assert(addr != NULL, "no reversed space");
     if (addr != NULL) {
       *addr = host;
     }
   }
-  bool has_host_klass() const              {
-    return adr_host_klass() != NULL;
+  bool is_unsafe_anonymous() const                {
+    return (_misc_flags & _misc_is_unsafe_anonymous) != 0;
   }
-  bool is_anonymous() const                {
-    return (_misc_flags & _misc_is_anonymous) != 0;
-  }
-  void set_is_anonymous(bool value)        {
+  void set_is_unsafe_anonymous(bool value)        {
     if (value) {
-      _misc_flags |= _misc_is_anonymous;
+      _misc_flags |= _misc_is_unsafe_anonymous;
     } else {
-      _misc_flags &= ~_misc_is_anonymous;
+      _misc_flags &= ~_misc_is_unsafe_anonymous;
     }
   }
 
   // Oop that keeps the metadata for this class from being unloaded
   // in places where the metadata is stored in other places, like nmethods
   oop klass_holder() const {
-    return is_anonymous() ? java_mirror() : class_loader();
+    return (is_unsafe_anonymous()) ? java_mirror() : class_loader();
   }
 
   bool is_contended() const                {
@@ -780,8 +777,8 @@ public:
   }
   bool supers_have_passed_fingerprint_checks();
 
-  static bool should_store_fingerprint(bool is_anonymous);
-  bool should_store_fingerprint() const { return should_store_fingerprint(is_anonymous()); }
+  static bool should_store_fingerprint(bool is_unsafe_anonymous);
+  bool should_store_fingerprint() const { return should_store_fingerprint(is_unsafe_anonymous()); }
   bool has_stored_fingerprint() const;
   uint64_t get_stored_fingerprint() const;
   void store_fingerprint(uint64_t fingerprint);
@@ -1063,20 +1060,20 @@ public:
 
   static int size(int vtable_length, int itable_length,
                   int nonstatic_oop_map_size,
-                  bool is_interface, bool is_anonymous, bool has_stored_fingerprint) {
+                  bool is_interface, bool is_unsafe_anonymous, bool has_stored_fingerprint) {
     return align_metadata_size(header_size() +
            vtable_length +
            itable_length +
            nonstatic_oop_map_size +
            (is_interface ? (int)sizeof(Klass*)/wordSize : 0) +
-           (is_anonymous ? (int)sizeof(Klass*)/wordSize : 0) +
+           (is_unsafe_anonymous ? (int)sizeof(Klass*)/wordSize : 0) +
            (has_stored_fingerprint ? (int)sizeof(uint64_t*)/wordSize : 0));
   }
   int size() const                    { return size(vtable_length(),
                                                itable_length(),
                                                nonstatic_oop_map_size(),
                                                is_interface(),
-                                               is_anonymous(),
+                                               is_unsafe_anonymous(),
                                                has_stored_fingerprint());
   }
 #if INCLUDE_SERVICES
@@ -1107,8 +1104,8 @@ public:
     }
   };
 
-  InstanceKlass** adr_host_klass() const {
-    if (is_anonymous()) {
+  InstanceKlass** adr_unsafe_anonymous_host() const {
+    if (is_unsafe_anonymous()) {
       InstanceKlass** adr_impl = (InstanceKlass **)adr_implementor();
       if (adr_impl != NULL) {
         return adr_impl + 1;
@@ -1122,7 +1119,7 @@ public:
 
   address adr_fingerprint() const {
     if (has_stored_fingerprint()) {
-      InstanceKlass** adr_host = adr_host_klass();
+      InstanceKlass** adr_host = adr_unsafe_anonymous_host();
       if (adr_host != NULL) {
         return (address)(adr_host + 1);
       }

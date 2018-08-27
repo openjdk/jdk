@@ -507,8 +507,7 @@ final class ProcessImpl extends Process {
 
         long deadline = System.nanoTime() + remainingNanos;
         do {
-            // Round up to next millisecond
-            wait(TimeUnit.NANOSECONDS.toMillis(remainingNanos + 999_999L));
+            TimeUnit.NANOSECONDS.timedWait(this, remainingNanos);
             if (hasExited) {
                 return true;
             }

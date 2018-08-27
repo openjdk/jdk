@@ -190,7 +190,7 @@ public final class ArrayEqualsNode extends FixedWithNextNode implements LIRLower
     }
 
     @NodeIntrinsic
-    public static native boolean equals(Object array1, Object array2, int length, @ConstantNodeParameter JavaKind kind);
+    static native boolean equals(Object array1, Object array2, int length, @ConstantNodeParameter JavaKind kind);
 
     public static boolean equals(boolean[] array1, boolean[] array2, int length) {
         return equals(array1, array2, length, JavaKind.Boolean);

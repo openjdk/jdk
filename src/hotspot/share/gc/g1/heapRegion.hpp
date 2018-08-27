@@ -426,6 +426,8 @@ class HeapRegion: public G1ContiguousSpace {
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
+  bool is_old_or_humongous_or_archive() const { return _type.is_old_or_humongous_or_archive(); }
+
   // A pinned region contains objects which are not moved by garbage collections.
   // Humongous regions and archive regions are pinned.
   bool is_pinned() const { return _type.is_pinned(); }

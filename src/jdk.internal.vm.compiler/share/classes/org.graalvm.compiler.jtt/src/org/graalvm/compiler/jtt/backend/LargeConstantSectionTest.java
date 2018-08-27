@@ -127,12 +127,12 @@ public class LargeConstantSectionTest extends JTTTest {
                 for (int i = 0; i < labels.length; i++) {
                     mv.visitLabel(labels[i]);
                     mv.visitFrame(Opcodes.F_NEW, 1, new Object[]{Opcodes.INTEGER}, 0, new Object[]{});
-                    mv.visitLdcInsn(new Long(LARGE_CONSTANT + i));
+                    mv.visitLdcInsn(Long.valueOf(LARGE_CONSTANT + i));
                     mv.visitInsn(LRETURN);
                 }
                 mv.visitLabel(defaultLabel);
                 mv.visitFrame(Opcodes.F_NEW, 1, new Object[]{Opcodes.INTEGER}, 0, new Object[]{});
-                mv.visitLdcInsn(new Long(3L));
+                mv.visitLdcInsn(Long.valueOf(3L));
                 mv.visitInsn(LRETURN);
                 Label end = new Label();
                 mv.visitLabel(end);

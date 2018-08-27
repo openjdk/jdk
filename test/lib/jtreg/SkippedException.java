@@ -24,7 +24,7 @@
 package jtreg;
 
 /**
- * {@code SkippedException} is an exception treaded by jtreg as an indication
+ * {@code SkippedException} is an exception treated by jtreg as an indication
  * of skipped status.
  */
 public final class SkippedException extends RuntimeException {

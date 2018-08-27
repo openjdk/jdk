@@ -435,12 +435,12 @@ enum CipherSuite {
             0x0003, false, "SSL_RSA_EXPORT_WITH_RC4_40_MD5",
                            "TLS_RSA_EXPORT_WITH_RC4_40_MD5",
             ProtocolVersion.PROTOCOLS_TO_10,
-            K_RSA_EXPORT, B_DES_40, M_MD5, H_NONE),
+            K_RSA_EXPORT, B_RC4_40, M_MD5, H_NONE),
     SSL_DH_anon_EXPORT_WITH_RC4_40_MD5(
             0x0017, false, "SSL_DH_anon_EXPORT_WITH_RC4_40_MD5",
                            "TLS_DH_anon_EXPORT_WITH_RC4_40_MD5",
             ProtocolVersion.PROTOCOLS_TO_10,
-            K_DH_ANON, B_DES_40, M_MD5, H_NONE),
+            K_DH_ANON, B_RC4_40, M_MD5, H_NONE),
 
     // no traffic encryption cipher suites
     TLS_RSA_WITH_NULL_SHA256(
@@ -805,7 +805,7 @@ enum CipherSuite {
         this.id = id;
         this.isDefaultEnabled = isDefaultEnabled;
         this.name = name;
-        if (aliases.isEmpty()) {
+        if (!aliases.isEmpty()) {
             this.aliases = Arrays.asList(aliases.split(","));
         } else {
             this.aliases = Collections.emptyList();

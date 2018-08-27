@@ -53,6 +53,11 @@ public abstract class ProxyNode extends FloatingNode implements ValueNumberable 
 
     public abstract ValueNode value();
 
+    public void setProxyPoint(LoopExitNode newProxyPoint) {
+        this.updateUsages(loopExit, newProxyPoint);
+        this.loopExit = newProxyPoint;
+    }
+
     public LoopExitNode proxyPoint() {
         return loopExit;
     }

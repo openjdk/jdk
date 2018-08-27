@@ -214,7 +214,7 @@ public abstract class Validator {
      *
      * @throws IllegalArgumentException
      *      If the {@code Result} type doesn't match the
-     *      {@code Source} type of if the {@code Source}
+     *      {@code Source} type or if the {@code Source}
      *      is an XML artifact that the implementation cannot
      *      validate (for example, a processing instruction).
      * @throws SAXException

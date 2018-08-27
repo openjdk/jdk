@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
-#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
@@ -71,6 +70,7 @@
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorageParState.hpp"
+#include "gc/shared/parallelCleaning.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
@@ -84,7 +84,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/handles.inline.hpp"
@@ -645,7 +644,7 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges,
         curr_region->set_closed_archive();
       }
       _hr_printer.alloc(curr_region);
-      _old_set.add(curr_region);
+      _archive_set.add(curr_region);
       HeapWord* top;
       HeapRegion* next_region;
       if (curr_region != last_region) {
@@ -802,7 +801,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
       guarantee(curr_region->is_archive(),
                 "Expected archive region at index %u", curr_region->hrm_index());
       uint curr_index = curr_region->hrm_index();
-      _old_set.remove(curr_region);
+      _archive_set.remove(curr_region);
       curr_region->set_free();
       curr_region->set_top(curr_region->bottom());
       if (curr_region != last_region) {
@@ -1127,7 +1126,7 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, &_full_gc_memory_manager, explicit_gc, do_clear_all_soft_refs);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs);
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
 
   collector.prepare_collection();
@@ -1407,6 +1406,68 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
   _verifier->verify_region_sets_optional();
 }
 
+class OldRegionSetChecker : public HeapRegionSetChecker {
+public:
+  void check_mt_safety() {
+    // Master Old Set MT safety protocol:
+    // (a) If we're at a safepoint, operations on the master old set
+    // should be invoked:
+    // - by the VM thread (which will serialize them), or
+    // - by the GC workers while holding the FreeList_lock, if we're
+    //   at a safepoint for an evacuation pause (this lock is taken
+    //   anyway when an GC alloc region is retired so that a new one
+    //   is allocated from the free list), or
+    // - by the GC workers while holding the OldSets_lock, if we're at a
+    //   safepoint for a cleanup pause.
+    // (b) If we're not at a safepoint, operations on the master old set
+    // should be invoked while holding the Heap_lock.
+
+    if (SafepointSynchronize::is_at_safepoint()) {
+      guarantee(Thread::current()->is_VM_thread() ||
+                FreeList_lock->owned_by_self() || OldSets_lock->owned_by_self(),
+                "master old set MT safety protocol at a safepoint");
+    } else {
+      guarantee(Heap_lock->owned_by_self(), "master old set MT safety protocol outside a safepoint");
+    }
+  }
+  bool is_correct_type(HeapRegion* hr) { return hr->is_old(); }
+  const char* get_description() { return "Old Regions"; }
+};
+
+class ArchiveRegionSetChecker : public HeapRegionSetChecker {
+public:
+  void check_mt_safety() {
+    guarantee(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(),
+              "May only change archive regions during initialization or safepoint.");
+  }
+  bool is_correct_type(HeapRegion* hr) { return hr->is_archive(); }
+  const char* get_description() { return "Archive Regions"; }
+};
+
+class HumongousRegionSetChecker : public HeapRegionSetChecker {
+public:
+  void check_mt_safety() {
+    // Humongous Set MT safety protocol:
+    // (a) If we're at a safepoint, operations on the master humongous
+    // set should be invoked by either the VM thread (which will
+    // serialize them) or by the GC workers while holding the
+    // OldSets_lock.
+    // (b) If we're not at a safepoint, operations on the master
+    // humongous set should be invoked while holding the Heap_lock.
+
+    if (SafepointSynchronize::is_at_safepoint()) {
+      guarantee(Thread::current()->is_VM_thread() ||
+                OldSets_lock->owned_by_self(),
+                "master humongous set MT safety protocol at a safepoint");
+    } else {
+      guarantee(Heap_lock->owned_by_self(),
+                "master humongous set MT safety protocol outside a safepoint");
+    }
+  }
+  bool is_correct_type(HeapRegion* hr) { return hr->is_humongous(); }
+  const char* get_description() { return "Humongous Regions"; }
+};
+
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   CollectedHeap(),
   _young_gen_sampling_thread(NULL),
@@ -1414,13 +1475,9 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* collector_policy) :
   _collector_policy(collector_policy),
   _card_table(NULL),
   _soft_ref_policy(),
-  _memory_manager("G1 Young Generation", "end of minor GC"),
-  _full_gc_memory_manager("G1 Old Generation", "end of major GC"),
-  _eden_pool(NULL),
-  _survivor_pool(NULL),
-  _old_pool(NULL),
-  _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
-  _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
+  _old_set("Old Region Set", new OldRegionSetChecker()),
+  _archive_set("Archive Region Set", new ArchiveRegionSetChecker()),
+  _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(NULL),
   _listener(),
   _hrm(),
@@ -1745,20 +1802,6 @@ jint G1CollectedHeap::initialize() {
   _collection_set.initialize(max_regions());
 
   return JNI_OK;
-}
-
-void G1CollectedHeap::initialize_serviceability() {
-  _eden_pool = new G1EdenPool(this);
-  _survivor_pool = new G1SurvivorPool(this);
-  _old_pool = new G1OldGenPool(this);
-
-  _full_gc_memory_manager.add_pool(_eden_pool);
-  _full_gc_memory_manager.add_pool(_survivor_pool);
-  _full_gc_memory_manager.add_pool(_old_pool);
-
-  _memory_manager.add_pool(_eden_pool);
-  _memory_manager.add_pool(_survivor_pool);
-  _memory_manager.add_pool(_old_pool, false /* always_affected_by_gc */);
 }
 
 void G1CollectedHeap::stop() {
@@ -2857,9 +2900,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     active_workers = workers()->update_active_workers(active_workers);
     log_info(gc,task)("Using %u workers of %u for evacuation", active_workers, workers()->total_workers());
 
-    TraceCollectorStats tcs(g1mm()->incremental_collection_counters());
-    TraceMemoryManagerStats tms(&_memory_manager, gc_cause(),
-                                collector_state()->yc_type() == Mixed /* allMemoryPoolsAffected */);
+    G1MonitoringScope ms(g1mm(),
+                         false /* full_gc */,
+                         collector_state()->yc_type() == Mixed /* all_memory_pools_affected */);
 
     G1HeapTransition heap_transition(this);
     size_t heap_used_bytes_before_gc = used();
@@ -3256,402 +3299,26 @@ void G1CollectedHeap::print_termination_stats(uint worker_id,
                undo_waste * HeapWordSize / K);
 }
 
-class G1StringAndSymbolCleaningTask : public AbstractGangTask {
-private:
-  BoolObjectClosure* _is_alive;
-  G1StringDedupUnlinkOrOopsDoClosure _dedup_closure;
-  OopStorage::ParState<false /* concurrent */, false /* const */> _par_state_string;
-
-  int _initial_string_table_size;
-  int _initial_symbol_table_size;
-
-  bool  _process_strings;
-  int _strings_processed;
-  int _strings_removed;
-
-  bool  _process_symbols;
-  int _symbols_processed;
-  int _symbols_removed;
-
-  bool _process_string_dedup;
-
-public:
-  G1StringAndSymbolCleaningTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, bool process_string_dedup) :
-    AbstractGangTask("String/Symbol Unlinking"),
-    _is_alive(is_alive),
-    _dedup_closure(is_alive, NULL, false),
-    _par_state_string(StringTable::weak_storage()),
-    _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
-    _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0),
-    _process_string_dedup(process_string_dedup) {
-
-    _initial_string_table_size = (int) StringTable::the_table()->table_size();
-    _initial_symbol_table_size = SymbolTable::the_table()->table_size();
-    if (process_symbols) {
-      SymbolTable::clear_parallel_claimed_index();
-    }
-    if (process_strings) {
-      StringTable::reset_dead_counter();
-    }
-  }
-
-  ~G1StringAndSymbolCleaningTask() {
-    guarantee(!_process_symbols || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
-              "claim value %d after unlink less than initial symbol table size %d",
-              SymbolTable::parallel_claimed_index(), _initial_symbol_table_size);
-
-    log_info(gc, stringtable)(
-        "Cleaned string and symbol table, "
-        "strings: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed, "
-        "symbols: " SIZE_FORMAT " processed, " SIZE_FORMAT " removed",
-        strings_processed(), strings_removed(),
-        symbols_processed(), symbols_removed());
-    if (_process_strings) {
-      StringTable::finish_dead_counter();
-    }
-  }
-
-  void work(uint worker_id) {
-    int strings_processed = 0;
-    int strings_removed = 0;
-    int symbols_processed = 0;
-    int symbols_removed = 0;
-    if (_process_strings) {
-      StringTable::possibly_parallel_unlink(&_par_state_string, _is_alive, &strings_processed, &strings_removed);
-      Atomic::add(strings_processed, &_strings_processed);
-      Atomic::add(strings_removed, &_strings_removed);
-    }
-    if (_process_symbols) {
-      SymbolTable::possibly_parallel_unlink(&symbols_processed, &symbols_removed);
-      Atomic::add(symbols_processed, &_symbols_processed);
-      Atomic::add(symbols_removed, &_symbols_removed);
-    }
-    if (_process_string_dedup) {
-      G1StringDedup::parallel_unlink(&_dedup_closure, worker_id);
-    }
-  }
-
-  size_t strings_processed() const { return (size_t)_strings_processed; }
-  size_t strings_removed()   const { return (size_t)_strings_removed; }
-
-  size_t symbols_processed() const { return (size_t)_symbols_processed; }
-  size_t symbols_removed()   const { return (size_t)_symbols_removed; }
-};
-
-class G1CodeCacheUnloadingTask {
-private:
-  static Monitor* _lock;
-
-  BoolObjectClosure* const _is_alive;
-  const bool               _unloading_occurred;
-  const uint               _num_workers;
-
-  // Variables used to claim nmethods.
-  CompiledMethod* _first_nmethod;
-  CompiledMethod* volatile _claimed_nmethod;
-
-  // The list of nmethods that need to be processed by the second pass.
-  CompiledMethod* volatile _postponed_list;
-  volatile uint            _num_entered_barrier;
-
- public:
-  G1CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred) :
-      _is_alive(is_alive),
-      _unloading_occurred(unloading_occurred),
-      _num_workers(num_workers),
-      _first_nmethod(NULL),
-      _claimed_nmethod(NULL),
-      _postponed_list(NULL),
-      _num_entered_barrier(0)
-  {
-    CompiledMethod::increase_unloading_clock();
-    // Get first alive nmethod
-    CompiledMethodIterator iter = CompiledMethodIterator();
-    if(iter.next_alive()) {
-      _first_nmethod = iter.method();
-    }
-    _claimed_nmethod = _first_nmethod;
-  }
-
-  ~G1CodeCacheUnloadingTask() {
-    CodeCache::verify_clean_inline_caches();
-
-    CodeCache::set_needs_cache_clean(false);
-    guarantee(CodeCache::scavenge_root_nmethods() == NULL, "Must be");
-
-    CodeCache::verify_icholder_relocations();
-  }
-
- private:
-  void add_to_postponed_list(CompiledMethod* nm) {
-      CompiledMethod* old;
-      do {
-        old = _postponed_list;
-        nm->set_unloading_next(old);
-      } while (Atomic::cmpxchg(nm, &_postponed_list, old) != old);
-  }
-
-  void clean_nmethod(CompiledMethod* nm) {
-    bool postponed = nm->do_unloading_parallel(_is_alive, _unloading_occurred);
-
-    if (postponed) {
-      // This nmethod referred to an nmethod that has not been cleaned/unloaded yet.
-      add_to_postponed_list(nm);
-    }
-
-    // Mark that this nmethod has been cleaned/unloaded.
-    // After this call, it will be safe to ask if this nmethod was unloaded or not.
-    nm->set_unloading_clock(CompiledMethod::global_unloading_clock());
-  }
-
-  void clean_nmethod_postponed(CompiledMethod* nm) {
-    nm->do_unloading_parallel_postponed();
-  }
-
-  static const int MaxClaimNmethods = 16;
-
-  void claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods) {
-    CompiledMethod* first;
-    CompiledMethodIterator last;
-
-    do {
-      *num_claimed_nmethods = 0;
-
-      first = _claimed_nmethod;
-      last = CompiledMethodIterator(first);
-
-      if (first != NULL) {
-
-        for (int i = 0; i < MaxClaimNmethods; i++) {
-          if (!last.next_alive()) {
-            break;
-          }
-          claimed_nmethods[i] = last.method();
-          (*num_claimed_nmethods)++;
-        }
-      }
-
-    } while (Atomic::cmpxchg(last.method(), &_claimed_nmethod, first) != first);
-  }
-
-  CompiledMethod* claim_postponed_nmethod() {
-    CompiledMethod* claim;
-    CompiledMethod* next;
-
-    do {
-      claim = _postponed_list;
-      if (claim == NULL) {
-        return NULL;
-      }
-
-      next = claim->unloading_next();
-
-    } while (Atomic::cmpxchg(next, &_postponed_list, claim) != claim);
-
-    return claim;
-  }
-
- public:
-  // Mark that we're done with the first pass of nmethod cleaning.
-  void barrier_mark(uint worker_id) {
-    MonitorLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
-    _num_entered_barrier++;
-    if (_num_entered_barrier == _num_workers) {
-      ml.notify_all();
-    }
-  }
-
-  // See if we have to wait for the other workers to
-  // finish their first-pass nmethod cleaning work.
-  void barrier_wait(uint worker_id) {
-    if (_num_entered_barrier < _num_workers) {
-      MonitorLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
-      while (_num_entered_barrier < _num_workers) {
-          ml.wait(Mutex::_no_safepoint_check_flag, 0, false);
-      }
-    }
-  }
-
-  // Cleaning and unloading of nmethods. Some work has to be postponed
-  // to the second pass, when we know which nmethods survive.
-  void work_first_pass(uint worker_id) {
-    // The first nmethods is claimed by the first worker.
-    if (worker_id == 0 && _first_nmethod != NULL) {
-      clean_nmethod(_first_nmethod);
-      _first_nmethod = NULL;
-    }
-
-    int num_claimed_nmethods;
-    CompiledMethod* claimed_nmethods[MaxClaimNmethods];
-
-    while (true) {
-      claim_nmethods(claimed_nmethods, &num_claimed_nmethods);
-
-      if (num_claimed_nmethods == 0) {
-        break;
-      }
-
-      for (int i = 0; i < num_claimed_nmethods; i++) {
-        clean_nmethod(claimed_nmethods[i]);
-      }
-    }
-  }
-
-  void work_second_pass(uint worker_id) {
-    CompiledMethod* nm;
-    // Take care of postponed nmethods.
-    while ((nm = claim_postponed_nmethod()) != NULL) {
-      clean_nmethod_postponed(nm);
-    }
-  }
-};
-
-Monitor* G1CodeCacheUnloadingTask::_lock = new Monitor(Mutex::leaf, "Code Cache Unload lock", false, Monitor::_safepoint_check_never);
-
-class G1KlassCleaningTask : public StackObj {
-  volatile int                            _clean_klass_tree_claimed;
-  ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
-
- public:
-  G1KlassCleaningTask() :
-      _clean_klass_tree_claimed(0),
-      _klass_iterator() {
-  }
-
- private:
-  bool claim_clean_klass_tree_task() {
-    if (_clean_klass_tree_claimed) {
-      return false;
-    }
-
-    return Atomic::cmpxchg(1, &_clean_klass_tree_claimed, 0) == 0;
-  }
-
-  InstanceKlass* claim_next_klass() {
-    Klass* klass;
-    do {
-      klass =_klass_iterator.next_klass();
-    } while (klass != NULL && !klass->is_instance_klass());
-
-    // this can be null so don't call InstanceKlass::cast
-    return static_cast<InstanceKlass*>(klass);
-  }
-
-public:
-
-  void clean_klass(InstanceKlass* ik) {
-    ik->clean_weak_instanceklass_links();
-  }
-
-  void work() {
-    ResourceMark rm;
-
-    // One worker will clean the subklass/sibling klass tree.
-    if (claim_clean_klass_tree_task()) {
-      Klass::clean_subklass_tree();
-    }
-
-    // All workers will help cleaning the classes,
-    InstanceKlass* klass;
-    while ((klass = claim_next_klass()) != NULL) {
-      clean_klass(klass);
-    }
-  }
-};
-
-class G1ResolvedMethodCleaningTask : public StackObj {
-  volatile int       _resolved_method_task_claimed;
-public:
-  G1ResolvedMethodCleaningTask() :
-      _resolved_method_task_claimed(0) {}
-
-  bool claim_resolved_method_task() {
-    if (_resolved_method_task_claimed) {
-      return false;
-    }
-    return Atomic::cmpxchg(1, &_resolved_method_task_claimed, 0) == 0;
-  }
-
-  // These aren't big, one thread can do it all.
-  void work() {
-    if (claim_resolved_method_task()) {
-      ResolvedMethodTable::unlink();
-    }
-  }
-};
-
-
-// To minimize the remark pause times, the tasks below are done in parallel.
-class G1ParallelCleaningTask : public AbstractGangTask {
-private:
-  bool                          _unloading_occurred;
-  G1StringAndSymbolCleaningTask _string_symbol_task;
-  G1CodeCacheUnloadingTask      _code_cache_task;
-  G1KlassCleaningTask           _klass_cleaning_task;
-  G1ResolvedMethodCleaningTask  _resolved_method_cleaning_task;
-
-public:
-  // The constructor is run in the VMThread.
-  G1ParallelCleaningTask(BoolObjectClosure* is_alive, uint num_workers, bool unloading_occurred) :
-      AbstractGangTask("Parallel Cleaning"),
-      _unloading_occurred(unloading_occurred),
-      _string_symbol_task(is_alive, true, true, G1StringDedup::is_enabled()),
-      _code_cache_task(num_workers, is_alive, unloading_occurred),
-      _klass_cleaning_task(),
-      _resolved_method_cleaning_task() {
-  }
-
-  // The parallel work done by all worker threads.
-  void work(uint worker_id) {
-    // Do first pass of code cache cleaning.
-    _code_cache_task.work_first_pass(worker_id);
-
-    // Let the threads mark that the first pass is done.
-    _code_cache_task.barrier_mark(worker_id);
-
-    // Clean the Strings and Symbols.
-    _string_symbol_task.work(worker_id);
-
-    // Clean unreferenced things in the ResolvedMethodTable
-    _resolved_method_cleaning_task.work();
-
-    // Wait for all workers to finish the first code cache cleaning pass.
-    _code_cache_task.barrier_wait(worker_id);
-
-    // Do the second code cache cleaning work, which realize on
-    // the liveness information gathered during the first pass.
-    _code_cache_task.work_second_pass(worker_id);
-
-    // Clean all klasses that were not unloaded.
-    // The weak metadata in klass doesn't need to be
-    // processed if there was no unloading.
-    if (_unloading_occurred) {
-      _klass_cleaning_task.work();
-    }
-  }
-};
-
-
 void G1CollectedHeap::complete_cleaning(BoolObjectClosure* is_alive,
                                         bool class_unloading_occurred) {
   uint n_workers = workers()->active_workers();
 
-  G1ParallelCleaningTask g1_unlink_task(is_alive, n_workers, class_unloading_occurred);
+  G1StringDedupUnlinkOrOopsDoClosure dedup_closure(is_alive, NULL, false);
+  ParallelCleaningTask g1_unlink_task(is_alive, &dedup_closure, n_workers, class_unloading_occurred);
   workers()->run_task(&g1_unlink_task);
 }
 
 void G1CollectedHeap::partial_cleaning(BoolObjectClosure* is_alive,
                                        bool process_strings,
-                                       bool process_symbols,
                                        bool process_string_dedup) {
-  if (!process_strings && !process_symbols && !process_string_dedup) {
+  if (!process_strings && !process_string_dedup) {
     // Nothing to clean.
     return;
   }
 
-  G1StringAndSymbolCleaningTask g1_unlink_task(is_alive, process_strings, process_symbols, process_string_dedup);
+  G1StringDedupUnlinkOrOopsDoClosure dedup_closure(is_alive, NULL, false);
+  StringCleaningTask g1_unlink_task(is_alive, process_string_dedup ? &dedup_closure : NULL, process_strings);
   workers()->run_task(&g1_unlink_task);
-
 }
 
 class G1RedirtyLoggedCardsTask : public AbstractGangTask {
@@ -4045,7 +3712,7 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   process_discovered_references(per_thread_states);
 
   // FIXME
-  // CM's reference processing also cleans up the string and symbol tables.
+  // CM's reference processing also cleans up the string table.
   // Should we do that here also? We could, but it is a serial operation
   // and could significantly increase the pause time.
 
@@ -4650,7 +4317,6 @@ bool G1CollectedHeap::check_young_list_empty() {
 #endif // ASSERT
 
 class TearDownRegionSetsClosure : public HeapRegionClosure {
-private:
   HeapRegionSet *_old_set;
 
 public:
@@ -4663,9 +4329,9 @@ public:
       r->uninstall_surv_rate_group();
     } else {
       // We ignore free regions, we'll empty the free list afterwards.
-      // We ignore humongous regions, we're not tearing down the
-      // humongous regions set.
-      assert(r->is_free() || r->is_humongous(),
+      // We ignore humongous and archive regions, we're not tearing down these
+      // sets.
+      assert(r->is_archive() || r->is_free() || r->is_humongous(),
              "it cannot be another type");
     }
     return false;
@@ -4708,14 +4374,17 @@ void G1CollectedHeap::set_used(size_t bytes) {
 
 class RebuildRegionSetsClosure : public HeapRegionClosure {
 private:
-  bool            _free_list_only;
-  HeapRegionSet*   _old_set;
-  HeapRegionManager*   _hrm;
-  size_t          _total_used;
+  bool _free_list_only;
+
+  HeapRegionSet* _old_set;
+  HeapRegionManager* _hrm;
+
+  size_t _total_used;
 
 public:
   RebuildRegionSetsClosure(bool free_list_only,
-                           HeapRegionSet* old_set, HeapRegionManager* hrm) :
+                           HeapRegionSet* old_set,
+                           HeapRegionManager* hrm) :
     _free_list_only(free_list_only),
     _old_set(old_set), _hrm(hrm), _total_used(0) {
     assert(_hrm->num_free_regions() == 0, "pre-condition");
@@ -4733,11 +4402,11 @@ public:
       _hrm->insert_into_free_list(r);
     } else if (!_free_list_only) {
 
-      if (r->is_humongous()) {
-        // We ignore humongous regions. We left the humongous set unchanged.
+      if (r->is_archive() || r->is_humongous()) {
+        // We ignore archive and humongous regions. We left these sets unchanged.
       } else {
         assert(r->is_young() || r->is_free() || r->is_old(), "invariant");
-        // We now move all (non-humongous, non-old) regions to old gen, and register them as such.
+        // We now move all (non-humongous, non-old, non-archive) regions to old gen, and register them as such.
         r->move_to_old();
         _old_set->add(r);
       }
@@ -4811,7 +4480,7 @@ void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
   _hr_printer.retire(alloc_region);
   // We update the eden sizes here, when the region is retired,
   // instead of when it's allocated, since this is the point that its
-  // used space has been recored in _summary_bytes_used.
+  // used space has been recorded in _summary_bytes_used.
   g1mm()->update_eden_size();
 }
 
@@ -4862,7 +4531,7 @@ void G1CollectedHeap::retire_gc_alloc_region(HeapRegion* alloc_region,
   alloc_region->note_end_of_copying(during_im);
   g1_policy()->record_bytes_copied_during_gc(allocated_bytes);
   if (dest.is_old()) {
-    _old_set.add(alloc_region);
+    old_set_add(alloc_region);
   }
   _hr_printer.retire(alloc_region);
 }
@@ -4987,17 +4656,14 @@ void G1CollectedHeap::rebuild_strong_code_roots() {
   CodeCache::blobs_do(&blob_cl);
 }
 
+void G1CollectedHeap::initialize_serviceability() {
+  _g1mm->initialize_serviceability();
+}
+
 GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {
-  GrowableArray<GCMemoryManager*> memory_managers(2);
-  memory_managers.append(&_memory_manager);
-  memory_managers.append(&_full_gc_memory_manager);
-  return memory_managers;
+  return _g1mm->memory_managers();
 }
 
 GrowableArray<MemoryPool*> G1CollectedHeap::memory_pools() {
-  GrowableArray<MemoryPool*> memory_pools(3);
-  memory_pools.append(_eden_pool);
-  memory_pools.append(_survivor_pool);
-  memory_pools.append(_old_pool);
-  return memory_pools;
+  return _g1mm->memory_pools();
 }

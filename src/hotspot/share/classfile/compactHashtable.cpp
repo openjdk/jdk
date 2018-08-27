@@ -27,6 +27,7 @@
 #include "classfile/compactHashtable.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "logging/logMessage.hpp"
+#include "memory/heapShared.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -280,8 +281,9 @@ class CompactHashtable_OopIterator {
 public:
   CompactHashtable_OopIterator(OopClosure *cl) : _closure(cl) {}
   inline void do_value(address base_address, u4 offset) const {
-    narrowOop o = (narrowOop)offset;
-    _closure->do_oop(&o);
+    narrowOop v = (narrowOop)offset;
+    oop obj = HeapShared::decode_with_archived_oop_encoding_mode(v);
+    _closure->do_oop(&obj);
   }
 };
 

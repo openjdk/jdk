@@ -488,19 +488,22 @@ void G1HeapVerifier::verify(VerifyOption vo) {
 class VerifyRegionListsClosure : public HeapRegionClosure {
 private:
   HeapRegionSet*   _old_set;
+  HeapRegionSet*   _archive_set;
   HeapRegionSet*   _humongous_set;
-  HeapRegionManager*   _hrm;
+  HeapRegionManager* _hrm;
 
 public:
   uint _old_count;
+  uint _archive_count;
   uint _humongous_count;
   uint _free_count;
 
   VerifyRegionListsClosure(HeapRegionSet* old_set,
+                           HeapRegionSet* archive_set,
                            HeapRegionSet* humongous_set,
                            HeapRegionManager* hrm) :
-    _old_set(old_set), _humongous_set(humongous_set), _hrm(hrm),
-    _old_count(), _humongous_count(), _free_count(){ }
+    _old_set(old_set), _archive_set(archive_set), _humongous_set(humongous_set), _hrm(hrm),
+    _old_count(), _archive_count(), _humongous_count(), _free_count(){ }
 
   bool do_heap_region(HeapRegion* hr) {
     if (hr->is_young()) {
@@ -511,6 +514,9 @@ public:
     } else if (hr->is_empty()) {
       assert(_hrm->is_free(hr), "Heap region %u is empty but not on the free list.", hr->hrm_index());
       _free_count++;
+    } else if (hr->is_archive()) {
+      assert(hr->containing_set() == _archive_set, "Heap region %u is archive but not in the archive set.", hr->hrm_index());
+      _archive_count++;
     } else if (hr->is_old()) {
       assert(hr->containing_set() == _old_set, "Heap region %u is old but not in the old set.", hr->hrm_index());
       _old_count++;
@@ -523,8 +529,9 @@ public:
     return false;
   }
 
-  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* humongous_set, HeapRegionManager* free_list) {
+  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* archive_set, HeapRegionSet* humongous_set, HeapRegionManager* free_list) {
     guarantee(old_set->length() == _old_count, "Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count);
+    guarantee(archive_set->length() == _archive_count, "Archive set count mismatch. Expected %u, actual %u.", archive_set->length(), _archive_count);
     guarantee(humongous_set->length() == _humongous_count, "Hum set count mismatch. Expected %u, actual %u.", humongous_set->length(), _humongous_count);
     guarantee(free_list->num_free_regions() == _free_count, "Free list count mismatch. Expected %u, actual %u.", free_list->num_free_regions(), _free_count);
   }
@@ -539,9 +546,9 @@ void G1HeapVerifier::verify_region_sets() {
   // Finally, make sure that the region accounting in the lists is
   // consistent with what we see in the heap.
 
-  VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
+  VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_archive_set, &_g1h->_humongous_set, &_g1h->_hrm);
   _g1h->heap_region_iterate(&cl);
-  cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
+  cl.verify_counts(&_g1h->_old_set, &_g1h->_archive_set, &_g1h->_humongous_set, &_g1h->_hrm);
 }
 
 void G1HeapVerifier::prepare_for_verify() {
@@ -755,6 +762,11 @@ class G1CheckCSetFastTableClosure : public HeapRegionClosure {
         return true;
       }
       if (cset_state.is_in_cset()) {
+        if (hr->is_archive()) {
+          log_error(gc, verify)("## is_archive in collection set for region %u", i);
+          _failures = true;
+          return true;
+        }
         if (hr->is_young() != (cset_state.is_young())) {
           log_error(gc, verify)("## is_young %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                hr->is_young(), cset_state.value(), i);

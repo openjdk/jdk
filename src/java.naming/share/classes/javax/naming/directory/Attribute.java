@@ -335,7 +335,11 @@ public interface Attribute extends Cloneable, java.io.Serializable {
 
     /**
      * Use serialVersionUID from JNDI 1.1.1 for interoperability.
+     *
+     * @deprecated A {@code serialVersionUID} field in an interface is
+     * ineffectual. Do not use; no replacement.
      */
-    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
+    @Deprecated
+    @SuppressWarnings("serial")
     static final long serialVersionUID = 8707690322213556804L;
 }

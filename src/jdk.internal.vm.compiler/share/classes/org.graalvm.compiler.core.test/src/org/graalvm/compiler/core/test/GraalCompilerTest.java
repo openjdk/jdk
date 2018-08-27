@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1063,6 +1063,20 @@ public abstract class GraalCompilerTest extends GraalTest {
         }
     }
 
+    protected StructuredGraph getFinalGraph(String method) {
+        return getFinalGraph(getResolvedJavaMethod(method));
+    }
+
+    protected StructuredGraph getFinalGraph(ResolvedJavaMethod method) {
+        StructuredGraph graph = parseForCompile(method);
+        applyFrontEnd(graph);
+        return graph;
+    }
+
+    protected void applyFrontEnd(StructuredGraph graph) {
+        GraalCompiler.emitFrontEnd(getProviders(), getBackend(), graph, getDefaultGraphBuilderSuite(), OptimisticOptimizations.ALL, graph.getProfilingInfo(), createSuites(graph.getOptions()));
+    }
+
     protected StructuredGraph lastCompiledGraph;
 
     protected SpeculationLog getSpeculationLog() {
@@ -1108,6 +1122,7 @@ public abstract class GraalCompilerTest extends GraalTest {
         return methodMap.get(javaMethod);
     }
 
+    @SuppressWarnings("deprecation")
     protected Object invoke(ResolvedJavaMethod javaMethod, Object receiver, Object... args) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, InstantiationException {
         Executable method = lookupMethod(javaMethod);
         Assert.assertTrue(method != null);
@@ -1442,14 +1457,5 @@ public abstract class GraalCompilerTest extends GraalTest {
      */
     protected boolean isArchitecture(String name) {
         return name.equals(backend.getTarget().arch.getName());
-    }
-
-    /**
-     * This method should be called in "timeout" tests which JUnit runs in a different thread.
-     */
-    public static void initializeForTimeout() {
-        // timeout tests run in a separate thread which needs the DebugEnvironment to be
-        // initialized
-        // DebugEnvironment.ensureInitialized(getInitialOptions());
     }
 }

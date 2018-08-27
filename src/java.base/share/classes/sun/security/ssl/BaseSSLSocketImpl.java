@@ -204,30 +204,35 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
     //
 
     /**
-     * The semantics of shutdownInput is not supported in TLS 1.0
-     * spec. Thus when the method is called on an SSL socket, an
-     * UnsupportedOperationException will be thrown.
+     * Places the input stream for this socket at "end of stream".  Any data
+     * sent to the input stream side of the socket is acknowledged and then
+     * silently discarded.
      *
-     * @throws UnsupportedOperationException
+     * @see java.net.Socket#shutdownInput
      */
     @Override
-    public final void shutdownInput() throws IOException {
-        throw new UnsupportedOperationException("The method shutdownInput()" +
-                   " is not supported in SSLSocket");
+    public void shutdownInput() throws IOException {
+        if (self == this) {
+            super.shutdownInput();
+        } else {
+            self.shutdownInput();
+        }
     }
 
     /**
-     * The semantics of shutdownOutput is not supported in TLS 1.0
-     * spec. Thus when the method is called on an SSL socket, an
-     * UnsupportedOperationException will be thrown.
+     * Disables the output stream for this socket.  For a TCP socket, any
+     * previously written data will be sent followed by TCP's normal
+     * connection termination sequence.
      *
-     * @throws UnsupportedOperationException
+     * @see java.net.Socket#shutdownOutput
      */
     @Override
-    public final void shutdownOutput() throws IOException {
-        throw new UnsupportedOperationException("The method shutdownOutput()" +
-                   " is not supported in SSLSocket");
-
+    public void shutdownOutput() throws IOException {
+        if (self == this) {
+            super.shutdownOutput();
+        } else {
+            self.shutdownOutput();
+        }
     }
 
     /**
@@ -235,7 +240,7 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
      * @see java.net.Socket#isInputShutdown
      */
     @Override
-    public final boolean isInputShutdown() {
+    public boolean isInputShutdown() {
         if (self == this) {
             return super.isInputShutdown();
         } else {
@@ -248,7 +253,7 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
      * @see java.net.Socket#isOutputShutdown
      */
     @Override
-    public final boolean isOutputShutdown() {
+    public boolean isOutputShutdown() {
         if (self == this) {
             return super.isOutputShutdown();
         } else {
@@ -618,7 +623,7 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         if (self == this) {
             super.close();
         } else {

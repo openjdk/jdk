@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -984,8 +984,9 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
         return UNSAFE.getInt(getMetaspaceKlass() + config().instanceKlassMiscFlagsOffset);
     }
 
-    public boolean isAnonymous() {
-        return (getMiscFlags() & config().instanceKlassMiscIsAnonymous) != 0;
+    @Override
+    public boolean isUnsafeAnonymous() {
+        return (getMiscFlags() & config().instanceKlassMiscIsUnsafeAnonymous) != 0;
     }
 
 }

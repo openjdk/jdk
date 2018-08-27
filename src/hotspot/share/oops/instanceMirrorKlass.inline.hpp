@@ -1,4 +1,4 @@
-/* Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 template <typename T, class OopClosureType>
 void InstanceMirrorKlass::oop_oop_iterate_statics(oop obj, OopClosureType* closure) {
   T* p         = (T*)start_of_static_fields(obj);
-  T* const end = p + java_lang_Class::static_oop_field_count(obj);
+  T* const end = p + java_lang_Class::static_oop_field_count_raw(obj);
 
   for (; p < end; ++p) {
     Devirtualizer::do_oop(closure, p);
@@ -48,12 +48,13 @@ void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
   InstanceKlass::oop_oop_iterate<T>(obj, closure);
 
   if (Devirtualizer::do_metadata(closure)) {
-    Klass* klass = java_lang_Class::as_Klass(obj);
+    Klass* klass = java_lang_Class::as_Klass_raw(obj);
     // We'll get NULL for primitive mirrors.
     if (klass != NULL) {
-      if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_anonymous()) {
-        // An anonymous class doesn't have its own class loader, so when handling
-        // the java mirror for an anonymous class we need to make sure its class
+      if (klass->is_instance_klass() &&
+          InstanceKlass::cast(klass)->is_unsafe_anonymous()) {
+        // An unsafe anonymous class doesn't have its own class loader, so
+        // when handling the java mirror for the class we need to make sure its class
         // loader data is claimed, this is done by calling do_cld explicitly.
         // For non-anonymous classes the call to do_cld is made when the class
         // loader itself is handled.
@@ -89,7 +90,7 @@ void InstanceMirrorKlass::oop_oop_iterate_statics_bounded(oop obj,
                                                           OopClosureType* closure,
                                                           MemRegion mr) {
   T* p   = (T*)start_of_static_fields(obj);
-  T* end = p + java_lang_Class::static_oop_field_count(obj);
+  T* end = p + java_lang_Class::static_oop_field_count_raw(obj);
 
   T* const l   = (T*)mr.start();
   T* const h   = (T*)mr.end();
@@ -115,7 +116,7 @@ void InstanceMirrorKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closu
 
   if (Devirtualizer::do_metadata(closure)) {
     if (mr.contains(obj)) {
-      Klass* klass = java_lang_Class::as_Klass(obj);
+      Klass* klass = java_lang_Class::as_Klass_raw(obj);
       // We'll get NULL for primitive mirrors.
       if (klass != NULL) {
         Devirtualizer::do_klass(closure, klass);

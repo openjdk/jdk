@@ -486,6 +486,7 @@ class Universe: AllStatic {
   // Apply "f" to all klasses for basic types (classes not present in
   // SystemDictionary).
   static void basic_type_classes_do(void f(Klass*));
+  static void basic_type_classes_do(KlassClosure* closure);
   static void metaspace_pointers_do(MetaspaceClosure* it);
 
   // Debugging

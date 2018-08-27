@@ -52,7 +52,7 @@ public class HelloExtTest {
 
     TestCommon.dump(appJar,
         TestCommon.list("javax/annotation/processing/FilerException", "[Ljava/lang/Comparable;"),
-        bootClassPath, "-verbose:class");
+        bootClassPath);
 
     String prefix = ".class.load. ";
     String class_pattern = ".*LambdaForm[$]MH[/][0123456789].*";
@@ -60,12 +60,12 @@ public class HelloExtTest {
     String pattern = prefix + class_pattern + suffix;
 
     TestCommon.run("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, bootClassPath, "-verbose:class", "HelloExt")
+            "-cp", appJar, bootClassPath, "-Xlog:class+load", "HelloExt")
         .assertNormalExit(output -> output.shouldNotMatch(pattern));
 
 
     TestCommon.run("-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
-            "-cp", appJar, bootClassPath, "-verbose:class",
+            "-cp", appJar, bootClassPath, "-Xlog:class+load",
             "-XX:+PrintSharedArchiveAndExit", "-XX:+PrintSharedDictionary",
             "HelloExt")
         .assertNormalExit(output ->  output.shouldNotMatch(class_pattern));

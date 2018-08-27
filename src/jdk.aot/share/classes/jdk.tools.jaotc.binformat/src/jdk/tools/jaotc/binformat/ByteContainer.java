@@ -21,11 +21,12 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat;
 
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
-import jdk.tools.jaotc.binformat.Container;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
@@ -184,6 +185,7 @@ public class ByteContainer implements Container {
      *
      * @return string containing name
      */
+    @Override
     public String getContainerName() {
         return containerName;
     }
@@ -218,6 +220,7 @@ public class ByteContainer implements Container {
         sectionId = id;
     }
 
+    @Override
     public int getSectionId() {
         if (sectionId == -1) {
             throw new InternalError("Using sectionId before assigned");

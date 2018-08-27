@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.List;
 
+import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.options.OptionKey;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.serviceprovider.GraalServices;
@@ -108,6 +109,7 @@ public class PrintStreamOptionKey extends OptionKey<String> {
      * Gets the print stream configured by this option. If no file is configured, the print stream
      * will output to HotSpot's {@link HotSpotJVMCIRuntime#getLogStream() log} stream.
      */
+    @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "false positive on dead store to `ps`")
     public PrintStream getStream(OptionValues options) {
         String nameTemplate = getValue(options);
         if (nameTemplate != null) {

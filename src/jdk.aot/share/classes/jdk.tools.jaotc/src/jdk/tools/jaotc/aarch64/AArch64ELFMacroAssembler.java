@@ -22,19 +22,21 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.aarch64;
 
-import jdk.tools.jaotc.StubInformation;
-import jdk.tools.jaotc.ELFMacroAssembler;
+import static jdk.vm.ci.aarch64.AArch64.r12;
+import static jdk.vm.ci.aarch64.AArch64.r16;
+import static jdk.vm.ci.aarch64.AArch64.r17;
+import static jdk.vm.ci.aarch64.AArch64.r9;
 
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
 
-
+import jdk.tools.jaotc.ELFMacroAssembler;
+import jdk.tools.jaotc.StubInformation;
 import jdk.vm.ci.code.TargetDescription;
-import jdk.vm.ci.code.Register;
-
-import static jdk.vm.ci.aarch64.AArch64.*;
 
 public final class AArch64ELFMacroAssembler extends AArch64MacroAssembler implements ELFMacroAssembler {
 
@@ -71,7 +73,7 @@ public final class AArch64ELFMacroAssembler extends AArch64MacroAssembler implem
         jmp(r16);
         stub.setDispatchJumpOffset(position());
 
-        // C2I stub used to call interpreter.  First load r12
+        // C2I stub used to call interpreter. First load r12
         // (i.e. rmethod) with a pointer to the Method structure ...
         addressOf(r12);
         ldr(64, r12, AArch64Address.createBaseRegisterOnlyAddress(r12));

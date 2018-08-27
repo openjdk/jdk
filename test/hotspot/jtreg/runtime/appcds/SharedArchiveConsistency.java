@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,11 +62,11 @@ import sun.hotspot.WhiteBox;
 public class SharedArchiveConsistency {
     public static WhiteBox wb;
     public static int offset_magic;    // FileMapHeader::_magic
-    public static int sp_offset_crc;   // FileMapHeader::space_info::_crc
+    public static int sp_offset_crc;   // CDSFileMapRegion::_crc
     public static int file_header_size = -1;// total size of header, variant, need calculation
-    public static int space_info_size; // size of space_info
-    public static int sp_offset;       // offset of FileMapHeader::space_info
-    public static int sp_used_offset;  // offset of space_info::_used
+    public static int CDSFileMapRegion_size; // size of CDSFileMapRegion
+    public static int sp_offset;       // offset of CDSFileMapRegion
+    public static int sp_used_offset;  // offset of CDSFileMapRegion::_used
     public static int size_t_size;     // size of size_t
 
     public static File jsa;        // will be updated during test
@@ -83,7 +83,7 @@ public class SharedArchiveConsistency {
     public static void getFileOffsetInfo() throws Exception {
         wb = WhiteBox.getWhiteBox();
         offset_magic = wb.getOffsetForName("FileMapHeader::_magic");
-        sp_offset_crc = wb.getOffsetForName("space_info::_crc");
+        sp_offset_crc = wb.getOffsetForName("CDSFileMapRegion::_crc");
         try {
             int nonExistOffset = wb.getOffsetForName("FileMapHeader::_non_exist_offset");
             System.exit(-1); // should fail
@@ -92,9 +92,9 @@ public class SharedArchiveConsistency {
         }
 
         sp_offset = wb.getOffsetForName("FileMapHeader::_space[0]") - offset_magic;
-        sp_used_offset = wb.getOffsetForName("space_info::_used") - sp_offset_crc;
+        sp_used_offset = wb.getOffsetForName("CDSFileMapRegion::_used") - sp_offset_crc;
         size_t_size = wb.getOffsetForName("size_t_size");
-        space_info_size  = wb.getOffsetForName("space_info_size");
+        CDSFileMapRegion_size  = wb.getOffsetForName("CDSFileMapRegion_size");
     }
 
     public static int getFileHeaderSize(FileChannel fc) throws Exception {
@@ -166,7 +166,7 @@ public class SharedArchiveConsistency {
         System.out.printf("%-12s%-12s%-12s%-12s%-12s\n", "Space Name", "Offset", "Used bytes", "Reg Start", "Random Offset");
         start0 = getFileHeaderSize(fc);
         for (int i = 0; i < num_regions; i++) {
-            used_offset = sp_offset + space_info_size * i + sp_used_offset;
+            used_offset = sp_offset + CDSFileMapRegion_size * i + sp_used_offset;
             // read 'used'
             used[i] = readInt(fc, used_offset, size_t_size);
             start = start0;
@@ -199,7 +199,7 @@ public class SharedArchiveConsistency {
         long[] used = new long[num_regions];
         System.out.printf("%-12s%-12s\n", "Space name", "Used bytes");
         for (int i = 0; i < num_regions; i++) {
-            used_offset = sp_offset + space_info_size* i + sp_used_offset;
+            used_offset = sp_offset + CDSFileMapRegion_size* i + sp_used_offset;
             // read 'used'
             used[i] = readInt(fc, used_offset, size_t_size);
             System.out.printf("%-12s%-12d\n", shared_region_name[i], used[i]);

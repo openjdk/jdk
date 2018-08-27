@@ -86,9 +86,6 @@ case "$OS" in
             "/usr/lib/nss/libsoftokn3.so"`
     fi
     ;;
-  Darwin )
-    LIBNAME="$TESTSRC/../../pkcs11/nss/lib/macosx-x86_64/libsoftokn3.dylib"
-    ;;
   * )
     echo "Will not run test on: ${OS}"
     exit 0;

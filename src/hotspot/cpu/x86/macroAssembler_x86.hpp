@@ -482,6 +482,10 @@ class MacroAssembler: public Assembler {
   // from register xmm0. Otherwise, the value is stored from the FPU stack.
   void store_double(Address dst);
 
+  // Save/restore ZMM (512bit) register on stack.
+  void push_zmm(XMMRegister reg);
+  void pop_zmm(XMMRegister reg);
+
   // pushes double TOS element of FPU stack on CPU stack; pops from FPU stack
   void push_fTOS();
 

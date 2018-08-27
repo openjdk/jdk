@@ -770,10 +770,13 @@ jint JNICALL heapReferenceCallback(
             break;
 
         case JVMTI_HEAP_REFERENCE_STACK_LOCAL:
-            thr_idx  = registerThread(thr_id, thr_tag);
-            meth_idx = registerFrame(thr_id, depth, method, ref_kind);
-            if (meth_idx > 0) {
-                jint loc_idx  = registerLocal(meth_idx, location, slot, tag);
+            // Skip local references from non-main (e.g. compiler) threads.
+            if (thr_tag == TARG_THREAD_TAG) {
+                thr_idx  = registerThread(thr_id, thr_tag);
+                meth_idx = registerFrame(thr_id, depth, method, ref_kind);
+                if (meth_idx > 0) {
+                    jint loc_idx  = registerLocal(meth_idx, location, slot, tag);
+                }
             }
             /* This part is kind of hack. It has some expectations about stack layout */
             if (thr_tag == TARG_THREAD_TAG &&
@@ -811,10 +814,13 @@ jint JNICALL heapReferenceCallback(
                    nsk_jvmti_setFailStatus();
                }
             }
-            /* Fall through */
+            break;
         case JVMTI_HEAP_REFERENCE_JNI_LOCAL:
-            thr_idx  = registerThread(thr_id, thr_tag);
-            meth_idx = registerFrame(thr_id, depth, method, ref_kind);
+            // Skip JNI local references from non-main (e.g. compiler) threads.
+            if (thr_tag == TARG_THREAD_TAG) {
+                thr_idx  = registerThread(thr_id, thr_tag);
+                meth_idx = registerFrame(thr_id, depth, method, ref_kind);
+            }
             break;
 
         case JVMTI_REFERENCE_ARRAY_ELEMENT:

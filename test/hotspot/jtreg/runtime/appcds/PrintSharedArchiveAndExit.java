@@ -65,7 +65,7 @@ public class PrintSharedArchiveAndExit {
     String cp = appJar + File.pathSeparator + appJar2;
     String lastCheckMsg = "checking shared classpath entry: " + appJar2; // the last JAR to check
 
-    TestCommon.testDump(cp, TestCommon.list("Hello"));
+    TestCommon.testDump(cp, TestCommon.list("Hello", "HelloMore"));
 
     log("Normal execution -- all the JAR paths should be checked");
     TestCommon.run(

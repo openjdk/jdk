@@ -27,12 +27,14 @@
  * @summary Handling of directories in -cp is based on the classlist
  * @requires vm.cds
  * @library /test/lib
+ * @compile test-classes/Hello.java
  * @run main DirClasspathTest
  */
 
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -87,13 +89,28 @@ public class DirClasspathTest {
         /////////////////////////////////////////////////////////////////
         String appClassList[] = {"java/lang/Object", "com/sun/tools/javac/Main"};
 
-        // Non-empty dir in -cp: should report error
+        // Non-empty dir in -cp: should be OK (as long as no classes were loaded from there)
         output = TestCommon.dump(dir.getPath(), appClassList, "-Xlog:class+path=info");
+        TestCommon.checkDump(output);
+
+        // Long path to non-empty dir in -cp: should be OK (as long as no classes were loaded from there)
+        output = TestCommon.dump(longDir.getPath(), appClassList, "-Xlog:class+path=info");
+        TestCommon.checkDump(output);
+
+        /////////////////////////////////////////////////////////////////
+        // Loading an app class from a directory
+        /////////////////////////////////////////////////////////////////
+        String appClassList2[] = {"Hello", "java/lang/Object", "com/sun/tools/javac/Main"};
+        // Non-empty dir in -cp: should report error if a class is loaded from it
+        output = TestCommon.dump(classDir.toString(), appClassList2, "-Xlog:class+path=info");
         output.shouldNotHaveExitValue(0);
         output.shouldContain("Cannot have non-empty directory in paths");
 
-        // Long path to non-empty dir in -cp: should report error
-        output = TestCommon.dump(longDir.getPath(), appClassList, "-Xlog:class+path=info");
+        // Long path to non-empty dir in -cp: should report error if a class is loaded from it
+        File srcClass = new File(classDir.toFile(), "Hello.class");
+        File destClass = new File(longDir, "Hello.class");
+        Files.copy(srcClass.toPath(), destClass.toPath());
+        output = TestCommon.dump(longDir.getPath(), appClassList2, "-Xlog:class+path=info");
         output.shouldNotHaveExitValue(0);
         output.shouldContain("Cannot have non-empty directory in paths");
     }

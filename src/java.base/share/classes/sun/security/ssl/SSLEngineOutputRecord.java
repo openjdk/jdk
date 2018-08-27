@@ -31,8 +31,6 @@ import java.util.LinkedList;
 import javax.net.ssl.SSLHandshakeException;
 
 import sun.security.ssl.SSLCipher.SSLWriteCipher;
-import sun.security.ssl.KeyUpdate.KeyUpdateMessage;
-import sun.security.ssl.KeyUpdate.KeyUpdateRequest;
 
 /**
  * {@code OutputRecord} implementation for {@code SSLEngine}.
@@ -43,7 +41,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
     private boolean isTalkingToV2 = false;      // SSLv2Hello
     private ByteBuffer v2ClientHello = null;    // SSLv2Hello
 
-    private boolean isCloseWaiting = false;
+    private volatile boolean isCloseWaiting = false;
 
     SSLEngineOutputRecord(HandshakeHash handshakeHash) {
         super(handshakeHash, SSLWriteCipher.nullTlsWriteCipher());
@@ -63,8 +61,20 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
         }
     }
 
+    boolean isClosed() {
+        return isClosed || isCloseWaiting;
+    }
+
     @Override
     void encodeAlert(byte level, byte description) throws IOException {
+        if (isClosed()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                    "alert message: " + Alert.nameOf(description));
+            }
+            return;
+        }
+
         if (fragmenter == null) {
            fragmenter = new HandshakeFragment();
         }
@@ -75,6 +85,14 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
     @Override
     void encodeHandshake(byte[] source,
             int offset, int length) throws IOException {
+        if (isClosed()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                        "handshake message",
+                        ByteBuffer.wrap(source, offset, length));
+            }
+            return;
+        }
 
         if (fragmenter == null) {
            fragmenter = new HandshakeFragment();
@@ -114,6 +132,14 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
     @Override
     void encodeChangeCipherSpec() throws IOException {
+        if (isClosed()) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                    "change_cipher_spec message");
+            }
+            return;
+        }
+
         if (fragmenter == null) {
            fragmenter = new HandshakeFragment();
         }
@@ -129,6 +155,23 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
     Ciphertext encode(
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
+
+        if (isClosed) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                    "application data or cached messages");
+            }
+
+            return null;
+        } else if (isCloseWaiting) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                SSLLogger.warning("outbound has closed, ignore outbound " +
+                    "application data");
+            }
+
+            srcs = null;    // use no application data.
+        }
+
         return encode(srcs, srcsOffset, srcsLength, dsts[0]);
     }
 
@@ -248,25 +291,14 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
             if (isFirstAppOutputRecord) {
                 isFirstAppOutputRecord = false;
             }
-
-            // atKeyLimit() inactive when limits not checked, tc set when limits
-            // are active.
-            if (writeCipher.atKeyLimit()) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("KeyUpdate: triggered, write side.");
-                }
-
-                PostHandshakeContext p = new PostHandshakeContext(tc);
-                KeyUpdate.handshakeProducer.produce(p,
-                    new KeyUpdateMessage(p, KeyUpdateRequest.REQUESTED));
-            }
         }
 
         return new Ciphertext(ContentType.APPLICATION_DATA.id,
                 SSLHandshake.NOT_APPLICABLE.id, recordSN);
     }
 
-    private Ciphertext acquireCiphertext(ByteBuffer destination) throws IOException {
+    private Ciphertext acquireCiphertext(
+            ByteBuffer destination) throws IOException {
         if (isTalkingToV2) {              // SSLv2Hello
             // We don't support SSLv2.  Send an SSLv2 error message
             // so that the connection can be closed gracefully.
@@ -517,7 +549,7 @@ final class SSLEngineOutputRecord extends OutputRecord implements SSLRecord {
 
         boolean hasAlert() {
             for (RecordMemo memo : handshakeMemos) {
-                if (memo.contentType ==  ContentType.ALERT.id) {
+                if (memo.contentType == ContentType.ALERT.id) {
                     return true;
                 }
             }

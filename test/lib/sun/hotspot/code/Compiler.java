@@ -55,11 +55,6 @@ public class Compiler {
         if (useJvmciComp == null || !useJvmciComp) {
             return false;
         }
-        // This check might be redundant but let's keep it for now.
-        String jvmciCompiler = System.getProperty("jvmci.Compiler");
-        if (jvmciCompiler == null || !jvmciCompiler.equals("graal")) {
-            return false;
-        }
 
         Boolean tieredCompilation = WB.getBooleanVMFlag("TieredCompilation");
         Long compLevel = WB.getIntxVMFlag("TieredStopAtLevel");

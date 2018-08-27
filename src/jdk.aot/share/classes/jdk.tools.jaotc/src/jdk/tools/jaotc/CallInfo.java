@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc;
 
 import org.graalvm.compiler.bytecode.Bytecodes;
@@ -33,7 +35,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 final class CallInfo {
 
     static boolean isStaticTarget(Call call) {
-        return !((HotSpotResolvedJavaMethod)call.target).hasReceiver();
+        return !((HotSpotResolvedJavaMethod) call.target).hasReceiver();
     }
 
     private static boolean isStaticOpcode(Call call) {

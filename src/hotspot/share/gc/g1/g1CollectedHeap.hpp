@@ -51,7 +51,6 @@
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "memory/memRegion.hpp"
-#include "services/memoryManager.hpp"
 #include "utilities/stack.hpp"
 
 // A "G1CollectedHeap" is an implementation of a java heap for HotSpot.
@@ -67,6 +66,7 @@ class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
 class G1ParScanThreadState;
 class MemoryPool;
+class MemoryManager;
 class ObjectClosure;
 class SpaceClosure;
 class CompactibleSpaceClosure;
@@ -160,22 +160,12 @@ private:
 
   SoftRefPolicy      _soft_ref_policy;
 
-  GCMemoryManager _memory_manager;
-  GCMemoryManager _full_gc_memory_manager;
-
-  MemoryPool* _eden_pool;
-  MemoryPool* _survivor_pool;
-  MemoryPool* _old_pool;
-
   static size_t _humongous_object_threshold_in_words;
 
-  // It keeps track of the old regions.
+  // These sets keep track of old, archive and humongous regions respectively.
   HeapRegionSet _old_set;
-
-  // It keeps track of the humongous regions.
+  HeapRegionSet _archive_set;
   HeapRegionSet _humongous_set;
-
-  virtual void initialize_serviceability();
 
   void eagerly_reclaim_humongous_regions();
   // Start a new incremental collection set for the next pause.
@@ -970,6 +960,7 @@ public:
 
   virtual SoftRefPolicy* soft_ref_policy();
 
+  virtual void initialize_serviceability();
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 
@@ -1046,8 +1037,10 @@ public:
   inline void old_set_add(HeapRegion* hr);
   inline void old_set_remove(HeapRegion* hr);
 
+  inline void archive_set_add(HeapRegion* hr);
+
   size_t non_young_capacity_bytes() {
-    return (_old_set.length() + _humongous_set.length()) * HeapRegion::GrainBytes;
+    return (old_regions_count() + _archive_set.length() + humongous_regions_count()) * HeapRegion::GrainBytes;
   }
 
   // Determine whether the given region is one that we are using as an
@@ -1232,20 +1225,11 @@ public:
 
   const G1SurvivorRegions* survivor() const { return &_survivor; }
 
-  uint survivor_regions_count() const {
-    return _survivor.length();
-  }
-
-  uint eden_regions_count() const {
-    return _eden.length();
-  }
-
-  uint young_regions_count() const {
-    return _eden.length() + _survivor.length();
-  }
-
+  uint eden_regions_count() const { return _eden.length(); }
+  uint survivor_regions_count() const { return _survivor.length(); }
+  uint young_regions_count() const { return _eden.length() + _survivor.length(); }
   uint old_regions_count() const { return _old_set.length(); }
-
+  uint archive_regions_count() const { return _archive_set.length(); }
   uint humongous_regions_count() const { return _humongous_set.length(); }
 
 #ifdef ASSERT
@@ -1324,9 +1308,8 @@ public:
   // Partial cleaning used when class unloading is disabled.
   // Let the caller choose what structures to clean out:
   // - StringTable
-  // - SymbolTable
   // - StringDeduplication structures
-  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_symbols, bool unlink_string_dedup);
+  void partial_cleaning(BoolObjectClosure* is_alive, bool unlink_strings, bool unlink_string_dedup);
 
   // Complete cleaning used when class unloading is enabled.
   // Cleans out all structures handled by partial_cleaning and also the CodeCache.

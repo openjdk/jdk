@@ -67,28 +67,37 @@ public class TestMemoryMXBeans {
         }
     }
 
-    public static void testAllocs() {
+    public static void testAllocs() throws Exception {
         MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
 
-        // Do lazy inits first:
-        long heapUsed1 = memoryMXBean.getHeapMemoryUsage().getUsed();
-        sink = new int[1024*1024];
-        long heapUsed2 = memoryMXBean.getHeapMemoryUsage().getUsed();
+        // Try multiple times, to capture either APIs we call allocate lazily, or the background threads allocating
+        int maxTries = 10;
+        int tries = 0;
 
-        // Compute how much we waste during the calls themselves:
-        heapUsed1 = memoryMXBean.getHeapMemoryUsage().getUsed();
-        heapUsed2 = memoryMXBean.getHeapMemoryUsage().getUsed();
-        long adj = heapUsed2 - heapUsed1;
+        while (true) {
+            // Compute how much we waste during the calls themselves:
+            long heapUsed1 = memoryMXBean.getHeapMemoryUsage().getUsed();
+            long heapUsed2 = memoryMXBean.getHeapMemoryUsage().getUsed();
+            long adj = heapUsed2 - heapUsed1;
 
-        heapUsed1 = memoryMXBean.getHeapMemoryUsage().getUsed();
-        sink = new int[1024*1024];
-        heapUsed2 = memoryMXBean.getHeapMemoryUsage().getUsed();
+            heapUsed1 = memoryMXBean.getHeapMemoryUsage().getUsed();
+            sink = new int[1024*1024];
+            heapUsed2 = memoryMXBean.getHeapMemoryUsage().getUsed();
 
-        long diff = heapUsed2 - heapUsed1 - adj;
-        long min = 8 + 4*1024*1024;
-        long max = 16 + 4*1024*1024;
-        if (!(min <= diff && diff <= max)) {
-           throw new IllegalStateException("Allocation did not change used space right: " + diff + " should be in [" + min + ", " + max + "]");
+            long diff = heapUsed2 - heapUsed1 - adj;
+            long min =  8 + 4*1024*1024;
+            long max = 16 + 4*1024*1024;
+            if ((min <= diff && diff <= max)) {
+              // Success
+              return;
+            }
+
+            if (tries++ > maxTries) {
+              throw new IllegalStateException("Allocation did not change used space right: " + diff + " should be in [" + min + ", " + max + "]");
+            }
+
+            // Wait and try again
+            Thread.sleep(1000);
         }
     }
 

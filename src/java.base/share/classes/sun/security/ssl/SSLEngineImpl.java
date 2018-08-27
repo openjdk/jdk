@@ -155,6 +155,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
 
+        // May need to deliver cached records.
         if (isOutboundDone()) {
             return new SSLEngineResult(
                     Status.CLOSED, getHandshakeStatus(), 0, 0);
@@ -162,8 +163,9 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
         HandshakeContext hc = conContext.handshakeContext;
         HandshakeStatus hsStatus = null;
-        if (!conContext.isNegotiated &&
-                !conContext.isClosed() && !conContext.isBroken) {
+        if (!conContext.isNegotiated && !conContext.isBroken &&
+                !conContext.isInboundClosed() &&
+                !conContext.isOutboundClosed()) {
             conContext.kickstart();
 
             hsStatus = getHandshakeStatus();
@@ -315,7 +317,8 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         }
 
         // Is the sequence number is nearly overflow?
-        if (conContext.outputRecord.seqNumIsHuge()) {
+        if (conContext.outputRecord.seqNumIsHuge() ||
+                conContext.outputRecord.writeCipher.atKeyLimit()) {
             hsStatus = tryKeyUpdate(hsStatus);
         }
 
@@ -343,25 +346,29 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
     }
 
     /**
-     * Try renegotiation or key update for sequence number wrap.
+     * Try key update for sequence number wrap or key usage limit.
      *
      * Note that in order to maintain the handshake status properly, we check
-     * the sequence number after the last record reading/writing process.  As
-     * we request renegotiation or close the connection for wrapped sequence
+     * the sequence number and key usage limit after the last record
+     * reading/writing process.
+     *
+     * As we request renegotiation or close the connection for wrapped sequence
      * number when there is enough sequence number space left to handle a few
      * more records, so the sequence number of the last record cannot be
      * wrapped.
      */
     private HandshakeStatus tryKeyUpdate(
             HandshakeStatus currentHandshakeStatus) throws IOException {
-        // Don't bother to kickstart the renegotiation or key update when the
-        // local is asking for it.
+        // Don't bother to kickstart if handshaking is in progress, or if the
+        // connection is not duplex-open.
         if ((conContext.handshakeContext == null) &&
-                !conContext.isClosed() && !conContext.isBroken) {
+                !conContext.isOutboundClosed() &&
+                !conContext.isInboundClosed() &&
+                !conContext.isBroken) {
             if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.finest("key update to wrap sequence number");
+                SSLLogger.finest("trigger key update");
             }
-            conContext.keyUpdate();
+            beginHandshake();
             return conContext.getHandshakeStatus();
         }
 
@@ -471,8 +478,9 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
         }
 
         HandshakeStatus hsStatus = null;
-        if (!conContext.isNegotiated &&
-                !conContext.isClosed() && !conContext.isBroken) {
+        if (!conContext.isNegotiated && !conContext.isBroken &&
+                !conContext.isInboundClosed() &&
+                !conContext.isOutboundClosed()) {
             conContext.kickstart();
 
             /*
@@ -677,7 +685,8 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             }
 
             // Is the sequence number is nearly overflow?
-            if (conContext.inputRecord.seqNumIsHuge()) {
+            if (conContext.inputRecord.seqNumIsHuge() ||
+                    conContext.inputRecord.readCipher.atKeyLimit()) {
                 pt.handshakeStatus =
                         tryKeyUpdate(pt.handshakeStatus);
             }
@@ -700,16 +709,42 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
     @Override
     public synchronized void closeInbound() throws SSLException {
+        if (isInboundDone()) {
+            return;
+        }
+
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            SSLLogger.finest("Closing inbound of SSLEngine");
+        }
+
+        // Is it ready to close inbound?
+        //
+        // No need to throw exception if the initial handshake is not started.
+        if (!conContext.isInputCloseNotified &&
+            (conContext.isNegotiated || conContext.handshakeContext != null)) {
+
+            conContext.fatal(Alert.INTERNAL_ERROR,
+                    "closing inbound before receiving peer's close_notify");
+        }
+
         conContext.closeInbound();
     }
 
     @Override
     public synchronized boolean isInboundDone() {
-        return conContext.isInboundDone();
+        return conContext.isInboundClosed();
     }
 
     @Override
     public synchronized void closeOutbound() {
+        if (conContext.isOutboundClosed()) {
+            return;
+        }
+
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+            SSLLogger.finest("Closing outbound of SSLEngine");
+        }
+
         conContext.closeOutbound();
     }
 

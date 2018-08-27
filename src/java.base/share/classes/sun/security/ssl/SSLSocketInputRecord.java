@@ -38,8 +38,6 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLProtocolException;
 
 import sun.security.ssl.SSLCipher.SSLReadCipher;
-import sun.security.ssl.KeyUpdate.KeyUpdateMessage;
-import sun.security.ssl.KeyUpdate.KeyUpdateRequest;
 
 /**
  * {@code InputRecord} implementation for {@code SSLSocket}.
@@ -346,20 +344,6 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
             }
 
             return plaintexts.toArray(new Plaintext[0]);
-        }
-
-        // KeyLimit check during application data.
-        // atKeyLimit() inactive when limits not checked, tc set when limits
-        // are active.
-
-        if (readCipher.atKeyLimit()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                SSLLogger.fine("KeyUpdate: triggered, read side.");
-            }
-
-            PostHandshakeContext p = new PostHandshakeContext(tc);
-            KeyUpdate.handshakeProducer.produce(p,
-                    new KeyUpdateMessage(p, KeyUpdateRequest.REQUESTED));
         }
 
         return new Plaintext[] {

@@ -77,7 +77,7 @@ static traceid package_id(KlassPtr klass) {
 
 static traceid cld_id(CldPtr cld) {
   assert(cld != NULL, "invariant");
-  return cld->is_anonymous() ? 0 : TRACE_ID(cld);
+  return cld->is_unsafe_anonymous() ? 0 : TRACE_ID(cld);
 }
 
 static void tag_leakp_klass_artifacts(KlassPtr k, bool class_unload) {
@@ -92,7 +92,7 @@ static void tag_leakp_klass_artifacts(KlassPtr k, bool class_unload) {
   }
   CldPtr cld = k->class_loader_data();
   assert(cld != NULL, "invariant");
-  if (!cld->is_anonymous()) {
+  if (!cld->is_unsafe_anonymous()) {
     tag_leakp_artifact(cld, class_unload);
   }
 }
@@ -230,7 +230,7 @@ typedef JfrArtifactWriterHost<ModuleWriterImpl, TYPE_MODULE> ModuleWriter;
 int write__artifact__classloader(JfrCheckpointWriter* writer, JfrArtifactSet* artifacts, const void* c) {
   assert(c != NULL, "invariant");
   CldPtr cld = (CldPtr)c;
-  assert(!cld->is_anonymous(), "invariant");
+  assert(!cld->is_unsafe_anonymous(), "invariant");
   const traceid cld_id = TRACE_ID(cld);
   // class loader type
   const Klass* class_loader_klass = cld->class_loader_klass();
@@ -301,9 +301,9 @@ int write__artifact__klass__symbol(JfrCheckpointWriter* writer, JfrArtifactSet* 
   assert(artifacts != NULL, "invaiant");
   assert(k != NULL, "invariant");
   const InstanceKlass* const ik = (const InstanceKlass*)k;
-  if (ik->is_anonymous()) {
+  if (ik->is_unsafe_anonymous()) {
     CStringEntryPtr entry =
-      artifacts->map_cstring(JfrSymbolId::anonymous_klass_name_hash_code(ik));
+      artifacts->map_cstring(JfrSymbolId::unsafe_anonymous_klass_name_hash_code(ik));
     assert(entry != NULL, "invariant");
     return write__artifact__cstring__entry__(writer, entry);
   }
@@ -358,7 +358,7 @@ class KlassSymbolWriterImpl {
       }
       CldPtr cld = klass->class_loader_data();
       assert(cld != NULL, "invariant");
-      if (!cld->is_anonymous()) {
+      if (!cld->is_unsafe_anonymous()) {
         count += class_loader_symbols(cld);
       }
       if (_method_used_predicate(klass)) {
@@ -374,9 +374,9 @@ int KlassSymbolWriterImpl<Predicate>::klass_symbols(KlassPtr klass) {
   assert(klass != NULL, "invariant");
   assert(_predicate(klass), "invariant");
   const InstanceKlass* const ik = (const InstanceKlass*)klass;
-  if (ik->is_anonymous()) {
+  if (ik->is_unsafe_anonymous()) {
     CStringEntryPtr entry =
-      this->_artifacts->map_cstring(JfrSymbolId::anonymous_klass_name_hash_code(ik));
+      this->_artifacts->map_cstring(JfrSymbolId::unsafe_anonymous_klass_name_hash_code(ik));
     assert(entry != NULL, "invariant");
     return _unique_predicate(entry->id()) ? write__artifact__cstring__entry__(this->_writer, entry) : 0;
   }
@@ -432,7 +432,7 @@ int KlassSymbolWriterImpl<Predicate>::module_symbols(ModPtr module) {
 template <template <typename> class Predicate>
 int KlassSymbolWriterImpl<Predicate>::class_loader_symbols(CldPtr cld) {
   assert(cld != NULL, "invariant");
-  assert(!cld->is_anonymous(), "invariant");
+  assert(!cld->is_unsafe_anonymous(), "invariant");
   int count = 0;
   // class loader type
   const Klass* class_loader_klass = cld->class_loader_klass();
@@ -696,7 +696,7 @@ class CldFieldSelector {
   static TypePtr select(KlassPtr klass) {
     assert(klass != NULL, "invariant");
     CldPtr cld = klass->class_loader_data();
-    return cld->is_anonymous() ? NULL : cld;
+    return cld->is_unsafe_anonymous() ? NULL : cld;
   }
 };
 
@@ -922,7 +922,7 @@ class CLDCallback : public CLDClosure {
   CLDCallback(bool class_unload) : _class_unload(class_unload) {}
   void do_cld(ClassLoaderData* cld) {
      assert(cld != NULL, "invariant");
-    if (cld->is_anonymous()) {
+    if (cld->is_unsafe_anonymous()) {
       return;
     }
     if (_class_unload) {

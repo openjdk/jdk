@@ -25,7 +25,6 @@ package jdk.vm.ci.hotspot;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;

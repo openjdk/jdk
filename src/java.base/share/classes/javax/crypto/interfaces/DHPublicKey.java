@@ -41,8 +41,12 @@ public interface DHPublicKey extends DHKey, java.security.PublicKey {
     /**
      * The class fingerprint that is set to indicate serialization
      * compatibility since J2SE 1.4.
+     *
+     * @deprecated A {@code serialVersionUID} field in an interface is
+     * ineffectual. Do not use; no replacement.
      */
-    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
+    @Deprecated
+    @SuppressWarnings("serial")
     static final long serialVersionUID = -6628103563352519193L;
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,21 @@ import java.util.function.BiFunction;
  * will not progress properly.  Once the initial handshaking has started, a
  * socket can not switch between client and server modes, even when
  * performing renegotiations.
+ *
+ * @apiNote
+ * When the connection is no longer needed, the client and server
+ * applications should each close both sides of their respective connection.
+ * For {@code SSLSocket} objects, for example, an application can call
+ * {@link Socket#shutdownOutput()} or {@link java.io.OutputStream#close()}
+ * for output strean close and call {@link Socket#shutdownInput()} or
+ * {@link java.io.InputStream#close()} for input stream close.  Note that
+ * in some cases, closing the input stream may depend on the peer's output
+ * stream being closed first.  If the connection is not closed in an orderly
+ * manner (for example {@link Socket#shutdownInput()} is called before the
+ * peer's write closure notification has been received), exceptions may
+ * be raised to indicate that an error has occurred.  Once an
+ * {@code SSLSocket} is closed, it is not reusable: a new {@code SSLSocket}
+ * must be created.
  *
  * @see java.net.Socket
  * @see SSLServerSocket

@@ -76,7 +76,7 @@ public class CompressedNullCheckTest extends HotSpotGraalCompilerTest {
 
     @Test
     public void implicit() {
-        testImplicit(new Integer(1));
+        testImplicit(Integer.valueOf(1));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class CompressedNullCheckTest extends HotSpotGraalCompilerTest {
 
     @Test
     public void explicit() {
-        testExplicit(new Integer(1));
+        testExplicit(Integer.valueOf(1));
     }
 
     @Test

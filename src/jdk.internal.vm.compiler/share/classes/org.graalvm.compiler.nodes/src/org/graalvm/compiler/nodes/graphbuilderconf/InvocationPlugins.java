@@ -442,6 +442,7 @@ public class InvocationPlugins {
          *            {@code declaringClass}
          */
         public void register(InvocationPlugin plugin, String name, Type... argumentTypes) {
+            assert plugins != null : String.format("Late registrations of invocation plugins for %s is already closed", declaringType);
             boolean isStatic = argumentTypes.length == 0 || argumentTypes[0] != InvocationPlugin.Receiver.class;
             if (!isStatic) {
                 argumentTypes[0] = declaringType;
@@ -567,7 +568,7 @@ public class InvocationPlugins {
         /**
          * Maps method names to binding lists.
          */
-        private final EconomicMap<String, Binding> bindings = EconomicMap.create(Equivalence.DEFAULT);
+        final EconomicMap<String, Binding> bindings = EconomicMap.create(Equivalence.DEFAULT);
 
         /**
          * Gets the invocation plugin for a given method.
@@ -883,11 +884,33 @@ public class InvocationPlugins {
         flushDeferrables();
     }
 
+    /**
+     * Determines if this object currently contains any plugins (in any state of registration). If
+     * this object has any {@link #defer(Runnable) deferred registrations}, it is assumed that
+     * executing them will result in at least one plugin being registered.
+     */
     public boolean isEmpty() {
-        if (resolvedRegistrations != null) {
-            return resolvedRegistrations.isEmpty();
+        if (parent != null && !parent.isEmpty()) {
+            return false;
         }
-        return registrations.size() == 0 && lateRegistrations == null;
+        UnmodifiableEconomicMap<ResolvedJavaMethod, InvocationPlugin> resolvedRegs = resolvedRegistrations;
+        if (resolvedRegs != null) {
+            if (!resolvedRegs.isEmpty()) {
+                return false;
+            }
+        }
+        List<Runnable> deferred = deferredRegistrations;
+        if (deferred != null) {
+            if (!deferred.isEmpty()) {
+                return false;
+            }
+        }
+        for (LateClassPlugins late = lateRegistrations; late != null; late = late.next) {
+            if (!late.bindings.isEmpty()) {
+                return false;
+            }
+        }
+        return registrations.size() == 0;
     }
 
     /**

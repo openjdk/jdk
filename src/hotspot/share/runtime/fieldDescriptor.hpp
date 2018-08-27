@@ -44,15 +44,9 @@ class fieldDescriptor {
   constantPoolHandle  _cp;
 
   // update the access_flags for the field in the klass
-  void update_klass_field_access_flag() {
-    InstanceKlass* ik = field_holder();
-    ik->field(index())->set_access_flags(_access_flags.as_short());
-  }
+  inline void update_klass_field_access_flag();
 
-  FieldInfo* field() const {
-    InstanceKlass* ik = field_holder();
-    return ik->field(_index);
-  }
+  inline FieldInfo* field() const;
 
  public:
   fieldDescriptor() {
@@ -62,26 +56,23 @@ class fieldDescriptor {
     DEBUG_ONLY(_index = badInt);
     reinitialize(ik, index);
   }
-  Symbol* name() const {
-    return field()->name(_cp());
-  }
-  Symbol* signature() const {
-    return field()->signature(_cp());
-  }
-  InstanceKlass* field_holder()   const    { return _cp->pool_holder(); }
-  ConstantPool* constants()       const    { return _cp(); }
+  inline Symbol* name() const;
+  inline Symbol* signature() const;
+  inline InstanceKlass* field_holder() const;
+  inline ConstantPool* constants() const;
+
   AccessFlags access_flags()      const    { return _access_flags; }
   oop loader()                    const;
   // Offset (in words) of field from start of instanceOop / Klass*
-  int offset()                    const    { return field()->offset(); }
+  inline int offset()             const;
   Symbol* generic_signature()     const;
   int index()                     const    { return _index; }
   AnnotationArray* annotations()  const;
   AnnotationArray* type_annotations()  const;
 
   // Initial field value
-  bool has_initial_value()        const    { return field()->initval_index() != 0; }
-  int initial_value_index()       const    { return field()->initval_index(); }
+  inline bool has_initial_value()        const;
+  inline int initial_value_index()       const;
   constantTag initial_value_tag() const;  // The tag will return true on one of is_int(), is_long(), is_single(), is_double()
   jint int_initial_value()        const;
   jlong long_initial_value()      const;
@@ -90,7 +81,7 @@ class fieldDescriptor {
   oop string_initial_value(TRAPS) const;
 
   // Field signature type
-  BasicType field_type()          const    { return FieldType::basic_type(signature()); }
+  inline BasicType field_type() const;
 
   // Access flags
   bool is_public()                const    { return access_flags().is_public(); }
@@ -111,20 +102,9 @@ class fieldDescriptor {
   bool has_initialized_final_update() const { return access_flags().has_field_initialized_final_update(); }
   bool has_generic_signature()    const    { return access_flags().field_has_generic_signature(); }
 
-  void set_is_field_access_watched(const bool value) {
-    _access_flags.set_is_field_access_watched(value);
-    update_klass_field_access_flag();
-  }
-
-  void set_is_field_modification_watched(const bool value) {
-    _access_flags.set_is_field_modification_watched(value);
-    update_klass_field_access_flag();
-  }
-
-  void set_has_initialized_final_update(const bool value) {
-    _access_flags.set_has_field_initialized_final_update(value);
-    update_klass_field_access_flag();
-  }
+  inline void set_is_field_access_watched(const bool value);
+  inline void set_is_field_modification_watched(const bool value);
+  inline void set_has_initialized_final_update(const bool value);
 
   // Initialization
   void reinitialize(InstanceKlass* ik, int index);

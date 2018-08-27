@@ -31,6 +31,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "cds.h"
 
 #define CHECK_EXCEPTION_(value) if(env->ExceptionOccurred()) { return value; }
 #define CHECK_EXCEPTION if(env->ExceptionOccurred()) { return;}
@@ -173,7 +174,7 @@ static void detach_internal(JNIEnv* env, jobject this_obj) {
   int classes_jsa_fd = env->GetIntField(this_obj, classes_jsa_fd_ID);
   if (classes_jsa_fd != -1) {
     close(classes_jsa_fd);
-    struct FileMapHeader* pheader = (struct FileMapHeader*) env->GetLongField(this_obj, p_file_map_header_ID);
+    CDSFileMapHeaderBase* pheader = (CDSFileMapHeaderBase*) env->GetLongField(this_obj, p_file_map_header_ID);
     if (pheader != NULL) {
       free(pheader);
     }
@@ -484,67 +485,13 @@ wrapper_fill_cframe_list(void *cd, const prgregset_t regs, uint_t argc,
   return(fill_cframe_list(cd, regs, argc, argv));
 }
 
-// part of the class sharing workaround
-
-// FIXME: !!HACK ALERT!!
-
-// The format of sharing achive file header is needed to read shared heap
-// file mappings. For now, I am hard coding portion of FileMapHeader here.
-// Refer to filemap.hpp.
-
-// FileMapHeader describes the shared space data in the file to be
-// mapped.  This structure gets written to a file.  It is not a class, so
-// that the compilers don't add any compiler-private data to it.
-
-const int NUM_SHARED_MAPS = 9;
-
-// Refer to FileMapInfo::_current_version in filemap.hpp
-const int CURRENT_ARCHIVE_VERSION = 3;
-
-typedef unsigned char* address;
-typedef uintptr_t      uintx;
-typedef intptr_t       intx;
-
-struct FileMapHeader {
-  int     _magic;                   // identify file type.
-  int     _crc;                     // header crc checksum.
-  int     _version;                 // (from enum, above.)
-  size_t  _alignment;               // how shared archive should be aligned
-  int     _obj_alignment;           // value of ObjectAlignmentInBytes
-  address _narrow_oop_base;         // compressed oop encoding base
-  int     _narrow_oop_shift;        // compressed oop encoding shift
-  bool    _compact_strings;         // value of CompactStrings
-  uintx   _max_heap_size;           // java max heap size during dumping
-  int     _narrow_oop_mode;         // compressed oop encoding mode
-  int     _narrow_klass_shift;      // save narrow klass base and shift
-  address _narrow_klass_base;
-  char*   _misc_data_patching_start;
-  char*   _read_only_tables_start;
-  address _cds_i2i_entry_code_buffers;
-  size_t  _cds_i2i_entry_code_buffers_size;
-  size_t  _core_spaces_size;        // number of bytes allocated by the core spaces
-                                    // (mc, md, ro, rw and od).
-
-
-  struct space_info {
-    int     _crc;          // crc checksum of the current space
-    size_t  _file_offset;  // sizeof(this) rounded to vm page size
-    union {
-      char*  _base;        // copy-on-write base address
-      intx   _offset;      // offset from the compressed oop encoding base, only used
-                           // by archive heap space
-    } _addr;
-    size_t _used;          // for setting space top on read
-    // 4991491 NOTICE These are C++ bool's in filemap.hpp and must match up with
-    // the C type matching the C++ bool type on any given platform.
-    // We assume the corresponding C type is char but licensees
-    // may need to adjust the type of these fields.
-    char   _read_only;     // read only space?
-    char   _allow_exec;    // executable code in space?
-  } _space[NUM_SHARED_MAPS];
-
-// Ignore the rest of the FileMapHeader. We don't need those fields here.
-};
+//---------------------------------------------------------------
+// Part of the class sharing workaround:
+//
+// With class sharing, pages are mapped from classes.jsa file.
+// The read-only class sharing pages are mapped as MAP_SHARED,
+// PROT_READ pages. These pages are not dumped into core dump.
+// With this workaround, these pages are read from classes.jsa.
 
 static bool
 read_jboolean(struct ps_prochandle* ph, psaddr_t addr, jboolean* pvalue) {
@@ -662,16 +609,16 @@ init_classsharing_workaround(void *cd, const prmap_t* pmap, const char* obj_name
   }
 
   // parse classes.jsa
-  struct FileMapHeader* pheader = (struct FileMapHeader*) malloc(sizeof(struct FileMapHeader));
+  CDSFileMapHeaderBase* pheader = (CDSFileMapHeaderBase*) malloc(sizeof(CDSFileMapHeaderBase));
   if (pheader == NULL) {
     close(fd);
     THROW_NEW_DEBUGGER_EXCEPTION_("can't allocate memory for shared file map header", 1);
   }
 
-  memset(pheader, 0, sizeof(struct FileMapHeader));
-  // read FileMapHeader
-  size_t n = read(fd, pheader, sizeof(struct FileMapHeader));
-  if (n != sizeof(struct FileMapHeader)) {
+  memset(pheader, 0, sizeof(CDSFileMapHeaderBase));
+  // read CDSFileMapHeaderBase
+  size_t n = read(fd, pheader, sizeof(CDSFileMapHeaderBase));
+  if (n != sizeof(CDSFileMapHeaderBase)) {
     char errMsg[ERR_MSG_SIZE];
     sprintf(errMsg, "unable to read shared archive file map header from %s", classes_jsa);
     close(fd);
@@ -680,27 +627,27 @@ init_classsharing_workaround(void *cd, const prmap_t* pmap, const char* obj_name
   }
 
   // check file magic
-  if (pheader->_magic != 0xf00baba2) {
+  if (pheader->_magic != CDS_ARCHIVE_MAGIC) {
     char errMsg[ERR_MSG_SIZE];
-    sprintf(errMsg, "%s has bad shared archive magic 0x%x, expecting 0xf00baba2",
-                   classes_jsa, pheader->_magic);
+    sprintf(errMsg, "%s has bad shared archive magic 0x%x, expecting 0x%x",
+            classes_jsa, pheader->_magic, CDS_ARCHIVE_MAGIC);
     close(fd);
     free(pheader);
     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 1);
   }
 
   // check version
-  if (pheader->_version != CURRENT_ARCHIVE_VERSION) {
+  if (pheader->_version != CURRENT_CDS_ARCHIVE_VERSION) {
     char errMsg[ERR_MSG_SIZE];
     sprintf(errMsg, "%s has wrong shared archive version %d, expecting %d",
-                   classes_jsa, pheader->_version, CURRENT_ARCHIVE_VERSION);
+                   classes_jsa, pheader->_version, CURRENT_CDS_ARCHIVE_VERSION);
     close(fd);
     free(pheader);
     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 1);
   }
 
   if (_libsaproc_debug) {
-    for (int m = 0; m < NUM_SHARED_MAPS; m++) {
+    for (int m = 0; m < NUM_CDS_REGIONS; m++) {
        print_debug("shared file offset %d mapped at 0x%lx, size = %ld, read only? = %d\n",
           pheader->_space[m]._file_offset, pheader->_space[m]._addr._base,
           pheader->_space[m]._used, pheader->_space[m]._read_only);
@@ -1091,10 +1038,10 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLoca
     if (classes_jsa_fd != -1 && address != (jlong)0) {
       print_debug("read failed at 0x%lx, attempting shared heap area\n", (long) address);
 
-      struct FileMapHeader* pheader = (struct FileMapHeader*) env->GetLongField(this_obj, p_file_map_header_ID);
+      CDSFileMapHeaderBase* pheader = (CDSFileMapHeaderBase*) env->GetLongField(this_obj, p_file_map_header_ID);
       // walk through the shared mappings -- we just have 9 of them.
       // so, linear walking is okay.
-      for (int m = 0; m < NUM_SHARED_MAPS; m++) {
+      for (int m = 0; m < NUM_CDS_REGIONS; m++) {
 
         // We can skip the non-read-only maps. These are mapped as MAP_PRIVATE
         // and hence will be read by libproc. Besides, the file copy may be

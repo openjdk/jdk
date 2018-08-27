@@ -52,7 +52,7 @@
 #include "runtime/biasedLocking.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/deoptimization.hpp"
-#include "runtime/fieldDescriptor.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/icache.hpp"
@@ -924,11 +924,11 @@ void InterpreterRuntime::resolve_invoke(JavaThread* thread, Bytecodes::Code byte
            info.call_kind() == CallInfo::vtable_call, "");
   }
 #endif
-  // Get sender or sender's host_klass, and only set cpCache entry to resolved if
+  // Get sender or sender's unsafe_anonymous_host, and only set cpCache entry to resolved if
   // it is not an interface.  The receiver for invokespecial calls within interface
   // methods must be checked for every call.
   InstanceKlass* sender = pool->pool_holder();
-  sender = sender->has_host_klass() ? sender->host_klass() : sender;
+  sender = sender->is_unsafe_anonymous() ? sender->unsafe_anonymous_host() : sender;
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:

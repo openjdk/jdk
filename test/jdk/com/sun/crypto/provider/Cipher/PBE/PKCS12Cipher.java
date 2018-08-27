@@ -106,7 +106,7 @@ class MyPBEKey implements PBEKey {
         this.salt = salt;
         this.iCount = iCount;
     }
-    public char[] getPassword() { return passwd; }
+    public char[] getPassword() { return passwd.clone(); }
     public byte[] getSalt() { return salt; }
     public int getIterationCount() { return iCount; }
     public String getAlgorithm() { return "PBE"; }

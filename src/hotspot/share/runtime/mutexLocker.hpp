@@ -57,7 +57,7 @@ extern Mutex*   ExpandHeap_lock;                 // a lock on expanding the heap
 extern Mutex*   AdapterHandlerLibrary_lock;      // a lock on the AdapterHandlerLibrary
 extern Mutex*   SignatureHandlerLibrary_lock;    // a lock on the SignatureHandlerLibrary
 extern Mutex*   VtableStubs_lock;                // a lock on the VtableStubs
-extern Mutex*   SymbolTable_lock;                // a lock on the symbol table
+extern Mutex*   SymbolArena_lock;                // a lock on the symbol table arena
 extern Mutex*   StringTable_lock;                // a lock on the interned string table
 extern Monitor* StringDedupQueue_lock;           // a lock on the string deduplication queue
 extern Mutex*   StringDedupTable_lock;           // a lock on the string deduplication table
@@ -72,6 +72,7 @@ extern Monitor* VMOperationRequest_lock;         // a lock on Threads waiting fo
 extern Monitor* Safepoint_lock;                  // a lock used by the safepoint abstraction
 extern Monitor* Threads_lock;                    // a lock on the Threads table of active Java threads
                                                  // (also used by Safepoints too to block threads creation/destruction)
+extern Mutex*   NamedThreadsList_lock;           // a lock on the NamedThreads list
 extern Monitor* CGC_lock;                        // used for coordination between
                                                  // fore- & background GC threads.
 extern Monitor* STS_lock;                        // used for joining/leaving SuspendibleThreadSet.

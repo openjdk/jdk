@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ import java.util.function.Function;
 
 import org.graalvm.compiler.test.GraalTest;
 import org.junit.Assume;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
@@ -43,6 +45,8 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
  * {@link InspectedFrame#materializeVirtualObjects(boolean)}.
  */
 public class HotSpotStackIntrospectionTest extends HotSpotGraalCompilerTest {
+
+    @Rule public TestRule timeout = createTimeoutSeconds(20);
 
     static StackIntrospection stackIntrospection = HotSpotJVMCIRuntime.runtime().getHostJVMCIBackend().getStackIntrospection();
     static volatile int v;
@@ -74,14 +78,14 @@ public class HotSpotStackIntrospectionTest extends HotSpotGraalCompilerTest {
         return a;
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void run() throws InvalidInstalledCodeException {
         // The JDK9 bits are currently broken
         Assume.assumeTrue(GraalTest.Java8OrEarlier);
         test("testSnippet");
     }
 
-    @Test(timeout = 20000)
+    @Test
     public void runSynchronized() throws InvalidInstalledCodeException {
         // The JDK9 bits are currently broken
         Assume.assumeTrue(GraalTest.Java8OrEarlier);

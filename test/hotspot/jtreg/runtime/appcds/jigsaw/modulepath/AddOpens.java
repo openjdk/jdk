@@ -87,7 +87,6 @@ public class AddOpens {
         // the class in the modular jar in the -cp won't be archived.
         OutputAnalyzer output = TestCommon.createArchive(
                                         destJar.toString(), appClasses,
-                                        "-Xlog:class+load=trace",
                                         "--module-path", moduleDir.toString(),
                                         "-m", TEST_MODULE1);
         TestCommon.checkDump(output);

@@ -1285,9 +1285,10 @@ void LIRGenerator::do_getClass(Intrinsic* x) {
   // FIXME T_ADDRESS should actually be T_METADATA but it can't because the
   // meaning of these two is mixed up (see JDK-8026837).
   __ move(new LIR_Address(rcvr.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), temp, info);
-  __ move_wide(new LIR_Address(temp, in_bytes(Klass::java_mirror_offset()), T_ADDRESS), result);
+  __ move_wide(new LIR_Address(temp, in_bytes(Klass::java_mirror_offset()), T_ADDRESS), temp);
   // mirror = ((OopHandle)mirror)->resolve();
-  __ move_wide(new LIR_Address(result, T_OBJECT), result);
+  access_load(IN_NATIVE, T_OBJECT,
+              LIR_OprFact::address(new LIR_Address(temp, T_OBJECT)), result);
 }
 
 // java.lang.Class::isPrimitive()
@@ -1614,7 +1615,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
 void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
                                   LIRItem& base, LIR_Opr offset, LIR_Opr result,
                                   CodeEmitInfo* patch_info, CodeEmitInfo* load_emit_info) {
-  decorators |= C1_READ_ACCESS;
+  decorators |= ACCESS_READ;
   LIRAccess access(this, decorators, base, offset, type, patch_info, load_emit_info);
   if (access.is_raw()) {
     _barrier_set->BarrierSetC1::load_at(access, result);
@@ -1623,10 +1624,22 @@ void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
   }
 }
 
+void LIRGenerator::access_load(DecoratorSet decorators, BasicType type,
+                               LIR_Opr addr, LIR_Opr result) {
+  decorators |= ACCESS_READ;
+  LIRAccess access(this, decorators, LIR_OprFact::illegalOpr, LIR_OprFact::illegalOpr, type);
+  access.set_resolved_addr(addr);
+  if (access.is_raw()) {
+    _barrier_set->BarrierSetC1::load(access, result);
+  } else {
+    _barrier_set->load(access, result);
+  }
+}
+
 void LIRGenerator::access_store_at(DecoratorSet decorators, BasicType type,
                                    LIRItem& base, LIR_Opr offset, LIR_Opr value,
                                    CodeEmitInfo* patch_info, CodeEmitInfo* store_emit_info) {
-  decorators |= C1_WRITE_ACCESS;
+  decorators |= ACCESS_WRITE;
   LIRAccess access(this, decorators, base, offset, type, patch_info, store_emit_info);
   if (access.is_raw()) {
     _barrier_set->BarrierSetC1::store_at(access, value);
@@ -1637,9 +1650,9 @@ void LIRGenerator::access_store_at(DecoratorSet decorators, BasicType type,
 
 LIR_Opr LIRGenerator::access_atomic_cmpxchg_at(DecoratorSet decorators, BasicType type,
                                                LIRItem& base, LIRItem& offset, LIRItem& cmp_value, LIRItem& new_value) {
+  decorators |= ACCESS_READ;
+  decorators |= ACCESS_WRITE;
   // Atomic operations are SEQ_CST by default
-  decorators |= C1_READ_ACCESS;
-  decorators |= C1_WRITE_ACCESS;
   decorators |= ((decorators & MO_DECORATOR_MASK) != 0) ? MO_SEQ_CST : 0;
   LIRAccess access(this, decorators, base, offset, type);
   if (access.is_raw()) {
@@ -1651,9 +1664,9 @@ LIR_Opr LIRGenerator::access_atomic_cmpxchg_at(DecoratorSet decorators, BasicTyp
 
 LIR_Opr LIRGenerator::access_atomic_xchg_at(DecoratorSet decorators, BasicType type,
                                             LIRItem& base, LIRItem& offset, LIRItem& value) {
+  decorators |= ACCESS_READ;
+  decorators |= ACCESS_WRITE;
   // Atomic operations are SEQ_CST by default
-  decorators |= C1_READ_ACCESS;
-  decorators |= C1_WRITE_ACCESS;
   decorators |= ((decorators & MO_DECORATOR_MASK) != 0) ? MO_SEQ_CST : 0;
   LIRAccess access(this, decorators, base, offset, type);
   if (access.is_raw()) {
@@ -1665,9 +1678,9 @@ LIR_Opr LIRGenerator::access_atomic_xchg_at(DecoratorSet decorators, BasicType t
 
 LIR_Opr LIRGenerator::access_atomic_add_at(DecoratorSet decorators, BasicType type,
                                            LIRItem& base, LIRItem& offset, LIRItem& value) {
+  decorators |= ACCESS_READ;
+  decorators |= ACCESS_WRITE;
   // Atomic operations are SEQ_CST by default
-  decorators |= C1_READ_ACCESS;
-  decorators |= C1_WRITE_ACCESS;
   decorators |= ((decorators & MO_DECORATOR_MASK) != 0) ? MO_SEQ_CST : 0;
   LIRAccess access(this, decorators, base, offset, type);
   if (access.is_raw()) {
@@ -1675,6 +1688,15 @@ LIR_Opr LIRGenerator::access_atomic_add_at(DecoratorSet decorators, BasicType ty
   } else {
     return _barrier_set->atomic_add_at(access, value);
   }
+}
+
+LIR_Opr LIRGenerator::access_resolve(DecoratorSet decorators, LIR_Opr obj) {
+  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
+  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
+    decorators |= ACCESS_READ | ACCESS_WRITE;
+  }
+
+  return _barrier_set->resolve(this, decorators, obj);
 }
 
 void LIRGenerator::do_LoadField(LoadField* x) {
@@ -1754,11 +1776,12 @@ void LIRGenerator::do_NIOCheckIndex(Intrinsic* x) {
   if (GenerateRangeChecks) {
     CodeEmitInfo* info = state_for(x);
     CodeStub* stub = new RangeCheckStub(info, index.result());
+    LIR_Opr buf_obj = access_resolve(IS_NOT_NULL | ACCESS_READ, buf.result());
     if (index.result()->is_constant()) {
-      cmp_mem_int(lir_cond_belowEqual, buf.result(), java_nio_Buffer::limit_offset(), index.result()->as_jint(), info);
+      cmp_mem_int(lir_cond_belowEqual, buf_obj, java_nio_Buffer::limit_offset(), index.result()->as_jint(), info);
       __ branch(lir_cond_belowEqual, T_INT, stub);
     } else {
-      cmp_reg_mem(lir_cond_aboveEqual, index.result(), buf.result(),
+      cmp_reg_mem(lir_cond_aboveEqual, index.result(), buf_obj,
                   java_nio_Buffer::limit_offset(), T_INT, info);
       __ branch(lir_cond_aboveEqual, T_INT, stub);
     }

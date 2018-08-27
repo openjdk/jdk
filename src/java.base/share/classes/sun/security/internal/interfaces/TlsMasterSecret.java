@@ -44,7 +44,12 @@ import javax.crypto.SecretKey;
 @Deprecated
 public interface TlsMasterSecret extends SecretKey {
 
-    @SuppressWarnings("serial") // serialVersionUID in an interface is ineffectual
+    /***
+     * @deprecated A {@code serialVersionUID} field in an interface is
+     * ineffectual. Do not use; no replacement.
+     */
+    @Deprecated
+    @SuppressWarnings("serial")
     public static final long serialVersionUID = -461748105810469773L;
 
     /**

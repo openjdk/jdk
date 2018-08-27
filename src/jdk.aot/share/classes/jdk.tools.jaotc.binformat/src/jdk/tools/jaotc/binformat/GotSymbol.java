@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat;
 
 public final class GotSymbol extends Symbol {

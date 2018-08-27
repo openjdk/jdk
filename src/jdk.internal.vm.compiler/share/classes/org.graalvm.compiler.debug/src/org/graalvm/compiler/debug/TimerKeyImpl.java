@@ -109,7 +109,7 @@ final class TimerKeyImpl extends AccumulatedKey implements TimerKey {
         return TimeUnit.NANOSECONDS;
     }
 
-    final class Timer extends CloseableCounter implements DebugCloseable {
+    static final class Timer extends CloseableCounter implements DebugCloseable {
         final DebugContext debug;
 
         Timer(AccumulatedKey counter, DebugContext debug) {

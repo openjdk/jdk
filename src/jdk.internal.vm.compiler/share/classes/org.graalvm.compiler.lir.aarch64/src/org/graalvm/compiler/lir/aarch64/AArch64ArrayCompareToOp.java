@@ -28,9 +28,6 @@ import static jdk.vm.ci.aarch64.AArch64.zr;
 import static jdk.vm.ci.code.ValueUtil.asRegister;
 import static org.graalvm.compiler.lir.LIRInstruction.OperandFlag.REG;
 
-import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-
 import org.graalvm.compiler.asm.Label;
 import org.graalvm.compiler.asm.aarch64.AArch64Address;
 import org.graalvm.compiler.asm.aarch64.AArch64MacroAssembler;
@@ -44,7 +41,6 @@ import org.graalvm.compiler.lir.gen.LIRGeneratorTool;
 import jdk.vm.ci.code.Register;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.Value;
-import sun.misc.Unsafe;
 
 /**
  * Emits code which compares two arrays lexicographically. If the CPU supports any vector
@@ -82,10 +78,8 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         this.kind2 = kind2;
 
         // Both offsets should be the same but better be safe than sorry.
-        Class<?> array1Class = Array.newInstance(kind1.toJavaClass(), 0).getClass();
-        Class<?> array2Class = Array.newInstance(kind2.toJavaClass(), 0).getClass();
-        this.array1BaseOffset = UNSAFE.arrayBaseOffset(array1Class);
-        this.array2BaseOffset = UNSAFE.arrayBaseOffset(array2Class);
+        this.array1BaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind1);
+        this.array2BaseOffset = tool.getProviders().getArrayOffsetProvider().arrayBaseOffset(kind2);
 
         this.resultValue = result;
 
@@ -109,22 +103,6 @@ public final class AArch64ArrayCompareToOp extends AArch64LIRInstruction {
         this.temp4 = tool.newVariable(LIRKind.unknownReference(tool.target().arch.getWordKind()));
         this.temp5 = tool.newVariable(LIRKind.unknownReference(tool.target().arch.getWordKind()));
         this.temp6 = tool.newVariable(LIRKind.unknownReference(tool.target().arch.getWordKind()));
-    }
-
-    private static final Unsafe UNSAFE = initUnsafe();
-
-    private static Unsafe initUnsafe() {
-        try {
-            return Unsafe.getUnsafe();
-        } catch (SecurityException se) {
-            try {
-                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-                theUnsafe.setAccessible(true);
-                return (Unsafe) theUnsafe.get(Unsafe.class);
-            } catch (Exception e) {
-                throw new RuntimeException("exception while trying to get Unsafe", e);
-            }
-        }
     }
 
     @Override

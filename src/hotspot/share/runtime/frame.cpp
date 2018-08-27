@@ -721,6 +721,14 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       st->print("v  ~ExceptionBlob");
     } else if (_cb->is_safepoint_stub()) {
       st->print("v  ~SafepointBlob");
+    } else if (_cb->is_adapter_blob()) {
+      st->print("v  ~AdapterBlob");
+    } else if (_cb->is_vtable_blob()) {
+      st->print("v  ~VtableBlob");
+    } else if (_cb->is_method_handles_adapter_blob()) {
+      st->print("v  ~MethodHandlesAdapterBlob");
+    } else if (_cb->is_uncommon_trap_stub()) {
+      st->print("v  ~UncommonTrapBlob");
     } else {
       st->print("v  blob " PTR_FORMAT, p2i(pc()));
     }

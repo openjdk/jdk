@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/metadataOnStackMark.hpp"
-#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -1578,8 +1577,8 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
   // Is alive closure.
   G1CMIsAliveClosure g1_is_alive(_g1h);
 
-  // Inner scope to exclude the cleaning of the string and symbol
-  // tables from the displayed time.
+  // Inner scope to exclude the cleaning of the string table
+  // from the displayed time.
   {
     GCTraceTime(Debug, gc, phases) debug("Reference Processing", _gc_timer_cm);
 
@@ -1673,16 +1672,16 @@ void G1ConcurrentMark::weak_refs_work(bool clear_all_soft_refs) {
     WeakProcessor::weak_oops_do(&g1_is_alive, &do_nothing_cl);
   }
 
-  // Unload Klasses, String, Symbols, Code Cache, etc.
+  // Unload Klasses, String, Code Cache, etc.
   if (ClassUnloadingWithConcurrentMark) {
     GCTraceTime(Debug, gc, phases) debug("Class Unloading", _gc_timer_cm);
     bool purged_classes = SystemDictionary::do_unloading(_gc_timer_cm, false /* Defer cleaning */);
     _g1h->complete_cleaning(&g1_is_alive, purged_classes);
   } else {
     GCTraceTime(Debug, gc, phases) debug("Cleanup", _gc_timer_cm);
-    // No need to clean string table and symbol table as they are treated as strong roots when
+    // No need to clean string table as it is treated as strong roots when
     // class unloading is disabled.
-    _g1h->partial_cleaning(&g1_is_alive, false, false, G1StringDedup::is_enabled());
+    _g1h->partial_cleaning(&g1_is_alive, false, G1StringDedup::is_enabled());
   }
 }
 

@@ -43,7 +43,7 @@ final class SSLExtensions {
 
     // Extension map for debug logging
     private final Map<Integer, byte[]> logMap =
-            SSLLogger.isOn ? null : new LinkedHashMap<>();
+            SSLLogger.isOn ? new LinkedHashMap<>() : null;
 
     SSLExtensions(HandshakeMessage handshakeMessage) {
         this.handshakeMessage = handshakeMessage;
@@ -65,38 +65,59 @@ final class SSLExtensions {
                         "): no sufficient data");
             }
 
+            boolean isSupported = true;
             SSLHandshake handshakeType = hm.handshakeType();
             if (SSLExtension.isConsumable(extId) &&
                     SSLExtension.valueOf(handshakeType, extId) == null) {
-                hm.handshakeContext.conContext.fatal(
+                if (extId == SSLExtension.CH_SUPPORTED_GROUPS.id &&
+                        handshakeType == SSLHandshake.SERVER_HELLO) {
+                    // Note: It does not comply to the specification.  However,
+                    // there are servers that send the supported_groups
+                    // extension in ServerHello handshake message.
+                    //
+                    // TLS 1.3 should not send this extension.   We may want to
+                    // limit the workaround for TLS 1.2 and prior version only.
+                    // However, the implementation of the limit is complicated
+                    // and inefficient, and may not worthy the maintenance.
+                    isSupported = false;
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                        SSLLogger.warning(
+                                "Received buggy supported_groups extension " +
+                                "in the ServerHello handshake message");
+                    }
+                } else {
+                    hm.handshakeContext.conContext.fatal(
                         Alert.UNSUPPORTED_EXTENSION,
                         "extension (" + extId +
                         ") should not be presented in " + handshakeType.name);
+                }
             }
 
-            boolean isSupported = false;
-            for (SSLExtension extension : extensions) {
-                if ((extension.id != extId) ||
-                        (extension.onLoadConsumer == null)) {
-                    continue;
-                }
+            if (isSupported) {
+                isSupported = false;
+                for (SSLExtension extension : extensions) {
+                    if ((extension.id != extId) ||
+                            (extension.onLoadConsumer == null)) {
+                        continue;
+                    }
 
-                if (extension.handshakeType != handshakeType) {
-                    hm.handshakeContext.conContext.fatal(
-                            Alert.UNSUPPORTED_EXTENSION,
-                            "extension (" + extId + ") should not be " +
-                            "presented in " + handshakeType.name);
-                }
+                    if (extension.handshakeType != handshakeType) {
+                        hm.handshakeContext.conContext.fatal(
+                                Alert.UNSUPPORTED_EXTENSION,
+                                "extension (" + extId + ") should not be " +
+                                "presented in " + handshakeType.name);
+                    }
 
-                byte[] extData = new byte[extLen];
-                m.get(extData);
-                extMap.put(extension, extData);
-                if (logMap != null) {
-                    logMap.put(extId, extData);
-                }
+                    byte[] extData = new byte[extLen];
+                    m.get(extData);
+                    extMap.put(extension, extData);
+                    if (logMap != null) {
+                        logMap.put(extId, extData);
+                    }
 
-                isSupported = true;
-                break;
+                    isSupported = true;
+                    break;
+                }
             }
 
             if (!isSupported) {

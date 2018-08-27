@@ -92,6 +92,10 @@ inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
   _old_set.remove(hr);
 }
 
+inline void G1CollectedHeap::archive_set_add(HeapRegion* hr) {
+  _archive_set.add(hr);
+}
+
 // It dirties the cards that cover the block so that the post
 // write barrier never queues anything when updating objects on this
 // block. It is assumed (and in fact we assert) that the block

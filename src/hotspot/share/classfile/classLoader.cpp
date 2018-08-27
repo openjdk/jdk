@@ -1400,7 +1400,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
                                                            name,
                                                            loader_data,
                                                            protection_domain,
-                                                           NULL, // host_klass
+                                                           NULL, // unsafe_anonymous_host
                                                            NULL, // cp_patches
                                                            THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -1443,8 +1443,8 @@ void ClassLoader::record_result(InstanceKlass* ik, const ClassFileStream* stream
   assert(DumpSharedSpaces, "sanity");
   assert(stream != NULL, "sanity");
 
-  if (ik->is_anonymous()) {
-    // We do not archive anonymous classes.
+  if (ik->is_unsafe_anonymous()) {
+    // We do not archive unsafe anonymous classes.
     return;
   }
 

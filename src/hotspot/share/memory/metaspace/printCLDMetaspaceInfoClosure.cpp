@@ -102,7 +102,7 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
       _out->print(" (unloading)");
     }
     _out->print(":");
-    if (cld->is_anonymous()) {
+    if (cld->is_unsafe_anonymous()) {
       _out->print(" <anonymous class>, loaded by");
     }
     if (name != NULL) {

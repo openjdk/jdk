@@ -317,18 +317,6 @@ reg_class ptr_rsp_reg(RSP, RSP_H);
 // Singleton class for TLS pointer
 reg_class ptr_r15_reg(R15, R15_H);
 
-// The registers which can be used for
-// a thread local safepoint poll
-// * R12 is reserved for heap base
-// * R13 cannot be encoded for addressing without an offset byte
-// * R15 is reserved for the JavaThread
-reg_class ptr_rex_reg(R8,  R8_H,
-                      R9,  R9_H,
-                      R10, R10_H,
-                      R11, R11_H,
-                      R14, R14_H);
-
-
 // Class for all long registers (excluding RSP)
 reg_class long_reg_with_rbp(RAX, RAX_H,
                             RDX, RDX_H,
@@ -3550,16 +3538,6 @@ operand rdi_RegP()
 operand r15_RegP()
 %{
   constraint(ALLOC_IN_RC(ptr_r15_reg));
-  match(RegP);
-  match(rRegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand rex_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_rex_reg));
   match(RegP);
   match(rRegP);
 
@@ -12360,7 +12338,7 @@ instruct safePoint_poll_far(rFlagsReg cr, rRegP poll)
   ins_pipe(ialu_reg_mem);
 %}
 
-instruct safePoint_poll_tls(rFlagsReg cr, rex_RegP poll)
+instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
 %{
   predicate(SafepointMechanism::uses_thread_local_poll());
   match(SafePoint poll);
@@ -12369,13 +12347,12 @@ instruct safePoint_poll_tls(rFlagsReg cr, rex_RegP poll)
   format %{ "testl  rax, [$poll]\t"
             "# Safepoint: poll for GC" %}
   ins_cost(125);
-  size(3); /* setting an explicit size will cause debug builds to assert if size is incorrect */
+  size(4); /* setting an explicit size will cause debug builds to assert if size is incorrect */
   ins_encode %{
     __ relocate(relocInfo::poll_type);
     address pre_pc = __ pc();
     __ testl(rax, Address($poll$$Register, 0));
-    address post_pc = __ pc();
-    guarantee(pre_pc[0] == 0x41 && pre_pc[1] == 0x85, "must emit #rex test-ax [reg]");
+    assert(nativeInstruction_at(pre_pc)->is_safepoint_poll(), "must emit test %%eax [reg]");
   %}
   ins_pipe(ialu_reg_mem);
 %}

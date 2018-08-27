@@ -575,8 +575,6 @@ public class GraalHotSpotVMConfig extends GraalHotSpotVMConfigBase {
 
     public final boolean tlabStats = getFlag("TLABStats", Boolean.class);
 
-    public final boolean useFastTLABRefill = versioned.useFastTLABRefill;
-
     // FIXME This is only temporary until the GC code is changed.
     public final boolean inlineContiguousAllocationSupported = getFieldValue("CompilerToVM::Data::_supports_inline_contig_alloc", Boolean.class);
     public final long heapEndAddress = getFieldValue("CompilerToVM::Data::_heap_end_addr", Long.class, "HeapWord**");

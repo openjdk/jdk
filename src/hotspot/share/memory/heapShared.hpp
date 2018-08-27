@@ -30,6 +30,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/growableArray.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -123,12 +124,33 @@ class HeapShared: AllStatic {
   static int num_of_subgraph_infos();
 
   static size_t build_archived_subgraph_info_records(int num_records);
+
+  // Used by decode_with_archived_oop_encoding_mode
+  static address _narrow_oop_base;
+  static int     _narrow_oop_shift;
+
 #endif // INCLUDE_CDS_JAVA_HEAP
  public:
   static char* read_archived_subgraph_infos(char* buffer) NOT_CDS_JAVA_HEAP_RETURN_(buffer);
   static void write_archived_subgraph_infos() NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_from_archived_subgraph(Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
 
+  // NarrowOops stored in the CDS archive may use a different encoding scheme
+  // than Universe::narrow_oop_{base,shift} -- see FileMapInfo::map_heap_regions_impl.
+  // To decode them, do not use CompressedOops::decode_not_null. Use this
+  // function instead.
+  inline static oop decode_with_archived_oop_encoding_mode(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+
+  static void init_narrow_oop_decoding(address base, int shift) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void patch_archived_heap_embedded_pointers(MemRegion mem, address  oopmap,
+                                                    size_t oopmap_in_bits) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void init_archivable_static_fields(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
   static void archive_module_graph_objects(Thread* THREAD) NOT_CDS_JAVA_HEAP_RETURN;
+
+#if INCLUDE_CDS_JAVA_HEAP
+  static ResourceBitMap calculate_oopmap(MemRegion region);
+#endif
 };
 #endif // SHARE_VM_MEMORY_HEAPSHARED_HPP

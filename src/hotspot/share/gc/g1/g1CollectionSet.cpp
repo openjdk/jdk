@@ -328,10 +328,10 @@ bool G1CollectionSet::verify_young_ages() {
   return cl.valid();
 }
 
-class G1PrintCollectionSetClosure : public HeapRegionClosure {
+class G1PrintCollectionSetDetailClosure : public HeapRegionClosure {
   outputStream* _st;
 public:
-  G1PrintCollectionSetClosure(outputStream* st) : HeapRegionClosure(), _st(st) { }
+  G1PrintCollectionSetDetailClosure(outputStream* st) : HeapRegionClosure(), _st(st) { }
 
   virtual bool do_heap_region(HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u should be in collection set", r->hrm_index());
@@ -347,7 +347,7 @@ public:
 void G1CollectionSet::print(outputStream* st) {
   st->print_cr("\nCollection_set:");
 
-  G1PrintCollectionSetClosure cl(st);
+  G1PrintCollectionSetDetailClosure cl(st);
   iterate(&cl);
 }
 #endif // !PRODUCT

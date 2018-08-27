@@ -330,13 +330,13 @@ void Dictionary::classes_do(void f(InstanceKlass*, TRAPS), TRAPS) {
 }
 
 // All classes, and their class loaders, including initiating class loaders
-void Dictionary::all_entries_do(void f(InstanceKlass*, ClassLoaderData*)) {
+void Dictionary::all_entries_do(KlassClosure* closure) {
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
                           probe != NULL;
                           probe = probe->next()) {
       InstanceKlass* k = probe->instance_klass();
-      f(k, loader_data());
+      closure->do_klass(k);
     }
   }
 }
@@ -592,8 +592,8 @@ void Dictionary::print_on(outputStream* st) const {
   ResourceMark rm;
 
   assert(loader_data() != NULL, "loader data should not be null");
-  st->print_cr("Java dictionary (table_size=%d, classes=%d)",
-               table_size(), number_of_entries());
+  st->print_cr("Java dictionary (table_size=%d, classes=%d, resizable=%s)",
+               table_size(), number_of_entries(), BOOL_TO_STR(_resizable));
   st->print_cr("^ indicates that initiating loader is different from defining loader");
 
   for (int index = 0; index < table_size(); index++) {

@@ -74,17 +74,17 @@ size_t SpaceManager::get_initial_chunk_size(Metaspace::MetaspaceType type) const
 
   if (is_class()) {
     switch (type) {
-    case Metaspace::BootMetaspaceType:       requested = Metaspace::first_class_chunk_word_size(); break;
-    case Metaspace::AnonymousMetaspaceType:  requested = ClassSpecializedChunk; break;
-    case Metaspace::ReflectionMetaspaceType: requested = ClassSpecializedChunk; break;
-    default:                                 requested = ClassSmallChunk; break;
+    case Metaspace::BootMetaspaceType:              requested = Metaspace::first_class_chunk_word_size(); break;
+    case Metaspace::UnsafeAnonymousMetaspaceType:   requested = ClassSpecializedChunk; break;
+    case Metaspace::ReflectionMetaspaceType:        requested = ClassSpecializedChunk; break;
+    default:                                        requested = ClassSmallChunk; break;
     }
   } else {
     switch (type) {
-    case Metaspace::BootMetaspaceType:       requested = Metaspace::first_chunk_word_size(); break;
-    case Metaspace::AnonymousMetaspaceType:  requested = SpecializedChunk; break;
-    case Metaspace::ReflectionMetaspaceType: requested = SpecializedChunk; break;
-    default:                                 requested = SmallChunk; break;
+    case Metaspace::BootMetaspaceType:              requested = Metaspace::first_chunk_word_size(); break;
+    case Metaspace::UnsafeAnonymousMetaspaceType:   requested = SpecializedChunk; break;
+    case Metaspace::ReflectionMetaspaceType:        requested = SpecializedChunk; break;
+    default:                                        requested = SmallChunk; break;
     }
   }
 
@@ -114,13 +114,15 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
   // After that a medium chunk is preferred.
   size_t chunk_word_size;
 
-  // Special case for anonymous metadata space.
-  // Anonymous metadata space is usually small, with majority within 1K - 2K range and
+  // Special case for unsafe anonymous metadata space.
+  // UnsafeAnonymous metadata space is usually small since it is used for
+  // class loader data's whose life cycle is governed by one class such as an
+  // unsafe anonymous class.  The majority within 1K - 2K range and
   // rarely about 4K (64-bits JVM).
   // Instead of jumping to SmallChunk after initial chunk exhausted, keeping allocation
   // from SpecializeChunk up to _anon_or_delegating_metadata_specialize_chunk_limit (4)
   // reduces space waste from 60+% to around 30%.
-  if ((_space_type == Metaspace::AnonymousMetaspaceType || _space_type == Metaspace::ReflectionMetaspaceType) &&
+  if ((_space_type == Metaspace::UnsafeAnonymousMetaspaceType || _space_type == Metaspace::ReflectionMetaspaceType) &&
       _mdtype == Metaspace::NonClassType &&
       num_chunks_by_type(SpecializedIndex) < anon_and_delegating_metadata_specialize_chunk_limit &&
       word_size + Metachunk::overhead() <= SpecializedChunk) {

@@ -362,7 +362,7 @@ void AOTCompiledMethod::log_identity(xmlStream* log) const {
   log->print(" aot='%2d'", _heap->dso_id());
 }
 
-void AOTCompiledMethod::log_state_change() const {
+void AOTCompiledMethod::log_state_change(oop cause) const {
   if (LogCompilation) {
     ResourceMark m;
     if (xtty != NULL) {

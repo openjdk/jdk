@@ -200,7 +200,7 @@
   <Event name="MetaspaceAllocationFailure" category="Java Virtual Machine, GC, Metaspace" label="Metaspace Allocation Failure" startTime="false"
     stackTrace="true">
     <Field type="ClassLoader" name="classLoader" label="Class Loader" />
-    <Field type="boolean" name="anonymousClassLoader" label="Anonymous Class Loader" />
+    <Field type="boolean" name="unsafeAnonymousClassLoader" label="Unsafe Anonymous Class Loader" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
     <Field type="MetadataType" name="metadataType" label="Metadata Type" />
     <Field type="MetaspaceObjectType" name="metaspaceObjectType" label="Metaspace Object Type" />
@@ -208,7 +208,7 @@
 
   <Event name="MetaspaceOOM" category="Java Virtual Machine, GC, Metaspace" label="Metaspace Out of Memory" startTime="false" stackTrace="true">
     <Field type="ClassLoader" name="classLoader" label="Class Loader" />
-    <Field type="boolean" name="anonymousClassLoader" label="Anonymous Class Loader" />
+    <Field type="boolean" name="unsafeAnonymousClassLoader" label="Unsafe Anonymous Class Loader" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
     <Field type="MetadataType" name="metadataType" label="Metadata Type" />
     <Field type="MetaspaceObjectType" name="metaspaceObjectType" label="Metaspace Object Type" />
@@ -682,11 +682,11 @@
     <Field type="long" name="classCount" label="Classes" description="Number of loaded classes" />
     <Field type="ulong" contentType="bytes" name="chunkSize" label="Total Chunk Size" description="Total size of all allocated metaspace chunks (each chunk has several blocks)" />
     <Field type="ulong" contentType="bytes" name="blockSize" label="Total Block Size" description="Total size of all allocated metaspace blocks (each chunk has several blocks)" />
-    <Field type="long" name="anonymousClassCount" label="Unsafe Anonymous Classes" description="Number of loaded classes to support invokedynamic" />
-    <Field type="ulong" contentType="bytes" name="anonymousChunkSize" label="Total Unsafe Anonymous Classes Chunk Size"
-      description="Total size of all allocated metaspace chunks for anonymous classes (each chunk has several blocks)" />
-    <Field type="ulong" contentType="bytes" name="anonymousBlockSize" label="Total Unsafe Anonymous Classes Block Size"
-      description="Total size of all allocated metaspace blocks for anonymous classes (each chunk has several blocks)" />
+    <Field type="long" name="unsafeAnonymousClassCount" label="Unsafe Anonymous Classes" description="Number of loaded classes to support invokedynamic" />
+    <Field type="ulong" contentType="bytes" name="unsafeAnonymousChunkSize" label="Total Unsafe Anonymous Classes Chunk Size"
+      description="Total size of all allocated metaspace chunks for unsafe anonymous classes (each chunk has several blocks)" />
+    <Field type="ulong" contentType="bytes" name="unsafeAnonymousBlockSize" label="Total Unsafe Anonymous Classes Block Size"
+      description="Total size of all allocated metaspace blocks for unsafe anonymous classes (each chunk has several blocks)" />
   </Event>
 
   <Event name="ThreadAllocationStatistics" category="Java Application, Statistics" label="Thread Allocation Statistics" period="everyChunk">

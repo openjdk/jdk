@@ -21,14 +21,16 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4814140
  * @summary AppInputStream: read can block a close
- * @run main/othervm ReadBlocksClose
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
+ * @run main/othervm -Djdk.tls.acknowledgeCloseNotify=true ReadBlocksClose
  * @author Brad Wetmore
  */
 
@@ -141,7 +143,8 @@ public class ReadBlocksClose {
                     System.out.println("Closing Thread started");
                     Thread.sleep(3000);
                     System.out.println("Closing Thread closing");
-                    sslIS.close();
+                    sslOS.close();
+                    System.out.println("Closing Thread closed");
                 } catch (Exception e) {
                     RuntimeException rte =
                         new RuntimeException("Check this out");

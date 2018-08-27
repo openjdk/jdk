@@ -66,7 +66,7 @@ public class FixedValueAnchorNode extends FixedWithNextNode implements LIRLowera
     @Override
     public boolean inferStamp() {
         if (predefinedStamp == null) {
-            return updateStamp(object.stamp(NodeView.DEFAULT));
+            return updateStamp(stamp.join(object.stamp(NodeView.DEFAULT)));
         } else {
             return false;
         }

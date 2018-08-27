@@ -44,6 +44,8 @@ class UnixFileSystem extends FileSystem {
         colon = props.getProperty("path.separator").charAt(0);
         javaHome = StaticProperty.javaHome();
         userDir = StaticProperty.userDir();
+        cache = useCanonCaches ? new ExpiringCache() : null;
+        javaHomePrefixCache = useCanonPrefixCache ? new ExpiringCache() : null;
     }
 
 
@@ -145,11 +147,11 @@ class UnixFileSystem extends FileSystem {
     // same directory, and must not create results differing from the true
     // canonicalization algorithm in canonicalize_md.c. For this reason the
     // prefix cache is conservative and is not used for complex path names.
-    private ExpiringCache cache = new ExpiringCache();
+    private final ExpiringCache cache;
     // On Unix symlinks can jump anywhere in the file system, so we only
     // treat prefixes in java.home as trusted and cacheable in the
     // canonicalization algorithm
-    private ExpiringCache javaHomePrefixCache = new ExpiringCache();
+    private final ExpiringCache javaHomePrefixCache;
 
     public String canonicalize(String path) throws IOException {
         if (!useCanonCaches) {
@@ -158,7 +160,7 @@ class UnixFileSystem extends FileSystem {
             String res = cache.get(path);
             if (res == null) {
                 String dir = null;
-                String resDir = null;
+                String resDir;
                 if (useCanonPrefixCache) {
                     // Note that this can cause symlinks that should
                     // be resolved to a destination directory to be
@@ -266,8 +268,12 @@ class UnixFileSystem extends FileSystem {
         // (i.e., only remove/update affected entries) but probably
         // not worth it since these entries expire after 30 seconds
         // anyway.
-        cache.clear();
-        javaHomePrefixCache.clear();
+        if (useCanonCaches) {
+            cache.clear();
+        }
+        if (useCanonPrefixCache) {
+            javaHomePrefixCache.clear();
+        }
         return delete0(f);
     }
     private native boolean delete0(File f);
@@ -279,8 +285,12 @@ class UnixFileSystem extends FileSystem {
         // (i.e., only remove/update affected entries) but probably
         // not worth it since these entries expire after 30 seconds
         // anyway.
-        cache.clear();
-        javaHomePrefixCache.clear();
+        if (useCanonCaches) {
+            cache.clear();
+        }
+        if (useCanonPrefixCache) {
+            javaHomePrefixCache.clear();
+        }
         return rename0(f1, f2);
     }
     private native boolean rename0(File f1, File f2);

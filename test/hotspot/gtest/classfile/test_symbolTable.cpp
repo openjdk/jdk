@@ -139,7 +139,7 @@ public:
       st[i]->doit();
     }
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < SYM_TEST_THREAD_COUNT; i++) {
       done.wait();
     }
   }

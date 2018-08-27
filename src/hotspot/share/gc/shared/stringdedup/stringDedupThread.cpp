@@ -59,8 +59,8 @@ class StringDedupSharedClosure: public OopClosure {
  public:
   StringDedupSharedClosure(StringDedupStat* stat) : _stat(stat) {}
 
-  virtual void do_oop(oop* p) { ShouldNotReachHere(); }
-  virtual void do_oop(narrowOop* p) {
+  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+  virtual void do_oop(oop* p) {
     oop java_string = RawAccess<>::oop_load(p);
     StringDedupTable::deduplicate(java_string, _stat);
   }

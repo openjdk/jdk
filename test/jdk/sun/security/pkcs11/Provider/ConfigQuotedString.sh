@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
 echo COMPILEJAVA=${COMPILEJAVA}
+echo CPAPPEND=${CPAPPEND}
 echo ""
 
 # let java test exit if platform unsupported
@@ -105,13 +106,14 @@ esac
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -classpath ${TESTSRC}${FS}.. \
         -d ${TESTCLASSES} \
+        ${TESTSRC}${FS}..${FS}..${FS}..${FS}..${FS}..${FS}lib${FS}jdk${FS}test${FS}lib${FS}artifacts${FS}*.java \
         ${TESTSRC}${FS}ConfigQuotedString.java \
         ${TESTSRC}${FS}..${FS}PKCS11Test.java
 
 # run test
 
 ${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
-        -classpath ${TESTCLASSES} \
+        -classpath ${TESTCLASSES}${PS}${CPAPPEND} \
         -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}ConfigQuotedString-nss.txt \
         -Dtest.src=${TESTSRC} \
         -Dtest.classes=${TESTCLASSES} \

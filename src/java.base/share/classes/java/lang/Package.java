@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,7 +286,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
         for (int i = 0; i < sa.length; i++) {
             si[i] = Integer.parseInt(sa[i]);
             if (si[i] < 0)
-                throw NumberFormatException.forInputString("" + si[i]);
+                throw NumberFormatException.forInputString("" + si[i], 10);
         }
 
         String [] da = desired.split("\\.", -1);
@@ -294,7 +294,7 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
         for (int i = 0; i < da.length; i++) {
             di[i] = Integer.parseInt(da[i]);
             if (di[i] < 0)
-                throw NumberFormatException.forInputString("" + di[i]);
+                throw NumberFormatException.forInputString("" + di[i], 10);
         }
 
         int len = Math.max(di.length, si.length);

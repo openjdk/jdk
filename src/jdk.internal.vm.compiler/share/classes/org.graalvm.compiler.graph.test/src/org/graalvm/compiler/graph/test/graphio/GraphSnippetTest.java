@@ -31,6 +31,7 @@ import org.junit.Assume;
 import org.junit.Test;
 
 public class GraphSnippetTest {
+    @SuppressWarnings("deprecation")
     @Test
     public void dumpTheFile() throws Exception {
         Class<?> snippets = null;

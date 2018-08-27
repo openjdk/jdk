@@ -80,7 +80,6 @@ public final class AArch64Address extends AbstractAddress {
          * address = base + imm9. base is updated to base + imm9
          */
         IMMEDIATE_PRE_INDEXED,
-        AddressingMode,
     }
 
     private final Register base;

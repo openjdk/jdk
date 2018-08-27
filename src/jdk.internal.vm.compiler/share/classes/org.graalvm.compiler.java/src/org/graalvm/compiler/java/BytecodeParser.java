@@ -1929,9 +1929,15 @@ public class BytecodeParser implements GraphBuilderContext {
         }
 
         boolean check(boolean pluginResult) {
-            if (pluginResult == true) {
+            if (pluginResult) {
+                /*
+                 * If lastInstr is null, even if this method has a non-void return type, the method
+                 * doesn't return a value, it probably throws an exception.
+                 */
                 int expectedStackSize = beforeStackSize + resultType.getSlotCount();
-                assert expectedStackSize == frameState.stackSize() : error("plugin manipulated the stack incorrectly: expected=%d, actual=%d", expectedStackSize, frameState.stackSize());
+                assert lastInstr == null || expectedStackSize == frameState.stackSize() : error("plugin manipulated the stack incorrectly: expected=%d, actual=%d", expectedStackSize,
+                                frameState.stackSize());
+
                 NodeIterable<Node> newNodes = graph.getNewNodes(mark);
                 assert !needsNullCheck || isPointerNonNull(args[0].stamp(NodeView.DEFAULT)) : error("plugin needs to null check the receiver of %s: receiver=%s", targetMethod.format("%H.%n(%p)"),
                                 args[0]);
@@ -3544,6 +3550,11 @@ public class BytecodeParser implements GraphBuilderContext {
     }
 
     @Override
+    public ValueNode pop(JavaKind slotKind) {
+        return frameState.pop(slotKind);
+    }
+
+    @Override
     public ConstantReflectionProvider getConstantReflection() {
         return constantReflection;
     }
@@ -4277,13 +4288,7 @@ public class BytecodeParser implements GraphBuilderContext {
 
         JavaKind fieldKind = resolvedField.getJavaKind();
 
-        if (resolvedField.isVolatile() && fieldRead instanceof LoadFieldNode) {
-            StateSplitProxyNode readProxy = append(genVolatileFieldReadProxy(fieldRead));
-            frameState.push(fieldKind, readProxy);
-            readProxy.setStateAfter(frameState.create(stream.nextBCI(), readProxy));
-        } else {
-            frameState.push(fieldKind, fieldRead);
-        }
+        pushLoadField(resolvedField, fieldRead, fieldKind);
     }
 
     /**
@@ -4334,10 +4339,8 @@ public class BytecodeParser implements GraphBuilderContext {
         return needsExplicitException();
     }
 
-    /**
-     * Returns true if an explicit exception check should be emitted.
-     */
-    protected boolean needsExplicitException() {
+    @Override
+    public boolean needsExplicitException() {
         BytecodeExceptionMode exceptionMode = graphBuilderConfig.getBytecodeExceptionMode();
         if (exceptionMode == BytecodeExceptionMode.CheckAll || StressExplicitExceptionCode.getValue(options)) {
             return true;
@@ -4345,6 +4348,15 @@ public class BytecodeParser implements GraphBuilderContext {
             return profilingInfo.getExceptionSeen(bci()) == TriState.TRUE;
         }
         return false;
+    }
+
+    @Override
+    public AbstractBeginNode genExplicitExceptionEdge(BytecodeExceptionKind exceptionKind) {
+        BytecodeExceptionNode exceptionNode = graph.add(new BytecodeExceptionNode(metaAccess, exceptionKind));
+        exceptionNode.setStateAfter(createFrameState(bci(), exceptionNode));
+        AbstractBeginNode exceptionDispatch = handleException(exceptionNode, bci(), false);
+        exceptionNode.setNext(exceptionDispatch);
+        return BeginNode.begin(exceptionNode);
     }
 
     protected void genPutField(int cpi, int opcode) {
@@ -4417,7 +4429,25 @@ public class BytecodeParser implements GraphBuilderContext {
             }
         }
 
-        frameState.push(field.getJavaKind(), append(genLoadField(null, resolvedField)));
+        ValueNode fieldRead = append(genLoadField(null, resolvedField));
+        JavaKind fieldKind = resolvedField.getJavaKind();
+
+        pushLoadField(resolvedField, fieldRead, fieldKind);
+    }
+
+    /**
+     * Pushes a loaded field onto the stack. If the loaded field is volatile, a
+     * {@link StateSplitProxyNode} is appended so that deoptimization does not deoptimize to a point
+     * before the field load.
+     */
+    private void pushLoadField(ResolvedJavaField resolvedField, ValueNode fieldRead, JavaKind fieldKind) {
+        if (resolvedField.isVolatile() && fieldRead instanceof LoadFieldNode) {
+            StateSplitProxyNode readProxy = append(genVolatileFieldReadProxy(fieldRead));
+            frameState.push(fieldKind, readProxy);
+            readProxy.setStateAfter(frameState.create(stream.nextBCI(), readProxy));
+        } else {
+            frameState.push(fieldKind, fieldRead);
+        }
     }
 
     private ResolvedJavaField resolveStaticFieldAccess(JavaField field, ValueNode value) {

@@ -78,7 +78,7 @@ class nmethod : public CompiledMethod {
   // That is, installed code other than a "default"
   // HotSpotNMethod causes nmethod unloading.
   // This field is ignored once _jvmci_installed_code is NULL.
-  bool _jvmci_installed_code_triggers_unloading;
+  bool _jvmci_installed_code_triggers_invalidation;
 #endif
 
   // To support simple linked-list chaining of nmethods:
@@ -456,7 +456,7 @@ public:
   // Copies the value of the name field in the InstalledCode
   // object (if any) associated with this nmethod into buf.
   // Returns the value of buf if it was updated otherwise NULL.
-  char* jvmci_installed_code_name(char* buf, size_t buflen);
+  char* jvmci_installed_code_name(char* buf, size_t buflen) const;
 
   // Updates the state of the InstalledCode (if any) associated with
   // this nmethod based on the current value of _state.
@@ -486,7 +486,7 @@ public:
  protected:
   virtual bool do_unloading_oops(address low_boundary, BoolObjectClosure* is_alive);
 #if INCLUDE_JVMCI
-  // See comment for _jvmci_installed_code_triggers_unloading field.
+  // See comment for _jvmci_installed_code_triggers_invalidation field.
   // Returns whether this nmethod was unloaded.
   virtual bool do_unloading_jvmci();
 #endif
@@ -555,7 +555,7 @@ public:
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
-  void log_state_change() const;
+  void log_state_change(oop cause = NULL) const;
 
   // Prints block-level comments, including nmethod specific block labels:
   virtual void print_block_comment(outputStream* stream, address block_begin) const {

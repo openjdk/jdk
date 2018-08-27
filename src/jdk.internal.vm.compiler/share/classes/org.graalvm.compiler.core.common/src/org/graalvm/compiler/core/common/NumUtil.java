@@ -110,6 +110,11 @@ public class NumUtil {
         return (short) v;
     }
 
+    public static int safeToInt(long v) {
+        assert isInt(v);
+        return (int) v;
+    }
+
     public static int roundUp(int number, int mod) {
         return ((number + mod - 1) / mod) * mod;
     }

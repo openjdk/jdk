@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6298106 6275523 6420252 8059627
  * @summary make sure we can access the NSS trust anchor module
  * @author Andreas Sterbenz
- * @library ..
+ * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TrustAnchors
  * @run main/othervm TrustAnchors sm policy

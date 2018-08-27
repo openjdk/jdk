@@ -141,8 +141,9 @@ bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_by
 void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
 
-  if (r->is_old_or_humongous()) {
+  if (r->is_old_or_humongous_or_archive()) {
     if (r->rem_set()->is_updating()) {
+      assert(!r->is_archive(), "Archive region %u with remembered set", r->hrm_index());
       r->rem_set()->set_state_complete();
     }
     G1CollectedHeap* g1h = G1CollectedHeap::heap();

@@ -39,7 +39,7 @@ import java.util.Formatter;
 class JVMCIVersionCheck {
 
     private static final int JVMCI8_MIN_MAJOR_VERSION = 0;
-    private static final int JVMCI8_MIN_MINOR_VERSION = 29;
+    private static final int JVMCI8_MIN_MINOR_VERSION = 46;
 
     private static void failVersionCheck(boolean exit, String reason, Object... args) {
         Formatter errorMessage = new Formatter().format(reason, args);
@@ -52,7 +52,7 @@ class JVMCIVersionCheck {
         if (System.getProperty("java.specification.version").compareTo("1.9") < 0) {
             errorMessage.format("Download the latest JVMCI JDK 8 from http://www.oracle.com/technetwork/oracle-labs/program-languages/downloads/index.html");
         } else {
-            errorMessage.format("Download the latest JDK 9 build from https://jdk9.java.net/download/");
+            errorMessage.format("Download JDK 11 or later.");
         }
         String value = System.getenv("JVMCI_VERSION_CHECK");
         if ("warn".equals(value)) {
@@ -69,8 +69,9 @@ class JVMCIVersionCheck {
 
     static void check(boolean exitOnFailure) {
         // Don't use regular expressions to minimize Graal startup time
+        String javaSpecVersion = System.getProperty("java.specification.version");
         String vmVersion = System.getProperty("java.vm.version");
-        if (System.getProperty("java.specification.version").compareTo("1.9") < 0) {
+        if (javaSpecVersion.compareTo("1.9") < 0) {
             int start = vmVersion.indexOf("-jvmci-");
             if (start >= 0) {
                 start += "-jvmci-".length();
@@ -107,18 +108,28 @@ class JVMCIVersionCheck {
             }
             failVersionCheck(exitOnFailure, "The VM does not support the minimum JVMCI API version required by Graal.%n" +
                             "Cannot read JVMCI version from java.vm.version property: %s.%n", vmVersion);
+        } else if (javaSpecVersion.compareTo("11") < 0) {
+            failVersionCheck(exitOnFailure, "Graal is not compatible with the JVMCI API in JDK 9 and 10.%n");
         } else {
             if (vmVersion.contains("SNAPSHOT")) {
-                // The snapshot of http://hg.openjdk.java.net/jdk9/dev tip is expected to work
                 return;
             }
             if (vmVersion.contains("internal")) {
                 // Allow local builds
                 return;
             }
-            if (vmVersion.startsWith("9-ea")) {
-                failVersionCheck(exitOnFailure, "This version of Graal is not compatible with JDK 9 Early Access builds.%n");
-                return;
+            if (vmVersion.startsWith("11-ea+")) {
+                String buildString = vmVersion.substring("11-ea+".length());
+                try {
+                    int build = Integer.parseInt(buildString);
+                    if (build < 20) {
+                        failVersionCheck(exitOnFailure, "Graal requires build 20 or later of JDK 11 early access binary, got build %d.%n", build);
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    failVersionCheck(exitOnFailure, "Could not parse the JDK 11 early access build number from java.vm.version property: %s.%n", vmVersion);
+                    return;
+                }
             } else {
                 // Graal is compatible with all JDK versions as of 9 GA.
             }

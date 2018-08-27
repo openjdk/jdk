@@ -21,13 +21,14 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
 
 import jdk.tools.jaotc.binformat.NativeSymbol;
 import jdk.tools.jaotc.binformat.macho.MachO.nlist_64;
-import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
 final class MachOSymbol extends NativeSymbol {
     private final ByteBuffer sym;

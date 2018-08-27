@@ -115,10 +115,15 @@ bool SharedPathsMiscInfo::check() {
     return fail("Corrupted archive file header");
   }
 
+  jshort cur_index = 0;
+  jshort max_cp_index = FileMapInfo::current_info()->header()->max_used_path_index();
+  jshort module_paths_start_index =
+    FileMapInfo::current_info()->header()->app_module_paths_start_index();
   while (_cur_ptr < _end_ptr) {
     jint type;
     const char* path = _cur_ptr;
     _cur_ptr += strlen(path) + 1;
+
     if (!read_jint(&type)) {
       return fail("Corrupted archive file header");
     }
@@ -129,13 +134,19 @@ bool SharedPathsMiscInfo::check() {
       print_path(&ls, type, path);
       ls.cr();
     }
-    if (!check(type, path)) {
-      if (!PrintSharedArchiveAndExit) {
-        return false;
+    // skip checking the class path(s) which was not referenced during CDS dump
+    if ((cur_index <= max_cp_index) || (cur_index >= module_paths_start_index)) {
+      if (!check(type, path)) {
+        if (!PrintSharedArchiveAndExit) {
+          return false;
+        }
+      } else {
+        ClassLoader::trace_class_path("ok");
       }
     } else {
-      ClassLoader::trace_class_path("ok");
+      ClassLoader::trace_class_path("skipped check");
     }
+    cur_index++;
   }
 
   return true;

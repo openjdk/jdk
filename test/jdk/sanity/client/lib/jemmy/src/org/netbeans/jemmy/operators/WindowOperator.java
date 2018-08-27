@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import org.netbeans.jemmy.ComponentSearcher;
 import org.netbeans.jemmy.JemmyException;
 import org.netbeans.jemmy.JemmyProperties;
 import org.netbeans.jemmy.Outputable;
+import org.netbeans.jemmy.QueueTool;
 import org.netbeans.jemmy.TestOut;
 import org.netbeans.jemmy.TimeoutExpiredException;
 import org.netbeans.jemmy.Timeouts;
@@ -583,6 +584,21 @@ public class WindowOperator extends ContainerOperator<Window>
                 ((Window) getSource()).toFront();
             }
         });
+    }
+
+    /**
+     * Maps {@code Window.getWindows()} through queue
+     *
+     * @return result of {@code Window.getWindows()}
+     */
+    public static Window[] getWindows() {
+        return new QueueTool().invokeSmoothly(
+                new QueueTool.QueueAction<Window[]>("getWindows") {
+                    @Override
+                    public Window[] launch() throws Exception {
+                        return Window.getWindows();
+                    }
+                });
     }
 
     //End of mapping                                      //

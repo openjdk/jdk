@@ -21,12 +21,13 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.macho;
 
 import java.nio.ByteBuffer;
 
 import jdk.tools.jaotc.binformat.macho.MachO.section_64;
-import jdk.tools.jaotc.binformat.macho.MachOByteBuffer;
 
 final class MachOSection {
     private final ByteBuffer section;

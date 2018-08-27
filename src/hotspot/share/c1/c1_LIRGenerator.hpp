@@ -288,6 +288,9 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
                       LIRItem& base, LIR_Opr offset, LIR_Opr result,
                       CodeEmitInfo* patch_info = NULL, CodeEmitInfo* load_emit_info = NULL);
 
+  void access_load(DecoratorSet decorators, BasicType type,
+                   LIR_Opr addr, LIR_Opr result);
+
   LIR_Opr access_atomic_cmpxchg_at(DecoratorSet decorators, BasicType type,
                                    LIRItem& base, LIRItem& offset, LIRItem& cmp_value, LIRItem& new_value);
 
@@ -296,6 +299,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   LIR_Opr access_atomic_add_at(DecoratorSet decorators, BasicType type,
                                LIRItem& base, LIRItem& offset, LIRItem& value);
+
+  LIR_Opr access_resolve(DecoratorSet decorators, LIR_Opr obj);
 
   // These need to guarantee JMM volatile semantics are preserved on each platform
   // and requires one implementation per architecture.

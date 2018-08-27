@@ -188,7 +188,6 @@ public class TransformRelatedClassesAppCDS extends TransformRelatedClasses {
 
         TestCommon.run("-Xlog:class+load=info",
                        "-cp", appJar,
-                       "--add-opens=java.base/java.security=ALL-UNNAMED",
                        agentParam,
                        "CustomLoaderApp",
                        customJar, loaderType, child)

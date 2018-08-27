@@ -21,6 +21,8 @@
  * questions.
  */
 
+
+
 package jdk.tools.jaotc.binformat.pecoff;
 
 import java.io.IOException;
@@ -38,13 +40,10 @@ import jdk.tools.jaotc.binformat.Relocation.RelocType;
 import jdk.tools.jaotc.binformat.Symbol;
 import jdk.tools.jaotc.binformat.Symbol.Binding;
 import jdk.tools.jaotc.binformat.Symbol.Kind;
-
-import jdk.tools.jaotc.binformat.pecoff.PECoffSymbol;
-import jdk.tools.jaotc.binformat.pecoff.PECoffTargetInfo;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_FILE_HEADER;
+import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_RELOCATION;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_SECTION_HEADER;
 import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_SYMBOL;
-import jdk.tools.jaotc.binformat.pecoff.PECoff.IMAGE_RELOCATION;
 
 public class JPECoffRelocObject {
 
@@ -102,7 +101,7 @@ public class JPECoffRelocObject {
     }
 
     /**
-     * Create an PECoff relocatable object
+     * Creates a PECoff relocatable object.
      *
      * @param relocationTable
      * @param symbols
@@ -138,7 +137,11 @@ public class JPECoffRelocObject {
 
         // Add Linker Directives Section
         int scnFlags = IMAGE_SECTION_HEADER.IMAGE_SCN_LNK_INFO | IMAGE_SECTION_HEADER.IMAGE_SCN_LNK_REMOVE;
-        createByteSection(sections, ".drectve", symtab.getDirectiveArray(), false, scnFlags, 1 /* 1 byte alignment */);
+        createByteSection(sections, ".drectve", symtab.getDirectiveArray(), false, scnFlags, 1 /*
+                                                                                                * 1
+                                                                                                * byte
+                                                                                                * alignment
+                                                                                                */);
 
         // Create the Relocation Tables
         PECoffRelocTable pecoffRelocs = createPECoffRelocTable(sections, relocationTable);
@@ -154,28 +157,28 @@ public class JPECoffRelocObject {
         // RELOCATION TABLE
 
         // Calculate Offset for Symbol table
-        int file_offset = IMAGE_FILE_HEADER.totalsize +
+        int fileOffset = IMAGE_FILE_HEADER.totalsize +
                         (IMAGE_SECTION_HEADER.totalsize * sections.size());
 
         // Update Header fields
         header.setSectionCount(sections.size());
         header.setSymbolCount(symtab.getSymtabCount());
-        header.setSymbolOff(file_offset);
+        header.setSymbolOff(fileOffset);
 
         // Calculate file offset for first section
-        file_offset += ((symtab.getSymtabCount() * IMAGE_SYMBOL.totalsize) +
+        fileOffset += ((symtab.getSymtabCount() * IMAGE_SYMBOL.totalsize) +
                         symtab.getStrtabSize());
         // And round it up
-        file_offset = (file_offset + (sections.get(0).getDataAlign() - 1)) &
+        fileOffset = (fileOffset + (sections.get(0).getDataAlign() - 1)) &
                         ~((sections.get(0).getDataAlign() - 1));
 
         // Calc file offsets for section data
         for (int i = 0; i < sections.size(); i++) {
             PECoffSection sect = sections.get(i);
-            file_offset = (file_offset + (sect.getDataAlign() - 1)) &
+            fileOffset = (fileOffset + (sect.getDataAlign() - 1)) &
                             ~((sect.getDataAlign() - 1));
-            sect.setOffset(file_offset);
-            file_offset += sect.getSize();
+            sect.setOffset(fileOffset);
+            fileOffset += sect.getSize();
         }
 
         // Update relocation sizing information in each section
@@ -183,13 +186,13 @@ public class JPECoffRelocObject {
             PECoffSection sect = sections.get(i);
             if (sect.hasRelocations()) {
                 int nreloc = pecoffRelocs.getNumRelocs(i);
-                sect.setReloff(file_offset);
+                sect.setReloff(fileOffset);
                 sect.setRelcount(nreloc);
                 // extended relocations add an addition entry
                 if (nreloc > 0xFFFF) {
                     nreloc++;
                 }
-                file_offset += (nreloc * IMAGE_RELOCATION.totalsize);
+                fileOffset += (nreloc * IMAGE_RELOCATION.totalsize);
             }
         }
 
@@ -269,7 +272,8 @@ public class JPECoffRelocObject {
 
         PECoffRelocTable pecoffRelocTable = new PECoffRelocTable(sections.size());
         /*
-         * For each of the symbols with associated relocation records, create a PECoff relocation entry.
+         * For each of the symbols with associated relocation records, create a PECoff relocation
+         * entry.
          */
         for (Map.Entry<Symbol, List<Relocation>> entry : relocationTable.entrySet()) {
             List<Relocation> relocs = entry.getValue();
@@ -316,8 +320,8 @@ public class JPECoffRelocObject {
                 addend = -4; // Size of 32-bit address of the GOT
                 /*
                  * Relocation should be applied before the test instruction to the move instruction.
-                 * reloc.getOffset() points to the test instruction after the instruction that loads the address of
-                 * polling page. So set the offset appropriately.
+                 * reloc.getOffset() points to the test instruction after the instruction that loads
+                 * the address of polling page. So set the offset appropriately.
                  */
                 offset = offset + addend;
                 break;
@@ -338,14 +342,14 @@ public class JPECoffRelocObject {
         switch (PECoffTargetInfo.getPECoffArch()) {
             case IMAGE_FILE_HEADER.IMAGE_FILE_MACHINE_AMD64:
                 if (relocType == RelocType.JAVA_CALL_DIRECT ||
-                    relocType == RelocType.FOREIGN_CALL_INDIRECT_GOT) {
+                                relocType == RelocType.FOREIGN_CALL_INDIRECT_GOT) {
                     pecoffRelocType = IMAGE_RELOCATION.IMAGE_REL_AMD64_REL32;
                 } else if (relocType == RelocType.STUB_CALL_DIRECT) {
                     pecoffRelocType = IMAGE_RELOCATION.IMAGE_REL_AMD64_REL32;
                 } else if (relocType == RelocType.JAVA_CALL_INDIRECT) {
                     pecoffRelocType = IMAGE_RELOCATION.IMAGE_REL_AMD64_ABSOLUTE;
                 } else if (relocType == RelocType.METASPACE_GOT_REFERENCE ||
-                           relocType == RelocType.EXTERNAL_PLT_TO_GOT) {
+                                relocType == RelocType.EXTERNAL_PLT_TO_GOT) {
                     pecoffRelocType = IMAGE_RELOCATION.IMAGE_REL_AMD64_REL32;
                 } else if (relocType == RelocType.EXTERNAL_GOT_TO_PLT) {
                     pecoffRelocType = IMAGE_RELOCATION.IMAGE_REL_AMD64_ADDR64;

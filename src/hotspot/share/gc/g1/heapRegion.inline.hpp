@@ -350,7 +350,7 @@ bool HeapRegion::oops_on_card_seq_iterate_careful(MemRegion mr,
   if (is_humongous()) {
     return do_oops_on_card_in_humongous<Closure, is_gc_active>(mr, cl, g1h);
   }
-  assert(is_old(), "precondition");
+  assert(is_old() || is_archive(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
 
   // Because mr has been trimmed to what's been allocated in this
   // region, the parts of the heap that are examined here are always

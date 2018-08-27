@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
+import org.graalvm.compiler.core.common.SuppressFBWarnings;
 import org.graalvm.compiler.debug.GraalError;
 import org.graalvm.compiler.debug.TTY;
 import org.graalvm.compiler.lir.phases.LIRPhase;
@@ -168,6 +169,7 @@ public abstract class CompilerConfigurationFactory implements Comparable<Compile
     /**
      * @return sorted list of {@link CompilerConfigurationFactory}s
      */
+    @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "false positive on dead store to `candidates`")
     private static List<CompilerConfigurationFactory> getAllCandidates() {
         List<CompilerConfigurationFactory> candidates = new ArrayList<>();
         for (CompilerConfigurationFactory candidate : GraalServices.load(CompilerConfigurationFactory.class)) {

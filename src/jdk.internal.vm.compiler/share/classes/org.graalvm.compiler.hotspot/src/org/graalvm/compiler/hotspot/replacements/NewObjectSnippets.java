@@ -177,8 +177,8 @@ public class NewObjectSnippets implements Snippets {
             String name = createName(path, typeContext, options);
 
             boolean context = withContext(options);
-            DynamicCounterNode.counter(name, "number of bytes allocated", size, context);
-            DynamicCounterNode.counter(name, "number of allocations", 1, context);
+            DynamicCounterNode.counter("number of bytes allocated", name, size, context);
+            DynamicCounterNode.counter("number of allocations", name, 1, context);
         }
     }
 
@@ -276,6 +276,8 @@ public class NewObjectSnippets implements Snippets {
                      */
                     return allocateInstanceHelper(layoutHelper, nonNullHub, prototypeMarkWord, fillContents, threadRegister, false, "", options, counters);
                 }
+            } else {
+                DeoptimizeNode.deopt(DeoptimizationAction.None, DeoptimizationReason.RuntimeConstraint);
             }
         }
         return dynamicNewInstanceStub(type);

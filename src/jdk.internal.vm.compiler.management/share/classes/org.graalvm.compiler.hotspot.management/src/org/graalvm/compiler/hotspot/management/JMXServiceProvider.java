@@ -30,7 +30,7 @@ import java.lang.management.ManagementFactory;
 import java.util.List;
 
 import org.graalvm.compiler.serviceprovider.ServiceProvider;
-import org.graalvm.compiler.serviceprovider.GraalServices.JMXService;
+import org.graalvm.compiler.serviceprovider.JMXService;
 
 import com.sun.management.ThreadMXBean;
 

@@ -497,10 +497,14 @@ final class ProcessImpl extends Process {
         if (getExitCodeProcess(handle) != STILL_ACTIVE) return true;
         if (timeout <= 0) return false;
 
-        long deadline = System.nanoTime() + remainingNanos ;
+        long deadline = System.nanoTime() + remainingNanos;
         do {
             // Round up to next millisecond
             long msTimeout = TimeUnit.NANOSECONDS.toMillis(remainingNanos + 999_999L);
+            if (msTimeout < 0) {
+                // if wraps around then wait a long while
+                msTimeout = Integer.MAX_VALUE;
+            }
             waitForTimeoutInterruptibly(handle, msTimeout);
             if (Thread.interrupted())
                 throw new InterruptedException();
@@ -514,7 +518,7 @@ final class ProcessImpl extends Process {
     }
 
     private static native void waitForTimeoutInterruptibly(
-        long handle, long timeout);
+        long handle, long timeoutMillis);
 
     @Override
     public void destroy() {

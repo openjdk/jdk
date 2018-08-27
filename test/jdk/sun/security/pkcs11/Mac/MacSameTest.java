@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8048603
  * @summary Check if doFinal and update operation result in same Mac
  * @author Yu-Ching Valerie Peng, Bill Situ, Alexander Fomin
- * @library ..
+ * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm MacSameTest
  * @run main/othervm MacSameTest sm

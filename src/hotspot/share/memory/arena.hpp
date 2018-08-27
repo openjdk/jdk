@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,12 +199,18 @@ protected:
   }
 
   // Fast delete in area.  Common case is: NOP (except for storage reclaimed)
-  void Afree(void *ptr, size_t size) {
+  bool Afree(void *ptr, size_t size) {
 #ifdef ASSERT
     if (ZapResourceArea) memset(ptr, badResourceValue, size); // zap freed memory
-    if (UseMallocOnly) return;
+    if (UseMallocOnly) return true;
 #endif
-    if (((char*)ptr) + size == _hwm) _hwm = (char*)ptr;
+    if (((char*)ptr) + size == _hwm) {
+      _hwm = (char*)ptr;
+      return true;
+    } else {
+      // Unable to fast free, so we just drop it.
+      return false;
+    }
   }
 
   void *Arealloc( void *old_ptr, size_t old_size, size_t new_size,

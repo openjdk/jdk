@@ -177,7 +177,7 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
      */
     @Test
     public void test6() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, wr, new Long(referentOffset), null);
+        test2("testUnsafeLoad", UNSAFE, wr, Long.valueOf(referentOffset), null);
     }
 
     /**
@@ -186,7 +186,7 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
      */
     @Test
     public void test7() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, con, new Long(referentOffset), null);
+        test2("testUnsafeLoad", UNSAFE, con, Long.valueOf(referentOffset), null);
     }
 
     /**
@@ -196,7 +196,7 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
      */
     @Test
     public void test8() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, wr, new Long(config.useCompressedOops ? 20 : 32), null);
+        test2("testUnsafeLoad", UNSAFE, wr, Long.valueOf(config.useCompressedOops ? 20 : 32), null);
     }
 
     /**
@@ -206,7 +206,7 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
      */
     @Test
     public void test10() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, wr, new Long(config.useCompressedOops ? 6 : 8), new Integer(config.useCompressedOops ? 6 : 8));
+        test2("testUnsafeLoad", UNSAFE, wr, Long.valueOf(config.useCompressedOops ? 6 : 8), Integer.valueOf(config.useCompressedOops ? 6 : 8));
     }
 
     /**
@@ -216,7 +216,7 @@ public class WriteBarrierAdditionTest extends HotSpotGraalCompilerTest {
      */
     @Test
     public void test9() throws Exception {
-        test2("testUnsafeLoad", UNSAFE, wr, new Long(config.useCompressedOops ? 10 : 16), new Integer(config.useCompressedOops ? 10 : 16));
+        test2("testUnsafeLoad", UNSAFE, wr, Long.valueOf(config.useCompressedOops ? 10 : 16), Integer.valueOf(config.useCompressedOops ? 10 : 16));
     }
 
     static Object[] src = new Object[1];

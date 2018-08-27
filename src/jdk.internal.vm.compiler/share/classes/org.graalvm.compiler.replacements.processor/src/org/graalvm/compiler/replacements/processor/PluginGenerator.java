@@ -38,13 +38,6 @@ import java.util.function.Function;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.PackageElement;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
-import javax.lang.model.type.WildcardType;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 
@@ -106,49 +99,12 @@ public class PluginGenerator {
         }
     }
 
-    private static void appendSimpleTypeName(StringBuilder ret, TypeMirror type) {
-        switch (type.getKind()) {
-            case DECLARED:
-                DeclaredType declared = (DeclaredType) type;
-                TypeElement element = (TypeElement) declared.asElement();
-                ret.append(element.getSimpleName());
-                break;
-            case TYPEVAR:
-                appendSimpleTypeName(ret, ((TypeVariable) type).getUpperBound());
-                break;
-            case WILDCARD:
-                appendSimpleTypeName(ret, ((WildcardType) type).getExtendsBound());
-                break;
-            case ARRAY:
-                appendSimpleTypeName(ret, ((ArrayType) type).getComponentType());
-                ret.append("Array");
-                break;
-            default:
-                ret.append(type);
-        }
-    }
-
     private static void disambiguateNames(List<GeneratedPlugin> plugins) {
-        // if we have more than one method with the same name, disambiguate with the argument types
-        disambiguateWith(plugins, plugin -> {
-            StringBuilder ret = new StringBuilder(plugin.getPluginName());
-            for (VariableElement param : plugin.intrinsicMethod.getParameters()) {
-                ret.append('_');
-                appendSimpleTypeName(ret, param.asType());
-            }
-            return ret.toString();
-        });
-
-        // since we're using simple names for argument types, we could still have a collision
-        disambiguateWith(plugins, new Function<GeneratedPlugin, String>() {
-
-            private int idx = 0;
-
-            @Override
-            public String apply(GeneratedPlugin plugin) {
-                return plugin.getPluginName() + "_" + (idx++);
-            }
-        });
+        // If we have more than one method with the same name, disambiguate with a numeric suffix.
+        // We use this instead of a suffix based on argument types to mitigate hitting file name
+        // length limits. We start the suffix with "__" to make it visually stick out.
+        int[] nextId = {0};
+        disambiguateWith(plugins, plugin -> plugin.getPluginName() + "__" + nextId[0]++);
     }
 
     private static void createPluginFactory(AbstractProcessor processor, Element topLevelClass, List<GeneratedPlugin> plugins) {

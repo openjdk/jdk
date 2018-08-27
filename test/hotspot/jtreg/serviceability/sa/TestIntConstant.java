@@ -114,7 +114,7 @@ public class TestIntConstant {
                 {"CollectedHeap::G1 4",
                  "RUNNABLE 2",
                  "Deoptimization::Reason_class_check 4",
-                 "InstanceKlass::_misc_is_anonymous 32",
+                 "InstanceKlass::_misc_is_unsafe_anonymous 32",
                  "Generation::ParNew 1",
                  "_thread_uninitialized 0"};
             String[] tempConstantString = {"intConstant _temp_constant 45"};

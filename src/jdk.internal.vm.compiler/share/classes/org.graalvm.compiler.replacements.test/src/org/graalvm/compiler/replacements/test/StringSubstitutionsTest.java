@@ -102,4 +102,44 @@ public class StringSubstitutionsTest extends MethodSubstitutionTest {
         return a.equals(b);
     }
 
+    @Test
+    public void testIndexOfConstant() {
+        test("indexOfConstant");
+    }
+
+    public int indexOfConstant() {
+        String foobar = "foobar";
+        String bar = "bar";
+        return foobar.indexOf(bar);
+    }
+
+    @Test
+    public void testIndexOfConstantUTF16() {
+        test("indexOfConstantUTF16case1");
+        test("indexOfConstantUTF16case2");
+        test("indexOfConstantUTF16case3");
+    }
+
+    public int indexOfConstantUTF16case1() {
+        return ("grga " + ((char) 0x10D) + "varak").indexOf(((char) 0x10D) + "varak");
+    }
+
+    public int indexOfConstantUTF16case2() {
+        int index = ("grga " + ((char) 0xD) + "varak").indexOf(((char) 0x10D) + "varak");
+        return index;
+    }
+
+    public int indexOfConstantUTF16case3() {
+        int index = ("grga " + ((char) 0x100) + "varak").indexOf(((char) 0x10D) + "varak");
+        return index;
+    }
+
+    @Test
+    public void testCompareTo() {
+        test("compareTo");
+    }
+
+    public int compareTo() {
+        return "ofar".compareTo("rafo");
+    }
 }

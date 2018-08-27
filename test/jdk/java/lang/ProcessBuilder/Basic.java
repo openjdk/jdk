@@ -2421,6 +2421,7 @@ public class Basic {
                 public void run() {
                     try {
                         aboutToWaitFor.countDown();
+                        Thread.currentThread().interrupt();
                         boolean result = p.waitFor(30L * 1000L, TimeUnit.MILLISECONDS);
                         fail("waitFor() wasn't interrupted, its return value was: " + result);
                     } catch (InterruptedException success) {
@@ -2430,7 +2431,38 @@ public class Basic {
 
             thread.start();
             aboutToWaitFor.await();
-            Thread.sleep(1000);
+            thread.interrupt();
+            thread.join(10L * 1000L);
+            check(millisElapsedSince(start) < 10L * 1000L);
+            check(!thread.isAlive());
+            p.destroy();
+        } catch (Throwable t) { unexpected(t); }
+
+        //----------------------------------------------------------------
+        // Check that Process.waitFor(Long.MAX_VALUE, TimeUnit.MILLISECONDS)
+        // interrupt works as expected, if interrupted while waiting.
+        //----------------------------------------------------------------
+        try {
+            List<String> childArgs = new ArrayList<String>(javaChildArgs);
+            childArgs.add("sleep");
+            final Process p = new ProcessBuilder(childArgs).start();
+            final long start = System.nanoTime();
+            final CountDownLatch aboutToWaitFor = new CountDownLatch(1);
+
+            final Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        aboutToWaitFor.countDown();
+                        Thread.currentThread().interrupt();
+                        boolean result = p.waitFor(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+                        fail("waitFor() wasn't interrupted, its return value was: " + result);
+                    } catch (InterruptedException success) {
+                    } catch (Throwable t) { unexpected(t); }
+                }
+            };
+
+            thread.start();
+            aboutToWaitFor.await();
             thread.interrupt();
             thread.join(10L * 1000L);
             check(millisElapsedSince(start) < 10L * 1000L);

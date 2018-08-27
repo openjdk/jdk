@@ -46,7 +46,15 @@ public class WindowsX86CFrame extends BasicCFrame {
 
   public CFrame sender(ThreadProxy thread) {
     X86ThreadContext context = (X86ThreadContext) thread.getContext();
-    Address esp = context.getRegisterAsAddress(X86ThreadContext.ESP);
+    /*
+     * Native code fills in the stack pointer register value using index
+     * X86ThreadContext.SP.
+     * See file sawindbg.cpp macro REG_INDEX(x).
+     *
+     * Be sure to use SP, or UESP which is aliased to SP in Java code,
+     * for the frame pointer validity check.
+     */
+    Address esp = context.getRegisterAsAddress(X86ThreadContext.SP);
 
     if ( (ebp == null) || ebp.lessThan(esp) ) {
       return null;

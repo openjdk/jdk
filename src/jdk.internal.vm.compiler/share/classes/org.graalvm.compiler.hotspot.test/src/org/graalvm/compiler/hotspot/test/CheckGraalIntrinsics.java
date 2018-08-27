@@ -343,14 +343,11 @@ public class CheckGraalIntrinsics extends GraalTest {
             add(toBeInvestigated,
                             "java/lang/StringCoding.hasNegatives([BII)Z",
                             "java/lang/StringCoding.implEncodeISOArray([BI[BII)I",
-                            "java/lang/StringLatin1.equals([B[B)Z",
-                            "java/lang/StringLatin1.indexOf([BI[BII)I",
                             "java/lang/StringLatin1.indexOf([B[B)I",
                             "java/lang/StringLatin1.inflate([BI[BII)V",
                             "java/lang/StringLatin1.inflate([BI[CII)V",
                             "java/lang/StringUTF16.compress([BI[BII)I",
                             "java/lang/StringUTF16.compress([CI[BII)I",
-                            "java/lang/StringUTF16.equals([B[B)Z",
                             "java/lang/StringUTF16.getChar([BI)C",
                             "java/lang/StringUTF16.getChars([BII[CI)V",
                             "java/lang/StringUTF16.indexOf([BI[BII)I",
@@ -360,6 +357,10 @@ public class CheckGraalIntrinsics extends GraalTest {
                             "java/lang/StringUTF16.indexOfLatin1([B[B)I",
                             "java/lang/StringUTF16.putChar([BII)V",
                             "java/lang/StringUTF16.toBytes([CII)[B");
+            // These are handled through an intrinsic for String.equals itself
+            add(ignore,
+                            "java/lang/StringLatin1.equals([B[B)Z",
+                            "java/lang/StringUTF16.equals([B[B)Z");
         }
 
         if (isJDK10OrHigher()) {

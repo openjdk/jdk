@@ -104,6 +104,7 @@ final class PKCS12PBECipherCore {
             Arrays.fill(D, (byte)type);
             concat(salt, I, 0, s);
             concat(passwd, I, s, p);
+            Arrays.fill(passwd, (byte) 0x00);
 
             byte[] Ai;
             byte[] B = new byte[v];
@@ -268,87 +269,92 @@ final class PKCS12PBECipherCore {
             salt = pbeKey.getSalt(); // maybe null if unspecified
             iCount = pbeKey.getIterationCount(); // maybe 0 if unspecified
         } else if (key instanceof SecretKey) {
-            byte[] passwdBytes = key.getEncoded();
-            if ((passwdBytes == null) ||
-                !(key.getAlgorithm().regionMatches(true, 0, "PBE", 0, 3))) {
+            byte[] passwdBytes;
+            if (!(key.getAlgorithm().regionMatches(true, 0, "PBE", 0, 3)) ||
+                    (passwdBytes = key.getEncoded()) == null) {
                 throw new InvalidKeyException("Missing password");
             }
             passwdChars = new char[passwdBytes.length];
             for (int i=0; i<passwdChars.length; i++) {
                 passwdChars[i] = (char) (passwdBytes[i] & 0x7f);
             }
+            Arrays.fill(passwdBytes, (byte)0x00);
         } else {
             throw new InvalidKeyException("SecretKey of PBE type required");
         }
 
-        if (((opmode == Cipher.DECRYPT_MODE) ||
-             (opmode == Cipher.UNWRAP_MODE)) &&
-            ((params == null) && ((salt == null) || (iCount == 0)))) {
-            throw new InvalidAlgorithmParameterException
-                ("Parameters missing");
-        }
+        try {
+            if (((opmode == Cipher.DECRYPT_MODE) ||
+                    (opmode == Cipher.UNWRAP_MODE)) &&
+                    ((params == null) && ((salt == null) || (iCount == 0)))) {
+                throw new InvalidAlgorithmParameterException
+                        ("Parameters missing");
+            }
 
-        if (params == null) {
-            // generate default for salt and iteration count if necessary
-            if (salt == null) {
-                salt = new byte[DEFAULT_SALT_LENGTH];
-                if (random != null) {
-                    random.nextBytes(salt);
+            if (params == null) {
+                // generate default for salt and iteration count if necessary
+                if (salt == null) {
+                    salt = new byte[DEFAULT_SALT_LENGTH];
+                    if (random != null) {
+                        random.nextBytes(salt);
+                    } else {
+                        SunJCE.getRandom().nextBytes(salt);
+                    }
+                }
+                if (iCount == 0) iCount = DEFAULT_COUNT;
+            } else if (!(params instanceof PBEParameterSpec)) {
+                throw new InvalidAlgorithmParameterException
+                        ("PBEParameterSpec type required");
+            } else {
+                PBEParameterSpec pbeParams = (PBEParameterSpec) params;
+                // make sure the parameter values are consistent
+                if (salt != null) {
+                    if (!Arrays.equals(salt, pbeParams.getSalt())) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Inconsistent value of salt between key and params");
+                    }
                 } else {
-                    SunJCE.getRandom().nextBytes(salt);
+                    salt = pbeParams.getSalt();
+                }
+                if (iCount != 0) {
+                    if (iCount != pbeParams.getIterationCount()) {
+                        throw new InvalidAlgorithmParameterException
+                                ("Different iteration count between key and params");
+                    }
+                } else {
+                    iCount = pbeParams.getIterationCount();
                 }
             }
-            if (iCount == 0) iCount = DEFAULT_COUNT;
-        } else if (!(params instanceof PBEParameterSpec)) {
-            throw new InvalidAlgorithmParameterException
-                ("PBEParameterSpec type required");
-        } else {
-            PBEParameterSpec pbeParams = (PBEParameterSpec) params;
-            // make sure the parameter values are consistent
-            if (salt != null) {
-                if (!Arrays.equals(salt, pbeParams.getSalt())) {
-                    throw new InvalidAlgorithmParameterException
-                        ("Inconsistent value of salt between key and params");
-                }
+            // salt is recommended to be ideally as long as the output
+            // of the hash function. However, it may be too strict to
+            // force this; so instead, we'll just require the minimum
+            // salt length to be 8-byte which is what PKCS#5 recommends
+            // and openssl does.
+            if (salt.length < 8) {
+                throw new InvalidAlgorithmParameterException
+                        ("Salt must be at least 8 bytes long");
+            }
+            if (iCount <= 0) {
+                throw new InvalidAlgorithmParameterException
+                        ("IterationCount must be a positive number");
+            }
+            byte[] derivedKey = derive(passwdChars, salt, iCount,
+                    keySize, CIPHER_KEY);
+            SecretKey cipherKey = new SecretKeySpec(derivedKey, algo);
+
+            if (cipherImpl != null && cipherImpl instanceof ARCFOURCipher) {
+                ((ARCFOURCipher)cipherImpl).engineInit(opmode, cipherKey, random);
+
             } else {
-                salt = pbeParams.getSalt();
+                byte[] derivedIv = derive(passwdChars, salt, iCount, 8,
+                        CIPHER_IV);
+                IvParameterSpec ivSpec = new IvParameterSpec(derivedIv, 0, 8);
+
+                // initialize the underlying cipher
+                cipher.init(opmode, cipherKey, ivSpec, random);
             }
-            if (iCount != 0) {
-                if (iCount != pbeParams.getIterationCount()) {
-                    throw new InvalidAlgorithmParameterException
-                        ("Different iteration count between key and params");
-                }
-            } else {
-                iCount = pbeParams.getIterationCount();
-            }
-        }
-        // salt is recommended to be ideally as long as the output
-        // of the hash function. However, it may be too strict to
-        // force this; so instead, we'll just require the minimum
-        // salt length to be 8-byte which is what PKCS#5 recommends
-        // and openssl does.
-        if (salt.length < 8) {
-            throw new InvalidAlgorithmParameterException
-                ("Salt must be at least 8 bytes long");
-        }
-        if (iCount <= 0) {
-            throw new InvalidAlgorithmParameterException
-                ("IterationCount must be a positive number");
-        }
-        byte[] derivedKey = derive(passwdChars, salt, iCount,
-                                   keySize, CIPHER_KEY);
-        SecretKey cipherKey = new SecretKeySpec(derivedKey, algo);
-
-        if (cipherImpl != null && cipherImpl instanceof ARCFOURCipher) {
-            ((ARCFOURCipher)cipherImpl).engineInit(opmode, cipherKey, random);
-
-        } else {
-            byte[] derivedIv = derive(passwdChars, salt, iCount, 8,
-                                  CIPHER_IV);
-            IvParameterSpec ivSpec = new IvParameterSpec(derivedIv, 0, 8);
-
-            // initialize the underlying cipher
-            cipher.init(opmode, cipherKey, ivSpec, random);
+        } finally {
+           Arrays.fill(passwdChars, '\0');
         }
     }
 

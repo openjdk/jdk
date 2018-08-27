@@ -137,7 +137,7 @@ public abstract class Formatter {
             while ((index = format.indexOf('{', index+1)) > -1) {
                 if (index >= fence) break;
                 char digit = format.charAt(index+1);
-                if (digit >= '0' & digit <= '9') {
+                if (digit >= '0' && digit <= '9') {
                    return java.text.MessageFormat.format(format, parameters);
                 }
             }

@@ -31,7 +31,7 @@
  * @bug 6405536
  * @summary Verify that all ciphersuites work (incl. ECC using NSS crypto)
  * @author Andreas Sterbenz
- * @library .. ../../../../javax/net/ssl/TLSCommon
+ * @library /test/lib .. ../../../../javax/net/ssl/TLSCommon
  * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1"

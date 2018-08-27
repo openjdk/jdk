@@ -102,8 +102,8 @@ class Metaspace : public AllStatic {
     ZeroMetaspaceType = 0,
     StandardMetaspaceType = ZeroMetaspaceType,
     BootMetaspaceType = StandardMetaspaceType + 1,
-    AnonymousMetaspaceType = BootMetaspaceType + 1,
-    ReflectionMetaspaceType = AnonymousMetaspaceType + 1,
+    UnsafeAnonymousMetaspaceType = BootMetaspaceType + 1,
+    ReflectionMetaspaceType = UnsafeAnonymousMetaspaceType + 1,
     MetaspaceTypeCount
   };
 

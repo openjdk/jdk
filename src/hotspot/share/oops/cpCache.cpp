@@ -477,7 +477,6 @@ bool ConstantPoolCacheEntry::save_and_throw_indy_exc(
 
   Symbol* error = PENDING_EXCEPTION->klass()->name();
   Symbol* message = java_lang_Throwable::detail_message(PENDING_EXCEPTION);
-  assert(message != NULL, "Missing detail message");
 
   SystemDictionary::add_resolution_error(cpool, index, error, message);
   set_indy_resolution_failed();
@@ -778,7 +777,7 @@ oop ConstantPoolCache::archived_references() {
   if (CompressedOops::is_null(_archived_references)) {
     return NULL;
   }
-  return MetaspaceShared::materialize_archived_object(CompressedOops::decode_not_null(_archived_references));
+  return MetaspaceShared::materialize_archived_object(_archived_references);
 }
 
 void ConstantPoolCache::set_archived_references(oop o) {

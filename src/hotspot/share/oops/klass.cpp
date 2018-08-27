@@ -571,6 +571,11 @@ oop Klass::archived_java_mirror_raw() {
   return CompressedOops::decode(_archived_mirror);
 }
 
+narrowOop Klass::archived_java_mirror_raw_narrow() {
+  assert(has_raw_archived_mirror(), "must have raw archived mirror");
+  return _archived_mirror;
+}
+
 // No GC barrier
 void Klass::set_archived_java_mirror_raw(oop m) {
   assert(DumpSharedSpaces, "called only during runtime");
@@ -612,7 +617,7 @@ oop Klass::class_loader() const { return class_loader_data()->class_loader(); }
 const char* Klass::external_name() const {
   if (is_instance_klass()) {
     const InstanceKlass* ik = static_cast<const InstanceKlass*>(this);
-    if (ik->is_anonymous()) {
+    if (ik->is_unsafe_anonymous()) {
       char addr_buf[20];
       jio_snprintf(addr_buf, 20, "/" INTPTR_FORMAT, p2i(ik));
       size_t addr_len = strlen(addr_buf);

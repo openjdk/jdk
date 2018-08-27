@@ -190,8 +190,8 @@ static void pre_load_barrier(LIRAccess& access) {
   // Downgrade access to MO_UNORDERED
   decorators = (decorators & ~MO_DECORATOR_MASK) | MO_UNORDERED;
 
-  // Remove C1_WRITE_ACCESS
-  decorators = (decorators & ~C1_WRITE_ACCESS);
+  // Remove ACCESS_WRITE
+  decorators = (decorators & ~ACCESS_WRITE);
 
   // Generate synthetic load at
   access.gen()->access_load_at(decorators,

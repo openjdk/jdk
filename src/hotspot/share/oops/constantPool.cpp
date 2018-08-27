@@ -221,7 +221,7 @@ void ConstantPool::initialize_unresolved_klasses(ClassLoaderData* loader_data, T
   allocate_resolved_klasses(loader_data, num_klasses, THREAD);
 }
 
-// Anonymous class support:
+// Unsafe anonymous class support:
 void ConstantPool::klass_at_put(int class_index, int name_index, int resolved_klass_index, Klass* k, Symbol* name) {
   assert(is_within_bounds(class_index), "index out of bounds");
   assert(is_within_bounds(name_index), "index out of bounds");
@@ -243,7 +243,7 @@ void ConstantPool::klass_at_put(int class_index, int name_index, int resolved_kl
   }
 }
 
-// Anonymous class support:
+// Unsafe anonymous class support:
 void ConstantPool::klass_at_put(int class_index, Klass* k) {
   assert(k != NULL, "must be valid klass");
   CPKlassSlot kslot = klass_slot_at(class_index);
@@ -296,6 +296,11 @@ void ConstantPool::archive_resolved_references(Thread* THREAD) {
     }
 
     oop archived = MetaspaceShared::archive_heap_object(rr, THREAD);
+    // If the resolved references array is not archived (too large),
+    // the 'archived' object is NULL. No need to explicitly check
+    // the return value of archive_heap_object here. At runtime, the
+    // resolved references will be created using the normal process
+    // when there is no archived value.
     _cache->set_archived_references(archived);
     set_resolved_references(NULL);
   }
@@ -764,10 +769,14 @@ Symbol* ConstantPool::exception_message(const constantPoolHandle& this_cp, int w
 void ConstantPool::throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS) {
   Symbol* message = NULL;
   Symbol* error = SystemDictionary::find_resolution_error(this_cp, which, &message);
-  assert(error != NULL && message != NULL, "checking");
+  assert(error != NULL, "checking");
   CLEAR_PENDING_EXCEPTION;
-  ResourceMark rm;
-  THROW_MSG(error, message->as_C_string());
+  if (message != NULL) {
+    ResourceMark rm;
+    THROW_MSG(error, message->as_C_string());
+  } else {
+    THROW(error);
+  }
 }
 
 // If resolution for Class, Dynamic constant, MethodHandle or MethodType fails, save the

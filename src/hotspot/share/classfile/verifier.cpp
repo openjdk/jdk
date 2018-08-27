@@ -2823,20 +2823,20 @@ void ClassVerifier::verify_invoke_instructions(
                   current_class()->super()->name()))) {
     bool subtype = false;
     bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
-    if (!current_class()->is_anonymous()) {
+    if (!current_class()->is_unsafe_anonymous()) {
       subtype = ref_class_type.is_assignable_from(
                  current_type(), this, false, CHECK_VERIFY(this));
     } else {
-      VerificationType host_klass_type =
-                        VerificationType::reference_type(current_class()->host_klass()->name());
-      subtype = ref_class_type.is_assignable_from(host_klass_type, this, false, CHECK_VERIFY(this));
+      VerificationType unsafe_anonymous_host_type =
+                        VerificationType::reference_type(current_class()->unsafe_anonymous_host()->name());
+      subtype = ref_class_type.is_assignable_from(unsafe_anonymous_host_type, this, false, CHECK_VERIFY(this));
 
       // If invokespecial of IMR, need to recheck for same or
       // direct interface relative to the host class
       have_imr_indirect = (have_imr_indirect &&
                            !is_same_or_direct_interface(
-                             current_class()->host_klass(),
-                             host_klass_type, ref_class_type));
+                             current_class()->unsafe_anonymous_host(),
+                             unsafe_anonymous_host_type, ref_class_type));
     }
     if (!subtype) {
       verify_error(ErrorContext::bad_code(bci),
@@ -2866,15 +2866,15 @@ void ClassVerifier::verify_invoke_instructions(
     } else {   // other methods
       // Ensures that target class is assignable to method class.
       if (opcode == Bytecodes::_invokespecial) {
-        if (!current_class()->is_anonymous()) {
+        if (!current_class()->is_unsafe_anonymous()) {
           current_frame->pop_stack(current_type(), CHECK_VERIFY(this));
         } else {
           // anonymous class invokespecial calls: check if the
-          // objectref is a subtype of the host_klass of the current class
-          // to allow an anonymous class to reference methods in the host_klass
+          // objectref is a subtype of the unsafe_anonymous_host of the current class
+          // to allow an anonymous class to reference methods in the unsafe_anonymous_host
           VerificationType top = current_frame->pop_stack(CHECK_VERIFY(this));
           VerificationType hosttype =
-            VerificationType::reference_type(current_class()->host_klass()->name());
+            VerificationType::reference_type(current_class()->unsafe_anonymous_host()->name());
           bool subtype = hosttype.is_assignable_from(top, this, false, CHECK_VERIFY(this));
           if (!subtype) {
             verify_error( ErrorContext::bad_type(current_frame->offset(),

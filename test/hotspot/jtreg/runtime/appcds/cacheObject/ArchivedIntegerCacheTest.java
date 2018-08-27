@@ -137,5 +137,17 @@ public class ArchivedIntegerCacheTest {
                 "30000",
                 "false");
         TestCommon.checkExec(output);
+
+        // Test case 6)
+        // - Cache is too large to archive
+        output = TestCommon.dump(appJar,
+                TestCommon.list("CheckIntegerCacheApp"),
+                "-XX:AutoBoxCacheMax=2000000",
+                "-Xmx1g",
+                "-XX:NewSize=1g",
+                "-Xlog:cds+heap=info",
+                use_whitebox_jar);
+        TestCommon.checkDump(output,
+            "Cannot archive the sub-graph referenced from [Ljava.lang.Integer; object");
     }
 }

@@ -36,18 +36,23 @@ import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.nodeinfo.NodeCycles;
 import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.CallTargetNode.InvokeKind;
+import org.graalvm.compiler.nodes.ConstantNode;
 import org.graalvm.compiler.nodes.NodeView;
 import org.graalvm.compiler.nodes.ValueNode;
 import org.graalvm.compiler.nodes.java.LoadFieldNode;
+import org.graalvm.compiler.nodes.java.LoadIndexedNode;
 import org.graalvm.compiler.nodes.java.MonitorIdNode;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.spi.VirtualizableAllocation;
 import org.graalvm.compiler.nodes.spi.VirtualizerTool;
 import org.graalvm.compiler.nodes.util.GraphUtil;
+import org.graalvm.compiler.nodes.virtual.VirtualArrayNode;
 import org.graalvm.compiler.nodes.virtual.VirtualInstanceNode;
 import org.graalvm.compiler.nodes.virtual.VirtualObjectNode;
 
 import jdk.vm.ci.meta.Assumptions;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -104,6 +109,10 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
         return LoadFieldNode.create(assumptions, originalAlias, field);
     }
 
+    protected LoadIndexedNode genLoadIndexedNode(Assumptions assumptions, ValueNode originalAlias, ValueNode index, JavaKind elementKind) {
+        return new LoadIndexedNode(assumptions, originalAlias, index, null, elementKind);
+    }
+
     @Override
     public void virtualize(VirtualizerTool tool) {
         ValueNode originalAlias = tool.getAlias(getObject());
@@ -120,18 +129,45 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
             }
         } else {
             ResolvedJavaType type = getConcreteType(originalAlias.stamp(NodeView.DEFAULT));
-            if (type != null && !type.isArray()) {
+            if (type == null) {
+                return;
+            }
+            if (!type.isArray()) {
                 VirtualInstanceNode newVirtual = createVirtualInstanceNode(type, true);
                 ResolvedJavaField[] fields = newVirtual.getFields();
 
                 ValueNode[] state = new ValueNode[fields.length];
-                final LoadFieldNode[] loads = new LoadFieldNode[fields.length];
                 for (int i = 0; i < fields.length; i++) {
-                    state[i] = loads[i] = genLoadFieldNode(graph().getAssumptions(), originalAlias, fields[i]);
-                    tool.addNode(loads[i]);
+                    LoadFieldNode load = genLoadFieldNode(graph().getAssumptions(), originalAlias, fields[i]);
+                    state[i] = load;
+                    tool.addNode(load);
                 }
                 tool.createVirtualObject(newVirtual, state, Collections.<MonitorIdNode> emptyList(), false);
                 tool.replaceWithVirtual(newVirtual);
+            } else {
+                ValueNode length = findLength(FindLengthMode.SEARCH_ONLY, tool.getConstantReflectionProvider());
+                if (length == null) {
+                    return;
+                }
+                ValueNode lengthAlias = tool.getAlias(length);
+                if (!lengthAlias.isConstant()) {
+                    return;
+                }
+                int constantLength = lengthAlias.asJavaConstant().asInt();
+                if (constantLength >= 0 && constantLength < tool.getMaximumEntryCount()) {
+                    ValueNode[] state = new ValueNode[constantLength];
+                    ResolvedJavaType componentType = type.getComponentType();
+                    for (int i = 0; i < constantLength; i++) {
+                        ConstantNode index = ConstantNode.forInt(i);
+                        LoadIndexedNode load = genLoadIndexedNode(graph().getAssumptions(), originalAlias, index, componentType.getJavaKind());
+                        state[i] = load;
+                        tool.addNode(index);
+                        tool.addNode(load);
+                    }
+                    VirtualObjectNode virtualObject = new VirtualArrayNode(componentType, constantLength);
+                    tool.createVirtualObject(virtualObject, state, Collections.<MonitorIdNode> emptyList(), false);
+                    tool.replaceWithVirtual(virtualObject);
+                }
             }
         }
     }
@@ -141,7 +177,7 @@ public abstract class BasicObjectCloneNode extends MacroStateSplitNode implement
     }
 
     @Override
-    public ValueNode findLength(ArrayLengthProvider.FindLengthMode mode) {
-        return GraphUtil.arrayLength(getObject(), mode);
+    public ValueNode findLength(FindLengthMode mode, ConstantReflectionProvider constantReflection) {
+        return GraphUtil.arrayLength(getObject(), mode, constantReflection);
     }
 }
