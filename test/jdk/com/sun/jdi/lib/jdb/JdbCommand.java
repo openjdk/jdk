@@ -148,4 +148,48 @@ public class JdbCommand {
         return new JdbCommand("stop at " + targetClass + ":" + lineNum);
     }
 
+    public static JdbCommand step() {
+        return new JdbCommand("step");
+    }
+    public static JdbCommand stepUp() {
+        return new JdbCommand("step up");
+    }
+
+    public static JdbCommand print(String expr) {
+        return new JdbCommand("print " + expr);
+    }
+
+    public static JdbCommand set(String lvalue, String expr) {
+        return new JdbCommand("set " + lvalue + " = " + expr);
+    }
+
+    // trace [go] methods [thread]
+    //                           -- trace method entries and exits.
+    //                           -- All threads are suspended unless 'go' is specified
+    // trace [go] method exit | exits [thread]
+    //                           -- trace the current method's exit, or all methods' exits
+    //                           -- All threads are suspended unless 'go' is specified
+    // untrace [methods]         -- stop tracing method entrys and/or exits
+    public static JdbCommand trace(boolean go, String  mode, Integer threadId) {
+        return new JdbCommand(" trace"
+                + (go ? " go" : "")
+                + (mode != null ? " " + mode : "")
+                + (threadId != null ? " " + threadId.toString() : ""));
+    }
+    // prints trace status
+    public static JdbCommand trace() {
+        return trace(false, null, null);
+    }
+    public static JdbCommand traceMethods(boolean go, Integer threadId) {
+        return trace(go, "methods", threadId);
+    }
+    public static JdbCommand traceMethodExit(boolean go, Integer threadId) {
+        return trace(go, "method exit", threadId);
+    }
+    public static JdbCommand traceMethodExits(boolean go, Integer threadId) {
+        return trace(go, "method exits", threadId);
+    }
+    public static JdbCommand untrace() {
+        return new JdbCommand("untrace");
+    }
 }
