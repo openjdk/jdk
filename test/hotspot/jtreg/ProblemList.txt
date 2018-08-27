@@ -92,6 +92,7 @@ runtime/MemberName/MemberNameLeak.java 8209844 generic-all
 serviceability/sa/ClhsdbAttach.java 8193639 solaris-all
 serviceability/sa/ClhsdbCDSCore.java 8193639 solaris-all
 serviceability/sa/ClhsdbCDSJstackPrintAll.java 8193639 solaris-all
+serviceability/sa/CDSJMapClstats.java 8193639 solaris-all
 serviceability/sa/ClhsdbField.java 8193639 solaris-all
 serviceability/sa/ClhsdbFindPC.java 8193639 solaris-all
 serviceability/sa/ClhsdbFlags.java 8193639 solaris-all
