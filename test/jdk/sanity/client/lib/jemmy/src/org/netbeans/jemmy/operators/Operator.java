@@ -693,7 +693,7 @@ public abstract class Operator
      * defined by {@code "ComponentOperator.WaitStateTimeout"}
      */
     public void waitState(final ComponentChooser state) {
-        Waiter<String, Void> stateWaiter = new Waiter<>(new Waitable<String, Void>() {
+        waitState(new Waitable<String, Void>() {
             @Override
             public String actionProduced(Void obj) {
                 return state.checkComponent(getSource()) ? "" : null;
@@ -710,13 +710,20 @@ public abstract class Operator
                 return "Operator.waitState.Waitable{description = " + getDescription() + '}';
             }
         });
-        stateWaiter.setTimeoutsToCloneOf(getTimeouts(), "ComponentOperator.WaitStateTimeout");
+    }
+
+    public <R> R waitState(Waitable<R, Void> waitable) {
+        Waiter<R, Void> stateWaiter = new Waiter<>(waitable);
+        stateWaiter.setTimeoutsToCloneOf(getTimeouts(),
+                "ComponentOperator.WaitStateTimeout");
         stateWaiter.setOutput(getOutput().createErrorOutput());
         try {
-            stateWaiter.waitAction(null);
+            return stateWaiter.waitAction(null);
         } catch (InterruptedException e) {
-            throw (new JemmyException("Waiting of \"" + state.getDescription()
-                    + "\" state has been interrupted!"));
+            Thread.currentThread().interrupt();
+            throw (new JemmyException(
+                    "Waiting of \"" + waitable.getDescription()
+                            + "\" state has been interrupted!"));
         }
     }
 

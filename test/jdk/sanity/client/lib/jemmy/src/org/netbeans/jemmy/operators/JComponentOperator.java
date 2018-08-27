@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import javax.swing.event.AncestorListener;
 
 import org.netbeans.jemmy.ComponentChooser;
 import org.netbeans.jemmy.ComponentSearcher;
-import org.netbeans.jemmy.JemmyProperties;
 import org.netbeans.jemmy.Outputable;
 import org.netbeans.jemmy.TestOut;
 import org.netbeans.jemmy.TimeoutExpiredException;
@@ -307,15 +306,7 @@ public class JComponentOperator extends ContainerOperator<Container>
     }
 
     public JToolTip waitToolTip() {
-        return ((JToolTip) waitComponent(WindowOperator.
-                waitWindow(new JToolTipWindowFinder(),
-                        0,
-                        getTimeouts(),
-                        getOutput()),
-                new JToolTipFinder(),
-                0,
-                getTimeouts(),
-                getOutput()));
+        return JToolTipOperator.waitJToolTip(this);
     }
 
     /**
@@ -1228,61 +1219,4 @@ public class JComponentOperator extends ContainerOperator<Container>
         }
     }
 
-    static class JToolTipWindowFinder implements ComponentChooser {
-
-        ComponentChooser ppFinder;
-
-        public JToolTipWindowFinder() {
-            ppFinder = new ComponentChooser() {
-                @Override
-                public boolean checkComponent(Component comp) {
-                    return (comp.isShowing()
-                            && comp.isVisible()
-                            && comp instanceof JToolTip);
-                }
-
-                @Override
-                public String getDescription() {
-                    return "A tool tip";
-                }
-
-                @Override
-                public String toString() {
-                    return "JComponentOperator.JToolTipWindowFinder.ComponentChooser{description = " + getDescription() + '}';
-                }
-            };
-        }
-
-        @Override
-        public boolean checkComponent(Component comp) {
-            if (comp.isShowing() && comp instanceof Window) {
-                ComponentSearcher cs = new ComponentSearcher((Container) comp);
-                cs.setOutput(JemmyProperties.getCurrentOutput().createErrorOutput());
-                return (cs.findComponent(ppFinder)
-                        != null);
-            }
-            return false;
-        }
-
-        @Override
-        public String getDescription() {
-            return "A tool tip window";
-        }
-
-        @Override
-        public String toString() {
-            return "JToolTipWindowFinder{" + "ppFinder=" + ppFinder + '}';
-        }
-    }
-
-    class JToolTipFinder extends Finder {
-
-        public JToolTipFinder(ComponentChooser sf) {
-            super(JToolTip.class, sf);
-        }
-
-        public JToolTipFinder() {
-            super(JToolTip.class);
-        }
-    }
 }
