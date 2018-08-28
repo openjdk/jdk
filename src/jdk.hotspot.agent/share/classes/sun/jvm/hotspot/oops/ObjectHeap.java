@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,53 +50,6 @@ public class ObjectHeap {
     DEBUG = System.getProperty("sun.jvm.hotspot.oops.ObjectHeap.DEBUG") != null;
   }
 
-  private Address              boolArrayKlassHandle;
-  private Address              byteArrayKlassHandle;
-  private Address              charArrayKlassHandle;
-  private Address              intArrayKlassHandle;
-  private Address              shortArrayKlassHandle;
-  private Address              longArrayKlassHandle;
-  private Address              singleArrayKlassHandle;
-  private Address              doubleArrayKlassHandle;
-
-  private TypeArrayKlass         boolArrayKlassObj;
-  private TypeArrayKlass         byteArrayKlassObj;
-  private TypeArrayKlass         charArrayKlassObj;
-  private TypeArrayKlass         intArrayKlassObj;
-  private TypeArrayKlass         shortArrayKlassObj;
-  private TypeArrayKlass         longArrayKlassObj;
-  private TypeArrayKlass         singleArrayKlassObj;
-  private TypeArrayKlass         doubleArrayKlassObj;
-
-  public void initialize(TypeDataBase db) throws WrongTypeException {
-    // Lookup the roots in the object hierarchy.
-    Type universeType = db.lookupType("Universe");
-
-    boolArrayKlassHandle      = universeType.getAddressField("_boolArrayKlassObj").getValue();
-    boolArrayKlassObj         = new TypeArrayKlass(boolArrayKlassHandle);
-
-    byteArrayKlassHandle      = universeType.getAddressField("_byteArrayKlassObj").getValue();
-    byteArrayKlassObj         = new TypeArrayKlass(byteArrayKlassHandle);
-
-    charArrayKlassHandle      = universeType.getAddressField("_charArrayKlassObj").getValue();
-    charArrayKlassObj         = new TypeArrayKlass(charArrayKlassHandle);
-
-    intArrayKlassHandle       = universeType.getAddressField("_intArrayKlassObj").getValue();
-    intArrayKlassObj          = new TypeArrayKlass(intArrayKlassHandle);
-
-    shortArrayKlassHandle     = universeType.getAddressField("_shortArrayKlassObj").getValue();
-    shortArrayKlassObj        = new TypeArrayKlass(shortArrayKlassHandle);
-
-    longArrayKlassHandle      = universeType.getAddressField("_longArrayKlassObj").getValue();
-    longArrayKlassObj         = new TypeArrayKlass(longArrayKlassHandle);
-
-    singleArrayKlassHandle    = universeType.getAddressField("_singleArrayKlassObj").getValue();
-    singleArrayKlassObj       = new TypeArrayKlass(singleArrayKlassHandle);
-
-    doubleArrayKlassHandle    = universeType.getAddressField("_doubleArrayKlassObj").getValue();
-    doubleArrayKlassObj       = new TypeArrayKlass(doubleArrayKlassHandle);
-  }
-
   public ObjectHeap(TypeDataBase db) throws WrongTypeException {
     // Get commonly used sizes of basic types
     oopSize     = VM.getVM().getOopSize();
@@ -108,8 +61,6 @@ public class ObjectHeap {
     longSize    = db.getJLongType().getSize();
     floatSize   = db.getJFloatType().getSize();
     doubleSize  = db.getJDoubleType().getSize();
-
-    initialize(db);
   }
 
   /** Comparison operation for oops, either or both of which may be null */
@@ -138,30 +89,6 @@ public class ObjectHeap {
   public long getLongSize()    { return longSize;    }
   public long getFloatSize()   { return floatSize;   }
   public long getDoubleSize()  { return doubleSize;  }
-
-  // Accessors for well-known system classes (from Universe)
-  public TypeArrayKlass         getBoolArrayKlassObj()         { return boolArrayKlassObj; }
-  public TypeArrayKlass         getByteArrayKlassObj()         { return byteArrayKlassObj; }
-  public TypeArrayKlass         getCharArrayKlassObj()         { return charArrayKlassObj; }
-  public TypeArrayKlass         getIntArrayKlassObj()          { return intArrayKlassObj; }
-  public TypeArrayKlass         getShortArrayKlassObj()        { return shortArrayKlassObj; }
-  public TypeArrayKlass         getLongArrayKlassObj()         { return longArrayKlassObj; }
-  public TypeArrayKlass         getSingleArrayKlassObj()       { return singleArrayKlassObj; }
-  public TypeArrayKlass         getDoubleArrayKlassObj()       { return doubleArrayKlassObj; }
-
-  /** Takes a BasicType and returns the corresponding primitive array
-      klass */
-  public Klass typeArrayKlassObj(int t) {
-    if (t == BasicType.getTBoolean()) return getBoolArrayKlassObj();
-    if (t == BasicType.getTChar())    return getCharArrayKlassObj();
-    if (t == BasicType.getTFloat())   return getSingleArrayKlassObj();
-    if (t == BasicType.getTDouble())  return getDoubleArrayKlassObj();
-    if (t == BasicType.getTByte())    return getByteArrayKlassObj();
-    if (t == BasicType.getTShort())   return getShortArrayKlassObj();
-    if (t == BasicType.getTInt())     return getIntArrayKlassObj();
-    if (t == BasicType.getTLong())    return getLongArrayKlassObj();
-    throw new RuntimeException("Illegal basic type " + t);
-  }
 
   /** an interface to filter objects while walking heap */
   public static interface ObjectFilter {

@@ -412,7 +412,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(sizeof(Symbol));
 
   // Dump/restore miscellaneous metadata.
-  Universe::serialize(soc, true);
+  Universe::serialize(soc);
   soc->do_tag(--tag);
 
   // Dump/restore references to commonly used names and signatures.

@@ -83,16 +83,8 @@
 #include "utilities/preserveException.hpp"
 
 // Known objects
-Klass* Universe::_boolArrayKlassObj                 = NULL;
-Klass* Universe::_byteArrayKlassObj                 = NULL;
-Klass* Universe::_charArrayKlassObj                 = NULL;
-Klass* Universe::_intArrayKlassObj                  = NULL;
-Klass* Universe::_shortArrayKlassObj                = NULL;
-Klass* Universe::_longArrayKlassObj                 = NULL;
-Klass* Universe::_singleArrayKlassObj               = NULL;
-Klass* Universe::_doubleArrayKlassObj               = NULL;
-Klass* Universe::_typeArrayKlassObjs[T_VOID+1]      = { NULL /*, NULL...*/ };
-Klass* Universe::_objectArrayKlassObj               = NULL;
+Klass* Universe::_typeArrayKlassObjs[T_LONG+1]        = { NULL /*, NULL...*/ };
+Klass* Universe::_objectArrayKlassObj                 = NULL;
 oop Universe::_int_mirror                             = NULL;
 oop Universe::_float_mirror                           = NULL;
 oop Universe::_double_mirror                          = NULL;
@@ -176,7 +168,7 @@ void Universe::basic_type_classes_do(KlassClosure *closure) {
   }
 }
 
-void Universe::oops_do(OopClosure* f, bool do_all) {
+void Universe::oops_do(OopClosure* f) {
 
   f->do_oop((oop*) &_int_mirror);
   f->do_oop((oop*) &_float_mirror);
@@ -220,15 +212,7 @@ void LatestMethodCache::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
-  it->push(&_boolArrayKlassObj);
-  it->push(&_byteArrayKlassObj);
-  it->push(&_charArrayKlassObj);
-  it->push(&_intArrayKlassObj);
-  it->push(&_shortArrayKlassObj);
-  it->push(&_longArrayKlassObj);
-  it->push(&_singleArrayKlassObj);
-  it->push(&_doubleArrayKlassObj);
-  for (int i = 0; i < T_VOID+1; i++) {
+  for (int i = 0; i < T_LONG+1; i++) {
     it->push(&_typeArrayKlassObjs[i]);
   }
   it->push(&_objectArrayKlassObj);
@@ -248,29 +232,13 @@ void Universe::metaspace_pointers_do(MetaspaceClosure* it) {
 }
 
 // Serialize metadata and pointers to primitive type mirrors in and out of CDS archive
-void Universe::serialize(SerializeClosure* f, bool do_all) {
+void Universe::serialize(SerializeClosure* f) {
 
-  f->do_ptr((void**)&_boolArrayKlassObj);
-  f->do_ptr((void**)&_byteArrayKlassObj);
-  f->do_ptr((void**)&_charArrayKlassObj);
-  f->do_ptr((void**)&_intArrayKlassObj);
-  f->do_ptr((void**)&_shortArrayKlassObj);
-  f->do_ptr((void**)&_longArrayKlassObj);
-  f->do_ptr((void**)&_singleArrayKlassObj);
-  f->do_ptr((void**)&_doubleArrayKlassObj);
-  f->do_ptr((void**)&_objectArrayKlassObj);
-
-  {
-    for (int i = 0; i < T_VOID+1; i++) {
-      if (_typeArrayKlassObjs[i] != NULL) {
-        assert(i >= T_BOOLEAN, "checking");
-        f->do_ptr((void**)&_typeArrayKlassObjs[i]);
-      } else if (do_all) {
-        f->do_ptr((void**)&_typeArrayKlassObjs[i]);
-      }
-    }
+  for (int i = 0; i < T_LONG+1; i++) {
+    f->do_ptr((void**)&_typeArrayKlassObjs[i]);
   }
 
+  f->do_ptr((void**)&_objectArrayKlassObj);
 #if INCLUDE_CDS_JAVA_HEAP
   // The mirrors are NULL if MetaspaceShared::is_heap_object_archiving_allowed
   // is false.
@@ -333,23 +301,9 @@ void Universe::genesis(TRAPS) {
       compute_base_vtable_size();
 
       if (!UseSharedSpaces) {
-        _boolArrayKlassObj      = TypeArrayKlass::create_klass(T_BOOLEAN, sizeof(jboolean), CHECK);
-        _charArrayKlassObj      = TypeArrayKlass::create_klass(T_CHAR,    sizeof(jchar),    CHECK);
-        _singleArrayKlassObj    = TypeArrayKlass::create_klass(T_FLOAT,   sizeof(jfloat),   CHECK);
-        _doubleArrayKlassObj    = TypeArrayKlass::create_klass(T_DOUBLE,  sizeof(jdouble),  CHECK);
-        _byteArrayKlassObj      = TypeArrayKlass::create_klass(T_BYTE,    sizeof(jbyte),    CHECK);
-        _shortArrayKlassObj     = TypeArrayKlass::create_klass(T_SHORT,   sizeof(jshort),   CHECK);
-        _intArrayKlassObj       = TypeArrayKlass::create_klass(T_INT,     sizeof(jint),     CHECK);
-        _longArrayKlassObj      = TypeArrayKlass::create_klass(T_LONG,    sizeof(jlong),    CHECK);
-
-        _typeArrayKlassObjs[T_BOOLEAN] = _boolArrayKlassObj;
-        _typeArrayKlassObjs[T_CHAR]    = _charArrayKlassObj;
-        _typeArrayKlassObjs[T_FLOAT]   = _singleArrayKlassObj;
-        _typeArrayKlassObjs[T_DOUBLE]  = _doubleArrayKlassObj;
-        _typeArrayKlassObjs[T_BYTE]    = _byteArrayKlassObj;
-        _typeArrayKlassObjs[T_SHORT]   = _shortArrayKlassObj;
-        _typeArrayKlassObjs[T_INT]     = _intArrayKlassObj;
-        _typeArrayKlassObjs[T_LONG]    = _longArrayKlassObj;
+        for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
+          _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
+        }
 
         ClassLoaderData* null_cld = ClassLoaderData::the_null_class_loader_data();
 
@@ -389,7 +343,7 @@ void Universe::genesis(TRAPS) {
 
     initialize_basic_type_klass(boolArrayKlassObj(), CHECK);
     initialize_basic_type_klass(charArrayKlassObj(), CHECK);
-    initialize_basic_type_klass(singleArrayKlassObj(), CHECK);
+    initialize_basic_type_klass(floatArrayKlassObj(), CHECK);
     initialize_basic_type_klass(doubleArrayKlassObj(), CHECK);
     initialize_basic_type_klass(byteArrayKlassObj(), CHECK);
     initialize_basic_type_klass(shortArrayKlassObj(), CHECK);

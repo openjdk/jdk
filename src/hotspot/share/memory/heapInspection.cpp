@@ -88,7 +88,7 @@ const char* KlassInfoEntry::name() const {
   } else {
     if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
     if (_klass == Universe::charArrayKlassObj())         name = "<charArrayKlass>";         else
-    if (_klass == Universe::singleArrayKlassObj())       name = "<singleArrayKlass>";       else
+    if (_klass == Universe::floatArrayKlassObj())        name = "<floatArrayKlass>";        else
     if (_klass == Universe::doubleArrayKlassObj())       name = "<doubleArrayKlass>";       else
     if (_klass == Universe::byteArrayKlassObj())         name = "<byteArrayKlass>";         else
     if (_klass == Universe::shortArrayKlassObj())        name = "<shortArrayKlass>";        else

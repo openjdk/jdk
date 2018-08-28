@@ -372,14 +372,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* Universe */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-     static_field(Universe,                    _boolArrayKlassObj,                            Klass*)                                \
-     static_field(Universe,                    _byteArrayKlassObj,                            Klass*)                                \
-     static_field(Universe,                    _charArrayKlassObj,                            Klass*)                                \
-     static_field(Universe,                    _intArrayKlassObj,                             Klass*)                                \
-     static_field(Universe,                    _shortArrayKlassObj,                           Klass*)                                \
-     static_field(Universe,                    _longArrayKlassObj,                            Klass*)                                \
-     static_field(Universe,                    _singleArrayKlassObj,                          Klass*)                                \
-     static_field(Universe,                    _doubleArrayKlassObj,                          Klass*)                                \
      static_field(Universe,                    _mirrors[0],                                   oop)                                   \
      static_field(Universe,                    _main_thread_group,                            oop)                                   \
      static_field(Universe,                    _system_thread_group,                          oop)                                   \

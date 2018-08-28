@@ -112,16 +112,7 @@ class Universe: AllStatic {
 
  private:
   // Known classes in the VM
-  static Klass* _boolArrayKlassObj;
-  static Klass* _byteArrayKlassObj;
-  static Klass* _charArrayKlassObj;
-  static Klass* _intArrayKlassObj;
-  static Klass* _shortArrayKlassObj;
-  static Klass* _longArrayKlassObj;
-  static Klass* _singleArrayKlassObj;
-  static Klass* _doubleArrayKlassObj;
-  static Klass* _typeArrayKlassObjs[T_VOID+1];
-
+  static Klass* _typeArrayKlassObjs[T_LONG+1];
   static Klass* _objectArrayKlassObj;
 
   // Known objects in the VM
@@ -270,21 +261,20 @@ class Universe: AllStatic {
 
  public:
   // Known classes in the VM
-  static Klass* boolArrayKlassObj()                 { return _boolArrayKlassObj;   }
-  static Klass* byteArrayKlassObj()                 { return _byteArrayKlassObj;   }
-  static Klass* charArrayKlassObj()                 { return _charArrayKlassObj;   }
-  static Klass* intArrayKlassObj()                  { return _intArrayKlassObj;    }
-  static Klass* shortArrayKlassObj()                { return _shortArrayKlassObj;  }
-  static Klass* longArrayKlassObj()                 { return _longArrayKlassObj;   }
-  static Klass* singleArrayKlassObj()               { return _singleArrayKlassObj; }
-  static Klass* doubleArrayKlassObj()               { return _doubleArrayKlassObj; }
+  static Klass* boolArrayKlassObj()                 { return typeArrayKlassObj(T_BOOLEAN); }
+  static Klass* byteArrayKlassObj()                 { return typeArrayKlassObj(T_BYTE); }
+  static Klass* charArrayKlassObj()                 { return typeArrayKlassObj(T_CHAR); }
+  static Klass* intArrayKlassObj()                  { return typeArrayKlassObj(T_INT); }
+  static Klass* shortArrayKlassObj()                { return typeArrayKlassObj(T_SHORT); }
+  static Klass* longArrayKlassObj()                 { return typeArrayKlassObj(T_LONG); }
+  static Klass* floatArrayKlassObj()                { return typeArrayKlassObj(T_FLOAT); }
+  static Klass* doubleArrayKlassObj()               { return typeArrayKlassObj(T_DOUBLE); }
 
-  static Klass* objectArrayKlassObj() {
-    return _objectArrayKlassObj;
-  }
+  static Klass* objectArrayKlassObj()               { return _objectArrayKlassObj; }
 
   static Klass* typeArrayKlassObj(BasicType t) {
-    assert((uint)t < T_VOID+1, "range check for type: %s", type2name(t));
+    assert((uint)t >= T_BOOLEAN, "range check for type: %s", type2name(t));
+    assert((uint)t < T_LONG+1,   "range check for type: %s", type2name(t));
     assert(_typeArrayKlassObjs[t] != NULL, "domain check");
     return _typeArrayKlassObjs[t];
   }
@@ -374,17 +364,6 @@ class Universe: AllStatic {
   static oop out_of_memory_error_gc_overhead_limit()  { return gen_out_of_memory_error(_out_of_memory_error_gc_overhead_limit);  }
   static oop out_of_memory_error_realloc_objects()    { return gen_out_of_memory_error(_out_of_memory_error_realloc_objects);  }
   static oop delayed_stack_overflow_error_message()   { return _delayed_stack_overflow_error_message; }
-
-  // Accessors needed for fast allocation
-  static Klass** boolArrayKlassObj_addr()           { return &_boolArrayKlassObj;   }
-  static Klass** byteArrayKlassObj_addr()           { return &_byteArrayKlassObj;   }
-  static Klass** charArrayKlassObj_addr()           { return &_charArrayKlassObj;   }
-  static Klass** intArrayKlassObj_addr()            { return &_intArrayKlassObj;    }
-  static Klass** shortArrayKlassObj_addr()          { return &_shortArrayKlassObj;  }
-  static Klass** longArrayKlassObj_addr()           { return &_longArrayKlassObj;   }
-  static Klass** singleArrayKlassObj_addr()         { return &_singleArrayKlassObj; }
-  static Klass** doubleArrayKlassObj_addr()         { return &_doubleArrayKlassObj; }
-  static Klass** objectArrayKlassObj_addr()         { return &_objectArrayKlassObj; }
 
   // The particular choice of collected heap.
   static CollectedHeap* heap() { return _collectedHeap; }
@@ -478,10 +457,10 @@ class Universe: AllStatic {
 
   // Apply "f" to the addresses of all the direct heap pointers maintained
   // as static fields of "Universe".
-  static void oops_do(OopClosure* f, bool do_all = false);
+  static void oops_do(OopClosure* f);
 
   // CDS support
-  static void serialize(SerializeClosure* f, bool do_all = false);
+  static void serialize(SerializeClosure* f);
 
   // Apply "f" to all klasses for basic types (classes not present in
   // SystemDictionary).
