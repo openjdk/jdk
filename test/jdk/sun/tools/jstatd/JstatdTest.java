@@ -28,11 +28,11 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
 
-import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.thread.ProcessThread;
 import static jdk.testlibrary.Asserts.*;
 import jdk.testlibrary.JDKToolLauncher;
 import jdk.testlibrary.Utils;
+import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 
 /**
@@ -328,7 +328,7 @@ public final class JstatdTest {
         }
 
         // Verify output from jstatd
-        OutputAnalyzer output = jstatdThread.getOutput();
+        jdk.test.lib.process.OutputAnalyzer output = jstatdThread.getOutput();
         assertTrue(output.getOutput().isEmpty(),
                 "jstatd should get an empty output, got: "
                 + Utils.NEW_LINE + output.getOutput());
