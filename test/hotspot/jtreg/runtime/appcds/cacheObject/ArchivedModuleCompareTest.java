@@ -50,16 +50,11 @@ public class ArchivedModuleCompareTest {
                         TestCommon.list("PrintSystemModulesApp"));
         TestCommon.checkDump(output);
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                                 "-cp", appJar,
-                                 "-Xshare:off",
-                                 "PrintSystemModulesApp");
-        output = TestCommon.executeAndLog(pb, "print.system.module.share.off");
+        output = TestCommon.execOff("-cp", appJar, "PrintSystemModulesApp");
         output.shouldHaveExitValue(0);
         String bootModules1 = output.getStdout();
 
-        output = TestCommon.exec(appJar,
-                                 "PrintSystemModulesApp");
+        output = TestCommon.exec(appJar, "PrintSystemModulesApp");
         TestCommon.checkExec(output);
         if (output.getStderr().contains("sharing")) {
             String bootModules2 = output.getStdout();
@@ -70,11 +65,9 @@ public class ArchivedModuleCompareTest {
         // Verify --show-module-resolution output with the output from
         // -Xshare:off run
         System.out.println("---------------- Test case 2 -----------------");
-        pb = ProcessTools.createJavaProcessBuilder(
-                                 "-Xshare:off",
-                                 "--show-module-resolution",
-                                 "-version");
-        output = TestCommon.executeAndLog(pb, "show.module.resolution.share.off");
+        output = TestCommon.execOff("-cp", appJar,
+                                    "--show-module-resolution",
+                                    "-version");
         output.shouldHaveExitValue(0);
         String moduleResolutionOut1 = output.getStdout();
 
