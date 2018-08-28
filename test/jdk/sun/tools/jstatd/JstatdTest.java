@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.thread.ProcessThread;
 import static jdk.testlibrary.Asserts.*;
 import jdk.testlibrary.JDKToolLauncher;
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessThread;
 import jdk.testlibrary.Utils;
 import jdk.testlibrary.ProcessTools;
 

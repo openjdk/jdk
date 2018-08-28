@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import jdk.testlibrary.ProcessThread;
+import jdk.test.lib.thread.ProcessThread;
 import jdk.testlibrary.ProcessTools;
 
 /**
@@ -49,6 +49,7 @@ import jdk.testlibrary.ProcessTools;
  *          interfaces to bind to (using plain sockets and SSL sockets).
  *
  * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.management.rmi
  *
  * @build jdk.testlibrary.* JMXAgentInterfaceBinding
