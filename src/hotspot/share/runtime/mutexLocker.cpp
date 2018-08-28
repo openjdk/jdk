@@ -76,7 +76,7 @@ Monitor* VMOperationRequest_lock      = NULL;
 Monitor* Safepoint_lock               = NULL;
 Monitor* SerializePage_lock           = NULL;
 Monitor* Threads_lock                 = NULL;
-Mutex*   NamedThreadsList_lock        = NULL;
+Mutex*   NonJavaThreadsList_lock      = NULL;
 Monitor* CGC_lock                     = NULL;
 Monitor* STS_lock                     = NULL;
 Monitor* FullGCCount_lock             = NULL;
@@ -257,7 +257,7 @@ void mutex_init() {
   def(Safepoint_lock               , PaddedMonitor, safepoint,   true,  Monitor::_safepoint_check_sometimes);  // locks SnippetCache_lock/Threads_lock
 
   def(Threads_lock                 , PaddedMonitor, barrier,     true,  Monitor::_safepoint_check_sometimes);
-  def(NamedThreadsList_lock        , PaddedMutex,   leaf,        true,  Monitor::_safepoint_check_never);
+  def(NonJavaThreadsList_lock      , PaddedMutex,   leaf,        true,  Monitor::_safepoint_check_never);
 
   def(VMOperationQueue_lock        , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_sometimes);  // VM_thread allowed to block on these
   def(VMOperationRequest_lock      , PaddedMonitor, nonleaf,     true,  Monitor::_safepoint_check_sometimes);

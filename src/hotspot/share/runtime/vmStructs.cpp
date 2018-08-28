@@ -1355,14 +1355,15 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_toplevel_type(Threads)                                          \
   declare_toplevel_type(ThreadShadow)                                     \
-           declare_type(Thread, ThreadShadow)                             \
-           declare_type(NamedThread, Thread)                              \
-           declare_type(WatcherThread, Thread)                            \
-           declare_type(JavaThread, Thread)                               \
-           declare_type(JvmtiAgentThread, JavaThread)                     \
-           declare_type(ServiceThread, JavaThread)                        \
-  declare_type(CompilerThread, JavaThread)                                \
-  declare_type(CodeCacheSweeperThread, JavaThread)                        \
+    declare_type(Thread, ThreadShadow)                                    \
+      declare_type(NonJavaThread, Thread)                                 \
+        declare_type(NamedThread, NonJavaThread)                          \
+        declare_type(WatcherThread, NonJavaThread)                        \
+      declare_type(JavaThread, Thread)                                    \
+        declare_type(JvmtiAgentThread, JavaThread)                        \
+        declare_type(ServiceThread, JavaThread)                           \
+        declare_type(CompilerThread, JavaThread)                          \
+        declare_type(CodeCacheSweeperThread, JavaThread)                  \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
