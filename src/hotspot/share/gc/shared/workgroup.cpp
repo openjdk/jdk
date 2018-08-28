@@ -462,7 +462,7 @@ void SubTasksDone::all_tasks_completed(uint n_threads) {
 
 
 SubTasksDone::~SubTasksDone() {
-  if (_tasks != NULL) FREE_C_HEAP_ARRAY(jint, _tasks);
+  if (_tasks != NULL) FREE_C_HEAP_ARRAY(uint, _tasks);
 }
 
 // *** SequentialSubTasksDone
