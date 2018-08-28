@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import jdk.testlibrary.JcmdBase;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.Utils;
 
