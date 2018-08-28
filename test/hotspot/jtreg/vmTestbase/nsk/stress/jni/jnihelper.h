@@ -23,11 +23,11 @@
 
 // Asserts every exception as fatal one
 #define CE {\
-    if ((*env)->ExceptionOccurred(env))\
+    if (env->ExceptionOccurred())\
     {\
-        puts("Unexpected JNI exception. TEST FAIL.");     \
-        (*env)->ExceptionDescribe(env);                   \
-        (*env)->ExceptionClear(env);\
-        (*env)->FatalError(env, "Unexpected JNI Exception. TEST FAIL."); \
+        puts("Unexpected JNI exception. TEST FAIL.");\
+        env->ExceptionDescribe();\
+        env->ExceptionClear();\
+        env->FatalError("Unexpected JNI Exception. TEST FAIL.");\
     }\
 }

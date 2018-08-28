@@ -80,7 +80,7 @@ int nsk_jvmti_aod_disableEvents(jvmtiEnv* jvmti, jvmtiEvent events[], int events
 
 jthread nsk_jvmti_aod_createThread(JNIEnv *jni);
 
-jthread nsk_jvmti_aod_createThreadWithName(JNIEnv *jni, char* threadName);
+jthread nsk_jvmti_aod_createThreadWithName(JNIEnv *jni, const char* threadName);
 
 // class redefinition
 

@@ -29,8 +29,8 @@
 
 #define JNI_VERSION JNI_VERSION_1_1
 
-#define EXCEPTION_CLEAR (*env)->ExceptionClear(env)
-#define EXCEPTION_OCCURRED (*env)->ExceptionOccurred(env)
+#define EXCEPTION_CLEAR NSK_CPP_STUB1(ExceptionClear, env)
+#define EXCEPTION_OCCURRED NSK_CPP_STUB1(ExceptionOccurred, env)
 
 // Check for pending exception of the specified type
 // If it's present, then clear it
