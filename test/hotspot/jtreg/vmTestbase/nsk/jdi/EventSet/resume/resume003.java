@@ -48,9 +48,9 @@ import java.io.*;
  * To check up on the method, a debugger,                       <BR>
  * upon getting new set for the EventSet,                       <BR>
  * suspends VM with the method VirtualMachine.suspend(),        <BR>
- * gets the List of geduggee's threads calling VM.allThreads(), <BR>
+ * gets the List of debuggee's threads calling VM.allThreads(), <BR>
  * invokes the method EventSet.resume(), and                    <BR>
- * gets another List of geduggee's threads.                     <BR>
+ * gets another List of debuggee's threads.                     <BR>
  * The debugger then compares values of                         <BR>
  * each thread's suspendCount from first and second Lists.      <BR>
  * <BR>
@@ -87,12 +87,12 @@ import java.io.*;
 
 public class resume003 {
 
-    //----------------------------------------------------- templete section
+    //----------------------------------------------------- template section
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int PASS_BASE = 95;
 
-    //----------------------------------------------------- templete parameters
+    //----------------------------------------------------- template parameters
     static final String
     sHeader1 = "\n==> nsk/jdi/EventSet/resume/resume003 ",
     sHeader2 = "--> debugger: ",
@@ -503,6 +503,8 @@ public class resume003 {
 
             log2("......--> vm.resume()");
             vm.resume();
+            informDebuggeeTestCase(i);
+
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         }
         log1("    TESTING ENDS");
@@ -642,5 +644,22 @@ public class resume003 {
             throw new JDITestRuntimeException("** FAILURE to set up ModificationWatchpointRequest **");
         }
     }
-
+    /**
+     * Inform debuggee which thread test the debugger has completed.
+     * Used for synchronization, so the debuggee does not move too quickly.
+     * @param testCase index of just completed test
+     */
+    void informDebuggeeTestCase(int testCase) {
+        try {
+            ((ClassType)debuggeeClass)
+                .setValue(debuggeeClass.fieldByName("testCase"),
+                          vm.mirrorOf(testCase));
+        } catch (InvalidTypeException ite) {
+            throw new Failure("** FAILURE setting testCase  **");
+        } catch (ClassNotLoadedException cnle) {
+            throw new Failure("** FAILURE notifying debuggee  **");
+        } catch (VMDisconnectedException e) {
+            throw new Failure("** FAILURE debuggee connection **");
+        }
+    }
 }

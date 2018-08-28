@@ -33,7 +33,7 @@ import nsk.share.jdi.*;
 
 public class resume008a {
 
-    //----------------------------------------------------- templete section
+    //----------------------------------------------------- template section
 
     static final int PASSED = 0;
     static final int FAILED = 2;
@@ -62,6 +62,7 @@ public class resume008a {
 
     static int exitCode = PASSED;
 
+    static int testCase    = -1;
     static int instruction = 1;
     static int end         = 0;
                                    //    static int quit        = 0;
@@ -70,6 +71,7 @@ public class resume008a {
 
     static int lineForComm = 2;
 
+    // Debugger sets a breakpoint here to track debuggee
     private static void methodForCommunication() {
         int i1 = instruction;
         int i2 = i1;
@@ -85,47 +87,38 @@ public class resume008a {
         log1("debuggee started!");
 
         label0:
-            for (int i = 0; ; i++) {
-
-                if (instruction > maxInstr) {
-                    logErr("ERROR: unexpected instruction: " + instruction);
-                    exitCode = FAILED;
-                    break ;
-                }
-
-                switch (i) {
-
-    //------------------------------------------------------  section tested
-
-                    case 0:
-                            thread0 = new Threadresume008a("thread0");
-                            methodForCommunication();
-
-                            threadStart(thread0);
-
-                            thread1 = new Threadresume008a("thread1");
-                            methodForCommunication();
-                            break;
-
-                    case 1:
-                            threadStart(thread1);
-
-                            thread2 = new Threadresume008a("thread2");
-                            methodForCommunication();
-                            break;
-
-                    case 2:
-                            threadStart(thread2);
-
-    //-------------------------------------------------    standard end section
-
-                    default:
-                                instruction = end;
-                                methodForCommunication();
-                                break label0;
-                }
+        for (int i = 0; ; i++) {
+            if (instruction > maxInstr) {
+                logErr("ERROR: unexpected instruction: " + instruction);
+                exitCode = FAILED;
+                break ;
             }
-
+            switch (i) {
+    //------------------------------------------------------  section tested
+            case 0:
+                thread0 = new Threadresume008a("thread0");
+                methodForCommunication();
+                threadStart(thread0);
+                thread1 = new Threadresume008a("thread1");
+                // Wait for debugger to complete the first test case
+                // before advancing to the first breakpoint
+                waitForTestCase(0);
+                methodForCommunication();
+                break;
+            case 1:
+                threadStart(thread1);
+                thread2 = new Threadresume008a("thread2");
+                methodForCommunication();
+                break;
+            case 2:
+                threadStart(thread2);
+            //-------------------------------------------------    standard end section
+            default:
+                instruction = end;
+                methodForCommunication();
+                break label0;
+            }
+        }
         log1("debuggee exits");
         System.exit(exitCode + PASS_BASE);
     }
@@ -145,24 +138,29 @@ public class resume008a {
         }
         return PASSED;
     }
-
+    // Synchronize with debugger progression.
+    static void waitForTestCase(int t) {
+        while (testCase < t) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // ignored
+            }
+        }
+    }
     static class Threadresume008a extends Thread {
-
         String tName = null;
-
         public Threadresume008a(String threadName) {
             super(threadName);
             tName = threadName;
         }
-
         public void run() {
             log1("  'run': enter  :: threadName == " + tName);
             synchronized (waitnotifyObj) {
-                    waitnotifyObj.notify();
+                waitnotifyObj.notify();
             }
             log1("  'run': exit   :: threadName == " + tName);
             return;
         }
     }
-
 }
