@@ -80,7 +80,7 @@
     "columnNumber": "15",
     "kind": "ERROR",
     "position": "15",
-    "message": "test.js:1:15 Unclosed group near index 9\n([a-z])+(\n         ^\n    /([a-z])+(/;\n               ^",
+    "message": "test.js:1:15 Unclosed group near index 9\n([a-z])+(\n    /([a-z])+(/;\n               ^",
     "lineNumber": "1"
   },
   {
