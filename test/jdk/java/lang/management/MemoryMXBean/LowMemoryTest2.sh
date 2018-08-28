@@ -54,12 +54,12 @@ go() {
 # Run test with each GC configuration
 #
 # Notes: To ensure that metaspace fills up we disable class unloading.
-# Also we set the max metaspace to 16MB - otherwise the test takes too
-# long to run.
+# Also we set the max metaspace to 16MB/32MB - otherwise the test takes too
+# long to run. The 32MB setting is required for running with CDS archive.
 
-go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseSerialGC LowMemoryTest2
-go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseParallelGC LowMemoryTest2
-go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseConcMarkSweepGC LowMemoryTest2
+go -noclassgc -XX:MaxMetaspaceSize=32m -XX:+UseSerialGC LowMemoryTest2
+go -noclassgc -XX:MaxMetaspaceSize=32m -XX:+UseParallelGC LowMemoryTest2
+go -noclassgc -XX:MaxMetaspaceSize=32m -XX:+UseConcMarkSweepGC LowMemoryTest2
 
 # Test class metaspace - might hit MaxMetaspaceSize instead if
 # UseCompressedClassPointers is off or if 32 bit.
