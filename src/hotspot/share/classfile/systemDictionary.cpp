@@ -89,6 +89,9 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 PlaceholderTable*      SystemDictionary::_placeholders        = NULL;
 Dictionary*            SystemDictionary::_shared_dictionary   = NULL;
@@ -1856,6 +1859,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer,
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
     unloading_occurred = ClassLoaderDataGraph::do_unloading(do_cleaning);
     if (unloading_occurred) {
+      JFR_ONLY(Jfr::on_unloading_classes();)
       ClassLoaderDataGraph::clean_module_and_package_info();
     }
   }

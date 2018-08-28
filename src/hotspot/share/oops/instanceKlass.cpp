@@ -80,6 +80,10 @@
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
+
 
 #ifdef DTRACE_ENABLED
 
@@ -2423,6 +2427,14 @@ void InstanceKlass::notify_unload_class(InstanceKlass* ik) {
 
   // notify ClassLoadingService of class unload
   ClassLoadingService::notify_class_unloaded(ik);
+
+#if INCLUDE_JFR
+  assert(ik != NULL, "invariant");
+  EventClassUnload event;
+  event.set_unloadedClass(ik);
+  event.set_definingClassLoader(ik->class_loader_data());
+  event.commit();
+#endif
 }
 
 void InstanceKlass::release_C_heap_structures(InstanceKlass* ik) {
