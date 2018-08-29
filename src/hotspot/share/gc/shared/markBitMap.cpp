@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,40 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/shared/markBitMap.inline.hpp"
 #include "memory/virtualspace.hpp"
 
-void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
-  MarkBitMap::initialize(heap, storage->reserved());
-  storage->set_mapping_changed_listener(&_listener);
+void MarkBitMap::print_on_error(outputStream* st, const char* prefix) const {
+  _bm.print_on_error(st, prefix);
 }
 
-void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_regions, bool zero_filled) {
-  if (zero_filled) {
-    return;
-  }
-  // We need to clear the bitmap on commit, removing any existing information.
-  MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
-  _bm->clear_range(mr);
+size_t MarkBitMap::compute_size(size_t heap_size) {
+  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
 }
 
-void G1CMBitMap::clear_region(HeapRegion* region) {
- if (!region->is_empty()) {
-   MemRegion mr(region->bottom(), region->top());
-   clear_range(mr);
- }
+size_t MarkBitMap::mark_distance() {
+  return MinObjAlignmentInBytes * BitsPerByte;
+}
+
+void MarkBitMap::initialize(MemRegion heap, MemRegion storage) {
+  _covered = heap;
+
+  _bm = BitMapView((BitMap::bm_word_t*) storage.start(), _covered.word_size() >> _shifter);
+}
+
+void MarkBitMap::clear_range(MemRegion mr) {
+  MemRegion intersection = mr.intersection(_covered);
+  assert(!intersection.is_empty(),
+         "Given range from " PTR_FORMAT " to " PTR_FORMAT " is completely outside the heap",
+         p2i(mr.start()), p2i(mr.end()));
+  // convert address range into offset range
+  _bm.at_put_range(addr_to_offset(intersection.start()),
+                   addr_to_offset(intersection.end()), false);
 }
 
 #ifdef ASSERT
-void G1CMBitMap::check_mark(HeapWord* addr) {
-  assert(G1CollectedHeap::heap()->is_in_exact(addr),
+void MarkBitMap::check_mark(HeapWord* addr) {
+  assert(Universe::heap()->is_in_reserved(addr),
          "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
          p2i(this), p2i(addr));
 }
