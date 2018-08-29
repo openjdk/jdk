@@ -76,9 +76,6 @@ void ZArguments::initialize() {
   }
 #endif
 
-  // To avoid asserts in set_active_workers()
-  FLAG_SET_DEFAULT(UseDynamicNumberOfGCThreads, true);
-
   // CompressedOops/UseCompressedClassPointers not supported
   FLAG_SET_DEFAULT(UseCompressedOops, false);
   FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
