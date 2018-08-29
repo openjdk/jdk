@@ -70,13 +70,28 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
     protected final int bitsPerLimb;
     private final long[] posModLimbs;
 
-    // must work when a==r
+    /**
+     * Multiply an IntegerPolynomial representation (a) with a long (b) and
+     * store the result in an IntegerPolynomial representation (r). Requires
+     * that a.length == r.length == numLimbs. It is allowed for a and r to be
+     * the same array.
+     */
     protected abstract void multByInt(long[] a, long b, long[] r);
 
-    // must work when a==r
+    /**
+     * Multiply two IntegerPolynomial representations (a and b) and store the
+     * result in an IntegerPolynomial representation (r). Requires that
+     * a.length == b.length == r.length == numLimbs. It is allowed for a and r
+     * to be the same array.
+     */
     protected abstract void mult(long[] a, long[] b, long[] r);
 
-    // must work when a==r
+    /**
+     * Multiply an IntegerPolynomial representation (a) with itself and store
+     * the result in an IntegerPolynomialRepresentation (r). Requires that
+     * a.length == r.length == numLimbs. It is allowed for a and r
+     * to be the same array.
+     */
     protected abstract void square(long[] a, long[] r);
 
     IntegerPolynomial(int bitsPerLimb,
@@ -240,7 +255,9 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         carry(limbs, 0, limbs.length - 1);
     }
 
-    // carry out of the specified position and return the carry value
+    /**
+     * Carry out of the specified position and return the carry value.
+     */
     protected long carryOut(long[] limbs, int index) {
         long carry = carryValue(limbs[index]);
         limbs[index] -= (carry << bitsPerLimb);
@@ -261,9 +278,20 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         }
     }
 
+    /**
+     * Carry out of the last limb and reduce back in. This method will be
+     * called as part of the "finalReduce" operation that puts the
+     * representation into a fully-reduced form. It is representation-
+     * specific, because representations have different amounts of empty
+     * space in the high-order limb. Requires that limbs.length=numLimbs.
+     */
     protected abstract void finalCarryReduceLast(long[] limbs);
 
-    // Convert reduced limbs into a number between 0 and MODULUS-1
+    /**
+     * Convert reduced limbs into a number between 0 and MODULUS-1.
+     * Requires that limbs.length == numLimbs. This method only works if the
+     * modulus has at most three terms.
+     */
     protected void finalReduce(long[] limbs) {
 
         // This method works by doing several full carry/reduce operations.
@@ -313,8 +341,10 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
 
     }
 
-    // v must be final reduced. I.e. all limbs in [0, bitsPerLimb)
-    // and value in [0, modulus)
+    /**
+     * Decode the value in v and store it in dst. Requires that v is final
+     * reduced. I.e. all limbs in [0, 2^bitsPerLimb) and value in [0, modulus).
+     */
     protected void decode(long[] v, byte[] dst, int offset, int length) {
 
         int nextLimbIndex = 0;
@@ -344,12 +374,25 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         }
     }
 
+    /**
+     * Add two IntegerPolynomial representations (a and b) and store the result
+     * in an IntegerPolynomialRepresentation (dst). Requires that
+     * a.length == b.length == dst.length. It is allowed for a and
+     * dst to be the same array.
+     */
     protected void addLimbs(long[] a, long[] b, long[] dst) {
         for (int i = 0; i < dst.length; i++) {
             dst[i] = a[i] + b[i];
         }
     }
 
+    /**
+     * Branch-free conditional swap of a and b. Requires that swap is 0 or 1,
+     * and that a.length == b.length. If swap==0, then the values of a and b
+     * will be unchanged. If swap==1, then the values of a and b will be
+     * swapped. The behavior is undefined if swap has any value other than
+     * 0 or 1.
+     */
     protected static void conditionalSwap(int swap, long[] a, long[] b) {
         int maskValue = 0 - swap;
         for (int i = 0; i < a.length; i++) {
@@ -359,6 +402,9 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         }
     }
 
+    /**
+     * Stores the reduced, little-endian value of limbs in result.
+     */
     protected void limbsToByteArray(long[] limbs, byte[] result) {
 
         long[] reducedLimbs = limbs.clone();
@@ -367,6 +413,11 @@ public abstract class IntegerPolynomial implements IntegerFieldModuloP {
         decode(reducedLimbs, result, 0, result.length);
     }
 
+    /**
+     * Add the reduced number corresponding to limbs and other, and store
+     * the low-order bytes of the sum in result. Requires that
+     * limbs.length==other.length. The result array may have any length.
+     */
     protected void addLimbsModPowerTwo(long[] limbs, long[] other,
                                        byte[] result) {
 

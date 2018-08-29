@@ -186,7 +186,7 @@ public class XDHKeyAgreement extends KeyAgreementSpi {
             throw new IllegalStateException("Not initialized correctly");
         }
         int secretLen = this.secret.length;
-        if (offset + secretLen > sharedSecret.length) {
+        if (secretLen > sharedSecret.length - offset) {
             throw new ShortBufferException("Need " + secretLen
                 + " bytes, only " + (sharedSecret.length - offset)
                 + " available");
