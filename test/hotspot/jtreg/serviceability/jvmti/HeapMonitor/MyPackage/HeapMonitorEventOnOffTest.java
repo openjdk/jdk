@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,7 +48,7 @@ public class HeapMonitorEventOnOffTest {
   private static void checkEventsAreBeingSent() {
     List<Frame> frameList = HeapMonitor.repeatAllocate(5);
 
-    frameList.add(new Frame("checkEventsAreBeingSent", "()V", "HeapMonitorEventOnOffTest.java", 48));
+    frameList.add(new Frame("checkEventsAreBeingSent", "()V", "HeapMonitorEventOnOffTest.java", 49));
     Frame[] frames = frameList.toArray(new Frame[0]);
 
     // Check that the data is available while heap sampling is enabled.
