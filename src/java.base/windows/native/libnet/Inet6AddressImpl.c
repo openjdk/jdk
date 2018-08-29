@@ -396,7 +396,7 @@ ping6(JNIEnv *env, HANDLE hIcmpFile, SOCKETADDRESS *sa,
     ReplyBuffer = (VOID *)malloc(ReplySize);
     if (ReplyBuffer == NULL) {
         IcmpCloseHandle(hIcmpFile);
-        NET_ThrowNew(env, WSAGetLastError(), "Unable to allocate memory");
+        NET_ThrowNew(env, -1, "Unable to allocate memory");
         return JNI_FALSE;
     }
 
