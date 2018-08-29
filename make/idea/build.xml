@@ -1,7 +1,7 @@
 <!-- importing.xml -->
-<project name="jdk" basedir="../..">
+<project name="jdk">
 
-    <script language="javascript" classpath=".idea/classes">
+    <script language="javascript" classpath="${idea.dir}/classes">
         var JdkLogger = Java.type("idea.JdkIdeaAntLogger");
         new JdkLogger(project)
     </script>

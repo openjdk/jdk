@@ -6,7 +6,7 @@
   <component name="antWorkspaceConfiguration">
     <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
     <option name="FILTER_TARGETS" value="false" />
-    <buildFile url="file://$PROJECT_DIR$/.idea/build.xml">
+    <buildFile url="file://$PROJECT_DIR$/make/langtools/intellij/build.xml">
       <runInBackground value="false" />
       <targetFilters>
         <filter targetName="build-all-tools" isVisible="true" />

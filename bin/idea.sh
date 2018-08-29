@@ -68,11 +68,8 @@ mkdir $IDEA_OUTPUT || exit 1
 cd $IDEA_OUTPUT; IDEA_OUTPUT=`pwd`
 
 MAKE_DIR="$SCRIPT_DIR/../make"
-SUPPORT_DIR="$SCRIPT_DIR/../build/.idea-support"
 IDEA_MAKE="$MAKE_DIR/idea"
 IDEA_TEMPLATE="$IDEA_MAKE/template"
-
-mkdir -p $SUPPORT_DIR
 
 cp -r "$IDEA_TEMPLATE"/* "$IDEA_OUTPUT"
 
@@ -126,11 +123,6 @@ fi
 if [ "x$SPEC" = "x" ] ; then
   echo "FATAL: SPEC is empty" >&2; exit 1
 fi
-
-# move build.xml out of .idea, see IDEA-189915
-IDEA_BUILD_OLD=$IDEA_BUILD
-IDEA_BUILD=$SUPPORT_DIR/build.xml
-mv $IDEA_BUILD_OLD $IDEA_BUILD
 
 SOURCE_FOLDER="      <sourceFolder url=\"file://\$MODULE_DIR\$/####\" isTestSource=\"false\" />"
 SOURCE_FOLDERS_DONE="false"

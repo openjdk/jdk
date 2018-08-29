@@ -9,7 +9,7 @@
     <jre alt="true" value="@IDEA_TARGET_JDK@" />
     <options>@XPATCH@</options>
     <ant>
-      <target file="file://$PROJECT_DIR$/build/.idea-support/build.xml" name="build-all-classes" />
+      <target file="file://$PROJECT_DIR$/make/langtools/intellij/build.xml" name="build-all-classes" />
     </ant>
   </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" assert-keyword="true" jdk-15="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">

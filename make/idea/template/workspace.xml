@@ -11,24 +11,11 @@
   <component name="antWorkspaceConfiguration">
     <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
     <option name="FILTER_TARGETS" value="false" />
-    <buildFile url="file://$PROJECT_DIR$/.idea/build.xml">
+    <buildFile url="file://$PROJECT_DIR$/make/idea/build.xml">
       <runInBackground value="false" />
       <targetFilters>
-        <filter targetName="post-make" isVisible="false" />
         <filter targetName="clean" isVisible="true" />
-        <filter targetName="-do-configure" isVisible="false" />
         <filter targetName="images" isVisible="true" />
-        <filter targetName="build-module" isVisible="true" />
-        <filter targetName="jtreg-debug" isVisible="false" />
-        <filter targetName="jtreg-debug-internal" isVisible="false" />
-        <filter targetName="jtreg" isVisible="false" />
-        <filter targetName="-check-jtreg.home" isVisible="false" />
-        <filter targetName="-def-check" isVisible="false" />
-        <filter targetName="-def-jtreg" isVisible="false" />
-        <filter targetName="-check-boot.java.home" isVisible="false" />
-        <filter targetName="-check-target.java.home" isVisible="false" />
-        <filter targetName="find-jdk-build-dir" isVisible="false" />
-        <filter targetName="check-env" isVisible="false" />
       </targetFilters>
       <treeView value="false" />
       <expanded value="true" />

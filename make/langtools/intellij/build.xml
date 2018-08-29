@@ -1,12 +1,12 @@
 <!-- importing.xml -->
-<project name="langtools" basedir="../..">
+<project name="langtools" basedir = "../../..">
 
-    <script language="javascript" classpath=".idea/classes">
+    <script language="javascript" classpath="${idea.dir}/classes">
         var LangtoolsLogger = Java.type("idea.LangtoolsIdeaAntLogger");
         new LangtoolsLogger(project)
     </script>
 
-    <import file="../../make/langtools/build.xml"/>
+    <import file="../build.xml"/>
 
     <target name="cond-clean" unless="${intellij.ismake}">
         <antcall target="clean"/>
