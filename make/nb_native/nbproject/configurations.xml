@@ -2843,8 +2843,6 @@
               <in>elfStringTable.hpp</in>
               <in>elfSymbolTable.cpp</in>
               <in>elfSymbolTable.hpp</in>
-              <in>errorReporter.cpp</in>
-              <in>errorReporter.hpp</in>
               <in>events.cpp</in>
               <in>events.hpp</in>
               <in>exceptions.cpp</in>
@@ -15162,16 +15160,6 @@
             flavor2="0">
       </item>
       <item path="../../src/hotspot/share/utilities/elfSymbolTable.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../src/hotspot/share/utilities/errorReporter.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../src/hotspot/share/utilities/errorReporter.hpp"
             ex="false"
             tool="3"
             flavor2="0">
@@ -28944,16 +28932,6 @@
             flavor2="0">
       </item>
       <item path="../../src/hotspot/share/utilities/elfSymbolTable.hpp"
-            ex="false"
-            tool="3"
-            flavor2="0">
-      </item>
-      <item path="../../src/hotspot/share/utilities/errorReporter.cpp"
-            ex="false"
-            tool="1"
-            flavor2="0">
-      </item>
-      <item path="../../src/hotspot/share/utilities/errorReporter.hpp"
             ex="false"
             tool="3"
             flavor2="0">

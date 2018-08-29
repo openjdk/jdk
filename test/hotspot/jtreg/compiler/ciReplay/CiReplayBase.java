@@ -65,7 +65,7 @@ public abstract class CiReplayBase {
         "-XX:MetaspaceSize=4m", "-XX:MaxMetaspaceSize=16m", "-XX:InitialCodeCacheSize=512k",
         "-XX:ReservedCodeCacheSize=4m", "-XX:ThreadStackSize=512", "-XX:VMThreadStackSize=512",
         "-XX:CompilerThreadStackSize=512", "-XX:ParallelGCThreads=1", "-XX:CICompilerCount=2",
-        "-Xcomp", "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError", "-XX:-TransmitErrorReport",
+        "-Xcomp", "-XX:CICrashAt=1", "-XX:+DumpReplayDataOnError",
         "-XX:+PreferInterpreterNativeStubs", "-XX:+PrintCompilation", REPLAY_FILE_OPTION};
     private static final String[] REPLAY_OPTIONS = new String[]{DISABLE_COREDUMP_ON_CRASH,
         "-XX:+ReplayCompiles", REPLAY_FILE_OPTION};

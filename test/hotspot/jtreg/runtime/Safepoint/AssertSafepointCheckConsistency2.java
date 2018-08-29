@@ -50,7 +50,6 @@ public class AssertSafepointCheckConsistency2 {
                   "-Xbootclasspath/a:.",
                   "-XX:+UnlockDiagnosticVMOptions",
                   "-XX:+WhiteBoxAPI",
-                  "-XX:-TransmitErrorReport",
                   "-XX:-CreateCoredumpOnCrash",
                   "-Xmx128m",
                   "AssertSafepointCheckConsistency2",

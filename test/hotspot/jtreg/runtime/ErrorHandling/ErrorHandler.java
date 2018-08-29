@@ -43,7 +43,7 @@ public class ErrorHandler {
         // The -XX:ErrorHandlerTest=N option requires debug bits.
         return new OutputAnalyzer(
             ProcessTools.createJavaProcessBuilder(
-            "-XX:-TransmitErrorReport", "-XX:-CreateCoredumpOnCrash", "-XX:ErrorHandlerTest=" + testcase)
+            "-XX:-CreateCoredumpOnCrash", "-XX:ErrorHandlerTest=" + testcase)
             .start());
     }
 
