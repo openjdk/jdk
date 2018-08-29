@@ -1,0 +1,2 @@
+SwitchObject.java:10:16: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: java.lang.Object, int)
+1 error

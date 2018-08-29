@@ -1,0 +1,7 @@
+SwitchExpressionScopesIsolated.java:13:25: compiler.err.cant.resolve.location: kindname.variable, res, , , (compiler.misc.location: kindname.class, SwitchExpressionScopesIsolated, null)
+SwitchExpressionScopesIsolated.java:13:41: compiler.err.cant.resolve.location: kindname.variable, res, , , (compiler.misc.location: kindname.class, SwitchExpressionScopesIsolated, null)
+SwitchExpressionScopesIsolated.java:14:26: compiler.err.cant.resolve.location: kindname.variable, res, , , (compiler.misc.location: kindname.class, SwitchExpressionScopesIsolated, null)
+SwitchExpressionScopesIsolated.java:14:42: compiler.err.cant.resolve.location: kindname.variable, res, , , (compiler.misc.location: kindname.class, SwitchExpressionScopesIsolated, null)
+- compiler.note.preview.filename: SwitchExpressionScopesIsolated.java
+- compiler.note.preview.recompile
+4 errors

@@ -82,6 +82,9 @@ import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
+import com.sun.source.tree.CaseTree;
+import com.sun.source.util.TreePathScanner;
+
 public class JavacParserTest extends TestCase {
     static final JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
     static final JavaFileManager fm = tool.getStandardFileManager(null, null, null);
@@ -1034,6 +1037,135 @@ public class JavacParserTest extends TestCase {
             fail("haven't found a variable");
         }
 
+        String actualErrors = normalize(out.toString());
+        assertEquals("the error message is not correct, actual: " + actualErrors, expectedErrors, actualErrors);
+    }
+
+    @Test
+    void testCaseBodyStatements() throws IOException {
+        String code = "class C {" +
+                      "    void t(int i) {" +
+                      "        switch (i) {" +
+                      "            case 0 -> i++;" +
+                      "            case 1 -> { i++; }" +
+                      "            case 2 -> throw new RuntimeException();" +
+                      "            case 3 -> if (true) ;" +
+                      "            default -> i++;" +
+                      "        }" +
+                      "        switch (i) {" +
+                      "            case 0: i++; break;" +
+                      "            case 1: { i++; break;}" +
+                      "            case 2: throw new RuntimeException();" +
+                      "            case 3: if (true) ; break;" +
+                      "            default: i++; break;" +
+                      "        }" +
+                      "        int j = switch (i) {" +
+                      "            case 0 -> i + 1;" +
+                      "            case 1 -> { break i + 1; }" +
+                      "            default -> throw new RuntimeException();" +
+                      "        };" +
+                      "        int k = switch (i) {" +
+                      "            case 0: break i + 1;" +
+                      "            case 1: { break i + 1; }" +
+                      "            default: throw new RuntimeException();" +
+                      "        };" +
+                      "    }" +
+                      "}";
+        String expectedErrors = "Test.java:1:178: compiler.err.switch.case.unexpected.statement\n";
+        StringWriter out = new StringWriter();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null,
+                Arrays.asList("-XDrawDiagnostics", "--enable-preview", "-source", "12"),
+                null, Arrays.asList(new MyFileObject(code)));
+
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        Trees trees = Trees.instance(ct);
+        List<String> spans = new ArrayList<>();
+
+        new TreePathScanner<Void, Void>() {
+            @Override
+            public Void visitCase(CaseTree tree, Void v) {
+                if (tree.getBody() != null) {
+                    int start = (int) trees.getSourcePositions().getStartPosition(cut, tree.getBody());
+                    int end = (int) trees.getSourcePositions().getEndPosition(cut, tree.getBody());
+                    spans.add(code.substring(start, end));
+                } else {
+                    spans.add("<null>");
+                }
+                return super.visitCase(tree, v);
+            }
+        }.scan(cut, null);
+
+        List<String> expectedSpans = List.of(
+                "i++;", "{ i++; }", "throw new RuntimeException();", "if (true) ;", "i++;",
+                "<null>", "<null>", "<null>", "<null>", "<null>",
+                "i + 1"/*TODO semicolon?*/, "{ break i + 1; }", "throw new RuntimeException();",
+                "<null>", "<null>", "<null>");
+        assertEquals("the error spans are not correct; actual:" + spans, expectedSpans, spans);
+        String toString = normalize(cut.toString());
+        String expectedToString =
+                "\n" +
+                "class C {\n" +
+                "    \n" +
+                "    void t(int i) {\n" +
+                "        switch (i) {\n" +
+                "        case 0 -> i++;\n" +
+                "        case 1 -> {\n" +
+                "            i++;\n" +
+                "        }\n" +
+                "        case 2 -> throw new RuntimeException();\n" +
+                "        case 3 -> if (true) ;\n" +
+                "        default -> i++;\n" +
+                "        }\n" +
+                "        switch (i) {\n" +
+                "        case 0:\n" +
+                "            i++;\n" +
+                "            break;\n" +
+                "        \n" +
+                "        case 1:\n" +
+                "            {\n" +
+                "                i++;\n" +
+                "                break;\n" +
+                "            }\n" +
+                "        \n" +
+                "        case 2:\n" +
+                "            throw new RuntimeException();\n" +
+                "        \n" +
+                "        case 3:\n" +
+                "            if (true) ;\n" +
+                "            break;\n" +
+                "        \n" +
+                "        default:\n" +
+                "            i++;\n" +
+                "            break;\n" +
+                "        \n" +
+                "        }\n" +
+                "        int j = switch (i) {\n" +
+                "        case 0 -> break i + 1;\n" +
+                "        case 1 -> {\n" +
+                "            break i + 1;\n" +
+                "        }\n" +
+                "        default -> throw new RuntimeException();\n" +
+                "        };\n" +
+                "        int k = switch (i) {\n" +
+                "        case 0:\n" +
+                "            break i + 1;\n" +
+                "        \n" +
+                "        case 1:\n" +
+                "            {\n" +
+                "                break i + 1;\n" +
+                "            }\n" +
+                "        \n" +
+                "        default:\n" +
+                "            throw new RuntimeException();\n" +
+                "        \n" +
+                "        };\n" +
+                "    }\n" +
+                "}";
+        System.err.println("toString:");
+        System.err.println(toString);
+        System.err.println("expectedToString:");
+        System.err.println(expectedToString);
+        assertEquals("the error spans are not correct; actual:" + toString, expectedToString, toString);
         String actualErrors = normalize(out.toString());
         assertEquals("the error message is not correct, actual: " + actualErrors, expectedErrors, actualErrors);
     }

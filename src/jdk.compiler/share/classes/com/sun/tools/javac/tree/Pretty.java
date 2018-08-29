@@ -27,6 +27,7 @@ package com.sun.tools.javac.tree;
 
 import java.io.*;
 
+import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 import com.sun.tools.javac.code.*;
@@ -835,18 +836,43 @@ public class Pretty extends JCTree.Visitor {
 
     public void visitCase(JCCase tree) {
         try {
-            if (tree.pat == null) {
+            if (tree.pats.isEmpty()) {
                 print("default");
             } else {
                 print("case ");
-                printExpr(tree.pat);
+                printExprs(tree.pats);
             }
-            print(": ");
+            if (tree.caseKind == JCCase.STATEMENT) {
+                print(":");
+                println();
+                indent();
+                printStats(tree.stats);
+                undent();
+                align();
+            } else {
+                print(" -> ");
+                printStat(tree.stats.head);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitSwitchExpression(JCSwitchExpression tree) {
+        try {
+            print("switch ");
+            if (tree.selector.hasTag(PARENS)) {
+                printExpr(tree.selector);
+            } else {
+                print("(");
+                printExpr(tree.selector);
+                print(")");
+            }
+            print(" {");
             println();
-            indent();
-            printStats(tree.stats);
-            undent();
+            printStats(tree.cases);
             align();
+            print("}");
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -956,7 +982,7 @@ public class Pretty extends JCTree.Visitor {
     public void visitBreak(JCBreak tree) {
         try {
             print("break");
-            if (tree.label != null) print(" " + tree.label);
+            if (tree.value != null) print(" " + tree.value);
             print(";");
         } catch (IOException e) {
             throw new UncheckedIOException(e);

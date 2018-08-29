@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,15 @@
  * questions.
  */
 
-// key: compiler.err.neither.conditional.subtype
+// key: compiler.err.not.exhaustive
+// key: compiler.note.preview.filename
+// key: compiler.note.preview.recompile
+// options: --enable-preview -source 12
 
-class NeitherConditionalSubtype {
-    public int test(boolean cond, Object o) {
-        // Should fail to compile since Object.wait() has a void return type.
-        (o instanceof String ? o.hashCode() : o.wait()).toString();
-        return 0;
+class NotExhaustive {
+    int t(int i) {
+        return switch (i) {
+            case 0 -> -1;
+        };
     }
 }
-
-

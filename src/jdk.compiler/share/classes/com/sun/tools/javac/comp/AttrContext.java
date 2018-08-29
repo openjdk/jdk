@@ -101,6 +101,11 @@ public class AttrContext {
      */
     Attr.ResultInfo returnResult = null;
 
+    /** ResultInfo to be used for attributing 'break' statement expressions
+     * (set by Attr.visitSwitchExpression)
+     */
+    Attr.ResultInfo breakResult = null;
+
     /** Symbol corresponding to the site of a qualified default super call
      */
     Type defaultSuperCallSite = null;
@@ -124,6 +129,7 @@ public class AttrContext {
         info.lint = lint;
         info.enclVar = enclVar;
         info.returnResult = returnResult;
+        info.breakResult = breakResult;
         info.defaultSuperCallSite = defaultSuperCallSite;
         info.isSerializable = isSerializable;
         info.isLambda = isLambda;

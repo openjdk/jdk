@@ -61,6 +61,7 @@ import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCModifiers;
+import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.JCTree.Tag;
@@ -327,8 +328,8 @@ public class BoxingAndSuper {
                     if (tree.hasTag(Tag.LETEXPR)) {
                         LetExpr le = (LetExpr) tree;
 
-                        for (JCVariableDecl var : le.defs) {
-                            letExprRemap.put(var.name.toString(), "$le" + i++);
+                        for (JCStatement var : le.defs) {
+                            letExprRemap.put(((JCVariableDecl) var).name.toString(), "$le" + i++);
                         }
                     }
                     return super.visitOther(node, p);

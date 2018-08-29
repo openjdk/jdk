@@ -1154,6 +1154,18 @@ public class DeferredAttr extends JCTree.Visitor {
     }
 
     /**
+     * A tree scanner suitable for visiting the target-type dependent nodes nested
+     * within a switch expression body.
+     */
+    static class SwitchExpressionScanner extends FilterScanner {
+
+        SwitchExpressionScanner() {
+            super(EnumSet.of(BLOCK, CASE, CATCH, DOLOOP, FOREACHLOOP,
+                    FORLOOP, IF, BREAK, SYNCHRONIZED, SWITCH, TRY, WHILELOOP));
+        }
+    }
+
+    /**
      * This visitor is used to check that structural expressions conform
      * to their target - this step is required as inference could end up
      * inferring types that make some of the nested expressions incompatible

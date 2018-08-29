@@ -247,7 +247,7 @@ class CompletenessAnalyzer {
         FOR(TokenKind.FOR, XSTMT1|XSTART),  //  for
         IF(TokenKind.IF, XSTMT1|XSTART),  //  if
         RETURN(TokenKind.RETURN, XSTMT1|XTERM|XSTART),  //  return
-        SWITCH(TokenKind.SWITCH, XSTMT1|XSTART),  //  switch
+        SWITCH(TokenKind.SWITCH, XSTMT1|XEXPR),  //  switch
         SYNCHRONIZED(TokenKind.SYNCHRONIZED, XSTMT1|XDECL),  //  synchronized
         THROW(TokenKind.THROW, XSTMT1|XSTART),  //  throw
         TRY(TokenKind.TRY, XSTMT1|XSTART),  //  try

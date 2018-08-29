@@ -185,7 +185,12 @@ public class CompletenessTest extends KullaTesting {
         "int n,",
         "int[] m = {1, 2},",
         "int[] m = {1, 2}, n = {3, 4},",
-        "Map<String,"
+        "Map<String,",
+        "switch (x) {",
+        "var v = switch (x) {",
+        "var v = switch (x) { case ",
+        "var v = switch (x) { case 0:",
+        "var v = switch (x) { case 0: break 12; ",
     };
 
     static final String[] unknown = new String[] {

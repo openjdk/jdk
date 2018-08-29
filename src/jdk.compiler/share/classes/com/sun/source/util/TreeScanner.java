@@ -26,6 +26,7 @@
 package com.sun.source.util;
 
 import com.sun.source.tree.*;
+import com.sun.source.tree.CaseTree.CaseKind;
 
 /**
  * A TreeVisitor that visits all the child tree nodes.
@@ -339,11 +340,36 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @param node  {@inheritDoc}
      * @param p  {@inheritDoc}
      * @return the result of scanning
+     *
+     * @deprecated
+     * This method is modeling switch expressions,
+     * which are part of a preview feature and may be removed
+     * if the preview feature is removed.
      */
     @Override
-    public R visitCase(CaseTree node, P p) {
+    @Deprecated(forRemoval=true, since="12")
+    @SuppressWarnings("removal")
+    public R visitSwitchExpression(SwitchExpressionTree node, P p) {
         R r = scan(node.getExpression(), p);
-        r = scanAndReduce(node.getStatements(), p, r);
+        r = scanAndReduce(node.getCases(), p, r);
+        return r;
+    }
+
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
+    @Override
+    @SuppressWarnings("removal")
+    public R visitCase(CaseTree node, P p) {
+        R r = scan(node.getExpressions(), p);
+        if (node.getCaseKind() == CaseKind.RULE)
+            r = scanAndReduce(node.getBody(), p, r);
+        else
+            r = scanAndReduce(node.getStatements(), p, r);
         return r;
     }
 
@@ -441,8 +467,9 @@ public class TreeScanner<R,P> implements TreeVisitor<R,P> {
      * @return the result of scanning
      */
     @Override
+    @SuppressWarnings("removal")
     public R visitBreak(BreakTree node, P p) {
-        return null;
+        return scan(node.getValue(), p);
     }
 
     /**

@@ -26,7 +26,11 @@
 package com.sun.tools.javac.comp;
 
 import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
+import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
@@ -54,6 +58,10 @@ import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Symbol.OperatorSymbol.AccessCode.DEREF;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
+import com.sun.tools.javac.tree.JCTree.JCBreak;
+import com.sun.tools.javac.tree.JCTree.JCCase;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -263,6 +271,13 @@ public class Lower extends TreeTranslator {
             }
             super.visitApply(tree);
         }
+
+        @Override
+        public void visitBreak(JCBreak tree) {
+            if (tree.isValueBreak())
+                scan(tree.value);
+        }
+
     }
 
     /**
@@ -364,6 +379,7 @@ public class Lower extends TreeTranslator {
             }
             super.visitApply(tree);
         }
+
     }
 
     ClassSymbol ownerToCopyFreeVarsFrom(ClassSymbol c) {
@@ -3340,6 +3356,45 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitSwitch(JCSwitch tree) {
+        //expand multiple label cases:
+        ListBuffer<JCCase> cases = new ListBuffer<>();
+
+        for (JCCase c : tree.cases) {
+            switch (c.pats.size()) {
+                case 0: //default
+                case 1: //single label
+                    cases.append(c);
+                    break;
+                default: //multiple labels, expand:
+                    //case C1, C2, C3: ...
+                    //=>
+                    //case C1:
+                    //case C2:
+                    //case C3: ...
+                    List<JCExpression> patterns = c.pats;
+                    while (patterns.tail.nonEmpty()) {
+                        cases.append(make_at(c.pos()).Case(JCCase.STATEMENT,
+                                                           List.of(patterns.head),
+                                                           List.nil(),
+                                                           null));
+                        patterns = patterns.tail;
+                    }
+                    c.pats = patterns;
+                    cases.append(c);
+                    break;
+            }
+        }
+
+        for (JCCase c : cases) {
+            if (c.caseKind == JCCase.RULE && c.completesNormally) {
+                JCBreak b = make_at(c.pos()).Break(null);
+                b.target = tree;
+                c.stats = c.stats.append(b);
+            }
+        }
+
+        tree.cases = cases.toList();
+
         Type selsuper = types.supertype(tree.selector.type);
         boolean enumSwitch = selsuper != null &&
             (tree.selector.type.tsym.flags() & ENUM) != 0;
@@ -3371,10 +3426,10 @@ public class Lower extends TreeTranslator {
                                                              ordinalMethod)));
         ListBuffer<JCCase> cases = new ListBuffer<>();
         for (JCCase c : tree.cases) {
-            if (c.pat != null) {
-                VarSymbol label = (VarSymbol)TreeInfo.symbol(c.pat);
+            if (c.pats.nonEmpty()) {
+                VarSymbol label = (VarSymbol)TreeInfo.symbol(c.pats.head);
                 JCLiteral pat = map.forConstant(label);
-                cases.append(make.Case(pat, c.stats));
+                cases.append(make.Case(JCCase.STATEMENT, List.of(pat), c.stats, null));
             } else {
                 cases.append(c);
             }
@@ -3442,10 +3497,10 @@ public class Lower extends TreeTranslator {
             Map<Integer, Set<String>> hashToString = new LinkedHashMap<>(alternatives + 1, 1.0f);
 
             int casePosition = 0;
-            for(JCCase oneCase : caseList) {
-                JCExpression expression = oneCase.getExpression();
 
-                if (expression != null) { // expression for a "default" case is null
+            for(JCCase oneCase : caseList) {
+                if (oneCase.pats.nonEmpty()) { // pats is empty for a "default" case
+                    JCExpression expression = oneCase.pats.head;
                     String labelExpr = (String) expression.type.constValue();
                     Integer mapping = caseLabelToPosition.put(labelExpr, casePosition);
                     Assert.checkNull(mapping);
@@ -3529,7 +3584,7 @@ public class Lower extends TreeTranslator {
                 breakStmt.target = switch1;
                 lb.append(elsepart).append(breakStmt);
 
-                caseBuffer.append(make.Case(make.Literal(hashCode), lb.toList()));
+                caseBuffer.append(make.Case(JCCase.STATEMENT, List.of(make.Literal(hashCode)), lb.toList(), null));
             }
 
             switch1.cases = caseBuffer.toList();
@@ -3546,18 +3601,17 @@ public class Lower extends TreeTranslator {
                 // replacement switch being created.
                 patchTargets(oneCase, tree, switch2);
 
-                boolean isDefault = (oneCase.getExpression() == null);
+                boolean isDefault = (oneCase.pats.isEmpty());
                 JCExpression caseExpr;
                 if (isDefault)
                     caseExpr = null;
                 else {
-                    caseExpr = make.Literal(caseLabelToPosition.get((String)TreeInfo.skipParens(oneCase.
-                                                                                                getExpression()).
+                    caseExpr = make.Literal(caseLabelToPosition.get((String)TreeInfo.skipParens(oneCase.pats.head).
                                                                     type.constValue()));
                 }
 
-                lb.append(make.Case(caseExpr,
-                                    oneCase.getStatements()));
+                lb.append(make.Case(JCCase.STATEMENT, caseExpr == null ? List.nil() : List.of(caseExpr),
+                                    oneCase.getStatements(), null));
             }
 
             switch2.cases = lb.toList();
@@ -3566,6 +3620,76 @@ public class Lower extends TreeTranslator {
             return make.Block(0L, stmtList.toList());
         }
     }
+
+    @Override
+    public void visitSwitchExpression(JCSwitchExpression tree) {
+        //translates switch expression to statement switch:
+        //switch (selector) {
+        //    case C: break value;
+        //    ...
+        //}
+        //=>
+        //(letexpr T exprswitch$;
+        //         switch (selector) {
+        //             case C: { exprswitch$ = value; break; }
+        //         }
+        //         exprswitch$
+        //)
+        VarSymbol dollar_switchexpr = new VarSymbol(Flags.FINAL|Flags.SYNTHETIC,
+                           names.fromString("exprswitch" + tree.pos + target.syntheticNameChar()),
+                           tree.type,
+                           currentMethodSym);
+
+        ListBuffer<JCStatement> stmtList = new ListBuffer<>();
+
+        stmtList.append(make.at(tree.pos()).VarDef(dollar_switchexpr, null).setType(dollar_switchexpr.type));
+        JCSwitch switchStatement = make.Switch(tree.selector, null);
+        switchStatement.cases =
+                tree.cases.stream()
+                          .map(c -> convertCase(dollar_switchexpr, switchStatement, tree, c))
+                          .collect(List.collector());
+        if (tree.cases.stream().noneMatch(c -> c.pats.isEmpty())) {
+            JCThrow thr = make.Throw(makeNewClass(syms.incompatibleClassChangeErrorType,
+                                                  List.nil()));
+            JCCase c = make.Case(JCCase.STATEMENT, List.nil(), List.of(thr), null);
+            switchStatement.cases = switchStatement.cases.append(c);
+        }
+
+        stmtList.append(translate(switchStatement));
+
+        result = make.LetExpr(stmtList.toList(), make.Ident(dollar_switchexpr))
+                     .setType(dollar_switchexpr.type);
+    }
+        //where:
+        private JCCase convertCase(VarSymbol dollar_switchexpr, JCSwitch switchStatement,
+                                   JCSwitchExpression switchExpr, JCCase c) {
+            make.at(c.pos());
+            ListBuffer<JCStatement> statements = new ListBuffer<>();
+            statements.addAll(new TreeTranslator() {
+                @Override
+                public void visitLambda(JCLambda tree) {}
+                @Override
+                public void visitClassDef(JCClassDecl tree) {}
+                @Override
+                public void visitMethodDef(JCMethodDecl tree) {}
+                @Override
+                public void visitBreak(JCBreak tree) {
+                    if (tree.target == switchExpr) {
+                        tree.target = switchStatement;
+                        JCExpressionStatement assignment =
+                                make.Exec(make.Assign(make.Ident(dollar_switchexpr),
+                                                      translate(tree.value))
+                                              .setType(dollar_switchexpr.type));
+                        result = make.Block(0, List.of(assignment,
+                                                       tree));
+                        tree.value = null;
+                    } else {
+                        result = tree;
+                    }
+                }
+            }.translate(c.stats));
+            return make.Case(JCCase.STATEMENT, c.pats, statements.toList(), null);
+        }
 
     public void visitNewArray(JCNewArray tree) {
         tree.elemtype = translate(tree.elemtype);
@@ -3602,7 +3726,7 @@ public class Lower extends TreeTranslator {
     }
 
     public void visitLetExpr(LetExpr tree) {
-        tree.defs = translateVarDefs(tree.defs);
+        tree.defs = translate(tree.defs);
         tree.expr = translate(tree.expr, tree.type);
         result = tree;
     }

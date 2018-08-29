@@ -259,13 +259,13 @@ public class TreeDiffer extends TreeScanner {
     @Override
     public void visitBreak(JCBreak tree) {
         JCBreak that = (JCBreak) parameter;
-        result = tree.label == that.label;
+        result = scan(tree.value, that.value);
     }
 
     @Override
     public void visitCase(JCCase tree) {
         JCCase that = (JCCase) parameter;
-        result = scan(tree.pat, that.pat) && scan(tree.stats, that.stats);
+        result = scan(tree.pats, that.pats) && scan(tree.stats, that.stats);
     }
 
     @Override

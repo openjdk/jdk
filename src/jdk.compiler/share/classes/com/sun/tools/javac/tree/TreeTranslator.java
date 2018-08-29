@@ -207,8 +207,14 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitCase(JCCase tree) {
-        tree.pat = translate(tree.pat);
+        tree.pats = translate(tree.pats);
         tree.stats = translate(tree.stats);
+        result = tree;
+    }
+
+    public void visitSwitchExpression(JCSwitchExpression tree) {
+        tree.selector = translate(tree.selector);
+        tree.cases = translateCases(tree.cases);
         result = tree;
     }
 
@@ -252,6 +258,8 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitBreak(JCBreak tree) {
+        if (tree.isValueBreak())
+            tree.value = translate(tree.value);
         result = tree;
     }
 
@@ -419,7 +427,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitLetExpr(LetExpr tree) {
-        tree.defs = translateVarDefs(tree.defs);
+        tree.defs = translate(tree.defs);
         tree.expr = translate(tree.expr);
         result = tree;
     }

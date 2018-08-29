@@ -1,0 +1,4 @@
+SwitchStatementBroken.java:15:13: compiler.err.switch.mixing.case.types
+- compiler.note.preview.filename: SwitchStatementBroken.java
+- compiler.note.preview.recompile
+1 error

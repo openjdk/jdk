@@ -1,0 +1,4 @@
+EmptySwitch.java:33:10: compiler.err.switch.expression.empty
+- compiler.note.preview.filename: EmptySwitch.java
+- compiler.note.preview.recompile
+1 error
