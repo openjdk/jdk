@@ -3340,11 +3340,6 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 }
 
 CompilerThread::~CompilerThread() {
-  // Free buffer blob, if allocated
-  if (get_buffer_blob() != NULL) {
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    CodeCache::free(get_buffer_blob());
-  }
   // Delete objects which were allocated on heap.
   delete _counters;
 }

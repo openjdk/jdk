@@ -379,10 +379,10 @@ enum SSLCipher {
     private final Map.Entry<WriteCipherGenerator,
             ProtocolVersion[]>[] writeCipherGenerators;
 
-    // Map of Ciphers listed in jdk.tls.KeyLimit
+    // Map of Ciphers listed in jdk.tls.keyLimits
     private static final HashMap<String, Long> cipherLimits = new HashMap<>();
 
-    // Keywords found on the jdk.tls.KeyLimit security property.
+    // Keywords found on the jdk.tls.keyLimits security property.
     final static String tag[] = {"KEYUPDATE"};
 
     static  {
@@ -407,7 +407,7 @@ enum SSLCipher {
                     index = 0;
                 } else {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                        SSLLogger.fine("jdk.net.keyLimits:  Unknown action:  " +
+                        SSLLogger.fine("jdk.tls.keyLimits:  Unknown action:  " +
                                 entry);
                     }
                     continue;
@@ -423,17 +423,18 @@ enum SSLCipher {
                         size = Long.parseLong(values[2]);
                     }
                     if (size < 1 || size > max) {
-                        throw new NumberFormatException("Length exceeded limits");
+                        throw new NumberFormatException(
+                            "Length exceeded limits");
                     }
                 } catch (NumberFormatException e) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                        SSLLogger.fine("jdk.net.keyLimits:  " + e.getMessage() +
+                        SSLLogger.fine("jdk.tls.keyLimits:  " + e.getMessage() +
                                 ":  " +  entry);
                     }
                     continue;
                 }
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.fine("jdk.net.keyLimits:  entry = " + entry +
+                    SSLLogger.fine("jdk.tls.keyLimits:  entry = " + entry +
                             ". " + values[0] + ":" + tag[index] + " = " + size);
                 }
                 cipherLimits.put(values[0] + ":" + tag[index], size);

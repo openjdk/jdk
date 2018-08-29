@@ -191,12 +191,12 @@ final class CertSignAlgsExtension {
             }
 
             // update the context
-            List<SignatureScheme> shemes =
+            List<SignatureScheme> schemes =
                     SignatureScheme.getSupportedAlgorithms(
                             shc.algorithmConstraints, shc.negotiatedProtocol,
                             spec.signatureSchemes);
-            shc.peerRequestedCertSignSchemes = shemes;
-            shc.handshakeSession.setPeerSupportedSignatureAlgorithms(shemes);
+            shc.peerRequestedCertSignSchemes = schemes;
+            shc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
 
             if (!shc.isResumption && shc.negotiatedProtocol.useTLS13PlusSpec()) {
                 if (shc.sslConfig.clientAuthType !=
@@ -337,12 +337,12 @@ final class CertSignAlgsExtension {
             }
 
             // update the context
-            List<SignatureScheme> shemes =
+            List<SignatureScheme> schemes =
                     SignatureScheme.getSupportedAlgorithms(
                             chc.algorithmConstraints, chc.negotiatedProtocol,
                             spec.signatureSchemes);
-            chc.peerRequestedCertSignSchemes = shemes;
-            chc.handshakeSession.setPeerSupportedSignatureAlgorithms(shemes);
+            chc.peerRequestedCertSignSchemes = schemes;
+            chc.handshakeSession.setPeerSupportedSignatureAlgorithms(schemes);
         }
     }
 }

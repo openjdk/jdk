@@ -74,6 +74,7 @@ import java.security.*;
 import java.nio.*;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class LengthCheckTest {
 
@@ -203,7 +204,11 @@ public class LengthCheckTest {
 
                 // Now send each ByteBuffer (each being a complete
                 // TLS record) into the client-side unwrap.
-                for (ByteBuffer bBuf : recList) {
+                // for (ByteBuffer bBuf : recList) {
+
+                Iterator<ByteBuffer> iter = recList.iterator();
+                while (!gotException && (iter.hasNext())) {
+                    ByteBuffer bBuf = iter.next();
                     dumpByteBuffer("SERVER-TO-CLIENT", bBuf);
                     try {
                         clientResult = clientEngine.unwrap(bBuf, clientIn);
@@ -232,8 +237,8 @@ public class LengthCheckTest {
             // was thrown and the proper action (a TLS alert) was
             // sent back to the server.
             if (gotException == false ||
-                !isTlsMessage(cTOs, TLS_RECTYPE_ALERT, TLS_ALERT_LVL_FATAL,
-                        TLS_ALERT_UNEXPECTED_MSG)) {
+                    !isTlsMessage(cTOs, TLS_RECTYPE_ALERT, TLS_ALERT_LVL_FATAL,
+                            TLS_ALERT_ILLEGAL_PARAMETER)) {
                 throw new SSLException(
                     "Client failed to throw Alert:fatal:internal_error");
             }
@@ -253,38 +258,36 @@ public class LengthCheckTest {
             ByteBuffer evilClientHello = createEvilClientHello(64);
             dumpByteBuffer("CLIENT-TO-SERVER", evilClientHello);
 
+            // Server consumes Client Hello
+            serverResult = serverEngine.unwrap(evilClientHello, serverIn);
+            log("server unwrap: ", serverResult);
+            runDelegatedTasks(serverResult, serverEngine);
+            evilClientHello.compact();
+
+            // Under normal circumstances this should be a ServerHello
+            // But should throw an exception instead due to the invalid
+            // session ID.
             try {
-                // Server consumes Client Hello
-                serverResult = serverEngine.unwrap(evilClientHello, serverIn);
-                log("server unwrap: ", serverResult);
-                runDelegatedTasks(serverResult, serverEngine);
-                evilClientHello.compact();
-
-                // Under normal circumstances this should be a ServerHello
-                // But should throw an exception instead due to the invalid
-                // session ID.
                 serverResult = serverEngine.wrap(serverOut, sTOc);
                 log("server wrap: ", serverResult);
                 runDelegatedTasks(serverResult, serverEngine);
-                sTOc.flip();
-                dumpByteBuffer("SERVER-TO-CLIENT", sTOc);
-
-                // We expect to see the server generate an alert here
-                serverResult = serverEngine.wrap(serverOut, sTOc);
-                log("server wrap: ", serverResult);
-                runDelegatedTasks(serverResult, serverEngine);
-                sTOc.flip();
-                dumpByteBuffer("SERVER-TO-CLIENT", sTOc);
             } catch (SSLProtocolException ssle) {
                 log("Received expected SSLProtocolException: " + ssle);
                 gotException = true;
             }
 
+            // We expect to see the server generate an alert here
+            serverResult = serverEngine.wrap(serverOut, sTOc);
+            log("server wrap: ", serverResult);
+            runDelegatedTasks(serverResult, serverEngine);
+            sTOc.flip();
+            dumpByteBuffer("SERVER-TO-CLIENT", sTOc);
+
             // At this point we can verify that both an exception
             // was thrown and the proper action (a TLS alert) was
             // sent back to the client.
             if (gotException == false ||
-                !isTlsMessage(sTOc, TLS_RECTYPE_ALERT, TLS_ALERT_LVL_FATAL,
+                    !isTlsMessage(sTOc, TLS_RECTYPE_ALERT, TLS_ALERT_LVL_FATAL,
                         TLS_ALERT_ILLEGAL_PARAMETER)) {
                 throw new SSLException(
                     "Server failed to throw Alert:fatal:internal_error");

@@ -26,9 +26,10 @@
 
 /*
  * @test
- * @bug 1234567
- * @summary SSLEngine has not yet caused Solaris kernel to panic
- * @run main/othervm SSLEngineTemplate
+ * @bug 8207317
+ * @summary SSLEngine negotiation fail Exception behavior changed from
+ *          fail-fast to fail-lazy
+ * @run main/othervm SSLEngineFailedALPN
  */
 /**
  * A SSLEngine usage example which simplifies the presentation
@@ -71,7 +72,7 @@ import java.io.*;
 import java.security.*;
 import java.nio.*;
 
-public class SSLEngineTemplate {
+public class SSLEngineFailedALPN {
 
     /*
      * Enables logging of the SSLEngine operations.
@@ -110,7 +111,7 @@ public class SSLEngineTemplate {
     /*
      * The following is to set up the keystores.
      */
-    private static final String pathToStores = "../etc";
+    private static final String pathToStores = "../../../../javax/net/ssl/etc";
     private static final String keyStoreFile = "keystore";
     private static final String trustStoreFile = "truststore";
     private static final char[] passphrase = "passphrase".toCharArray();
@@ -130,7 +131,7 @@ public class SSLEngineTemplate {
             System.setProperty("javax.net.debug", "all");
         }
 
-        SSLEngineTemplate test = new SSLEngineTemplate();
+        SSLEngineFailedALPN test = new SSLEngineFailedALPN();
         test.runTest();
 
         System.out.println("Test Passed.");
@@ -139,7 +140,7 @@ public class SSLEngineTemplate {
     /*
      * Create an initialized SSLContext to use for these tests.
      */
-    public SSLEngineTemplate() throws Exception {
+    public SSLEngineFailedALPN() throws Exception {
 
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
@@ -282,6 +283,24 @@ public class SSLEngineTemplate {
                 logEngineStatus(serverEngine);
             }
         }
+
+        log("================");
+
+        if ((clientException != null) &&
+                (clientException instanceof SSLHandshakeException)) {
+            log("Client threw proper exception");
+            clientException.printStackTrace(System.out);
+        } else {
+            throw new Exception("Client Exception not seen");
+        }
+
+        if ((serverException != null) &&
+                (serverException instanceof SSLHandshakeException)) {
+            log("Server threw proper exception:");
+            serverException.printStackTrace(System.out);
+        } else {
+            throw new Exception("Server Exception not seen");
+        }
     }
 
     private static void logEngineStatus(SSLEngine engine) {
@@ -305,6 +324,7 @@ public class SSLEngineTemplate {
 
         // Get/set parameters if needed
         SSLParameters paramsServer = serverEngine.getSSLParameters();
+        paramsServer.setApplicationProtocols(new String[]{"one"});
         serverEngine.setSSLParameters(paramsServer);
 
         /*
@@ -315,6 +335,7 @@ public class SSLEngineTemplate {
 
         // Get/set parameters if needed
         SSLParameters paramsClient = clientEngine.getSSLParameters();
+        paramsClient.setApplicationProtocols(new String[]{"two"});
         clientEngine.setSSLParameters(paramsClient);
     }
 

@@ -50,7 +50,7 @@ public class HandshakeOutStream extends ByteArrayOutputStream {
         this.outputRecord = outputRecord;
     }
 
-    // Complete a handshakin message writing. Called by HandshakeMessage.
+    // Complete a handshaking message write. Called by HandshakeMessage.
     void complete() throws IOException {
         if (size() < 4) {       // 4: handshake message header size
             // internal_error alert will be triggered

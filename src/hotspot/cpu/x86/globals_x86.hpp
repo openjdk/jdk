@@ -119,7 +119,7 @@ define_pd_global(bool, ThreadLocalHandshakes, false);
   product(bool, UseStoreImmI16, true,                                       \
           "Use store immediate 16-bits value instruction on x86")           \
                                                                             \
-  product(intx, UseAVX, 3,                                                  \
+  product(intx, UseAVX, 2,                                                  \
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 99)                                                      \
                                                                             \
