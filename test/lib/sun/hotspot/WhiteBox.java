@@ -536,4 +536,7 @@ public class WhiteBox {
 
   // Decoder
   public native void disableElfSectionCache();
+
+  // Resolved Method Table
+  public native int resolvedMethodRemovedCount();
 }
