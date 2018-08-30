@@ -35,7 +35,7 @@ extern "C" {
 
 int g_fakeUserData = 0;
 int g_userDataError = 0;
-jvmtiHeapCallbacks g_wrongHeapCallbacks = {};
+jvmtiHeapCallbacks g_wrongHeapCallbacks;
 
 /* This array has to be up-to-date with the jvmtiHeapReferenceKind enum */
 const char * const g_refKindStr[28] = {

@@ -71,7 +71,7 @@ static const jlong CHAIN_CLASS_TAG  = 99;
 static const jlong ROOT_OBJECT_TAG  = 10;
 static const jlong CHAIN_OBJECT_TAG = 100;
 
-static jvmtiHeapCallbacks heapCallbacks = {};
+static jvmtiHeapCallbacks heapCallbacks;
 
 /* This array has to be up-to-date with the jvmtiHeapReferenceKind enum */
 static const char* ref_kind_str[28] = {

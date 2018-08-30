@@ -69,7 +69,7 @@ static jlong chainClassTag  = 99;
 static jlong rootObjectTag  = 10;
 static jlong chainObjectTag = 100;
 
-static jvmtiHeapCallbacks heapCallbacks = {};
+static jvmtiHeapCallbacks heapCallbacks;
 
 static const char* ref_kind_str[28] = {
    "unknown_0",

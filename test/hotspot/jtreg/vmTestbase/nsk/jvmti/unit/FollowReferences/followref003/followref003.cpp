@@ -94,7 +94,7 @@ static jlong chainObjectTag = 100;
 #define DUMMY_STRING_ARR_SLOT  11
 
 
-static jvmtiHeapCallbacks heapCallbacks = {};
+static jvmtiHeapCallbacks heapCallbacks;
 
 static const char* ref_kind_str[28] = {
    "unknown_0",
