@@ -30,13 +30,45 @@
 
 BarrierSet* BarrierSet::_barrier_set = NULL;
 
+class SetBarrierSetNonJavaThread : public ThreadClosure {
+  BarrierSet* _barrier_set;
+  size_t _count;
+
+public:
+  SetBarrierSetNonJavaThread(BarrierSet* barrier_set) :
+    _barrier_set(barrier_set), _count(0) {}
+
+  virtual void do_thread(Thread* thread) {
+    _barrier_set->on_thread_create(thread);
+    ++_count;
+  }
+
+  size_t count() const { return _count; }
+};
+
 void BarrierSet::set_barrier_set(BarrierSet* barrier_set) {
   assert(_barrier_set == NULL, "Already initialized");
   _barrier_set = barrier_set;
 
-  // The barrier set was not initialized when the this thread (the main thread)
-  // was created, so the call to BarrierSet::on_thread_create() had to be deferred
-  // until we have a barrier set. Now we have a barrier set, so we make the call.
+  // Some threads are created before the barrier set, so the call to
+  // BarrierSet::on_thread_create had to be deferred for them.  Now that
+  // we have the barrier set, do those deferred calls.
+
+  // First do any non-JavaThreads.
+  SetBarrierSetNonJavaThread njt_closure(_barrier_set);
+  Threads::non_java_threads_do(&njt_closure);
+
+  // Do the current (main) thread.  Ensure it's the one and only
+  // JavaThread so far.  Also verify that it isn't yet on the thread
+  // list, else we'd also need to call BarrierSet::on_thread_attach.
+  assert(Thread::current()->is_Java_thread(),
+         "Expected main thread to be a JavaThread");
+  assert((njt_closure.count() + 1) == Threads::threads_before_barrier_set(),
+         "Unexpected JavaThreads before barrier set initialization: "
+         "Non-JavaThreads: " SIZE_FORMAT ", all: " SIZE_FORMAT,
+         njt_closure.count(), Threads::threads_before_barrier_set());
+  assert(!JavaThread::current()->on_thread_list(),
+         "Main thread already on thread list.");
   _barrier_set->on_thread_create(Thread::current());
 }
 
