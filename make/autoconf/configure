@@ -122,14 +122,18 @@ generate_configure_script() {
   if test "x$CUSTOM_CONFIG_DIR" != x; then
     # Generate configure script with custom hooks compiled in.
     custom_patcher='sed -e "s|#CUSTOM_AUTOCONF_INCLUDE|m4_include([$custom_hook])|"'
+    custom_script_dir_include="-I$CUSTOM_CONFIG_DIR"
   else
     custom_patcher='cat'
+    custom_script_dir_include=""
   fi
 
   mkdir -p $build_support_dir
   # Call autoconf but replace the "magic" variable in configure.ac if requested.
+
   cat $conf_script_dir/configure.ac | eval $custom_patcher | \
-      ${AUTOCONF} -W all -I$conf_script_dir - > $generated_script
+      ${AUTOCONF} -W all $custom_script_dir_include -I$conf_script_dir - \
+      > $generated_script
   rm -rf autom4te.cache
 
   # Sanity check
