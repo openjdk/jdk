@@ -180,13 +180,6 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   AC_SUBST(LIBDL)
   LIBS="$save_LIBS"
 
-  # Deprecated libraries, keep the flags for backwards compatibility
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    BASIC_DEPRECATED_ARG_WITH([dxsdk])
-    BASIC_DEPRECATED_ARG_WITH([dxsdk-lib])
-    BASIC_DEPRECATED_ARG_WITH([dxsdk-include])
-  fi
-
   # Control if libzip can use mmap. Available for purposes of overriding.
   LIBZIP_CAN_USE_MMAP=true
   AC_SUBST(LIBZIP_CAN_USE_MMAP)
@@ -217,4 +210,3 @@ AC_DEFUN_ONCE([LIB_SETUP_SOLARIS_STLPORT],
     AC_SUBST(STLPORT_LIB)
   fi
 ])
-

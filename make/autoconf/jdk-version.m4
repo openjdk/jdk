@@ -57,15 +57,6 @@ AC_DEFUN([JDKVER_CHECK_AND_SET_NUMBER],
 
 AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
 [
-  # Warn user that old version arguments are deprecated.
-  BASIC_DEPRECATED_ARG_WITH([milestone])
-  BASIC_DEPRECATED_ARG_WITH([update-version])
-  BASIC_DEPRECATED_ARG_WITH([user-release-suffix])
-  BASIC_DEPRECATED_ARG_WITH([build-number])
-  BASIC_DEPRECATED_ARG_WITH([version-major])
-  BASIC_DEPRECATED_ARG_WITH([version-minor])
-  BASIC_DEPRECATED_ARG_WITH([version-security])
-
   # Source the version numbers file
   . $AUTOCONF_DIR/version-numbers
 
@@ -443,7 +434,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     AC_MSG_ERROR([--with-version-date must have a value])
   elif test "x$with_version_date" != x; then
     if [ ! [[ $with_version_date =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] ]; then
-      AC_MSG_ERROR(["$with_version_date" is not a valid version date]) 
+      AC_MSG_ERROR(["$with_version_date" is not a valid version date])
     else
       VERSION_DATE="$with_version_date"
     fi

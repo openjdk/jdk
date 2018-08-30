@@ -517,9 +517,6 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
 
   # Used for verification of Makefiles by check-jvm-feature
   AC_SUBST(VALID_JVM_FEATURES)
-
-  # We don't support --with-jvm-interpreter anymore, use zero instead.
-  BASIC_DEPRECATED_ARG_WITH(jvm-interpreter)
 ])
 
 ###############################################################################
