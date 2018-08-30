@@ -74,9 +74,12 @@ static jlong page_size = 0;
 
 #endif /* _ALLBSD_SOURCE */
 
-#if defined(_ALLBSD_SOURCE)
-  #define dirent64 dirent
-  #define readdir64 readdir
+#if defined(_AIX)
+  #define DIR DIR64
+  #define dirent dirent64
+  #define opendir opendir64
+  #define readdir readdir64
+  #define closedir closedir64
 #endif
 
 // true = get available swap in bytes
@@ -423,7 +426,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getOpenFileDescriptorCount0
     return (100);
 #else /* solaris/linux */
     DIR *dirp;
-    struct dirent64* dentp;
+    struct dirent* dentp;
     jlong fds = 0;
 
 #if defined(_AIX)
@@ -443,7 +446,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getOpenFileDescriptorCount0
 
     // iterate through directory entries, skipping '.' and '..'
     // each entry represents an open file descriptor.
-    while ((dentp = readdir64(dirp)) != NULL) {
+    while ((dentp = readdir(dirp)) != NULL) {
         if (isdigit(dentp->d_name[0])) {
             fds++;
         }

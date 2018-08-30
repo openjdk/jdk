@@ -50,11 +50,6 @@
   } while((_result == -1) && (errno == EINTR)); \
 } while(0)
 
-#if defined(_ALLBSD_SOURCE)
-#define dirent64 dirent
-#define readdir64 readdir
-#endif
-
 #if !defined(__solaris__) || defined(__sparcv9) || defined(amd64)
 #define fileopen        fopen
 #define filegets        fgets
@@ -121,7 +116,7 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
 {
     DIR *dirp = NULL;
     struct stat statbuf;
-    struct dirent64 *dp = NULL;
+    struct dirent *dp = NULL;
     char *pathname = NULL;
     int fd = -1;
     char *dbuf = NULL;
@@ -133,7 +128,7 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
         return NULL;
     }
 
-    while ((dp = readdir64(dirp)) != NULL) {
+    while ((dp = readdir(dirp)) != NULL) {
         /*
          * Skip '.' and '..' (and possibly other .* files)
          */
