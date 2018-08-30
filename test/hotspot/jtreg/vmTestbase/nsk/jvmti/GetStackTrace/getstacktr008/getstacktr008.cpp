@@ -72,11 +72,11 @@ static frame_info frames[] = {
     {"Lnsk/jvmti/GetStackTrace/getstacktr008$TestThread;", "run", "()V"},
 };
 
-#define NUMBER_OF_FRAMES ((int) (sizeof(frames)/sizeof(frame_info)))
+#define NUMBER_OF_STACK_FRAMES ((int) (sizeof(frames)/sizeof(frame_info)))
 
 void check(jvmtiEnv *jvmti_env, jthread thr, int offset, const char *note) {
     jvmtiError err;
-    jvmtiFrameInfo f[NUMBER_OF_FRAMES + 1];
+    jvmtiFrameInfo f[NUMBER_OF_STACK_FRAMES + 1];
     jclass callerClass;
     char *sigClass, *name, *sig, *generic;
     jint i, count;
@@ -86,7 +86,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, int offset, const char *note) {
     }
 
     err = jvmti_env->GetStackTrace(thr,
-        0, NUMBER_OF_FRAMES + 1, f, &count);
+        0, NUMBER_OF_STACK_FRAMES + 1, f, &count);
     if (err != JVMTI_ERROR_NONE) {
         printf("(%s, GetStackTrace) unexpected error: %s (%d)\n",
                note, TranslateError(err), err);
@@ -98,9 +98,9 @@ void check(jvmtiEnv *jvmti_env, jthread thr, int offset, const char *note) {
             printf(">>>   frame count: %d\n", count);
     }
 
-    if (count != (jint)(NUMBER_OF_FRAMES - offset)) {
+    if (count != (jint)(NUMBER_OF_STACK_FRAMES - offset)) {
         printf("(%s) wrong frame count, expected: %d, actual: %d\n",
-               note, NUMBER_OF_FRAMES, count);
+               note, NUMBER_OF_STACK_FRAMES, count);
         result = STATUS_FAILED;
     }
     for (i = 0; i < count; i++) {
@@ -135,7 +135,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, int offset, const char *note) {
             printf(">>>   class:  \"%s\"\n", sigClass);
             printf(">>>   method: \"%s%s\"\n", name, sig);
         }
-        if (i < NUMBER_OF_FRAMES) {
+        if (i < NUMBER_OF_STACK_FRAMES) {
             if (sigClass == NULL ||
                     strcmp(sigClass, frames[i + offset].cls) != 0) {
                 printf("(%s, frame#%d) wrong class sig: \"%s\",\n",

@@ -63,7 +63,7 @@ static frame_info frames[] = {
     {"Lnsk/jvmti/GetStackTrace/getstacktr003$TestThread;", "run", "()V"},
 };
 
-#define NUMBER_OF_FRAMES ((int) (sizeof(frames)/sizeof(frame_info)))
+#define NUMBER_OF_STACK_FRAMES ((int) (sizeof(frames)/sizeof(frame_info)))
 #define MAX_NUMBER_OF_FRAMES 32
 
 #ifdef STATIC_BUILD
@@ -168,9 +168,9 @@ Java_nsk_jvmti_GetStackTrace_getstacktr003_check(JNIEnv *env, jclass cls, jthrea
         result = STATUS_FAILED;
         return result;
     }
-    if (count < NUMBER_OF_FRAMES) {
+    if (count < NUMBER_OF_STACK_FRAMES) {
         printf("Number of frames: %d is less then expected: %d\n",
-               count, NUMBER_OF_FRAMES);
+               count, NUMBER_OF_STACK_FRAMES);
         result = STATUS_FAILED;
     }
     for (i = 0; i < count; i++) {
@@ -206,20 +206,20 @@ Java_nsk_jvmti_GetStackTrace_getstacktr003_check(JNIEnv *env, jclass cls, jthrea
             printf(">>>   method: \"%s%s\"\n", name, sig);
             printf(">>>   %d ... done\n", i);
         }
-        if (i < NUMBER_OF_FRAMES) {
-            if (sigClass == NULL || strcmp(sigClass, frames[NUMBER_OF_FRAMES-1-i].cls) != 0) {
+        if (i < NUMBER_OF_STACK_FRAMES) {
+            if (sigClass == NULL || strcmp(sigClass, frames[NUMBER_OF_STACK_FRAMES-1-i].cls) != 0) {
                 printf("(frame#%d) wrong class sig: \"%s\", expected: \"%s\"\n",
-                       NUMBER_OF_FRAMES-1-i, sigClass, frames[NUMBER_OF_FRAMES-1-i].cls);
+                       NUMBER_OF_STACK_FRAMES-1-i, sigClass, frames[NUMBER_OF_STACK_FRAMES-1-i].cls);
                 result = STATUS_FAILED;
             }
-            if (name == NULL || strcmp(name, frames[NUMBER_OF_FRAMES-1-i].name) != 0) {
+            if (name == NULL || strcmp(name, frames[NUMBER_OF_STACK_FRAMES-1-i].name) != 0) {
                 printf("(frame#%d) wrong method name: \"%s\", expected: \"%s\"\n",
-                       NUMBER_OF_FRAMES-1-i, name, frames[NUMBER_OF_FRAMES-1-i].name);
+                       NUMBER_OF_STACK_FRAMES-1-i, name, frames[NUMBER_OF_STACK_FRAMES-1-i].name);
                 result = STATUS_FAILED;
             }
-            if (sig == NULL || strcmp(sig, frames[NUMBER_OF_FRAMES-1-i].sig) != 0) {
+            if (sig == NULL || strcmp(sig, frames[NUMBER_OF_STACK_FRAMES-1-i].sig) != 0) {
                 printf("(frame#%d) wrong method sig: \"%s\", expected: \"%s\"\n",
-                       NUMBER_OF_FRAMES-1-i, sig, frames[NUMBER_OF_FRAMES-1-i].sig);
+                       NUMBER_OF_STACK_FRAMES-1-i, sig, frames[NUMBER_OF_STACK_FRAMES-1-i].sig);
                 result = STATUS_FAILED;
             }
         }
