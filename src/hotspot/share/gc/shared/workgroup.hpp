@@ -332,9 +332,10 @@ public:
   // True iff the object is in a valid state.
   bool valid();
 
-  // Returns "false" if the task "t" is unclaimed, and ensures that task is
-  // claimed.  The task "t" is required to be within the range of "this".
-  bool is_task_claimed(uint t);
+  // Attempt to claim the task "t", returning true if successful,
+  // false if it has already been claimed.  The task "t" is required
+  // to be within the range of "this".
+  bool try_claim_task(uint t);
 
   // The calling thread asserts that it has attempted to claim all the
   // tasks that it will try to claim.  Every thread in the parallel task
@@ -391,11 +392,11 @@ public:
   // agree on the number of tasks.
   void set_n_tasks(uint t) { _n_tasks = t; }
 
-  // Returns false if the next task in the sequence is unclaimed,
-  // and ensures that it is claimed. Will set t to be the index
-  // of the claimed task in the sequence. Will return true if
-  // the task cannot be claimed and there are none left to claim.
-  bool is_task_claimed(uint& t);
+  // Attempt to claim the next unclaimed task in the sequence,
+  // returning true if successful, with t set to the index of the
+  // claimed task.  Returns false if there are no more unclaimed tasks
+  // in the sequence.
+  bool try_claim_task(uint& t);
 
   // The calling thread asserts that it has attempted to claim
   // all the tasks it possibly can in the sequence. Every thread

@@ -429,16 +429,16 @@ void SubTasksDone::clear() {
 #endif
 }
 
-bool SubTasksDone::is_task_claimed(uint t) {
+bool SubTasksDone::try_claim_task(uint t) {
   assert(t < _n_tasks, "bad task id.");
   uint old = _tasks[t];
   if (old == 0) {
     old = Atomic::cmpxchg(1u, &_tasks[t], 0u);
   }
   assert(_tasks[t] == 1, "What else?");
-  bool res = old != 0;
+  bool res = old == 0;
 #ifdef ASSERT
-  if (!res) {
+  if (res) {
     assert(_claimed < _n_tasks, "Too many tasks claimed; missing clear?");
     Atomic::inc(&_claimed);
   }
@@ -476,16 +476,16 @@ bool SequentialSubTasksDone::valid() {
   return _n_threads > 0;
 }
 
-bool SequentialSubTasksDone::is_task_claimed(uint& t) {
+bool SequentialSubTasksDone::try_claim_task(uint& t) {
   t = _n_claimed;
   while (t < _n_tasks) {
     uint res = Atomic::cmpxchg(t+1, &_n_claimed, t);
     if (res == t) {
-      return false;
+      return true;
     }
     t = res;
   }
-  return true;
+  return false;
 }
 
 bool SequentialSubTasksDone::all_tasks_completed() {

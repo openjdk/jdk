@@ -47,7 +47,7 @@ void WeakProcessor::Task::work(uint worker_id,
   FOR_EACH_WEAK_PROCESSOR_PHASE(phase) {
     if (WeakProcessorPhases::is_serial(phase)) {
       uint serial_index = WeakProcessorPhases::serial_index(phase);
-      if (!_serial_phases_done.is_task_claimed(serial_index)) {
+      if (_serial_phases_done.try_claim_task(serial_index)) {
         WeakProcessorPhaseTimeTracker pt(_phase_times, phase);
         WeakProcessorPhases::processor(phase)(is_alive, keep_alive);
       }

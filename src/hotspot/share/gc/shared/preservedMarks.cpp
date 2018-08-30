@@ -100,7 +100,7 @@ private:
 public:
   virtual void work(uint worker_id) {
     uint task_id = 0;
-    while (!_sub_tasks.is_task_claimed(/* reference */ task_id)) {
+    while (_sub_tasks.try_claim_task(/* reference */ task_id)) {
       _preserved_marks_set->get(task_id)->restore_and_increment(_total_size_addr);
     }
     _sub_tasks.all_tasks_completed();
