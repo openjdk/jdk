@@ -619,3 +619,18 @@ void CompiledMethod::do_unloading_parallel_postponed() {
     }
   }
 }
+
+// Iterating over all nmethods, e.g. with the help of CodeCache::nmethods_do(fun) was found
+// to not be inherently safe. There is a chance that fields are seen which are not properly
+// initialized. This happens despite the fact that nmethods_do() asserts the CodeCache_lock
+// to be held.
+// To bundle knowledge about necessary checks in one place, this function was introduced.
+// It is not claimed that these checks are sufficient, but they were found to be necessary.
+bool CompiledMethod::nmethod_access_is_safe(nmethod* nm) {
+  Method* method = (nm == NULL) ? NULL : nm->method();  // nm->method() may be uninitialized, i.e. != NULL, but invalid
+  return (nm != NULL) && (method != NULL) && (method->signature() != NULL) &&
+         !nm->is_zombie() && !nm->is_not_installed() &&
+         os::is_readable_pointer(method) &&
+         os::is_readable_pointer(method->constants()) &&
+         os::is_readable_pointer(method->signature());
+}
