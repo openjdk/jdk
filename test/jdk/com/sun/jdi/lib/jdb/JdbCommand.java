@@ -120,7 +120,7 @@ public class JdbCommand {
     boolean allowExit = false;
 
     public JdbCommand(String cmd) {
-        this.cmd = cmd.endsWith(ls) ? cmd.substring(0, cmd.length() - 1) : cmd;
+        this.cmd = cmd;
     }
 
     public JdbCommand allowExit() {
@@ -128,8 +128,6 @@ public class JdbCommand {
         return this;
     }
 
-
-    private static final String ls = System.getProperty("line.separator");
 
     public static JdbCommand run(String ... params) {
         return new JdbCommand("run " + Arrays.stream(params).collect(Collectors.joining(" ")));
@@ -147,6 +145,28 @@ public class JdbCommand {
     public static JdbCommand stopAt(String targetClass, int lineNum) {
         return new JdbCommand("stop at " + targetClass + ":" + lineNum);
     }
+    public static JdbCommand stopIn(String targetClass, String methodName) {
+        return new JdbCommand("stop in " + targetClass + "." + methodName);
+    }
+
+    // exception type used by catch/ignore
+    public enum ExType{
+        uncaught,
+        caught,
+        all
+    }
+    public static JdbCommand catch_(String classId) {
+        return new JdbCommand("catch " + classId);
+    }
+    public static JdbCommand catch_(ExType eType, String classId) {
+        return catch_(eType.toString() + " " + classId);
+    }
+    public static JdbCommand ignore(String classId) {
+        return new JdbCommand("ignore " + classId);
+    }
+    public static JdbCommand ignore(ExType eType, String classId) {
+        return ignore(eType.toString() + " " + classId);
+    }
 
     public static JdbCommand step() {
         return new JdbCommand("step");
@@ -154,9 +174,23 @@ public class JdbCommand {
     public static JdbCommand stepUp() {
         return new JdbCommand("step up");
     }
+    public static JdbCommand next() {
+        return new JdbCommand("next");
+    }
 
+    // where [thread id] | all
+    public static JdbCommand where(String threadId) {
+        return new JdbCommand("where " + threadId);
+    }
+    public static JdbCommand eval(String expr) {
+        return new JdbCommand("eval " + expr);
+    }
     public static JdbCommand print(String expr) {
         return new JdbCommand("print " + expr);
+    }
+
+    public static JdbCommand locals() {
+        return new JdbCommand("locals");
     }
 
     public static JdbCommand set(String lvalue, String expr) {

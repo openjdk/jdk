@@ -67,7 +67,7 @@ public class JdbExprTest extends JdbTest {
 
     @Override
     protected void runCases() {
-        setBreakpoints(System.getProperty("test.src") + "/JdbExprTest.java", 1);
+        setBreakpointsFromTestSource("JdbExprTest.java", 1);
         // Run to breakpoint #1
         execCommand(JdbCommand.run())
                 .shouldContain("Breakpoint hit");

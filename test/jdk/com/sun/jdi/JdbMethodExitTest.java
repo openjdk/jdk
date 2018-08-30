@@ -197,13 +197,13 @@ public class JdbMethodExitTest extends JdbTest {
 
     @Override
     protected void runCases() {
-        setBreakpoints(System.getProperty("test.src") + "/JdbMethodExitTest.java", 1);
+        setBreakpointsFromTestSource("JdbMethodExitTest.java", 1);
 
         // test all possible return types
         execCommand(JdbCommand.run())
                 .shouldContain("Breakpoint hit");
         Integer threadId = Integer.parseInt(
-                new OutputAnalyzer(jdb.getDebuggeeOutput())
+                new OutputAnalyzer(getDebuggeeOutput())
                         .firstMatch("^threadid=(.*)$", 1));
         jdb.command(JdbCommand.untrace());
 
@@ -299,7 +299,7 @@ public class JdbMethodExitTest extends JdbTest {
         new OutputAnalyzer(reply.stream().collect(Collectors.joining(lineSeparator)))
                 .shouldMatch("Method exited: .*JdbMethodExitTestTarg.traceExit1");
 
-        new OutputAnalyzer(jdb.getJdbOutput())
+        new OutputAnalyzer(getJdbOutput())
                 .shouldContain("Breakpoint hit");
     }
 }
