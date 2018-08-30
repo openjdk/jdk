@@ -59,7 +59,14 @@ uint WeakProcessorPhases::oop_storage_index(Phase phase) {
 }
 
 bool WeakProcessorPhases::is_serial(Phase phase) {
+  // serial_phase_count is 0 if JFR and JVMTI are both not built,
+  // making this check with unsigned lhs redundant
+#if INCLUDE_JVMTI || INCLUDE_JFR
   return (index(phase) - serial_phase_start) < serial_phase_count;
+#else
+  STATIC_ASSERT(serial_phase_count == 0);
+  return false;
+#endif
 }
 
 bool WeakProcessorPhases::is_oop_storage(Phase phase) {
