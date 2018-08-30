@@ -400,7 +400,9 @@ void Rewriter::scan_method(Method* method, bool reverse, bool* invokespecial_err
       }
     }
 
-    assert(bc_length != 0, "impossible bytecode length");
+    // Continuing with an invalid bytecode will fail in the loop below.
+    // So guarantee here.
+    guarantee(bc_length > 0, "Verifier should have caught this invalid bytecode");
 
     switch (c) {
       case Bytecodes::_lookupswitch   : {
