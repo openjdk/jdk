@@ -79,9 +79,6 @@
   diagnostic(bool, ZVerifyForwarding, false,                                \
           "Verify forwarding tables")                                       \
                                                                             \
-  diagnostic(bool, ZWeakRoots, true,                                        \
-          "Treat JNI WeakGlobalRefs and StringTable as weak roots")         \
-                                                                            \
   diagnostic(bool, ZOptimizeLoadBarriers, true,                             \
           "Apply load barrier optimizations")                               \
                                                                             \
