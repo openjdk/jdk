@@ -82,15 +82,6 @@
   diagnostic(bool, ZWeakRoots, true,                                        \
           "Treat JNI WeakGlobalRefs and StringTable as weak roots")         \
                                                                             \
-  diagnostic(bool, ZConcurrentStringTable, true,                            \
-          "Clean StringTable concurrently")                                 \
-                                                                            \
-  diagnostic(bool, ZConcurrentVMWeakHandles, true,                          \
-          "Clean VM WeakHandles concurrently")                              \
-                                                                            \
-  diagnostic(bool, ZConcurrentJNIWeakGlobalHandles, true,                   \
-          "Clean JNI WeakGlobalRefs concurrently")                          \
-                                                                            \
   diagnostic(bool, ZOptimizeLoadBarriers, true,                             \
           "Apply load barrier optimizations")                               \
                                                                             \

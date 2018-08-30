@@ -122,21 +122,11 @@ public:
 
 class ZWeakRootsIterator {
 private:
-  ZOopStorageIterator _vm_weak_handles_iter;
-  ZOopStorageIterator _jni_weak_handles_iter;
-  ZOopStorageIterator _string_table_iter;
-
-  void do_vm_weak_handles(BoolObjectClosure* is_alive, OopClosure* cl);
-  void do_jni_weak_handles(BoolObjectClosure* is_alive, OopClosure* cl);
   void do_jvmti_weak_export(BoolObjectClosure* is_alive, OopClosure* cl);
   void do_jfr_weak(BoolObjectClosure* is_alive, OopClosure* cl);
-  void do_string_table(BoolObjectClosure* is_alive, OopClosure* cl);
 
   ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jvmti_weak_export>  _jvmti_weak_export;
   ZSerialWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jfr_weak>           _jfr_weak;
-  ZParallelWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_vm_weak_handles>  _vm_weak_handles;
-  ZParallelWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_jni_weak_handles> _jni_weak_handles;
-  ZParallelWeakOopsDo<ZWeakRootsIterator, &ZWeakRootsIterator::do_string_table>     _string_table;
 
 public:
   ZWeakRootsIterator();
