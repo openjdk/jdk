@@ -1698,6 +1698,14 @@ void GraphKit::access_clone(Node* ctl, Node* src, Node* dst, Node* size, bool is
   return _barrier_set->clone(this, src, dst, size, is_array);
 }
 
+Node* GraphKit::access_resolve(Node* n, DecoratorSet decorators) {
+  // Use stronger ACCESS_WRITE|ACCESS_READ by default.
+  if ((decorators & (ACCESS_READ | ACCESS_WRITE)) == 0) {
+    decorators |= ACCESS_READ | ACCESS_WRITE;
+  }
+  return _barrier_set->resolve(this, n, decorators);
+}
+
 //-------------------------array_element_address-------------------------
 Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
                                       const TypeInt* sizetype, Node* ctrl) {
@@ -3233,6 +3241,8 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
 
   assert(dead_locals_are_killed(), "should kill locals before sync. point");
 
+  obj = access_resolve(obj, ACCESS_READ | ACCESS_WRITE);
+
   // Box the stack location
   Node* box = _gvn.transform(new BoxLockNode(next_monitor()));
   Node* mem = reset_memory();
@@ -3950,6 +3960,8 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
    *   dst[i_char++] = (char)(src[i_byte] & 0xff);
    * }
    */
+  src = access_resolve(src, ACCESS_READ);
+  dst = access_resolve(dst, ACCESS_WRITE);
   add_predicate();
   RegionNode* head = new RegionNode(3);
   head->init_req(1, control());

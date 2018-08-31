@@ -1212,6 +1212,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
     kit.set_control(loop);
     Node* sizeTable = fetch_static_field(kit, size_table_field);
 
+    sizeTable = kit.access_resolve(sizeTable, ACCESS_READ);
     Node* value = kit.load_array_element(NULL, sizeTable, index, TypeAryPtr::INTS);
     C->record_for_igvn(value);
     Node* limit = __ CmpI(phi, value);
@@ -1547,6 +1548,7 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
 // Compress copy contents of the byte/char String str into dst_array starting at index start.
 Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* dst_array, Node* dst_coder, Node* start) {
   Node* src_array = kit.load_String_value(kit.control(), str);
+  src_array = kit.access_resolve(src_array, ACCESS_READ);
 
   IdealKit ideal(&kit, true, true);
   IdealVariable count(ideal); __ declarations_done();
