@@ -247,12 +247,7 @@ class KlassInfoTable: public StackObj {
   uint hash(const Klass* p);
   KlassInfoEntry* lookup(Klass* k); // allocates if not found!
 
-  class AllClassesFinder : public KlassClosure {
-    KlassInfoTable *_table;
-   public:
-    AllClassesFinder(KlassInfoTable* table) : _table(table) {}
-    virtual void do_klass(Klass* k);
-  };
+  class AllClassesFinder;
 
  public:
   KlassInfoTable(bool add_all_classes);

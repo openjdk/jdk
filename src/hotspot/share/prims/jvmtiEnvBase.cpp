@@ -1489,6 +1489,7 @@ void JvmtiModuleClosure::do_module(ModuleEntry* entry) {
 jvmtiError
 JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobject** modules_ptr) {
   ResourceMark rm;
+  MutexLocker mcld(ClassLoaderDataGraph_lock);
   MutexLocker ml(Module_lock);
 
   _tbl = new GrowableArray<OopHandle>(77);

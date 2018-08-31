@@ -146,7 +146,7 @@ WB_ENTRY(jlong, WB_GetVMLargePageSize(JNIEnv* env, jobject o))
   return os::large_page_size();
 WB_END
 
-class WBIsKlassAliveClosure : public KlassClosure {
+class WBIsKlassAliveClosure : public LockedClassesDo {
     Symbol* _name;
     bool _found;
 public:

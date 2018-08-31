@@ -70,6 +70,7 @@ class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphKlassIteratorStatic;
+  friend class ClassLoaderDataGraphIterator;
   friend class VMStructs;
  private:
   // All CLDs (except the null CLD) can be reached by walking _head->_next->...
@@ -118,6 +119,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void packages_do(void f(PackageEntry*));
   static void packages_unloading_do(void f(PackageEntry*));
   static void loaded_classes_do(KlassClosure* klass_closure);
+  static void unlocked_loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
   static bool do_unloading(bool do_cleaning);
 
@@ -177,6 +179,20 @@ class ClassLoaderDataGraph : public AllStatic {
 #endif
 };
 
+class LockedClassesDo : public KlassClosure {
+  typedef void (*classes_do_func_t)(Klass*);
+  classes_do_func_t _function;
+public:
+  LockedClassesDo();  // For callers who provide their own do_klass
+  LockedClassesDo(classes_do_func_t function);
+  ~LockedClassesDo();
+
+  void do_klass(Klass* k) {
+    (*_function)(k);
+  }
+};
+
+
 // ClassLoaderData class
 
 class ClassLoaderData : public CHeapObj<mtClass> {
@@ -213,6 +229,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   };
 
   friend class ClassLoaderDataGraph;
+  friend class ClassLoaderDataGraphIterator;
   friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphKlassIteratorStatic;
   friend class ClassLoaderDataGraphMetaspaceIterator;

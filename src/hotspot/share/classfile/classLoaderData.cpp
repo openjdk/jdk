@@ -544,6 +544,7 @@ class ClassLoaderDataGraphKlassIteratorStatic {
 static ClassLoaderDataGraphKlassIteratorStatic static_klass_iterator;
 
 InstanceKlass* ClassLoaderDataGraph::try_get_next_class() {
+  assert(SafepointSynchronize::is_at_safepoint(), "only called at safepoint");
   return static_klass_iterator.try_get_next_class();
 }
 
@@ -895,6 +896,7 @@ void ClassLoaderData::free_deallocate_list() {
 }
 
 void ClassLoaderDataGraph::clean_deallocate_lists(bool walk_previous_versions) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must only be called at safepoint");
   uint loaders_processed = 0;
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
     // is_alive check will be necessary for concurrent class unloading.
@@ -1065,43 +1067,43 @@ bool ClassLoaderDataGraph::_metaspace_oom = false;
 // Add a new class loader data node to the list.  Assign the newly created
 // ClassLoaderData into the java/lang/ClassLoader object as a hidden field
 ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool is_unsafe_anonymous) {
-  NoSafepointVerifier no_safepoints; // we mustn't GC until we've installed the
-                                     // ClassLoaderData in the graph since the CLD
-                                     // contains oops in _handles that must be walked.
 
-  ClassLoaderData* cld = new ClassLoaderData(loader, is_unsafe_anonymous);
 
-  if (!is_unsafe_anonymous) {
-    // First, Atomically set it
-    ClassLoaderData* old = java_lang_ClassLoader::cmpxchg_loader_data(cld, loader(), NULL);
-    if (old != NULL) {
-      delete cld;
-      // Returns the data.
-      return old;
+  ClassLoaderData* cld;
+  {
+    NoSafepointVerifier no_safepoints; // we mustn't GC until we've installed the
+                                       // ClassLoaderData in the loader since the CLD
+                                       // contains oops in _handles that must be walked.
+                                       // GC will find the CLD through the loader after this.
+
+    cld = new ClassLoaderData(loader, is_unsafe_anonymous);
+
+    if (!is_unsafe_anonymous) {
+      // First, Atomically set it
+      ClassLoaderData* old = java_lang_ClassLoader::cmpxchg_loader_data(cld, loader(), NULL);
+      if (old != NULL) {
+        delete cld;
+        // Returns the data.
+        return old;
+      }
     }
   }
 
+  MutexLocker ml(ClassLoaderDataGraph_lock);
+
   // We won the race, and therefore the task of adding the data to the list of
   // class loader data
-  ClassLoaderData** list_head = &_head;
-  ClassLoaderData* next = _head;
-
-  do {
-    cld->set_next(next);
-    ClassLoaderData* exchanged = Atomic::cmpxchg(cld, list_head, next);
-    if (exchanged == next) {
-      LogTarget(Trace, class, loader, data) lt;
-      if (lt.is_enabled()) {
-        ResourceMark rm;
-        LogStream ls(lt);
-        ls.print("create ");
-        cld->print_value_on(&ls);
-        ls.cr();
-      }
-      return cld;
-    }
-    next = exchanged;
-  } while (true);
+  cld->set_next(_head);
+  _head = cld;
+  LogTarget(Trace, class, loader, data) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    ls.print("create ");
+    cld->print_value_on(&ls);
+    ls.cr();
+  }
+  return cld;
 }
 
 ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_unsafe_anonymous) {
@@ -1115,13 +1117,14 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_unsafe_anonymo
 }
 
 void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
-  for (ClassLoaderData* cld = _head; cl != NULL && cld != NULL; cld = cld->next()) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  for (ClassLoaderData* cld = _head;  cld != NULL; cld = cld->_next) {
     cl->do_cld(cld);
   }
 }
 
 void ClassLoaderDataGraph::cld_unloading_do(CLDClosure* cl) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   // Only walk the head until any clds not purged from prior unloading
   // (CMS doesn't purge right away).
   for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
@@ -1131,6 +1134,7 @@ void ClassLoaderDataGraph::cld_unloading_do(CLDClosure* cl) {
 }
 
 void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   for (ClassLoaderData* cld = _head;  cld != NULL; cld = cld->_next) {
     CLDClosure* closure = cld->keep_alive() ? strong : weak;
     if (closure != NULL) {
@@ -1140,6 +1144,7 @@ void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
 }
 
 void ClassLoaderDataGraph::always_strong_cld_do(CLDClosure* cl) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   if (ClassUnloading) {
     roots_cld_do(cl, NULL);
   } else {
@@ -1147,41 +1152,90 @@ void ClassLoaderDataGraph::always_strong_cld_do(CLDClosure* cl) {
   }
 }
 
+// Closure for locking and iterating through classes.
+LockedClassesDo::LockedClassesDo(classes_do_func_t f) : _function(f) {
+  ClassLoaderDataGraph_lock->lock();
+}
+
+LockedClassesDo::LockedClassesDo() : _function(NULL) {
+  // callers provide their own do_klass
+  ClassLoaderDataGraph_lock->lock();
+}
+
+LockedClassesDo::~LockedClassesDo() { ClassLoaderDataGraph_lock->unlock(); }
+
+
+// Iterating over the CLDG needs to be locked because
+// unloading can remove entries concurrently soon.
+class ClassLoaderDataGraphIterator : public StackObj {
+  ClassLoaderData* _next;
+  HandleMark       _hm;  // clean up handles when this is done.
+  Handle           _holder;
+  Thread*          _thread;
+
+  void hold_next() {
+    if (_next != NULL) {
+      _holder = Handle(_thread, _next->holder_phantom());
+    }
+  }
+public:
+  ClassLoaderDataGraphIterator() : _next(ClassLoaderDataGraph::_head) {
+    _thread = Thread::current();
+    assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+    hold_next();
+  }
+
+  bool repeat() const {
+    return _next != NULL;
+  }
+
+  ClassLoaderData* get_next() {
+    ClassLoaderData* next = _next;
+    if (_next != NULL) {
+      _next = _next->next();
+      hold_next();
+    }
+    return next;
+  }
+};
+
+// These functions assume that the caller has locked the ClassLoaderDataGraph_lock
+// if they are not calling the function from a safepoint.
 void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
-  Thread* thread = Thread::current();
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    Handle holder(thread, cld->holder_phantom());
+  ClassLoaderDataGraphIterator iter;
+  while (iter.repeat()) {
+    ClassLoaderData* cld = iter.get_next();
     cld->classes_do(klass_closure);
   }
 }
 
 void ClassLoaderDataGraph::classes_do(void f(Klass* const)) {
-  Thread* thread = Thread::current();
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    Handle holder(thread, cld->holder_phantom());
+  ClassLoaderDataGraphIterator iter;
+  while (iter.repeat()) {
+    ClassLoaderData* cld = iter.get_next();
     cld->classes_do(f);
   }
 }
 
 void ClassLoaderDataGraph::methods_do(void f(Method*)) {
-  Thread* thread = Thread::current();
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    Handle holder(thread, cld->holder_phantom());
+  ClassLoaderDataGraphIterator iter;
+  while (iter.repeat()) {
+    ClassLoaderData* cld = iter.get_next();
     cld->methods_do(f);
   }
 }
 
 void ClassLoaderDataGraph::modules_do(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
-  Thread* thread = Thread::current();
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    Handle holder(thread, cld->holder_phantom());
+  ClassLoaderDataGraphIterator iter;
+  while (iter.repeat()) {
+    ClassLoaderData* cld = iter.get_next();
     cld->modules_do(f);
   }
 }
 
 void ClassLoaderDataGraph::modules_unloading_do(void f(ModuleEntry*)) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   // Only walk the head until any clds not purged from prior unloading
   // (CMS doesn't purge right away).
   for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
@@ -1192,15 +1246,15 @@ void ClassLoaderDataGraph::modules_unloading_do(void f(ModuleEntry*)) {
 
 void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
   assert_locked_or_safepoint(Module_lock);
-  Thread* thread = Thread::current();
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    Handle holder(thread, cld->holder_phantom());
+  ClassLoaderDataGraphIterator iter;
+  while (iter.repeat()) {
+    ClassLoaderData* cld = iter.get_next();
     cld->packages_do(f);
   }
 }
 
 void ClassLoaderDataGraph::packages_unloading_do(void f(PackageEntry*)) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   // Only walk the head until any clds not purged from prior unloading
   // (CMS doesn't purge right away).
   for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
@@ -1210,15 +1264,23 @@ void ClassLoaderDataGraph::packages_unloading_do(void f(PackageEntry*)) {
 }
 
 void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
-  Thread* thread = Thread::current();
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    Handle holder(thread, cld->holder_phantom());
+  ClassLoaderDataGraphIterator iter;
+  while (iter.repeat()) {
+    ClassLoaderData* cld = iter.get_next();
     cld->loaded_classes_do(klass_closure);
   }
 }
 
+// This case can block but cannot do unloading (called from CDS)
+void ClassLoaderDataGraph::unlocked_loaded_classes_do(KlassClosure* klass_closure) {
+  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
+    cld->loaded_classes_do(klass_closure);
+  }
+}
+
+
 void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   // Only walk the head until any clds not purged from prior unloading
   // (CMS doesn't purge right away).
   for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
@@ -1227,24 +1289,22 @@ void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   }
 }
 
-#define FOR_ALL_DICTIONARY(X) for (ClassLoaderData* X = _head; X != NULL; X = X->next()) \
-                                if (X->dictionary() != NULL)
+#define FOR_ALL_DICTIONARY(X)   ClassLoaderDataGraphIterator iter; \
+                                ClassLoaderData* X; \
+                                while ((X = iter.get_next()) != NULL) \
+                                  if (X->dictionary() != NULL)
 
 // Walk classes in the loaded class dictionaries in various forms.
 // Only walks the classes defined in this class loader.
 void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*)) {
-  Thread* thread = Thread::current();
   FOR_ALL_DICTIONARY(cld) {
-    Handle holder(thread, cld->holder_phantom());
     cld->dictionary()->classes_do(f);
   }
 }
 
 // Only walks the classes defined in this class loader.
 void ClassLoaderDataGraph::dictionary_classes_do(void f(InstanceKlass*, TRAPS), TRAPS) {
-  Thread* thread = Thread::current();
   FOR_ALL_DICTIONARY(cld) {
-    Handle holder(thread, cld->holder_phantom());
     cld->dictionary()->classes_do(f, CHECK);
   }
 }
@@ -1275,6 +1335,7 @@ void ClassLoaderDataGraph::print_dictionary_statistics(outputStream* st) {
 }
 
 GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(_head == NULL || _saved_head != NULL, "remember_new_clds(true) not called?");
 
   GrowableArray<ClassLoaderData*>* array = new GrowableArray<ClassLoaderData*>();
@@ -1301,6 +1362,7 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
 
 #ifndef PRODUCT
 bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
     if (loader_data == data) {
       return true;
@@ -1314,6 +1376,7 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 // Move class loader data from main list to the unloaded list for unloading
 // and deallocation later.
 bool ClassLoaderDataGraph::do_unloading(bool do_cleaning) {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
   // Indicate whether safepoint cleanup is needed.
   _safepoint_cleanup_needed |= do_cleaning;
@@ -1362,6 +1425,8 @@ bool ClassLoaderDataGraph::do_unloading(bool do_cleaning) {
 // There's at least one dead class loader.  Purge refererences of healthy module
 // reads lists and package export lists to modules belonging to dead loaders.
 void ClassLoaderDataGraph::clean_module_and_package_info() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+
   ClassLoaderData* data = _head;
   while (data != NULL) {
     // Remove entries in the dictionary of live class loader that have
@@ -1418,6 +1483,7 @@ int ClassLoaderDataGraph::resize_if_needed() {
 
 ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()
     : _next_klass(NULL) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
   ClassLoaderData* cld = ClassLoaderDataGraph::_head;
   Klass* klass = NULL;
 
@@ -1474,6 +1540,7 @@ Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
 }
 
 ClassLoaderDataGraphMetaspaceIterator::ClassLoaderDataGraphMetaspaceIterator() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
   _data = ClassLoaderDataGraph::_head;
 }
 
@@ -1488,14 +1555,18 @@ extern "C" int print_loader_data_graph() {
 }
 
 void ClassLoaderDataGraph::verify() {
-  for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
-    data->verify();
+  ClassLoaderDataGraphIterator iter;
+  while (iter.repeat()) {
+    ClassLoaderData* cld = iter.get_next();
+    cld->verify();
   }
 }
 
 void ClassLoaderDataGraph::print_on(outputStream * const out) {
-  for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
-    data->print_on(out);
+  ClassLoaderDataGraphIterator iter;
+  while (iter.repeat()) {
+    ClassLoaderData* cld = iter.get_next();
+    cld->print_on(out);
   }
 }
 #endif // PRODUCT

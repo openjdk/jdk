@@ -145,6 +145,7 @@ extern Mutex*   UnsafeJlong_lock;                // provides Unsafe atomic updat
 #endif
 
 extern Mutex*   MetaspaceExpand_lock;            // protects Metaspace virtualspace and chunk expansions
+extern Mutex*   ClassLoaderDataGraph_lock;       // protects CLDG list, needed for concurrent unloading
 
 
 extern Monitor* CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.

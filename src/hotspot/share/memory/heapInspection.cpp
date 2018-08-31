@@ -153,11 +153,17 @@ void KlassInfoBucket::empty() {
   }
 }
 
-void KlassInfoTable::AllClassesFinder::do_klass(Klass* k) {
-  // This has the SIDE EFFECT of creating a KlassInfoEntry
-  // for <k>, if one doesn't exist yet.
-  _table->lookup(k);
-}
+class KlassInfoTable::AllClassesFinder : public LockedClassesDo {
+  KlassInfoTable *_table;
+public:
+  AllClassesFinder(KlassInfoTable* table) : _table(table) {}
+  virtual void do_klass(Klass* k) {
+    // This has the SIDE EFFECT of creating a KlassInfoEntry
+    // for <k>, if one doesn't exist yet.
+    _table->lookup(k);
+  }
+};
+
 
 KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _size_of_instances_in_words = 0;

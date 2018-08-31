@@ -4074,6 +4074,8 @@ class PrecleanCLDClosure : public CLDClosure {
 
 // The freelist lock is needed to prevent asserts, is it really needed?
 void CMSCollector::preclean_cld(MarkRefsIntoAndScanClosure* cl, Mutex* freelistLock) {
+  // Needed to walk CLDG
+  MutexLocker ml(ClassLoaderDataGraph_lock);
 
   cl->set_freelistLock(freelistLock);
 

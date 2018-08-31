@@ -74,6 +74,10 @@ static void prepare_for_emergency_dump(Thread* thread) {
     Module_lock->unlock();
   }
 
+  if (ClassLoaderDataGraph_lock->owned_by_self()) {
+    ClassLoaderDataGraph_lock->unlock();
+  }
+
   if (Heap_lock->owned_by_self()) {
     Heap_lock->unlock();
   }

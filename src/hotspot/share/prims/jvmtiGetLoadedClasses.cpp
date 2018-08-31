@@ -107,6 +107,7 @@ JvmtiGetLoadedClasses::getLoadedClasses(JvmtiEnv *env, jint* classCountPtr, jcla
 
     // Iterate through all classes in ClassLoaderDataGraph
     // and collect them using the LoadedClassesClosure
+    MutexLocker mcld(ClassLoaderDataGraph_lock);
     ClassLoaderDataGraph::loaded_classes_do(&closure);
   }
 
