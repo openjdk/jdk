@@ -32,20 +32,15 @@
  *     This JVMTI test is for SP06 scenario of "time sampling profiling" area.
  *     This test checks that JVMTI methods GetStackTrace() returns expected list
  *     of stack frames including frame for tested method even for compiled methods.
- *     The test provokes compilation of tested methods by intensivelly calling
- *     them in a loop and then invokes GenarateEvents() to receive all
+ *     The test provokes compilation of tested methods by intensively calling
+ *     them in a loop and then invokes GenerateEvents() to receive all
  *     COMPILED_METHOD_LOAD events and mark compiled methods.
- *     Threads are supended/resumed individually by SuspendThread() and ResumeThread().
+ *     Threads are suspended/resumed individually by SuspendThread() and ResumeThread().
  *     Checked statements:
- *         - number of stack frames returned by GetFramesCount() should be equal or
- *           less than number returned by successive call to GetStackTrace()
+ *         - for suspended threads number of stack frames returned by GetFrameCount()
+ *           should be equal to frames number returned by successive call to GetStackTrace()
  *         - list of stack frames returned by GetStackTrace() should include
  *           frame for tested method
- *     Checked statements:
- *         - stack frame info returned by GetFrameLocation() equals to the
- *           corresponding frame info returmned by GetStackTrace()
- *         - both GetFrameLocation() and GetStackTrace() include frame info
- *           for expected tested method
  *     Tested threads:
  *         Running             - running in Java method
  *         Entering            - entering monitor in synchronized block

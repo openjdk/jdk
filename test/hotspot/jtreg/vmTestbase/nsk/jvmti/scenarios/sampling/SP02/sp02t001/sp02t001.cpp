@@ -64,7 +64,7 @@ static ThreadDesc threadsDesc[THREADS_COUNT] = {
 
 /* testcase(s) */
 static int prepare();
-static int checkThreads(int suspended, const char* kind);
+static int checkSuspendedThreads();
 static int suspendThreadsIndividually(int suspend);
 static int clean();
 
@@ -87,30 +87,19 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
             nsk_jvmti_setFailStatus();
             return;
         }
-
-        /* testcase #1: check not suspended threads */
-        NSK_DISPLAY0("Testcase #1: check stack frames of not suspended threads\n");
-        if (!checkThreads(NSK_FALSE, "not suspended"))
-            return;
-
         /* suspend threads */
         NSK_DISPLAY0("Suspend each thread\n");
         if (!suspendThreadsIndividually(NSK_TRUE))
             return;
 
-        /* testcase #2: check suspended threads */
-        NSK_DISPLAY0("Testcase #2: check stack frames of suspended threads\n");
-        if (!checkThreads(NSK_TRUE, "suspended"))
+        /* check suspended threads */
+        NSK_DISPLAY0("Check stack frames of suspended threads\n");
+        if (!checkSuspendedThreads())
             return;
 
         /* resume threads */
         NSK_DISPLAY0("Resume each thread\n");
         if (!suspendThreadsIndividually(NSK_FALSE))
-            return;
-
-        /* testcase #3: check resumed threads */
-        NSK_DISPLAY0("Testcase #3: check stack frames of resumed threads\n");
-        if (!checkThreads(NSK_FALSE, "resumed"))
             return;
 
         /* clean date: delete threads references */
@@ -237,12 +226,11 @@ static int suspendThreadsIndividually(int suspend) {
  *    - invoke getFrameCount() for each thread
  *    - check if frameCount is not less than minimal stack depth
  *    - invoke getStackTrace() for each thread
- *    - check if stack depth is not less than frameCount
- *    - for suspended thread check if stack depth is equal to frameCount
+ *    - check if stack depth is equal to frameCount
  *
  * Returns NSK_TRUE if test may continue; or NSK_FALSE for test break.
  */
-static int checkThreads(int suspended, const char* kind) {
+static int checkSuspendedThreads() {
     int i;
 
     /* check each thread */
@@ -276,35 +264,23 @@ static int checkThreads(int suspended, const char* kind) {
 
         /* check frame count */
         if (frameCount < threadsDesc[i].minDepth) {
-            NSK_COMPLAIN5("Too few frameCount of %s thread #%d (%s):\n"
+            NSK_COMPLAIN4("Too few frameCount of suspended thread #%d (%s):\n"
                             "#   got frameCount:   %d\n"
                             "#   expected minimum: %d\n",
-                            kind, i, threadsDesc[i].threadName,
+                            i, threadsDesc[i].threadName,
                             (int)frameCount, threadsDesc[i].minDepth);
             nsk_jvmti_setFailStatus();
         }
 
-        /* check if stack size is not less than frameCount */
-        if (frameStackSize < frameCount) {
-            NSK_COMPLAIN5("Too small stack of %s thread #%d (%s):\n"
+        if (frameStackSize != frameCount) {
+            NSK_COMPLAIN4("Different frames count for suspended thread #%d (%s):\n"
                             "#   getStackTrace(): %d\n"
                             "#   getFrameCount(): %d\n",
-                            kind, i, threadsDesc[i].threadName,
+                            i, threadsDesc[i].threadName,
                             (int)frameStackSize, (int)frameCount);
             nsk_jvmti_setFailStatus();
         }
 
-        /* for suspended thread: check if stack size is equal to frameCount */
-        if (suspended) {
-            if (frameStackSize != frameCount) {
-                NSK_COMPLAIN5("Different frames count for %s thread #%d (%s):\n"
-                                "#   getStackTrace(): %d\n"
-                                "#   getFrameCount(): %d\n",
-                                kind, i, threadsDesc[i].threadName,
-                                (int)frameStackSize, (int)frameCount);
-                nsk_jvmti_setFailStatus();
-            }
-        }
     }
 
     /* test may continue */

@@ -81,7 +81,7 @@ static const int nativeThreadIndex = THREADS_COUNT - 1;
 /* testcase(s) */
 static int prepare();
 static int generateEvents();
-static int checkThreads(int suspended, const char* kind);
+static int checkSuspendedThreads();
 static int suspendThreadsIndividually(int suspend);
 static int clean();
 
@@ -107,24 +107,16 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
         if (!generateEvents())
             return;
 
-        NSK_DISPLAY0("Testcase #1: check stack frames of not suspended threads\n");
-        if (!checkThreads(NSK_FALSE, "not suspended"))
-            return;
-
         NSK_DISPLAY0("Suspend each thread\n");
         if (!suspendThreadsIndividually(NSK_TRUE))
             return;
 
-        NSK_DISPLAY0("Testcase #2: check stack frames of suspended threads\n");
-        if (!checkThreads(NSK_TRUE, "suspended"))
+        NSK_DISPLAY0("Check stack frames of suspended threads\n");
+        if (!checkSuspendedThreads())
             return;
 
         NSK_DISPLAY0("Resume each thread\n");
         if (!suspendThreadsIndividually(NSK_FALSE))
-            return;
-
-        NSK_DISPLAY0("Testcase #3: check stack frames of resumed threads\n");
-        if (!checkThreads(NSK_FALSE, "resumed"))
             return;
 
         NSK_DISPLAY0("Clean data\n");
@@ -290,12 +282,11 @@ static int suspendThreadsIndividually(int suspend) {
  *    - invoke getFrameCount() for each thread
  *    - check if frameCount is not less than minimal stack depth
  *    - invoke getStackTrace() for each thread
- *    - check if stack depth is not less than frameCount
- *    - for suspended thread check if stack depth is equal to frameCount
+ *    - check if stack depth is equal to frameCount
  *
  * Returns NSK_TRUE if test may continue; or NSK_FALSE for test break.
  */
-static int checkThreads(int suspended, const char* kind0) {
+static int checkSuspendedThreads() {
     char kind[256] = "";
     int i;
 
@@ -308,7 +299,6 @@ static int checkThreads(int suspended, const char* kind0) {
 
         /* make proper kind */
         strcpy(kind, threadsDesc[i].methodCompiled ? "compiled " : "not compiled ");
-        strcat(kind, kind0);
         NSK_DISPLAY2("  thread #%d (%s):\n", i, threadsDesc[i].threadName);
 
         /* get frame count */
@@ -341,9 +331,8 @@ static int checkThreads(int suspended, const char* kind0) {
             nsk_jvmti_setFailStatus();
         }
 
-        /* check if stack size is not less than frameCount */
-        if (frameStackSize < frameCount) {
-            NSK_COMPLAIN5("Too small stack of %s thread #%d (%s):\n"
+        if (frameStackSize != frameCount) {
+            NSK_COMPLAIN5("Different frames count for %s thread #%d (%s):\n"
                             "#   getStackTrace(): %d\n"
                             "#   getFrameCount(): %d\n",
                             kind, i, threadsDesc[i].threadName,
@@ -351,17 +340,6 @@ static int checkThreads(int suspended, const char* kind0) {
             nsk_jvmti_setFailStatus();
         }
 
-        /* for suspended thread: check if stack size is equal to frameCount */
-        if (suspended) {
-            if (frameStackSize != frameCount) {
-                NSK_COMPLAIN5("Different frames count for %s thread #%d (%s):\n"
-                                "#   getStackTrace(): %d\n"
-                                "#   getFrameCount(): %d\n",
-                                kind, i, threadsDesc[i].threadName,
-                                (int)frameStackSize, (int)frameCount);
-                nsk_jvmti_setFailStatus();
-            }
-        }
     }
 
     /* test may continue */

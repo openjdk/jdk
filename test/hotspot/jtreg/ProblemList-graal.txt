@@ -147,11 +147,6 @@ vmTestbase/nsk/jvmti/StopThread/stopthrd007/TestDescription.java                
 
 vmTestbase/nsk/jvmti/scenarios/sampling/SP02/sp02t003/TestDescription.java         8051349   generic-all
 
-vmTestbase/nsk/jvmti/scenarios/sampling/SP02/sp02t001/TestDescription.java         8209585   generic-all
-vmTestbase/nsk/jvmti/scenarios/sampling/SP02/sp02t002/TestDescription.java         8209585   generic-all
-vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t001/TestDescription.java         8209585   generic-all
-vmTestbase/nsk/jvmti/scenarios/sampling/SP06/sp06t002/TestDescription.java         8209585   generic-all
-
 runtime/appcds/cacheObject/ArchivedModuleCompareTest.java                          8209534   generic-all
 runtime/appcds/cacheObject/ArchivedModuleComboTest.java                            8209534   generic-all
 
