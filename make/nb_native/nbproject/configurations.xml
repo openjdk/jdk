@@ -2853,7 +2853,7 @@
               <in>globalDefinitions.cpp</in>
               <in>globalDefinitions.hpp</in>
               <in>globalDefinitions_gcc.hpp</in>
-              <in>globalDefinitions_sparcWorks.hpp</in>
+              <in>globalDefinitions_solstudio.hpp</in>
               <in>globalDefinitions_visCPP.hpp</in>
               <in>globalDefinitions_xlc.hpp</in>
               <in>growableArray.cpp</in>
@@ -15217,7 +15217,7 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../src/hotspot/share/utilities/globalDefinitions_sparcWorks.hpp"
+      <item path="../../src/hotspot/share/utilities/globalDefinitions_solstudio.hpp"
             ex="false"
             tool="3"
             flavor2="0">
@@ -15869,7 +15869,7 @@
             <Elem>SPARC_WORKS</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
-            <Elem>TARGET_COMPILER_sparcWorks</Elem>
+            <Elem>TARGET_COMPILER_solstudio</Elem>
             <Elem>TARGET_OS_ARCH_MODEL_solaris_x86_64</Elem>
             <Elem>TARGET_OS_ARCH_solaris_x86</Elem>
             <Elem>TARGET_OS_FAMILY_solaris</Elem>
@@ -15922,7 +15922,7 @@
             <Elem>SPARC_WORKS</Elem>
             <Elem>TARGET_ARCH_MODEL_x86_64</Elem>
             <Elem>TARGET_ARCH_x86</Elem>
-            <Elem>TARGET_COMPILER_sparcWorks</Elem>
+            <Elem>TARGET_COMPILER_solstudio</Elem>
             <Elem>TARGET_OS_ARCH_MODEL_solaris_x86_64</Elem>
             <Elem>TARGET_OS_ARCH_solaris_x86</Elem>
             <Elem>TARGET_OS_FAMILY_solaris</Elem>
@@ -28989,7 +28989,7 @@
             tool="3"
             flavor2="0">
       </item>
-      <item path="../../src/hotspot/share/utilities/globalDefinitions_sparcWorks.hpp"
+      <item path="../../src/hotspot/share/utilities/globalDefinitions_solstudio.hpp"
             ex="false"
             tool="3"
             flavor2="0">

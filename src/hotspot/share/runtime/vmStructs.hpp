@@ -72,7 +72,7 @@ typedef struct {
   int32_t  isStatic;               // Indicates whether following field is an offset or an address
   uint64_t offset;                 // Offset of field within structure; only used for nonstatic fields
   void* address;                   // Address of field; only used for static fields
-                                   // ("offset" can not be reused because of apparent SparcWorks compiler bug
+                                   // ("offset" can not be reused because of apparent solstudio compiler bug
                                    // in generation of initializer data)
 } VMStructEntry;
 
