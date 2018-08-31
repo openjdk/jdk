@@ -1,7 +1,7 @@
 <!-- importing.xml -->
 <project name="langtools" basedir = "../../..">
 
-    <script language="javascript" classpath="${idea.dir}/classes">
+    <script language="javascript" classpath=".idea/classes">
         var LangtoolsLogger = Java.type("idea.LangtoolsIdeaAntLogger");
         new LangtoolsLogger(project)
     </script>

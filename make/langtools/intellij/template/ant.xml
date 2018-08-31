@@ -5,7 +5,6 @@
       <properties>
 	    <property name="langtools.jdk.home" value="@IDEA_TARGET_JDK@" />
         <property name="intellij.ismake" value="$IsMake$" />
-        <property name="idea.dir" value="$ModuleFileDir$" />
       </properties>
       <executeOn event="afterCompilation" target="post-make" />
     </buildFile>

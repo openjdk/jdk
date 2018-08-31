@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <ignored path="jdk.iws" />
-    <ignored path="$PROJECT_DIR$/build/idea/out/" />
+    <ignored path="###ROOT_DIR###/build/idea/out/" />
     <ignored path=".idea/" />
   </component>
   <component name="StructureViewFactory">
@@ -11,7 +11,7 @@
   <component name="antWorkspaceConfiguration">
     <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
     <option name="FILTER_TARGETS" value="false" />
-    <buildFile url="file://$PROJECT_DIR$/make/idea/build.xml">
+    <buildFile url="file://###ROOT_DIR###/make/idea/build.xml">
       <runInBackground value="false" />
       <targetFilters>
         <filter targetName="clean" isVisible="true" />
