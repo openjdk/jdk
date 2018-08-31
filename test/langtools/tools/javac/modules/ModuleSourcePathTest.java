@@ -519,11 +519,175 @@ public class ModuleSourcePathTest extends ModuleTestBase {
         }
     }
 
+    @Test
+    public void moduleSpecificFormsOnly(Path base) throws Exception {
+        // The dirs for the modules do not use a subdirectory named for the module,
+        // meaning they can only be used by the module-specific form of the option.
+        String[] srcDirs = {
+                "src0",         // m0x
+                "src1",         // m1x
+                "src2",         // m2x
+                "src3"          // m3x
+        };
+        generateModules(base, false, srcDirs);
+
+        final Path modules = base.resolve("modules");
+        tb.createDirectories(modules);
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics",
+                        "--module-source-path", "m0x=" + base.resolve("src0"),
+                        "--module-source-path", "m1x=" + base.resolve("src1"),
+                        "--module-source-path", "m2x=" + base.resolve("src2"),
+                        "--module-source-path", "m3x=" + base.resolve("src3"))
+                .files(findJavaFiles(base.resolve(srcDirs[srcDirs.length - 1])))
+                .outdir(modules)
+                .run()
+                .writeAll();
+
+        for (int i = 0; i < srcDirs.length; i++) {
+            checkFiles(modules.resolve("m" + i + "x/module-info.class"));
+        }
+        checkFiles(modules.resolve("m3x/pkg3/A.class"));
+    }
+
+    @Test
+    public void modulePatternWithEquals(Path base) throws Exception {
+        // The dirs for the modules contain an '=' character, but
+        // the option should still be recognized as the module pattern form.
+        String[] srcDirs = {
+                "src=",         // m0x
+                "src=",         // m1x
+                "src=",         // m2x
+                "src="  // m3x
+        };
+        generateModules(base, true, srcDirs);
+
+        final Path modules = base.resolve("modules");
+        tb.createDirectories(modules);
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics",
+                        "--module-source-path", base.resolve("src=").toString())
+                .files(findJavaFiles(base.resolve(srcDirs[srcDirs.length - 1])))
+                .outdir(modules)
+                .run()
+                .writeAll();
+
+        for (int i = 0; i < srcDirs.length; i++) {
+            checkFiles(modules.resolve("m" + i + "x/module-info.class"));
+        }
+        checkFiles(modules.resolve("m3x/pkg3/A.class"));
+    }
+
+    @Test
+    public void duplicateModuleSpecificForms(Path base) throws Exception {
+        // The dirs for the modules do not use a subdirectory named for the module,
+        // meaning they can only be used by the module-specific form of the option.
+        String[] srcDirs = {
+                "src0",         // m0x
+                "src1",         // m1x
+                "src2",         // m2x
+                "src3"          // m3x
+        };
+        generateModules(base, false, srcDirs);
+
+        final Path modules = base.resolve("modules");
+        tb.createDirectories(modules);
+
+        // in the following, it should not matter that src1 does not contain
+        // a definition of m0x; it is bad/wrong to specify the option for m0x twice.
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics",
+                        "--module-source-path", "m0x=" + base.resolve("src0"),
+                        "--module-source-path", "m0x=" + base.resolve("src1"))
+                .files(findJavaFiles(base.resolve(srcDirs[srcDirs.length - 1])))
+                .outdir(modules)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("error: --module-source-path specified more than once for module m0x"))
+            throw new Exception("Expected error message not found");
+    }
+
+    @Test
+    public void duplicateModulePatternForms(Path base) throws Exception {
+        // module-specific subdirs are used to allow for use of module-pattern form
+        String[] srcDirs = {
+                "src",  // m0x
+                "src",  // m1x
+                "src",  // m2x
+                "src"   // m3x
+        };
+        generateModules(base, true, srcDirs);
+
+        final Path modules = base.resolve("modules");
+        tb.createDirectories(modules);
+
+        // in the following, it should not matter that the same pattern
+        // is used for both occurrences; it is bad/wrong to give any two patterns
+        String log = new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics",
+                        "--module-source-path", base.resolve("src").toString(),
+                        "--module-source-path", base.resolve("src").toString())
+                .files(findJavaFiles(base.resolve(srcDirs[srcDirs.length - 1])))
+                .outdir(modules)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutput(Task.OutputKind.DIRECT);
+
+        if (!log.contains("error: --module-source-path specified more than once with a pattern argument"))
+            throw new Exception("Expected error message not found");
+    }
+
+    @Test
+    public void mixedOptionForms(Path base) throws Exception {
+        // The dirs for m0x, m2x use a subdirectory named for the module,
+        // meaning they can be used in the module pattern form of the option;
+        // the dirs for m1x, m3x do not use a subdirectory named for the module,
+        // meaning they can only be used by the module-specific form of the option
+        String[] srcDirs = {
+                "src/m0x",      // m0x
+                "src1",         // m1x
+                "src/m2x",      // m2x
+                "src3"          // m3x
+        };
+        generateModules(base, false, srcDirs);
+
+        final Path modules = base.resolve("modules");
+        tb.createDirectories(modules);
+
+        new JavacTask(tb, Task.Mode.CMDLINE)
+                .options("-XDrawDiagnostics",
+                        "--module-source-path", base.resolve("src").toString(), // for m0x, m2x
+                        "--module-source-path", "m1x=" + base.resolve("src1"),
+                        "--module-source-path", "m3x=" + base.resolve("src3"))
+                .files(findJavaFiles(base.resolve(srcDirs[srcDirs.length - 1])))
+                .outdir(modules)
+                .run()
+                .writeAll();
+
+        for (int i = 0; i < srcDirs.length; i++) {
+            checkFiles(modules.resolve("m" + i + "x/module-info.class"));
+        }
+        checkFiles(modules.resolve("m3x/pkg3/A.class"));
+    }
+
     private void generateModules(Path base, String... paths) throws IOException {
+        generateModules(base, true, paths);
+    }
+
+    private void generateModules(Path base, boolean useModuleSubdirs, String... paths)
+                throws IOException {
         for (int i = 0; i < paths.length; i++) {
             String moduleName = "m" + i + "x";
             String dependency = i > 0 ? "requires m" + (i - 1) + "x;" : "";
-            tb.writeJavaFiles(base.resolve(paths[i]).resolve(moduleName),
+            Path dir = base.resolve(paths[i]);
+            if (useModuleSubdirs) {
+                dir = dir.resolve(moduleName);
+            }
+            tb.writeJavaFiles(dir,
                     "module " + moduleName + " { " + dependency + " }",
                     "package pkg" + i + "; class A { }");
         }

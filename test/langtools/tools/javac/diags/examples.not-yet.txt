@@ -174,12 +174,14 @@ compiler.err.invalid.flag
 compiler.err.invalid.profile
 compiler.err.invalid.source
 compiler.err.invalid.target
+compiler.err.multiple.values.for.module.source.path
 compiler.err.no.source.files.classes
 compiler.err.no.value.for.option
 compiler.err.option.not.allowed.with.target
 compiler.err.option.too.many
 compiler.err.profile.bootclasspath.conflict
 compiler.err.release.bootclasspath.conflict
+compiler.err.repeated.value.for.module.source.path
 compiler.err.repeated.value.for.patch.module
 compiler.err.req.arg
 compiler.err.sourcepath.modulesourcepath.conflict
