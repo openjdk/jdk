@@ -23,94 +23,92 @@
 
 /* @test
  * @bug 8201315
+ * @build SelectorUtils
+ * @run main RegisterDuringSelect
  * @summary Test that channels can be registered, interest ops can changed,
  *          and keys cancelled while a selection operation is in progress.
  */
 
 import java.io.IOException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.Phaser;
 
 public class RegisterDuringSelect {
+    interface TestOperation {
+        void accept(Thread t, Selector sel, Pipe.SourceChannel sc) throws Exception;
+    }
+    static class Test {
+        final Selector sel;
+        final Pipe p;
+        final Pipe.SourceChannel sc;
 
-    static Callable<Void> selectLoop(Selector sel, Phaser barrier) {
-        return new Callable<Void>() {
-            @Override
-            public Void call() throws IOException {
-                for (;;) {
+        Test() throws Exception {
+            sel = Selector.open();
+            p = Pipe.open();
+            sc = p.source();
+            sc.configureBlocking(false);
+        }
+        void test(TestOperation op) throws Exception {
+            try {
+                Thread t = new Thread(() -> {
                     try {
                         sel.select();
-                    } catch (ClosedSelectorException ignore) {
-                        return null;
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
                     }
-                    if (sel.isOpen()) {
-                        barrier.arriveAndAwaitAdvance();
-                        System.out.println("selectLoop advanced ...");
-                    } else {
-                        // closed
-                        return null;
-                    }
-                }
+                });
+                t.start();
+                op.accept(t, sel, sc);
+            } finally {
+                sel.close();
+                p.source().close();
+                p.sink().close();
             }
-        };
+        }
     }
     /**
      * Invoke register, interestOps, and cancel concurrently with a thread
      * doing a selection operation
      */
     public static void main(String args[]) throws Exception {
-        Future<Void> result;
-
-        ExecutorService pool = Executors.newFixedThreadPool(1);
-        try (Selector sel = Selector.open()) {
-            Phaser barrier = new Phaser(2);
-
-            // submit task to do the select loop
-            result = pool.submit(selectLoop(sel, barrier));
-
-            Pipe p = Pipe.open();
+        new Test().test((t, sel, sc) -> {
+            System.out.println("register ...");
+            // spin until make sure select is invoked
+            SelectorUtils.spinUntilLocked(t, sel);
+            SelectionKey key = sc.register(sel, SelectionKey.OP_READ);
             try {
-                Pipe.SourceChannel sc = p.source();
-                sc.configureBlocking(false);
-
-                System.out.println("register ...");
-                SelectionKey key = sc.register(sel, SelectionKey.OP_READ);
                 if (!sel.keys().contains(key))
                     throw new RuntimeException("key not in key set");
-                sel.wakeup();
-                barrier.arriveAndAwaitAdvance();
-
-                System.out.println("interestOps ...");
-                key.interestOps(0);
-                sel.wakeup();
-                barrier.arriveAndAwaitAdvance();
-
-                System.out.println("cancel ...");
-                key.cancel();
-                sel.wakeup();
-                barrier.arriveAndAwaitAdvance();
-                if (sel.keys().contains(key))
-                    throw new RuntimeException("key not removed from key set");
-
             } finally {
-                p.source().close();
-                p.sink().close();
+                sel.wakeup();
+                t.join();
             }
-
-        } finally {
-            pool.shutdown();
-        }
-
-        // ensure selectLoop completes without exception
-        result.get();
-
+        });
+        new Test().test((t, sel, sc) -> {
+            System.out.println("interestOps ...");
+            SelectionKey key = sc.register(sel, SelectionKey.OP_READ);
+            // spin until make sure select is invoked
+            SelectorUtils.spinUntilLocked(t, sel);
+            key.interestOps(0);
+            try {
+                if (key.interestOps() != 0)
+                    throw new RuntimeException("interested ops not cleared");
+            } finally {
+                sel.wakeup();
+                t.join();
+            }
+        });
+        new Test().test((t, sel, sc) -> {
+            System.out.println("cancel ...");
+            SelectionKey key = sc.register(sel, SelectionKey.OP_READ);
+            // spin until make sure select is invoked
+            SelectorUtils.spinUntilLocked(t, sel);
+            key.cancel();
+            sel.wakeup();
+            t.join();
+            if (sel.keys().contains(key))
+                throw new RuntimeException("key not removed from key set");
+        });
     }
 }
-

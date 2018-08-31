@@ -23,32 +23,17 @@
 
 /* @test
  * @bug 5004077 8203765
+ * @build SelectorUtils
+ * @run main SelectAndClose
  * @summary Check blocking of select and close
  */
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MonitorInfo;
-import java.lang.management.ThreadInfo;
 import java.nio.channels.Selector;
 
 public class SelectAndClose {
     static Selector selector;
     static volatile boolean awakened = false;
-
-    private static boolean mightHoldLock(Thread t, Object lock) {
-        long tid = t.getId();
-        int hash = System.identityHashCode(lock);
-        ThreadInfo ti = ManagementFactory.getThreadMXBean().
-            getThreadInfo(new long[]{ tid} , true, false, 100)[0];
-        if (ti != null) {
-            for (MonitorInfo mi : ti.getLockedMonitors()) {
-                if (mi.getIdentityHashCode() == hash)
-                    return true;
-            }
-        }
-        return false;
-    }
 
     public static void main(String[] args) throws Exception {
         selector = Selector.open();
@@ -66,12 +51,8 @@ public class SelectAndClose {
             });
         selectThread.start();
 
-        // Spin until the monitor of the selected-key set is likely held
-        // as selected operations are specified to synchronize on the
-        // selected-key set.
-        while (!mightHoldLock(selectThread, selector.selectedKeys())) {
-            Thread.sleep(50);
-        }
+        // spin until make sure select is invoked
+        SelectorUtils.spinUntilLocked(selectThread, selector);
 
         // Close the selector.
         selector.close();
