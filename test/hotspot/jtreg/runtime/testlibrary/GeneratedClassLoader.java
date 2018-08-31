@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import java.io.DataInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
@@ -145,10 +146,17 @@ public class GeneratedClassLoader extends ClassLoader {
             pw.append(src);
             pw.flush();
         }
-        int exitcode = javac.run(null, null, null, file.getCanonicalPath());
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        int exitcode = javac.run(null, null, err, file.getCanonicalPath());
         if (exitcode != 0) {
-            throw new RuntimeException("javac failure when compiling: " +
-                    file.getCanonicalPath());
+            // Print Error
+            System.err.print(err);
+            if (err.toString().contains("java.lang.OutOfMemoryError: Java heap space")) {
+              throw new OutOfMemoryError("javac failed with resources exhausted");
+            } else {
+              throw new RuntimeException("javac failure when compiling: " +
+                      file.getCanonicalPath());
+            }
         } else {
             if (deleteFiles) {
                 file.delete();
