@@ -376,6 +376,9 @@ public:
   // System loader lock
   static oop system_loader_lock()           { return _system_loader_lock_obj; }
 
+  // Protection Domain Table
+  static ProtectionDomainCacheTable* pd_cache_table() { return _pd_cache_table; }
+
 public:
   // Sharing support.
   static void reorder_dictionary_for_sharing() NOT_CDS_RETURN;

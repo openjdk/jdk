@@ -1884,7 +1884,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer,
     // Oops referenced by the protection domain cache table may get unreachable independently
     // of the class loader (eg. cached protection domain oops). So we need to
     // explicitly unlink them here.
-    _pd_cache_table->unlink();
+    _pd_cache_table->trigger_cleanup();
   }
 
   if (do_cleaning) {

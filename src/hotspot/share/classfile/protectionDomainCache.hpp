@@ -85,6 +85,9 @@ private:
   ProtectionDomainCacheEntry* add_entry(int index, unsigned int hash, Handle protection_domain);
   ProtectionDomainCacheEntry* find_entry(int index, Handle protection_domain);
 
+  bool _dead_entries;
+  int _total_oops_removed;
+
 public:
   ProtectionDomainCacheTable(int table_size);
   ProtectionDomainCacheEntry* get(Handle protection_domain);
@@ -93,6 +96,11 @@ public:
 
   void print_on(outputStream* st) const;
   void verify();
+
+  bool has_work() { return _dead_entries; }
+  void trigger_cleanup();
+
+  int removed_entries_count() { return _total_oops_removed; };
 };
 
 
