@@ -1059,11 +1059,10 @@ C2V_VMENTRY(jobject, iterateFrames, (JNIEnv*, jobject compilerToVM, jobjectArray
               } else {
                 // some object might already have been re-allocated, only reallocate the non-allocated ones
                 objects = new GrowableArray<ScopeValue*>(scope->objects()->length());
-                int ii = 0;
                 for (int i = 0; i < scope->objects()->length(); i++) {
                   ObjectValue* sv = (ObjectValue*) scope->objects()->at(i);
                   if (sv->value().is_null()) {
-                    objects->at_put(ii++, sv);
+                    objects->append(sv);
                   }
                 }
               }
