@@ -32,11 +32,16 @@ var catSearchTags = "SearchTags";
 var highlight = "<span class=\"resultHighlight\">$&</span>";
 var camelCaseRegexp = "";
 var secondaryMatcher = "";
+function escapeHtml(str) {
+    return str.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
 function getHighlightedText(item) {
-    var ccMatcher = new RegExp(camelCaseRegexp);
-    var label = item.replace(ccMatcher, highlight);
-    if (label === item) {
-        label = item.replace(secondaryMatcher, highlight);
+    var ccMatcher = new RegExp(escapeHtml(camelCaseRegexp));
+    var escapedItem = escapeHtml(item);
+    var label = escapedItem.replace(ccMatcher, highlight);
+    if (label === escapedItem) {
+        var secMatcher = new RegExp(escapeHtml(secondaryMatcher.source), "i");
+        label = escapedItem.replace(secMatcher, highlight);
     }
     return label;
 }
