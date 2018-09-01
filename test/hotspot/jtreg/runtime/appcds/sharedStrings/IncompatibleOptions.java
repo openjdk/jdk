@@ -41,6 +41,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import sun.hotspot.code.Compiler;
+import sun.hotspot.gc.GC;
 
 public class IncompatibleOptions {
     static final String COOPS_DUMP_WARNING =
@@ -63,7 +64,7 @@ public class IncompatibleOptions {
 
         // Uncompressed OOPs
         testDump(1, "-XX:+UseG1GC", "-XX:-UseCompressedOops", COOPS_DUMP_WARNING, true);
-        if (Platform.isLinux() && Platform.isX64()) {
+        if (GC.Z.isSupported()) { // ZGC is included in build.
             testDump(1, "-XX:+UnlockExperimentalVMOptions", "-XX:+UseZGC", COOPS_DUMP_WARNING, true);
         }
 
