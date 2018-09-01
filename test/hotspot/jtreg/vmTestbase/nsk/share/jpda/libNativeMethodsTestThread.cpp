@@ -23,36 +23,16 @@
 #include "jni.h"
 #include <stdlib.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_PTR
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG_2(x, y) y
-#define JNI_ENV_ARG_3(x, y, z) y, z
-#define JNI_ENV_ARG_4(x, y, z, a) y, z, a
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG_2(x,y) x, y
-#define JNI_ENV_ARG_3(x, y, z) x, y, z
-#define JNI_ENV_ARG_4(x, y, z, a) x, y, z, a
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 static void logMessage(JNIEnv *env, jobject thisObject, jstring message)
 {
         jclass klass;
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
-        JNI_ENV_PTR(env)->CallVoidMethod(
-        JNI_ENV_ARG_4(
-                env,
-                thisObject,
-                JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG_4(env, klass, "log", "(Ljava/lang/String;)V")),
-                message));
+        klass = env->GetObjectClass(thisObject);
+        env->CallVoidMethod(thisObject,
+                            env->GetMethodID(klass, "log", "(Ljava/lang/String;)V"),
+                            message);
 }
 
 JNIEXPORT void JNICALL
@@ -71,15 +51,11 @@ Java_nsk_share_jpda_NativeMethodsTestThread_BooleanMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedBooleanValue",
-                "Z"));
+        valueField = env->GetStaticFieldID(klass, "expectedBooleanValue", "Z");
 
-        return JNI_ENV_PTR(env)->GetStaticBooleanField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticBooleanField(klass, valueField);
 }
 
 JNIEXPORT jbyte JNICALL
@@ -91,15 +67,11 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ByteMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedByteValue",
-                "B"));
+        valueField = env->GetStaticFieldID(klass, "expectedByteValue", "B");
 
-        return JNI_ENV_PTR(env)->GetStaticByteField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticByteField(klass, valueField);
 }
 
 JNIEXPORT jshort JNICALL
@@ -111,15 +83,11 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ShortMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedShortValue",
-                "S"));
+        valueField = env->GetStaticFieldID(klass, "expectedShortValue", "S");
 
-        return JNI_ENV_PTR(env)->GetStaticShortField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticShortField(klass, valueField);
 }
 
 JNIEXPORT jchar JNICALL
@@ -131,15 +99,11 @@ Java_nsk_share_jpda_NativeMethodsTestThread_CharMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedCharValue",
-                "C"));
+        valueField = env->GetStaticFieldID(klass, "expectedCharValue", "C");
 
-        return JNI_ENV_PTR(env)->GetStaticCharField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticCharField(klass, valueField);
 }
 
 JNIEXPORT jint JNICALL
@@ -151,15 +115,11 @@ Java_nsk_share_jpda_NativeMethodsTestThread_IntMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedIntValue",
-                "I"));
+        valueField = env->GetStaticFieldID(klass, "expectedIntValue", "I");
 
-        return JNI_ENV_PTR(env)->GetStaticIntField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticIntField(klass, valueField);
 }
 
 JNIEXPORT jlong JNICALL
@@ -171,15 +131,11 @@ Java_nsk_share_jpda_NativeMethodsTestThread_LongMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedLongValue",
-                "J"));
+        valueField = env->GetStaticFieldID(klass, "expectedLongValue", "J");
 
-        return JNI_ENV_PTR(env)->GetStaticLongField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticLongField(klass, valueField);
 }
 
 JNIEXPORT jfloat JNICALL
@@ -191,15 +147,11 @@ Java_nsk_share_jpda_NativeMethodsTestThread_FloatMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedFloatValue",
-                "F"));
+        valueField = env->GetStaticFieldID(klass, "expectedFloatValue", "F");
 
-        return JNI_ENV_PTR(env)->GetStaticFloatField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticFloatField(klass, valueField);
 }
 
 JNIEXPORT jdouble JNICALL
@@ -211,15 +163,11 @@ Java_nsk_share_jpda_NativeMethodsTestThread_DoubleMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedDoubleValue",
-                "D"));
+        valueField = env->GetStaticFieldID(klass, "expectedDoubleValue", "D");
 
-        return JNI_ENV_PTR(env)->GetStaticDoubleField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticDoubleField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -231,15 +179,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ObjectArrayMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedObjectArrayValue",
-                "[Ljava/lang/Object;"));
+        valueField = env->GetStaticFieldID(klass, "expectedObjectArrayValue",
+                                           "[Ljava/lang/Object;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -251,15 +196,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_StringMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedStringValue",
-                "Ljava/lang/String;"));
+        valueField = env->GetStaticFieldID(klass, "expectedStringValue",
+                                           "Ljava/lang/String;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -271,15 +213,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ThreadMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedThreadValue",
-                "Ljava/lang/Thread;"));
+        valueField = env->GetStaticFieldID(klass, "expectedThreadValue",
+                                           "Ljava/lang/Thread;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -291,15 +230,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ThreadGroupMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedThreadGroupValue",
-                "Ljava/lang/ThreadGroup;"));
+        valueField = env->GetStaticFieldID(klass, "expectedThreadGroupValue",
+                                           "Ljava/lang/ThreadGroup;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -311,15 +247,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ClassObjectMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedClassObjectValue",
-                "Ljava/lang/Class;"));
+        valueField = env->GetStaticFieldID(klass, "expectedClassObjectValue",
+                                           "Ljava/lang/Class;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -331,15 +264,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ClassLoaderMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedClassLoaderValue",
-                "Ljava/lang/ClassLoader;"));
+        valueField = env->GetStaticFieldID(klass, "expectedClassLoaderValue",
+                                           "Ljava/lang/ClassLoader;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -351,15 +281,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ObjectMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedObjectValue",
-                "Ljava/lang/Object;"));
+        valueField = env->GetStaticFieldID(klass, "expectedObjectValue",
+                                           "Ljava/lang/Object;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -371,15 +298,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_BooleanWrapperMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedBooleanWrapperValue",
-                "Ljava/lang/Boolean;"));
+        valueField = env->GetStaticFieldID(klass, "expectedBooleanWrapperValue",
+                                           "Ljava/lang/Boolean;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -391,15 +315,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ByteWrapperMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedByteWrapperValue",
-                "Ljava/lang/Byte;"));
+        valueField = env->GetStaticFieldID(klass, "expectedByteWrapperValue",
+                                           "Ljava/lang/Byte;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -411,15 +332,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_ShortWrapperMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedShortWrapperValue",
-                "Ljava/lang/Short;"));
+        valueField = env->GetStaticFieldID(klass, "expectedShortWrapperValue",
+                                           "Ljava/lang/Short;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -431,15 +349,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_CharWrapperMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedCharWrapperValue",
-                "Ljava/lang/Character;"));
+        valueField = env->GetStaticFieldID(klass, "expectedCharWrapperValue",
+                                           "Ljava/lang/Character;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -451,15 +366,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_IntWrapperMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedIntWrapperValue",
-                "Ljava/lang/Integer;"));
+        valueField = env->GetStaticFieldID(klass, "expectedIntWrapperValue",
+                                           "Ljava/lang/Integer;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -471,15 +383,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_LongWrapperMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedLongWrapperValue",
-                "Ljava/lang/Long;"));
+        valueField = env->GetStaticFieldID(klass, "expectedLongWrapperValue",
+                                           "Ljava/lang/Long;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -491,15 +400,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_FloatWrapperMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedFloatWrapperValue",
-                "Ljava/lang/Float;"));
+        valueField = env->GetStaticFieldID(klass, "expectedFloatWrapperValue",
+                                           "Ljava/lang/Float;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
 JNIEXPORT jobject JNICALL
@@ -511,17 +417,12 @@ Java_nsk_share_jpda_NativeMethodsTestThread_DoubleWrapperMethod(JNIEnv *env,
 
         logMessage(env, thisObject, message);
 
-        klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        klass = env->GetObjectClass(thisObject);
 
-        valueField = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG_4(
-                env,
-                klass,
-                "expectedDoubleWrapperValue",
-                "Ljava/lang/Double;"));
+        valueField = env->GetStaticFieldID(klass, "expectedDoubleWrapperValue",
+                                           "Ljava/lang/Double;");
 
-        return JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG_3(env, klass, valueField));
+        return env->GetStaticObjectField(klass, valueField);
 }
 
-#ifdef __cplusplus
 }
-#endif

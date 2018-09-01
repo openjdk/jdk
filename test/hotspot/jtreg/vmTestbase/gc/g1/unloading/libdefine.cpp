@@ -31,24 +31,10 @@
 
 #define REFERENCES_ARRAY_SIZE 10000000
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x, y) x , y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
-
 #ifndef _Included_gc_g1_unloading_unloading_classloaders_JNIClassloader
 #define _Included_gc_g1_unloading_unloading_classloaders_JNIClassloader
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Class:     gc_g1_unloading_unloading_classloaders_JNIClassloader
@@ -58,10 +44,10 @@ extern "C" {
 JNIEXPORT jclass JNICALL Java_gc_g1_unloading_classloaders_JNIClassloader_loadThroughJNI0 (JNIEnv * env,
                                          jclass clazz, jstring className, jobject classLoader, jbyteArray bytecode) {
 
-  const char * classNameChar = JNI_ENV_PTR(env)->GetStringUTFChars(JNI_ENV_ARG(env, className), NULL);
-  jbyte * arrayContent = JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG(env, bytecode), NULL);
-  jsize bytecodeLength = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG(env, bytecode));
-  jclass returnValue = JNI_ENV_PTR(env)->DefineClass(JNI_ENV_ARG(env, classNameChar), classLoader, arrayContent, bytecodeLength);
+  const char * classNameChar = env->GetStringUTFChars(className, NULL);
+  jbyte * arrayContent = env->GetByteArrayElements(bytecode, NULL);
+  jsize bytecodeLength = env->GetArrayLength(bytecode);
+  jclass returnValue = env->DefineClass(classNameChar, classLoader, arrayContent, bytecodeLength);
   if (!returnValue) {
     printf("ERROR: DefineClass call returned NULL by some reason. Classloading failed.\n");
   }
@@ -81,25 +67,25 @@ JNIEXPORT jint JNICALL  Java_gc_g1_unloading_loading_ClassLoadingThread_makeRede
     jvmtiError err;
     jvmtiCapabilities caps;
     jvmtiClassDefinition classDef;
-    jint jint_err = JNI_ENV_PTR(env)->GetJavaVM(JNI_ENV_ARG(env, &jvm));
+    jint jint_err = env->GetJavaVM(&jvm);
     if (jint_err) {
         printf("GetJavaVM returned nonzero: %d", jint_err);
         return STATUS_FAILED;
     }
 
-    jint_err = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **)&jvmti), JVMTI_VERSION_1_0);
+    jint_err = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_0);
     if (jint_err) {
         printf("GetEnv returned nonzero: %d", jint_err);
         return STATUS_FAILED;
     }
 
-    err = JNI_ENV_PTR(jvmti)->GetPotentialCapabilities(JNI_ENV_ARG(jvmti, &caps));
+    err = jvmti->GetPotentialCapabilities(&caps);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetPotentialCapabilities) unexpected error: %d\n",err);
         return JNI_ERR;
     }
 
-    err = JNI_ENV_PTR(jvmti)->AddCapabilities(JNI_ENV_ARG(jvmti, &caps));
+    err = jvmti->AddCapabilities(&caps);
     if (err != JVMTI_ERROR_NONE) {
         printf("(AddCapabilities) unexpected error: %d\n", err);
         return JNI_ERR;
@@ -112,16 +98,16 @@ JNIEXPORT jint JNICALL  Java_gc_g1_unloading_loading_ClassLoadingThread_makeRede
 
     classDef.klass = redefCls;
     classDef.class_byte_count =
-        JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG(env, classBytes));
+        env->GetArrayLength(classBytes);
     classDef.class_bytes = (unsigned char *)
-        JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG(env, classBytes),
+        env->GetByteArrayElements(classBytes,
             NULL);
 
     if (fl == 2) {
         printf(">>>>>>>> Invoke RedefineClasses():\n");
         printf("\tnew class byte count=%d\n", classDef.class_byte_count);
     }
-    err = JNI_ENV_PTR(jvmti)->RedefineClasses(JNI_ENV_ARG(jvmti, 1), &classDef);
+    err = jvmti->RedefineClasses(1, &classDef);
     if (err != JVMTI_ERROR_NONE) {
         printf("%s: Failed to call RedefineClasses():\n", __FILE__);
         printf("\tthe function returned error %d\n", err);
@@ -145,7 +131,7 @@ int firstFreeIndex = 0;
 JNIEXPORT jint JNICALL Java_gc_g1_unloading_keepref_JNIGlobalRefHolder_keepGlobalJNIReference
   (JNIEnv * env, jclass clazz, jobject obj) {
     int returnValue;
-    referencesArray[firstFreeIndex] = JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, obj));
+    referencesArray[firstFreeIndex] = env->NewGlobalRef(obj);
     printf("checkpoint1 %d \n", firstFreeIndex);
     returnValue = firstFreeIndex;
     firstFreeIndex++;
@@ -159,7 +145,7 @@ JNIEXPORT jint JNICALL Java_gc_g1_unloading_keepref_JNIGlobalRefHolder_keepGloba
  */
 JNIEXPORT void JNICALL Java_gc_g1_unloading_keepref_JNIGlobalRefHolder_deleteGlobalJNIReference
   (JNIEnv * env, jclass clazz, jint index) {
-    JNI_ENV_PTR(env)->DeleteGlobalRef(JNI_ENV_ARG(env, referencesArray[index]));
+    env->DeleteGlobalRef(referencesArray[index]);
 }
 
 
@@ -185,10 +171,6 @@ JNIEXPORT void JNICALL Java_gc_g1_unloading_keepref_JNILocalRefHolder_holdWithJN
     waitMethod = env->GetMethodID(objectClazz, "wait", "()V");
     env->CallVoidMethod(syncObject, waitMethod);
     printf("checkpoint2 \n");
-  }
-
-
-#ifdef __cplusplus
 }
-#endif
+}
 #endif

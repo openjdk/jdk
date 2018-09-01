@@ -23,25 +23,8 @@
 #include "jni.h"
 #include "nsk_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_PTR
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG_2(x, y) y
-#define JNI_ENV_ARG_3(x, y, z) y, z
-#define JNI_ENV_ARG_4(x, y, z, a) y, z, a
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG_2(x,y) x, y
-#define JNI_ENV_ARG_3(x, y, z) x, y, z
-#define JNI_ENV_ARG_4(x, y, z, a) x, y, z, a
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 JNIEXPORT void JNICALL
 Java_nsk_share_locks_JNIMonitorLocker_doLock(JNIEnv *env, jobject thisObject)
@@ -74,54 +57,60 @@ This method executes JNI analog for following Java code:
         // class for field 'inner'
         jclass deadlockLockerClass;
 
-        success = JNI_ENV_PTR(env)->MonitorEnter(JNI_ENV_ARG_2(env, thisObject));
+        success = env->MonitorEnter(thisObject);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorEnter return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorEnter return non-zero");
         }
 
-        thisObjectClass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, thisObject));
+        thisObjectClass = env->GetObjectClass(thisObject);
 
         // step1.unlockAll()
-        field = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG_4(env, thisObjectClass, "step1", "Lnsk/share/Wicket;"));
+        field = env->GetFieldID(thisObjectClass, "step1", "Lnsk/share/Wicket;");
 
-        wicketObject = JNI_ENV_PTR(env)->GetObjectField(JNI_ENV_ARG_3(env, thisObject, field));
-        wicketClass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, wicketObject));
+        wicketObject = env->GetObjectField(thisObject, field);
+        wicketClass = env->GetObjectClass(wicketObject);
 
-        JNI_ENV_PTR(env)->CallVoidMethod(JNI_ENV_ARG_3(env, wicketObject, JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG_4(env, wicketClass, "unlockAll", "()V"))));
+        env->CallVoidMethod(wicketObject,
+                            env->GetMethodID(wicketClass, "unlockAll", "()V"));
 
         // step2.waitFor()
-        field = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG_4(env, thisObjectClass, "step2", "Lnsk/share/Wicket;"));
-        wicketObject = JNI_ENV_PTR(env)->GetObjectField(JNI_ENV_ARG_3(env, thisObject, field));
+        field = env->GetFieldID(thisObjectClass, "step2", "Lnsk/share/Wicket;");
+        wicketObject = env->GetObjectField(thisObject, field);
 
-        JNI_ENV_PTR(env)->CallVoidMethod(JNI_ENV_ARG_3(env, wicketObject, JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG_4(env, wicketClass, "waitFor", "()V"))));
+        env->CallVoidMethod(wicketObject,
+                            env->GetMethodID(wicketClass, "waitFor", "()V"));
 
         // readyWicket.unlock()
-        field = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG_4(env, thisObjectClass, "readyWicket", "Lnsk/share/Wicket;"));
-        wicketObject = JNI_ENV_PTR(env)->GetObjectField(JNI_ENV_ARG_3(env, thisObject, field));
+        field = env->GetFieldID(thisObjectClass, "readyWicket", "Lnsk/share/Wicket;");
+        wicketObject = env->GetObjectField(thisObject, field);
 
-        JNI_ENV_PTR(env)->CallVoidMethod(JNI_ENV_ARG_3(env, wicketObject, JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG_4(env, wicketClass, "unlock", "()V"))));
+        env->CallVoidMethod(wicketObject,
+                            env->GetMethodID(wicketClass, "unlock", "()V"));
 
         // inner.lock()
-        field = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG_4(env, thisObjectClass, "inner", "Lnsk/share/locks/DeadlockLocker;"));
-        innerObject = JNI_ENV_PTR(env)->GetObjectField(JNI_ENV_ARG_3(env, thisObject, field));
-        deadlockLockerClass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, innerObject));
+        field = env->GetFieldID(thisObjectClass, "inner", "Lnsk/share/locks/DeadlockLocker;");
+        innerObject = env->GetObjectField(thisObject, field);
+        deadlockLockerClass = env->GetObjectClass(innerObject);
 
-        JNI_ENV_PTR(env)->CallVoidMethod(JNI_ENV_ARG_3(env, innerObject, JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG_4(env, deadlockLockerClass, "lock", "()V"))));
+        env->CallVoidMethod(innerObject,
+                            env->GetMethodID(deadlockLockerClass, "lock", "()V"));
 
-        success = JNI_ENV_PTR(env)->MonitorExit(JNI_ENV_ARG_2(env, thisObject));
+        success = env->MonitorExit(thisObject);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorExit return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorExit return non-zero");
         }
 }
 
-#ifdef __cplusplus
 }
-#endif

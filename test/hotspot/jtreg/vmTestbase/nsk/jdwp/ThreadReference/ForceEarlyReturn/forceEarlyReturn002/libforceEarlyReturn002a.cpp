@@ -23,25 +23,8 @@
 
 #include "jni.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_PTR
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG_2(x, y) y
-#define JNI_ENV_ARG_3(x, y, z) y, z
-#define JNI_ENV_ARG_4(x, y, z, a) y, z, a
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG_2(x,y) x, y
-#define JNI_ENV_ARG_3(x, y, z) x, y, z
-#define JNI_ENV_ARG_4(x, y, z, a) x, y, z, a
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 int always_true = 1;
 
@@ -50,9 +33,9 @@ Java_nsk_jdwp_ThreadReference_ForceEarlyReturn_forceEarlyReturn002_forceEarlyRet
 {
     int dummy_counter = 0;
     // notify another thread that thread in native method
-    jclass klass = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG_2(env, object));
-    jfieldID field = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG_4(env, klass, "threadInNative", "Z"));
-    JNI_ENV_PTR(env)->SetBooleanField(JNI_ENV_ARG_4(env, object, field, 1));
+    jclass klass = env->GetObjectClass(object);
+    jfieldID field = env->GetFieldID(klass, "threadInNative", "Z");
+    env->SetBooleanField(object, field, 1);
 
     // execute infinite loop to be sure that thread in native method
     while(always_true)
@@ -66,6 +49,4 @@ Java_nsk_jdwp_ThreadReference_ForceEarlyReturn_forceEarlyReturn002_forceEarlyRet
     return dummy_counter >= 0 ? 0 : 1;
 }
 
-#ifdef __cplusplus
 }
-#endif

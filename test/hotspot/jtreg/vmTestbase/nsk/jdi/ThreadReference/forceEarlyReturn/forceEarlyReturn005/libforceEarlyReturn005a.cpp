@@ -24,37 +24,22 @@
 #include "jni.h"
 #include "nsk_tools.cpp"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_PTR
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG_2(x, y) y
-#define JNI_ENV_ARG_3(x,y,z) y, z
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG_2(x,y) x, y
-#define JNI_ENV_ARG_3(x,y,z) x, y, z
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 JNIEXPORT void JNICALL
 Java_nsk_jdi_ThreadReference_forceEarlyReturn_forceEarlyReturn005_forceEarlyReturn005a_nativeJNIMonitorEnter(JNIEnv *env, jobject classObject, jobject object)
 {
-        jint success  = JNI_ENV_PTR(env)->MonitorEnter(JNI_ENV_ARG_2(env, object));
+        jint success  = env->MonitorEnter(object);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorEnter return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorEnter return non-zero");
         }
 }
 
-#ifdef __cplusplus
 }
-#endif

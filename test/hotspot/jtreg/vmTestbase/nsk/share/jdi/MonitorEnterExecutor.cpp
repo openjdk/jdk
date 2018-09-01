@@ -23,45 +23,34 @@
 #include "jni.h"
 #include "nsk_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_PTR
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG_2(x, y) y
-#define JNI_ENV_ARG_3(x,y, z) y, z
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG_2(x,y) x, y
-#define JNI_ENV_ARG_3(x,y, z) x, y, z
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 JNIEXPORT void JNICALL
 Java_nsk_share_jdi_MonitorEnterExecutor_nativeJNIMonitorEnter(JNIEnv *env, jobject thisObject)
 {
         jint success;
 
-        success  = JNI_ENV_PTR(env)->MonitorEnter(JNI_ENV_ARG_2(env, thisObject));
+        success  = env->MonitorEnter(thisObject);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorEnter return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorEnter return non-zero");
         }
 
-        success  = JNI_ENV_PTR(env)->MonitorExit(JNI_ENV_ARG_2(env, thisObject));
+        success  = env->MonitorExit(thisObject);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorExit return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorExit return non-zero");
         }
 }
 
@@ -70,22 +59,26 @@ Java_nsk_share_jdi_MonitorEnterExecutor_11Subclass_nativeJNIMonitorEnter(JNIEnv 
 {
         jint success;
 
-        success  = JNI_ENV_PTR(env)->MonitorEnter(JNI_ENV_ARG_2(env, thisObject));
+        success  = env->MonitorEnter(thisObject);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorEnter return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorEnter return non-zero");
         }
 
-        success  = JNI_ENV_PTR(env)->MonitorExit(JNI_ENV_ARG_2(env, thisObject));
+        success  = env->MonitorExit(thisObject);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorExit return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorExit return non-zero");
         }
 }
 
@@ -94,25 +87,27 @@ Java_nsk_share_jdi_MonitorEnterExecutor_12Subclass_nativeJNIMonitorEnter(JNIEnv 
 {
         jint success;
 
-        success  = JNI_ENV_PTR(env)->MonitorEnter(JNI_ENV_ARG_2(env, thisObject));
+        success  = env->MonitorEnter(thisObject);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorEnter return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorEnter return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorEnter return non-zero");
         }
 
-        success  = JNI_ENV_PTR(env)->MonitorExit(JNI_ENV_ARG_2(env, thisObject));
+        success  = env->MonitorExit(thisObject);
 
         if(success != 0)
         {
                 NSK_COMPLAIN1("MonitorExit return non-zero: %d\n", success);
 
-                JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG_3(env, JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG_2(env, "nsk/share/TestJNIError")), "MonitorExit return non-zero"));
+                env->ThrowNew(
+                    env->FindClass("nsk/share/TestJNIError"),
+                    "MonitorExit return non-zero");
         }
 }
 
-#ifdef __cplusplus
 }
-#endif

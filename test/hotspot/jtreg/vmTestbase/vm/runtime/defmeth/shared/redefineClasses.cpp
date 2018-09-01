@@ -30,21 +30,8 @@
 #include "JVMTITools.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 static jvmtiEnv *test_jvmti = NULL;
 static jvmtiCapabilities caps;
@@ -126,6 +113,4 @@ JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *jvm, char *options, void *reserved
     return Agent_Initialize(jvm, options, reserved);
 }
 
-#ifdef __cplusplus
 }
-#endif
