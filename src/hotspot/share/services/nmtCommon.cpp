@@ -25,27 +25,11 @@
 #include "services/nmtCommon.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+#define MEMORY_TYPE_DECLARE_NAME(type, human_readable) \
+  #human_readable,
+
 const char* NMTUtil::_memory_type_names[] = {
-  "Java Heap",
-  "Class",
-  "Thread",
-  "Thread Stack",
-  "Code",
-  "GC",
-  "Compiler",
-  "Internal",
-  "Other",
-  "Symbol",
-  "Native Memory Tracking",
-  "Shared class space",
-  "Arena Chunk",
-  "Test",
-  "Tracing",
-  "Logging",
-  "Arguments",
-  "Module",
-  "Safepoint",
-  "Unknown"
+  MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_NAME)
 };
 
 
