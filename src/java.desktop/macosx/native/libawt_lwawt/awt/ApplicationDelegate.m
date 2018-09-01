@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "CPopupMenu.h"
+#import "CMenuBar.h"
 #import "ThreadUtilities.h"
 #import "NSApplicationAWT.h"
-
 
 #pragma mark App Menu helpers
 
@@ -201,11 +201,11 @@ AWT_ASSERT_APPKIT_THREAD;
 
     self.fPreferencesMenu = (NSMenuItem*)[appMenu itemWithTag:PREFERENCES_TAG];
     self.fAboutMenu = (NSMenuItem*)[appMenu itemAtIndex:0];
-    
+
     NSDockTile *dockTile = [NSApp dockTile];
     self.fProgressIndicator = [[NSProgressIndicator alloc]
                                 initWithFrame:NSMakeRect(3.f, 0.f, dockTile.size.width - 6.f, 20.f)];
-    
+
     [fProgressIndicator setStyle:NSProgressIndicatorBarStyle];
     [fProgressIndicator setIndeterminate:NO];
     [[dockTile contentView] addSubview:fProgressIndicator];
@@ -820,6 +820,26 @@ JNF_COCOA_ENTER(env);
     CMenuBar *menu = (CMenuBar *)jlong_to_ptr(cMenuBarPtr);
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [ApplicationDelegate sharedDelegate].fDefaultMenuBar = menu;
+    }];
+
+JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     com_apple_eawt__AppMenuBarHandler
+ * Method:    nativeActivateDefaultMenuBar
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_apple_eawt__1AppMenuBarHandler_nativeActivateDefaultMenuBar
+(JNIEnv *env, jclass clz, jlong cMenuBarPtr)
+{
+JNF_COCOA_ENTER(env);
+
+    CMenuBar *menu = (CMenuBar *)jlong_to_ptr(cMenuBarPtr);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        if (menu) {
+            [CMenuBar activate:menu modallyDisabled:NO];
+        }
     }];
 
 JNF_COCOA_EXIT(env);
