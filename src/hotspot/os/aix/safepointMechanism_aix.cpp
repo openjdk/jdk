@@ -27,6 +27,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
+#include "services/memTracker.hpp"
 #include <sys/mman.h>
 
 void SafepointMechanism::pd_initialize() {
@@ -94,6 +95,9 @@ void SafepointMechanism::pd_initialize() {
             "SafepointMechanism::pd_initialize: failed to allocate polling page");
   log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(map_address));
   os::set_polling_page((address)(map_address));
+
+  // Register polling page with NMT.
+  MemTracker::record_virtual_memory_reserve_and_commit(map_address, map_size, CALLER_PC, mtSafepoint);
 
   // Use same page for ThreadLocalHandshakes without SIGTRAP
   if (ThreadLocalHandshakes) {
