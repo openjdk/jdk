@@ -162,7 +162,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
 
   __ load_heap_oop(Rmethod, Address(tmp, NONZERO(java_lang_invoke_MemberName::method_offset_in_bytes())));
   __ verify_oop(Rmethod);
-  __ ldr(Rmethod, Address(Rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())));
+  __ access_load_at(T_ADDRESS, IN_HEAP, Address(Rmethod, NONZERO(java_lang_invoke_ResolvedMethodName::vmtarget_offset_in_bytes())), Rmethod, noreg, noreg, noreg);
 
   if (VerifyMethodHandles && !for_compiler_entry) {
     // make sure recv is already on stack
@@ -381,7 +381,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeSpecial, member_reg, temp3);
       }
       __ load_heap_oop(Rmethod, member_vmtarget);
-      __ ldr(Rmethod, vmtarget_method);
+      __ access_load_at(T_ADDRESS, IN_HEAP, vmtarget_method, Rmethod, noreg, noreg, noreg);
       break;
 
     case vmIntrinsics::_linkToStatic:
@@ -389,7 +389,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         verify_ref_kind(_masm, JVM_REF_invokeStatic, member_reg, temp3);
       }
       __ load_heap_oop(Rmethod, member_vmtarget);
-      __ ldr(Rmethod, vmtarget_method);
+      __ access_load_at(T_ADDRESS, IN_HEAP, vmtarget_method, Rmethod, noreg, noreg, noreg);
       break;
       break;
 
@@ -404,7 +404,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
       // pick out the vtable index from the MemberName, and then we can discard it:
       Register temp2_index = temp2;
-      __ ldr(temp2_index, member_vmindex);
+      __ access_load_at(T_ADDRESS, IN_HEAP, member_vmindex, temp2_index, noreg, noreg, noreg);
 
       if (VerifyMethodHandles) {
         Label L_index_ok;
@@ -436,7 +436,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ verify_klass_ptr(temp3_intf);
 
       Register rbx_index = rbx_method;
-      __ ldr(rbx_index, member_vmindex);
+      __ access_load_at(T_ADDRESS, IN_HEAP, member_vmindex, rbx_index, noreg, noreg, noreg);
       if (VerifyMethodHandles) {
         Label L;
         __ cmp(rbx_index, 0);

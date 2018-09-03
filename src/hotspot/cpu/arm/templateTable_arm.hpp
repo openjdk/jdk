@@ -55,6 +55,7 @@
   static void store_category2_local(Register Rlocal_index, Register tmp);
 
   static Address get_array_elem_addr(BasicType elemType, Register array, Register index, Register temp);
+  static Address get_array_elem_addr_same_base(BasicType elemType, Register array, Register index, Register temp);
 
   static void jvmti_post_fast_field_mod(TosState state);
 
