@@ -48,16 +48,30 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
 #endif
 
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
-  const int code_length = VtableStub::pd_code_size_limit(true);
-  VtableStub* s = new(code_length) VtableStub(true, vtable_index);
+  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
+  const int stub_code_length = code_size_limit(true);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
     return NULL;
   }
 
-  ResourceMark rm;
-  CodeBuffer cb(s->entry_point(), code_length);
+  // Count unused bytes in instruction sequences of variable size.
+  // We add them to the computed buffer size in order to avoid
+  // overflow in subsequently generated stubs.
+  address   start_pc;
+  int       slop_bytes = 0;
+  int       slop_delta = 0;
+
+  ResourceMark    rm;
+  CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
+
+#if (!defined(PRODUCT) && defined(COMPILER2))
+  if (CountCompiledCalls) {
+    // Implementation required?
+  }
+#endif
 
   assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
 
@@ -66,17 +80,33 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address npe_addr = __ pc();
   __ load_klass(tmp, R0);
 
-  {
-  int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-  int method_offset = vtableEntry::method_offset_in_bytes() + entry_offset;
+#ifndef PRODUCT
+  if (DebugVtables) {
+    // Implementation required?
+  }
+#endif
 
-  assert ((method_offset & (wordSize - 1)) == 0, "offset should be aligned");
-  int offset_mask = AARCH64_ONLY(0xfff << LogBytesPerWord) NOT_AARCH64(0xfff);
-  if (method_offset & ~offset_mask) {
-    __ add(tmp, tmp, method_offset & ~offset_mask);
+  start_pc = __ pc();
+  { // lookup virtual method
+    int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
+    int method_offset = vtableEntry::method_offset_in_bytes() + entry_offset;
+
+    assert ((method_offset & (wordSize - 1)) == 0, "offset should be aligned");
+    int offset_mask = AARCH64_ONLY(0xfff << LogBytesPerWord) NOT_AARCH64(0xfff);
+    if (method_offset & ~offset_mask) {
+      __ add(tmp, tmp, method_offset & ~offset_mask);
+    }
+    __ ldr(Rmethod, Address(tmp, method_offset & offset_mask));
   }
-  __ ldr(Rmethod, Address(tmp, method_offset & offset_mask));
+  slop_delta  = 8 - (int)(__ pc() - start_pc);
+  slop_bytes += slop_delta;
+  assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
+
+#ifndef PRODUCT
+  if (DebugVtables) {
+    // Implementation required?
   }
+#endif
 
   address ame_addr = __ pc();
 #ifdef AARCH64
@@ -87,34 +117,35 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #endif // AARCH64
 
   masm->flush();
+  bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
-  if (PrintMiscellaneous && (WizardMode || Verbose)) {
-    tty->print_cr("vtable #%d at " PTR_FORMAT "[%d] left over: %d",
-                  vtable_index, p2i(s->entry_point()),
-                  (int)(s->code_end() - s->entry_point()),
-                  (int)(s->code_end() - __ pc()));
-  }
-  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
-  // FIXME ARM: need correct 'slop' - below is x86 code
-  // shut the door on sizing bugs
-  //int slop = 8;  // 32-bit offset is this much larger than a 13-bit one
-  //assert(vtable_index > 10 || __ pc() + slop <= s->code_end(), "room for 32-bit offset");
-
-  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
 VtableStub* VtableStubs::create_itable_stub(int itable_index) {
-  const int code_length = VtableStub::pd_code_size_limit(false);
-  VtableStub* s = new(code_length) VtableStub(false, itable_index);
+  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
+  const int stub_code_length = code_size_limit(false);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
     return NULL;
   }
+  // Count unused bytes in instruction sequences of variable size.
+  // We add them to the computed buffer size in order to avoid
+  // overflow in subsequently generated stubs.
+  address   start_pc;
+  int       slop_bytes = 0;
+  int       slop_delta = 0;
 
-  ResourceMark rm;
-  CodeBuffer cb(s->entry_point(), code_length);
+  ResourceMark    rm;
+  CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
+
+#if (!defined(PRODUCT) && defined(COMPILER2))
+  if (CountCompiledCalls) {
+    // Implementation required?
+  }
+#endif
 
   assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
 
@@ -123,14 +154,15 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register Rintf   = AARCH64_ONLY(R10) NOT_AARCH64(R5);
   const Register Rscan   = AARCH64_ONLY(R11) NOT_AARCH64(R6);
 
+  Label L_no_such_interface;
+
   assert_different_registers(Ricklass, Rclass, Rintf, Rscan, Rtemp);
 
-  // Calculate the start of itable (itable goes after vtable)
-  const int scale = exact_log2(vtableEntry::size_in_bytes());
+  start_pc = __ pc();
+
+  // get receiver klass (also an implicit null-check)
   address npe_addr = __ pc();
   __ load_klass(Rclass, R0);
-
-  Label L_no_such_interface;
 
   // Receiver subtype check against REFC.
   __ ldr(Rintf, Address(Ricklass, CompiledICHolder::holder_klass_offset()));
@@ -140,6 +172,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                              noreg, Rscan, Rtemp,
                              L_no_such_interface);
 
+  const ptrdiff_t  typecheckSize = __ pc() - start_pc;
+  start_pc = __ pc();
+
   // Get Method* and entry point for compiler
   __ ldr(Rintf, Address(Ricklass, CompiledICHolder::holder_metadata_offset()));
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
@@ -147,6 +182,21 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                              // outputs: temp reg1, temp reg2, temp reg3
                              Rmethod, Rscan, Rtemp,
                              L_no_such_interface);
+
+  const ptrdiff_t lookupSize = __ pc() - start_pc;
+
+  // Reduce "estimate" such that "padding" does not drop below 8.
+  const ptrdiff_t estimate = 140;
+  const ptrdiff_t codesize = typecheckSize + lookupSize;
+  slop_delta  = (int)(estimate - codesize);
+  slop_bytes += slop_delta;
+  assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);
+
+#ifndef PRODUCT
+  if (DebugVtables) {
+    // Implementation required?
+  }
+#endif
 
   address ame_addr = __ pc();
 
@@ -158,7 +208,6 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #endif // AARCH64
 
   __ bind(L_no_such_interface);
-
   // Handle IncompatibleClassChangeError in itable stubs.
   // More detailed error message.
   // We force resolving of the call site by jumping to the "handle
@@ -168,43 +217,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ jump(SharedRuntime::get_handle_wrong_method_stub(), relocInfo::runtime_call_type, Rtemp);
 
   masm->flush();
+  bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
-  if (PrintMiscellaneous && (WizardMode || Verbose)) {
-    tty->print_cr("itable #%d at " PTR_FORMAT "[%d] left over: %d",
-                  itable_index, p2i(s->entry_point()),
-                  (int)(s->code_end() - s->entry_point()),
-                  (int)(s->code_end() - __ pc()));
-  }
-  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
-  // FIXME ARM: need correct 'slop' - below is x86 code
-  // shut the door on sizing bugs
-  //int slop = 8;  // 32-bit offset is this much larger than a 13-bit one
-  //assert(itable_index > 10 || __ pc() + slop <= s->code_end(), "room for 32-bit offset");
-
-  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
-int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
-  int instr_count;
-
-  if (is_vtable_stub) {
-    // vtable stub size
-    instr_count = NOT_AARCH64(4) AARCH64_ONLY(5);
-  } else {
-    // itable stub size
-    instr_count = NOT_AARCH64(31) AARCH64_ONLY(31);
-  }
-
-#ifdef AARCH64
-  if (UseCompressedClassPointers) {
-    instr_count += MacroAssembler::instr_count_for_decode_klass_not_null();
-  }
-#endif // AARCH64
-
-  return instr_count * Assembler::InstructionSize;
-}
-
 int VtableStub::pd_code_alignment() {
-  return 8;
+  // ARM32 cache line size is not an architected constant. We just align on word size.
+  const unsigned int icache_line_size = wordSize;
+  return icache_line_size;
 }

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,6 @@
 #include "opto/runtime.hpp"
 #endif
 
-// Machine-dependent part of VtableStubs: create vtableStub of correct
-// size and initialize its code.
-
 #define __ masm->
 
 #ifndef PRODUCT
@@ -48,123 +45,140 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
 
 // Used by compiler only; may use only caller saved, non-argument registers.
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
-
-  const int   code_length = VtableStub::pd_code_size_limit(true);
-  VtableStub *s = new(code_length) VtableStub(true, vtable_index);
-  if (s == NULL) { // Indicates OOM In the code cache.
+  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
+  const int stub_code_length = code_size_limit(true);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
+  // Can be NULL if there is no free space in the code cache.
+  if (s == NULL) {
     return NULL;
   }
 
+  // Count unused bytes in instruction sequences of variable size.
+  // We add them to the computed buffer size in order to avoid
+  // overflow in subsequently generated stubs.
+  address   start_pc;
+  int       slop_bytes = 0;
+  int       slop_delta = 0;
+
   ResourceMark    rm;
-  CodeBuffer      cb(s->entry_point(), code_length);
-  MacroAssembler *masm = new MacroAssembler(&cb);
-  int     padding_bytes = 0;
+  CodeBuffer      cb(s->entry_point(), stub_code_length);
+  MacroAssembler* masm = new MacroAssembler(&cb);
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
-    // Count unused bytes
-    //                  worst case             actual size
-    padding_bytes += __ load_const_size() - __ load_const_optimized_rtn_len(Z_R1_scratch, (long)SharedRuntime::nof_megamorphic_calls_addr(), true);
-
+    //               worst case             actual size
+    slop_delta  = __ load_const_size() - __ load_const_optimized_rtn_len(Z_R1_scratch, (long)SharedRuntime::nof_megamorphic_calls_addr(), true);
+    slop_bytes += slop_delta;
+    assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
     // Use generic emitter for direct memory increment.
     // Abuse Z_method as scratch register for generic emitter.
     // It is loaded further down anyway before it is first used.
+    // No dynamic code size variance here, increment is 1, always.
     __ add2mem_32(Address(Z_R1_scratch), 1, Z_method);
   }
 #endif
 
   assert(VtableStub::receiver_location() == Z_R2->as_VMReg(), "receiver expected in Z_ARG1");
 
-  // Get receiver klass.
-  // Must do an explicit check if implicit checks are disabled.
-  address npe_addr = __ pc(); // npe == NULL ptr exception
+  const Register rcvr_klass   = Z_R1_scratch;
+  address        npe_addr     = __ pc(); // npe == NULL ptr exception
+  // check if we must do an explicit check (implicit checks disabled, offset too large).
   __ null_check(Z_ARG1, Z_R1_scratch, oopDesc::klass_offset_in_bytes());
-  const Register rcvr_klass = Z_R1_scratch;
+  // Get receiver klass.
   __ load_klass(rcvr_klass, Z_ARG1);
-
-  // Set method (in case of interpreted method), and destination address.
-  int entry_offset = in_bytes(Klass::vtable_start_offset()) +
-                     vtable_index * vtableEntry::size_in_bytes();
 
 #ifndef PRODUCT
   if (DebugVtables) {
-    Label L;
+    NearLabel L;
     // Check offset vs vtable length.
     const Register vtable_idx = Z_R0_scratch;
 
-    // Count unused bytes.
-    //                  worst case             actual size
-    padding_bytes += __ load_const_size() - __ load_const_optimized_rtn_len(vtable_idx, vtable_index*vtableEntry::size_in_bytes(), true);
+    //               worst case             actual size
+    slop_delta  = __ load_const_size() - __ load_const_optimized_rtn_len(vtable_idx, vtable_index*vtableEntry::size(), true);
+    slop_bytes += slop_delta;
+    assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
 
-    assert(Immediate::is_uimm12(in_bytes(Klass::vtable_length_offset())), "disp to large");
+    assert(Displacement::is_shortDisp(in_bytes(Klass::vtable_length_offset())), "disp to large");
     __ z_cl(vtable_idx, in_bytes(Klass::vtable_length_offset()), rcvr_klass);
     __ z_brl(L);
     __ z_lghi(Z_ARG3, vtable_index);  // Debug code, don't optimize.
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), Z_ARG1, Z_ARG3, false);
     // Count unused bytes (assume worst case here).
-    padding_bytes += 12;
+    slop_bytes += 12;
     __ bind(L);
   }
 #endif
 
-  int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
+  int entry_offset = in_bytes(Klass::vtable_start_offset()) +
+                     vtable_index * vtableEntry::size_in_bytes();
+  int v_off        = entry_offset + vtableEntry::method_offset_in_bytes();
 
+  // Set method (in case of interpreted method), and destination address.
   // Duplicate safety code from enc_class Java_Dynamic_Call_dynTOC.
   if (Displacement::is_validDisp(v_off)) {
     __ z_lg(Z_method/*method oop*/, v_off, rcvr_klass/*class oop*/);
     // Account for the load_const in the else path.
-    padding_bytes += __ load_const_size();
+    slop_delta  = __ load_const_size();
   } else {
     // Worse case, offset does not fit in displacement field.
-    __ load_const(Z_method, v_off); // Z_method temporarily holds the offset value.
+    //               worst case             actual size
+    slop_delta  = __ load_const_size() - __ load_const_optimized_rtn_len(Z_method, v_off, true);
     __ z_lg(Z_method/*method oop*/, 0, Z_method/*method offset*/, rcvr_klass/*class oop*/);
   }
+  slop_bytes += slop_delta;
 
 #ifndef PRODUCT
   if (DebugVtables) {
-    Label L;
+    NearLabel L;
     __ z_ltgr(Z_method, Z_method);
     __ z_brne(L);
-    __ stop("Vtable entry is ZERO",102);
+    __ stop("Vtable entry is ZERO", 102);
     __ bind(L);
   }
 #endif
 
-  address ame_addr = __ pc(); // ame = abstract method error
-
-  // Must do an explicit check if implicit checks are disabled.
+  // Must do an explicit check if offset too large or implicit checks are disabled.
+  address ame_addr = __ pc();
   __ null_check(Z_method, Z_R1_scratch, in_bytes(Method::from_compiled_offset()));
   __ z_lg(Z_R1_scratch, in_bytes(Method::from_compiled_offset()), Z_method);
   __ z_br(Z_R1_scratch);
 
   masm->flush();
-
-  s->set_exception_points(npe_addr, ame_addr);
+  bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
 }
 
 VtableStub* VtableStubs::create_itable_stub(int itable_index) {
-  const int   code_length = VtableStub::pd_code_size_limit(false);
-  VtableStub *s = new(code_length) VtableStub(false, itable_index);
-  if (s == NULL) { // Indicates OOM in the code cache.
+  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
+  const int stub_code_length = code_size_limit(false);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
+  // Can be NULL if there is no free space in the code cache.
+  if (s == NULL) {
     return NULL;
   }
+  // Count unused bytes in instruction sequences of variable size.
+  // We add them to the computed buffer size in order to avoid
+  // overflow in subsequently generated stubs.
+  address   start_pc;
+  int       slop_bytes = 0;
+  int       slop_delta = 0;
 
   ResourceMark    rm;
-  CodeBuffer      cb(s->entry_point(), code_length);
-  MacroAssembler *masm = new MacroAssembler(&cb);
-  int     padding_bytes = 0;
+  CodeBuffer      cb(s->entry_point(), stub_code_length);
+  MacroAssembler* masm = new MacroAssembler(&cb);
 
 #if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
-    // Count unused bytes
-    //                  worst case             actual size
-    padding_bytes += __ load_const_size() - __ load_const_optimized_rtn_len(Z_R1_scratch, (long)SharedRuntime::nof_megamorphic_calls_addr(), true);
-
+    //               worst case             actual size
+    slop_delta  = __ load_const_size() - __ load_const_optimized_rtn_len(Z_R1_scratch, (long)SharedRuntime::nof_megamorphic_calls_addr(), true);
+    slop_bytes += slop_delta;
+    assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
     // Use generic emitter for direct memory increment.
-    // Use Z_tmp_1 as scratch register for generic emitter.
-    __ add2mem_32((Z_R1_scratch), 1, Z_tmp_1);
+    // Abuse Z_method as scratch register for generic emitter.
+    // It is loaded further down anyway before it is first used.
+    // No dynamic code size variance here, increment is 1, always.
+    __ add2mem_32(Address(Z_R1_scratch), 1, Z_method);
   }
 #endif
 
@@ -178,7 +192,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                  interface  = Z_tmp_2;
 
   // Get receiver klass.
-  // Must do an explicit check if implicit checks are disabled.
+  // Must do an explicit check if offset too large or implicit checks are disabled.
   address npe_addr = __ pc(); // npe == NULL ptr exception
   __ null_check(Z_ARG1, Z_R1_scratch, oopDesc::klass_offset_in_bytes());
   __ load_klass(rcvr_klass, Z_ARG1);
@@ -195,10 +209,10 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
 #ifndef PRODUCT
   if (DebugVtables) {
-    Label ok1;
+    NearLabel ok1;
     __ z_ltgr(Z_method, Z_method);
     __ z_brne(ok1);
-    __ stop("method is null",103);
+    __ stop("method is null", 103);
     __ bind(ok1);
   }
 #endif
@@ -213,39 +227,24 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   // Handle IncompatibleClassChangeError in itable stubs.
   __ bind(no_such_interface);
-  // Count unused bytes
-  //                  worst case          actual size
-  // We force resolving of the call site by jumping to
-  // the "handle wrong method" stub, and so let the
+  // more detailed IncompatibleClassChangeError
+  // we force re-resolving of the call site by jumping to
+  // the "handle wrong method" stub, thus letting the
   // interpreter runtime do all the dirty work.
-  padding_bytes += __ load_const_size() - __ load_const_optimized_rtn_len(Z_R1_scratch, (long)SharedRuntime::get_handle_wrong_method_stub(), true);
+  //               worst case          actual size
+  slop_delta  = __ load_const_size() - __ load_const_optimized_rtn_len(Z_R1_scratch, (long)SharedRuntime::get_handle_wrong_method_stub(), true);
+  slop_bytes += slop_delta;
+  assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
   __ z_br(Z_R1_scratch);
 
   masm->flush();
+  bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
-  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
-// In order to tune these parameters, run the JVM with VM options
-// +PrintMiscellaneous and +WizardMode to see information about
-// actual itable stubs. Run it with -Xmx31G -XX:+UseCompressedOops.
-int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
-  int size = DebugVtables ? 216 : 0;
-  if (CountCompiledCalls) {
-    size += 6 * 4;
-  }
-  size += is_vtable_stub ? 36 : 140;
-  if (UseCompressedClassPointers) {
-    size += MacroAssembler::instr_size_for_decode_klass_not_null();
-  }
-  if (!ImplicitNullChecks) {
-    size += 36;
-  }
-  return size;
-}
-
 int VtableStub::pd_code_alignment() {
+  // System z cache line size is 256 bytes, but octoword-alignment is quite ok.
   const unsigned int icache_line_size = 32;
   return icache_line_size;
 }
