@@ -186,7 +186,7 @@ inline void MacroAssembler::set_oop(AddressLiteral obj_addr, Register d) {
   load_const(d, obj_addr);
 }
 
-inline void MacroAssembler::pd_patch_instruction(address branch, address target) {
+inline void MacroAssembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
   jint& stub_inst = *(jint*) branch;
   stub_inst = patched_branch(target - branch, stub_inst, 0);
 }

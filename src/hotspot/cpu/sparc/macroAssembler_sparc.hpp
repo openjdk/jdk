@@ -659,7 +659,7 @@ class MacroAssembler : public Assembler {
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
-  void pd_patch_instruction(address branch, address target);
+  void pd_patch_instruction(address branch, address target, const char* file, int line);
 
   // sethi Macro handles optimizations and relocations
 private:

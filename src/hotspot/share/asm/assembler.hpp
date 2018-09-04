@@ -73,7 +73,7 @@ class Label;
  */
 class Label {
  private:
-  enum { PatchCacheSize = 4 };
+  enum { PatchCacheSize = 4 debug_only( +4 ) };
 
   // _loc encodes both the binding state (via its sign)
   // and the binding locator (via its value) of a label.
@@ -98,6 +98,11 @@ class Label {
   // The label will be bound to a location near its users.
   bool _is_near;
 
+#ifdef ASSERT
+  // Sourcre file and line location of jump instruction
+  int _lines[PatchCacheSize];
+  const char* _files[PatchCacheSize];
+#endif
  public:
 
   /**
@@ -141,7 +146,7 @@ class Label {
    * @param cb         the code buffer being patched
    * @param branch_loc the locator of the branch instruction in the code buffer
    */
-  void add_patch_at(CodeBuffer* cb, int branch_loc);
+  void add_patch_at(CodeBuffer* cb, int branch_loc, const char* file = NULL, int line = 0);
 
   /**
    * Iterate over the list of patches, resolving the instructions
@@ -447,7 +452,7 @@ class AbstractAssembler : public ResourceObj  {
    * @param branch the location of the instruction to patch
    * @param masm the assembler which generated the branch
    */
-  void pd_patch_instruction(address branch, address target);
+  void pd_patch_instruction(address branch, address target, const char* file, int line);
 
 };
 

@@ -360,7 +360,7 @@ class MacroAssembler: public Assembler {
   // Use one generic function for all branch patches.
   static unsigned long patched_branch(address dest_pos, unsigned long inst, address inst_pos);
 
-  void pd_patch_instruction(address branch, address target);
+  void pd_patch_instruction(address branch, address target, const char* file, int line);
 
   // Extract relative address from "relative" instructions.
   static long get_pcrel_offset(unsigned long inst);

@@ -49,7 +49,7 @@ bool AbstractAssembler::pd_check_instruction_mark() {
 }
 #endif
 
-void Assembler::pd_patch_instruction(address branch, address target) {
+void Assembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
   ShouldNotCallThis();
 }
 

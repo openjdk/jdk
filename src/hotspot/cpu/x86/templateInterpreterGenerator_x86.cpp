@@ -275,7 +275,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
     if (EnableJVMCI) {
       Label L;
       __ cmpb(Address(r15_thread, JavaThread::pending_monitorenter_offset()), 0);
-      __ jccb(Assembler::zero, L);
+      __ jcc(Assembler::zero, L);
       __ stop("unexpected pending monitor in deopt entry");
       __ bind(L);
     }

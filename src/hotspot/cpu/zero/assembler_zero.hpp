@@ -36,7 +36,7 @@ class Assembler : public AbstractAssembler {
   Assembler(CodeBuffer* code) : AbstractAssembler(code) {}
 
  public:
-  void pd_patch_instruction(address branch, address target);
+  void pd_patch_instruction(address branch, address target, const char* file, int line);
 };
 
 class MacroAssembler : public Assembler {
