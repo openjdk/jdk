@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.io.IOException;
  *
  * <p> The {@link PosixFileAttributes#permissions() permissions} attribute is a
  * set of access permissions. This file attribute view provides access to the nine
- * permission defined by the {@link PosixFilePermission} class.
+ * permission bits defined by the {@link PosixFilePermission} class.
  * These nine permission bits determine the <em>read</em>, <em>write</em>, and
  * <em>execute</em> access for the file owner, group, and others (others
  * meaning identities other than the owner and members of the group). Some
@@ -126,7 +126,7 @@ import java.io.IOException;
  * </pre>
  *
  * <p> When the access permissions are set at file creation time then the actual
- * value of the permissions may differ that the value of the attribute object.
+ * value of the permissions may differ from the value of the attribute object.
  * The reasons for this are implementation specific. On UNIX systems, for
  * example, a process has a <em>umask</em> that impacts the permission bits
  * of newly created files. Where an implementation supports the setting of
