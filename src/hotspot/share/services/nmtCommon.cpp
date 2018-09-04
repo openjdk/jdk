@@ -26,7 +26,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 #define MEMORY_TYPE_DECLARE_NAME(type, human_readable) \
-  #human_readable,
+  human_readable,
 
 const char* NMTUtil::_memory_type_names[] = {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_NAME)
