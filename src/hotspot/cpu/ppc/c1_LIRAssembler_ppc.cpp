@@ -2396,8 +2396,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     if (reg_conflict) { obj = dst; }
   }
 
-  ciMethodData* md;
-  ciProfileData* data;
+  ciMethodData* md = NULL;
+  ciProfileData* data = NULL;
   int mdo_offset_bias = 0;
   if (should_profile) {
     ciMethod* method = op->profiled_method();
@@ -2514,8 +2514,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     __ verify_oop(value);
     CodeStub* stub = op->stub();
     // Check if it needs to be profiled.
-    ciMethodData* md;
-    ciProfileData* data;
+    ciMethodData* md = NULL;
+    ciProfileData* data = NULL;
     int mdo_offset_bias = 0;
     if (should_profile) {
       ciMethod* method = op->profiled_method();
