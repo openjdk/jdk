@@ -94,6 +94,7 @@ extern Mutex*   Shared_DirtyCardQ_lock;          // Lock protecting dirty card
                                                  // non-Java threads.
 extern Mutex*   MarkStackFreeList_lock;          // Protects access to the global mark stack free list.
 extern Mutex*   MarkStackChunkList_lock;         // Protects access to the global mark stack chunk list.
+extern Mutex*   MonitoringSupport_lock;          // Protects updates to the serviceability memory pools.
 extern Mutex*   ParGCRareEvent_lock;             // Synchronizes various (rare) parallel GC ops.
 extern Mutex*   Compile_lock;                    // a lock held when Compilation is updating code (used to block CodeCache traversal, CHA updates, etc)
 extern Monitor* MethodCompileQueue_lock;         // a lock held when method compilations are enqueued, dequeued

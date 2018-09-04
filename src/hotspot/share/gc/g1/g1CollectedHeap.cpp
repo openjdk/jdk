@@ -4654,6 +4654,10 @@ void G1CollectedHeap::initialize_serviceability() {
   _g1mm->initialize_serviceability();
 }
 
+MemoryUsage G1CollectedHeap::memory_usage() {
+  return _g1mm->memory_usage();
+}
+
 GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {
   return _g1mm->memory_managers();
 }

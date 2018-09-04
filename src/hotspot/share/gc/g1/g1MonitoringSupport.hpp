@@ -29,6 +29,7 @@
 #include "gc/shared/generationCounters.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
+#include "runtime/mutex.hpp"
 
 class CollectorCounters;
 class G1CollectedHeap;
@@ -198,6 +199,8 @@ public:
   ~G1MonitoringSupport();
 
   void initialize_serviceability();
+
+  MemoryUsage memory_usage();
   GrowableArray<GCMemoryManager*> memory_managers();
   GrowableArray<MemoryPool*> memory_pools();
 
@@ -230,16 +233,22 @@ public:
   //   MemoryService
   //   jstat counters
   //   Tracing
+  // Values may not be consistent wrt to each other.
 
   size_t young_gen_committed()        { return _young_gen_committed; }
 
-  size_t eden_space_committed()       { return _eden_space_committed; }
   size_t eden_space_used()            { return _eden_space_used; }
-  size_t survivor_space_committed()   { return _survivor_space_committed; }
   size_t survivor_space_used()        { return _survivor_space_used; }
 
   size_t old_gen_committed()          { return _old_gen_committed; }
   size_t old_gen_used()               { return _old_gen_used; }
+
+  // Monitoring support for MemoryPools. Values in the returned MemoryUsage are
+  // guaranteed to be consistent with each other.
+  MemoryUsage eden_space_memory_usage(size_t initial_size, size_t max_size);
+  MemoryUsage survivor_space_memory_usage(size_t initial_size, size_t max_size);
+
+  MemoryUsage old_gen_memory_usage(size_t initial_size, size_t max_size);
 };
 
 // Scope object for java.lang.management support.

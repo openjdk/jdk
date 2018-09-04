@@ -88,6 +88,7 @@ Monitor* DirtyCardQ_CBL_mon           = NULL;
 Mutex*   Shared_DirtyCardQ_lock       = NULL;
 Mutex*   MarkStackFreeList_lock       = NULL;
 Mutex*   MarkStackChunkList_lock      = NULL;
+Mutex*   MonitoringSupport_lock       = NULL;
 Mutex*   ParGCRareEvent_lock          = NULL;
 Mutex*   DerivedPointerTableGC_lock   = NULL;
 Monitor* CGCPhaseManager_lock         = NULL;
@@ -216,6 +217,8 @@ void mutex_init() {
 
     def(MarkStackFreeList_lock     , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_never);
     def(MarkStackChunkList_lock    , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_never);
+
+    def(MonitoringSupport_lock     , PaddedMutex  , native   ,   true,  Monitor::_safepoint_check_never);      // used for serviceability monitoring support
   }
   def(ParGCRareEvent_lock          , PaddedMutex  , leaf     ,   true,  Monitor::_safepoint_check_sometimes);
   def(DerivedPointerTableGC_lock   , PaddedMutex  , leaf,        true,  Monitor::_safepoint_check_never);

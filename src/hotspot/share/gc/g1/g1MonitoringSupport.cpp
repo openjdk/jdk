@@ -202,6 +202,11 @@ void G1MonitoringSupport::initialize_serviceability() {
   _incremental_memory_manager.add_pool(_old_gen_pool, false /* always_affected_by_gc */);
 }
 
+MemoryUsage G1MonitoringSupport::memory_usage() {
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+  return MemoryUsage(InitialHeapSize, _overall_used, _overall_committed, _g1h->max_capacity());
+}
+
 GrowableArray<GCMemoryManager*> G1MonitoringSupport::memory_managers() {
   GrowableArray<GCMemoryManager*> memory_managers(2);
   memory_managers.append(&_incremental_memory_manager);
@@ -220,6 +225,7 @@ GrowableArray<MemoryPool*> G1MonitoringSupport::memory_pools() {
 void G1MonitoringSupport::recalculate_sizes() {
   assert_heap_locked_or_at_safepoint(true);
 
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
   // Recalculate all the sizes from scratch.
 
   uint young_list_length = _g1h->young_regions_count();
@@ -296,11 +302,39 @@ void G1MonitoringSupport::update_sizes() {
 }
 
 void G1MonitoringSupport::update_eden_size() {
-  // Recalculate everything - this is fast enough.
+  // Recalculate everything - this should be fast enough and we are sure that we do not
+  // miss anything.
   recalculate_sizes();
   if (UsePerfData) {
     _eden_space_counters->update_used(_eden_space_used);
   }
+}
+
+MemoryUsage G1MonitoringSupport::eden_space_memory_usage(size_t initial_size, size_t max_size) {
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+
+  return MemoryUsage(initial_size,
+                     _eden_space_used,
+                     _eden_space_committed,
+                     max_size);
+}
+
+MemoryUsage G1MonitoringSupport::survivor_space_memory_usage(size_t initial_size, size_t max_size) {
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+
+  return MemoryUsage(initial_size,
+                     _survivor_space_used,
+                     _survivor_space_committed,
+                     max_size);
+}
+
+MemoryUsage G1MonitoringSupport::old_gen_memory_usage(size_t initial_size, size_t max_size) {
+  MutexLockerEx x(MonitoringSupport_lock, Mutex::_no_safepoint_check_flag);
+
+  return MemoryUsage(initial_size,
+                     _old_gen_used,
+                     _old_gen_committed,
+                     max_size);
 }
 
 G1MonitoringScope::G1MonitoringScope(G1MonitoringSupport* g1mm, bool full_gc, bool all_memory_pools_affected) :
