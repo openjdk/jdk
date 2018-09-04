@@ -170,7 +170,9 @@ G1MonitoringSupport::G1MonitoringSupport(G1CollectedHeap* g1h) :
   // Given that this survivor space is not used, we update it here
   // once to reflect that its used space is 0 so that we don't have to
   // worry about updating it again later.
-  _from_space_counters->update_used(0);
+  if (UsePerfData) {
+    _from_space_counters->update_used(0);
+  }
 
   //  name "generation.0.space.2"
   // See _old_space_counters for additional counters
