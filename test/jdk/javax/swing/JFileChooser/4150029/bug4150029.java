@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
    author Oleg Mokhovikov
 */
 
+import jdk.test.lib.Platform;
+
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +37,7 @@ public class bug4150029 extends JApplet {
     private boolean res;
 
     public void init() {
-        if (jdk.testlibrary.OSInfo.getOSType() == jdk.testlibrary.OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             try {
                 UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             } catch (Exception e) {

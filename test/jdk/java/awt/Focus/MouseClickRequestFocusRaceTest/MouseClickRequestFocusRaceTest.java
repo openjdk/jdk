@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.WindowConstants;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 /**
  * @test
@@ -47,8 +47,8 @@ import jdk.testlibrary.OSInfo;
  * @summary Focus request & mouse click being performed nearly synchronously
  *          shouldn't break the focus subsystem
  * @author  anton.tarasov@sun.com: area=awt-focus
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main MouseClickRequestFocusRaceTest
  */
 public class MouseClickRequestFocusRaceTest {
@@ -149,7 +149,7 @@ public class MouseClickRequestFocusRaceTest {
             throw new RuntimeException("The focus owner is not in the focused window!");
         }
 
-        if (!OSInfo.getOSType().equals(OSInfo.OSType.MACOSX)) {
+        if (!Platform.isOSX()) {
             // Try to close native focused window
             robot.keyPress(KeyEvent.VK_ALT);
             robot.keyPress(KeyEvent.VK_F4);

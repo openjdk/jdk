@@ -1,7 +1,7 @@
 <html>
 
 <!--
- Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@
   @summary Tests that no NPE is thrown when the tray icon is disposed from the
   handler of action event caused by clicking on this icon.
   @library ../../regtesthelpers
-  @library ../../../../lib/testlibrary
+  @library /test/lib
   @build Sysout
-  @build jdk.testlibrary.OSInfo
+  @build jdk.test.lib.Platform
   @author artem.ananiev: area=awt.tray
   @run applet/manual=yesno DisposeInActionEventTest.html
   -->

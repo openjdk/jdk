@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,22 @@
  * @bug 8007006
  * @summary [macosx] Closing subwindow loses main window menus.
  * @author Leonid Romanov
- * @library ../../../../lib/testlibrary
- * @build ExtendedRobot jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build ExtendedRobot jdk.test.lib.Platform
  * @run main bug8007006
  */
 
 import java.awt.*;
 import java.awt.event.*;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 public class bug8007006 {
     private static Frame frame1;
     private static Frame frame2;
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }

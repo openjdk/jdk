@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,14 @@
    @summary filechooser in Windows-Libraries folder: columns are mixed up
    @author Semyon Sadetsky
    @modules java.desktop/sun.awt.shell
-   @library /lib/testlibrary
-   @build jdk.testlibrary.OSInfo
+   @library /test/lib
+   @build jdk.test.lib.OSVersion jdk.test.lib.Platform
    @run main bug8017487
   */
 
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
+import jdk.test.lib.OSVersion;
 
 import sun.awt.shell.ShellFolder;
 import sun.awt.shell.ShellFolderColumnInfo;
@@ -42,8 +43,8 @@ import java.io.File;
 public class bug8017487
 {
     public static void main(String[] p_args) throws Exception {
-        if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-                OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_VISTA) > 0 ) {
+        if (Platform.isWindows() &&
+                OSVersion.current().compareTo(OSVersion.WINDOWS_VISTA) > 0 ) {
             test();
             System.out.println("ok");
         }

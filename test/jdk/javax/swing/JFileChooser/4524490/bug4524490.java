@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,16 @@
  * @summary Tests if in JFileChooser, ALT+L does not bring focus to 'Files' selection list in Motif LAF
  * @author Konstantin Eremin
  * @library ../../regtesthelpers
- * @library ../../../../lib/testlibrary
- * @build Util jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build Util jdk.test.lib.Platform
  * @run main bug4524490
  */
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
 import javax.swing.*;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class bug4524490 {
 
@@ -58,7 +59,7 @@ public class bug4524490 {
 
         robot.waitForIdle();
 
-        if (OSInfo.OSType.MACOSX.equals(OSInfo.getOSType())) {
+        if (Platform.isOSX()) {
             Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_L);
         } else {
             Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_L);

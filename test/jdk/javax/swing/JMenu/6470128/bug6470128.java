@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,16 @@
  * @bug 6470128
  * @summary Escape Key causes JMenu Selection to Disappear
  * @author Alexander Potochkin
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug6470128
  */
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class bug6470128 {
     static JFrame frame;
@@ -66,14 +67,14 @@ public class bug6470128 {
         Robot robot = new Robot();
         robot.setAutoDelay(10);
         robot.waitForIdle();
-        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             robot.keyPress(KeyEvent.VK_CONTROL);
         }
         robot.keyPress(KeyEvent.VK_ALT);
         robot.keyPress(KeyEvent.VK_M);
         robot.keyRelease(KeyEvent.VK_M);
         robot.keyRelease(KeyEvent.VK_ALT);
-        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             robot.keyRelease(KeyEvent.VK_CONTROL);
         }
         robot.keyPress(KeyEvent.VK_ENTER);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,80 +28,68 @@
  *          GTK is not on Windows and Mac.
  * added as tabs
  * @author Scott Violet
- * @library ../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main UITest
  */
 import javax.swing.*;
 import javax.swing.UIManager.LookAndFeelInfo;
-import jdk.testlibrary.OSInfo;
-import jdk.testlibrary.OSInfo.OSType;
+
+import jdk.test.lib.Platform;
 
 public class UITest {
 
     public static void main(String[] args) {
-        OSType os = OSInfo.getOSType();
         LookAndFeelInfo[] lafInfo = UIManager.getInstalledLookAndFeels();
+        if (Platform.isWindows()) {
+            // Make sure we don't have GTK.
+            if (hasLAF("gtk", lafInfo)) {
+                throw new RuntimeException("On windows, but GTK is present");
+            }
 
-        switch (os) {
-            case WINDOWS:
+            // Make sure we don't have Aqua.
+            if (hasLAF("mac", lafInfo)) {
+                throw new RuntimeException("On windows, but Aqua is present");
+            }
 
-                // Make sure we don't have GTK.
-                if (hasLAF("gtk", lafInfo)) {
-                    throw new RuntimeException("On windows, but GTK is present");
-                }
+            // Make sure we have Windows.
+            if (!hasLAF("windows", lafInfo)) {
+                throw new RuntimeException("On windows and don't have Windows");
+            }
+        } else if (Platform.isOSX()) {
+            // Make sure we don't have GTK.
+            if (hasLAF("gtk", lafInfo)) {
+                throw new RuntimeException("On mac, but GTK is present");
+            }
 
-                // Make sure we don't have Aqua.
-                if (hasLAF("mac", lafInfo)) {
-                    throw new RuntimeException("On windows, but Aqua is present");
-                }
+            // Make sure we don't have Windows.
+            if (hasLAF("windows", lafInfo)) {
+                throw new RuntimeException("On mac, but Windows is present");
+            }
 
-                // Make sure we have Windows.
-                if (!hasLAF("windows", lafInfo)) {
-                    throw new RuntimeException("On windows and don't have Windows");
-                }
+            // Make sure we have Aqua.
+            if (!hasLAF("mac", lafInfo)) {
+                throw new RuntimeException("On mac and don't have Aqua");
+            }
+        } else {
+            // Not windows and mac
 
-                break;
+            // Make sure we don't have Windows.
+            if (hasLAF("windows", lafInfo)) {
+                throw new RuntimeException("Not on windows and have Windows");
+            }
 
-            case MACOSX:
+            // Make sure we don't have Aqua.
+            if (hasLAF("mac", lafInfo)) {
+                throw new RuntimeException("Not on mac and have Aqua");
+            }
 
-                // Make sure we don't have GTK.
-                if (hasLAF("gtk", lafInfo)) {
-                    throw new RuntimeException("On mac, but GTK is present");
-                }
-
-                // Make sure we don't have Windows.
-                if (hasLAF("windows", lafInfo)) {
-                    throw new RuntimeException("On mac, but Windows is present");
-                }
-
-                // Make sure we have Aqua.
-                if (!hasLAF("mac", lafInfo)) {
-                    throw new RuntimeException("On mac and don't have Aqua");
-                }
-
-                break;
-
-            default:
-                // Not windows and mac
-
-                // Make sure we don't have Windows.
-                if (hasLAF("windows", lafInfo)) {
-                    throw new RuntimeException("Not on windows and have Windows");
-                }
-
-                // Make sure we don't have Aqua.
-                if (hasLAF("mac", lafInfo)) {
-                    throw new RuntimeException("Not on mac and have Aqua");
-                }
-
-                // Make sure we have GTK.
-                if (!hasLAF("gtk", lafInfo)) {
-                    throw new RuntimeException(
-                            "Not on Windows and Mac and don't have GTK!");
-                }
+            // Make sure we have GTK.
+            if (!hasLAF("gtk", lafInfo)) {
+                throw new RuntimeException(
+                        "Not on Windows and Mac and don't have GTK!");
+            }
         }
-
     }
 
     public static boolean hasLAF(String name, LookAndFeelInfo[] lafInfo) {

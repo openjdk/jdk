@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@
   @bug 6315717
   @summary verifies that modifiers are correct for extra buttons
   @author Andrei Dmitriev : area=awt.mouse
-  @library ../../../../lib/testlibrary
-  @build jdk.testlibrary.OSInfo
+  @library /test/lib
+  @build jdk.test.lib.Platform
   @run main MouseModifiersUnitTest_Extra
  */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -66,14 +66,14 @@ public class MouseModifiersUnitTest_Extra extends Frame {
     static int [] modifiersExStandardCTRL;
     static int [] modifiersExStandardALT;
 
-    private final static String SHIFT_MODIFIER = OSInfo.getOSType().equals(OSInfo.OSType.MACOSX) ?
+    private final static String SHIFT_MODIFIER = Platform.isOSX() ?
                                                 "\u21e7" : "Shift";
 
-    private final static String ALT_MODIFIER = OSInfo.getOSType().equals(OSInfo.OSType.MACOSX) ?
+    private final static String ALT_MODIFIER = Platform.isOSX() ?
                                                 "\u2325" : "Alt";
 
 
-    private final static String CTRL_MODIFIER = OSInfo.getOSType().equals(OSInfo.OSType.MACOSX) ?
+    private final static String CTRL_MODIFIER = Platform.isOSX() ?
                                                 "\u2303" : "Ctrl";
 
 

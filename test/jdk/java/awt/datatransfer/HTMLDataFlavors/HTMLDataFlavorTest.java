@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,14 @@
  * @summary WIN: Provide a way to format HTML on drop
  * @author Denis Fokin: area=datatransfer
  * @requires (os.family == "windows")
- * @library ../../../../lib/testlibrary
+ * @library /test/lib
  * @build HtmlTransferable PutAllHtmlFlavorsOnClipboard
  * @build PutOnlyAllHtmlFlavorOnClipboard PutSelectionAndFragmentHtmlFlavorsOnClipboard
- * @build jdk.testlibrary.OSInfo
+ * @build jdk.test.lib.Platform
  * @run main HTMLDataFlavorTest
  */
+
+import jdk.test.lib.Platform;
 
 import java.awt.*;
 import java.awt.datatransfer.*;
@@ -47,7 +49,7 @@ public class HTMLDataFlavorTest {
 
     public static void main(String[] args) throws IOException, UnsupportedFlavorException {
 
-        if (jdk.testlibrary.OSInfo.getOSType() != jdk.testlibrary.OSInfo.OSType.WINDOWS) {
+        if (!Platform.isWindows()) {
             System.err.println("This test is for MS Windows only. Considered passed.");
             return;
         }

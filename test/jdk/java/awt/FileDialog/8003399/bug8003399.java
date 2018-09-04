@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
    @bug 8003399
    @summary JFileChooser gives wrong path to selected file when saving to Libraries folder on Windows 7
    @author Semyon Sadetsky
-   @library /lib/testlibrary
-   @build jdk.testlibrary.OSInfo
+   @library /test/lib
+   @build jdk.test.lib.OSVersion jdk.test.lib.Platform
    @run main bug8003399
   */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
+import jdk.test.lib.OSVersion;
 
 import javax.swing.filechooser.FileSystemView;
 import java.io.File;
@@ -38,8 +39,8 @@ import java.io.File;
 public class bug8003399 {
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS &&
-                OSInfo.getWindowsVersion().compareTo(OSInfo.WINDOWS_VISTA) > 0 ) {
+        if (Platform.isWindows() &&
+                OSVersion.current().compareTo(OSVersion.WINDOWS_VISTA) > 0 ) {
             FileSystemView fsv = FileSystemView.getFileSystemView();
             for (File file : fsv.getFiles(fsv.getHomeDirectory(), false)) {
                 if(file.isDirectory()) {

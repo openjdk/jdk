@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
   @summary Frame is not created on the specified GraphicsDevice with two
 monitors
   @author Oleg Pekhovskiy
-  @library ../../../../lib/testlibrary
-  @build jdk.testlibrary.OSInfo
+  @library /test/lib
+  @build jdk.test.lib.Platform
   @run main MultiScreenInsetsTest
  */
 
@@ -40,14 +40,14 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class MultiScreenInsetsTest {
     private static final int SIZE = 100;
 
     public static void main(String[] args) throws InterruptedException {
-        OSInfo.OSType type = OSInfo.getOSType();
-        if (type != OSInfo.OSType.LINUX && type != OSInfo.OSType.SOLARIS) {
+        if (!Platform.isLinux() && !Platform.isSolaris()) {
             System.out.println("This test is for Solaris and Linux only..." +
                                "skipping!");
             return;

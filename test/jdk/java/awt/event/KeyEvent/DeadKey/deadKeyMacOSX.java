@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug 7196547
  * @summary Dead Key implementation for KeyEvent on Mac OS X
  * @author alexandr.scherbatiy area=awt.event
- * @library ../../../../../lib/testlibrary
- * @build  jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build  jdk.test.lib.Platform
  * @run main deadKeyMacOSX
  */
 
@@ -36,7 +36,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.event.KeyEvent;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 public class deadKeyMacOSX {
 
@@ -44,7 +44,7 @@ public class deadKeyMacOSX {
 
     public static void main(String[] args) throws Exception {
 
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             return;
         }
 

@@ -26,10 +26,12 @@
   @bug       6346690
   @summary   Tests that key_typed is consumed after mnemonic key_pressed is handled for a menu item.
   @author    anton.tarasov@sun.com: area=awt-focus
-  @library   ../../../../lib/testlibrary
-  @build jdk.testlibrary.OSInfo
+  @library   /test/lib
+  @build     jdk.test.lib.Platform
   @run       applet ConsumeNextMnemonicKeyTypedTest.html
 */
+
+import jdk.test.lib.Platform;
 
 import java.awt.*;
 import javax.swing.*;
@@ -116,7 +118,7 @@ public class ConsumeNextMnemonicKeyTypedTest extends Applet {
 
         robot.waitForIdle();
 
-        if (jdk.testlibrary.OSInfo.getOSType() == jdk.testlibrary.OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             robot.keyPress(KeyEvent.VK_CONTROL);
         }
         robot.keyPress(KeyEvent.VK_ALT);
@@ -124,7 +126,7 @@ public class ConsumeNextMnemonicKeyTypedTest extends Applet {
         robot.delay(100);
         robot.keyRelease(KeyEvent.VK_F);
         robot.keyRelease(KeyEvent.VK_ALT);
-        if (jdk.testlibrary.OSInfo.getOSType() == jdk.testlibrary.OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             robot.keyRelease(KeyEvent.VK_CONTROL);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,9 @@
  * @bug 4624207
  * @summary JTabbedPane mnemonics don't work from outside the tabbed pane
  * @author Oleg Mokhovikov
- * @library ../../../../lib/testlibrary
+ * @library /test/lib
  * @library ../../regtesthelpers
- * @build Util jdk.testlibrary.OSInfo
+ * @build Util jdk.test.lib.Platform
  * @run main bug4624207
  */
 import javax.swing.*;
@@ -40,7 +40,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 public class bug4624207 implements ChangeListener, FocusListener {
 
@@ -101,7 +101,7 @@ public class bug4624207 implements ChangeListener, FocusListener {
 
         robot.waitForIdle();
 
-        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             Util.hitKeys(robot, KeyEvent.VK_CONTROL, KeyEvent.VK_ALT, KeyEvent.VK_B);
         } else {
             Util.hitKeys(robot, KeyEvent.VK_ALT, KeyEvent.VK_B);

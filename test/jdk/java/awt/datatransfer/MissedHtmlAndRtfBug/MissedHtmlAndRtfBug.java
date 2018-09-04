@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@ import java.applet.Applet;
 import java.io.File;
 import java.util.ArrayList;
 
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
 import test.java.awt.regtesthelpers.Util;
-import jdk.testlibrary.OSInfo;
 
 import static java.lang.Thread.sleep;
 
@@ -42,8 +42,7 @@ public class MissedHtmlAndRtfBug extends Applet {
     }//End  init()
 
     public void start() {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX
-                && OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+        if (!Platform.isOSX() && !Platform.isWindows()) {
             System.out.println("This test is for Windows and Mac only. Passed.");
             return;
         }

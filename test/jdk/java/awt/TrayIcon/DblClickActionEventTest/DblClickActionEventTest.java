@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Sysout;
 
 public class DblClickActionEventTest extends Applet {
@@ -50,7 +50,7 @@ public class DblClickActionEventTest extends Applet {
         traySupported = SystemTray.isSupported();
         if (traySupported) {
             String clickInstruction;
-            if (OSInfo.getOSType().equals(OSInfo.OSType.MACOSX)) {
+            if (Platform.isOSX()) {
                 clickInstruction = "right";
             } else {
                 clickInstruction = "left";

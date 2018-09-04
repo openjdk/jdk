@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@
    @requires (os.family == "windows")
    @summary RFE: JComboBox shouldn't send ActionEvents for keyboard navigation
    @author Vladislav Karnaukhov
-   @library ../../../../lib/testlibrary
+   @library /test/lib
    @modules java.desktop/com.sun.java.swing.plaf.windows
-   @build jdk.testlibrary.OSInfo
+   @build jdk.test.libr.Platform
    @run main bug4199622
  */
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalLookAndFeel;
@@ -229,7 +229,7 @@ public class bug4199622 extends JFrame implements ActionListener {
         }
         doTest();
 
-        if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
+        if (Platform.isWindows()) {
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
                     @Override

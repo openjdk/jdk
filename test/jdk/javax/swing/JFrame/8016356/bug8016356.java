@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
  * @summary Any swing frame resizes ugly.
  * @author Oleg Pekhovskiy
  * @requires (os.family == "windows")
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug8016356
  */
 
@@ -47,7 +47,8 @@ import java.awt.event.InputEvent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class bug8016356 {
     private static JFrame frame;
@@ -60,7 +61,7 @@ public class bug8016356 {
     public static void main(String[] args) throws Exception {
 
         // Windows only test
-        if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
+        if (Platform.isWindows()) {
 
             // Retrieving top edge of Desktop
             GraphicsConfiguration grConf = GraphicsEnvironment

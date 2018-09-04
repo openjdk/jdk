@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,15 @@
   @summary Tests that mouse click at the are of intersection of two
    scrollbars for text area doesn't trigger any scrolling
   @author artem.ananiev@sun.com: area=awt.text
-  @library ../../../../lib/testlibrary
-  @build jdk.testlibrary.OSInfo
+  @library /test/lib
+  @build jdk.test.lib.Platform
   @run main ScrollbarIntersectionTest
 */
 
 import java.awt.*;
 import java.awt.event.*;
-import jdk.testlibrary.OSInfo;
 
+import jdk.test.lib.Platform;
 
 public class ScrollbarIntersectionTest
 {
@@ -134,7 +134,7 @@ public class ScrollbarIntersectionTest
 
     public static void main( String args[] ) throws InterruptedException
     {
-        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             // On OS X, this area is commandeered by the system,
             // and frame would be wildly resized
             System.out.println("Not for OS X");

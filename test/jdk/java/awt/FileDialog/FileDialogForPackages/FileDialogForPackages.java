@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Sysout;
 
 import java.applet.Applet;
@@ -41,7 +41,7 @@ public class FileDialogForPackages extends Applet implements ActionListener {
 
     @Override
     public void init() {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             Sysout.createDialogWithInstructions(new String[]{
                     "Press PASS, this test is for MacOS X only."});
             return;

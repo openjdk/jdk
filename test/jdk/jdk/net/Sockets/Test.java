@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,17 @@
  * @test
  * @bug 8032808 8044773
  * @modules jdk.net
- * @library /lib/testlibrary
- * @build jdk.testlibrary.*
+ * @library /test/lib
+ * @build jdk.test.lib.OSVersion jdk.test.lib.Platform
  * @run main/othervm -Xcheck:jni Test success
  * @run main/othervm/policy=policy.fail -Xcheck:jni Test fail
  * @run main/othervm/policy=policy.success -Xcheck:jni Test success
  */
 
-import jdk.net.ExtendedSocketOptions;
 import jdk.net.SocketFlow;
 import jdk.net.Sockets;
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
+import jdk.test.lib.OSVersion;
 
 import java.io.IOException;
 import java.net.*;
@@ -53,7 +53,6 @@ public class Test {
 
     static boolean expectSuccess;
     private static final boolean expectSupport = checkExpectedOptionSupport();
-    private static final double solarisVersionToCheck = 11.2;
 
     public static void main(String[] args) throws Exception {
 
@@ -190,9 +189,10 @@ public class Test {
     }
 
     private static boolean checkExpectedOptionSupport() {
-        if (OSInfo.getOSType().equals(OSInfo.OSType.SOLARIS)) {
-            double solarisVersion = OSInfo.getSolarisVersion();
-            if (solarisVersion >= solarisVersionToCheck) {
+        if (Platform.isSolaris()) {
+            OSVersion solarisVersion = OSVersion.current();
+            OSVersion solarisVersionToCheck = new OSVersion(11, 2);
+            if (solarisVersion.compareTo(solarisVersionToCheck) >= 0) {
                 System.out.println("This Solaris version (" + solarisVersion
                         + ") should support SO_FLOW_SLA option");
                 return true;
