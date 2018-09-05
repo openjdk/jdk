@@ -104,8 +104,10 @@ void ThreadHeapSampler::pick_next_geometric_sample() {
 }
 
 void ThreadHeapSampler::pick_next_sample(size_t overflowed_bytes) {
-  if (get_sampling_interval() == 1) {
-    _bytes_until_sample = 1;
+  // Explicitly test if the sampling interval is 0, return 0 to sample every
+  // allocation.
+  if (get_sampling_interval() == 0) {
+    _bytes_until_sample = 0;
     return;
   }
 
