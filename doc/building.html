@@ -26,7 +26,8 @@
 <li><a href="#build-hardware-requirements">Build Hardware Requirements</a><ul>
 <li><a href="#building-on-x86">Building on x86</a></li>
 <li><a href="#building-on-sparc">Building on sparc</a></li>
-<li><a href="#building-on-armaarch64">Building on arm/aarch64</a></li>
+<li><a href="#building-on-aarch64">Building on aarch64</a></li>
+<li><a href="#building-on-32-bit-arm">Building on 32-bit arm</a></li>
 </ul></li>
 <li><a href="#operating-system-requirements">Operating System Requirements</a><ul>
 <li><a href="#windows">Windows</a></li>
@@ -154,7 +155,10 @@
 <p>Even for 32-bit builds, it is recommended to use a 64-bit build machine, and instead create a 32-bit target using <code>--with-target-bits=32</code>.</p>
 <h3 id="building-on-sparc">Building on sparc</h3>
 <p>At a minimum, a machine with 4 cores is advisable, as well as 4 GB of RAM. (The more cores to use, the more memory you need.) At least 8 GB of free disk space is required.</p>
-<h3 id="building-on-armaarch64">Building on arm/aarch64</h3>
+<h3 id="building-on-aarch64">Building on aarch64</h3>
+<p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM. (The more cores to use, the more memory you need.) At least 6 GB of free disk space is required.</p>
+<p>If you do not have access to sufficiently powerful hardware, it is also possible to use <a href="#cross-compiling">cross-compiling</a>.</p>
+<h3 id="building-on-32-bit-arm">Building on 32-bit arm</h3>
 <p>This is not recommended. Instead, see the section on <a href="#cross-compiling">Cross-compiling</a>.</p>
 <h2 id="operating-system-requirements">Operating System Requirements</h2>
 <p>The mainline JDK project supports Linux, Solaris, macOS, AIX and Windows. Support for other operating system, e.g. BSD, exists in separate &quot;port&quot; projects.</p>
