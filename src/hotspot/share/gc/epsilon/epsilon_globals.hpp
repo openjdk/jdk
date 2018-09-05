@@ -79,7 +79,7 @@
           "improves performance at the expense of per-thread memory waste. "\
           "Lower value improves memory footprint, but penalizes actively "  \
           "allocating threads.")                                            \
-          range(1, max_intx)                                                \
+          range(1.0, DBL_MAX)                                               \
                                                                             \
   experimental(size_t, EpsilonTLABDecayTime, 1000,                          \
           "TLAB sizing policy decays to initial size after thread had not " \
