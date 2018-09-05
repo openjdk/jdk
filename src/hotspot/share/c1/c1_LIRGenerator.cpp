@@ -2979,7 +2979,10 @@ void LIRGenerator::do_getEventWriter(Intrinsic* x) {
   __ move_wide(jobj_addr, result);
   __ cmp(lir_cond_equal, result, LIR_OprFact::oopConst(NULL));
   __ branch(lir_cond_equal, T_OBJECT, L_end->label());
-  __ move_wide(new LIR_Address(result, T_OBJECT), result);
+
+  LIR_Opr jobj = new_register(T_OBJECT);
+  __ move(result, jobj);
+  access_load(IN_NATIVE, T_OBJECT, LIR_OprFact::address(new LIR_Address(jobj, T_OBJECT)), result);
 
   __ branch_destination(L_end->label());
 }

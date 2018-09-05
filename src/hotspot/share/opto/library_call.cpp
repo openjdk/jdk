@@ -2863,8 +2863,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
 
   Node* jobj_ptr = basic_plus_adr(top(), tls_ptr,
-                                  in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR)
-                                  );
+                                  in_bytes(THREAD_LOCAL_WRITER_OFFSET_JFR));
 
   Node* jobj = make_load(control(), jobj_ptr, TypeRawPtr::BOTTOM, T_ADDRESS, MemNode::unordered);
 
@@ -2879,16 +2878,17 @@ bool LibraryCallKit::inline_native_getEventWriter() {
          PATH_LIMIT };
 
   RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
-  PhiNode*    result_val = new PhiNode(result_rgn, TypePtr::BOTTOM);
+  PhiNode*    result_val = new PhiNode(result_rgn, TypeInstPtr::BOTTOM);
 
   Node* jobj_is_null = _gvn.transform(new IfTrueNode(iff_jobj_null));
   result_rgn->init_req(_null_path, jobj_is_null);
   result_val->init_req(_null_path, null());
 
   Node* jobj_is_not_null = _gvn.transform(new IfFalseNode(iff_jobj_null));
-  result_rgn->init_req(_normal_path, jobj_is_not_null);
-
-  Node* res = make_load(jobj_is_not_null, jobj, TypeInstPtr::NOTNULL, T_OBJECT, MemNode::unordered);
+  set_control(jobj_is_not_null);
+  Node* res = access_load(jobj, TypeInstPtr::NOTNULL, T_OBJECT,
+                          IN_NATIVE | C2_CONTROL_DEPENDENT_LOAD);
+  result_rgn->init_req(_normal_path, control());
   result_val->init_req(_normal_path, res);
 
   set_result(result_rgn, result_val);
