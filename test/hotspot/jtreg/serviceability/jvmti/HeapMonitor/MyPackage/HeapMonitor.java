@@ -188,6 +188,28 @@ public class HeapMonitor {
     throw new RuntimeException("Could not set the sampler");
   }
 
+  public static Frame[] allocateAndCheckFrames() {
+    if (!eventStorageIsEmpty()) {
+      throw new RuntimeException("Statistics should be null to begin with.");
+    }
+
+    // Put sampling rate to 100k to ensure samples are collected.
+    setSamplingInterval(100 * 1024);
+
+    enableSamplingEvents();
+
+    List<Frame> frameList = allocate();
+    frameList.add(new Frame("allocateAndCheckFrames", "()[LMyPackage/Frame;", "HeapMonitor.java",
+          201));
+    Frame[] frames = frameList.toArray(new Frame[0]);
+
+    if (!obtainedEvents(frames) && !garbageContains(frames)) {
+      throw new RuntimeException("No expected events were found.");
+    }
+
+    return frames;
+  }
+
   public native static int sampledEvents();
   public native static boolean obtainedEvents(Frame[] frames, boolean checkLines);
   public native static boolean garbageContains(Frame[] frames, boolean checkLines);
