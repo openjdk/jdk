@@ -95,6 +95,7 @@ public interface MessageType {
         KIND_NAME("kind name", "KindName", "com.sun.tools.javac.code.Kinds"),
         TARGET("target", "Target", "com.sun.tools.javac.jvm"),
         TOKEN("token", "TokenKind", "com.sun.tools.javac.parser.Tokens"),
+        TREE_TAG("tree tag", "Tag", "com.sun.tools.javac.tree.JCTree"),
         TYPE("type", "Type", "com.sun.tools.javac.code"),
         URL("url", "URL", "java.net"),
         SET("set", "Set", "java.util"),

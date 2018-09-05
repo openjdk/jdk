@@ -8315,8 +8315,11 @@ FormatData/sr-Latin/NumberElements/1=.
 # bug #8187946
 CurrencyNames//stn=S\u00e3o Tom\u00e9 and Pr\u00edncipe Dobra
 CurrencyNames//lak=Lao Kip
-CurrencyNames//php=Philippine Piso
+CurrencyNames//php=Philippine Peso
 CurrencyNames//azn=Azerbaijan Manat
 
-# bug $8193552
+# bug #8193552
 CurrencyNames//mru=Mauritanian Ouguiya
+
+# bug #8208746
+CurrencyNames//ves=Venezuelan Bol\u00edvar Soberano

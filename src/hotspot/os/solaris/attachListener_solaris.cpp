@@ -294,12 +294,17 @@ extern "C" {
     int return_fd = -1;
     SolarisAttachOperation* op = NULL;
 
-    // no listener
+    // wait up to 10 seconds for listener to be up and running
     jint res = 0;
-    if (!AttachListener::is_initialized()) {
-      // how did we get here?
-      debug_only(warning("door_call when not enabled"));
-      res = (jint)SolarisAttachListener::ATTACH_ERROR_INTERNAL;
+    int sleep_count = 0;
+    while (!AttachListener::is_initialized()) {
+      sleep(1); // 1 second
+      sleep_count++;
+      if (sleep_count > 10) { // try for 10 seconds
+        debug_only(warning("door_call when not enabled"));
+        res = (jint)SolarisAttachListener::ATTACH_ERROR_INTERNAL;
+        break;
+      }
     }
 
     // check client credentials

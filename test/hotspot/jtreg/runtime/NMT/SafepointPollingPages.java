@@ -21,7 +21,7 @@
  * questions.
  */
 
-/*
+/**
  * @test
  * @bug 8208499
  * @summary NMT should report safepoint polling page(s)
@@ -29,8 +29,9 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -Xbootclasspath/a:. -XX:NativeMemoryTracking=summary -XX:+ThreadLocalHandshakes SafepointPollingPages
- * @run main/othervm -Xbootclasspath/a:. -XX:NativeMemoryTracking=summary -XX:-ThreadLocalHandshakes SafepointPollingPages
+ * @comment On ppc, with UseSIGTRAP on, no polling pages are used, but trap instructions instead.
+ * @run main/othervm -XX:-UseSIGTRAP -XX:+IgnoreUnrecognizedVMOptions -Xbootclasspath/a:. -XX:NativeMemoryTracking=summary -XX:+ThreadLocalHandshakes SafepointPollingPages
+ * @run main/othervm -XX:-UseSIGTRAP -XX:+IgnoreUnrecognizedVMOptions -Xbootclasspath/a:. -XX:NativeMemoryTracking=summary -XX:-ThreadLocalHandshakes SafepointPollingPages
  */
 
 import jdk.test.lib.process.ProcessTools;

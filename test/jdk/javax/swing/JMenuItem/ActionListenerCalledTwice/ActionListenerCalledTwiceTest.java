@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,12 @@
  * @summary [macosx] ActionListener called twice for JMenuItem using ScreenMenuBar
  * @author vera.akulova@oracle.com
  * @modules java.desktop/java.awt:open
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main ActionListenerCalledTwiceTest
  */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -56,7 +56,7 @@ public class ActionListenerCalledTwiceTest {
     static volatile int listenerCallCounter = 0;
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             System.out.println("This test is for MacOS only." +
                     " Automatically passed on other platforms.");
             return;

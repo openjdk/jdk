@@ -24,6 +24,10 @@
 #ifndef NSK_LIST
 #define NSK_LIST
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Prepares array of pointers which has fixed INITIAL_SIZE.
  * Memory for this array will be reallocated at the nsk_list_add()
@@ -63,5 +67,9 @@ int nsk_list_add(const void *plist, const void *p);
  * Removes i-th pointer from array
  */
 int nsk_list_remove(const void *plist, int i);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

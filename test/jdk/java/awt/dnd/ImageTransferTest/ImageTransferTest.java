@@ -27,16 +27,16 @@
  * @bug 4397404 4720930 8197926
  * @summary tests that images of all supported native image formats are
  * transferred properly
- * @library ../../../../lib/testlibrary
+ * @library /test/lib
  * @library ../../regtesthelpers/process/
- * @build jdk.testlibrary.OSInfo ProcessResults ProcessCommunicator
+ * @build jdk.test.lib.Platform ProcessResults ProcessCommunicator
  * @author gas@sparc.spb.su area=Clipboard
  * @run main/timeout=240 ImageTransferTest
  */
 
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
-import jdk.testlibrary.OSInfo;
 
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
@@ -174,8 +174,7 @@ abstract class ImageTransferer {
                 (SystemFlavorMap) SystemFlavorMap.getDefaultFlavorMap();
         java.util.List<String> ln =
                 sfm.getNativesForFlavor(DataFlavor.imageFlavor);
-        if (OSInfo.OSType.WINDOWS.equals(OSInfo.getOSType()) &&
-            !ln.contains("METAFILEPICT"))
+        if (Platform.isWindows() &&  !ln.contains("METAFILEPICT"))
         {
             // for test failing on JDK without this fix
             ln.add("METAFILEPICT");

@@ -2135,16 +2135,14 @@ class MethodArityHistogram {
   static int _max_size;                       // max. arg size seen
 
   static void add_method_to_histogram(nmethod* nm) {
-    // These checks are taken from CodeHeapState::print_names()
-    Method* m = (nm == NULL) ? NULL : nm->method();  // nm->method() may be uninitialized, i.e. != NULL, but invalid
-    if ((nm != NULL) && (m != NULL) && !nm->is_zombie() && !nm->is_not_installed() &&
-        os::is_readable_pointer(m) && os::is_readable_pointer(m->constants())) {
-      ArgumentCount args(m->signature());
-      int arity   = args.size() + (m->is_static() ? 0 : 1);
-      int argsize = m->size_of_parameters();
+    if (CompiledMethod::nmethod_access_is_safe(nm)) {
+      Method* method = nm->method();
+      ArgumentCount args(method->signature());
+      int arity   = args.size() + (method->is_static() ? 0 : 1);
+      int argsize = method->size_of_parameters();
       arity   = MIN2(arity, MAX_ARITY-1);
       argsize = MIN2(argsize, MAX_ARITY-1);
-      int count = nm->method()->compiled_invocation_count();
+      int count = method->compiled_invocation_count();
       _arity_histogram[arity]  += count;
       _size_histogram[argsize] += count;
       _max_arity = MAX2(_max_arity, arity);

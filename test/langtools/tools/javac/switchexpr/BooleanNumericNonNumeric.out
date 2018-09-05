@@ -1,0 +1,5 @@
+BooleanNumericNonNumeric.java:11:20: compiler.err.operator.cant.be.applied.1: +, int, boolean
+BooleanNumericNonNumeric.java:19:15: compiler.err.cant.deref: int
+- compiler.note.preview.filename: BooleanNumericNonNumeric.java
+- compiler.note.preview.recompile
+2 errors

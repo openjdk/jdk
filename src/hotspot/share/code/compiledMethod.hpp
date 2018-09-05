@@ -238,6 +238,8 @@ public:
     return _mark_for_deoptimization_status != deoptimize_noupdate;
   }
 
+  static bool nmethod_access_is_safe(nmethod* nm);
+
   // tells whether frames described by this nmethod can be deoptimized
   // note: native wrappers cannot be deoptimized.
   bool can_be_deoptimized() const { return is_java_method(); }

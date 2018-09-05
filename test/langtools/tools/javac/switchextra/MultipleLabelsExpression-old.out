@@ -1,0 +1,4 @@
+MultipleLabelsExpression.java:31:16: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.switch.expressions)
+MultipleLabelsExpression.java:32:20: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.switch.rules)
+MultipleLabelsExpression.java:33:19: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.multiple.case.labels)
+3 errors

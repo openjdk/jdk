@@ -372,14 +372,6 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
   /* Universe */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-     static_field(Universe,                    _boolArrayKlassObj,                            Klass*)                                \
-     static_field(Universe,                    _byteArrayKlassObj,                            Klass*)                                \
-     static_field(Universe,                    _charArrayKlassObj,                            Klass*)                                \
-     static_field(Universe,                    _intArrayKlassObj,                             Klass*)                                \
-     static_field(Universe,                    _shortArrayKlassObj,                           Klass*)                                \
-     static_field(Universe,                    _longArrayKlassObj,                            Klass*)                                \
-     static_field(Universe,                    _singleArrayKlassObj,                          Klass*)                                \
-     static_field(Universe,                    _doubleArrayKlassObj,                          Klass*)                                \
      static_field(Universe,                    _mirrors[0],                                   oop)                                   \
      static_field(Universe,                    _main_thread_group,                            oop)                                   \
      static_field(Universe,                    _system_thread_group,                          oop)                                   \
@@ -1355,14 +1347,15 @@ typedef PaddedEnd<ObjectMonitor>              PaddedObjectMonitor;
                                                                           \
   declare_toplevel_type(Threads)                                          \
   declare_toplevel_type(ThreadShadow)                                     \
-           declare_type(Thread, ThreadShadow)                             \
-           declare_type(NamedThread, Thread)                              \
-           declare_type(WatcherThread, Thread)                            \
-           declare_type(JavaThread, Thread)                               \
-           declare_type(JvmtiAgentThread, JavaThread)                     \
-           declare_type(ServiceThread, JavaThread)                        \
-  declare_type(CompilerThread, JavaThread)                                \
-  declare_type(CodeCacheSweeperThread, JavaThread)                        \
+    declare_type(Thread, ThreadShadow)                                    \
+      declare_type(NonJavaThread, Thread)                                 \
+        declare_type(NamedThread, NonJavaThread)                          \
+        declare_type(WatcherThread, NonJavaThread)                        \
+      declare_type(JavaThread, Thread)                                    \
+        declare_type(JvmtiAgentThread, JavaThread)                        \
+        declare_type(ServiceThread, JavaThread)                           \
+        declare_type(CompilerThread, JavaThread)                          \
+        declare_type(CodeCacheSweeperThread, JavaThread)                  \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \

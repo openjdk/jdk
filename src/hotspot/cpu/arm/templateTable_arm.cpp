@@ -161,6 +161,18 @@ Address TemplateTable::get_array_elem_addr(BasicType elemType, Register array, R
   return Address(temp, arrayOopDesc::base_offset_in_bytes(elemType));
 }
 
+// Returns address of Java array element using temp register as offset from array base
+Address TemplateTable::get_array_elem_addr_same_base(BasicType elemType, Register array, Register index, Register temp) {
+  int logElemSize = exact_log2(type2aelembytes(elemType));
+  if (logElemSize == 0) {
+    __ add(temp, index, arrayOopDesc::base_offset_in_bytes(elemType));
+  } else {
+    __ mov(temp, arrayOopDesc::base_offset_in_bytes(elemType));
+    __ add_ptr_scaled_int32(temp, temp, index, logElemSize);
+  }
+  return Address(array, temp);
+}
+
 //----------------------------------------------------------------------------------------------------
 // Condition conversion
 AsmCondition convNegCond(TemplateTable::Condition cc) {
@@ -883,7 +895,8 @@ void TemplateTable::iaload() {
   const Register Rindex = R0_tos;
 
   index_check(Rarray, Rindex);
-  __ ldr_s32(R0_tos, get_array_elem_addr(T_INT, Rarray, Rindex, Rtemp));
+  Address addr = get_array_elem_addr_same_base(T_INT, Rarray, Rindex, Rtemp);
+  __ access_load_at(T_INT, IN_HEAP | IS_ARRAY, addr, R0_tos, noreg, noreg, noreg);
 }
 
 
@@ -897,9 +910,8 @@ void TemplateTable::laload() {
 #ifdef AARCH64
   __ ldr(R0_tos, get_array_elem_addr(T_LONG, Rarray, Rindex, Rtemp));
 #else
-  __ add(Rtemp, Rarray, AsmOperand(Rindex, lsl, LogBytesPerLong));
-  __ add(Rtemp, Rtemp, arrayOopDesc::base_offset_in_bytes(T_LONG));
-  __ ldmia(Rtemp, RegisterSet(R0_tos_lo, R1_tos_hi));
+  Address addr = get_array_elem_addr_same_base(T_LONG, Rarray, Rindex, Rtemp);
+  __ access_load_at(T_LONG, IN_HEAP | IS_ARRAY, addr, noreg /* ltos */, noreg, noreg, noreg);
 #endif // AARCH64
 }
 
@@ -911,12 +923,8 @@ void TemplateTable::faload() {
 
   index_check(Rarray, Rindex);
 
-  Address addr = get_array_elem_addr(T_FLOAT, Rarray, Rindex, Rtemp);
-#ifdef __SOFTFP__
-  __ ldr(R0_tos, addr);
-#else
-  __ ldr_float(S0_tos, addr);
-#endif // __SOFTFP__
+  Address addr = get_array_elem_addr_same_base(T_FLOAT, Rarray, Rindex, Rtemp);
+  __ access_load_at(T_FLOAT, IN_HEAP | IS_ARRAY, addr, noreg /* ftos */, noreg, noreg, noreg);
 }
 
 
@@ -927,13 +935,8 @@ void TemplateTable::daload() {
 
   index_check(Rarray, Rindex);
 
-#ifdef __SOFTFP__
-  __ add(Rtemp, Rarray, AsmOperand(Rindex, lsl, LogBytesPerLong));
-  __ add(Rtemp, Rtemp, arrayOopDesc::base_offset_in_bytes(T_DOUBLE));
-  __ ldmia(Rtemp, RegisterSet(R0_tos_lo, R1_tos_hi));
-#else
-  __ ldr_double(D0_tos, get_array_elem_addr(T_DOUBLE, Rarray, Rindex, Rtemp));
-#endif // __SOFTFP__
+  Address addr = get_array_elem_addr_same_base(T_DOUBLE, Rarray, Rindex, Rtemp);
+  __ access_load_at(T_DOUBLE, IN_HEAP | IS_ARRAY, addr, noreg /* dtos */, noreg, noreg, noreg);
 }
 
 
@@ -943,7 +946,7 @@ void TemplateTable::aaload() {
   const Register Rindex = R0_tos;
 
   index_check(Rarray, Rindex);
-  do_oop_load(_masm, R0_tos, get_array_elem_addr(T_OBJECT, Rarray, Rindex, Rtemp), IS_ARRAY);
+  do_oop_load(_masm, R0_tos, get_array_elem_addr_same_base(T_OBJECT, Rarray, Rindex, Rtemp), IS_ARRAY);
 }
 
 
@@ -953,7 +956,8 @@ void TemplateTable::baload() {
   const Register Rindex = R0_tos;
 
   index_check(Rarray, Rindex);
-  __ ldrsb(R0_tos, get_array_elem_addr(T_BYTE, Rarray, Rindex, Rtemp));
+  Address addr = get_array_elem_addr_same_base(T_BYTE, Rarray, Rindex, Rtemp);
+  __ access_load_at(T_BYTE, IN_HEAP | IS_ARRAY, addr, R0_tos, noreg, noreg, noreg);
 }
 
 
@@ -963,7 +967,8 @@ void TemplateTable::caload() {
   const Register Rindex = R0_tos;
 
   index_check(Rarray, Rindex);
-  __ ldrh(R0_tos, get_array_elem_addr(T_CHAR, Rarray, Rindex, Rtemp));
+  Address addr = get_array_elem_addr_same_base(T_CHAR, Rarray, Rindex, Rtemp);
+  __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, addr, R0_tos, noreg, noreg, noreg);
 }
 
 
@@ -983,7 +988,8 @@ void TemplateTable::fast_icaload() {
 
   // get array element
   index_check(Rarray, Rindex);
-  __ ldrh(R0_tos, get_array_elem_addr(T_CHAR, Rarray, Rindex, Rtemp));
+  Address addr = get_array_elem_addr_same_base(T_CHAR, Rarray, Rindex, Rtemp);
+  __ access_load_at(T_CHAR, IN_HEAP | IS_ARRAY, addr, R0_tos, noreg, noreg, noreg);
 }
 
 
@@ -993,7 +999,8 @@ void TemplateTable::saload() {
   const Register Rindex = R0_tos;
 
   index_check(Rarray, Rindex);
-  __ ldrsh(R0_tos, get_array_elem_addr(T_SHORT, Rarray, Rindex, Rtemp));
+  Address addr = get_array_elem_addr_same_base(T_SHORT, Rarray, Rindex, Rtemp);
+  __ access_load_at(T_SHORT, IN_HEAP | IS_ARRAY, addr, R0_tos, noreg, noreg, noreg);
 }
 
 
@@ -1231,7 +1238,8 @@ void TemplateTable::iastore() {
 
   __ pop_i(Rindex);
   index_check(Rarray, Rindex);
-  __ str_32(R0_tos, get_array_elem_addr(T_INT, Rarray, Rindex, Rtemp));
+  Address addr = get_array_elem_addr_same_base(T_INT, Rarray, Rindex, Rtemp);
+  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY, addr, R0_tos, noreg, noreg, noreg, false);
 }
 
 
@@ -1247,9 +1255,8 @@ void TemplateTable::lastore() {
 #ifdef AARCH64
   __ str(R0_tos, get_array_elem_addr(T_LONG, Rarray, Rindex, Rtemp));
 #else
-  __ add(Rtemp, Rarray, AsmOperand(Rindex, lsl, LogBytesPerLong));
-  __ add(Rtemp, Rtemp, arrayOopDesc::base_offset_in_bytes(T_LONG));
-  __ stmia(Rtemp, RegisterSet(R0_tos_lo, R1_tos_hi));
+  Address addr = get_array_elem_addr_same_base(T_LONG, Rarray, Rindex, Rtemp);
+  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, addr, noreg /* ltos */, noreg, noreg, noreg, false);
 #endif // AARCH64
 }
 
@@ -1262,13 +1269,8 @@ void TemplateTable::fastore() {
 
   __ pop_i(Rindex);
   index_check(Rarray, Rindex);
-  Address addr = get_array_elem_addr(T_FLOAT, Rarray, Rindex, Rtemp);
-
-#ifdef __SOFTFP__
-  __ str(R0_tos, addr);
-#else
-  __ str_float(S0_tos, addr);
-#endif // __SOFTFP__
+  Address addr = get_array_elem_addr_same_base(T_FLOAT, Rarray, Rindex, Rtemp);
+  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY, addr, noreg /* ftos */, noreg, noreg, noreg, false);
 }
 
 
@@ -1281,13 +1283,8 @@ void TemplateTable::dastore() {
   __ pop_i(Rindex);
   index_check(Rarray, Rindex);
 
-#ifdef __SOFTFP__
-  __ add(Rtemp, Rarray, AsmOperand(Rindex, lsl, LogBytesPerLong));
-  __ add(Rtemp, Rtemp, arrayOopDesc::base_offset_in_bytes(T_DOUBLE));
-  __ stmia(Rtemp, RegisterSet(R0_tos_lo, R1_tos_hi));
-#else
-  __ str_double(D0_tos, get_array_elem_addr(T_DOUBLE, Rarray, Rindex, Rtemp));
-#endif // __SOFTFP__
+  Address addr = get_array_elem_addr_same_base(T_DOUBLE, Rarray, Rindex, Rtemp);
+  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY, addr, noreg /* dtos */, noreg, noreg, noreg, false);
 }
 
 
@@ -1370,7 +1367,8 @@ void TemplateTable::bastore() {
   __ b(L_skip, eq);
   __ and_32(R0_tos, R0_tos, 1); // if it is a T_BOOLEAN array, mask the stored value to 0/1
   __ bind(L_skip);
-  __ strb(R0_tos, get_array_elem_addr(T_BYTE, Rarray, Rindex, Rtemp));
+  Address addr = get_array_elem_addr_same_base(T_BYTE, Rarray, Rindex, Rtemp);
+  __ access_store_at(T_BYTE, IN_HEAP | IS_ARRAY, addr, R0_tos, noreg, noreg, noreg, false);
 }
 
 
@@ -1382,8 +1380,8 @@ void TemplateTable::castore() {
 
   __ pop_i(Rindex);
   index_check(Rarray, Rindex);
-
-  __ strh(R0_tos, get_array_elem_addr(T_CHAR, Rarray, Rindex, Rtemp));
+  Address addr = get_array_elem_addr_same_base(T_CHAR, Rarray, Rindex, Rtemp);
+  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY, addr, R0_tos, noreg, noreg, noreg, false);
 }
 
 
@@ -3182,7 +3180,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // modes.
 
   // Size of fixed size code block for fast_version
-  const int log_max_block_size = 2;
+  const int log_max_block_size = AARCH64_ONLY(2) NOT_AARCH64(3);
   const int max_block_size = 1 << log_max_block_size;
 
   // Decide if fast version is enabled
@@ -3249,7 +3247,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     assert(btos == seq++, "btos has unexpected value");
     FixedSizeCodeBlock btos_block(_masm, max_block_size, fast_version);
     __ bind(Lbtos);
-    __ ldrsb(R0_tos, Address(Robj, Roffset));
+    __ access_load_at(T_BYTE, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg);
     __ push(btos);
     // Rewrite bytecode to be faster
     if (!is_static && rc == may_rewrite) {
@@ -3263,7 +3261,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     assert(ztos == seq++, "btos has unexpected value");
     FixedSizeCodeBlock ztos_block(_masm, max_block_size, fast_version);
     __ bind(Lztos);
-    __ ldrsb(R0_tos, Address(Robj, Roffset));
+    __ access_load_at(T_BOOLEAN, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg);
     __ push(ztos);
     // Rewrite bytecode to be faster (use btos fast getfield)
     if (!is_static && rc == may_rewrite) {
@@ -3277,7 +3275,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     assert(ctos == seq++, "ctos has unexpected value");
     FixedSizeCodeBlock ctos_block(_masm, max_block_size, fast_version);
     __ bind(Lctos);
-    __ ldrh(R0_tos, Address(Robj, Roffset));
+    __ access_load_at(T_CHAR, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg);
     __ push(ctos);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_cgetfield, R0_tmp, Rtemp);
@@ -3290,7 +3288,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     assert(stos == seq++, "stos has unexpected value");
     FixedSizeCodeBlock stos_block(_masm, max_block_size, fast_version);
     __ bind(Lstos);
-    __ ldrsh(R0_tos, Address(Robj, Roffset));
+    __ access_load_at(T_SHORT, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg);
     __ push(stos);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_sgetfield, R0_tmp, Rtemp);
@@ -3314,8 +3312,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 #ifdef AARCH64
     __ ldr(R0_tos, Address(Robj, Roffset));
 #else
-    __ add(Roffset, Robj, Roffset);
-    __ ldmia(Roffset, RegisterSet(R0_tos_lo, R1_tos_hi));
+    __ access_load_at(T_LONG, IN_HEAP, Address(Robj, Roffset), noreg /* ltos */, noreg, noreg, noreg);
 #endif // AARCH64
     __ push(ltos);
     if (!is_static && rc == may_rewrite) {
@@ -3331,7 +3328,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
     __ bind(Lftos);
     // floats and ints are placed on stack in same way, so
     // we can use push(itos) to transfer value without using VFP
-    __ ldr_u32(R0_tos, Address(Robj, Roffset));
+    __ access_load_at(T_INT, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg);
     __ push(itos);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_fgetfield, R0_tmp, Rtemp);
@@ -3349,8 +3346,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 #ifdef AARCH64
     __ ldr(R0_tos, Address(Robj, Roffset));
 #else
-    __ add(Rtemp, Robj, Roffset);
-    __ ldmia(Rtemp, RegisterSet(R0_tos_lo, R1_tos_hi));
+    __ access_load_at(T_LONG, IN_HEAP, Address(Robj, Roffset), noreg /* ltos */, noreg, noreg, noreg);
 #endif // AARCH64
     __ push(ltos);
     if (!is_static && rc == may_rewrite) {
@@ -3385,7 +3381,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // atos case can be merged with itos case (and thus moved out of table switch) on 32-bit ARM, fast version only
 
   __ bind(Lint);
-  __ ldr_s32(R0_tos, Address(Robj, Roffset));
+  __ access_load_at(T_INT, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg);
   __ push(itos);
   // Rewrite bytecode to be faster
   if (!is_static && rc == may_rewrite) {
@@ -3597,7 +3593,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ bind(Lbtos);
     __ pop(btos);
     if (!is_static) pop_and_check_object(Robj);
-    __ strb(R0_tos, Address(Robj, Roffset));
+    __ access_store_at(T_BYTE, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg, false);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_bputfield, R0_tmp, Rtemp, true, byte_no);
     }
@@ -3611,8 +3607,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ bind(Lztos);
     __ pop(ztos);
     if (!is_static) pop_and_check_object(Robj);
-    __ and_32(R0_tos, R0_tos, 1);
-    __ strb(R0_tos, Address(Robj, Roffset));
+    __ access_store_at(T_BOOLEAN, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg, false);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_zputfield, R0_tmp, Rtemp, true, byte_no);
     }
@@ -3626,7 +3621,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ bind(Lctos);
     __ pop(ctos);
     if (!is_static) pop_and_check_object(Robj);
-    __ strh(R0_tos, Address(Robj, Roffset));
+    __ access_store_at(T_CHAR, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg, false);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_cputfield, R0_tmp, Rtemp, true, byte_no);
     }
@@ -3640,7 +3635,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ bind(Lstos);
     __ pop(stos);
     if (!is_static) pop_and_check_object(Robj);
-    __ strh(R0_tos, Address(Robj, Roffset));
+    __ access_store_at(T_SHORT, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg, false);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_sputfield, R0_tmp, Rtemp, true, byte_no);
     }
@@ -3665,8 +3660,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 #ifdef AARCH64
     __ str(R0_tos, Address(Robj, Roffset));
 #else
-    __ add(Roffset, Robj, Roffset);
-    __ stmia(Roffset, RegisterSet(R0_tos_lo, R1_tos_hi));
+    __ access_store_at(T_LONG, IN_HEAP, Address(Robj, Roffset), noreg /* ltos */, noreg, noreg, noreg, false);
 #endif // AARCH64
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_lputfield, R0_tmp, Rtemp, true, byte_no);
@@ -3683,7 +3677,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     // we can use pop(itos) to transfer value without using VFP
     __ pop(itos);
     if (!is_static) pop_and_check_object(Robj);
-    __ str_32(R0_tos, Address(Robj, Roffset));
+    __ access_store_at(T_INT, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg, false);
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_fputfield, R0_tmp, Rtemp, true, byte_no);
     }
@@ -3702,8 +3696,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 #ifdef AARCH64
     __ str(R0_tos, Address(Robj, Roffset));
 #else
-    __ add(Rtemp, Robj, Roffset);
-    __ stmia(Rtemp, RegisterSet(R0_tos_lo, R1_tos_hi));
+    __ access_store_at(T_LONG, IN_HEAP, Address(Robj, Roffset), noreg /* ltos */, noreg, noreg, noreg, false);
 #endif // AARCH64
     if (!is_static && rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_dputfield, R0_tmp, Rtemp, true, byte_no);
@@ -3732,7 +3725,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   __ bind(Lint);
   __ pop(itos);
   if (!is_static) pop_and_check_object(Robj);
-  __ str_32(R0_tos, Address(Robj, Roffset));
+  __ access_store_at(T_INT, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg, false);
   if (!is_static && rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_iputfield, R0_tmp, Rtemp, true, byte_no);
   }
@@ -3867,36 +3860,42 @@ void TemplateTable::fast_storefield(TosState state) {
   // Get object from stack
   pop_and_check_object(Robj);
 
+  Address addr = Address(Robj, Roffset);
   // access field
   switch (bytecode()) {
-    case Bytecodes::_fast_zputfield: __ and_32(R0_tos, R0_tos, 1);
-                                     // fall through
-    case Bytecodes::_fast_bputfield: __ strb(R0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_sputfield: // fall through
-    case Bytecodes::_fast_cputfield: __ strh(R0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_iputfield: __ str_32(R0_tos, Address(Robj, Roffset)); break;
+    case Bytecodes::_fast_zputfield:
+      __ access_store_at(T_BOOLEAN, IN_HEAP, addr, R0_tos, noreg, noreg, noreg, false);
+      break;
+    case Bytecodes::_fast_bputfield:
+      __ access_store_at(T_BYTE, IN_HEAP, addr, R0_tos, noreg, noreg, noreg, false);
+      break;
+    case Bytecodes::_fast_sputfield:
+      __ access_store_at(T_SHORT, IN_HEAP, addr, R0_tos, noreg, noreg, noreg, false);
+      break;
+    case Bytecodes::_fast_cputfield:
+      __ access_store_at(T_CHAR, IN_HEAP, addr, R0_tos, noreg, noreg, noreg,false);
+      break;
+    case Bytecodes::_fast_iputfield:
+      __ access_store_at(T_INT, IN_HEAP, addr, R0_tos, noreg, noreg, noreg, false);
+      break;
 #ifdef AARCH64
-    case Bytecodes::_fast_lputfield: __ str  (R0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_fputfield: __ str_s(S0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_dputfield: __ str_d(D0_tos, Address(Robj, Roffset)); break;
+    case Bytecodes::_fast_lputfield: __ str  (R0_tos, addr); break;
+    case Bytecodes::_fast_fputfield: __ str_s(S0_tos, addr); break;
+    case Bytecodes::_fast_dputfield: __ str_d(D0_tos, addr); break;
 #else
-    case Bytecodes::_fast_lputfield: __ add(Robj, Robj, Roffset);
-                                     __ stmia(Robj, RegisterSet(R0_tos_lo, R1_tos_hi)); break;
-
-#ifdef __SOFTFP__
-    case Bytecodes::_fast_fputfield: __ str(R0_tos, Address(Robj, Roffset));  break;
-    case Bytecodes::_fast_dputfield: __ add(Robj, Robj, Roffset);
-                                     __ stmia(Robj, RegisterSet(R0_tos_lo, R1_tos_hi)); break;
-#else
-    case Bytecodes::_fast_fputfield: __ add(Robj, Robj, Roffset);
-                                     __ fsts(S0_tos, Address(Robj));          break;
-    case Bytecodes::_fast_dputfield: __ add(Robj, Robj, Roffset);
-                                     __ fstd(D0_tos, Address(Robj));          break;
-#endif // __SOFTFP__
+    case Bytecodes::_fast_lputfield:
+      __ access_store_at(T_LONG, IN_HEAP, addr, noreg, noreg, noreg, noreg, false);
+      break;
+    case Bytecodes::_fast_fputfield:
+      __ access_store_at(T_FLOAT, IN_HEAP, addr, noreg, noreg, noreg, noreg, false);
+      break;
+    case Bytecodes::_fast_dputfield:
+      __ access_store_at(T_DOUBLE, IN_HEAP, addr, noreg, noreg, noreg, noreg, false);
+      break;
 #endif // AARCH64
 
     case Bytecodes::_fast_aputfield:
-      do_oop_store(_masm, Address(Robj, Roffset), R0_tos, Rtemp, R1_tmp, R2_tmp, false);
+      do_oop_store(_masm, addr, R0_tos, Rtemp, R1_tmp, R2_tmp, false);
       break;
 
     default:
@@ -3970,29 +3969,40 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ verify_oop(Robj);
   __ null_check(Robj, Rtemp);
 
+  Address addr = Address(Robj, Roffset);
   // access field
   switch (bytecode()) {
-    case Bytecodes::_fast_bgetfield: __ ldrsb(R0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_sgetfield: __ ldrsh(R0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_cgetfield: __ ldrh (R0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_igetfield: __ ldr_s32(R0_tos, Address(Robj, Roffset)); break;
+    case Bytecodes::_fast_bgetfield:
+      __ access_load_at(T_BYTE, IN_HEAP, addr, R0_tos, noreg, noreg, noreg);
+      break;
+    case Bytecodes::_fast_sgetfield:
+      __ access_load_at(T_SHORT, IN_HEAP, addr, R0_tos, noreg, noreg, noreg);
+      break;
+    case Bytecodes::_fast_cgetfield:
+      __ access_load_at(T_CHAR, IN_HEAP, addr, R0_tos, noreg, noreg, noreg);
+      break;
+    case Bytecodes::_fast_igetfield:
+      __ access_load_at(T_INT, IN_HEAP, addr, R0_tos, noreg, noreg, noreg);
+      break;
 #ifdef AARCH64
-    case Bytecodes::_fast_lgetfield: __ ldr  (R0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_fgetfield: __ ldr_s(S0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_dgetfield: __ ldr_d(D0_tos, Address(Robj, Roffset)); break;
+    case Bytecodes::_fast_lgetfield: __ ldr  (R0_tos, addr); break;
+    case Bytecodes::_fast_fgetfield: __ ldr_s(S0_tos, addr); break;
+    case Bytecodes::_fast_dgetfield: __ ldr_d(D0_tos, addr); break;
 #else
-    case Bytecodes::_fast_lgetfield: __ add(Roffset, Robj, Roffset);
-                                     __ ldmia(Roffset, RegisterSet(R0_tos_lo, R1_tos_hi)); break;
-#ifdef __SOFTFP__
-    case Bytecodes::_fast_fgetfield: __ ldr  (R0_tos, Address(Robj, Roffset)); break;
-    case Bytecodes::_fast_dgetfield: __ add(Roffset, Robj, Roffset);
-                                     __ ldmia(Roffset, RegisterSet(R0_tos_lo, R1_tos_hi)); break;
-#else
-    case Bytecodes::_fast_fgetfield: __ add(Roffset, Robj, Roffset); __ flds(S0_tos, Address(Roffset)); break;
-    case Bytecodes::_fast_dgetfield: __ add(Roffset, Robj, Roffset); __ fldd(D0_tos, Address(Roffset)); break;
-#endif // __SOFTFP__
+    case Bytecodes::_fast_lgetfield:
+      __ access_load_at(T_LONG, IN_HEAP, addr, noreg, noreg, noreg, noreg);
+      break;
+    case Bytecodes::_fast_fgetfield:
+      __ access_load_at(T_FLOAT, IN_HEAP, addr, noreg, noreg, noreg, noreg);
+      break;
+    case Bytecodes::_fast_dgetfield:
+      __ access_load_at(T_DOUBLE, IN_HEAP, addr, noreg, noreg, noreg, noreg);
+      break;
 #endif // AARCH64
-    case Bytecodes::_fast_agetfield: do_oop_load(_masm, R0_tos, Address(Robj, Roffset)); __ verify_oop(R0_tos); break;
+    case Bytecodes::_fast_agetfield:
+      do_oop_load(_masm, R0_tos, addr);
+      __ verify_oop(R0_tos);
+      break;
     default:
       ShouldNotReachHere();
   }
@@ -4070,7 +4080,7 @@ void TemplateTable::fast_xaccess(TosState state) {
 #endif // AARCH64
 
   if (state == itos) {
-    __ ldr_s32(R0_tos, Address(Robj, Roffset));
+    __ access_load_at(T_INT, IN_HEAP, Address(Robj, Roffset), R0_tos, noreg, noreg, noreg);
   } else if (state == atos) {
     do_oop_load(_masm, R0_tos, Address(Robj, Roffset));
     __ verify_oop(R0_tos);
@@ -4081,8 +4091,7 @@ void TemplateTable::fast_xaccess(TosState state) {
 #ifdef __SOFTFP__
     __ ldr(R0_tos, Address(Robj, Roffset));
 #else
-    __ add(Roffset, Robj, Roffset);
-    __ flds(S0_tos, Address(Roffset));
+    __ access_load_at(T_FLOAT, IN_HEAP, Address(Robj, Roffset), noreg /* ftos */, noreg, noreg, noreg);
 #endif // __SOFTFP__
 #endif // AARCH64
   } else {

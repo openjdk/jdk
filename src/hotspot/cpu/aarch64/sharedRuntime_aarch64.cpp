@@ -1107,7 +1107,7 @@ static void restore_args(MacroAssembler *masm, int arg_count, int first_arg, VMR
     }
   }
   __ pop(x, sp);
-  for ( int i = first_arg ; i < arg_count ; i++ ) {
+  for ( int i = arg_count - 1 ; i >= first_arg ; i-- ) {
     if (args[i].first()->is_Register()) {
       ;
     } else if (args[i].first()->is_FloatRegister()) {

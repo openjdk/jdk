@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.MultiResolutionImage;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 /*
  * @test
@@ -32,8 +33,8 @@ import jdk.testlibrary.OSInfo;
  * @summary [macosx] Get MultiResolution image from native system
  * @author Alexander Scherbatiy
  * @modules java.desktop/sun.awt.image
- * @library /lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main NSImageToMultiResolutionImageTest
  */
 
@@ -41,7 +42,7 @@ public class NSImageToMultiResolutionImageTest {
 
     public static void main(String[] args) throws Exception {
 
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             return;
         }
 

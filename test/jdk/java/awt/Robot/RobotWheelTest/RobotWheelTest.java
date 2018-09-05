@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@ import java.awt.Button;
 import java.awt.Frame;
 import java.awt.Rectangle;
 import java.awt.Robot;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 /*
  * @test 1.2 98/08/05
@@ -32,8 +33,8 @@ import jdk.testlibrary.OSInfo;
  * @bug 4373478 8079255
  * @summary Test mouse wheel functionality of Robot
  * @author bchristi: area=Robot
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main RobotWheelTest
  */
 public class RobotWheelTest {
@@ -45,7 +46,7 @@ public class RobotWheelTest {
 
         Frame frame = null;
         try {
-            int wheelSign = OSInfo.getOSType().equals(OSInfo.OSType.MACOSX) ? -1 : 1;
+            int wheelSign = Platform.isOSX() ? -1 : 1;
 
             frame = new Frame();
             frame.setSize(200, 200);

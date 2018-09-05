@@ -63,6 +63,7 @@ compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
 # :hotspot_gc
 
+gc/epsilon/TestMemoryMXBeans.java 8206434 generic-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/survivorAlignment/TestPromotionToSurvivor.java 8129886 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
@@ -83,7 +84,6 @@ runtime/appcds/javaldr/GCDuringDump.java 8208778 macosx-x64
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 runtime/RedefineTests/RedefineRunningMethods.java 8208778 macosx-x64
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
-runtime/MemberName/MemberNameLeak.java 8209844 generic-all
 
 #############################################################################
 
@@ -181,6 +181,7 @@ vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java 7013
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted003/TestDescription.java 6606767 generic-all
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 7013634,6606767 generic-all
 vmTestbase/nsk/jvmti/ThreadStart/threadstart001/TestDescription.java 8016181 generic-all
+vmTestbase/nsk/jvmti/scenarios/allocation/AP10/ap10t001/TestDescription.java 8210131 generic-all
 vmTestbase/nsk/jvmti/scenarios/extension/EX03/ex03t001/TestDescription.java 8173658 generic-all
 vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java 8204506,8203350 generic-all
 vmTestbase/nsk/jvmti/scenarios/hotswap/HS204/hs204t001/hs204t001.java 6813266 generic-all

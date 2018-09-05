@@ -41,6 +41,15 @@ public class PerfCounter {
     }
 
     /**
+     * Returns the value of this performance counter as an Object.
+     *
+     * @return The value of this performance counter
+     */
+    public Object value() {
+        return monitor.getValue();
+    }
+
+    /**
      * Returns the value of this performance counter as a long.
      *
      * @return The long value of this performance counter

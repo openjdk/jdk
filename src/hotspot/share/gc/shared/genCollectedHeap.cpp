@@ -792,7 +792,7 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   // could be trying to change the termination condition while the task
   // is executing in another GC worker.
 
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_ClassLoaderDataGraph_oops_do)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_ClassLoaderDataGraph_oops_do)) {
     ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
   }
 
@@ -802,32 +802,32 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   bool is_par = scope->n_threads() > 1;
   Threads::possibly_parallel_oops_do(is_par, strong_roots, roots_from_code_p);
 
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_Universe_oops_do)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_Universe_oops_do)) {
     Universe::oops_do(strong_roots);
   }
   // Global (strong) JNI handles
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_JNIHandles_oops_do)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_JNIHandles_oops_do)) {
     JNIHandles::oops_do(strong_roots);
   }
 
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_ObjectSynchronizer_oops_do)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_ObjectSynchronizer_oops_do)) {
     ObjectSynchronizer::oops_do(strong_roots);
   }
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_Management_oops_do)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_Management_oops_do)) {
     Management::oops_do(strong_roots);
   }
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_jvmti_oops_do)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_jvmti_oops_do)) {
     JvmtiExport::oops_do(strong_roots);
   }
-  if (UseAOT && !_process_strong_tasks->is_task_claimed(GCH_PS_aot_oops_do)) {
+  if (UseAOT && _process_strong_tasks->try_claim_task(GCH_PS_aot_oops_do)) {
     AOTLoader::oops_do(strong_roots);
   }
 
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_SystemDictionary_oops_do)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_SystemDictionary_oops_do)) {
     SystemDictionary::oops_do(strong_roots);
   }
 
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_CodeCache_oops_do)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_CodeCache_oops_do)) {
     if (so & SO_ScavengeCodeCache) {
       assert(code_roots != NULL, "must supply closure for code cache");
 
@@ -876,7 +876,7 @@ void GenCollectedHeap::young_process_roots(StrongRootsScope* scope,
                 cld_closure, cld_closure, &mark_code_closure);
   process_string_table_roots(scope, root_closure, par_state_string);
 
-  if (!_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
+  if (_process_strong_tasks->try_claim_task(GCH_PS_younger_gens)) {
     root_closure->reset_generation();
   }
 

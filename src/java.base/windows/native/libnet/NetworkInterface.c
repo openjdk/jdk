@@ -826,7 +826,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
     (JNIEnv *env, jclass cls)
 {
     int count;
-    netif *ifList, *curr;
+    netif *ifList = NULL, *curr;
     jobjectArray netIFArr;
     jint arr_index;
 
@@ -846,6 +846,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
     /* allocate a NetworkInterface array */
     netIFArr = (*env)->NewObjectArray(env, count, cls, NULL);
     if (netIFArr == NULL) {
+        free_netif(ifList);
         return NULL;
     }
 
@@ -860,6 +861,7 @@ JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll
 
         netifObj = createNetworkInterface(env, curr, -1, NULL);
         if (netifObj == NULL) {
+            free_netif(ifList);
             return NULL;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug     8073001 8081764
  * @summary Test verifies that combo box with custom editor renders
  *          focus ring around arrow button correctly.
- * @library /lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run     main CustomComboBoxFocusTest
  */
 
@@ -54,14 +54,15 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class CustomComboBoxFocusTest {
 
     private static CustomComboBoxFocusTest test = null;
 
     public static void main(String[] args) {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             System.out.println("Only Mac platform test. Test is skipped for other OS.");
             return;
         }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,10 @@
 # questions.
 #
 
-default: all
-
 include $(SPEC)
 include MakeBase.gmk
 
-$(eval $(call IncludeCustomExtension, SourceRevision.gmk))
+$(eval $(call IncludeCustomExtension, SourceRevision-pre.gmk))
 
 ################################################################################
 # Keep track of what source revision is used to create the build, by creating
@@ -94,11 +92,14 @@ ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
 
   $(eval $(call CreateSourceRevisionFile, $(STORED_SOURCE_REVISION)))
 
-  store-source-revision: $(STORED_SOURCE_REVISION)
+  hg-store-source-revision: $(STORED_SOURCE_REVISION)
 
   $(eval $(call CreateSourceRevisionFile, $(SOURCE_REVISION_TRACKER)))
 
-  create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
+  hg-create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
+
+  STORE_SOURCE_REVISION_TARGET := hg-store-source-revision
+  CREATE_SOURCE_REVISION_TRACKER_TARGET := hg-create-source-revision-tracker
 
 else
   # Not using HG
@@ -106,28 +107,39 @@ else
   ifneq ($(wildcard $(STORED_SOURCE_REVISION)), )
     # We have a stored source revision (.src-rev)
 
-    store-source-revision:
+    src-store-source-revision:
 	$(call LogInfo, No mercurial configuration present$(COMMA) not updating .src-rev)
 
     $(SOURCE_REVISION_TRACKER): $(STORED_SOURCE_REVISION)
 	$(install-file)
 
-    create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
+    src-create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
   else
     # We don't have a stored source revision. Can't do anything, really.
 
-    store-source-revision:
+    src-store-source-revision:
 	$(call LogWarn, Error: No mercurial configuration present$(COMMA) cannot create .src-rev)
 	exit 2
 
-    create-source-revision-tracker:
+    src-create-source-revision-tracker:
 	$(call LogWarn, Warning: No mercurial configuration present and no .src-rev)
   endif
 
+  STORE_SOURCE_REVISION_TARGET := src-store-source-revision
+  CREATE_SOURCE_REVISION_TRACKER_TARGET := src-create-source-revision-tracker
+
 endif
 
-all: store-source-revision create-source-revision-tracker
+################################################################################
+
+$(eval $(call IncludeCustomExtension, SourceRevision-post.gmk))
+
+################################################################################
+
+store-source-revision: $(STORE_SOURCE_REVISION_TARGET)
+
+create-source-revision-tracker: $(CREATE_SOURCE_REVISION_TRACKER_TARGET)
 
 FRC: # Force target
 
-.PHONY: all store-source-revision create-source-revision-tracker
+.PHONY: store-source-revision create-source-revision-tracker

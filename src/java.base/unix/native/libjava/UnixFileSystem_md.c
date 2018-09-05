@@ -55,8 +55,11 @@
     #define NAME_MAX MAXNAMLEN
   #endif
   #define DIR DIR64
+  #define dirent dirent64
   #define opendir opendir64
+  #define readdir readdir64
   #define closedir closedir64
+  #define stat stat64
 #endif
 
 #if defined(__solaris__) && !defined(NAME_MAX)
@@ -64,9 +67,6 @@
 #endif
 
 #if defined(_ALLBSD_SOURCE)
-  #define dirent64 dirent
-  #define readdir64 readdir
-  #define stat64 stat
   #ifndef MACOSX
     #define statvfs64 statvfs
   #endif
@@ -121,8 +121,8 @@ Java_java_io_UnixFileSystem_canonicalize0(JNIEnv *env, jobject this,
 static jboolean
 statMode(const char *path, int *mode)
 {
-    struct stat64 sb;
-    if (stat64(path, &sb) == 0) {
+    struct stat sb;
+    if (stat(path, &sb) == 0) {
         *mode = sb.st_mode;
         return JNI_TRUE;
     }
@@ -229,8 +229,8 @@ Java_java_io_UnixFileSystem_getLastModifiedTime(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat64 sb;
-        if (stat64(path, &sb) == 0) {
+        struct stat sb;
+        if (stat(path, &sb) == 0) {
 #if defined(_AIX)
             rv =  (jlong)sb.st_mtime * 1000;
             rv += (jlong)sb.st_mtime_n / 1000000;
@@ -254,8 +254,8 @@ Java_java_io_UnixFileSystem_getLength(JNIEnv *env, jobject this,
     jlong rv = 0;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat64 sb;
-        if (stat64(path, &sb) == 0) {
+        struct stat sb;
+        if (stat(path, &sb) == 0) {
             rv = sb.st_size;
         }
     } END_PLATFORM_STRING(env, path);
@@ -311,7 +311,7 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
                                  jobject file)
 {
     DIR *dir = NULL;
-    struct dirent64 *ptr;
+    struct dirent *ptr;
     int len, maxlen;
     jobjectArray rv, old;
     jclass str_class;
@@ -331,7 +331,7 @@ Java_java_io_UnixFileSystem_list(JNIEnv *env, jobject this,
     if (rv == NULL) goto error;
 
     /* Scan the directory */
-    while ((ptr = readdir64(dir)) != NULL) {
+    while ((ptr = readdir(dir)) != NULL) {
         jstring name;
         if (!strcmp(ptr->d_name, ".") || !strcmp(ptr->d_name, ".."))
             continue;
@@ -408,9 +408,9 @@ Java_java_io_UnixFileSystem_setLastModifiedTime(JNIEnv *env, jobject this,
     jboolean rv = JNI_FALSE;
 
     WITH_FIELD_PLATFORM_STRING(env, file, ids.path, path) {
-        struct stat64 sb;
+        struct stat sb;
 
-        if (stat64(path, &sb) == 0) {
+        if (stat(path, &sb) == 0) {
             struct timeval tv[2];
 
             /* Preserve access time */

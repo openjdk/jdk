@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug 8041694
  * @summary JFileChooser removes trailing spaces in the selected directory name
  * @author Anton Litvinov
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug8041694
  */
 
@@ -45,7 +45,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 public class bug8041694 {
     private static volatile File dir1;
@@ -59,7 +59,7 @@ public class bug8041694 {
             Robot robot = new Robot();
 
             dir1 = Files.createTempDirectory("bug8041694").toFile();
-            if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
+            if (Platform.isWindows()) {
                 dir2 = new File(String.format(
                     "\\\\?\\%s\\d ", dir1.getAbsolutePath().replace('/', '\\')));
             } else {

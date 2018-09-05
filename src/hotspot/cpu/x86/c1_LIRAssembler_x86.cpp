@@ -3605,7 +3605,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
     }
   } else {
     __ testptr(tmp, tmp);
-    __ jccb(Assembler::notZero, update);
+    __ jcc(Assembler::notZero, update);
     __ stop("unexpect null obj");
 #endif
   }
@@ -3620,7 +3620,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
       __ push(tmp);
       __ mov_metadata(tmp, exact_klass->constant_encoding());
       __ cmpptr(tmp, Address(rsp, 0));
-      __ jccb(Assembler::equal, ok);
+      __ jcc(Assembler::equal, ok);
       __ stop("exact klass and actual klass differ");
       __ bind(ok);
       __ pop(tmp);

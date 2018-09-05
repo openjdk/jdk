@@ -26,26 +26,30 @@ package jdk.test.lib;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 
 public class Platform {
-    public  static final String vmName      = System.getProperty("java.vm.name");
-    public  static final String vmInfo      = System.getProperty("java.vm.info");
-    private static final String osVersion   = System.getProperty("os.version");
-    private static       String[] osVersionTokens;
+    public  static final String vmName      = privilegedGetProperty("java.vm.name");
+    public  static final String vmInfo      = privilegedGetProperty("java.vm.info");
+    private static final String osVersion   = privilegedGetProperty("os.version");
     private static       int osVersionMajor = -1;
     private static       int osVersionMinor = -1;
-    private static final String osName      = System.getProperty("os.name");
-    private static final String dataModel   = System.getProperty("sun.arch.data.model");
-    private static final String vmVersion   = System.getProperty("java.vm.version");
-    private static final String jdkDebug    = System.getProperty("jdk.debug");
-    private static final String osArch      = System.getProperty("os.arch");
-    private static final String userName    = System.getProperty("user.name");
-    private static final String compiler    = System.getProperty("sun.management.compiler");
+    private static final String osName      = privilegedGetProperty("os.name");
+    private static final String dataModel   = privilegedGetProperty("sun.arch.data.model");
+    private static final String vmVersion   = privilegedGetProperty("java.vm.version");
+    private static final String jdkDebug    = privilegedGetProperty("jdk.debug");
+    private static final String osArch      = privilegedGetProperty("os.arch");
+    private static final String userName    = privilegedGetProperty("user.name");
+    private static final String compiler    = privilegedGetProperty("sun.management.compiler");
+
+    private static String privilegedGetProperty(String key) {
+        return AccessController.doPrivileged((
+                PrivilegedAction<String>) () -> System.getProperty(key));
+    }
 
     public static boolean isClient() {
         return vmName.endsWith(" Client VM");
@@ -129,7 +133,7 @@ public class Platform {
 
     // Os version support.
     private static void init_version() {
-        osVersionTokens = osVersion.split("\\.");
+        String[] osVersionTokens = osVersion.split("\\.");
         try {
             if (osVersionTokens.length > 0) {
                 osVersionMajor = Integer.parseInt(osVersionTokens[0]);
@@ -158,45 +162,6 @@ public class Platform {
     public static int getOsVersionMinor() {
         if (osVersionMinor == -1) init_version();
         return osVersionMinor;
-    }
-
-    /**
-     * Compares the platform version with the supplied version. The
-     * version must be of the form a[.b[.c[.d...]]] where a, b, c, d, ...
-     * are decimal integers.
-     *
-     * @throws NullPointerException if the parameter is null
-     * @throws NumberFormatException if there is an error parsing either
-     *         version as split into component strings
-     * @return -1, 0, or 1 according to whether the platform version is
-     *         less than, equal to, or greater than the supplied version
-     */
-    public static int compareOsVersion(String version) {
-        if (osVersionTokens == null) init_version();
-
-        Objects.requireNonNull(version);
-
-        List<Integer> s1 = Arrays
-            .stream(osVersionTokens)
-            .map(Integer::valueOf)
-            .collect(Collectors.toList());
-        List<Integer> s2 = Arrays
-            .stream(version.split("\\."))
-            .map(Integer::valueOf)
-            .collect(Collectors.toList());
-
-        int count = Math.max(s1.size(), s2.size());
-        for (int i = 0; i < count; i++) {
-            int i1 = i < s1.size() ? s1.get(i) : 0;
-            int i2 = i < s2.size() ? s2.get(i) : 0;
-            if (i1 > i2) {
-                return 1;
-            } else if (i2 > i1) {
-                return -1;
-            }
-        }
-
-        return 0;
     }
 
     public static boolean isDebugBuild() {
@@ -294,10 +259,15 @@ public class Platform {
         // SELinux deny_ptrace:
         File deny_ptrace = new File("/sys/fs/selinux/booleans/deny_ptrace");
         if (deny_ptrace.exists()) {
-            try (RandomAccessFile file = new RandomAccessFile(deny_ptrace, "r")) {
+            try (RandomAccessFile file = AccessController.doPrivileged(
+                    (PrivilegedExceptionAction<RandomAccessFile>) () -> new RandomAccessFile(deny_ptrace, "r"))) {
                 if (file.readByte() != '0') {
                     return false;
                 }
+            } catch (PrivilegedActionException e) {
+                @SuppressWarnings("unchecked")
+                IOException t = (IOException) e.getException();
+                throw t;
             }
         }
 
@@ -308,7 +278,8 @@ public class Platform {
         // 3 - no attach: no processes may use ptrace with PTRACE_ATTACH
         File ptrace_scope = new File("/proc/sys/kernel/yama/ptrace_scope");
         if (ptrace_scope.exists()) {
-            try (RandomAccessFile file = new RandomAccessFile(ptrace_scope, "r")) {
+            try (RandomAccessFile file = AccessController.doPrivileged(
+                    (PrivilegedExceptionAction<RandomAccessFile>) () -> new RandomAccessFile(ptrace_scope, "r"))) {
                 byte yama_scope = file.readByte();
                 if (yama_scope == '3') {
                     return false;
@@ -317,6 +288,10 @@ public class Platform {
                 if (!userName.equals("root") && yama_scope != '0') {
                     return false;
                 }
+            } catch (PrivilegedActionException e) {
+                @SuppressWarnings("unchecked")
+                IOException t = (IOException) e.getException();
+                throw t;
             }
         }
         // Otherwise expect to be permitted:

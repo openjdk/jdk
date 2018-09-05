@@ -69,6 +69,7 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
+import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.JavacTool;
@@ -76,6 +77,7 @@ import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
+import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -438,6 +440,15 @@ public class TreePosTest {
                 }
             } else
                 super.visitVarDef(tree);
+        }
+
+        @Override
+        public void visitCase(JCCase tree) {
+            if (tree.getCaseKind() == CaseKind.RULE) {
+                scan(tree.getBody());
+            } else {
+                super.visitCase(tree);
+            }
         }
 
         boolean check(Info encl, Info self) {

@@ -2041,7 +2041,7 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
   }
 }
 
-void Assembler::jccb(Condition cc, Label& L) {
+void Assembler::jccb_0(Condition cc, Label& L, const char* file, int line) {
   if (L.is_bound()) {
     const int short_size = 2;
     address entry = target(L);
@@ -2051,7 +2051,7 @@ void Assembler::jccb(Condition cc, Label& L) {
     if (delta != 0) {
       dist += (dist < 0 ? (-delta) :delta);
     }
-    assert(is8bit(dist), "Dispacement too large for a short jmp");
+    assert(is8bit(dist), "Dispacement too large for a short jmp at %s:%d", file, line);
 #endif
     intptr_t offs = (intptr_t)entry - (intptr_t)pc();
     // 0111 tttn #8-bit disp
@@ -2059,7 +2059,7 @@ void Assembler::jccb(Condition cc, Label& L) {
     emit_int8((offs - short_size) & 0xFF);
   } else {
     InstructionMark im(this);
-    L.add_patch_at(code(), locator());
+    L.add_patch_at(code(), locator(), file, line);
     emit_int8(0x70 | cc);
     emit_int8(0);
   }
@@ -2114,7 +2114,7 @@ void Assembler::jmp_literal(address dest, RelocationHolder const& rspec) {
   emit_data(disp, rspec.reloc(), call32_operand);
 }
 
-void Assembler::jmpb(Label& L) {
+void Assembler::jmpb_0(Label& L, const char* file, int line) {
   if (L.is_bound()) {
     const int short_size = 2;
     address entry = target(L);
@@ -2125,14 +2125,14 @@ void Assembler::jmpb(Label& L) {
     if (delta != 0) {
       dist += (dist < 0 ? (-delta) :delta);
     }
-    assert(is8bit(dist), "Dispacement too large for a short jmp");
+    assert(is8bit(dist), "Dispacement too large for a short jmp at %s:%d", file, line);
 #endif
     intptr_t offs = entry - pc();
     emit_int8((unsigned char)0xEB);
     emit_int8((offs - short_size) & 0xFF);
   } else {
     InstructionMark im(this);
-    L.add_patch_at(code(), locator());
+    L.add_patch_at(code(), locator(), file, line);
     emit_int8((unsigned char)0xEB);
     emit_int8(0);
   }

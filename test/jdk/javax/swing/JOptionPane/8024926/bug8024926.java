@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,16 @@ import java.awt.Frame;
 import java.awt.TextArea;
 import javax.swing.JApplet;
 import javax.swing.JOptionPane;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 /**
  * @test
  * @bug 8024926 8040279
  * @summary [macosx] AquaIcon HiDPI support
  * @author Alexander Scherbatiy
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run applet/manual=yesno bug8024926.html
  */
 public class bug8024926 extends JApplet {
@@ -48,7 +49,7 @@ public class bug8024926 extends JApplet {
         this.setLayout(new BorderLayout());
 
 
-        if (OSInfo.getOSType().equals(OSInfo.OSType.MACOSX)) {
+        if (Platform.isOSX()) {
             String[] instructions = {
                 "Verify that high resolution system icons are used"
                 + " in JOptionPane on HiDPI displays.",

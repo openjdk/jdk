@@ -1681,7 +1681,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ z_lg(Z_R1/*active_handles*/, thread_(active_handles));
   __ clear_mem(Address(Z_R1, JNIHandleBlock::top_offset_in_bytes()), 4);
 
-  // Bandle exceptions (exception handling will handle unlocking!).
+  // Handle exceptions (exception handling will handle unlocking!).
   {
     Label L;
     __ load_and_test_long(Z_R0/*pending_exception*/, thread_(pending_exception));
@@ -1710,17 +1710,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ notify_method_exit(true/*native_method*/, ilgl, InterpreterMacroAssembler::NotifyJVMTI);
 
   // Move native method result back into proper registers and return.
-  // C++ interpreter does not use result handler. So do we need to here? TODO(ZASM): check if correct.
-  { NearLabel no_oop_or_null;
   __ mem2freg_opt(Z_FRET, Address(Z_fp, _z_ijava_state_neg(fresult)));
-  __ load_and_test_long(Z_RET, Address(Z_fp, _z_ijava_state_neg(lresult)));
-  __ z_bre(no_oop_or_null); // No unboxing if the result is NULL.
-  __ load_absolute_address(Z_R1, AbstractInterpreter::result_handler(T_OBJECT));
-  __ compareU64_and_branch(Z_R1, Rresult_handler, Assembler::bcondNotEqual, no_oop_or_null);
-  __ z_lg(Z_RET, oop_tmp_offset, Z_fp);
-  __ verify_oop(Z_RET);
-  __ bind(no_oop_or_null);
-  }
+  __ mem2reg_opt(Z_RET, Address(Z_fp, _z_ijava_state_neg(lresult)));
+  __ call_stub(Rresult_handler);
 
   // Pop the native method's interpreter frame.
   __ pop_interpreter_frame(Z_R14 /*return_pc*/, Z_ARG2/*tmp1*/, Z_ARG3/*tmp2*/);

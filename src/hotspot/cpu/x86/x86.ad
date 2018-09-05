@@ -1252,8 +1252,8 @@ class HandlerImpl {
 
 #ifdef _LP64
   static uint size_deopt_handler() {
-    // three 5 byte instructions
-    return 15;
+    // three 5 byte instructions plus one move for unreachable address.
+    return 15+3;
   }
 #else
   static uint size_deopt_handler() {
@@ -1322,7 +1322,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
 #endif
 
   __ jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
+  assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow %d", (__ offset() - offset));
   __ end_a_stub();
   return offset;
 }
@@ -5645,7 +5645,7 @@ instruct vadd4B_mem_evex(vecS dst, vecS src, memory mem) %{
 %}
 
 instruct vadd4B_mem_evex_special(vecS dst, vecS src, memory mem) %{
-  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 4);
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 4);
   match(Set dst (AddVB dst (LoadVector mem)));
   effect(TEMP src);
   format %{ "vpaddb  $dst,$src,$mem\t! add packed4B" %}
@@ -5723,7 +5723,7 @@ instruct vadd8B_mem_evex(vecD dst, vecD src, memory mem) %{
 %}
 
 instruct vadd8B_mem_evex_special(vecD dst, vecD src, memory mem) %{
-  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 8);
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 8);
   match(Set dst (AddVB dst (LoadVector mem)));
   effect(TEMP src);
   format %{ "vpaddb  $dst,$src,$mem\t! add packed8B" %}
@@ -5801,7 +5801,7 @@ instruct vadd16B_mem_evex(vecX dst, vecX src, memory mem) %{
 %}
 
 instruct vadd16B_mem_evex_special(vecX dst, vecX src, memory mem) %{
-  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 16);
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 16);
   match(Set dst (AddVB dst (LoadVector mem)));
   effect(TEMP src);
   format %{ "vpaddb  $dst,$src,$mem\t! add packed16B" %}
@@ -5869,7 +5869,7 @@ instruct vadd32B_mem_evex(vecY dst, vecY src, memory mem) %{
 %}
 
 instruct vadd32B_mem_evex_special(vecY dst, vecY src, memory mem) %{
-  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 32);
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 32);
   match(Set dst (AddVB dst (LoadVector mem)));
   effect(TEMP src);
   format %{ "vpaddb  $dst,$src,$mem\t! add packed32B" %}
@@ -5970,7 +5970,7 @@ instruct vadd2S_mem_evex(vecS dst, vecS src, memory mem) %{
 %}
 
 instruct vadd2S_mem_evex_special(vecS dst, vecS src, memory mem) %{
-  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 2);
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 2);
   match(Set dst (AddVS dst (LoadVector mem)));
   effect(TEMP src);
   format %{ "vpaddw  $dst,$src,$mem\t! add packed2S" %}
@@ -6048,7 +6048,7 @@ instruct vadd4S_mem_evex(vecD dst, vecD src, memory mem) %{
 %}
 
 instruct vadd4S_mem_evex_special(vecD dst, vecD src, memory mem) %{
-  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 4);
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 4);
   match(Set dst (AddVS dst (LoadVector mem)));
   effect(TEMP src);
   format %{ "vpaddw  $dst,$src,$mem\t! add packed4S" %}
@@ -6126,7 +6126,7 @@ instruct vadd8S_mem_evex(vecX dst, vecX src, memory mem) %{
 %}
 
 instruct vadd8S_mem_evex_special(vecX dst, vecX src, memory mem) %{
-  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 8);
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 8);
   match(Set dst (AddVS dst (LoadVector mem)));
   effect(TEMP src);
   format %{ "vpaddw  $dst,$src,$mem\t! add packed8S" %}
@@ -6194,7 +6194,7 @@ instruct vadd16S_mem_evex(vecY dst, vecY src, memory mem) %{
 %}
 
 instruct vadd16S_mem_evex_special(vecY dst, vecY src, memory mem) %{
-  predicate(VM_Version::supports_avx512bw() && n->as_Vector()->length() == 16);
+  predicate(VM_Version::supports_avx512nobw() && n->as_Vector()->length() == 16);
   match(Set dst (AddVS dst (LoadVector mem)));
   effect(TEMP src);
   format %{ "vpaddw  $dst,$src,$mem\t! add packed16S" %}

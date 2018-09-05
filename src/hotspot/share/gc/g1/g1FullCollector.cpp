@@ -41,7 +41,7 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/weakProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
@@ -214,8 +214,8 @@ void G1FullCollector::phase1_mark_live_objects() {
 
   // Weak oops cleanup.
   {
-    GCTraceTime(Debug, gc, phases) trace("Phase 1: Weak Processing", scope()->timer());
-    WeakProcessor::weak_oops_do(&_is_alive, &do_nothing_cl);
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: Weak Processing", scope()->timer());
+    WeakProcessor::weak_oops_do(_heap->workers(), &_is_alive, &do_nothing_cl, 1);
   }
 
   // Class unloading and cleanup.

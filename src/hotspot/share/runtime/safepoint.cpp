@@ -628,7 +628,7 @@ public:
     // All threads deflate monitors and mark nmethods (if necessary).
     Threads::possibly_parallel_threads_do(true, &_cleanup_threads_cl);
 
-    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_DEFLATE_MONITORS)) {
       const char* name = "deflating idle monitors";
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
@@ -638,7 +638,7 @@ public:
       }
     }
 
-    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
       const char* name = "updating inline caches";
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
@@ -648,7 +648,7 @@ public:
       }
     }
 
-    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_COMPILATION_POLICY)) {
       const char* name = "compilation policy safepoint handler";
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));
@@ -658,7 +658,7 @@ public:
       }
     }
 
-    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
       if (SymbolTable::needs_rehashing()) {
         const char* name = "rehashing symbol table";
         EventSafepointCleanupTask event;
@@ -670,7 +670,7 @@ public:
       }
     }
 
-    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
       if (StringTable::needs_rehashing()) {
         const char* name = "rehashing string table";
         EventSafepointCleanupTask event;
@@ -682,7 +682,7 @@ public:
       }
     }
 
-    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_CLD_PURGE)) {
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_CLD_PURGE)) {
       // CMS delays purging the CLDG until the beginning of the next safepoint and to
       // make sure concurrent sweep is done
       const char* name = "purging class loader data graph";
@@ -694,7 +694,7 @@ public:
       }
     }
 
-    if (!_subtasks.is_task_claimed(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
+    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYSTEM_DICTIONARY_RESIZE)) {
       const char* name = "resizing system dictionaries";
       EventSafepointCleanupTask event;
       TraceTime timer(name, TRACETIME_LOG(Info, safepoint, cleanup));

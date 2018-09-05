@@ -641,22 +641,6 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
 }
 
 
-bool InstructForm::is_wide_memory_kill(FormDict &globals) const {
-  if( _matrule == NULL ) return false;
-  if( !_matrule->_opType ) return false;
-
-  if( strcmp(_matrule->_opType,"MemBarRelease") == 0 ) return true;
-  if( strcmp(_matrule->_opType,"MemBarAcquire") == 0 ) return true;
-  if( strcmp(_matrule->_opType,"MemBarReleaseLock") == 0 ) return true;
-  if( strcmp(_matrule->_opType,"MemBarAcquireLock") == 0 ) return true;
-  if( strcmp(_matrule->_opType,"MemBarStoreStore") == 0 ) return true;
-  if( strcmp(_matrule->_opType,"MemBarVolatile") == 0 ) return true;
-  if( strcmp(_matrule->_opType,"StoreFence") == 0 ) return true;
-  if( strcmp(_matrule->_opType,"LoadFence") == 0 ) return true;
-
-  return false;
-}
-
 int InstructForm::memory_operand(FormDict &globals) const {
   // Machine independent loads must be checked for anti-dependences
   // Check if instruction has a USE of a memory operand class, or a def.
@@ -1170,6 +1154,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   }
   else if (is_ideal_nop()) {
     return "MachNopNode";
+  }
+  else if( is_ideal_membar()) {
+    return "MachMemBarNode";
   }
   else if (is_ideal_jump()) {
     return "MachJumpNode";
@@ -4116,7 +4103,8 @@ bool MatchRule::is_ideal_membar() const {
     !strcmp(_opType,"StoreFence") ||
     !strcmp(_opType,"MemBarVolatile") ||
     !strcmp(_opType,"MemBarCPUOrder") ||
-    !strcmp(_opType,"MemBarStoreStore");
+    !strcmp(_opType,"MemBarStoreStore") ||
+    !strcmp(_opType,"OnSpinWait");
 }
 
 bool MatchRule::is_ideal_loadPC() const {

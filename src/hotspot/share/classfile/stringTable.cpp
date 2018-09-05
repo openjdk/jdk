@@ -395,7 +395,7 @@ class StringTableIsAliveCounter : public BoolObjectClosure {
 };
 
 void StringTable::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f,
-                                    int* processed, int* removed) {
+                                    size_t* processed, size_t* removed) {
   DoNothingClosure dnc;
   assert(is_alive != NULL, "No closure");
   StringTableIsAliveCounter stiac(is_alive);
@@ -409,10 +409,10 @@ void StringTable::unlink_or_oops_do(BoolObjectClosure* is_alive, OopClosure* f,
   StringTable::the_table()->check_concurrent_work();
 
   if (processed != NULL) {
-    *processed = (int) stiac._count_total;
+    *processed = stiac._count_total;
   }
   if (removed != NULL) {
-    *removed = (int) stiac._count;
+    *removed = stiac._count;
   }
 }
 
@@ -423,7 +423,7 @@ void StringTable::oops_do(OopClosure* f) {
 
 void StringTable::possibly_parallel_unlink(
    OopStorage::ParState<false, false>* _par_state_string, BoolObjectClosure* cl,
-   int* processed, int* removed)
+   size_t* processed, size_t* removed)
 {
   DoNothingClosure dnc;
   assert(cl != NULL, "No closure");
@@ -434,8 +434,8 @@ void StringTable::possibly_parallel_unlink(
   // Accumulate the dead strings.
   the_table()->add_items_count_to_clean(stiac._count);
 
-  *processed = (int) stiac._count_total;
-  *removed = (int) stiac._count;
+  *processed = stiac._count_total;
+  *removed = stiac._count;
 }
 
 void StringTable::possibly_parallel_oops_do(

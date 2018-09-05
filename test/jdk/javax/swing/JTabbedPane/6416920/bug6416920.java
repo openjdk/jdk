@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @summary Ensures that selected tab is painted properly in the scroll tab layout
  *         under WindowsLookAndFeel in Windows' "Windows XP" theme.
  * @author Mikhail Lapshin
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug6416920
  */
 
@@ -37,14 +37,15 @@ import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 import java.awt.Rectangle;
 import java.awt.Insets;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class bug6416920 extends BasicTabbedPaneUI {
     public AccessibleTabbedPaneLayout layout = new AccessibleTabbedPaneLayout();
 
     public static void main(String[] args) {
 
-        if(OSInfo.getOSType() != OSInfo.OSType.WINDOWS){
+        if (!Platform.isWindows()) {
             return;
         }
 

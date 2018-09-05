@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,18 @@
  * @bug 7129133
  * @summary [macosx] Accelerators are displayed as Meta instead of the Command symbol
  * @author leonid.romanov@oracle.com
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug7129133
  */
+
+import jdk.test.lib.Platform;
 
 import java.awt.*;
 
 public class bug7129133 {
     public static void main(String[] args) throws Exception {
-        if (jdk.testlibrary.OSInfo.getOSType() != jdk.testlibrary.OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }

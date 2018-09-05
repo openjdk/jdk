@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
    @bug 6840086
    @summary JFileChooser lacks icons on top right when running on Windows 7
    @author Pavel Porvatov
-   @library ../../../../lib/testlibrary
+   @library /test/lib
    @modules java.desktop/sun.awt.shell
-   @build jdk.testlibrary.OSInfo
+   @build jdk.test.lib.Platform
    @run main bug6840086
 */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 import sun.awt.shell.ShellFolder;
 
 import java.awt.*;
@@ -46,7 +46,7 @@ public class bug6840086 {
     };
 
     public static void main(String[] args) {
-        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+        if (!Platform.isWindows()) {
             System.out.println("The test was skipped because it is sensible only for Windows.");
 
             return;

@@ -412,7 +412,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   soc->do_tag(sizeof(Symbol));
 
   // Dump/restore miscellaneous metadata.
-  Universe::serialize(soc, true);
+  Universe::serialize(soc);
   soc->do_tag(--tag);
 
   // Dump/restore references to commonly used names and signatures.
@@ -1619,7 +1619,7 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
   LinkSharedClassesClosure link_closure(THREAD);
   do {
     link_closure.reset();
-    ClassLoaderDataGraph::loaded_classes_do(&link_closure);
+    ClassLoaderDataGraph::unlocked_loaded_classes_do(&link_closure);
     guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
   } while (link_closure.made_progress());
 
@@ -1631,7 +1631,7 @@ void MetaspaceShared::link_and_cleanup_shared_classes(TRAPS) {
       // we should come here only if there are unverifiable classes, which
       // shouldn't happen in normal cases. So better safe than sorry.
       check_closure.reset();
-      ClassLoaderDataGraph::loaded_classes_do(&check_closure);
+      ClassLoaderDataGraph::unlocked_loaded_classes_do(&check_closure);
     } while (check_closure.made_progress());
 
     if (IgnoreUnverifiableClassesDuringDump) {

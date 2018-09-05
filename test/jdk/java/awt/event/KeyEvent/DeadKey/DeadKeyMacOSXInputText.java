@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug 7199180
  * @summary [macosx] Dead keys handling for input methods
  * @author alexandr.scherbatiy area=awt.event
- * @library ../../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main DeadKeyMacOSXInputText
  */
 
@@ -37,7 +37,7 @@ import java.awt.event.*;
 import java.awt.event.KeyEvent;
 import javax.swing.JTextField;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 public class DeadKeyMacOSXInputText {
 
@@ -45,7 +45,7 @@ public class DeadKeyMacOSXInputText {
 
     public static void main(String[] args) throws Exception {
 
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             return;
         }
 

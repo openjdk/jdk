@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 /**
  * @test
@@ -39,8 +39,8 @@ import jdk.testlibrary.OSInfo;
  * @bug 8033000 8147994
  * @author Alexander Scherbatiy
  * @summary No Horizontal Mouse Wheel Support In BasicScrollPaneUI
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main HorizontalMouseWheelOnShiftPressed
  */
 public class HorizontalMouseWheelOnShiftPressed {
@@ -52,7 +52,7 @@ public class HorizontalMouseWheelOnShiftPressed {
     private static JFrame frame;
 
     static {
-        delta = OSInfo.getOSType().equals(OSInfo.OSType.MACOSX) ? -30 : 30;
+        delta = Platform.isOSX() ? -30 : 30;
     }
 
     public static void main(String[] args) throws Exception {

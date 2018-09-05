@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug 8024061
  * @summary Checks that no exception is thrown if dragGestureRecognized
  *          takes a while to complete.
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug8024061
  */
 import java.awt.*;
@@ -56,8 +56,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.*;
-import jdk.testlibrary.OSInfo;
 
+import jdk.test.lib.Platform;
 
 /**
  * If dragGestureRecognized() takes a while to complete and if user performs a drag quickly,
@@ -114,8 +114,7 @@ public class bug8024061 {
     }
 
     public static void main(String[] args) throws AWTException, InvocationTargetException, InterruptedException {
-        OSInfo.OSType type = OSInfo.getOSType();
-        if (type != OSInfo.OSType.LINUX && type != OSInfo.OSType.SOLARIS) {
+        if (!Platform.isLinux() && !Platform.isSolaris()) {
             System.out.println("This test is for Linux and Solaris only... " +
                                "skipping!");
             return;

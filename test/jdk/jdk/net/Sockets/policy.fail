@@ -1,8 +1,10 @@
-grant {
-    permission java.util.PropertyPermission "os.name", "read";
-    permission java.io.FilePermission "<<ALL FILES>>", "execute";
-    permission java.util.PropertyPermission "line.separator", "read";
+grant codeBase "file:${test.classes}/../../../../test/lib/-" {
+    permission java.util.PropertyPermission "*", "read";
     permission java.io.FilePermission "/etc/release", "read";
-    permission java.net.SocketPermission "127.0.0.1", "connect,accept" ;
-    permission java.net.SocketPermission "localhost", "listen" ;
+    permission java.io.FilePermission "<<ALL FILES>>", "execute";
+};
+
+grant codeBase "file:${test.classes}/*" {
+    permission java.net.SocketPermission "127.0.0.1", "connect,accept";
+    permission java.net.SocketPermission "localhost", "listen";
 };

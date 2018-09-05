@@ -85,7 +85,7 @@ typedef struct VMStructEntry {
   const char * typeName;           /* The type name containing the given field (example: "Klass") */
   const char * fieldName;          /* The field name within the type           (example: "_name") */
   uint64_t address;                /* Address of field; only used for static fields */
-                                   /* ("offset" can not be reused because of apparent SparcWorks compiler bug */
+                                   /* ("offset" can not be reused because of apparent solstudio compiler bug */
                                    /* in generation of initializer data) */
 } VMStructEntry;
 

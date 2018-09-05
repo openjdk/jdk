@@ -33,7 +33,7 @@ import nsk.share.jdi.*;
 
 public class resume002a {
 
-    //----------------------------------------------------- templete section
+    //----------------------------------------------------- template section
 
     static final int PASSED = 0;
     static final int FAILED = 2;
@@ -41,6 +41,7 @@ public class resume002a {
 
     static ArgumentHandler argHandler;
     static Log log;
+    static int testCase    = -1;
 
     //--------------------------------------------------   log procedures
 
@@ -98,8 +99,12 @@ public class resume002a {
 
     //------------------------------------------------------  section tested
 
-                    case 0: resume002aTestClass.method();
-                            break;
+                    case 0:
+                        resume002aTestClass.method();
+                        // Wait for debugger to complete the first test case
+                        // before advancing to the first breakpoint
+                        waitForTestCase(0);
+                        break;
 
                     case 1: resume002aTestClass.method();
                             break;
@@ -118,6 +123,17 @@ public class resume002a {
         log1("debuggee exits");
         System.exit(exitCode + PASS_BASE);
     }
+    // Synchronize with debugger progression.
+    static void waitForTestCase(int t) {
+        while (testCase < t) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // ignored
+            }
+        }
+    }
+
 }
 
 class resume002aTestClass {

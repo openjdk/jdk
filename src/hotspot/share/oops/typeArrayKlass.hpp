@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,10 +56,8 @@ class TypeArrayKlass : public ArrayKlass {
   // klass allocation
   static TypeArrayKlass* create_klass(BasicType type, const char* name_str,
                                TRAPS);
-  static inline Klass* create_klass(BasicType type, int scale, TRAPS) {
-    TypeArrayKlass* tak = create_klass(type, external_name(type), CHECK_NULL);
-    assert(scale == (1 << tak->log2_element_size()), "scale must check out");
-    return tak;
+  static TypeArrayKlass* create_klass(BasicType type, TRAPS) {
+    return create_klass(type, external_name(type), THREAD);
   }
 
   int oop_size(oop obj) const;

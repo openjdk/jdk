@@ -961,6 +961,7 @@ public:
   virtual SoftRefPolicy* soft_ref_policy();
 
   virtual void initialize_serviceability();
+  virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers();
   virtual GrowableArray<MemoryPool*> memory_pools();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import java.util.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
+import jdk.test.lib.OSVersion;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
@@ -376,9 +377,6 @@ public class TestAES extends UcryptoTest {
 
     // The cases on CFB128 mode have to be skipped on pre-S11.3.
     private static boolean isBadSolaris() {
-        return Platform.isSolaris()
-                && Platform.getOsVersionMajor() <= 5
-                && Platform.getOsVersionMinor() <= 11
-                && Utils.distro().compareTo("11.3") < 0;
+        return Platform.isSolaris() && OSVersion.current().compareTo(new OSVersion(11, 3)) < 0;
     }
 }

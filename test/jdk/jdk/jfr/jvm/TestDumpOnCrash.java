@@ -69,7 +69,6 @@ public class TestDumpOnCrash {
             ProcessTools.createJavaProcessBuilder(true,
                 "-Xmx64m",
                 "-Xint",
-                "-XX:-TransmitErrorReport",
                 "-XX:-CreateCoredumpOnCrash",
                 "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:StartFlightRecording=dumponexit=true",

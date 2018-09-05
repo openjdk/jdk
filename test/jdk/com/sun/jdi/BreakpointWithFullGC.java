@@ -77,7 +77,7 @@ public class BreakpointWithFullGC extends JdbTest {
 
     @Override
     protected void runCases() {
-        setBreakpoints(System.getProperty("test.src") + "/BreakpointWithFullGC.java", 1);
+        setBreakpointsFromTestSource("BreakpointWithFullGC.java", 1);
 
         // get to the first loop breakpoint
         jdb.command(JdbCommand.run());
@@ -90,14 +90,14 @@ public class BreakpointWithFullGC extends JdbTest {
 
         jdb.contToExit(1);
 
-        new OutputAnalyzer(jdb.getJdbOutput())
+        new OutputAnalyzer(getJdbOutput())
                 // make sure we hit the first breakpoint at least once
                 .stdoutShouldMatch("System\\..*top of loop")
                 // make sure we hit the second breakpoint at least once
                 .stdoutShouldMatch("System\\..*bottom of loop")
                 // make sure we hit the last breakpoint
                 .stdoutShouldMatch("System\\..*end of test");
-        new OutputAnalyzer(jdb.getDebuggeeOutput())
+        new OutputAnalyzer(getDebuggeeOutput())
                 // check for error message due to thread ID change
                 .stderrShouldNotContain("Exception in thread \"event-handler\" java.lang.NullPointerException");
     }

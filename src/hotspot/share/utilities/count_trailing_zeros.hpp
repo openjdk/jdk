@@ -89,7 +89,7 @@ inline unsigned count_trailing_zeros(uintx x) {
 /*****************************************************************************
  * Oracle Studio
  *****************************************************************************/
-#elif defined(TARGET_COMPILER_sparcWorks)
+#elif defined(TARGET_COMPILER_solstudio)
 
 // No compiler built-in / intrinsic, so use inline assembler.
 

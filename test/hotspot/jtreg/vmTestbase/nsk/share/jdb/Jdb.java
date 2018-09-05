@@ -399,8 +399,14 @@ public class Jdb extends LocalProcess implements Finalizable {
      * @param count number of prompt instances to wait for.
      */
     public String[] receiveReply(int startPos, boolean compoundPromptOnly, int count) {
-
-        int found = waitForPrompt(startPos, compoundPromptOnly, count);
+        nsk.share.Failure e = null;
+        try {
+            waitForPrompt(startPos, compoundPromptOnly, count);
+        } catch (nsk.share.Failure nsf) {
+            e = nsf;
+            launcher.getLog().display("receiveReply FAILED due to \"" + e + "\".");
+            launcher.getLog().display("Pending reply output follows:");
+        }
 
         String reply = stdoutBuffer.substring(startPos, stdoutBuffer.length());
         String[] replyArr = toStringArray(reply);
@@ -410,6 +416,7 @@ public class Jdb extends LocalProcess implements Finalizable {
             launcher.getLog().display("reply[" + i + "]: " + replyArr[i]);
         }
 
+        if (e != null) throw e;
         return replyArr;
     }
 
@@ -443,7 +450,7 @@ public class Jdb extends LocalProcess implements Finalizable {
         long max = getLauncher().getJdbArgumentHandler().getWaitTime() * 60 * 1000;  // maximum time to wait.
 
         if (count <= 0) {
-            throw new TestBug("Wrong number of promts count in Jdb.waitForPrompt(): " + count);
+            throw new TestBug("Wrong number of prompts count in Jdb.waitForPrompt(): " + count);
         }
 
         Object dummy = new Object();

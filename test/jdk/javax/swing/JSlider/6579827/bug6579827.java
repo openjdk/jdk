@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,21 @@
  * @requires (os.family == "windows")
  * @summary vista : JSlider on JColorchooser is not properly render or can't be seen completely
  * @author Pavel Porvatov
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.OSVersion jdk.test.lib.Platform
    @run main bug6579827
  */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
+import jdk.test.lib.OSVersion;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class bug6579827 {
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS ||
-                OSInfo.getWindowsVersion() != OSInfo.WINDOWS_VISTA) {
+        if (!Platform.isWindows() ||
+                !OSVersion.current().equals(OSVersion.WINDOWS_VISTA)) {
             System.out.println("This test is only for Windows Vista. Skipped.");
 
             return;

@@ -35,6 +35,8 @@ import javax.lang.model.element.Name;
  *   break;
  *
  *   break <em>label</em> ;
+ *
+ *   break <em>expression</em> ;
  * </pre>
  *
  * @jls section 14.15
@@ -49,4 +51,18 @@ public interface BreakTree extends StatementTree {
      * @return the label
      */
     Name getLabel();
+
+    /**
+     * Returns the expression for this {@code break} statement.
+     *
+     * @return the expression
+     * @since 12
+     *
+     * @deprecated This method is modeling value breaks, which are part of
+     * a preview feature and may be removed if the preview feature
+     * is removed.
+     *
+     */
+    @Deprecated(forRemoval=true, since="12")
+    ExpressionTree getValue();
 }

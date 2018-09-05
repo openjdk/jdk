@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,23 +28,8 @@
 #include "gc/g1/heapRegion.hpp"
 #include "memory/virtualspace.hpp"
 
-void G1CMBitMap::print_on_error(outputStream* st, const char* prefix) const {
-  _bm.print_on_error(st, prefix);
-}
-
-size_t G1CMBitMap::compute_size(size_t heap_size) {
-  return ReservedSpace::allocation_align_size_up(heap_size / mark_distance());
-}
-
-size_t G1CMBitMap::mark_distance() {
-  return MinObjAlignmentInBytes * BitsPerByte;
-}
-
 void G1CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
-  _covered = heap;
-
-  _bm = BitMapView((BitMap::bm_word_t*) storage->reserved().start(), _covered.word_size() >> _shifter);
-
+  MarkBitMap::initialize(heap, storage->reserved());
   storage->set_mapping_changed_listener(&_listener);
 }
 
@@ -57,19 +42,17 @@ void G1CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_r
   _bm->clear_range(mr);
 }
 
-void G1CMBitMap::clear_range(MemRegion mr) {
-  MemRegion intersection = mr.intersection(_covered);
-  assert(!intersection.is_empty(),
-         "Given range from " PTR_FORMAT " to " PTR_FORMAT " is completely outside the heap",
-         p2i(mr.start()), p2i(mr.end()));
-  // convert address range into offset range
-  _bm.at_put_range(addr_to_offset(intersection.start()),
-                   addr_to_offset(intersection.end()), false);
-}
-
 void G1CMBitMap::clear_region(HeapRegion* region) {
  if (!region->is_empty()) {
    MemRegion mr(region->bottom(), region->top());
    clear_range(mr);
  }
 }
+
+#ifdef ASSERT
+void G1CMBitMap::check_mark(HeapWord* addr) {
+  assert(G1CollectedHeap::heap()->is_in_exact(addr),
+         "Trying to access bitmap " PTR_FORMAT " for address " PTR_FORMAT " not in the heap.",
+         p2i(this), p2i(addr));
+}
+#endif

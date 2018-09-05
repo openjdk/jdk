@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,8 @@
   @summary Check if multiresolution image behaves properly
            on HiDPI + non-HiDPI display pair.
   @author a.stepanov
-  @library /lib/testlibrary
-  @build jdk.testlibrary.OSInfo
+  @library /test/lib
+  @build jdk.test.lib.Platform
   @run applet/manual=yesno MultiDisplayTest.html
 */
 
@@ -38,8 +38,8 @@ import java.applet.Applet;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
-import jdk.testlibrary.OSInfo;
 
+import jdk.test.lib.Platform;
 
 public class MultiDisplayTest extends Applet {
 
@@ -50,9 +50,7 @@ public class MultiDisplayTest extends Applet {
         generateImage(1, Color.BLACK), generateImage(2, Color.BLUE)});
 
     private static boolean checkOS() {
-        OSInfo.OSType os = OSInfo.getOSType();
-        return (os.equals(OSInfo.OSType.WINDOWS) ||
-            os.equals(OSInfo.OSType.MACOSX));
+        return Platform.isWindows() || Platform.isOSX();
     }
 
     public void init() { this.setLayout(new BorderLayout()); }

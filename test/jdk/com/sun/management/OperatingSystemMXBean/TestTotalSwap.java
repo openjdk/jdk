@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @author  Jaroslav Bachorik
  *
  * @library /lib/testlibrary
+ * @library /test/lib
  *
  * @build TestTotalSwap jdk.testlibrary.*
  * @run main TestTotalSwap
@@ -55,7 +56,7 @@
 import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.*;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.OutputAnalyzer;
 
@@ -110,56 +111,48 @@ public class TestTotalSwap {
     }
 
     private static long getSwapSizeFromOs() throws Throwable {
-        OSInfo.OSType os = OSInfo.getOSType();
-
-        switch (os) {
+        if (Platform.isLinux()) {
             // total       used       free     shared    buffers     cached
             // Mem:    16533540864 13638467584 2895073280  534040576 1630248960 6236909568
             // -/+ buffers/cache: 5771309056 10762231808
             // Swap:   15999168512          0 15999168512
-
-            case LINUX: {
-                String swapSizeStr = ProcessTools.executeCommand("free", "-b")
-                                        .firstMatch("Swap:\\s+([0-9]+)\\s+.*", 1);
-                return Long.parseLong(swapSizeStr);
-            }
-            case SOLARIS: {
-                // swapfile             dev   swaplo blocks   free
-                // /dev/dsk/c0t0d0s1   136,1      16 1638608 1600528
-                OutputAnalyzer out= ProcessTools.executeCommand(
+            String swapSizeStr = ProcessTools.executeCommand("free", "-b")
+                                             .firstMatch("Swap:\\s+([0-9]+)\\s+.*", 1);
+            return Long.parseLong(swapSizeStr);
+        } else if (Platform.isSolaris()) {
+            // swapfile             dev   swaplo blocks   free
+            // /dev/dsk/c0t0d0s1   136,1      16 1638608 1600528
+            OutputAnalyzer out= ProcessTools.executeCommand(
                     "/usr/sbin/swap",
                     "-l"
-                );
+            );
 
-                long swapSize = 0;
+            long swapSize = 0;
 
-                for (String line : out.asLines()) {
-                    if (line.contains("swapfile")) continue;
+            for (String line : out.asLines()) {
+                if (line.contains("swapfile")) continue;
 
-                    String[] vals = line.split("\\s+");
-                    if (vals.length == 5) {
-                        swapSize += Long.parseLong(vals[3]) * 512; // size is reported in 512b blocks
-                    }
+                String[] vals = line.split("\\s+");
+                if (vals.length == 5) {
+                    swapSize += Long.parseLong(vals[3]) * 512; // size is reported in 512b blocks
                 }
-
-                return swapSize;
             }
-            case MACOSX: {
-                // total = 8192.00M used = 7471.11M free = 720.89M (encrypted)
-                String swapSizeStr = ProcessTools.executeCommand(
+
+            return swapSize;
+        } else if (Platform.isOSX()) {
+            // total = 8192.00M used = 7471.11M free = 720.89M (encrypted)
+            String swapSizeStr = ProcessTools.executeCommand(
                     "/usr/sbin/sysctl",
                     "-n",
                     "vm.swapusage"
-                ).firstMatch("total\\s+=\\s+([0-9]+(\\.[0-9]+)?[Mm]?).*", 1);
-                if (swapSizeStr.toLowerCase().endsWith("m")) {
-                    swapSizeStr = swapSizeStr.substring(0, swapSizeStr.length() - 1);
-                    return (long)(Double.parseDouble(swapSizeStr) * 1024 * 1024); // size in MB
-                }
-                return (long)(Double.parseDouble(swapSizeStr) * 1024 * 1024);
+            ).firstMatch("total\\s+=\\s+([0-9]+(\\.[0-9]+)?[Mm]?).*", 1);
+            if (swapSizeStr.toLowerCase().endsWith("m")) {
+                swapSizeStr = swapSizeStr.substring(0, swapSizeStr.length() - 1);
+                return (long)(Double.parseDouble(swapSizeStr) * 1024 * 1024); // size in MB
             }
-            default: {
-                System.err.println("Unsupported operating system: " + os);
-            }
+            return (long)(Double.parseDouble(swapSizeStr) * 1024 * 1024);
+        } else {
+            System.err.println("Unsupported operating system: " + Platform.getOsName());
         }
 
         return -1;

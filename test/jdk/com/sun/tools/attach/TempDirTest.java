@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,9 @@ import java.util.Properties;
 import java.util.List;
 import java.io.File;
 
+import jdk.test.lib.thread.ProcessThread;
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.ProcessThread;
 
 /*
  * @test
@@ -39,6 +39,7 @@ import jdk.testlibrary.ProcessThread;
  * @summary Test to make sure attach and jvmstat works correctly when java.io.tmpdir is set
  *
  * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.attach
  *          jdk.jartool/sun.tools.jar
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug 6596966
  * @summary Some JFileChooser mnemonics do not work with sticky keys
  * @library ../../regtesthelpers
- * @library ../../../../lib/testlibrary
- * @build Util jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build Util jdk.test.lib.Platform
  * @run main bug6596966
  * @author Pavel Porvatov
  */
@@ -39,7 +39,7 @@ import java.awt.event.InputEvent;
 import java.util.ArrayList;
 import javax.swing.*;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 public class bug6596966 {
     private static JFrame frame;
@@ -78,7 +78,7 @@ public class bug6596966 {
 
 
         int keyMask = InputEvent.ALT_MASK;
-        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             keyMask = InputEvent.CTRL_MASK | InputEvent.ALT_MASK;
         }
         ArrayList<Integer> keys = Util.getKeyCodesFromKeyMask(keyMask);

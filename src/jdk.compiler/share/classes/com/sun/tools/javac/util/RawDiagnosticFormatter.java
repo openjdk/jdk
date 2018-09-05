@@ -158,6 +158,8 @@ public final class RawDiagnosticFormatter extends AbstractDiagnosticFormatter {
             s = "@" + rawDiagnosticPosHelper.getPosition((JCExpression)arg);
         } else if (arg instanceof PathFileObject) {
             s = ((PathFileObject) arg).getShortName();
+        } else if (arg instanceof Tag) {
+            s = "compiler.misc.tree.tag." + StringUtils.toLowerCase(((Tag) arg).name());
         } else {
             s = super.formatArgument(diag, arg, null);
         }

@@ -107,34 +107,40 @@ class AllocatedObj {
 };
 #endif
 
+#define MEMORY_TYPES_DO(f) \
+  /* Memory type by sub systems. It occupies lower byte. */  \
+  f(mtJavaHeap,      "Java Heap")   /* Java heap                                 */ \
+  f(mtClass,         "Class")       /* Java classes                              */ \
+  f(mtThread,        "Thread")      /* thread objects                            */ \
+  f(mtThreadStack,   "Thread Stack")                                                \
+  f(mtCode,          "Code")        /* generated code                            */ \
+  f(mtGC,            "GC")                                                          \
+  f(mtCompiler,      "Compiler")                                                    \
+  f(mtInternal,      "Internal")    /* memory used by VM, but does not belong to */ \
+                                    /* any of above categories, and not used by  */ \
+                                    /* NMT                                       */ \
+  f(mtOther,         "Other")       /* memory not used by VM                     */ \
+  f(mtSymbol,        "Symbol")                                                      \
+  f(mtNMT,           "Native Memory Tracking")  /* memory used by NMT            */ \
+  f(mtClassShared,   "Shared class space")      /* class data sharing            */ \
+  f(mtChunk,         "Arena Chunk") /* chunk that holds content of arenas        */ \
+  f(mtTest,          "Test")        /* Test type for verifying NMT               */ \
+  f(mtTracing,       "Tracing")                                                     \
+  f(mtLogging,       "Logging")                                                     \
+  f(mtArguments,     "Arguments")                                                   \
+  f(mtModule,        "Module")                                                      \
+  f(mtSafepoint,     "Safepoint")                                                   \
+  f(mtNone,          "Unknown")                                                     \
+  //end
+
+#define MEMORY_TYPE_DECLARE_ENUM(type, human_readable) \
+  type,
 
 /*
  * Memory types
  */
 enum MemoryType {
-  // Memory type by sub systems. It occupies lower byte.
-  mtJavaHeap,          // Java heap
-  mtClass,             // memory class for Java classes
-  mtThread,            // memory for thread objects
-  mtThreadStack,
-  mtCode,              // memory for generated code
-  mtGC,                // memory for GC
-  mtCompiler,          // memory for compiler
-  mtInternal,          // memory used by VM, but does not belong to
-                       // any of above categories, and not used for
-                       // native memory tracking
-  mtOther,             // memory not used by VM
-  mtSymbol,            // symbol
-  mtNMT,               // memory used by native memory tracking
-  mtClassShared,       // class data sharing
-  mtChunk,             // chunk that holds content of arenas
-  mtTest,              // Test type for verifying NMT
-  mtTracing,           // memory used for Tracing
-  mtLogging,           // memory for logging
-  mtArguments,         // memory for argument processing
-  mtModule,            // memory for module processing
-  mtSafepoint,         // memory for safepoint support
-  mtNone,              // undefined
+  MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
   mt_number_of_types   // number of memory types (mtDontTrack
                        // is not included as validate type)
 };

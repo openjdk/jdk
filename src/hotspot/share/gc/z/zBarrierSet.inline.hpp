@@ -210,16 +210,10 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
 template <DecoratorSet decorators, typename BarrierSetT>
 template <typename T>
 inline oop ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_load_not_in_heap(T* addr) {
+  verify_decorators_absent<ON_UNKNOWN_OOP_REF>();
+
   const oop o = Raw::oop_load_not_in_heap(addr);
-
-  if (HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value) {
-    return load_barrier_on_oop_field_preloaded(addr, o);
-  }
-
-  verify_decorators_present<ON_STRONG_OOP_REF>();
-  verify_decorators_absent<AS_NO_KEEPALIVE>();
-
-  return o;
+  return load_barrier_on_oop_field_preloaded(addr, o);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>

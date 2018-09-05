@@ -183,6 +183,8 @@ public class Code {
 
     final MethodSymbol meth;
 
+    private int letExprStackPos = 0;
+
     /** Construct a code object, given the settings of the fatcode,
      *  debugging info switches and the CharacterRangeTable.
      */
@@ -382,7 +384,7 @@ public class Code {
     }
 
     void postop() {
-        Assert.check(alive || state.stacksize == 0);
+        Assert.check(alive || isStatementStart());
     }
 
     /** Emit a ldc (or ldc_w) instruction, taking into account operand size
@@ -1211,6 +1213,15 @@ public class Code {
         return pc;
     }
 
+    public int setLetExprStackPos(int pos) {
+        int res = letExprStackPos;
+        letExprStackPos = pos;
+        return res;
+    }
+
+    public boolean isStatementStart() {
+        return state.stacksize == letExprStackPos;
+    }
 
 /**************************************************************************
  * Stack map generation
@@ -1474,7 +1485,7 @@ public class Code {
         State newState = state;
         for (; chain != null; chain = chain.next) {
             Assert.check(state != chain.state
-                    && (target > chain.pc || state.stacksize == 0));
+                    && (target > chain.pc || isStatementStart()));
             if (target >= cp) {
                 target = cp;
             } else if (get1(target) == goto_) {

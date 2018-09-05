@@ -40,16 +40,21 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
-#include "oops/oop.hpp"
-#include "opto/compile.hpp"
-#include "opto/intrinsicnode.hpp"
-#include "opto/node.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/thread.hpp"
+#ifdef COMPILER1
+#include "c1/c1_LIRAssembler.hpp"
+#endif
+#ifdef COMPILER2
+#include "oops/oop.hpp"
+#include "opto/compile.hpp"
+#include "opto/intrinsicnode.hpp"
+#include "opto/node.hpp"
+#endif
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -741,12 +746,15 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
 
   // We need a trampoline if branches are far.
   if (far_branches()) {
+    bool in_scratch_emit_size = false;
+#ifdef COMPILER2
     // We don't want to emit a trampoline if C2 is generating dummy
     // code during its branch shortening phase.
     CompileTask* task = ciEnv::current()->task();
-    bool in_scratch_emit_size =
+    in_scratch_emit_size =
       (task != NULL && is_c2_compile(task->comp_level()) &&
        Compile::current()->in_scratch_emit_size());
+#endif
     if (!in_scratch_emit_size) {
       address stub = emit_trampoline_stub(offset(), entry.target());
       if (stub == NULL) {
@@ -780,7 +788,9 @@ address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
 
 address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
                                              address dest) {
-  address stub = start_a_stub(Compile::MAX_stubs_size/2);
+  // Max stub size: alignment nop, TrampolineStub.
+  address stub = start_a_stub(NativeInstruction::instruction_size
+                   + NativeCallTrampolineStub::instruction_size);
   if (stub == NULL) {
     return NULL;  // CodeBuffer::expand failed
   }
@@ -4324,6 +4334,7 @@ void MacroAssembler::remove_frame(int framesize) {
   }
 }
 
+#ifdef COMPILER2
 typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
 // Search for str1 in str2 and return index or -1
@@ -5053,6 +5064,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
 
   BLOCK_COMMENT("} string_compare");
 }
+#endif // COMPILER2
 
 // This method checks if provided byte array contains byte with highest bit set.
 void MacroAssembler::has_negatives(Register ary1, Register len, Register result) {

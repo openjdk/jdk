@@ -90,7 +90,7 @@ public class ArrayLengthDumpTest extends JdbTest {
 
     @Override
     protected void runCases() {
-        setBreakpoints(System.getProperty("test.src") + "/ArrayLengthDumpTest.java", 1);
+        setBreakpointsFromTestSource("ArrayLengthDumpTest.java", 1);
 
         // Run to breakpoint #1
         jdb.command(JdbCommand.run());

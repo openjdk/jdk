@@ -75,7 +75,7 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
-#include "gc/shared/weakProcessor.hpp"
+#include "gc/shared/weakProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -3719,14 +3719,8 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
   G1STWIsAliveClosure is_alive(this);
   G1KeepAliveClosure keep_alive(this);
 
-  {
-    double start = os::elapsedTime();
-
-    WeakProcessor::weak_oops_do(&is_alive, &keep_alive);
-
-    double time_ms = (os::elapsedTime() - start) * 1000.0;
-    g1_policy()->phase_times()->record_weak_ref_proc_time(time_ms);
-  }
+  WeakProcessor::weak_oops_do(workers(), &is_alive, &keep_alive,
+                              g1_policy()->phase_times()->weak_phase_times());
 
   if (G1StringDedup::is_enabled()) {
     double fixup_start = os::elapsedTime();
@@ -4658,6 +4652,10 @@ void G1CollectedHeap::rebuild_strong_code_roots() {
 
 void G1CollectedHeap::initialize_serviceability() {
   _g1mm->initialize_serviceability();
+}
+
+MemoryUsage G1CollectedHeap::memory_usage() {
+  return _g1mm->memory_usage();
 }
 
 GrowableArray<GCMemoryManager*> G1CollectedHeap::memory_managers() {

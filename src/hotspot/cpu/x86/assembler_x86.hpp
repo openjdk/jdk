@@ -1302,7 +1302,11 @@ private:
   // WARNING: be very careful using this for forward jumps.  If the label is
   // not bound within an 8-bit offset of this instruction, a run-time error
   // will occur.
-  void jccb(Condition cc, Label& L);
+
+  // Use macro to record file and line number.
+  #define jccb(cc, L) jccb_0(cc, L, __FILE__, __LINE__)
+
+  void jccb_0(Condition cc, Label& L, const char* file, int line);
 
   void jmp(Address entry);    // pc <- entry
 
@@ -1315,7 +1319,11 @@ private:
   // WARNING: be very careful using this for forward jumps.  If the label is
   // not bound within an 8-bit offset of this instruction, a run-time error
   // will occur.
-  void jmpb(Label& L);
+
+  // Use macro to record file and line number.
+  #define jmpb(L) jmpb_0(L, __FILE__, __LINE__)
+
+  void jmpb_0(Label& L, const char* file, int line);
 
   void ldmxcsr( Address src );
 

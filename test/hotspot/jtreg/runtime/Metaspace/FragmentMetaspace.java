@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @library /runtime/testlibrary
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
- * @run main/othervm/timeout=200 -Xmx300m FragmentMetaspace
+ * @run main/othervm/timeout=200 -Xmx1g FragmentMetaspace
  */
 
 import java.io.IOException;
@@ -42,8 +42,8 @@ public class FragmentMetaspace {
     public static Class<?> c;
 
     public static void main(String... args) {
-        runGrowing(Long.valueOf(System.getProperty("time", "80000")),
-            Integer.valueOf(System.getProperty("iterations", "200")));
+        runGrowing(Long.valueOf(System.getProperty("time", "40000")),
+            Integer.valueOf(System.getProperty("iterations", "100")));
         // try to clean up and unload classes to decrease
         // class verification time in debug vm
         System.gc();
@@ -68,6 +68,9 @@ public class FragmentMetaspace {
                 gcl = null;
             } catch (IOException | InstantiationException | IllegalAccessException ex) {
                 throw new RuntimeException(ex);
+            } catch (OutOfMemoryError oome) {
+                System.out.println("javac failed with OOM; ignored.");
+                return;
             }
         }
     }

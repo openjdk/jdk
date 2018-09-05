@@ -26,8 +26,10 @@
 package com.sun.tools.javac.parser;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.sun.source.tree.CaseTree.CaseKind;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.ModuleTree.ModuleKind;
 
@@ -218,12 +220,22 @@ public class JavacParser implements Parser {
      *     mode = TYPE        : a type
      *     mode = NOPARAMS    : no parameters allowed for type
      *     mode = TYPEARG     : type argument
+     *     mode |= NOLAMBDA   : lambdas are not allowed
      */
     protected static final int EXPR = 0x1;
     protected static final int TYPE = 0x2;
     protected static final int NOPARAMS = 0x4;
     protected static final int TYPEARG = 0x8;
     protected static final int DIAMOND = 0x10;
+    protected static final int NOLAMBDA = 0x20;
+
+    protected void selectExprMode() {
+        mode = (mode & NOLAMBDA) | EXPR;
+    }
+
+    protected void selectTypeMode() {
+        mode = (mode & NOLAMBDA) | TYPE;
+    }
 
     /** The current mode.
      */
@@ -427,11 +439,18 @@ public class JavacParser implements Parser {
      *  an error.
      */
     public void accept(TokenKind tk) {
+        accept(tk, Errors::Expected);
+    }
+
+    /** If next input token matches given token, skip it, otherwise report
+     *  an error.
+     */
+    public void accept(TokenKind tk, Function<TokenKind, Error> errorProvider) {
         if (token.kind == tk) {
             nextToken();
         } else {
             setErrorEndPos(token.pos);
-            reportSyntaxError(S.prevToken().endPos, Errors.Expected(tk));
+            reportSyntaxError(S.prevToken().endPos, errorProvider.apply(tk));
         }
     }
 
@@ -796,7 +815,7 @@ public class JavacParser implements Parser {
         case EQ: {
             int pos = token.pos;
             nextToken();
-            mode = EXPR;
+            selectExprMode();
             JCExpression t1 = term();
             return toP(F.at(pos).Assign(t, t1));
         }
@@ -814,7 +833,7 @@ public class JavacParser implements Parser {
             int pos = token.pos;
             TokenKind tk = token.kind;
             nextToken();
-            mode = EXPR;
+            selectExprMode();
             JCExpression t1 = term();
             return F.at(pos).Assignop(optag(tk), t, t1);
         default:
@@ -829,7 +848,7 @@ public class JavacParser implements Parser {
     JCExpression term1() {
         JCExpression t = term2();
         if ((mode & EXPR) != 0 && token.kind == QUES) {
-            mode = EXPR;
+            selectExprMode();
             return term1Rest(t);
         } else {
             return t;
@@ -858,7 +877,7 @@ public class JavacParser implements Parser {
     JCExpression term2() {
         JCExpression t = term3();
         if ((mode & EXPR) != 0 && prec(token.kind) >= TreeInfo.orPrec) {
-            mode = EXPR;
+            selectExprMode();
             return term2Rest(t, TreeInfo.orPrec);
         } else {
             return t;
@@ -1058,7 +1077,7 @@ public class JavacParser implements Parser {
         switch (token.kind) {
         case QUES:
             if ((mode & TYPE) != 0 && (mode & (TYPEARG|NOPARAMS)) == TYPEARG) {
-                mode = TYPE;
+                selectTypeMode();
                 return typeArgument();
             } else
                 return illegal();
@@ -1066,11 +1085,11 @@ public class JavacParser implements Parser {
             if (typeArgs == null && (mode & EXPR) != 0) {
                 TokenKind tk = token.kind;
                 nextToken();
-                mode = EXPR;
+                selectExprMode();
                 if (tk == SUB &&
                     (token.kind == INTLITERAL || token.kind == LONGLITERAL) &&
                     token.radix() == 10) {
-                    mode = EXPR;
+                    selectExprMode();
                     t = literal(names.hyphen, pos);
                 } else {
                     t = term3();
@@ -1084,7 +1103,7 @@ public class JavacParser implements Parser {
                 switch (pres) {
                     case CAST:
                        accept(LPAREN);
-                       mode = TYPE;
+                       selectTypeMode();
                        int pos1 = pos;
                        List<JCExpression> targets = List.of(t = parseType());
                        while (token.kind == AMP) {
@@ -1096,7 +1115,7 @@ public class JavacParser implements Parser {
                            t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
                        }
                        accept(RPAREN);
-                       mode = EXPR;
+                       selectExprMode();
                        JCExpression t1 = term3();
                        return F.at(pos).TypeCast(t, t1);
                     case IMPLICIT_LAMBDA:
@@ -1105,7 +1124,7 @@ public class JavacParser implements Parser {
                         break;
                     default: //PARENS
                         accept(LPAREN);
-                        mode = EXPR;
+                        selectExprMode();
                         t = termRest(term1Rest(term2Rest(term3(), TreeInfo.orPrec)));
                         accept(RPAREN);
                         t = toP(F.at(pos).Parens(t));
@@ -1117,7 +1136,7 @@ public class JavacParser implements Parser {
             break;
         case THIS:
             if ((mode & EXPR) != 0) {
-                mode = EXPR;
+                selectExprMode();
                 t = to(F.at(pos).Ident(names._this));
                 nextToken();
                 if (typeArgs == null)
@@ -1129,7 +1148,7 @@ public class JavacParser implements Parser {
             break;
         case SUPER:
             if ((mode & EXPR) != 0) {
-                mode = EXPR;
+                selectExprMode();
                 t = to(F.at(pos).Ident(names._super));
                 t = superSuffix(typeArgs, t);
                 typeArgs = null;
@@ -1139,14 +1158,14 @@ public class JavacParser implements Parser {
         case CHARLITERAL: case STRINGLITERAL:
         case TRUE: case FALSE: case NULL:
             if (typeArgs == null && (mode & EXPR) != 0) {
-                mode = EXPR;
+                selectExprMode();
                 t = literal(names.empty);
             } else return illegal();
             break;
         case NEW:
             if (typeArgs != null) return illegal();
             if ((mode & EXPR) != 0) {
-                mode = EXPR;
+                selectExprMode();
                 nextToken();
                 if (token.kind == LT) typeArgs = typeArguments(false);
                 t = creator(pos, typeArgs);
@@ -1193,7 +1212,7 @@ public class JavacParser implements Parser {
             break;
         case UNDERSCORE: case IDENTIFIER: case ASSERT: case ENUM:
             if (typeArgs != null) return illegal();
-            if ((mode & EXPR) != 0 && peekToken(ARROW)) {
+            if ((mode & EXPR) != 0 && (mode & NOLAMBDA) == 0 && peekToken(ARROW)) {
                 t = lambdaExpressionOrStatement(false, false, pos);
             } else {
                 t = toP(F.at(token.pos).Ident(ident()));
@@ -1219,7 +1238,7 @@ public class JavacParser implements Parser {
                             t = bracketsSuffix(t);
                         } else {
                             if ((mode & EXPR) != 0) {
-                                mode = EXPR;
+                                selectExprMode();
                                 JCExpression t1 = term();
                                 if (!annos.isEmpty()) t = illegal(annos.head.pos);
                                 t = to(F.at(pos).Indexed(t, t1));
@@ -1229,7 +1248,7 @@ public class JavacParser implements Parser {
                         break loop;
                     case LPAREN:
                         if ((mode & EXPR) != 0) {
-                            mode = EXPR;
+                            selectExprMode();
                             t = arguments(typeArgs, t);
                             if (!annos.isEmpty()) t = illegal(annos.head.pos);
                             typeArgs = null;
@@ -1248,25 +1267,25 @@ public class JavacParser implements Parser {
                             switch (token.kind) {
                             case CLASS:
                                 if (typeArgs != null) return illegal();
-                                mode = EXPR;
+                                selectExprMode();
                                 t = to(F.at(pos).Select(t, names._class));
                                 nextToken();
                                 break loop;
                             case THIS:
                                 if (typeArgs != null) return illegal();
-                                mode = EXPR;
+                                selectExprMode();
                                 t = to(F.at(pos).Select(t, names._this));
                                 nextToken();
                                 break loop;
                             case SUPER:
-                                mode = EXPR;
+                                selectExprMode();
                                 t = to(F.at(pos).Select(t, names._super));
                                 t = superSuffix(typeArgs, t);
                                 typeArgs = null;
                                 break loop;
                             case NEW:
                                 if (typeArgs != null) return illegal();
-                                mode = EXPR;
+                                selectExprMode();
                                 int pos1 = token.pos;
                                 nextToken();
                                 if (token.kind == LT) typeArgs = typeArguments(false);
@@ -1310,7 +1329,7 @@ public class JavacParser implements Parser {
                             t = toP(F.at(pos1).TypeApply(t, args.toList()));
                             while (token.kind == DOT) {
                                 nextToken();
-                                mode = TYPE;
+                                selectTypeMode();
                                 t = toP(F.at(token.pos).Select(t, ident()));
                                 t = typeArgumentsOpt(t);
                             }
@@ -1319,7 +1338,7 @@ public class JavacParser implements Parser {
                                 //method reference expected here
                                 t = illegal();
                             }
-                            mode = EXPR;
+                            selectExprMode();
                             return term3Rest(t, typeArgs);
                         }
                         break loop;
@@ -1356,10 +1375,80 @@ public class JavacParser implements Parser {
                 //return illegal();
             }
             break;
+        case SWITCH:
+            checkSourceLevel(Feature.SWITCH_EXPRESSION);
+            int switchPos = token.pos;
+            nextToken();
+            JCExpression selector = parExpression();
+            accept(LBRACE);
+            ListBuffer<JCCase> cases = new ListBuffer<>();
+            while (true) {
+                pos = token.pos;
+                switch (token.kind) {
+                case CASE:
+                case DEFAULT:
+                    cases.appendList(switchExpressionStatementGroup());
+                    break;
+                case RBRACE: case EOF:
+                    JCSwitchExpression e = to(F.at(switchPos).SwitchExpression(selector,
+                                                                               cases.toList()));
+                    accept(RBRACE);
+                    return e;
+                default:
+                    nextToken(); // to ensure progress
+                    syntaxError(pos, Errors.Expected3(CASE, DEFAULT, RBRACE));
+                }
+            }
         default:
             return illegal();
         }
         return term3Rest(t, typeArgs);
+    }
+
+    private List<JCCase> switchExpressionStatementGroup() {
+        ListBuffer<JCCase> caseExprs = new ListBuffer<>();
+        int casePos = token.pos;
+        ListBuffer<JCExpression> pats = new ListBuffer<>();
+
+        if (token.kind == DEFAULT) {
+            nextToken();
+        } else {
+            accept(CASE);
+            while (true) {
+                pats.append(term(EXPR | NOLAMBDA));
+                if (token.kind != COMMA) break;
+                checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
+                nextToken();
+            };
+        }
+        List<JCStatement> stats = null;
+        JCTree body = null;
+        @SuppressWarnings("removal")
+        CaseKind kind;
+        switch (token.kind) {
+            case ARROW:
+                checkSourceLevel(Feature.SWITCH_RULE);
+                nextToken();
+                if (token.kind == TokenKind.THROW || token.kind == TokenKind.LBRACE) {
+                    stats = List.of(parseStatement());
+                    body = stats.head;
+                    kind = JCCase.RULE;
+                } else {
+                    JCExpression value = parseExpression();
+                    stats = List.of(to(F.at(value).Break(value)));
+                    body = value;
+                    kind = JCCase.RULE;
+                    accept(SEMI);
+                }
+                break;
+            default:
+                accept(COLON, tk -> Errors.Expected2(COLON, ARROW));
+                stats = blockStatements();
+                kind = JCCase.STATEMENT;
+                break;
+        }
+        caseExprs.append(toP(F.at(casePos).Case(kind, pats.toList(), stats, body)));
+        return caseExprs.toList();
     }
 
     JCExpression term3Rest(JCExpression t, List<JCExpression> typeArgs) {
@@ -1372,13 +1461,13 @@ public class JavacParser implements Parser {
                 nextToken();
                 if ((mode & TYPE) != 0) {
                     int oldmode = mode;
-                    mode = TYPE;
+                    selectTypeMode();
                     if (token.kind == RBRACKET) {
                         nextToken();
                         t = bracketsOpt(t);
                         t = toP(F.at(pos1).TypeArray(t));
                         if (token.kind == COLCOL) {
-                            mode = EXPR;
+                            selectExprMode();
                             continue;
                         }
                         if (annos.nonEmpty()) {
@@ -1389,7 +1478,7 @@ public class JavacParser implements Parser {
                     mode = oldmode;
                 }
                 if ((mode & EXPR) != 0) {
-                    mode = EXPR;
+                    selectExprMode();
                     JCExpression t1 = term();
                     t = to(F.at(pos1).Indexed(t, t1));
                 }
@@ -1398,14 +1487,14 @@ public class JavacParser implements Parser {
                 nextToken();
                 typeArgs = typeArgumentsOpt(EXPR);
                 if (token.kind == SUPER && (mode & EXPR) != 0) {
-                    mode = EXPR;
+                    selectExprMode();
                     t = to(F.at(pos1).Select(t, names._super));
                     nextToken();
                     t = arguments(typeArgs, t);
                     typeArgs = null;
                 } else if (token.kind == NEW && (mode & EXPR) != 0) {
                     if (typeArgs != null) return illegal();
-                    mode = EXPR;
+                    selectExprMode();
                     int pos2 = token.pos;
                     nextToken();
                     if (token.kind == LT) typeArgs = typeArguments(false);
@@ -1425,7 +1514,7 @@ public class JavacParser implements Parser {
                     typeArgs = null;
                 }
             } else if ((mode & EXPR) != 0 && token.kind == COLCOL) {
-                mode = EXPR;
+                selectExprMode();
                 if (typeArgs != null) return illegal();
                 accept(COLCOL);
                 t = memberReferenceSuffix(pos1, t);
@@ -1440,7 +1529,7 @@ public class JavacParser implements Parser {
             }
         }
         while ((token.kind == PLUSPLUS || token.kind == SUBSUB) && (mode & EXPR) != 0) {
-            mode = EXPR;
+            selectExprMode();
             t = to(F.at(token.pos).Unary(
                   token.kind == PLUSPLUS ? POSTINC : POSTDEC, t));
             nextToken();
@@ -1580,7 +1669,8 @@ public class JavacParser implements Parser {
                         return ParensResult.EXPLICIT_LAMBDA;
                     } else if (peekToken(lookahead, RPAREN, ARROW)) {
                         // Identifier, ')' '->' -> implicit lambda
-                        return ParensResult.IMPLICIT_LAMBDA;
+                        return (mode & NOLAMBDA) == 0 ? ParensResult.IMPLICIT_LAMBDA
+                                                      : ParensResult.PARENS;
                     } else if (depth == 0 && peekToken(lookahead, COMMA)) {
                         defaultResult = ParensResult.IMPLICIT_LAMBDA;
                     }
@@ -1818,7 +1908,7 @@ public class JavacParser implements Parser {
      */
     JCExpression argumentsOpt(List<JCExpression> typeArgs, JCExpression t) {
         if ((mode & EXPR) != 0 && token.kind == LPAREN || typeArgs != null) {
-            mode = EXPR;
+            selectExprMode();
             return arguments(typeArgs, t);
         } else {
             return t;
@@ -1857,7 +1947,7 @@ public class JavacParser implements Parser {
         if (token.kind == LT &&
             (mode & TYPE) != 0 &&
             (mode & NOPARAMS) == 0) {
-            mode = TYPE;
+            selectTypeMode();
             return typeArguments(t, false);
         } else {
             return t;
@@ -2019,7 +2109,7 @@ public class JavacParser implements Parser {
      */
     JCExpression bracketsSuffix(JCExpression t) {
         if ((mode & EXPR) != 0 && token.kind == DOT) {
-            mode = EXPR;
+            selectExprMode();
             int pos = token.pos;
             nextToken();
             accept(CLASS);
@@ -2044,7 +2134,7 @@ public class JavacParser implements Parser {
             }
         } else if ((mode & TYPE) != 0) {
             if (token.kind != COLCOL) {
-                mode = TYPE;
+                selectTypeMode();
             }
         } else if (token.kind != COLCOL) {
             syntaxError(token.pos, Errors.DotClassExpected);
@@ -2064,7 +2154,7 @@ public class JavacParser implements Parser {
 
     JCExpression memberReferenceSuffix(int pos1, JCExpression t) {
         checkSourceLevel(Feature.METHOD_REFERENCES);
-        mode = EXPR;
+        selectExprMode();
         List<JCExpression> typeArgs = null;
         if (token.kind == LT) {
             typeArgs = typeArguments(false);
@@ -2103,7 +2193,7 @@ public class JavacParser implements Parser {
         JCExpression t = qualident(true);
 
         int oldmode = mode;
-        mode = TYPE;
+        selectTypeMode();
         boolean diamondFound = false;
         int lastTypeargsPos = -1;
         if (token.kind == LT) {
@@ -2617,9 +2707,9 @@ public class JavacParser implements Parser {
         }
         case BREAK: {
             nextToken();
-            Name label = LAX_IDENTIFIER.accepts(token.kind) ? ident() : null;
+            JCExpression value = token.kind == SEMI ? null : parseExpression();
             accept(SEMI);
-            JCBreak t = toP(F.at(pos).Break(label));
+            JCBreak t = toP(F.at(pos).Break(value));
             return t;
         }
         case CONTINUE: {
@@ -2713,7 +2803,7 @@ public class JavacParser implements Parser {
             switch (token.kind) {
             case CASE:
             case DEFAULT:
-                cases.append(switchBlockStatementGroup());
+                cases.appendList(switchBlockStatementGroup());
                 break;
             case RBRACE: case EOF:
                 return cases.toList();
@@ -2724,28 +2814,69 @@ public class JavacParser implements Parser {
         }
     }
 
-    protected JCCase switchBlockStatementGroup() {
+    protected List<JCCase> switchBlockStatementGroup() {
         int pos = token.pos;
         List<JCStatement> stats;
         JCCase c;
+        ListBuffer<JCCase> cases = new ListBuffer<JCCase>();
         switch (token.kind) {
-        case CASE:
+        case CASE: {
             nextToken();
-            JCExpression pat = parseExpression();
-            accept(COLON);
-            stats = blockStatements();
-            c = F.at(pos).Case(pat, stats);
+            ListBuffer<JCExpression> pats = new ListBuffer<>();
+            while (true) {
+                pats.append(term(EXPR | NOLAMBDA));
+                if (token.kind != COMMA) break;
+                nextToken();
+                checkSourceLevel(Feature.SWITCH_MULTIPLE_CASE_LABELS);
+            };
+            @SuppressWarnings("removal")
+            CaseKind caseKind;
+            JCTree body = null;
+            if (token.kind == ARROW) {
+                checkSourceLevel(Feature.SWITCH_RULE);
+                accept(ARROW);
+                caseKind = JCCase.RULE;
+                JCStatement statement = parseStatementAsBlock();
+                if (!statement.hasTag(EXEC) && !statement.hasTag(BLOCK) && !statement.hasTag(Tag.THROW)) {
+                    log.error(statement.pos(), Errors.SwitchCaseUnexpectedStatement);
+                }
+                stats = List.of(statement);
+                body = stats.head;
+            } else {
+                accept(COLON, tk -> Errors.Expected2(COLON, ARROW));
+                caseKind = JCCase.STATEMENT;
+                stats = blockStatements();
+            }
+            c = F.at(pos).Case(caseKind, pats.toList(), stats, body);
             if (stats.isEmpty())
                 storeEnd(c, S.prevToken().endPos);
-            return c;
-        case DEFAULT:
+            return cases.append(c).toList();
+        }
+        case DEFAULT: {
             nextToken();
-            accept(COLON);
-            stats = blockStatements();
-            c = F.at(pos).Case(null, stats);
+            @SuppressWarnings("removal")
+            CaseKind caseKind;
+            JCTree body = null;
+            if (token.kind == ARROW) {
+                checkSourceLevel(Feature.SWITCH_RULE);
+                accept(ARROW);
+                caseKind = JCCase.RULE;
+                JCStatement statement = parseStatementAsBlock();
+                if (!statement.hasTag(EXEC) && !statement.hasTag(BLOCK) && !statement.hasTag(Tag.THROW)) {
+                    log.error(statement.pos(), Errors.SwitchCaseUnexpectedStatement);
+                }
+                stats = List.of(statement);
+                body = stats.head;
+            } else {
+                accept(COLON, tk -> Errors.Expected2(COLON, ARROW));
+                caseKind = JCCase.STATEMENT;
+                stats = blockStatements();
+            }
+            c = F.at(pos).Case(caseKind, List.nil(), stats, body);
             if (stats.isEmpty())
                 storeEnd(c, S.prevToken().endPos);
-            return c;
+            return cases.append(c).toList();
+        }
         }
         throw new AssertionError("should not reach here");
     }
@@ -2946,7 +3077,7 @@ public class JavacParser implements Parser {
      */
     JCExpression annotationFieldValue() {
         if (LAX_IDENTIFIER.accepts(token.kind)) {
-            mode = EXPR;
+            selectExprMode();
             JCExpression t1 = term1();
             if (t1.hasTag(IDENT) && token.kind == EQ) {
                 int pos = token.pos;
@@ -2988,7 +3119,7 @@ public class JavacParser implements Parser {
             accept(RBRACE);
             return toP(F.at(pos).NewArray(null, List.nil(), buf.toList()));
         default:
-            mode = EXPR;
+            selectExprMode();
             return term1();
         }
     }

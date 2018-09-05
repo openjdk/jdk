@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.testlibrary.ProcessTools;
  * @test
  * @bug 4990825
  * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.management
  * @build jdk.testlibrary.*
  * @run main TestJstatdUsage

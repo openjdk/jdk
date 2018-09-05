@@ -4080,7 +4080,7 @@ void TemplateTable::_new() {
     // make sure rdx was multiple of 8
     Label L;
     // Ignore partial flag stall after shrl() since it is debug VM
-    __ jccb(Assembler::carryClear, L);
+    __ jcc(Assembler::carryClear, L);
     __ stop("object size is not multiple of 2 - adjust this code");
     __ bind(L);
     // rdx must be > 0, no extra check needed here

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,14 @@
   @summary   Tests that key events with modifiers are not swallowed.
   @author    anton.tarasov: area=awt.focus
   @library   ../../../regtesthelpers
-  @library ../../../../../lib/testlibrary
+  @library /test/lib
   @modules java.desktop/sun.awt
-  @build jdk.testlibrary.OSInfo
+  @build jdk.test.lib.Platform
   @build     Util
   @run       main SwallowKeyEvents
 */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 import java.awt.AWTException;
 import java.awt.Frame;
 import java.awt.Robot;
@@ -54,7 +54,7 @@ public class SwallowKeyEvents {
     static Robot r;
 
     public static void main(String[] args) {
-        if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
+        if (Platform.isWindows()) {
             System.out.println("Skipped. Test not for MS Windows.");
             return;
         }

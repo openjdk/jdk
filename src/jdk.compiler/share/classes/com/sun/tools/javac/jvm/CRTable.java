@@ -313,7 +313,7 @@ implements CRTFlags {
 
         public void visitCase(JCCase tree) {
             SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
-            sr.mergeWith(csp(tree.pat));
+            sr.mergeWith(csp(tree.pats));
             sr.mergeWith(csp(tree.stats));
             result = sr;
         }

@@ -71,7 +71,6 @@
 #define open64 open
 #define fstat64 fstat
 #define lstat64 lstat
-#define dirent64 dirent
 #define readdir64 readdir
 #endif
 
@@ -83,7 +82,9 @@
 
 #if defined(_AIX)
   #define DIR DIR64
+  #define dirent dirent64
   #define opendir opendir64
+  #define readdir readdir64
   #define closedir closedir64
 #endif
 
@@ -729,10 +730,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_closedir(JNIEnv* env, jclass this, jlong di
 JNIEXPORT jbyteArray JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_readdir(JNIEnv* env, jclass this, jlong value) {
     DIR* dirp = jlong_to_ptr(value);
-    struct dirent64* ptr;
+    struct dirent* ptr;
 
     errno = 0;
-    ptr = readdir64(dirp);
+    ptr = readdir(dirp);
     if (ptr == NULL) {
         if (errno != 0) {
             throwUnixException(env, errno);

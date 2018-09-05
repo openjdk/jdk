@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
  * @bug 7154841
  * @summary JPopupMenu is overlapped by a Dock on Mac OS X
  * @author Petr Pchelko
- * @library ../../../../lib/testlibrary
- * @build ExtendedRobot jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build ExtendedRobot jdk.test.lib.Platform
  * @run main bug7154841
  */
 
@@ -37,7 +37,8 @@ import javax.swing.*;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.util.concurrent.atomic.AtomicReference;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class bug7154841 {
 
@@ -68,7 +69,7 @@ public class bug7154841 {
     }
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             return; // Test only for Mac OS X
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,16 +34,17 @@ import java.awt.Toolkit;
 import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import javax.swing.JApplet;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 /**
  * @test
  * @bug 8028212
  * @summary [macosx] Custom Cursor HiDPI support
  * @author Alexander Scherbatiy
- * @library ../../../../lib/testlibrary
+ * @library /test/lib
  * @modules java.desktop/sun.awt.image
- * @build jdk.testlibrary.OSInfo
+ * @build jdk.test.lib.Platform
  * @run applet/manual=yesno MultiResolutionCursorTest.html
  */
 public class MultiResolutionCursorTest extends JApplet {
@@ -58,7 +59,7 @@ public class MultiResolutionCursorTest extends JApplet {
         // etc.
         this.setLayout(new BorderLayout());
 
-        if (OSInfo.getOSType().equals(OSInfo.OSType.MACOSX)) {
+        if (Platform.isOSX()) {
             String[] instructions = {
                 "Verify that high resolution custom cursor is used"
                 + " on HiDPI displays.",

@@ -60,13 +60,13 @@ define SetupTestFilesCompilationBody
   ifeq ($$($1_TYPE), LIBRARY)
     $1_PREFIX = lib
     $1_OUTPUT_SUBDIR := lib
-    $1_CFLAGS := $(CFLAGS_TESTLIB)
+    $1_CFLAGS += $(CFLAGS_TESTLIB)
     $1_LDFLAGS := $(LDFLAGS_TESTLIB) $(call SET_SHARED_LIBRARY_ORIGIN)
     $1_COMPILATION_TYPE := LIBRARY
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
     $1_OUTPUT_SUBDIR := bin
-    $1_CFLAGS := $(CFLAGS_TESTEXE)
+    $1_CFLAGS += $(CFLAGS_TESTEXE)
     $1_LDFLAGS := $(LDFLAGS_TESTEXE)
     $1_COMPILATION_TYPE := EXECUTABLE
   else
@@ -75,7 +75,8 @@ define SetupTestFilesCompilationBody
 
   # Locate all files with the matching prefix
   $1_FILE_LIST := \
-      $$(shell $$(FIND) $$($1_SOURCE_DIRS) -type f -name "$$($1_PREFIX)*.c")
+      $$(shell $$(FIND) $$($1_SOURCE_DIRS) -type f \( -name "$$($1_PREFIX)*.c" \
+          -o -name "$$($1_PREFIX)*.cpp" \))
 
   $1_EXCLUDE_PATTERN := $$(addprefix %/, $$($1_EXCLUDE))
   $1_FILTERED_FILE_LIST := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_FILE_LIST))
@@ -94,6 +95,7 @@ define SetupTestFilesCompilationBody
         CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$(name)), \
         LIBS := $$($1_LIBS_$$(name)), \
+        TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
         COPY_DEBUG_SYMBOLS := false, \
         STRIP_SYMBOLS := false, \

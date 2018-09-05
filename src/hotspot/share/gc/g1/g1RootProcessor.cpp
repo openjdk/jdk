@@ -40,7 +40,6 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "gc/shared/weakProcessor.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "services/management.hpp"
@@ -96,7 +95,7 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
   {
     // Now the CM ref_processor roots.
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CMRefRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_refProcessor_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_refProcessor_oops_do)) {
       // We need to treat the discovered reference lists of the
       // concurrent mark ref processor as roots and keep entries
       // (which are added by the marking threads) on them live
@@ -128,7 +127,7 @@ void G1RootProcessor::evacuate_roots(G1ParScanThreadState* pss, uint worker_i) {
   // as implicitly live).
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::SATBFiltering, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_filter_satb_buffers) && _g1h->collector_state()->mark_or_rebuild_in_progress()) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_filter_satb_buffers) && _g1h->collector_state()->mark_or_rebuild_in_progress()) {
       G1BarrierSet::satb_mark_queue_set().filter_thread_buffers();
     }
   }
@@ -225,7 +224,7 @@ void G1RootProcessor::process_java_roots(G1RootClosures* closures,
   // let the thread process the weak CLDs and nmethods.
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::CLDGRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_ClassLoaderDataGraph_oops_do)) {
       ClassLoaderDataGraph::roots_cld_do(closures->strong_clds(), closures->weak_clds());
     }
   }
@@ -246,35 +245,35 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::UniverseRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_Universe_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_Universe_oops_do)) {
       Universe::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::JNIRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_JNIHandles_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_JNIHandles_oops_do)) {
       JNIHandles::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ObjectSynchronizerRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_ObjectSynchronizer_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_ObjectSynchronizer_oops_do)) {
       ObjectSynchronizer::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::ManagementRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_Management_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_Management_oops_do)) {
       Management::oops_do(strong_roots);
     }
   }
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::JVMTIRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_jvmti_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_jvmti_oops_do)) {
       JvmtiExport::oops_do(strong_roots);
     }
   }
@@ -282,7 +281,7 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
 #if INCLUDE_AOT
   if (UseAOT) {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::AOTCodeRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_aot_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_aot_oops_do)) {
         AOTLoader::oops_do(strong_roots);
     }
   }
@@ -290,7 +289,7 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::SystemDictionaryRoots, worker_i);
-    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_SystemDictionary_oops_do)) {
+    if (_process_strong_tasks.try_claim_task(G1RP_PS_SystemDictionary_oops_do)) {
       SystemDictionary::oops_do(strong_roots);
     }
   }
@@ -309,18 +308,8 @@ void G1RootProcessor::process_string_table_roots(G1RootClosures* closures,
 void G1RootProcessor::process_code_cache_roots(CodeBlobClosure* code_closure,
                                                G1GCPhaseTimes* phase_times,
                                                uint worker_i) {
-  if (!_process_strong_tasks.is_task_claimed(G1RP_PS_CodeCache_oops_do)) {
+  if (_process_strong_tasks.try_claim_task(G1RP_PS_CodeCache_oops_do)) {
     CodeCache::blobs_do(code_closure);
-  }
-}
-
-void G1RootProcessor::process_full_gc_weak_roots(OopClosure* oops) {
-  if (!_process_strong_tasks.is_task_claimed(G1RP_PS_refProcessor_oops_do)) {
-    _g1h->ref_processor_stw()->weak_oops_do(oops);
-  }
-
-  if (!_process_strong_tasks.is_task_claimed(G1RP_PS_weakProcessor_oops_do)) {
-    WeakProcessor::oops_do(oops);
   }
 }
 

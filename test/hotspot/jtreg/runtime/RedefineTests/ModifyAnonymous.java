@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@
  * @run main/othervm -javaagent:redefineagent.jar ModifyAnonymous
  */
 
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.lang.RuntimeException;
 import java.lang.instrument.ClassDefinition;
@@ -107,12 +109,39 @@ public class ModifyAnonymous {
     }
 
     static void runTest() {
+        PrintWriter pw;
+        String logName = System.getProperty("test.classes") +
+            File.separator + "loadedClasses.log";
+        // Create a log file to capture the names of the classes in the
+        // allLoadedClasses array. The log file is for assisting in debugging
+        // in case a null class is encountered in the allLoadedClasses array.
+        try {
+            pw = new PrintWriter(new FileOutputStream(
+                new File(logName), true));
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException("Could not write loaded classes to log", e);
+        }
         while (!done) {
             Class[] allLoadedClasses = inst.getAllLoadedClasses();
-            for (Class clazz : allLoadedClasses) {
+            int len = allLoadedClasses.length;
+            pw.println("    allLoadedClasses length: " + len);
+            for (int idx = 0; idx < len; idx++) {
+                Class cls = allLoadedClasses[idx];
+                pw.println("    " + idx + " " +
+                    ((cls != null) ? cls.getName() : "null"));
+            }
+            for (int idx = 0; idx < len; idx++) {
+                Class clazz = allLoadedClasses[idx];
+                if (clazz == null) {
+                    pw.flush();
+                    pw.close();
+                    throw new RuntimeException("null class encountered");
+                }
                 final String name = clazz.getName();
                 if (name.contains("$$Lambda$") && name.contains("App")) {
                     if (inst.isModifiableClass(clazz)) {
+                        pw.flush();
+                        pw.close();
                         throw new RuntimeException ("Class should not be modifiable");
                     }
                     // Try to modify them anyway.
@@ -133,12 +162,16 @@ public class ModifyAnonymous {
                         System.out.println("PASSED: expecting UnmodifiableClassException");
                         t.printStackTrace();
                     } catch(java.lang.ClassNotFoundException e) {
+                        pw.flush();
+                        pw.close();
                         throw new RuntimeException ("ClassNotFoundException thrown");
                     }
                     done = true;
                 }
             }
         }
+        pw.flush();
+        pw.close();
     }
 
     public static void main(String argv[]) throws InterruptedException, RuntimeException {

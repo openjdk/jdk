@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4290801 4942982 5102005 8008577 8021121
+ * @bug 4290801 4942982 5102005 8008577 8021121 8210153
  * @summary Basic tests for currency formatting.
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=JRE,SPI CurrencyFormat

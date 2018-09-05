@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,15 @@
   @summary awt Choice doesn't fire ItemStateChange when selecting item after select() call
   @author Oleg Pekhovskiy: area=awt-choice
   @library ../../regtesthelpers
-  @library ../../../../lib/testlibrary
+  @library /test/lib
   @modules java.desktop/sun.awt
   @build Util
-  @build jdk.testlibrary.OSInfo
+  @build jdk.test.lib.Platform
   @run main ItemStateChangeTest
 */
 
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Util;
-import jdk.testlibrary.OSInfo;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -51,7 +51,7 @@ public class ItemStateChangeTest extends Frame {
 
     public ItemStateChangeTest() {
 
-        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+        if (!Platform.isWindows()) {
             return;
         }
 

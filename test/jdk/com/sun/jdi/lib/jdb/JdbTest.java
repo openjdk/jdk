@@ -23,6 +23,8 @@
 
 package lib.jdb;
 
+import jdk.test.lib.process.OutputAnalyzer;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -43,6 +45,16 @@ public abstract class JdbTest {
     private final Jdb.LaunchOptions jdbOptions;
     protected Jdb jdb;
     protected final String debuggeeClass;   // shortland for jdbOptions.debuggeeClass
+
+    // returns the whole jdb output as a string
+    public String getJdbOutput() {
+        return jdb == null ? "" : jdb.getJdbOutput();
+    }
+
+    // returns the whole debuggee output as a string
+    public String getDebuggeeOutput() {
+        return jdb == null ? "" : jdb.getDebuggeeOutput();
+    }
 
     public void run() {
         try {
@@ -107,8 +119,26 @@ public abstract class JdbTest {
         return bps.size();
     }
 
-    protected int setBreakpoints(String debuggeeSourcePath, int id) {
-        return setBreakpoints(jdb, debuggeeClass, debuggeeSourcePath, id);
+    // sets breakpoints to the lines parsed by {@code parseBreakpoints}
+    // from the file from test source directory.
+    // returns number of the breakpoints set.
+    protected int setBreakpointsFromTestSource(String debuggeeFileName, int id) {
+        return setBreakpoints(jdb, debuggeeClass, System.getProperty("test.src") + "/" + debuggeeFileName, id);
     }
 
+    protected OutputAnalyzer execCommand(JdbCommand cmd) {
+        List<String> reply = jdb.command(cmd);
+        return new OutputAnalyzer(reply.stream().collect(Collectors.joining(lineSeparator)));
+    }
+    // helpers for "eval" jdb command.
+    // executes "eval <expr>" and verifies output contains the specified text
+    protected void evalShouldContain(String expr, String expectedString) {
+        execCommand(JdbCommand.eval(expr))
+                .shouldContain(expectedString);
+    }
+    // executes "eval <expr>" and verifies output does not contain the specified text
+    protected void evalShouldNotContain(String expr, String unexpectedString) {
+        execCommand(JdbCommand.eval(expr))
+                .shouldNotContain(unexpectedString);
+    }
 }

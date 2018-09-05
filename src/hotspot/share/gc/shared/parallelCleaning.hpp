@@ -40,9 +40,9 @@ private:
 
   int _initial_string_table_size;
 
-  bool  _process_strings;
-  int   _strings_processed;
-  int   _strings_removed;
+  bool            _process_strings;
+  volatile size_t _strings_processed;
+  volatile size_t _strings_removed;
 
 public:
   StringCleaningTask(BoolObjectClosure* is_alive, StringDedupUnlinkOrOopsDoClosure* dedup_closure, bool process_strings);
@@ -50,8 +50,8 @@ public:
 
   void work(uint worker_id);
 
-  size_t strings_processed() const { return (size_t)_strings_processed; }
-  size_t strings_removed()   const { return (size_t)_strings_removed; }
+  size_t strings_processed() const { return _strings_processed; }
+  size_t strings_removed()   const { return _strings_removed; }
 };
 
 class CodeCacheUnloadingTask {

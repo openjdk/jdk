@@ -5792,6 +5792,7 @@ class StubGenerator: public StubCodeGenerator {
     // byte_array_inflate stub for large arrays.
     StubRoutines::aarch64::_large_byte_array_inflate = generate_large_byte_array_inflate();
 
+#ifdef COMPILER2
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
@@ -5817,6 +5818,7 @@ class StubGenerator: public StubCodeGenerator {
       // because it's faster for the sizes of modulus we care about.
       StubRoutines::_montgomerySquare = g.generate_multiply();
     }
+#endif // COMPILER2
 
 #ifndef BUILTIN_SIM
     // generate GHASH intrinsics code

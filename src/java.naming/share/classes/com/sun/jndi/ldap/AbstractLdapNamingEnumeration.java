@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -312,7 +312,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
         if ((refEx != null) &&
             (refEx.hasMoreReferrals() ||
-             refEx.hasMoreReferralExceptions())) {
+             refEx.hasMoreReferralExceptions()
+                && !(errEx instanceof LimitExceededException))) {
 
             if (homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
                 throw (NamingException)(refEx.fillInStackTrace());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 /**
  * @test
@@ -41,8 +41,8 @@ import jdk.testlibrary.OSInfo;
  * @bug 6263470
  * @summary Tries to change font of MenuBar. Test passes if the font has changed
  * fails otherwise.
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @author Vyacheslav.Baranov: area=menu
  * @run main MenuBarSetFont
  */
@@ -68,7 +68,7 @@ public final class MenuBarSetFont {
 
     public static void main(final String[] args) throws Exception {
 
-        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             System.err.println("This test is not for OS X. Menu.setFont() is not supported on OS X.");
             return;
         }

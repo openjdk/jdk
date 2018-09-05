@@ -49,7 +49,7 @@ do
       ;;
 
     -o | --output )
-      IDEA_OUTPUT=$2
+      IDEA_OUTPUT=$2/.idea
       shift
       ;;
 
@@ -64,45 +64,31 @@ do
   shift
 done
 
-mkdir $IDEA_OUTPUT || exit 1
+mkdir -p $IDEA_OUTPUT || exit 1
 cd $IDEA_OUTPUT; IDEA_OUTPUT=`pwd`
 
+if [ "x$TOPLEVEL_DIR" = "x" ] ; then
+    cd $SCRIPT_DIR/..
+    TOPLEVEL_DIR=`pwd`
+    cd $IDEA_OUTPUT
+fi
+
 MAKE_DIR="$SCRIPT_DIR/../make"
-SUPPORT_DIR="$SCRIPT_DIR/../build/.idea-support"
 IDEA_MAKE="$MAKE_DIR/idea"
 IDEA_TEMPLATE="$IDEA_MAKE/template"
 
-mkdir -p $SUPPORT_DIR
-
 cp -r "$IDEA_TEMPLATE"/* "$IDEA_OUTPUT"
 
-#init template variables
-for file in `ls -p $IDEA_TEMPLATE | grep -v /`; do
-	VAR_SUFFIX=`echo $file | cut -d'.' -f1 | tr [:lower:] [:upper:]`
-    eval "$VAR_SUFFIX"_TEMPLATE="$IDEA_TEMPLATE"/$file
-	eval IDEA_"$VAR_SUFFIX"="$IDEA_OUTPUT"/$file
-done
-
-#override template variables
+#override template
 if [ -d "$TEMPLATES_OVERRIDE" ] ; then
     for file in `ls -p "$TEMPLATES_OVERRIDE" | grep -v /`; do
         cp "$TEMPLATES_OVERRIDE"/$file "$IDEA_OUTPUT"/
-    	VAR_SUFFIX=`echo $file | cut -d'.' -f1 | tr [:lower:] [:upper:]`
-        eval "$VAR_SUFFIX"_TEMPLATE="$TEMPLATES_OVERRIDE"/$file
     done
 fi
 
 if [ "$VERBOSE" = "true" ] ; then
   echo "output dir: $IDEA_OUTPUT"
   echo "idea template dir: $IDEA_TEMPLATE"
-fi
-
-if [ ! -f "$JDK_TEMPLATE" ] ; then
-  echo "FATAL: cannot find $JDK_TEMPLATE" >&2; exit 1
-fi
-
-if [ ! -f "$ANT_TEMPLATE" ] ; then
-  echo "FATAL: cannot find $ANT_TEMPLATE" >&2; exit 1
 fi
 
 cd $TOP ; make -f "$IDEA_MAKE/idea.gmk" -I $MAKE_DIR/.. idea MAKEOVERRIDES= OUT=$IDEA_OUTPUT/env.cfg MODULES="$*" || exit 1
@@ -127,13 +113,6 @@ if [ "x$SPEC" = "x" ] ; then
   echo "FATAL: SPEC is empty" >&2; exit 1
 fi
 
-# move build.xml out of .idea, see IDEA-189915
-IDEA_BUILD_OLD=$IDEA_BUILD
-IDEA_BUILD=$SUPPORT_DIR/build.xml
-mv $IDEA_BUILD_OLD $IDEA_BUILD
-
-SOURCE_FOLDER="      <sourceFolder url=\"file://\$MODULE_DIR\$/####\" isTestSource=\"false\" />"
-SOURCE_FOLDERS_DONE="false"
 
 addSourceFolder() {
   root=$@
@@ -142,84 +121,45 @@ addSourceFolder() {
   printf "%s\n" "$folder" >> $IDEA_JDK
 }
 
-### Generate project iml
+### Replace template variables
 
-rm -f $IDEA_JDK
-while IFS= read -r line
-do
-  if echo "$line" | egrep "^ .* <sourceFolder.*####" > /dev/null ; then
-    if [ "$SOURCE_FOLDERS_DONE" = "false" ] ; then
-      SOURCE_FOLDERS_DONE="true"
-      for root in $MODULE_ROOTS; do
-         addSourceFolder $root
-      done
-    fi
-  else
-    printf "%s\n" "$line" >> $IDEA_JDK
-  fi
-done < "$JDK_TEMPLATE"
+NUM_REPLACEMENTS=0
 
-
-MODULE_NAME="        <property name=\"module.name\" value=\"####\" />"
-
-addModuleName() {
-  mn="`echo "$MODULE_NAME" | sed -e s@"\(.*\)####\(.*\)"@"\1$MODULE_NAMES\2"@`"
-  printf "%s\n" "$mn" >> $IDEA_ANT
+replace_template_file() {
+    for i in $(seq 1 $NUM_REPLACEMENTS); do
+      eval "sed -i \"s|\${FROM${i}}|\${TO${i}}|g\" $1"
+    done
 }
 
-BUILD_DIR="        <property name=\"build.target.dir\" value=\"####\" />"
-
-addBuildDir() {
-  DIR=`dirname $SPEC`
-  mn="`echo "$BUILD_DIR" | sed -e s@"\(.*\)####\(.*\)"@"\1$DIR\2"@`"
-  printf "%s\n" "$mn" >> $IDEA_ANT
+replace_template_dir() {
+    for f in `find $1 -type f` ; do
+        replace_template_file $f
+    done
 }
 
-### Generate ant.xml
-
-rm -f $IDEA_ANT
-while IFS= read -r line
-do
-  if echo "$line" | egrep "^ .* <property name=\"module.name\"" > /dev/null ; then
-    addModuleName
-  elif echo "$line" | egrep "^ .* <property name=\"build.target.dir\"" > /dev/null ; then
-    addBuildDir
-  else
-    printf "%s\n" "$line" >> $IDEA_ANT
-  fi
-done < "$ANT_TEMPLATE"
-
-### Generate misc.xml
-
-rm -f $IDEA_MISC
-
-JTREG_HOME="    <path>####</path>"
-
-IMAGES_DIR="    <jre alt=\"true\" value=\"####\" />"
-
-addImagesDir() {
-  DIR=`dirname $SPEC`/images/jdk
-  mn="`echo "$IMAGES_DIR" | sed -e s@"\(.*\)####\(.*\)"@"\1$DIR\2"@`"
-  printf "%s\n" "$mn" >> $IDEA_MISC
+add_replacement() {
+    NUM_REPLACEMENTS=`expr $NUM_REPLACEMENTS + 1`
+    eval FROM$NUM_REPLACEMENTS='$1'
+    eval TO$NUM_REPLACEMENTS='$2'
 }
 
-addJtregHome() {
-  DIR=`dirname $SPEC`
-  mn="`echo "$JTREG_HOME" | sed -e s@"\(.*\)####\(.*\)"@"\1$JT_HOME\2"@`"
-  printf "%s\n" "$mn" >> $IDEA_MISC
-}
+add_replacement "###BUILD_DIR###" "`dirname $SPEC`"
+add_replacement "###MODULE_NAMES###" "$MODULE_NAMES"
+add_replacement "###JTREG_HOME###" "$JT_HOME"
+add_replacement "###IMAGES_DIR###" "`dirname $SPEC`/images/jdk"
+add_replacement "###ROOT_DIR###" "$TOPLEVEL_DIR"
+add_replacement "###IDEA_DIR###" "$IDEA_OUTPUT"
 
-rm -f $MISC_ANT
-while IFS= read -r line
-do
-  if echo "$line" | egrep "^ .*<path>jtreg_home</path>" > /dev/null ; then
-	addJtregHome
-  elif echo "$line" | egrep "^ .*<jre alt=\"true\" value=\"images_jdk\"" > /dev/null ; then
-    addImagesDir
-  else
-    printf "%s\n" "$line" >> $IDEA_MISC
-  fi
-done < "$MISC_TEMPLATE"
+SOURCE_PREFIX="<sourceFolder url=\"file://"
+SOURCE_POSTFIX="\" isTestSource=\"false\" />"
+
+for root in $MODULE_ROOTS; do
+    SOURCES=$SOURCES"\n$SOURCE_PREFIX""$root""$SOURCE_POSTFIX"
+done
+
+add_replacement "###SOURCE_ROOTS###" "$SOURCES"
+
+replace_template_dir "$IDEA_OUTPUT"
 
 ### Compile the custom Logger
 

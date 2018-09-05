@@ -1,0 +1,5 @@
+SwitchStatementScopesIsolated.java:13:25: compiler.err.cant.resolve.location: kindname.variable, res, , , (compiler.misc.location: kindname.class, SwitchStatementScopesIsolated, null)
+SwitchStatementScopesIsolated.java:14:26: compiler.err.cant.resolve.location: kindname.variable, res, , , (compiler.misc.location: kindname.class, SwitchStatementScopesIsolated, null)
+- compiler.note.preview.filename: SwitchStatementScopesIsolated.java
+- compiler.note.preview.recompile
+2 errors

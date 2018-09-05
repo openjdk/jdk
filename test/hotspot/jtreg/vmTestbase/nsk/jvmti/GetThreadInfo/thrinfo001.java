@@ -63,13 +63,13 @@ public class thrinfo001 {
         try {
             t_a.join();
         } catch (InterruptedException e) {}
+        checkInfo(t_a, t_a.getThreadGroup(), 1);
 
         thrinfo001b t_b = new thrinfo001b();
         t_b.setPriority(Thread.MIN_PRIORITY);
         t_b.setDaemon(true);
         checkInfo(t_b, t_b.getThreadGroup(), 2);
         t_b.start();
-        checkInfo(t_b, t_b.getThreadGroup(), 2);
         try {
             t_b.join();
         } catch (InterruptedException e) {}

@@ -88,7 +88,7 @@ const char* KlassInfoEntry::name() const {
   } else {
     if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
     if (_klass == Universe::charArrayKlassObj())         name = "<charArrayKlass>";         else
-    if (_klass == Universe::singleArrayKlassObj())       name = "<singleArrayKlass>";       else
+    if (_klass == Universe::floatArrayKlassObj())        name = "<floatArrayKlass>";        else
     if (_klass == Universe::doubleArrayKlassObj())       name = "<doubleArrayKlass>";       else
     if (_klass == Universe::byteArrayKlassObj())         name = "<byteArrayKlass>";         else
     if (_klass == Universe::shortArrayKlassObj())        name = "<shortArrayKlass>";        else
@@ -153,11 +153,17 @@ void KlassInfoBucket::empty() {
   }
 }
 
-void KlassInfoTable::AllClassesFinder::do_klass(Klass* k) {
-  // This has the SIDE EFFECT of creating a KlassInfoEntry
-  // for <k>, if one doesn't exist yet.
-  _table->lookup(k);
-}
+class KlassInfoTable::AllClassesFinder : public LockedClassesDo {
+  KlassInfoTable *_table;
+public:
+  AllClassesFinder(KlassInfoTable* table) : _table(table) {}
+  virtual void do_klass(Klass* k) {
+    // This has the SIDE EFFECT of creating a KlassInfoEntry
+    // for <k>, if one doesn't exist yet.
+    _table->lookup(k);
+  }
+};
+
 
 KlassInfoTable::KlassInfoTable(bool add_all_classes) {
   _size_of_instances_in_words = 0;

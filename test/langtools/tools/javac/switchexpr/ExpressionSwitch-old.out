@@ -1,0 +1,3 @@
+ExpressionSwitch.java:30:16: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.switch.expressions)
+ExpressionSwitch.java:31:20: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.switch.rules)
+2 errors

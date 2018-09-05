@@ -33,7 +33,8 @@ import nsk.share.jdi.*;
 
 public class resume005a {
 
-    //----------------------------------------------------- templete section
+    //----------------------------------------------------- template section
+    static int testCase    = -1;
 
     static final int PASSED = 0;
     static final int FAILED = 2;
@@ -98,8 +99,10 @@ public class resume005a {
 
     //------------------------------------------------------  section tested
 
-                    case 0: resume005aTestClass.method();
-                            break;
+                    case 0:
+                        resume005aTestClass.method();
+                        waitForTestCase(0);
+                        break;
 
                     case 1: resume005aTestClass.method();
                             break;
@@ -122,7 +125,16 @@ public class resume005a {
     public static void nullMethod() {
         throw new NullPointerException("test");
     }
-
+    // Synchronize with debugger progression.
+    static void waitForTestCase(int t) {
+        while (testCase < t) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // ignored
+            }
+        }
+    }
 }
 
 class resume005aTestClass {

@@ -184,9 +184,14 @@ int Win32AttachListener::init() {
 // Also we need to be careful not to execute anything that results in more than a 4k stack.
 //
 int Win32AttachListener::enqueue(char* cmd, char* arg0, char* arg1, char* arg2, char* pipename) {
-  // listener not running
-  if (!AttachListener::is_initialized()) {
-    return ATTACH_ERROR_DISABLED;
+  // wait up to 10 seconds for listener to be up and running
+  int sleep_count = 0;
+  while (!AttachListener::is_initialized()) {
+    Sleep(1000); // 1 second
+    sleep_count++;
+    if (sleep_count > 10) { // try for 10 seconds
+      return ATTACH_ERROR_DISABLED;
+    }
   }
 
   // check that all paramteres to the operation

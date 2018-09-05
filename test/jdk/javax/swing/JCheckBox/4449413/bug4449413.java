@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @bug 4449413
  * @summary Tests that checkbox and radiobuttons' check marks are visible when background is black
  * @author Ilya Boyandin
- * @library ../../../../lib/testlibrary
+ * @library /test/lib
  * @modules java.desktop/sun.awt
- * @build jdk.testlibrary.OSInfo
+ * @build jdk.test.lib.Platform
  * @run applet/manual=yesno bug4449413.html
  */
 
@@ -35,7 +35,8 @@ import javax.swing.*;
 import javax.swing.plaf.metal.*;
 import java.awt.event.*;
 import java.awt.*;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class bug4449413 extends JApplet {
 
@@ -44,7 +45,7 @@ public class bug4449413 extends JApplet {
 
         try {
 
-            if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+            if (Platform.isOSX()) {
                 UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
             }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @summary SSLEngine has not yet caused Solaris kernel to panic
  * @run main/othervm SSLEngineTemplate
  */
-
 /**
  * A SSLEngine usage example which simplifies the presentation
  * by removing the I/O and multi-threading concerns.
@@ -66,7 +65,6 @@
  *      unwrap()        ...             ChangeCipherSpec
  *      unwrap()        ...             Finished
  */
-
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
 import java.io.*;
@@ -115,7 +113,7 @@ public class SSLEngineTemplate {
     private static final String pathToStores = "../etc";
     private static final String keyStoreFile = "keystore";
     private static final String trustStoreFile = "truststore";
-    private static final String passwd = "passphrase";
+    private static final char[] passphrase = "passphrase".toCharArray();
 
     private static final String keyFilename =
             System.getProperty("test.src", ".") + "/" + pathToStores +
@@ -145,8 +143,6 @@ public class SSLEngineTemplate {
 
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
-
-        char[] passphrase = "passphrase".toCharArray();
 
         ks.load(new FileInputStream(keyFilename), passphrase);
         ts.load(new FileInputStream(trustFilename), passphrase);
@@ -187,8 +183,11 @@ public class SSLEngineTemplate {
         createSSLEngines();
         createBuffers();
 
-        SSLEngineResult clientResult;   // results from client's last operation
-        SSLEngineResult serverResult;   // results from server's last operation
+        // results from client's last operation
+        SSLEngineResult clientResult;
+
+        // results from server's last operation
+        SSLEngineResult serverResult;
 
         /*
          * Examining the SSLEngineResults could be much more involved,
@@ -198,31 +197,62 @@ public class SSLEngineTemplate {
          * to write to the output pipe, we could reallocate a larger
          * pipe, but instead we wait for the peer to drain it.
          */
-        while (!isEngineClosed(clientEngine) ||
-                !isEngineClosed(serverEngine)) {
+        Exception clientException = null;
+        Exception serverException = null;
+
+        while (!isEngineClosed(clientEngine)
+                || !isEngineClosed(serverEngine)) {
 
             log("================");
 
-            clientResult = clientEngine.wrap(clientOut, cTOs);
-            log("client wrap: ", clientResult);
-            runDelegatedTasks(clientResult, clientEngine);
+            try {
+                clientResult = clientEngine.wrap(clientOut, cTOs);
+                log("client wrap: ", clientResult);
+            } catch (Exception e) {
+                clientException = e;
+                System.out.println("Client wrap() threw: " + e.getMessage());
+            }
+            logEngineStatus(clientEngine);
+            runDelegatedTasks(clientEngine);
 
-            serverResult = serverEngine.wrap(serverOut, sTOc);
-            log("server wrap: ", serverResult);
-            runDelegatedTasks(serverResult, serverEngine);
+            log("----");
+
+            try {
+                serverResult = serverEngine.wrap(serverOut, sTOc);
+                log("server wrap: ", serverResult);
+            } catch (Exception e) {
+                serverException = e;
+                System.out.println("Server wrap() threw: " + e.getMessage());
+            }
+            logEngineStatus(serverEngine);
+            runDelegatedTasks(serverEngine);
 
             cTOs.flip();
             sTOc.flip();
 
+            log("--------");
+
+            try {
+                clientResult = clientEngine.unwrap(sTOc, clientIn);
+                log("client unwrap: ", clientResult);
+            } catch (Exception e) {
+                clientException = e;
+                System.out.println("Client unwrap() threw: " + e.getMessage());
+            }
+            logEngineStatus(clientEngine);
+            runDelegatedTasks(clientEngine);
+
             log("----");
 
-            clientResult = clientEngine.unwrap(sTOc, clientIn);
-            log("client unwrap: ", clientResult);
-            runDelegatedTasks(clientResult, clientEngine);
-
-            serverResult = serverEngine.unwrap(cTOs, serverIn);
-            log("server unwrap: ", serverResult);
-            runDelegatedTasks(serverResult, serverEngine);
+            try {
+                serverResult = serverEngine.unwrap(cTOs, serverIn);
+                log("server unwrap: ", serverResult);
+            } catch (Exception e) {
+                serverException = e;
+                System.out.println("Server unwrap() threw: " + e.getMessage());
+            }
+            logEngineStatus(serverEngine);
+            runDelegatedTasks(serverEngine);
 
             cTOs.compact();
             sTOc.compact();
@@ -244,11 +274,20 @@ public class SSLEngineTemplate {
 
                 log("\tClosing clientEngine's *OUTBOUND*...");
                 clientEngine.closeOutbound();
+                logEngineStatus(clientEngine);
+
                 dataDone = true;
                 log("\tClosing serverEngine's *OUTBOUND*...");
                 serverEngine.closeOutbound();
+                logEngineStatus(serverEngine);
             }
         }
+    }
+
+    private static void logEngineStatus(SSLEngine engine) {
+        log("\tCurrent HS State  " + engine.getHandshakeStatus().toString());
+        log("\tisInboundDone():  " + engine.isInboundDone());
+        log("\tisOutboundDone(): " + engine.isOutboundDone());
     }
 
     /*
@@ -264,11 +303,19 @@ public class SSLEngineTemplate {
         serverEngine.setUseClientMode(false);
         serverEngine.setNeedClientAuth(true);
 
+        // Get/set parameters if needed
+        SSLParameters paramsServer = serverEngine.getSSLParameters();
+        serverEngine.setSSLParameters(paramsServer);
+
         /*
          * Similar to above, but using client mode instead.
          */
         clientEngine = sslc.createSSLEngine("client", 80);
         clientEngine.setUseClientMode(true);
+
+        // Get/set parameters if needed
+        SSLParameters paramsClient = clientEngine.getSSLParameters();
+        clientEngine.setSSLParameters(paramsClient);
     }
 
     /*
@@ -307,13 +354,12 @@ public class SSLEngineTemplate {
      * If the result indicates that we have outstanding tasks to do,
      * go ahead and run them in this thread.
      */
-    private static void runDelegatedTasks(SSLEngineResult result,
-            SSLEngine engine) throws Exception {
+    private static void runDelegatedTasks(SSLEngine engine) throws Exception {
 
-        if (result.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
+        if (engine.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
             Runnable runnable;
             while ((runnable = engine.getDelegatedTask()) != null) {
-                log("\trunning delegated task...");
+                log("    running delegated task...");
                 runnable.run();
             }
             HandshakeStatus hsStatus = engine.getHandshakeStatus();
@@ -321,7 +367,7 @@ public class SSLEngineTemplate {
                 throw new Exception(
                     "handshake shouldn't need additional tasks");
             }
-            log("\tnew HandshakeStatus: " + hsStatus);
+            logEngineStatus(engine);
         }
     }
 
@@ -361,14 +407,14 @@ public class SSLEngineTemplate {
         if (resultOnce) {
             resultOnce = false;
             System.out.println("The format of the SSLEngineResult is: \n" +
-                "\t\"getStatus() / getHandshakeStatus()\" +\n" +
-                "\t\"bytesConsumed() / bytesProduced()\"\n");
+                    "\t\"getStatus() / getHandshakeStatus()\" +\n" +
+                    "\t\"bytesConsumed() / bytesProduced()\"\n");
         }
         HandshakeStatus hsStatus = result.getHandshakeStatus();
         log(str +
-            result.getStatus() + "/" + hsStatus + ", " +
-            result.bytesConsumed() + "/" + result.bytesProduced() +
-            " bytes");
+                result.getStatus() + "/" + hsStatus + ", " +
+                result.bytesConsumed() + "/" + result.bytesProduced() +
+                " bytes");
         if (hsStatus == HandshakeStatus.FINISHED) {
             log("\t...ready for application data");
         }

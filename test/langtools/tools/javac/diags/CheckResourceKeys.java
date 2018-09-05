@@ -302,6 +302,7 @@ public class CheckResourceKeys {
             // prefix/embedded strings
             "compiler.",
             "compiler.misc.",
+            "compiler.misc.tree.tag.",
             "opt.Xlint.desc.",
             "count.",
             "illegal.",

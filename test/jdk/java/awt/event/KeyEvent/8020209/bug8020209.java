@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
  * @bug 8020209
  * @summary [macosx] Mac OS X key event confusion for "COMMAND PLUS"
  * @author leonid.romanov@oracle.com
- * @library ../../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug8020209
  */
 
 import java.awt.*;
 import java.awt.event.*;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 public class bug8020209 {
     static volatile int listenerCallCounter = 0;
@@ -47,7 +47,7 @@ public class bug8020209 {
     };
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }

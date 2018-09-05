@@ -693,13 +693,6 @@ public abstract class Buffer {
         return mark;
     }
 
-    final void truncate() {                             // package-private
-        mark = -1;
-        position = 0;
-        limit = 0;
-        capacity = 0;
-    }
-
     final void discardMark() {                          // package-private
         mark = -1;
     }

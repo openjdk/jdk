@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,9 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
@@ -69,7 +72,7 @@ public final class ProcessTools {
      * @throws IOException If an I/O error occurs.
      */
     public static OutputBuffer getOutput(ProcessBuilder processBuilder) throws IOException {
-        return getOutput(processBuilder.start());
+        return getOutput(privilegedStart(processBuilder));
     }
 
     /**
@@ -201,7 +204,7 @@ public final class ProcessTools {
                                        TimeUnit unit)
     throws IOException, InterruptedException, TimeoutException {
         System.out.println("["+name+"]:" + processBuilder.command().stream().collect(Collectors.joining(" ")));
-        Process p = processBuilder.start();
+        Process p = privilegedStart(processBuilder);
         StreamPumper stdout = new StreamPumper(p.getInputStream());
         StreamPumper stderr = new StreamPumper(p.getErrorStream());
 
@@ -393,7 +396,7 @@ public final class ProcessTools {
         Process p = null;
         boolean failed = false;
         try {
-            p = pb.start();
+            p = privilegedStart(pb);
             output = new OutputAnalyzer(p);
             p.waitFor();
 
@@ -493,6 +496,17 @@ public final class ProcessTools {
         OutputAnalyzer analyzer = ProcessTools.executeProcess(pb);
         System.out.println(analyzer.getOutput());
         return analyzer;
+    }
+
+    private static Process privilegedStart(ProcessBuilder pb) throws IOException {
+        try {
+            return AccessController.doPrivileged(
+                (PrivilegedExceptionAction<Process>) () -> pb.start());
+        } catch (PrivilegedActionException e) {
+            @SuppressWarnings("unchecked")
+            IOException t = (IOException) e.getException();
+            throw t;
+        }
     }
 
     private static class ProcessImpl extends Process {

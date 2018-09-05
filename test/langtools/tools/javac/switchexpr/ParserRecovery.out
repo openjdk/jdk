@@ -1,0 +1,5 @@
+ParserRecovery.java:10:39: compiler.err.expected2: :, ->
+ParserRecovery.java:13:31: compiler.err.expected2: :, ->
+- compiler.note.preview.filename: ParserRecovery.java
+- compiler.note.preview.recompile
+2 errors

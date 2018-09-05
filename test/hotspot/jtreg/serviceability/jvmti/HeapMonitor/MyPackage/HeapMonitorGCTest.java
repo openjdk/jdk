@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,7 +50,7 @@ public class HeapMonitorGCTest {
     HeapMonitor.enableSamplingEvents();
 
     List<Frame> frameList = HeapMonitor.allocate();
-    frameList.add(new Frame("main", "([Ljava/lang/String;)V", "HeapMonitorGCTest.java", 51));
+    frameList.add(new Frame("main", "([Ljava/lang/String;)V", "HeapMonitorGCTest.java", 52));
     Frame[] frames = frameList.toArray(new Frame[0]);
 
     if (!HeapMonitor.obtainedEvents(frames)

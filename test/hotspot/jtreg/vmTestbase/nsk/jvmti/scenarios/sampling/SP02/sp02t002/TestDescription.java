@@ -32,10 +32,10 @@
  *     This JVMTI test is for SP02 scenario of "time sampling profiling" area.
  *     This test checks that JVMTI methods GetStackTrace() returns expected list
  *     of stack frames including frame for tested method.
- *     Threads are supended/resumed individually by SuspendThread() and ResumeThread().
+ *     Threads are suspended/resumed individually by SuspendThread() and ResumeThread().
  *     Checked statements:
- *         - number of stack frames returned by GetFramesCount() should be equal or
- *           less than number returned by successive call to GetStackTrace()
+ *         - for suspended threads number of stack frames returned by GetFrameCount()
+  *          should be equal to frames number returned by successive call to GetStackTrace()
  *         - list of stack frames returned by GetStackTrace() should include
  *           frame for tested method
  *     Tested threads:

@@ -1904,7 +1904,7 @@ unsigned long MacroAssembler::patched_branch(address dest_pos, unsigned long ins
 
 // Only called when binding labels (share/vm/asm/assembler.cpp)
 // Pass arguments as intended. Do not pre-calculate distance.
-void MacroAssembler::pd_patch_instruction(address branch, address target) {
+void MacroAssembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
   unsigned long stub_inst;
   int           inst_len = get_instruction(branch, &stub_inst);
 

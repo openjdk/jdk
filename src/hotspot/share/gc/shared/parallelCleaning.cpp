@@ -54,8 +54,8 @@ StringCleaningTask::~StringCleaningTask() {
 }
 
 void StringCleaningTask::work(uint worker_id) {
-  int strings_processed = 0;
-  int strings_removed = 0;
+  size_t strings_processed = 0;
+  size_t strings_removed = 0;
   if (_process_strings) {
     StringTable::possibly_parallel_unlink(&_par_state_string, _is_alive, &strings_processed, &strings_removed);
     Atomic::add(strings_processed, &_strings_processed);

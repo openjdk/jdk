@@ -73,7 +73,7 @@ enum X509Authentication implements SSLAuthentication {
     }
 
     static X509Authentication valueOf(SignatureScheme signatureScheme) {
-        for (X509Authentication au: X509Authentication.values()) {
+        for (X509Authentication au : X509Authentication.values()) {
             if (au.keyType.equals(signatureScheme.keyAlgorithm)) {
                 return au;
             }
@@ -291,9 +291,9 @@ enum X509Authentication implements SSLAuthentication {
                         ((ECPublicKey)serverPublicKey).getParams();
                 NamedGroup namedGroup = NamedGroup.valueOf(params);
                 if ((namedGroup == null) ||
-                    (!SupportedGroups.isSupported(namedGroup)) ||
-                    ((shc.clientRequestedNamedGroups != null) &&
-                    !shc.clientRequestedNamedGroups.contains(namedGroup))) {
+                        (!SupportedGroups.isSupported(namedGroup)) ||
+                        ((shc.clientRequestedNamedGroups != null) &&
+                        !shc.clientRequestedNamedGroups.contains(namedGroup))) {
 
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
                         SSLLogger.warning(

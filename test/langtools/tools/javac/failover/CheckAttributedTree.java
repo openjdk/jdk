@@ -95,6 +95,7 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCImport;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -444,6 +445,12 @@ public class CheckAttributedTree {
             @Override
             public void visitTopLevel(JCCompilationUnit tree) {
                 scan(tree.defs);
+            }
+
+            @Override
+            public void visitBreak(JCBreak tree) {
+                if (tree.isValueBreak())
+                    super.visitBreak(tree);
             }
 
             JavaFileObject sourcefile;

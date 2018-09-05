@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.StreamPumper;
 
@@ -158,7 +159,7 @@ public class Jdb {
     // waits until the process shutdown or crash
     public boolean waitFor(long timeout, TimeUnit unit) {
         try {
-            return jdb.waitFor(timeout, unit);
+            return jdb.waitFor(Utils.adjustTimeout(timeout), unit);
         } catch (InterruptedException e) {
             return false;
         }
@@ -180,7 +181,7 @@ public class Jdb {
         // shutdown debuggee
         if (debuggee.isAlive()) {
             try {
-                debuggee.waitFor(10, TimeUnit.SECONDS);
+                debuggee.waitFor(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 // ignore
             } finally {

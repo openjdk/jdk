@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@
   @bug 6399679
   @summary Choice is not invalidated when the frame gets resized programmatically when the drop-down is visible
   @author andrei.dmitriev area=awt.choice
-  @library ../../../../lib/testlibrary
-  @build jdk.testlibrary.OSInfo
+  @library /test/lib
+  @build jdk.test.lib.Platform
   @run main ResizeAutoClosesChoice
 */
 
 import java.awt.*;
 import java.awt.event.*;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 public class ResizeAutoClosesChoice
 {
@@ -46,7 +46,7 @@ public class ResizeAutoClosesChoice
     static Button button = new Button("This button causes Frame to be resized on pack()");
     public static void main(String args[]) throws Exception
     {
-        if(OSInfo.getOSType().equals(OSInfo.OSType.MACOSX)) {
+        if (Platform.isOSX()) {
             System.out.println("Not for OS OX");
             return;
         }

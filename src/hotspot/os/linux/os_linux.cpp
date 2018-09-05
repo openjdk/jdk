@@ -1742,7 +1742,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 
 #if  (defined IA32)
   static  Elf32_Half running_arch_code=EM_386;
-#elif   (defined AMD64)
+#elif   (defined AMD64) || (defined X32)
   static  Elf32_Half running_arch_code=EM_X86_64;
 #elif  (defined IA64)
   static  Elf32_Half running_arch_code=EM_IA_64;

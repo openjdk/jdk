@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
  * @bug 7186371
  * @summary [macosx] Main menu shortcuts not displayed
  * @author vera.akulova@oracle.com
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main/manual ShortcutNotDisplayedTest
  */
+
+import jdk.test.lib.Platform;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -41,7 +43,7 @@ public class ShortcutNotDisplayedTest {
     static final String PASS_COMMAND = "pass";
 
     public static void main(String[] args) throws Exception {
-        if (jdk.testlibrary.OSInfo.getOSType() != jdk.testlibrary.OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             System.out.println("This test is for MacOS only. Automatically passed on other platforms.");
             return;
         }

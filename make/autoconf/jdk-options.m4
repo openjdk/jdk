@@ -126,10 +126,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_OPEN_OR_CUSTOM],
   else
     AC_MSG_ERROR([Invalid value for --enable-openjdk-only: $enable_openjdk_only])
   fi
-
-  # custom-make-dir is deprecated. Please use your custom-hook.m4 to override
-  # the IncludeCustomExtension macro.
-  BASIC_DEPRECATED_ARG_WITH(custom-make-dir)
 ])
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
@@ -349,16 +345,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   else
     AC_MSG_ERROR([Allowed native debug symbols are: none, internal, external, zipped])
   fi
-
-  # --enable-debug-symbols is deprecated.
-  # Please use --with-native-debug-symbols=[internal,external,zipped] .
-  BASIC_DEPRECATED_ARG_ENABLE(debug-symbols, debug_symbols,
-        [Please use --with-native-debug-symbols=[[internal,external,zipped]] .])
-
-  # --enable-zip-debug-info is deprecated.
-  # Please use --with-native-debug-symbols=zipped .
-  BASIC_DEPRECATED_ARG_ENABLE(zip-debug-info, zip_debug_info,
-                              [Please use --with-native-debug-symbols=zipped .])
 
   AC_SUBST(COMPILE_WITH_DEBUG_SYMBOLS)
   AC_SUBST(COPY_DEBUG_SYMBOLS)

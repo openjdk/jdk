@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,14 @@
  * @requires (os.family == "windows")
  * @summary JFileChooser hangs if displayed in Windows L&F
  * @author Alexey Ivanov
- * @library ../../../../lib/testlibrary
+ * @library /test/lib
  * @modules java.desktop/com.sun.java.swing.plaf.windows
- * @build jdk.testlibrary.OSInfo
+ * @build jdk.test.lib.Platform
  * @run main/othervm/timeout=10 bug8046391
 */
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-import jdk.testlibrary.OSInfo;
-import jdk.testlibrary.OSInfo.OSType;
+import jdk.test.lib.Platform;
 
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
@@ -45,8 +44,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 public class bug8046391  {
 
     public static void main(String[] args) throws Exception {
-        OSType type = OSInfo.getOSType();
-        if (type != OSType.WINDOWS) {
+        if (!Platform.isWindows()) {
             System.out.println("This test is for Windows only... skipping!");
             return;
         }

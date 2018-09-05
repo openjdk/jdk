@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,8 +160,7 @@ public class SetLocationForModule extends TestRunner {
             Path src1 = Files.createDirectories(base.resolve("src1"));
             Path src1_m = src1.resolve("m");
             tb.writeJavaFiles(src1_m, "module m { }");
-//            fm.setLocationFromPaths(locn, List.of(src1));
-            fm.handleOption("--module-source-path", List.of(src1.toString()).iterator());
+            fm.setLocationFromPaths(locn, List.of(src1));
 
             Location m = fm.getLocationForModule(locn, "m");
             checkEqual("default setting",
@@ -186,8 +185,7 @@ public class SetLocationForModule extends TestRunner {
             Path src2 = Files.createDirectories(base.resolve("src2"));
             Path src2_m = src2.resolve("m");
             tb.writeJavaFiles(src2_m, "module m { }");
-//            fm.setLocationFromPaths(locn, List.of(src2));
-            fm.handleOption("--module-source-path", List.of(src2.toString()).iterator());
+            fm.setLocationFromPaths(locn, List.of(src2));
 
             m = fm.getLocationForModule(locn, "m");
 

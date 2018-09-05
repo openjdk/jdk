@@ -30,6 +30,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
 [
   # First argument is the cpu name from the trip/quad
   case "$1" in
+    x86_64*x32)
+      VAR_CPU=x32
+      VAR_CPU_ARCH=x86
+      VAR_CPU_BITS=32
+      VAR_CPU_ENDIAN=little
+      ;;
     x86_64)
       VAR_CPU=x86_64
       VAR_CPU_ARCH=x86
@@ -455,6 +461,8 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS_HELPER],
     HOTSPOT_$1_CPU_DEFINE=IA32
   elif test "x$OPENJDK_$1_CPU" = xx86_64; then
     HOTSPOT_$1_CPU_DEFINE=AMD64
+  elif test "x$OPENJDK_$1_CPU" = xx32; then
+    HOTSPOT_$1_CPU_DEFINE=X32
   elif test "x$OPENJDK_$1_CPU" = xsparcv9; then
     HOTSPOT_$1_CPU_DEFINE=SPARC
   elif test "x$OPENJDK_$1_CPU" = xaarch64; then

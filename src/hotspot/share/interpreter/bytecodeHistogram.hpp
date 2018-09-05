@@ -74,7 +74,7 @@ class BytecodeHistogram: AllStatic {
 // A bytecode pair is any sequence of two consequtive bytecodes.
 
 class BytecodePairHistogram: AllStatic {
- public: // for SparcWorks
+ public: // for solstudio
   enum Constants {
     log2_number_of_codes = 8,                         // use a power of 2 for faster addressing
     number_of_codes      = 1 << log2_number_of_codes, // must be no less than Bytecodes::number_of_codes

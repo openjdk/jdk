@@ -308,7 +308,7 @@ JfrThreadSampleClosure::JfrThreadSampleClosure(EventExecutionSample* events, Eve
   _added_native(0) {
 }
 
-class JfrThreadSampler : public Thread {
+class JfrThreadSampler : public NonJavaThread {
   friend class JfrThreadSampling;
  private:
   Semaphore _sample;

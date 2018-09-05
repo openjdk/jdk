@@ -26,6 +26,7 @@
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
@@ -92,6 +93,32 @@ void VtableStub::print_on(outputStream* st) const {
 
 VtableStub* VtableStubs::_table[VtableStubs::N];
 int VtableStubs::_number_of_vtable_stubs = 0;
+int VtableStubs::_vtab_stub_size = 0;
+int VtableStubs::_itab_stub_size = 0;
+
+#if defined(PRODUCT)
+  // These values are good for the PRODUCT case (no tracing).
+  static const int first_vtableStub_size =  64;
+  static const int first_itableStub_size = 256;
+#else
+  // These values are good for the non-PRODUCT case (when tracing can be switched on).
+  // To find out, run test workload with
+  //   -Xlog:vtablestubs=Trace -XX:+CountCompiledCalls -XX:+DebugVtables
+  // and use the reported "estimate" value.
+  // Here is a list of observed worst-case values:
+  //               vtable  itable
+  // aarch64:         460     324
+  // arm:               ?       ?
+  // ppc (linux, BE): 404     288
+  // ppc (linux, LE): 356     276
+  // ppc (AIX):       416     296
+  // s390x:           408     256
+  // Solaris-sparc:   792     348
+  // x86 (Linux):     670     309
+  // x86 (MacOS):     682     321
+  static const int first_vtableStub_size = 1024;
+  static const int first_itableStub_size =  512;
+#endif
 
 
 void VtableStubs::initialize() {
@@ -104,6 +131,77 @@ void VtableStubs::initialize() {
       _table[i] = NULL;
     }
   }
+}
+
+
+int VtableStubs::code_size_limit(bool is_vtable_stub) {
+  if (is_vtable_stub) {
+    return _vtab_stub_size > 0 ? _vtab_stub_size : first_vtableStub_size;
+  } else { // itable stub
+    return _itab_stub_size > 0 ? _itab_stub_size : first_itableStub_size;
+  }
+}   // code_size_limit
+
+
+void VtableStubs::check_and_set_size_limit(bool is_vtable_stub,
+                                           int  code_size,
+                                           int  padding) {
+  const char* name = is_vtable_stub ? "vtable" : "itable";
+
+  guarantee(code_size <= code_size_limit(is_vtable_stub),
+            "buffer overflow in %s stub, code_size is %d, limit is %d", name, code_size, code_size_limit(is_vtable_stub));
+
+  if (is_vtable_stub) {
+    if (log_is_enabled(Trace, vtablestubs)) {
+      if ( (_vtab_stub_size > 0) && ((code_size + padding) > _vtab_stub_size) ) {
+        log_trace(vtablestubs)("%s size estimate needed adjustment from %d to %d bytes",
+                               name, _vtab_stub_size, code_size + padding);
+      }
+    }
+    if ( (code_size + padding) > _vtab_stub_size ) {
+      _vtab_stub_size = code_size + padding;
+    }
+  } else {  // itable stub
+    if (log_is_enabled(Trace, vtablestubs)) {
+      if ( (_itab_stub_size > 0) && ((code_size + padding) > _itab_stub_size) ) {
+        log_trace(vtablestubs)("%s size estimate needed adjustment from %d to %d bytes",
+                               name, _itab_stub_size, code_size + padding);
+      }
+    }
+    if ( (code_size + padding) > _itab_stub_size ) {
+      _itab_stub_size = code_size + padding;
+    }
+  }
+  return;
+}   // check_and_set_size_limit
+
+
+void VtableStubs::bookkeeping(MacroAssembler* masm, outputStream* out, VtableStub* s,
+                              address npe_addr, address ame_addr,   bool is_vtable_stub,
+                              int     index,    int     slop_bytes, int  index_dependent_slop) {
+  const char* name        = is_vtable_stub ? "vtable" : "itable";
+  const int   stub_length = code_size_limit(is_vtable_stub);
+
+  if (log_is_enabled(Trace, vtablestubs)) {
+    log_trace(vtablestubs)("%s #%d at " PTR_FORMAT ": size: %d, estimate: %d, slop area: %d",
+                           name, index, p2i(s->code_begin()),
+                           (int)(masm->pc() - s->code_begin()),
+                           stub_length,
+                           (int)(s->code_end() - masm->pc()));
+  }
+  guarantee(masm->pc() <= s->code_end(), "%s #%d: overflowed buffer, estimated len: %d, actual len: %d, overrun: %d",
+                                         name, index, stub_length,
+                                         (int)(masm->pc() - s->code_begin()),
+                                         (int)(masm->pc() - s->code_end()));
+  assert((masm->pc() + index_dependent_slop) <= s->code_end(), "%s #%d: spare space for 32-bit offset: required = %d, available = %d",
+                                         name, index, index_dependent_slop,
+                                         (int)(s->code_end() - masm->pc()));
+
+  // After the first vtable/itable stub is generated, we have a much
+  // better estimate for the stub size. Remember/update this
+  // estimate after some sanity checks.
+  check_and_set_size_limit(is_vtable_stub, masm->offset(), slop_bytes);
+  s->set_exception_points(npe_addr, ame_addr);
 }
 
 
@@ -173,10 +271,7 @@ VtableStub* VtableStubs::entry_point(address pc) {
   uint hash = VtableStubs::hash(stub->is_vtable_stub(), stub->index());
   VtableStub* s;
   for (s = _table[hash]; s != NULL && s != stub; s = s->next()) {}
-  if (s == stub) {
-    return s;
-  }
-  return NULL;
+  return (s == stub) ? s : NULL;
 }
 
 bool VtableStubs::contains(address pc) {

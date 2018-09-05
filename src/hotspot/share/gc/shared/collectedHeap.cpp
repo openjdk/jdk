@@ -328,6 +328,11 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
   } while (true);  // Until a GC is done
 }
 
+MemoryUsage CollectedHeap::memory_usage() {
+  return MemoryUsage(InitialHeapSize, used(), capacity(), max_capacity());
+}
+
+
 #ifndef PRODUCT
 void CollectedHeap::check_for_non_bad_heap_word_value(HeapWord* addr, size_t size) {
   if (CheckMemoryInitialization && ZapUnusedHeapArea) {

@@ -48,9 +48,7 @@ G1EdenPool::G1EdenPool(G1CollectedHeap* g1h, size_t initial_size) :
                     false /* support_usage_threshold */) { }
 
 MemoryUsage G1EdenPool::get_memory_usage() {
-  size_t committed  = _g1mm->eden_space_committed();
-
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  return _g1mm->eden_space_memory_usage(initial_size(), max_size());
 }
 
 G1SurvivorPool::G1SurvivorPool(G1CollectedHeap* g1h, size_t initial_size) :
@@ -61,9 +59,7 @@ G1SurvivorPool::G1SurvivorPool(G1CollectedHeap* g1h, size_t initial_size) :
                     false /* support_usage_threshold */) { }
 
 MemoryUsage G1SurvivorPool::get_memory_usage() {
-  size_t committed  = _g1mm->survivor_space_committed();
-
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  return _g1mm->survivor_space_memory_usage(initial_size(), max_size());
 }
 
 G1OldGenPool::G1OldGenPool(G1CollectedHeap* g1h, size_t initial_size, size_t max_size) :
@@ -74,7 +70,5 @@ G1OldGenPool::G1OldGenPool(G1CollectedHeap* g1h, size_t initial_size, size_t max
                     true /* support_usage_threshold */) { }
 
 MemoryUsage G1OldGenPool::get_memory_usage() {
-  size_t committed  = _g1mm->old_gen_committed();
-
-  return MemoryUsage(initial_size(), used_in_bytes(), committed, max_size());
+  return _g1mm->old_gen_memory_usage(initial_size(), max_size());
 }

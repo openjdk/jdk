@@ -28,9 +28,9 @@
   @summary REG: Menu does not disappear when clicked, keeping Choice's drop-down open, XToolkit
   @author andrei.dmitriev: area=awt.menu
   @library ../../regtesthelpers
-  @library ../../../../lib/testlibrary
+  @library /test/lib
   @modules java.desktop/sun.awt
-  @build jdk.testlibrary.OSInfo
+  @build jdk.test.lib.Platform
   @build Util
   @run main OpensWithNoGrab
 */
@@ -38,7 +38,7 @@
 import java.awt.*;
 import java.awt.event.*;
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Util;
 
 public class OpensWithNoGrab
@@ -46,8 +46,7 @@ public class OpensWithNoGrab
     final static int delay = 50;
     private static void init()
     {
-        if (!(OSInfo.getOSType().equals(OSInfo.OSType.LINUX)
-                || OSInfo.getOSType().equals(OSInfo.OSType.SOLARIS))) {
+        if (!(Platform.isLinux() || Platform.isSolaris())) {
             System.out.println("This test is for XAWT/Motif only");
             OpensWithNoGrab.pass();
         }

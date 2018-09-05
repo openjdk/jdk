@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,24 +42,32 @@
 #define __ masm->
 
 #ifndef PRODUCT
-extern "C" void bad_compiled_vtable_index(JavaThread* thread,
-                                          oop receiver,
-                                          int index);
+extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int index);
 #endif
 
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
-  const int amd64_code_length = VtableStub::pd_code_size_limit(true);
-  VtableStub* s = new(amd64_code_length) VtableStub(true, vtable_index);
+  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
+  const int stub_code_length = code_size_limit(true);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
     return NULL;
   }
 
-  ResourceMark rm;
-  CodeBuffer cb(s->entry_point(), amd64_code_length);
+  // Count unused bytes in instruction sequences of variable size.
+  // We add them to the computed buffer size in order to avoid
+  // overflow in subsequently generated stubs.
+  address   start_pc;
+  int       slop_bytes = 0;
+  int       slop_delta = 0;
+  // No variance was detected in vtable stub sizes. Setting index_dependent_slop == 0 will unveil any deviation from this observation.
+  const int index_dependent_slop     = 0;
+
+  ResourceMark    rm;
+  CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
 
-#ifndef PRODUCT
+#if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     __ incrementl(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
   }
@@ -77,22 +85,35 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
+    start_pc = __ pc();
     // check offset vs vtable length
-    __ cmpl(Address(rax, Klass::vtable_length_offset()),
-            vtable_index * vtableEntry::size());
+    __ cmpl(Address(rax, Klass::vtable_length_offset()), vtable_index*vtableEntry::size());
+    slop_delta  = 12 - (__ pc() - start_pc);  // cmpl varies in length, depending on data
+    slop_bytes += slop_delta;
+    assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
+
     __ jcc(Assembler::greater, L);
     __ movl(rbx, vtable_index);
-    __ call_VM(noreg,
-               CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), j_rarg0, rbx);
+    // VTABLE TODO: find upper bound for call_VM length.
+    start_pc = __ pc();
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), j_rarg0, rbx);
+    slop_delta  = 480 - (__ pc() - start_pc);
+    slop_bytes += slop_delta;
+    assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
     __ bind(L);
   }
 #endif // PRODUCT
 
-  // load Method* and target address
   const Register method = rbx;
 
+  // load Method* and target address
+  start_pc = __ pc();
   __ lookup_virtual_method(rax, vtable_index, method);
+  slop_delta  = 8 - (int)(__ pc() - start_pc);
+  slop_bytes += slop_delta;
+  assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
 
+#ifndef PRODUCT
   if (DebugVtables) {
     Label L;
     __ cmpptr(method, (int32_t)NULL_WORD);
@@ -102,50 +123,48 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     __ stop("Vtable entry is NULL");
     __ bind(L);
   }
+#endif // PRODUCT
+
   // rax: receiver klass
-  // rbx: Method*
+  // method (rbx): Method*
   // rcx: receiver
   address ame_addr = __ pc();
   __ jmp( Address(rbx, Method::from_compiled_offset()));
 
-  __ flush();
+  masm->flush();
+  slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
+  bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, index_dependent_slop);
 
-  if (PrintMiscellaneous && (WizardMode || Verbose)) {
-    tty->print_cr("vtable #%d at " PTR_FORMAT "[%d] left over: %d",
-                  vtable_index, p2i(s->entry_point()),
-                  (int)(s->code_end() - s->entry_point()),
-                  (int)(s->code_end() - __ pc()));
-  }
-  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
-  // shut the door on sizing bugs
-  int slop = 3;  // 32-bit offset is this much larger than an 8-bit one
-  assert(vtable_index > 10 || __ pc() + slop <= s->code_end(), "room for 32-bit offset");
-
-  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
 
 VtableStub* VtableStubs::create_itable_stub(int itable_index) {
-  // Note well: pd_code_size_limit is the absolute minimum we can get
-  // away with.  If you add code here, bump the code stub size
-  // returned by pd_code_size_limit!
-  const int amd64_code_length = VtableStub::pd_code_size_limit(false);
-  VtableStub* s = new(amd64_code_length) VtableStub(false, itable_index);
+  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
+  const int stub_code_length = code_size_limit(false);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
     return NULL;
   }
+  // Count unused bytes in instruction sequences of variable size.
+  // We add them to the computed buffer size in order to avoid
+  // overflow in subsequently generated stubs.
+  address   start_pc;
+  int       slop_bytes = 0;
+  int       slop_delta = 0;
+  const int index_dependent_slop = (itable_index == 0) ? 4 :     // code size change with transition from 8-bit to 32-bit constant (@index == 16).
+                                   (itable_index < 16) ? 3 : 0;  // index == 0 generates even shorter code.
 
-  ResourceMark rm;
-  CodeBuffer cb(s->entry_point(), amd64_code_length);
-  MacroAssembler* masm = new MacroAssembler(&cb);
+  ResourceMark    rm;
+  CodeBuffer      cb(s->entry_point(), stub_code_length);
+  MacroAssembler *masm = new MacroAssembler(&cb);
 
-#ifndef PRODUCT
+#if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     __ incrementl(ExternalAddress((address) SharedRuntime::nof_megamorphic_calls_addr()));
   }
-#endif
+#endif // PRODUCT
 
   // Entry arguments:
   //  rax: CompiledICHolder
@@ -158,16 +177,18 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register resolved_klass_reg = rbx; // resolved interface klass (REFC)
   const Register temp_reg           = r11;
 
-  Label L_no_such_interface;
-
   const Register icholder_reg = rax;
   __ movptr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
   __ movptr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
+
+  Label L_no_such_interface;
 
   // get receiver klass (also an implicit null-check)
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
   address npe_addr = __ pc();
   __ load_klass(recv_klass_reg, j_rarg0);
+
+  start_pc = __ pc();
 
   // Receiver subtype check against REFC.
   // Destroys recv_klass_reg value.
@@ -178,6 +199,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                              L_no_such_interface,
                              /*return_method=*/false);
 
+  const ptrdiff_t  typecheckSize = __ pc() - start_pc;
+  start_pc = __ pc();
+
   // Get selected method from declaring class and itable index
   const Register method = rbx;
   __ load_klass(recv_klass_reg, j_rarg0);   // restore recv_klass_reg
@@ -186,6 +210,17 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                              // outputs: method, scan temp. reg
                              method, temp_reg,
                              L_no_such_interface);
+
+  const ptrdiff_t  lookupSize = __ pc() - start_pc;
+
+  // We expect we need index_dependent_slop extra bytes. Reason:
+  // The emitted code in lookup_interface_method changes when itable_index exceeds 15.
+  // For linux, a very narrow estimate would be 112, but Solaris requires some more space (130).
+  const ptrdiff_t estimate = 136;
+  const ptrdiff_t codesize = typecheckSize + lookupSize + index_dependent_slop;
+  slop_delta  = (int)(estimate - codesize);
+  slop_bytes += slop_delta;
+  assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);
 
   // If we take a trap while this arg is on the stack we will not
   // be able to walk the stack properly. This is not an issue except
@@ -207,8 +242,6 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   }
 #endif // ASSERT
 
-  // rbx: Method*
-  // j_rarg0: receiver
   address ame_addr = __ pc();
   __ jmp(Address(method, Method::from_compiled_offset()));
 
@@ -220,68 +253,15 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // dirty work.
   __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-  __ flush();
+  masm->flush();
+  slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
+  bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, index_dependent_slop);
 
-  if (PrintMiscellaneous && (WizardMode || Verbose)) {
-    tty->print_cr("itable #%d at " PTR_FORMAT "[%d] left over: %d",
-                  itable_index, p2i(s->entry_point()),
-                  (int)(s->code_end() - s->entry_point()),
-                  (int)(s->code_end() - __ pc()));
-  }
-  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
-  // shut the door on sizing bugs
-  int slop = 3;  // 32-bit offset is this much larger than an 8-bit one
-  assert(itable_index > 10 || __ pc() + slop <= s->code_end(), "room for 32-bit offset");
-
-  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
-int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
-  if (is_vtable_stub) {
-    // Vtable stub size
-    return (DebugVtables ? 512 : 24) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedClassPointers ?  MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
-  } else {
-    // Itable stub size
-    return (DebugVtables ? 512 : 140) + (CountCompiledCalls ? 13 : 0) +
-           (UseCompressedClassPointers ? 2 * MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
-  }
-  // In order to tune these parameters, run the JVM with VM options
-  // +PrintMiscellaneous and +WizardMode to see information about
-  // actual itable stubs.  Look for lines like this:
-  //   itable #1 at 0x5551212[71] left over: 3
-  // Reduce the constants so that the "left over" number is >=3
-  // for the common cases.
-  // Do not aim at a left-over number of zero, because a
-  // large vtable or itable index (>= 32) will require a 32-bit
-  // immediate displacement instead of an 8-bit one.
-  //
-  // The JVM98 app. _202_jess has a megamorphic interface call.
-  // The itable code looks like this:
-  // Decoding VtableStub itbl[1]@12
-  //   mov    0x8(%rsi),%r10
-  //   mov    0x198(%r10),%r11d
-  //   lea    0x218(%r10,%r11,8),%r11
-  //   lea    0x8(%r10),%r10
-  //   mov    (%r11),%rbx
-  //   cmp    %rbx,%rax
-  //   je     success
-  // loop:
-  //   test   %rbx,%rbx
-  //   je     throw_icce
-  //   add    $0x10,%r11
-  //   mov    (%r11),%rbx
-  //   cmp    %rbx,%rax
-  //   jne    loop
-  // success:
-  //   mov    0x8(%r11),%r11d
-  //   mov    (%r10,%r11,1),%rbx
-  //   jmpq   *0x60(%rbx)
-  // throw_icce:
-  //   jmpq   throw_ICCE_entry
-}
-
 int VtableStub::pd_code_alignment() {
-  return wordSize;
+  // x86 cache line size is 64 bytes, but we want to limit alignment loss.
+  const unsigned int icache_line_size = wordSize;
+  return icache_line_size;
 }

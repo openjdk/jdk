@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,15 +28,16 @@
  * @summary XP Only: JButton.setBorderPainted() does not work with XP L&F
  * @author Alexander Scherbatiy
  * @library ../../regtesthelpers
- * @library ../../../../lib/testlibrary
+ * @library /test/lib
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  *          java.desktop/sun.awt
- * @build jdk.testlibrary.OSInfo
+ * @build jdk.test.lib.OSVersion jdk.test.lib.Platform
  * @build Util
  * @run main bug4796987
  */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
+import jdk.test.lib.OSVersion;
 import java.awt.*;
 import javax.swing.*;
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
@@ -47,8 +48,8 @@ public class bug4796987 {
     private static JButton button2;
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS
-                && OSInfo.getWindowsVersion() == OSInfo.WINDOWS_XP) {
+        if (Platform.isWindows()
+                && OSVersion.current().equals(OSVersion.WINDOWS_XP)) {
             UIManager.setLookAndFeel(new WindowsLookAndFeel());
             testButtonBorder();
         }

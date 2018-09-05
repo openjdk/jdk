@@ -1026,8 +1026,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   HOTSPOT_TOOLCHAIN_TYPE=$TOOLCHAIN_TYPE
   if test "x$TOOLCHAIN_TYPE" = xclang; then
     HOTSPOT_TOOLCHAIN_TYPE=gcc
-  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    HOTSPOT_TOOLCHAIN_TYPE=sparcWorks
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     HOTSPOT_TOOLCHAIN_TYPE=visCPP
   fi

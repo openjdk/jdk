@@ -1031,8 +1031,8 @@ final class CertificateMessage {
                 // Don't select a signature scheme unless we will be able to
                 // produce a CertificateVerify message later
                 if (SignatureScheme.getPreferableAlgorithm(
-                    hc.peerRequestedSignatureSchemes,
-                    ss, hc.negotiatedProtocol) == null) {
+                        hc.peerRequestedSignatureSchemes,
+                        ss, hc.negotiatedProtocol) == null) {
 
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                         SSLLogger.warning(

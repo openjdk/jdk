@@ -837,13 +837,7 @@ com/sun/jdi/BasicJDWPConnectionTest.java                        8195703 generic-
 
 com/sun/jdi/RedefineImplementor.sh                              8004127 generic-all
 
-com/sun/jdi/JdbExprTest.sh                                      8203393 solaris-all
-
-com/sun/jdi/JdbMethodExitTest.sh                                8203393 solaris-all
-
 com/sun/jdi/RepStep.java                                        8043571 generic-all
-
-com/sun/jdi/GetLocalVariables4Test.sh                           8067354 windows-all
 
 com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-all
 

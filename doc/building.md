@@ -120,7 +120,16 @@ At a minimum, a machine with 4 cores is advisable, as well as 4 GB of RAM. (The
 more cores to use, the more memory you need.) At least 8 GB of free disk space
 is required.
 
-### Building on arm/aarch64
+### Building on aarch64
+
+At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM.
+(The more cores to use, the more memory you need.) At least 6 GB of free disk
+space is required.
+
+If you do not have access to sufficiently powerful hardware, it is also
+possible to use [cross-compiling](#cross-compiling).
+
+### Building on 32-bit arm
 
 This is not recommended. Instead, see the section on [Cross-compiling](
 #cross-compiling).

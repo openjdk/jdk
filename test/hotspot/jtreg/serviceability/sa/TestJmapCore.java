@@ -87,7 +87,7 @@ public class TestJmapCore {
 
     static void test(String type) throws Throwable {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, "-XX:+CreateCoredumpOnCrash",
-                "-XX:MaxMetaspaceSize=64m", "-XX:+CrashOnOutOfMemoryError", "-XX:-TransmitErrorReport",
+                "-XX:MaxMetaspaceSize=64m", "-XX:+CrashOnOutOfMemoryError",
                 TestJmapCore.class.getName(), type);
 
         boolean useDefaultUlimit = useDefaultUlimit();

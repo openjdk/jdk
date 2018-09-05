@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
   @author Dmitry.Cherepanov@SUN.COM area=awt.list
   @run applet FirstItemRemoveTest.html
 */
+
+import jdk.test.lib.Platform;
 
 import java.applet.Applet;
 import java.awt.*;
@@ -65,7 +67,7 @@ public class FirstItemRemoveTest extends Applet
 
     private void test(){
 
-        if (jdk.testlibrary.OSInfo.getOSType() == jdk.testlibrary.OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             System.err.println("Skipped. This test is not for OS X.");
             return;
         }

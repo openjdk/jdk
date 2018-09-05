@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,14 @@ import java.awt.image.BufferedImage;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 /* @test
  * @bug 8032667
  * @summary [macosx] Components cannot be rendered in HiDPI to BufferedImage
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug8032667_image_diff
  */
 public class bug8032667_image_diff {
@@ -44,7 +45,7 @@ public class bug8032667_image_diff {
 
     public static void main(String[] args) throws Exception {
 
-        if(!OSInfo.OSType.MACOSX.equals(OSInfo.getOSType())){
+        if (!Platform.isOSX()) {
             return;
         }
 

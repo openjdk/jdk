@@ -33,8 +33,10 @@
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/weakProcessor.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "runtime/atomic.hpp"
 
 class G1AdjustLiveClosure : public StackObj {
   G1AdjustClosure* _adjust_closure;
@@ -79,6 +81,8 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
 G1FullGCAdjustTask::G1FullGCAdjustTask(G1FullCollector* collector) :
     G1FullGCTask("G1 Adjust", collector),
     _root_processor(G1CollectedHeap::heap(), collector->workers()),
+    _references_done(0),
+    _weak_proc_task(collector->workers()),
     _hrclaimer(collector->workers()),
     _adjust(),
     _adjust_string_dedup(NULL, &_adjust, G1StringDedup::is_enabled()) {
@@ -94,12 +98,17 @@ void G1FullGCAdjustTask::work(uint worker_id) {
   G1FullGCMarker* marker = collector()->marker(worker_id);
   marker->preserved_stack()->adjust_during_full_gc();
 
-  // Adjust the weak_roots.
+  // Adjust the weak roots.
+
+  if (Atomic::add(1u, &_references_done) == 1u) { // First incr claims task.
+    G1CollectedHeap::heap()->ref_processor_stw()->weak_oops_do(&_adjust);
+  }
+
+  AlwaysTrueClosure always_alive;
+  _weak_proc_task.work(worker_id, &always_alive, &_adjust);
+
   CLDToOopClosure adjust_cld(&_adjust);
   CodeBlobToOopClosure adjust_code(&_adjust, CodeBlobToOopClosure::FixRelocations);
-  _root_processor.process_full_gc_weak_roots(&_adjust);
-
-  // Needs to be last, process_all_roots calls all_tasks_completed(...).
   _root_processor.process_all_roots(
       &_adjust,
       &adjust_cld,

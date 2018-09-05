@@ -2168,9 +2168,8 @@ void CodeHeapState::print_names(outputStream* out, CodeHeap* heap) {
 
         // this_blob->as_nmethod_or_null() is safe. Inlined, maybe invisible on stack.
         nmethod*    nm     = this_blob->as_nmethod_or_null();
-        Method*     method = (nm == NULL) ? NULL : nm->method();  // may be uninitialized, i.e. != NULL, but invalid
-        if ((nm != NULL) && (method != NULL) && (cbType != nMethod_dead) && (cbType != nMethod_inconstruction) &&
-            os::is_readable_pointer(method) && os::is_readable_pointer(method->constants())) {
+        if (CompiledMethod::nmethod_access_is_safe(nm)) {
+          Method* method = nm->method();
           ResourceMark rm;
           //---<  collect all data to locals as quickly as possible  >---
           unsigned int total_size = nm->total_size();

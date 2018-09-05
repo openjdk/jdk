@@ -3263,10 +3263,6 @@ void ArchDesc::defineClasses(FILE *fp) {
 
     // Analyze machine instructions that either USE or DEF memory.
     int memory_operand = instr->memory_operand(_globalNames);
-    // Some guys kill all of memory
-    if ( instr->is_wide_memory_kill(_globalNames) ) {
-      memory_operand = InstructForm::MANY_MEMORY_OPERANDS;
-    }
 
     if ( memory_operand != InstructForm::NO_MEMORY_OPERAND ) {
       if( memory_operand == InstructForm::MANY_MEMORY_OPERANDS ) {

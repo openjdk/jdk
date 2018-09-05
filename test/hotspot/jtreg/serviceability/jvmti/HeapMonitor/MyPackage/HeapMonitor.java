@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,7 +61,7 @@ public class HeapMonitor {
     int sum = 0;
     List<Frame> frames = new ArrayList<Frame>();
     allocate(frames);
-    frames.add(new Frame("allocate", "()Ljava/util/List;", "HeapMonitor.java", 62));
+    frames.add(new Frame("allocate", "()Ljava/util/List;", "HeapMonitor.java", 63));
     return frames;
   }
 
@@ -69,8 +70,8 @@ public class HeapMonitor {
     for (int j = 0; j < allocationIterations; j++) {
       sum += actuallyAllocate();
     }
-    frames.add(new Frame("actuallyAllocate", "()I", "HeapMonitor.java", 97));
-    frames.add(new Frame("allocate", "(Ljava/util/List;)V", "HeapMonitor.java", 70));
+    frames.add(new Frame("actuallyAllocate", "()I", "HeapMonitor.java", 98));
+    frames.add(new Frame("allocate", "(Ljava/util/List;)V", "HeapMonitor.java", 71));
   }
 
   public static List<Frame> repeatAllocate(int max) {
@@ -78,7 +79,7 @@ public class HeapMonitor {
     for (int i = 0; i < max; i++) {
       frames = allocate();
     }
-    frames.add(new Frame("repeatAllocate", "(I)Ljava/util/List;", "HeapMonitor.java", 79));
+    frames.add(new Frame("repeatAllocate", "(I)Ljava/util/List;", "HeapMonitor.java", 80));
     return frames;
   }
 

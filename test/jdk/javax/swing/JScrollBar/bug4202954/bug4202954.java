@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
    @test
    @key headful
    @bug 4202954
-   @library ../../../../lib/testlibrary
+   @library /test/lib
    @library ../../regtesthelpers
-   @build Util jdk.testlibrary.OSInfo
+   @build Util jdk.test.lib.Platform
    @author Michael C. Albers
    @run main bug4202954
  */
@@ -34,13 +34,14 @@
 import java.awt.*;
 import java.awt.event.InputEvent;
 import javax.swing.*;
-import jdk.testlibrary.OSInfo;
+
+import jdk.test.lib.Platform;
 
 public class bug4202954 {
     static JScrollPane buttonScrollPane;
     static Robot robot;
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,12 @@
  * @summary Textarea within scrollpane shows vertical scrollbar
  * @author Pavel Porvatov
  * @requires (os.family == "windows")
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main bug6940863
  */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 import javax.swing.*;
 import java.awt.*;
@@ -59,7 +59,7 @@ public class bug6940863 {
     });
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+        if (!Platform.isWindows()) {
             System.out.println("The test is suitable only for Windows OS. Skipped");
             return;
         }

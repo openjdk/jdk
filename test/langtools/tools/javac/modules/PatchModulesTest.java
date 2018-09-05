@@ -98,7 +98,7 @@ public class PatchModulesTest extends ModuleTestBase {
     @Test
     public void testDuplicates(Path base) throws Exception {
         test(asList("java.base=a", "java.compiler=b", "java.base=c"),
-            false, "error: --patch-module specified more than once for java.base");
+            false, "error: --patch-module specified more than once for module java.base");
     }
 
     @Test

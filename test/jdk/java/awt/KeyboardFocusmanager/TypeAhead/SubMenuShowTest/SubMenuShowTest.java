@@ -35,8 +35,9 @@ import javax.swing.*;
 import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.InvocationTargetException;
+
+import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Util;
-import jdk.testlibrary.OSInfo;
 
 public class SubMenuShowTest extends Applet {
     Robot robot;
@@ -85,7 +86,7 @@ public class SubMenuShowTest extends Applet {
 
         frame.setVisible(true);
 
-        boolean isMacOSX = (OSInfo.getOSType() == OSInfo.OSType.MACOSX);
+        boolean isMacOSX = Platform.isOSX();
         if (isMacOSX) {
             robot.keyPress(KeyEvent.VK_CONTROL);
         }

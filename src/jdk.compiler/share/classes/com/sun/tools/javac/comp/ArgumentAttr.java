@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.comp;
 
-import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symtab;
@@ -39,10 +38,12 @@ import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredType;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredTypeCompleter;
 import com.sun.tools.javac.comp.DeferredAttr.LambdaReturnScanner;
+import com.sun.tools.javac.comp.DeferredAttr.SwitchExpressionScanner;
 import com.sun.tools.javac.comp.Infer.PartiallyInferredMethodType;
 import com.sun.tools.javac.comp.Resolve.MethodResolutionPhase;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCConditional;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCLambda;
@@ -52,6 +53,7 @@ import com.sun.tools.javac.tree.JCTree.JCMethodInvocation;
 import com.sun.tools.javac.tree.JCTree.JCNewClass;
 import com.sun.tools.javac.tree.JCTree.JCParens;
 import com.sun.tools.javac.tree.JCTree.JCReturn;
+import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
@@ -145,7 +147,7 @@ public class ArgumentAttr extends JCTree.Visitor {
      * Checks a type in the speculative tree against a given result; the type can be either a plain
      * type or an argument type,in which case a more complex check is required.
      */
-    Type checkSpeculative(JCExpression expr, ResultInfo resultInfo) {
+    Type checkSpeculative(JCTree expr, ResultInfo resultInfo) {
         return checkSpeculative(expr, expr.type, resultInfo);
     }
 
@@ -253,6 +255,11 @@ public class ArgumentAttr extends JCTree.Visitor {
     @Override
     public void visitConditional(JCConditional that) {
         processArg(that, speculativeTree -> new ConditionalType(that, env, speculativeTree));
+    }
+
+    @Override
+    public void visitSwitchExpression(JCSwitchExpression that) {
+        processArg(that, speculativeTree -> new SwitchExpressionType(that, env, speculativeTree));
     }
 
     @Override
@@ -452,6 +459,61 @@ public class ArgumentAttr extends JCTree.Visitor {
         @Override
         ArgumentType<JCConditional> dup(JCConditional tree, Env<AttrContext> env) {
             return new ConditionalType(tree, env, speculativeTree, speculativeTypes);
+        }
+    }
+
+    /**
+     * Argument type for switch expressions.
+     */
+    class SwitchExpressionType extends ArgumentType<JCSwitchExpression> {
+        /** List of break expressions (lazily populated). */
+        Optional<List<JCBreak>> breakExpressions = Optional.empty();
+
+        SwitchExpressionType(JCExpression tree, Env<AttrContext> env, JCSwitchExpression speculativeCond) {
+            this(tree, env, speculativeCond, new HashMap<>());
+        }
+
+        SwitchExpressionType(JCExpression tree, Env<AttrContext> env, JCSwitchExpression speculativeCond, Map<ResultInfo, Type> speculativeTypes) {
+           super(tree, env, speculativeCond, speculativeTypes);
+        }
+
+        @Override
+        Type overloadCheck(ResultInfo resultInfo, DeferredAttrContext deferredAttrContext) {
+            ResultInfo localInfo = resultInfo.dup(attr.conditionalContext(resultInfo.checkContext));
+            if (resultInfo.pt.hasTag(VOID)) {
+                //this means we are returning a poly switch expression from void-compatible lambda expression
+                resultInfo.checkContext.report(tree, attr.diags.fragment(Fragments.SwitchExpressionTargetCantBeVoid));
+                return attr.types.createErrorType(resultInfo.pt);
+            } else {
+                //poly
+                for (JCBreak brk : breakExpressions()) {
+                    checkSpeculative(brk.value, brk.value.type, resultInfo);
+                }
+                return localInfo.pt;
+            }
+        }
+
+        /** Compute return expressions (if needed). */
+        List<JCBreak> breakExpressions() {
+            return breakExpressions.orElseGet(() -> {
+                final List<JCBreak> res;
+                ListBuffer<JCBreak> buf = new ListBuffer<>();
+                new SwitchExpressionScanner() {
+                    @Override
+                    public void visitBreak(JCBreak tree) {
+                        if (tree.target == speculativeTree)
+                            buf.add(tree);
+                    }
+                }.scan(speculativeTree.cases);
+                res = buf.toList();
+                breakExpressions = Optional.of(res);
+                return res;
+            });
+        }
+
+        @Override
+        ArgumentType<JCSwitchExpression> dup(JCSwitchExpression tree, Env<AttrContext> env) {
+            return new SwitchExpressionType(tree, env, speculativeTree, speculativeTypes);
         }
     }
 

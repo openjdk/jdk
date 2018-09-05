@@ -50,9 +50,9 @@ import static nsk.share.Consts.TEST_FAILED;
  * To check up on the method, a debugger,
  * upon getting new set for ClassPrepareEvent,
  * suspends VM with the method VirtualMachine.suspend(),
- * gets the List of geduggee's threads calling VM.allThreads(),
+ * gets the List of debuggee's threads calling VM.allThreads(),
  * invokes the method EventSet.resume(), and
- * gets another List of geduggee's threads.
+ * gets another List of debuggee's threads.
  * The debugger then compares values of
  * each thread's suspendCount from first and second Lists.
  *
@@ -63,6 +63,13 @@ import static nsk.share.Consts.TEST_FAILED;
  *   making special clases loaded and prepared to create the Events
  * - Upon getting the Events,
  *   the debugger performs the check required.
+ * - The debugger informs the debuggee when it completes
+ *   each test case, so it will wait before hitting
+ *   communication breakpoints.
+ *   This prevents the breakpoint SUSPEND_ALL policy
+ *   disrupting the first test case check for
+ *   SUSPEND_NONE, if the debuggee gets ahead of
+ *   the debugger processing.
  */
 
 public class resume001 extends TestDebuggerType1 {
@@ -233,6 +240,7 @@ public class resume001 extends TestDebuggerType1 {
 
                      default: throw new Failure("** default case 1 **");
                 }
+                informDebuggeeTestCase(i);
             }
 
             display("......--> vm.resume()");
@@ -261,5 +269,22 @@ public class resume001 extends TestDebuggerType1 {
             throw new Failure("** FAILURE to set up ClassPrepareRequest **");
         }
     }
-
+    /**
+     * Inform debuggee which thread test the debugger has completed.
+     * Used for synchronization, so the debuggee does not move too quickly.
+     * @param testCase index of just completed test
+     */
+    void informDebuggeeTestCase(int testCase) {
+        try {
+            ((ClassType)debuggeeClass)
+                .setValue(debuggeeClass.fieldByName("testCase"),
+                          vm.mirrorOf(testCase));
+        } catch (InvalidTypeException ite) {
+            throw new Failure("** FAILURE setting testCase  **");
+        } catch (ClassNotLoadedException cnle) {
+            throw new Failure("** FAILURE notifying debuggee  **");
+        } catch (VMDisconnectedException e) {
+            throw new Failure("** FAILURE debuggee connection **");
+        }
+    }
 }

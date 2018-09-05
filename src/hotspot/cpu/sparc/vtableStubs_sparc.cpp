@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,32 +41,38 @@
 
 #define __ masm->
 
-
 #ifndef PRODUCT
 extern "C" void bad_compiled_vtable_index(JavaThread* thread, oopDesc* receiver, int index);
 #endif
 
 
 // Used by compiler only; may use only caller saved, non-argument registers
-// NOTE:  %%%% if any change is made to this stub make sure that the function
-//             pd_code_size_limit is changed to ensure the correct size for VtableStub
 VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
-  const int sparc_code_length = VtableStub::pd_code_size_limit(true);
-  VtableStub* s = new(sparc_code_length) VtableStub(true, vtable_index);
+  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
+  const int stub_code_length = code_size_limit(true);
+  VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
     return NULL;
   }
 
-  ResourceMark rm;
-  CodeBuffer cb(s->entry_point(), sparc_code_length);
+  // Count unused bytes in instruction sequences of variable size.
+  // We add them to the computed buffer size in order to avoid
+  // overflow in subsequently generated stubs.
+  address   start_pc;
+  int       slop_bytes = 0;
+  int       slop_delta = 0;
+  const int index_dependent_slop     = ((vtable_index < 512) ? 2 : 0)*BytesPerInstWord; // code size change with transition from 13-bit to 32-bit constant (@index == 512?).
+
+  ResourceMark    rm;
+  CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
 
-#ifndef PRODUCT
+#if (!defined(PRODUCT) && defined(COMPILER2))
   if (CountCompiledCalls) {
     __ inc_counter(SharedRuntime::nof_megamorphic_calls_addr(), G5, G3_scratch);
   }
-#endif /* PRODUCT */
+#endif // PRODUCT
 
   assert(VtableStub::receiver_location() == O0->as_VMReg(), "receiver expected in O0");
 
@@ -74,20 +80,33 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   address npe_addr = __ pc();
   __ load_klass(O0, G3_scratch);
 
-  // set Method* (in case of interpreted method), and destination address
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
     __ ld(G3_scratch, in_bytes(Klass::vtable_length_offset()), G5);
     __ cmp_and_br_short(G5, vtable_index*vtableEntry::size(), Assembler::greaterUnsigned, Assembler::pt, L);
+
+    // set generates 8 instructions (worst case), 1 instruction (best case)
+    start_pc = __ pc();
     __ set(vtable_index, O2);
+    slop_delta  = __ worst_case_insts_for_set()*BytesPerInstWord - (__ pc() - start_pc);
+    slop_bytes += slop_delta;
+    assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
+
+    // there is no variance in call_VM() emitted code.
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), O0, O2);
     __ bind(L);
   }
 #endif
 
+  // set Method* (in case of interpreted method), and destination address
+  start_pc = __ pc();
   __ lookup_virtual_method(G3_scratch, vtable_index, G5_method);
+  // lookup_virtual_method generates 3 instructions (worst case), 1 instruction (best case)
+  slop_delta  = 3*BytesPerInstWord - (int)(__ pc() - start_pc);
+  slop_bytes += slop_delta;
+  assert(slop_delta >= 0, "negative slop(%d) encountered, adjust code size estimate!", slop_delta);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -109,36 +128,40 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ delayed()->nop();
 
   masm->flush();
+  slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
+  bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, index_dependent_slop);
 
-  if (PrintMiscellaneous && (WizardMode || Verbose)) {
-    tty->print_cr("vtable #%d at " PTR_FORMAT "[%d] left over: %d",
-                  vtable_index, p2i(s->entry_point()),
-                  (int)(s->code_end() - s->entry_point()),
-                  (int)(s->code_end() - __ pc()));
-  }
-  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
-  // shut the door on sizing bugs
-  int slop = 2*BytesPerInstWord;  // 32-bit offset is this much larger than a 13-bit one
-  assert(vtable_index > 10 || __ pc() + slop <= s->code_end(), "room for sethi;add");
-
-  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
 
 
-// NOTE:  %%%% if any change is made to this stub make sure that the function
-//             pd_code_size_limit is changed to ensure the correct size for VtableStub
 VtableStub* VtableStubs::create_itable_stub(int itable_index) {
-  const int sparc_code_length = VtableStub::pd_code_size_limit(false);
-  VtableStub* s = new(sparc_code_length) VtableStub(false, itable_index);
+  // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
+  const int stub_code_length = code_size_limit(false);
+  VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
   // Can be NULL if there is no free space in the code cache.
   if (s == NULL) {
     return NULL;
   }
+  // Count unused bytes in instruction sequences of variable size.
+  // We add them to the computed buffer size in order to avoid
+  // overflow in subsequently generated stubs.
+  address   start_pc;
+  int       slop_bytes = 0;
+  int       slop_delta = 0;
+  const int index_dependent_slop     = ((itable_index < 512) ? 2 : 0)*BytesPerInstWord; // code size change with transition from 13-bit to 32-bit constant (@index == 512?).
 
-  ResourceMark rm;
-  CodeBuffer cb(s->entry_point(), sparc_code_length);
+  ResourceMark    rm;
+  CodeBuffer      cb(s->entry_point(), stub_code_length);
   MacroAssembler* masm = new MacroAssembler(&cb);
+
+#if (!defined(PRODUCT) && defined(COMPILER2))
+  if (CountCompiledCalls) {
+//  Use G3_scratch, G4_scratch as work regs for inc_counter.
+//  These are defined before use further down.
+    __ inc_counter(SharedRuntime::nof_megamorphic_calls_addr(), G3_scratch, G4_scratch);
+  }
+#endif // PRODUCT
 
   Register G3_Klass = G3_scratch;
   Register G5_icholder = G5;  // Passed in as an argument
@@ -160,15 +183,10 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // and so those registers are not available here.
   __ save(SP,-frame::register_save_words*wordSize,SP);
 
-#ifndef PRODUCT
-  if (CountCompiledCalls) {
-    __ inc_counter(SharedRuntime::nof_megamorphic_calls_addr(), L0, L1);
-  }
-#endif /* PRODUCT */
-
-  Label L_no_such_interface;
-
+  Label    L_no_such_interface;
   Register L5_method = L5;
+
+  start_pc = __ pc();
 
   // Receiver subtype check against REFC.
   __ ld_ptr(G5_icholder, CompiledICHolder::holder_klass_offset(), G4_interface);
@@ -179,6 +197,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                              L_no_such_interface,
                              /*return_method=*/ false);
 
+  const ptrdiff_t typecheckSize = __ pc() - start_pc;
+  start_pc = __ pc();
+
   // Get Method* and entrypoint for compiler
   __ ld_ptr(G5_icholder, CompiledICHolder::holder_metadata_offset(), G4_interface);
   __ lookup_interface_method(// inputs: rec. class, interface, itable index
@@ -186,6 +207,19 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
                              // outputs: method, scan temp. reg
                              L5_method, L2, L3,
                              L_no_such_interface);
+
+  const ptrdiff_t lookupSize = __ pc() - start_pc;
+
+  // Reduce "estimate" such that "padding" does not drop below 8.
+  // Do not target a left-over number of zero, because a very
+  // large vtable or itable offset (> 4K) will require an extra
+  // sethi/or pair of instructions.
+  // Found typecheck(60) + lookup(72) to exceed previous extimate (32*4).
+  const ptrdiff_t estimate = 36*BytesPerInstWord;
+  const ptrdiff_t codesize = typecheckSize + lookupSize + index_dependent_slop;
+  slop_delta  = (int)(estimate - codesize);
+  slop_bytes += slop_delta;
+  assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);
 
 #ifndef PRODUCT
   if (DebugVtables) {
@@ -222,87 +256,11 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ delayed()->restore();
 
   masm->flush();
+  slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
+  bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, index_dependent_slop);
 
-  if (PrintMiscellaneous && (WizardMode || Verbose)) {
-    tty->print_cr("itable #%d at " PTR_FORMAT "[%d] left over: %d",
-                  itable_index, p2i(s->entry_point()),
-                  (int)(s->code_end() - s->entry_point()),
-                  (int)(s->code_end() - __ pc()));
-  }
-  guarantee(__ pc() <= s->code_end(), "overflowed buffer");
-  // shut the door on sizing bugs
-  int slop = 2*BytesPerInstWord;  // 32-bit offset is this much larger than a 13-bit one
-  assert(itable_index > 10 || __ pc() + slop <= s->code_end(), "room for sethi;add");
-
-  s->set_exception_points(npe_addr, ame_addr);
   return s;
 }
-
-
-int VtableStub::pd_code_size_limit(bool is_vtable_stub) {
-  if (DebugVtables || CountCompiledCalls || VerifyOops) return 1000;
-  else {
-    const int slop = 2*BytesPerInstWord; // sethi;add  (needed for long offsets)
-    if (is_vtable_stub) {
-      // ld;ld;ld,jmp,nop
-      const int basic = 5*BytesPerInstWord +
-                        // shift;add for load_klass (only shift with zero heap based)
-                        (UseCompressedClassPointers ?
-                          MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
-      return basic + slop;
-    } else {
-      const int basic = 54 * BytesPerInstWord +
-                        // shift;add for load_klass (only shift with zero heap based)
-                        (UseCompressedClassPointers ?
-                          MacroAssembler::instr_size_for_decode_klass_not_null() : 0);
-      return (basic + slop);
-    }
-  }
-
-  // In order to tune these parameters, run the JVM with VM options
-  // +PrintMiscellaneous and +WizardMode to see information about
-  // actual itable stubs.  Look for lines like this:
-  //   itable #1 at 0x5551212[116] left over: 8
-  // Reduce the constants so that the "left over" number is 8
-  // Do not aim at a left-over number of zero, because a very
-  // large vtable or itable offset (> 4K) will require an extra
-  // sethi/or pair of instructions.
-  //
-  // The JVM98 app. _202_jess has a megamorphic interface call.
-  // The itable code looks like this:
-  // Decoding VtableStub itbl[1]@16
-  //   ld  [ %o0 + 4 ], %g3
-  //   save  %sp, -64, %sp
-  //   ld  [ %g3 + 0xe8 ], %l2
-  //   sll  %l2, 2, %l2
-  //   add  %l2, 0x134, %l2
-  //   add  %g3, %l2, %l2
-  //   add  %g3, 4, %g3
-  //   ld  [ %l2 ], %l5
-  //   brz,pn   %l5, throw_icce
-  //   cmp  %l5, %g5
-  //   be  %icc, success
-  //   add  %l2, 8, %l2
-  // loop:
-  //   ld  [ %l2 ], %l5
-  //   brz,pn   %l5, throw_icce
-  //   cmp  %l5, %g5
-  //   bne,pn   %icc, loop
-  //   add  %l2, 8, %l2
-  // success:
-  //   ld  [ %l2 + -4 ], %l2
-  //   ld  [ %g3 + %l2 ], %l5
-  //   restore  %l5, 0, %g5
-  //   ld  [ %g5 + 0x44 ], %g3
-  //   jmp  %g3
-  //   nop
-  // throw_icce:
-  //   sethi  %hi(throw_ICCE_entry), %g3
-  //   ! 5 more instructions here, LP64_ONLY
-  //   jmp  %g3 + %lo(throw_ICCE_entry)
-  //   restore
-}
-
 
 int VtableStub::pd_code_alignment() {
   // UltraSPARC cache line size is 8 instructions:

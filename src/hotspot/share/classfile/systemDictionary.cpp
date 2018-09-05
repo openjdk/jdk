@@ -89,6 +89,9 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
 #endif
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 PlaceholderTable*      SystemDictionary::_placeholders        = NULL;
 Dictionary*            SystemDictionary::_shared_dictionary   = NULL;
@@ -1856,6 +1859,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer,
     // First, mark for unload all ClassLoaderData referencing a dead class loader.
     unloading_occurred = ClassLoaderDataGraph::do_unloading(do_cleaning);
     if (unloading_occurred) {
+      JFR_ONLY(Jfr::on_unloading_classes();)
       ClassLoaderDataGraph::clean_module_and_package_info();
     }
   }
@@ -1880,7 +1884,7 @@ bool SystemDictionary::do_unloading(GCTimer* gc_timer,
     // Oops referenced by the protection domain cache table may get unreachable independently
     // of the class loader (eg. cached protection domain oops). So we need to
     // explicitly unlink them here.
-    _pd_cache_table->unlink();
+    _pd_cache_table->trigger_cleanup();
   }
 
   if (do_cleaning) {
@@ -1915,6 +1919,7 @@ void SystemDictionary::well_known_klasses_do(MetaspaceClosure* it) {
 
 void SystemDictionary::methods_do(void f(Method*)) {
   // Walk methods in loaded classes
+  MutexLocker ml(ClassLoaderDataGraph_lock);
   ClassLoaderDataGraph::methods_do(f);
   // Walk method handle intrinsics
   invoke_method_table()->methods_do(f);
@@ -1932,6 +1937,7 @@ class RemoveClassesClosure : public CLDClosure {
 void SystemDictionary::remove_classes_in_error_state() {
   ClassLoaderData::the_null_class_loader_data()->dictionary()->remove_classes_in_error_state();
   RemoveClassesClosure rcc;
+  MutexLocker ml(ClassLoaderDataGraph_lock);
   ClassLoaderDataGraph::cld_do(&rcc);
 }
 

@@ -47,7 +47,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/errorReporter.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 #include "utilities/macros.hpp"
@@ -1287,7 +1286,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   // then save detailed information in log file (verbose = true).
   static bool out_done = false;         // done printing to standard out
   static bool log_done = false;         // done saving error log
-  static bool transmit_report_done = false; // done error reporting
 
   if (SuppressFatalErrorMessage) {
       os::abort(CreateCoredumpOnCrash);
@@ -1433,9 +1431,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       } else {
         out.print_raw_cr("# Can not save log file, dump to screen..");
         log.set_fd(defaultStream::output_fd());
-        /* Error reporting currently needs dumpfile.
-         * Maybe implement direct streaming in the future.*/
-        transmit_report_done = true;
       }
     }
 
@@ -1443,20 +1438,6 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     log_done = true;
     _current_step = 0;
     _current_step_info = "";
-
-    // Run error reporting to determine whether or not to report the crash.
-    if (!transmit_report_done && should_report_bug(_id)) {
-      transmit_report_done = true;
-      const int fd2 = ::dup(log.fd());
-      if (fd2 != -1) {
-        FILE* const hs_err = ::fdopen(fd2, "r");
-        if (NULL != hs_err) {
-          ErrorReporter er;
-          er.call(hs_err, buffer, O_BUFLEN);
-          ::fclose(hs_err);
-        }
-      }
-    }
 
     if (log.fd() != defaultStream::output_fd()) {
       close(log.fd());

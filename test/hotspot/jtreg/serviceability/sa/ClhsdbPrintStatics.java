@@ -75,8 +75,7 @@ public class ClhsdbPrintStatics {
                     "Static fields of Universe",
                     "uintptr_t Universe::_verify_oop_mask",
                     "intptr_t Universe::_non_oop_bits",
-                    "bool Universe::_fully_initialized",
-                    "Universe::_doubleArrayKlassObj"));
+                    "bool Universe::_fully_initialized"));
             expStrMap.put("printstatics JvmtiExport", List.of(
                     "Static fields of JvmtiExport",
                     "bool JvmtiExport::_can_access_local_variables",

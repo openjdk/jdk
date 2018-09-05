@@ -1276,7 +1276,7 @@ public:
     inc_counter((address) counter_addr, tmpreg1, tmpreg2);
   }
 
-  void pd_patch_instruction(address branch, address target);
+  void pd_patch_instruction(address branch, address target, const char* file, int line);
 
   // Loading and storing values by size and signed-ness;
   // size must not exceed wordSize (i.e. 8-byte values are not supported on 32-bit ARM);

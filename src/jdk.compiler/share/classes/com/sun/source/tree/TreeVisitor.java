@@ -354,6 +354,23 @@ public interface TreeVisitor<R,P> {
     R visitSwitch(SwitchTree node, P p);
 
     /**
+     * Visits a SwitchExpressionTree node.
+     *
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 12
+     *
+     * @deprecated
+     * This method is modeling switch expressions,
+     * which are part of a preview feature and may be removed
+     * if the preview feature is removed.
+     */
+    @Deprecated(forRemoval=true, since="12")
+    @SuppressWarnings("removal")
+    R visitSwitchExpression(SwitchExpressionTree node, P p);
+
+    /**
      * Visits a SynchronizedTree node.
      * @param node the node being visited
      * @param p a parameter value

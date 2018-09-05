@@ -30,7 +30,7 @@
 #include "code/codeCache.hpp"
 #include "runtime/handles.inline.hpp"
 
-inline void MacroAssembler::pd_patch_instruction(address branch, address target) {
+inline void MacroAssembler::pd_patch_instruction(address branch, address target, const char* file, int line) {
   int instr = *(int*)branch;
   int new_offset = (int)(target - branch NOT_AARCH64(- 8));
   assert((new_offset & 3) == 0, "bad alignment");

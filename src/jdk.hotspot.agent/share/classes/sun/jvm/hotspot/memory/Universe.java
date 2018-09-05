@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,16 +53,6 @@ public class Universe {
   private static sun.jvm.hotspot.types.OopField mainThreadGroupField;
   private static sun.jvm.hotspot.types.OopField systemThreadGroupField;
 
-  // single dimensional primitive array klasses
-  private static sun.jvm.hotspot.types.AddressField boolArrayKlassField;
-  private static sun.jvm.hotspot.types.AddressField byteArrayKlassField;
-  private static sun.jvm.hotspot.types.AddressField charArrayKlassField;
-  private static sun.jvm.hotspot.types.AddressField intArrayKlassField;
-  private static sun.jvm.hotspot.types.AddressField shortArrayKlassField;
-  private static sun.jvm.hotspot.types.AddressField longArrayKlassField;
-  private static sun.jvm.hotspot.types.AddressField singleArrayKlassField;
-  private static sun.jvm.hotspot.types.AddressField doubleArrayKlassField;
-
   private static AddressField narrowOopBaseField;
   private static CIntegerField narrowOopShiftField;
   private static AddressField narrowKlassBaseField;
@@ -113,15 +103,6 @@ public class Universe {
 
     mainThreadGroupField   = type.getOopField("_main_thread_group");
     systemThreadGroupField = type.getOopField("_system_thread_group");
-
-    boolArrayKlassField      = type.getAddressField("_boolArrayKlassObj");
-    byteArrayKlassField      = type.getAddressField("_byteArrayKlassObj");
-    charArrayKlassField      = type.getAddressField("_charArrayKlassObj");
-    intArrayKlassField       = type.getAddressField("_intArrayKlassObj");
-    shortArrayKlassField     = type.getAddressField("_shortArrayKlassObj");
-    longArrayKlassField      = type.getAddressField("_longArrayKlassObj");
-    singleArrayKlassField    = type.getAddressField("_singleArrayKlassObj");
-    doubleArrayKlassField    = type.getAddressField("_doubleArrayKlassObj");
 
     narrowOopBaseField = type.getAddressField("_narrow_oop._base");
     narrowOopShiftField = type.getCIntegerField("_narrow_oop._shift");

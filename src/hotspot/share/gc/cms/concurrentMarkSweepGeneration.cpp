@@ -3225,7 +3225,7 @@ void CMSConcMarkingTask::do_scan_and_mark(int i, CompactibleFreeListSpace* sp) {
   }
 
   size_t chunk_size = sp->marking_task_size();
-  while (!pst->is_task_claimed(/* reference */ nth_task)) {
+  while (pst->try_claim_task(/* reference */ nth_task)) {
     // Having claimed the nth task in this space,
     // compute the chunk that it corresponds to:
     MemRegion span = MemRegion(aligned_start + nth_task*chunk_size,
@@ -4074,6 +4074,8 @@ class PrecleanCLDClosure : public CLDClosure {
 
 // The freelist lock is needed to prevent asserts, is it really needed?
 void CMSCollector::preclean_cld(MarkRefsIntoAndScanClosure* cl, Mutex* freelistLock) {
+  // Needed to walk CLDG
+  MutexLocker ml(ClassLoaderDataGraph_lock);
 
   cl->set_freelistLock(freelistLock);
 
@@ -4494,7 +4496,7 @@ CMSParMarkTask::do_young_space_rescan(
   if (n_tasks > 0) {
     assert(pst->valid(), "Uninitialized use?");
     HeapWord *start, *end;
-    while (!pst->is_task_claimed(/* reference */ nth_task)) {
+    while (pst->try_claim_task(/* reference */ nth_task)) {
       // We claimed task # nth_task; compute its boundaries.
       if (chunk_top == 0) {  // no samples were taken
         assert(nth_task == 0 && n_tasks == 1, "Can have only 1 eden task");
@@ -4580,7 +4582,7 @@ CMSParRemarkTask::do_dirty_card_rescan_tasks(
   assert(is_aligned(start_addr, alignment), "Check alignment");
   assert(is_aligned(chunk_size, alignment), "Check alignment");
 
-  while (!pst->is_task_claimed(/* reference */ nth_task)) {
+  while (pst->try_claim_task(/* reference */ nth_task)) {
     // Having claimed the nth_task, compute corresponding mem-region,
     // which is a-fortiori aligned correctly (i.e. at a MUT boundary).
     // The alignment restriction ensures that we do not need any

@@ -162,7 +162,7 @@ class MacroAssembler: public Assembler {
   // branch, jump
   //
 
-  inline void pd_patch_instruction(address branch, address target);
+  inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)
 
   // Conditional far branch for destinations encodable in 24+2 bits.

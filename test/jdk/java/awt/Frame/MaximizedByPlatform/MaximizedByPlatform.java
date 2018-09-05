@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@
  * @bug 8026143
  * @summary [macosx] Maximized state could be inconsistent between peer and frame
  * @author Petr Pchelko
- * @library ../../../../lib/testlibrary
- * @build jdk.testlibrary.OSInfo
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main MaximizedByPlatform
  */
 
-import jdk.testlibrary.OSInfo;
+import jdk.test.lib.Platform;
 
 import java.awt.*;
 
@@ -41,7 +41,7 @@ public class MaximizedByPlatform {
     private static Rectangle availableScreenBounds;
 
     public static void main(String[] args) {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+        if (!Platform.isOSX()) {
             // Test only for macosx. Pass
             return;
         }

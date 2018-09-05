@@ -184,6 +184,7 @@ public class Symtab {
     public final Type noClassDefFoundErrorType;
     public final Type noSuchFieldErrorType;
     public final Type assertionErrorType;
+    public final Type incompatibleClassChangeErrorType;
     public final Type cloneNotSupportedExceptionType;
     public final Type annotationType;
     public final TypeSymbol enumSym;
@@ -526,6 +527,7 @@ public class Symtab {
         noClassDefFoundErrorType = enterClass("java.lang.NoClassDefFoundError");
         noSuchFieldErrorType = enterClass("java.lang.NoSuchFieldError");
         assertionErrorType = enterClass("java.lang.AssertionError");
+        incompatibleClassChangeErrorType = enterClass("java.lang.IncompatibleClassChangeError");
         cloneNotSupportedExceptionType = enterClass("java.lang.CloneNotSupportedException");
         annotationType = enterClass("java.lang.annotation.Annotation");
         classLoaderType = enterClass("java.lang.ClassLoader");

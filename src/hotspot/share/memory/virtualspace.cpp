@@ -490,7 +490,6 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
   guarantee(size + noaccess_prefix_size(alignment) <= OopEncodingHeapMax,
             "can not allocate compressed oop heap for this size");
   guarantee(alignment == MAX2(alignment, (size_t)os::vm_page_size()), "alignment too small");
-  assert(HeapBaseMinAddress > 0, "sanity");
 
   const size_t granularity = os::vm_allocation_granularity();
   assert((size & (granularity - 1)) == 0,

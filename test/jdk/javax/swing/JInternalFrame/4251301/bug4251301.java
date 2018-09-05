@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
    @bug 4251301
    @summary Keybinding for show/hide the system menu.
    @author Andrey Pikalev
-   @library ../../../../lib/testlibrary
-   @build jdk.testlibrary.OSInfo
+   @library /test/lib
+   @build jdk.test.lib.Platform
    @run main/manual bug4251301
 */
 
@@ -34,13 +34,13 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.*;
-import jdk.testlibrary.OSInfo;
 
+import jdk.test.lib.Platform;
 
 public class bug4251301 {
     static Test test = new Test();
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
+        if (Platform.isOSX()) {
             System.out.println("This test is not applicable for MacOS. Passed.");
             return;
         }

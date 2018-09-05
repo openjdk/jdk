@@ -50,9 +50,9 @@ import static nsk.share.Consts.TEST_FAILED;
  * To check up on the method, a debugger,
  * upon getting new set for the EventSet,
  * suspends VM with the method VirtualMachine.suspend(),
- * gets the List of geduggee's threads calling VM.allThreads(),
+ * gets the List of debuggee's threads calling VM.allThreads(),
  * invokes the method EventSet.resume(), and
- * gets another List of geduggee's threads.
+ * gets another List of debuggee's threads.
  * The debugger then compares values of
  * each thread's suspendCount from first and second Lists.
  *
@@ -63,6 +63,13 @@ import static nsk.share.Consts.TEST_FAILED;
  *   to be resulting in the event.
  * - Upon getting new event, the debugger
  *   performs the check corresponding to the event.
+ * - The debugger informs the debuggee when it completes
+ *   each test case, so it will wait before hitting
+ *   communication breakpoints.
+ *   This prevents the breakpoint SUSPEND_ALL policy
+ *   disrupting the first test case check for
+ *   SUSPEND_NONE, if the debuggee gets ahead of
+ *   the debugger processing.
  */
 
 public class resume008 extends TestDebuggerType1 {
@@ -124,7 +131,9 @@ public class resume008 extends TestDebuggerType1 {
             }
 
             display("......waiting for new ThreadStartEvent : " + i);
-            EventSet eventSet = eventHandler.waitForRequestedEventSet(new EventRequest[]{eventRequest}, waitTime, true);
+            EventSet eventSet = eventHandler
+                .waitForRequestedEventSet(new EventRequest[]{eventRequest},
+                                          waitTime, true);
 
             EventIterator eventIterator = eventSet.eventIterator();
             Event newEvent = eventIterator.nextEvent();
@@ -134,7 +143,8 @@ public class resume008 extends TestDebuggerType1 {
             } else {
 
                 String property = (String) newEvent.request().getProperty("number");
-                display("       got new ThreadStartEvent with propety 'number' == " + property);
+                display("       got new ThreadStartEvent with propety 'number' == "
+                        + property);
 
                 display("......checking up on EventSet.resume()");
                 display("......--> vm.suspend();");
@@ -144,7 +154,8 @@ public class resume008 extends TestDebuggerType1 {
 
                 Map<String, Integer> suspendsCounts1 = new HashMap<String, Integer>();
                 for (ThreadReference threadReference : vm.allThreads()) {
-                    suspendsCounts1.put(threadReference.name(), threadReference.suspendCount());
+                    suspendsCounts1.put(threadReference.name(),
+                                        threadReference.suspendCount());
                 }
                 display(suspendsCounts1.toString());
 
@@ -154,7 +165,8 @@ public class resume008 extends TestDebuggerType1 {
                 display("        getting : Map<String, Integer> suspendsCounts2");
                 Map<String, Integer> suspendsCounts2 = new HashMap<String, Integer>();
                 for (ThreadReference threadReference : vm.allThreads()) {
-                    suspendsCounts2.put(threadReference.name(), threadReference.suspendCount());
+                    suspendsCounts2.put(threadReference.name(),
+                                        threadReference.suspendCount());
                 }
                 display(suspendsCounts2.toString());
 
@@ -163,85 +175,90 @@ public class resume008 extends TestDebuggerType1 {
 
                 switch (policy) {
 
-                  case SUSPEND_NONE   :
-                       display("        case SUSPEND_NONE");
-                       for (String threadName : suspendsCounts1.keySet()) {
-                           display("        checking " + threadName);
-                           if (!suspendsCounts2.containsKey(threadName)) {
-                               complain("ERROR: couldn't get ThreadReference for " + threadName);
-                               testExitCode = TEST_FAILED;
-                               break;
-                           }
-                           int count1 = suspendsCounts1.get(threadName);
-                           int count2 = suspendsCounts2.get(threadName);
-                           if (count1 != count2) {
-                               complain("ERROR: suspendCounts don't match for : " + threadName);
-                               complain("before resuming : " + count1);
-                               complain("after  resuming : " + count2);
-                               testExitCode = TEST_FAILED;
-                               break;
-                           }
-                       }
-                       break;
-
-                  case SUSPEND_THREAD :
-                       display("        case SUSPEND_THREAD");
-                       for (String threadName : suspendsCounts1.keySet()) {
-                           display("checking " + threadName);
-                           if (!suspendsCounts2.containsKey(threadName)) {
-                               complain("ERROR: couldn't get ThreadReference for " + threadName);
-                               testExitCode = TEST_FAILED;
-                               break;
-                           }
-                           int count1 = suspendsCounts1.get(threadName);
-                           int count2 = suspendsCounts2.get(threadName);
-                           String eventThreadName = ((ThreadStartEvent)newEvent).thread().name();
-                           int expectedValue = count2 + (eventThreadName.equals(threadName) ? 1 : 0);
-                           if (count1 != expectedValue) {
-                               complain("ERROR: suspendCounts don't match for : " + threadName);
-                               complain("before resuming : " + count1);
-                               complain("after  resuming : " + count2);
-                               testExitCode = TEST_FAILED;
-                               break;
-                           }
-                       }
-                       break;
-
-                    case SUSPEND_ALL    :
-
-                        display("        case SUSPEND_ALL");
-                        for (String threadName : suspendsCounts1.keySet()) {
-                            display("checking " + threadName);
-
-                            if (!newEvent.request().equals(eventRequest))
-                                break;
-                            if (!suspendsCounts2.containsKey(threadName)) {
-                                complain("ERROR: couldn't get ThreadReference for " + threadName);
-                                testExitCode = TEST_FAILED;
-                                break;
-                            }
-                            int count1 = suspendsCounts1.get(threadName);
-                            int count2 = suspendsCounts2.get(threadName);
-                            if (count1 != count2 + 1) {
-                                complain("ERROR: suspendCounts don't match for : " + threadName);
-                                complain("before resuming : " + count1);
-                                complain("after  resuming : " + count2);
-                                testExitCode = TEST_FAILED;
-                                break;
-                            }
+                case SUSPEND_NONE   :
+                    display("        case SUSPEND_NONE");
+                    for (String threadName : suspendsCounts1.keySet()) {
+                        display("        checking " + threadName);
+                        if (!suspendsCounts2.containsKey(threadName)) {
+                            complain("ERROR: couldn't get ThreadReference for "
+                                     + threadName);
+                            testExitCode = TEST_FAILED;
+                            break;
                         }
-                        break;
+                        int count1 = suspendsCounts1.get(threadName);
+                        int count2 = suspendsCounts2.get(threadName);
+                        if (count1 != count2) {
+                            complain("ERROR: suspendCounts don't match for : "
+                                     + threadName);
+                            complain("before resuming : " + count1);
+                            complain("after  resuming : " + count2);
+                            testExitCode = TEST_FAILED;
+                            break;
+                        }
+                    }
+                    break;
 
-                     default: throw new Failure("** default case 1 **");
+                case SUSPEND_THREAD :
+                    display("        case SUSPEND_THREAD");
+                    for (String threadName : suspendsCounts1.keySet()) {
+                        display("checking " + threadName);
+                        if (!suspendsCounts2.containsKey(threadName)) {
+                            complain("ERROR: couldn't get ThreadReference for "
+                                     + threadName);
+                            testExitCode = TEST_FAILED;
+                            break;
+                        }
+                        int count1 = suspendsCounts1.get(threadName);
+                        int count2 = suspendsCounts2.get(threadName);
+                        String eventThreadName = ((ThreadStartEvent)newEvent)
+                            .thread().name();
+                        int expectedValue = count2 +
+                            (eventThreadName.equals(threadName) ? 1 : 0);
+                        if (count1 != expectedValue) {
+                            complain("ERROR: suspendCounts don't match for : "
+                                     + threadName);
+                            complain("before resuming : " + count1);
+                            complain("after  resuming : " + count2);
+                            testExitCode = TEST_FAILED;
+                            break;
+                        }
+                    }
+                    break;
+
+                case SUSPEND_ALL    :
+                    display("        case SUSPEND_ALL");
+                    for (String threadName : suspendsCounts1.keySet()) {
+                        display("checking " + threadName);
+                        if (!newEvent.request().equals(eventRequest))
+                            break;
+                        if (!suspendsCounts2.containsKey(threadName)) {
+                            complain("ERROR: couldn't get ThreadReference for "
+                                     + threadName);
+                            testExitCode = TEST_FAILED;
+                            break;
+                        }
+                        int count1 = suspendsCounts1.get(threadName);
+                        int count2 = suspendsCounts2.get(threadName);
+                        if (count1 != count2 + 1) {
+                            complain("ERROR: suspendCounts don't match for : "
+                                     + threadName);
+                            complain("before resuming : " + count1);
+                            complain("after  resuming : " + count2);
+                            testExitCode = TEST_FAILED;
+                            break;
+                        }
+                    }
+                    break;
+                default: throw new Failure("** default case 1 **");
                 }
-            }
+                informDebuggeeTestCase(i);
 
+            }
             display("......--> vm.resume()");
             vm.resume();
         }
         return;
     }
-
     private ThreadStartRequest settingThreadStartRequest(int suspendPolicy,
                                                          String property) {
         try {
@@ -254,5 +271,22 @@ public class resume008 extends TestDebuggerType1 {
             throw new Failure("** FAILURE to set up ThreadStartRequest **");
         }
     }
-
+    /**
+     * Inform debuggee which thread test the debugger has completed.
+     * Used for synchronization, so the debuggee does not move too quickly.
+     * @param testCase index of just completed test
+     */
+    void informDebuggeeTestCase(int testCase) {
+        try {
+            ((ClassType)debuggeeClass)
+                .setValue(debuggeeClass.fieldByName("testCase"),
+                          vm.mirrorOf(testCase));
+        } catch (InvalidTypeException ite) {
+            throw new Failure("** FAILURE setting testCase  **");
+        } catch (ClassNotLoadedException cnle) {
+            throw new Failure("** FAILURE notifying debuggee  **");
+        } catch (VMDisconnectedException e) {
+            throw new Failure("** FAILURE debuggee connection **");
+        }
+    }
 }

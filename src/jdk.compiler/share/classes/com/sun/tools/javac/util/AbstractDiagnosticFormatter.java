@@ -219,6 +219,10 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         else if (arg instanceof Source) {
             return ((Source)arg).name;
         }
+        else if (arg instanceof Tag) {
+            return messages.getLocalizedString(l, "compiler.misc.tree.tag." +
+                                                  StringUtils.toLowerCase(((Tag) arg).name()));
+        }
         else {
             return String.valueOf(arg);
         }

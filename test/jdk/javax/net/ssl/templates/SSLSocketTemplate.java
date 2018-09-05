@@ -220,12 +220,12 @@ public class SSLSocketTemplate {
     /*
      * What's the server port?  Use any free port by default
      */
-    private volatile int serverPort = 0;
+    protected volatile int serverPort = 0;
 
     /*
      * Define the server side of the test.
      */
-    private void doServerSide() throws Exception {
+    protected void doServerSide() throws Exception {
         // kick start the server side service
         SSLContext context = createServerSSLContext();
         SSLServerSocketFactory sslssf = context.getServerSocketFactory();
@@ -286,7 +286,7 @@ public class SSLSocketTemplate {
     /*
      * Define the client side of the test.
      */
-    private void doClientSide() throws Exception {
+    protected void doClientSide() throws Exception {
 
         // Wait for server to get started.
         //
