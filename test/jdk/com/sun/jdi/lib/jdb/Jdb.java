@@ -33,88 +33,22 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.StreamPumper;
 
-public class Jdb {
-
-    public static class LaunchOptions {
-        public final String debuggeeClass;
-        public final List<String> debuggeeOptions = new LinkedList<>();
-
-        public LaunchOptions(String debuggeeClass) {
-            this.debuggeeClass = debuggeeClass;
-        }
-        public LaunchOptions addDebuggeeOption(String option) {
-            debuggeeOptions.add(option);
-            return this;
-        }
-        public LaunchOptions addDebuggeeOptions(String[] options) {
-            debuggeeOptions.addAll(Arrays.asList(options));
-            return this;
-        }
-    }
-
-    public static Jdb launchLocal(LaunchOptions options) {
-        return new Jdb(options);
-    }
-
-    public static Jdb launchLocal(String debuggeeClass) {
-        return new Jdb(new LaunchOptions(debuggeeClass));
-    }
-
-    public Jdb(LaunchOptions options) {
-        /* run debuggee as:
-            java -agentlib:jdwp=transport=dt_socket,address=0,server=n,suspend=y <debuggeeClass>
-        it reports something like : Listening for transport dt_socket at address: 60810
-        after that connect jdb by:
-            jdb -connect com.sun.jdi.SocketAttach:port=60810
-        */
-        // launch debuggee
-        List<String> debuggeeArgs = new LinkedList<>();
-        // specify address=0 to automatically select free port
-        debuggeeArgs.add("-agentlib:jdwp=transport=dt_socket,address=0,server=y,suspend=y");
-        debuggeeArgs.addAll(options.debuggeeOptions);
-        debuggeeArgs.add(options.debuggeeClass);
-        ProcessBuilder pbDebuggee = ProcessTools.createJavaProcessBuilder(true, debuggeeArgs.toArray(new String[0]));
-
-        // debuggeeListen[0] - transport, debuggeeListen[1] - address
-        String[] debuggeeListen = new String[2];
-        Pattern listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(\\d+)\\b");
+public class Jdb implements AutoCloseable {
+    public Jdb(String... args) {
+        ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jdb"));
+        pb.command().addAll(Arrays.asList(args));
         try {
-            debuggee = ProcessTools.startProcess("debuggee", pbDebuggee,
-                    s -> debuggeeOutput.add(s),  // output consumer
-                    s -> {  // warm-up predicate
-                        Matcher m = listenRegexp.matcher(s);
-                        if (!m.matches()) {
-                            return false;
-                        }
-                        debuggeeListen[0] = m.group(1);
-                        debuggeeListen[1] = m.group(2);
-                        return true;
-                    },
-                    30, TimeUnit.SECONDS);
-        } catch (IOException | InterruptedException | TimeoutException ex) {
-            throw new RuntimeException("failed to launch debuggee", ex);
+            jdb = pb.start();
+        } catch (IOException ex) {
+            throw new RuntimeException("failed to launch pdb", ex);
         }
-
-        // launch jdb
         try {
-            ProcessBuilder pb = new ProcessBuilder(JDKToolFinder.getTestJDKTool("jdb"));
-            pb.command().add("-connect");
-            pb.command().add("com.sun.jdi.SocketAttach:port=" + debuggeeListen[1]);
-            System.out.println("Launching jdb:" + pb.command().stream().collect(Collectors.joining(" ")));
-            try {
-                jdb = pb.start();
-            } catch (IOException ex) {
-                throw new RuntimeException("failed to launch pdb", ex);
-            }
             StreamPumper stdout = new StreamPumper(jdb.getInputStream());
             StreamPumper stderr = new StreamPumper(jdb.getErrorStream());
 
@@ -126,19 +60,16 @@ public class Jdb {
 
             inputWriter = new PrintWriter(jdb.getOutputStream(), true);
         } catch (Throwable ex) {
-            // terminate debuggee if something went wrong
-            debuggee.destroy();
+            // terminate jdb if something went wrong
+            jdb.destroy();
             throw ex;
         }
     }
 
     private final Process jdb;
-    private final Process debuggee;
     private final OutputHandler outputHandler = new OutputHandler();
     private final PrintWriter inputWriter;
-    // contains all jdb output (to be used by getJdbOutput())
     private final List<String> jdbOutput = new LinkedList<>();
-    private final List<String> debuggeeOutput = new LinkedList<>();
 
     private static final String lineSeparator = System.getProperty("line.separator");
     // wait time before check jdb output (in ms)
@@ -146,8 +77,6 @@ public class Jdb {
     // max time to wait for  jdb output (in ms)
     private static long timeout = 60000;
 
-    // jdb prompt when debuggee is not started nor suspended after breakpoint
-    public static final String SIMPLE_PROMPT = "> ";
     // pattern for message of a breakpoint hit
     public static final String BREAKPOINT_HIT = "Breakpoint hit:";
     // pattern for message of an application exit
@@ -155,6 +84,11 @@ public class Jdb {
     // pattern for message of an application disconnect
     public static final String APPLICATION_DISCONNECTED = "The application has been disconnected";
 
+
+    @Override
+    public void close() throws Exception {
+        shutdown();
+    }
 
     // waits until the process shutdown or crash
     public boolean waitFor(long timeout, TimeUnit unit) {
@@ -175,18 +109,6 @@ public class Jdb {
             } finally {
                 if (jdb.isAlive()) {
                     jdb.destroy();
-                }
-            }
-        }
-        // shutdown debuggee
-        if (debuggee.isAlive()) {
-            try {
-                debuggee.waitFor(Utils.adjustTimeout(10), TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                // ignore
-            } finally {
-                if (debuggee.isAlive()) {
-                    debuggee.destroy();
                 }
             }
         }
@@ -231,6 +153,16 @@ public class Jdb {
     private final String promptPattern = "[a-zA-Z0-9_-][a-zA-Z0-9_-]*\\[[1-9][0-9]*\\] [ >]*$";
     private final Pattern promptRegexp = Pattern.compile(promptPattern);
     public List<String> waitForPrompt(int lines, boolean allowExit) {
+        return waitForPrompt(lines, allowExit, promptRegexp);
+    }
+
+    // jdb prompt when debuggee is not started and is not suspended after breakpoint
+    private static final String SIMPLE_PROMPT = "> ";
+    public List<String> waitForSimplePrompt(int lines, boolean allowExit) {
+        return waitForPrompt(lines, allowExit, Pattern.compile(SIMPLE_PROMPT));
+    }
+
+    private List<String> waitForPrompt(int lines, boolean allowExit, Pattern promptRegexp) {
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < timeout) {
             try {
@@ -331,11 +263,6 @@ public class Jdb {
     // returns the whole jdb output as a string
     public String getJdbOutput() {
         return jdbOutput.stream().collect(Collectors.joining(lineSeparator));
-    }
-
-    // returns the whole debuggee output as a string
-    public String getDebuggeeOutput() {
-        return debuggeeOutput.stream().collect(Collectors.joining(lineSeparator));
     }
 
     // handler for out/err of the pdb process

@@ -197,6 +197,14 @@ public class JdbCommand {
         return new JdbCommand("set " + lvalue + " = " + expr);
     }
 
+    public static JdbCommand lock(String expr) {
+        return new JdbCommand("lock " + expr);
+    }
+
+    public static JdbCommand methods(String classId) {
+        return new JdbCommand("methods " + classId);
+    }
+
     // trace [go] methods [thread]
     //                           -- trace method entries and exits.
     //                           -- All threads are suspended unless 'go' is specified
@@ -225,5 +233,10 @@ public class JdbCommand {
     }
     public static JdbCommand untrace() {
         return new JdbCommand("untrace");
+    }
+
+    // watch [access|all] <class id>.<field name>
+    public static JdbCommand watch(String classId, String fieldName) {
+        return new JdbCommand("watch " + classId + "." + fieldName);
     }
 }

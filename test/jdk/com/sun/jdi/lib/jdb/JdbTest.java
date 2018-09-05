@@ -23,28 +23,54 @@
 
 package lib.jdb;
 
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public abstract class JdbTest {
 
-    public JdbTest(Jdb.LaunchOptions jdbOptions) {
-        this.jdbOptions= jdbOptions;
-        debuggeeClass = jdbOptions.debuggeeClass;
-    }
-    public JdbTest(String debuggeeClass) {
-        this(new Jdb.LaunchOptions(debuggeeClass));
+    public static class LaunchOptions {
+        public final String debuggeeClass;
+        public final List<String> debuggeeOptions = new LinkedList<>();
+
+        public LaunchOptions(String debuggeeClass) {
+            this.debuggeeClass = debuggeeClass;
+        }
+        public LaunchOptions addDebuggeeOption(String option) {
+            debuggeeOptions.add(option);
+            return this;
+        }
+        public LaunchOptions addDebuggeeOptions(String[] options) {
+            debuggeeOptions.addAll(Arrays.asList(options));
+            return this;
+        }
     }
 
-    private final Jdb.LaunchOptions jdbOptions;
+    public JdbTest(LaunchOptions launchOptions) {
+        this.launchOptions= launchOptions;
+        debuggeeClass = launchOptions.debuggeeClass;
+    }
+    public JdbTest(String debuggeeClass) {
+        this(new LaunchOptions(debuggeeClass));
+    }
+
     protected Jdb jdb;
-    protected final String debuggeeClass;   // shortland for jdbOptions.debuggeeClass
+    protected Process debuggee;
+    private final List<String> debuggeeOutput = new LinkedList<>();
+    private final LaunchOptions launchOptions;
+    protected final String debuggeeClass;   // shortland for launchOptions.debuggeeClass
 
     // returns the whole jdb output as a string
     public String getJdbOutput() {
@@ -53,7 +79,7 @@ public abstract class JdbTest {
 
     // returns the whole debuggee output as a string
     public String getDebuggeeOutput() {
-        return jdb == null ? "" : jdb.getDebuggeeOutput();
+        return debuggeeOutput.stream().collect(Collectors.joining(lineSeparator));
     }
 
     public void run() {
@@ -66,10 +92,50 @@ public abstract class JdbTest {
     }
 
     protected void setup() {
-        jdb = Jdb.launchLocal(jdbOptions);
+        /* run debuggee as:
+            java -agentlib:jdwp=transport=dt_socket,address=0,server=n,suspend=y <debuggeeClass>
+        it reports something like : Listening for transport dt_socket at address: 60810
+        after that connect jdb by:
+            jdb -connect com.sun.jdi.SocketAttach:port=60810
+        */
+        // launch debuggee
+        List<String> debuggeeArgs = new LinkedList<>();
+        // specify address=0 to automatically select free port
+        debuggeeArgs.add("-agentlib:jdwp=transport=dt_socket,address=0,server=y,suspend=y");
+        debuggeeArgs.addAll(launchOptions.debuggeeOptions);
+        debuggeeArgs.add(launchOptions.debuggeeClass);
+        ProcessBuilder pbDebuggee = ProcessTools.createJavaProcessBuilder(true, debuggeeArgs.toArray(new String[0]));
+
+        // debuggeeListen[0] - transport, debuggeeListen[1] - address
+        String[] debuggeeListen = new String[2];
+        Pattern listenRegexp = Pattern.compile("Listening for transport \\b(.+)\\b at address: \\b(\\d+)\\b");
+        try {
+            debuggee = ProcessTools.startProcess("debuggee", pbDebuggee,
+                    s -> debuggeeOutput.add(s),  // output consumer
+                    s -> {  // warm-up predicate
+                        Matcher m = listenRegexp.matcher(s);
+                        if (!m.matches()) {
+                            return false;
+                        }
+                        debuggeeListen[0] = m.group(1);
+                        debuggeeListen[1] = m.group(2);
+                        return true;
+                    },
+                    30, TimeUnit.SECONDS);
+        } catch (IOException | InterruptedException | TimeoutException ex) {
+            throw new RuntimeException("failed to launch debuggee", ex);
+        }
+
+        // launch jdb
+        try {
+            jdb = new Jdb("-connect", "com.sun.jdi.SocketAttach:port=" + debuggeeListen[1]);
+        } catch (Throwable ex) {
+            // terminate debuggee if something went wrong
+            debuggee.destroy();
+            throw ex;
+        }
         // wait while jdb is initialized
         jdb.waitForPrompt(1, false);
-
     }
 
     protected abstract void runCases();
@@ -77,6 +143,18 @@ public abstract class JdbTest {
     protected void shutdown() {
         if (jdb != null) {
             jdb.shutdown();
+        }
+        // shutdown debuggee
+        if (debuggee != null && debuggee.isAlive()) {
+            try {
+                debuggee.waitFor(Utils.adjustTimeout(10), TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                // ignore
+            } finally {
+                if (debuggee.isAlive()) {
+                    debuggee.destroy();
+                }
+            }
         }
     }
 
@@ -130,6 +208,7 @@ public abstract class JdbTest {
         List<String> reply = jdb.command(cmd);
         return new OutputAnalyzer(reply.stream().collect(Collectors.joining(lineSeparator)));
     }
+
     // helpers for "eval" jdb command.
     // executes "eval <expr>" and verifies output contains the specified text
     protected void evalShouldContain(String expr, String expectedString) {
