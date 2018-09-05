@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 7156873 8040059 8028480 8034773 8153248 8061777 8197398
+ * @bug 7156873 8040059 8028480 8034773 8153248 8061777 8197398 8210394
  * @summary ZipFileSystem regression tests
  *
  * @modules jdk.zipfs
@@ -106,78 +106,83 @@ public class ZFSTests {
         // absolute file/dir, no need to test cnt again..
         dirs.clear();
         files.clear();
-        try (OutputStream os = Files.newOutputStream(path);
-             ZipOutputStream zos = new ZipOutputStream(os)) {
-            zos.putNextEntry(new ZipEntry("/"));     dirs.add("/");
-            zos.putNextEntry(new ZipEntry("/fooo/"));     dirs.add("/fooo");
-            zos.putNextEntry(new ZipEntry("/foo"));   files.add("/foo");
-            zos.write("/foo".getBytes());
-            zos.putNextEntry(new ZipEntry("/bar"));   files.add("/bar");
-            zos.write("/bar".getBytes());
-            zos.putNextEntry(new ZipEntry("/fooo/bar"));   files.add("/fooo/bar");
-            zos.write("/fooo/bar".getBytes());
-        }
+        try {
+            try (OutputStream os = Files.newOutputStream(path);
+                ZipOutputStream zos = new ZipOutputStream(os)) {
+                zos.putNextEntry(new ZipEntry("/"));     dirs.add("/");
+                zos.putNextEntry(new ZipEntry("/fooo/"));     dirs.add("/fooo");
+                zos.putNextEntry(new ZipEntry("/foo"));   files.add("/foo");
+                zos.write("/foo".getBytes());
+                zos.putNextEntry(new ZipEntry("/bar"));   files.add("/bar");
+                zos.write("/bar".getBytes());
+                zos.putNextEntry(new ZipEntry("/fooo/bar"));   files.add("/fooo/bar");
+                zos.write("/fooo/bar".getBytes());
+            }
 
-        try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
-            Files.walkFileTree(fs.getRootDirectories().iterator().next(),
-                                new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                        throws IOException {
-                    files.remove(file.toString());
-                    if (!Arrays.equals(Files.readAllBytes(file), file.toString().getBytes()))
-                        throw new RuntimeException("visited files has wrong content: " + file);
-                    return FileVisitResult.CONTINUE;
-                }
-                @Override
-                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                        throws IOException {
-                    dirs.remove(dir.toString());
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-            if (dirs.size() != 0 || files.size() != 0)
-                throw new RuntimeException("walk files/dirs failed");
-
-            // for next test: updated any entry, the result zipfs file should have no
-            // absolute path entry
-            Files.write(fs.getPath("/foo"), "/foo".getBytes());
-        }
-
-        // updated zfs should have the same dirs/files (path is not absolute though)
-        dirs.add("/");
-        dirs.add("/fooo");
-        files.add("/foo");
-        files.add("/bar");
-        files.add("/fooo/bar");
-        try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
-                Files.walk(fs.getPath("/")).forEach( p -> {
-                    if (Files.isDirectory(p)) {
-                        dirs.remove(p.toString());
-                    } else {
-                        files.remove(p.toString());
-                        try {
-                            if (!Arrays.equals(Files.readAllBytes(p), p.toString().getBytes()))
-                                throw new RuntimeException("visited files has wrong content: " + p);
-                        } catch (IOException x) {
-                            throw new RuntimeException(x);
-                        }
+            try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+                Files.walkFileTree(fs.getRootDirectories().iterator().next(),
+                                    new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                            throws IOException {
+                        files.remove(file.toString());
+                        if (!Arrays.equals(Files.readAllBytes(file), file.toString().getBytes()))
+                            throw new RuntimeException("visited files has wrong content: " + file);
+                        return FileVisitResult.CONTINUE;
+                    }
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                            throws IOException {
+                        dirs.remove(dir.toString());
+                        return FileVisitResult.CONTINUE;
                     }
                 });
-            if (dirs.size() != 0 || files.size() != 0)
-                throw new RuntimeException("walk files/dirs failed");
+                if (dirs.size() != 0 || files.size() != 0)
+                    throw new RuntimeException("walk files/dirs failed");
 
+                // for next test: updated any entry, the result zipfs file should have no
+                // absolute path entry
+                Files.write(fs.getPath("/foo"), "/foo".getBytes());
+            }
+
+            // updated zfs should have the same dirs/files (path is not absolute though)
+            dirs.add("/");
+            dirs.add("/fooo");
+            files.add("/foo");
+            files.add("/bar");
+            files.add("/fooo/bar");
+            try (FileSystem fs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+                    Files.walk(fs.getPath("/")).forEach( p -> {
+                        if (Files.isDirectory(p)) {
+                            dirs.remove(p.toString());
+                        } else {
+                            files.remove(p.toString());
+                            try {
+                                if (!Arrays.equals(Files.readAllBytes(p), p.toString().getBytes()))
+                                    throw new RuntimeException("visited files has wrong content: " + p);
+                            } catch (IOException x) {
+                                throw new RuntimeException(x);
+                            }
+                        }
+                    });
+                if (dirs.size() != 0 || files.size() != 0)
+                    throw new RuntimeException("walk files/dirs failed");
+
+            }
+            // updated zip file should  not have "/" and entry with absolute path
+            try (var zf = new ZipFile(path.toFile())) {
+                String[] entries = zf.stream()
+                                     .map(ZipEntry::toString)
+                                     .sorted()
+                                     .toArray(String[]::new);
+                if (!Arrays.equals(entries, new String[] {"bar", "foo", "fooo/", "fooo/bar" })) {
+                    System.out.println("unexpeded: " + Arrays.toString(entries));
+                    throw new RuntimeException("unexpected entreis in updated zipfs file");
+                }
+            }
+        } finally {
+            Files.deleteIfExists(path);
         }
-        // updated zip file should  not have "/" and entry with absolute path
-        String[] entries = new ZipFile(path.toFile()).stream()
-                                                     .map(ZipEntry::toString)
-                                                     .sorted()
-                                                     .toArray(String[]::new);
-        if (!Arrays.equals(entries, new String[] {"bar", "foo", "fooo/", "fooo/bar" })) {
-            System.out.println("unexpeded: " + Arrays.toString(entries));
-            throw new RuntimeException("unexpected entreis in updated zipfs file");
-        }
-        Files.deleteIfExists(path);
     }
 
     static void test7156873() throws Throwable {
