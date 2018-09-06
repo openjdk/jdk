@@ -27,8 +27,11 @@ package com.sun.tools.javac.launcher;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -37,20 +40,28 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.NoSuchElementException;
 import java.util.ResourceBundle;
 
 import javax.lang.model.SourceVersion;
@@ -59,7 +70,6 @@ import javax.lang.model.element.TypeElement;
 import javax.tools.FileObject;
 import javax.tools.ForwardingJavaFileManager;
 import javax.tools.JavaFileManager;
-import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -531,6 +541,10 @@ public class Main {
      * {@code findClass} to find classes in the in-memory cache.
      */
     private static class MemoryClassLoader extends ClassLoader {
+        /**
+         * The map of classes known to this class loader, indexed by
+         * {@link ClassLoader#name binary name}.
+         */
         private final Map<String, byte[]> map;
 
         MemoryClassLoader(Map<String, byte[]> map, ClassLoader parent) {
@@ -545,6 +559,118 @@ public class Main {
                 throw new ClassNotFoundException(name);
             }
             return defineClass(name, bytes, 0, bytes.length);
+        }
+
+        @Override
+        public URL findResource(String name) {
+            String binaryName = toBinaryName(name);
+            if (binaryName == null || map.get(binaryName) == null) {
+                return null;
+            }
+
+            URLStreamHandler handler = this.handler;
+            if (handler == null) {
+                this.handler = handler = new MemoryURLStreamHandler();
+            }
+
+            try {
+                return new URL(PROTOCOL, null, -1, name, handler);
+            } catch (MalformedURLException e) {
+                return null;
+            }
+        }
+
+        @Override
+        public Enumeration<URL> findResources(String name) {
+            return new Enumeration<URL>() {
+                private URL next = findResource(name);
+
+                @Override
+                public boolean hasMoreElements() {
+                    return (next != null);
+                }
+
+                @Override
+                public URL nextElement() {
+                    if (next == null) {
+                        throw new NoSuchElementException();
+                    }
+                    URL u = next;
+                    next = null;
+                    return u;
+                }
+            };
+        }
+
+        /**
+         * Converts a "resource name" (as used in the getResource* methods)
+         * to a binary name if the name identifies a class, or null otherwise.
+         * @param name the resource name
+         * @return the binary name
+         */
+        private String toBinaryName(String name) {
+            if (!name.endsWith(".class")) {
+                return null;
+            }
+            return name.substring(0, name.length() - DOT_CLASS_LENGTH).replace('/', '.');
+        }
+
+        private static final int DOT_CLASS_LENGTH = ".class".length();
+        private final String PROTOCOL = "sourcelauncher-" + getClass().getSimpleName() + hashCode();
+        private URLStreamHandler handler;
+
+        /**
+         * A URLStreamHandler for use with URLs returned by MemoryClassLoader.getResource.
+         */
+        private class MemoryURLStreamHandler extends URLStreamHandler {
+            @Override
+            public URLConnection openConnection(URL u) {
+                if (!u.getProtocol().equalsIgnoreCase(PROTOCOL)) {
+                    throw new IllegalArgumentException(u.toString());
+                }
+                return new MemoryURLConnection(u, map.get(toBinaryName(u.getPath())));
+            }
+
+        }
+
+        /**
+         * A URLConnection for use with URLs returned by MemoryClassLoader.getResource.
+         */
+        private static class MemoryURLConnection extends URLConnection {
+            private byte[] bytes;
+            private InputStream in;
+
+            MemoryURLConnection(URL u, byte[] bytes) {
+                super(u);
+                this.bytes = bytes;
+            }
+
+            @Override
+            public void connect() throws IOException {
+                if (!connected) {
+                    if (bytes == null) {
+                        throw new FileNotFoundException(getURL().getPath());
+                    }
+                    in = new ByteArrayInputStream(bytes);
+                    connected = true;
+                }
+            }
+
+            @Override
+            public InputStream getInputStream() throws IOException {
+                connect();
+                return in;
+            }
+
+            @Override
+            public long getContentLengthLong() {
+                return bytes.length;
+            }
+
+            @Override
+            public String getContentType() {
+                return "application/octet-stream";
+            }
         }
     }
 }
