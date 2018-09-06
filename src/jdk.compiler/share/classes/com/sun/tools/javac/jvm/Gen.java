@@ -1002,15 +1002,17 @@ public class Gen extends JCTree.Visitor {
 
     public void visitVarDef(JCVariableDecl tree) {
         VarSymbol v = tree.sym;
-        code.newLocal(v);
         if (tree.init != null) {
             checkStringConstant(tree.init.pos(), v.getConstValue());
             if (v.getConstValue() == null || varDebugInfo) {
                 Assert.check(code.isStatementStart());
+                code.newLocal(v);
                 genExpr(tree.init, v.erasure(types)).load();
                 items.makeLocalItem(v).store();
                 Assert.check(code.isStatementStart());
             }
+        } else {
+            code.newLocal(v);
         }
         checkDimension(tree.pos(), v.type);
     }
