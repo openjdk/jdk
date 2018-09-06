@@ -1881,7 +1881,7 @@ void MetaspaceShared::dump_open_archive_heap_objects(
 
   MetaspaceShared::archive_klass_objects(THREAD);
 
-  HeapShared::archive_module_graph_objects(THREAD);
+  HeapShared::archive_static_fields(THREAD);
 
   G1CollectedHeap::heap()->end_archive_alloc_range(open_archive,
                                                    os::vm_allocation_granularity());
