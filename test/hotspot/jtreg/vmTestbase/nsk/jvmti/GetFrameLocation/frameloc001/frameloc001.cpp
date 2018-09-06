@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -62,8 +49,7 @@ jboolean checkFrame(jvmtiEnv *jvmti_env, JNIEnv *env,
     char *meth, *sig, *generic;
     jboolean isOk = JNI_FALSE;
 
-    err = jvmti_env->GetMethodName(exp_mid,
-        &meth, &sig, &generic);
+    err = jvmti_env->GetMethodName(exp_mid, &meth, &sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetMethodName) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -115,8 +101,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -177,8 +162,7 @@ Java_nsk_jvmti_GetFrameLocation_frameloc001_getReady(JNIEnv *env, jclass cls,
         return;
     }
 
-    mid1 = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, klass),
-        "meth01", "(I)V");
+    mid1 = env->GetMethodID(klass, "meth01", "(I)V");
     if (mid1 == NULL) {
         printf("Cannot get jmethodID for method \"meth01\"\n");
         result = STATUS_FAILED;
@@ -205,7 +189,7 @@ Java_nsk_jvmti_GetFrameLocation_frameloc001_checkFrame01(JNIEnv *env,
         return JNI_TRUE;
     }
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, klass), "run", "()V");
+    mid = env->GetMethodID(klass, "run", "()V");
     if (mid == NULL) {
         printf("Cannot get jmethodID for method \"run\"\n");
         result = STATUS_FAILED;
@@ -241,6 +225,4 @@ Java_nsk_jvmti_GetFrameLocation_frameloc001_getRes(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif
