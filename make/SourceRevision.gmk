@@ -31,23 +31,35 @@ $(eval $(call IncludeCustomExtension, SourceRevision-pre.gmk))
 ################################################################################
 # Keep track of what source revision is used to create the build, by creating
 # a tracker file in the output directory. This tracker file is included in the
-# image, and can be used to recreate the source revision used.
+# source image, and can be used to recreate the source revision used.
 #
-# We're either building directly from a mercurial forest, and if so, use the
-# current revision from mercurial. Otherwise, we are building from a source
-# bundle. As a part of creating this source bundle, the current mercurial
-# revisions of all repos will be stored in a file in the top dir, which is then
-# used when creating the tracker file.
+# We're either building directly from an SCM repository, and if so, use the
+# current revision from that SCM. Otherwise, we are building from a source
+# bundle. As a part of creating this source bundle, the current SCM revisions of
+# all repos will be stored in a file in the top dir, which is then used when
+# creating the tracker file.
 
 STORED_SOURCE_REVISION := $(TOPDIR)/.src-rev
 
-# Are we using mercurial?
+USE_SCM := false
 ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
+  USE_SCM := true
+  SCM_DIR := .hg
+  ID_COMMAND := $(PRINTF) "hg:%s" "$$($(HG) id -i)"
+else ifneq ($(and $(GIT), $(wildcard $(TOPDIR)/.git)), )
+  USE_SCM := true
+  SCM_DIR := .git
+  ID_COMMAND := $(PRINTF) "git:%s%s\n" \
+      "$$(git log -n1 --format=%H | cut -c1-12)" \
+      "$$(if test -n "$$(git status --porcelain)"; then printf '+'; fi)"
+endif
+
+ifeq ($(USE_SCM), true)
 
   # Verify that the entire forest is consistent
   $(foreach repo, $(call FindAllReposRel), \
-    $(if $(wildcard $(TOPDIR)/$(repo)/.hg),, \
-        $(error Inconsistent revision control: $(repo) is missing .hg directory)) \
+    $(if $(wildcard $(TOPDIR)/$(repo)/$(SCM_DIR)),, \
+        $(error Inconsistent revision control: $(repo) is missing $(SCM_DIR) directory)) \
   )
 
   # Replace "." with "_top" and "/" with "-"
@@ -56,7 +68,9 @@ ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
 
   ################################################################################
   # SetupGetRevisionForRepo defines a make rule for creating a file containing
-  # the name of the repository and the output of "hg id" for that repository.
+  # the name of the repository and the output of the scm command for that
+  # repository.
+  #
   # Argument 1 is the relative path to the repository from the top dir.
   #
   SetupGetRevisionForRepo = $(NamedParamsMacroTemplate)
@@ -66,7 +80,7 @@ ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
 
     $$(SUPPORT_OUTPUTDIR)/src-rev/$$($1_FILENAME): FRC
 	$$(call MakeDir, $$(@D))
-	$$(ECHO) $$(strip $1):`$$(HG) id -i --repository $$($1_REPO_PATH)` > $$@
+	$$(ECHO) $$(strip $1):`$$(CD) $$($1_REPO_PATH) && $$(ID_COMMAND)` > $$@
 
     REPO_REVISIONS += $$(SUPPORT_OUTPUTDIR)/src-rev/$$($1_FILENAME)
   endef
@@ -92,23 +106,25 @@ ifneq ($(and $(HG), $(wildcard $(TOPDIR)/.hg)), )
 
   $(eval $(call CreateSourceRevisionFile, $(STORED_SOURCE_REVISION)))
 
-  hg-store-source-revision: $(STORED_SOURCE_REVISION)
+  scm-store-source-revision: $(STORED_SOURCE_REVISION)
 
   $(eval $(call CreateSourceRevisionFile, $(SOURCE_REVISION_TRACKER)))
 
-  hg-create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
+  scm-create-source-revision-tracker: $(SOURCE_REVISION_TRACKER)
 
-  STORE_SOURCE_REVISION_TARGET := hg-store-source-revision
-  CREATE_SOURCE_REVISION_TRACKER_TARGET := hg-create-source-revision-tracker
+  STORE_SOURCE_REVISION_TARGET := scm-store-source-revision
+  CREATE_SOURCE_REVISION_TRACKER_TARGET := scm-create-source-revision-tracker
+
+  .PHONY: scm-store-source-revision scm-create-source-revision-tracker
 
 else
-  # Not using HG
+  # Not using any SCM
 
   ifneq ($(wildcard $(STORED_SOURCE_REVISION)), )
     # We have a stored source revision (.src-rev)
 
     src-store-source-revision:
-	$(call LogInfo, No mercurial configuration present$(COMMA) not updating .src-rev)
+	$(call LogInfo, No SCM configuration present$(COMMA) not updating .src-rev)
 
     $(SOURCE_REVISION_TRACKER): $(STORED_SOURCE_REVISION)
 	$(install-file)
@@ -118,15 +134,17 @@ else
     # We don't have a stored source revision. Can't do anything, really.
 
     src-store-source-revision:
-	$(call LogWarn, Error: No mercurial configuration present$(COMMA) cannot create .src-rev)
+	$(call LogWarn, Error: No SCM configuration present$(COMMA) cannot create .src-rev)
 	exit 2
 
     src-create-source-revision-tracker:
-	$(call LogWarn, Warning: No mercurial configuration present and no .src-rev)
+	$(call LogWarn, Warning: No SCM configuration present and no .src-rev)
   endif
 
   STORE_SOURCE_REVISION_TARGET := src-store-source-revision
   CREATE_SOURCE_REVISION_TRACKER_TARGET := src-create-source-revision-tracker
+
+  .PHONY: src-store-source-revision src-create-source-revision-tracker
 
 endif
 

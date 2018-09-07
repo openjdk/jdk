@@ -347,6 +347,7 @@ SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
 FindAllReposAbs = \
     $(strip $(sort $(dir $(filter-out $(TOPDIR)/build/%, $(wildcard \
         $(addprefix $(TOPDIR)/, .hg */.hg */*/.hg */*/*/.hg */*/*/*/.hg) \
+        $(addprefix $(TOPDIR)/, .git */.git */*/.git */*/*/.git */*/*/*/.git) \
     )))))
 
 # Locate all hg repositories included in the forest, as relative paths
