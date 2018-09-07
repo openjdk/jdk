@@ -699,7 +699,6 @@ static jvmtiError check_nest_attributes(InstanceKlass* the_class,
   // Check whether the class NestHost attribute has been changed.
   Thread* thread = Thread::current();
   ResourceMark rm(thread);
-  JvmtiThreadState *state = JvmtiThreadState::state_for((JavaThread*)thread);
   u2 the_nest_host_idx = the_class->nest_host_index();
   u2 scr_nest_host_idx = scratch_class->nest_host_index();
 
