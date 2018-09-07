@@ -68,7 +68,7 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS_linux_ppc64le := -ffp-contract=off, \
       CFLAGS_linux_s390x := -ffp-contract=off, \
       CFLAGS_linux_aarch64 := -ffp-contract=off, \
-      DISABLED_WARNINGS_gcc := sign-compare misleading-indentation, \
+      DISABLED_WARNINGS_gcc := sign-compare misleading-indentation array-bounds, \
       DISABLED_WARNINGS_microsoft := 4146 4244 4018, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
