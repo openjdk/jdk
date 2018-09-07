@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
 
 import java.nio.file.Files;
@@ -31,7 +31,7 @@ import java.nio.file.Paths;
  * @test
  * @bug 8024302 8026037
  * @summary Test for chainNotValidated warning
- * @library /lib/testlibrary /test/lib ../
+ * @library /test/lib ../
  * @build jdk.test.lib.util.JarUtils
  * @run main ChainNotValidatedTest ca2yes
  * @run main ChainNotValidatedTest ca2no

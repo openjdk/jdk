@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,17 @@
  * questions.
  */
 
-package jdk.testlibrary;
-
 /*
  * @test
  * @summary Test the OutputAnalyzer reporting functionality,
  *     such as printing additional diagnostic info
  *     (exit code, stdout, stderr, command line, etc.)
  * @modules java.management
- * @build jdk.testlibrary.*
- * @run main jdk.testlibrary.OutputAnalyzerReportingTest
+ * @library /test/lib
+ * @run main OutputAnalyzerReportingTest
  */
+
+import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

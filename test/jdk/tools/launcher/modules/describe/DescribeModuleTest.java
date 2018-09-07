@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 /**
  * @test
  * @modules java.xml
- * @library /lib/testlibrary
- * @build DescribeModuleTest jdk.testlibrary.*
+ * @library /test/lib
+ * @build DescribeModuleTest
  * @run testng DescribeModuleTest
  * @summary Basic test for java --describe-module
  */
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;

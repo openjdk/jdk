@@ -45,7 +45,7 @@ import java.util.*;
 import java.util.concurrent.Phaser;
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.JDKToolFinder;
 import jdk.testlibrary.Utils;
 

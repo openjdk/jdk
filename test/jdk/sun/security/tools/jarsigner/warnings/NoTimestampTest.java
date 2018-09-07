@@ -23,14 +23,14 @@
 
 import java.util.Date;
 import java.util.Locale;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
 
 /**
  * @test
  * @bug 8024302 8026037 8196213
  * @summary Checks warnings if -tsa and -tsacert options are not specified
- * @library /lib/testlibrary /test/lib ../
+ * @library /test/lib ../
  * @build jdk.test.lib.util.JarUtils
  * @run main NoTimestampTest
  */

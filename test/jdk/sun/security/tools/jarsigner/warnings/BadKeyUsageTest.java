@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,14 @@
  * questions.
  */
 
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
 
 /**
  * @test
  * @bug 8024302 8026037
  * @summary Test for badKeyUsage warning
- * @library /lib/testlibrary /test/lib ../
+ * @library /test/lib ../
  * @ignore until 8026393 is fixed
  * @build jdk.test.lib.util.JarUtils
  * @run main BadKeyUsageTest

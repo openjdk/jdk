@@ -1,6 +1,6 @@
 /*
  * Copyright 2014 Goldman Sachs.
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +24,11 @@
 /* @test
  * @bug 7142035
  * @summary Assert in java.lang.instrument agents during shutdown when classloading occurs after shutdown
- * @library /lib/testlibrary
+ * @library /test/lib
  *
  * @modules java.instrument
  *          java.management
- * @build jdk.testlibrary.* DummyAgent DummyClass TestDaemonThreadLauncher TestDaemonThread
+ * @build DummyAgent DummyClass TestDaemonThreadLauncher TestDaemonThread
  * @run shell ../MakeJAR3.sh DummyAgent
  * @run main/timeout=240 TestDaemonThreadLauncher
  *

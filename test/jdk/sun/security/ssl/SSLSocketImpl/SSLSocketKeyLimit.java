@@ -25,6 +25,7 @@
  * @test
  * @bug 8164879
  * @library /lib/testlibrary ../../
+ * @library /test/lib
  * @modules java.base/sun.security.util
  * @summary Verify AES/GCM's limits set in the jdk.tls.keyLimits property
  * @run main SSLSocketKeyLimit 0 server AES/GCM/NoPadding keyupdate 1000000
@@ -47,8 +48,6 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -57,9 +56,9 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.Utils;
-import jdk.testlibrary.OutputAnalyzer;
 import sun.security.util.HexDumpEncoder;
 
 public class SSLSocketKeyLimit {

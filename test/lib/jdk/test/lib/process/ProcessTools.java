@@ -23,7 +23,6 @@
 
 package jdk.test.lib.process;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -62,50 +61,6 @@ public final class ProcessTools {
     }
 
     private ProcessTools() {
-    }
-
-    /**
-     * Pumps stdout and stderr from running the process into a String.
-     *
-     * @param processBuilder ProcessBuilder to run.
-     * @return Output from process.
-     * @throws IOException If an I/O error occurs.
-     */
-    public static OutputBuffer getOutput(ProcessBuilder processBuilder) throws IOException {
-        return getOutput(privilegedStart(processBuilder));
-    }
-
-    /**
-     * Pumps stdout and stderr the running process into a String.
-     *
-     * @param process Process to pump.
-     * @return Output from process.
-     * @throws IOException If an I/O error occurs.
-     */
-    public static OutputBuffer getOutput(Process process) throws IOException {
-        ByteArrayOutputStream stderrBuffer = new ByteArrayOutputStream();
-        ByteArrayOutputStream stdoutBuffer = new ByteArrayOutputStream();
-        StreamPumper outPumper = new StreamPumper(process.getInputStream(), stdoutBuffer);
-        StreamPumper errPumper = new StreamPumper(process.getErrorStream(), stderrBuffer);
-        Thread outPumperThread = new Thread(outPumper);
-        Thread errPumperThread = new Thread(errPumper);
-
-        outPumperThread.setDaemon(true);
-        errPumperThread.setDaemon(true);
-
-        outPumperThread.start();
-        errPumperThread.start();
-
-        try {
-            process.waitFor();
-            outPumperThread.join();
-            errPumperThread.join();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
-        }
-
-        return new OutputBuffer(stdoutBuffer.toString(), stderrBuffer.toString());
     }
 
     /**
@@ -392,11 +347,29 @@ public final class ProcessTools {
      * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
      */
     public static OutputAnalyzer executeProcess(ProcessBuilder pb) throws Exception {
+        return executeProcess(pb, null);
+    }
+
+    /**
+     * Executes a process, pipe some text into its STDIN, waits for it
+     * to finish and returns the process output. The process will have exited
+     * before this method returns.
+     * @param pb The ProcessBuilder to execute.
+     * @param input The text to pipe into STDIN. Can be null.
+     * @return The {@linkplain OutputAnalyzer} instance wrapping the process.
+     */
+    public static OutputAnalyzer executeProcess(ProcessBuilder pb, String input) throws Exception {
         OutputAnalyzer output = null;
         Process p = null;
         boolean failed = false;
         try {
             p = privilegedStart(pb);
+            if (input != null) {
+               try (PrintStream ps = new PrintStream(p.getOutputStream())) {
+                   ps.print(input);
+               }
+            }
+
             output = new OutputAnalyzer(p);
             p.waitFor();
 

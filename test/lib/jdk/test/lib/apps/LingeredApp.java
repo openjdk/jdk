@@ -146,7 +146,7 @@ public class LingeredApp {
             throw new RuntimeException("Process is still alive. Can't get its output.");
         }
         if (output == null) {
-            output = new OutputBuffer(stdoutBuffer.toString(), stderrBuffer.toString());
+            output = OutputBuffer.of(stdoutBuffer.toString(), stderrBuffer.toString());
         }
         return output;
     }

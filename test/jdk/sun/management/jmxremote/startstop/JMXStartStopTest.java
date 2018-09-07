@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import javax.management.*;
 import javax.management.remote.*;
 import javax.net.ssl.SSLHandshakeException;
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.Utils;
 import jdk.internal.agent.Agent;
 import jdk.internal.agent.AgentConfigurationError;
@@ -58,6 +58,7 @@ import jdk.internal.agent.ConnectorAddressLink;
  *          achieves the desired results
  *
  * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.management
  *          java.rmi
  *          jdk.management.agent/jdk.internal.agent

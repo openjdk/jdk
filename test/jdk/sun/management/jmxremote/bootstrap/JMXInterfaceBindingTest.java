@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import jdk.test.lib.thread.ProcessThread;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * NOTE:
@@ -48,11 +48,10 @@ import jdk.testlibrary.ProcessTools;
  * @summary Test JMX agent host address binding. Same ports but different
  *          interfaces to bind to (using plain sockets and SSL sockets).
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.management.rmi
  *
- * @build jdk.testlibrary.* JMXAgentInterfaceBinding
+ * @build JMXAgentInterfaceBinding
  * @run main/timeout=5 JMXInterfaceBindingTest
  */
 public class JMXInterfaceBindingTest {

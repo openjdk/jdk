@@ -29,7 +29,6 @@
  * @library /test/lib /lib/testlibrary modules
  * @build IllegalAccessTest TryAccess JarUtils
  *        jdk.test.lib.compiler.CompilerUtils
- *        jdk.testlibrary.*
  * @build m/*
  * @run testng/othervm/timeout=180 IllegalAccessTest
  * @summary Basic test for java --illegal-access=$VALUE
@@ -45,8 +44,8 @@ import java.util.jar.Manifest;
 import java.util.stream.Stream;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

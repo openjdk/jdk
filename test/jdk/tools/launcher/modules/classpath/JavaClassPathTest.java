@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,24 +29,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.spi.ToolProvider;
+import java.util.stream.Stream;
 
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertTrue;
-import static jdk.testlibrary.ProcessTools.*;
+import static jdk.test.lib.process.ProcessTools.*;
 
 /**
  * @test
  * @bug 8168205
  * @summary Test the default class path if -Djava.class.path is set
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
- * @build jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
+ * @build jdk.test.lib.compiler.CompilerUtils
  * @run testng JavaClassPathTest
  */
 
@@ -197,28 +200,27 @@ public class JavaClassPathTest {
     }
 
     private OutputAnalyzer execute(List<String> options) throws Throwable {
-        ProcessBuilder pb = createJavaProcessBuilder(
-            options.stream()
-                   .map(this::autoQuote)
-                   .toArray(String[]::new)
+        // can't use ProcessTools.createJavaProcessBuilder as it always adds -cp
+        ProcessBuilder pb = new ProcessBuilder(
+                Stream.concat(Stream.of(JDKToolFinder.getTestJDKTool("java")),
+                              options.stream()
+                                     .map(this::autoQuote))
+                      .toArray(String[]::new)
         );
 
         Map<String,String> env = pb.environment();
         // remove CLASSPATH environment variable
-        String value = env.remove("CLASSPATH");
+        env.remove("CLASSPATH");
         return executeCommand(pb)
                     .outputTo(System.out)
                     .errorTo(System.out);
     }
 
-    private static final boolean IS_WINDOWS
-        = System.getProperty("os.name").startsWith("Windows");
-
     /*
      * Autoquote empty string argument on Windows
      */
     private String autoQuote(String arg) {
-        if (IS_WINDOWS && arg.isEmpty()) {
+        if (Platform.isWindows() && arg.isEmpty()) {
             return "\"\"";
         }
         return arg;

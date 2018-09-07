@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
  * @bug 6857795 8075299
  * @summary Checks if kinit uses both krb5 conf file and system properties
  * @requires os.family == "windows"
- * @library /lib/testlibrary
+ * @library /test/lib
  * @library /sun/security/krb5/auto
  * @run main/othervm KinitConfPlusProps
  */

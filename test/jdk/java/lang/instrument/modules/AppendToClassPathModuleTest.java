@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,18 @@
 /**
  * @test
  * @bug 8169909
- * @library src /lib/testlibrary
+ * @library src /test/lib
  * @build test/*
  * @run shell AppendToClassPathModuleTest.sh
  * @run main AppendToClassPathModuleTest
  */
 
+import jdk.test.lib.JDKToolFinder;
+
 import java.util.Map;
-import static jdk.testlibrary.ProcessTools.*;
+import java.util.stream.Stream;
+
+import static jdk.test.lib.process.ProcessTools.*;
 
 /**
  * Launch a modular test with no class path and no CLASSPATH set.
@@ -41,14 +45,17 @@ import static jdk.testlibrary.ProcessTools.*;
 public class AppendToClassPathModuleTest {
     public static void main(String... args) throws Throwable {
         String modulepath = System.getProperty("test.module.path");
-        ProcessBuilder pb =
-            createJavaProcessBuilder("-javaagent:Agent.jar",
-                                     "--module-path", modulepath,
-                                     "-m", "test/jdk.test.Main");
 
-        // remove CLASSPATH environment variable
+        // can't use ProcessTools.createJavaProcessBuilder as it always adds -cp
+        ProcessBuilder pb = new ProcessBuilder(
+                JDKToolFinder.getTestJDKTool("java"),
+                "-javaagent:Agent.jar",
+                "--module-path", modulepath,
+                "-m", "test/jdk.test.Main");
+
         Map<String,String> env = pb.environment();
-        String value = env.remove("CLASSPATH");
+        // remove CLASSPATH environment variable
+        env.remove("CLASSPATH");
 
         int exitCode = executeCommand(pb).getExitValue();
         if (exitCode != 0) {

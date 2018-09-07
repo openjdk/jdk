@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build AddReadsTest JarUtils jdk.testlibrary.*
+ * @build AddReadsTest JarUtils
  *        jdk.test.lib.compiler.CompilerUtils
  * @run testng AddReadsTest
  * @summary Basic tests for java --add-reads
@@ -35,8 +35,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.testlibrary.OutputAnalyzer;
-import static jdk.testlibrary.ProcessTools.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

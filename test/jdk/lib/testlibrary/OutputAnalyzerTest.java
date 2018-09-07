@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,15 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.testlibrary;
 
 /*
  * @test
  * @summary Test the OutputAnalyzer utility class
  * @modules java.management
- * @build jdk.testlibrary.*
- * @run main jdk.testlibrary.OutputAnalyzerTest
+ * @library /test/lib
+ * @run main OutputAnalyzerTest
  */
+
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class OutputAnalyzerTest {
 
@@ -150,17 +151,23 @@ public class OutputAnalyzerTest {
             // expected
         }
 
-        if (output.shouldMatchByLine(byLinePattern) != 1) {
-            throw new Exception("shouldMatchByLine() should find one line");
+        try {
+            output.shouldMatchByLine(byLinePattern);
+        } catch (RuntimeException e) {
+            throw new Exception("shouldMatchByLine() failed", e);
         }
+
         try {
             output.shouldMatchByLine(nonExistingPattern);
             throw new Exception("shouldMatchByLine() failed to throw exception");
         } catch (RuntimeException e) {
             // expected
         }
-        if (output.stdoutShouldMatchByLine(stdoutByLinePattern) != 1) {
-            throw new Exception("stdoutShouldMatchByLine() should find one line");
+
+        try {
+            output.stdoutShouldMatchByLine(stdoutByLinePattern);
+        } catch (RuntimeException e) {
+            throw new Exception("stdoutShouldMatchByLine() failed", e);
         }
 
         // Should not match

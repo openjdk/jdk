@@ -46,7 +46,7 @@ import jdk.testlibrary.Utils;
  *          jdk.attach
  *          jdk.jartool/sun.tools.jar
  *
- * @run build Application SimpleProvider jdk.testlibrary.*
+ * @run build jdk.testlibrary.* Application SimpleProvider jdk.testlibrary.*
  * @run main/timeout=300 StartManagementAgent
  */
 

@@ -39,7 +39,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.Asserts;
 
 public class AddReads {

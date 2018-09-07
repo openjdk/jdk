@@ -23,6 +23,8 @@
 
 package jdk.test.lib.process;
 
+import jdk.test.lib.Asserts;
+
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
@@ -33,10 +35,7 @@ import java.util.regex.Pattern;
 
 public final class OutputAnalyzer {
 
-    private final String stdout;
-    private final String stderr;
-    private final int exitValue;
-
+    private final OutputBuffer buffer;
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
      * value from a Process
@@ -45,10 +44,7 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process) throws IOException {
-        OutputBuffer output = ProcessTools.getOutput(process);
-        exitValue = process.exitValue();
-        this.stdout = output.getStdout();
-        this.stderr = output.getStderr();
+        buffer = OutputBuffer.of(process);
     }
 
     /**
@@ -57,7 +53,7 @@ public final class OutputAnalyzer {
      * @param buf String buffer to analyze
      */
     public OutputAnalyzer(String buf) {
-        this(buf, buf);
+        buffer = OutputBuffer.of(buf, buf);
     }
 
     /**
@@ -67,9 +63,7 @@ public final class OutputAnalyzer {
      * @param stderr stderr buffer to analyze
      */
     public OutputAnalyzer(String stdout, String stderr) {
-        this.stdout = stdout;
-        this.stderr = stderr;
-        exitValue = -1;
+        buffer = OutputBuffer.of(stdout, stderr);
     }
 
     /**
@@ -78,11 +72,12 @@ public final class OutputAnalyzer {
      * @throws RuntimeException
      *             If stdout was not empty
      */
-    public void stdoutShouldBeEmpty() {
+    public OutputAnalyzer stdoutShouldBeEmpty() {
         if (!getStdout().isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stdout was not empty");
         }
+        return this;
     }
 
     /**
@@ -91,11 +86,12 @@ public final class OutputAnalyzer {
      * @throws RuntimeException
      *             If stderr was not empty
      */
-    public void stderrShouldBeEmpty() {
+    public OutputAnalyzer stderrShouldBeEmpty() {
         if (!getStderr().isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
         }
+        return this;
     }
 
     /**
@@ -105,11 +101,12 @@ public final class OutputAnalyzer {
      * @throws RuntimeException
      *             If stderr was not empty
      */
-    public void stderrShouldBeEmptyIgnoreVMWarnings() {
+    public OutputAnalyzer stderrShouldBeEmptyIgnoreVMWarnings() {
         if (!getStderr().replaceAll(jvmwarningmsg + "\\R", "").isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
         }
+        return this;
     }
 
     /**
@@ -118,11 +115,12 @@ public final class OutputAnalyzer {
      * @throws RuntimeException
      *             If stdout was empty
      */
-    public void stdoutShouldNotBeEmpty() {
+    public OutputAnalyzer stdoutShouldNotBeEmpty() {
         if (getStdout().isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stdout was empty");
         }
+        return this;
     }
 
     /**
@@ -131,11 +129,12 @@ public final class OutputAnalyzer {
      * @throws RuntimeException
      *             If stderr was empty
      */
-    public void stderrShouldNotBeEmpty() {
+    public OutputAnalyzer stderrShouldNotBeEmpty() {
         if (getStderr().isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was empty");
         }
+        return this;
     }
 
     /**
@@ -145,6 +144,8 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the string was not found
      */
     public OutputAnalyzer shouldContain(String expectedString) {
+        String stdout = getStdout();
+        String stderr = getStderr();
         if (!stdout.contains(expectedString) && !stderr.contains(expectedString)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + expectedString + "' missing from stdout/stderr \n");
@@ -159,6 +160,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the string was not found
      */
     public OutputAnalyzer stdoutShouldContain(String expectedString) {
+        String stdout = getStdout();
         if (!stdout.contains(expectedString)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + expectedString + "' missing from stdout \n");
@@ -173,6 +175,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the string was not found
      */
     public OutputAnalyzer stderrShouldContain(String expectedString) {
+        String stderr = getStderr();
         if (!stderr.contains(expectedString)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + expectedString + "' missing from stderr \n");
@@ -183,10 +186,12 @@ public final class OutputAnalyzer {
     /**
      * Verify that the stdout and stderr contents of output buffer does not contain the string
      *
-     * @param expectedString String that the buffer should not contain
+     * @param notExpectedString String that the buffer should not contain
      * @throws RuntimeException If the string was found
      */
     public OutputAnalyzer shouldNotContain(String notExpectedString) {
+        String stdout = getStdout();
+        String stderr = getStderr();
         if (stdout.contains(notExpectedString)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + notExpectedString + "' found in stdout \n");
@@ -204,6 +209,8 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the stdout and stderr are not empty
      */
     public OutputAnalyzer shouldBeEmpty() {
+        String stdout = getStdout();
+        String stderr = getStderr();
         if (!stdout.isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stdout was not empty");
@@ -218,10 +225,11 @@ public final class OutputAnalyzer {
     /**
      * Verify that the stdout contents of output buffer does not contain the string
      *
-     * @param expectedString String that the buffer should not contain
+     * @param notExpectedString String that the buffer should not contain
      * @throws RuntimeException If the string was found
      */
     public OutputAnalyzer stdoutShouldNotContain(String notExpectedString) {
+        String stdout = getStdout();
         if (stdout.contains(notExpectedString)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + notExpectedString + "' found in stdout \n");
@@ -232,10 +240,11 @@ public final class OutputAnalyzer {
     /**
      * Verify that the stderr contents of output buffer does not contain the string
      *
-     * @param expectedString String that the buffer should not contain
+     * @param notExpectedString String that the buffer should not contain
      * @throws RuntimeException If the string was found
      */
     public OutputAnalyzer stderrShouldNotContain(String notExpectedString) {
+        String stderr = getStderr();
         if (stderr.contains(notExpectedString)) {
             reportDiagnosticSummary();
             throw new RuntimeException("'" + notExpectedString + "' found in stderr \n");
@@ -247,15 +256,18 @@ public final class OutputAnalyzer {
      * Verify that the stdout and stderr contents of output buffer matches
      * the pattern
      *
-     * @param pattern
+     * @param regexp
      * @throws RuntimeException If the pattern was not found
      */
-    public OutputAnalyzer shouldMatch(String pattern) {
-        Matcher stdoutMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
-        Matcher stderrMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+    public OutputAnalyzer shouldMatch(String regexp) {
+        String stdout = getStdout();
+        String stderr = getStderr();
+        Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
+        Matcher stdoutMatcher = pattern.matcher(stdout);
+        Matcher stderrMatcher = pattern.matcher(stderr);
         if (!stdoutMatcher.find() && !stderrMatcher.find()) {
             reportDiagnosticSummary();
-            throw new RuntimeException("'" + pattern
+            throw new RuntimeException("'" + regexp
                   + "' missing from stdout/stderr \n");
         }
         return this;
@@ -265,14 +277,15 @@ public final class OutputAnalyzer {
      * Verify that the stdout contents of output buffer matches the
      * pattern
      *
-     * @param pattern
+     * @param regexp
      * @throws RuntimeException If the pattern was not found
      */
-    public OutputAnalyzer stdoutShouldMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+    public OutputAnalyzer stdoutShouldMatch(String regexp) {
+        String stdout = getStdout();
+        Matcher matcher = Pattern.compile(regexp, Pattern.MULTILINE).matcher(stdout);
         if (!matcher.find()) {
             reportDiagnosticSummary();
-            throw new RuntimeException("'" + pattern
+            throw new RuntimeException("'" + regexp
                   + "' missing from stdout \n");
         }
         return this;
@@ -286,7 +299,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the pattern was not found
      */
     public OutputAnalyzer stderrShouldMatch(String pattern) {
-
+        String stderr = getStderr();
         Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
         if (!matcher.find()) {
             reportDiagnosticSummary();
@@ -300,22 +313,27 @@ public final class OutputAnalyzer {
      * Verify that the stdout and stderr contents of output buffer does not
      * match the pattern
      *
-     * @param pattern
+     * @param regexp
      * @throws RuntimeException If the pattern was found
      */
-    public OutputAnalyzer shouldNotMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+    public OutputAnalyzer shouldNotMatch(String regexp) {
+        String stdout = getStdout();
+        Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
+        Matcher matcher = pattern.matcher(stdout);
         if (matcher.find()) {
             reportDiagnosticSummary();
-            throw new RuntimeException("'" + pattern
+            throw new RuntimeException("'" + regexp
                     + "' found in stdout: '" + matcher.group() + "' \n");
         }
-        matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+
+        String stderr = getStderr();
+        matcher = pattern.matcher(stderr);
         if (matcher.find()) {
             reportDiagnosticSummary();
-            throw new RuntimeException("'" + pattern
+            throw new RuntimeException("'" + regexp
                     + "' found in stderr: '" + matcher.group() + "' \n");
         }
+
         return this;
     }
 
@@ -323,14 +341,15 @@ public final class OutputAnalyzer {
      * Verify that the stdout contents of output buffer does not match the
      * pattern
      *
-     * @param pattern
+     * @param regexp
      * @throws RuntimeException If the pattern was found
      */
-    public OutputAnalyzer stdoutShouldNotMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+    public OutputAnalyzer stdoutShouldNotMatch(String regexp) {
+        String stdout = getStdout();
+        Matcher matcher = Pattern.compile(regexp, Pattern.MULTILINE).matcher(stdout);
         if (matcher.find()) {
             reportDiagnosticSummary();
-            throw new RuntimeException("'" + pattern
+            throw new RuntimeException("'" + regexp
                     + "' found in stdout \n");
         }
         return this;
@@ -340,14 +359,15 @@ public final class OutputAnalyzer {
      * Verify that the stderr contents of output buffer does not match the
      * pattern
      *
-     * @param pattern
+     * @param regexp
      * @throws RuntimeException If the pattern was found
      */
-    public OutputAnalyzer stderrShouldNotMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+    public OutputAnalyzer stderrShouldNotMatch(String regexp) {
+        String stderr = getStderr();
+        Matcher matcher = Pattern.compile(regexp, Pattern.MULTILINE).matcher(stderr);
         if (matcher.find()) {
             reportDiagnosticSummary();
-            throw new RuntimeException("'" + pattern
+            throw new RuntimeException("'" + regexp
                     + "' found in stderr \n");
         }
         return this;
@@ -357,16 +377,19 @@ public final class OutputAnalyzer {
      * Get the captured group of the first string matching the pattern.
      * stderr is searched before stdout.
      *
-     * @param pattern The multi-line pattern to match
+     * @param regexp The multi-line pattern to match
      * @param group The group to capture
      * @return The matched string or null if no match was found
      */
-    public String firstMatch(String pattern, int group) {
-        Matcher stderrMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
-        Matcher stdoutMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+    public String firstMatch(String regexp, int group) {
+        Pattern pattern = Pattern.compile(regexp, Pattern.MULTILINE);
+        String stderr = getStderr();
+        Matcher stderrMatcher = pattern.matcher(stderr);
         if (stderrMatcher.find()) {
             return stderrMatcher.group(group);
         }
+        String stdout = getStdout();
+        Matcher stdoutMatcher = pattern.matcher(stdout);
         if (stdoutMatcher.find()) {
             return stdoutMatcher.group(group);
         }
@@ -425,8 +448,8 @@ public final class OutputAnalyzer {
      */
     public void reportDiagnosticSummary() {
         String msg =
-            " stdout: [" + stdout + "];\n" +
-            " stderr: [" + stderr + "]\n" +
+            " stdout: [" + getStdout() + "];\n" +
+            " stderr: [" + getStderr() + "]\n" +
             " exitValue = " + getExitValue() + "\n";
 
         System.err.println(msg);
@@ -458,7 +481,7 @@ public final class OutputAnalyzer {
      * @return Content of the output buffer
      */
     public String getOutput() {
-        return stdout + stderr;
+        return getStdout() + getStderr();
     }
 
     /**
@@ -467,7 +490,7 @@ public final class OutputAnalyzer {
      * @return Content of the stdout buffer
      */
     public String getStdout() {
-        return stdout;
+        return buffer.getStdout();
     }
 
     /**
@@ -476,7 +499,7 @@ public final class OutputAnalyzer {
      * @return Content of the stderr buffer
      */
     public String getStderr() {
-        return stderr;
+        return buffer.getStderr();
     }
 
     /**
@@ -485,7 +508,7 @@ public final class OutputAnalyzer {
      * @return Process exit value
      */
     public int getExitValue() {
-        return exitValue;
+        return buffer.getExitValue();
     }
 
     /**
@@ -499,7 +522,7 @@ public final class OutputAnalyzer {
     }
 
     private List<String> asLines(String buffer) {
-        return Arrays.asList(buffer.split("(\\r\\n|\\n|\\r)"));
+        return Arrays.asList(buffer.split("\\R"));
     }
 
 
@@ -512,6 +535,8 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the stdout and stderr are not empty
      */
     public OutputAnalyzer shouldBeEmptyIgnoreVMWarnings() {
+        String stdout = getStdout();
+        String stderr = getStderr();
         if (!stdout.isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stdout was not empty");
@@ -531,7 +556,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the pattern was not found
      */
     public OutputAnalyzer stderrShouldMatchIgnoreVMWarnings(String pattern) {
-        String stderr = this.stderr.replaceAll(jvmwarningmsg + "\\R", "");
+        String stderr = getStderr().replaceAll(jvmwarningmsg + "\\R", "");
         Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
         if (!matcher.find()) {
             reportDiagnosticSummary();
@@ -548,10 +573,118 @@ public final class OutputAnalyzer {
      * @return Contents of the output buffer as list of strings
      */
     public List<String> asLinesWithoutVMWarnings() {
-        return Arrays.asList(getOutput().split("\\R"))
-                .stream()
-                .filter(Pattern.compile(jvmwarningmsg).asPredicate().negate())
-                .collect(Collectors.toList());
+        return Arrays.stream(getOutput().split("\\R"))
+                     .filter(Pattern.compile(jvmwarningmsg).asPredicate().negate())
+                     .collect(Collectors.toList());
+    }
+
+    /**
+     * @see #shouldMatchByLine(String, String, String)
+     */
+    public OutputAnalyzer shouldMatchByLine(String pattern) {
+        return shouldMatchByLine(null, null, pattern);
+    }
+
+    /**
+     * @see #stdoutShouldMatchByLine(String, String, String)
+     */
+    public OutputAnalyzer stdoutShouldMatchByLine(String pattern) {
+        return stdoutShouldMatchByLine(null, null, pattern);
+    }
+
+    /**
+     * @see #shouldMatchByLine(String, String, String)
+     */
+    public OutputAnalyzer shouldMatchByLineFrom(String from, String pattern) {
+        return shouldMatchByLine(from, null, pattern);
+    }
+
+    /**
+     * @see #shouldMatchByLine(String, String, String)
+     */
+    public OutputAnalyzer shouldMatchByLineTo(String to, String pattern) {
+        return shouldMatchByLine(null, to, pattern);
+    }
+
+    /**
+     * Verify that the stdout and stderr contents of output buffer match the
+     * {@code pattern} line by line. The whole output could be matched or
+     * just a subset of it.
+     *
+     * @param from
+     *            The line from where output will be matched.
+     *            Set {@code from} to null for matching from the first line.
+     * @param to
+     *            The line until where output will be matched.
+     *            Set {@code to} to null for matching until the last line.
+     * @param pattern
+     *            Matching pattern
+     */
+    public OutputAnalyzer shouldMatchByLine(String from, String to, String pattern) {
+        return shouldMatchByLine(getOutput(), from, to, pattern);
+    }
+
+    /**
+     * Verify that the stdout contents of output buffer matches the
+     * {@code pattern} line by line. The whole stdout could be matched or
+     * just a subset of it.
+     *
+     * @param from
+     *            The line from where stdout will be matched.
+     *            Set {@code from} to null for matching from the first line.
+     * @param to
+     *            The line until where stdout will be matched.
+     *            Set {@code to} to null for matching until the last line.
+     * @param pattern
+     *            Matching pattern
+     */
+    public OutputAnalyzer stdoutShouldMatchByLine(String from, String to, String pattern) {
+        return shouldMatchByLine(getStdout(), from, to, pattern);
+    }
+
+    private OutputAnalyzer shouldMatchByLine(String buffer, String from, String to, String pattern) {
+        List<String> lines = asLines(buffer);
+
+        int fromIndex = 0;
+        if (from != null) {
+            fromIndex = indexOf(lines, from);
+            Asserts.assertGreaterThan(fromIndex, -1,
+                    "The line/pattern '" + from + "' from where the output should match can not be found");
+        }
+
+        int toIndex = lines.size();
+        if (to != null) {
+            toIndex = indexOf(lines, to);
+            Asserts.assertGreaterThan(toIndex, -1,
+                    "The line/pattern '" + to + "' until where the output should match can not be found");
+        }
+
+        List<String> subList = lines.subList(fromIndex, toIndex);
+        Asserts.assertFalse(subList.isEmpty(), "There are no lines to check");
+
+        subList.stream()
+               .filter(Pattern.compile(pattern).asPredicate().negate())
+               .findAny()
+               .ifPresent(line -> Asserts.assertTrue(false,
+                       "The line '" + line + "' does not match pattern '" + pattern + "'"));
+
+        return this;
+    }
+
+    /**
+     * Check if there is a line matching {@code regexp} and return its index
+     *
+     * @param regexp Matching pattern
+     * @return Index of first matching line
+     */
+    private int indexOf(List<String> lines, String regexp) {
+        Pattern pattern = Pattern.compile(regexp);
+        for (int i = 0; i < lines.size(); i++) {
+            if (pattern.matcher(lines.get(i)).matches()) {
+                return i;
+            }
+        }
+        return -1;
     }
 
 }

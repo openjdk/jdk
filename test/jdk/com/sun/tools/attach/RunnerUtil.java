@@ -27,7 +27,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 
 import jdk.test.lib.thread.ProcessThread;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.Utils;
 
 /*

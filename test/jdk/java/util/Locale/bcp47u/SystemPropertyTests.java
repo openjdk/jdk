@@ -23,15 +23,15 @@
 
 /*
  * @test
- * @library /lib/testlibrary
+ * @library /test/lib
  * @bug 8189134
  * @summary Tests the system properties
  * @modules jdk.localedata
- * @build DefaultLocaleTest jdk.testlibrary.*
+ * @build DefaultLocaleTest
  * @run testng/othervm SystemPropertyTests
  */
 
-import static jdk.testlibrary.ProcessTools.executeTestJava;
+import static jdk.test.lib.process.ProcessTools.executeTestJava;
 import static org.testng.Assert.assertTrue;
 
 import java.util.Locale;

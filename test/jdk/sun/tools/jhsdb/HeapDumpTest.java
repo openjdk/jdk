@@ -38,12 +38,13 @@ import java.io.IOException;
 import java.io.File;
 import java.util.List;
 import java.util.Arrays;
-import jdk.testlibrary.JDKToolLauncher;
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
 import jdk.test.lib.hprof.parser.HprofReader;
+import jdk.testlibrary.JDKToolLauncher;
 
 public class HeapDumpTest {
 

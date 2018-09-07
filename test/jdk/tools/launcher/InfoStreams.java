@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,14 @@
 
 /**
  * @test
- * @library /lib/testlibrary
- * @build InfoStreams jdk.testlibrary.ProcessTools
+ * @library /test/lib
+ * @build InfoStreams jdk.test.lib.process.ProcessTools
  * @run main InfoStreams
  * @summary Test that informational options use the correct streams
  */
 
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.OutputAnalyzer;
-
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class InfoStreams {
 

@@ -23,14 +23,13 @@
 
 import static jdk.testlibrary.Asserts.*;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.testlibrary.Utils;
 
 /*
@@ -40,6 +39,7 @@ import jdk.testlibrary.Utils;
  * requests to a specific JVM process.
  *
  * @library /lib/testlibrary
+ * @library /test/lib
  *
  * @build jdk.testlibrary.*
  * @run main TestJcmdDefaults
@@ -90,12 +90,9 @@ public class TestJcmdDefaults {
      * 24428 com.sun.javatest.regtest.MainWrapper /tmp/jtreg/jtreg-workdir/classes/sun/tools/jcmd/TestJcmdDefaults.jta
      *
      * @param output The generated output from the jcmd.
-     * @throws Exception
      */
-    private static void matchListedProcesses(OutputAnalyzer output) throws Exception {
-        int matchedCount = output.shouldMatchByLine(JCMD_LIST_REGEX);
-        assertGreaterThan(matchedCount , 0,
-                "Found no lines matching pattern: " + JCMD_LIST_REGEX);
+    private static void matchListedProcesses(OutputAnalyzer output) {
+        output.shouldMatchByLine(JCMD_LIST_REGEX);
     }
 
     private static void verifyOutputAgainstFile(OutputAnalyzer output) throws IOException {

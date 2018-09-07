@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /**
  * @test
  * @modules jdk.jartool
- * @library /lib/testlibrary
- * @build SetDefaultProvider TestProvider m/* jdk.testlibrary.ProcessTools
+ * @library /test/lib
+ * @build SetDefaultProvider TestProvider m/* jdk.test.lib.process.ProcessTools
  * @run testng/othervm SetDefaultProvider
  * @summary Runs tests with -Djava.nio.file.spi.DefaultFileSystemProvider set on
  *          the command line to override the default file system provider
@@ -38,7 +38,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.spi.ToolProvider;
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

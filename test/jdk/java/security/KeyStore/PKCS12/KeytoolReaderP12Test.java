@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
 import java.util.Base64;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import static java.lang.System.out;
 import java.nio.file.Paths;
 import java.util.List;
@@ -37,6 +37,7 @@ import java.util.List;
  * @summary Test for PKCS12 keystore list , export commands. Refer README for
  * keystore files information
  * @library /lib/testlibrary ../
+ * @library /test/lib
  * @run main KeytoolReaderP12Test
  */
 public class KeytoolReaderP12Test {

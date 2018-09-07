@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,9 +29,8 @@
  * @modules jdk.jdi
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @library /lib/testlibrary
+ * @library /test/lib
  * @library ..
- * @build jdk.testlibrary.*
  * @build TestScaffold VMConnection TargetListener TargetAdapter
  * @build CDSJDITest
  * @run compile -g ../BreakpointTest.java

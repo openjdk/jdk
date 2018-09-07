@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
  * @test
  * @bug 8168836
  * @summary Basic argument validation for --add-exports
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
  * @build jdk.test.lib.compiler.ModuleInfoMaker
  *        jdk.test.lib.compiler.CompilerUtils
- *        jdk.testlibrary.*
  * @run testng AddExportsTestWarningError
  */
 
@@ -42,8 +41,8 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 import jdk.test.lib.compiler.ModuleInfoMaker;
-import jdk.testlibrary.OutputAnalyzer;
-import static jdk.testlibrary.ProcessTools.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

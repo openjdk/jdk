@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 
 import jdk.test.lib.util.FileUtils;
 import jdk.test.lib.compiler.CompilerUtils;
-import static jdk.testlibrary.ProcessTools.*;
+import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -41,12 +41,12 @@ import static org.testng.Assert.assertTrue;
  * @test
  * @bug 8087335
  * @summary Tests for Class.forName(Module,String)
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
  *        jdk.test.lib.compiler.CompilerUtils
- *        jdk.testlibrary.ProcessTools
+ *        jdk.test.lib.process.ProcessTools
  *        TestDriver TestMain TestLayer
  * @run testng TestDriver
  */

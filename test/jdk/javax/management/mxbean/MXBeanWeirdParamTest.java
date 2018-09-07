@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @author Olivier Lagneau
  * @modules java.management.rmi
  * @library /lib/testlibrary
+ * @library /test/lib
  * @compile Basic.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD MXBeanWeirdParamTest
  */
@@ -58,7 +59,7 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.JDKToolFinder;
 
 public class MXBeanWeirdParamTest {

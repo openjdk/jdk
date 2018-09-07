@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
- * @build AddExportsTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
+ * @build AddExportsTest jdk.test.lib.compiler.CompilerUtils
  * @run testng AddExportsTest
  * @summary Basic tests for java --add-exports
  */
@@ -35,8 +35,8 @@ import java.nio.file.Paths;
 import java.util.stream.Stream;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.testlibrary.OutputAnalyzer;
-import static jdk.testlibrary.ProcessTools.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

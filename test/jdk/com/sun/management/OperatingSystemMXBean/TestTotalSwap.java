@@ -28,10 +28,8 @@
  * @author  Steve Bohne
  * @author  Jaroslav Bachorik
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build TestTotalSwap jdk.testlibrary.*
  * @run main TestTotalSwap
  */
 
@@ -57,8 +55,8 @@ import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.*;
 
 import jdk.test.lib.Platform;
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestTotalSwap {
 

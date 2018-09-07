@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import static jdk.testlibrary.Asserts.assertGreaterThan;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
@@ -38,9 +38,10 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * @bug 6942989
  * @summary Check for WeakReference leak in Logger and anonymous Logger objects
  * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.attach/sun.tools.attach
  *          java.logging
- * @build jdk.testlibrary.ProcessTools
+ * @build jdk.test.lib.process.ProcessTools
  * @run main/othervm -Djdk.attach.allowAttachSelf TestLoggerWeakRefLeak Logger
  * @run main/othervm -Djdk.attach.allowAttachSelf TestLoggerWeakRefLeak AnonymousLogger
  */

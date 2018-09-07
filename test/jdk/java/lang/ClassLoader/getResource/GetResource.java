@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
  * @test
  * @bug 6760902
  * @library /lib/testlibrary
- * @build jdk.testlibrary.ProcessTools
+ * @library /test/lib
+ * @build jdk.test.lib.process.ProcessTools
  * @run testng GetResource
  * @summary Empty path on bootclasspath is not default to current working
  *          directory for both class lookup and resource lookup whereas
@@ -45,7 +46,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.testlibrary.JDKToolFinder;
-import static jdk.testlibrary.ProcessTools.*;
+import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;

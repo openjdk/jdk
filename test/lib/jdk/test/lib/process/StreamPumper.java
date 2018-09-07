@@ -41,14 +41,14 @@ public final class StreamPumper implements Runnable {
     /**
      * Pump will be called by the StreamPumper to process the incoming data
      */
-    abstract public static class Pump {
+    public abstract static class Pump {
         abstract void register(StreamPumper d);
     }
 
     /**
      * OutputStream -> Pump adapter
      */
-    final public static class StreamPump extends Pump {
+    public final static class StreamPump extends Pump {
         private final OutputStream out;
         public StreamPump(OutputStream out) {
             this.out = out;
@@ -63,13 +63,13 @@ public final class StreamPumper implements Runnable {
     /**
      * Used to process the incoming data line-by-line
      */
-    abstract public static class LinePump extends Pump {
+    public abstract static class LinePump extends Pump {
         @Override
         final void register(StreamPumper sp) {
             sp.addLineProcessor(this);
         }
 
-        abstract protected void processLine(String line);
+        protected abstract void processLine(String line);
     }
 
     private final InputStream in;
@@ -77,7 +77,6 @@ public final class StreamPumper implements Runnable {
     private final Set<LinePump> linePumps = new HashSet<>();
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
-    private final FutureTask<Void> processingTask = new FutureTask<>(this, null);
 
     public StreamPumper(InputStream in) {
         this.in = in;
@@ -108,7 +107,7 @@ public final class StreamPumper implements Runnable {
             int linelen = 0;
 
             while ((len = is.read(buf)) > 0 && !Thread.interrupted()) {
-                for(OutputStream out : outStreams) {
+                for (OutputStream out : outStreams) {
                     out.write(buf, 0, len);
                 }
                 if (!linePumps.isEmpty()) {
@@ -125,9 +124,7 @@ public final class StreamPumper implements Runnable {
                             if (linelen > 0) {
                                 lineBos.flush();
                                 final String line = lineBos.toString();
-                                linePumps.stream().forEach((lp) -> {
-                                    lp.processLine(line);
-                                });
+                                linePumps.forEach((lp) -> lp.processLine(line));
                                 lineBos.reset();
                                 linelen = 0;
                             }
@@ -149,7 +146,7 @@ public final class StreamPumper implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            for(OutputStream out : outStreams) {
+            for (OutputStream out : outStreams) {
                 try {
                     out.flush();
                 } catch (IOException e) {}
@@ -168,30 +165,26 @@ public final class StreamPumper implements Runnable {
         linePumps.add(lp);
     }
 
-    final public StreamPumper addPump(Pump ... pump) {
+    public final StreamPumper addPump(Pump ... pump) {
         if (processing.get()) {
             throw new IllegalStateException("Can not modify pumper while " +
                                             "processing is in progress");
         }
-        for(Pump p : pump) {
+        for (Pump p : pump) {
             p.register(this);
         }
         return this;
     }
 
-    final public Future<Void> process() {
+    public final Future<Void> process() {
         if (!processing.compareAndSet(false, true)) {
             throw new IllegalStateException("Can not re-run the processing");
         }
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                processingTask.run();
-            }
-        });
+        FutureTask<Void> result = new FutureTask<>(this, null);
+        Thread t = new Thread(result);
         t.setDaemon(true);
         t.start();
 
-        return processingTask;
+        return result;
     }
 }
