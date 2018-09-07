@@ -3378,26 +3378,18 @@ encode %{
     // Load markOop from object into displaced_header.
     __ ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
 
-    // Always do locking in runtime.
-    if (EmitSync & 0x01) {
-      __ cmp(oop, zr);
-      return;
-    }
-
     if (UseBiasedLocking && !UseOptoBiasInlining) {
       __ biased_locking_enter(box, oop, disp_hdr, tmp, true, cont);
     }
 
     // Handle existing monitor
-    if ((EmitSync & 0x02) == 0) {
-      // we can use AArch64's bit test and branch here but
-      // markoopDesc does not define a bit index just the bit value
-      // so assert in case the bit pos changes
-#     define __monitor_value_log2 1
-      assert(markOopDesc::monitor_value == (1 << __monitor_value_log2), "incorrect bit position");
-      __ tbnz(disp_hdr, __monitor_value_log2, object_has_monitor);
-#     undef __monitor_value_log2
-    }
+    // we can use AArch64's bit test and branch here but
+    // markoopDesc does not define a bit index just the bit value
+    // so assert in case the bit pos changes
+#   define __monitor_value_log2 1
+    assert(markOopDesc::monitor_value == (1 << __monitor_value_log2), "incorrect bit position");
+    __ tbnz(disp_hdr, __monitor_value_log2, object_has_monitor);
+#   undef __monitor_value_log2
 
     // Set displaced_header to be (markOop of object | UNLOCK_VALUE).
     __ orr(disp_hdr, disp_hdr, markOopDesc::unlocked_value);
@@ -3455,62 +3447,61 @@ encode %{
     __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
 
     // Handle existing monitor.
-    if ((EmitSync & 0x02) == 0) {
-      __ b(cont);
+    __ b(cont);
 
-      __ bind(object_has_monitor);
-      // The object's monitor m is unlocked iff m->owner == NULL,
-      // otherwise m->owner may contain a thread or a stack address.
-      //
-      // Try to CAS m->owner from NULL to current thread.
-      __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markOopDesc::monitor_value));
-      __ mov(disp_hdr, zr);
+    __ bind(object_has_monitor);
+    // The object's monitor m is unlocked iff m->owner == NULL,
+    // otherwise m->owner may contain a thread or a stack address.
+    //
+    // Try to CAS m->owner from NULL to current thread.
+    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markOopDesc::monitor_value));
+    __ mov(disp_hdr, zr);
 
-      if (UseLSE) {
-        __ mov(rscratch1, disp_hdr);
-        __ casal(Assembler::xword, rscratch1, rthread, tmp);
-        __ cmp(rscratch1, disp_hdr);
-      } else {
-        Label retry_load, fail;
-        if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH))
-          __ prfm(Address(tmp), PSTL1STRM);
-        __ bind(retry_load);
-        __ ldaxr(rscratch1, tmp);
-        __ cmp(disp_hdr, rscratch1);
-        __ br(Assembler::NE, fail);
-        // use stlxr to ensure update is immediately visible
-        __ stlxr(rscratch1, rthread, tmp);
-        __ cbnzw(rscratch1, retry_load);
-        __ bind(fail);
+    if (UseLSE) {
+      __ mov(rscratch1, disp_hdr);
+      __ casal(Assembler::xword, rscratch1, rthread, tmp);
+      __ cmp(rscratch1, disp_hdr);
+    } else {
+      Label retry_load, fail;
+      if ((VM_Version::features() & VM_Version::CPU_STXR_PREFETCH)) {
+        __ prfm(Address(tmp), PSTL1STRM);
       }
-
-      // Label next;
-      // __ cmpxchgptr(/*oldv=*/disp_hdr,
-      //               /*newv=*/rthread,
-      //               /*addr=*/tmp,
-      //               /*tmp=*/rscratch1,
-      //               /*succeed*/next,
-      //               /*fail*/NULL);
-      // __ bind(next);
-
-      // store a non-null value into the box.
-      __ str(box, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-      // PPC port checks the following invariants
-      // #ifdef ASSERT
-      // bne(flag, cont);
-      // We have acquired the monitor, check some invariants.
-      // addw(/*monitor=*/tmp, tmp, -ObjectMonitor::owner_offset_in_bytes());
-      // Invariant 1: _recursions should be 0.
-      // assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
-      // assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), tmp,
-      //                        "monitor->_recursions should be 0", -1);
-      // Invariant 2: OwnerIsThread shouldn't be 0.
-      // assert(ObjectMonitor::OwnerIsThread_size_in_bytes() == 4, "unexpected size");
-      //assert_mem4_isnot_zero(ObjectMonitor::OwnerIsThread_offset_in_bytes(), tmp,
-      //                           "monitor->OwnerIsThread shouldn't be 0", -1);
-      // #endif
+      __ bind(retry_load);
+      __ ldaxr(rscratch1, tmp);
+      __ cmp(disp_hdr, rscratch1);
+      __ br(Assembler::NE, fail);
+      // use stlxr to ensure update is immediately visible
+      __ stlxr(rscratch1, rthread, tmp);
+      __ cbnzw(rscratch1, retry_load);
+      __ bind(fail);
     }
+
+    // Label next;
+    // __ cmpxchgptr(/*oldv=*/disp_hdr,
+    //               /*newv=*/rthread,
+    //               /*addr=*/tmp,
+    //               /*tmp=*/rscratch1,
+    //               /*succeed*/next,
+    //               /*fail*/NULL);
+    // __ bind(next);
+
+    // store a non-null value into the box.
+    __ str(box, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+
+    // PPC port checks the following invariants
+    // #ifdef ASSERT
+    // bne(flag, cont);
+    // We have acquired the monitor, check some invariants.
+    // addw(/*monitor=*/tmp, tmp, -ObjectMonitor::owner_offset_in_bytes());
+    // Invariant 1: _recursions should be 0.
+    // assert(ObjectMonitor::recursions_size_in_bytes() == 8, "unexpected size");
+    // assert_mem8_is_zero(ObjectMonitor::recursions_offset_in_bytes(), tmp,
+    //                        "monitor->_recursions should be 0", -1);
+    // Invariant 2: OwnerIsThread shouldn't be 0.
+    // assert(ObjectMonitor::OwnerIsThread_size_in_bytes() == 4, "unexpected size");
+    //assert_mem4_isnot_zero(ObjectMonitor::OwnerIsThread_offset_in_bytes(), tmp,
+    //                           "monitor->OwnerIsThread shouldn't be 0", -1);
+    // #endif
 
     __ bind(cont);
     // flag == EQ indicates success
@@ -3533,12 +3524,6 @@ encode %{
 
     assert_different_registers(oop, box, tmp, disp_hdr);
 
-    // Always do locking in runtime.
-    if (EmitSync & 0x01) {
-      __ cmp(oop, zr); // Oop can't be 0 here => always false.
-      return;
-    }
-
     if (UseBiasedLocking && !UseOptoBiasInlining) {
       __ biased_locking_exit(oop, tmp, cont);
     }
@@ -3552,10 +3537,8 @@ encode %{
 
 
     // Handle existing monitor.
-    if ((EmitSync & 0x02) == 0) {
-      __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-      __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
-    }
+    __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
+    __ tbnz(disp_hdr, exact_log2(markOopDesc::monitor_value), object_has_monitor);
 
     // Check if it is still a light weight lock, this is is true if we
     // see the stack address of the basicLock in the markOop of the
@@ -3590,27 +3573,25 @@ encode %{
     __ bind(cas_failed);
 
     // Handle existing monitor.
-    if ((EmitSync & 0x02) == 0) {
-      __ b(cont);
+    __ b(cont);
 
-      __ bind(object_has_monitor);
-      __ add(tmp, tmp, -markOopDesc::monitor_value); // monitor
-      __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-      __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.
-      __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if there are 0 recursions
-      __ cmp(rscratch1, zr);
-      __ br(Assembler::NE, cont);
+    __ bind(object_has_monitor);
+    __ add(tmp, tmp, -markOopDesc::monitor_value); // monitor
+    __ ldr(rscratch1, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+    __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
+    __ eor(rscratch1, rscratch1, rthread); // Will be 0 if we are the owner.
+    __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if there are 0 recursions
+    __ cmp(rscratch1, zr);
+    __ br(Assembler::NE, cont);
 
-      __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
-      __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
-      __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
-      __ cmp(rscratch1, zr);
-      __ cbnz(rscratch1, cont);
-      // need a release store here
-      __ lea(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-      __ stlr(rscratch1, tmp); // rscratch1 is zero
-    }
+    __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
+    __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
+    __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
+    __ cmp(rscratch1, zr);
+    __ cbnz(rscratch1, cont);
+    // need a release store here
+    __ lea(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
+    __ stlr(rscratch1, tmp); // rscratch1 is zero
 
     __ bind(cont);
     // flag == EQ indicates success

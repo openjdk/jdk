@@ -1721,227 +1721,160 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
   if (counters != NULL) {
     atomic_incl(ExternalAddress((address)counters->total_entry_count_addr()), scrReg);
   }
-  if (EmitSync & 1) {
-      // set box->dhw = markOopDesc::unused_mark()
-      // Force all sync thru slow-path: slow_enter() and slow_exit()
-      movptr (Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
-      cmpptr (rsp, (int32_t)NULL_WORD);
-  } else {
-    // Possible cases that we'll encounter in fast_lock
-    // ------------------------------------------------
-    // * Inflated
-    //    -- unlocked
-    //    -- Locked
-    //       = by self
-    //       = by other
-    // * biased
-    //    -- by Self
-    //    -- by other
-    // * neutral
-    // * stack-locked
-    //    -- by self
-    //       = sp-proximity test hits
-    //       = sp-proximity test generates false-negative
-    //    -- by other
-    //
 
-    Label IsInflated, DONE_LABEL;
+  // Possible cases that we'll encounter in fast_lock
+  // ------------------------------------------------
+  // * Inflated
+  //    -- unlocked
+  //    -- Locked
+  //       = by self
+  //       = by other
+  // * biased
+  //    -- by Self
+  //    -- by other
+  // * neutral
+  // * stack-locked
+  //    -- by self
+  //       = sp-proximity test hits
+  //       = sp-proximity test generates false-negative
+  //    -- by other
+  //
 
-    // it's stack-locked, biased or neutral
-    // TODO: optimize away redundant LDs of obj->mark and improve the markword triage
-    // order to reduce the number of conditional branches in the most common cases.
-    // Beware -- there's a subtle invariant that fetch of the markword
-    // at [FETCH], below, will never observe a biased encoding (*101b).
-    // If this invariant is not held we risk exclusion (safety) failure.
-    if (UseBiasedLocking && !UseOptoBiasInlining) {
-      biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, counters);
-    }
+  Label IsInflated, DONE_LABEL;
+
+  // it's stack-locked, biased or neutral
+  // TODO: optimize away redundant LDs of obj->mark and improve the markword triage
+  // order to reduce the number of conditional branches in the most common cases.
+  // Beware -- there's a subtle invariant that fetch of the markword
+  // at [FETCH], below, will never observe a biased encoding (*101b).
+  // If this invariant is not held we risk exclusion (safety) failure.
+  if (UseBiasedLocking && !UseOptoBiasInlining) {
+    biased_locking_enter(boxReg, objReg, tmpReg, scrReg, false, DONE_LABEL, NULL, counters);
+  }
 
 #if INCLUDE_RTM_OPT
-    if (UseRTMForStackLocks && use_rtm) {
-      rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
-                        stack_rtm_counters, method_data, profile_rtm,
-                        DONE_LABEL, IsInflated);
-    }
+  if (UseRTMForStackLocks && use_rtm) {
+    rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
+                      stack_rtm_counters, method_data, profile_rtm,
+                      DONE_LABEL, IsInflated);
+  }
 #endif // INCLUDE_RTM_OPT
 
-    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
-    testptr(tmpReg, markOopDesc::monitor_value); // inflated vs stack-locked|neutral|biased
-    jccb(Assembler::notZero, IsInflated);
+  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
+  testptr(tmpReg, markOopDesc::monitor_value); // inflated vs stack-locked|neutral|biased
+  jccb(Assembler::notZero, IsInflated);
 
-    // Attempt stack-locking ...
-    orptr (tmpReg, markOopDesc::unlocked_value);
-    movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
-    if (os::is_MP()) {
-      lock();
-    }
-    cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
-    if (counters != NULL) {
-      cond_inc32(Assembler::equal,
-                 ExternalAddress((address)counters->fast_path_entry_count_addr()));
-    }
-    jcc(Assembler::equal, DONE_LABEL);           // Success
+  // Attempt stack-locking ...
+  orptr (tmpReg, markOopDesc::unlocked_value);
+  movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
+  if (os::is_MP()) {
+    lock();
+  }
+  cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
+  if (counters != NULL) {
+    cond_inc32(Assembler::equal,
+               ExternalAddress((address)counters->fast_path_entry_count_addr()));
+  }
+  jcc(Assembler::equal, DONE_LABEL);           // Success
 
-    // Recursive locking.
-    // The object is stack-locked: markword contains stack pointer to BasicLock.
-    // Locked by current thread if difference with current SP is less than one page.
-    subptr(tmpReg, rsp);
-    // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
-    andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
-    movptr(Address(boxReg, 0), tmpReg);
-    if (counters != NULL) {
-      cond_inc32(Assembler::equal,
-                 ExternalAddress((address)counters->fast_path_entry_count_addr()));
-    }
-    jmp(DONE_LABEL);
+  // Recursive locking.
+  // The object is stack-locked: markword contains stack pointer to BasicLock.
+  // Locked by current thread if difference with current SP is less than one page.
+  subptr(tmpReg, rsp);
+  // Next instruction set ZFlag == 1 (Success) if difference is less then one page.
+  andptr(tmpReg, (int32_t) (NOT_LP64(0xFFFFF003) LP64_ONLY(7 - os::vm_page_size())) );
+  movptr(Address(boxReg, 0), tmpReg);
+  if (counters != NULL) {
+    cond_inc32(Assembler::equal,
+               ExternalAddress((address)counters->fast_path_entry_count_addr()));
+  }
+  jmp(DONE_LABEL);
 
-    bind(IsInflated);
-    // The object is inflated. tmpReg contains pointer to ObjectMonitor* + markOopDesc::monitor_value
+  bind(IsInflated);
+  // The object is inflated. tmpReg contains pointer to ObjectMonitor* + markOopDesc::monitor_value
 
 #if INCLUDE_RTM_OPT
-    // Use the same RTM locking code in 32- and 64-bit VM.
-    if (use_rtm) {
-      rtm_inflated_locking(objReg, boxReg, tmpReg, scrReg, cx1Reg, cx2Reg,
-                           rtm_counters, method_data, profile_rtm, DONE_LABEL);
-    } else {
+  // Use the same RTM locking code in 32- and 64-bit VM.
+  if (use_rtm) {
+    rtm_inflated_locking(objReg, boxReg, tmpReg, scrReg, cx1Reg, cx2Reg,
+                         rtm_counters, method_data, profile_rtm, DONE_LABEL);
+  } else {
 #endif // INCLUDE_RTM_OPT
 
 #ifndef _LP64
-    // The object is inflated.
+  // The object is inflated.
 
-    // boxReg refers to the on-stack BasicLock in the current frame.
-    // We'd like to write:
-    //   set box->_displaced_header = markOopDesc::unused_mark().  Any non-0 value suffices.
-    // This is convenient but results a ST-before-CAS penalty.  The following CAS suffers
-    // additional latency as we have another ST in the store buffer that must drain.
+  // boxReg refers to the on-stack BasicLock in the current frame.
+  // We'd like to write:
+  //   set box->_displaced_header = markOopDesc::unused_mark().  Any non-0 value suffices.
+  // This is convenient but results a ST-before-CAS penalty.  The following CAS suffers
+  // additional latency as we have another ST in the store buffer that must drain.
 
-    if (EmitSync & 8192) {
-       movptr(Address(boxReg, 0), 3);            // results in ST-before-CAS penalty
-       get_thread (scrReg);
-       movptr(boxReg, tmpReg);                    // consider: LEA box, [tmp-2]
-       movptr(tmpReg, NULL_WORD);                 // consider: xor vs mov
-       if (os::is_MP()) {
-         lock();
-       }
-       cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    } else
-    if ((EmitSync & 128) == 0) {                      // avoid ST-before-CAS
-       // register juggle because we need tmpReg for cmpxchgptr below
-       movptr(scrReg, boxReg);
-       movptr(boxReg, tmpReg);                   // consider: LEA box, [tmp-2]
+  // avoid ST-before-CAS
+  // register juggle because we need tmpReg for cmpxchgptr below
+  movptr(scrReg, boxReg);
+  movptr(boxReg, tmpReg);                   // consider: LEA box, [tmp-2]
 
-       // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
-       if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
-          // prefetchw [eax + Offset(_owner)-2]
-          prefetchw(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-       }
+  // Optimistic form: consider XORL tmpReg,tmpReg
+  movptr(tmpReg, NULL_WORD);
 
-       if ((EmitSync & 64) == 0) {
-         // Optimistic form: consider XORL tmpReg,tmpReg
-         movptr(tmpReg, NULL_WORD);
-       } else {
-         // Can suffer RTS->RTO upgrades on shared or cold $ lines
-         // Test-And-CAS instead of CAS
-         movptr(tmpReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));   // rax, = m->_owner
-         testptr(tmpReg, tmpReg);                   // Locked ?
-         jccb  (Assembler::notZero, DONE_LABEL);
-       }
+  // Appears unlocked - try to swing _owner from null to non-null.
+  // Ideally, I'd manifest "Self" with get_thread and then attempt
+  // to CAS the register containing Self into m->Owner.
+  // But we don't have enough registers, so instead we can either try to CAS
+  // rsp or the address of the box (in scr) into &m->owner.  If the CAS succeeds
+  // we later store "Self" into m->Owner.  Transiently storing a stack address
+  // (rsp or the address of the box) into  m->owner is harmless.
+  // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
+  if (os::is_MP()) {
+    lock();
+  }
+  cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
+  // If we weren't able to swing _owner from NULL to the BasicLock
+  // then take the slow path.
+  jccb  (Assembler::notZero, DONE_LABEL);
+  // update _owner from BasicLock to thread
+  get_thread (scrReg);                    // beware: clobbers ICCs
+  movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
+  xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
 
-       // Appears unlocked - try to swing _owner from null to non-null.
-       // Ideally, I'd manifest "Self" with get_thread and then attempt
-       // to CAS the register containing Self into m->Owner.
-       // But we don't have enough registers, so instead we can either try to CAS
-       // rsp or the address of the box (in scr) into &m->owner.  If the CAS succeeds
-       // we later store "Self" into m->Owner.  Transiently storing a stack address
-       // (rsp or the address of the box) into  m->owner is harmless.
-       // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
-       if (os::is_MP()) {
-         lock();
-       }
-       cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-       movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
-       // If we weren't able to swing _owner from NULL to the BasicLock
-       // then take the slow path.
-       jccb  (Assembler::notZero, DONE_LABEL);
-       // update _owner from BasicLock to thread
-       get_thread (scrReg);                    // beware: clobbers ICCs
-       movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
-       xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
-
-       // If the CAS fails we can either retry or pass control to the slow-path.
-       // We use the latter tactic.
-       // Pass the CAS result in the icc.ZFlag into DONE_LABEL
-       // If the CAS was successful ...
-       //   Self has acquired the lock
-       //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
-       // Intentional fall-through into DONE_LABEL ...
-    } else {
-       movptr(Address(boxReg, 0), intptr_t(markOopDesc::unused_mark()));  // results in ST-before-CAS penalty
-       movptr(boxReg, tmpReg);
-
-       // Using a prefetchw helps avoid later RTS->RTO upgrades and cache probes
-       if ((EmitSync & 2048) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
-          // prefetchw [eax + Offset(_owner)-2]
-          prefetchw(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-       }
-
-       if ((EmitSync & 64) == 0) {
-         // Optimistic form
-         xorptr  (tmpReg, tmpReg);
-       } else {
-         // Can suffer RTS->RTO upgrades on shared or cold $ lines
-         movptr(tmpReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));   // rax, = m->_owner
-         testptr(tmpReg, tmpReg);                   // Locked ?
-         jccb  (Assembler::notZero, DONE_LABEL);
-       }
-
-       // Appears unlocked - try to swing _owner from null to non-null.
-       // Use either "Self" (in scr) or rsp as thread identity in _owner.
-       // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
-       get_thread (scrReg);
-       if (os::is_MP()) {
-         lock();
-       }
-       cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-
-       // If the CAS fails we can either retry or pass control to the slow-path.
-       // We use the latter tactic.
-       // Pass the CAS result in the icc.ZFlag into DONE_LABEL
-       // If the CAS was successful ...
-       //   Self has acquired the lock
-       //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
-       // Intentional fall-through into DONE_LABEL ...
-    }
+  // If the CAS fails we can either retry or pass control to the slow-path.
+  // We use the latter tactic.
+  // Pass the CAS result in the icc.ZFlag into DONE_LABEL
+  // If the CAS was successful ...
+  //   Self has acquired the lock
+  //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
+  // Intentional fall-through into DONE_LABEL ...
 #else // _LP64
-    // It's inflated
-    movq(scrReg, tmpReg);
-    xorq(tmpReg, tmpReg);
+  // It's inflated
+  movq(scrReg, tmpReg);
+  xorq(tmpReg, tmpReg);
 
-    if (os::is_MP()) {
-      lock();
-    }
-    cmpxchgptr(r15_thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    // Unconditionally set box->_displaced_header = markOopDesc::unused_mark().
-    // Without cast to int32_t movptr will destroy r10 which is typically obj.
-    movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
-    // Intentional fall-through into DONE_LABEL ...
-    // Propagate ICC.ZF from CAS above into DONE_LABEL.
+  if (os::is_MP()) {
+    lock();
+  }
+  cmpxchgptr(r15_thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  // Unconditionally set box->_displaced_header = markOopDesc::unused_mark().
+  // Without cast to int32_t movptr will destroy r10 which is typically obj.
+  movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark()));
+  // Intentional fall-through into DONE_LABEL ...
+  // Propagate ICC.ZF from CAS above into DONE_LABEL.
 #endif // _LP64
 #if INCLUDE_RTM_OPT
-    } // use_rtm()
+  } // use_rtm()
 #endif
-    // DONE_LABEL is a hot target - we'd really like to place it at the
-    // start of cache line by padding with NOPs.
-    // See the AMD and Intel software optimization manuals for the
-    // most efficient "long" NOP encodings.
-    // Unfortunately none of our alignment mechanisms suffice.
-    bind(DONE_LABEL);
+  // DONE_LABEL is a hot target - we'd really like to place it at the
+  // start of cache line by padding with NOPs.
+  // See the AMD and Intel software optimization manuals for the
+  // most efficient "long" NOP encodings.
+  // Unfortunately none of our alignment mechanisms suffice.
+  bind(DONE_LABEL);
 
-    // At DONE_LABEL the icc ZFlag is set as follows ...
-    // Fast_Unlock uses the same protocol.
-    // ZFlag == 1 -> Success
-    // ZFlag == 0 -> Failure - force control through the slow-path
-  }
+  // At DONE_LABEL the icc ZFlag is set as follows ...
+  // Fast_Unlock uses the same protocol.
+  // ZFlag == 1 -> Success
+  // ZFlag == 0 -> Failure - force control through the slow-path
 }
 
 // obj: object to unlock
@@ -1980,293 +1913,179 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
   assert(boxReg == rax, "");
   assert_different_registers(objReg, boxReg, tmpReg);
 
-  if (EmitSync & 4) {
-    // Disable - inhibit all inlining.  Force control through the slow-path
-    cmpptr (rsp, 0);
-  } else {
-    Label DONE_LABEL, Stacked, CheckSucc;
+  Label DONE_LABEL, Stacked, CheckSucc;
 
-    // Critically, the biased locking test must have precedence over
-    // and appear before the (box->dhw == 0) recursive stack-lock test.
-    if (UseBiasedLocking && !UseOptoBiasInlining) {
-       biased_locking_exit(objReg, tmpReg, DONE_LABEL);
-    }
-
-#if INCLUDE_RTM_OPT
-    if (UseRTMForStackLocks && use_rtm) {
-      assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
-      Label L_regular_unlock;
-      movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));           // fetch markword
-      andptr(tmpReg, markOopDesc::biased_lock_mask_in_place); // look at 3 lock bits
-      cmpptr(tmpReg, markOopDesc::unlocked_value);            // bits = 001 unlocked
-      jccb(Assembler::notEqual, L_regular_unlock);  // if !HLE RegularLock
-      xend();                                       // otherwise end...
-      jmp(DONE_LABEL);                              // ... and we're done
-      bind(L_regular_unlock);
-    }
-#endif
-
-    cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD); // Examine the displaced header
-    jcc   (Assembler::zero, DONE_LABEL);            // 0 indicates recursive stack-lock
-    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));             // Examine the object's markword
-    testptr(tmpReg, markOopDesc::monitor_value);    // Inflated?
-    jccb  (Assembler::zero, Stacked);
-
-    // It's inflated.
-#if INCLUDE_RTM_OPT
-    if (use_rtm) {
-      Label L_regular_inflated_unlock;
-      int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
-      movptr(boxReg, Address(tmpReg, owner_offset));
-      testptr(boxReg, boxReg);
-      jccb(Assembler::notZero, L_regular_inflated_unlock);
-      xend();
-      jmpb(DONE_LABEL);
-      bind(L_regular_inflated_unlock);
-    }
-#endif
-
-    // Despite our balanced locking property we still check that m->_owner == Self
-    // as java routines or native JNI code called by this thread might
-    // have released the lock.
-    // Refer to the comments in synchronizer.cpp for how we might encode extra
-    // state in _succ so we can avoid fetching EntryList|cxq.
-    //
-    // I'd like to add more cases in fast_lock() and fast_unlock() --
-    // such as recursive enter and exit -- but we have to be wary of
-    // I$ bloat, T$ effects and BP$ effects.
-    //
-    // If there's no contention try a 1-0 exit.  That is, exit without
-    // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
-    // we detect and recover from the race that the 1-0 exit admits.
-    //
-    // Conceptually Fast_Unlock() must execute a STST|LDST "release" barrier
-    // before it STs null into _owner, releasing the lock.  Updates
-    // to data protected by the critical section must be visible before
-    // we drop the lock (and thus before any other thread could acquire
-    // the lock and observe the fields protected by the lock).
-    // IA32's memory-model is SPO, so STs are ordered with respect to
-    // each other and there's no need for an explicit barrier (fence).
-    // See also http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
-#ifndef _LP64
-    get_thread (boxReg);
-    if ((EmitSync & 4096) && VM_Version::supports_3dnow_prefetch() && os::is_MP()) {
-      // prefetchw [ebx + Offset(_owner)-2]
-      prefetchw(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    }
-
-    // Note that we could employ various encoding schemes to reduce
-    // the number of loads below (currently 4) to just 2 or 3.
-    // Refer to the comments in synchronizer.cpp.
-    // In practice the chain of fetches doesn't seem to impact performance, however.
-    xorptr(boxReg, boxReg);
-    if ((EmitSync & 65536) == 0 && (EmitSync & 256)) {
-       // Attempt to reduce branch density - AMD's branch predictor.
-       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-       jccb  (Assembler::notZero, DONE_LABEL);
-       movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-       jmpb  (DONE_LABEL);
-    } else {
-       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-       jccb  (Assembler::notZero, DONE_LABEL);
-       movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-       orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-       jccb  (Assembler::notZero, CheckSucc);
-       movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-       jmpb  (DONE_LABEL);
-    }
-
-    // The Following code fragment (EmitSync & 65536) improves the performance of
-    // contended applications and contended synchronization microbenchmarks.
-    // Unfortunately the emission of the code - even though not executed - causes regressions
-    // in scimark and jetstream, evidently because of $ effects.  Replacing the code
-    // with an equal number of never-executed NOPs results in the same regression.
-    // We leave it off by default.
-
-    if ((EmitSync & 65536) != 0) {
-       Label LSuccess, LGoSlowPath ;
-
-       bind  (CheckSucc);
-
-       // Optional pre-test ... it's safe to elide this
-       cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
-       jccb(Assembler::zero, LGoSlowPath);
-
-       // We have a classic Dekker-style idiom:
-       //    ST m->_owner = 0 ; MEMBAR; LD m->_succ
-       // There are a number of ways to implement the barrier:
-       // (1) lock:andl &m->_owner, 0
-       //     is fast, but mask doesn't currently support the "ANDL M,IMM32" form.
-       //     LOCK: ANDL [ebx+Offset(_Owner)-2], 0
-       //     Encodes as 81 31 OFF32 IMM32 or 83 63 OFF8 IMM8
-       // (2) If supported, an explicit MFENCE is appealing.
-       //     In older IA32 processors MFENCE is slower than lock:add or xchg
-       //     particularly if the write-buffer is full as might be the case if
-       //     if stores closely precede the fence or fence-equivalent instruction.
-       //     See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
-       //     as the situation has changed with Nehalem and Shanghai.
-       // (3) In lieu of an explicit fence, use lock:addl to the top-of-stack
-       //     The $lines underlying the top-of-stack should be in M-state.
-       //     The locked add instruction is serializing, of course.
-       // (4) Use xchg, which is serializing
-       //     mov boxReg, 0; xchgl boxReg, [tmpReg + Offset(_owner)-2] also works
-       // (5) ST m->_owner = 0 and then execute lock:orl &m->_succ, 0.
-       //     The integer condition codes will tell us if succ was 0.
-       //     Since _succ and _owner should reside in the same $line and
-       //     we just stored into _owner, it's likely that the $line
-       //     remains in M-state for the lock:orl.
-       //
-       // We currently use (3), although it's likely that switching to (2)
-       // is correct for the future.
-
-       movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-       if (os::is_MP()) {
-         lock(); addptr(Address(rsp, 0), 0);
-       }
-       // Ratify _succ remains non-null
-       cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), 0);
-       jccb  (Assembler::notZero, LSuccess);
-
-       xorptr(boxReg, boxReg);                  // box is really EAX
-       if (os::is_MP()) { lock(); }
-       cmpxchgptr(rsp, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-       // There's no successor so we tried to regrab the lock with the
-       // placeholder value. If that didn't work, then another thread
-       // grabbed the lock so we're done (and exit was a success).
-       jccb  (Assembler::notEqual, LSuccess);
-       // Since we're low on registers we installed rsp as a placeholding in _owner.
-       // Now install Self over rsp.  This is safe as we're transitioning from
-       // non-null to non=null
-       get_thread (boxReg);
-       movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), boxReg);
-       // Intentional fall-through into LGoSlowPath ...
-
-       bind  (LGoSlowPath);
-       orptr(boxReg, 1);                      // set ICC.ZF=0 to indicate failure
-       jmpb  (DONE_LABEL);
-
-       bind  (LSuccess);
-       xorptr(boxReg, boxReg);                 // set ICC.ZF=1 to indicate success
-       jmpb  (DONE_LABEL);
-    }
-
-    bind (Stacked);
-    // It's not inflated and it's not recursively stack-locked and it's not biased.
-    // It must be stack-locked.
-    // Try to reset the header to displaced header.
-    // The "box" value on the stack is stable, so we can reload
-    // and be assured we observe the same value as above.
-    movptr(tmpReg, Address(boxReg, 0));
-    if (os::is_MP()) {
-      lock();
-    }
-    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
-    // Intention fall-thru into DONE_LABEL
-
-    // DONE_LABEL is a hot target - we'd really like to place it at the
-    // start of cache line by padding with NOPs.
-    // See the AMD and Intel software optimization manuals for the
-    // most efficient "long" NOP encodings.
-    // Unfortunately none of our alignment mechanisms suffice.
-    if ((EmitSync & 65536) == 0) {
-       bind (CheckSucc);
-    }
-#else // _LP64
-    // It's inflated
-    if (EmitSync & 1024) {
-      // Emit code to check that _owner == Self
-      // We could fold the _owner test into subsequent code more efficiently
-      // than using a stand-alone check, but since _owner checking is off by
-      // default we don't bother. We also might consider predicating the
-      // _owner==Self check on Xcheck:jni or running on a debug build.
-      movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-      xorptr(boxReg, r15_thread);
-    } else {
-      xorptr(boxReg, boxReg);
-    }
-    orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-    jccb  (Assembler::notZero, DONE_LABEL);
-    movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    jccb  (Assembler::notZero, CheckSucc);
-    movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
-    jmpb  (DONE_LABEL);
-
-    if ((EmitSync & 65536) == 0) {
-      // Try to avoid passing control into the slow_path ...
-      Label LSuccess, LGoSlowPath ;
-      bind  (CheckSucc);
-
-      // The following optional optimization can be elided if necessary
-      // Effectively: if (succ == null) goto SlowPath
-      // The code reduces the window for a race, however,
-      // and thus benefits performance.
-      cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
-      jccb  (Assembler::zero, LGoSlowPath);
-
-      xorptr(boxReg, boxReg);
-      if ((EmitSync & 16) && os::is_MP()) {
-        xchgptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-      } else {
-        movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
-        if (os::is_MP()) {
-          // Memory barrier/fence
-          // Dekker pivot point -- fulcrum : ST Owner; MEMBAR; LD Succ
-          // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
-          // This is faster on Nehalem and AMD Shanghai/Barcelona.
-          // See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
-          // We might also restructure (ST Owner=0;barrier;LD _Succ) to
-          // (mov box,0; xchgq box, &m->Owner; LD _succ) .
-          lock(); addl(Address(rsp, 0), 0);
-        }
-      }
-      cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
-      jccb  (Assembler::notZero, LSuccess);
-
-      // Rare inopportune interleaving - race.
-      // The successor vanished in the small window above.
-      // The lock is contended -- (cxq|EntryList) != null -- and there's no apparent successor.
-      // We need to ensure progress and succession.
-      // Try to reacquire the lock.
-      // If that fails then the new owner is responsible for succession and this
-      // thread needs to take no further action and can exit via the fast path (success).
-      // If the re-acquire succeeds then pass control into the slow path.
-      // As implemented, this latter mode is horrible because we generated more
-      // coherence traffic on the lock *and* artifically extended the critical section
-      // length while by virtue of passing control into the slow path.
-
-      // box is really RAX -- the following CMPXCHG depends on that binding
-      // cmpxchg R,[M] is equivalent to rax = CAS(M,rax,R)
-      if (os::is_MP()) { lock(); }
-      cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-      // There's no successor so we tried to regrab the lock.
-      // If that didn't work, then another thread grabbed the
-      // lock so we're done (and exit was a success).
-      jccb  (Assembler::notEqual, LSuccess);
-      // Intentional fall-through into slow-path
-
-      bind  (LGoSlowPath);
-      orl   (boxReg, 1);                      // set ICC.ZF=0 to indicate failure
-      jmpb  (DONE_LABEL);
-
-      bind  (LSuccess);
-      testl (boxReg, 0);                      // set ICC.ZF=1 to indicate success
-      jmpb  (DONE_LABEL);
-    }
-
-    bind  (Stacked);
-    movptr(tmpReg, Address (boxReg, 0));      // re-fetch
-    if (os::is_MP()) { lock(); }
-    cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
-
-    if (EmitSync & 65536) {
-       bind (CheckSucc);
-    }
-#endif
-    bind(DONE_LABEL);
+  // Critically, the biased locking test must have precedence over
+  // and appear before the (box->dhw == 0) recursive stack-lock test.
+  if (UseBiasedLocking && !UseOptoBiasInlining) {
+    biased_locking_exit(objReg, tmpReg, DONE_LABEL);
   }
+
+#if INCLUDE_RTM_OPT
+  if (UseRTMForStackLocks && use_rtm) {
+    assert(!UseBiasedLocking, "Biased locking is not supported with RTM locking");
+    Label L_regular_unlock;
+    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));           // fetch markword
+    andptr(tmpReg, markOopDesc::biased_lock_mask_in_place); // look at 3 lock bits
+    cmpptr(tmpReg, markOopDesc::unlocked_value);            // bits = 001 unlocked
+    jccb(Assembler::notEqual, L_regular_unlock);  // if !HLE RegularLock
+    xend();                                       // otherwise end...
+    jmp(DONE_LABEL);                              // ... and we're done
+    bind(L_regular_unlock);
+  }
+#endif
+
+  cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD); // Examine the displaced header
+  jcc   (Assembler::zero, DONE_LABEL);            // 0 indicates recursive stack-lock
+  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));             // Examine the object's markword
+  testptr(tmpReg, markOopDesc::monitor_value);    // Inflated?
+  jccb  (Assembler::zero, Stacked);
+
+  // It's inflated.
+#if INCLUDE_RTM_OPT
+  if (use_rtm) {
+    Label L_regular_inflated_unlock;
+    int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
+    movptr(boxReg, Address(tmpReg, owner_offset));
+    testptr(boxReg, boxReg);
+    jccb(Assembler::notZero, L_regular_inflated_unlock);
+    xend();
+    jmpb(DONE_LABEL);
+    bind(L_regular_inflated_unlock);
+  }
+#endif
+
+  // Despite our balanced locking property we still check that m->_owner == Self
+  // as java routines or native JNI code called by this thread might
+  // have released the lock.
+  // Refer to the comments in synchronizer.cpp for how we might encode extra
+  // state in _succ so we can avoid fetching EntryList|cxq.
+  //
+  // I'd like to add more cases in fast_lock() and fast_unlock() --
+  // such as recursive enter and exit -- but we have to be wary of
+  // I$ bloat, T$ effects and BP$ effects.
+  //
+  // If there's no contention try a 1-0 exit.  That is, exit without
+  // a costly MEMBAR or CAS.  See synchronizer.cpp for details on how
+  // we detect and recover from the race that the 1-0 exit admits.
+  //
+  // Conceptually Fast_Unlock() must execute a STST|LDST "release" barrier
+  // before it STs null into _owner, releasing the lock.  Updates
+  // to data protected by the critical section must be visible before
+  // we drop the lock (and thus before any other thread could acquire
+  // the lock and observe the fields protected by the lock).
+  // IA32's memory-model is SPO, so STs are ordered with respect to
+  // each other and there's no need for an explicit barrier (fence).
+  // See also http://gee.cs.oswego.edu/dl/jmm/cookbook.html.
+#ifndef _LP64
+  get_thread (boxReg);
+
+  // Note that we could employ various encoding schemes to reduce
+  // the number of loads below (currently 4) to just 2 or 3.
+  // Refer to the comments in synchronizer.cpp.
+  // In practice the chain of fetches doesn't seem to impact performance, however.
+  xorptr(boxReg, boxReg);
+  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+  jccb  (Assembler::notZero, DONE_LABEL);
+  movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  jccb  (Assembler::notZero, CheckSucc);
+  movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
+  jmpb  (DONE_LABEL);
+
+  bind (Stacked);
+  // It's not inflated and it's not recursively stack-locked and it's not biased.
+  // It must be stack-locked.
+  // Try to reset the header to displaced header.
+  // The "box" value on the stack is stable, so we can reload
+  // and be assured we observe the same value as above.
+  movptr(tmpReg, Address(boxReg, 0));
+  if (os::is_MP()) {
+    lock();
+  }
+  cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+  // Intention fall-thru into DONE_LABEL
+
+  // DONE_LABEL is a hot target - we'd really like to place it at the
+  // start of cache line by padding with NOPs.
+  // See the AMD and Intel software optimization manuals for the
+  // most efficient "long" NOP encodings.
+  // Unfortunately none of our alignment mechanisms suffice.
+  bind (CheckSucc);
+#else // _LP64
+  // It's inflated
+  xorptr(boxReg, boxReg);
+  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+  jccb  (Assembler::notZero, DONE_LABEL);
+  movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  jccb  (Assembler::notZero, CheckSucc);
+  movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
+  jmpb  (DONE_LABEL);
+
+  // Try to avoid passing control into the slow_path ...
+  Label LSuccess, LGoSlowPath ;
+  bind  (CheckSucc);
+
+  // The following optional optimization can be elided if necessary
+  // Effectively: if (succ == null) goto SlowPath
+  // The code reduces the window for a race, however,
+  // and thus benefits performance.
+  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
+  jccb  (Assembler::zero, LGoSlowPath);
+
+  xorptr(boxReg, boxReg);
+  movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
+  if (os::is_MP()) {
+    // Memory barrier/fence
+    // Dekker pivot point -- fulcrum : ST Owner; MEMBAR; LD Succ
+    // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
+    // This is faster on Nehalem and AMD Shanghai/Barcelona.
+    // See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
+    // We might also restructure (ST Owner=0;barrier;LD _Succ) to
+    // (mov box,0; xchgq box, &m->Owner; LD _succ) .
+    lock(); addl(Address(rsp, 0), 0);
+  }
+  cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
+  jccb  (Assembler::notZero, LSuccess);
+
+  // Rare inopportune interleaving - race.
+  // The successor vanished in the small window above.
+  // The lock is contended -- (cxq|EntryList) != null -- and there's no apparent successor.
+  // We need to ensure progress and succession.
+  // Try to reacquire the lock.
+  // If that fails then the new owner is responsible for succession and this
+  // thread needs to take no further action and can exit via the fast path (success).
+  // If the re-acquire succeeds then pass control into the slow path.
+  // As implemented, this latter mode is horrible because we generated more
+  // coherence traffic on the lock *and* artifically extended the critical section
+  // length while by virtue of passing control into the slow path.
+
+  // box is really RAX -- the following CMPXCHG depends on that binding
+  // cmpxchg R,[M] is equivalent to rax = CAS(M,rax,R)
+  if (os::is_MP()) { lock(); }
+  cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  // There's no successor so we tried to regrab the lock.
+  // If that didn't work, then another thread grabbed the
+  // lock so we're done (and exit was a success).
+  jccb  (Assembler::notEqual, LSuccess);
+  // Intentional fall-through into slow-path
+
+  bind  (LGoSlowPath);
+  orl   (boxReg, 1);                      // set ICC.ZF=0 to indicate failure
+  jmpb  (DONE_LABEL);
+
+  bind  (LSuccess);
+  testl (boxReg, 0);                      // set ICC.ZF=1 to indicate success
+  jmpb  (DONE_LABEL);
+
+  bind  (Stacked);
+  movptr(tmpReg, Address (boxReg, 0));      // re-fetch
+  if (os::is_MP()) { lock(); }
+  cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
+
+#endif
+  bind(DONE_LABEL);
 }
 #endif // COMPILER2
 

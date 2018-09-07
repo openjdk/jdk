@@ -830,10 +830,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   experimental(ccstr, SyncKnobs, NULL,                                      \
                "(Unstable) Various monitor synchronization tunables")       \
                                                                             \
-  experimental(intx, EmitSync, 0,                                           \
-               "(Unsafe, Unstable) "                                        \
-               "Control emission of inline sync fast-path code")            \
-                                                                            \
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
           range(0, max_jint)                                                \
                                                                             \

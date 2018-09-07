@@ -3374,13 +3374,11 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   }
 
   // Handle existing monitor.
-  if ((EmitSync & 0x01) == 0) {
-    // The object has an existing monitor iff (mark & monitor_value) != 0.
-    guarantee(Immediate::is_uimm16(markOopDesc::monitor_value), "must be half-word");
-    z_lr(temp, displacedHeader);
-    z_nill(temp, markOopDesc::monitor_value);
-    z_brne(object_has_monitor);
-  }
+  // The object has an existing monitor iff (mark & monitor_value) != 0.
+  guarantee(Immediate::is_uimm16(markOopDesc::monitor_value), "must be half-word");
+  z_lr(temp, displacedHeader);
+  z_nill(temp, markOopDesc::monitor_value);
+  z_brne(object_has_monitor);
 
   // Set mark to markOop | markOopDesc::unlocked_value.
   z_oill(displacedHeader, markOopDesc::unlocked_value);
@@ -3411,28 +3409,26 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   z_bru(done);
 
-  if ((EmitSync & 0x01) == 0) {
-    Register zero = temp;
-    Register monitor_tagged = displacedHeader; // Tagged with markOopDesc::monitor_value.
-    bind(object_has_monitor);
-    // The object's monitor m is unlocked iff m->owner == NULL,
-    // otherwise m->owner may contain a thread or a stack address.
-    //
-    // Try to CAS m->owner from NULL to current thread.
-    z_lghi(zero, 0);
-    // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-    z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
-    // Store a non-null value into the box.
-    z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
+  Register zero = temp;
+  Register monitor_tagged = displacedHeader; // Tagged with markOopDesc::monitor_value.
+  bind(object_has_monitor);
+  // The object's monitor m is unlocked iff m->owner == NULL,
+  // otherwise m->owner may contain a thread or a stack address.
+  //
+  // Try to CAS m->owner from NULL to current thread.
+  z_lghi(zero, 0);
+  // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
+  z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
+  // Store a non-null value into the box.
+  z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
 #ifdef ASSERT
-      z_brne(done);
-      // We've acquired the monitor, check some invariants.
-      // Invariant 1: _recursions should be 0.
-      asm_assert_mem8_is_zero(OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions), monitor_tagged,
-                              "monitor->_recursions should be 0", -1);
-      z_ltgr(zero, zero); // Set CR=EQ.
+  z_brne(done);
+  // We've acquired the monitor, check some invariants.
+  // Invariant 1: _recursions should be 0.
+  asm_assert_mem8_is_zero(OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions), monitor_tagged,
+                          "monitor->_recursions should be 0", -1);
+  z_ltgr(zero, zero); // Set CR=EQ.
 #endif
-  }
   bind(done);
 
   BLOCK_COMMENT("} compiler_fast_lock_object");
@@ -3461,13 +3457,11 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_bre(done);
 
   // Handle existing monitor.
-  if ((EmitSync & 0x02) == 0) {
-    // The object has an existing monitor iff (mark & monitor_value) != 0.
-    z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);
-    guarantee(Immediate::is_uimm16(markOopDesc::monitor_value), "must be half-word");
-    z_nill(currentHeader, markOopDesc::monitor_value);
-    z_brne(object_has_monitor);
-  }
+  // The object has an existing monitor iff (mark & monitor_value) != 0.
+  z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);
+  guarantee(Immediate::is_uimm16(markOopDesc::monitor_value), "must be half-word");
+  z_nill(currentHeader, markOopDesc::monitor_value);
+  z_brne(object_has_monitor);
 
   // Check if it is still a light weight lock, this is true if we see
   // the stack address of the basicLock in the markOop of the object
@@ -3477,20 +3471,18 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_bru(done); // Csg sets CR as desired.
 
   // Handle existing monitor.
-  if ((EmitSync & 0x02) == 0) {
-    bind(object_has_monitor);
-    z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);    // CurrentHeader is tagged with monitor_value set.
-    load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-    z_brne(done);
-    load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    z_brne(done);
-    load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    z_brne(done);
-    load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    z_brne(done);
-    z_release();
-    z_stg(temp/*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
-  }
+  bind(object_has_monitor);
+  z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);    // CurrentHeader is tagged with monitor_value set.
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+  z_brne(done);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  z_brne(done);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  z_brne(done);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  z_brne(done);
+  z_release();
+  z_stg(temp/*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
 
   bind(done);
 
