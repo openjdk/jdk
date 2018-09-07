@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -59,10 +46,9 @@ void checkMeth(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cl,
     char *ret_name, *ret_sig, *generic;
 
     if (stat) {
-        mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cl),
-            name, sig);
+        mid = env->GetStaticMethodID(cl, name, sig);
     } else {
-        mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cl), name, sig);
+        mid = env->GetMethodID(cl, name, sig);
     }
     if (mid == NULL) {
         printf("Cannot find MethodID for \"%s%s\"\n", name, sig);
@@ -133,8 +119,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -166,17 +151,12 @@ Java_nsk_jvmti_GetMethodName_methname001_check(JNIEnv *env, jclass cls) {
     checkMeth(jvmti, env, cls, "<init>", "()V", 0);
     checkMeth(jvmti, env, cls, "meth_1", "(C)C", 0);
     checkMeth(jvmti, env, cls, "meth_1", "(CC)C", 0);
-    clsId = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/GetMethodName/methname001a"));
-    checkMeth(jvmti, env, clsId, "meth_new",
-        "()Lnsk/jvmti/GetMethodName/methname001;", 0);
-    clsId = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/GetMethodName/methname001$Inn"));
+    clsId = env->FindClass("nsk/jvmti/GetMethodName/methname001a");
+    checkMeth(jvmti, env, clsId, "meth_new", "()Lnsk/jvmti/GetMethodName/methname001;", 0);
+    clsId = env->FindClass("nsk/jvmti/GetMethodName/methname001$Inn");
     checkMeth(jvmti, env, clsId, "meth_inn", "(Ljava/lang/String;)V", 0);
 
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

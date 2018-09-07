@@ -27,19 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-  #ifdef __cplusplus
-    #define JNI_ENV_ARG(x, y) y
-    #define JNI_ENV_PTR(x) x
-  #else
-    #define JNI_ENV_ARG(x, y) x, y
-    #define JNI_ENV_PTR(x) (*x)
-  #endif
-#endif
 
 #ifndef JNI_ENV_ARG1
   #ifdef __cplusplus
@@ -100,9 +89,7 @@ Java_nsk_jvmti_GetJNIFunctionTable_getjniftab002_check(JNIEnv *env, jobject obj)
        only since JDK 1.2 */
     if (verbose)
         printf("\nb) Checking the function with the detached thread ...\n\ndetaching the main thread ...\n");
-    if ((err =
-            JNI_ENV_PTR(vm)->DetachCurrentThread(
-                JNI_ENV_ARG1(vm))) != 0)
+    if ((err = vm->DetachCurrentThread(JNI_ENV_ARG1(vm))) != 0)
         printf("(%s,%d): Warning: DetachCurrentThread() returns: %d\n\
 \tcheck with the detached main thread skipped\n",
             __FILE__, __LINE__, err);
@@ -111,9 +98,7 @@ Java_nsk_jvmti_GetJNIFunctionTable_getjniftab002_check(JNIEnv *env, jobject obj)
 
         if (verbose)
             printf("\nattaching the main thread back ...\n");
-        if ((err =
-                JNI_ENV_PTR(vm)->AttachCurrentThread(
-                    JNI_ENV_ARG(vm, (void **) &nextEnv), (void *) 0)) != 0) {
+        if ((err = vm->AttachCurrentThread((void **) &nextEnv, (void *) 0)) != 0) {
             printf("(%s,%d): TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
                 __FILE__, __LINE__, err);
             return STATUS_FAILED;
@@ -143,8 +128,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (verbose)
         printf("verbose mode on\n");
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
@@ -155,6 +139,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

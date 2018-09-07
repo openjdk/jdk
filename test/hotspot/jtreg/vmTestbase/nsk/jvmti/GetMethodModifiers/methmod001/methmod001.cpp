@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -81,10 +68,9 @@ void checkMeth(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cl,
     jint modifiers;
 
     if (stat) {
-        mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cl),
-            name, sig);
+        mid = env->GetStaticMethodID(cl, name, sig);
     } else {
-        mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cl), name, sig);
+        mid = env->GetMethodID(cl, name, sig);
     }
     if (mid == NULL) {
         printf("Cannot find MethodID for \"%s%s\"\n", name, sig);
@@ -155,8 +141,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -188,19 +173,13 @@ JNIEXPORT jint JNICALL Java_nsk_jvmti_GetMethodModifiers_methmod001_check(JNIEnv
     checkMeth(jvmti, env, cls, "meth_1", "(C)C", 0,  ACC_PRIVATE);
     checkMeth(jvmti, env, cls, "meth_2", "(FF)F", 0,  ACC_STRICT);
     checkMeth(jvmti, env, cls, "check", "()I", 1,  ACC_NATIVE |  ACC_STATIC);
-    clsId = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/GetMethodModifiers/methmod001a"));
-    checkMeth(jvmti, env, clsId, "meth_new",
-        "()Lnsk/jvmti/GetMethodModifiers/methmod001;", 0,  ACC_SYNCHRONIZED);
+    clsId = env->FindClass("nsk/jvmti/GetMethodModifiers/methmod001a");
+    checkMeth(jvmti, env, clsId, "meth_new", "()Lnsk/jvmti/GetMethodModifiers/methmod001;", 0,  ACC_SYNCHRONIZED);
     checkMeth(jvmti, env, clsId, "meth_abs", "()V", 0,  ACC_ABSTRACT);
-    clsId = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/GetMethodModifiers/methmod001$Inn"));
-    checkMeth(jvmti, env, clsId, "meth_inn", "(Ljava/lang/String;)V",
-        0, ACC_PUBLIC |  ACC_SYNCHRONIZED |  ACC_FINAL);
+    clsId = env->FindClass("nsk/jvmti/GetMethodModifiers/methmod001$Inn");
+    checkMeth(jvmti, env, clsId, "meth_inn", "(Ljava/lang/String;)V", 0, ACC_PUBLIC |  ACC_SYNCHRONIZED |  ACC_FINAL);
 
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif
