@@ -76,6 +76,7 @@ bool MetaspaceShared::_has_error_classes;
 bool MetaspaceShared::_archive_loading_failed = false;
 bool MetaspaceShared::_remapped_readwrite = false;
 bool MetaspaceShared::_open_archive_heap_region_mapped = false;
+bool MetaspaceShared::_archive_heap_region_fixed = false;
 address MetaspaceShared::_cds_i2i_entry_code_buffers = NULL;
 size_t MetaspaceShared::_cds_i2i_entry_code_buffers_size = 0;
 size_t MetaspaceShared::_core_spaces_size = 0;
@@ -1940,6 +1941,8 @@ oop MetaspaceShared::archive_heap_object(oop obj, Thread* THREAD) {
 }
 
 oop MetaspaceShared::materialize_archived_object(narrowOop v) {
+  assert(archive_heap_region_fixed(),
+         "must be called after archive heap regions are fixed");
   if (!CompressedOops::is_null(v)) {
     oop obj = HeapShared::decode_with_archived_oop_encoding_mode(v);
     return G1CollectedHeap::heap()->materialize_archived_object(obj);
@@ -1970,6 +1973,7 @@ bool MetaspaceShared::is_archive_object(oop p) {
 void MetaspaceShared::fixup_mapped_heap_regions() {
   FileMapInfo *mapinfo = FileMapInfo::current_info();
   mapinfo->fixup_mapped_heap_regions();
+  set_archive_heap_region_fixed();
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
