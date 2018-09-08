@@ -688,7 +688,6 @@ sun/security/pkcs11/tls/TestPremaster.java                      8204203 windows-
 javax/sound/sampled/DirectAudio/bug6372428.java                      8055097 generic-all
 javax/sound/sampled/Clip/bug5070081.java                             8055097 generic-all
 javax/sound/sampled/DataLine/LongFramePosition.java                  8055097 generic-all
-javax/sound/sampled/Clip/AutoCloseTimeCheck.java                     8207150 generic-all
 
 javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 
