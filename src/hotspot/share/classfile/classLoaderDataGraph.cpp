@@ -561,11 +561,6 @@ void ClassLoaderDataGraph::clean_module_and_package_info() {
 
   ClassLoaderData* data = _head;
   while (data != NULL) {
-    // Remove entries in the dictionary of live class loader that have
-    // initiated loading classes in a dead class loader.
-    if (data->dictionary() != NULL) {
-      data->dictionary()->do_unloading();
-    }
     // Walk a ModuleEntry's reads, and a PackageEntry's exports
     // lists to determine if there are modules on those lists that are now
     // dead and should be removed.  A module's life cycle is equivalent
