@@ -671,6 +671,15 @@ oop ClassLoaderData::holder_phantom() const {
   }
 }
 
+// Let the GC read the holder without keeping it alive.
+oop ClassLoaderData::holder_no_keepalive() const {
+  if (!_holder.is_null()) {  // NULL class_loader
+    return _holder.peek();
+  } else {
+    return NULL;
+  }
+}
+
 // Unloading support
 bool ClassLoaderData::is_alive() const {
   bool alive = keep_alive()         // null class loader and incomplete unsafe anonymous klasses.

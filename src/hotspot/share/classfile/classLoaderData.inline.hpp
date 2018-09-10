@@ -34,7 +34,7 @@
 
 inline oop ClassLoaderData::class_loader() const {
   assert(!_unloading, "This oop is not available to unloading class loader data");
-  assert(_holder.is_null() || _holder.peek() != NULL , "This class loader data holder must be alive");
+  assert(_holder.is_null() || holder_no_keepalive() != NULL , "This class loader data holder must be alive");
   return _class_loader.resolve();
 }
 
