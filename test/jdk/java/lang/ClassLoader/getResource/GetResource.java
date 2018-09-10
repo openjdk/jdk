@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 6760902
- * @library /lib/testlibrary
  * @library /test/lib
  * @build jdk.test.lib.process.ProcessTools
  * @run testng GetResource
@@ -45,7 +44,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.testlibrary.JDKToolFinder;
+import jdk.test.lib.JDKToolFinder;
 import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;

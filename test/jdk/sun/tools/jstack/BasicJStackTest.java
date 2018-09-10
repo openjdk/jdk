@@ -25,14 +25,12 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.JDKToolLauncher;
+import jdk.test.lib.JDKToolLauncher;
 
 /*
  * @test
  * @summary Unit test for jstack utility
- * @library /lib/testlibrary
  * @library /test/lib
- * @build jdk.testlibrary.*
  * @run main BasicJStackTest
  */
 public class BasicJStackTest {

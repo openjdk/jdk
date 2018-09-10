@@ -42,7 +42,7 @@ import static java.lang.System.out;
  * @summary Test imports certificate from file to PKCS12 keystore store it as
  * trusted certificate Check import errors (must be not errors) & check keystore
  * content after import
- * @library /lib/testlibrary ../
+ * @library ../
  * @library /test/lib
  * @run main StoreTrustedCertAPITest
  */

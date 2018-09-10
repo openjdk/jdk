@@ -38,7 +38,7 @@ import static java.lang.System.out;
  * @bug 8048830
  * @summary Tests keytool command imports certificate , list keystore, print
  * certificate and import password help.
- * @library /lib/testlibrary ../
+ * @library ../
  * @library /test/lib
  * @run main StoreTrustedCertKeytool
  */

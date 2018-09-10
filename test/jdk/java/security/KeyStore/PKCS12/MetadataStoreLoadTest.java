@@ -43,7 +43,7 @@ import java.util.HashSet;
  * @test
  * @bug 8048830
  * @summary Test store metadata attributes to PKCS12 keystore.
- * @library /lib/testlibrary ../
+ * @library ../
  * @library /test/lib
  * @run main MetadataStoreLoadTest
  */

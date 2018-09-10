@@ -32,8 +32,8 @@
  *            2. clients are in named/unnamed module,
  *               patched system module, or Xbootclasspath
  *          This test DOES require existence of java.logging module
- * @library /lib/testlibrary /test/lib
- * @build Base jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
+ * @library /test/lib
+ * @build Base jdk.test.lib.compiler.CompilerUtils
  * @run main/othervm JDKLoggerForJDKTest
  */
 

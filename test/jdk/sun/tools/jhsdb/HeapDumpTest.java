@@ -39,12 +39,12 @@ import java.io.File;
 import java.util.List;
 import java.util.Arrays;
 
+import jdk.test.lib.Platform;
+import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.apps.LingeredApp;
-import jdk.test.lib.Platform;
 import jdk.test.lib.hprof.parser.HprofReader;
-import jdk.testlibrary.JDKToolLauncher;
 
 public class HeapDumpTest {
 

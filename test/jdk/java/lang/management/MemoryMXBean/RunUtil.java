@@ -28,10 +28,10 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.Utils;
-import jdk.testlibrary.JDKToolFinder;
 
 public class RunUtil {
 

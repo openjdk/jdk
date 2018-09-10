@@ -36,7 +36,7 @@ import java.util.List;
  * @bug 8048830
  * @summary Test for PKCS12 keystore list , export commands. Refer README for
  * keystore files information
- * @library /lib/testlibrary ../
+ * @library ../
  * @library /test/lib
  * @run main KeytoolReaderP12Test
  */

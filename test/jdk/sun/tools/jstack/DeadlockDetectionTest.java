@@ -32,7 +32,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import jdk.testlibrary.Utils;
-import jdk.testlibrary.JDKToolLauncher;
+import jdk.test.lib.JDKToolLauncher;
 
 /**
  * @test

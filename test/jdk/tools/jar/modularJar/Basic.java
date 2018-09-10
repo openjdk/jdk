@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.test.lib.util.FileUtils;
-import jdk.testlibrary.JDKToolFinder;
+import jdk.test.lib.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -47,12 +47,12 @@ import static java.lang.System.out;
 /*
  * @test
  * @bug 8167328 8171830 8165640 8174248 8176772 8196748 8191533
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- *        jdk.testlibrary.JDKToolFinder
+ *        jdk.test.lib.JDKToolFinder
  * @compile Basic.java
  * @run testng Basic
  * @summary Tests for plain Modular jars & Multi-Release Modular jars

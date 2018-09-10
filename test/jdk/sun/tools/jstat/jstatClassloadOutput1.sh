@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 6959965 
+# @bug 6959965
 # @run shell jstatClassloadOutput1.sh
 # @summary Test that output of 'jstat -classload 0' has expected line counts
 

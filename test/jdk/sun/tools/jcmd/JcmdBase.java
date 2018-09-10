@@ -25,7 +25,7 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.JDKToolLauncher;
+import jdk.test.lib.JDKToolLauncher;
 
 /**
  * Helper class for starting jcmd process.

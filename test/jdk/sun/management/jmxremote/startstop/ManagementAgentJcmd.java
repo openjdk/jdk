@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 import jdk.internal.agent.Agent;
 import jdk.internal.agent.AgentConfigurationError;
 
-import jdk.testlibrary.JDKToolLauncher;
+import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.ProcessTools;
 
 /**

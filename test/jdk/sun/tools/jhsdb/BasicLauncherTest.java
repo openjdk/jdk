@@ -44,7 +44,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Platform;
-import jdk.testlibrary.JDKToolLauncher;
+import jdk.test.lib.JDKToolLauncher;
 import jdk.testlibrary.Utils;
 
 public class BasicLauncherTest {

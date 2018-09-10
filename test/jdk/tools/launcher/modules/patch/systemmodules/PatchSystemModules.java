@@ -25,7 +25,7 @@
  * @test
  * @bug 8157068 8177844
  * @summary Patch java.base and user module with ModuleHashes attribute
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.util.FileUtils
@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
-import jdk.testlibrary.JDKToolFinder;
+import jdk.test.lib.JDKToolFinder;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 

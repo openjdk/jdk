@@ -65,8 +65,8 @@ import javax.management.remote.JMXServiceURL;
 import javax.management.Attribute ;
 import javax.management.ObjectName ;
 
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.JDKToolFinder;
 
 public class AuthorizationTest {
 

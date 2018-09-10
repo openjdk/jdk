@@ -59,8 +59,8 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.JDKToolFinder;
 
 public class MXBeanWeirdParamTest {
 

@@ -39,7 +39,7 @@ import static java.lang.System.out;
  * @test
  * @bug 8048830
  * @summary Entry's attribute set should be empty
- * @library /lib/testlibrary ../
+ * @library ../
  * @library /test/lib
  * @run main MetadataEmptyTest
  */

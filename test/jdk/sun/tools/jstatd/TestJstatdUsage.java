@@ -21,17 +21,15 @@
  * questions.
  */
 
-import jdk.testlibrary.JDKToolLauncher;
+import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
  * @bug 4990825
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.management
- * @build jdk.testlibrary.*
  * @run main TestJstatdUsage
  */
 public class TestJstatdUsage {

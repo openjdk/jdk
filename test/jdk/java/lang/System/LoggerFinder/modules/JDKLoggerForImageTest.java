@@ -32,8 +32,8 @@
  *               patched system module, or Xbootclasspath
  *          This test does not require existence of java.logging module,
  *          but require jdk.compiler module
- * @library /lib/testlibrary /test/lib
- * @build Base jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
+ * @library /test/lib
+ * @build Base jdk.test.lib.compiler.CompilerUtils
  * @run main/othervm JDKLoggerForImageTest
  */
 

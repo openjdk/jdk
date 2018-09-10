@@ -40,7 +40,7 @@ import java.util.Arrays;
  * @summary Test for feature 'support stronger entry protection'. An entry is
  * stored to keystore with different PasswordProtection objects which are
  * specified by different PBE algorithms (use -Dseed=X to set PRNG seed)
- * @library /test/lib /lib/testlibrary ../
+ * @library /test/lib ../
  * @key randomness
  * @build jdk.test.lib.RandomFactory
  * @run main EntryProtectionTest

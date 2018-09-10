@@ -81,8 +81,8 @@ import javax.rmi.ssl.SslRMIServerSocketFactory;
 
 import java.security.Security;
 
+import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.JDKToolFinder;
 
 public class SecurityTest {
 

@@ -31,7 +31,7 @@ import static java.lang.System.out;
  * @test
  * @bug 8048830
  * @summary Tests for creating pkcs12 keystore with various algorithms
- * @library /lib/testlibrary ../
+ * @library ../
  * @library /test/lib
  * @run main KeytoolWriteP12Test
  */

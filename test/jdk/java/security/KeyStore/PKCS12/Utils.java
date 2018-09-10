@@ -34,7 +34,7 @@ import java.util.Arrays;
 import java.util.List;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.testlibrary.JDKToolFinder;
+import jdk.test.lib.JDKToolFinder;
 import static java.lang.System.out;
 import java.util.ArrayList;
 

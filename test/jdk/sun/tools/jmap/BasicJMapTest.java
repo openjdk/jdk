@@ -27,10 +27,10 @@ import static jdk.testlibrary.Asserts.fail;
 import java.io.File;
 import java.util.Arrays;
 
+import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.hprof.HprofParser;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.JDKToolLauncher;
 
 /*
  * @test

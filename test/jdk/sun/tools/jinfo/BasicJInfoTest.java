@@ -23,16 +23,14 @@
 
 import java.util.Arrays;
 
+import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.JDKToolLauncher;
 
 /*
  * @test
  * @summary Unit test for jinfo utility
- * @library /lib/testlibrary
  * @library /test/lib
- * @build jdk.testlibrary.*
  * @run main BasicJInfoTest
  */
 public class BasicJInfoTest {
