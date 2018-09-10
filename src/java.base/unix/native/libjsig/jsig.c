@@ -29,6 +29,18 @@
  * Used for signal-chaining. See RFE 4381843.
  */
 
+#include "jni.h"
+
+#ifdef SOLARIS
+/* Our redeclarations of the system functions must not have a less
+ * restrictive linker scoping, so we have to declare them as JNIEXPORT
+ * before including signal.h */
+#include "sys/signal.h"
+JNIEXPORT void (*signal(int sig, void (*disp)(int)))(int);
+JNIEXPORT void (*sigset(int sig, void (*disp)(int)))(int);
+JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *oact);
+#endif
+
 #include <dlfcn.h>
 #include <errno.h>
 #include <pthread.h>
@@ -208,7 +220,7 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
   }
 }
 
-sa_handler_t signal(int sig, sa_handler_t disp) {
+JNIEXPORT sa_handler_t signal(int sig, sa_handler_t disp) {
   if (sig < 0 || sig >= MAX_SIGNALS) {
     errno = EINVAL;
     return SIG_ERR;
@@ -217,7 +229,7 @@ sa_handler_t signal(int sig, sa_handler_t disp) {
   return set_signal(sig, disp, false);
 }
 
-sa_handler_t sigset(int sig, sa_handler_t disp) {
+JNIEXPORT sa_handler_t sigset(int sig, sa_handler_t disp) {
 #ifdef _ALLBSD_SOURCE
   printf("sigset() is not supported by BSD");
   exit(0);
@@ -243,7 +255,7 @@ static int call_os_sigaction(int sig, const struct sigaction  *act,
   return (*os_sigaction)(sig, act, oact);
 }
 
-int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
+JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
   int res;
   bool sigused;
   struct sigaction oldAct;
