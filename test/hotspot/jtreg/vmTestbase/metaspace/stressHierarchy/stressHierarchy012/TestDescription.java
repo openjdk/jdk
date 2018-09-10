@@ -37,7 +37,7 @@
  * @comment generate and compile metaspace.stressHierarchy.common.HumongousClass
  * @run driver metaspace.stressHierarchy.common.GenClassesBuilder
  * @run main/othervm
- *      -XX:MaxMetaspaceSize=450m
+ *      -XX:MaxMetaspaceSize=250m
  *      -Xss10m
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions

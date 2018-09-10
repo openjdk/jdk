@@ -39,15 +39,13 @@ import metaspace.stressHierarchy.common.generateHierarchy.TreeDescriptor;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import nsk.share.test.TestBase;
-import nsk.share.test.timeoutwatchdog.TimeoutHandler;
-import nsk.share.test.timeoutwatchdog.TimeoutWatchdog;
 
 
 /**
  * Superclass for StressHierarchy* tests. It provides util methods to create and load
  * classes hierarchy and perform checks.
  */
-abstract public class StressHierarchyBaseClass extends TestBase implements TimeoutHandler {
+abstract public class StressHierarchyBaseClass extends TestBase {
 
     protected static String[] args;
 
@@ -101,7 +99,6 @@ abstract public class StressHierarchyBaseClass extends TestBase implements Timeo
             long startTimeStamp = System.currentTimeMillis();
             ExecutionController stresser = new Stresser(args);
             stresser.start(1);
-            TimeoutWatchdog.watch(stresser, this);
             TreeDescriptor treeDescriptor = GenerateHierarchyHelper.generateHierarchy(treeDepth, minLevelSize, maxLevelSize, hierarchyType);
             Tree tree = buildTree(treeDescriptor);
             System.out.println("Generating took " + ((System.currentTimeMillis() - startTimeStamp)/1000) +" sec");
@@ -126,12 +123,6 @@ abstract public class StressHierarchyBaseClass extends TestBase implements Timeo
             throwable.printStackTrace();
             throw new RuntimeException(throwable);
         }
-    }
-
-    @Override
-    public void handleTimeout() {
-        System.out.println("Shutting down vm because of time expired.");
-        System.exit(95);
     }
 
     abstract protected void runTestLogic(Tree tree, ExecutionController stresser) throws Throwable;

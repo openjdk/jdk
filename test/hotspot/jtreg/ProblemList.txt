@@ -214,11 +214,4 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
-vmTestbase/metaspace/stressHierarchy/stressHierarchy007/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy008/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy009/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy010/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy011/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy012/TestDescription.java 8208697 generic-all
-
 #############################################################################

@@ -137,10 +137,10 @@ public class PerformChecksHelper {
                 }
             }
         } catch (OutOfMemoryError e) {
-            if (e.getMessage().trim().toLowerCase().contains("metadata")) {
-                System.out.println("Got OOME in metaspace in PerformChecksHelper.callMethods(Class clazz). " +
-                                "This happened because reflection generates a too many accessors. " +
-                                "There is nothing we can do with it, so we are just suppressing.");
+            if (e.getMessage().trim().toLowerCase().contains("metaspace")) {
+                // avoid string concatenation, which may create more classes.
+                System.out.println("Got OOME in metaspace in PerformChecksHelper.callMethods(Class clazz). ");
+                System.out.println("This is possible with -triggerUnloadingByFillingMetaspace");
             } else {
                 throw e;
             }
