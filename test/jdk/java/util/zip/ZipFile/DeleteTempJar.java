@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,16 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/* @test
-   @bug 4166799
-   @summary Make sure URL-downloaded jar files (jar_cache files)
-            will be deleted when VM exits.
-
-   @modules jdk.httpserver
-   @build DeleteTempJar
-   @run shell deletetempjar.sh
  */
 
 import java.io.File;
@@ -106,6 +96,5 @@ public class DeleteTempJar
         else return fail(x + " not equal to " + y);}
     public static void main(String[] args) throws Throwable {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
-        System.out.println("\nPassed = " + passed + " failed = " + failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
 }
