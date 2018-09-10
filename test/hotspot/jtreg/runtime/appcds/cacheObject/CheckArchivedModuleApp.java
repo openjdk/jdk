@@ -47,8 +47,16 @@ public class CheckArchivedModuleApp {
            throw new RuntimeException(
                "FAILED. Incorrect argument length: " + args.length);
         }
+
         boolean expectArchivedDescriptors = "yes".equals(args[0]);
         boolean expectArchivedConfiguration = "yes".equals(args[1]);
+        // -XX:+EnableJVMCI adds extra system modules, in which case the system
+        // module objects are not archived.
+        if (wb.getBooleanVMFlag("EnableJVMCI")) {
+            expectArchivedDescriptors = false;
+            expectArchivedConfiguration = false;
+        }
+
         checkModuleDescriptors(expectArchivedDescriptors);
         checkConfiguration(expectArchivedConfiguration);
         checkEmptyConfiguration(expectArchivedConfiguration);
