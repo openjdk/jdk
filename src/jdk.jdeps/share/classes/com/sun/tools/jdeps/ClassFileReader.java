@@ -325,9 +325,6 @@ public class ClassFileReader implements Closeable {
                 }
             } else {
                 jf = new JarFile(f, false, ZipFile.OPEN_READ, version);
-                if (!jf.isMultiRelease()) {
-                    throw new MultiReleaseException("err.multirelease.option.exists", f.getName());
-                }
             }
             return jf;
         }
