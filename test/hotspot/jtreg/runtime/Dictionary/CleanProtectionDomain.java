@@ -45,6 +45,7 @@ public class CleanProtectionDomain {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                                   "-Xlog:protectiondomain+table=debug",
                                   "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                                  "-XX:+UnlockDiagnosticVMOptions",
                                   "-XX:+WhiteBoxAPI",
                                   "-Xbootclasspath/a:.",
                                   Test.class.getName());
@@ -70,13 +71,20 @@ public class CleanProtectionDomain {
 
       test();
 
-      System.gc();
       // Wait until ServiceThread cleans ProtectionDomain table.
       // When the TestClassLoader is unloaded by GC, at least one
       // ProtectionDomainCacheEntry will be eligible for removal.
-      do {
-        removedCount = wb.protectionDomainRemovedCount();
-      } while (removedCountOrig == removedCount);
+      int cnt = 0;
+      while (true) {
+        if (cnt++ % 30 == 0) {
+          System.gc();
+        }
+        removedCount = wb.resolvedMethodRemovedCount();
+        if (removedCountOrig != removedCount) {
+          break;
+        }
+        Thread.sleep(100);
+      }
     }
 
     private static class TestClassLoader extends ClassLoader {
