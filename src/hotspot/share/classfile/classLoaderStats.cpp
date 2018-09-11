@@ -139,7 +139,7 @@ void ClassLoaderStatsClosure::print() {
 
 
 void ClassLoaderStatsClosure::addEmptyParents(oop cl) {
-  while (cl != NULL && java_lang_ClassLoader::loader_data(cl) == NULL) {
+  while (cl != NULL && java_lang_ClassLoader::loader_data_acquire(cl) == NULL) {
     // This classloader has not loaded any classes
     ClassLoaderStats** cls_ptr = _stats->get(cl);
     if (cls_ptr == NULL) {

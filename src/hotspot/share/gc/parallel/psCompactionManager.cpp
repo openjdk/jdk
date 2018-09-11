@@ -183,7 +183,7 @@ void InstanceMirrorKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* 
 void InstanceClassLoaderKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* cm) {
   InstanceKlass::oop_pc_follow_contents(obj, cm);
 
-  ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data(obj);
+  ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data_acquire(obj);
   if (loader_data != NULL) {
     cm->follow_class_loader(loader_data);
   }

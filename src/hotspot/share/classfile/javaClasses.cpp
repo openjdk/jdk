@@ -4027,9 +4027,9 @@ int  java_lang_ClassLoader::name_offset = -1;
 int  java_lang_ClassLoader::nameAndId_offset = -1;
 int  java_lang_ClassLoader::unnamedModule_offset = -1;
 
-ClassLoaderData* java_lang_ClassLoader::loader_data(oop loader) {
+ClassLoaderData* java_lang_ClassLoader::loader_data_acquire(oop loader) {
   assert(loader != NULL && oopDesc::is_oop(loader), "loader must be oop");
-  return HeapAccess<>::load_at(loader, _loader_data_offset);
+  return HeapAccess<MO_ACQUIRE>::load_at(loader, _loader_data_offset);
 }
 
 ClassLoaderData* java_lang_ClassLoader::loader_data_raw(oop loader) {
@@ -4037,9 +4037,9 @@ ClassLoaderData* java_lang_ClassLoader::loader_data_raw(oop loader) {
   return RawAccess<>::load_at(loader, _loader_data_offset);
 }
 
-ClassLoaderData* java_lang_ClassLoader::cmpxchg_loader_data(ClassLoaderData* new_data, oop loader, ClassLoaderData* expected_data) {
+void java_lang_ClassLoader::release_set_loader_data(oop loader, ClassLoaderData* new_data) {
   assert(loader != NULL && oopDesc::is_oop(loader), "loader must be oop");
-  return HeapAccess<>::atomic_cmpxchg_at(new_data, loader, _loader_data_offset, expected_data);
+  HeapAccess<MO_RELEASE>::store_at(loader, _loader_data_offset, new_data);
 }
 
 #define CLASSLOADER_FIELDS_DO(macro) \
