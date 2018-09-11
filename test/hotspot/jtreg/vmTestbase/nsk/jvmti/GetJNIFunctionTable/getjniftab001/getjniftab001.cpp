@@ -34,15 +34,6 @@
 
 extern "C" {
 
-
-#ifndef JNI_ENV_ARG1
-  #ifdef __cplusplus
-    #define JNI_ENV_ARG1(x)
-  #else
-    #define JNI_ENV_ARG1(x) x
-  #endif
-#endif
-
 #define PASSED  0
 #define STATUS_FAILED  2
 

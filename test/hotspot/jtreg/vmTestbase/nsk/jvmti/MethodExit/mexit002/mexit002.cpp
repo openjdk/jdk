@@ -29,21 +29,8 @@
 #include "jni_tools.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -172,8 +159,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -230,15 +216,13 @@ Java_nsk_jvmti_MethodExit_mexit002_check(JNIEnv *env, jclass cls) {
         return result;
     }
 
-    clz = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/MethodExit/mexit002a"));
+    clz = env->FindClass("nsk/jvmti/MethodExit/mexit002a");
     if (clz == NULL) {
         printf("Failed to find class \"mexit002a\"!\n");
         return STATUS_FAILED;
     }
 
-    mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, clz),
-        "dummy", "()V");
+    mid = env->GetStaticMethodID(clz, "dummy", "()V");
     if (mid == NULL) {
         printf("Failed to get method \"dummy\"!\n");
         return STATUS_FAILED;
@@ -254,7 +238,7 @@ Java_nsk_jvmti_MethodExit_mexit002_check(JNIEnv *env, jclass cls) {
         result = STATUS_FAILED;
     }
 
-    JNI_ENV_PTR(env)->CallStaticVoidMethod(JNI_ENV_ARG(env, clz), mid);
+    env->CallStaticVoidMethod(clz, mid);
 
     err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
             JVMTI_EVENT_METHOD_EXIT, NULL);
@@ -279,6 +263,4 @@ Java_nsk_jvmti_MethodExit_mexit002a_chain(JNIEnv *env, jclass cls) {
     }
 }
 
-#ifdef __cplusplus
 }
-#endif

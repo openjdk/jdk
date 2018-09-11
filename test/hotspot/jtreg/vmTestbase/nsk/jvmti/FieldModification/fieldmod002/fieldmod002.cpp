@@ -28,21 +28,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -170,8 +157,7 @@ int isEqual(JNIEnv *env, char *sig, jvalue v1, jvalue v2) {
         return (v1.d == v2.d);
     case 'L':
     case '[':
-        return (JNI_TRUE ==
-            JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, v1.l), v2.l));
+        return env->IsSameObject(v1.l, v2.l);
     case 'Z':
         return (v1.z == v2.z);
     case 'B':
@@ -218,8 +204,7 @@ void JNICALL FieldModification(jvmtiEnv *jvmti_env, JNIEnv *env,
                TranslateError(err), err);
         result = STATUS_FAILED;
     }
-    err = jvmti_env->GetMethodName(method,
-        &watch.m_name, &watch.m_sig, &generic);
+    err = jvmti_env->GetMethodName(method, &watch.m_name, &watch.m_sig, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetMethodName) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -335,8 +320,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -402,8 +386,7 @@ Java_nsk_jvmti_FieldModification_fieldmod002_getReady(JNIEnv *env, jclass clz) {
     if (printdump == JNI_TRUE) {
         printf(">>> setting field modification watches ...\n");
     }
-    cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/FieldModification/fieldmod002a"));
+    cls = env->FindClass("nsk/jvmti/FieldModification/fieldmod002a");
     if (cls == NULL) {
         printf("Cannot find fieldmod001a class!\n");
         result = STATUS_FAILED;
@@ -411,11 +394,11 @@ Java_nsk_jvmti_FieldModification_fieldmod002_getReady(JNIEnv *env, jclass clz) {
     }
     for (i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
         if (watches[i].is_static == JNI_TRUE) {
-            watches[i].fid = JNI_ENV_PTR(env)->GetStaticFieldID(
-                JNI_ENV_ARG(env, cls), watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetStaticFieldID(
+                cls, watches[i].f_name, watches[i].f_sig);
         } else {
-            watches[i].fid = JNI_ENV_PTR(env)->GetFieldID(
-                JNI_ENV_ARG(env, cls), watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetFieldID(
+                cls, watches[i].f_name, watches[i].f_sig);
         }
         if (watches[i].fid == NULL) {
             printf("Cannot get field ID for \"%s:%s\"\n",
@@ -433,16 +416,11 @@ Java_nsk_jvmti_FieldModification_fieldmod002_getReady(JNIEnv *env, jclass clz) {
         }
     }
 
-    ctor = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "<init>", "()V");
-    obj1 = JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env,
-        JNI_ENV_PTR(env)->NewObject(JNI_ENV_ARG(env, cls), ctor)));
-    obj2 = JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env,
-        JNI_ENV_PTR(env)->NewObject(JNI_ENV_ARG(env, cls), ctor)));
-    arr1 = (jintArray) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env,
-        JNI_ENV_PTR(env)->NewIntArray(JNI_ENV_ARG(env, (jsize)1))));
-    arr2 = (jintArray) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env,
-        JNI_ENV_PTR(env)->NewIntArray(JNI_ENV_ARG(env, (jsize)1))));
+    ctor = env->GetMethodID(cls, "<init>", "()V");
+    obj1 = env->NewGlobalRef(env->NewObject(cls, ctor));
+    obj2 = env->NewGlobalRef(env->NewObject(cls, ctor));
+    arr1 = (jintArray) env->NewGlobalRef(env->NewIntArray((jsize) 1));
+    arr2 = (jintArray) env->NewGlobalRef(env->NewIntArray((jsize) 1));
 
     watches[0].val.z = JNI_TRUE;
     watches[1].val.b = 1;
@@ -480,60 +458,37 @@ Java_nsk_jvmti_FieldModification_fieldmod002_check(JNIEnv *env,
         return PASSED;
     }
 
-
-
     if (printdump == JNI_TRUE) {
         printf(">>> modifying fields ...\n");
     }
 
-    cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/FieldModification/fieldmod002a"));
+    cls = env->FindClass("nsk/jvmti/FieldModification/fieldmod002a");
     if (cls == NULL) {
         printf("Cannot find fieldmod001a class!\n");
         return STATUS_FAILED;
     }
 
-    JNI_ENV_PTR(env)->SetStaticBooleanField(JNI_ENV_ARG(env, cls),
-        watches[0].fid, watches[0].val.z);
-    JNI_ENV_PTR(env)->SetStaticByteField(JNI_ENV_ARG(env, cls),
-        watches[1].fid, watches[1].val.b);
-    JNI_ENV_PTR(env)->SetStaticShortField(JNI_ENV_ARG(env, cls),
-        watches[2].fid, watches[2].val.s);
-    JNI_ENV_PTR(env)->SetStaticIntField(JNI_ENV_ARG(env, cls),
-        watches[3].fid, watches[3].val.i);
-    JNI_ENV_PTR(env)->SetStaticLongField(JNI_ENV_ARG(env, cls),
-        watches[4].fid, watches[4].val.j);
-    JNI_ENV_PTR(env)->SetStaticFloatField(JNI_ENV_ARG(env, cls),
-        watches[5].fid, watches[5].val.f);
-    JNI_ENV_PTR(env)->SetStaticDoubleField(JNI_ENV_ARG(env, cls),
-        watches[6].fid, watches[6].val.d);
-    JNI_ENV_PTR(env)->SetStaticCharField(JNI_ENV_ARG(env, cls),
-        watches[7].fid, watches[7].val.c);
-    JNI_ENV_PTR(env)->SetStaticObjectField(JNI_ENV_ARG(env, cls),
-        watches[8].fid, watches[8].val.l);
-    JNI_ENV_PTR(env)->SetStaticObjectField(JNI_ENV_ARG(env, cls),
-        watches[9].fid, watches[9].val.l);
+    env->SetStaticBooleanField(cls, watches[0].fid, watches[0].val.z);
+    env->SetStaticByteField(cls, watches[1].fid, watches[1].val.b);
+    env->SetStaticShortField(cls, watches[2].fid, watches[2].val.s);
+    env->SetStaticIntField(cls, watches[3].fid, watches[3].val.i);
+    env->SetStaticLongField(cls, watches[4].fid, watches[4].val.j);
+    env->SetStaticFloatField(cls, watches[5].fid, watches[5].val.f);
+    env->SetStaticDoubleField(cls, watches[6].fid, watches[6].val.d);
+    env->SetStaticCharField(cls, watches[7].fid, watches[7].val.c);
+    env->SetStaticObjectField(cls, watches[8].fid, watches[8].val.l);
+    env->SetStaticObjectField(cls, watches[9].fid, watches[9].val.l);
 
-    JNI_ENV_PTR(env)->SetBooleanField(JNI_ENV_ARG(env, obj),
-        watches[10].fid, watches[10].val.z);
-    JNI_ENV_PTR(env)->SetByteField(JNI_ENV_ARG(env, obj),
-        watches[11].fid, watches[11].val.b);
-    JNI_ENV_PTR(env)->SetShortField(JNI_ENV_ARG(env, obj),
-        watches[12].fid, watches[12].val.s);
-    JNI_ENV_PTR(env)->SetIntField(JNI_ENV_ARG(env, obj),
-        watches[13].fid, watches[13].val.i);
-    JNI_ENV_PTR(env)->SetLongField(JNI_ENV_ARG(env, obj),
-        watches[14].fid, watches[14].val.j);
-    JNI_ENV_PTR(env)->SetFloatField(JNI_ENV_ARG(env, obj),
-        watches[15].fid, watches[15].val.f);
-    JNI_ENV_PTR(env)->SetDoubleField(JNI_ENV_ARG(env, obj),
-        watches[16].fid, watches[16].val.d);
-    JNI_ENV_PTR(env)->SetCharField(JNI_ENV_ARG(env, obj),
-        watches[17].fid, watches[17].val.c);
-    JNI_ENV_PTR(env)->SetObjectField(JNI_ENV_ARG(env, obj),
-        watches[18].fid, watches[18].val.l);
-    JNI_ENV_PTR(env)->SetObjectField(JNI_ENV_ARG(env, obj),
-        watches[19].fid, watches[19].val.l);
+    env->SetBooleanField(obj, watches[10].fid, watches[10].val.z);
+    env->SetByteField(obj, watches[11].fid, watches[11].val.b);
+    env->SetShortField(obj, watches[12].fid, watches[12].val.s);
+    env->SetIntField(obj, watches[13].fid, watches[13].val.i);
+    env->SetLongField(obj, watches[14].fid, watches[14].val.j);
+    env->SetFloatField(obj, watches[15].fid, watches[15].val.f);
+    env->SetDoubleField(obj, watches[16].fid, watches[16].val.d);
+    env->SetCharField(obj, watches[17].fid, watches[17].val.c);
+    env->SetObjectField(obj, watches[18].fid, watches[18].val.l);
+    env->SetObjectField(obj, watches[19].fid, watches[19].val.l);
 
     if (printdump == JNI_TRUE) {
         printf(">>> ... done\n");
@@ -547,6 +502,4 @@ Java_nsk_jvmti_FieldModification_fieldmod002_check(JNIEnv *env,
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

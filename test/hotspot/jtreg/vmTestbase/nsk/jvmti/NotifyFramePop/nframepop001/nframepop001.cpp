@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -63,8 +50,7 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
         jmethodID method, jboolean wasPopedByException) {
     jvmtiError err;
 
-    popThread = JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG((JNIEnv *)env,
-        thread));
+    popThread = env->NewGlobalRef(thread);
 
     err = jvmti_env->GetMethodDeclaringClass(method, &popClass);
     if (err != JVMTI_ERROR_NONE) {
@@ -72,8 +58,7 @@ FramePop(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
                TranslateError(err), err);
         result = STATUS_FAILED;
     }
-    popClass = (jclass) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG((JNIEnv *)env,
-        popClass));
+    popClass = (jclass) env->NewGlobalRef(popClass);
 
     popMethod = method;
     popFlag = wasPopedByException;
@@ -95,8 +80,7 @@ ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
     jvmtiError err;
 
     if (method == mid1 || method == mid2) {
-        currThread = JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG((JNIEnv *)env,
-            thread));
+        currThread = env->NewGlobalRef(thread);
 
         err = jvmti_env->GetMethodDeclaringClass(
             method, &currClass);
@@ -105,8 +89,7 @@ ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
                    TranslateError(err), err);
             result = STATUS_FAILED;
         }
-        currClass = (jclass) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG((JNIEnv *)env,
-            currClass));
+        currClass = (jclass) env->NewGlobalRef(currClass);
 
         currMethod = method;
 
@@ -147,8 +130,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -215,16 +197,14 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_getMethIds(JNIEnv *env, jclass cl) {
         }
     }
 
-    mid1 = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cl),
-        "meth01", "(I)V");
+    mid1 = env->GetMethodID(cl, "meth01", "(I)V");
     if (mid1 == NULL) {
         printf("Cannot find method \"meth01\"\n");
         result = STATUS_FAILED;
         return;
     }
 
-    mid2 = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cl),
-        "meth02", "(I)V");
+    mid2 = env->GetMethodID(cl, "meth02", "(I)V");
     if (mid2 == NULL) {
         printf("Cannot find method \"meth02\"\n");
         result = STATUS_FAILED;
@@ -259,19 +239,17 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_setFramePopNotif(JNIEnv *env,
         result = STATUS_FAILED;
     }
 
-    currThread = JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, thr));
+    currThread = env->NewGlobalRef(thr);
 
-    currClass = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/NotifyFramePop/nframepop001a"));
+    currClass = env->FindClass("nsk/jvmti/NotifyFramePop/nframepop001a");
     if (currClass == NULL) {
         printf("Cannot find nsk.jvmti.NotifyFramePop.nframepop001a class!\n");
         result = STATUS_FAILED;
         return;
     }
-    currClass = (jclass) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, currClass));
+    currClass = (jclass) env->NewGlobalRef(currClass);
 
-    currMethod = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, currClass),
-        "run", "()V");
+    currMethod = env->GetMethodID(currClass, "run", "()V");
     if (currMethod == NULL) {
         printf("Cannot find method \"run\"\n");
         result = STATUS_FAILED;
@@ -310,14 +288,12 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_checkFrame(JNIEnv *env,
         return;
     }
 
-    if (JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, currThread),
-            popThread) != JNI_TRUE) {
+    if (!env->IsSameObject(currThread, popThread)) {
         printf("Point %d: thread is not the same as expected\n", point);
         result = STATUS_FAILED;
     }
 
-    if (JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, currClass),
-            popClass) != JNI_TRUE) {
+    if (!env->IsSameObject(currClass, popClass)) {
         printf("Point %d: class is not the same as expected\n", point);
         result = STATUS_FAILED;
     }
@@ -352,6 +328,4 @@ Java_nsk_jvmti_NotifyFramePop_nframepop001_getRes(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

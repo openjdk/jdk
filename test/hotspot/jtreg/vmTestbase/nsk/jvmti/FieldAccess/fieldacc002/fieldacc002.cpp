@@ -28,21 +28,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -257,8 +244,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -321,8 +307,7 @@ JNIEXPORT void JNICALL Java_nsk_jvmti_FieldAccess_fieldacc002_getReady(JNIEnv *e
         printf(">>> setting field access watches ...\n");
     }
 
-    cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/FieldAccess/fieldacc002a"));
+    cls = env->FindClass("nsk/jvmti/FieldAccess/fieldacc002a");
     if (cls == NULL) {
         printf("Cannot find fieldacc002a class!\n");
         result = STATUS_FAILED;
@@ -330,11 +315,11 @@ JNIEXPORT void JNICALL Java_nsk_jvmti_FieldAccess_fieldacc002_getReady(JNIEnv *e
     }
     for (i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
         if (watches[i].is_static == JNI_TRUE) {
-            watches[i].fid = JNI_ENV_PTR(env)->GetStaticFieldID(
-                JNI_ENV_ARG(env, cls), watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetStaticFieldID(
+                cls, watches[i].f_name, watches[i].f_sig);
         } else {
-            watches[i].fid = JNI_ENV_PTR(env)->GetFieldID(
-                JNI_ENV_ARG(env, cls), watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetFieldID(
+                cls, watches[i].f_name, watches[i].f_sig);
         }
         if (watches[i].fid == NULL) {
             printf("Cannot find field \"%s\"!\n", watches[i].f_name);
@@ -368,44 +353,33 @@ Java_nsk_jvmti_FieldAccess_fieldacc002_check(JNIEnv *env, jclass clz, jobject ob
         printf(">>> accessing fields ...\n");
     }
 
-    cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/FieldAccess/fieldacc002a"));
+    cls = env->FindClass("nsk/jvmti/FieldAccess/fieldacc002a");
     if (cls == NULL) {
         printf("Cannot find fieldacc002a class!\n");
         return STATUS_FAILED;
     }
 
-    JNI_ENV_PTR(env)->GetStaticBooleanField(JNI_ENV_ARG(env, cls),
-        watches[0].fid);
-    JNI_ENV_PTR(env)->GetStaticByteField(JNI_ENV_ARG(env, cls),
-        watches[1].fid);
-    JNI_ENV_PTR(env)->GetStaticShortField(JNI_ENV_ARG(env, cls),
-        watches[2].fid);
-    JNI_ENV_PTR(env)->GetStaticIntField(JNI_ENV_ARG(env, cls),
-        watches[3].fid);
-    JNI_ENV_PTR(env)->GetStaticLongField(JNI_ENV_ARG(env, cls),
-        watches[4].fid);
-    JNI_ENV_PTR(env)->GetStaticFloatField(JNI_ENV_ARG(env, cls),
-        watches[5].fid);
-    JNI_ENV_PTR(env)->GetStaticDoubleField(JNI_ENV_ARG(env, cls),
-        watches[6].fid);
-    JNI_ENV_PTR(env)->GetStaticCharField(JNI_ENV_ARG(env, cls),
-        watches[7].fid);
-    JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG(env, cls),
-        watches[8].fid);
-    JNI_ENV_PTR(env)->GetStaticObjectField(JNI_ENV_ARG(env, cls),
-        watches[9].fid);
+    env->GetStaticBooleanField(cls, watches[0].fid);
+    env->GetStaticByteField(cls, watches[1].fid);
+    env->GetStaticShortField(cls, watches[2].fid);
+    env->GetStaticIntField(cls, watches[3].fid);
+    env->GetStaticLongField(cls, watches[4].fid);
+    env->GetStaticFloatField(cls, watches[5].fid);
+    env->GetStaticDoubleField(cls, watches[6].fid);
+    env->GetStaticCharField(cls, watches[7].fid);
+    env->GetStaticObjectField(cls, watches[8].fid);
+    env->GetStaticObjectField(cls, watches[9].fid);
 
-    JNI_ENV_PTR(env)->GetBooleanField(JNI_ENV_ARG(env, obj), watches[10].fid);
-    JNI_ENV_PTR(env)->GetByteField(JNI_ENV_ARG(env, obj), watches[11].fid);
-    JNI_ENV_PTR(env)->GetShortField(JNI_ENV_ARG(env, obj), watches[12].fid);
-    JNI_ENV_PTR(env)->GetIntField(JNI_ENV_ARG(env, obj), watches[13].fid);
-    JNI_ENV_PTR(env)->GetLongField(JNI_ENV_ARG(env, obj), watches[14].fid);
-    JNI_ENV_PTR(env)->GetFloatField(JNI_ENV_ARG(env, obj), watches[15].fid);
-    JNI_ENV_PTR(env)->GetDoubleField(JNI_ENV_ARG(env, obj), watches[16].fid);
-    JNI_ENV_PTR(env)->GetCharField(JNI_ENV_ARG(env, obj), watches[17].fid);
-    JNI_ENV_PTR(env)->GetObjectField(JNI_ENV_ARG(env, obj), watches[18].fid);
-    JNI_ENV_PTR(env)->GetObjectField(JNI_ENV_ARG(env, obj), watches[19].fid);
+    env->GetBooleanField(obj, watches[10].fid);
+    env->GetByteField(obj, watches[11].fid);
+    env->GetShortField(obj, watches[12].fid);
+    env->GetIntField(obj, watches[13].fid);
+    env->GetLongField(obj, watches[14].fid);
+    env->GetFloatField(obj, watches[15].fid);
+    env->GetDoubleField(obj, watches[16].fid);
+    env->GetCharField(obj, watches[17].fid);
+    env->GetObjectField(obj, watches[18].fid);
+    env->GetObjectField(obj, watches[19].fid);
 
     if (printdump == JNI_TRUE) {
         printf(">>> ... done\n");
@@ -419,6 +393,4 @@ Java_nsk_jvmti_FieldAccess_fieldacc002_check(JNIEnv *env, jclass clz, jobject ob
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

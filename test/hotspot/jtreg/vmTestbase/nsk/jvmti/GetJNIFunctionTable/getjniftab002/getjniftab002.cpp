@@ -29,15 +29,6 @@
 
 extern "C" {
 
-
-#ifndef JNI_ENV_ARG1
-  #ifdef __cplusplus
-    #define JNI_ENV_ARG1(x)
-  #else
-    #define JNI_ENV_ARG1(x) x
-  #endif
-#endif
-
 #define PASSED  0
 #define STATUS_FAILED  2
 
@@ -89,7 +80,7 @@ Java_nsk_jvmti_GetJNIFunctionTable_getjniftab002_check(JNIEnv *env, jobject obj)
        only since JDK 1.2 */
     if (verbose)
         printf("\nb) Checking the function with the detached thread ...\n\ndetaching the main thread ...\n");
-    if ((err = vm->DetachCurrentThread(JNI_ENV_ARG1(vm))) != 0)
+    if ((err = vm->DetachCurrentThread()) != 0)
         printf("(%s,%d): Warning: DetachCurrentThread() returns: %d\n\
 \tcheck with the detached main thread skipped\n",
             __FILE__, __LINE__, err);

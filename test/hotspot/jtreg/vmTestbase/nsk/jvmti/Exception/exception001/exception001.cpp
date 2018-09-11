@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -102,7 +89,7 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr,
     if (printdump == JNI_TRUE) {
         printf(">>> retrieving Exception info ...\n");
     }
-    cls = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG((JNIEnv *)env, exception));
+    cls = env->GetObjectClass(exception);
     err = jvmti_env->GetClassSignature(cls, &ex.name, &generic);
     if (err != JVMTI_ERROR_NONE) {
         printf("(GetClassSignature) unexpected error: %s (%d)\n",
@@ -204,8 +191,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -263,26 +249,22 @@ Java_nsk_jvmti_Exception_exception001_check(JNIEnv *env, jclass cls) {
         return result;
     }
 
-    clz = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/Exception/exception001c"));
+    clz = env->FindClass("nsk/jvmti/Exception/exception001c");
     if (clz == NULL) {
         printf("Cannot find exception001c class!\n");
         return STATUS_FAILED;
     }
-    clz = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/Exception/exception001b"));
+    clz = env->FindClass("nsk/jvmti/Exception/exception001b");
     if (clz == NULL) {
         printf("Cannot find exception001b class!\n");
         return STATUS_FAILED;
     }
-    clz = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/Exception/exception001a"));
+    clz = env->FindClass("nsk/jvmti/Exception/exception001a");
     if (clz == NULL) {
         printf("Cannot find exception001a class!\n");
         return STATUS_FAILED;
     }
-    mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, clz),
-        "run", "()V");
+    mid = env->GetStaticMethodID(clz, "run", "()V");
     if (mid == NULL) {
         printf("Cannot find method run!\n");
         return STATUS_FAILED;
@@ -304,7 +286,7 @@ Java_nsk_jvmti_Exception_exception001_check(JNIEnv *env, jclass cls) {
         result = STATUS_FAILED;
     }
 
-    JNI_ENV_PTR(env)->CallStaticVoidMethod(JNI_ENV_ARG(env, clz), mid);
+    env->CallStaticVoidMethod(clz, mid);
 
     err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
             JVMTI_EVENT_EXCEPTION, thread);
@@ -322,6 +304,4 @@ Java_nsk_jvmti_Exception_exception001_check(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif
