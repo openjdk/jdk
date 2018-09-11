@@ -938,8 +938,7 @@ public final class ServiceLoader<S>
                     List<ModuleLayer> parents = layer.parents();
                     for (int i = parents.size() - 1; i >= 0; i--) {
                         ModuleLayer parent = parents.get(i);
-                        if (!visited.contains(parent)) {
-                            visited.add(parent);
+                        if (visited.add(parent)) {
                             stack.push(parent);
                         }
                     }

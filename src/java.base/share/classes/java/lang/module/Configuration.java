@@ -601,8 +601,7 @@ public final class Configuration {
                 // push in reverse order
                 for (int i = layer.parents.size() - 1; i >= 0; i--) {
                     Configuration parent = layer.parents.get(i);
-                    if (!visited.contains(parent)) {
-                        visited.add(parent);
+                    if (visited.add(parent)) {
                         stack.push(parent);
                     }
                 }
