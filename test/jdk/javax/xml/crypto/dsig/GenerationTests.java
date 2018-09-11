@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
- *      8046724 8079693 8177334
+ *      8046724 8079693 8177334 8205507
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
@@ -258,6 +258,26 @@ public class GenerationTests {
         KeyValue, x509data, KeyName
     }
 
+    // cached keys (for performance) used by test_create_detached_signature().
+    private static HashMap<String,Key[]> cachedKeys = new HashMap<>();
+
+    // Load cachedKeys persisted in a file to reproduce a failure.
+    // The keys are always saved to "cached-keys" but you can rename
+    // it to a different file name and load it here. Note: The keys will
+    // always be persisted so renaming is a good idea although the
+    // content might not change.
+    static {
+        String cacheFile = System.getProperty("use.cached.keys");
+        if (cacheFile != null) {
+            try (FileInputStream fis = new FileInputStream(cacheFile);
+                 ObjectInputStream ois = new ObjectInputStream(fis)) {
+                cachedKeys = (HashMap<String,Key[]>) ois.readObject();
+            } catch (Exception e) {
+                throw new AssertionError("Cannot read " + cacheFile, e);
+            }
+        }
+    }
+
     private static boolean result = true;
 
     public static void main(String args[]) throws Exception {
@@ -420,6 +440,12 @@ public class GenerationTests {
                     server.getPort(),
                     true,
                     XMLSignatureException.class);
+        }
+
+        // persist cached keys to a file.
+        try (FileOutputStream fos = new FileOutputStream("cached-keys", true);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(cachedKeys);
         }
 
         if (!result) {
@@ -1650,37 +1676,9 @@ public class GenerationTests {
 
         SignatureMethod sm = fac.newSignatureMethod(signatureMethod, null);
 
-        Key signingKey;
-        Key validationKey;
-        if (signatureMethod.contains("#hmac-")) {
-            // http://...#hmac-sha1 -> hmac-sha1 -> hmacsha1
-            String algName = signatureMethod
-                    .substring(signatureMethod.indexOf('#') + 1)
-                    .replace("-", "");
-            KeyGenerator kg = KeyGenerator.getInstance(algName);
-            signingKey = kg.generateKey();
-            validationKey = signingKey;
-        } else {
-            KeyPairGenerator kpg;
-            SecureRandom random = new SecureRandom();
-            if (signatureMethod.contains("#rsa-")
-                    || signatureMethod.contains("-rsa-MGF1")) {
-                kpg = KeyPairGenerator.getInstance("RSA");
-                kpg.initialize(signatureMethod.contains("#sha512-rsa-MGF1")
-                        ? 2048 : 1024, random);
-            } else if (signatureMethod.contains("#dsa-")) {
-                kpg = KeyPairGenerator.getInstance("DSA");
-                kpg.initialize(1024, random);
-            } else if (signatureMethod.contains("#ecdsa-")) {
-                kpg = KeyPairGenerator.getInstance("EC");
-                kpg.initialize(256, random);
-            } else {
-                throw new RuntimeException("Unsupported signature algorithm");
-            }
-            KeyPair kp = kpg.generateKeyPair();
-            validationKey = kp.getPublic();
-            signingKey = kp.getPrivate();
-        }
+        Key[] pair = getCachedKeys(signatureMethod);
+        Key signingKey = pair[0];
+        Key validationKey = pair[1];
 
         SignedInfo si = fac.newSignedInfo(cm, sm, refs, null);
 
@@ -1757,6 +1755,44 @@ public class GenerationTests {
         }
 
         return true;
+    }
+
+    private static Key[] getCachedKeys(String signatureMethod) {
+        return cachedKeys.computeIfAbsent(signatureMethod, sm -> {
+            try {
+                System.out.print("<create keys for " + sm + ">");
+                System.out.flush();
+                if (sm.contains("#hmac-")) {
+                    // http://...#hmac-sha1 -> hmac-sha1 -> hmacsha1
+                    String algName = sm
+                            .substring(sm.indexOf('#') + 1)
+                            .replace("-", "");
+                    KeyGenerator kg = KeyGenerator.getInstance(algName);
+                    Key signingKey = kg.generateKey();
+                    return new Key[] { signingKey, signingKey};
+                } else {
+                    KeyPairGenerator kpg;
+                    if (sm.contains("#rsa-")
+                            || sm.contains("-rsa-MGF1")) {
+                        kpg = KeyPairGenerator.getInstance("RSA");
+                        kpg.initialize(
+                                sm.contains("#sha512-rsa-MGF1") ? 2048 : 1024);
+                    } else if (sm.contains("#dsa-")) {
+                        kpg = KeyPairGenerator.getInstance("DSA");
+                        kpg.initialize(1024);
+                    } else if (sm.contains("#ecdsa-")) {
+                        kpg = KeyPairGenerator.getInstance("EC");
+                        kpg.initialize(256);
+                    } else {
+                        throw new RuntimeException("Unsupported signature algorithm");
+                    }
+                    KeyPair kp = kpg.generateKeyPair();
+                    return new Key[] { kp.getPrivate(), kp.getPublic()};
+                }
+            } catch (NoSuchAlgorithmException e) {
+                throw new AssertionError("Should not happen", e);
+            }
+        });
     }
 
     private static final String DSA_Y =
