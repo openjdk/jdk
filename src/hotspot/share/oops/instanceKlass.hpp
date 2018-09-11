@@ -1285,8 +1285,8 @@ public:
 private:
   void fence_and_clear_init_lock();
 
-  bool link_class_impl                           (bool throw_verifyerror, TRAPS);
-  bool verify_code                               (bool throw_verifyerror, TRAPS);
+  bool link_class_impl                           (TRAPS);
+  bool verify_code                               (TRAPS);
   void initialize_impl                           (TRAPS);
   void initialize_super_interfaces               (TRAPS);
   void eager_initialize_impl                     ();

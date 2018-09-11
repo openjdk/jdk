@@ -643,7 +643,7 @@ void InstanceKlass::eager_initialize_impl() {
   if (!is_not_initialized()) return;  // note: not equivalent to is_initialized()
 
   ClassState old_state = init_state();
-  link_class_impl(true, THREAD);
+  link_class_impl(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     // Abort if linking the class throws an exception.
@@ -681,11 +681,9 @@ void InstanceKlass::initialize(TRAPS) {
 }
 
 
-bool InstanceKlass::verify_code(bool throw_verifyerror, TRAPS) {
+bool InstanceKlass::verify_code(TRAPS) {
   // 1) Verify the bytecodes
-  Verifier::Mode mode =
-    throw_verifyerror ? Verifier::ThrowException : Verifier::NoException;
-  return Verifier::verify(this, mode, should_verify_class(), THREAD);
+  return Verifier::verify(this, should_verify_class(), THREAD);
 }
 
 
@@ -700,7 +698,7 @@ void InstanceKlass::unlink_class() {
 void InstanceKlass::link_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
-    link_class_impl(true, CHECK);
+    link_class_impl(CHECK);
   }
 }
 
@@ -709,12 +707,12 @@ void InstanceKlass::link_class(TRAPS) {
 bool InstanceKlass::link_class_or_fail(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
-    link_class_impl(false, CHECK_false);
+    link_class_impl(CHECK_false);
   }
   return is_linked();
 }
 
-bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
+bool InstanceKlass::link_class_impl(TRAPS) {
   if (DumpSharedSpaces && is_in_error_state()) {
     // This is for CDS dumping phase only -- we use the in_error_state to indicate that
     // the class has failed verification. Throwing the NoClassDefFoundError here is just
@@ -756,7 +754,7 @@ bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
     }
 
     InstanceKlass* ik_super = InstanceKlass::cast(super_klass);
-    ik_super->link_class_impl(throw_verifyerror, CHECK_false);
+    ik_super->link_class_impl(CHECK_false);
   }
 
   // link all interfaces implemented by this class before linking this class
@@ -764,7 +762,7 @@ bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
   int num_interfaces = interfaces->length();
   for (int index = 0; index < num_interfaces; index++) {
     InstanceKlass* interk = interfaces->at(index);
-    interk->link_class_impl(throw_verifyerror, CHECK_false);
+    interk->link_class_impl(CHECK_false);
   }
 
   // in case the class is linked in the process of linking its superclasses
@@ -794,7 +792,7 @@ bool InstanceKlass::link_class_impl(bool throw_verifyerror, TRAPS) {
     if (!is_linked()) {
       if (!is_rewritten()) {
         {
-          bool verify_ok = verify_code(throw_verifyerror, THREAD);
+          bool verify_ok = verify_code(THREAD);
           if (!verify_ok) {
             return false;
           }
