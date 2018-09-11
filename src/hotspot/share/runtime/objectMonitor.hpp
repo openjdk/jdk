@@ -321,21 +321,4 @@ class ObjectMonitor {
   bool      ExitSuspendEquivalent(JavaThread * Self);
 };
 
-#undef TEVENT
-#define TEVENT(nom) { if (SyncVerbose) FEVENT(nom); }
-
-#define FEVENT(nom)                             \
-  {                                             \
-    static volatile int ctr = 0;                \
-    int v = ++ctr;                              \
-    if ((v & (v - 1)) == 0) {                   \
-      tty->print_cr("INFO: " #nom " : %d", v);  \
-      tty->flush();                             \
-    }                                           \
-  }
-
-#undef  TEVENT
-#define TEVENT(nom) {;}
-
-
 #endif // SHARE_VM_RUNTIME_OBJECTMONITOR_HPP

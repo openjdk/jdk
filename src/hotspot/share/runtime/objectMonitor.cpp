@@ -546,7 +546,6 @@ void ObjectMonitor::EnterI(TRAPS) {
   // to defer the state transitions until absolutely necessary,
   // and in doing so avoid some transitions ...
 
-  TEVENT(Inflated enter - Contention);
   int nWakeups = 0;
   int recheckInterval = 1;
 
@@ -561,7 +560,6 @@ void ObjectMonitor::EnterI(TRAPS) {
 
     // park self
     if (_Responsible == Self || (SyncFlags & 1)) {
-      TEVENT(Inflated enter - park TIMED);
       Self->_ParkEvent->park((jlong) recheckInterval);
       // Increase the recheckInterval, but clamp the value.
       recheckInterval *= 8;
@@ -569,7 +567,6 @@ void ObjectMonitor::EnterI(TRAPS) {
         recheckInterval = MAX_RECHECK_INTERVAL;
       }
     } else {
-      TEVENT(Inflated enter - park UNTIMED);
       Self->_ParkEvent->park();
     }
 
@@ -580,7 +577,7 @@ void ObjectMonitor::EnterI(TRAPS) {
     // Note that the counter is not protected by a lock or updated by atomics.
     // That is by design - we trade "lossy" counters which are exposed to
     // races during updates for a lower probe effect.
-    TEVENT(Inflated enter - Futile wakeup);
+
     // This PerfData object can be used in parallel with a safepoint.
     // See the work around in PerfDataManager::destroy().
     OM_PERFDATA_OP(FutileWakeups, inc());
@@ -707,8 +704,6 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
     if (TryLock(Self) > 0) break;
     if (TrySpin(Self) > 0) break;
 
-    TEVENT(Wait Reentry - parking);
-
     // State transition wrappers around park() ...
     // ReenterI() wisely defers state transitions until
     // it's clear we must park the thread.
@@ -744,7 +739,6 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
     // Note that the counter is not protected by a lock or updated by atomics.
     // That is by design - we trade "lossy" counters which are exposed to
     // races during updates for a lower probe effect.
-    TEVENT(Wait Reentry - futile wakeup);
     ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally
@@ -795,7 +789,6 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
     if (SelfNode == _EntryList) _EntryList = nxt;
     assert(nxt == NULL || nxt->TState == ObjectWaiter::TS_ENTER, "invariant");
     assert(prv == NULL || prv->TState == ObjectWaiter::TS_ENTER, "invariant");
-    TEVENT(Unlink from EntryList);
   } else {
     assert(SelfNode->TState == ObjectWaiter::TS_CXQ, "invariant");
     // Inopportune interleaving -- Self is still on the cxq.
@@ -834,7 +827,6 @@ void ObjectMonitor::UnlinkAfterAcquire(Thread *Self, ObjectWaiter *SelfNode) {
       assert(q->_next == p, "invariant");
       q->_next = p->_next;
     }
-    TEVENT(Unlink from cxq);
   }
 
 #ifdef ASSERT
@@ -923,7 +915,6 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
       // way we should encounter this situation is in the presence of
       // unbalanced JNI locking. TODO: CheckJNICalls.
       // See also: CR4414101
-      TEVENT(Exit - Throw IMSX);
       assert(false, "Non-balanced monitor enter/exit! Likely JNI locking");
       return;
     }
@@ -931,7 +922,6 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
 
   if (_recursions != 0) {
     _recursions--;        // this is simple recursive enter
-    TEVENT(Inflated exit - recursive);
     return;
   }
 
@@ -968,10 +958,8 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
       OrderAccess::release_store(&_owner, (void*)NULL);   // drop the lock
       OrderAccess::storeload();                        // See if we need to wake a successor
       if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
-        TEVENT(Inflated exit - simple egress);
         return;
       }
-      TEVENT(Inflated exit - complex egress);
       // Other threads are blocked trying to acquire the lock.
 
       // Normally the exiting thread is responsible for ensuring succession,
@@ -1013,14 +1001,12 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
       if (!Atomic::replace_if_null(THREAD, &_owner)) {
         return;
       }
-      TEVENT(Exit - Reacquired);
     } else {
       if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
         OrderAccess::release_store(&_owner, (void*)NULL);   // drop the lock
         OrderAccess::storeload();
         // Ratify the previously observed values.
         if (_cxq == NULL || _succ != NULL) {
-          TEVENT(Inflated exit - simple egress);
           return;
         }
 
@@ -1036,12 +1022,8 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
         //     we could simply unpark() the lead thread and return
         //     without having set _succ.
         if (!Atomic::replace_if_null(THREAD, &_owner)) {
-          TEVENT(Inflated exit - reacquired succeeded);
           return;
         }
-        TEVENT(Inflated exit - reacquired failed);
-      } else {
-        TEVENT(Inflated exit - complex egress);
       }
     }
 
@@ -1168,7 +1150,6 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
       if (u == w) break;
       w = u;
     }
-    TEVENT(Inflated exit - drain cxq into EntryList);
 
     assert(w != NULL, "invariant");
     assert(_EntryList == NULL, "invariant");
@@ -1272,7 +1253,6 @@ bool ObjectMonitor::ExitSuspendEquivalent(JavaThread * jSelf) {
     if (2 == Mode) OrderAccess::storeload();
     if (!jSelf->is_external_suspend()) return false;
     // We raced a suspension -- fall thru into the slow path
-    TEVENT(ExitSuspendEquivalent - raced);
     jSelf->set_suspend_equivalent();
   }
   return jSelf->handle_special_suspend_equivalent_condition();
@@ -1299,10 +1279,6 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   // Drop the lock
   OrderAccess::release_store(&_owner, (void*)NULL);
   OrderAccess::fence();                               // ST _owner vs LD in unpark()
-
-  if (SafepointMechanism::poll(Self)) {
-    TEVENT(unpark before SAFEPOINT);
-  }
 
   DTRACE_MONITOR_PROBE(contended__exit, this, object(), Self);
   Trigger->unpark();
@@ -1372,7 +1348,6 @@ void ObjectMonitor::reenter(intptr_t recursions, TRAPS) {
         _owner = THREAD;  /* Convert from basiclock addr to Thread addr */  \
         _recursions = 0;                                                    \
       } else {                                                              \
-        TEVENT(Throw IMSX);                                                 \
         THROW(vmSymbols::java_lang_IllegalMonitorStateException());         \
       }                                                                     \
     }                                                                       \
@@ -1382,7 +1357,6 @@ void ObjectMonitor::reenter(intptr_t recursions, TRAPS) {
 // TODO-FIXME: remove check_slow() -- it's likely dead.
 
 void ObjectMonitor::check_slow(TRAPS) {
-  TEVENT(check_slow - throw IMSX);
   assert(THREAD != _owner && !THREAD->is_lock_owned((address) _owner), "must not be owner");
   THROW_MSG(vmSymbols::java_lang_IllegalMonitorStateException(), "current thread not owner");
 }
@@ -1444,12 +1418,9 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     if (event.should_commit()) {
       post_monitor_wait_event(&event, this, 0, millis, false);
     }
-    TEVENT(Wait - Throw IEX);
     THROW(vmSymbols::java_lang_InterruptedException());
     return;
   }
-
-  TEVENT(Wait);
 
   assert(Self->_Stalled == 0, "invariant");
   Self->_Stalled = intptr_t(this);
@@ -1631,7 +1602,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // no, it could be timeout or Thread.interrupt() or both
     // check for interrupt event, otherwise it is timeout
     if (interruptible && Thread::is_interrupted(Self, true) && !HAS_PENDING_EXCEPTION) {
-      TEVENT(Wait - throw IEX from epilog);
       THROW(vmSymbols::java_lang_InterruptedException());
     }
   }
@@ -1652,7 +1622,6 @@ void ObjectMonitor::INotify(Thread * Self) {
   Thread::SpinAcquire(&_WaitSetLock, "WaitSet - notify");
   ObjectWaiter * iterator = DequeueWaiter();
   if (iterator != NULL) {
-    TEVENT(Notify1 - Transfer);
     guarantee(iterator->TState == ObjectWaiter::TS_WAIT, "invariant");
     guarantee(iterator->_notified == 0, "invariant");
     // Disposition - what might we do with iterator ?
@@ -1766,7 +1735,6 @@ void ObjectMonitor::INotify(Thread * Self) {
 void ObjectMonitor::notify(TRAPS) {
   CHECK_OWNER();
   if (_WaitSet == NULL) {
-    TEVENT(Empty-Notify);
     return;
   }
   DTRACE_MONITOR_PROBE(notify, this, object(), THREAD);
@@ -1785,7 +1753,6 @@ void ObjectMonitor::notify(TRAPS) {
 void ObjectMonitor::notifyAll(TRAPS) {
   CHECK_OWNER();
   if (_WaitSet == NULL) {
-    TEVENT(Empty-NotifyAll);
     return;
   }
 
@@ -1912,14 +1879,12 @@ int ObjectMonitor::TrySpin(Thread * Self) {
 
   if (Knob_SuccRestrict && _succ != NULL) return 0;
   if (Knob_OState && NotRunnable (Self, (Thread *) _owner)) {
-    TEVENT(Spin abort - notrunnable [TOP]);
     return 0;
   }
 
   int MaxSpin = Knob_MaxSpinners;
   if (MaxSpin >= 0) {
     if (_Spinner > MaxSpin) {
-      TEVENT(Spin abort -- too many spinners);
       return 0;
     }
     // Slightly racy, but benign ...
@@ -1956,7 +1921,6 @@ int ObjectMonitor::TrySpin(Thread * Self) {
     // We periodically check to see if there's a safepoint pending.
     if ((ctr & 0xFF) == 0) {
       if (SafepointMechanism::poll(Self)) {
-        TEVENT(Spin: safepoint);
         goto Abort;           // abrupt spin egress
       }
       if (Knob_UsePause & 1) SpinPause();
@@ -2029,7 +1993,6 @@ int ObjectMonitor::TrySpin(Thread * Self) {
       // * exit spin without prejudice.
       // * Since CAS is high-latency, retry again immediately.
       prv = ox;
-      TEVENT(Spin: cas failed);
       if (caspty == -2) break;
       if (caspty == -1) goto Abort;
       ctr -= caspty;
@@ -2038,7 +2001,6 @@ int ObjectMonitor::TrySpin(Thread * Self) {
 
     // Did lock ownership change hands ?
     if (ox != prv && prv != NULL) {
-      TEVENT(spin: Owner changed)
       if (oxpty == -2) break;
       if (oxpty == -1) goto Abort;
       ctr -= oxpty;
@@ -2050,7 +2012,6 @@ int ObjectMonitor::TrySpin(Thread * Self) {
     // Spinning while the owner is OFFPROC is idiocy.
     // Consider: ctr -= RunnablePenalty ;
     if (Knob_OState && NotRunnable (Self, ox)) {
-      TEVENT(Spin abort - notrunnable);
       goto Abort;
     }
     if (sss && _succ == NULL) _succ = Self;
@@ -2059,7 +2020,6 @@ int ObjectMonitor::TrySpin(Thread * Self) {
   // Spin failed with prejudice -- reduce _SpinDuration.
   // TODO: Use an AIMD-like policy to adjust _SpinDuration.
   // AIMD is globally stable.
-  TEVENT(Spin failure);
   {
     int x = _SpinDuration;
     if (x > 0) {

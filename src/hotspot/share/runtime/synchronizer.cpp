@@ -320,7 +320,6 @@ void ObjectSynchronizer::fast_exit(oop object, BasicLock* lock, TRAPS) {
     // swing the displaced header from the BasicLock back to the mark.
     assert(dhw->is_neutral(), "invariant");
     if (object->cas_set_mark(dhw, mark) == mark) {
-      TEVENT(fast_exit: release stack-lock);
       return;
     }
   }
@@ -345,7 +344,6 @@ void ObjectSynchronizer::slow_enter(Handle obj, BasicLock* lock, TRAPS) {
     // be visible <= the ST performed by the CAS.
     lock->set_displaced_header(mark);
     if (mark == obj()->cas_set_mark((markOop) lock, mark)) {
-      TEVENT(slow_enter: release stacklock);
       return;
     }
     // Fall through to inflate() ...
@@ -388,7 +386,6 @@ void ObjectSynchronizer::slow_exit(oop object, BasicLock* lock, TRAPS) {
 //  5) lock lock2
 // NOTE: must use heavy weight monitor to handle complete_exit/reenter()
 intptr_t ObjectSynchronizer::complete_exit(Handle obj, TRAPS) {
-  TEVENT(complete_exit);
   if (UseBiasedLocking) {
     BiasedLocking::revoke_and_rebias(obj, false, THREAD);
     assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
@@ -403,7 +400,6 @@ intptr_t ObjectSynchronizer::complete_exit(Handle obj, TRAPS) {
 
 // NOTE: must use heavy weight monitor to handle complete_exit/reenter()
 void ObjectSynchronizer::reenter(Handle obj, intptr_t recursion, TRAPS) {
-  TEVENT(reenter);
   if (UseBiasedLocking) {
     BiasedLocking::revoke_and_rebias(obj, false, THREAD);
     assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
@@ -420,7 +416,6 @@ void ObjectSynchronizer::reenter(Handle obj, intptr_t recursion, TRAPS) {
 // NOTE: must use heavy weight monitor to handle jni monitor enter
 void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
   // the current locking is from JNI instead of Java code
-  TEVENT(jni_enter);
   if (UseBiasedLocking) {
     BiasedLocking::revoke_and_rebias(obj, false, THREAD);
     assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
@@ -432,7 +427,6 @@ void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
 
 // NOTE: must use heavy weight monitor to handle jni monitor exit
 void ObjectSynchronizer::jni_exit(oop obj, Thread* THREAD) {
-  TEVENT(jni_exit);
   if (UseBiasedLocking) {
     Handle h_obj(THREAD, obj);
     BiasedLocking::revoke_and_rebias(h_obj, false, THREAD);
@@ -460,8 +454,6 @@ ObjectLocker::ObjectLocker(Handle obj, Thread* thread, bool doLock) {
   _obj = obj;
 
   if (_dolock) {
-    TEVENT(ObjectLocker);
-
     ObjectSynchronizer::fast_enter(_obj, &_lock, false, _thread);
   }
 }
@@ -482,7 +474,6 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
     assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
   }
   if (millis < 0) {
-    TEVENT(wait - throw IAX);
     THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
   }
   ObjectMonitor* monitor = ObjectSynchronizer::inflate(THREAD,
@@ -505,7 +496,6 @@ void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
     assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
   }
   if (millis < 0) {
-    TEVENT(wait - throw IAX);
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
   }
   ObjectSynchronizer::inflate(THREAD,
@@ -608,7 +598,6 @@ static markOop ReadStableMark(oop obj) {
     if (its > 10000 || !os::is_MP()) {
       if (its & 1) {
         os::naked_yield();
-        TEVENT(Inflate: INFLATING - yield);
       } else {
         // Note that the following code attenuates the livelock problem but is not
         // a complete remedy.  A more complete solution would require that the inflating
@@ -641,7 +630,6 @@ static markOop ReadStableMark(oop obj) {
           }
         }
         Thread::muxRelease(gInflationLocks + ix);
-        TEVENT(Inflate: INFLATING - yield/park);
       }
     } else {
       SpinPause();       // SMP-polite spinning
@@ -703,7 +691,6 @@ static inline intptr_t get_next_hash(Thread * Self, oop obj) {
   value &= markOopDesc::hash_mask;
   if (value == 0) value = 0xBAD;
   assert(value != markOopDesc::no_hash, "invariant");
-  TEVENT(hashCode: GENERATE);
   return value;
 }
 
@@ -1154,7 +1141,6 @@ ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
       Thread::muxRelease(&gListLock);
       Self->omFreeProvision += 1 + (Self->omFreeProvision/2);
       if (Self->omFreeProvision > MAXPRIVATE) Self->omFreeProvision = MAXPRIVATE;
-      TEVENT(omFirst - reprovision);
 
       const int mx = MonitorBound;
       if (mx > 0 && (gMonitorPopulation-gMonitorFreeCount) > mx) {
@@ -1232,7 +1218,6 @@ ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
     temp[_BLOCKSIZE - 1].FreeNext = gFreeList;
     gFreeList = temp + 1;
     Thread::muxRelease(&gListLock);
-    TEVENT(Allocate block of monitors);
   }
 }
 
@@ -1317,7 +1302,6 @@ void ObjectSynchronizer::omFlush(Thread * Self) {
       guarantee(s->object() == NULL, "invariant");
       guarantee(!s->is_busy(), "invariant");
       s->set_owner(NULL);   // redundant but good hygiene
-      TEVENT(omFlush - Move one);
     }
     guarantee(tail != NULL && list != NULL, "invariant");
   }
@@ -1357,7 +1341,6 @@ void ObjectSynchronizer::omFlush(Thread * Self) {
   }
 
   Thread::muxRelease(&gListLock);
-  TEVENT(omFlush);
 }
 
 static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
@@ -1422,7 +1405,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
     // Currently, we spin/yield/park and poll the markword, waiting for inflation to finish.
     // We could always eliminate polling by parking the thread on some auxiliary list.
     if (mark == markOopDesc::INFLATING()) {
-      TEVENT(Inflate: spin while INFLATING);
       ReadStableMark(object);
       continue;
     }
@@ -1515,7 +1497,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
       // Hopefully the performance counters are allocated on distinct cache lines
       // to avoid false sharing on MP systems ...
       OM_PERFDATA_OP(Inflations, inc());
-      TEVENT(Inflate: overwrite stacklock);
       if (log_is_enabled(Debug, monitorinflation)) {
         if (object->is_instance()) {
           ResourceMark rm;
@@ -1566,7 +1547,6 @@ ObjectMonitor* ObjectSynchronizer::inflate(Thread * Self,
     // Hopefully the performance counters are allocated on distinct
     // cache lines to avoid false sharing on MP systems ...
     OM_PERFDATA_OP(Inflations, inc());
-    TEVENT(Inflate: overwrite neutral);
     if (log_is_enabled(Debug, monitorinflation)) {
       if (object->is_instance()) {
         ResourceMark rm;
@@ -1633,7 +1613,6 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
     // Deflate the monitor if it is no longer being used
     // It's idle - scavenge and return to the global free list
     // plain old deflation ...
-    TEVENT(deflate_idle_monitors - scavenge1);
     if (log_is_enabled(Debug, monitorinflation)) {
       if (obj->is_instance()) {
         ResourceMark rm;
@@ -1719,7 +1698,6 @@ void ObjectSynchronizer::deflate_idle_monitors(DeflateMonitorCounters* counters)
   ObjectMonitor * freeHeadp = NULL;  // Local SLL of scavenged monitors
   ObjectMonitor * freeTailp = NULL;
 
-  TEVENT(deflate_idle_monitors);
   // Prevent omFlush from changing mids in Thread dtor's during deflation
   // And in case the vm thread is acquiring a lock during a safepoint
   // See e.g. 6320749

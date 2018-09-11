@@ -844,8 +844,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
                "Experimental Sync flags")                                   \
                                                                             \
-  experimental(intx, SyncVerbose, 0, "(Unstable)")                          \
-                                                                            \
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
                                                                             \

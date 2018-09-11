@@ -264,7 +264,6 @@ int JvmtiRawMonitor::SimpleNotify (Thread * Self, bool All) {
 
 // Any JavaThread will enter here with state _thread_blocked
 int JvmtiRawMonitor::raw_enter(TRAPS) {
-  TEVENT (raw_enter) ;
   void * Contended ;
 
   // don't enter raw monitor if thread is being externally suspended, it will
@@ -341,7 +340,6 @@ int JvmtiRawMonitor::raw_enter(TRAPS) {
 // Used mainly for JVMTI raw monitor implementation
 // Also used for JvmtiRawMonitor::wait().
 int JvmtiRawMonitor::raw_exit(TRAPS) {
-  TEVENT (raw_exit) ;
   if (THREAD != _owner) {
     return OM_ILLEGAL_MONITOR_STATE;
   }
@@ -360,7 +358,6 @@ int JvmtiRawMonitor::raw_exit(TRAPS) {
 // All JavaThreads will enter here with state _thread_blocked
 
 int JvmtiRawMonitor::raw_wait(jlong millis, bool interruptible, TRAPS) {
-  TEVENT (raw_wait) ;
   if (THREAD != _owner) {
     return OM_ILLEGAL_MONITOR_STATE;
   }
@@ -406,7 +403,6 @@ int JvmtiRawMonitor::raw_wait(jlong millis, bool interruptible, TRAPS) {
 }
 
 int JvmtiRawMonitor::raw_notify(TRAPS) {
-  TEVENT (raw_notify) ;
   if (THREAD != _owner) {
     return OM_ILLEGAL_MONITOR_STATE;
   }
@@ -415,7 +411,6 @@ int JvmtiRawMonitor::raw_notify(TRAPS) {
 }
 
 int JvmtiRawMonitor::raw_notifyAll(TRAPS) {
-  TEVENT (raw_notifyAll) ;
   if (THREAD != _owner) {
     return OM_ILLEGAL_MONITOR_STATE;
   }
