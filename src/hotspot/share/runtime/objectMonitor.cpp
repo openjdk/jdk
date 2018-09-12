@@ -529,7 +529,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   // timer scalability issues we see on some platforms as we'd only have one thread
   // -- the checker -- parked on a timer.
 
-  if ((SyncFlags & 16) == 0 && nxt == NULL && _EntryList == NULL) {
+  if (nxt == NULL && _EntryList == NULL) {
     // Try to assume the role of responsible thread for the monitor.
     // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=Self }
     Atomic::replace_if_null(Self, &_Responsible);
@@ -554,12 +554,8 @@ void ObjectMonitor::EnterI(TRAPS) {
     if (TryLock(Self) > 0) break;
     assert(_owner != Self, "invariant");
 
-    if ((SyncFlags & 2) && _Responsible == NULL) {
-      Atomic::replace_if_null(Self, &_Responsible);
-    }
-
     // park self
-    if (_Responsible == Self || (SyncFlags & 1)) {
+    if (_Responsible == Self) {
       Self->_ParkEvent->park((jlong) recheckInterval);
       // Increase the recheckInterval, but clamp the value.
       recheckInterval *= 8;
@@ -672,9 +668,6 @@ void ObjectMonitor::EnterI(TRAPS) {
   // monitorexit.  Recall too, that in 1-0 mode monitorexit does not necessarily
   // execute a serializing instruction.
 
-  if (SyncFlags & 8) {
-    OrderAccess::fence();
-  }
   return;
 }
 
@@ -714,11 +707,7 @@ void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
       // cleared by handle_special_suspend_equivalent_condition()
       // or java_suspend_self()
       jt->set_suspend_equivalent();
-      if (SyncFlags & 1) {
-        Self->_ParkEvent->park((jlong)MAX_RECHECK_INTERVAL);
-      } else {
-        Self->_ParkEvent->park();
-      }
+      Self->_ParkEvent->park();
 
       // were we externally suspended while we were waiting?
       for (;;) {
@@ -927,9 +916,7 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
 
   // Invariant: after setting Responsible=null an thread must execute
   // a MEMBAR or other serializing instruction before fetching EntryList|cxq.
-  if ((SyncFlags & 4) == 0) {
-    _Responsible = NULL;
-  }
+  _Responsible = NULL;
 
 #if INCLUDE_JFR
   // get the owner's thread id for the MonitorEnter event
@@ -1445,9 +1432,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   AddWaiter(&node);
   Thread::SpinRelease(&_WaitSetLock);
 
-  if ((SyncFlags & 4) == 0) {
-    _Responsible = NULL;
-  }
+  _Responsible = NULL;
+
   intptr_t save = _recursions; // record the old recursion count
   _waiters++;                  // increment the number of waiters
   _recursions = 0;             // set the recursion level to be 1
@@ -1593,10 +1579,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   assert(_succ != Self, "invariant");
   assert(((oop)(object()))->mark() == markOopDesc::encode(this), "invariant");
 
-  if (SyncFlags & 32) {
-    OrderAccess::fence();
-  }
-
   // check if the notification happened
   if (!WasNotified) {
     // no, it could be timeout or Thread.interrupt() or both
@@ -1728,9 +1710,7 @@ void ObjectMonitor::INotify(Thread * Self) {
 // Note: We can also detect many such problems with a "minimum wait".
 // When the "minimum wait" is set to a small non-zero timeout value
 // and the program does not hang whereas it did absent "minimum wait",
-// that suggests a lost wakeup bug. The '-XX:SyncFlags=1' option uses
-// a "minimum wait" for all park() operations; see the recheckInterval
-// variable and MAX_RECHECK_INTERVAL.
+// that suggests a lost wakeup bug.
 
 void ObjectMonitor::notify(TRAPS) {
   CHECK_OWNER();

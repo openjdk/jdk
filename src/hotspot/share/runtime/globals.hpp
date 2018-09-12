@@ -841,9 +841,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                 "The check is performed on GuaranteedSafepointInterval.")   \
                 range(0, 100)                                               \
                                                                             \
-  experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
-               "Experimental Sync flags")                                   \
-                                                                            \
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \
                                                                             \
