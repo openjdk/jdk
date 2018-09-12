@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import com.sun.swingset3.demos.tree.TreeDemo;
 import static com.sun.swingset3.demos.tree.TreeDemo.DEMO_TITLE;
 
 import java.awt.Component;
+import javax.swing.UIManager;
 import javax.swing.tree.TreePath;
 
 import org.jtregext.GuiTestListener;
@@ -68,14 +69,16 @@ public class TreeDemoTest {
             public boolean checkComponent(Component comp) {
                 return tree.getRowCount() == count;
             }
+
             public String getDescription() {
                 return "A tree to have " + count + " rows";
             }
         });
     }
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
 
         new ClassReference(TreeDemo.class.getCanonicalName()).startApplication();
 

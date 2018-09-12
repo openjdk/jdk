@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,9 @@ public class OptionPaneDemoTest {
     public static final String YES = "Yes";
     public static final String SELECT_AN_OPTION = UIManager.getString("OptionPane.titleText");
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
 
         new ClassReference(OptionPaneDemo.class.getCanonicalName()).startApplication();
 
@@ -94,7 +95,7 @@ public class OptionPaneDemoTest {
     private void useInputDialog(JFrameOperator jfo, String textToType, String buttonToPush) {
         new JButtonOperator(jfo, INPUT_BUTTON).pushNoBlock();
         JDialogOperator jdo = new JDialogOperator(INPUT);
-        if(textToType != null) {
+        if (textToType != null) {
             JTextFieldOperator jto = new JTextFieldOperator(jdo);
             jto.typeText(textToType);
             jto.waitText(textToType);
@@ -146,7 +147,7 @@ public class OptionPaneDemoTest {
     }
 
     private void callADialogAndClose(JFrameOperator jfo, String buttonToOpenDialog,
-                                     String dialogTitle, String buttonToPush) {
+            String dialogTitle, String buttonToPush) {
         new JButtonOperator(jfo, buttonToOpenDialog).pushNoBlock();
         JDialogOperator jdo = new JDialogOperator(dialogTitle);
         new JButtonOperator(jdo, buttonToPush).push();
