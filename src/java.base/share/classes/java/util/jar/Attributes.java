@@ -369,8 +369,12 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * Reads attributes from the specified input stream.
      * XXX Need to handle UTF8 values.
      */
-    @SuppressWarnings("deprecation")
     void read(Manifest.FastInputStream is, byte[] lbuf) throws IOException {
+        read(is, lbuf, null, 0);
+    }
+
+    @SuppressWarnings("deprecation")
+    int read(Manifest.FastInputStream is, byte[] lbuf, String filename, int lineNumber) throws IOException {
         String name = null, value;
         byte[] lastline = null;
 
@@ -378,8 +382,11 @@ public class Attributes implements Map<Object,Object>, Cloneable {
         while ((len = is.readLine(lbuf)) != -1) {
             boolean lineContinued = false;
             byte c = lbuf[--len];
+            lineNumber++;
+
             if (c != '\n' && c != '\r') {
-                throw new IOException("line too long");
+                throw new IOException("line too long ("
+                            + Manifest.getErrorPosition(filename, lineNumber) + ")");
             }
             if (len > 0 && lbuf[len-1] == '\r') {
                 --len;
@@ -391,7 +398,8 @@ public class Attributes implements Map<Object,Object>, Cloneable {
             if (lbuf[0] == ' ') {
                 // continuation of previous line
                 if (name == null) {
-                    throw new IOException("misplaced continuation line");
+                    throw new IOException("misplaced continuation line ("
+                                + Manifest.getErrorPosition(filename, lineNumber) + ")");
                 }
                 lineContinued = true;
                 byte[] buf = new byte[lastline.length + len - 1];
@@ -406,11 +414,13 @@ public class Attributes implements Map<Object,Object>, Cloneable {
             } else {
                 while (lbuf[i++] != ':') {
                     if (i >= len) {
-                        throw new IOException("invalid header field");
+                        throw new IOException("invalid header field ("
+                                    + Manifest.getErrorPosition(filename, lineNumber) + ")");
                     }
                 }
                 if (lbuf[i++] != ' ') {
-                    throw new IOException("invalid header field");
+                    throw new IOException("invalid header field ("
+                                + Manifest.getErrorPosition(filename, lineNumber) + ")");
                 }
                 name = new String(lbuf, 0, 0, i - 2);
                 if (is.peek() == ' ') {
@@ -433,9 +443,11 @@ public class Attributes implements Map<Object,Object>, Cloneable {
                                      + "entry in the jar file.");
                 }
             } catch (IllegalArgumentException e) {
-                throw new IOException("invalid header field name: " + name);
+                throw new IOException("invalid header field name: " + name
+                            + " (" + Manifest.getErrorPosition(filename, lineNumber) + ")");
             }
         }
+        return lineNumber;
     }
 
     /**

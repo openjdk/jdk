@@ -1081,7 +1081,10 @@ jceks.key.serialFilter = java.base/java.lang.Enum;java.base/java.security.KeyRep
 #             java.nio.channels package will contain enhanced exception
 #             message information
 #
+#  jar      - enables more detailed information in the IOExceptions thrown
+#             by classes in the java.util.jar package
+#
 # The property setting in this file can be overridden by a system property of
 # the same name, with the same syntax and possible values.
 #
-#jdk.includeInExceptions=hostInfo
+#jdk.includeInExceptions=hostInfo,jar
