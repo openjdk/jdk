@@ -98,12 +98,14 @@ void InstanceRefKlass::oop_oop_iterate_discovered_and_discovery(oop obj, Referen
 
 template <typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_fields(oop obj, OopClosureType* closure, Contains& contains) {
+  assert(closure->ref_discoverer() == NULL, "ReferenceDiscoverer should not be set");
   do_referent<T>(obj, closure, contains);
   do_discovered<T>(obj, closure, contains);
 }
 
 template <typename T, class OopClosureType, class Contains>
 void InstanceRefKlass::oop_oop_iterate_fields_except_referent(oop obj, OopClosureType* closure, Contains& contains) {
+  assert(closure->ref_discoverer() == NULL, "ReferenceDiscoverer should not be set");
   do_discovered<T>(obj, closure, contains);
 }
 

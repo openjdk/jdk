@@ -54,8 +54,8 @@ protected:
   template <class T>
   inline void handle_non_cset_obj_common(InCSetState const state, T* p, oop const obj);
 public:
-  // This closure needs special handling for InstanceRefKlass.
-  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
+
   void set_region(HeapRegion* from) { _from = from; }
 
   inline void trim_queue_partially();
@@ -97,6 +97,9 @@ public:
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)          { do_oop_work(p); }
   virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
+
+  // We need to do reference discovery while processing evacuated objects.
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);
@@ -201,8 +204,7 @@ public:
     _worker_i(worker_i) {
   }
 
-  // This closure needs special handling for InstanceRefKlass.
-  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -219,8 +221,8 @@ public:
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)       { do_oop_work(p); }
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  // This closure needs special handling for InstanceRefKlass.
-  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
+
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 };
 
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_HPP
