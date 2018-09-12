@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -157,11 +144,8 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
     bpeakpointsCount++;
 
     classDef.klass = klass;
-    classDef.class_byte_count =
-        JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG((JNIEnv *)env, classBytes));
-    bytes = (unsigned char *)
-        JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG((JNIEnv *)env,
-            classBytes), NULL);
+    classDef.class_byte_count = env->GetArrayLength(classBytes);
+    bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
 
     for (i = 0; i < classDef.class_byte_count - 3; i++) {
         if (((jint)bytes[i+3] |
@@ -219,8 +203,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -292,14 +275,14 @@ Java_nsk_jvmti_RedefineClasses_redefclass016_getReady(JNIEnv *env, jclass cls,
         !caps.can_get_line_numbers ||
         !caps.can_access_local_variables) return;
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, clazz), "run", "()V");
+    mid = env->GetMethodID(clazz, "run", "()V");
     if (mid == NULL) {
         printf("Cannot find Method ID for method run\n");
         result = STATUS_FAILED;
         return;
     }
 
-    classBytes = (jbyteArray) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, bytes));
+    classBytes = (jbyteArray) env->NewGlobalRef(bytes);
 
     err = jvmti->GetLineNumberTable(mid, &entryCount, &lines);
     if (err != JVMTI_ERROR_NONE) {
@@ -353,6 +336,4 @@ Java_nsk_jvmti_RedefineClasses_redefclass016_check(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

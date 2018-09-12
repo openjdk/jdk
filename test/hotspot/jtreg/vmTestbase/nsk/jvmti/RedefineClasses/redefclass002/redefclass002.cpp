@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define STATUS_FAILED 2
 #define PASSED 0
@@ -64,8 +51,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = JNI_ENV_PTR(vm)->GetEnv(JNI_ENV_ARG(vm, (void **) &jvmti),
-            JVMTI_VERSION_1_1)) != JNI_OK) {
+    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -155,10 +141,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass002_makeRedefinition(JNIEnv *env, jclas
 
 /* filling the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
-    classDef.class_byte_count =
-        JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG(env, classBytes));
-    classDef.class_bytes = (unsigned char *)
-        JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG(env, classBytes), NULL);
+    classDef.class_byte_count = env->GetArrayLength(classBytes);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
@@ -175,6 +159,4 @@ Java_nsk_jvmti_RedefineClasses_redefclass002_makeRedefinition(JNIEnv *env, jclas
     return PASSED;
 }
 
-#ifdef __cplusplus
 }
-#endif

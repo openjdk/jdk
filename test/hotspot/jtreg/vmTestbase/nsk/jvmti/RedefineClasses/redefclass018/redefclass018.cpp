@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -78,11 +65,8 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
     }
 
     classDef.klass = klass;
-    classDef.class_byte_count =
-        JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG((JNIEnv *)env, classBytes));
-    classDef.class_bytes = (unsigned char *)
-        JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG((JNIEnv *)env,
-            classBytes), NULL);
+    classDef.class_byte_count = env->GetArrayLength(classBytes);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
 
     if (printdump == JNI_TRUE) {
         printf(">>> about to call RedefineClasses\n");
@@ -115,8 +99,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -177,7 +160,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass018_getReady(JNIEnv *env, jclass cls,
     if (!caps.can_redefine_classes ||
         !caps.can_generate_exception_events) return;
 
-    classBytes = (jbyteArray) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, bytes));
+    classBytes = (jbyteArray) env->NewGlobalRef(bytes);
 
     if ((err = (jvmti->GetCurrentThread(&thread))) != JVMTI_ERROR_NONE) {
         printf("Failed to get current thread: %s (%d)\n", TranslateError(err), err);
@@ -199,6 +182,4 @@ Java_nsk_jvmti_RedefineClasses_redefclass018_check(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif
