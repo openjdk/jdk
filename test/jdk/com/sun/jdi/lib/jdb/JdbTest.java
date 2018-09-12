@@ -44,6 +44,7 @@ public abstract class JdbTest {
     public static class LaunchOptions {
         public final String debuggeeClass;
         public final List<String> debuggeeOptions = new LinkedList<>();
+        public String sourceFilename;
 
         public LaunchOptions(String debuggeeClass) {
             this.debuggeeClass = debuggeeClass;
@@ -56,21 +57,28 @@ public abstract class JdbTest {
             debuggeeOptions.addAll(Arrays.asList(options));
             return this;
         }
+        public LaunchOptions setSourceFilename(String name) {
+            sourceFilename = name;
+            return this;
+        }
     }
 
     public JdbTest(LaunchOptions launchOptions) {
-        this.launchOptions= launchOptions;
-        debuggeeClass = launchOptions.debuggeeClass;
+        this.launchOptions = launchOptions;
     }
     public JdbTest(String debuggeeClass) {
         this(new LaunchOptions(debuggeeClass));
+    }
+
+    // sourceFilename is used by setBreakpoints and redefineClass
+    public JdbTest(String debuggeeClass, String sourceFilename) {
+        this(new LaunchOptions(debuggeeClass).setSourceFilename(sourceFilename));
     }
 
     protected Jdb jdb;
     protected Process debuggee;
     private final List<String> debuggeeOutput = new LinkedList<>();
     private final LaunchOptions launchOptions;
-    protected final String debuggeeClass;   // shortland for launchOptions.debuggeeClass
 
     // returns the whole jdb output as a string
     public String getJdbOutput() {
@@ -201,7 +209,39 @@ public abstract class JdbTest {
     // from the file from test source directory.
     // returns number of the breakpoints set.
     protected int setBreakpointsFromTestSource(String debuggeeFileName, int id) {
-        return setBreakpoints(jdb, debuggeeClass, System.getProperty("test.src") + "/" + debuggeeFileName, id);
+        return setBreakpoints(jdb, launchOptions.debuggeeClass,
+                              getTestSourcePath(debuggeeFileName), id);
+    }
+
+    // sets breakpoints in the class {@code launchOptions.debuggeeClass}
+    // to the lines parsed by {@code parseBreakpoints}
+    // from the file from test source directory specified by {@code launchOptions.sourceFilename}.
+    // returns number of the breakpoints set.
+    protected int setBreakpoints(int id) {
+        verifySourceFilename();
+        return setBreakpointsFromTestSource(launchOptions.sourceFilename, id);
+    }
+
+    // transforms class with the specified id (see {@code ClassTransformer})
+    // and executes "redefine" jdb command for {@code launchOptions.debuggeeClass}.
+    // returns reply for the command.
+    protected List<String> redefineClass(int id, String... compilerOptions) {
+        verifySourceFilename();
+        String transformedClassFile = ClassTransformer.fromTestSource(launchOptions.sourceFilename)
+                .transform(id, launchOptions.debuggeeClass, compilerOptions);
+        return jdb.command(JdbCommand.redefine(launchOptions.debuggeeClass, transformedClassFile));
+    }
+
+    // gets full test source path for the given test filename
+    protected static String getTestSourcePath(String fileName) {
+        return Paths.get(System.getProperty("test.src")).resolve(fileName).toString();
+    }
+
+    // verifies that sourceFilename is specified in ctor
+    private void verifySourceFilename() {
+        if (launchOptions.sourceFilename == null) {
+            throw new RuntimeException("launchOptions.sourceFilename must be specified.");
+        }
     }
 
     protected OutputAnalyzer execCommand(JdbCommand cmd) {

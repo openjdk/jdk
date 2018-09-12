@@ -1,71 +1,66 @@
-#!/bin/sh
+/*
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
 
-#
-# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-# or visit www.oracle.com if you need additional information or have any
-# questions.
-#
+/*
+ * @test
+ * @bug 5002251 6407335 6412391
+ * @summary Redefine a class that has an annotation and verify that the
+ * new annotation is returned.
+ * @comment converted from test/jdk/com/sun/jdi/RedefineAnnotation.sh
+ *
+ * @library /test/lib
+ * @compile -g RedefineAnnotation.java
+ * @run main/othervm RedefineAnnotation
+ */
 
-#  @test
-#  @bug 5002251 6407335 6412391
-#  @summary Redefine a class that has an annotation and verify that the
-#    new annotation is returned.
-#
-#  @key intermittent
-#  @run shell RedefineAnnotation.sh
-
-compileOptions=-g
-
-# Uncomment this to see the JDI trace
-#jdbOptions=-dbgtrace
-
-createJavaFile()
-{
-    cat <<EOF > $1.java.1
+import jdk.test.lib.process.OutputAnalyzer;
+import lib.jdb.JdbCommand;
+import lib.jdb.JdbTest;
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 
-/**
- */
 @Foo(Constants.class_annotation)  // @1 commentout
 // @1 uncomment @Foo(Constants.new_class_annotation)
-public class $1 {
-@Foo(Constants.field_annotation)  // @1 commentout
-// @1 uncomment @Foo(Constants.new_field_annotation)
+class RedefineAnnotationTarg {
+    @Foo(Constants.field_annotation)  // @1 commentout
+    // @1 uncomment @Foo(Constants.new_field_annotation)
     public int dummy_field;
 
     public static void main(String[] args) {
         MySubClass sub = new MySubClass();
         MySubSubClass subsub = new MySubSubClass();
-        new $1().hi(false);
-        new $1().hi(true);  // @1 breakpoint
+        new RedefineAnnotationTarg().hi(false);
+        new RedefineAnnotationTarg().hi(true);  // @1 breakpoint
         sub.hi(true);
         subsub.hi(true);
     }
 
-@Foo(Constants.method_annotation)  // @1 commentout
-// @1 uncomment @Foo(Constants.new_method_annotation)
+    @Foo(Constants.method_annotation)  // @1 commentout
+    // @1 uncomment @Foo(Constants.new_method_annotation)
     public void hi(
-@Foo(Constants.method_parameter_annotation)  // @1 commentout
-// @1 uncomment @Foo(Constants.new_method_parameter_annotation)
+    @Foo(Constants.method_parameter_annotation)  // @1 commentout
+    // @1 uncomment @Foo(Constants.new_method_parameter_annotation)
                    boolean isNewVersion) {
 
         if (isNewVersion) {
@@ -89,7 +84,7 @@ public class $1 {
                 System.out.println("FAIL: class_annotation was NOT changed.");
             }
         }
-    
+
         // field annotations check:
         try {
             Field my_field = getClass().getField("dummy_field");
@@ -112,7 +107,7 @@ public class $1 {
             throw new Error("FAIL: cannot find field 'dummy_field' in "
                           + getClass());
         }
-    
+
         // method annotations check:
         try {
             Class params[] = new Class[1];
@@ -136,7 +131,7 @@ public class $1 {
         } catch (NoSuchMethodException nsme) {
             throw new Error("FAIL: cannot find method 'hi' in " + getClass());
         }
-    
+
         // method parameter annotations check:
         try {
             Class params[] = new Class[1];
@@ -174,14 +169,14 @@ public class $1 {
 
 // this subclass exists just to make the RedefineClasses() code do a
 // subclass walk to update the counter
-class MySubClass extends $1 {
-  int my_int_field_makes_me_different;
+class MySubClass extends RedefineAnnotationTarg {
+    int my_int_field_makes_me_different;
 }
 
 // this subclass exists just to make the RedefineClasses() code do a
 // sub-subclass walk to update the counter
 class MySubSubClass extends MySubClass {
-  float my_float_field_makes_me_different;
+    float my_float_field_makes_me_different;
 }
 
 class Constants {
@@ -209,38 +204,28 @@ class Constants {
     String value();
 }
 
-EOF
+public class RedefineAnnotation extends JdbTest {
+
+    public static void main(String argv[]) {
+        new RedefineAnnotation().run();
+    }
+
+    private RedefineAnnotation() {
+        super(DEBUGGEE_CLASS, SOURCE_FILE);
+    }
+
+    private static final String DEBUGGEE_CLASS = RedefineAnnotationTarg.class.getName();
+    private static final String SOURCE_FILE = "RedefineAnnotation.java";
+
+    @Override
+    protected void runCases() {
+        setBreakpoints(1);
+        jdb.command(JdbCommand.run());
+
+        redefineClass(1, "-g");
+        jdb.contToExit(1);
+
+        new OutputAnalyzer(getDebuggeeOutput())
+                .shouldNotContain("FAIL:");
+    }
 }
-
-# This is called to feed cmds to jdb.
-dojdbCmds()
-{
-    setBkpts @1
-    runToBkpt @1
-    redefineClass @1
-    cmd allowExit cont
-}
-
-
-mysetup()
-{
-    if [ -z "$TESTSRC" ] ; then
-        TESTSRC=.
-    fi
-
-    for ii in . $TESTSRC $TESTSRC/.. ; do
-        if [ -r "$ii/ShellScaffold.sh" ] ; then
-            . $ii/ShellScaffold.sh 
-            break
-        fi
-    done
-}
-
-# You could replace this next line with the contents
-# of ShellScaffold.sh and this script will run just the same.
-mysetup
-
-runit
-
-debuggeeFailIfPresent 'FAIL:'
-pass

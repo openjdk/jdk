@@ -149,6 +149,11 @@ public class JdbCommand {
         return new JdbCommand("stop in " + targetClass + "." + methodName);
     }
 
+    // clear <class id>:<line>   -- clear a breakpoint at a line
+    public static JdbCommand clear(String targetClass, int lineNum) {
+        return new JdbCommand("clear " + targetClass + ":" + lineNum);
+    }
+
     // exception type used by catch/ignore
     public enum ExType{
         uncaught,
@@ -238,5 +243,13 @@ public class JdbCommand {
     // watch [access|all] <class id>.<field name>
     public static JdbCommand watch(String classId, String fieldName) {
         return new JdbCommand("watch " + classId + "." + fieldName);
+    }
+
+    public static JdbCommand pop() {
+        return new JdbCommand("pop");
+    }
+
+    public static JdbCommand redefine(String classId, String classFileName) {
+        return new JdbCommand("redefine " + classId + " " + classFileName);
     }
 }
