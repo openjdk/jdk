@@ -1889,13 +1889,23 @@ Node *PhaseCCP::transform_once( Node *n ) {
       } else if( n->is_Region() ) { // Unreachable region
         // Note: nn == C->top()
         n->set_req(0, NULL);        // Cut selfreference
-        // Eagerly remove dead phis to avoid phis copies creation.
-        for (DUIterator i = n->outs(); n->has_out(i); i++) {
-          Node* m = n->out(i);
-          if( m->is_Phi() ) {
-            assert(type(m) == Type::TOP, "Unreachable region should not have live phis.");
-            replace_node(m, nn);
-            --i; // deleted this phi; rescan starting with next position
+        bool progress = true;
+        uint max = n->outcnt();
+        DUIterator i;
+        while (progress) {
+          progress = false;
+          // Eagerly remove dead phis to avoid phis copies creation.
+          for (i = n->outs(); n->has_out(i); i++) {
+            Node* m = n->out(i);
+            if (m->is_Phi()) {
+              assert(type(m) == Type::TOP, "Unreachable region should not have live phis.");
+              replace_node(m, nn);
+              if (max != n->outcnt()) {
+                progress = true;
+                i = n->refresh_out_pos(i);
+                max = n->outcnt();
+              }
+            }
           }
         }
       }
