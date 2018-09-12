@@ -32,6 +32,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import javax.swing.JFormattedTextField;
+import javax.swing.UIManager;
 
 import static org.jemmy2ext.JemmyExt.*;
 
@@ -69,9 +70,9 @@ import static org.testng.AssertJUnit.*;
 @Listeners(GuiTestListener.class)
 public class TextFieldDemoTest {
 
-    @Test
-    public void test() throws Exception {
-
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
         new ClassReference(TextFieldDemo.class.getCanonicalName()).startApplication();
 
         JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
@@ -144,11 +145,12 @@ public class TextFieldDemoTest {
         });
 
         // Check non-matching passwords
+        final Color backgroundColor = UIManager.getColor("TextField.background");
         password2.typeText("passwereertegrs");
         password1.waitState(new ComponentChooser() {
             public boolean checkComponent(Component comp) {
-                return password1.getBackground().equals(Color.white) &&
-                       password2.getBackground().equals(Color.white);
+                return password1.getBackground().equals(backgroundColor) &&
+                       password2.getBackground().equals(backgroundColor);
             }
             public String getDescription() {
                 return "Passwords not to match";
