@@ -526,8 +526,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fcheck-new"
-    TOOLCHAIN_CFLAGS_JDK="-pipe"
+    TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fcheck-new -fstack-protector"
+    TOOLCHAIN_CFLAGS_JDK="-pipe -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX (but since this gives *worse* performance, use no-strict-aliasing everywhere!)
 
     CXXSTD_CXXFLAG="-std=gnu++98"
