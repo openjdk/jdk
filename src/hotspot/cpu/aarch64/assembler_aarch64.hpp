@@ -2356,7 +2356,7 @@ public:
 
   // FMLA/FMLS - Vector - Scalar
   INSN(fmlavs, 0, 0b0001);
-  INSN(fmlsvs, 0, 0b0001);
+  INSN(fmlsvs, 0, 0b0101);
   // FMULX - Vector - Scalar
   INSN(fmulxvs, 1, 0b1001);
 
