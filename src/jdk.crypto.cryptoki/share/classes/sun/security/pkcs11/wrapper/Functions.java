@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -73,6 +73,9 @@ public class Functions {
     private static final Map<String,Integer> mechIds =
         new HashMap<String,Integer>();
 
+    private static final Map<String, Long> hashMechIds =
+            new HashMap<String, Long>();
+
     // key types (CKK_*)
     private static final Map<Integer,String> keyNames =
         new HashMap<Integer,String>();
@@ -93,7 +96,6 @@ public class Functions {
 
     private static final Map<String,Integer> objectClassIds =
         new HashMap<String,Integer>();
-
 
     /**
      * For converting numbers to their hex presentation.
@@ -444,6 +446,10 @@ public class Functions {
         return getId(objectClassIds, name);
     }
 
+    public static long getHashMechId(String name) {
+        return hashMechIds.get(name);
+    }
+
     /**
      * Check the given arrays for equalitiy. This method considers both arrays as
      * equal, if both are <code>null</code> or both have the same length and
@@ -589,6 +595,10 @@ public class Functions {
         addMapping(objectClassNames, objectClassIds, id, name);
     }
 
+    private static void addHashMech(long id, String name) {
+        hashMechIds.put(name, id);
+    }
+
     static {
         addMech(CKM_RSA_PKCS_KEY_PAIR_GEN,      "CKM_RSA_PKCS_KEY_PAIR_GEN");
         addMech(CKM_RSA_PKCS,                   "CKM_RSA_PKCS");
@@ -719,6 +729,10 @@ public class Functions {
         addMech(CKM_TLS_PRF,                    "CKM_TLS_PRF");
         addMech(CKM_SSL3_MD5_MAC,               "CKM_SSL3_MD5_MAC");
         addMech(CKM_SSL3_SHA1_MAC,              "CKM_SSL3_SHA1_MAC");
+        addMech(CKM_TLS12_MASTER_KEY_DERIVE,    "CKM_TLS12_MASTER_KEY_DERIVE");
+        addMech(CKM_TLS12_KEY_AND_MAC_DERIVE,   "CKM_TLS12_KEY_AND_MAC_DERIVE");
+        addMech(CKM_TLS12_MASTER_KEY_DERIVE_DH, "CKM_TLS12_MASTER_KEY_DERIVE_DH");
+        addMech(CKM_TLS_MAC,                    "CKM_TLS_MAC");
         addMech(CKM_MD5_KEY_DERIVATION,         "CKM_MD5_KEY_DERIVATION");
         addMech(CKM_MD2_KEY_DERIVATION,         "CKM_MD2_KEY_DERIVATION");
         addMech(CKM_SHA1_KEY_DERIVATION,        "CKM_SHA1_KEY_DERIVATION");
@@ -793,6 +807,12 @@ public class Functions {
 
         addMech(PCKM_SECURERANDOM,              "SecureRandom");
         addMech(PCKM_KEYSTORE,                  "KeyStore");
+
+        addHashMech(CKM_SHA_1, "SHA-1");
+        addHashMech(CKM_SHA224, "SHA-224");
+        addHashMech(CKM_SHA256, "SHA-256");
+        addHashMech(CKM_SHA384, "SHA-384");
+        addHashMech(CKM_SHA512, "SHA-512");
 
         addKeyType(CKK_RSA,                     "CKK_RSA");
         addKeyType(CKK_DSA,                     "CKK_DSA");

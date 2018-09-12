@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -276,10 +276,13 @@ void printDebug(const char *format, ...);
 #define CLASS_SSL3_RANDOM_DATA "sun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA"
 // CLASS_SSL3_RANDOM_DATA is used by CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS
 #define CLASS_SSL3_KEY_MAT_OUT "sun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_OUT"
-// CLASS_SSL3_KEY_MAT_OUT is used by CLASS_SSL3_KEY_MAT_PARAMS
+// CLASS_SSL3_KEY_MAT_OUT is used by CLASS_SSL3_KEY_MAT_PARAMS and CK_TLS12_KEY_MAT_PARAMS
 #define CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_SSL3_MASTER_KEY_DERIVE_PARAMS"
+#define CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS "sun/security/pkcs11/wrapper/CK_TLS12_MASTER_KEY_DERIVE_PARAMS"
 #define CLASS_SSL3_KEY_MAT_PARAMS "sun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_PARAMS"
+#define CLASS_TLS12_KEY_MAT_PARAMS "sun/security/pkcs11/wrapper/CK_TLS12_KEY_MAT_PARAMS"
 #define CLASS_TLS_PRF_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_PRF_PARAMS"
+#define CLASS_TLS_MAC_PARAMS "sun/security/pkcs11/wrapper/CK_TLS_MAC_PARAMS"
 #define CLASS_AES_CTR_PARAMS "sun/security/pkcs11/wrapper/CK_AES_CTR_PARAMS"
 
 /* function to convert a PKCS#11 return value other than CK_OK into a Java Exception
@@ -369,9 +372,11 @@ CK_PKCS5_PBKD2_PARAMS jPkcs5Pbkd2ParamToCKPkcs5Pbkd2Param(JNIEnv *env, jobject j
 CK_KEY_WRAP_SET_OAEP_PARAMS jKeyWrapSetOaepParamToCKKeyWrapSetOaepParam(JNIEnv *env, jobject jParam);
 void copyBackSetUnwrappedKey(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 CK_SSL3_MASTER_KEY_DERIVE_PARAMS jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(JNIEnv *env, jobject jParam);
-void copyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
+void ssl3CopyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
+void tls12CopyBackClientVersion(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 CK_SSL3_KEY_MAT_PARAMS jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject jParam);
-void copyBackSSLKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
+void ssl3CopyBackKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
+void tls12CopyBackKeyMatParams(JNIEnv *env, CK_MECHANISM *ckMechanism, jobject jMechanism);
 CK_KEY_DERIVATION_STRING_DATA jKeyDerivationStringDataToCKKeyDerivationStringData(JNIEnv *env, jobject jParam);
 CK_RSA_PKCS_PSS_PARAMS jRsaPkcsPssParamToCKRsaPkcsPssParam(JNIEnv *env, jobject jParam);
 CK_ECDH1_DERIVE_PARAMS jEcdh1DeriveParamToCKEcdh1DeriveParam(JNIEnv *env, jobject jParam);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -625,6 +625,14 @@ public interface PKCS11Constants {
     public static final long  CKM_PKCS5_PBKD2                = 0x000003B0L;
 
     public static final long  CKM_PBA_SHA1_WITH_SHA1_HMAC    = 0x000003C0L;
+
+    /* CKM_TLS12_MASTER_KEY_DERIVE, CKM_TLS12_KEY_AND_MAC_DERIVE,
+     * CKM_TLS12_MASTER_KEY_DERIVE_DH and CKM_TLS_MAC are new for v2.40 */
+    public static final long  CKM_TLS12_MASTER_KEY_DERIVE    = 0x000003E0L;
+    public static final long  CKM_TLS12_KEY_AND_MAC_DERIVE   = 0x000003E1L;
+    public static final long  CKM_TLS12_MASTER_KEY_DERIVE_DH = 0x000003E2L;
+    public static final long  CKM_TLS_MAC                    = 0x000003E4L;
+
     public static final long  CKM_KEY_WRAP_LYNKS             = 0x00000400L;
     public static final long  CKM_KEY_WRAP_SET_OAEP          = 0x00000401L;
 

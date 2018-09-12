@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -744,38 +744,28 @@ public final class SunPKCS11 extends AuthProvider {
                 s("1.2.840.113549.1.1.13", "OID.1.2.840.113549.1.1.13"),
                 m(CKM_SHA512_RSA_PKCS, CKM_RSA_PKCS, CKM_RSA_X_509));
 
-        /*
-         * TLS 1.2 uses a different hash algorithm than 1.0/1.1 for the
-         * PRF calculations.  As of 2010, there is no PKCS11-level
-         * support for TLS 1.2 PRF calculations, and no known OS's have
-         * an internal variant we could use.  Therefore for TLS 1.2, we
-         * are updating JSSE to request different provider algorithms
-         * (e.g. "SunTls12Prf"), and currently only SunJCE has these
-         * TLS 1.2 algorithms.
-         *
-         * If we reused the names such as "SunTlsPrf", the PKCS11
-         * providers would need be updated to fail correctly when
-         * presented with the wrong version number (via
-         * Provider.Service.supportsParameters()), and we would also
-         * need to add the appropriate supportsParamters() checks into
-         * KeyGenerators (not currently there).
-         *
-         * In the future, if PKCS11 support is added, we will restructure
-         * this.
-         */
         d(KG, "SunTlsRsaPremasterSecret",
                     "sun.security.pkcs11.P11TlsRsaPremasterSecretGenerator",
+                    s("SunTls12RsaPremasterSecret"),
                 m(CKM_SSL3_PRE_MASTER_KEY_GEN, CKM_TLS_PRE_MASTER_KEY_GEN));
         d(KG, "SunTlsMasterSecret",
                     "sun.security.pkcs11.P11TlsMasterSecretGenerator",
                 m(CKM_SSL3_MASTER_KEY_DERIVE, CKM_TLS_MASTER_KEY_DERIVE,
                     CKM_SSL3_MASTER_KEY_DERIVE_DH,
                     CKM_TLS_MASTER_KEY_DERIVE_DH));
+        d(KG, "SunTls12MasterSecret",
+                "sun.security.pkcs11.P11TlsMasterSecretGenerator",
+            m(CKM_TLS12_MASTER_KEY_DERIVE, CKM_TLS12_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTlsKeyMaterial",
                     "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
                 m(CKM_SSL3_KEY_AND_MAC_DERIVE, CKM_TLS_KEY_AND_MAC_DERIVE));
+        d(KG, "SunTls12KeyMaterial",
+                "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
+            m(CKM_TLS12_KEY_AND_MAC_DERIVE));
         d(KG, "SunTlsPrf", "sun.security.pkcs11.P11TlsPrfGenerator",
                 m(CKM_TLS_PRF, CKM_NSS_TLS_PRF_GENERAL));
+        d(KG, "SunTls12Prf", "sun.security.pkcs11.P11TlsPrfGenerator",
+                m(CKM_TLS_MAC));
     }
 
     // background thread that periodically checks for token insertion
@@ -1042,13 +1032,16 @@ public final class SunPKCS11 extends AuthProvider {
                 if (algorithm == "SunTlsRsaPremasterSecret") {
                     return new P11TlsRsaPremasterSecretGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsMasterSecret") {
+                } else if (algorithm == "SunTlsMasterSecret"
+                        || algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsKeyMaterial") {
+                } else if (algorithm == "SunTlsKeyMaterial"
+                        || algorithm == "SunTls12KeyMaterial") {
                     return new P11TlsKeyMaterialGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsPrf") {
+                } else if (algorithm == "SunTlsPrf"
+                        || algorithm == "SunTls12Prf") {
                     return new P11TlsPrfGenerator(token, algorithm, mechanism);
                 } else {
                     return new P11KeyGenerator(token, algorithm, mechanism);

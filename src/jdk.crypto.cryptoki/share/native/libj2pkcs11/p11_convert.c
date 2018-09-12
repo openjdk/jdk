@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -457,67 +457,110 @@ CK_ATTRIBUTE jAttributeToCKAttribute(JNIEnv *env, jobject jAttribute)
     return ckAttribute ;
 }
 
-/*
- * converts the Java CK_SSL3_MASTER_KEY_DERIVE_PARAMS object to a
- * CK_SSL3_MASTER_KEY_DERIVE_PARAMS structure
- *
- * @param env - used to call JNI funktions to get the Java classes and objects
- * @param jParam - the Java CK_SSL3_MASTER_KEY_DERIVE_PARAMS object to convert
- * @return - the new CK_SSL3_MASTER_KEY_DERIVE_PARAMS structure
- */
-CK_SSL3_MASTER_KEY_DERIVE_PARAMS jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(JNIEnv *env, jobject jParam)
-{
-    // XXX don't return structs
-    // XXX prefetch class and field ids
-    jclass jSsl3MasterKeyDeriveParamsClass;
-    CK_SSL3_MASTER_KEY_DERIVE_PARAMS ckParam;
+void masterKeyDeriveParamToCKMasterKeyDeriveParam(JNIEnv *env, jobject jParam,
+        jclass masterKeyDeriveParamClass,
+        CK_VERSION_PTR* cKMasterKeyDeriveParamVersion,
+        CK_SSL3_RANDOM_DATA* cKMasterKeyDeriveParamRandomInfo) {
     jfieldID fieldID;
     jclass jSsl3RandomDataClass;
     jobject jRandomInfo, jRIClientRandom, jRIServerRandom, jVersion;
-    memset(&ckParam, 0, sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS));
 
     /* get RandomInfo */
-    jSsl3MasterKeyDeriveParamsClass = (*env)->FindClass(env, CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS);
-    if (jSsl3MasterKeyDeriveParamsClass == NULL) { return ckParam; }
-    fieldID = (*env)->GetFieldID(env, jSsl3MasterKeyDeriveParamsClass, "RandomInfo", "Lsun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA;");
-    if (fieldID == NULL) { return ckParam; }
+    fieldID = (*env)->GetFieldID(env, masterKeyDeriveParamClass, "RandomInfo",
+            "Lsun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA;");
+    if (fieldID == NULL) { return; }
     jRandomInfo = (*env)->GetObjectField(env, jParam, fieldID);
 
     /* get pClientRandom and ulClientRandomLength out of RandomInfo */
     jSsl3RandomDataClass = (*env)->FindClass(env, CLASS_SSL3_RANDOM_DATA);
-    if (jSsl3RandomDataClass == NULL) { return ckParam; }
+    if (jSsl3RandomDataClass == NULL) { return; }
     fieldID = (*env)->GetFieldID(env, jSsl3RandomDataClass, "pClientRandom", "[B");
-    if (fieldID == NULL) { return ckParam; }
+    if (fieldID == NULL) { return; }
     jRIClientRandom = (*env)->GetObjectField(env, jRandomInfo, fieldID);
 
     /* get pServerRandom and ulServerRandomLength out of RandomInfo */
     fieldID = (*env)->GetFieldID(env, jSsl3RandomDataClass, "pServerRandom", "[B");
-    if (fieldID == NULL) { return ckParam; }
+    if (fieldID == NULL) { return; }
     jRIServerRandom = (*env)->GetObjectField(env, jRandomInfo, fieldID);
 
     /* get pVersion */
-    fieldID = (*env)->GetFieldID(env, jSsl3MasterKeyDeriveParamsClass, "pVersion",  "Lsun/security/pkcs11/wrapper/CK_VERSION;");
-    if (fieldID == NULL) { return ckParam; }
+    fieldID = (*env)->GetFieldID(env, masterKeyDeriveParamClass, "pVersion",
+            "Lsun/security/pkcs11/wrapper/CK_VERSION;");
+    if (fieldID == NULL) { return; }
     jVersion = (*env)->GetObjectField(env, jParam, fieldID);
 
     /* populate java values */
-    ckParam.pVersion = jVersionToCKVersionPtr(env, jVersion);
-    if ((*env)->ExceptionCheck(env)) { return ckParam; }
-    jByteArrayToCKByteArray(env, jRIClientRandom, &(ckParam.RandomInfo.pClientRandom), &(ckParam.RandomInfo.ulClientRandomLen));
+    *cKMasterKeyDeriveParamVersion = jVersionToCKVersionPtr(env, jVersion);
+    if ((*env)->ExceptionCheck(env)) { return; }
+    jByteArrayToCKByteArray(env, jRIClientRandom,
+            &(cKMasterKeyDeriveParamRandomInfo->pClientRandom),
+            &(cKMasterKeyDeriveParamRandomInfo->ulClientRandomLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParam.pVersion);
-        return ckParam;
+        free(*cKMasterKeyDeriveParamVersion);
+        return;
     }
-    jByteArrayToCKByteArray(env, jRIServerRandom, &(ckParam.RandomInfo.pServerRandom), &(ckParam.RandomInfo.ulServerRandomLen));
+    jByteArrayToCKByteArray(env, jRIServerRandom,
+            &(cKMasterKeyDeriveParamRandomInfo->pServerRandom),
+            &(cKMasterKeyDeriveParamRandomInfo->ulServerRandomLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParam.pVersion);
-        free(ckParam.RandomInfo.pClientRandom);
-        return ckParam;
+        free(*cKMasterKeyDeriveParamVersion);
+        free(cKMasterKeyDeriveParamRandomInfo->pClientRandom);
+        return;
     }
-
-    return ckParam ;
 }
 
+/*
+ * converts the Java CK_SSL3_MASTER_KEY_DERIVE_PARAMS object to a
+ * CK_SSL3_MASTER_KEY_DERIVE_PARAMS structure
+ *
+ * @param env - used to call JNI functions to get the Java classes and objects
+ * @param jParam - the Java CK_SSL3_MASTER_KEY_DERIVE_PARAMS object to convert
+ * @return - the new CK_SSL3_MASTER_KEY_DERIVE_PARAMS structure
+ */
+CK_SSL3_MASTER_KEY_DERIVE_PARAMS
+jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(JNIEnv *env,
+        jobject jParam)
+{
+    CK_SSL3_MASTER_KEY_DERIVE_PARAMS ckParam;
+    memset(&ckParam, 0, sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS));
+    jclass jSsl3MasterKeyDeriveParamsClass =
+            (*env)->FindClass(env, CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS);
+    if (jSsl3MasterKeyDeriveParamsClass == NULL) { return ckParam; }
+    masterKeyDeriveParamToCKMasterKeyDeriveParam(env, jParam,
+            jSsl3MasterKeyDeriveParamsClass,
+            &ckParam.pVersion, &ckParam.RandomInfo);
+    return ckParam;
+}
+
+/*
+ * converts the Java CK_TLS12_MASTER_KEY_DERIVE_PARAMS object to a
+ * CK_TLS12_MASTER_KEY_DERIVE_PARAMS structure
+ *
+ * @param env - used to call JNI functions to get the Java classes and objects
+ * @param jParam - the Java CK_TLS12_MASTER_KEY_DERIVE_PARAMS object to convert
+ * @return - the new CK_TLS12_MASTER_KEY_DERIVE_PARAMS structure
+ */
+CK_TLS12_MASTER_KEY_DERIVE_PARAMS
+jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParam(JNIEnv *env,
+        jobject jParam)
+{
+    CK_TLS12_MASTER_KEY_DERIVE_PARAMS ckParam;
+    memset(&ckParam, 0, sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS));
+    jclass jTls12MasterKeyDeriveParamsClass =
+            (*env)->FindClass(env, CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS);
+    if (jTls12MasterKeyDeriveParamsClass == NULL) { return ckParam; }
+    masterKeyDeriveParamToCKMasterKeyDeriveParam(env, jParam,
+            jTls12MasterKeyDeriveParamsClass, &ckParam.pVersion,
+            &ckParam.RandomInfo);
+    jfieldID fieldID = (*env)->GetFieldID(env,
+            jTls12MasterKeyDeriveParamsClass, "prfHashMechanism", "J");
+    if (fieldID != NULL) {
+        jlong prfHashMechanism =
+                (*env)->GetLongField(env, jParam, fieldID);
+        ckParam.prfHashMechanism = (CK_MECHANISM_TYPE)prfHashMechanism;
+    }
+    return ckParam;
+}
 
 /*
  * converts the Java CK_TLS_PRF_PARAMS object to a CK_TLS_PRF_PARAMS structure
@@ -576,126 +619,217 @@ CK_TLS_PRF_PARAMS jTlsPrfParamsToCKTlsPrfParam(JNIEnv *env, jobject jParam)
 }
 
 /*
- * converts the Java CK_SSL3_KEY_MAT_PARAMS object to a CK_SSL3_KEY_MAT_PARAMS structure
- *
- * @param env - used to call JNI funktions to get the Java classes and objects
- * @param jParam - the Java CK_SSL3_KEY_MAT_PARAMS object to convert
- * @return - the new CK_SSL3_KEY_MAT_PARAMS structure
+ * converts the Java CK_TLS_MAC_PARAMS object to a CK_TLS_MAC_PARAMS structure
  */
-CK_SSL3_KEY_MAT_PARAMS jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject jParam)
+CK_TLS_MAC_PARAMS jTlsMacParamsToCKTlsMacParam(JNIEnv *env, jobject jParam)
 {
-    // XXX don't return structs
-    // XXX prefetch class and field ids
-    jclass jSsl3KeyMatParamsClass, jSsl3RandomDataClass, jSsl3KeyMatOutClass;
-    CK_SSL3_KEY_MAT_PARAMS ckParam;
+    jclass jTlsMacParamsClass;
+    CK_TLS_MAC_PARAMS ckParam;
+    jfieldID fieldID;
+    jlong jPrfMechanism, jUlMacLength, jUlServerOrClient;
+    memset(&ckParam, 0, sizeof(CK_TLS_MAC_PARAMS));
+
+    jTlsMacParamsClass = (*env)->FindClass(env, CLASS_TLS_MAC_PARAMS);
+    if (jTlsMacParamsClass == NULL) { return ckParam; }
+
+    /* get prfMechanism */
+    fieldID = (*env)->GetFieldID(env, jTlsMacParamsClass, "prfMechanism", "J");
+    if (fieldID == NULL) { return ckParam; }
+    jPrfMechanism = (*env)->GetLongField(env, jParam, fieldID);
+
+    /* get ulMacLength */
+    fieldID = (*env)->GetFieldID(env, jTlsMacParamsClass, "ulMacLength", "J");
+    if (fieldID == NULL) { return ckParam; }
+    jUlMacLength = (*env)->GetLongField(env, jParam, fieldID);
+
+    /* get ulServerOrClient */
+    fieldID = (*env)->GetFieldID(env, jTlsMacParamsClass, "ulServerOrClient", "J");
+    if (fieldID == NULL) { return ckParam; }
+    jUlServerOrClient = (*env)->GetLongField(env, jParam, fieldID);
+
+    /* populate java values */
+    ckParam.prfMechanism = jLongToCKULong(jPrfMechanism);
+    ckParam.ulMacLength = jLongToCKULong(jUlMacLength);
+    ckParam.ulServerOrClient = jLongToCKULong(jUlServerOrClient);
+
+    return ckParam;
+}
+
+void keyMatParamToCKKeyMatParam(JNIEnv *env, jobject jParam,
+        jclass jKeyMatParamClass,
+        CK_ULONG* cKKeyMatParamUlMacSizeInBits,
+        CK_ULONG* cKKeyMatParamUlKeySizeInBits,
+        CK_ULONG* cKKeyMatParamUlIVSizeInBits,
+        CK_BBOOL* cKKeyMatParamBIsExport,
+        CK_SSL3_RANDOM_DATA* cKKeyMatParamRandomInfo,
+        CK_SSL3_KEY_MAT_OUT_PTR* cKKeyMatParamPReturnedKeyMaterial)
+{
+    jclass jSsl3RandomDataClass, jSsl3KeyMatOutClass;
     jfieldID fieldID;
     jlong jMacSizeInBits, jKeySizeInBits, jIVSizeInBits;
     jboolean jIsExport;
     jobject jRandomInfo, jRIClientRandom, jRIServerRandom;
     jobject jReturnedKeyMaterial, jRMIvClient, jRMIvServer;
     CK_ULONG ckTemp;
-    memset(&ckParam, 0, sizeof(CK_SSL3_KEY_MAT_PARAMS));
 
     /* get ulMacSizeInBits */
-    jSsl3KeyMatParamsClass = (*env)->FindClass(env, CLASS_SSL3_KEY_MAT_PARAMS);
-    if (jSsl3KeyMatParamsClass == NULL) { return ckParam; }
-    fieldID = (*env)->GetFieldID(env, jSsl3KeyMatParamsClass, "ulMacSizeInBits", "J");
-    if (fieldID == NULL) { return ckParam; }
+    fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "ulMacSizeInBits", "J");
+    if (fieldID == NULL) { return; }
     jMacSizeInBits = (*env)->GetLongField(env, jParam, fieldID);
 
     /* get ulKeySizeInBits */
-    fieldID = (*env)->GetFieldID(env, jSsl3KeyMatParamsClass, "ulKeySizeInBits", "J");
-    if (fieldID == NULL) { return ckParam; }
+    fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "ulKeySizeInBits", "J");
+    if (fieldID == NULL) { return; }
     jKeySizeInBits = (*env)->GetLongField(env, jParam, fieldID);
 
     /* get ulIVSizeInBits */
-    fieldID = (*env)->GetFieldID(env, jSsl3KeyMatParamsClass, "ulIVSizeInBits", "J");
-    if (fieldID == NULL) { return ckParam; }
+    fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "ulIVSizeInBits", "J");
+    if (fieldID == NULL) { return; }
     jIVSizeInBits = (*env)->GetLongField(env, jParam, fieldID);
 
     /* get bIsExport */
-    fieldID = (*env)->GetFieldID(env, jSsl3KeyMatParamsClass, "bIsExport", "Z");
-    if (fieldID == NULL) { return ckParam; }
+    fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "bIsExport", "Z");
+    if (fieldID == NULL) { return; }
     jIsExport = (*env)->GetBooleanField(env, jParam, fieldID);
 
     /* get RandomInfo */
     jSsl3RandomDataClass = (*env)->FindClass(env, CLASS_SSL3_RANDOM_DATA);
-    if (jSsl3RandomDataClass == NULL) { return ckParam; }
-    fieldID = (*env)->GetFieldID(env, jSsl3KeyMatParamsClass, "RandomInfo",  "Lsun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA;");
-    if (fieldID == NULL) { return ckParam; }
+    if (jSsl3RandomDataClass == NULL) { return; }
+    fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "RandomInfo",
+            "Lsun/security/pkcs11/wrapper/CK_SSL3_RANDOM_DATA;");
+    if (fieldID == NULL) { return; }
     jRandomInfo = (*env)->GetObjectField(env, jParam, fieldID);
 
     /* get pClientRandom and ulClientRandomLength out of RandomInfo */
     fieldID = (*env)->GetFieldID(env, jSsl3RandomDataClass, "pClientRandom", "[B");
-    if (fieldID == NULL) { return ckParam; }
+    if (fieldID == NULL) { return; }
     jRIClientRandom = (*env)->GetObjectField(env, jRandomInfo, fieldID);
 
     /* get pServerRandom and ulServerRandomLength out of RandomInfo */
     fieldID = (*env)->GetFieldID(env, jSsl3RandomDataClass, "pServerRandom", "[B");
-    if (fieldID == NULL) { return ckParam; }
+    if (fieldID == NULL) { return; }
     jRIServerRandom = (*env)->GetObjectField(env, jRandomInfo, fieldID);
 
     /* get pReturnedKeyMaterial */
     jSsl3KeyMatOutClass = (*env)->FindClass(env, CLASS_SSL3_KEY_MAT_OUT);
-    if (jSsl3KeyMatOutClass == NULL) { return ckParam; }
-    fieldID = (*env)->GetFieldID(env, jSsl3KeyMatParamsClass, "pReturnedKeyMaterial",  "Lsun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_OUT;");
-    if (fieldID == NULL) { return ckParam; }
+    if (jSsl3KeyMatOutClass == NULL) { return; }
+    fieldID = (*env)->GetFieldID(env, jKeyMatParamClass, "pReturnedKeyMaterial",
+            "Lsun/security/pkcs11/wrapper/CK_SSL3_KEY_MAT_OUT;");
+    if (fieldID == NULL) { return; }
     jReturnedKeyMaterial = (*env)->GetObjectField(env, jParam, fieldID);
 
     /* get pIVClient out of pReturnedKeyMaterial */
     fieldID = (*env)->GetFieldID(env, jSsl3KeyMatOutClass, "pIVClient", "[B");
-    if (fieldID == NULL) { return ckParam; }
+    if (fieldID == NULL) { return; }
     jRMIvClient = (*env)->GetObjectField(env, jReturnedKeyMaterial, fieldID);
 
     /* get pIVServer out of pReturnedKeyMaterial */
     fieldID = (*env)->GetFieldID(env, jSsl3KeyMatOutClass, "pIVServer", "[B");
-    if (fieldID == NULL) { return ckParam; }
+    if (fieldID == NULL) { return; }
     jRMIvServer = (*env)->GetObjectField(env, jReturnedKeyMaterial, fieldID);
 
     /* populate java values */
-    ckParam.ulMacSizeInBits = jLongToCKULong(jMacSizeInBits);
-    ckParam.ulKeySizeInBits = jLongToCKULong(jKeySizeInBits);
-    ckParam.ulIVSizeInBits = jLongToCKULong(jIVSizeInBits);
-    ckParam.bIsExport = jBooleanToCKBBool(jIsExport);
-    jByteArrayToCKByteArray(env, jRIClientRandom, &(ckParam.RandomInfo.pClientRandom), &(ckParam.RandomInfo.ulClientRandomLen));
-    if ((*env)->ExceptionCheck(env)) { return ckParam; }
-    jByteArrayToCKByteArray(env, jRIServerRandom, &(ckParam.RandomInfo.pServerRandom), &(ckParam.RandomInfo.ulServerRandomLen));
+    *cKKeyMatParamUlMacSizeInBits = jLongToCKULong(jMacSizeInBits);
+    *cKKeyMatParamUlKeySizeInBits = jLongToCKULong(jKeySizeInBits);
+    *cKKeyMatParamUlIVSizeInBits = jLongToCKULong(jIVSizeInBits);
+    *cKKeyMatParamBIsExport = jBooleanToCKBBool(jIsExport);
+    jByteArrayToCKByteArray(env, jRIClientRandom,
+            &(cKKeyMatParamRandomInfo->pClientRandom),
+            &(cKKeyMatParamRandomInfo->ulClientRandomLen));
+    if ((*env)->ExceptionCheck(env)) { return; }
+    jByteArrayToCKByteArray(env, jRIServerRandom,
+            &(cKKeyMatParamRandomInfo->pServerRandom),
+            &(cKKeyMatParamRandomInfo->ulServerRandomLen));
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParam.RandomInfo.pClientRandom);
-        return ckParam;
+        free(cKKeyMatParamRandomInfo->pClientRandom);
+        return;
     }
     /* allocate memory for pRetrunedKeyMaterial */
-    ckParam.pReturnedKeyMaterial = (CK_SSL3_KEY_MAT_OUT_PTR) malloc(sizeof(CK_SSL3_KEY_MAT_OUT));
-    if (ckParam.pReturnedKeyMaterial == NULL) {
-        free(ckParam.RandomInfo.pClientRandom);
-        free(ckParam.RandomInfo.pServerRandom);
+    *cKKeyMatParamPReturnedKeyMaterial =
+            (CK_SSL3_KEY_MAT_OUT_PTR)malloc(sizeof(CK_SSL3_KEY_MAT_OUT));
+    if (*cKKeyMatParamPReturnedKeyMaterial == NULL) {
+        free(cKKeyMatParamRandomInfo->pClientRandom);
+        free(cKKeyMatParamRandomInfo->pServerRandom);
         throwOutOfMemoryError(env, 0);
-        return ckParam;
+        return;
     }
 
     // the handles are output params only, no need to fetch them from Java
-    ckParam.pReturnedKeyMaterial->hClientMacSecret = 0;
-    ckParam.pReturnedKeyMaterial->hServerMacSecret = 0;
-    ckParam.pReturnedKeyMaterial->hClientKey = 0;
-    ckParam.pReturnedKeyMaterial->hServerKey = 0;
+    (*cKKeyMatParamPReturnedKeyMaterial)->hClientMacSecret = 0;
+    (*cKKeyMatParamPReturnedKeyMaterial)->hServerMacSecret = 0;
+    (*cKKeyMatParamPReturnedKeyMaterial)->hClientKey = 0;
+    (*cKKeyMatParamPReturnedKeyMaterial)->hServerKey = 0;
 
-    jByteArrayToCKByteArray(env, jRMIvClient, &(ckParam.pReturnedKeyMaterial->pIVClient), &ckTemp);
+    jByteArrayToCKByteArray(env, jRMIvClient,
+            &((*cKKeyMatParamPReturnedKeyMaterial)->pIVClient), &ckTemp);
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParam.RandomInfo.pClientRandom);
-        free(ckParam.RandomInfo.pServerRandom);
-        free(ckParam.pReturnedKeyMaterial);
-        return ckParam;
+        free(cKKeyMatParamRandomInfo->pClientRandom);
+        free(cKKeyMatParamRandomInfo->pServerRandom);
+        free((*cKKeyMatParamPReturnedKeyMaterial));
+        return;
     }
-    jByteArrayToCKByteArray(env, jRMIvServer, &(ckParam.pReturnedKeyMaterial->pIVServer), &ckTemp);
+    jByteArrayToCKByteArray(env, jRMIvServer,
+            &((*cKKeyMatParamPReturnedKeyMaterial)->pIVServer), &ckTemp);
     if ((*env)->ExceptionCheck(env)) {
-        free(ckParam.RandomInfo.pClientRandom);
-        free(ckParam.RandomInfo.pServerRandom);
-        free(ckParam.pReturnedKeyMaterial->pIVClient);
-        free(ckParam.pReturnedKeyMaterial);
-        return ckParam;
+        free(cKKeyMatParamRandomInfo->pClientRandom);
+        free(cKKeyMatParamRandomInfo->pServerRandom);
+        free((*cKKeyMatParamPReturnedKeyMaterial)->pIVClient);
+        free((*cKKeyMatParamPReturnedKeyMaterial));
+        return;
     }
 
-    return ckParam ;
+    return;
+}
+/*
+ * converts the Java CK_SSL3_KEY_MAT_PARAMS object to a
+ * CK_SSL3_KEY_MAT_PARAMS structure
+ *
+ * @param env - used to call JNI funktions to get the Java classes and objects
+ * @param jParam - the Java CK_SSL3_KEY_MAT_PARAMS object to convert
+ * @return - the new CK_SSL3_KEY_MAT_PARAMS structure
+ */
+CK_SSL3_KEY_MAT_PARAMS
+jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject jParam)
+{
+    CK_SSL3_KEY_MAT_PARAMS ckParam;
+    memset(&ckParam, 0, sizeof(CK_SSL3_KEY_MAT_PARAMS));
+    jclass jSsl3KeyMatParamsClass = (*env)->FindClass(env,
+            CLASS_SSL3_KEY_MAT_PARAMS);
+    if (jSsl3KeyMatParamsClass == NULL) { return ckParam; }
+    keyMatParamToCKKeyMatParam(env, jParam, jSsl3KeyMatParamsClass,
+            &ckParam.ulMacSizeInBits, &ckParam.ulKeySizeInBits,
+            &ckParam.ulIVSizeInBits, &ckParam.bIsExport,
+            &ckParam.RandomInfo, &ckParam.pReturnedKeyMaterial);
+    return ckParam;
+}
+
+/*
+ * converts the Java CK_TLS12_KEY_MAT_PARAMS object to a
+ * CK_TLS12_KEY_MAT_PARAMS structure
+ *
+ * @param env - used to call JNI functions to get the Java classes and objects
+ * @param jParam - the Java CK_TLS12_KEY_MAT_PARAMS object to convert
+ * @return - the new CK_TLS12_KEY_MAT_PARAMS structure
+ */
+CK_TLS12_KEY_MAT_PARAMS jTls12KeyMatParamToCKTls12KeyMatParam(JNIEnv *env,
+        jobject jParam)
+{
+    CK_TLS12_KEY_MAT_PARAMS ckParam;
+    memset(&ckParam, 0, sizeof(CK_TLS12_KEY_MAT_PARAMS));
+    jclass jTls12KeyMatParamsClass = (*env)->FindClass(env,
+            CLASS_TLS12_KEY_MAT_PARAMS);
+    if (jTls12KeyMatParamsClass == NULL) { return ckParam; }
+    keyMatParamToCKKeyMatParam(env, jParam, jTls12KeyMatParamsClass,
+            &ckParam.ulMacSizeInBits, &ckParam.ulKeySizeInBits,
+            &ckParam.ulIVSizeInBits, &ckParam.bIsExport,
+            &ckParam.RandomInfo, &ckParam.pReturnedKeyMaterial);
+    jfieldID fieldID = (*env)->GetFieldID(env, jTls12KeyMatParamsClass,
+            "prfHashMechanism", "J");
+    if (fieldID != NULL) {
+        jlong prfHashMechanism = (*env)->GetLongField(env, jParam, fieldID);
+        ckParam.prfHashMechanism = (CK_MECHANISM_TYPE)prfHashMechanism;
+    }
+    return ckParam;
 }
 
 /*
@@ -980,8 +1114,11 @@ void jMechanismParameterToCKMechanismParameter(JNIEnv *env, jobject jParam, CK_V
 void jMechanismParameterToCKMechanismParameterSlow(JNIEnv *env, jobject jParam, CK_VOID_PTR *ckpParamPtr, CK_ULONG *ckpLength)
 {
     /* get all Java mechanism parameter classes */
-    jclass jVersionClass, jSsl3MasterKeyDeriveParamsClass, jSsl3KeyMatParamsClass;
-    jclass jTlsPrfParamsClass, jAesCtrParamsClass, jRsaPkcsOaepParamsClass;
+    jclass jVersionClass, jSsl3MasterKeyDeriveParamsClass;
+    jclass jTls12MasterKeyDeriveParamsClass, jSsl3KeyMatParamsClass;
+    jclass jTls12KeyMatParamsClass;
+    jclass jTlsPrfParamsClass, jTlsMacParamsClass, jAesCtrParamsClass;
+    jclass jRsaPkcsOaepParamsClass;
     jclass jPbeParamsClass, jPkcs5Pbkd2ParamsClass, jRsaPkcsPssParamsClass;
     jclass jEcdh1DeriveParamsClass, jEcdh2DeriveParamsClass;
     jclass jX942Dh1DeriveParamsClass, jX942Dh2DeriveParamsClass;
@@ -1061,6 +1198,62 @@ void jMechanismParameterToCKMechanismParameterSlow(JNIEnv *env, jobject jParam, 
         return;
     }
 
+    jTls12KeyMatParamsClass = (*env)->FindClass(env, CLASS_TLS12_KEY_MAT_PARAMS);
+    if (jTls12KeyMatParamsClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jParam, jTls12KeyMatParamsClass)) {
+        /*
+         * CK_TLS12_KEY_MAT_PARAMS
+         */
+        CK_TLS12_KEY_MAT_PARAMS_PTR ckpParam;
+
+        ckpParam = (CK_TLS12_KEY_MAT_PARAMS_PTR) malloc(sizeof(CK_TLS12_KEY_MAT_PARAMS));
+        if (ckpParam == NULL) {
+            throwOutOfMemoryError(env, 0);
+            return;
+        }
+
+        /* convert jParameter to CKParameter */
+        *ckpParam = jTls12KeyMatParamToCKTls12KeyMatParam(env, jParam);
+        if ((*env)->ExceptionCheck(env)) {
+            free(ckpParam);
+            return;
+        }
+
+        /* get length and pointer of parameter */
+        *ckpLength = sizeof(CK_TLS12_KEY_MAT_PARAMS);
+        *ckpParamPtr = ckpParam;
+        return;
+    }
+
+    jTls12MasterKeyDeriveParamsClass =
+            (*env)->FindClass(env, CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS);
+    if (jTls12MasterKeyDeriveParamsClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jParam, jTls12MasterKeyDeriveParamsClass)) {
+        /*
+         * CK_TLS12_MASTER_KEY_DERIVE_PARAMS
+         */
+        CK_TLS12_MASTER_KEY_DERIVE_PARAMS_PTR ckpParam;
+
+        ckpParam = (CK_TLS12_MASTER_KEY_DERIVE_PARAMS_PTR)malloc(
+                sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS));
+        if (ckpParam == NULL) {
+            throwOutOfMemoryError(env, 0);
+            return;
+        }
+
+        /* convert jParameter to CKParameter */
+        *ckpParam = jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParam(env, jParam);
+        if ((*env)->ExceptionCheck(env)) {
+            free(ckpParam);
+            return;
+        }
+
+        /* get length and pointer of parameter */
+        *ckpLength = sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS);
+        *ckpParamPtr = ckpParam;
+        return;
+    }
+
     jTlsPrfParamsClass = (*env)->FindClass(env, CLASS_TLS_PRF_PARAMS);
     if (jTlsPrfParamsClass == NULL) { return; }
     if ((*env)->IsInstanceOf(env, jParam, jTlsPrfParamsClass)) {
@@ -1084,6 +1277,30 @@ void jMechanismParameterToCKMechanismParameterSlow(JNIEnv *env, jobject jParam, 
 
         /* get length and pointer of parameter */
         *ckpLength = sizeof(CK_TLS_PRF_PARAMS);
+        *ckpParamPtr = ckpParam;
+        return;
+    }
+
+    jTlsMacParamsClass = (*env)->FindClass(env, CLASS_TLS_MAC_PARAMS);
+    if (jTlsMacParamsClass == NULL) { return; }
+    if ((*env)->IsInstanceOf(env, jParam, jTlsMacParamsClass)) {
+        CK_TLS_MAC_PARAMS_PTR ckpParam;
+
+        ckpParam = (CK_TLS_MAC_PARAMS_PTR) malloc(sizeof(CK_TLS_MAC_PARAMS));
+        if (ckpParam == NULL) {
+            throwOutOfMemoryError(env, 0);
+            return;
+        }
+
+        /* convert jParameter to CKParameter */
+        *ckpParam = jTlsMacParamsToCKTlsMacParam(env, jParam);
+        if ((*env)->ExceptionCheck(env)) {
+            free(ckpParam);
+            return;
+        }
+
+        /* get length and pointer of parameter */
+        *ckpLength = sizeof(CK_TLS_MAC_PARAMS);
         *ckpParamPtr = ckpParam;
         return;
     }
