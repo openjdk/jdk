@@ -25,6 +25,7 @@
  * @test DictionaryDependsTest
  * @bug 8210094
  * @summary Create ClassLoader dependency from initiating loader to class loader through reflection
+ * @requires vm.opt.final.ClassUnloading
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  * @library /runtime/testlibrary /test/lib
@@ -32,7 +33,7 @@
  * @compile p2/c2.java MyDiffClassLoader.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload=trace -XX:+WhiteBoxAPI DictionaryDependsTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmn8m -XX:+UnlockDiagnosticVMOptions -Xlog:class+unload -XX:+WhiteBoxAPI DictionaryDependsTest
  */
 import sun.hotspot.WhiteBox;
 import java.lang.reflect.Method;
