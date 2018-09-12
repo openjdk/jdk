@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,6 @@
 #include "precompiled.hpp"
 #include "register_ppc.hpp"
 
-const int ConcreteRegisterImpl::max_gpr = RegisterImpl::number_of_registers * 2;
-const int ConcreteRegisterImpl::max_fpr = ConcreteRegisterImpl::max_gpr +
-                                          FloatRegisterImpl::number_of_registers * 2;
-const int ConcreteRegisterImpl::max_cnd = ConcreteRegisterImpl::max_fpr +
-                                          ConditionRegisterImpl::number_of_registers;
 
 const char* RegisterImpl::name() const {
   const char* names[number_of_registers] = {

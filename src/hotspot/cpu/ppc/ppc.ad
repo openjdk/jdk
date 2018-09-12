@@ -908,6 +908,7 @@ reg_class dbl_reg(
 // ----------------------------
 
 reg_class vs_reg(
+  // Attention: Only these ones are saved & restored at safepoint by RegisterSaver.
   VSR32,
   VSR33,
   VSR34,
@@ -928,18 +929,7 @@ reg_class vs_reg(
   VSR49,
   VSR50,
   VSR51
-//  VSR52,     // nv!
-//  VSR53,     // nv!
-//  VSR54,     // nv!
-//  VSR55,     // nv!
-//  VSR56,     // nv!
-//  VSR57,     // nv!
-//  VSR58,     // nv!
-//  VSR59,     // nv!
-//  VSR60,     // nv!
-//  VSR61,     // nv!
-//  VSR62,     // nv!
-//  VSR63      // nv!
+  // VSR52-VSR63 // nv!
 );
 
  %}
