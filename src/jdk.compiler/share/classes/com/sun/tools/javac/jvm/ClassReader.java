@@ -2466,6 +2466,9 @@ public class ClassReader {
     }
 
     private List<Type> adjustMethodParams(long flags, List<Type> args) {
+        if (args.isEmpty()) {
+            return args;
+        }
         boolean isVarargs = (flags & VARARGS) != 0;
         if (isVarargs) {
             Type varargsElem = args.last();
