@@ -521,6 +521,9 @@ class VectorSRegisterImpl: public AbstractRegisterImpl {
   bool is_valid() const { return 0 <=  value() &&  value() < number_of_registers; }
 
   const char* name() const;
+
+  // convert to VR
+  VectorRegister to_vr() const;
 };
 
 // The Vector-Scalar (VSX) registers of the POWER architecture.
@@ -593,7 +596,7 @@ CONSTANT_REGISTER_DECLARATION(VectorSRegister, VSR62, (62));
 CONSTANT_REGISTER_DECLARATION(VectorSRegister, VSR63, (63));
 
 #ifndef DONT_USE_REGISTER_DEFINES
-#define vsnoregi ((VectorSRegister)(vsnoreg_VectorSRegisterEnumValue))
+#define vsnoreg ((VectorSRegister)(vsnoreg_VectorSRegisterEnumValue))
 #define VSR0    ((VectorSRegister)(   VSR0_VectorSRegisterEnumValue))
 #define VSR1    ((VectorSRegister)(   VSR1_VectorSRegisterEnumValue))
 #define VSR2    ((VectorSRegister)(   VSR2_VectorSRegisterEnumValue))

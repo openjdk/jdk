@@ -2224,9 +2224,35 @@ const bool Matcher::match_rule_supported(int opcode) {
   case Op_StrEquals:
     return SpecialStringEquals;
   case Op_StrIndexOf:
-    return SpecialStringIndexOf;
   case Op_StrIndexOfChar:
     return SpecialStringIndexOf;
+  case Op_AddVB:
+  case Op_AddVS:
+  case Op_AddVI:
+  case Op_AddVF:
+  case Op_AddVD:
+  case Op_SubVB:
+  case Op_SubVS:
+  case Op_SubVI:
+  case Op_SubVF:
+  case Op_SubVD:
+  case Op_MulVS:
+  case Op_MulVF:
+  case Op_MulVD:
+  case Op_DivVF:
+  case Op_DivVD:
+  case Op_AbsVF:
+  case Op_AbsVD:
+  case Op_NegVF:
+  case Op_NegVD:
+  case Op_SqrtVF:
+  case Op_SqrtVD:
+  case Op_AddVL:
+  case Op_SubVL:
+  case Op_MulVI:
+    return SuperwordUseVSX;
+  case Op_PopCountVI:
+    return (SuperwordUseVSX && UsePopCountInstruction);
   }
 
   return true;  // Per default match rules are supported.
@@ -10007,7 +10033,7 @@ instruct sqrtD_reg(regD dst, regD src) %{
 
 // Single-precision sqrt.
 instruct sqrtF_reg(regF dst, regF src) %{
-  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+  match(Set dst (SqrtF src));
   predicate(VM_Version::has_fsqrts());
   ins_cost(DEFAULT_COST);
 
@@ -13974,6 +14000,303 @@ instruct repl2F_immF0(iRegLdst dst, immF_0 zero) %{
   ins_encode %{
     // TODO: PPC port $archOpcode(ppc64Opcode_addi);
     __ li($dst$$Register, 0x0);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+
+//----------Vector Arithmetic Instructions--------------------------------------
+
+// Vector Addition Instructions
+
+instruct vadd16B_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVB src1 src2));
+  predicate(n->as_Vector()->length() == 16);
+  format %{ "VADDUBM  $dst,$src1,$src2\t// add packed16B" %}
+  size(4);
+  ins_encode %{
+    __ vaddubm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vadd8S_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVS src1 src2));
+  predicate(n->as_Vector()->length() == 8);
+  format %{ "VADDUHM  $dst,$src1,$src2\t// add packed8S" %}
+  size(4);
+  ins_encode %{
+    __ vadduhm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vadd4I_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVI src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VADDUWM  $dst,$src1,$src2\t// add packed4I" %}
+  size(4);
+  ins_encode %{
+    __ vadduwm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vadd4F_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVF src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VADDFP  $dst,$src1,$src2\t// add packed4F" %}
+  size(4);
+  ins_encode %{
+    __ vaddfp($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vadd2L_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVL src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VADDUDM  $dst,$src1,$src2\t// add packed2L" %}
+  size(4);
+  ins_encode %{
+    __ vaddudm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vadd2D_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (AddVD src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "XVADDDP  $dst,$src1,$src2\t// add packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvadddp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Subtraction Instructions
+
+instruct vsub16B_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVB src1 src2));
+  predicate(n->as_Vector()->length() == 16);
+  format %{ "VSUBUBM  $dst,$src1,$src2\t// sub packed16B" %}
+  size(4);
+  ins_encode %{
+    __ vsububm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vsub8S_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVS src1 src2));
+  predicate(n->as_Vector()->length() == 8);
+  format %{ "VSUBUHM  $dst,$src1,$src2\t// sub packed8S" %}
+  size(4);
+  ins_encode %{
+    __ vsubuhm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vsub4I_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVI src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VSUBUWM  $dst,$src1,$src2\t// sub packed4I" %}
+  size(4);
+  ins_encode %{
+    __ vsubuwm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vsub4F_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVF src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VSUBFP  $dst,$src1,$src2\t// sub packed4F" %}
+  size(4);
+  ins_encode %{
+    __ vsubfp($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vsub2L_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVL src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "VSUBUDM  $dst,$src1,$src2\t// sub packed2L" %}
+  size(4);
+  ins_encode %{
+    __ vsubudm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vsub2D_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (SubVD src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "XVSUBDP  $dst,$src1,$src2\t// sub packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvsubdp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Multiplication Instructions
+
+instruct vmul8S_reg(vecX dst, vecX src1, vecX src2, vecX tmp) %{
+  match(Set dst (MulVS src1 src2));
+  predicate(n->as_Vector()->length() == 8);
+  effect(TEMP tmp);
+  format %{ "VSPLTISH  $tmp,0\t// mul packed8S" %}
+  format %{ "VMLADDUHM  $dst,$src1,$src2\t// mul packed8S" %}
+  size(8);
+  ins_encode %{
+    __ vspltish($tmp$$VectorSRegister->to_vr(), 0);
+    __ vmladduhm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr(), $tmp$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmul4I_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MulVI src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VMULUWM  $dst,$src1,$src2\t// mul packed4I" %}
+  size(4);
+  ins_encode %{
+    __ vmuluwm($dst$$VectorSRegister->to_vr(), $src1$$VectorSRegister->to_vr(), $src2$$VectorSRegister->to_vr());
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmul4F_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MulVF src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "XVMULSP  $dst,$src1,$src2\t// mul packed4F" %}
+  size(4);
+  ins_encode %{
+    __ xvmulsp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmul2D_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (MulVD src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "XVMULDP  $dst,$src1,$src2\t// mul packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvmuldp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Division Instructions
+
+instruct vdiv4F_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (DivVF src1 src2));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "XVDIVSP  $dst,$src1,$src2\t// div packed4F" %}
+  size(4);
+  ins_encode %{
+    __ xvdivsp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vdiv2D_reg(vecX dst, vecX src1, vecX src2) %{
+  match(Set dst (DivVD src1 src2));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "XVDIVDP  $dst,$src1,$src2\t// div packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvdivdp($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Absolute Instructions
+
+instruct vabs4F_reg(vecX dst, vecX src) %{
+  match(Set dst (AbsVF src));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "XVABSSP $dst,$src\t// absolute packed4F" %}
+  size(4);
+  ins_encode %{
+    __ xvabssp($dst$$VectorSRegister, $src$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vabs2D_reg(vecX dst, vecX src) %{
+  match(Set dst (AbsVD src));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "XVABSDP $dst,$src\t// absolute packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvabsdp($dst$$VectorSRegister, $src$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Negate Instructions
+
+instruct vneg4F_reg(vecX dst, vecX src) %{
+  match(Set dst (NegVF src));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "XVNEGSP $dst,$src\t// negate packed4F" %}
+  size(4);
+  ins_encode %{
+    __ xvnegsp($dst$$VectorSRegister, $src$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vneg2D_reg(vecX dst, vecX src) %{
+  match(Set dst (NegVD src));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "XVNEGDP $dst,$src\t// negate packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvnegdp($dst$$VectorSRegister, $src$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Square Root Instructions
+
+instruct vsqrt4F_reg(vecX dst, vecX src) %{
+  match(Set dst (SqrtVF src));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "XVSQRTSP $dst,$src\t// sqrt packed4F" %}
+  size(4);
+  ins_encode %{
+    __ xvsqrtsp($dst$$VectorSRegister, $src$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vsqrt2D_reg(vecX dst, vecX src) %{
+  match(Set dst (SqrtVD src));
+  predicate(n->as_Vector()->length() == 2);
+  format %{ "XVSQRTDP  $dst,$src\t// sqrt packed2D" %}
+  size(4);
+  ins_encode %{
+    __ xvsqrtdp($dst$$VectorSRegister, $src$$VectorSRegister);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Vector Population Count Instructions
+
+instruct vpopcnt4I_reg(vecX dst, vecX src) %{
+  match(Set dst (PopCountVI src));
+  predicate(n->as_Vector()->length() == 4);
+  format %{ "VPOPCNTW $dst,$src\t// pop count packed4I" %}
+  size(4);
+  ins_encode %{
+    __ vpopcntw($dst$$VectorSRegister->to_vr(), $src$$VectorSRegister->to_vr());
   %}
   ins_pipe(pipe_class_default);
 %}
