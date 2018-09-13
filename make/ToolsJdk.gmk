@@ -47,9 +47,6 @@ TOOL_COMPILEFONTCONFIG = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_cla
 TOOL_COMPILEPROPERTIES = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.compileproperties.CompileProperties
 
-TOOL_JARREORDER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    build.tools.jarreorder.JarReorder
-
 TOOL_GENERATECHARACTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecharacter.GenerateCharacter
 
@@ -66,9 +63,6 @@ TOOL_GENERATEBREAKITERATORDATA = $(JAVA_SMALL) \
 
 TOOL_GENERATECURRENCYDATA = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatecurrencydata.GenerateCurrencyData
-
-TOOL_HASHER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    build.tools.hasher.Hasher
 
 TOOL_TZDB = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.tzdb.TzdbZoneRulesCompiler
@@ -108,10 +102,6 @@ TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes
 
 TOOL_GENERATELSREQUIVMAPS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.generatelsrequivmaps.EquivMapsGenerator
-
-TOOL_GENMODULESXML = $(JAVA_SMALL) $(INTERIM_LANGTOOLS_BOOTCLASSPATH) \
-    -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes) \
-    build.tools.module.GenJdepsModulesXml
 
 TOOL_GENMODULEINFOSOURCE = $(JAVA_SMALL) $(INTERIM_LANGTOOLS_BOOTCLASSPATH) \
     -cp $(call PathList, $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes) \
