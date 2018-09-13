@@ -142,6 +142,13 @@ public final class HttpCookie implements Cloneable {
     }
 
     private HttpCookie(String name, String value, String header) {
+        this(name, value, header, System.currentTimeMillis());
+    }
+
+    /**
+     * Package private for testing purposes.
+     */
+    HttpCookie(String name, String value, String header, long creationTime) {
         name = name.trim();
         if (name.length() == 0 || !isToken(name) || name.charAt(0) == '$') {
             throw new IllegalArgumentException("Illegal cookie name");
@@ -152,7 +159,7 @@ public final class HttpCookie implements Cloneable {
         toDiscard = false;
         secure = false;
 
-        whenCreated = System.currentTimeMillis();
+        whenCreated = creationTime;
         portlist = null;
         this.header = header;
     }
@@ -755,6 +762,11 @@ public final class HttpCookie implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
+    // ---------------- Package private operations --------------
+
+    long getCreationTime() {
+        return whenCreated;
     }
 
     // ---------------- Private operations --------------

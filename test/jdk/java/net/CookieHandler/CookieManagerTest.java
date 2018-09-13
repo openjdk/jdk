@@ -31,6 +31,9 @@
  */
 
 import com.sun.net.httpserver.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.io.IOException;
 import java.net.*;
 import static java.net.Proxy.NO_PROXY;
@@ -160,14 +163,40 @@ class CookieTransactionHandler implements HttpHandler {
         exchange.close();
     }
 
+    private static String trim(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i=0; i<s.length(); i++) {
+            char c = s.charAt(i);
+            if (!Character.isWhitespace(c))
+                sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    private static boolean cookieEquals(String s1, String s2) {
+        s1 = trim(s1);
+        s2 = trim(s2);
+        String[] s1a = s1.split(";");
+        String[] s2a = s2.split(";");
+        List<String> l1 = new LinkedList(List.of(s1a));
+        List<String> l2 = new LinkedList(List.of(s2a));
+        Collections.sort(l1);
+        Collections.sort(l2);
+        int i = 0;
+        for (String s : l1) {
+            if (!s.equals(l2.get(i++))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void checkRequest(Headers hdrs) {
 
         assert testDone > 0;
         String cookieHeader = hdrs.getFirst("Cookie");
-        if (cookieHeader != null &&
-            cookieHeader
-                .equalsIgnoreCase(testCases[testcaseDone][testDone-1]
-                                  .cookieToRecv))
+        if (cookieHeader != null && cookieEquals(
+                cookieHeader, testCases[testcaseDone][testDone-1].cookieToRecv))
         {
             System.out.printf("%15s %s\n", "PASSED:", cookieHeader);
         } else {

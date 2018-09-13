@@ -241,7 +241,7 @@ public class CookieManager extends CookieHandler
         }
 
         // apply sort rule (RFC 2965 sec. 3.3.4)
-        List<String> cookieHeader = sortByPath(cookies);
+        List<String> cookieHeader = sortByPathAndAge(cookies);
 
         return Map.of("Cookie", cookieHeader);
     }
@@ -402,11 +402,12 @@ public class CookieManager extends CookieHandler
 
 
     /*
-     * sort cookies with respect to their path: those with more specific Path attributes
-     * precede those with less specific, as defined in RFC 2965 sec. 3.3.4
+     * sort cookies with respect to their path and age: those with more longer Path attributes
+     * precede those with shorter, as defined in RFC 6265. Cookies with the same length
+     * path are distinguished by creation time (older first). Method made PP to enable testing.
      */
-    private List<String> sortByPath(List<HttpCookie> cookies) {
-        Collections.sort(cookies, new CookiePathComparator());
+    static List<String> sortByPathAndAge(List<HttpCookie> cookies) {
+        Collections.sort(cookies, new CookieComparator());
 
         List<String> cookieHeader = new java.util.ArrayList<>();
         for (HttpCookie cookie : cookies) {
@@ -424,22 +425,36 @@ public class CookieManager extends CookieHandler
     }
 
 
-    static class CookiePathComparator implements Comparator<HttpCookie> {
+    // Comparator compares the length of the path. Longer paths should precede shorter ones.
+    // As per rfc6265 cookies with equal path lengths sort on creation time.
+
+    static class CookieComparator implements Comparator<HttpCookie> {
         public int compare(HttpCookie c1, HttpCookie c2) {
             if (c1 == c2) return 0;
             if (c1 == null) return -1;
             if (c2 == null) return 1;
 
-            // path rule only applies to the cookies with same name
-            if (!c1.getName().equals(c2.getName())) return 0;
-
-            // those with more specific Path attributes precede those with less specific
-            if (c1.getPath().startsWith(c2.getPath()))
+            String p1 = c1.getPath();
+            String p2 = c2.getPath();
+            p1 = (p1 == null) ? "" : p1;
+            p2 = (p2 == null) ? "" : p2;
+            int len1 = p1.length();
+            int len2 = p2.length();
+            if (len1 > len2)
                 return -1;
-            else if (c2.getPath().startsWith(c1.getPath()))
+            if (len2 > len1)
                 return 1;
-            else
-                return 0;
+
+            // Check creation time. Sort older first
+            long creation1 = c1.getCreationTime();
+            long creation2 = c2.getCreationTime();
+            if (creation1 < creation2) {
+                return -1;
+            }
+            if (creation1 > creation2) {
+                return 1;
+            }
+            return 0;
         }
     }
 }
