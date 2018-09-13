@@ -28,21 +28,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED  0
 #define STATUS_FAILED  2
@@ -74,7 +61,7 @@ void setWatch(JNIEnv *env, jint ind) {
     jclass cls;
     field fld = fields[ind];
 
-    cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env, fld.klass));
+    cls = env->FindClass(fld.klass);
     if (cls == NULL) {
         printf("Cannot find class \"%s\"\n", fld.klass);
         result = STATUS_FAILED;
@@ -82,11 +69,9 @@ void setWatch(JNIEnv *env, jint ind) {
     }
     if (fld.fid == NULL) {
         if (fld.stat) {
-            fields[ind].fid = JNI_ENV_PTR(env)->
-                GetStaticFieldID(JNI_ENV_ARG(env, cls), fld.name, fld.sig);
+            fields[ind].fid = env->GetStaticFieldID(cls, fld.name, fld.sig);
         } else {
-            fields[ind].fid = JNI_ENV_PTR(env)->
-                GetFieldID(JNI_ENV_ARG(env, cls), fld.name, fld.sig);
+            fields[ind].fid = env->GetFieldID(cls, fld.name, fld.sig);
         }
     }
 
@@ -147,8 +132,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -210,7 +194,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw001_touchfld0(JNIEnv *env,
     jint val;
 
     setWatch(env, (jint)0);
-    val = JNI_ENV_PTR(env)->GetIntField(JNI_ENV_ARG(env, obj), fields[0].fid);
+    val = env->GetIntField(obj, fields[0].fid);
 }
 
 JNIEXPORT void JNICALL
@@ -236,6 +220,4 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw001_getRes(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

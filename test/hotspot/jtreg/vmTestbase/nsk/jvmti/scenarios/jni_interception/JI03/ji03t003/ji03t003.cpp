@@ -31,27 +31,7 @@
 
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef JNI_ENV_ARG
-  #ifdef __cplusplus
-    #define JNI_ENV_ARG(x, y) y
-    #define JNI_ENV_PTR(x) x
-  #else
-    #define JNI_ENV_ARG(x, y) x, y
-    #define JNI_ENV_PTR(x) (*x)
-  #endif
-#endif
-
-#ifndef JNI_ENV_ARG1
-  #ifdef __cplusplus
-    #define JNI_ENV_ARG1(x)
-  #else
-    #define JNI_ENV_ARG1(x) x
-  #endif
-#endif
 
 #define PASSED  0
 #define STATUS_FAILED  2
@@ -128,16 +108,14 @@ void doRedirect(JNIEnv *env) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to get original JNI function table"));
+        env->FatalError("failed to get original JNI function table");
     }
     if ((err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) !=
             JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get redirected JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to get redirected JNI function table"));
+        env->FatalError("failed to get redirected JNI function table");
     }
     if (verbose)
         printf("doRedirect: the JNI function table obtained successfully\n");
@@ -153,8 +131,7 @@ void doRedirect(JNIEnv *env) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to set new JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to set new JNI function table"));
+        env->FatalError("failed to set new JNI function table");
     }
 
     if (verbose)
@@ -171,8 +148,7 @@ void doRestore(JNIEnv *env) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to restore original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to restore original JNI function table"));
+        env->FatalError("failed to restore original JNI function table");
     }
     if (verbose)
         printf("doRestore: the original JNI function table is restored successfully\n");
@@ -181,19 +157,18 @@ void doRestore(JNIEnv *env) {
 void doExc(JNIEnv *env, jthrowable thrw, jclass thrCls, const char *msg) {
     jint res;
 
-    if ((res = JNI_ENV_PTR(env)->ThrowNew(JNI_ENV_ARG(env, thrCls), msg)) != 0) {
+    if ((res = env->ThrowNew(thrCls, msg)) != 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to throw new exception\n",
             __FILE__, __LINE__);
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to failed to throw new exception"));
+        env->FatalError("failed to failed to throw new exception");
     }
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG1(env))) {
+    if (env->ExceptionOccurred()) {
         if (verbose)
             printf("\nCHECK PASSED: exception %s thrown by ThrowNew()\n\tis detected by ExceptionOccurred() successfully\n",
                 msg);
-        JNI_ENV_PTR(env)->ExceptionClear(JNI_ENV_ARG1(env));
+        env->ExceptionClear();
     }
     else {
         result = STATUS_FAILED;
@@ -201,19 +176,18 @@ void doExc(JNIEnv *env, jthrowable thrw, jclass thrCls, const char *msg) {
             __FILE__, __LINE__, msg);
     }
 
-    if ((res = JNI_ENV_PTR(env)->Throw(JNI_ENV_ARG(env, thrw))) != 0) {
+    if ((res = env->Throw(thrw)) != 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to throw exception\n",
             __FILE__, __LINE__);
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to failed to throw new exception"));
+        env->FatalError("failed to failed to throw new exception");
     }
 
-    if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG1(env))) {
+    if (env->ExceptionOccurred()) {
         if (verbose)
             printf("(%s,%d): CHECK PASSED: exception %s thrown by Throw()\n\tis detected by ExceptionOccurred() successfully\n",
                 __FILE__, __LINE__, msg);
-        JNI_ENV_PTR(env)->ExceptionClear(JNI_ENV_ARG1(env));
+        env->ExceptionClear();
     }
     else {
         result = STATUS_FAILED;
@@ -285,13 +259,12 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t003_check(JNIEnv *env, jobj
         return STATUS_FAILED;
     }
 
-    objCls = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG(env, obj));
+    objCls = env->GetObjectClass(obj);
 
     if (verbose)
        printf("\ncheck: obtaining field ID for \"name=%s signature=%s\"...\n",
            javaField, excClassSig);
-    if ((fid = JNI_ENV_PTR(env)->GetFieldID(
-            JNI_ENV_ARG(env, objCls), javaField, excClassSig)) == 0) {
+    if ((fid = env->GetFieldID(objCls, javaField, excClassSig)) == 0) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get ID for the field \"%s\"\n",
             __FILE__, __LINE__, javaField);
@@ -301,13 +274,12 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t003_check(JNIEnv *env, jobj
     if (verbose)
        printf("check: obtaining the value of the field \"%s\"...\n",
            javaField);
-    thrwObj = (jthrowable) JNI_ENV_PTR(env)->GetObjectField(
-        JNI_ENV_ARG(env, obj), fid);
+    thrwObj = (jthrowable) env->GetObjectField(obj, fid);
 
     if (verbose)
        printf("check: obtaining the class of the object for \"%s\"...\n",
            javaField);
-    thrw = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG(env, thrwObj));
+    thrw = env->GetObjectClass(thrwObj);
 
     /* 1: check the JNI function table interception */
     if (verbose)
@@ -323,8 +295,8 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t003_check(JNIEnv *env, jobj
     doExc(env, thrwObj, thrw, "restored");
     checkCall(2, 0, 0, 0);
 
-    JNI_ENV_PTR(env)->DeleteLocalRef(JNI_ENV_ARG(env, thrw));
-    JNI_ENV_PTR(env)->DeleteLocalRef(JNI_ENV_ARG(env, thrwObj));
+    env->DeleteLocalRef(thrw);
+    env->DeleteLocalRef(thrwObj);
 
     return result;
 }
@@ -349,8 +321,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (verbose)
         printf("verbose mode on\n");
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
@@ -359,6 +330,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

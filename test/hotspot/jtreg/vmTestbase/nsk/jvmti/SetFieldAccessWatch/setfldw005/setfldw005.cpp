@@ -28,21 +28,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED  0
 #define STATUS_FAILED  2
@@ -108,8 +95,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -168,13 +154,11 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw005_getReady(JNIEnv *env, jclass cls) 
 
     for (i = 0; i < sizeof(fields) / sizeof(field); i++) {
         if (fields[i].stat == JNI_TRUE) {
-            fields[i].fid = JNI_ENV_PTR(env)->
-                GetStaticFieldID(JNI_ENV_ARG(env, cls),
-                                 fields[i].name, fields[i].sig);
+            fields[i].fid = env-> GetStaticFieldID(
+                cls, fields[i].name, fields[i].sig);
         } else {
-            fields[i].fid = JNI_ENV_PTR(env)->
-                GetFieldID(JNI_ENV_ARG(env, cls),
-                           fields[i].name, fields[i].sig);
+            fields[i].fid = env->GetFieldID(
+                cls, fields[i].name, fields[i].sig);
         }
         if (fields[i].fid == NULL) {
             printf("Unable to set access watch on %s fld%" PRIuPTR ", fieldID=0",
@@ -220,6 +204,4 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw005_getRes(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

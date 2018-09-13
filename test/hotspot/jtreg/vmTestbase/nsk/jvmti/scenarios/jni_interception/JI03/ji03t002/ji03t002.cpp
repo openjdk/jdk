@@ -31,27 +31,7 @@
 
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef JNI_ENV_ARG
-  #ifdef __cplusplus
-    #define JNI_ENV_ARG(x, y) y
-    #define JNI_ENV_PTR(x) x
-  #else
-    #define JNI_ENV_ARG(x, y) x, y
-    #define JNI_ENV_PTR(x) (*x)
-  #endif
-#endif
-
-#ifndef JNI_ENV_ARG1
-  #ifdef __cplusplus
-    #define JNI_ENV_ARG1(x)
-  #else
-    #define JNI_ENV_ARG1(x) x
-  #endif
-#endif
 
 #define PASSED  0
 #define STATUS_FAILED  2
@@ -123,16 +103,14 @@ void doRedirect(JNIEnv *env, jclass cls) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to get original JNI function table"));
+        env->FatalError("failed to get original JNI function table");
     }
     if ((err = jvmti->GetJNIFunctionTable(&redir_jni_functions)) !=
             JVMTI_ERROR_NONE) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to get redirected JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to get redirected JNI function table"));
+        env->FatalError("failed to get redirected JNI function table");
     }
     if (verbose)
         printf("doRedirect: the JNI function table obtained successfully\n");
@@ -142,33 +120,29 @@ void doRedirect(JNIEnv *env, jclass cls) {
             printf("\ndoRedirect: obtaining method ID for \"%s %s\"...\n",
             meth_info[i].m_name, meth_info[i].m_sign);
         if (meth_info[i].inst) { /* an instance method */
-            meth_info[i].mid = JNI_ENV_PTR(env)->GetMethodID(
-                JNI_ENV_ARG(env, cls),
-                meth_info[i].m_name, meth_info[i].m_sign);
+            meth_info[i].mid = env->GetMethodID(
+                cls, meth_info[i].m_name, meth_info[i].m_sign);
         }
         else {                   /* a static method */
-            meth_info[i].mid = JNI_ENV_PTR(env)->GetStaticMethodID(
-                JNI_ENV_ARG(env, cls),
-                meth_info[i].m_name, meth_info[i].m_sign);
+            meth_info[i].mid = env->GetStaticMethodID(
+                cls, meth_info[i].m_name, meth_info[i].m_sign);
         }
         if (meth_info[i].mid == NULL) {
            result = STATUS_FAILED;
            printf("(%s,%d): TEST FAILURE: failed to get the ID for the method \"%s %s\"\n",
                 __FILE__, __LINE__, meth_info[i].m_name, meth_info[i].m_sign);
-           JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-               "failed to get the ID for a method"));
+           env->FatalError("failed to get the ID for a method");
         }
 
         if (verbose)
             printf("\ndoRedirect: obtaining field ID for \"%s\"...\n",
                 meth_info[i].f_name);
-        if ((meth_info[i].fid = JNI_ENV_PTR(env)->GetStaticFieldID(
-                JNI_ENV_ARG(env, cls), meth_info[i].f_name, "I")) == 0) {
+        if ((meth_info[i].fid = env->GetStaticFieldID(
+                cls, meth_info[i].f_name, "I")) == 0) {
             result = STATUS_FAILED;
             printf("(%s,%d): TEST FAILED: failed to get ID for the field %s\n",
                 __FILE__, __LINE__, meth_info[i].f_name);
-            JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-                "cannot get field ID"));
+            env->FatalError("cannot get field ID");
         }
 
         switch(i) {
@@ -190,8 +164,7 @@ void doRedirect(JNIEnv *env, jclass cls) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to set new JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to set new JNI function table"));
+        env->FatalError("failed to set new JNI function table");
     }
 
     if (verbose)
@@ -208,16 +181,14 @@ void doRestore(JNIEnv *env) {
         result = STATUS_FAILED;
         printf("(%s,%d): TEST FAILED: failed to restore original JNI function table: %s\n",
             __FILE__, __LINE__, TranslateError(err));
-        JNI_ENV_PTR(env)->FatalError(JNI_ENV_ARG(env,
-            "failed to restore original JNI function table"));
+        env->FatalError("failed to restore original JNI function table");
     }
     if (verbose)
         printf("doRestore: the original JNI function table is restored successfully\n");
 }
 
 int getFieldVal(JNIEnv *env, jclass cls, jfieldID fid) {
-    return JNI_ENV_PTR(env)->GetStaticIntField(
-        JNI_ENV_ARG(env, cls), fid);
+    return env->GetStaticIntField(cls, fid);
 }
 
 void doCall(JNIEnv *env, jobject obj, jclass objCls, const char *msg) {
@@ -233,27 +204,26 @@ void doCall(JNIEnv *env, jobject obj, jclass objCls, const char *msg) {
             dVal = env->CallStaticDoubleMethod(objCls, meth_info[i].mid, 73);
             break;
         case 1:
-            JNI_ENV_PTR(env)->CallVoidMethod(JNI_ENV_ARG(env, obj),
-                meth_info[i].mid);
+            env->CallVoidMethod(obj, meth_info[i].mid);
             break;
         }
 
-        if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG1(env))) {
+        if (env->ExceptionOccurred()) {
             result = STATUS_FAILED;
             printf("(%s,%d): TEST FAILED: exception occured during the execution of the %s method\n",
                 __FILE__, __LINE__, msg);
-            JNI_ENV_PTR(env)->ExceptionDescribe(JNI_ENV_ARG1(env));
-            JNI_ENV_PTR(env)->ExceptionClear(JNI_ENV_ARG1(env));
+            env->ExceptionDescribe();
+            env->ExceptionClear();
         }
 
         meth_info[i].java_calls = getFieldVal(env, objCls, meth_info[i].fid);
 
-        if (JNI_ENV_PTR(env)->ExceptionOccurred(JNI_ENV_ARG1(env))) {
+        if (env->ExceptionOccurred()) {
             result = STATUS_FAILED;
             printf("(%s,%d): TEST FAILED: exception occured during getting value of the %s fieldn",
                 __FILE__, __LINE__, meth_info[i].f_name);
-            JNI_ENV_PTR(env)->ExceptionDescribe(JNI_ENV_ARG1(env));
-            JNI_ENV_PTR(env)->ExceptionClear(JNI_ENV_ARG1(env));
+            env->ExceptionDescribe();
+            env->ExceptionClear();
         }
 
     }
@@ -306,7 +276,7 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI03_ji03t002_check(JNIEnv *env, jobj
         return STATUS_FAILED;
     }
 
-    objCls = JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG(env, obj));
+    objCls = env->GetObjectClass(obj);
 
     /* 1: check the JNI function table interception */
     if (verbose)
@@ -345,8 +315,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (verbose)
         printf("verbose mode on\n");
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("(%s,%d): Failed to call GetEnv\n", __FILE__, __LINE__);
         return JNI_ERR;
@@ -355,6 +324,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif
