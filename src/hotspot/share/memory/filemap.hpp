@@ -335,12 +335,12 @@ public:
   }
 
   // The starting address of spc, as calculated with CompressedOop::decode_non_null()
-  address start_address_with_current_oop_encoding_mode(CDSFileMapRegion* spc) {
+  address start_address_as_decoded_with_current_oop_encoding_mode(CDSFileMapRegion* spc) {
     return decode_start_address(spc, true);
   }
 
-  // The starting address of spc, as calculated with HeapShared::decode_with_archived_oop_encoding_mode()
-  address start_address_with_archived_oop_encoding_mode(CDSFileMapRegion* spc) {
+  // The starting address of spc, as calculated with HeapShared::decode_from_archive()
+  address start_address_as_decoded_from_archive(CDSFileMapRegion* spc) {
     return decode_start_address(spc, false);
   }
 

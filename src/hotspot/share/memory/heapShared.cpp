@@ -834,7 +834,7 @@ class PatchEmbeddedPointers: public BitMapClosure {
     narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
-    oop o = HeapShared::decode_with_archived_oop_encoding_mode(v);
+    oop o = HeapShared::decode_from_archive(v);
     RawAccess<IS_NOT_NULL>::oop_store(p, o);
     return true;
   }

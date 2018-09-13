@@ -1944,7 +1944,7 @@ oop MetaspaceShared::materialize_archived_object(narrowOop v) {
   assert(archive_heap_region_fixed(),
          "must be called after archive heap regions are fixed");
   if (!CompressedOops::is_null(v)) {
-    oop obj = HeapShared::decode_with_archived_oop_encoding_mode(v);
+    oop obj = HeapShared::decode_from_archive(v);
     return G1CollectedHeap::heap()->materialize_archived_object(obj);
   }
   return NULL;
@@ -2021,7 +2021,7 @@ public:
              "Archived heap object is not allowed");
       assert(MetaspaceShared::open_archive_heap_region_mapped(),
              "Open archive heap region is not mapped");
-      *p = HeapShared::decode_with_archived_oop_encoding_mode(o);
+      *p = HeapShared::decode_from_archive(o);
     }
   }
 

@@ -137,7 +137,7 @@ class HeapShared: AllStatic {
 
   static size_t build_archived_subgraph_info_records(int num_records);
 
-  // Used by decode_with_archived_oop_encoding_mode
+  // Used by decode_from_archive
   static address _narrow_oop_base;
   static int     _narrow_oop_shift;
 
@@ -194,7 +194,7 @@ class HeapShared: AllStatic {
   // than Universe::narrow_oop_{base,shift} -- see FileMapInfo::map_heap_regions_impl.
   // To decode them, do not use CompressedOops::decode_not_null. Use this
   // function instead.
-  inline static oop decode_with_archived_oop_encoding_mode(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  inline static oop decode_from_archive(narrowOop v) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
 
   static void init_narrow_oop_decoding(address base, int shift) NOT_CDS_JAVA_HEAP_RETURN;
 
