@@ -350,13 +350,11 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
 
   MAX_KNOWN_DIS_DIFF_SIZE="3000"
 
-  # On slowdebug the disassembly can differ randomly.
-  if [ "$DEBUG_LEVEL" = "slowdebug" ]; then
-    ACCEPTED_DIS_DIFF="
-        ./lib/libfontmanager.so
-        ./lib/server/libjvm.so
-    "
-  fi
+  ACCEPTED_DIS_DIFF="
+      ./lib/libfontmanager.so
+      ./lib/libsaproc.so
+      ./lib/server/libjvm.so
+  "
 
   SKIP_FULLDUMP_DIFF="true"
 
