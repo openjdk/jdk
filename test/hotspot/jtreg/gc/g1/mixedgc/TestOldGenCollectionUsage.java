@@ -33,7 +33,7 @@
  * @modules java.management
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -verbose:gc -XX:SurvivorRatio=1 -Xmx12m -Xms12m -XX:MaxTenuringThreshold=1 -XX:InitiatingHeapOccupancyPercent=100 -XX:-G1UseAdaptiveIHOP -XX:G1MixedGCCountTarget=4 -XX:MaxGCPauseMillis=30000 -XX:G1HeapRegionSize=1m -XX:G1HeapWastePercent=0 -XX:G1MixedGCLiveThresholdPercent=100 TestOldGenCollectionUsage
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -verbose:gc -XX:SurvivorRatio=1 -Xmx14m -Xms14m -XX:MaxTenuringThreshold=1 -XX:InitiatingHeapOccupancyPercent=100 -XX:-G1UseAdaptiveIHOP -XX:G1MixedGCCountTarget=4 -XX:MaxGCPauseMillis=30000 -XX:G1HeapRegionSize=1m -XX:G1HeapWastePercent=0 -XX:G1MixedGCLiveThresholdPercent=100 TestOldGenCollectionUsage
  */
 
 import jdk.test.lib.Asserts;
@@ -209,7 +209,15 @@ public class TestOldGenCollectionUsage {
             // Provoke a mixed collection. G1MixedGCLiveThresholdPercent=100
             // guarantees that full old gen regions will be included.
             for (int i = 0; i < (ALLOCATION_COUNT * 20); i++) {
-                newObjects.add(new byte[ALLOCATION_SIZE]);
+                try {
+                    newObjects.add(new byte[ALLOCATION_SIZE]);
+                } catch (OutOfMemoryError e) {
+                    newObjects.clear();
+                    WB.youngGC();
+                    WB.youngGC();
+                    System.out.println("OutOfMemoryError is reported, stop allocating new objects");
+                    break;
+                }
             }
             // check that liveOldObjects still alive
             Asserts.assertTrue(WB.isObjectInOldGen(liveOldObjects),
