@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import jdk.test.lib.JDKToolLauncher;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.Asserts;
-import jdk.testlibrary.JDKToolLauncher;
-import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.Utils;
-import jdk.testlibrary.ProcessTools;
 
 /**
  * The helper class for running jps utility and verifying output from it
@@ -184,10 +184,9 @@ public final class JpsHelper {
      * 35417 Main
      * 31103 org.eclipse.equinox.launcher_1.3.0.v20120522-1813.jar
      */
-    public static void verifyJpsOutput(OutputAnalyzer output, String regex) throws Exception {
+    public static void verifyJpsOutput(OutputAnalyzer output, String regex) {
         output.shouldHaveExitValue(0);
-        int matchedCount = output.stdoutShouldMatchByLine(regex);
-        assertGreaterThan(matchedCount , 0, "Found no lines matching pattern: " + regex);
+        output.stdoutShouldMatchByLine(regex);
         output.stderrShouldNotMatch("[E|e]xception");
         output.stderrShouldNotMatch("[E|e]rror");
     }

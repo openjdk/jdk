@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,11 +111,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      */
     public URLClassLoader(URL[] urls, ClassLoader parent) {
         super(parent);
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
         this.acc = AccessController.getContext();
         this.ucp = new URLClassPath(urls, acc);
     }
@@ -123,11 +118,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     URLClassLoader(String name, URL[] urls, ClassLoader parent,
                    AccessControlContext acc) {
         super(name, parent);
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
         this.acc = acc;
         this.ucp = new URLClassPath(urls, acc);
     }
@@ -156,22 +146,12 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      */
     public URLClassLoader(URL[] urls) {
         super();
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
         this.acc = AccessController.getContext();
         this.ucp = new URLClassPath(urls, acc);
     }
 
     URLClassLoader(URL[] urls, AccessControlContext acc) {
         super();
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
         this.acc = acc;
         this.ucp = new URLClassPath(urls, acc);
     }
@@ -201,11 +181,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     public URLClassLoader(URL[] urls, ClassLoader parent,
                           URLStreamHandlerFactory factory) {
         super(parent);
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
         this.acc = AccessController.getContext();
         this.ucp = new URLClassPath(urls, factory, acc);
     }
@@ -238,11 +213,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                           URL[] urls,
                           ClassLoader parent) {
         super(name, parent);
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
         this.acc = AccessController.getContext();
         this.ucp = new URLClassPath(urls, acc);
     }
@@ -273,11 +243,6 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     public URLClassLoader(String name, URL[] urls, ClassLoader parent,
                           URLStreamHandlerFactory factory) {
         super(name, parent);
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
         this.acc = AccessController.getContext();
         this.ucp = new URLClassPath(urls, factory, acc);
     }

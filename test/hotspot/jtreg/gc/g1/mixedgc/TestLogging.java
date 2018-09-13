@@ -166,7 +166,14 @@ class MixedGCProvoker {
         System.out.println("Allocating new objects to provoke mixed GC");
         // allocate more objects to provoke GC
         for (int i = 0; i < (TestLogging.ALLOCATION_COUNT * 20); i++) {
-            newObjects.add(new byte[TestLogging.ALLOCATION_SIZE]);
+            try {
+                newObjects.add(new byte[TestLogging.ALLOCATION_SIZE]);
+            } catch (OutOfMemoryError e) {
+                newObjects.clear();
+                WB.youngGC();
+                WB.youngGC();
+                break;
+            }
         }
         // check that liveOldObjects still alive
         Asserts.assertTrue(WB.isObjectInOldGen(liveOldObjects),

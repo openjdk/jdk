@@ -46,7 +46,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 import jdk.test.lib.util.FileUtils;
-import jdk.testlibrary.JDKToolFinder;
+import jdk.test.lib.JDKToolFinder;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
 
@@ -55,10 +55,10 @@ import static java.util.Arrays.asList;
  * @bug 8064924
  * @modules jdk.compiler
  * @summary Basic test for URLStreamHandlerProvider
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- *        jdk.testlibrary.JDKToolFinder
+ *        jdk.test.lib.JDKToolFinder
  * @compile Basic.java Child.java
  * @run main Basic
  */

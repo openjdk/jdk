@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @author Olivier Lagneau
  * @modules java.management.rmi
  * @library /lib/testlibrary
+ * @library /test/lib
  * @compile Simple.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=username1 -Dpassword=password1 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=username2 -Dpassword=password2 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials -expectedCreateException -expectedSetException -expectedInvokeException
@@ -64,8 +65,8 @@ import javax.management.remote.JMXServiceURL;
 import javax.management.Attribute ;
 import javax.management.ObjectName ;
 
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.JDKToolFinder;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.process.ProcessTools;
 
 public class AuthorizationTest {
 

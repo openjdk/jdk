@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -183,10 +170,8 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
 
     classDef.klass = klass;
     classDef.class_byte_count =
-        JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG((JNIEnv *)env, classBytes));
-    classDef.class_bytes = (unsigned char*)
-        JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG((JNIEnv *)env,
-            classBytes), NULL);
+        env->GetArrayLength(classBytes);
+    classDef.class_bytes = (unsigned char*) env->GetByteArrayElements(classBytes, NULL);
 
     err = jvmti->RedefineClasses(1, &classDef);
     if (err != JVMTI_ERROR_NONE) {
@@ -195,7 +180,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         result = STATUS_FAILED;
         return;
     }
-    JNI_ENV_PTR(env)->DeleteGlobalRef(JNI_ENV_ARG((JNIEnv *)env, classBytes));
+    env->DeleteGlobalRef(classBytes);
     classBytes = NULL;
 
     check(jvmti_env, thr);
@@ -220,8 +205,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -278,10 +262,9 @@ Java_nsk_jvmti_GetStackTrace_getstacktr007_getReady(JNIEnv *env, jclass cls,
         return;
     }
 
-    classBytes = (jbyteArray) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, bytes));
+    classBytes = (jbyteArray) env->NewGlobalRef(bytes);
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, clazz),
-         "checkPoint", "()V");
+    mid = env->GetMethodID(clazz, "checkPoint", "()V");
     if (mid == NULL) {
         printf("Cannot find Method ID for method checkPoint\n");
         result = STATUS_FAILED;
@@ -310,6 +293,4 @@ Java_nsk_jvmti_GetStackTrace_getstacktr007_getRes(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

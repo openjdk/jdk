@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 /* @test
  * @bug 4997445
  * @summary Test that with server=y, when VM runs to System.exit() no error happens
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.management
  *          jdk.jdi
- * @build jdk.testlibrary.* VMConnection RunToExit Exit0
+ * @build VMConnection RunToExit Exit0
  * @run driver RunToExit
  */
 import java.net.ServerSocket;
@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 public class RunToExit {
 

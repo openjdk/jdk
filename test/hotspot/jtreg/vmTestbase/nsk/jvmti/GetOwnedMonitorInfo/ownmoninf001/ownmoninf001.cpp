@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -65,8 +52,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -139,8 +125,7 @@ Java_nsk_jvmti_GetOwnedMonitorInfo_ownmoninf001_checkMon1(JNIEnv *env,
     if ((monitors = getInfo(env, point, thr, 1)) == NULL) {
         return;
     }
-    if (JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, lock), monitors[0])
-            == JNI_FALSE) {
+    if (!env->IsSameObject(lock, monitors[0])) {
         result = STATUS_FAILED;
         printf("Point %d: not expected monitor: 0x%p\n", point, monitors[0]);
     }
@@ -153,19 +138,12 @@ Java_nsk_jvmti_GetOwnedMonitorInfo_ownmoninf001_checkMon2(JNIEnv *env,
     if ((monitors = getInfo(env, point, thr, 2)) == NULL) {
         return;
     }
-    if (JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, lock1), monitors[0])
-            == JNI_FALSE &&
-            JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, lock2), monitors[0])
-            == JNI_FALSE) {
+    if (!env->IsSameObject(lock1, monitors[0]) && !env->IsSameObject(lock2, monitors[0])) {
         result = STATUS_FAILED;
         printf("Point %d: not expected monitor: 0x%p\n", point, monitors[0]);
     }
-    if ((JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, lock1), monitors[1])
-            == JNI_FALSE &&
-            JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, lock2), monitors[1])
-            == JNI_FALSE) ||
-            JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, monitors[0]),
-                 monitors[1]) == JNI_TRUE) {
+    if ((!env->IsSameObject(lock1, monitors[1]) && !env->IsSameObject(lock2, monitors[1]))
+        || env->IsSameObject(monitors[0], monitors[1])) {
         result = STATUS_FAILED;
         printf("Point %d: not expected monitor: 0x%p\n", point, monitors[1]);
     }
@@ -176,6 +154,4 @@ Java_nsk_jvmti_GetOwnedMonitorInfo_ownmoninf001_getRes(JNIEnv *env, jclass cls) 
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

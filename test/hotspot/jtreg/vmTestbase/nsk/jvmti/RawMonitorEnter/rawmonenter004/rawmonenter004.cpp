@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -74,8 +61,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -137,15 +123,14 @@ Java_nsk_jvmti_RawMonitorEnter_rawmonenter004_check(JNIEnv *env, jclass cls, job
         return STATUS_FAILED;
     }
 
-    threads_limit = JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG(env, threads));
+    threads_limit = env->GetArrayLength(threads);
 
     if (printdump == JNI_TRUE) {
         printf(">>> starting %d threads ...\n", threads_limit);
     }
 
     for (i = 0; i < threads_limit; i++) {
-        thr = JNI_ENV_PTR(env)->GetObjectArrayElement(JNI_ENV_ARG(env,
-            threads), i);
+        thr = env->GetObjectArrayElement(threads, i);
         err = jvmti->RunAgentThread(thr, increment_thread, NULL,
                                     JVMTI_THREAD_NORM_PRIORITY);
         if (err != JVMTI_ERROR_NONE) {
@@ -192,6 +177,4 @@ Java_nsk_jvmti_RawMonitorEnter_rawmonenter004_check(JNIEnv *env, jclass cls, job
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -28,21 +28,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -258,8 +245,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -323,8 +309,7 @@ Java_nsk_jvmti_FieldAccess_fieldacc001_getReady(JNIEnv *env, jclass klass) {
     if (printdump == JNI_TRUE) {
         printf(">>> setting field access watches ...\n");
     }
-    cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/FieldAccess/fieldacc001a"));
+    cls = env->FindClass("nsk/jvmti/FieldAccess/fieldacc001a");
     if (cls == NULL) {
         printf("Cannot find fieldacc001a class!\n");
         result = STATUS_FAILED;
@@ -332,11 +317,11 @@ Java_nsk_jvmti_FieldAccess_fieldacc001_getReady(JNIEnv *env, jclass klass) {
     }
     for (i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
         if (watches[i].is_static == JNI_TRUE) {
-            watches[i].fid = JNI_ENV_PTR(env)->GetStaticFieldID(
-                JNI_ENV_ARG(env, cls), watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetStaticFieldID(
+                cls, watches[i].f_name, watches[i].f_sig);
         } else {
-            watches[i].fid = JNI_ENV_PTR(env)->GetFieldID(
-                JNI_ENV_ARG(env, cls), watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetFieldID(
+                cls, watches[i].f_name, watches[i].f_sig);
         }
         if (watches[i].fid == NULL) {
             printf("Cannot find field \"%s\"!\n", watches[i].f_name);
@@ -367,6 +352,4 @@ Java_nsk_jvmti_FieldAccess_fieldacc001_check(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

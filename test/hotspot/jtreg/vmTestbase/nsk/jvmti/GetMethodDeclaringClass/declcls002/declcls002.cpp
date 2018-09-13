@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -68,8 +55,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -89,8 +75,7 @@ Java_nsk_jvmti_GetMethodDeclaringClass_declcls002_check(JNIEnv *env, jclass cls)
         return STATUS_FAILED;
     }
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "<init>", "()V");
+    mid = env->GetMethodID(cls, "<init>", "()V");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -123,6 +108,4 @@ Java_nsk_jvmti_GetMethodDeclaringClass_declcls002_check(JNIEnv *env, jclass cls)
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

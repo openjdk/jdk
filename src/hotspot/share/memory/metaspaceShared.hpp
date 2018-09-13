@@ -59,6 +59,7 @@ class MetaspaceShared : AllStatic {
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static bool _open_archive_heap_region_mapped;
+  static bool _archive_heap_region_fixed;
   static address _cds_i2i_entry_code_buffers;
   static size_t  _cds_i2i_entry_code_buffers_size;
   static size_t  _core_spaces_size;
@@ -114,6 +115,14 @@ class MetaspaceShared : AllStatic {
   static oop archive_heap_object(oop obj, Thread* THREAD);
   static oop materialize_archived_object(narrowOop v);
   static void archive_klass_objects(Thread* THREAD);
+
+  static void set_archive_heap_region_fixed() {
+    _archive_heap_region_fixed = true;
+  }
+
+  static bool archive_heap_region_fixed() {
+    return _archive_heap_region_fixed;
+  }
 #endif
 
   static bool is_archive_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);

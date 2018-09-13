@@ -405,7 +405,7 @@ struct jvmtiInterface_1_ jvmti</xsl:text>
     <xsl:otherwise> 
       <xsl:choose>
         <xsl:when test="count(@phase)=0 or contains(@phase,'live') or contains(@phase,'start')">
-	  <xsl:text>if (this_thread == NULL || (!this_thread->is_Java_thread() &amp;&amp; !this_thread->is_VM_thread())) {</xsl:text>
+	  <xsl:text>if (this_thread == NULL || (!this_thread->is_Java_thread() &amp;&amp; !this_thread->is_Named_thread())) {</xsl:text>
         </xsl:when>
         <xsl:otherwise>
           <xsl:text>if (!this_thread->is_Java_thread()) {</xsl:text> 

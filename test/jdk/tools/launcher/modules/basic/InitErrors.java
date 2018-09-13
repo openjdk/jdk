@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /**
  * @test
- * @library /lib/testlibrary
- * @build InitErrors jdk.testlibrary.*
+ * @library /test/lib
+ * @build InitErrors
  * @run testng InitErrors
  * @summary Basic test to ensure that module system initialization errors
  *          go the right stream and with the right level of verbosity
@@ -32,8 +32,8 @@
 
 
 import java.util.Arrays;
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 

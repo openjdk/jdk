@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.Utils;
 
 /**
@@ -39,6 +39,7 @@ import jdk.testlibrary.Utils;
  *          both agent properties and jvmstat buffer.
  *
  * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.management
  *          jdk.attach
  *          jdk.management.agent/jdk.internal.agent

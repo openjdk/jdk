@@ -40,6 +40,8 @@ public class CDSTestUtils {
         "UseSharedSpaces: Unable to allocate region, range is not within java heap.";
     public static final String MSG_RANGE_ALREADT_IN_USE =
         "Unable to allocate region, java heap range is already in use.";
+    public static final String MSG_COMPRESSION_MUST_BE_USED =
+        "Unable to use shared archive: UseCompressedOops and UseCompressedClassPointers must be on for UseSharedSpaces.";
 
     public interface Checker {
         public void check(OutputAnalyzer output) throws Exception;

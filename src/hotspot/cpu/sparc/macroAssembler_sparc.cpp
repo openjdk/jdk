@@ -2648,195 +2648,92 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
      inc_counter((address) counters->total_entry_count_addr(), Rmark, Rscratch);
    }
 
-   if (EmitSync & 1) {
-     mov(3, Rscratch);
-     st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
-     cmp(SP, G0);
-     return ;
-   }
-
-   if (EmitSync & 2) {
-
-     // Fetch object's markword
-     ld_ptr(mark_addr, Rmark);
-
-     if (try_bias) {
-        biased_locking_enter(Roop, Rmark, Rscratch, done, NULL, counters);
-     }
-
-     // Save Rbox in Rscratch to be used for the cas operation
-     mov(Rbox, Rscratch);
-
-     // set Rmark to markOop | markOopDesc::unlocked_value
-     or3(Rmark, markOopDesc::unlocked_value, Rmark);
-
-     // Initialize the box.  (Must happen before we update the object mark!)
-     st_ptr(Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
-
-     // compare object markOop with Rmark and if equal exchange Rscratch with object markOop
-     assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-     cas_ptr(mark_addr.base(), Rmark, Rscratch);
-
-     // if compare/exchange succeeded we found an unlocked object and we now have locked it
-     // hence we are done
-     cmp(Rmark, Rscratch);
-     sub(Rscratch, STACK_BIAS, Rscratch);
-     brx(Assembler::equal, false, Assembler::pt, done);
-     delayed()->sub(Rscratch, SP, Rscratch);  //pull next instruction into delay slot
-
-     // we did not find an unlocked object so see if this is a recursive case
-     // sub(Rscratch, SP, Rscratch);
-     assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-     andcc(Rscratch, 0xfffff003, Rscratch);
-     st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
-     bind (done);
-     return ;
-   }
-
    Label Egress ;
 
-   if (EmitSync & 256) {
-      Label IsInflated ;
-
-      ld_ptr(mark_addr, Rmark);           // fetch obj->mark
-      // Triage: biased, stack-locked, neutral, inflated
-      if (try_bias) {
-        biased_locking_enter(Roop, Rmark, Rscratch, done, NULL, counters);
-        // Invariant: if control reaches this point in the emitted stream
-        // then Rmark has not been modified.
-      }
-
-      // Store mark into displaced mark field in the on-stack basic-lock "box"
-      // Critically, this must happen before the CAS
-      // Maximize the ST-CAS distance to minimize the ST-before-CAS penalty.
-      st_ptr(Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
-      andcc(Rmark, 2, G0);
-      brx(Assembler::notZero, false, Assembler::pn, IsInflated);
-      delayed()->
-
-      // Try stack-lock acquisition.
-      // Beware: the 1st instruction is in a delay slot
-      mov(Rbox,  Rscratch);
-      or3(Rmark, markOopDesc::unlocked_value, Rmark);
-      assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-      cas_ptr(mark_addr.base(), Rmark, Rscratch);
-      cmp(Rmark, Rscratch);
-      brx(Assembler::equal, false, Assembler::pt, done);
-      delayed()->sub(Rscratch, SP, Rscratch);
-
-      // Stack-lock attempt failed - check for recursive stack-lock.
-      // See the comments below about how we might remove this case.
-      sub(Rscratch, STACK_BIAS, Rscratch);
-      assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-      andcc(Rscratch, 0xfffff003, Rscratch);
-      br(Assembler::always, false, Assembler::pt, done);
-      delayed()-> st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
-
-      bind(IsInflated);
-      if (EmitSync & 64) {
-         // If m->owner != null goto IsLocked
-         // Pessimistic form: Test-and-CAS vs CAS
-         // The optimistic form avoids RTS->RTO cache line upgrades.
-         ld_ptr(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rscratch);
-         andcc(Rscratch, Rscratch, G0);
-         brx(Assembler::notZero, false, Assembler::pn, done);
-         delayed()->nop();
-         // m->owner == null : it's unlocked.
-      }
-
-      // Try to CAS m->owner from null to Self
-      // Invariant: if we acquire the lock then _recursions should be 0.
-      add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
-      mov(G2_thread, Rscratch);
-      cas_ptr(Rmark, G0, Rscratch);
-      cmp(Rscratch, G0);
-      // Intentional fall-through into done
-   } else {
-      // Aggressively avoid the Store-before-CAS penalty
-      // Defer the store into box->dhw until after the CAS
-      Label IsInflated, Recursive ;
+   // Aggressively avoid the Store-before-CAS penalty
+   // Defer the store into box->dhw until after the CAS
+   Label IsInflated, Recursive ;
 
 // Anticipate CAS -- Avoid RTS->RTO upgrade
 // prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads);
 
-      ld_ptr(mark_addr, Rmark);           // fetch obj->mark
-      // Triage: biased, stack-locked, neutral, inflated
+   ld_ptr(mark_addr, Rmark);           // fetch obj->mark
+   // Triage: biased, stack-locked, neutral, inflated
 
-      if (try_bias) {
-        biased_locking_enter(Roop, Rmark, Rscratch, done, NULL, counters);
-        // Invariant: if control reaches this point in the emitted stream
-        // then Rmark has not been modified.
-      }
-      andcc(Rmark, 2, G0);
-      brx(Assembler::notZero, false, Assembler::pn, IsInflated);
-      delayed()->                         // Beware - dangling delay-slot
-
-      // Try stack-lock acquisition.
-      // Transiently install BUSY (0) encoding in the mark word.
-      // if the CAS of 0 into the mark was successful then we execute:
-      //   ST box->dhw  = mark   -- save fetched mark in on-stack basiclock box
-      //   ST obj->mark = box    -- overwrite transient 0 value
-      // This presumes TSO, of course.
-
-      mov(0, Rscratch);
-      or3(Rmark, markOopDesc::unlocked_value, Rmark);
-      assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-      cas_ptr(mark_addr.base(), Rmark, Rscratch);
-// prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads);
-      cmp(Rscratch, Rmark);
-      brx(Assembler::notZero, false, Assembler::pn, Recursive);
-      delayed()->st_ptr(Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
-      if (counters != NULL) {
-        cond_inc(Assembler::equal, (address) counters->fast_path_entry_count_addr(), Rmark, Rscratch);
-      }
-      ba(done);
-      delayed()->st_ptr(Rbox, mark_addr);
-
-      bind(Recursive);
-      // Stack-lock attempt failed - check for recursive stack-lock.
-      // Tests show that we can remove the recursive case with no impact
-      // on refworkload 0.83.  If we need to reduce the size of the code
-      // emitted by compiler_lock_object() the recursive case is perfect
-      // candidate.
-      //
-      // A more extreme idea is to always inflate on stack-lock recursion.
-      // This lets us eliminate the recursive checks in compiler_lock_object
-      // and compiler_unlock_object and the (box->dhw == 0) encoding.
-      // A brief experiment - requiring changes to synchronizer.cpp, interpreter,
-      // and showed a performance *increase*.  In the same experiment I eliminated
-      // the fast-path stack-lock code from the interpreter and always passed
-      // control to the "slow" operators in synchronizer.cpp.
-
-      // RScratch contains the fetched obj->mark value from the failed CAS.
-      sub(Rscratch, STACK_BIAS, Rscratch);
-      sub(Rscratch, SP, Rscratch);
-      assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-      andcc(Rscratch, 0xfffff003, Rscratch);
-      if (counters != NULL) {
-        // Accounting needs the Rscratch register
-        st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
-        cond_inc(Assembler::equal, (address) counters->fast_path_entry_count_addr(), Rmark, Rscratch);
-        ba_short(done);
-      } else {
-        ba(done);
-        delayed()->st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
-      }
-
-      bind   (IsInflated);
-
-      // Try to CAS m->owner from null to Self
-      // Invariant: if we acquire the lock then _recursions should be 0.
-      add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
-      mov(G2_thread, Rscratch);
-      cas_ptr(Rmark, G0, Rscratch);
-      andcc(Rscratch, Rscratch, G0);             // set ICCs for done: icc.zf iff success
-      // set icc.zf : 1=success 0=failure
-      // ST box->displaced_header = NonZero.
-      // Any non-zero value suffices:
-      //    markOopDesc::unused_mark(), G2_thread, RBox, RScratch, rsp, etc.
-      st_ptr(Rbox, Rbox, BasicLock::displaced_header_offset_in_bytes());
-      // Intentional fall-through into done
+   if (try_bias) {
+     biased_locking_enter(Roop, Rmark, Rscratch, done, NULL, counters);
+     // Invariant: if control reaches this point in the emitted stream
+     // then Rmark has not been modified.
    }
+   andcc(Rmark, 2, G0);
+   brx(Assembler::notZero, false, Assembler::pn, IsInflated);
+   delayed()->                         // Beware - dangling delay-slot
+
+   // Try stack-lock acquisition.
+   // Transiently install BUSY (0) encoding in the mark word.
+   // if the CAS of 0 into the mark was successful then we execute:
+   //   ST box->dhw  = mark   -- save fetched mark in on-stack basiclock box
+   //   ST obj->mark = box    -- overwrite transient 0 value
+   // This presumes TSO, of course.
+
+   mov(0, Rscratch);
+   or3(Rmark, markOopDesc::unlocked_value, Rmark);
+   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
+   cas_ptr(mark_addr.base(), Rmark, Rscratch);
+// prefetch (mark_addr, Assembler::severalWritesAndPossiblyReads);
+   cmp(Rscratch, Rmark);
+   brx(Assembler::notZero, false, Assembler::pn, Recursive);
+   delayed()->st_ptr(Rmark, Rbox, BasicLock::displaced_header_offset_in_bytes());
+   if (counters != NULL) {
+     cond_inc(Assembler::equal, (address) counters->fast_path_entry_count_addr(), Rmark, Rscratch);
+   }
+   ba(done);
+   delayed()->st_ptr(Rbox, mark_addr);
+
+   bind(Recursive);
+   // Stack-lock attempt failed - check for recursive stack-lock.
+   // Tests show that we can remove the recursive case with no impact
+   // on refworkload 0.83.  If we need to reduce the size of the code
+   // emitted by compiler_lock_object() the recursive case is perfect
+   // candidate.
+   //
+   // A more extreme idea is to always inflate on stack-lock recursion.
+   // This lets us eliminate the recursive checks in compiler_lock_object
+   // and compiler_unlock_object and the (box->dhw == 0) encoding.
+   // A brief experiment - requiring changes to synchronizer.cpp, interpreter,
+   // and showed a performance *increase*.  In the same experiment I eliminated
+   // the fast-path stack-lock code from the interpreter and always passed
+   // control to the "slow" operators in synchronizer.cpp.
+
+   // RScratch contains the fetched obj->mark value from the failed CAS.
+   sub(Rscratch, STACK_BIAS, Rscratch);
+   sub(Rscratch, SP, Rscratch);
+   assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
+   andcc(Rscratch, 0xfffff003, Rscratch);
+   if (counters != NULL) {
+     // Accounting needs the Rscratch register
+     st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
+     cond_inc(Assembler::equal, (address) counters->fast_path_entry_count_addr(), Rmark, Rscratch);
+     ba_short(done);
+   } else {
+     ba(done);
+     delayed()->st_ptr(Rscratch, Rbox, BasicLock::displaced_header_offset_in_bytes());
+   }
+
+   bind   (IsInflated);
+
+   // Try to CAS m->owner from null to Self
+   // Invariant: if we acquire the lock then _recursions should be 0.
+   add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
+   mov(G2_thread, Rscratch);
+   cas_ptr(Rmark, G0, Rscratch);
+   andcc(Rscratch, Rscratch, G0);             // set ICCs for done: icc.zf iff success
+   // set icc.zf : 1=success 0=failure
+   // ST box->displaced_header = NonZero.
+   // Any non-zero value suffices:
+   //    markOopDesc::unused_mark(), G2_thread, RBox, RScratch, rsp, etc.
+   st_ptr(Rbox, Rbox, BasicLock::displaced_header_offset_in_bytes());
+   // Intentional fall-through into done
 
    bind   (done);
 }
@@ -2847,30 +2744,6 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    Address mark_addr(Roop, oopDesc::mark_offset_in_bytes());
 
    Label done ;
-
-   if (EmitSync & 4) {
-     cmp(SP, G0);
-     return ;
-   }
-
-   if (EmitSync & 8) {
-     if (try_bias) {
-        biased_locking_exit(mark_addr, Rscratch, done);
-     }
-
-     // Test first if it is a fast recursive unlock
-     ld_ptr(Rbox, BasicLock::displaced_header_offset_in_bytes(), Rmark);
-     br_null_short(Rmark, Assembler::pt, done);
-
-     // Check if it is still a light weight lock, this is is true if we see
-     // the stack address of the basicLock in the markOop of the object
-     assert(mark_addr.disp() == 0, "cas must take a zero displacement");
-     cas_ptr(mark_addr.base(), Rbox, Rmark);
-     ba(done);
-     delayed()->cmp(Rbox, Rmark);
-     bind(done);
-     return ;
-   }
 
    // Beware ... If the aggregate size of the code emitted by CLO and CUO is
    // is too large performance rolls abruptly off a cliff.
@@ -2902,105 +2775,39 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    // close the resultant (and rare) race by having contended threads in
    // monitorenter periodically poll _owner.
 
-   if (EmitSync & 1024) {
-     // Emit code to check that _owner == Self
-     // We could fold the _owner test into subsequent code more efficiently
-     // than using a stand-alone check, but since _owner checking is off by
-     // default we don't bother. We also might consider predicating the
-     // _owner==Self check on Xcheck:jni or running on a debug build.
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), Rscratch);
-     orcc(Rscratch, G0, G0);
-     brx(Assembler::notZero, false, Assembler::pn, done);
-     delayed()->nop();
-   }
+   // 1-0 form : avoids CAS and MEMBAR in the common case
+   // Do not bother to ratify that m->Owner == Self.
+   ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), Rbox);
+   orcc(Rbox, G0, G0);
+   brx(Assembler::notZero, false, Assembler::pn, done);
+   delayed()->
+   ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)), Rscratch);
+   ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)), Rbox);
+   orcc(Rbox, Rscratch, G0);
+   brx(Assembler::zero, false, Assembler::pt, done);
+   delayed()->
+   st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
 
-   if (EmitSync & 512) {
-     // classic lock release code absent 1-0 locking
-     //   m->Owner = null;
-     //   membar #storeload
-     //   if (m->cxq|m->EntryList) == null goto Success
-     //   if (m->succ != null) goto Success
-     //   if CAS (&m->Owner,0,Self) != 0 goto Success
-     //   goto SlowPath
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), Rbox);
-     orcc(Rbox, G0, G0);
-     brx(Assembler::notZero, false, Assembler::pn, done);
-     delayed()->nop();
-     st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-     if (os::is_MP()) { membar(StoreLoad); }
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)), Rscratch);
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)), Rbox);
-     orcc(Rbox, Rscratch, G0);
-     brx(Assembler::zero, false, Assembler::pt, done);
-     delayed()->
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), Rscratch);
-     andcc(Rscratch, Rscratch, G0);
-     brx(Assembler::notZero, false, Assembler::pt, done);
-     delayed()->andcc(G0, G0, G0);
-     add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
-     mov(G2_thread, Rscratch);
-     cas_ptr(Rmark, G0, Rscratch);
-     cmp(Rscratch, G0);
-     // invert icc.zf and goto done
-     brx(Assembler::notZero, false, Assembler::pt, done);
-     delayed()->cmp(G0, G0);
-     br(Assembler::always, false, Assembler::pt, done);
-     delayed()->cmp(G0, 1);
-   } else {
-     // 1-0 form : avoids CAS and MEMBAR in the common case
-     // Do not bother to ratify that m->Owner == Self.
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), Rbox);
-     orcc(Rbox, G0, G0);
-     brx(Assembler::notZero, false, Assembler::pn, done);
-     delayed()->
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)), Rscratch);
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)), Rbox);
-     orcc(Rbox, Rscratch, G0);
-     if (EmitSync & 16384) {
-       // As an optional optimization, if (EntryList|cxq) != null and _succ is null then
-       // we should transfer control directly to the slow-path.
-       // This test makes the reacquire operation below very infrequent.
-       // The logic is equivalent to :
-       //   if (cxq|EntryList) == null : Owner=null; goto Success
-       //   if succ == null : goto SlowPath
-       //   Owner=null; membar #storeload
-       //   if succ != null : goto Success
-       //   if CAS(&Owner,null,Self) != null goto Success
-       //   goto SlowPath
-       brx(Assembler::zero, true, Assembler::pt, done);
-       delayed()->
-       st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-       ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), Rscratch);
-       andcc(Rscratch, Rscratch, G0) ;
-       brx(Assembler::zero, false, Assembler::pt, done);
-       delayed()->orcc(G0, 1, G0);
-       st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-     } else {
-       brx(Assembler::zero, false, Assembler::pt, done);
-       delayed()->
-       st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-     }
-     if (os::is_MP()) { membar(StoreLoad); }
-     // Check that _succ is (or remains) non-zero
-     ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), Rscratch);
-     andcc(Rscratch, Rscratch, G0);
-     brx(Assembler::notZero, false, Assembler::pt, done);
-     delayed()->andcc(G0, G0, G0);
-     add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
-     mov(G2_thread, Rscratch);
-     cas_ptr(Rmark, G0, Rscratch);
-     cmp(Rscratch, G0);
-     // invert icc.zf and goto done
-     // A slightly better v8+/v9 idiom would be the following:
-     //   movrnz Rscratch,1,Rscratch
-     //   ba done
-     //   xorcc Rscratch,1,G0
-     // In v8+ mode the idiom would be valid IFF Rscratch was a G or O register
-     brx(Assembler::notZero, false, Assembler::pt, done);
-     delayed()->cmp(G0, G0);
-     br(Assembler::always, false, Assembler::pt, done);
-     delayed()->cmp(G0, 1);
-   }
+   if (os::is_MP()) { membar(StoreLoad); }
+   // Check that _succ is (or remains) non-zero
+   ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), Rscratch);
+   andcc(Rscratch, Rscratch, G0);
+   brx(Assembler::notZero, false, Assembler::pt, done);
+   delayed()->andcc(G0, G0, G0);
+   add(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), Rmark);
+   mov(G2_thread, Rscratch);
+   cas_ptr(Rmark, G0, Rscratch);
+   cmp(Rscratch, G0);
+   // invert icc.zf and goto done
+   // A slightly better v8+/v9 idiom would be the following:
+   //   movrnz Rscratch,1,Rscratch
+   //   ba done
+   //   xorcc Rscratch,1,G0
+   // In v8+ mode the idiom would be valid IFF Rscratch was a G or O register
+   brx(Assembler::notZero, false, Assembler::pt, done);
+   delayed()->cmp(G0, G0);
+   br(Assembler::always, false, Assembler::pt, done);
+   delayed()->cmp(G0, 1);
 
    bind   (LStacked);
    // Consider: we could replace the expensive CAS in the exit

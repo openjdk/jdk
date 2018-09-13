@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main ThreadPriorities
+ * @comment Use othervm mode so that we don't capture unrelated threads created by other tests
+ * @run main/othervm ThreadPriorities
  */
 
 import java.util.ArrayList;
@@ -75,7 +76,7 @@ public class ThreadPriorities {
                 JDKToolFinder.getJDKTool("jstack"),
                 String.valueOf(ProcessTools.getProcessId()));
 
-        String[] output = new OutputAnalyzer(pb.start()).getOutput().split("\\n+");
+        String[] output = new OutputAnalyzer(pb.start()).getOutput().split("\\R");
 
         Pattern pattern = Pattern.compile(
                 "\\\"Priority=(\\d+)\\\".* prio=(\\d+).*");
@@ -93,8 +94,20 @@ public class ThreadPriorities {
         barrier.await(); // 2nd
         barrier.reset();
 
-        assertEquals(matches, NUMBER_OF_JAVA_PRIORITIES);
-        assertTrue(failed.isEmpty(), failed.size() + ":" + failed);
+        boolean success = false;
+        try {
+            assertEquals(matches, NUMBER_OF_JAVA_PRIORITIES);
+            assertTrue(failed.isEmpty(), failed.size() + ":" + failed);
+            success = true;
+        }
+        finally {
+            if (!success) {
+                System.out.println("Failure detected - dumping jstack output:");
+                for (String line : output) {
+                    System.out.println(line);
+                }
+            }
+        }
     }
 }
 

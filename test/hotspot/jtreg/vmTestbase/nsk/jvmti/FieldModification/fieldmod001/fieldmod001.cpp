@@ -28,21 +28,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -170,8 +157,7 @@ int isEqual(JNIEnv *env, char *sig, jvalue v1, jvalue v2) {
         return (v1.d == v2.d);
     case 'L':
     case '[':
-        return (JNI_TRUE ==
-            JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, v1.l), v2.l));
+        return env->IsSameObject(v1.l, v2.l);
     case 'Z':
         return (v1.z == v2.z);
     case 'B':
@@ -335,8 +321,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -400,8 +385,7 @@ Java_nsk_jvmti_FieldModification_fieldmod001_getReady(JNIEnv *env, jclass klass,
     if (printdump == JNI_TRUE) {
         printf(">>> setting field modification watches ...\n");
     }
-    cls = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/FieldModification/fieldmod001a"));
+    cls = env->FindClass("nsk/jvmti/FieldModification/fieldmod001a");
     if (cls == NULL) {
         printf("Cannot find fieldmod001a class!\n");
         result = STATUS_FAILED;
@@ -409,11 +393,11 @@ Java_nsk_jvmti_FieldModification_fieldmod001_getReady(JNIEnv *env, jclass klass,
     }
     for (i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
         if (watches[i].is_static == JNI_TRUE) {
-            watches[i].fid = JNI_ENV_PTR(env)->GetStaticFieldID(
-                JNI_ENV_ARG(env, cls), watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetStaticFieldID(
+                cls, watches[i].f_name, watches[i].f_sig);
         } else {
-            watches[i].fid = JNI_ENV_PTR(env)->GetFieldID(
-                JNI_ENV_ARG(env, cls), watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetFieldID(
+                cls, watches[i].f_name, watches[i].f_sig);
         }
         if (watches[i].fid == NULL) {
             printf("Cannot get field ID for \"%s:%s\"\n",
@@ -468,6 +452,4 @@ Java_nsk_jvmti_FieldModification_fieldmod001_check(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

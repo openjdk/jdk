@@ -25,21 +25,8 @@
 #include "jvmti.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED  0
 #define STATUS_FAILED  2
@@ -68,10 +55,9 @@ void checkMeth(JNIEnv *env, jclass cl, const char *name, const char *sig,
     jlocation exp_end = meth_tab[meth_ind].end;
 
     if (stat) {
-        mid = JNI_ENV_PTR(env)->
-            GetStaticMethodID(JNI_ENV_ARG(env, cl), name, sig);
+        mid = env->GetStaticMethodID(cl, name, sig);
     } else {
-        mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cl), name, sig);
+        mid = env->GetMethodID(cl, name, sig);
     }
     if (mid == NULL) {
         printf("Name = %s, sig = %s: mid = NULL\n", name, sig);
@@ -116,8 +102,7 @@ JNIEXPORT jint JNI_OnLoad_methloc001(JavaVM *jvm, char *options, void *reserved)
 jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -133,6 +118,4 @@ JNIEXPORT jint JNICALL Java_nsk_jvmti_GetMethodLocation_methloc001_check(JNIEnv 
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

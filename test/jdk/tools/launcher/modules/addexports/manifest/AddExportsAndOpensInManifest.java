@@ -24,6 +24,7 @@
 /**
  * @test
  * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.compiler
  * @build AddExportsAndOpensInManifest Test2 JarUtils jdk.testlibrary.*
  * @compile --add-exports=java.base/jdk.internal.misc=ALL-UNNAMED Test1.java
@@ -39,8 +40,8 @@ import java.nio.file.Paths;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;

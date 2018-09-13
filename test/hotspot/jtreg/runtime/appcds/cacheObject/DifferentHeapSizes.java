@@ -40,6 +40,8 @@ import sun.hotspot.WhiteBox;
 import jdk.test.lib.cds.CDSTestUtils;
 
 public class DifferentHeapSizes {
+    static final String DEDUP = "-XX:+UseStringDeduplication"; // This increases code coverage.
+
     static class Scenario {
         int dumpSize;   // in MB
         int runSizes[]; // in MB
@@ -59,7 +61,6 @@ public class DifferentHeapSizes {
     };
 
     public static void main(String[] args) throws Exception {
-        String dedup = "-XX:+UseStringDeduplication"; // This increases code coverage.
         JarBuilder.getOrCreateHelloJar();
         String appJar = TestCommon.getTestJar("hello.jar");
         String appClasses[] = TestCommon.list("Hello");
@@ -71,7 +72,7 @@ public class DifferentHeapSizes {
             for (int runSize : s.runSizes) {
                 String runXmx = "-Xmx" + runSize + "m";
                 CDSTestUtils.Result result = TestCommon.run("-cp", appJar, "-showversion",
-                        "-Xlog:cds", runXmx, dedup, "Hello");
+                        "-Xlog:cds", runXmx, DEDUP, "Hello");
                 if (runSize < 32768) {
                     result
                         .assertNormalExit("Hello World")
@@ -80,21 +81,49 @@ public class DifferentHeapSizes {
                             out.shouldNotContain(CDSTestUtils.MSG_RANGE_ALREADT_IN_USE);
                         });
                 } else {
-                    result.assertAbnormalExit("Unable to use shared archive: UseCompressedOops and UseCompressedClassPointers must be on for UseSharedSpaces.");
+                    result.assertAbnormalExit(CDSTestUtils.MSG_COMPRESSION_MUST_BE_USED);
                 }
             }
         }
-        String flag = "HeapBaseMinAddress";
-        String xxflag = "-XX:" + flag + "=";
-        String mx = "-Xmx128m";
-        long base = WhiteBox.getWhiteBox().getSizeTVMFlag(flag).longValue();
 
-        TestCommon.dump(appJar, appClasses, mx, xxflag + base);
-        TestCommon.run("-cp", appJar, "-showversion", "-Xlog:cds", mx, xxflag + (base + 256 * 1024 * 1024), dedup, "Hello")
-            .assertNormalExit("Hello World")
-            .assertNormalExit(out -> {
-                    out.shouldNotContain(CDSTestUtils.MSG_RANGE_NOT_WITHIN_HEAP);
-                    out.shouldNotContain(CDSTestUtils.MSG_RANGE_ALREADT_IN_USE);
-                });
+        // Test various settings of -XX:HeapBaseMinAddress that would trigger
+        // "CDS heap data need to be relocated because the desired range ... is outside of the heap"
+        long default_base = WhiteBox.getWhiteBox().getSizeTVMFlag("HeapBaseMinAddress").longValue();
+        long M = 1024 * 1024;
+        long bases[] = new long[] {
+            /* dump xmx */   /* run xmx */   /* dump base */             /* run base */
+            128 * M,         128 * M,        default_base,               default_base + 256L * 1024 * 1024,
+            128 * M,         16376 * M,      0x0000000119200000L,        -1,
+        };
+
+        for (int i = 0; i < bases.length; i += 4) {
+            String dump_xmx  = getXmx(bases[i+0]);
+            String run_xmx   = getXmx(bases[i+1]);
+            String dump_base = getHeapBaseMinAddress(bases[i+2]);
+            String run_base  = getHeapBaseMinAddress(bases[i+3]);
+
+            TestCommon.dump(appJar, appClasses, dump_xmx, dump_base);
+            TestCommon.run("-cp", appJar, "-showversion", "-Xlog:cds", run_xmx, run_base, DEDUP, "Hello")
+                .assertNormalExit("Hello World")
+                .assertNormalExit(out -> {
+                        out.shouldNotContain(CDSTestUtils.MSG_RANGE_NOT_WITHIN_HEAP);
+                        out.shouldNotContain(CDSTestUtils.MSG_RANGE_ALREADT_IN_USE);
+                    });
+        }
+    }
+
+    static String getXmx(long value) {
+        if (value < 0) {
+            return "-showversion"; // This is a harmless command line arg
+        } else {
+            return "-Xmx" + (value / 1024 / 1024) + "m";
+        }
+    }
+    static String getHeapBaseMinAddress(long value) {
+        if (value < 0) {
+            return "-showversion"; // This is a harmless command line arg
+        } else {
+            return "-XX:HeapBaseMinAddress=0x" + Long.toHexString(value);
+        }
     }
 }

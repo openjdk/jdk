@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 /**
  * @test
  * @library /lib/testlibrary /test/lib
- * @build jdk.testlibrary.ProcessTools
+ * @build jdk.test.lib.process.ProcessTools
  *        ModuleTest jdk.test.lib.compiler.CompilerUtils JarUtils
  * @run testng ModuleTest
  * @summary Basic tests for using rmi in module world
  */
 
-import static jdk.testlibrary.ProcessTools.executeTestJava;
+import static jdk.test.lib.process.ProcessTools.executeTestJava;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 

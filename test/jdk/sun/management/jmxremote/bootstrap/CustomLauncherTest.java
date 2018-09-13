@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,19 +35,18 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
  * @bug 6434402 8004926
  * @author Jaroslav Bachorik
  *
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.management
  *          jdk.attach
  *          jdk.management.agent/jdk.internal.agent
  *
- * @build jdk.testlibrary.*
  * @build TestManager TestApplication CustomLauncherTest
  * @run main/othervm CustomLauncherTest
  */

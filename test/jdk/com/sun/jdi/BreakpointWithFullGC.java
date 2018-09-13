@@ -67,7 +67,7 @@ public class BreakpointWithFullGC extends JdbTest {
     }
 
     private BreakpointWithFullGC() {
-        super(new Jdb.LaunchOptions(DEBUGGEE_CLASS)
+        super(new LaunchOptions(DEBUGGEE_CLASS)
                      .addDebuggeeOptions(DEBUGGEE_OPTIONS));
     }
 

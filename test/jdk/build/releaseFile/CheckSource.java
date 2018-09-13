@@ -34,8 +34,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CheckSource {
+
+    public static final String SRC_HASH_REGEXP = ":((hg)|(git)):[a-z0-9]*\\+?";
 
     CheckSource(String dataFile, boolean isOpenJDK) {
         // Read data files
@@ -44,6 +48,7 @@ public class CheckSource {
 
     private void readFile(String fileName, boolean isOpenJDK) {
         String fishForSOURCE = null;
+        String implementor = null;
 
         File file = new File(fileName);
 
@@ -65,7 +70,13 @@ public class CheckSource {
                 // grab SOURCE line
                 if (readIn.startsWith("SOURCE=")) {
                     fishForSOURCE = readIn;
-                    break;
+                    continue;
+                }
+
+                // grab IMPLEMENTOR line
+                if (readIn.startsWith("IMPLEMENTOR=")) {
+                    implementor = readIn;
+                    continue;
                 }
             }
         } catch (FileNotFoundException fileExcept) {
@@ -79,27 +90,46 @@ public class CheckSource {
         // was SOURCE even found?
         if (fishForSOURCE == null) {
             throw new RuntimeException("SOURCE line was not found!");
-        } else {
-            // OK it was found, did it have correct sources?
-            System.out.println("The source string found: " + fishForSOURCE);
+        }
+        System.out.println("The source string found: " + fishForSOURCE);
 
-            // First it MUST have .: regardless of closed or openJDK
-            if (!fishForSOURCE.contains(".:")) {
-                throw new RuntimeException("The test failed, .: not found!");
-            }
-            // take out the .: source path
-            fishForSOURCE = fishForSOURCE.replace(".:", "");
+        // Extract the value of SOURCE=
+        Pattern valuePattern = Pattern.compile("SOURCE=\"(.*)\"");
+        Matcher valueMatcher = valuePattern.matcher(fishForSOURCE);
+        if (!valueMatcher.matches()) {
+            throw new RuntimeException("SOURCE string has bad format, should be SOURCE=\"<value>\"");
+        }
+        String valueString = valueMatcher.group(1);
 
-            // if its closedJDK it MUST have open:
-            if (!isOpenJDK && !fishForSOURCE.contains("open:")) {
-                throw new RuntimeException("The test failed, open: not found!");
-            }
-            // take out the open: source path
-            fishForSOURCE = fishForSOURCE.replace("open:", "");
+        // Check if implementor is Oracle
+        boolean isOracle = (implementor != null) && implementor.contains("Oracle Corporation");
 
-            // if any other source exists, that's an error
-            if (fishForSOURCE.contains(":")) {
-                throw new RuntimeException("The test failed, additional sources found!");
+        String[] values = valueString.split(" ");
+
+        // First value MUST start with ".:" regardless of Oracle or OpenJDK
+        String rootRegexp = "\\." + SRC_HASH_REGEXP;
+        if (!values[0].matches(rootRegexp)) {
+            throw new RuntimeException("The test failed, first element did not match regexp: " + rootRegexp);
+        }
+
+        // If it's an Oracle build, it can be either OpenJDK or OracleJDK. Other
+        // builds may have any number of additional elements in any format.
+        if (isOracle) {
+            if (isOpenJDK) {
+                if (values.length != 1) {
+                    throw new RuntimeException("The test failed, wrong number of elements in SOURCE list." +
+                            " Should be 1 for Oracle built OpenJDK.");
+                }
+            } else {
+                if (values.length != 2) {
+                    throw new RuntimeException("The test failed, wrong number of elements in SOURCE list." +
+                            " Should be 2 for OracleJDK.");
+                }
+                // Second value MUST start with "open:" for OracleJDK
+                String openRegexp = "open" + SRC_HASH_REGEXP;
+                if (!values[1].matches(openRegexp)) {
+                    throw new RuntimeException("The test failed, second element did not match regexp: " + openRegexp);
+                }
             }
         }
 
@@ -114,7 +144,6 @@ public class CheckSource {
         System.out.println("JDK Path : " + jdkPath);
         System.out.println("Runtime Name : " + runtime);
 
-        new CheckSource(jdkPath + "/release",
-                              runtime.contains("OpenJDK"));
+        new CheckSource(jdkPath + "/release", runtime.contains("OpenJDK"));
     }
 }

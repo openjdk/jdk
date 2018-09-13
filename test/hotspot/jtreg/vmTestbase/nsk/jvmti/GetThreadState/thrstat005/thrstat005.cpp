@@ -33,21 +33,8 @@
 #include "JVMTITools.h"
 #endif
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define THREAD_STATE_MASK ~(JVMTI_THREAD_STATE_SUSPENDED \
                             | JVMTI_THREAD_STATE_INTERRUPTED \
@@ -113,7 +100,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError error;
     jint res;
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &g_ppJvmtiEnv), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &g_ppJvmtiEnv, JVMTI_VERSION_1_1);
     if ( res != JNI_OK || ! g_ppJvmtiEnv ) {
         printf("Agent_OnLoad: Error: GetEnv returned error or NULL\n");
         return JNI_ERR;
@@ -171,6 +158,4 @@ Java_nsk_jvmti_GetThreadState_thrstat005_checkThreadState(JNIEnv * pEnv, jclass 
     return JNI_FALSE;
 }
 
-#ifdef __cplusplus
 }
-#endif

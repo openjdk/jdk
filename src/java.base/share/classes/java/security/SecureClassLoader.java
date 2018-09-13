@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,12 +42,6 @@ import sun.security.util.Debug;
  * @since 1.2
  */
 public class SecureClassLoader extends ClassLoader {
-    /*
-     * If initialization succeed this is set to true and security checks will
-     * succeed. Otherwise the object is not initialized and the object is
-     * useless.
-     */
-    private final boolean initialized;
 
     /*
      * Map that maps the CodeSource to a ProtectionDomain. The key is a
@@ -81,12 +75,6 @@ public class SecureClassLoader extends ClassLoader {
      */
     protected SecureClassLoader(ClassLoader parent) {
         super(parent);
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
-        initialized = true;
     }
 
     /**
@@ -104,12 +92,6 @@ public class SecureClassLoader extends ClassLoader {
      */
     protected SecureClassLoader() {
         super();
-        // this is to make the stack depth consistent with 1.1
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
-        initialized = true;
     }
 
     /**
@@ -130,11 +112,6 @@ public class SecureClassLoader extends ClassLoader {
      */
     protected SecureClassLoader(String name, ClassLoader parent) {
         super(name, parent);
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkCreateClassLoader();
-        }
-        initialized = true;
     }
 
     /**
@@ -220,7 +197,6 @@ public class SecureClassLoader extends ClassLoader {
      */
     protected PermissionCollection getPermissions(CodeSource codesource)
     {
-        check();
         return new Permissions(); // ProtectionDomain defers the binding
     }
 
@@ -258,15 +234,6 @@ public class SecureClassLoader extends ClassLoader {
                 return pd;
             }
         });
-    }
-
-    /*
-     * Check to make sure the class loader has been initialized.
-     */
-    private void check() {
-        if (!initialized) {
-            throw new SecurityException("ClassLoader object not initialized");
-        }
     }
 
     private static class CodeSourceKey {

@@ -22,7 +22,7 @@
  */
 
 import jdk.testlibrary.Asserts;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.apps.LingeredApp;
 
 /*

@@ -22,9 +22,8 @@
  */
 
 import java.io.File;
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.JDKToolLauncher;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.spi.AttachProvider;
 

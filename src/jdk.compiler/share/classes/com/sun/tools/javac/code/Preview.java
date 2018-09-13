@@ -167,7 +167,8 @@ public class Preview {
     public boolean isPreview(Feature feature) {
         if (feature == Feature.SWITCH_EXPRESSION ||
             feature == Feature.SWITCH_MULTIPLE_CASE_LABELS ||
-            feature == Feature.SWITCH_RULE)
+            feature == Feature.SWITCH_RULE ||
+            feature == Feature.RAW_STRING_LITERALS)
             return true;
         //Note: this is a backdoor which allows to optionally treat all features as 'preview' (for testing).
         //When real preview features will be added, this method can be implemented to return 'true'

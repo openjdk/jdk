@@ -27,10 +27,9 @@
  * @author Staffan Larsen
  * @comment Graal does not support CMS
  * @requires !vm.graal.enabled
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules jdk.attach/sun.tools.attach
  *          jdk.management
- * @build jdk.testlibrary.*
  * @run main CheckOrigin
  */
 
@@ -44,7 +43,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.util.Map;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import sun.tools.attach.HotSpotVirtualMachine;
 
 public class CheckOrigin {

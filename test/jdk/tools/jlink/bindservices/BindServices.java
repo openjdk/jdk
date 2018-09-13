@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import static jdk.testlibrary.ProcessTools.*;
+import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -43,9 +43,9 @@ import static org.testng.Assert.*;
 /**
  * @test
  * @bug 8174826
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler jdk.jlink
- * @build BindServices jdk.testlibrary.ProcessTools
+ * @build BindServices jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.compiler.CompilerUtils
  * @run testng BindServices
  */

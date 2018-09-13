@@ -830,10 +830,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   experimental(ccstr, SyncKnobs, NULL,                                      \
                "(Unstable) Various monitor synchronization tunables")       \
                                                                             \
-  experimental(intx, EmitSync, 0,                                           \
-               "(Unsafe, Unstable) "                                        \
-               "Control emission of inline sync fast-path code")            \
-                                                                            \
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
           range(0, max_jint)                                                \
                                                                             \
@@ -844,11 +840,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                 "safepoint which deflates monitors (0 is off). "            \
                 "The check is performed on GuaranteedSafepointInterval.")   \
                 range(0, 100)                                               \
-                                                                            \
-  experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
-               "Experimental Sync flags")                                   \
-                                                                            \
-  experimental(intx, SyncVerbose, 0, "(Unstable)")                          \
                                                                             \
   experimental(intx, hashCode, 5,                                           \
                "(Unstable) select hashCode generation algorithm")           \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,14 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.AccessController;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
 
 /**
  * @test
  * @bug 8050402
  * @summary Check policy is extensible with user defined permissions
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @build jdk.test.lib.util.JarUtils
  * @compile TVJar/TVPermission.java
  * @run main ExtensiblePolicyWithJarTest

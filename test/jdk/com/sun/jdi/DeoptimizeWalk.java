@@ -33,7 +33,6 @@
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
-import lib.jdb.Jdb;
 import lib.jdb.JdbCommand;
 import lib.jdb.JdbTest;
 
@@ -83,7 +82,7 @@ public class DeoptimizeWalk extends JdbTest {
     }
 
     private DeoptimizeWalk() {
-        super(new Jdb.LaunchOptions(DEBUGGEE_CLASS)
+        super(new LaunchOptions(DEBUGGEE_CLASS)
                 .addDebuggeeOptions(DEBUGGEE_OPTIONS));
     }
 

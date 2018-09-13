@@ -22,16 +22,15 @@
  */
 
 import jdk.test.lib.Platform;
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
  * @bug 8132374
  * @summary Check that the value of the os.version property is equal
  *          to the value of the corresponding OS provided tools.
- * @library /lib/testlibrary /test/lib
- * @build jdk.test.lib.Platform
+ * @library /test/lib
  * @run main OsVersionTest
  * @author Volker Simonis
  */

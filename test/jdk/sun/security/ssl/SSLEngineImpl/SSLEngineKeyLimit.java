@@ -25,6 +25,7 @@
  * @test
  * @bug 8164879
  * @library /lib/testlibrary ../../
+ * @library /test/lib
  * @summary Verify AES/GCM's limits set in the jdk.tls.keyLimits property
  * start a new handshake sequence to renegotiate the symmetric key with an
  * SSLSocket connection.  This test verifies the handshake method was called
@@ -53,9 +54,9 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.Arrays;
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.testlibrary.Utils;
-import jdk.testlibrary.OutputAnalyzer;
 
 public class SSLEngineKeyLimit {
 

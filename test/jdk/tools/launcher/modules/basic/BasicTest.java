@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
  *          jdk.jartool
  *          jdk.jlink
- * @build BasicTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
+ * @build BasicTest jdk.test.lib.compiler.CompilerUtils
  * @run testng BasicTest
  * @summary Basic test of starting an application as a module
  */
@@ -39,7 +39,7 @@ import java.nio.file.Paths;
 import java.util.spi.ToolProvider;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

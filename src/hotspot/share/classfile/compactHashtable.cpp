@@ -282,7 +282,7 @@ public:
   CompactHashtable_OopIterator(OopClosure *cl) : _closure(cl) {}
   inline void do_value(address base_address, u4 offset) const {
     narrowOop v = (narrowOop)offset;
-    oop obj = HeapShared::decode_with_archived_oop_encoding_mode(v);
+    oop obj = HeapShared::decode_from_archive(v);
     _closure->do_oop(&obj);
   }
 };

@@ -25,6 +25,9 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.code.Types.SignatureGenerator.InvalidSignatureException;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
@@ -2031,7 +2034,7 @@ public class LambdaToMethod extends TreeTranslator {
                         owner.type != null ||
                         directlyEnclosingLambda() != null);
                 if (owner.type != null) {
-                    buf.append(typeSig(owner.type));
+                    buf.append(typeSig(owner.type, true));
                     buf.append(":");
                 }
 
@@ -2047,7 +2050,7 @@ public class LambdaToMethod extends TreeTranslator {
                 //add captured locals info: type, name, order
                 for (Symbol fv : getSymbolMap(CAPTURED_VAR).keySet()) {
                     if (fv != self) {
-                        buf.append(typeSig(fv.type));
+                        buf.append(typeSig(fv.type, true));
                         buf.append(" ");
                         buf.append(fv.flatName());
                         buf.append(",");
@@ -2433,15 +2436,31 @@ public class LambdaToMethod extends TreeTranslator {
      */
 
     private String typeSig(Type type) {
-        L2MSignatureGenerator sg = new L2MSignatureGenerator();
-        sg.assembleSig(type);
-        return sg.toString();
+        return typeSig(type, false);
+    }
+
+    private String typeSig(Type type, boolean allowIllegalSignature) {
+        try {
+            L2MSignatureGenerator sg = new L2MSignatureGenerator(allowIllegalSignature);
+            sg.assembleSig(type);
+            return sg.toString();
+        } catch (InvalidSignatureException ex) {
+            Symbol c = attrEnv.enclClass.sym;
+            log.error(Errors.CannotGenerateClass(c, Fragments.IllegalSignature(c, ex.type())));
+            return "<ERRONEOUS>";
+        }
     }
 
     private String classSig(Type type) {
-        L2MSignatureGenerator sg = new L2MSignatureGenerator();
-        sg.assembleClassSig(type);
-        return sg.toString();
+        try {
+            L2MSignatureGenerator sg = new L2MSignatureGenerator(false);
+            sg.assembleClassSig(type);
+            return sg.toString();
+        } catch (InvalidSignatureException ex) {
+            Symbol c = attrEnv.enclClass.sym;
+            log.error(Errors.CannotGenerateClass(c, Fragments.IllegalSignature(c, ex.type())));
+            return "<ERRONEOUS>";
+        }
     }
 
     /**
@@ -2454,8 +2473,22 @@ public class LambdaToMethod extends TreeTranslator {
          */
         StringBuilder sb = new StringBuilder();
 
-        L2MSignatureGenerator() {
+        /**
+         * Are signatures incompatible with JVM spec allowed?
+         * Used by {@link LambdaTranslationContext#serializedLambdaDisambiguation()}.
+         */
+        boolean allowIllegalSignatures;
+
+        L2MSignatureGenerator(boolean allowIllegalSignatures) {
             super(types);
+            this.allowIllegalSignatures = allowIllegalSignatures;
+        }
+
+        @Override
+        protected void reportIllegalSignature(Type t) {
+            if (!allowIllegalSignatures) {
+                super.reportIllegalSignature(t);
+            }
         }
 
         @Override

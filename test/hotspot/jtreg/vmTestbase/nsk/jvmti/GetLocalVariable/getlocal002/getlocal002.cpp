@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -146,8 +133,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -204,7 +190,7 @@ Java_nsk_jvmti_GetLocalVariable_getlocal002_getMeth(JNIEnv *env, jclass cls) {
     if (!caps.can_access_local_variables ||
         !caps.can_generate_method_exit_events) return;
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls), "meth01", "()D");
+    mid = env->GetMethodID(cls, "meth01", "()D");
     if (mid == NULL) {
         printf("Cannot find Method ID for meth01\n");
         result = STATUS_FAILED;
@@ -233,8 +219,7 @@ Java_nsk_jvmti_GetLocalVariable_getlocal002_checkLoc(JNIEnv *env,
         return;
     }
 
-    mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cls),
-        "meth02", "()V");
+    mid = env->GetStaticMethodID(cls, "meth02", "()V");
     if (mid == NULL) {
         printf("Cannot find Method ID for meth02\n");
         result = STATUS_FAILED;
@@ -287,6 +272,4 @@ Java_nsk_jvmti_GetLocalVariable_getlocal002_getRes(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

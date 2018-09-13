@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,10 +28,10 @@
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.Utils;
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.JDKToolFinder;
 
 public class RunUtil {
 

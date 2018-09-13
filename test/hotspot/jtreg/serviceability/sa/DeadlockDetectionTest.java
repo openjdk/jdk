@@ -40,7 +40,6 @@ import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.apps.LingeredAppWithDeadlock;
 
 import jdk.test.lib.Utils;
-import jdk.test.lib.Platform;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /**
  * @test
- * @bug 4064654 4374886 4984320 4984574 4944795
+ * @bug 4064654 4374886 4984320 4984574 4944795 8210142
  * @summary test for Calendar
  * @library /java/text/testlib
+ * @modules java.base/java.util:+open
  * @run main CalendarTest
  * @key randomness
  */
@@ -37,6 +38,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -1174,6 +1176,29 @@ public class CalendarTest extends IntlTest {
         } finally {
             Locale.setDefault(savedLocale);
             TimeZone.setDefault(savedTimeZone);
+        }
+    }
+
+    public void TestClonedSharedZones() throws NoSuchFieldException, IllegalAccessException {
+        Field zone = Calendar.class.getDeclaredField("zone");
+        zone.setAccessible(true);
+        Field sharedZone = Calendar.class.getDeclaredField("sharedZone");
+        sharedZone.setAccessible(true);
+
+        // create a new calendar with any date, and clone it.
+        Calendar c1 = new GregorianCalendar();
+        Calendar c2 = (Calendar) c1.clone();
+
+        // c1 should have a shared zone
+        if (!sharedZone.getBoolean(c1)) {
+            errln("Failed : c1.sharedZone == false");
+        } else {
+            // c2 should have a shared zone too
+            if (!sharedZone.getBoolean(c2)) {
+                errln("Failed : c2.sharedZone == false");
+            } else if (zone.get(c1) != zone.get(c2)) {
+                errln("Failed : c1.zone != c2.zone");
+            }
         }
     }
 }

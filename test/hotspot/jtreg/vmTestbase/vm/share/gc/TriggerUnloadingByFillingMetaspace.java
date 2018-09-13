@@ -22,76 +22,38 @@
  */
 package vm.share.gc;
 
-import java.util.ArrayList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+import nsk.share.test.ExecutionController;
 import metaspace.stressHierarchy.common.exceptions.GotWrongOOMEException;
 import nsk.share.gc.gp.classload.GeneratedClassProducer;
-import nsk.share.test.ExecutionController;
 
 public class TriggerUnloadingByFillingMetaspace implements
         TriggerUnloadingHelper {
 
-    private static final int NUMBER_OF_THREADS = 30;
+    private volatile boolean gotOOME = false;
+    private ExecutionController stresser;
+    private final ThreadLocal<GeneratedClassProducer> generatedClassProducer =
+        new ThreadLocal<GeneratedClassProducer>() {
+          @Override
+          protected GeneratedClassProducer initialValue() {
+            return new GeneratedClassProducer("metaspace.stressHierarchy.common.HumongousClass");
+          }
+        };
 
-    private static class FillMetaspace {
-        private volatile boolean gotOOME = false;
-        private ExecutionController stresser;
-        private final ThreadLocal<GeneratedClassProducer> generatedClassProducer =
-            new ThreadLocal<GeneratedClassProducer>() {
-              @Override
-              protected GeneratedClassProducer initialValue() {
-                return new GeneratedClassProducer("metaspace.stressHierarchy.common.HumongousClass");
-              }
-            };
-
-        public FillMetaspace(ExecutionController stresser) { this.stresser = stresser; }
-
-        private class FillMetaspaceTask implements Callable<Object> {
-            @Override
-            public Object call() throws Exception {
-                while (stresser.continueExecution() && ! gotOOME) {
-                    try {
-                        generatedClassProducer.get().create(-100500); //argument is not used.
-                    } catch (OutOfMemoryError oome) {
-                        if (!isInMetaspace(oome)) {
-                            throw new GotWrongOOMEException("Got OOME in heap while gaining OOME in metaspace. Test result can't be valid.");
-                        }
-                        gotOOME = true;
-                    }
-                }
-                return null;
-            }
-        }
-    }
-
-    private static boolean isInMetaspace(OutOfMemoryError error) {
-        return error.getMessage().trim().toLowerCase().contains("metadata");
+    private static boolean isInMetaspace(Throwable error) {
+        return (error.getMessage().trim().toLowerCase().contains("metaspace"));
     }
 
     @Override
     public void triggerUnloading(ExecutionController stresser) {
-        try {
-            FillMetaspace fillMetaspace = new FillMetaspace(stresser);
-            ArrayList<Callable<Object>> tasks = new ArrayList<Callable<Object>>(NUMBER_OF_THREADS);
-            for (int i = 0; i < NUMBER_OF_THREADS; i++) {
-                tasks.add(fillMetaspace.new FillMetaspaceTask());
-            }
-            ExecutorService executorService = Executors.newCachedThreadPool();
+        while (stresser.continueExecution() && !gotOOME) {
             try {
-                executorService.invokeAll(tasks);
-            } catch (InterruptedException e) {
-                System.out.println("Process of gaining OOME in metaspace was interrupted.");
-                e.printStackTrace();
+                generatedClassProducer.get().create(-100500); //argument is not used.
+            } catch (Throwable oome) {
+                if (!isInMetaspace(oome)) {
+                    throw new GotWrongOOMEException("Got OOME in heap while triggering OOME in metaspace. Test result can't be valid.");
+                }
+                gotOOME = true;
             }
-        } catch (OutOfMemoryError e) {
-            if (!isInMetaspace(e)) {
-                throw new GotWrongOOMEException("Got OOME in heap while gaining OOME in metaspace. Test result can't be valid.");
-            }
-            return;
         }
     }
-
 }

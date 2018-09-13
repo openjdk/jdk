@@ -181,7 +181,6 @@ vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted001/TestDescription.java 7013
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted003/TestDescription.java 6606767 generic-all
 vmTestbase/nsk/jvmti/ResourceExhausted/resexhausted004/TestDescription.java 7013634,6606767 generic-all
 vmTestbase/nsk/jvmti/ThreadStart/threadstart001/TestDescription.java 8016181 generic-all
-vmTestbase/nsk/jvmti/scenarios/allocation/AP10/ap10t001/TestDescription.java 8210131 generic-all
 vmTestbase/nsk/jvmti/scenarios/extension/EX03/ex03t001/TestDescription.java 8173658 generic-all
 vmTestbase/nsk/jvmti/scenarios/hotswap/HS102/hs102t002/TestDescription.java 8204506,8203350 generic-all
 vmTestbase/nsk/jvmti/scenarios/hotswap/HS204/hs204t001/hs204t001.java 6813266 generic-all
@@ -214,12 +213,5 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
-
-vmTestbase/metaspace/stressHierarchy/stressHierarchy007/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy008/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy009/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy010/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy011/TestDescription.java 8208697 generic-all
-vmTestbase/metaspace/stressHierarchy/stressHierarchy012/TestDescription.java 8208697 generic-all
 
 #############################################################################

@@ -307,8 +307,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void accumulate_modified_oops()        { if (has_modified_oops()) _accumulated_modified_oops = true; }
   void clear_accumulated_modified_oops() { _accumulated_modified_oops = false; }
   bool has_accumulated_modified_oops()   { return _accumulated_modified_oops; }
- private:
+  oop holder_no_keepalive() const;
 
+ private:
   void unload();
   bool keep_alive() const       { return _keep_alive > 0; }
 
@@ -336,6 +337,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool claimed() const { return _claimed == 1; }
   bool claim();
 
+  // Computes if the CLD is alive or not. This is safe to call in concurrent
+  // contexts.
   bool is_alive() const;
 
   // Accessors
@@ -377,6 +380,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   inline oop class_loader() const;
 
   // Returns true if this class loader data is for a loader going away.
+  // Note that this is only safe after the GC has computed if the CLD is
+  // unloading or not. In concurrent contexts where there are no such
+  // guarantees, is_alive() should be used instead.
   bool is_unloading() const     {
     assert(!(is_the_null_class_loader_data() && _unloading), "The null class loader can never be unloaded");
     return _unloading;

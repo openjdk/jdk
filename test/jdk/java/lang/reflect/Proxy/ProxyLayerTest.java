@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import static jdk.testlibrary.ProcessTools.executeTestJava;
+import static jdk.test.lib.process.ProcessTools.executeTestJava;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
@@ -38,9 +38,9 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
- * @build ProxyTest jdk.testlibrary.ProcessTools
+ * @build ProxyTest jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.compiler.CompilerUtils
  * @run testng ProxyLayerTest
  * @summary Test proxies to implement interfaces in a layer

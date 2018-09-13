@@ -656,8 +656,9 @@ protected:
   virtual MetaspaceObj::Type type() const { return ClassType; }
 
   // Iff the class loader (or mirror for unsafe anonymous classes) is alive the
-  // Klass is considered alive.  Has already been marked as unloading.
-  bool is_loader_alive() const { return !class_loader_data()->is_unloading(); }
+  // Klass is considered alive. This is safe to call before the CLD is marked as
+  // unloading, and hence during concurrent class unloading.
+  bool is_loader_alive() const { return class_loader_data()->is_alive(); }
 
   // Load the klass's holder as a phantom. This is useful when a weak Klass
   // pointer has been "peeked" and then must be kept alive before it may

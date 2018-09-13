@@ -40,7 +40,6 @@ import java.nio.file.Paths;
 
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.Asserts;
 
 public class ExportModule {

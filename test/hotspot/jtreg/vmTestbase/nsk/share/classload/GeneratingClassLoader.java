@@ -119,8 +119,6 @@ public class GeneratingClassLoader extends ClassLoader {
                         return bytecode;
                 } catch (UnsupportedEncodingException e) {
                         throw new TestBug(e);
-                } catch (IOException e) {
-                        throw new TestBug(e);
                 }
         }
 

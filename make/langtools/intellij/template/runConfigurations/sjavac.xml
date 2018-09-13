@@ -16,7 +16,7 @@
     <ConfigurationWrapper RunnerId="Run" />
     <method>
       <option name="Make" enabled="false" />
-      <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
+      <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/make/langtools/intellij/build.xml" target="build-all-classes" />
     </method>
   </configuration>
 </component>

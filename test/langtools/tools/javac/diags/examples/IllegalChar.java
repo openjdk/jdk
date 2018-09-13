@@ -24,5 +24,5 @@
 // key: compiler.err.illegal.char
 
 class IllegalChar {
-    int i = `;
+    int i = #;
 }

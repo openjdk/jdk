@@ -26,6 +26,7 @@
  * @bug 8072466
  * @summary Deadlock when initializing MulticastSocket and DatagramSocket
  * @library /lib/testlibrary
+ * @library /test/lib
  * @build jdk.testlibrary.*
  * @run main/othervm MultiDead
  */
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CountDownLatch;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import jdk.testlibrary.JDKToolLauncher;
+import jdk.test.lib.JDKToolLauncher;
 import jdk.testlibrary.Utils;
 
 public class MultiDead {

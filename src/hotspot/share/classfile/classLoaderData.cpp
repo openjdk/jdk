@@ -157,6 +157,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool is_unsafe_anonymous
   if (!h_class_loader.is_null()) {
     _class_loader = _handles.add(h_class_loader());
     _class_loader_klass = h_class_loader->klass();
+    initialize_name(h_class_loader);
   }
 
   if (!is_unsafe_anonymous) {
@@ -671,6 +672,15 @@ oop ClassLoaderData::holder_phantom() const {
   }
 }
 
+// Let the GC read the holder without keeping it alive.
+oop ClassLoaderData::holder_no_keepalive() const {
+  if (!_holder.is_null()) {  // NULL class_loader
+    return _holder.peek();
+  } else {
+    return NULL;
+  }
+}
+
 // Unloading support
 bool ClassLoaderData::is_alive() const {
   bool alive = keep_alive()         // null class loader and incomplete unsafe anonymous klasses.
@@ -1068,33 +1078,38 @@ bool ClassLoaderDataGraph::_metaspace_oom = false;
 // ClassLoaderData into the java/lang/ClassLoader object as a hidden field
 ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool is_unsafe_anonymous) {
 
+  assert_lock_strong(ClassLoaderDataGraph_lock);
 
   ClassLoaderData* cld;
-  {
-    NoSafepointVerifier no_safepoints; // we mustn't GC until we've installed the
-                                       // ClassLoaderData in the loader since the CLD
-                                       // contains oops in _handles that must be walked.
-                                       // GC will find the CLD through the loader after this.
 
-    cld = new ClassLoaderData(loader, is_unsafe_anonymous);
-
-    if (!is_unsafe_anonymous) {
-      // First, Atomically set it
-      ClassLoaderData* old = java_lang_ClassLoader::cmpxchg_loader_data(cld, loader(), NULL);
-      if (old != NULL) {
-        delete cld;
-        // Returns the data.
-        return old;
-      }
+  // First check if another thread beat us to creating the CLD and installing
+  // it into the loader while we were waiting for the lock.
+  if (!is_unsafe_anonymous && loader.not_null()) {
+    cld = java_lang_ClassLoader::loader_data_acquire(loader());
+    if (cld != NULL) {
+      return cld;
     }
   }
 
-  MutexLocker ml(ClassLoaderDataGraph_lock);
+  // We mustn't GC until we've installed the ClassLoaderData in the Graph since the CLD
+  // contains oops in _handles that must be walked.  GC doesn't walk CLD from the
+  // loader oop in all collections, particularly young collections.
+  NoSafepointVerifier no_safepoints;
 
-  // We won the race, and therefore the task of adding the data to the list of
-  // class loader data
+  cld = new ClassLoaderData(loader, is_unsafe_anonymous);
+
+  // First install the new CLD to the Graph.
   cld->set_next(_head);
   _head = cld;
+
+  // Next associate with the class_loader.
+  if (!is_unsafe_anonymous) {
+    // Use OrderAccess, since readers need to get the loader_data only after
+    // it's added to the Graph
+    java_lang_ClassLoader::release_set_loader_data(loader(), cld);
+  }
+
+  // Lastly log, if requested
   LogTarget(Trace, class, loader, data) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;
@@ -1107,12 +1122,8 @@ ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool is_unsaf
 }
 
 ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_unsafe_anonymous) {
+  MutexLocker ml(ClassLoaderDataGraph_lock);
   ClassLoaderData* loader_data = add_to_graph(loader, is_unsafe_anonymous);
-  // Initialize _name and _name_and_id after the loader data is added to the
-  // CLDG because adding the Symbol for _name and _name_and_id might safepoint.
-  if (loader.not_null()) {
-    loader_data->initialize_name(loader);
-  }
   return loader_data;
 }
 

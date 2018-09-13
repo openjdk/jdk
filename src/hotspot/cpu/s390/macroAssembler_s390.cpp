@@ -465,19 +465,8 @@ void MacroAssembler::not_(Register r1, Register r2, bool wide) {
       z_xihf(r1, -1);
     }
   } else { // Distinct src and dst registers.
-    if (VM_Version::has_DistinctOpnds()) {
-      load_const_optimized(r1, -1);
-      z_xgrk(r1, r2, r1);
-    } else {
-      if (wide) {
-        z_lgr(r1, r2);
-        z_xilf(r1, -1);
-        z_xihf(r1, -1);
-      } else {
-        z_lr(r1, r2);
-        z_xilf(r1, -1);
-      }
-    }
+    load_const_optimized(r1, -1);
+    z_xgr(r1, r2);
   }
 }
 
@@ -1158,8 +1147,10 @@ void MacroAssembler::load_absolute_address(Register d, address addr) {
 // Make sure to keep code size constant -> no value-dependent optimizations.
 // Do not kill condition code.
 void MacroAssembler::load_const(Register t, long x) {
-  Assembler::z_iihf(t, (int)(x >> 32));
-  Assembler::z_iilf(t, (int)(x & 0xffffffff));
+  // Note: Right shift is only cleanly defined for unsigned types
+  //       or for signed types with nonnegative values.
+  Assembler::z_iihf(t, (long)((unsigned long)x >> 32));
+  Assembler::z_iilf(t, (long)((unsigned long)x & 0xffffffffUL));
 }
 
 // Load a 32bit constant into a 64bit register, sign-extend or zero-extend.
@@ -1256,8 +1247,10 @@ bool MacroAssembler::is_compare_immediate_narrow_klass(address pos) {
 // CPU-version dependend patching of load_const.
 void MacroAssembler::patch_const(address a, long x) {
   assert(is_load_const(a), "not a load of a constant");
-  set_imm32((address)a, (int) ((x >> 32) & 0xffffffff));
-  set_imm32((address)(a + 6), (int)(x & 0xffffffff));
+  // Note: Right shift is only cleanly defined for unsigned types
+  //       or for signed types with nonnegative values.
+  set_imm32((address)a, (long)((unsigned long)x >> 32));
+  set_imm32((address)(a + 6), (long)((unsigned long)x & 0xffffffffUL));
 }
 
 // Patching the value of CPU version dependent load_const_32to64 sequence.
@@ -1461,13 +1454,17 @@ int MacroAssembler::load_const_optimized_rtn_len(Register t, long x, bool emit) 
 
   // 64 bit value: | part1 | part2 | part3 | part4 |
   // At least one part is not zero!
-  int part1 = ((x >> 32) & 0xffff0000) >> 16;
-  int part2 = (x >> 32) & 0x0000ffff;
-  int part3 = (x & 0xffff0000) >> 16;
-  int part4 = (x & 0x0000ffff);
+  // Note: Right shift is only cleanly defined for unsigned types
+  //       or for signed types with nonnegative values.
+  int part1 = (int)((unsigned long)x >> 48) & 0x0000ffff;
+  int part2 = (int)((unsigned long)x >> 32) & 0x0000ffff;
+  int part3 = (int)((unsigned long)x >> 16) & 0x0000ffff;
+  int part4 = (int)x & 0x0000ffff;
+  int part12 = (int)((unsigned long)x >> 32);
+  int part34 = (int)x;
 
   // Lower word only (unsigned).
-  if ((part1 == 0) && (part2 == 0)) {
+  if (part12 == 0) {
     if (part3 == 0) {
       if (emit) z_llill(t, part4);
       return 4;
@@ -1476,12 +1473,12 @@ int MacroAssembler::load_const_optimized_rtn_len(Register t, long x, bool emit) 
       if (emit) z_llilh(t, part3);
       return 4;
     }
-    if (emit) z_llilf(t, (int)(x & 0xffffffff));
+    if (emit) z_llilf(t, part34);
     return 6;
   }
 
   // Upper word only.
-  if ((part3 == 0) && (part4 == 0)) {
+  if (part34 == 0) {
     if (part1 == 0) {
       if (emit) z_llihl(t, part2);
       return 4;
@@ -1490,13 +1487,13 @@ int MacroAssembler::load_const_optimized_rtn_len(Register t, long x, bool emit) 
       if (emit) z_llihh(t, part1);
       return 4;
     }
-    if (emit) z_llihf(t, (int)(x >> 32));
+    if (emit) z_llihf(t, part12);
     return 6;
   }
 
   // Lower word only (signed).
   if ((part1 == 0x0000ffff) && (part2 == 0x0000ffff) && ((part3 & 0x00008000) != 0)) {
-    if (emit) z_lgfi(t, (int)(x & 0xffffffff));
+    if (emit) z_lgfi(t, part34);
     return 6;
   }
 
@@ -1511,7 +1508,7 @@ int MacroAssembler::load_const_optimized_rtn_len(Register t, long x, bool emit) 
       len += 4;
     }
   } else {
-    if (emit) z_llihf(t, (int)(x >> 32));
+    if (emit) z_llihf(t, part12);
     len += 6;
   }
 
@@ -1524,7 +1521,7 @@ int MacroAssembler::load_const_optimized_rtn_len(Register t, long x, bool emit) 
       len += 4;
     }
   } else {
-    if (emit) z_iilf(t, (int)(x & 0xffffffff));
+    if (emit) z_iilf(t, part34);
     len += 6;
   }
   return len;
@@ -3374,13 +3371,11 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   }
 
   // Handle existing monitor.
-  if ((EmitSync & 0x01) == 0) {
-    // The object has an existing monitor iff (mark & monitor_value) != 0.
-    guarantee(Immediate::is_uimm16(markOopDesc::monitor_value), "must be half-word");
-    z_lr(temp, displacedHeader);
-    z_nill(temp, markOopDesc::monitor_value);
-    z_brne(object_has_monitor);
-  }
+  // The object has an existing monitor iff (mark & monitor_value) != 0.
+  guarantee(Immediate::is_uimm16(markOopDesc::monitor_value), "must be half-word");
+  z_lr(temp, displacedHeader);
+  z_nill(temp, markOopDesc::monitor_value);
+  z_brne(object_has_monitor);
 
   // Set mark to markOop | markOopDesc::unlocked_value.
   z_oill(displacedHeader, markOopDesc::unlocked_value);
@@ -3411,28 +3406,26 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   z_bru(done);
 
-  if ((EmitSync & 0x01) == 0) {
-    Register zero = temp;
-    Register monitor_tagged = displacedHeader; // Tagged with markOopDesc::monitor_value.
-    bind(object_has_monitor);
-    // The object's monitor m is unlocked iff m->owner == NULL,
-    // otherwise m->owner may contain a thread or a stack address.
-    //
-    // Try to CAS m->owner from NULL to current thread.
-    z_lghi(zero, 0);
-    // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-    z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
-    // Store a non-null value into the box.
-    z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
+  Register zero = temp;
+  Register monitor_tagged = displacedHeader; // Tagged with markOopDesc::monitor_value.
+  bind(object_has_monitor);
+  // The object's monitor m is unlocked iff m->owner == NULL,
+  // otherwise m->owner may contain a thread or a stack address.
+  //
+  // Try to CAS m->owner from NULL to current thread.
+  z_lghi(zero, 0);
+  // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
+  z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
+  // Store a non-null value into the box.
+  z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
 #ifdef ASSERT
-      z_brne(done);
-      // We've acquired the monitor, check some invariants.
-      // Invariant 1: _recursions should be 0.
-      asm_assert_mem8_is_zero(OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions), monitor_tagged,
-                              "monitor->_recursions should be 0", -1);
-      z_ltgr(zero, zero); // Set CR=EQ.
+  z_brne(done);
+  // We've acquired the monitor, check some invariants.
+  // Invariant 1: _recursions should be 0.
+  asm_assert_mem8_is_zero(OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions), monitor_tagged,
+                          "monitor->_recursions should be 0", -1);
+  z_ltgr(zero, zero); // Set CR=EQ.
 #endif
-  }
   bind(done);
 
   BLOCK_COMMENT("} compiler_fast_lock_object");
@@ -3461,13 +3454,11 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_bre(done);
 
   // Handle existing monitor.
-  if ((EmitSync & 0x02) == 0) {
-    // The object has an existing monitor iff (mark & monitor_value) != 0.
-    z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);
-    guarantee(Immediate::is_uimm16(markOopDesc::monitor_value), "must be half-word");
-    z_nill(currentHeader, markOopDesc::monitor_value);
-    z_brne(object_has_monitor);
-  }
+  // The object has an existing monitor iff (mark & monitor_value) != 0.
+  z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);
+  guarantee(Immediate::is_uimm16(markOopDesc::monitor_value), "must be half-word");
+  z_nill(currentHeader, markOopDesc::monitor_value);
+  z_brne(object_has_monitor);
 
   // Check if it is still a light weight lock, this is true if we see
   // the stack address of the basicLock in the markOop of the object
@@ -3477,20 +3468,18 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_bru(done); // Csg sets CR as desired.
 
   // Handle existing monitor.
-  if ((EmitSync & 0x02) == 0) {
-    bind(object_has_monitor);
-    z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);    // CurrentHeader is tagged with monitor_value set.
-    load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-    z_brne(done);
-    load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    z_brne(done);
-    load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    z_brne(done);
-    load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    z_brne(done);
-    z_release();
-    z_stg(temp/*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
-  }
+  bind(object_has_monitor);
+  z_lg(currentHeader, oopDesc::mark_offset_in_bytes(), oop);    // CurrentHeader is tagged with monitor_value set.
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+  z_brne(done);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  z_brne(done);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  z_brne(done);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  z_brne(done);
+  z_release();
+  z_stg(temp/*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
 
   bind(done);
 

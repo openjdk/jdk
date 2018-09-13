@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public final class LdapClient implements PooledConnection {
     boolean isLdapv3;         // Used by LdapCtx
     int referenceCount = 1;   // Used by LdapCtx for check for sharing
 
-    Connection conn;  // Connection to server; has reader thread
+    final Connection conn;  // Connection to server; has reader thread
                       // used by LdapCtx for StartTLS
 
     final private PoolCallback pcb;
@@ -433,19 +433,16 @@ public final class LdapClient implements PooledConnection {
             (new Throwable()).printStackTrace();
         }
 
-        if (referenceCount <= 0 && conn != null) {
+        if (referenceCount <= 0) {
             if (debug > 0) System.err.println("LdapClient: closed connection " + this);
             if (!pooled) {
                 // Not being pooled; continue with closing
                 conn.cleanup(reqCtls, false);
-                conn = null;
             } else {
                 // Pooled
-
                 // Is this a real close or a request to return conn to pool
                 if (hardClose) {
                     conn.cleanup(reqCtls, false);
-                    conn = null;
                     pcb.removePooledConnection(this);
                 } else {
                     pcb.releasePooledConnection(this);
@@ -461,16 +458,13 @@ public final class LdapClient implements PooledConnection {
         if (debug > 1) {
             System.err.println("LdapClient: forceClose() of " + this);
         }
-
-        if (conn != null) {
-            if (debug > 0) System.err.println(
-                "LdapClient: forced close of connection " + this);
-            conn.cleanup(null, false);
-            conn = null;
-
-            if (cleanPool) {
-                pcb.removePooledConnection(this);
-            }
+        if (debug > 0) {
+            System.err.println(
+                    "LdapClient: forced close of connection " + this);
+        }
+        conn.cleanup(null, false);
+        if (cleanPool) {
+            pcb.removePooledConnection(this);
         }
     }
 
@@ -568,7 +562,7 @@ public final class LdapClient implements PooledConnection {
      * Abandon the search operation and remove it from the message queue.
      */
     void clearSearchReply(LdapResult res, Control[] ctls) {
-        if (res != null && conn != null) {
+        if (res != null) {
 
             // Only send an LDAP abandon operation when clearing the search
             // reply from a one-level or subtree search.

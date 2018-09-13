@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -55,9 +42,9 @@ void checkMeth(JNIEnv *env, jclass cl, const char *name, const char *sig, int st
     jint ret_loc;
 
     if (stat) {
-        mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cl), name, sig);
+        mid = env->GetStaticMethodID(cl, name, sig);
     } else {
-        mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cl), name, sig);
+        mid = env->GetMethodID(cl, name, sig);
     }
     if (mid == NULL) {
         printf("Name = %s, sig = %s: mid = 0\n", name, sig);
@@ -89,8 +76,7 @@ JNIEXPORT jint JNI_OnLoad_maxloc001(JavaVM *jvm, char *options, void *reserved) 
 jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -108,16 +94,12 @@ Java_nsk_jvmti_GetMaxLocals_maxloc001_check(JNIEnv *env, jclass cls) {
     checkMeth(env, cls, "meth_stat", "(ILjava/lang/String;)[F", 1, 3);
     checkMeth(env, cls, "meth_1", "(C)C", 0, 4);
     checkMeth(env, cls, "meth_2", "(FF)F", 0, 6);
-    clsId = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/GetMaxLocals/maxloc001a"));
+    clsId = env->FindClass("nsk/jvmti/GetMaxLocals/maxloc001a");
     checkMeth(env, clsId, "meth_new", "()Lnsk/jvmti/GetMaxLocals/maxloc001;", 0, 3);
     checkMeth(env, clsId, "meth_abs", "()V", 0, 0);
-    clsId = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/GetMaxLocals/maxloc001$Inn"));
+    clsId = env->FindClass("nsk/jvmti/GetMaxLocals/maxloc001$Inn");
     checkMeth(env, clsId, "meth_inn", "(Ljava/lang/String;)V", 0, 2);
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

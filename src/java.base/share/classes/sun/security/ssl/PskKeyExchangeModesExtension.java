@@ -323,7 +323,7 @@ final class PskKeyExchangeModesExtension {
             // servers MUST abort the handshake.
             SSLExtensionSpec spec =
                 shc.handshakeExtensions.get(SSLExtension.CH_PRE_SHARED_KEY);
-            if (spec == null) {
+            if (spec != null) {
                 shc.conContext.fatal(Alert.HANDSHAKE_FAILURE,
                         "pre_shared_key key extension is offered " +
                         "without a psk_key_exchange_modes extension");

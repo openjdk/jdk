@@ -129,7 +129,7 @@ JvmtiGetLoadedClasses::getClassLoaderClasses(JvmtiEnv *env, jobject initiatingLo
     // requested, so only need to walk this loader's ClassLoaderData
     // dictionary, or the NULL ClassLoaderData dictionary for bootstrap loader.
     if (loader != NULL) {
-      ClassLoaderData* data = java_lang_ClassLoader::loader_data(loader);
+      ClassLoaderData* data = java_lang_ClassLoader::loader_data_acquire(loader);
       // ClassLoader may not be used yet for loading.
       if (data != NULL && data->dictionary() != NULL) {
         data->dictionary()->all_entries_do(&closure);

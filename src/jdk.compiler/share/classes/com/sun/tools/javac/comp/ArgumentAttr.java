@@ -280,8 +280,9 @@ public class ArgumentAttr extends JCTree.Visitor {
         if (!res.kind.isResolutionError()) {
             tree.sym = res;
         }
-        if (res.kind.isResolutionTargetError() ||
-                res.type != null && res.type.hasTag(FORALL) ||
+        if (res.kind.isResolutionTargetError()) {
+             tree.setOverloadKind(JCMemberReference.OverloadKind.ERROR);
+        } else if (res.type != null && res.type.hasTag(FORALL) ||
                 (res.flags() & Flags.VARARGS) != 0 ||
                 (TreeInfo.isStaticSelector(exprTree, tree.name.table.names) &&
                 exprTree.type.isRaw() && !exprTree.type.hasTag(ARRAY))) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import javax.security.auth.Subject;
 import javax.security.auth.x500.X500Principal;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * @test
@@ -50,7 +50,7 @@ import jdk.testlibrary.ProcessTools;
  *          in case of nested Subject.doAs() invocations
  *          when one of protection domains doesn't have permissions
  *
- * @library /lib/testlibrary
+ * @library /test/lib
  *
  * @run main NestedActions jar NestedActionsACE.jar
  *              NestedActionsACE.class Utils.class

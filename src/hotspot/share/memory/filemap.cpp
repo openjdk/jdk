@@ -854,7 +854,7 @@ address FileMapInfo::decode_start_address(CDSFileMapRegion* spc, bool with_curre
   if (with_current_oop_encoding_mode) {
     return (address)CompressedOops::decode_not_null(offset_of_space(spc));
   } else {
-    return (address)HeapShared::decode_with_archived_oop_encoding_mode(offset_of_space(spc));
+    return (address)HeapShared::decode_from_archive(offset_of_space(spc));
   }
 }
 
@@ -880,7 +880,7 @@ MemRegion FileMapInfo::get_heap_regions_range_with_current_oop_encoding_mode() {
     CDSFileMapRegion* si = space_at(i);
     size_t size = si->_used;
     if (size > 0) {
-      address s = start_address_with_current_oop_encoding_mode(si);
+      address s = start_address_as_decoded_with_current_oop_encoding_mode(si);
       address e = s + size;
       if (start > s) {
         start = s;
@@ -972,21 +972,20 @@ void FileMapInfo::map_heap_regions_impl() {
   HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
 
   CDSFileMapRegion* si = space_at(MetaspaceShared::first_string);
-  address relocated_strings_bottom = start_address_with_archived_oop_encoding_mode(si);
-  if (!is_aligned(relocated_strings_bottom + delta, HeapRegion::GrainBytes)) {
+  address relocated_strings_bottom = start_address_as_decoded_from_archive(si);
+  if (!is_aligned(relocated_strings_bottom, HeapRegion::GrainBytes)) {
     // Align the bottom of the string regions at G1 region boundary. This will avoid
     // the situation where the highest open region and the lowest string region sharing
     // the same G1 region. Otherwise we will fail to map the open regions.
     size_t align = size_t(relocated_strings_bottom) % HeapRegion::GrainBytes;
     delta -= align;
-    assert(is_aligned(relocated_strings_bottom + delta, HeapRegion::GrainBytes), "must be");
-
     log_info(cds)("CDS heap data need to be relocated lower by a further " SIZE_FORMAT
-                  " bytes to be aligned with HeapRegion::GrainBytes", align);
-
+                  " bytes to " INTX_FORMAT " to be aligned with HeapRegion::GrainBytes", align, delta);
     HeapShared::init_narrow_oop_decoding(narrow_oop_base() + delta, narrow_oop_shift());
     _heap_pointers_need_patching = true;
+    relocated_strings_bottom = start_address_as_decoded_from_archive(si);
   }
+  assert(is_aligned(relocated_strings_bottom, HeapRegion::GrainBytes), "must be");
 
   // First, map string regions as closed archive heap regions.
   // GC does not write into the regions.
@@ -1032,7 +1031,7 @@ bool FileMapInfo::map_heap_data(MemRegion **heap_mem, int first,
     si = space_at(i);
     size_t size = si->_used;
     if (size > 0) {
-      HeapWord* start = (HeapWord*)start_address_with_archived_oop_encoding_mode(si);
+      HeapWord* start = (HeapWord*)start_address_as_decoded_from_archive(si);
       regions[region_num] = MemRegion(start, size / HeapWordSize);
       region_num ++;
       log_info(cds)("Trying to map heap data: region[%d] at " INTPTR_FORMAT ", size = " SIZE_FORMAT_W(8) " bytes",
@@ -1242,7 +1241,7 @@ char* FileMapInfo::region_addr(int idx) {
   if (MetaspaceShared::is_heap_region(idx)) {
     assert(DumpSharedSpaces, "The following doesn't work at runtime");
     return si->_used > 0 ?
-          (char*)start_address_with_current_oop_encoding_mode(si) : NULL;
+          (char*)start_address_as_decoded_with_current_oop_encoding_mode(si) : NULL;
   } else {
     return si->_addr._base;
   }

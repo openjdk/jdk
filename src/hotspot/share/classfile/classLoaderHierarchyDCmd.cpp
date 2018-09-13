@@ -470,7 +470,7 @@ public:
   void do_cld (ClassLoaderData* cld) {
 
     // We do not display unloading loaders, for now.
-    if (cld->is_unloading()) {
+    if (!cld->is_alive()) {
       return;
     }
 

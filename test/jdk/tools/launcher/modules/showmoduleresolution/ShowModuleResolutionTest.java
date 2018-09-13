@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @requires !vm.graal.enabled
  * @modules jdk.jdeps jdk.zipfs
- * @library /lib/testlibrary
- * @build ShowModuleResolutionTest jdk.testlibrary.*
+ * @library /test/lib
+ * @build ShowModuleResolutionTest
  * @run testng ShowModuleResolutionTest
  * @summary Basic test for java --show-module-resolution
  */
 
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;

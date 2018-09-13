@@ -699,7 +699,6 @@ static jvmtiError check_nest_attributes(InstanceKlass* the_class,
   // Check whether the class NestHost attribute has been changed.
   Thread* thread = Thread::current();
   ResourceMark rm(thread);
-  JvmtiThreadState *state = JvmtiThreadState::state_for((JavaThread*)thread);
   u2 the_nest_host_idx = the_class->nest_host_index();
   u2 scr_nest_host_idx = scratch_class->nest_host_index();
 
@@ -1232,8 +1231,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       // verifier. Please, refer to jvmtiThreadState.hpp for the detailed
       // description.
       RedefineVerifyMark rvm(the_class, scratch_class, state);
-      Verifier::verify(
-        scratch_class, Verifier::ThrowException, true, THREAD);
+      Verifier::verify(scratch_class, true, THREAD);
     }
 
     if (HAS_PENDING_EXCEPTION) {
@@ -1264,7 +1262,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       // verify what we have done during constant pool merging
       {
         RedefineVerifyMark rvm(the_class, scratch_class, state);
-        Verifier::verify(scratch_class, Verifier::ThrowException, true, THREAD);
+        Verifier::verify(scratch_class, true, THREAD);
       }
 
       if (HAS_PENDING_EXCEPTION) {

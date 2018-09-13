@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,10 +189,12 @@ public abstract class Charset$Coder$ {
                    $replType$ replacement)
     {
         this.charset = cs;
-        if (average$ItypesPerOtype$ <= 0.0f)
+        // Use !(a > 0.0f) rather than (a <= 0.0f) to exclude NaN values
+        if (!(average$ItypesPerOtype$ > 0.0f))
             throw new IllegalArgumentException("Non-positive "
                                                + "average$ItypesPerOtype$");
-        if (max$ItypesPerOtype$ <= 0.0f)
+        // Use !(a > 0.0f) rather than (a <= 0.0f) to exclude NaN values
+        if (!(max$ItypesPerOtype$ > 0.0f))
             throw new IllegalArgumentException("Non-positive "
                                                + "max$ItypesPerOtype$");
         if (average$ItypesPerOtype$ > max$ItypesPerOtype$)

@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x,y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x,y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -69,8 +56,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -94,11 +80,9 @@ Java_nsk_jvmti_GetFieldDeclaringClass_getfldecl002_check(JNIEnv *env,
     }
 
     if (i == 0) {
-        fid = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG(env, cls1),
-            fields[i], "I");
+        fid = env->GetStaticFieldID(cls1, fields[i], "I");
     } else {
-        fid = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG(env, cls1),
-            fields[i], "I");
+        fid = env->GetFieldID(cls1, fields[i], "I");
     }
     if (fid == NULL) {
         printf("(%d) cannot get field ID for %s:\"I\"\n", i, fields[i]);
@@ -126,8 +110,7 @@ Java_nsk_jvmti_GetFieldDeclaringClass_getfldecl002_check(JNIEnv *env,
         printf(">>> %d -- %s: \"%s\"\n", i, fields[i], sig);
     }
 
-    if (JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, cls2),
-            declaringClass) != JNI_TRUE) {
+    if (env->IsSameObject(cls2, declaringClass) != JNI_TRUE) {
         printf("(%d) unexpected declaringClass: %s\n", i, sig);
         result = STATUS_FAILED;
     }
@@ -137,6 +120,4 @@ JNIEXPORT jint JNICALL Java_nsk_jvmti_GetFieldDeclaringClass_getfldecl002_getRes
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

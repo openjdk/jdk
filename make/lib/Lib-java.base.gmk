@@ -128,14 +128,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
   ifeq ($(STATIC_BUILD), false)
-
-    LIBJSIG_MAPFILE := $(wildcard $(TOPDIR)/make/mapfiles/libjsig/mapfile-vers-$(OPENJDK_TARGET_OS))
-
-    ifeq ($(OPENJDK_TARGET_OS), linux)
-      # FIXME: This is probably not what we want to do, but keep it now for compatibility.
-      LIBJSIG_CFLAGS := $(EXPORT_ALL_SYMBOLS)
-    endif
-
     $(eval $(call SetupJdkLibrary, BUILD_LIBJSIG, \
         NAME := jsig, \
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBJSIG_CFLAGS), \
@@ -144,7 +136,6 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
         LIBS_linux := $(LIBDL), \
         LIBS_solaris := $(LIBDL), \
         LIBS_aix := $(LIBDL), \
-        MAPFILE := $(LIBJSIG_MAPFILE), \
     ))
 
     TARGETS += $(BUILD_LIBJSIG)

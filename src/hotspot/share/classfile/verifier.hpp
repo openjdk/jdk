@@ -42,16 +42,11 @@ class Verifier : AllStatic {
     NO_RELAX_ACCESS_CTRL_CHECK_VERSION  = 52,
     DYNAMICCONSTANT_MAJOR_VERSION       = 55
   };
-  typedef enum { ThrowException, NoException } Mode;
 
-  /**
-   * Verify the bytecodes for a class.  If 'throw_exception' is true
-   * then the appropriate VerifyError or ClassFormatError will be thrown.
-   * Otherwise, no exception is thrown and the return indicates the
-   * error.
-   */
+  // Verify the bytecodes for a class.
+  static bool verify(InstanceKlass* klass, bool should_verify_class, TRAPS);
+
   static void log_end_verification(outputStream* st, const char* klassName, Symbol* exception_name, TRAPS);
-  static bool verify(InstanceKlass* klass, Mode mode, bool should_verify_class, TRAPS);
 
   // Return false if the class is loaded by the bootstrap loader,
   // or if defineClass was called requesting skipping verification

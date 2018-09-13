@@ -54,13 +54,16 @@ public:
   {}
 
   virtual void main_run() {
-    uintx iterations = 0;
+    size_t iterations = 0;
+    size_t values_changed = 0;
     while (OrderAccess::load_acquire(_continue_running) != 0) {
+      { ThreadBlockInVM tbiv(this); } // Safepoint check outside critical section.
       ++iterations;
       SingleWriterSynchronizer::CriticalSection cs(_synchronizer);
       uintx value = OrderAccess::load_acquire(_synchronized_value);
+      uintx new_value = value;
       for (uint i = 0; i < reader_iterations; ++i) {
-        uintx new_value = OrderAccess::load_acquire(_synchronized_value);
+        new_value = OrderAccess::load_acquire(_synchronized_value);
         // A reader can see either the value it first read after
         // entering the critical section, or that value + 1.  No other
         // values are possible.
@@ -68,8 +71,12 @@ public:
           ASSERT_EQ((value + 1), new_value);
         }
       }
+      if (value != new_value) {
+        ++values_changed;
+      }
     }
-    tty->print_cr("reader iterations: " UINTX_FORMAT, iterations);
+    tty->print_cr("reader iterations: " SIZE_FORMAT ", changes: " SIZE_FORMAT,
+                  iterations, values_changed);
   }
 };
 
@@ -93,13 +100,14 @@ public:
     while (OrderAccess::load_acquire(_continue_running) != 0) {
       ++*_synchronized_value;
       _synchronizer->synchronize();
+      { ThreadBlockInVM tbiv(this); } // Safepoint check.
     }
     tty->print_cr("writer iterations: " UINTX_FORMAT, *_synchronized_value);
   }
 };
 
 const uint nreaders = 5;
-const uint milliseconds_to_run = 3000;
+const uint milliseconds_to_run = 1000;
 
 TEST_VM(TestSingleWriterSynchronizer, stress) {
   Semaphore post;

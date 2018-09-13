@@ -30,8 +30,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.testlibrary.Utils;
 
 /*
@@ -41,6 +41,7 @@ import jdk.testlibrary.Utils;
  * command requests to the current java process.
  *
  * @library /lib/testlibrary
+ * @library /test/lib
  *
  * @build jdk.testlibrary.*
  * @run main/othervm -XX:+UsePerfData TestJcmdSanity
@@ -134,12 +135,10 @@ public class TestJcmdSanity {
      * @param output The generated output from the jcmd.
      * @throws Exception
      */
-    private static void matchJcmdCommands(OutputAnalyzer output) throws Exception {
-        int matchedCount = output.shouldMatchByLine(JCMD_COMMAND_REGEX,
+    private static void matchJcmdCommands(OutputAnalyzer output) {
+        output.shouldMatchByLine(JCMD_COMMAND_REGEX,
                 "help",
                 JCMD_COMMAND_REGEX);
-        assertGreaterThan(matchedCount , 0,
-                "Found no lines matching pattern: " + JCMD_COMMAND_REGEX);
     }
 
     /**
@@ -154,11 +153,9 @@ public class TestJcmdSanity {
      * @param output The generated output from the PerfCounter.print command.
      * @throws Exception
      */
-    private static void matchPerfCounters(OutputAnalyzer output) throws Exception {
-        int matchedCount = output.shouldMatchByLineFrom(PERF_COUNTER_REGEX,
+    private static void matchPerfCounters(OutputAnalyzer output) {
+        output.shouldMatchByLineFrom(PERF_COUNTER_REGEX,
                 PERF_COUNTER_REGEX);
-        assertGreaterThan(matchedCount , 0,
-                "Found no lines matching pattern: " + PERF_COUNTER_REGEX);
     }
 
     private static void verifyOutputAgainstFile(OutputAnalyzer output) throws IOException {

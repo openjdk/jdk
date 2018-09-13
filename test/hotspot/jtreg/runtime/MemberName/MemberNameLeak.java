@@ -56,19 +56,26 @@ public class MemberNameLeak {
           mh.invokeExact(leak);
         }
 
-        System.gc();  // make mh unused
-
         // Wait until ServiceThread cleans ResolvedMethod table
-        do {
+        int cnt = 0;
+        while (true) {
+          if (cnt++ % 30 == 0) {
+            System.gc();  // make mh unused
+          }
           removedCount = wb.resolvedMethodRemovedCount();
-        } while (removedCountOrig == removedCount);
+          if (removedCountOrig != removedCount) {
+            break;
+          }
+          Thread.sleep(100);
+        }
       }
     }
 
     public static void test(String gc) throws Throwable {
-       // Run this Leak class with logging
+        // Run this Leak class with logging
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                                       "-Xlog:membername+table=trace",
+                                      "-XX:+UnlockDiagnosticVMOptions",
                                       "-XX:+WhiteBoxAPI",
                                       "-Xbootclasspath/a:.",
                                       gc, Leak.class.getName());

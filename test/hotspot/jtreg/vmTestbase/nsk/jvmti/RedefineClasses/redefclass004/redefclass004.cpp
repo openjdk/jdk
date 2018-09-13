@@ -28,21 +28,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define STATUS_FAILED 2
 #define PASSED 0
@@ -71,8 +58,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = JNI_ENV_PTR(vm)->GetEnv(JNI_ENV_ARG(vm, (void **) &jvmti),
-            JVMTI_VERSION_1_1)) != JNI_OK) {
+    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -123,10 +109,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_makeRedefinition(JNIEnv *env,
 
 /* fill the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
-    classDef.class_byte_count =
-        JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG(env, classBytes));
-    classDef.class_bytes = (unsigned char *)
-        JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG(env, classBytes), NULL);
+    classDef.class_byte_count = env->GetArrayLength(classBytes);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
@@ -154,8 +138,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_makeRedefinition(JNIEnv *env,
 JNIEXPORT jint JNICALL
 Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
         jobject obj, jint vrb, jobject redefObj) {
-    jclass redefCls =
-        JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG(env, redefObj));
+    jclass redefCls = env->GetObjectClass(redefObj);
     jfieldID fid;
     jint intFld;
     jlong longFld;
@@ -163,34 +146,29 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
     const char *strFld = NULL;
 
 /* get value of new instance field "intComplNewFld" */
-    if ((fid = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG(env, redefCls),
-        "intComplNewFld", "I")) == NULL) {
+    if ((fid = env->GetFieldID(redefCls, "intComplNewFld", "I")) == NULL) {
         printf("%s: Failed to get the field ID for the field \"intComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
     }
-    intFld = JNI_ENV_PTR(env)->GetIntField(JNI_ENV_ARG(env, redefObj), fid);
+    intFld = env->GetIntField(redefObj, fid);
 
 /* get value of new instance field "longComplNewFld" */
-    if ((fid = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG(env, redefCls),
-        "longComplNewFld", "J")) == NULL) {
+    if ((fid = env->GetFieldID(redefCls, "longComplNewFld", "J")) == NULL) {
         printf("%s: Failed to get the field ID for the field \"longComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
     }
-    longFld = JNI_ENV_PTR(env)->GetLongField(JNI_ENV_ARG(env, redefObj), fid);
+    longFld = env->GetLongField(redefObj, fid);
 
 /* get value of new instance field "stringComplNewFld" */
-    if ((fid = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG(env, redefCls),
-        "stringComplNewFld", "Ljava/lang/String;")) == NULL) {
+    if ((fid = env->GetFieldID(redefCls, "stringComplNewFld", "Ljava/lang/String;")) == NULL) {
         printf("%s: Failed to get the field ID for the field \"stringComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
     }
-    stringObj = (jstring) JNI_ENV_PTR(env)->GetObjectField(JNI_ENV_ARG(env,
-        redefObj), fid);
-    strFld = JNI_ENV_PTR(env)->GetStringUTFChars(JNI_ENV_ARG(env,
-        stringObj), 0);
+    stringObj = (jstring) env->GetObjectField(redefObj, fid);
+    strFld = env->GetStringUTFChars(stringObj, 0);
 
     if (intFld != INTFLD || longFld != LONGFLD ||
         strcmp(strFld, STRFLD) != 0) {
@@ -201,8 +179,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
         printf(",\texpected %" LL "d\n", LONGFLD);
         printf("\tstringComplNewFld = \"%s\",\texpected \"%s\"\n",
             strFld, STRFLD);
-        JNI_ENV_PTR(env)->ReleaseStringUTFChars(JNI_ENV_ARG(env,
-            stringObj), strFld);
+        env->ReleaseStringUTFChars(stringObj, strFld);
         return STATUS_FAILED;
     } else {
         if (vrb == 1)
@@ -210,12 +187,9 @@ Java_nsk_jvmti_RedefineClasses_redefclass004_checkNewFields(JNIEnv *env,
 \tstringComplNewFld = \"%s\"\n\tintComplNewFld = %d\n\
 \tlongComplNewFld = %" LL "d\n",
                 strFld, intFld, longFld);
-        JNI_ENV_PTR(env)->ReleaseStringUTFChars(JNI_ENV_ARG(env,
-            stringObj), strFld);
+        env->ReleaseStringUTFChars(stringObj, strFld);
         return PASSED;
     }
 }
 
-#ifdef __cplusplus
 }
-#endif

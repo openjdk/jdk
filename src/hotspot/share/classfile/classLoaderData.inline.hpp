@@ -34,7 +34,7 @@
 
 inline oop ClassLoaderData::class_loader() const {
   assert(!_unloading, "This oop is not available to unloading class loader data");
-  assert(_holder.is_null() || _holder.peek() != NULL , "This class loader data holder must be alive");
+  assert(_holder.is_null() || holder_no_keepalive() != NULL , "This class loader data holder must be alive");
   return _class_loader.resolve();
 }
 
@@ -46,7 +46,7 @@ inline ClassLoaderData* ClassLoaderData::class_loader_data_or_null(oop loader) {
   if (loader == NULL) {
     return ClassLoaderData::the_null_class_loader_data();
   }
-  return java_lang_ClassLoader::loader_data(loader);
+  return java_lang_ClassLoader::loader_data_acquire(loader);
 }
 
 inline ClassLoaderData* ClassLoaderData::class_loader_data(oop loader) {
@@ -60,7 +60,7 @@ inline ClassLoaderData *ClassLoaderDataGraph::find_or_create(Handle loader) {
   guarantee(loader() != NULL && oopDesc::is_oop(loader()), "Loader must be oop");
   // Gets the class loader data out of the java/lang/ClassLoader object, if non-null
   // it's already in the loader_data, so no need to add
-  ClassLoaderData* loader_data= java_lang_ClassLoader::loader_data(loader());
+  ClassLoaderData* loader_data= java_lang_ClassLoader::loader_data_acquire(loader());
   if (loader_data) {
      return loader_data;
   }

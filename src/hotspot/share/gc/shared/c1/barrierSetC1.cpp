@@ -321,7 +321,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
       __ cmp(lir_cond_equal, base.result(), LIR_OprFact::oopConst(NULL));
       __ branch(lir_cond_equal, T_OBJECT, cont->label());
     }
-    LIR_Opr src_klass = gen->new_register(T_OBJECT);
+    LIR_Opr src_klass = gen->new_register(T_METADATA);
     if (gen_type_check) {
       // We have determined that offset == referent_offset && src != null.
       // if (src->_klass->_reference_type == REF_NONE) -> continue

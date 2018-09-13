@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -34,8 +33,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
 
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import sun.jvmstat.monitor.MonitorException;
 import sun.jvmstat.monitor.MonitoredHost;
 import sun.jvmstat.monitor.MonitoredVm;
@@ -66,11 +65,10 @@ import sun.jvmstat.monitor.event.VmStatusChangeEvent;
  * @test
  * @bug 4990825
  * @summary attach to external but local JVM processes
- * @library /lib/testlibrary
+ * @library /test/lib
  * @modules java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  *          jdk.internal.jvmstat/sun.jvmstat.monitor.event
- * @build jdk.testlibrary.*
  * @run main/othervm MonitorVmStartTerminate
  */
 public final class MonitorVmStartTerminate {

@@ -240,6 +240,11 @@ else # HAS_SPEC=true
     override BUILD_LOG_PIPE :=
   endif
 
+  ifeq ($(filter dist-clean, $(SEQUENTIAL_TARGETS)), dist-clean)
+    # We can't have a log file if we're about to remove it.
+    override BUILD_LOG_PIPE :=
+  endif
+
   ifeq ($(OUTPUT_SYNC_SUPPORTED), true)
     OUTPUT_SYNC_FLAG := -O$(OUTPUT_SYNC)
   endif

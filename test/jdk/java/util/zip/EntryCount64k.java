@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Test java.util.zip behavior with ~64k entries
- * @library /lib/testlibrary
+ * @library /test/lib
  * @run main/othervm EntryCount64k
  * @run main/othervm -Djdk.util.zip.inhibitZip64=true EntryCount64k
  * @run main/othervm -Djdk.util.zip.inhibitZip64=false EntryCount64k
@@ -44,8 +44,8 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class EntryCount64k {
     public static class Main {

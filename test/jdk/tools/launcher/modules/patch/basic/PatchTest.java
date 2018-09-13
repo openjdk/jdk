@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
  *          jdk.naming.dns
- * @build PatchTest JarUtils jdk.testlibrary.*
+ * @build PatchTest JarUtils
  *        jdk.test.lib.compiler.CompilerUtils
  * @run testng PatchTest
  * @summary Basic test for --patch-module
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.test.lib.compiler.CompilerUtils;
-import static jdk.testlibrary.ProcessTools.*;
+import static jdk.test.lib.process.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

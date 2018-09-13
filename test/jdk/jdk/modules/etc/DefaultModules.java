@@ -27,7 +27,7 @@
  * @modules jdk.compiler
  *          jdk.jlink
  *          jdk.zipfs
- * @library src /lib/testlibrary
+ * @library src /test/lib
  * @build java.json/*
  * @run main DefaultModules
  * @summary Test that all modules that export an API are in the set of modules
@@ -37,13 +37,9 @@
 import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.lang.module.ModuleDescriptor;
-import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReference;
 import java.util.spi.ToolProvider;
 
-import jdk.testlibrary.ProcessTools;
-import jdk.testlibrary.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * This test compiles and runs the following tests on the class path:

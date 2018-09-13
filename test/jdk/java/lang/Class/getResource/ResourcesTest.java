@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static jdk.testlibrary.ProcessTools.executeTestJava;
+import static jdk.test.lib.process.ProcessTools.executeTestJava;
 import jdk.test.lib.compiler.CompilerUtils;
 
 import org.testng.annotations.BeforeTest;
@@ -33,9 +33,9 @@ import static org.testng.Assert.*;
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.compiler
- * @build ResourcesTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
+ * @build ResourcesTest jdk.test.lib.compiler.CompilerUtils
  * @run testng ResourcesTest
  * @summary Driver for basic test of Class getResource and getResourceAsStream
  */

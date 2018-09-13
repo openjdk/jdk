@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public abstract class CommandExecutor {
      * Execute a diagnostic command
      *
      * @param cmd The diagnostic command to execute
-     * @return an {@link jdk.testlibrary.OutputAnalyzer} encapsulating the output of the command
+     * @return an {@link jdk.test.lib.process.OutputAnalyzer} encapsulating the output of the command
      * @throws CommandExecutorException if there is an exception on the "calling side" while trying to execute the
      *          Diagnostic Command. Exceptions thrown on the remote side are available as textual representations in
      *          stderr, regardless of the specific executor used.
@@ -48,7 +48,7 @@ public abstract class CommandExecutor {
      *
      * @param cmd The diagnostic command to execute
      * @param silent Do not print the command output
-     * @return an {@link jdk.testlibrary.OutputAnalyzer} encapsulating the output of the command
+     * @return an {@link jdk.test.lib.process.OutputAnalyzer} encapsulating the output of the command
      * @throws CommandExecutorException if there is an exception on the "calling side" while trying to execute the
      *          Diagnostic Command. Exceptions thrown on the remote side are available as textual representations in
      *          stderr, regardless of the specific executor used.

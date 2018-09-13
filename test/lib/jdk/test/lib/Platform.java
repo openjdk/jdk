@@ -329,10 +329,6 @@ public class Platform {
      * This should match the #if condition in ClassListParser::load_class_from_source().
      */
     public static boolean areCustomLoadersSupportedForCDS() {
-        boolean isLinux = Platform.isLinux();
-        boolean is64 = Platform.is64bit();
-        boolean isSolaris = Platform.isSolaris();
-
-        return (is64 && (isLinux || isSolaris));
+        return (is64bit() && (isLinux() || isSolaris() || isOSX()));
     }
 }

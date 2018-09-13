@@ -24,8 +24,6 @@
 
 package MyPackage;
 
-import java.util.List;
-
 /**
  * @test
  * @summary Verifies the JVMTI Heap Monitor API
@@ -44,22 +42,7 @@ public class HeapMonitorTest {
       HeapMonitor.setAllocationIterations(Integer.parseInt(args[0]));
     }
 
-    // Put sampling rate to 100k to ensure samples are collected.
-    HeapMonitor.setSamplingInterval(100 * 1024);
-
-    if (!HeapMonitor.eventStorageIsEmpty()) {
-      throw new RuntimeException("Storage is not empty at test start...");
-    }
-
-    HeapMonitor.enableSamplingEvents();
-    List<Frame> frameList = HeapMonitor.allocate();
-    frameList.add(new Frame("main", "([Ljava/lang/String;)V", "HeapMonitorTest.java", 55));
-
-    Frame[] frames = frameList.toArray(new Frame[0]);
-    if (!HeapMonitor.obtainedEvents(frames)
-        && !HeapMonitor.garbageContains(frames)) {
-      throw new RuntimeException("Events not found with the right frames.");
-    }
+    HeapMonitor.allocateAndCheckFrames();
 
     HeapMonitor.disableSamplingEvents();
     HeapMonitor.resetEventStorage();

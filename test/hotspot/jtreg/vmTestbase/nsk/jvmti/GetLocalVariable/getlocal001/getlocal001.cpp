@@ -27,31 +27,11 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#define JNI_EARG(x)
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#define JNI_EARG(x) x
-#endif
-
-#endif
 
 #ifndef JNI_EARG
 
-#ifdef __cplusplus
-#define JNI_EARG(x)
-#else
-#define JNI_EARG(x) x
-#endif
 
 #endif
 
@@ -190,15 +170,14 @@ void check3(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr, jint depth,
                 result = STATUS_FAILED;
                 continue;
             }
-            fid = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG(env, cls),
-                 "fld", "I");
+            fid = env->GetFieldID(cls, "fld", "I");
             if (fid == NULL) {
                 printf("Cannot find ID for \"fld\" field of meth03\n");
-                JNI_ENV_PTR(env)->ExceptionClear(JNI_EARG(env));
+                env->ExceptionClear();
                 result = STATUS_FAILED;
                 continue;
             }
-            fldVal = JNI_ENV_PTR(env)->GetIntField(JNI_ENV_ARG(env, ob1), fid);
+            fldVal = env->GetIntField(ob1, fid);
         } else if (strcmp(table[i].name, "ob2") == 0) {
             err = jvmti_env->GetLocalObject(thr, depth,
                 table[i].slot, &ob2);
@@ -207,8 +186,7 @@ void check3(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thr, jint depth,
                        TranslateError(err), err);
                 result = STATUS_FAILED;
             }
-            JNI_ENV_PTR(env)->GetIntArrayRegion(JNI_ENV_ARG(env, (jintArray) ob2),
-                0, 10, arr);
+            env->GetIntArrayRegion((jintArray) ob2, 0, 10, arr);
         }
     }
     if ((fldVal != 17) || (arr[2] != 8)) {
@@ -423,8 +401,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -482,25 +459,19 @@ Java_nsk_jvmti_GetLocalVariable_getlocal001_getMeth(JNIEnv *env, jclass cls,
 
     fval = f;
     dval = d;
-    mid1 = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "meth01", "()D");
-    mid2 = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "meth02", "(I)V");
-    mid3 = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cls),
-        "meth03", "(Lnsk/jvmti/GetLocalVariable/getlocal001;)V");
-    mid4 = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cls),
-        "meth04", "(IJSDCFBZ)V");
-    mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cls),
-         "checkPoint", "()V");
+    mid1 = env->GetMethodID(cls, "meth01", "()D");
+    mid2 = env->GetMethodID(cls, "meth02", "(I)V");
+    mid3 = env->GetStaticMethodID(cls, "meth03", "(Lnsk/jvmti/GetLocalVariable/getlocal001;)V");
+    mid4 = env->GetStaticMethodID(cls, "meth04", "(IJSDCFBZ)V");
+    mid = env->GetStaticMethodID(cls, "checkPoint", "()V");
     if (mid == 0 || mid1 == 0 || mid2 == 0 || mid3 == 0 || mid4 == 0) {
         printf("Cannot find Method ID for a method\n");
-        JNI_ENV_PTR(env)->ExceptionDescribe(JNI_EARG(env));
-        JNI_ENV_PTR(env)->ExceptionClear(JNI_EARG(env));
+        env->ExceptionDescribe();
+        env->ExceptionClear();
         result = STATUS_FAILED;
         return;
     }
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_METHOD_EXIT, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable METHOD_EXIT event: %s (%d)\n",
                TranslateError(err), err);
@@ -526,6 +497,4 @@ Java_nsk_jvmti_GetLocalVariable_getlocal001_getRes(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

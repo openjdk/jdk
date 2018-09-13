@@ -118,7 +118,8 @@ public class referringObjects002 extends HeapwalkingDebugger {
         // + 'includedIntoReferrersCountTypes.size()' referrers was additionally created
         // +1 referrer is classloader
         // +1 referrer is debugee class unloader
-        int expectedReferrersCount = createInstances + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size() + 2;
+        // +1 self-reference from this_class index
+        int expectedReferrersCount = createInstances + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size() + 3;
 
         ClassObjectReference classObjectReference = debuggee.classByName(className).classObject();
 
@@ -132,7 +133,8 @@ public class referringObjects002 extends HeapwalkingDebugger {
         // Only this referrers should left:
         // 1 referrer is classloader
         // 1 referrer is debugee class unloader
-        expectedReferrersCount = 2;
+        // 1 self-reference from this_class index
+        expectedReferrersCount = 3;
 
         checkClassObjectReferrersCount(classObjectReference, expectedReferrersCount);
 

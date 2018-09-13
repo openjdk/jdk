@@ -190,6 +190,8 @@ public:
 
   virtual void clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool is_array) const;
 
+  virtual Node* resolve(GraphKit* kit, Node* n, DecoratorSet decorators) const { return n; }
+
   // These are general helper methods used by C2
   virtual bool array_copy_requires_gc_barriers(BasicType type) const { return false; }
 

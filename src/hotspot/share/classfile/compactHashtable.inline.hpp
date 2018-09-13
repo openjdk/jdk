@@ -48,7 +48,7 @@ template <class T, class N>
 inline oop CompactHashtable<T, N>::decode_entry(CompactHashtable<oop, char>* const t,
                                                 u4 offset, const char* name, int len) {
   narrowOop v = (narrowOop)offset;
-  oop string = HeapShared::decode_with_archived_oop_encoding_mode(v);
+  oop string = HeapShared::decode_from_archive(v);
   if (java_lang_String::equals(string, (jchar*)name, len)) {
     return string;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,18 +259,18 @@ mlib_status mlib_ImageLookUp_Bit_U8_1(const mlib_u8 *src,
       }
 
 #ifdef _LITTLE_ENDIAN
-      emask = (mlib_u32)((mlib_s32)(-1)) >> ((4 - (size - i)) * 8);
+      emask = (~(mlib_u32)0) >> ((4 - (size - i)) * 8);
 #else
-      emask = (mlib_s32)(-1) << ((4 - (size - i)) * 8);
+      emask = (~(mlib_u32)0) << ((4 - (size - i)) * 8);
 #endif /* _LITTLE_ENDIAN */
       ((mlib_u32*)da)[0] = (val1 & emask) | (((mlib_u32*)da)[0] &~ emask);
 
 #else /* _NO_LONGLONG */
 
 #ifdef _LITTLE_ENDIAN
-      mlib_u64 emask = (mlib_u64)((mlib_s64)(-1)) >> ((8 - (size - i)) * 8);
+      mlib_u64 emask = (~(mlib_u64)0) >> ((8 - (size - i)) * 8);
 #else
-      mlib_u64 emask = (mlib_s64)(-1) << ((8 - (size - i)) * 8);
+      mlib_u64 emask = (~(mlib_u64)0) << ((8 - (size - i)) * 8);
 #endif /* _LITTLE_ENDIAN */
 
       ((mlib_u64*)da)[0] = (((mlib_u64*)dd_array)[sa[0]] & emask) | (((mlib_u64*)da)[0] &~ emask);
@@ -395,9 +395,9 @@ mlib_status mlib_ImageLookUp_Bit_U8_2(const mlib_u8 *src,
       }
 
 #ifdef _LITTLE_ENDIAN
-      emask = (mlib_u32)((mlib_s32)(-1)) >> ((4 - (size - i)) * 8);
+      emask = (~(mlib_u32)0) >> ((4 - (size - i)) * 8);
 #else
-      emask = (mlib_s32)(-1) << ((4 - (size - i)) * 8);
+      emask = (~(mlib_u32)0) << ((4 - (size - i)) * 8);
 #endif /* _LITTLE_ENDIAN */
       ((mlib_u32*)da)[0] = (dd1 & emask) | (((mlib_u32*)da)[0] &~ emask);
 
@@ -413,9 +413,9 @@ mlib_status mlib_ImageLookUp_Bit_U8_2(const mlib_u8 *src,
       }
 
 #ifdef _LITTLE_ENDIAN
-      emask = (mlib_u64)((mlib_s64)(-1)) >> ((8 - (size - i)) * 8);
+      emask = (~(mlib_u64)0) >> ((8 - (size - i)) * 8);
 #else
-      emask = (mlib_s64)(-1) << ((8 - (size - i)) * 8);
+      emask = (~(mlib_u64)0) << ((8 - (size - i)) * 8);
 #endif /* _LITTLE_ENDIAN */
       ((mlib_u64*)da)[0] = (dd & emask) | (((mlib_u64*)da)[0] &~ emask);
 
@@ -565,9 +565,9 @@ mlib_status mlib_ImageLookUp_Bit_U8_3(const mlib_u8 *src,
       }
 
 #ifdef _LITTLE_ENDIAN
-      emask = (mlib_u32)((mlib_s32)(-1)) >> ((4 - (size - i)) * 8);
+      emask = (~(mlib_u32)0) >> ((4 - (size - i)) * 8);
 #else
-      emask = (mlib_s32)(-1) << ((4 - (size - i)) * 8);
+      emask = (~(mlib_u32)0) << ((4 - (size - i)) * 8);
 #endif /* _LITTLE_ENDIAN */
       da[0] = (dd & emask) | (da[0] &~ emask);
     }

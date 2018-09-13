@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define BP_NUM 5 /* overall number of breakpoints */
 
@@ -90,8 +77,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if ((res = JNI_ENV_PTR(vm)->GetEnv(JNI_ENV_ARG(vm, (void **) &jvmti),
-            JVMTI_VERSION_1_1)) != JNI_OK) {
+    if ((res = vm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1)) != JNI_OK) {
         printf("%s: Failed to call GetEnv: error=%d\n", __FILE__, res);
         return JNI_ERR;
     }
@@ -146,25 +132,24 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_setBreakpoints(JNIEnv *env,
         return PASSED;
     }
 
-    redefCls =
-        JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG(env, redefObj));
+    redefCls = env->GetObjectClass(redefObj);
 
     for (i=0; i<BP_NUM; i++) {
 /* get the JNI method ID for a method with name m_name and
    signature m_sign */
         if (breakpoints[i].inst) { /* an instance method */
-            if ((breakpoints[i].mid =
-                    JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, redefCls),
-                    breakpoints[i].m_name, breakpoints[i].m_sign)) == NULL) {
+            breakpoints[i].mid = env->GetMethodID(
+                redefCls, breakpoints[i].m_name, breakpoints[i].m_sign);
+            if (breakpoints[i].mid == NULL) {
                 printf("%s: Failed to get the method ID for the instance method\
  \"%s\" with signature \"%s\"\n",
                     __FILE__, breakpoints[i].m_name, breakpoints[i].m_sign);
                 return STATUS_FAILED;
             }
         } else {                   /* a static method */
-            if ((breakpoints[i].mid =
-                    JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, redefCls),
-                    breakpoints[i].m_name, breakpoints[i].m_sign)) == NULL) {
+            breakpoints[i].mid = env->GetStaticMethodID(
+                redefCls, breakpoints[i].m_name, breakpoints[i].m_sign);
+            if (breakpoints[i].mid == NULL) {
                 printf("%s: Failed to get the method ID for the static method\
  \"%s\" with signature \"%s\"\n",
                     __FILE__, breakpoints[i].m_name, breakpoints[i].m_sign);
@@ -215,10 +200,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_makeRedefinition(JNIEnv *env,
 
 /* fill the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
-    classDef.class_byte_count =
-        JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG(env, classBytes));
-    classDef.class_bytes = (unsigned char *)
-        JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG(env, classBytes), NULL);
+    classDef.class_byte_count = env->GetArrayLength(classBytes);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
@@ -246,26 +229,25 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_getResult(JNIEnv *env,
         return PASSED;
     }
 
-    redefCls =
-        JNI_ENV_PTR(env)->GetObjectClass(JNI_ENV_ARG(env, redefObj));
+    redefCls = env->GetObjectClass(redefObj);
 
 /* all breakpoints should be cleared after the redefinition */
     for (i=0; i<BP_NUM; i++) {
 /* get again the JNI method ID for a method with name m_name and
    signature m_sign */
         if (breakpoints[i].inst) { /* an instance method */
-            if ((breakpoints[i].mid =
-                    JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, redefCls),
-                    breakpoints[i].m_name, breakpoints[i].m_sign)) == NULL) {
+            breakpoints[i].mid = env->GetMethodID(
+                redefCls, breakpoints[i].m_name, breakpoints[i].m_sign);
+            if (breakpoints[i].mid == NULL) {
                 printf("%s: getResult: Failed to get the method ID for the instance method\
  \"%s\" with signature \"%s\"\n",
                     __FILE__, breakpoints[i].m_name, breakpoints[i].m_sign);
                 return STATUS_FAILED;
             }
         } else {                   /* a static method */
-            if ((breakpoints[i].mid =
-                    JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, redefCls),
-                    breakpoints[i].m_name, breakpoints[i].m_sign)) == NULL) {
+            breakpoints[i].mid = env->GetStaticMethodID(
+                redefCls, breakpoints[i].m_name, breakpoints[i].m_sign);
+            if (breakpoints[i].mid == NULL) {
                 printf("%s: getResult: Failed to get the method ID for the static method\
  \"%s\" with signature \"%s\"\n",
                     __FILE__, breakpoints[i].m_name, breakpoints[i].m_sign);
@@ -303,6 +285,4 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_getResult(JNIEnv *env,
     return totRes;
 }
 
-#ifdef __cplusplus
 }
-#endif

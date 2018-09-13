@@ -147,9 +147,6 @@ vmTestbase/nsk/jvmti/StopThread/stopthrd007/TestDescription.java                
 
 vmTestbase/nsk/jvmti/scenarios/sampling/SP02/sp02t003/TestDescription.java         8051349   generic-all
 
-runtime/appcds/cacheObject/ArchivedModuleCompareTest.java                          8209534   generic-all
-runtime/appcds/cacheObject/ArchivedModuleComboTest.java                            8209534   generic-all
-
 serviceability/jvmti/FieldAccessWatch/FieldAccessWatch.java                        8202482   generic-all
 
 compiler/stable/TestStableBoolean.java                           8204347   generic-all
