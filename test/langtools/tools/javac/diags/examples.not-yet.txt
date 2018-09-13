@@ -42,7 +42,6 @@ compiler.err.stack.sim.error
 compiler.err.type.var.more.than.once                    # UNUSED
 compiler.err.type.var.more.than.once.in.result          # UNUSED
 compiler.err.unexpected.type
-compiler.err.unicode.backtick                           # Need to address
 compiler.err.unsupported.cross.fp.lit                   # Scanner: host system dependent
 compiler.misc.bad.class.signature                       # bad class file
 compiler.misc.bad.const.pool.tag                        # bad class file
@@ -64,7 +63,6 @@ compiler.misc.fatal.err.cant.locate.field               # Resolve, from Lower
 compiler.misc.fatal.err.cant.locate.meth                # Resolve, from Lower
 compiler.misc.fatal.err.cant.close                      # JavaCompiler
 compiler.misc.feature.not.supported.in.source.plural    # cannot happen (for now)
-compiler.misc.feature.raw.string.literals               # Need to address
 compiler.misc.file.does.not.contain.package
 compiler.misc.illegal.start.of.class.file
 compiler.misc.inferred.do.not.conform.to.lower.bounds   # cannot happen?
