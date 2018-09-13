@@ -195,3 +195,14 @@ ifeq ($(STATIC_BUILD), true)
 
   TARGETS += $(JAVA_BASE_EXPORT_SYMBOL_FILE)
 endif
+
+################################################################################
+# Copy tzmappings file for Windows
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  $(eval $(call SetupCopyFiles, COPY_TZMAPPINGS, \
+      FILES := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/windows/conf/tzmappings, \
+      DEST := $(call FindLibDirForModule, $(MODULE)), \
+  ))
+  TARGETS += $(COPY_TZMAPPINGS)
+endif 

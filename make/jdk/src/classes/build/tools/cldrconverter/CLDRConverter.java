@@ -69,6 +69,7 @@ public class CLDRConverter {
     private static String METAZONES_SOURCE_FILE;
     private static String LIKELYSUBTAGS_SOURCE_FILE;
     private static String TIMEZONE_SOURCE_FILE;
+    private static String WINZONES_SOURCE_FILE;
     static String DESTINATION_DIR = "build/gensrc";
 
     static final String LOCALE_NAME_PREFIX = "locale.displayname.";
@@ -91,6 +92,7 @@ public class CLDRConverter {
 
     private static SupplementDataParseHandler handlerSuppl;
     private static LikelySubtagsParseHandler handlerLikelySubtags;
+    private static WinZonesParseHandler handlerWinZones;
     static SupplementalMetadataParseHandler handlerSupplMeta;
     static NumberingSystemsParseHandler handlerNumbering;
     static MetaZonesParseHandler handlerMetaZones;
@@ -241,6 +243,7 @@ public class CLDRConverter {
         METAZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/metaZones.xml";
         TIMEZONE_SOURCE_FILE = CLDR_BASE + "/bcp47/timezone.xml";
         SPPL_META_SOURCE_FILE = CLDR_BASE + "/supplemental/supplementalMetadata.xml";
+        WINZONES_SOURCE_FILE = CLDR_BASE + "/supplemental/windowsZones.xml";
 
         if (BASE_LOCALES.isEmpty()) {
             setupBaseLocales("en-US");
@@ -255,9 +258,12 @@ public class CLDRConverter {
         List<Bundle> bundles = readBundleList();
         convertBundles(bundles);
 
-        // Generate java.time.format.ZoneName.java
         if (isBaseModule) {
+            // Generate java.time.format.ZoneName.java
             generateZoneName();
+
+            // Generate Windows tzmappings
+            generateWindowsTZMappings();
         }
     }
 
@@ -432,6 +438,10 @@ public class CLDRConverter {
         // Currently interested in deprecated time zone ids and language aliases.
         handlerSupplMeta = new SupplementalMetadataParseHandler();
         parseLDMLFile(new File(SPPL_META_SOURCE_FILE), handlerSupplMeta);
+
+        // Parse windowsZones
+        handlerWinZones = new WinZonesParseHandler();
+        parseLDMLFile(new File(WINZONES_SOURCE_FILE), handlerWinZones);
     }
 
     // Parsers for data in "bcp47" directory
@@ -1087,5 +1097,43 @@ public class CLDRConverter {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    // Generate tzmappings for Windows. The format is:
+    //
+    // (Windows Zone Name):(REGION):(Java TZID)
+    //
+    // where:
+    //   Windows Zone Name: arbitrary time zone name string used in Windows
+    //   REGION: ISO3166 or UN M.49 code
+    //   Java TZID: Java's time zone ID
+    //
+    // Note: the entries are alphabetically sorted, *except* the "world" region
+    // code, i.e., "001". It should be the last entry for the same windows time
+    // zone name entries. (cf. TimeZone_md.c)
+    private static void generateWindowsTZMappings() throws Exception {
+        Files.createDirectories(Paths.get(DESTINATION_DIR, "windows", "conf"));
+        Files.write(Paths.get(DESTINATION_DIR, "windows", "conf", "tzmappings"),
+            handlerWinZones.keySet().stream()
+                .map(k -> k + ":" + handlerWinZones.get(k) + ":")
+                .sorted(new Comparator<String>() {
+                    public int compare(String t1, String t2) {
+                        String[] s1 = t1.split(":");
+                        String[] s2 = t2.split(":");
+                        if (s1[0].equals(s2[0])) {
+                            if (s1[1].equals("001")) {
+                                return 1;
+                            } else if (s2[1].equals("001")) {
+                                return -1;
+                            } else {
+                                return s1[1].compareTo(s2[1]);
+                            }
+                        } else {
+                            return s1[0].compareTo(s2[0]);
+                        }
+                    }
+                })
+                .collect(Collectors.toList()),
+            StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 }
