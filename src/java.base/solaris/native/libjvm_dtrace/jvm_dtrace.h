@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
-
+#include "jni.h"
 
 struct _jvm_t;
 typedef struct _jvm_t jvm_t;
@@ -44,10 +44,10 @@ typedef struct _jvm_t jvm_t;
 
 /* Attach to the given JVM process. Returns NULL on failure.
    jvm_get_last_error() returns last error message. */
-jvm_t* jvm_attach(pid_t pid);
+JNIEXPORT jvm_t* jvm_attach(pid_t pid);
 
 /* Returns the last error message from this library or NULL if none. */
-const char* jvm_get_last_error();
+JNIEXPORT const char* jvm_get_last_error();
 
 /* few well-known probe type constants for 'probe_types' param below */
 
@@ -68,7 +68,7 @@ const char* jvm_get_last_error();
  * On success, this returns number of probe_types enabled.
  * On failure, jvm_get_last_error() returns the last error message.
  */
-int jvm_enable_dtprobes(jvm_t* jvm, int num_probe_types, const char** probe_types);
+JNIEXPORT int jvm_enable_dtprobes(jvm_t* jvm, int num_probe_types, const char** probe_types);
 
 /* Note: There is no jvm_disable_dtprobes function. Probes are automatically
  * disabled when there are no more clients requiring those probes.
@@ -77,7 +77,7 @@ int jvm_enable_dtprobes(jvm_t* jvm, int num_probe_types, const char** probe_type
 /* Detach the given JVM. Returns 0 on success, -1 on failure.
  * jvm_get_last_error() returns the last error message.
  */
-int jvm_detach(jvm_t* jvm);
+JNIEXPORT int jvm_detach(jvm_t* jvm);
 
 #ifdef __cplusplus
 }

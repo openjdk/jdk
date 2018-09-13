@@ -25,6 +25,10 @@
 
 ifeq ($(call check-jvm-feature, dtrace), true)
   ifeq ($(OPENJDK_TARGET_OS), solaris)
+    JNI_INCLUDE_FLAGS := \
+        -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base \
+        -I$(SUPPORT_OUTPUTDIR)/modules_include/java.base/$(OPENJDK_TARGET_OS_INCLUDE_SUBDIR) \
+        #
 
     ############################################################################
     # Build the stand-alone dtrace libraries.
@@ -34,10 +38,9 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         NAME := jvm_dtrace, \
         OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
         SRC := $(TOPDIR)/src/java.base/solaris/native/libjvm_dtrace, \
-        CFLAGS := -m64 -G -mt -KPIC, \
+        CFLAGS := $(JNI_INCLUDE_FLAGS) -m64 -G -mt -KPIC -xldscope=hidden, \
         LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
         LIBS := $(LIBDL) -lthread -ldoor, \
-        MAPFILE := $(TOPDIR)/make/mapfiles/libjvm_dtrace/mapfile-vers, \
         OBJECT_DIR := $(LIBJVM_DTRACE_OUTPUTDIR)/objs, \
     ))
 
@@ -48,9 +51,8 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         NAME := jvm_db, \
         OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
         SRC := $(TOPDIR)/src/java.base/solaris/native/libjvm_db, \
-        CFLAGS := -I$(DTRACE_GENSRC_DIR) -m64 -G -mt -KPIC, \
+        CFLAGS := -I$(DTRACE_GENSRC_DIR) $(JNI_INCLUDE_FLAGS) -m64 -G -mt -KPIC -xldscope=hidden, \
         LDFLAGS := -m64 -mt -xnolib $(SHARED_LIBRARY_FLAGS), \
-        MAPFILE := $(TOPDIR)/make/mapfiles/libjvm_db/mapfile-vers, \
         OBJECT_DIR := $(LIBJVM_DB_OUTPUTDIR)/objs, \
     ))
 
