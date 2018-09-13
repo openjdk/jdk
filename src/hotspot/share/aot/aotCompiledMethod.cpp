@@ -243,16 +243,6 @@ bool AOTCompiledMethod::make_entrant() {
 }
 #endif // TIERED
 
-// We don't have full dependencies for AOT methods, so flushing is
-// more conservative than for nmethods.
-void AOTCompiledMethod::flush_evol_dependents_on(InstanceKlass* dependee) {
-  if (is_java_method()) {
-    clear_inline_caches();
-    mark_for_deoptimization();
-    make_not_entrant();
-  }
-}
-
 // Iterate over metadata calling this function.   Used by RedefineClasses
 // Copied from nmethod::metadata_do
 void AOTCompiledMethod::metadata_do(void f(Metadata*)) {
