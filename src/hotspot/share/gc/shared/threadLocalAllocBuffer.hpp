@@ -101,7 +101,7 @@ private:
 
   void print_stats(const char* tag);
 
-  Thread* myThread();
+  Thread* thread();
 
   // statistics
 
