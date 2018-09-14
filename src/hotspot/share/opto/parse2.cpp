@@ -2747,8 +2747,8 @@ void Parse::do_one_bytecode() {
   handle_if_acmp:
     // If this is a backwards branch in the bytecodes, add Safepoint
     maybe_add_safepoint(iter().get_dest());
-    a = pop();
-    b = pop();
+    a = access_resolve(pop(), 0);
+    b = access_resolve(pop(), 0);
     c = _gvn.transform( new CmpPNode(b, a) );
     c = optimize_cmp_with_klass(c);
     do_if(btest, c);
