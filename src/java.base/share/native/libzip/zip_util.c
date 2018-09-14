@@ -100,6 +100,9 @@ DEF_STATIC_JNI_OnLoad
 static ZFILE
 ZFILE_Open(const char *fname, int flags) {
 #ifdef WIN32
+    WCHAR *wfname, *wprefixed_fname;
+    size_t converted_chars, fname_length;
+    jlong fhandle;
     const DWORD access =
         (flags & O_RDWR)   ? (GENERIC_WRITE | GENERIC_READ) :
         (flags & O_WRONLY) ?  GENERIC_WRITE :
@@ -121,14 +124,37 @@ ZFILE_Open(const char *fname, int flags) {
         FILE_ATTRIBUTE_NORMAL;
     const DWORD flagsAndAttributes = maybeWriteThrough | maybeDeleteOnClose;
 
-    return (jlong) CreateFile(
-        fname,          /* Wide char path name */
-        access,         /* Read and/or write permission */
-        sharing,        /* File sharing flags */
-        NULL,           /* Security attributes */
-        disposition,        /* creation disposition */
-        flagsAndAttributes, /* flags and attributes */
-        NULL);
+    fname_length = strlen(fname);
+    if (fname_length < MAX_PATH) {
+        return (jlong)CreateFile(
+            fname,              /* path name in multibyte char */
+            access,             /* Read and/or write permission */
+            sharing,            /* File sharing flags */
+            NULL,               /* Security attributes */
+            disposition,        /* creation disposition */
+            flagsAndAttributes, /* flags and attributes */
+            NULL);
+    } else {
+        if ((wfname = (WCHAR*)malloc((fname_length + 1) * sizeof(WCHAR))) == NULL)
+            return (jlong)INVALID_HANDLE_VALUE;
+
+        if (mbstowcs_s(&converted_chars, wfname, fname_length + 1, fname, fname_length) != 0) {
+            free(wfname);
+            return (jlong)INVALID_HANDLE_VALUE;
+        }
+        wprefixed_fname = getPrefixed(wfname, (int)fname_length);
+        fhandle = (jlong)CreateFileW(
+            wprefixed_fname,    /* Wide char path name */
+            access,             /* Read and/or write permission */
+            sharing,            /* File sharing flags */
+            NULL,               /* Security attributes */
+            disposition,        /* creation disposition */
+            flagsAndAttributes, /* flags and attributes */
+            NULL);
+        free(wfname);
+        free(wprefixed_fname);
+        return fhandle;
+    }
 #else
     return open(fname, flags, 0);
 #endif

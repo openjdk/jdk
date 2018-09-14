@@ -225,6 +225,8 @@ lastErrorReportable()
     return 1;
 }
 
+int wcanonicalize(WCHAR *orig_path, WCHAR *result, int size);
+
 /* Convert a pathname to canonical form.  The input orig_path is assumed to
    have been converted to native form already, via JVM_NativePath().  This is
    necessary because _fullpath() rejects duplicate separator characters on
@@ -237,6 +239,38 @@ canonicalize(char *orig_path, char *result, int size)
     HANDLE h;
     char path[1024];    /* Working copy of path */
     char *src, *dst, *dend;
+    wchar_t *worig_path, *wresult;
+    size_t converted_chars = 0;
+
+    /* handle long path with length >= MAX_PATH */
+    if (strlen(orig_path) >= MAX_PATH) {
+        if ((worig_path = (WCHAR*)malloc(size * sizeof(WCHAR))) == NULL)
+            return -1;
+
+        if (mbstowcs_s(&converted_chars, worig_path, (size_t)size, orig_path, (size_t)(size - 1)) != 0) {
+            free(worig_path);
+            return -1;
+        }
+
+        if ((wresult = (WCHAR*)malloc(size * sizeof(WCHAR))) == NULL)
+            return -1;
+
+        if (wcanonicalize(worig_path, wresult, size) != 0) {
+            free(worig_path);
+            free(wresult);
+            return -1;
+        }
+
+        if (wcstombs_s(&converted_chars, result, (size_t)size, wresult, (size_t)(size - 1)) != 0) {
+            free(worig_path);
+            free(wresult);
+            return -1;
+        }
+
+        free(worig_path);
+        free(wresult);
+        return 0;
+    }
 
     /* Reject paths that contain wildcards */
     if (wild(orig_path)) {
@@ -245,15 +279,15 @@ canonicalize(char *orig_path, char *result, int size)
     }
 
     /* Collapse instances of "foo\.." and ensure absoluteness.  Note that
-       contrary to the documentation, the _fullpath procedure does not require
-       the drive to be available.  It also does not reliably change all
-       occurrences of '/' to '\\' on Win95, so now JVM_NativePath does that. */
-    if(!_fullpath(path, orig_path, sizeof(path))) {
+      contrary to the documentation, the _fullpath procedure does not require
+      the drive to be available.  It also does not reliably change all
+      occurrences of '/' to '\\' on Win95, so now JVM_NativePath does that. */
+    if (!_fullpath(path, orig_path, sizeof(path))) {
         return -1;
     }
 
     /* Correction for Win95: _fullpath may leave a trailing "\\"
-       on a UNC pathname */
+      on a UNC pathname */
     if ((path[0] == '\\') && (path[1] == '\\')) {
         char *p = path + strlen(path);
         if ((p[-1] == '\\') && !islb(p[-2])) {
@@ -281,16 +315,16 @@ canonicalize(char *orig_path, char *result, int size)
         char *p;
         p = nextsep(src + 2);    /* Skip past host name */
         if (!*p) {
-        /* A UNC pathname must begin with "\\\\host\\share",
-           so reject this path as invalid if there is no share name */
+            /* A UNC pathname must begin with "\\\\host\\share",
+            so reject this path as invalid if there is no share name */
             errno = EINVAL;
             return -1;
-    }
-    p = nextsep(p + 1);    /* Skip past share name */
-    if (!(dst = cp(dst, dend, '\0', src, p))) {
-        return -1;
-    }
-    src = p;
+        }
+        p = nextsep(p + 1);    /* Skip past share name */
+        if (!(dst = cp(dst, dend, '\0', src, p))) {
+            return -1;
+        }
+        src = p;
     } else {
         /* Invalid path */
         errno = EINVAL;
@@ -309,11 +343,11 @@ canonicalize(char *orig_path, char *result, int size)
     }
 
     /* At this point we have copied either a drive specifier ("z:") or a UNC
-       prefix ("\\\\host\\share") to the result buffer, and src points to the
-       first byte of the remainder of the path.  We now scan through the rest
-       of the path, looking up each prefix in order to find the true name of
-       the last element of each prefix, thereby computing the full true name of
-       the original path. */
+    prefix ("\\\\host\\share") to the result buffer, and src points to the
+    first byte of the remainder of the path.  We now scan through the rest
+    of the path, looking up each prefix in order to find the true name of
+    the last element of each prefix, thereby computing the full true name of
+    the original path. */
     while (*src) {
         char *p = nextsep(src + 1);    /* Find next separator */
         char c = *p;
@@ -325,8 +359,8 @@ canonicalize(char *orig_path, char *result, int size)
             /* Lookup succeeded; append true name to result and continue */
             FindClose(h);
             if (!(dst = cp(dst, dend, '\\',
-                           fd.cFileName,
-                           fd.cFileName + strlen(fd.cFileName)))) {
+                fd.cFileName,
+                fd.cFileName + strlen(fd.cFileName)))) {
                 return -1;
             }
             src = p;
@@ -344,8 +378,8 @@ canonicalize(char *orig_path, char *result, int size)
     }
 
     if (dst >= dend) {
-    errno = ENAMETOOLONG;
-    return -1;
+        errno = ENAMETOOLONG;
+        return -1;
     }
     *dst = '\0';
     return 0;
@@ -587,7 +621,7 @@ wcanonicalizeWithPrefix(WCHAR *canonicalPrefix, WCHAR *pathWithCanonicalPrefix, 
  */
 
 /* copy \\?\ or \\?\UNC\ to the front of path*/
-WCHAR*
+__declspec(dllexport) WCHAR*
 getPrefixed(const WCHAR* path, int pathlen) {
     WCHAR* pathbuf = (WCHAR*)malloc((pathlen + 10) * sizeof (WCHAR));
     if (pathbuf != 0) {
