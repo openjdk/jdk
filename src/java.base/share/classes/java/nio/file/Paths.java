@@ -73,7 +73,8 @@ public final class Paths {
      * Converts the given URI to a {@link Path} object.
      *
      * @implSpec
-     * This method simply invokes {@link Path#of(URI) * Path.of(URI)} with the given parameter.
+     * This method simply invokes {@link Path#of(URI) Path.of(URI)} with the
+     * given parameter.
      *
      * @param   uri
      *          the URI to convert
