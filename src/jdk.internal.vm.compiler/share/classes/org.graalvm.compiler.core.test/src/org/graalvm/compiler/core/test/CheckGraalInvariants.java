@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.graalvm.compiler.api.replacements.MethodSubstitution;
 import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.api.replacements.Snippet.ConstantParameter;
 import org.graalvm.compiler.api.replacements.Snippet.NonNullParameter;
@@ -279,7 +280,8 @@ public class CheckGraalInvariants extends GraalCompilerTest {
                             executor.execute(() -> {
                                 try (DebugContext debug = DebugContext.create(options, DebugHandlersFactory.LOADER)) {
                                     ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);
-                                    StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).build();
+                                    boolean isSubstitution = method.getAnnotation(Snippet.class) != null || method.getAnnotation(MethodSubstitution.class) != null;
+                                    StructuredGraph graph = new StructuredGraph.Builder(options, debug).method(method).setIsSubstitution(isSubstitution).build();
                                     try (DebugCloseable s = debug.disableIntercept(); DebugContext.Scope ds = debug.scope("CheckingGraph", graph, method)) {
                                         checkMethod(method);
                                         graphBuilderSuite.apply(graph, context);

@@ -41,7 +41,6 @@ import jdk.internal.vm.compiler.collections.Equivalence;
 import jdk.internal.vm.compiler.collections.UnmodifiableEconomicMap;
 import jdk.internal.vm.compiler.collections.UnmodifiableMapCursor;
 import org.graalvm.compiler.api.replacements.MethodSubstitution;
-import org.graalvm.compiler.api.replacements.Snippet;
 import org.graalvm.compiler.core.common.GraalOptions;
 import org.graalvm.compiler.core.common.type.Stamp;
 import org.graalvm.compiler.core.common.type.StampFactory;
@@ -674,12 +673,12 @@ public class InliningUtil extends ValueMergeUtil {
     @SuppressWarnings("try")
     private static void updateSourcePositions(Invoke invoke, StructuredGraph inlineGraph, UnmodifiableEconomicMap<Node, Node> duplicates, boolean isSub, Mark mark) {
         FixedNode invokeNode = invoke.asNode();
-        boolean isSubstitution = isSub || inlineGraph.method().getAnnotation(MethodSubstitution.class) != null || inlineGraph.method().getAnnotation(Snippet.class) != null;
         StructuredGraph invokeGraph = invokeNode.graph();
-        assert !invokeGraph.trackNodeSourcePosition() || inlineGraph.trackNodeSourcePosition() ||
-                        isSubstitution : String.format("trackNodeSourcePosition mismatch %s %s != %s %s", invokeGraph, invokeGraph.trackNodeSourcePosition(), inlineGraph,
-                                        inlineGraph.trackNodeSourcePosition());
         if (invokeGraph.trackNodeSourcePosition() && invoke.stateAfter() != null) {
+            boolean isSubstitution = isSub || inlineGraph.isSubstitution();
+            assert !invokeGraph.trackNodeSourcePosition() || inlineGraph.trackNodeSourcePosition() ||
+                            isSubstitution : String.format("trackNodeSourcePosition mismatch %s %s != %s %s", invokeGraph, invokeGraph.trackNodeSourcePosition(), inlineGraph,
+                                            inlineGraph.trackNodeSourcePosition());
             final NodeSourcePosition invokePos = invoke.asNode().getNodeSourcePosition();
             updateSourcePosition(invokeGraph, duplicates, mark, invokePos, isSubstitution);
         }

@@ -93,7 +93,8 @@ public interface HotSpotGraalRuntimeProvider extends GraalRuntime, RuntimeProvid
     DiagnosticsOutputDirectory getOutputDirectory();
 
     /**
-     * Gets the map used to count compilation problems at each {@link ExceptionAction} level.
+     * Gets the map used to count compilation problems at each {@link ExceptionAction} level. All
+     * updates and queries to the map should be synchronized.
      */
     Map<ExceptionAction, Integer> getCompilationProblemsPerAction();
 

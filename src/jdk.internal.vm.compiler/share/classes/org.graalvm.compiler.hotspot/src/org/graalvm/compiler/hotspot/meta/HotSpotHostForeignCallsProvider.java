@@ -85,8 +85,6 @@ import static org.graalvm.compiler.hotspot.replacements.WriteBarrierSnippets.G1W
 import static org.graalvm.compiler.hotspot.replacements.WriteBarrierSnippets.G1WBPRECALL;
 import static org.graalvm.compiler.hotspot.replacements.WriteBarrierSnippets.VALIDATE_OBJECT;
 import static org.graalvm.compiler.hotspot.stubs.ExceptionHandlerStub.EXCEPTION_HANDLER_FOR_PC;
-import static org.graalvm.compiler.hotspot.stubs.NewArrayStub.NEW_ARRAY_C;
-import static org.graalvm.compiler.hotspot.stubs.NewInstanceStub.NEW_INSTANCE_C;
 import static org.graalvm.compiler.hotspot.stubs.StubUtil.VM_MESSAGE_C;
 import static org.graalvm.compiler.hotspot.stubs.UnwindExceptionToCallerStub.EXCEPTION_HANDLER_FOR_RETURN_ADDRESS;
 import static org.graalvm.compiler.nodes.java.ForeignCallDescriptors.REGISTER_FINALIZER;
@@ -119,8 +117,6 @@ import org.graalvm.compiler.hotspot.stubs.DivisionByZeroExceptionStub;
 import org.graalvm.compiler.hotspot.stubs.ExceptionHandlerStub;
 import org.graalvm.compiler.hotspot.stubs.IntegerExactOverflowExceptionStub;
 import org.graalvm.compiler.hotspot.stubs.LongExactOverflowExceptionStub;
-import org.graalvm.compiler.hotspot.stubs.NewArrayStub;
-import org.graalvm.compiler.hotspot.stubs.NewInstanceStub;
 import org.graalvm.compiler.hotspot.stubs.NullPointerExceptionStub;
 import org.graalvm.compiler.hotspot.stubs.OutOfBoundsExceptionStub;
 import org.graalvm.compiler.hotspot.stubs.Stub;
@@ -280,8 +276,6 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
 
         registerForeignCall(EXCEPTION_HANDLER_FOR_PC, c.exceptionHandlerForPcAddress, NativeCall, DESTROYS_REGISTERS, SAFEPOINT, REEXECUTABLE, any());
         registerForeignCall(EXCEPTION_HANDLER_FOR_RETURN_ADDRESS, c.exceptionHandlerForReturnAddressAddress, NativeCall, DESTROYS_REGISTERS, SAFEPOINT, REEXECUTABLE, any());
-        registerForeignCall(NEW_ARRAY_C, c.newArrayAddress, NativeCall, DESTROYS_REGISTERS, SAFEPOINT, REEXECUTABLE, any());
-        registerForeignCall(NEW_INSTANCE_C, c.newInstanceAddress, NativeCall, DESTROYS_REGISTERS, SAFEPOINT, REEXECUTABLE, any());
 
         CreateExceptionStub.registerForeignCalls(c, this);
 
@@ -292,8 +286,8 @@ public abstract class HotSpotHostForeignCallsProvider extends HotSpotForeignCall
         registerForeignCall(VM_MESSAGE_C, c.vmMessageAddress, NativeCall, DESTROYS_REGISTERS, SAFEPOINT, REEXECUTABLE, NO_LOCATIONS);
         registerForeignCall(ASSERTION_VM_MESSAGE_C, c.vmMessageAddress, NativeCall, PRESERVES_REGISTERS, LEAF, REEXECUTABLE, NO_LOCATIONS);
 
-        link(new NewInstanceStub(options, providers, registerStubCall(NEW_INSTANCE, SAFEPOINT, REEXECUTABLE, TLAB_TOP_LOCATION, TLAB_END_LOCATION)));
-        link(new NewArrayStub(options, providers, registerStubCall(NEW_ARRAY, SAFEPOINT, REEXECUTABLE, TLAB_TOP_LOCATION, TLAB_END_LOCATION)));
+        linkForeignCall(options, providers, NEW_INSTANCE, c.newInstanceAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, TLAB_TOP_LOCATION, TLAB_END_LOCATION);
+        linkForeignCall(options, providers, NEW_ARRAY, c.newArrayAddress, PREPEND_THREAD, SAFEPOINT, REEXECUTABLE, TLAB_TOP_LOCATION, TLAB_END_LOCATION);
         link(new ExceptionHandlerStub(options, providers, foreignCalls.get(EXCEPTION_HANDLER)));
         link(new UnwindExceptionToCallerStub(options, providers, registerStubCall(UNWIND_EXCEPTION_TO_CALLER, SAFEPOINT, REEXECUTABLE_ONLY_AFTER_EXCEPTION, any())));
         link(new VerifyOopStub(options, providers, registerStubCall(VERIFY_OOP, LEAF_NOFP, REEXECUTABLE, NO_LOCATIONS)));

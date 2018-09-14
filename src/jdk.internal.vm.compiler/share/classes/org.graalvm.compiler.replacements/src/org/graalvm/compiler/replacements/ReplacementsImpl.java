@@ -429,10 +429,16 @@ public class ReplacementsImpl implements Replacements, InlineInvokePlugin {
         @SuppressWarnings("try")
         protected StructuredGraph buildInitialGraph(DebugContext debug, BytecodeProvider bytecodeProvider, final ResolvedJavaMethod methodToParse, Object[] args, boolean trackNodeSourcePosition,
                         NodeSourcePosition replaceePosition) {
+            // @formatter:off
             // Replacements cannot have optimistic assumptions since they have
             // to be valid for the entire run of the VM.
-            final StructuredGraph graph = new StructuredGraph.Builder(replacements.options, debug).method(methodToParse).trackNodeSourcePosition(trackNodeSourcePosition).callerContext(
-                            replaceePosition).build();
+            final StructuredGraph graph = new StructuredGraph.Builder(replacements.options, debug).
+                            method(methodToParse).
+                            trackNodeSourcePosition(trackNodeSourcePosition).
+                            callerContext(replaceePosition).
+                            setIsSubstitution(true).
+                            build();
+            // @formatter:on
 
             // Replacements are not user code so they do not participate in unsafe access
             // tracking

@@ -37,7 +37,7 @@ import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.EVEXPrefixConfig
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.EVEXPrefixConfig.Z1;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.L128;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.L256;
-import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.LIG;
+import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.LZ;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.M_0F;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.M_0F38;
 import static org.graalvm.compiler.asm.amd64.AMD64BaseAssembler.VEXPrefixConfig.M_0F3A;
@@ -748,7 +748,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
     public static final class VEXPrefixConfig {
         public static final int L128 = 0;
         public static final int L256 = 1;
-        public static final int LIG = 0;
+        public static final int LZ = 0;
 
         public static final int W0 = 0;
         public static final int W1 = 1;
@@ -849,10 +849,10 @@ public abstract class AMD64BaseAssembler extends Assembler {
     protected final void emitVEX(int l, int pp, int mmmmm, int w, int rxb, int vvvv) {
         assert ((AMD64) target.arch).getFeatures().contains(CPUFeature.AVX) : "emitting VEX prefix on a CPU without AVX support";
 
-        assert l == L128 || l == L256 || l == LIG : "invalid value for VEX.L";
+        assert l == L128 || l == L256 : "invalid value for VEX.L";
         assert pp == P_ || pp == P_66 || pp == P_F3 || pp == P_F2 : "invalid value for VEX.pp";
         assert mmmmm == M_0F || mmmmm == M_0F38 || mmmmm == M_0F3A : "invalid value for VEX.m-mmmm";
-        assert w == W0 || w == W1 || w == WIG : "invalid value for VEX.W";
+        assert w == W0 || w == W1 : "invalid value for VEX.W";
 
         assert (rxb & 0x07) == rxb : "invalid value for VEX.RXB";
         assert (vvvv & 0x0F) == vvvv : "invalid value for VEX.vvvv";
@@ -887,7 +887,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
         }
     }
 
-    private static int getLFlag(AVXSize size) {
+    public static int getLFlag(AVXSize size) {
         switch (size) {
             case XMM:
                 return L128;
@@ -896,7 +896,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
             case ZMM:
                 return L512;
             default:
-                return LIG;
+                return LZ;
         }
     }
 
@@ -910,6 +910,7 @@ public abstract class AMD64BaseAssembler extends Assembler {
 
     protected static final class EVEXPrefixConfig {
         public static final int L512 = 2;
+        public static final int LIG = 0;
 
         public static final int Z0 = 0x0;
         public static final int Z1 = 0x1;
@@ -1013,10 +1014,10 @@ public abstract class AMD64BaseAssembler extends Assembler {
     private void emitEVEX(int l, int pp, int mm, int w, int rxb, int reg, int vvvvv, int z, int b, int aaa) {
         assert ((AMD64) target.arch).getFeatures().contains(CPUFeature.AVX512F) : "emitting EVEX prefix on a CPU without AVX512 support";
 
-        assert l == L128 || l == L256 || l == L512 || l == LIG : "invalid value for EVEX.L'L";
+        assert l == L128 || l == L256 || l == L512 : "invalid value for EVEX.L'L";
         assert pp == P_ || pp == P_66 || pp == P_F3 || pp == P_F2 : "invalid value for EVEX.pp";
         assert mm == M_0F || mm == M_0F38 || mm == M_0F3A : "invalid value for EVEX.mm";
-        assert w == W0 || w == W1 || w == WIG : "invalid value for EVEX.W";
+        assert w == W0 || w == W1 : "invalid value for EVEX.W";
 
         assert (rxb & 0x07) == rxb : "invalid value for EVEX.RXB";
         assert (reg & 0x1F) == reg : "invalid value for EVEX.R'";

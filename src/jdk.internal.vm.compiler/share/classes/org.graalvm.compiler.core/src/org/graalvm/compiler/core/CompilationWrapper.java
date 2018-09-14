@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 
+import org.graalvm.compiler.debug.DebugCloseable;
 import org.graalvm.compiler.debug.DebugContext;
 import org.graalvm.compiler.debug.DiagnosticsOutputDirectory;
 import org.graalvm.compiler.debug.PathUtilities;
@@ -181,15 +182,64 @@ public abstract class CompilationWrapper<T> {
                 actionKey = CompilationFailureAction;
                 causeType = "failure";
             }
-            ExceptionAction action = lookupAction(initialOptions, actionKey, cause);
+            synchronized (CompilationFailureAction) {
+                // Serialize all compilation failure handling.
+                // This prevents retry compilation storms and interleaving
+                // of compilation exception messages.
+                // It also allows for reliable testing of CompilationWrapper
+                // by avoiding a race whereby retry compilation output from a
+                // forced crash (i.e., use of GraalCompilerOptions.CrashAt)
+                // is truncated.
 
-            action = adjustAction(initialOptions, actionKey, action);
+                ExceptionAction action = lookupAction(initialOptions, actionKey, cause);
 
-            if (action == ExceptionAction.Silent) {
-                return handleException(cause);
-            }
+                action = adjustAction(initialOptions, actionKey, action);
 
-            if (action == ExceptionAction.Print) {
+                if (action == ExceptionAction.Silent) {
+                    return handleException(cause);
+                }
+
+                if (action == ExceptionAction.Print) {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    try (PrintStream ps = new PrintStream(baos)) {
+                        ps.printf("%s: Compilation of %s failed: ", Thread.currentThread(), this);
+                        cause.printStackTrace(ps);
+                        ps.printf("To disable compilation %s notifications, set %s to %s (e.g., -Dgraal.%s=%s).%n",
+                                        causeType,
+                                        actionKey.getName(), ExceptionAction.Silent,
+                                        actionKey.getName(), ExceptionAction.Silent);
+                        ps.printf("To capture more information for diagnosing or reporting a compilation %s, " +
+                                        "set %s to %s or %s (e.g., -Dgraal.%s=%s).%n",
+                                        causeType,
+                                        actionKey.getName(), ExceptionAction.Diagnose,
+                                        ExceptionAction.ExitVM,
+                                        actionKey.getName(), ExceptionAction.Diagnose);
+                    }
+                    TTY.print(baos.toString());
+                    return handleException(cause);
+                }
+
+                // action is Diagnose or ExitVM
+
+                if (Dump.hasBeenSet(initialOptions)) {
+                    // If dumping is explicitly enabled, Graal is being debugged
+                    // so don't interfere with what the user is expecting to see.
+                    return handleException(cause);
+                }
+
+                String dir = this.outputDirectory.getPath();
+                if (dir == null) {
+                    return handleException(cause);
+                }
+                String dumpName = PathUtilities.sanitizeFileName(toString());
+                File dumpPath = new File(dir, dumpName);
+                dumpPath.mkdirs();
+                if (!dumpPath.exists()) {
+                    TTY.println("Warning: could not create diagnostics directory " + dumpPath);
+                    return handleException(cause);
+                }
+
+                String message;
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (PrintStream ps = new PrintStream(baos)) {
                     ps.printf("%s: Compilation of %s failed: ", Thread.currentThread(), this);
@@ -198,63 +248,16 @@ public abstract class CompilationWrapper<T> {
                                     causeType,
                                     actionKey.getName(), ExceptionAction.Silent,
                                     actionKey.getName(), ExceptionAction.Silent);
-                    ps.printf("To capture more information for diagnosing or reporting a compilation %s, " +
-                                    "set %s to %s or %s (e.g., -Dgraal.%s=%s).%n",
+                    ps.printf("To print a message for a compilation %s without retrying the compilation, " +
+                                    "set %s to %s (e.g., -Dgraal.%s=%s).%n",
                                     causeType,
-                                    actionKey.getName(), ExceptionAction.Diagnose,
-                                    ExceptionAction.ExitVM,
-                                    actionKey.getName(), ExceptionAction.Diagnose);
+                                    actionKey.getName(), ExceptionAction.Print,
+                                    actionKey.getName(), ExceptionAction.Print);
+                    ps.println("Retrying compilation of " + this);
+                    message = baos.toString();
                 }
-                synchronized (CompilationFailureAction) {
-                    // Synchronize to prevent compilation exception
-                    // messages from interleaving.
-                    TTY.println(baos.toString());
-                }
-                return handleException(cause);
-            }
 
-            // action is Diagnose or ExitVM
-
-            if (Dump.hasBeenSet(initialOptions)) {
-                // If dumping is explicitly enabled, Graal is being debugged
-                // so don't interfere with what the user is expecting to see.
-                return handleException(cause);
-            }
-
-            String dir = this.outputDirectory.getPath();
-            if (dir == null) {
-                return handleException(cause);
-            }
-            String dumpName = PathUtilities.sanitizeFileName(toString());
-            File dumpPath = new File(dir, dumpName);
-            dumpPath.mkdirs();
-            if (!dumpPath.exists()) {
-                TTY.println("Warning: could not create diagnostics directory " + dumpPath);
-                return handleException(cause);
-            }
-
-            String message;
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (PrintStream ps = new PrintStream(baos)) {
-                ps.printf("%s: Compilation of %s failed: ", Thread.currentThread(), this);
-                cause.printStackTrace(ps);
-                ps.printf("To disable compilation %s notifications, set %s to %s (e.g., -Dgraal.%s=%s).%n",
-                                causeType,
-                                actionKey.getName(), ExceptionAction.Silent,
-                                actionKey.getName(), ExceptionAction.Silent);
-                ps.printf("To print a message for a compilation %s without retrying the compilation, " +
-                                "set %s to %s (e.g., -Dgraal.%s=%s).%n",
-                                causeType,
-                                actionKey.getName(), ExceptionAction.Print,
-                                actionKey.getName(), ExceptionAction.Print);
-                ps.println("Retrying compilation of " + this);
-                message = baos.toString();
-            }
-
-            synchronized (CompilationFailureAction) {
-                // Synchronize here to serialize retry compilations. This
-                // mitigates retry compilation storms.
-                TTY.println(message);
+                TTY.print(message);
                 File retryLogFile = new File(dumpPath, "retry.log");
                 try (PrintStream ps = new PrintStream(new FileOutputStream(retryLogFile))) {
                     ps.print(message);
@@ -267,7 +270,7 @@ public abstract class CompilationWrapper<T> {
                                 MethodFilter, null,
                                 DumpPath, dumpPath.getPath());
 
-                try (DebugContext retryDebug = createRetryDebugContext(retryOptions)) {
+                try (DebugContext retryDebug = createRetryDebugContext(retryOptions); DebugCloseable s = retryDebug.disableIntercept()) {
                     T res = performCompilation(retryDebug);
                     maybeExitVM(action);
                     return res;
@@ -283,16 +286,8 @@ public abstract class CompilationWrapper<T> {
 
     private void maybeExitVM(ExceptionAction action) {
         if (action == ExitVM) {
-            synchronized (ExceptionAction.class) {
-                try {
-                    // Give other compiler threads a chance to flush
-                    // error handling output.
-                    ExceptionAction.class.wait(2000);
-                } catch (InterruptedException e) {
-                }
-                TTY.println("Exiting VM after retry compilation of " + this);
-                System.exit(-1);
-            }
+            TTY.println("Exiting VM after retry compilation of " + this);
+            System.exit(-1);
         }
     }
 
@@ -303,22 +298,24 @@ public abstract class CompilationWrapper<T> {
     private ExceptionAction adjustAction(OptionValues initialOptions, EnumOptionKey<ExceptionAction> actionKey, ExceptionAction initialAction) {
         ExceptionAction action = initialAction;
         int maxProblems = MaxCompilationProblemsPerAction.getValue(initialOptions);
-        synchronized (problemsHandledPerAction) {
-            while (action != ExceptionAction.Silent) {
-                int problems = problemsHandledPerAction.getOrDefault(action, 0);
-                if (problems >= maxProblems) {
-                    if (problems == maxProblems) {
-                        TTY.printf("Warning: adjusting %s from %s to %s after %s (%d) failed compilations%n", actionKey, action, action.quieter(),
-                                        MaxCompilationProblemsPerAction, maxProblems);
-                        // Ensure that the message above is only printed once
-                        problemsHandledPerAction.put(action, problems + 1);
+        if (action != ExceptionAction.ExitVM) {
+            synchronized (problemsHandledPerAction) {
+                while (action != ExceptionAction.Silent) {
+                    int problems = problemsHandledPerAction.getOrDefault(action, 0);
+                    if (problems >= maxProblems) {
+                        if (problems == maxProblems) {
+                            TTY.printf("Warning: adjusting %s from %s to %s after %s (%d) failed compilations%n", actionKey, action, action.quieter(),
+                                            MaxCompilationProblemsPerAction, maxProblems);
+                            // Ensure that the message above is only printed once
+                            problemsHandledPerAction.put(action, problems + 1);
+                        }
+                        action = action.quieter();
+                    } else {
+                        break;
                     }
-                    action = action.quieter();
-                } else {
-                    break;
                 }
+                problemsHandledPerAction.put(action, problemsHandledPerAction.getOrDefault(action, 0) + 1);
             }
-            problemsHandledPerAction.put(action, problemsHandledPerAction.getOrDefault(action, 0) + 1);
         }
         return action;
     }

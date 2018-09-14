@@ -94,7 +94,7 @@ public class IntrinsicGraphBuilder implements GraphBuilderContext, Receiver {
         this.stampProvider = stampProvider;
         this.code = code;
         this.method = code.getMethod();
-        this.graph = new StructuredGraph.Builder(options, debug, allowAssumptions).method(method).build();
+        this.graph = new StructuredGraph.Builder(options, debug, allowAssumptions).method(method).setIsSubstitution(true).build();
         this.graph.setTrackNodeSourcePosition();
         this.invokeBci = invokeBci;
         this.lastInstr = graph.start();
