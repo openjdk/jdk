@@ -27,7 +27,6 @@
  * @summary Checks various authentication behavior from remote jmx client
  * @author Olivier Lagneau
  * @modules java.management.rmi
- * @library /lib/testlibrary
  * @library /test/lib
  * @compile Simple.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=username1 -Dpassword=password1 AuthorizationTest -server -mapType x.access.file;x.password.file -populate -client -mapType credentials
@@ -177,7 +176,7 @@ public class AuthorizationTest {
     private List<String> buildCommandLine(String args[]) {
         List<String> opts = new ArrayList<>();
         opts.add(JDKToolFinder.getJDKTool("java"));
-        opts.addAll(Arrays.asList(jdk.testlibrary.Utils.getTestJavaOpts()));
+        opts.addAll(Arrays.asList(jdk.test.lib.Utils.getTestJavaOpts()));
 
         String usernameValue = System.getProperty(USERNAME_PROPERTY);
         if (usernameValue != null) {

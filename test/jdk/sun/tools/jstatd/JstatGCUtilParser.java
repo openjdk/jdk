@@ -23,7 +23,7 @@
 
 import java.util.Arrays;
 
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import static jdk.testlibrary.Asserts.*;
 import java.text.NumberFormat;
 

@@ -35,7 +35,7 @@
  * @test
  * @bug 4486658
  * @summary basic safety and liveness of ReentrantLocks, and other locks based on them
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -48,7 +48,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public final class CheckedLockLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

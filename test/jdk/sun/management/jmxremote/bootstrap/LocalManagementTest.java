@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /**
  * @test
@@ -38,13 +38,12 @@ import jdk.testlibrary.Utils;
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.management
  *          jdk.attach
  *          jdk.management.agent/jdk.internal.agent
  *
- * @build jdk.testlibrary.* TestManager TestApplication
+ * @build TestManager TestApplication
  * @run main/othervm/timeout=300 LocalManagementTest
  */
 public class LocalManagementTest {

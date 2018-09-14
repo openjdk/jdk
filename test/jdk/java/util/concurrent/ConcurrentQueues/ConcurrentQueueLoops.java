@@ -35,7 +35,7 @@
  * @test
  * @bug 4486658 6785442
  * @summary Checks that a set of threads can repeatedly get and modify items
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @run main ConcurrentQueueLoops 8 123456
  */
 
@@ -58,7 +58,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class ConcurrentQueueLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

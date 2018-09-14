@@ -35,7 +35,7 @@
  * @test
  * @bug 4965960
  * @summary  Exercise ExecutorCompletionService
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -44,7 +44,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class ExecutorCompletionServiceLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

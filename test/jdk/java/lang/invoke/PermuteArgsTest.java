@@ -23,7 +23,7 @@
 
 /* @test
  * @summary unit tests for method handles which permute their arguments
- * @library /lib/testlibrary /java/lang/invoke/common
+ * @library /test/lib /java/lang/invoke/common
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
  */
 

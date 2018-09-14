@@ -25,7 +25,7 @@
  * @test
  * @bug 6576792
  * @summary non-idle worker threads should not be interrupted
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -34,7 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class SelfInterrupt {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

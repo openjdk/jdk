@@ -27,9 +27,9 @@
 # @key intermittent
 # @summary Test RMI Bootstrap
 #
-# @library /lib/testlibrary
+# @library /test/lib
 #
-# @build jdk.testlibrary.* TestLogger Utils RmiBootstrapTest
+# @build TestLogger Utils RmiBootstrapTest
 # @run shell/timeout=300  RmiBootstrapTest.sh
 
 # Define the Java class test name

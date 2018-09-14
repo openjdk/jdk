@@ -35,7 +35,7 @@
  * @test
  * @bug 8005697
  * @summary Basic tests for StampedLock
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @author Chris Hegarty
  */
 
@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.StampedLock;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class Basic {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

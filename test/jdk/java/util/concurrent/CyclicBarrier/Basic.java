@@ -25,7 +25,7 @@
  * @test
  * @bug 6253848 6366811
  * @summary Basic tests for CyclicBarrier
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @author Martin Buchholz, David Holmes
  */
 
@@ -39,7 +39,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class Basic {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

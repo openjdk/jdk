@@ -26,7 +26,7 @@
  * @bug 6384064
  * @summary Check proper handling of interrupts
  * @author Martin Buchholz
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -41,7 +41,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class Interrupt {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

@@ -37,7 +37,7 @@
  * @summary Checks for responsiveness of futures to cancellation.
  * Runs under the assumption that ITERS computations require more than
  * TIMEOUT msecs to complete.
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @run main/timeout=2000 CancelledFutureLoops
  */
 
@@ -52,7 +52,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.ReentrantLock;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public final class CancelledFutureLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

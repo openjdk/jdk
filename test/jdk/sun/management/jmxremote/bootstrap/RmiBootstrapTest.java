@@ -635,7 +635,7 @@ public class RmiBootstrapTest {
 
         for (int i = 0; i < MAX_GET_FREE_PORT_TRIES; i++) {
             try {
-                int port = jdk.testlibrary.Utils.getFreePort();
+                int port = jdk.test.lib.Utils.getFreePort();
                 final String path;
                 try {
                     path=(file==null)?null:file.getCanonicalPath();

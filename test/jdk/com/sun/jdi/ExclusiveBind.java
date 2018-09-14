@@ -25,12 +25,11 @@
  * @bug 4531526
  * @summary Test that more than one debuggee cannot bind to same port
  *          at the same time.
- * @library /lib/testlibrary
  * @library /test/lib
  *
  * @modules java.management
  *          jdk.jdi
- * @build jdk.testlibrary.* VMConnection ExclusiveBind HelloWorld
+ * @build VMConnection ExclusiveBind HelloWorld
  * @run driver ExclusiveBind
  */
 import java.net.ServerSocket;
@@ -46,7 +45,7 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class ExclusiveBind {
     /*

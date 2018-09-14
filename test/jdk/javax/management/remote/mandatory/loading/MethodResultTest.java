@@ -27,7 +27,7 @@
  * @summary Tests client default class loader used before JSR 160 loader
  * @author Eamonn McManus
  *
- * @library /lib/testlibrary
+ * @library /test/lib
  *
  * @run clean MethodResultTest
  * @run build MethodResultTest
@@ -40,7 +40,7 @@ import java.net.*;
 import java.util.*;
 import javax.management.*;
 import javax.management.remote.*;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /*
    This test checks that the class loader that is used to deserialize

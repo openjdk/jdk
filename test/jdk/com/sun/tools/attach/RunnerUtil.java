@@ -28,7 +28,7 @@ import java.util.Arrays;
 
 import jdk.test.lib.thread.ProcessThread;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /*
  * Utility functions for test runners.

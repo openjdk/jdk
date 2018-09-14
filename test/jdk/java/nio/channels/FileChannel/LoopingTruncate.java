@@ -25,8 +25,8 @@
  * @test
  * @bug 8137121 8137230
  * @summary (fc) Infinite loop FileChannel.truncate
- * @library /lib/testlibrary
- * @build jdk.testlibrary.Utils
+ * @library /test/lib
+ * @build jdk.test.lib.Utils
  * @run main/othervm/timeout=300 LoopingTruncate
  */
 
@@ -37,7 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import static java.nio.file.StandardOpenOption.*;
 import java.util.concurrent.TimeUnit;
-import static jdk.testlibrary.Utils.adjustTimeout;
+import static jdk.test.lib.Utils.adjustTimeout;
 
 public class LoopingTruncate {
 

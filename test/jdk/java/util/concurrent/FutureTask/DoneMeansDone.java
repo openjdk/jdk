@@ -36,7 +36,7 @@
  * @bug 8073704
  * @summary Checks that once isDone() returns true,
  * get() never throws InterruptedException or TimeoutException
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -52,7 +52,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class DoneMeansDone {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

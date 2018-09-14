@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8164879
- * @library /lib/testlibrary ../../
+ * @library ../../
  * @library /test/lib
  * @modules java.base/sun.security.util
  * @summary Verify AES/GCM's limits set in the jdk.tls.keyLimits property
@@ -58,7 +58,7 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import sun.security.util.HexDumpEncoder;
 
 public class SSLSocketKeyLimit {

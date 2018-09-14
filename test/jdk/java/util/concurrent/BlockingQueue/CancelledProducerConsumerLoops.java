@@ -35,7 +35,7 @@
  * @test
  * @bug 4486658
  * @summary Checks for responsiveness of blocking queues to cancellation.
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -56,7 +56,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class CancelledProducerConsumerLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

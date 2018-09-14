@@ -41,7 +41,7 @@
  * inserts it, and if present, with probability premove it removes
  * it.  (pinsert and premove are expressed as percentages to simplify
  * parsing from command line.)
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @run main/timeout=1600 MapLoops
  */
 
@@ -54,7 +54,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class MapLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

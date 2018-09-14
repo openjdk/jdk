@@ -35,7 +35,7 @@
  * @test
  * @bug 6725789
  * @summary Check for long overflow in task time comparison.
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.DAYS;
@@ -45,7 +45,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class DelayOverflow {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

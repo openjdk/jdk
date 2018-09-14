@@ -24,7 +24,7 @@
 /* @test
  * @bug 6405995
  * @summary Unit test for selector wakeup and interruption
- * @library .. /lib/testlibrary/
+ * @library .. /test/lib
  */
 
 import java.io.*;
@@ -44,7 +44,7 @@ public class Wakeup {
     }
 
     static class Sleeper extends TestThread {
-        private static final long TIMEOUT = jdk.testlibrary.Utils.adjustTimeout(20_000);
+        private static final long TIMEOUT = jdk.test.lib.Utils.adjustTimeout(20_000);
 
         // barrier is used to synchronize sleeper thread and checking
         // thread which is the main thread: when go() get to the end,

@@ -36,18 +36,17 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 
 /* @test
  * @bug 6306165 6432567
  * @summary Check that a bad handshake doesn't cause a debuggee to abort
- * @library /lib/testlibrary
  * @library /test/lib
  *
  * @modules java.management
  *          jdk.jdi
- * @build jdk.testlibrary.* VMConnection BadHandshakeTest Exit0
+ * @build VMConnection BadHandshakeTest Exit0
  * @run driver BadHandshakeTest
  */
 public class BadHandshakeTest {
