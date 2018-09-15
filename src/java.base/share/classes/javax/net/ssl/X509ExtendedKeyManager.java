@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.security.Principal;
  * Abstract class that provides for extension of the X509KeyManager
  * interface.
  * <P>
- * Methods in this class should be overriden to provide actual
+ * Methods in this class should be overridden to provide actual
  * implementations.
  *
  * @since 1.5
