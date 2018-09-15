@@ -3880,7 +3880,6 @@ void TemplateTable::multianewarray() {
 void TemplateTable::arraylength() {
   transition(atos, itos);
 
-  Label LnoException;
   __ verify_oop(R17_tos);
   __ null_check_throw(R17_tos, arrayOopDesc::length_offset_in_bytes(), R11_scratch1);
   __ lwa(R17_tos, arrayOopDesc::length_offset_in_bytes(), R17_tos);
@@ -4081,7 +4080,7 @@ void TemplateTable::monitorenter() {
                     found_same_obj  = CCR1,
                     reached_limit   = CCR6;
   {
-    Label Lloop, Lentry;
+    Label Lloop;
     Register Rlimit = Rcurrent_monitor;
 
     // Set up search loop - start with topmost monitor.

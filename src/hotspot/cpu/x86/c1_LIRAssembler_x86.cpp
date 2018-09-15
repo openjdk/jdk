@@ -1778,7 +1778,6 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
     __ bind(profile_cast_success);
     __ mov_metadata(mdo, md->constant_encoding());
     __ load_klass(recv, obj);
-    Label update_done;
     type_profile_helper(mdo, md, data, recv, success);
     __ jmp(*success);
 
@@ -1861,7 +1860,6 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
       __ bind(profile_cast_success);
       __ mov_metadata(mdo, md->constant_encoding());
       __ load_klass(recv, value);
-      Label update_done;
       type_profile_helper(mdo, md, data, recv, &done);
       __ jmpb(done);
 
@@ -3048,7 +3046,6 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   // if we don't know anything, just go through the generic arraycopy
   if (default_type == NULL) {
-    Label done;
     // save outgoing arguments on stack in case call to System.arraycopy is needed
     // HACK ALERT. This code used to push the parameters in a hardwired fashion
     // for interpreter calling conventions. Now we have to do it in new style conventions.

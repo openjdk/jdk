@@ -3492,8 +3492,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   // No exception case
   __ bind(noException);
 
-  Label no_adjust, bail, no_prefix, not_special;
+  Label no_adjust;
+#ifdef ASSERT
+  Label bail;
+#endif
   if (SafepointMechanism::uses_thread_local_poll() && !cause_return) {
+    Label no_prefix, not_special;
+
     // If our stashed return pc was modified by the runtime we avoid touching it
     __ cmpptr(rbx, Address(rbp, wordSize));
     __ jccb(Assembler::notEqual, no_adjust);

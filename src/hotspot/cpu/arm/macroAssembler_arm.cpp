@@ -260,7 +260,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   add(count_temp, count_temp, 1);
 
-  Label L_loop, L_setnz_and_fail, L_fail;
+  Label L_loop, L_fail;
 
   // Top of search loop
   bind(L_loop);

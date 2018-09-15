@@ -2758,7 +2758,6 @@ class StubGenerator: public StubCodeGenerator {
     Label L_doLast;
     Label L_do44;
     Label L_do52;
-    Label L_do60;
 
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
@@ -3296,8 +3295,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register cs        = R27;
 
     // Labels
-    Label SKIP_LSHIFT, SKIP_DIAGONAL_SUM, SKIP_ADDONE, SKIP_MULADD, SKIP_LOOP_SQUARE;
-    Label LOOP_LSHIFT, LOOP_DIAGONAL_SUM, LOOP_ADDONE, LOOP_MULADD, LOOP_SQUARE;
+    Label SKIP_LSHIFT, SKIP_DIAGONAL_SUM, SKIP_ADDONE, SKIP_LOOP_SQUARE;
+    Label LOOP_LSHIFT, LOOP_DIAGONAL_SUM, LOOP_ADDONE, LOOP_SQUARE;
 
     // Save non-volatile regs (frameless).
     int current_offs = -8;

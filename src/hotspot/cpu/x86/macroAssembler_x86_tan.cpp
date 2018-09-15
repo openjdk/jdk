@@ -501,7 +501,7 @@ void MacroAssembler::fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xm
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
   Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1, L_2TAG_PACKET_7_0_1;
   Label L_2TAG_PACKET_8_0_1, L_2TAG_PACKET_9_0_1, L_2TAG_PACKET_10_0_1, L_2TAG_PACKET_11_0_1;
-  Label L_2TAG_PACKET_12_0_1, L_2TAG_PACKET_13_0_1, L_2TAG_PACKET_14_0_1, B1_2, B1_3, B1_4, B1_5, start;
+  Label L_2TAG_PACKET_12_0_1, L_2TAG_PACKET_13_0_1, L_2TAG_PACKET_14_0_1, B1_2, B1_4, start;
 
   address ONEHALF = (address)_ONEHALF_tan;
   address MUL16 = (address)_MUL16;
@@ -1089,7 +1089,7 @@ void MacroAssembler::libm_tancot_huge(XMMRegister xmm0, XMMRegister xmm1, Regist
   Label B1_1, B1_2, B1_3, B1_4, B1_5, B1_6, B1_7, B1_8, B1_9, B1_10, B1_11, B1_12;
   Label B1_13, B1_14, B1_15, B1_16, B1_17, B1_18, B1_19, B1_20, B1_21, B1_22, B1_23;
   Label B1_24, B1_25, B1_26, B1_27, B1_28, B1_29, B1_30, B1_31, B1_32, B1_33, B1_34;
-  Label B1_35, B1_36, B1_37, B1_38, B1_39, B1_40, B1_41, B1_42, B1_43, B1_44, B1_45, B1_46;
+  Label B1_35, B1_36, B1_37, B1_38, B1_39, B1_40, B1_43;
 
   assert_different_registers(ebx, eax, ecx, edx, esi, edi, ebp, esp);
 
@@ -1966,9 +1966,8 @@ ATTRIBUTE_ALIGNED(16) juint _static_const_table_tan[] =
 void MacroAssembler::fast_tan(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ecx, Register edx, Register tmp) {
 
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
-  Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
-  Label L_2TAG_PACKET_8_0_2, L_2TAG_PACKET_9_0_2, L_2TAG_PACKET_10_0_2, L_2TAG_PACKET_11_0_2;
-  Label L_2TAG_PACKET_12_0_2, L_2TAG_PACKET_13_0_2, B1_3, B1_5, start;
+  Label L_2TAG_PACKET_4_0_2;
+  Label start;
 
   assert_different_registers(tmp, eax, ecx, edx);
 

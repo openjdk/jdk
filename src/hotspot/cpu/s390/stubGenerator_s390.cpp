@@ -285,11 +285,6 @@ class StubGenerator: public StubCodeGenerator {
       // Just pop the topmost frame ...
       //
 
-      Label ret_is_object;
-      Label ret_is_long;
-      Label ret_is_float;
-      Label ret_is_double;
-
       // Restore frame pointer.
       __ z_lg(r_entryframe_fp, _z_abi(callers_sp), Z_SP);
       // Pop frame. Done here to minimize stalls.

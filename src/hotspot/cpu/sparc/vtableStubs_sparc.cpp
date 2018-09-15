@@ -166,7 +166,6 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   Register G3_Klass = G3_scratch;
   Register G5_icholder = G5;  // Passed in as an argument
   Register G4_interface = G4_scratch;
-  Label search;
 
   // Entry arguments:
   //  G5_interface: Interface

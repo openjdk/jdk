@@ -2648,8 +2648,6 @@ void MacroAssembler::compiler_lock_object(Register Roop, Register Rmark,
      inc_counter((address) counters->total_entry_count_addr(), Rmark, Rscratch);
    }
 
-   Label Egress ;
-
    // Aggressively avoid the Store-before-CAS penalty
    // Defer the store into box->dhw until after the CAS
    Label IsInflated, Recursive ;
@@ -4171,7 +4169,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   Label L_main_loop_prologue;
   Label L_fold_512b, L_fold_512b_loop, L_fold_128b;
   Label L_fold_tail, L_fold_tail_loop;
-  Label L_8byte_fold_loop, L_8byte_fold_check;
+  Label L_8byte_fold_check;
 
   const Register tmp[CRC32_TMP_REG_NUM] = {L0, L1, L2, L3, L4, L5, L6, G1, I0, I1, I2, I3, I4, I5, I7, O4, O5, G3};
 

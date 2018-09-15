@@ -634,7 +634,7 @@ class StubGenerator: public StubCodeGenerator {
   //      r11 < MacroAssembler::zero_words_block_size.
 
   address generate_zero_blocks() {
-    Label store_pair, loop_store_pair, done;
+    Label done;
     Label base_aligned;
 
     Register base = r10, cnt = r11;
@@ -1039,7 +1039,7 @@ class StubGenerator: public StubCodeGenerator {
     int direction = is_backwards ? -1 : 1;
     int unit = wordSize * direction;
 
-    Label Lpair, Lword, Lint, Lshort, Lbyte;
+    Label Lword, Lint, Lshort, Lbyte;
 
     assert(granularity
            && granularity <= sizeof (jlong), "Impossible granularity in copy_memory_small");
@@ -1096,7 +1096,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // <= 96 bytes do inline. Direction doesn't matter because we always
     // load all the data before writing anything
-    Label copy4, copy8, copy16, copy32, copy80, copy128, copy_big, finish;
+    Label copy4, copy8, copy16, copy32, copy80, copy_big, finish;
     const Register t2 = r5, t3 = r6, t4 = r7, t5 = r8;
     const Register t6 = r9, t7 = r10, t8 = r11, t9 = r12;
     const Register send = r17, dend = r18;
@@ -1966,7 +1966,7 @@ class StubGenerator: public StubCodeGenerator {
                                 address int_copy_entry, address oop_copy_entry,
                                 address long_copy_entry, address checkcast_copy_entry) {
 
-    Label L_failed, L_failed_0, L_objArray;
+    Label L_failed, L_objArray;
     Label L_copy_bytes, L_copy_shorts, L_copy_ints, L_copy_longs;
 
     // Input registers
@@ -4366,7 +4366,7 @@ class StubGenerator: public StubCodeGenerator {
     Register ch1 = rscratch1, ch2 = rscratch2, first = tmp3;
 
     __ push(spilled_regs, sp);
-    Label L_LOOP, L_LOOP_PROCEED, L_SMALL, L_HAS_ZERO, L_SMALL_MATCH_LOOP,
+    Label L_LOOP, L_LOOP_PROCEED, L_SMALL, L_HAS_ZERO,
         L_HAS_ZERO_LOOP, L_CMP_LOOP, L_CMP_LOOP_NOMATCH, L_SMALL_PROCEED,
         L_SMALL_HAS_ZERO_LOOP, L_SMALL_CMP_LOOP_NOMATCH, L_SMALL_CMP_LOOP,
         L_POST_LOOP, L_CMP_LOOP_LAST_CMP, L_HAS_ZERO_LOOP_NOMATCH,
