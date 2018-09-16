@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.net.*;
  * authentication is necessary, and whether created sockets should
  * begin handshaking in client or server mode.  The state
  * inherited by the created <code>SSLSocket</code> can be
- * overriden by calling the appropriate methods.
+ * overridden by calling the appropriate methods.
  *
  * @see java.net.ServerSocket
  * @see SSLSocket

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1318,7 +1318,7 @@ public abstract class Provider extends Properties {
      * {@code "putProviderProperty."+name}, where {@code name} is
      * the provider name, to see if it's ok to set this provider's property
      * values. If the default implementation of {@code checkSecurityAccess}
-     * is used (that is, that method is not overriden), then this results in
+     * is used (that is, that method is not overridden), then this results in
      * a call to the security manager's {@code checkPermission} method with
      * a {@code SecurityPermission("putProviderProperty."+name)}
      * permission.
@@ -1410,7 +1410,7 @@ public abstract class Provider extends Properties {
      * the provider name, to see if it's ok to remove this provider's
      * properties. If the default implementation of
      * {@code checkSecurityAccess} is used (that is, that method is not
-     * overriden), then this results in a call to the security manager's
+     * overridden), then this results in a call to the security manager's
      * {@code checkPermission} method with a
      * {@code SecurityPermission("removeProviderProperty."+name)}
      * permission.

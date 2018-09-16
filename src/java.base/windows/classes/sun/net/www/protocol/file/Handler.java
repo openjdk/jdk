@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class Handler extends URLStreamHandler {
     }
 
     /**
-     * Template method to be overriden by Java Plug-in. [stanleyh]
+     * Template method to be overridden by Java Plug-in. [stanleyh]
      */
     protected URLConnection createFileURLConnection(URL url, File file) {
         return new FileURLConnection(url, file);
