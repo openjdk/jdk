@@ -25,6 +25,12 @@
 
 package java.lang.reflect;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import jdk.internal.misc.SharedSecrets;
+
 /**
  * InvocationTargetException is a checked exception that wraps
  * an exception thrown by an invoked method or constructor.
@@ -46,16 +52,6 @@ public class InvocationTargetException extends ReflectiveOperationException {
      */
     private static final long serialVersionUID = 4085088731926701167L;
 
-     /**
-     * This field holds the target if the
-     * InvocationTargetException(Throwable target) constructor was
-     * used to instantiate the object
-     *
-     * @serial
-     *
-     */
-    private Throwable target;
-
     /**
      * Constructs an {@code InvocationTargetException} with
      * {@code null} as the target exception.
@@ -70,8 +66,7 @@ public class InvocationTargetException extends ReflectiveOperationException {
      * @param target the target exception
      */
     public InvocationTargetException(Throwable target) {
-        super((Throwable)null);  // Disallow initCause
-        this.target = target;
+        super(null, target);  // Disallow initCause
     }
 
     /**
@@ -82,8 +77,7 @@ public class InvocationTargetException extends ReflectiveOperationException {
      * @param s      the detail message
      */
     public InvocationTargetException(Throwable target, String s) {
-        super(s, null);  // Disallow initCause
-        this.target = target;
+        super(s, target);  // Disallow initCause
     }
 
     /**
@@ -96,17 +90,42 @@ public class InvocationTargetException extends ReflectiveOperationException {
      * @return the thrown target exception (cause of this exception).
      */
     public Throwable getTargetException() {
-        return target;
+        return super.getCause();
     }
 
     /**
-     * Returns the cause of this exception (the thrown target exception,
-     * which may be {@code null}).
+     * Serializable fields for UndeclaredThrowableException.
      *
-     * @return  the cause of this exception.
-     * @since   1.4
+     * @serialField target Throwable
      */
-    public Throwable getCause() {
-        return target;
+    private static final ObjectStreamField[] serialPersistentFields = {
+        new ObjectStreamField("target", Throwable.class)
+    };
+
+    /*
+     * Reconstitutes the InvocationTargetException instance from a stream
+     * and initialize the cause properly when deserializing from an older
+     * version.
+     *
+     * The getException and getCause method returns the private "target" field
+     * in the older implementation and InvocationTargetException::cause
+     * was set to null.
+     */
+    private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField fields = s.readFields();
+        Throwable exception = (Throwable) fields.get("target", null);
+        if (exception != null) {
+            SharedSecrets.getJavaLangAccess().setCause(this, exception);
+        }
+    }
+
+    /*
+     * To maintain compatibility with older implementation, write a serial
+     * "target" field with the cause as the value.
+     */
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        ObjectOutputStream.PutField fields = out.putFields();
+        fields.put("target", super.getCause());
+        out.writeFields();
     }
 }

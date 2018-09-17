@@ -466,6 +466,16 @@ public class Throwable implements Serializable {
         return this;
     }
 
+    /*
+     * This is called by readObject of a few exceptions such as
+     * ClassNotFoundException and ExceptionInInitializerError to deserialize
+     * a stream output from an older runtime version where the cause may
+     * have set to null.
+     */
+    final void setCause(Throwable t) {
+        this.cause = t;
+    }
+
     /**
      * Returns a short description of this throwable.
      * The result is the concatenation of:
