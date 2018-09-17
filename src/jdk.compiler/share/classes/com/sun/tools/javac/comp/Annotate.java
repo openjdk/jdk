@@ -1115,7 +1115,9 @@ public class Annotate {
         public void visitNewClass(JCNewClass tree) {
             scan(tree.encl);
             scan(tree.typeargs);
-            scan(tree.clazz);
+            if (tree.def == null) {
+                scan(tree.clazz);
+            }
             scan(tree.args);
             // the anonymous class instantiation if any will be visited separately.
         }
