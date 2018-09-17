@@ -70,6 +70,9 @@ enum CipherSuite {
     TLS_AES_256_GCM_SHA384(
             0x1302, true, "TLS_AES_256_GCM_SHA384",
             ProtocolVersion.PROTOCOLS_OF_13, B_AES_256_GCM_IV, H_SHA384),
+    TLS_CHACHA20_POLY1305_SHA256(
+            0x1303, true, "TLS_CHACHA20_POLY1305_SHA256",
+            ProtocolVersion.PROTOCOLS_OF_13, B_CC20_P1305, H_SHA256),
 
     // Suite B compliant cipher suites, see RFC 6460.
     //
@@ -87,11 +90,22 @@ enum CipherSuite {
             ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_ECDSA, B_AES_128_GCM, M_NULL, H_SHA256),
 
+    // Not suite B, but we want it to position the suite early in the list
+    // of 1.2 suites.
+    TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256(
+            0xCCA9, true, "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDHE_ECDSA, B_CC20_P1305, M_NULL, H_SHA256),
+
     // AES_256(GCM)
     TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384(
             0xC030, true, "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384", "",
             ProtocolVersion.PROTOCOLS_OF_12,
             K_ECDHE_RSA, B_AES_256_GCM, M_NULL, H_SHA384),
+    TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256(
+            0xCCA8, true, "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_ECDHE_RSA, B_CC20_P1305, M_NULL, H_SHA256),
     TLS_RSA_WITH_AES_256_GCM_SHA384(
             0x009D, true, "TLS_RSA_WITH_AES_256_GCM_SHA384", "",
             ProtocolVersion.PROTOCOLS_OF_12,
@@ -108,6 +122,10 @@ enum CipherSuite {
             0x009F, true, "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384", "",
             ProtocolVersion.PROTOCOLS_OF_12,
             K_DHE_RSA, B_AES_256_GCM, M_NULL, H_SHA384),
+    TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256(
+            0xCCAA, true, "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256", "",
+            ProtocolVersion.PROTOCOLS_OF_12,
+            K_DHE_RSA, B_CC20_P1305, M_NULL, H_SHA256),
     TLS_DHE_DSS_WITH_AES_256_GCM_SHA384(
             0x00A3, true, "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384", "",
             ProtocolVersion.PROTOCOLS_OF_12,
@@ -480,8 +498,6 @@ enum CipherSuite {
 
     // Definition of the CipherSuites that are not supported but the names
     // are known.
-    TLS_CHACHA20_POLY1305_SHA256(                    // TLS 1.3
-            "TLS_CHACHA20_POLY1305_SHA256", 0x1303),
     TLS_AES_128_CCM_SHA256(                          // TLS 1.3
             "TLS_AES_128_CCM_SHA256", 0x1304),
     TLS_AES_128_CCM_8_SHA256(                        // TLS 1.3
