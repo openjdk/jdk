@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED  0
 #define STATUS_FAILED  2
@@ -71,8 +58,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -128,8 +114,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw002_check(JNIEnv *env,
     jvmtiError err;
     jfieldID fid;
 
-    fid = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG(env, cls),
-         "fld1", "I");
+    fid = env->GetStaticFieldID(cls, "fld1", "I");
 
     if (!caps.can_generate_field_modification_events) {
         err = jvmti->SetFieldModificationWatch(cls, fid);
@@ -171,6 +156,4 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw002_check(JNIEnv *env,
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

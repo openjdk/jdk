@@ -31,7 +31,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import jdk.test.lib.JDKToolLauncher;
 
 /**
@@ -39,8 +39,6 @@ import jdk.test.lib.JDKToolLauncher;
  * @summary Test deadlock detection
  * @requires vm.hasSAandCanAttach
  * @library /test/lib
- * @library /lib/testlibrary
- * @build jdk.testlibrary.*
  * @build jdk.test.lib.apps.* jdk.test.lib.Platform
  * @build DeadlockDetectionTest
  * @run main DeadlockDetectionTest

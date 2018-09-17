@@ -23,7 +23,7 @@
 
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 import java.io.IOException;
 import java.net.ServerSocket;

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.testlibrary.Asserts;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import sun.jvmstat.monitor.MonitorException;
 import sun.jvmstat.monitor.MonitoredHost;

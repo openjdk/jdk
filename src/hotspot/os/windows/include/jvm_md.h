@@ -63,7 +63,7 @@ typedef struct {
 #include <stddef.h>  /* For uintptr_t */
 #include <stdlib.h>
 
-#define JVM_MAXPATHLEN _MAX_PATH
+#define JVM_MAXPATHLEN 1024
 
 #define JVM_R_OK    4
 #define JVM_W_OK    2

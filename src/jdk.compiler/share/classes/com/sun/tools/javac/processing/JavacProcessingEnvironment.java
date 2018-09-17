@@ -1536,13 +1536,12 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             JCCompilationUnit topLevel;
             public void visitTopLevel(JCCompilationUnit node) {
                 if (node.packge != null) {
-                    if (node.packge.package_info != null) {
+                    if (isPkgInfo(node.sourcefile, Kind.SOURCE)) {
                         node.packge.package_info.reset();
                     }
                     node.packge.reset();
                 }
-                boolean isModuleInfo = node.sourcefile.isNameCompatible("module-info", Kind.SOURCE);
-                if (isModuleInfo) {
+                if (isModuleInfo(node.sourcefile, Kind.SOURCE)) {
                     node.modle.reset();
                     node.modle.completer = sym -> modules.enter(List.of(node), node.modle.module_info);
                     node.modle.module_info.reset();

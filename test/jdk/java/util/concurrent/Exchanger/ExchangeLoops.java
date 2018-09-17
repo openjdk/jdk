@@ -35,7 +35,7 @@
  * @test
  * @bug 4486658
  * @summary checks to make sure a pipeline of exchangers passes data.
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -44,7 +44,7 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class ExchangeLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

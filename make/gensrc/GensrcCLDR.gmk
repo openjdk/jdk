@@ -37,9 +37,17 @@ CLDR_BASE_LOCALES := "en-US"
 ZONENAME_TEMPLATE := $(TOPDIR)/src/java.base/share/classes/java/time/format/ZoneName.java.template
 TZDATA_DIR := $(TOPDIR)/make/data/tzdata
 
-$(CLDR_BASEMETAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
-    $(wildcard $(CLDRSRCDIR)/common/main/en*.xml) \
-    $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml) \
+# tzmappings generation for Windows.
+# Since the rule is shared with CLDR_BASEMETAINFO_FILE target, note that
+# just removing the target tzmappings will not recreate the tzmappings file.
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  CLDR_WINTZMAPPINGS := $(GENSRC_BASEDIR)/windows/conf/tzmappings
+  $(CLDR_WINTZMAPPINGS): $(CLDR_BASEMETAINFO_FILE)
+endif
+
+$(CLDR_BASEMETAINFO_FILE): $(wildcard $(CLDRSRCDIR)/dtd/*.dtd) \
+    $(wildcard $(CLDRSRCDIR)/main/en*.xml) \
+    $(wildcard $(CLDRSRCDIR)/supplemental/*.xml) \
     $(ZONENAME_TEMPLATE) \
     $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(GENSRC_BASEDIR)
@@ -50,14 +58,14 @@ $(CLDR_BASEMETAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
 	    -zntempfile $(ZONENAME_TEMPLATE) \
 	    -tzdatadir $(TZDATA_DIR)
 
-$(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
-    $(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
-    $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml) \
+$(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/dtd/*.dtd) \
+    $(wildcard $(CLDRSRCDIR)/main/*.xml) \
+    $(wildcard $(CLDRSRCDIR)/supplemental/*.xml) \
     $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(GENSRC_DIR)
 	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) \
 	    -baselocales $(CLDR_BASE_LOCALES) \
 	    -o $(GENSRC_DIR)
 
-GENSRC_JAVA_BASE += $(CLDR_BASEMETAINFO_FILE)
+GENSRC_JAVA_BASE += $(CLDR_BASEMETAINFO_FILE) $(CLDR_WINTZMAPPINGS)
 GENSRC_JDK_LOCALEDATA += $(CLDR_METAINFO_FILE)

@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import jdk.test.lib.Platform;
 
 /**
@@ -39,7 +39,6 @@ import jdk.test.lib.Platform;
  *
  * @requires vm.hasSAandCanAttach
  * @library /test/lib
- * @library /lib/testlibrary
  * @modules java.management
  *          jdk.hotspot.agent/sun.jvm.hotspot
  *

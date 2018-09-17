@@ -28,23 +28,8 @@
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_ARG1(x)
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_ARG1(x) x
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 /* ============================================================================= */
 
@@ -201,8 +186,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     NSK_DISPLAY0("Create first JVMTI env.\n");
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti_1), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti_1, JVMTI_VERSION_1_1);
     if (res < 0) {
         NSK_COMPLAIN0("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -254,6 +238,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 /* ============================================================================= */
 
-#ifdef __cplusplus
 }
-#endif

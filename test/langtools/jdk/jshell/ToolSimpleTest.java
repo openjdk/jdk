@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801
+ * @bug 8153716 8143955 8151754 8150382 8153920 8156910 8131024 8160089 8153897 8167128 8154513 8170015 8170368 8172102 8172103  8165405 8173073 8173848 8174041 8173916 8174028 8174262 8174797 8177079 8180508 8177466 8172154 8192979 8191842 8198573 8198801 8210596
  * @summary Simple jshell tool tests
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -71,6 +71,22 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommand(a, "/** hoge ", ""),
                 (a) -> assertCommand(a, "baz **/", ""),
                 (a) -> assertCommand(a, "int v", "v ==> 0")
+        );
+    }
+
+    @Test
+    public void testRawString() {
+         test(false, new String[]{"--enable-preview", "--no-startup"},
+                 (a) -> assertCommand(a, "String s = `abc`", "s ==> \"abc\""),
+                 (a) -> assertCommand(a, "String a = `abc", ""),
+                 (a) -> assertCommand(a, "def`", "a ==> \"abc\\ndef\""),
+                 (a) -> assertCommand(a, "String bj = ``Hi, `Bob` and ```Jim```.``", "bj ==> \"Hi, `Bob` and ```Jim```.\""),
+                 (a) -> assertCommand(a, "String hw = ````````````", ""),
+                 (a) -> assertCommand(a, "Hello, world", ""),
+                 (a) -> assertCommand(a, "````````````;", "hw ==> \"\\nHello, world\\n\""),
+                 (a) -> assertCommand(a, "String uc = `\\u000d\\u000a`", "uc ==> \"\\\\u000d\\\\u000a\""),
+                 (a) -> assertCommand(a, "String es = `\\(.\\)\\1`", "es ==> \"\\\\(.\\\\)\\\\1\""),
+                 (a) -> assertCommand(a, "String end = `abc`+`def`+`ghi`", "end ==> \"abcdefghi\"")
         );
     }
 

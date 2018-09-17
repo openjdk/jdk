@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,7 @@ public class DebuggerThreadTest extends TestScaffold {
      * Move to top ThreadGroup and dump all threads.
      */
     public void dumpThreads() {
+        int finishedThreads = 0;
         ThreadGroup tg = Thread.currentThread().getThreadGroup();
         ThreadGroup parent = tg.getParent();
         while (parent != null) {
@@ -77,7 +78,14 @@ public class DebuggerThreadTest extends TestScaffold {
         int gotThreads = tg.enumerate(list, true);
         for (int i = 0; i < Math.min(gotThreads, list.length); i++){
             Thread t = list[i];
-            String groupName = t.getThreadGroup().getName();
+            ThreadGroup tga = t.getThreadGroup();
+            String groupName;
+            if (tga == null) {
+                groupName = "<completed>";
+                finishedThreads++ ;
+            } else {
+                groupName = tga.getName();
+            }
 
             System.out.println("Thread [" + i + "] group = '" +
                                groupName +
@@ -89,7 +97,10 @@ public class DebuggerThreadTest extends TestScaffold {
                 failure("FAIL: non-daemon thread '" + t.getName() +
                         "' found in ThreadGroup '" + groupName + "'");
             }
-
+        }
+        if (finishedThreads > 0 ) {
+            failure("FAIL: " + finishedThreads +
+                    " threads completed while VM suspended.");
         }
     }
 

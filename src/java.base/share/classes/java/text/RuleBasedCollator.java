@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,7 @@ public class RuleBasedCollator extends Collator{
      * Compares the character data stored in two different strings based on the
      * collation rules.  Returns information about whether a string is less
      * than, greater than or equal to another string in a language.
-     * This can be overriden in a subclass.
+     * This can be overridden in a subclass.
      *
      * @exception NullPointerException if <code>source</code> or <code>target</code> is null.
      */
@@ -567,7 +567,7 @@ public class RuleBasedCollator extends Collator{
     /**
      * Transforms the string into a series of characters that can be compared
      * with CollationKey.compareTo. This overrides java.text.Collator.getCollationKey.
-     * It can be overriden in a subclass.
+     * It can be overridden in a subclass.
      */
     public synchronized CollationKey getCollationKey(String source)
     {

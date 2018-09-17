@@ -24,12 +24,12 @@
 /**
  * @test
  * @bug 8031320
- * @summary Verify RTMTotalCountIncrRate option processing on CPU with
+ * @summary Verify RTMTotalCountIncrRate option processing on CPU and OS with
  *          rtm support and on VM with rtm locking support.
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
+ * @requires vm.rtm.cpu & vm.rtm.compiler
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission

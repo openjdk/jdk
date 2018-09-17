@@ -7982,7 +7982,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
                                    Register rtmp, XMMRegister xtmp) {
   ShortBranchVerifier sbv(this);
   assert_different_registers(to, value, count, rtmp);
-  Label L_exit, L_skip_align1, L_skip_align2, L_fill_byte;
+  Label L_exit;
   Label L_fill_2_bytes, L_fill_4_bytes;
 
   int shift = -1;
@@ -8017,8 +8017,10 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
   cmpl(count, 2<<shift); // Short arrays (< 8 bytes) fill by element
   jcc(Assembler::below, L_fill_4_bytes); // use unsigned cmp
   if (!UseUnalignedLoadStores && !aligned && (t == T_BYTE || t == T_SHORT)) {
+    Label L_skip_align2;
     // align source address at 4 bytes address boundary
     if (t == T_BYTE) {
+      Label L_skip_align1;
       // One byte misalignment happens only for byte arrays
       testptr(to, 1);
       jccb(Assembler::zero, L_skip_align1);
@@ -8183,6 +8185,7 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
   jccb(Assembler::zero, L_fill_2_bytes);
   movl(Address(to, 0), value);
   if (t == T_BYTE || t == T_SHORT) {
+    Label L_fill_byte;
     addptr(to, 4);
     BIND(L_fill_2_bytes);
     // fill trailing 2 bytes
@@ -8246,7 +8249,7 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   negptr(len);
 
   if (UseSSE42Intrinsics || UseAVX >= 2) {
-    Label L_chars_8_check, L_copy_8_chars, L_copy_8_chars_exit;
+    Label L_copy_8_chars, L_copy_8_chars_exit;
     Label L_chars_16_check, L_copy_16_chars, L_copy_16_chars_exit;
 
     if (UseAVX >= 2) {
@@ -8812,9 +8815,8 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
 void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
   Register result, Register tmp1, Register tmp2, XMMRegister rymm0, XMMRegister rymm1, XMMRegister rymm2){
   assert(UseSSE42Intrinsics, "SSE4.2 must be enabled.");
-  Label VECTOR64_LOOP, VECTOR64_TAIL, VECTOR64_NOT_EQUAL, VECTOR32_TAIL;
-  Label VECTOR32_LOOP, VECTOR16_LOOP, VECTOR8_LOOP, VECTOR4_LOOP;
-  Label VECTOR16_TAIL, VECTOR8_TAIL, VECTOR4_TAIL;
+  Label VECTOR16_LOOP, VECTOR8_LOOP, VECTOR4_LOOP;
+  Label VECTOR8_TAIL, VECTOR4_TAIL;
   Label VECTOR32_NOT_EQUAL, VECTOR16_NOT_EQUAL, VECTOR8_NOT_EQUAL, VECTOR4_NOT_EQUAL;
   Label SAME_TILL_END, DONE;
   Label BYTES_LOOP, BYTES_TAIL, BYTES_NOT_EQUAL;
@@ -8827,6 +8829,8 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
 
   if ((UseAVX > 2) &&
       VM_Version::supports_avx512vlbw()) {
+    Label VECTOR64_LOOP, VECTOR64_NOT_EQUAL, VECTOR32_TAIL;
+
     set_vector_masking();  // opening of the stub context for programming mask registers
     cmpq(length, 64);
     jcc(Assembler::less, VECTOR32_TAIL);
@@ -8848,7 +8852,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
     testq(tmp1, tmp1);
     jcc(Assembler::zero, SAME_TILL_END);
 
-    bind(VECTOR64_TAIL);
+    //bind(VECTOR64_TAIL);
     // AVX512 code to compare upto 63 byte vectors.
     // Save k1
     kmovql(k3, k1);
@@ -8881,6 +8885,7 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
   jcc(Assembler::less, VECTOR4_TAIL);
 
   if (UseAVX >= 2) {
+    Label VECTOR16_TAIL, VECTOR32_LOOP;
 
     cmpq(length, 16);
     jcc(Assembler::equal, VECTOR16_LOOP);
@@ -9231,7 +9236,7 @@ void MacroAssembler::lshift_by_1(Register x, Register len, Register z, Register 
  */
 void MacroAssembler::square_to_len(Register x, Register len, Register z, Register zlen, Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register rdxReg, Register raxReg) {
 
-  Label L_second_loop, L_second_loop_exit, L_third_loop, L_third_loop_exit, fifth_loop, fifth_loop_exit, L_last_x, L_multiply;
+  Label L_second_loop, L_second_loop_exit, L_third_loop, L_third_loop_exit, L_last_x, L_multiply;
   push(tmp1);
   push(tmp2);
   push(tmp3);

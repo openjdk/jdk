@@ -2057,7 +2057,9 @@ public class Lower extends TreeTranslator {
 
     // evaluate and discard the first expression, then evaluate the second.
     JCExpression makeComma(final JCExpression expr1, final JCExpression expr2) {
-        return abstractRval(expr1, discarded -> expr2);
+        JCExpression res = make.LetExpr(List.of(make.Exec(expr1)), expr2);
+        res.type = expr2.type;
+        return res;
     }
 
 /**************************************************************************

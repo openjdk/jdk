@@ -38,6 +38,7 @@
 #include "oops/method.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vm_operations.hpp"
 
@@ -298,15 +299,25 @@ AOTCodeHeap::AOTCodeHeap(AOTLib* lib) :
 void AOTCodeHeap::publish_aot(const methodHandle& mh, AOTMethodData* method_data, int code_id) {
   // The method may be explicitly excluded by the user.
   // Or Interpreter uses an intrinsic for this method.
-  if (CompilerOracle::should_exclude(mh) || !AbstractInterpreter::can_be_compiled(mh)) {
+  // Or method has breakpoints.
+  if (CompilerOracle::should_exclude(mh) ||
+      !AbstractInterpreter::can_be_compiled(mh) ||
+      (mh->number_of_breakpoints() > 0)) {
     return;
   }
+  // Make sure no break points were set in the method in case of a safepoint
+  // in the following code until aot code is registered.
+  NoSafepointVerifier nsv;
 
   address code = method_data->_code;
   const char* name = method_data->_name;
   aot_metadata* meta = method_data->_meta;
 
   if (meta->scopes_pcs_begin() == meta->scopes_pcs_end()) {
+    // Switch off NoSafepointVerifier because log_info() may cause safepoint
+    // and it is fine because aot code will not be registered here.
+    PauseNoSafepointVerifier pnsv(&nsv);
+
     // When the AOT compiler compiles something big we fail to generate metadata
     // in CodeInstaller::gather_metadata. In that case the scopes_pcs_begin == scopes_pcs_end.
     // In all successful cases we always have 2 entries of scope pcs.
@@ -343,6 +354,7 @@ void AOTCodeHeap::publish_aot(const methodHandle& mh, AOTMethodData* method_data
 #endif
     Method::set_code(mh, aot);
     if (PrintAOT || (PrintCompilation && PrintAOT)) {
+      PauseNoSafepointVerifier pnsv(&nsv); // aot code is registered already
       aot->print_on(tty, NULL);
     }
     // Publish oop only after we are visible to CompiledMethodIterator
@@ -917,16 +929,6 @@ int AOTCodeHeap::verify_icholder_relocations() {
   return count;
 }
 #endif
-
-void AOTCodeHeap::flush_evol_dependents_on(InstanceKlass* dependee) {
-  for (int index = 0; index < _method_count; index++) {
-    if (_code_to_aot[index]._state != in_use) {
-      continue; // Skip uninitialized entries.
-    }
-    AOTCompiledMethod* aot = _code_to_aot[index]._aot;
-    aot->flush_evol_dependents_on(dependee);
-  }
-}
 
 void AOTCodeHeap::metadata_do(void f(Metadata*)) {
   for (int index = 0; index < _method_count; index++) {

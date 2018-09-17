@@ -26,6 +26,10 @@ package org.graalvm.compiler.hotspot;
 
 import java.util.EnumSet;
 
+import jdk.internal.vm.compiler.collections.EconomicMap;
+import jdk.internal.vm.compiler.collections.EconomicSet;
+import jdk.internal.vm.compiler.collections.Equivalence;
+import jdk.internal.vm.compiler.collections.MapCursor;
 import org.graalvm.compiler.code.CompilationResult;
 import org.graalvm.compiler.core.common.CompilationIdentifier;
 import org.graalvm.compiler.core.common.cfg.AbstractBlockBase;
@@ -66,10 +70,6 @@ import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionValues;
 import org.graalvm.compiler.phases.tiers.SuitesProvider;
 import org.graalvm.compiler.word.Word;
-import jdk.internal.vm.compiler.collections.EconomicMap;
-import jdk.internal.vm.compiler.collections.EconomicSet;
-import jdk.internal.vm.compiler.collections.Equivalence;
-import jdk.internal.vm.compiler.collections.MapCursor;
 import jdk.internal.vm.compiler.word.Pointer;
 
 import jdk.vm.ci.code.CompilationRequest;
@@ -286,7 +286,7 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
     /**
      * New array stub.
      */
-    public static final ForeignCallDescriptor NEW_ARRAY = new ForeignCallDescriptor("new_array", Object.class, KlassPointer.class, int.class, boolean.class);
+    public static final ForeignCallDescriptor NEW_ARRAY = new ForeignCallDescriptor("new_array", Object.class, KlassPointer.class, int.class);
 
     /**
      * New instance stub.

@@ -5431,7 +5431,7 @@ void MacroAssembler::zero_words(Register ptr, Register cnt)
 
   BLOCK_COMMENT("zero_words {");
   cmp(cnt, (u1)zero_words_block_size);
-  Label around, done, done16;
+  Label around;
   br(LO, around);
   {
     RuntimeAddress zero_blocks =  RuntimeAddress(StubRoutines::aarch64::zero_blocks());

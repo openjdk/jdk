@@ -161,10 +161,10 @@ public abstract class AbstractFilePermissionTest {
     private int doTest() throws Exception {
 
         for (int i = 0; i < MAX_GET_FREE_PORT_TRIES; ++i) {
-            final String pp = "-Dcom.sun.management.jmxremote.port=" + jdk.testlibrary.Utils.getFreePort();
+            final String pp = "-Dcom.sun.management.jmxremote.port=" + jdk.test.lib.Utils.getFreePort();
 
             List<String> command = new ArrayList<>();
-            command.addAll(jdk.testlibrary.Utils.getVmOptions());
+            command.addAll(jdk.test.lib.Utils.getVmOptions());
             command.add(mp);
             command.add(pp);
             command.add("-cp");

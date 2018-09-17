@@ -23,7 +23,7 @@
 
 package test.java.lang.invoke.lib;
 
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /**
  * Helper class used to catch and process VirtualMachineError with message "Out
@@ -36,7 +36,7 @@ public class CodeCacheOverflowProcessor {
     /**
      * Checks if an instance of Throwable is caused by VirtualMachineError with
      * message "Out of space in CodeCache". May be used as filter in method
-     * {@code jdk.testlibrary.Utils.filterException}.
+     * {@code jdk.test.lib.Utils.filterException}.
      *
      * @param t - Throwable to check.
      * @return true if Throwable is caused by VME, false otherwise.

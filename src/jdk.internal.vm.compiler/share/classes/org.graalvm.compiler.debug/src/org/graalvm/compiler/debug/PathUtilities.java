@@ -24,8 +24,11 @@
 
 package org.graalvm.compiler.debug;
 
+import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -118,7 +121,15 @@ public class PathUtilities {
                 if (createDirectory) {
                     return Files.createDirectory(result);
                 } else {
-                    return Files.createFile(result);
+                    try {
+                        return Files.createFile(result);
+                    } catch (AccessDeniedException e) {
+                        /*
+                         * Thrown on Windows if a directory with the same name already exists, so
+                         * convert it to FileAlreadyExistsException if that's the case.
+                         */
+                        throw Files.isDirectory(result, NOFOLLOW_LINKS) ? new FileAlreadyExistsException(e.getFile()) : e;
+                    }
                 }
             } catch (FileAlreadyExistsException e) {
                 uniqueTag = "_" + dumpCounter++;

@@ -198,7 +198,7 @@ ATTRIBUTE_ALIGNED(16) juint _coeff_log10[] =
 void MacroAssembler::fast_log10(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3, XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7, Register eax, Register ecx, Register edx, Register r11) {
   Label L_2TAG_PACKET_0_0_2, L_2TAG_PACKET_1_0_2, L_2TAG_PACKET_2_0_2, L_2TAG_PACKET_3_0_2;
   Label L_2TAG_PACKET_4_0_2, L_2TAG_PACKET_5_0_2, L_2TAG_PACKET_6_0_2, L_2TAG_PACKET_7_0_2;
-  Label L_2TAG_PACKET_8_0_2, L_2TAG_PACKET_9_0_2, B1_2, B1_3, B1_4, B1_5, start;
+  Label L_2TAG_PACKET_8_0_2, L_2TAG_PACKET_9_0_2, B1_2, B1_3, B1_5, start;
 
   assert_different_registers(r11, eax, ecx, edx);
 

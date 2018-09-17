@@ -23,7 +23,7 @@
 
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandles
- * @library /lib/testlibrary /java/lang/invoke/common
+ * @library /test/lib /java/lang/invoke/common
  * @compile MethodHandlesTest.java MethodHandlesGeneralTest.java remote/RemoteExample.java
  * @run junit/othervm/timeout=2500 -XX:+IgnoreUnrecognizedVMOptions
  *                                 -XX:-VerifyDependencies

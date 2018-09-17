@@ -23,13 +23,13 @@
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /*
  * @test
  * @bug 8078490
  * @summary Test submission and execution of task without joining
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 public class SubmissionTest {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

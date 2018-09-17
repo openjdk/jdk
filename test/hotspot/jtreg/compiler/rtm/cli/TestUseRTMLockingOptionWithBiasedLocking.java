@@ -25,11 +25,11 @@
  * @test
  * @bug 8031320
  * @summary Verify processing of UseRTMLocking and UseBiasedLocking
- *          options combination on CPU and VM with rtm support.
+ *          options combination on CPU, OS, and VM with rtm support.
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
+ * @requires vm.rtm.cpu & vm.rtm.compiler
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission

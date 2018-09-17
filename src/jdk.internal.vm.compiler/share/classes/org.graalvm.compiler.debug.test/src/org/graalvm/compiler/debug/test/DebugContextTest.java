@@ -27,14 +27,16 @@ package org.graalvm.compiler.debug.test;
 import static org.graalvm.compiler.debug.DebugContext.NO_DESCRIPTION;
 import static org.graalvm.compiler.debug.DebugContext.NO_GLOBAL_METRIC_VALUES;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import jdk.internal.vm.compiler.collections.EconomicMap;
 import org.graalvm.compiler.debug.Assertions;
@@ -158,14 +160,13 @@ public class DebugContextTest {
                 }
             }
         }
-        DataInputStream in = new DataInputStream(getClass().getResourceAsStream(getClass().getSimpleName() + ".testLogging.input"));
-        byte[] buf = new byte[in.available()];
-        in.readFully(buf);
-        String threadLabel = "[thread:" + Thread.currentThread().getId() + "]";
-        String expect = new String(buf).replace("[thread:1]", threadLabel);
-
-        String log = setup.logOutput.toString();
-        Assert.assertEquals(expect, log);
+        String expected;
+        try (BufferedReader input = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(getClass().getSimpleName() + ".testLogging.input")))) {
+            String threadLabel = "[thread:" + Thread.currentThread().getId() + "]";
+            expected = input.lines().collect(Collectors.joining(System.lineSeparator(), "", System.lineSeparator())).replace("[thread:1]", threadLabel);
+        }
+        String logged = setup.logOutput.toString();
+        Assert.assertEquals(expected, logged);
     }
 
     @Test

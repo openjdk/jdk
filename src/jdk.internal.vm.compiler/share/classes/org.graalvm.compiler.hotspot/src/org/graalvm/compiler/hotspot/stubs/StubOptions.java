@@ -25,8 +25,8 @@
 package org.graalvm.compiler.hotspot.stubs;
 
 import org.graalvm.compiler.options.Option;
-import org.graalvm.compiler.options.OptionType;
 import org.graalvm.compiler.options.OptionKey;
+import org.graalvm.compiler.options.OptionType;
 
 //JaCoCo Exclude
 
@@ -43,14 +43,5 @@ public class StubOptions {
 
     @Option(help = "Trace execution of the stub that routes an exception to a handler in the calling frame.", type = OptionType.Debug)
     static final OptionKey<Boolean> TraceUnwindStub = new OptionKey<>(false);
-
-    @Option(help = "Trace execution of slow path stub for array allocation.", type = OptionType.Debug)
-    static final OptionKey<Boolean> TraceNewArrayStub = new OptionKey<>(false);
-
-    @Option(help = "Trace execution of slow path stub for non-array object allocation.", type = OptionType.Debug)
-    static final OptionKey<Boolean> TraceNewInstanceStub = new OptionKey<>(false);
-
-    @Option(help = "Force non-array object allocation to always use the slow path.", type = OptionType.Debug)
-    static final OptionKey<Boolean> ForceUseOfNewInstanceStub = new OptionKey<>(false);
     //@formatter:on
 }

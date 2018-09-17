@@ -28,21 +28,8 @@
 #include "JVMTITools.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -311,10 +298,8 @@ void redefine(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cls) {
     jvmtiError err;
 
     classDef.klass = cls;
-    classDef.class_byte_count =
-        JNI_ENV_PTR(env)->GetArrayLength(JNI_ENV_ARG(env, classBytes));
-    classDef.class_bytes = (unsigned char *)
-        JNI_ENV_PTR(env)->GetByteArrayElements(JNI_ENV_ARG(env, classBytes), NULL);
+    classDef.class_byte_count = env->GetArrayLength(classBytes);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
 
     if (printdump == JNI_TRUE) {
         printf(">>> about to call RedefineClasses %d\n", redefinesCount);
@@ -615,8 +600,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -713,24 +697,21 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
         !caps.can_get_line_numbers ||
         !caps.can_access_local_variables) return;
 
-    classBytes = (jbyteArray) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, bytes));
+    classBytes = (jbyteArray) env->NewGlobalRef(bytes);
 
-    midRun = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, clazz),
-         "run", "()V");
+    midRun = env->GetMethodID(clazz, "run", "()V");
     if (midRun == NULL) {
         printf("Cannot find Method ID for method run\n");
         result = STATUS_FAILED;
     }
 
-    mid1 = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, clazz),
-         "method1", "(I)V");
+    mid1 = env->GetMethodID(clazz, "method1", "(I)V");
     if (mid1 == NULL) {
         printf("Cannot find Method ID for method1\n");
         result = STATUS_FAILED;
     }
 
-    mid2 = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, clazz),
-         "method2", "(I)V");
+    mid2 = env->GetMethodID(clazz, "method2", "(I)V");
     if (mid2 == NULL) {
         printf("Cannot find Method ID for method2\n");
         result = STATUS_FAILED;
@@ -755,8 +736,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
         }
     }
 
-    fid1 = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG(env, clazz),
-        "staticInt", "I");
+    fid1 = env->GetStaticFieldID(clazz, "staticInt", "I");
     if (fid1 == NULL) {
         printf("Cannot find Field ID for staticInt\n");
         result = STATUS_FAILED;
@@ -781,8 +761,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_getReady(JNIEnv *env, jclass cls,
         }
     }
 
-    fid2 = JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG(env, clazz),
-        "instanceInt", "I");
+    fid2 = env->GetFieldID(clazz, "instanceInt", "I");
     if (fid2 == NULL) {
         printf("Cannot find Field ID for instanceInt\n");
         result = STATUS_FAILED;
@@ -848,6 +827,4 @@ Java_nsk_jvmti_RedefineClasses_redefclass027_check(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -30,7 +30,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /*
  * @test

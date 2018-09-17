@@ -39,20 +39,15 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   BUILD_LIBFDLIBM_OPTIMIZATION := HIGH
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), linux)
-  ifeq ($(OPENJDK_TARGET_CPU), ppc64)
-    BUILD_LIBFDLIBM_OPTIMIZATION := HIGH
-  else ifeq ($(OPENJDK_TARGET_CPU), ppc64le)
-    BUILD_LIBFDLIBM_OPTIMIZATION := HIGH
-  else ifeq ($(OPENJDK_TARGET_CPU), s390x)
-    BUILD_LIBFDLIBM_OPTIMIZATION := HIGH
-  else ifeq ($(OPENJDK_TARGET_CPU), aarch64)
-    BUILD_LIBFDLIBM_OPTIMIZATION := HIGH
-  endif
+# If FDLIBM_CFLAGS is non-empty we know that we can optimize
+# fdlibm when adding those extra C flags. Currently GCC,
+# and clang only.
+ifneq ($(FDLIBM_CFLAGS), )
+  BUILD_LIBFDLIBM_OPTIMIZATION := LOW
 endif
 
 LIBFDLIBM_SRC := $(TOPDIR)/src/java.base/share/native/libfdlibm
-LIBFDLIBM_CFLAGS := -I$(LIBFDLIBM_SRC)
+LIBFDLIBM_CFLAGS := -I$(LIBFDLIBM_SRC) $(FDLIBM_CFLAGS)
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
   $(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM, \
@@ -64,10 +59,6 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBFDLIBM_CFLAGS), \
       CFLAGS_windows_debug := -DLOGGING, \
       CFLAGS_aix := -qfloat=nomaf, \
-      CFLAGS_linux_ppc64 := -ffp-contract=off, \
-      CFLAGS_linux_ppc64le := -ffp-contract=off, \
-      CFLAGS_linux_s390x := -ffp-contract=off, \
-      CFLAGS_linux_aarch64 := -ffp-contract=off, \
       DISABLED_WARNINGS_gcc := sign-compare misleading-indentation array-bounds, \
       DISABLED_WARNINGS_microsoft := 4146 4244 4018, \
       ARFLAGS := $(ARFLAGS), \

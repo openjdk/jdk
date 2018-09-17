@@ -28,7 +28,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- *
+ * @requires vm.rtm.compiler
  * @run main/othervm compiler.rtm.cli.TestRTMSpinLoopCountOption
  */
 

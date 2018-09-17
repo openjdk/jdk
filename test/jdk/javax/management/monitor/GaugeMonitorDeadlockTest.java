@@ -28,7 +28,7 @@
  * or notif delivered.
  * @author Eamonn McManus
  *
- * @library /lib/testlibrary
+ * @library /test/lib
  *
  * @run clean GaugeMonitorDeadlockTest
  * @run build GaugeMonitorDeadlockTest
@@ -50,7 +50,7 @@ import javax.management.ObjectName;
 import javax.management.monitor.GaugeMonitor;
 import javax.management.monitor.GaugeMonitorMBean;
 
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class GaugeMonitorDeadlockTest {
     private static enum When {IN_GET_ATTRIBUTE, IN_NOTIFY};

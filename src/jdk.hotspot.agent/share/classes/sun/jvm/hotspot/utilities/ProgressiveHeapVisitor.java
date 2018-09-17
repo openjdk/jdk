@@ -50,6 +50,7 @@ public class ProgressiveHeapVisitor implements HeapVisitor {
     this.usedSize = usedSize;
     visitedSize = 0;
     userHeapVisitor.prologue(usedSize);
+    thunk.heapIterationFractionUpdate(0.0);
   }
 
   public boolean doObj(Oop obj) {

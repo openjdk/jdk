@@ -23,16 +23,14 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /* @test
  * @bug 6354345
  * @summary Check that multiple -agentlib statements in command line fails
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.management
- * @build jdk.testlibrary.*
  * @build DoubleAgentTest Exit0
  * @run driver DoubleAgentTest
  */

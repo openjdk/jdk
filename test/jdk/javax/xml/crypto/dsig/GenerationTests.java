@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349 8046949
- *      8046724 8079693 8177334 8205507
+ *      8046724 8079693 8177334 8205507 8210736
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
@@ -32,7 +32,7 @@
  *          jdk.httpserver/com.sun.net.httpserver
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
- * @run main/othervm/timeout=300 GenerationTests
+ * @run main/othervm/timeout=300 -Dsun.net.httpserver.nodelay=true GenerationTests
  * @author Sean Mullan
  */
 
@@ -51,7 +51,6 @@ import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;

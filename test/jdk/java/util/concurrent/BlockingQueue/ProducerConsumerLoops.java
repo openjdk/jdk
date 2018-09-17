@@ -35,7 +35,7 @@
  * @test
  * @bug 4486658
  * @summary  multiple producers and consumers using blocking queues
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -52,7 +52,7 @@ import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class ProducerConsumerLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8199433
+ * @bug 8199433 8208780
  * @run testng SelectWithConsumer
  * @summary Unit test for Selector select(Consumer), select(Consumer,long) and
  *          selectNow(Consumer)
@@ -62,9 +62,19 @@ public class SelectWithConsumer {
         var interestOps = key.interestOps();
         var notifiedOps = new AtomicInteger();
 
+        if (expectedOps == 0) {
+            // ensure select(Consumer) does not block indefinitely
+            sel.wakeup();
+        } else {
+            // ensure that the channel is ready for all expected operations
+            sel.select();
+            while ((key.readyOps() & interestOps) != expectedOps) {
+                Thread.sleep(100);
+                sel.select();
+            }
+        }
+
         // select(Consumer)
-        if (expectedOps == 0)
-            sel.wakeup(); // ensure select does not block
         notifiedOps.set(0);
         int n = sel.select(k -> {
             assertTrue(Thread.currentThread() == callerThread);

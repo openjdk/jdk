@@ -29,6 +29,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
+ *          jdk.jartool/sun.tools.jar
  * @run main LongBCP
  */
 
@@ -77,6 +78,23 @@ public class LongBCP {
         CompilerUtils.compile(sourceDir, destDir);
 
         bootCP = "-Xbootclasspath/a:" + destDir.toString();
+        pb = ProcessTools.createJavaProcessBuilder(
+            bootCP, "Hello");
+
+        output = new OutputAnalyzer(pb.start());
+        output.shouldContain("Hello World")
+              .shouldHaveExitValue(0);
+
+        // create a hello.jar
+        sun.tools.jar.Main jarTool = new sun.tools.jar.Main(System.out, System.err, "jar");
+        String helloJar = destDir.toString() + File.separator + "hello.jar";
+        if (!jarTool.run(new String[]
+            {"-cf", helloJar, "-C", destDir.toString(), "Hello.class"})) {
+            throw new RuntimeException("Could not write the Hello jar file");
+        }
+
+        // run with long bootclasspath to hello.jar
+        bootCP = "-Xbootclasspath/a:" + helloJar;
         pb = ProcessTools.createJavaProcessBuilder(
             bootCP, "Hello");
 

@@ -131,7 +131,7 @@ class JVMCIVersionCheck {
                     return;
                 }
             } else {
-                // Graal is compatible with all JDK versions as of 9 GA.
+                // Graal is compatible with all JDK versions as of 11 GA.
             }
         }
     }

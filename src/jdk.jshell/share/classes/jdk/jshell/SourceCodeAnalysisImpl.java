@@ -25,7 +25,6 @@
 
 package jdk.jshell;
 
-import jdk.jshell.SourceCodeAnalysis.Completeness;
 import com.sun.source.tree.AssignmentTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -170,7 +169,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     @Override
     public CompletionInfo analyzeCompletion(String srcInput) {
         MaskCommentsAndModifiers mcm = new MaskCommentsAndModifiers(srcInput, false);
-        if (mcm.endsWithOpenComment()) {
+        if (mcm.endsWithOpenToken()) {
             proc.debug(DBG_COMPA, "Incomplete (open comment): %s\n", srcInput);
             return new CompletionInfoImpl(DEFINITELY_INCOMPLETE, null, srcInput + '\n');
         }

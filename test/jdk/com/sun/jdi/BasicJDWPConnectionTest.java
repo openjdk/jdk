@@ -24,7 +24,6 @@
 /*
  * @test
  * @summary Smoke test for JDWP hardening
- * @library /lib/testlibrary
  * @library /test/lib
  * @run driver BasicJDWPConnectionTest
  */
@@ -37,7 +36,7 @@ import java.net.Socket;
 import java.net.SocketException;
 
 import jdk.test.lib.apps.LingeredApp;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 import java.util.ArrayList;
 import java.util.List;

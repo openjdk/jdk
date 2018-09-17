@@ -36,7 +36,7 @@
  * @test
  * @summary Only one thread should be created when a thread needs to
  * be kept alive to service a delayed task waiting in the queue.
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -44,7 +44,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class ThreadRestarts {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

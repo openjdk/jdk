@@ -27,7 +27,6 @@
  * @summary Checks various secure ways of connecting from remote jmx client
  * @author Olivier Lagneau
  * @modules java.management.rmi
- * @library /lib/testlibrary
  * @library /test/lib
  * @compile MBS_Light.java ServerDelegate.java TestSampleLoginModule.java
  * @run main/othervm/timeout=300 -DDEBUG_STANDARD -Dusername=SQE_username -Dpassword=SQE_password SecurityTest -server -mapType x.password.file -client -mapType credentials
@@ -398,7 +397,7 @@ public class SecurityTest {
 
         List<String> opts = new ArrayList<>();
         opts.add(JDKToolFinder.getJDKTool("java"));
-        opts.addAll(Arrays.asList(jdk.testlibrary.Utils.getTestJavaOpts()));
+        opts.addAll(Arrays.asList(jdk.test.lib.Utils.getTestJavaOpts()));
 
         // We need to forward some properties to the client side
         opts.add("-Dtest.src=" + System.getProperty("test.src"));

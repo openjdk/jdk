@@ -183,7 +183,7 @@ public class MemberEnter extends JCTree.Visitor {
 
         //if this is a default method, add the DEFAULT flag to the enclosing interface
         if ((tree.mods.flags & DEFAULT) != 0) {
-            m.enclClass().flags_field |= DEFAULT;
+            m.owner.flags_field |= DEFAULT;
         }
 
         Env<AttrContext> localEnv = methodEnv(tree, env);

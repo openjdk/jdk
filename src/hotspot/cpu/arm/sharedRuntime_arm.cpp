@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1566,7 +1566,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register disp_hdr    = AARCH64_ONLY(R22) NOT_AARCH64(altFP_7_11);
   const Register tmp         = AARCH64_ONLY(R23) NOT_AARCH64(R8);
 
-  Label slow_lock, slow_lock_biased, lock_done, fast_lock, leave;
+  Label slow_lock, slow_lock_biased, lock_done, fast_lock;
   if (method->is_synchronized()) {
     // The first argument is a handle to sync object (a class or an instance)
     __ ldr(sync_obj, Address(R1));
@@ -1686,7 +1686,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ b(reguard, eq);
   __ bind(reguard_done);
 
-  Label slow_unlock, unlock_done, retry;
+  Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
     __ ldr(sync_obj, Address(sync_handle));
 

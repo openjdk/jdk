@@ -769,6 +769,14 @@ ClassLoaderData::~ClassLoaderData() {
   if (_deallocate_list != NULL) {
     delete _deallocate_list;
   }
+
+  // Decrement refcounts of Symbols if created.
+  if (_name != NULL) {
+    _name->decrement_refcount();
+  }
+  if (_name_and_id != NULL) {
+    _name_and_id->decrement_refcount();
+  }
 }
 
 // Returns true if this class loader data is for the app class loader

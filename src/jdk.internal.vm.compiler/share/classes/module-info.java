@@ -74,6 +74,7 @@ module jdk.internal.vm.compiler {
         jdk.aot,
         jdk.internal.vm.compiler.management;
     exports org.graalvm.compiler.phases                 to jdk.aot;
+    exports org.graalvm.compiler.phases.common.jmx      to jdk.internal.vm.compiler.management;
     exports org.graalvm.compiler.phases.tiers           to jdk.aot;
     exports org.graalvm.compiler.printer                to jdk.aot;
     exports org.graalvm.compiler.runtime                to jdk.aot;

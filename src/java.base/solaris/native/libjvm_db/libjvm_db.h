@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define OS_SOLARIS_DTRACE_LIBJVM_DB_H
 
 #include <proc_service.h>
+#include "jni.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,7 +36,7 @@ typedef struct jvm_agent jvm_agent_t;
 
 #define JVM_DB_VERSION  1
 
-jvm_agent_t *Jagent_create(struct ps_prochandle *P, int vers);
+JNIEXPORT jvm_agent_t *Jagent_create(struct ps_prochandle *P, int vers);
 
 /*
  * Called from Jframe_iter() for each java frame.  If it returns 0, then
@@ -57,9 +58,9 @@ typedef int java_stack_f(void *cld, const prgregset_t regs, const char* name, in
  * frames were found, or if there was some unrecoverable error.  Otherwise,
  * returns the last value returned from 'func'.
  */
-int Jframe_iter(jvm_agent_t *agent, prgregset_t gregs, java_stack_f *func, void* cld);
+JNIEXPORT int Jframe_iter(jvm_agent_t *agent, prgregset_t gregs, java_stack_f *func, void* cld);
 
-void Jagent_destroy(jvm_agent_t *J);
+JNIEXPORT void Jagent_destroy(jvm_agent_t *J);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -22,7 +22,7 @@
  */
 
 import jdk.test.lib.TimeLimitedRunner;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
 import test.java.lang.invoke.lib.Helper;
 

@@ -28,21 +28,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED  0
 #define STATUS_FAILED  2
@@ -90,9 +77,7 @@ void JNICALL FieldModification(jvmtiEnv *jvmti_env, JNIEnv *env,
     actual_sig = sig;
     actual_val = new_value;
     if (actual_sig == 'L') {
-        actual_val.l =
-            JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG((JNIEnv *)env,
-                actual_val.l));
+        actual_val.l = env->NewGlobalRef(actual_val.l);
     }
     if (printdump == JNI_TRUE) {
         printf(">>> FieldModification, field: 0x%p", actual_fid);
@@ -152,8 +137,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -216,8 +200,8 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw005_getReady(JNIEnv *env,
     flds[3].val.f = 654.321F;
     flds[4].val.d = 123456.654321;
     flds[5].val.d = 654321.123456;
-    flds[6].val.l = JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, obj1));
-    flds[7].val.l = JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, obj2));
+    flds[6].val.l = env->NewGlobalRef(obj1);
+    flds[7].val.l = env->NewGlobalRef(obj2);
     flds[8].val.z = JNI_TRUE;
     flds[9].val.z = JNI_FALSE;
     flds[10].val.b = 123;
@@ -228,13 +212,9 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw005_getReady(JNIEnv *env,
     flds[15].val.c = 0xdcba;
     for (i = 0; i < sizeof(flds) / sizeof(field); i++) {
         if (flds[i].stat == JNI_TRUE) {
-            flds[i].fid =
-                JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG(env, cls),
-                    flds[i].name, flds[i].sig);
+            flds[i].fid = env->GetStaticFieldID(cls, flds[i].name, flds[i].sig);
         } else {
-            flds[i].fid =
-                JNI_ENV_PTR(env)->GetFieldID(JNI_ENV_ARG(env, cls),
-                    flds[i].name, flds[i].sig);
+            flds[i].fid = env->GetFieldID(cls, flds[i].name, flds[i].sig);
         }
         if (flds[i].fid == NULL) {
             printf("Unable to set modification watch on %s fld%" PRIuPTR ", fieldID=0",
@@ -330,8 +310,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw005_check(JNIEnv *env,
         }
         break;
     case 'L':
-        if (JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, actual_val.l),
-                flds[ind].val.l) != JNI_TRUE) {
+        if (!env->IsSameObject(actual_val.l, flds[ind].val.l)) {
             result = STATUS_FAILED;
             if (!flag_err) {
                 printf("Field %s fld%d thrown error:\n", flds[ind].descr, ind);
@@ -398,6 +377,4 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw005_getRes(JNIEnv *env,
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

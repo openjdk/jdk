@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8019184
- * @library /lib/testlibrary /java/lang/invoke/common
+ * @library /test/lib /java/lang/invoke/common
  * @summary MethodHandles.catchException() fails when methods have 8 args + varargs
  * @run main TestCatchExceptionWithVarargs
  */

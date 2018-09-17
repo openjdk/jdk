@@ -35,7 +35,7 @@
  * @test
  * @bug 4486658 5031862 8140471
  * @summary Checks for responsiveness of locks to timeouts.
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -46,7 +46,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public final class TimeoutLockLoops {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

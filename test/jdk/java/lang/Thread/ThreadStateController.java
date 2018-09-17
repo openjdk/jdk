@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import jdk.test.lib.LockFreeLogger;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /**
  * ThreadStateController allows a thread to request this thread to transition

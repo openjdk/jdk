@@ -35,7 +35,7 @@
  * @test
  * @bug 8022642 8065320 8129861
  * @summary Ensure relative sanity when zero core threads
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @modules java.base/java.util.concurrent:open
  */
 
@@ -48,7 +48,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BooleanSupplier;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class ZeroCoreThreads {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

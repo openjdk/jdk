@@ -1004,7 +1004,7 @@ void MacroAssembler::generate__kernel_rem_pio2(address two_over_pi, address pio2
           br(LT, Z_IS_LESS_THAN_TWO24B);
           fmuld(v1, v18, v17);                               // twon24*z
           frintzd(v1, v1);                                   // v1 = (double)(int)(v1)
-          fmaddd(v2, v10, v1, v18);
+          fmsubd(v2, v10, v1, v18);
           fcvtzdw(tmp3, v1);                                 // (int)fw
           fcvtzdw(tmp2, v2);                                 // double to int
           strw(tmp2, Address(iqBase, jz, Address::lsl(2)));

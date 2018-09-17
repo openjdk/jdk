@@ -24,7 +24,7 @@
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 
 public class RmiRegistrySslTestApp {

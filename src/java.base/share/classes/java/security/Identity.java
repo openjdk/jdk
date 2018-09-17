@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ public abstract class Identity implements Principal, Serializable {
 
     /**
      * Tests for equality between the specified identity and this identity.
-     * This method should be overriden by subclasses to test for equality.
+     * This method should be overridden by subclasses to test for equality.
      * The default behavior is to return true if the names and public keys
      * are equal.
      *

@@ -25,11 +25,11 @@
  * @test
  * @bug 8031320
  * @summary Verify that UseRTMDeopt affects uncommon trap installation in
- *          copmpiled methods with synchronized block.
+ *          compiled methods with synchronized block.
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @requires vm.flavor == "server" & !vm.emulatedClient & vm.rtm.cpu & vm.rtm.os
+ * @requires vm.rtm.cpu & vm.rtm.compiler
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission

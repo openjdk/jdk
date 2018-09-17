@@ -32,9 +32,9 @@
  * @requires vm.gc == "null"
  * @requires vm.opt.ExplicitGCInvokesConcurrent != "true"
  * @requires vm.opt.DisableExplicitGC != "true"
- * @library /lib/testlibrary/ /test/lib
+ * @library /test/lib
  *
- * @build jdk.testlibrary.* LowMemoryTest MemoryUtil RunUtil
+ * @build LowMemoryTest MemoryUtil RunUtil
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=600 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. LowMemoryTest
@@ -47,7 +47,7 @@ import javax.management.*;
 import javax.management.openmbean.CompositeData;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 import sun.hotspot.code.Compiler;
 

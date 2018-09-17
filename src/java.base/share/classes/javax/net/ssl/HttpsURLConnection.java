@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.security.cert.X509Certificate;
  * However, the implementations can be replaced on a per-class (static) or
  * per-instance basis.  All new <code>HttpsURLConnection</code>s instances
  * will be assigned
- * the "default" static values at instance creation, but they can be overriden
+ * the "default" static values at instance creation, but they can be overridden
  * by calling the appropriate per-instance set method(s) before
  * <code>connect</code>ing.
  *

@@ -34,19 +34,18 @@ import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 
 import jdk.test.lib.thread.ProcessThread;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /*
  * @test
  * @summary Test for VirtualMachine.startManagementAgent and VirtualMachine.startLocalManagementAgent
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.management
  *          jdk.attach
  *          jdk.jartool/sun.tools.jar
  *
- * @run build jdk.testlibrary.* Application SimpleProvider jdk.testlibrary.*
+ * @run build Application SimpleProvider
  * @run main/timeout=300 StartManagementAgent
  */
 

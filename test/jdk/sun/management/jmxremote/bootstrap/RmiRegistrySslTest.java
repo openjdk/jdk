@@ -23,7 +23,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -43,10 +43,9 @@ import java.util.regex.Pattern;
  * @summary Test that RMI registry uses SSL.
  * @author Luis-Miguel Alventosa, Taras Ledkov
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build jdk.testlibrary.* RmiRegistrySslTestApp
+ * @build RmiRegistrySslTestApp
  * @run main/timeout=300 RmiRegistrySslTest
  */
 public class RmiRegistrySslTest {

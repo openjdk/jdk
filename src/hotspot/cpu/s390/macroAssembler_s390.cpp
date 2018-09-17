@@ -3079,7 +3079,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register Rsubklass,
   // Input registers must not overlap.
   // Also check for R1 which is explicitely used here.
   assert_different_registers(Z_R1, Rsubklass, Rsuperklass, Rarray_ptr, Rlength);
-  NearLabel L_fallthrough, L_loop;
+  NearLabel L_fallthrough;
   int label_nulls = 0;
   if (L_success == NULL) { L_success = &L_fallthrough; label_nulls++; }
   if (L_failure == NULL) { L_failure = &L_fallthrough; label_nulls++; }

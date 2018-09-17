@@ -25,7 +25,7 @@
  * @test
  * @bug 6277663
  * @summary Test TPE extensibility framework
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @author Martin Buchholz
  */
 
@@ -41,7 +41,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class Custom {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

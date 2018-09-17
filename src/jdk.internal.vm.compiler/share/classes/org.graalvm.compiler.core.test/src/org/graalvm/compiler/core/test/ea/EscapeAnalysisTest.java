@@ -27,6 +27,7 @@ package org.graalvm.compiler.core.test.ea;
 import java.util.List;
 
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.loop.DefaultLoopPolicies;
 import org.graalvm.compiler.loop.phases.LoopFullUnrollPhase;
 import org.graalvm.compiler.loop.phases.LoopPeelingPhase;
@@ -491,5 +492,22 @@ public class EscapeAnalysisTest extends EATestBase {
     @Test
     public void testDeoptMonitor() {
         test("testDeoptMonitorSnippet", new Object(), 0);
+    }
+
+    @Test
+    public void testInterfaceArrayAssignment() {
+        prepareGraph("testInterfaceArrayAssignmentSnippet", false);
+        NodeIterable<ReturnNode> returns = graph.getNodes().filter(ReturnNode.class);
+        assertTrue(returns.count() == 1);
+        assertFalse(returns.first().result().isConstant());
+    }
+
+    private interface TestInterface {
+    }
+
+    public static boolean testInterfaceArrayAssignmentSnippet() {
+        Object[] array = new TestInterface[1];
+        array[0] = new Object();
+        return array[0] == null;
     }
 }

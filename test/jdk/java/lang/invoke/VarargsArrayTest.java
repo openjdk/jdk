@@ -34,7 +34,7 @@ import java.util.Collections;
  * @summary unit tests for varargs array methods: MethodHandleInfo.varargsArray(int),
  *          MethodHandleInfo.varargsArray(Class,int) & MethodHandleInfo.varargsList(int)
  * @modules java.base/sun.invoke.util
- * @library /lib/testlibrary /java/lang/invoke/common
+ * @library /test/lib /java/lang/invoke/common
  * @compile/module=java.base java/lang/invoke/MethodHandleHelper.java
  * @run main/bootclasspath VarargsArrayTest
  * @run main/bootclasspath/othervm -DVarargsArrayTest.MAX_ARITY=255 -DVarargsArrayTest.START_ARITY=250

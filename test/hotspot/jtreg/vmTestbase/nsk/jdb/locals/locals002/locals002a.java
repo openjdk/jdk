@@ -81,7 +81,7 @@ public class locals002a {
        int[]   arrVar
                               )
    {
-       System.out.println("Arguments but no locals"); // locals002.BREAKPOINT_LINE1
+       int x = 3; // locals002.BREAKPOINT_LINE1
    }
 
    static void allKindsOfLocals()  {
@@ -97,6 +97,6 @@ public class locals002a {
        int[]   arrVar    = new int[5];
 
        for (int j = 0; j < 5 ; j++) arrVar[j] = j;
-       System.out.println("Locals but no arguments"); // locals002.BREAKPOINT_LINE2
+       int x = 4; // locals002.BREAKPOINT_LINE2
    }
 }

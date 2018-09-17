@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -132,8 +119,7 @@ void setWatches(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cls) {
     jfieldID fid;
     jmethodID mid;
 
-    mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cls),
-        "meth01", "(I)V");
+    mid = env->GetStaticMethodID(cls, "meth01", "(I)V");
     err = jvmti->SetBreakpoint(mid, 0);
     if (err == JVMTI_ERROR_NONE) {
         enable(jvmti_env, JVMTI_EVENT_BREAKPOINT);
@@ -143,7 +129,7 @@ void setWatches(jvmtiEnv *jvmti_env, JNIEnv *env, jclass cls) {
                TranslateError(err), err);
     }
 
-    fid = JNI_ENV_PTR(env)->GetStaticFieldID(JNI_ENV_ARG(env, cls), "fld", "I");
+    fid = env->GetStaticFieldID(cls, "fld", "I");
     if (caps.can_generate_field_access_events) {
         err = jvmti->SetFieldAccessWatch(cls, fid);
         if (err == JVMTI_ERROR_NONE) {
@@ -322,8 +308,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     memset(enbl_scale, 0, SCALE_SIZE);
     memset(ev_scale, 0, SCALE_SIZE);
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
@@ -429,6 +414,4 @@ Java_nsk_jvmti_SetEventNotificationMode_setnotif001_getRes(JNIEnv *env,
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

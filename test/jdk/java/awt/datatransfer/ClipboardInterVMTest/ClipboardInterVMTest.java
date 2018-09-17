@@ -27,12 +27,12 @@
   @bug 8071668
   @summary Check whether clipboard see changes from external process after taking ownership
   @author Anton Nashatyrev: area=datatransfer
-  @library /lib/testlibrary
-  @build jdk.testlibrary.Utils
+  @library /test/lib
+  @build jdk.test.lib.Utils
   @run main ClipboardInterVMTest
 */
 
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 import java.awt.*;
 import java.awt.datatransfer.*;

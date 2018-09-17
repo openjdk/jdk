@@ -26,14 +26,14 @@
  * @bug 7091003
  * @summary ScheduledExecutorService never executes Runnable
  *          with corePoolSize of zero
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @author Chris Hegarty
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /**
  * Verify that tasks can be run even with a core pool size of 0.

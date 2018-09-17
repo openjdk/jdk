@@ -26,7 +26,7 @@
  * @bug 6431315
  * @summary ExecutorService.invokeAll might hang
  * @author Martin Buchholz
- * @library /lib/testlibrary/
+ * @library /test/lib
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -37,7 +37,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /**
  * Adapted from Doug Lea, which was...

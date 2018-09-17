@@ -101,15 +101,6 @@ void AOTLoader::metadata_do(void f(Metadata*)) {
   }
 }
 
-// Flushing and deoptimization in case of evolution
-void AOTLoader::flush_evol_dependents_on(InstanceKlass* dependee) {
-  // make non entrant and mark for deoptimization
-  FOR_ALL_AOT_HEAPS(heap) {
-    (*heap)->flush_evol_dependents_on(dependee);
-  }
-  Deoptimization::deoptimize_dependents();
-}
-
 /**
  * List of core modules for which we search for shared libraries.
  */

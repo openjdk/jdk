@@ -238,11 +238,6 @@ private:
   address get_original_pc(const frame* fr) { return *orig_pc_addr(fr); }
   void    set_original_pc(const frame* fr, address pc) { *orig_pc_addr(fr) = pc; }
 
-#ifdef HOTSWAP
-  // Flushing and deoptimization in case of evolution
-  void flush_evol_dependents_on(InstanceKlass* dependee);
-#endif // HOTSWAP
-
   virtual void metadata_do(void f(Metadata*));
 
   bool metadata_got_contains(Metadata **p) {

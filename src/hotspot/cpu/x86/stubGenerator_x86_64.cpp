@@ -1906,7 +1906,7 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", name);
     address start = __ pc();
 
-    Label L_copy_bytes, L_copy_8_bytes, L_copy_2_bytes, L_exit;
+    Label L_copy_bytes, L_copy_8_bytes, L_exit;
     const Register from        = rdi;  // source array address
     const Register to          = rsi;  // destination array address
     const Register count       = rdx;  // elements count
@@ -3848,7 +3848,7 @@ class StubGenerator: public StubCodeGenerator {
     Label L__incCounter[3][6]; //for 6 blocks
     Label L__incCounter_single[3]; //for single block, key128, key192, key256
     Label L_processTail_insr[3], L_processTail_4_insr[3], L_processTail_2_insr[3], L_processTail_1_insr[3], L_processTail_exit_insr[3];
-    Label L_processTail_extr[3], L_processTail_4_extr[3], L_processTail_2_extr[3], L_processTail_1_extr[3], L_processTail_exit_extr[3];
+    Label L_processTail_4_extr[3], L_processTail_2_extr[3], L_processTail_1_extr[3], L_processTail_exit_extr[3];
 
     Label L_exit;
 

@@ -957,7 +957,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   // Runtime will return true if the nmethod has been deoptimized during
   // the patching process. In that case we must do a deopt reexecute instead.
 
-  Label reexecuteEntry, cont;
+  Label cont;
 
   __ testptr(rax, rax);                                 // have we deoptimized?
   __ jcc(Assembler::equal, cont);                       // no

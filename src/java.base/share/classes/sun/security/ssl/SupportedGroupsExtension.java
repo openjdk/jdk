@@ -27,7 +27,6 @@ package sun.security.ssl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.security.AccessController;
 import java.security.AlgorithmConstraints;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
@@ -672,6 +671,11 @@ final class SupportedGroupsExtension {
             }
 
             AlgorithmParameters params = namedGroupParams.get(namedGroup);
+            if (params == null) {
+                throw new RuntimeException(
+                        "Not a supported EC named group: " + namedGroup);
+            }
+
             try {
                 return params.getParameterSpec(ECGenParameterSpec.class);
             } catch (InvalidParameterSpecException ipse) {
@@ -687,6 +691,11 @@ final class SupportedGroupsExtension {
             }
 
             AlgorithmParameters params = namedGroupParams.get(namedGroup);
+            if (params == null) {
+                throw new RuntimeException(
+                        "Not a supported DH named group: " + namedGroup);
+            }
+
             try {
                 return params.getParameterSpec(DHParameterSpec.class);
             } catch (InvalidParameterSpecException ipse) {
@@ -739,7 +748,7 @@ final class SupportedGroupsExtension {
                             namedGroupParams.get(namedGroup));
         }
 
-        // Is there any supported group permitted by the constraints?
+        // Is the named group supported?
         static boolean isSupported(NamedGroup namedGroup) {
             for (NamedGroup group : supportedNamedGroups) {
                 if (namedGroup.id == group.id) {
@@ -757,6 +766,7 @@ final class SupportedGroupsExtension {
             for (NamedGroup namedGroup : requestedNamedGroups) {
                 if ((namedGroup.type == type) &&
                         namedGroup.isAvailable(negotiatedProtocol) &&
+                        isSupported(namedGroup) &&
                         constraints.permits(
                                 EnumSet.of(CryptoPrimitive.KEY_AGREEMENT),
                                 namedGroup.algorithm,

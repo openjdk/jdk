@@ -3785,7 +3785,6 @@ void TemplateTable::_new() {
   Label slow_case;
   Label done;
   Label initialize_header;
-  Label allocate_shared;
 
   BLOCK_COMMENT("TemplateTable::_new {");
   __ get_2_byte_integer_at_bcp(offset/*dest*/, 1, InterpreterMacroAssembler::Unsigned);

@@ -227,6 +227,7 @@ public class HotSpotGraalCompiler implements GraalJVMCICompiler {
                             method(substMethod).
                             compilationId(compilationId).
                             recordInlinedMethods(bytecodeProvider.shouldRecordMethodDependencies()).
+                            setIsSubstitution(true).
                             build();
             // @formatter:on
             try (DebugContext.Scope scope = debug.scope("GetIntrinsicGraph", graph)) {

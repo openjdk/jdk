@@ -24,12 +24,11 @@
  /*
  * @test
  * @bug 8159377
- * @library /lib/testlibrary
  * @library /test/lib
  * @summary Tests ObjectFilter on default agent
  * @author Harsha Wardhana B
  * @modules java.management
- * @build jdk.testlibrary.* DefaultAgentFilterTest
+ * @build DefaultAgentFilterTest
  * @run main/othervm/timeout=600 -XX:+UsePerfData DefaultAgentFilterTest
  */
 import java.io.EOFException;
@@ -56,7 +55,7 @@ import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class DefaultAgentFilterTest {
 

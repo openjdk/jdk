@@ -25,7 +25,7 @@
  * @test
  * @bug 6460501 6236036 6500694 6490770
  * @summary Repeated failed timed waits shouldn't leak memory
- * @library /lib/testlibrary/
+ * @library /test/lib
  * @author Martin Buchholz
  */
 
@@ -56,7 +56,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 public class TimedAcquireLeak {
     static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);

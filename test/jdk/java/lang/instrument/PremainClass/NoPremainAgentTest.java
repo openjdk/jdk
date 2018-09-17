@@ -23,17 +23,16 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 
 /*
  * @test
  * @bug 6289149
  * @summary test when the agent's class is missing the premain() function.
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.management
  *          java.instrument
- * @run build jdk.testlibrary.* DummyMain
+ * @run build DummyMain
  * @run shell ../MakeJAR3.sh NoPremainAgent
  * @run main/othervm -XX:-CreateCoredumpOnCrash NoPremainAgentTest
  */

@@ -45,7 +45,7 @@ import javax.management.remote.*;
 import javax.net.ssl.SSLHandshakeException;
 
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Utils;
+import jdk.test.lib.Utils;
 import jdk.internal.agent.Agent;
 import jdk.internal.agent.AgentConfigurationError;
 import jdk.internal.agent.ConnectorAddressLink;
@@ -57,13 +57,12 @@ import jdk.internal.agent.ConnectorAddressLink;
  * @summary Makes sure that enabling/disabling the management agent through JCMD
  *          achieves the desired results
  *
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.management
  *          java.rmi
  *          jdk.management.agent/jdk.internal.agent
  *
- * @build jdk.testlibrary.* JMXStartStopTest PortAllocator TestApp ManagementAgentJcmd
+ * @build JMXStartStopTest PortAllocator TestApp ManagementAgentJcmd
  * @run main/othervm/timeout=600 -XX:+UsePerfData JMXStartStopTest
  */
 public class JMXStartStopTest {

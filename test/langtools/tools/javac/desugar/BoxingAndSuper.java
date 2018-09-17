@@ -100,7 +100,7 @@ public class BoxingAndSuper {
                 "p.Test.dump()java.lang.Integer\n" +
                 "{\n" +
                 "    return (let /*synthetic*/ final Integer $le0 = (Integer)super.i " +
-                            "in (let /*synthetic*/ final Integer $le1 = super.i = Integer.valueOf((int)(super.i.intValue() + 1)) " +
+                            "in (let super.i = Integer.valueOf((int)(super.i.intValue() + 1)); " +
                                 "in $le0));\n" +
                 "}\n");
         //qualified super, same package:
@@ -121,7 +121,7 @@ public class BoxingAndSuper {
                 "p.Test.Inner.dump()java.lang.Integer\n" +
                 "{\n" +
                 "    return (let /*synthetic*/ final Integer $le0 = (Integer)Test.access$001(this$0) " +
-                            "in (let /*synthetic*/ final Integer $le1 = Test.access$103(this$0, Integer.valueOf((int)(Test.access$201(this$0).intValue() + 1))) " +
+                            "in (let Test.access$103(this$0, Integer.valueOf((int)(Test.access$201(this$0).intValue() + 1))); " +
                                 "in $le0));\n" +
                 "}\n" +
                 "p.Test.access$001(p.Test)java.lang.Integer\n" +
@@ -152,7 +152,7 @@ public class BoxingAndSuper {
                 "p1.Test.dump()java.lang.Integer\n" +
                 "{\n" +
                 "    return (let /*synthetic*/ final Integer $le0 = (Integer)super.i " +
-                            "in (let /*synthetic*/ final Integer $le1 = super.i = Integer.valueOf((int)(super.i.intValue() + 1)) " +
+                            "in (let super.i = Integer.valueOf((int)(super.i.intValue() + 1)); " +
                                 "in $le0));\n" +
                 "}\n");
         //qualified super, different packages:
@@ -173,7 +173,7 @@ public class BoxingAndSuper {
                 "p1.Test.Inner.dump()java.lang.Integer\n" +
                 "{\n" +
                 "    return (let /*synthetic*/ final Integer $le0 = (Integer)Test.access$001(this$0) " +
-                            "in (let /*synthetic*/ final Integer $le1 = Test.access$103(this$0, Integer.valueOf((int)(Test.access$201(this$0).intValue() + 1))) " +
+                            "in (let Test.access$103(this$0, Integer.valueOf((int)(Test.access$201(this$0).intValue() + 1))); " +
                                 "in $le0));\n" +
                 "}\n" +
                 "p1.Test.access$001(p1.Test)java.lang.Integer\n" +
@@ -201,8 +201,8 @@ public class BoxingAndSuper {
         String expected =
                 "Test.dump()void\n" +
                 "{\n" +
-                "    (let /*synthetic*/ final Integer $le0 = i in (let /*synthetic*/ final Integer $le1 = i = Integer.valueOf((int)(i.intValue() + 1)) in $le0));\n" +
-                "    (let /*synthetic*/ final Integer $le2 = (Integer)this.i in (let /*synthetic*/ final Integer $le3 = this.i = Integer.valueOf((int)(this.i.intValue() + 1)) in $le2));\n" +
+                "    (let /*synthetic*/ final Integer $le0 = i in (let i = Integer.valueOf((int)(i.intValue() + 1)); in $le0));\n" +
+                "    (let /*synthetic*/ final Integer $le1 = (Integer)this.i in (let this.i = Integer.valueOf((int)(this.i.intValue() + 1)); in $le1));\n" +
                 "}\n";
         runTest(code, expected);
         //qualified this:
@@ -219,8 +219,8 @@ public class BoxingAndSuper {
                 "Test.Inner1.Inner2.dump()java.lang.Integer\n" +
                 "{\n" +
                 "    return (let /*synthetic*/ final Integer $le0 = (Integer)this$1.this$0.i" +
-                           " in (let /*synthetic*/ final Integer $le1 = this$1.this$0.i = " +
-                                "Integer.valueOf((int)(this$1.this$0.i.intValue() + 1)) " +
+                           " in (let this$1.this$0.i = " +
+                                "Integer.valueOf((int)(this$1.this$0.i.intValue() + 1)); " +
                                 "in $le0));\n" +
                 "}\n"
         );
@@ -329,7 +329,8 @@ public class BoxingAndSuper {
                         LetExpr le = (LetExpr) tree;
 
                         for (JCStatement var : le.defs) {
-                            letExprRemap.put(((JCVariableDecl) var).name.toString(), "$le" + i++);
+                            if (var.hasTag(Tag.VARDEF))
+                                letExprRemap.put(((JCVariableDecl) var).name.toString(), "$le" + i++);
                         }
                     }
                     return super.visitOther(node, p);

@@ -1171,7 +1171,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // and result handler will pick it up
 
   {
-    Label no_oop, not_weak, store_result;
+    Label no_oop;
     __ lea(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
     __ cmpptr(t, Address(rbp, frame::interpreter_frame_result_handler_offset*wordSize));
     __ jcc(Assembler::notEqual, no_oop);

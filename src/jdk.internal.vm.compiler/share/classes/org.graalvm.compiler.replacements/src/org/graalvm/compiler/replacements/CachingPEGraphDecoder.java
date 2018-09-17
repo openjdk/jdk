@@ -83,9 +83,15 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
     }
 
     @SuppressWarnings("try")
-    private EncodedGraph createGraph(ResolvedJavaMethod method, ResolvedJavaMethod originalMethod, BytecodeProvider intrinsicBytecodeProvider) {
-        StructuredGraph graphToEncode = new StructuredGraph.Builder(options, debug, allowAssumptions).useProfilingInfo(false).trackNodeSourcePosition(
-                        graphBuilderConfig.trackNodeSourcePosition()).method(method).build();
+    private EncodedGraph createGraph(ResolvedJavaMethod method, ResolvedJavaMethod originalMethod, BytecodeProvider intrinsicBytecodeProvider, boolean isSubstitution) {
+        // @formatter:off
+        StructuredGraph graphToEncode = new StructuredGraph.Builder(options, debug, allowAssumptions).
+                        useProfilingInfo(false).
+                        trackNodeSourcePosition(graphBuilderConfig.trackNodeSourcePosition()).
+                        method(method).
+                        setIsSubstitution(isSubstitution).
+                        build();
+        // @formatter:on
         try (DebugContext.Scope scope = debug.scope("createGraph", graphToEncode)) {
             IntrinsicContext initialIntrinsicContext = intrinsicBytecodeProvider != null ? new IntrinsicContext(originalMethod, method, intrinsicBytecodeProvider, INLINE_AFTER_PARSING) : null;
             GraphBuilderPhase.Instance graphBuilderPhaseInstance = createGraphBuilderPhaseInstance(initialIntrinsicContext);
@@ -110,10 +116,11 @@ public class CachingPEGraphDecoder extends PEGraphDecoder {
     }
 
     @Override
-    protected EncodedGraph lookupEncodedGraph(ResolvedJavaMethod method, ResolvedJavaMethod originalMethod, BytecodeProvider intrinsicBytecodeProvider, boolean trackNodeSourcePosition) {
+    protected EncodedGraph lookupEncodedGraph(ResolvedJavaMethod method, ResolvedJavaMethod originalMethod, BytecodeProvider intrinsicBytecodeProvider, boolean isSubstitution,
+                    boolean trackNodeSourcePosition) {
         EncodedGraph result = graphCache.get(method);
         if (result == null && method.hasBytecodes()) {
-            result = createGraph(method, originalMethod, intrinsicBytecodeProvider);
+            result = createGraph(method, originalMethod, intrinsicBytecodeProvider, isSubstitution);
         }
         return result;
     }

@@ -54,11 +54,13 @@ public class CompilationWrapperTest extends GraalCompilerTest {
      */
     @Test
     public void testVMCompilation1() throws IOException, InterruptedException {
-        testHelper(Collections.emptyList(), Arrays.asList("-XX:+BootstrapJVMCI",
+        testHelper(Collections.emptyList(), Arrays.asList("-XX:-TieredCompilation",
                         "-XX:+UseJVMCICompiler",
                         "-Dgraal.CompilationFailureAction=ExitVM",
-                        "-Dgraal.CrashAt=Object.*,String.*",
-                        "-version"));
+                        "-Dgraal.CrashAt=TestProgram.*",
+                        "-Xcomp",
+                        "-XX:CompileCommand=compileonly,*/TestProgram.print*",
+                        TestProgram.class.getName()));
     }
 
     /**
@@ -67,11 +69,13 @@ public class CompilationWrapperTest extends GraalCompilerTest {
      */
     @Test
     public void testVMCompilation2() throws IOException, InterruptedException {
-        testHelper(Collections.emptyList(), Arrays.asList("-XX:+BootstrapJVMCI",
+        testHelper(Collections.emptyList(), Arrays.asList("-XX:-TieredCompilation",
                         "-XX:+UseJVMCICompiler",
                         "-Dgraal.ExitVMOnException=true",
-                        "-Dgraal.CrashAt=Object.*,String.*",
-                        "-version"));
+                        "-Dgraal.CrashAt=TestProgram.*",
+                        "-Xcomp",
+                        "-XX:CompileCommand=compileonly,*/TestProgram.print*",
+                        TestProgram.class.getName()));
     }
 
     static class Probe {
@@ -105,23 +109,36 @@ public class CompilationWrapperTest extends GraalCompilerTest {
      */
     @Test
     public void testVMCompilation3() throws IOException, InterruptedException {
-        final int maxProblems = 4;
-        Probe[] probes = {
-                        new Probe("Retrying compilation of", maxProblems) {
-                            @Override
-                            String test() {
-                                return actualOccurrences > 0 && actualOccurrences <= maxProblems ? null : String.format("expected occurrences to be in [1 .. %d]", maxProblems);
-                            }
-                        },
-                        new Probe("adjusting CompilationFailureAction from Diagnose to Print", 1),
-                        new Probe("adjusting CompilationFailureAction from Print to Silent", 1),
+        final int maxProblems = 2;
+        Probe retryingProbe = new Probe("Retrying compilation of", maxProblems) {
+            @Override
+            String test() {
+                return actualOccurrences > 0 && actualOccurrences <= maxProblems ? null : String.format("expected occurrences to be in [1 .. %d]", maxProblems);
+            }
         };
-        testHelper(Arrays.asList(probes), Arrays.asList("-XX:+BootstrapJVMCI",
+        Probe adjustmentProbe = new Probe("adjusting CompilationFailureAction from Diagnose to Print", 1) {
+            @Override
+            String test() {
+                if (retryingProbe.actualOccurrences >= maxProblems) {
+                    if (actualOccurrences == 0) {
+                        return "expected at least one occurrence";
+                    }
+                }
+                return null;
+            }
+        };
+        Probe[] probes = {
+                        retryingProbe,
+                        adjustmentProbe
+        };
+        testHelper(Arrays.asList(probes), Arrays.asList("-XX:-TieredCompilation",
                         "-XX:+UseJVMCICompiler",
                         "-Dgraal.CompilationFailureAction=Diagnose",
                         "-Dgraal.MaxCompilationProblemsPerAction=" + maxProblems,
-                        "-Dgraal.CrashAt=Object.*,String.*",
-                        "-version"));
+                        "-Dgraal.CrashAt=TestProgram.*",
+                        "-Xcomp",
+                        "-XX:CompileCommand=compileonly,*/TestProgram.print*",
+                        TestProgram.class.getName()));
     }
 
     /**
@@ -244,5 +261,40 @@ public class CompilationWrapperTest extends GraalCompilerTest {
                 dumpPath.delete();
             }
         }
+    }
+}
+
+class TestProgram {
+    public static void main(String[] args) {
+        printHello1();
+        printWorld1();
+        printHello2();
+        printWorld2();
+        printHello3();
+        printWorld3();
+    }
+
+    private static void printHello1() {
+        System.out.println("Hello1");
+    }
+
+    private static void printWorld1() {
+        System.out.println("World1");
+    }
+
+    private static void printHello2() {
+        System.out.println("Hello2");
+    }
+
+    private static void printWorld2() {
+        System.out.println("World2");
+    }
+
+    private static void printHello3() {
+        System.out.println("Hello3");
+    }
+
+    private static void printWorld3() {
+        System.out.println("World3");
     }
 }
