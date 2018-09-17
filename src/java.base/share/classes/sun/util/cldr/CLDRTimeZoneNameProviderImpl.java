@@ -281,7 +281,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 .replaceFirst("H+", (isShort ? "\\%1\\$d" : "\\%1\\$02d"))
                 .replaceFirst("m+", "\\%2\\$02d");
             return MessageFormat.format(gmtFormat,
-                    String.format(hourFormat, offset / 60, offset % 60));
+                    String.format(l, hourFormat, offset / 60, offset % 60));
         }
     }
 }

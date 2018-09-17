@@ -21,9 +21,9 @@
  * questions.
  */
 
-/*
+ /*
  * @test
- * @bug 8005471 8008577 8129881 8130845 8136518 8181157
+ * @bug 8005471 8008577 8129881 8130845 8136518 8181157 8210490
  * @modules jdk.localedata
  * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
@@ -51,7 +51,7 @@ public class CLDRDisplayNamesTest {
             "\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u590f\u6642\u9593",
             "GMT-07:00",
             //"\u30a2\u30e1\u30ea\u30ab\u592a\u5e73\u6d0b\u6642\u9593",
-            //"PT"
+        //"PT"
         },
         {
             "zh-CN",
@@ -60,7 +60,7 @@ public class CLDRDisplayNamesTest {
             "\u5317\u7f8e\u592a\u5e73\u6d0b\u590f\u4ee4\u65f6\u95f4",
             "GMT-07:00",
             //"\u5317\u7f8e\u592a\u5e73\u6d0b\u65f6\u95f4",
-            //"PT",
+        //"PT",
         },
         {
             "de-DE",
@@ -69,7 +69,7 @@ public class CLDRDisplayNamesTest {
             "Nordamerikanische Westk\u00fcsten-Sommerzeit",
             "GMT-07:00",
             //"Nordamerikanische Westk\u00fcstenzeit",
-            //"PT",
+        //"PT",
         },
     };
 
@@ -86,7 +86,7 @@ public class CLDRDisplayNamesTest {
                 String name = tz.getDisplayName(daylight, style, locale);
                 if (!data[i].equals(name)) {
                     System.err.printf("error: got '%s' expected '%s' (style=%d, daylight=%s, locale=%s)%n",
-                                      name, data[i], style, daylight, locale);
+                            name, data[i], style, daylight, locale);
                     errors++;
                 }
             }
@@ -117,6 +117,17 @@ public class CLDRDisplayNamesTest {
             Locale.setDefault(originalLocale);
         }
 
+        // for 8210490
+        // Check that TimeZone.getDisplayName should honor passed locale parameter,
+        // even if default locale is set to some other locale.
+        Locale.setDefault(Locale.forLanguageTag("ar-PK"));
+        TimeZone zi = TimeZone.getTimeZone("Etc/GMT-5");
+        String displayName = zi.getDisplayName(false, TimeZone.SHORT, Locale.US);
+        Locale.setDefault(originalLocale);
+        if (!displayName.equals("GMT+05:00")) {
+            System.err.printf("Wrong display name for timezone Etc/GMT-5 : expected GMT+05:00,  Actual " + displayName);
+            errors++;
+        }
         if (errors > 0) {
             throw new RuntimeException("test failed");
         }
