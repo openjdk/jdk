@@ -108,8 +108,7 @@ Java_nsk_jvmti_SetLocalVariable_setlocal002_check(JNIEnv *env, jclass cls, jthre
         return result;
     }
 
-    mid = env->GetStaticMethodID(
-        cls, "run", "([Ljava/lang/String;Ljava/io/PrintStream;)I");
+    mid = env->GetStaticMethodID(cls, "run", "([Ljava/lang/String;Ljava/io/PrintStream;)I");
     if (mid == NULL) {
         printf("Cannot find method \"run\"\n");
         return STATUS_FAILED;

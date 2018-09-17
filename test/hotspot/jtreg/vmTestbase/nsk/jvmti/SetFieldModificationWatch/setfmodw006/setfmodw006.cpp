@@ -170,11 +170,9 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw006_getReady(JNIEnv *env,
     }
     for (i = 0; i < sizeof(watches)/sizeof(watch_info); i++) {
         if (watches[i].is_static == JNI_TRUE) {
-            watches[i].fid = env->GetStaticFieldID(
-                cls, watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetStaticFieldID(cls, watches[i].f_name, watches[i].f_sig);
         } else {
-            watches[i].fid = env->GetFieldID(
-                cls, watches[i].f_name, watches[i].f_sig);
+            watches[i].fid = env->GetFieldID(cls, watches[i].f_name, watches[i].f_sig);
         }
         err = jvmti->SetFieldModificationWatch(cls, watches[i].fid);
         if (err == JVMTI_ERROR_NONE) {

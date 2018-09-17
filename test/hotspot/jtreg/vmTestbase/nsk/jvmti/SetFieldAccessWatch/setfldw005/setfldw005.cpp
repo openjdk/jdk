@@ -154,11 +154,9 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw005_getReady(JNIEnv *env, jclass cls) 
 
     for (i = 0; i < sizeof(fields) / sizeof(field); i++) {
         if (fields[i].stat == JNI_TRUE) {
-            fields[i].fid = env-> GetStaticFieldID(
-                cls, fields[i].name, fields[i].sig);
+            fields[i].fid = env->GetStaticFieldID(cls, fields[i].name, fields[i].sig);
         } else {
-            fields[i].fid = env->GetFieldID(
-                cls, fields[i].name, fields[i].sig);
+            fields[i].fid = env->GetFieldID(cls, fields[i].name, fields[i].sig);
         }
         if (fields[i].fid == NULL) {
             printf("Unable to set access watch on %s fld%" PRIuPTR ", fieldID=0",
