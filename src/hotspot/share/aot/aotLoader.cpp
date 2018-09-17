@@ -47,6 +47,13 @@ void AOTLoader::load_for_klass(InstanceKlass* ik, Thread* thread) {
     return;
   }
   if (UseAOT) {
+    if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
+      if (PrintAOT) {
+        warning("JVMTI capability to hotswap and post breakpoint is not compatible with AOT (switching AOT off)");
+      }
+      FLAG_SET_DEFAULT(UseAOT, false);
+      return;
+    }
     FOR_ALL_AOT_HEAPS(heap) {
       (*heap)->load_klass_data(ik, thread);
     }
@@ -54,6 +61,7 @@ void AOTLoader::load_for_klass(InstanceKlass* ik, Thread* thread) {
 }
 
 uint64_t AOTLoader::get_saved_fingerprint(InstanceKlass* ik) {
+  assert(UseAOT, "called only when AOT is enabled");
   if (ik->is_unsafe_anonymous()) {
     // don't even bother
     return 0;
@@ -65,24 +73,6 @@ uint64_t AOTLoader::get_saved_fingerprint(InstanceKlass* ik) {
     }
   }
   return 0;
-}
-
-bool AOTLoader::find_klass(InstanceKlass* ik) {
-  FOR_ALL_AOT_HEAPS(heap) {
-    if ((*heap)->find_klass(ik) != NULL) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool AOTLoader::contains(address p) {
-  FOR_ALL_AOT_HEAPS(heap) {
-    if ((*heap)->contains(p)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void AOTLoader::oops_do(OopClosure* f) {
@@ -125,6 +115,14 @@ void AOTLoader::initialize() {
     if (EagerInitialization) {
       if (PrintAOT) {
         warning("EagerInitialization is not compatible with AOT (switching AOT off)");
+      }
+      FLAG_SET_DEFAULT(UseAOT, false);
+      return;
+    }
+
+    if (JvmtiExport::can_hotswap_or_post_breakpoint()) {
+      if (PrintAOT) {
+        warning("JVMTI capability to hotswap and post breakpoint is not compatible with AOT (switching AOT off)");
       }
       FLAG_SET_DEFAULT(UseAOT, false);
       return;
