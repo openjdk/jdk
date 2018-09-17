@@ -191,33 +191,13 @@ public class CustomizedDTLSDefaultProtocols {
             // Check SSLParameters of SSLSocket
             System.out.println();
             System.out.println("\tChecking SSLSocket of this SSLContext");
-            System.out.println("\tChecking SSLSocket.getSSLParameters()");
-            SocketFactory fac = context.getSocketFactory();
-            SSLSocket socket = (SSLSocket)fac.createSocket();
-            parameters = socket.getSSLParameters();
-
-            protocols = parameters.getProtocols();
-            failed |= !checkProtocols(protocols, cv.enabledProtocols);
-
-            ciphers = parameters.getCipherSuites();
-            failed |= !checkCipherSuites(ciphers);
-
-            System.out.println("\tChecking SSLEngine.getEnabledProtocols()");
-            protocols = socket.getEnabledProtocols();
-            failed |= !checkProtocols(protocols, cv.enabledProtocols);
-
-            System.out.println("\tChecking SSLEngine.getEnabledCipherSuites()");
-            ciphers = socket.getEnabledCipherSuites();
-            failed |= !checkCipherSuites(ciphers);
-
-            System.out.println("\tChecking SSLEngine.getSupportedProtocols()");
-            protocols = socket.getSupportedProtocols();
-            failed |= !checkProtocols(protocols, cv.supportedProtocols);
-
-            System.out.println(
-                    "\tChecking SSLEngine.getSupportedCipherSuites()");
-            ciphers = socket.getSupportedCipherSuites();
-            failed |= !checkCipherSuites(ciphers);
+            try {
+                context.getSocketFactory();
+                failed = true;
+                System.out.println("SSLSocket returned a socket for DTLS");
+            } catch (UnsupportedOperationException e) {
+                System.out.println("\t  " + e.getMessage());
+            }
 
             //
             // Check SSLServerSocket
@@ -225,33 +205,13 @@ public class CustomizedDTLSDefaultProtocols {
             // Check SSLParameters of SSLServerSocket
             System.out.println();
             System.out.println("\tChecking SSLServerSocket of this SSLContext");
-            System.out.println("\tChecking SSLServerSocket.getSSLParameters()");
-            SSLServerSocketFactory sf = context.getServerSocketFactory();
-            SSLServerSocket ssocket = (SSLServerSocket)sf.createServerSocket();
-            parameters = ssocket.getSSLParameters();
-
-            protocols = parameters.getProtocols();
-            failed |= !checkProtocols(protocols, cv.supportedProtocols);
-
-            ciphers = parameters.getCipherSuites();
-            failed |= !checkCipherSuites(ciphers);
-
-            System.out.println("\tChecking SSLEngine.getEnabledProtocols()");
-            protocols = ssocket.getEnabledProtocols();
-            failed |= !checkProtocols(protocols, cv.supportedProtocols);
-
-            System.out.println("\tChecking SSLEngine.getEnabledCipherSuites()");
-            ciphers = ssocket.getEnabledCipherSuites();
-            failed |= !checkCipherSuites(ciphers);
-
-            System.out.println("\tChecking SSLEngine.getSupportedProtocols()");
-            protocols = ssocket.getSupportedProtocols();
-            failed |= !checkProtocols(protocols, cv.supportedProtocols);
-
-            System.out.println(
-                    "\tChecking SSLEngine.getSupportedCipherSuites()");
-            ciphers = ssocket.getSupportedCipherSuites();
-            failed |= !checkCipherSuites(ciphers);
+            try {
+                context.getServerSocketFactory();
+                failed = true;
+                System.out.println("SSLServerSocket returned a socket for DTLS");
+            } catch (UnsupportedOperationException e) {
+                System.out.println("\t  " + e.getMessage());
+            }
         }
 
         if (failed) {
