@@ -204,6 +204,7 @@
     <p id="ChangeHistory"/>
       <xsl:apply-templates select="changehistory"/>
     </div>
+    <xsl:apply-templates select="copyright"/>
   </body>
 </html>
 </xsl:template>
@@ -217,6 +218,12 @@
       <xsl:text> </xsl:text>
       <xsl:call-template name="showbasicversion"/>
     </h3>
+</xsl:template>
+
+<xsl:template match="copyright">
+  <p>
+    <xsl:apply-templates/>
+  </p>
 </xsl:template>
 
 <xsl:template match="functionsection">
