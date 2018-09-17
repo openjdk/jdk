@@ -85,4 +85,9 @@ public class ToolLocalSimpleTest extends ToolSimpleTest {
         );
     }
 
+    @Test
+    public void testRawString() {
+        // can't set --enable-preview for local, ignore
+    }
+
 }

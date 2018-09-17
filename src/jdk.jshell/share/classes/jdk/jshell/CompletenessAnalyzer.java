@@ -31,6 +31,7 @@ import com.sun.tools.javac.parser.ScannerFactory;
 import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -121,6 +122,7 @@ class CompletenessAnalyzer {
 
         private CaLog(Context context, PrintWriter pw) {
             super(context, pw);
+            this.source = DiagnosticSource.NO_SOURCE;
         }
 
         @Override

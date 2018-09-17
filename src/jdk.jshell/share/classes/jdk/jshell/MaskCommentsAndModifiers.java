@@ -67,7 +67,7 @@ class MaskCommentsAndModifiers {
     private boolean maskModifiers;
 
     // Does the string end with an unclosed '/*' style comment?
-    private boolean openComment = false;
+    private boolean openToken = false;
 
     MaskCommentsAndModifiers(String s, boolean maskModifiers) {
         this.str = s;
@@ -88,8 +88,8 @@ class MaskCommentsAndModifiers {
         return sbMask.toString();
     }
 
-    boolean endsWithOpenComment() {
-        return openComment;
+    boolean endsWithOpenToken() {
+        return openToken;
     }
 
     /****** private implementation methods ******/
@@ -142,7 +142,7 @@ class MaskCommentsAndModifiers {
     private void next() {
         switch (c) {
             case '\'':
-            case '"':
+            case '"': {
                 maskModifiers = false;
                 write(c);
                 int match = c;
@@ -154,6 +154,38 @@ class MaskCommentsAndModifiers {
                 }
                 write(c); // write match // line-end
                 break;
+            }
+            case '`': { // RawString
+                maskModifiers = false;
+                int backtickCount = 0;
+                do {
+                    write(c);
+                    ++backtickCount;
+                    read();
+                } while (c == '`');
+                while (true) {
+                    if (c == '`') {
+                        int cnt = 0;
+                        do {
+                            write(c);
+                            ++cnt;
+                            read();
+                        } while (c == '`');
+                        if (cnt == backtickCount) {
+                            unread();
+                            break;
+                        }
+                    } else {
+                        write(c);
+                        if (c < 0) {
+                            openToken = true;
+                            break;
+                        }
+                        read();
+                    }
+                }
+                break;
+            }
             case '/':
                 read();
                 switch (c) {
@@ -166,7 +198,7 @@ class MaskCommentsAndModifiers {
                             prevc = c;
                         }
                         writeMask(c);
-                        openComment = c < 0;
+                        openToken = c < 0;
                         break;
                     case '/':
                         writeMask('/');
