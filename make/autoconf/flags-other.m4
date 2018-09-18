@@ -31,9 +31,7 @@
 AC_DEFUN([FLAGS_SETUP_ARFLAGS],
 [
   # FIXME: figure out if we should select AR flags depending on OS or toolchain.
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    ARFLAGS="-r -mmacosx-version-min=$MACOSX_VERSION_MIN"
-  elif test "x$OPENJDK_TARGET_OS" = xaix; then
+  if test "x$OPENJDK_TARGET_OS" = xaix; then
     ARFLAGS="-X64"
   elif test "x$OPENJDK_TARGET_OS" = xwindows; then
     # lib.exe is used as AR to create static libraries.

@@ -25,19 +25,13 @@
 
 include JdkNativeCompilation.gmk
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN)
-else
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-  endif
-  ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/../lib/jli)
+ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/../lib/jli)
 
-  # Applications expect to be able to link against libjawt without invoking
-  # System.loadLibrary("jawt") first. This was the behaviour described in the
-  # devloper documentation of JAWT and what worked with OpenJDK6.
-  ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
-    ORIGIN_ARG += $(call SET_EXECUTABLE_ORIGIN,/../lib)
-  endif
+# Applications expect to be able to link against libjawt without invoking
+# System.loadLibrary("jawt") first. This was the behaviour described in the
+# devloper documentation of JAWT and what worked with OpenJDK6.
+ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
+  ORIGIN_ARG += $(call SET_EXECUTABLE_ORIGIN,/../lib)
 endif
 
 # Tell the compiler not to export any functions unless declared so in
@@ -153,8 +147,6 @@ define SetupBuildLauncherBody
           -framework Foundation \
           -framework SystemConfiguration \
           -lstdc++ -liconv
-    else
-      $1_LIBS += $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a
     endif
     $1_LIBS += -framework Cocoa -framework Security \
         -framework ApplicationServices
@@ -195,11 +187,14 @@ define SetupBuildLauncherBody
           $$($1_LDFLAGS), \
       LDFLAGS_linux := \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
+      LDFLAGS_macosx := \
+          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
       LDFLAGS_solaris := $$($1_LDFLAGS_solaris) \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
       LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
       LIBS_unix := $$($1_LIBS_unix), \
       LIBS_linux := -lpthread -ljli $(LIBDL), \
+      LIBS_macosx := -ljli, \
       LIBS_solaris := -ljli -lthread $(LIBDL), \
       LIBS_windows := $$($1_WINDOWS_JLI_LIB) \
           $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib advapi32.lib \
@@ -215,7 +210,7 @@ define SetupBuildLauncherBody
   $1 += $$(BUILD_LAUNCHER_$1)
   TARGETS += $$($1)
 
-  ifneq (,$(filter $(OPENJDK_TARGET_OS), macosx aix))
+  ifeq ($(OPENJDK_TARGET_OS), aix)
     $$(BUILD_LAUNCHER_$1): $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a
   endif
 
