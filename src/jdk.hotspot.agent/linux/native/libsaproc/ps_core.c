@@ -795,7 +795,11 @@ static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
       if (exec_php->p_filesz > BUF_SIZE) {
         goto err;
       }
-      pread(ph->core->exec_fd, interp_name, exec_php->p_filesz, exec_php->p_offset);
+      if (pread(ph->core->exec_fd, interp_name,
+                exec_php->p_filesz, exec_php->p_offset) != exec_php->p_filesz) {
+        print_debug("Unable to read in the ELF interpreter\n");
+        goto err;
+      }
       interp_name[exec_php->p_filesz] = '\0';
       print_debug("ELF interpreter %s\n", interp_name);
       // read interpreter segments as well
