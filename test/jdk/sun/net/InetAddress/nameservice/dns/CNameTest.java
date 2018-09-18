@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.nio.file.StandardOpenOption;
  * @summary Test DNS provider's handling of CNAME records
  */
 public class CNameTest {
-    private static final String HOST = "www-proxy.us.oracle.com";
+    private static final String HOST = "www.w3c.org";
     private static final String POLICY = "grant {" + System.lineSeparator() +
             " permission java.net .SocketPermission \"${HOST}\", \"resolve\";" +
             System.lineSeparator() + "};";
