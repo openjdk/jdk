@@ -3379,6 +3379,32 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       n->set_req(MemBarNode::Precedent, top());
     }
     break;
+  case Op_MemBarAcquire: {
+    if (n->as_MemBar()->trailing_load() && n->req() > MemBarNode::Precedent) {
+      // At parse time, the trailing MemBarAcquire for a volatile load
+      // is created with an edge to the load. After optimizations,
+      // that input may be a chain of Phis. If those phis have no
+      // other use, then the MemBarAcquire keeps them alive and
+      // register allocation can be confused.
+      ResourceMark rm;
+      Unique_Node_List wq;
+      wq.push(n->in(MemBarNode::Precedent));
+      n->set_req(MemBarNode::Precedent, top());
+      while (wq.size() > 0) {
+        Node* m = wq.pop();
+        if (m->outcnt() == 0) {
+          for (uint j = 0; j < m->req(); j++) {
+            Node* in = m->in(j);
+            if (in != NULL) {
+              wq.push(in);
+            }
+          }
+          m->disconnect_inputs(NULL, this);
+        }
+      }
+    }
+    break;
+  }
   case Op_RangeCheck: {
     RangeCheckNode* rc = n->as_RangeCheck();
     Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);
