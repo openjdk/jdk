@@ -26,8 +26,15 @@
 #define OS_CPU_WINDOWS_X86_VM_THREAD_WINDOWS_X86_HPP
 
  private:
+  // On windows, in the stubGenerator, there's nowhere to save callee saved regs
+  address          _windows_saved_rsi;
+  address          _windows_saved_rdi;
+
   void pd_initialize() {
     _anchor.clear();
+
+    _windows_saved_rsi = NULL;
+    _windows_saved_rdi = NULL;
   }
 
   frame pd_last_frame();
@@ -52,6 +59,8 @@
 
    bool pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava);
 
+  static ByteSize windows_saved_rsi_offset() { return byte_offset_of(JavaThread, _windows_saved_rsi); }
+  static ByteSize windows_saved_rdi_offset() { return byte_offset_of(JavaThread, _windows_saved_rdi); }
 private:
   bool pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava);
 
