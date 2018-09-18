@@ -92,9 +92,6 @@ private:
   // Make parsable and release it.
   void reset();
 
-  // Resize based on amount of allocation, etc.
-  void resize();
-
   void invariants() const { assert(top() >= start() && top() <= end(), "invalid tlab"); }
 
   void initialize(HeapWord* start, HeapWord* top, HeapWord* end);
@@ -168,11 +165,11 @@ public:
   // Retire in-use tlab before allocation of a new tlab
   void clear_before_allocation();
 
+  // Resize based on amount of allocation, etc.
+  void resize();
+
   // Accumulate statistics across all tlabs before gc
   static void accumulate_statistics_before_gc();
-
-  // Resize tlabs for all threads
-  static void resize_all_tlabs();
 
   void fill(HeapWord* start, HeapWord* top, size_t new_size);
   void initialize();

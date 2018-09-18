@@ -138,14 +138,6 @@ void ThreadLocalAllocBuffer::make_parsable(bool retire, bool zap) {
          "TLAB must be reset");
 }
 
-void ThreadLocalAllocBuffer::resize_all_tlabs() {
-  if (ResizeTLAB) {
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-      thread->tlab().resize();
-    }
-  }
-}
-
 void ThreadLocalAllocBuffer::resize() {
   // Compute the next tlab size using expected allocation amount
   assert(ResizeTLAB, "Should not call this otherwise");
