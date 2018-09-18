@@ -27,27 +27,7 @@
 #include "jvmti.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_ARG1(x)
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_ARG1(x) x
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
-
-#define JVMTI_ENV_ARG JNI_ENV_ARG
-#define JVMTI_ENV_ARG1 JNI_ENV_ARG1
-#define JVMTI_ENV_PTR JNI_ENV_PTR
 
 #define JVMTI_ERROR_CHECK(str,res) if ( res != JVMTI_ERROR_NONE) { printf(str); printf("%d\n",res); return res;}
 #define JVMTI_ERROR_CHECK_EXPECTED_ERROR(str,res,err) if ( res != err) { printf(str); printf("unexpected error %d\n",res); return res;}
@@ -92,7 +72,7 @@ vmStart(jvmtiEnv *jvmti, JNIEnv* jni) {
 
    debug_printf("VMStart event done\n");
 
-   res = JVMTI_ENV_PTR(jvmti)->AddToBootstrapClassLoaderSearch(JVMTI_ENV_ARG(jvmti, segment));
+   res = jvmti->AddToBootstrapClassLoaderSearch(segment);
    JVMTI_ERROR_CHECK_EXPECTED_ERROR_VOID("VMStart: AddToBootstrapClassLoaderSearch returned error ",
       res, JVMTI_ERROR_WRONG_PHASE);
 }
@@ -106,7 +86,7 @@ vmDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
 
    debug_printf("VMDeath event done\n");
 
-   res = JVMTI_ENV_PTR(jvmti)->AddToBootstrapClassLoaderSearch(JVMTI_ENV_ARG(jvmti, segment));
+   res = jvmti->AddToBootstrapClassLoaderSearch(segment);
    /* In the live phase, anything other than an existing JAR file is an invalid path.
       So, check that JVMTI_ERROR_ILLEGAL_ARGUMENT error is thrown.
    */
@@ -122,7 +102,7 @@ void JNICALL vmInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread) {
 
     debug_printf("VMInit event  done\n");
 
-    res = JVMTI_ENV_PTR(jvmti)->AddToBootstrapClassLoaderSearch(JVMTI_ENV_ARG(jvmti, segment));
+    res = jvmti->AddToBootstrapClassLoaderSearch(segment);
     /* In the live phase, anything other than an existing JAR file is an invalid path.
        So, check that JVMTI_ERROR_ILLEGAL_ARGUMENT error is thrown.
     */
@@ -140,13 +120,13 @@ NativeMethodBind(jvmtiEnv* jvmti, JNIEnv *jni,
    jvmtiPhase phase;
    jvmtiError res;
 
-   res = JVMTI_ENV_PTR(jvmti)->GetPhase(JVMTI_ENV_ARG(jvmti, &phase));
+   res = jvmti->GetPhase(&phase);
    JVMTI_ERROR_CHECK_VOID("GetPhase returned error", res);
 
    if (phase == JVMTI_PHASE_PRIMORDIAL) {
       debug_printf("Primordial phase\n");
 
-      res = JVMTI_ENV_PTR(jvmti)->AddToBootstrapClassLoaderSearch(JVMTI_ENV_ARG(jvmti, segment));
+      res = jvmti->AddToBootstrapClassLoaderSearch(segment);
       JVMTI_ERROR_CHECK_EXPECTED_ERROR_VOID("Primordial: AddToBootstrapClassLoaderSearch returned error ",
          res, JVMTI_ERROR_WRONG_PHASE);
    }
@@ -215,44 +195,43 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
         if (idx != NULL) *idx = 0;
     }
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res < 0) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
 
     /* Add capabilities */
-    res = JVMTI_ENV_PTR(jvmti)->GetPotentialCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->GetPotentialCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetPotentialCapabilities returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->AddCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->AddCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetAddCapabilities returned error", res);
 
 
     /* Enable events */
     init_callbacks();
-    res = JVMTI_ENV_PTR(jvmti)->SetEventCallbacks(JVMTI_ENV_ARG(jvmti, &callbacks), sizeof(callbacks));
+    res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_VM_START,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_START returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_VM_INIT,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_NATIVE_METHOD_BIND,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for NATIVE_METHOD_BIND returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_VM_DEATH,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_DEATH returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode CLASS_FILE_LOAD_HOOK returned error", res);
 
     strcat(segment, "/newclass");
     debug_printf("segment=%s\n", segment);
-    res = JVMTI_ENV_PTR(jvmti)->AddToBootstrapClassLoaderSearch(JVMTI_ENV_ARG(jvmti, segment));
+    res = jvmti->AddToBootstrapClassLoaderSearch(segment);
     JVMTI_ERROR_CHECK("AddToBootStrapClassLoaderSearch returned error", res);
 
     return JNI_OK;
@@ -269,6 +248,4 @@ Java_nsk_jvmti_unit_functions_AddToBootstrapClassLoaderSearch_JvmtiTest_GetResul
 }
 
 
-#ifdef __cplusplus
 }
-#endif

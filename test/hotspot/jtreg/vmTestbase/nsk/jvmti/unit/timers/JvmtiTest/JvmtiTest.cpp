@@ -39,24 +39,7 @@
 
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_PTR(x) x
-#define JNI_ENV_ARG(x, y) y
-#else
-#define JNI_ENV_PTR(x) (*x)
-#define JNI_ENV_ARG(x, y) x, y
-#endif
-
-#endif
-
-#define JVMTI_ENV_PTR JNI_ENV_PTR
-#define JVMTI_ENV_ARG JNI_ENV_ARG
 
 #define JVMTI_ERROR_CHECK_DURING_ONLOAD(str,res) if ( res != JVMTI_ERROR_NONE) { printf("Fatal error: %s - %d\n", str, res); return JNI_ERR; }
 
@@ -102,7 +85,7 @@ void JNICALL vmInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread) {
     debug_printf("VMInit event\n");
 
     debug_printf("jvmti GetTime \n");
-    err = JVMTI_ENV_PTR(jvmti_env)->GetTime(JVMTI_ENV_ARG(jvmti_env, &initial_time));
+    err = jvmti_env->GetTime(&initial_time);
     JVMTI_ERROR_CHECK("GetTime", err);
     debug_printf("  Initial time: %s ns\n",
         jlong_to_string(initial_time, buffer));
@@ -157,13 +140,13 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
 
     /* Enable events */
     init_callbacks();
-    res = JVMTI_ENV_PTR(jvmti)->SetEventCallbacks(JVMTI_ENV_ARG(jvmti_env, &callbacks), sizeof(callbacks));
+    res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK_DURING_ONLOAD("SetEventCallbacks returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti_env, JVMTI_ENABLE), JVMTI_EVENT_VM_INIT, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
     JVMTI_ERROR_CHECK_DURING_ONLOAD("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti_env, JVMTI_ENABLE), JVMTI_EVENT_VM_DEATH, NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
     JVMTI_ERROR_CHECK_DURING_ONLOAD("SetEventNotificationMode for vm death event returned error", res);
 
     return JNI_OK;
@@ -184,12 +167,12 @@ Java_nsk_jvmti_unit_timers_JvmtiTest_RegisterCompletedThread(JNIEnv * env,
     jlong curr;
 
     debug_printf("jvmti GetCurrentThreadCpuTime \n");
-    ret = JVMTI_ENV_PTR(jvmti)->GetCurrentThreadCpuTime(JVMTI_ENV_ARG(jvmti_env, &curr));
+    ret = jvmti->GetCurrentThreadCpuTime(&curr);
     JVMTI_ERROR_CHECK_RETURN("GetCurrentThreadCpuTime", ret);
 
     thread_info[threadNumber].iterationCount = iterationCount;
     thread_info[threadNumber].currThreadTime = curr;
-    thread_info[threadNumber].ref = JNI_ENV_PTR(env)->NewWeakGlobalRef(JNI_ENV_ARG(env, thread));
+    thread_info[threadNumber].ref = env->NewWeakGlobalRef(thread);
 }
 
 static void print_timerinfo(jvmtiTimerInfo* timerInfo) {
@@ -237,34 +220,34 @@ Java_nsk_jvmti_unit_timers_JvmtiTest_Analyze(JNIEnv * env, jclass cls) {
     char buffer[32];
 
     debug_printf("jvmti GetTime \n");
-    ret = JVMTI_ENV_PTR(jvmti)->GetTime(JVMTI_ENV_ARG(jvmti_env, &now));
+    ret = jvmti->GetTime(&now);
     JVMTI_ERROR_CHECK_RETURN("GetTime", ret);
     etime = now - initial_time;
     debug_printf("  Elapsed time: %s ms\n",
         jlong_to_string(milli(etime), buffer));
 
     debug_printf("jvmti GetCurrentThreadCpuTimerInfo \n");
-    ret = JVMTI_ENV_PTR(jvmti)->GetCurrentThreadCpuTimerInfo(JVMTI_ENV_ARG(jvmti_env, &timerInfoCurr));
+    ret = jvmti->GetCurrentThreadCpuTimerInfo(&timerInfoCurr);
     JVMTI_ERROR_CHECK_RETURN("GetCurrentThreadCpuTimerInfo", ret);
     print_timerinfo(&timerInfoCurr);
 
     debug_printf("jvmti GetThreadCpuTimerInfo \n");
-    ret = JVMTI_ENV_PTR(jvmti)->GetThreadCpuTimerInfo(JVMTI_ENV_ARG(jvmti_env, &timerInfoOther));
+    ret = jvmti->GetThreadCpuTimerInfo(&timerInfoOther);
     JVMTI_ERROR_CHECK_RETURN("GetThreadCpuTimerInfo", ret);
     print_timerinfo(&timerInfoOther);
 
     debug_printf("jvmti GetTimerInfo \n");
-    ret = JVMTI_ENV_PTR(jvmti)->GetTimerInfo(JVMTI_ENV_ARG(jvmti_env, &timerInfoTime));
+    ret = jvmti->GetTimerInfo(&timerInfoTime);
     JVMTI_ERROR_CHECK_RETURN("GetTimerInfo", ret);
     print_timerinfo(&timerInfoTime);
 
     debug_printf("jvmti GetAvailableProcessors \n");
-    ret = JVMTI_ENV_PTR(jvmti)->GetAvailableProcessors(JVMTI_ENV_ARG(jvmti_env, &processor_count));
+    ret = jvmti->GetAvailableProcessors(&processor_count);
     JVMTI_ERROR_CHECK_RETURN("GetAvailableProcessors", ret);
     debug_printf("  processor_count = %d\n", processor_count);
 
     debug_printf("jvmti GetAllThreads \n");
-    ret = JVMTI_ENV_PTR(jvmti)->GetAllThreads(JVMTI_ENV_ARG(jvmti_env, &thrCnt), &thrArray);
+    ret = jvmti->GetAllThreads(&thrCnt, &thrArray);
     JVMTI_ERROR_CHECK_RETURN("GetAllThreads", ret);
 
     for (k = 0; k < thrCnt; ++k) {
@@ -272,13 +255,13 @@ Java_nsk_jvmti_unit_timers_JvmtiTest_Analyze(JNIEnv * env, jclass cls) {
       jthread thread;
 
       thread = thrArray[k];
-      ret = JVMTI_ENV_PTR(jvmti)->GetThreadCpuTime(JVMTI_ENV_ARG(jvmti_env, thread), &oth);
+      ret = jvmti->GetThreadCpuTime(thread, &oth);
       JVMTI_ERROR_CHECK_RETURN("GetThreadCpuTime", ret);
 
       for (i = 1; i < THREADS_LIMIT; ++i) {
         jweak tref = thread_info[i].ref;
         if (tref != 0) {
-          if (JNI_ENV_PTR(env)->IsSameObject(JNI_ENV_ARG(env, thread), tref)) {
+          if (env->IsSameObject(thread, tref)) {
             thread_info[i].threadTime = oth;
             break;
           }
@@ -287,7 +270,7 @@ Java_nsk_jvmti_unit_timers_JvmtiTest_Analyze(JNIEnv * env, jclass cls) {
       if (i == THREADS_LIMIT) {
         jvmtiThreadInfo info;
         info.name = (char*) "*retrieval error*";
-        ret = JVMTI_ENV_PTR(jvmti)->GetThreadInfo(JVMTI_ENV_ARG(jvmti_env, thread), &info);
+        ret = jvmti->GetThreadInfo(thread, &info);
         JVMTI_ERROR_CHECK("GetThreadInfo %d \n", ret);
 
         debug_printf("non-test thread: %s - %s ms\n", info.name,
@@ -380,6 +363,4 @@ Java_nsk_jvmti_unit_timers_JvmtiTest_Analyze(JNIEnv * env, jclass cls) {
 }
 
 
-#ifdef __cplusplus
 }
-#endif

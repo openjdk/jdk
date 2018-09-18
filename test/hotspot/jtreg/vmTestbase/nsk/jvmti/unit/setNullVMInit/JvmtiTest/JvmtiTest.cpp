@@ -36,27 +36,7 @@
 #include "jni_tools.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_ARG1(x)
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_ARG1(x) x
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
-
-#define JVMTI_ENV_ARG JNI_ENV_ARG
-#define JVMTI_ENV_ARG1 JNI_ENV_ARG1
-#define JVMTI_ENV_PTR JNI_ENV_PTR
 
 #define JVMTI_ERROR_CHECK(str,res) if ( res != JVMTI_ERROR_NONE) { printf(str); printf("%d\n",res); return res;}
 #define JVMTI_ERROR_CHECK_EXPECTED_ERROR(str,res,err) if ( res != err) { printf(str); printf("unexpected error %d\n",res); return res;}
@@ -86,7 +66,7 @@ void debug_printf(char *fmt, ...) {
 intptr_t get_env_local() {
   jvmtiError res;
   void *val;
-  res = JVMTI_ENV_PTR(jvmti)->GetEnvironmentLocalStorage(JVMTI_ENV_ARG(jvmti, &val));
+  res = jvmti->GetEnvironmentLocalStorage(&val);
   JVMTI_ERROR_CHECK("GetEnvironmentLocalStorage returned error", res);
   return (intptr_t)val;
 }
@@ -94,14 +74,14 @@ intptr_t get_env_local() {
 void set_env_local(intptr_t x) {
   jvmtiError res;
   void *val = (void*)x;
-  res = JVMTI_ENV_PTR(jvmti)->SetEnvironmentLocalStorage(JVMTI_ENV_ARG(jvmti, val));
+  res = jvmti->SetEnvironmentLocalStorage(val);
   JVMTI_ERROR_CHECK_VOID("SetEnvironmentLocalStorage returned error", res);
 }
 
 intptr_t get_thread_local(jthread thread) {
   jvmtiError res;
   void *val;
-  res = JVMTI_ENV_PTR(jvmti)->GetThreadLocalStorage(JVMTI_ENV_ARG(jvmti, thread), &val);
+  res = jvmti->GetThreadLocalStorage(thread, &val);
   JVMTI_ERROR_CHECK("GetThreadLocalStorage returned error", res);
   return (intptr_t)val;
 }
@@ -109,7 +89,7 @@ intptr_t get_thread_local(jthread thread) {
 void set_thread_local(jthread thread, intptr_t x) {
   jvmtiError res;
   void *val = (void*)x;
-  res = JVMTI_ENV_PTR(jvmti)->SetThreadLocalStorage(JVMTI_ENV_ARG(jvmti, thread), val);
+  res = jvmti->SetThreadLocalStorage(thread, val);
   JVMTI_ERROR_CHECK_VOID("SetThreadLocalStorage returned error", res);
 }
 
@@ -164,8 +144,7 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
         }
     }
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res < 0) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -179,10 +158,10 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
 
     /* Enable events */
     init_callbacks();
-    res = JVMTI_ENV_PTR(jvmti)->SetEventCallbacks(JVMTI_ENV_ARG(jvmti, &callbacks), sizeof(callbacks));
+    res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti, JVMTI_ENABLE), JVMTI_EVENT_VM_INIT,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT,NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
     return JNI_OK;
@@ -201,6 +180,4 @@ Java_nsk_jvmti_unit_setNullVMInit_JvmtiTest_check(JNIEnv *env, jclass cls) {
   return iGlobalStatus;
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -277,8 +264,8 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread,
         return;
     }
     if (method == midCountDownString) {
-      ret_str = JNI_ENV_PTR(env)->GetStringUTFChars(JNI_ENV_ARG(env, ret_val), 0);
-      exp_str = JNI_ENV_PTR(env)->GetStringUTFChars(JNI_ENV_ARG(env, str_exp), 0);
+      ret_str = env->GetStringUTFChars(ret_val, 0);
+      exp_str = env->GetStringUTFChars(str_exp, 0);
       printf("Expected string: \"%s\"\n", exp_str);
       printf("Returned string: \"%s\"\n", ret_str);
       if (was_popped_by_exception) {
@@ -310,8 +297,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong error code of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -379,22 +365,19 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretstr_getReady(
         return;
     }
 
-    midRun = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-         "run", "()V");
+    midRun = env->GetMethodID(cls, "run", "()V");
     if (midRun == NULL) {
         printf("Cannot find Method ID for method run\n");
         RETURN_FAILED;
     }
 
-    midCheckPoint = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-         "checkPoint", "()V");
+    midCheckPoint = env->GetMethodID(cls, "checkPoint", "()V");
     if (midCheckPoint == NULL) {
         printf("Cannot find Method ID for method checkPoint\n");
         RETURN_FAILED;
     }
 
-    midCountDownString = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-         "countDownString", sig_exp);
+    midCountDownString = env->GetMethodID(cls, "countDownString", sig_exp);
     if (midCountDownString == NULL) {
         printf("Cannot find Method ID for method countDownString\n");
         RETURN_FAILED;
@@ -414,7 +397,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretstr_getReady(
                TranslateError(err), err);
         RETURN_FAILED;
     } else {
-        str_exp = (jstring) JNI_ENV_PTR(env)->NewGlobalRef(JNI_ENV_ARG(env, expected_str));
+        str_exp = (jstring) env->NewGlobalRef(expected_str);
         framesExpected = depth;
     }
 }
@@ -430,6 +413,4 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretstr_check(JNIEnv *env, jclass cls) 
     return errCode;
 }
 
-#ifdef __cplusplus
 }
-#endif
