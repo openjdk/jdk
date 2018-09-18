@@ -232,6 +232,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
       XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
       $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
       if test $? -ne 0; then
+        AC_MSG_NOTICE([xcodebuild output: $XCODE_VERSION_OUTPUT])
         AC_MSG_ERROR([Failed to determine Xcode version.])
       fi
       XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
