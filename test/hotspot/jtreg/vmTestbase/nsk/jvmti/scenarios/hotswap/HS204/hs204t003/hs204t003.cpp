@@ -30,9 +30,7 @@
 #include "jni_tools.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS204/hs204t003/MyThread"
 #define CLASS_NAME  "Lnsk/jvmti/scenarios/hotswap/HS204/hs204t003/MyThread;"
@@ -252,6 +250,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS204_hs204t003_hs204t003_popFrame(JNIEnv * jni
     }
     return retvalue;
 }
-#ifdef __cplusplus
 }
-#endif

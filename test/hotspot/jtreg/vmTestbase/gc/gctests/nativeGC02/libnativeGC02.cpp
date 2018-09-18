@@ -23,9 +23,7 @@
 #include <jni.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* A C function that takes a reference to java Object( a circular Linked list)
     and utilizes this reference to do a java method callback to determine the
@@ -76,6 +74,4 @@ Java_gc_gctests_nativeGC02_nativeGC02_nativeMethod02
         return elementCount;
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -23,9 +23,7 @@
 
 #include <jni.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Class:     nsk_monitoring_share_thread_NativeBlockedThread
@@ -40,6 +38,4 @@ JNIEXPORT void JNICALL Java_nsk_monitoring_share_thread_NativeBlockedThread_nati
         env->MonitorExit(lock);
 }
 
-#ifdef __cplusplus
 }
-#endif

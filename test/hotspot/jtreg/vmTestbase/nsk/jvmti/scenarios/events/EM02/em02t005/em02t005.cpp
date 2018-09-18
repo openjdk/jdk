@@ -28,9 +28,7 @@
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ============================================================================= */
 
@@ -587,6 +585,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 /* ============================================================================= */
 
 
-#ifdef __cplusplus
 }
-#endif

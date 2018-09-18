@@ -25,9 +25,7 @@
 #include "agent_common.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ============================================================================= */
 
@@ -83,6 +81,4 @@ Agent_OnUnload(JavaVM *jvm)
 
 /* ============================================================================= */
 
-#ifdef __cplusplus
 }
-#endif

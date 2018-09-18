@@ -26,9 +26,7 @@
 #include <string.h>
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS302/hs302t010r/MyClass"
 #define PATH_FORMAT "%s%02d/%s"
@@ -98,6 +96,4 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     }
     return JNI_OK;
 }
-#ifdef __cplusplus
 }
-#endif

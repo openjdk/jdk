@@ -24,9 +24,7 @@
 #ifndef NSK_SHARE_NATIVE_NATIVE_THREAD_H
 #define NSK_SHARE_NATIVE_NATIVE_THREAD_H
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /**
  * A thread procedure with a void* argument and returning
@@ -75,8 +73,6 @@ void THREAD_waitFor(void* thread);
  */
 void THREAD_sleep(int seconds);
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif

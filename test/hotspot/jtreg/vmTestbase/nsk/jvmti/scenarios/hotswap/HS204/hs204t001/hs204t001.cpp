@@ -30,9 +30,7 @@
 #include "jvmti_tools.h"
 
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 static JNIEnv* jni = NULL;
 static jvmtiEnv *jvmti = NULL;
 static jlong timeout = 0;
@@ -305,6 +303,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS204_hs204t001_hs204t001_popFrame(JNIEnv * env
     }
     return NSK_TRUE;
 }
-#ifdef __cplusplus
 }
-#endif

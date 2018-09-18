@@ -26,9 +26,7 @@
 #include <stdlib.h>
 #include "jnihelper.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define BOOL  0
 #define BYTE  1
@@ -263,6 +261,4 @@ Use Orig pointers to get the original effect of the test.
     return JNI_TRUE;
 }
 
-#ifdef __cplusplus
 }
-#endif

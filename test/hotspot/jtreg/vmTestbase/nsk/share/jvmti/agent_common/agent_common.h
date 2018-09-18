@@ -26,9 +26,7 @@
 #include "jvmti.h"
 #include "../jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved);
 
@@ -36,8 +34,6 @@ JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *jvm, char *options, void *reserved
 
 jint Agent_Initialize(JavaVM *vm, char *options, void *reserved);
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif

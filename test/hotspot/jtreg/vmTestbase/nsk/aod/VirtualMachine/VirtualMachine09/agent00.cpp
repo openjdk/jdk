@@ -26,9 +26,7 @@
 #include <jni.h>
 #include <aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Test checks following spec clause: "Agent_OnAttach function is invoked even if the agent library was loaded
@@ -68,6 +66,4 @@ JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *vm, char *optionsString, void *res
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

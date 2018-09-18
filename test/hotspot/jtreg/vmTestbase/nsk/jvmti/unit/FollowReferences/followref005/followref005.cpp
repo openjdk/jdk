@@ -27,9 +27,7 @@
 #include "jvmti_tools.h"
 #include "jvmti_FollowRefObjects.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jlong g_timeout = 0;
 
@@ -165,6 +163,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 /* ============================================================================= */
 
-#ifdef __cplusplus
 }
-#endif

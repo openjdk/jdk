@@ -25,9 +25,7 @@
 #include <stdio.h>
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define GET_OBJECT_CLASS(_class, _obj)\
     if (!NSK_JNI_VERIFY(env, (_class = \
@@ -93,6 +91,4 @@ Java_nsk_monitoring_stress_thread_RunningThread_recursionNative(JNIEnv *env,
     return 0;
 }
 
-#ifdef __cplusplus
 }
-#endif

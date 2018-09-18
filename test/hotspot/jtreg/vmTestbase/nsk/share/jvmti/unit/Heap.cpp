@@ -29,9 +29,7 @@
 #include "jvmti.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jvmtiEnv *jvmti;
 static jint dummy_user_data;
@@ -470,6 +468,4 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     return 0;
 }
 
-#ifdef __cplusplus
 }
-#endif

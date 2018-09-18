@@ -27,9 +27,7 @@
 #include <jvmti.h>
 #include <jvmti_tools.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define MAX_STRING_LENGTH 1024
 
@@ -90,8 +88,6 @@ int nsk_jvmti_aod_redefineClass(Options* options, jvmtiEnv* jvmti, jclass classT
 
 void printCapabilities(jvmtiCapabilities caps);
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* END OF NSK_SHARE_JVMTI_AOD_H */

@@ -25,9 +25,7 @@
 #include <string.h>
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 const char* TranslateState(jint flags) {
     static char str[15 * 20];
@@ -326,6 +324,4 @@ const char* TranslateObjectRefKind(jvmtiObjectReferenceKind ref) {
     }
 }
 
-#ifdef __cplusplus
 }
-#endif

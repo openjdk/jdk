@@ -35,9 +35,7 @@
 #include "JVMTITools.h"
 
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 
 /******************** Diagnostics errors *********************/
@@ -393,8 +391,6 @@ void getPhase(jvmtiEnv *env, jvmtiPhase *phase);
 #endif
 
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif

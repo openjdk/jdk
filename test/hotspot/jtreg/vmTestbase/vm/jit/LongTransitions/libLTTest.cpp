@@ -23,9 +23,7 @@
 #include <jni.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT void JNICALL Java_vm_jit_LongTransitions_LTTest_nativeFnc1(JNIEnv *e, jclass c
 ,jfloat p0,jfloat p1,jfloat p2,jfloat p3,jfloat p4,jfloat p5,jfloat p6,jfloat p7
@@ -3464,6 +3462,4 @@ JNIEXPORT void JNICALL Java_vm_jit_LongTransitions_LTTest_nativeFnc52(JNIEnv *e,
     fclose(file);
 }
 
-#ifdef __cplusplus
 }
-#endif

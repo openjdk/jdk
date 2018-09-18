@@ -25,9 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define CHECK_EXCEPTION     { if (env->ExceptionOccurred()) { fprintf(stderr, "Unexpected exception:\n"); env->ExceptionDescribe(); env->ExceptionClear(); exit(97); } }
 
@@ -114,6 +112,4 @@ Java_nsk_stress_jni_JNIter005_except (JNIEnv *env, jobject jobj, jthrowable tobj
 /*     printf("JNI: count %d\n", Exceptcalls); */
 }
 
-#ifdef __cplusplus
 }
-#endif

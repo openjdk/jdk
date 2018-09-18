@@ -47,27 +47,6 @@
  *
  */
 
-#define NSK_CPP_STUB1(Func,env)  (*env)->Func(env)
-#define NSK_CPP_STUB2(Func,env,a)  (*env)->Func(env,a)
-#define NSK_CPP_STUB3(Func,env,a,b)  (*env)->Func(env,a,b)
-#define NSK_CPP_STUB4(Func,env,a,b,c)  (*env)->Func(env,a,b,c)
-#define NSK_CPP_STUB5(Func,env,a,b,c,d)  (*env)->Func(env,a,b,c,d)
-#define NSK_CPP_STUB6(Func,env,a,b,c,d,e)  (*env)->Func(env,a,b,c,d,e)
-#define NSK_CPP_STUB7(Func,env,a,b,c,d,e,f)  (*env)->Func(env,a,b,c,d,e,f)
-#define NSK_CPP_STUB8(Func,env,a,b,c,d,e,f,g)  (*env)->Func(env,a,b,c,d,e,f,g)
-#define NSK_CPP_STUB9(Func,env,a,b,c,d,e,f,g,h)  (*env)->Func(env,a,b,c,d,e,f,g,h)
-
-#ifdef __cplusplus
-#ifndef NSK_CPP_STUBS_ENFORCE_C
-#undef NSK_CPP_STUB1
-#undef NSK_CPP_STUB2
-#undef NSK_CPP_STUB3
-#undef NSK_CPP_STUB4
-#undef NSK_CPP_STUB5
-#undef NSK_CPP_STUB6
-#undef NSK_CPP_STUB7
-#undef NSK_CPP_STUB8
-#undef NSK_CPP_STUB9
 #define NSK_CPP_STUB1(Func,env)  env->Func()
 #define NSK_CPP_STUB2(Func,env,a)  env->Func(a)
 #define NSK_CPP_STUB3(Func,env,a,b)  env->Func(a,b)
@@ -77,8 +56,6 @@
 #define NSK_CPP_STUB7(Func,env,a,b,c,d,e,f)  env->Func(a,b,c,d,e,f)
 #define NSK_CPP_STUB8(Func,env,a,b,c,d,e,f,g)  env->Func(a,b,c,d,e,f,g)
 #define NSK_CPP_STUB9(Func,env,a,b,c,d,e,f,g,h)  env->Func(a,b,c,d,e,f,g,h)
-#endif
-#endif
 
 /*************************************************************/
 
@@ -123,9 +100,7 @@
 
 /*************************************************************/
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define NSK_TRUE  1
 #define NSK_FALSE 0
@@ -210,9 +185,7 @@ const char* nsk_null_string(const char* str);
 
 /*************************************************************/
 
-#ifdef __cplusplus
 }
-#endif
 
 /*************************************************************/
 

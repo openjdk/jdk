@@ -27,9 +27,7 @@
 #include "jvmti_tools.h"
 
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS301/hs301t005/MyClass"
 #define CLASS_NAME "Lnsk/jvmti/scenarios/hotswap/HS301/hs301t005/MyClass;"
 
@@ -99,6 +97,4 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

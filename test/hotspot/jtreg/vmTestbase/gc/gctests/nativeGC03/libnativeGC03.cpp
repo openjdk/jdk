@@ -22,9 +22,7 @@
  */
 #include <jni.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT void JNICALL
 Java_gc_gctests_nativeGC03_nativeGC03_nativeMethod03
@@ -57,6 +55,4 @@ Java_gc_gctests_nativeGC03_nativeGC03_nativeMethod03
 
 }
 
-#ifdef __cplusplus
 }
-#endif

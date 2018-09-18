@@ -26,9 +26,7 @@
 #include <jni.h>
 #include <aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define AGENT_NAME "VMNativeAgent03"
 
@@ -59,6 +57,4 @@ JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *vm, char *optionsString, void *res
     return ON_ATTACH_EXIT_CODE;
 }
 
-#ifdef __cplusplus
 }
-#endif

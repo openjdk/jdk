@@ -105,9 +105,7 @@ static jbyte* widening;
 
 /* ========================================================================== */
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
     static u1 get_u1() {
         return *inputPos++;
@@ -1202,6 +1200,4 @@ extern "C" {
 
     /* ========================================================================== */
 
-#ifdef __cplusplus
 }
-#endif

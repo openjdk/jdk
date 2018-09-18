@@ -43,9 +43,7 @@
    method b().
 */
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS203/hs203t002/MyThread"
 #define SEARCH_NAME "nsk/jvmti/scenarios/hotswap/HS203/hs203t002/MyThread"
@@ -252,6 +250,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t002_hs203t002_suspendThread(JNIEnv 
     return retvalue;
 }
 
-#ifdef __cplusplus
 }
-#endif

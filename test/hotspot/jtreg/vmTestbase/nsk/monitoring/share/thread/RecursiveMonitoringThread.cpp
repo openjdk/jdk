@@ -25,9 +25,7 @@
 #include <stdio.h>
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FIND_CLASS(_class, _className)\
     if (!NSK_JNI_VERIFY(env, (_class = \
@@ -176,7 +174,5 @@ JNIEXPORT void JNICALL Java_nsk_monitoring_share_thread_RecursiveMonitoringThrea
         }
 }
 
-#ifdef __cplusplus
 }
-#endif
 

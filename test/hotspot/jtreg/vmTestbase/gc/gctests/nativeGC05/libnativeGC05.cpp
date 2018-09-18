@@ -23,9 +23,7 @@
 #include <jni.h>
 #include <stdio.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT void JNICALL
 Java_gc_gctests_nativeGC05_nativeGC05_kickOffRefillers
@@ -91,6 +89,4 @@ Java_gc_gctests_nativeGC05_nativeGC05_kickOffRefillers
         }
 }
 
-#ifdef __cplusplus
 }
-#endif

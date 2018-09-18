@@ -26,9 +26,7 @@
 #include <stdlib.h>
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jvmtiEnv *jvmti = NULL;
 static jvmtiCapabilities caps;
@@ -67,6 +65,4 @@ JNIEXPORT void JNICALL Java_nsk_share_gc_lock_jvmti_JVMTIAllocLocker_jVMTIAllocS
         }
 }
 
-#ifdef __cplusplus
 }
-#endif

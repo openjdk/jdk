@@ -28,9 +28,7 @@
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ============================================================================= */
 
@@ -810,6 +808,4 @@ void nsk_jvmti_showPossessedCapabilities(jvmtiEnv *jvmti_env) {
 
 /* ============================================================================= */
 
-#ifdef __cplusplus
 }
-#endif

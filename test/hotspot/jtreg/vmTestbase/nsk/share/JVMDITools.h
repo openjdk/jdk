@@ -21,13 +21,9 @@
  * questions.
  */
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 char const *TranslateEvent(jint kind);
 char const *TranslateError(jvmdiError err);
 
-#ifdef __cplusplus
 }
-#endif

@@ -39,9 +39,7 @@
 #include "JVMTITools.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jvmtiEnv *jvmti = NULL; /* JVMTI env */
 static jvmtiEventCallbacks callbacks;
@@ -1271,6 +1269,4 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

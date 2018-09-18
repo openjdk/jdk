@@ -27,9 +27,7 @@
 #include <string.h>
 #include "jnihelper.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define DIGESTLENGTH 16
 
@@ -171,6 +169,4 @@ Java_nsk_stress_jni_JNIter004_CheckCompare (JNIEnv *env, jobject jobj, jstring j
     return ret;
 }
 
-#ifdef __cplusplus
 }
-#endif

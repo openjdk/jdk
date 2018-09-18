@@ -27,9 +27,7 @@
 #include "jni.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define ARGS_COUNT 6
 
@@ -74,6 +72,4 @@ Java_vm_mlvm_meth_stress_jni_nativeAndMH_Test_native01(
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

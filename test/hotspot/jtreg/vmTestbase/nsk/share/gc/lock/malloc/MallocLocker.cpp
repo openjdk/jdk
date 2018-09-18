@@ -25,9 +25,7 @@
 #include <stdlib.h>
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Class:     nsk_share_gc_lock_malloc_MallocLocker
@@ -50,6 +48,4 @@ JNIEXPORT void JNICALL Java_nsk_share_gc_lock_malloc_MallocLocker_mallocSection
         }
 }
 
-#ifdef __cplusplus
 }
-#endif

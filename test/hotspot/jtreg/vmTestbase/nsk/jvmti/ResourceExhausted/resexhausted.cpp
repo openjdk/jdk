@@ -30,9 +30,7 @@
 #define PASSED 0
 #define STATUS_FAILED 2
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jvmtiEnv* gJvmti = NULL;
 static volatile jboolean gGotEvent = JNI_FALSE;
@@ -102,6 +100,4 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -24,9 +24,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT void JNICALL Java_gc_gctests_mallocWithGC1_mallocWithGC1_getMallocLock01
 (JNIEnv *env, jobject obj) {
@@ -43,6 +41,4 @@ JNIEXPORT void JNICALL Java_gc_gctests_mallocWithGC1_mallocWithGC1_getMallocLock
         }
 }
 
-#ifdef __cplusplus
 }
-#endif

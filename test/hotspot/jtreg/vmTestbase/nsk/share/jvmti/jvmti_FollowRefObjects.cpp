@@ -27,9 +27,7 @@
 #include "jvmti_tools.h"
 #include "jvmti_FollowRefObjects.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ============================================================================= */
 
@@ -392,6 +390,4 @@ void jvmti_FollowRefObject_init()
 
 /* ============================================================================= */
 
-#ifdef __cplusplus
 }
-#endif

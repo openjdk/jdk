@@ -34,9 +34,7 @@
  *3. Upon reaching the breakpoint, redefine the class and pop
  *a currently executed frame of the static initializer.
 */
-#ifdef __cplusplus
 extern "C" {
-#endif
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS204/hs204t002/MyThread"
 
 #define SEARCH_NAME "nsk/jvmti/scenarios/hotswap/HS204/hs204t002/MyThread"
@@ -166,6 +164,4 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

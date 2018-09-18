@@ -25,9 +25,7 @@
 #include <stdio.h>
 #include "jnihelper.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT void JNICALL
 Java_nsk_stress_jni_JNIter007_incCount (JNIEnv *env, jobject jobj, jstring name) {
@@ -47,6 +45,4 @@ Java_nsk_stress_jni_JNIter007_incCount (JNIEnv *env, jobject jobj, jstring name)
     printf("in %s Count after %u\n", str, value);
 }
 
-#ifdef __cplusplus
 }
-#endif

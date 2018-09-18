@@ -28,9 +28,7 @@
 #include <jvmti_tools.h>
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 // Deallocate memory region allocated by VM
 #define DEALLOCATE(p) \
@@ -391,6 +389,4 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

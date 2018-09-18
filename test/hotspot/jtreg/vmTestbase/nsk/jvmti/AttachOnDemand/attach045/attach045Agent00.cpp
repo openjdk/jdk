@@ -28,9 +28,7 @@
 #include <aod.h>
 #include <jvmti_aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Agent receives expected number of ClassLoad events and finishes work
@@ -134,6 +132,4 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
 }
 
 
-#ifdef __cplusplus
 }
-#endif

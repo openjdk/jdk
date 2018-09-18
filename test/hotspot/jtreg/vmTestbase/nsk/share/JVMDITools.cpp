@@ -24,9 +24,7 @@
 #include "jvmdi.h"
 #include "JVMDITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 char const *TranslateEvent(jint kind) {
     switch (kind) {
@@ -168,6 +166,4 @@ char const *TranslateError(jvmdiError err) {
     }
 }
 
-#ifdef __cplusplus
 }
-#endif

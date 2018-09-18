@@ -24,9 +24,7 @@
 #include <stdio.h>
 #include "nsk_strace.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT void JNICALL
 Java_nsk_stress_strace_strace012Thread_recursiveMethod2(JNIEnv *env, jobject obj)
@@ -39,6 +37,4 @@ Java_nsk_stress_strace_strace012Thread_recursiveMethod2(JNIEnv *env, jobject obj
     CALL_VOID_NOPARAM(obj, threadClass, "recursiveMethod1");
 }
 
-#ifdef __cplusplus
 }
-#endif

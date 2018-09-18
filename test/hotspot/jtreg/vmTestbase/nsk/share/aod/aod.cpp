@@ -27,9 +27,7 @@
 #include <nsk_tools.h>
 #include <aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static volatile int internalError = 0;
 
@@ -283,6 +281,4 @@ JNIEnv* nsk_aod_createJNIEnv(JavaVM* vm) {
     return jni;
 }
 
-#ifdef __cplusplus
 }
-#endif

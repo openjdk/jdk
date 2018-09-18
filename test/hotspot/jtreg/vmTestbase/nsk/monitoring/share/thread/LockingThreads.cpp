@@ -23,9 +23,7 @@
 #include <jni.h>
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FIND_CLASS(_class, _className)\
         if (!NSK_JNI_VERIFY(env, (_class = \
@@ -85,6 +83,4 @@ JNIEXPORT void JNICALL Java_nsk_monitoring_share_thread_LockingThreads_00024Thre
                 env->ThrowNew(testBugClass, "MonitorEnter(lock4) call failed");
 }
 
-#ifdef __cplusplus
 }
-#endif
