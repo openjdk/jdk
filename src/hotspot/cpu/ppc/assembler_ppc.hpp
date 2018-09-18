@@ -529,6 +529,7 @@ class Assembler : public AbstractAssembler {
     XVNEGDP_OPCODE = (60u << OPCODE_SHIFT |  505u << 2),
     XVSQRTSP_OPCODE= (60u << OPCODE_SHIFT |  139u << 2),
     XVSQRTDP_OPCODE= (60u << OPCODE_SHIFT |  203u << 2),
+    XSCVDPSPN_OPCODE=(60u << OPCODE_SHIFT |  267u << 2),
     XVADDDP_OPCODE = (60u << OPCODE_SHIFT |   96u << 3),
     XVSUBDP_OPCODE = (60u << OPCODE_SHIFT |  104u << 3),
     XVMULSP_OPCODE = (60u << OPCODE_SHIFT |   80u << 3),
@@ -2202,6 +2203,7 @@ class Assembler : public AbstractAssembler {
   inline void xvnegdp(  VectorSRegister d, VectorSRegister b);
   inline void xvsqrtsp( VectorSRegister d, VectorSRegister b);
   inline void xvsqrtdp( VectorSRegister d, VectorSRegister b);
+  inline void xscvdpspn(VectorSRegister d, VectorSRegister b);
   inline void xvadddp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvsubdp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);
   inline void xvmulsp(  VectorSRegister d, VectorSRegister a, VectorSRegister b);

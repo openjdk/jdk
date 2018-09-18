@@ -85,6 +85,12 @@ const char* VectorSRegisterImpl::name() const {
   return is_valid() ? names[encoding()] : "vsnoreg";
 }
 
+// Method to convert a FloatRegister to a Vector-Scalar Register (VectorSRegister)
+VectorSRegister FloatRegisterImpl::to_vsr() const {
+  if (this == fnoreg) { return vsnoreg; }
+  return as_VectorSRegister(encoding());
+}
+
 // Method to convert a VectorRegister to a Vector-Scalar Register (VectorSRegister)
 VectorSRegister VectorRegisterImpl::to_vsr() const {
   if (this == vnoreg) { return vsnoreg; }

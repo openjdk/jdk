@@ -241,6 +241,10 @@ CONSTANT_REGISTER_DECLARATION(ConditionRegister, CCR7,   (7));
 
 #endif // DONT_USE_REGISTER_DEFINES
 
+// Forward declaration
+// Use VectorSRegister as a shortcut.
+class VectorSRegisterImpl;
+typedef VectorSRegisterImpl* VectorSRegister;
 
 // Use FloatRegister as shortcut
 class FloatRegisterImpl;
@@ -270,6 +274,9 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
   bool is_valid() const { return (0 <= value() && value() < number_of_registers); }
 
   const char* name() const;
+
+  // convert to VSR
+  VectorSRegister to_vsr() const;
 };
 
 // The float registers of the PPC architecture
@@ -397,11 +404,6 @@ typedef VectorRegisterImpl* VectorRegister;
 inline VectorRegister as_VectorRegister(int encoding) {
   return (VectorRegister)(intptr_t)encoding;
 }
-
-// Forward declaration
-// Use VectorSRegister as a shortcut.
-class VectorSRegisterImpl;
-typedef VectorSRegisterImpl* VectorSRegister;
 
 // The implementation of vector registers for the Power architecture
 class VectorRegisterImpl: public AbstractRegisterImpl {

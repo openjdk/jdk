@@ -13682,6 +13682,7 @@ instruct storeS_reversed(iRegIsrc src, indirect mem) %{
 instruct mtvsrwz(vecX temp1, iRegIsrc src) %{
   effect(DEF temp1, USE src);
 
+  format %{ "MTVSRWZ $temp1, $src \t// Move to 16-byte register" %}
   size(4);
   ins_encode %{
     __ mtvsrwz($temp1$$VectorSRegister, $src$$Register);
@@ -13692,9 +13693,21 @@ instruct mtvsrwz(vecX temp1, iRegIsrc src) %{
 instruct xxspltw(vecX dst, vecX src, immI8 imm1) %{
   effect(DEF dst, USE src, USE imm1);
 
+  format %{ "XXSPLTW $dst, $src, $imm1 \t// Splat word" %}
   size(4);
   ins_encode %{
     __ xxspltw($dst$$VectorSRegister, $src$$VectorSRegister, $imm1$$constant);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct xscvdpspn_regF(vecX dst, regF src) %{
+  effect(DEF dst, USE src);
+
+  format %{ "XSCVDPSPN $dst, $src \t// Convert scalar single precision to vector single precision" %}
+  size(4);
+  ins_encode %{
+    __ xscvdpspn($dst$$VectorSRegister, $src$$FloatRegister->to_vsr());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -14360,24 +14373,16 @@ instruct overflowMulL_reg_reg(flagsRegCR0 cr0, iRegLsrc op1, iRegLsrc op2) %{
   ins_pipe(pipe_class_default);
 %}
 
-
 instruct repl4F_reg_Ex(vecX dst, regF src) %{
   match(Set dst (ReplicateF src));
   predicate(n->as_Vector()->length() == 4);
-  ins_cost(2 * MEMORY_REF_COST + DEFAULT_COST);
+  ins_cost(DEFAULT_COST);
   expand %{
-    stackSlotL tmpS;
-    iRegIdst tmpI;
-    iRegLdst tmpL;
     vecX tmpV;
     immI8  zero %{ (int)  0 %}
 
-    moveF2I_reg_stack(tmpS, src);   // Move float to stack.
-    moveF2I_stack_reg(tmpI, tmpS);  // Move stack to int reg.
-    moveReg(tmpL, tmpI);             // Move int to long reg.
-    repl32(tmpL);                    // Replicate bitpattern.
-    mtvsrd(tmpV, tmpL);
-    xxpermdi(dst, tmpV, tmpV, zero);
+    xscvdpspn_regF(tmpV, src);
+    xxspltw(dst, tmpV, zero);
   %}
 %}
 
@@ -14404,17 +14409,13 @@ instruct repl4F_immF0(vecX dst, immF_0 zero) %{
 instruct repl2D_reg_Ex(vecX dst, regD src) %{
   match(Set dst (ReplicateD src));
   predicate(n->as_Vector()->length() == 2);
-  expand %{
-    stackSlotL tmpS;
-    iRegLdst tmpL;
-    iRegLdst tmp;
-    vecX tmpV;
-    immI8  zero %{ (int)  0 %}
-    moveD2L_reg_stack(tmpS, src);
-    moveD2L_stack_reg(tmpL, tmpS);
-    mtvsrd(tmpV, tmpL);
-    xxpermdi(dst, tmpV, tmpV, zero);
+
+  format %{ "XXPERMDI      $dst, $src, $src, 0 \t// Splat doubleword" %}
+  size(4);
+  ins_encode %{
+    __ xxpermdi($dst$$VectorSRegister, $src$$FloatRegister->to_vsr(), $src$$FloatRegister->to_vsr(), 0);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 instruct repl2D_immI0(vecX dst, immI_0 zero) %{
@@ -14445,7 +14446,7 @@ instruct mtvsrd(vecX dst, iRegLsrc src) %{
   predicate(false);
   effect(DEF dst, USE src);
 
-  format %{ "MTVSRD      $dst, $src \t// Move to 16-byte register"%}
+  format %{ "MTVSRD      $dst, $src \t// Move to 16-byte register" %}
   size(4);
   ins_encode %{
     __ mtvsrd($dst$$VectorSRegister, $src$$Register);
@@ -14456,7 +14457,7 @@ instruct mtvsrd(vecX dst, iRegLsrc src) %{
 instruct xxspltd(vecX dst, vecX src, immI8 zero) %{
   effect(DEF dst, USE src, USE zero);
 
-  format %{ "XXSPLATD      $dst, $src, $zero \t// Permute 16-byte register"%}
+  format %{ "XXSPLATD      $dst, $src, $zero \t// Splat doubleword" %}
   size(4);
   ins_encode %{
     __ xxpermdi($dst$$VectorSRegister, $src$$VectorSRegister, $src$$VectorSRegister, $zero$$constant);
@@ -14467,7 +14468,7 @@ instruct xxspltd(vecX dst, vecX src, immI8 zero) %{
 instruct xxpermdi(vecX dst, vecX src1, vecX src2, immI8 zero) %{
   effect(DEF dst, USE src1, USE src2, USE zero);
 
-  format %{ "XXPERMDI      $dst, $src1, $src2, $zero \t// Permute 16-byte register"%}
+  format %{ "XXPERMDI      $dst, $src1, $src2, $zero \t// Splat doubleword" %}
   size(4);
   ins_encode %{
     __ xxpermdi($dst$$VectorSRegister, $src1$$VectorSRegister, $src2$$VectorSRegister, $zero$$constant);
