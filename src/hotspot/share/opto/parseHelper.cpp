@@ -437,9 +437,9 @@ void Parse::set_md_flag_at(ciMethodData* md, ciProfileData* data, int flag_const
   Node* adr_node = method_data_addressing(md, data, DataLayout::flags_offset());
 
   const TypePtr* adr_type = _gvn.type(adr_node)->is_ptr();
-  Node* flags = make_load(NULL, adr_node, TypeInt::BYTE, T_BYTE, adr_type, MemNode::unordered);
+  Node* flags = make_load(NULL, adr_node, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
   Node* incr = _gvn.transform(new OrINode(flags, _gvn.intcon(flag_constant)));
-  store_to_memory(NULL, adr_node, incr, T_BYTE, adr_type, MemNode::unordered);
+  store_to_memory(NULL, adr_node, incr, T_INT, adr_type, MemNode::unordered);
 }
 
 //----------------------------profile_taken_branch-----------------------------
