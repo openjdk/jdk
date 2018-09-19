@@ -602,10 +602,8 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static int annotations_offset;
   static int parameter_annotations_offset;
   static int annotation_default_offset;
-  static int type_annotations_offset;
 
   static void compute_offsets();
-
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
@@ -616,7 +614,6 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static oop clazz(oop reflect);
   static void set_clazz(oop reflect, oop value);
 
-  static oop name(oop method);
   static void set_name(oop method, oop value);
 
   static oop return_type(oop method);
@@ -625,34 +622,15 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static oop parameter_types(oop method);
   static void set_parameter_types(oop method, oop value);
 
-  static oop exception_types(oop method);
-  static void set_exception_types(oop method, oop value);
-
   static int slot(oop reflect);
   static void set_slot(oop reflect, int value);
 
-  static int modifiers(oop method);
+  static void set_exception_types(oop method, oop value);
   static void set_modifiers(oop method, int value);
-
-  static bool has_signature_field();
-  static oop signature(oop method);
   static void set_signature(oop method, oop value);
-
-  static bool has_annotations_field();
-  static oop annotations(oop method);
   static void set_annotations(oop method, oop value);
-
-  static bool has_parameter_annotations_field();
-  static oop parameter_annotations(oop method);
   static void set_parameter_annotations(oop method, oop value);
-
-  static bool has_annotation_default_field();
-  static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
-
-  static bool has_type_annotations_field();
-  static oop type_annotations(oop method);
-  static void set_type_annotations(oop method, oop value);
 
   // Debugging
   friend class JavaClasses;
@@ -673,10 +651,8 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static int signature_offset;
   static int annotations_offset;
   static int parameter_annotations_offset;
-  static int type_annotations_offset;
 
   static void compute_offsets();
-
  public:
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
@@ -690,30 +666,14 @@ class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject 
   static oop parameter_types(oop constructor);
   static void set_parameter_types(oop constructor, oop value);
 
-  static oop exception_types(oop constructor);
-  static void set_exception_types(oop constructor, oop value);
-
   static int slot(oop reflect);
   static void set_slot(oop reflect, int value);
 
-  static int modifiers(oop constructor);
+  static void set_exception_types(oop constructor, oop value);
   static void set_modifiers(oop constructor, int value);
-
-  static bool has_signature_field();
-  static oop signature(oop constructor);
   static void set_signature(oop constructor, oop value);
-
-  static bool has_annotations_field();
-  static oop annotations(oop constructor);
   static void set_annotations(oop constructor, oop value);
-
-  static bool has_parameter_annotations_field();
-  static oop parameter_annotations(oop method);
   static void set_parameter_annotations(oop method, oop value);
-
-  static bool has_type_annotations_field();
-  static oop type_annotations(oop constructor);
-  static void set_type_annotations(oop constructor, oop value);
 
   // Debugging
   friend class JavaClasses;
@@ -733,7 +693,6 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int modifiers_offset;
   static int signature_offset;
   static int annotations_offset;
-  static int type_annotations_offset;
 
   static void compute_offsets();
 
@@ -759,25 +718,10 @@ class java_lang_reflect_Field : public java_lang_reflect_AccessibleObject {
   static int modifiers(oop field);
   static void set_modifiers(oop field, int value);
 
-  static bool has_signature_field();
-  static oop signature(oop constructor);
   static void set_signature(oop constructor, oop value);
-
-  static bool has_annotations_field();
-  static oop annotations(oop constructor);
   static void set_annotations(oop constructor, oop value);
-
-  static bool has_parameter_annotations_field();
-  static oop parameter_annotations(oop method);
   static void set_parameter_annotations(oop method, oop value);
-
-  static bool has_annotation_default_field();
-  static oop annotation_default(oop method);
   static void set_annotation_default(oop method, oop value);
-
-  static bool has_type_annotations_field();
-  static oop type_annotations(oop field);
-  static void set_type_annotations(oop field, oop value);
 
   // Debugging
   friend class JavaClasses;

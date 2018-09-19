@@ -898,28 +898,17 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
   java_lang_reflect_Method::set_exception_types(mh(), exception_types());
   java_lang_reflect_Method::set_modifiers(mh(), modifiers);
   java_lang_reflect_Method::set_override(mh(), false);
-  if (java_lang_reflect_Method::has_signature_field() &&
-      method->generic_signature() != NULL) {
+  if (method->generic_signature() != NULL) {
     Symbol*  gs = method->generic_signature();
     Handle sig = java_lang_String::create_from_symbol(gs, CHECK_NULL);
     java_lang_reflect_Method::set_signature(mh(), sig());
   }
-  if (java_lang_reflect_Method::has_annotations_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(method->annotations(), CHECK_NULL);
-    java_lang_reflect_Method::set_annotations(mh(), an_oop);
-  }
-  if (java_lang_reflect_Method::has_parameter_annotations_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(method->parameter_annotations(), CHECK_NULL);
-    java_lang_reflect_Method::set_parameter_annotations(mh(), an_oop);
-  }
-  if (java_lang_reflect_Method::has_annotation_default_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(method->annotation_default(), CHECK_NULL);
-    java_lang_reflect_Method::set_annotation_default(mh(), an_oop);
-  }
-  if (java_lang_reflect_Method::has_type_annotations_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(method->type_annotations(), CHECK_NULL);
-    java_lang_reflect_Method::set_type_annotations(mh(), an_oop);
-  }
+  typeArrayOop an_oop = Annotations::make_java_array(method->annotations(), CHECK_NULL);
+  java_lang_reflect_Method::set_annotations(mh(), an_oop);
+  an_oop = Annotations::make_java_array(method->parameter_annotations(), CHECK_NULL);
+  java_lang_reflect_Method::set_parameter_annotations(mh(), an_oop);
+  an_oop = Annotations::make_java_array(method->annotation_default(), CHECK_NULL);
+  java_lang_reflect_Method::set_annotation_default(mh(), an_oop);
   return mh();
 }
 
@@ -948,24 +937,15 @@ oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
   java_lang_reflect_Constructor::set_exception_types(ch(), exception_types());
   java_lang_reflect_Constructor::set_modifiers(ch(), modifiers);
   java_lang_reflect_Constructor::set_override(ch(), false);
-  if (java_lang_reflect_Constructor::has_signature_field() &&
-      method->generic_signature() != NULL) {
+  if (method->generic_signature() != NULL) {
     Symbol*  gs = method->generic_signature();
     Handle sig = java_lang_String::create_from_symbol(gs, CHECK_NULL);
     java_lang_reflect_Constructor::set_signature(ch(), sig());
   }
-  if (java_lang_reflect_Constructor::has_annotations_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(method->annotations(), CHECK_NULL);
-    java_lang_reflect_Constructor::set_annotations(ch(), an_oop);
-  }
-  if (java_lang_reflect_Constructor::has_parameter_annotations_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(method->parameter_annotations(), CHECK_NULL);
-    java_lang_reflect_Constructor::set_parameter_annotations(ch(), an_oop);
-  }
-  if (java_lang_reflect_Constructor::has_type_annotations_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(method->type_annotations(), CHECK_NULL);
-    java_lang_reflect_Constructor::set_type_annotations(ch(), an_oop);
-  }
+  typeArrayOop an_oop = Annotations::make_java_array(method->annotations(), CHECK_NULL);
+  java_lang_reflect_Constructor::set_annotations(ch(), an_oop);
+  an_oop = Annotations::make_java_array(method->parameter_annotations(), CHECK_NULL);
+  java_lang_reflect_Constructor::set_parameter_annotations(ch(), an_oop);
   return ch();
 }
 
@@ -986,20 +966,13 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
   // Note the ACC_ANNOTATION bit, which is a per-class access flag, is never set here.
   java_lang_reflect_Field::set_modifiers(rh(), fd->access_flags().as_int() & JVM_RECOGNIZED_FIELD_MODIFIERS);
   java_lang_reflect_Field::set_override(rh(), false);
-  if (java_lang_reflect_Field::has_signature_field() &&
-      fd->has_generic_signature()) {
+  if (fd->has_generic_signature()) {
     Symbol*  gs = fd->generic_signature();
     Handle sig = java_lang_String::create_from_symbol(gs, CHECK_NULL);
     java_lang_reflect_Field::set_signature(rh(), sig());
   }
-  if (java_lang_reflect_Field::has_annotations_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(fd->annotations(), CHECK_NULL);
-    java_lang_reflect_Field::set_annotations(rh(), an_oop);
-  }
-  if (java_lang_reflect_Field::has_type_annotations_field()) {
-    typeArrayOop an_oop = Annotations::make_java_array(fd->type_annotations(), CHECK_NULL);
-    java_lang_reflect_Field::set_type_annotations(rh(), an_oop);
-  }
+  typeArrayOop an_oop = Annotations::make_java_array(fd->annotations(), CHECK_NULL);
+  java_lang_reflect_Field::set_annotations(rh(), an_oop);
   return rh();
 }
 
