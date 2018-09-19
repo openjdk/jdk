@@ -193,11 +193,6 @@ private:
                           Node* klass_node, Node* length,
                           Node* size_in_bytes);
 
-  Node* prefetch_allocation(Node* i_o,
-                            Node*& needgc_false, Node*& contended_phi_rawmem,
-                            Node* old_eden_top, Node* new_eden_top,
-                            Node* length);
-
   Node* make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc);
 
 public:
@@ -215,6 +210,11 @@ public:
   Node* longcon(jlong con)      const { return _igvn.longcon(con); }
   Node* makecon(const Type *t)  const { return _igvn.makecon(t); }
   Node* top()                   const { return C->top(); }
+
+  Node* prefetch_allocation(Node* i_o,
+                            Node*& needgc_false, Node*& contended_phi_rawmem,
+                            Node* old_eden_top, Node* new_eden_top,
+                            intx lines);
 };
 
 #endif // SHARE_VM_OPTO_MACRO_HPP
