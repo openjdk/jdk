@@ -522,8 +522,9 @@ jSsl3MasterKeyDeriveParamToCKSsl3MasterKeyDeriveParam(JNIEnv *env,
         jobject jParam)
 {
     CK_SSL3_MASTER_KEY_DERIVE_PARAMS ckParam;
+    jclass jSsl3MasterKeyDeriveParamsClass;
     memset(&ckParam, 0, sizeof(CK_SSL3_MASTER_KEY_DERIVE_PARAMS));
-    jclass jSsl3MasterKeyDeriveParamsClass =
+    jSsl3MasterKeyDeriveParamsClass =
             (*env)->FindClass(env, CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS);
     if (jSsl3MasterKeyDeriveParamsClass == NULL) { return ckParam; }
     masterKeyDeriveParamToCKMasterKeyDeriveParam(env, jParam,
@@ -545,14 +546,16 @@ jTls12MasterKeyDeriveParamToCKTls12MasterKeyDeriveParam(JNIEnv *env,
         jobject jParam)
 {
     CK_TLS12_MASTER_KEY_DERIVE_PARAMS ckParam;
+    jclass jTls12MasterKeyDeriveParamsClass;
+    jfieldID fieldID;
     memset(&ckParam, 0, sizeof(CK_TLS12_MASTER_KEY_DERIVE_PARAMS));
-    jclass jTls12MasterKeyDeriveParamsClass =
+    jTls12MasterKeyDeriveParamsClass =
             (*env)->FindClass(env, CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS);
     if (jTls12MasterKeyDeriveParamsClass == NULL) { return ckParam; }
     masterKeyDeriveParamToCKMasterKeyDeriveParam(env, jParam,
             jTls12MasterKeyDeriveParamsClass, &ckParam.pVersion,
             &ckParam.RandomInfo);
-    jfieldID fieldID = (*env)->GetFieldID(env,
+    fieldID = (*env)->GetFieldID(env,
             jTls12MasterKeyDeriveParamsClass, "prfHashMechanism", "J");
     if (fieldID != NULL) {
         jlong prfHashMechanism =
@@ -792,8 +795,9 @@ CK_SSL3_KEY_MAT_PARAMS
 jSsl3KeyMatParamToCKSsl3KeyMatParam(JNIEnv *env, jobject jParam)
 {
     CK_SSL3_KEY_MAT_PARAMS ckParam;
+    jclass jSsl3KeyMatParamsClass;
     memset(&ckParam, 0, sizeof(CK_SSL3_KEY_MAT_PARAMS));
-    jclass jSsl3KeyMatParamsClass = (*env)->FindClass(env,
+    jSsl3KeyMatParamsClass = (*env)->FindClass(env,
             CLASS_SSL3_KEY_MAT_PARAMS);
     if (jSsl3KeyMatParamsClass == NULL) { return ckParam; }
     keyMatParamToCKKeyMatParam(env, jParam, jSsl3KeyMatParamsClass,
@@ -815,15 +819,17 @@ CK_TLS12_KEY_MAT_PARAMS jTls12KeyMatParamToCKTls12KeyMatParam(JNIEnv *env,
         jobject jParam)
 {
     CK_TLS12_KEY_MAT_PARAMS ckParam;
+    jclass jTls12KeyMatParamsClass;
+    jfieldID fieldID;
     memset(&ckParam, 0, sizeof(CK_TLS12_KEY_MAT_PARAMS));
-    jclass jTls12KeyMatParamsClass = (*env)->FindClass(env,
+    jTls12KeyMatParamsClass = (*env)->FindClass(env,
             CLASS_TLS12_KEY_MAT_PARAMS);
     if (jTls12KeyMatParamsClass == NULL) { return ckParam; }
     keyMatParamToCKKeyMatParam(env, jParam, jTls12KeyMatParamsClass,
             &ckParam.ulMacSizeInBits, &ckParam.ulKeySizeInBits,
             &ckParam.ulIVSizeInBits, &ckParam.bIsExport,
             &ckParam.RandomInfo, &ckParam.pReturnedKeyMaterial);
-    jfieldID fieldID = (*env)->GetFieldID(env, jTls12KeyMatParamsClass,
+    fieldID = (*env)->GetFieldID(env, jTls12KeyMatParamsClass,
             "prfHashMechanism", "J");
     if (fieldID != NULL) {
         jlong prfHashMechanism = (*env)->GetLongField(env, jParam, fieldID);
