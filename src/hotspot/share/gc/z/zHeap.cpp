@@ -304,6 +304,17 @@ void ZHeap::mark_flush_and_free(Thread* thread) {
   _mark.flush_and_free(thread);
 }
 
+class ZFixupPartialLoadsClosure : public ZRootsIteratorClosure {
+public:
+  virtual void do_oop(oop* p) {
+    ZBarrier::mark_barrier_on_root_oop_field(p);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
 class ZFixupPartialLoadsTask : public ZTask {
 private:
   ZThreadRootsIterator _thread_roots;
@@ -314,7 +325,7 @@ public:
       _thread_roots() {}
 
   virtual void work() {
-    ZMarkRootOopClosure cl;
+    ZFixupPartialLoadsClosure cl;
     _thread_roots.oops_do(&cl);
   }
 };

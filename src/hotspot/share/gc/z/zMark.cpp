@@ -117,6 +117,24 @@ void ZMark::prepare_mark() {
   }
 }
 
+class ZMarkRootsIteratorClosure : public ZRootsIteratorClosure {
+public:
+  virtual void do_thread(Thread* thread) {
+    ZRootsIteratorClosure::do_thread(thread);
+
+    // Update thread local address bad mask
+    ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+  }
+
+  virtual void do_oop(oop* p) {
+    ZBarrier::mark_barrier_on_root_oop_field(p);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
 class ZMarkRootsTask : public ZTask {
 private:
   ZMark* const   _mark;
@@ -129,7 +147,7 @@ public:
       _roots() {}
 
   virtual void work() {
-    ZMarkRootOopClosure cl;
+    ZMarkRootsIteratorClosure cl;
     _roots.oops_do(&cl);
 
     // Flush and free worker stacks. Needed here since

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,24 @@
 ZRelocate::ZRelocate(ZWorkers* workers) :
     _workers(workers) {}
 
+class ZRelocateRootsIteratorClosure : public ZRootsIteratorClosure {
+public:
+  virtual void do_thread(Thread* thread) {
+    ZRootsIteratorClosure::do_thread(thread);
+
+    // Update thread local address bad mask
+    ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+  }
+
+  virtual void do_oop(oop* p) {
+    ZBarrier::relocate_barrier_on_root_oop_field(p);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
 class ZRelocateRootsTask : public ZTask {
 private:
   ZRootsIterator _roots;
@@ -46,7 +64,7 @@ public:
   virtual void work() {
     // During relocation we need to visit the JVMTI
     // export weak roots to rehash the JVMTI tag map
-    ZRelocateRootOopClosure cl;
+    ZRelocateRootsIteratorClosure cl;
     _roots.oops_do(&cl, true /* visit_jvmti_weak_export */);
   }
 };

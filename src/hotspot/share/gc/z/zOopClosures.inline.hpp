@@ -40,22 +40,6 @@ inline void ZLoadBarrierOopClosure::do_oop(narrowOop* p) {
   ShouldNotReachHere();
 }
 
-inline void ZMarkRootOopClosure::do_oop(oop* p) {
-  ZBarrier::mark_barrier_on_root_oop_field(p);
-}
-
-inline void ZMarkRootOopClosure::do_oop(narrowOop* p) {
-  ShouldNotReachHere();
-}
-
-inline void ZRelocateRootOopClosure::do_oop(oop* p) {
-  ZBarrier::relocate_barrier_on_root_oop_field(p);
-}
-
-inline void ZRelocateRootOopClosure::do_oop(narrowOop* p) {
-  ShouldNotReachHere();
-}
-
 template <bool finalizable>
 inline ZMarkBarrierOopClosure<finalizable>::ZMarkBarrierOopClosure() :
     BasicOopIterateClosure(finalizable ? NULL : ZHeap::heap()->reference_discoverer()) {}
