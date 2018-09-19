@@ -65,7 +65,6 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
 #if INCLUDE_G1GC
-#include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
 
@@ -1964,10 +1963,6 @@ void MetaspaceShared::archive_klass_objects(Thread* THREAD) {
       ik->constants()->archive_resolved_references(THREAD);
     }
   }
-}
-
-bool MetaspaceShared::is_archive_object(oop p) {
-  return (p == NULL) ? false : G1ArchiveAllocator::is_archive_object(p);
 }
 
 void MetaspaceShared::fixup_mapped_heap_regions() {

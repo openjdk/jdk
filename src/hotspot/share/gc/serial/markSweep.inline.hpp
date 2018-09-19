@@ -27,7 +27,6 @@
 
 #include "classfile/classLoaderData.inline.hpp"
 #include "gc/serial/markSweep.hpp"
-#include "memory/metaspaceShared.hpp"
 #include "memory/universe.hpp"
 #include "oops/markOop.inline.hpp"
 #include "oops/access.inline.hpp"
