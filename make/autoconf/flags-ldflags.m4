@@ -74,10 +74,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # Add -z defs, to forbid undefined symbols in object files.
     BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,defs"
 
-    BASIC_LDFLAGS_JVM_ONLY="-Wl,-z,noexecstack -Wl,-O1 -Wl,-z,relro"
+    BASIC_LDFLAGS_JVM_ONLY="-Wl,-O1 -Wl,-z,relro"
 
-    BASIC_LDFLAGS_JDK_LIB_ONLY="-Wl,-z,noexecstack"
-    LIBJSIG_NOEXECSTACK_LDFLAGS="-Wl,-z,noexecstack"
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
@@ -101,6 +99,12 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS="-nologo -opt:ref"
     BASIC_LDFLAGS_JDK_ONLY="-incremental:no"
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
+  fi
+
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    if test -n "$HAS_NOEXECSTACK"; then
+      BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,noexecstack"
+    fi
   fi
 
   # Setup OS-dependent LDFLAGS
