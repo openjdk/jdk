@@ -202,8 +202,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   BUILD_LIBJLI_java_md_macosx.c_CFLAGS := -x objective-c
   BUILD_LIBJLI_STATIC_java_md_macosx.c_CFLAGS := -x objective-c
-
-  LIBJLI_CFLAGS += -DPACKAGE_PATH=\"$(PACKAGE_PATH)\"
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)

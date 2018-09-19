@@ -128,7 +128,6 @@ define SetupBuildLauncherBody
       $1_PLIST_FILE := Info-cmdline.plist
     endif
 
-    $1_CFLAGS += -DPACKAGE_PATH='"$(PACKAGE_PATH)"'
     $1_LDFLAGS += -Wl,-all_load \
         -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
     ifeq ($(STATIC_BUILD), true)

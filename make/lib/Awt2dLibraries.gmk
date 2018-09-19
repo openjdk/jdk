@@ -292,7 +292,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx), )
         #
 
     LIBAWT_XAWT_CFLAGS += -DXAWT -DXAWT_HACK \
-        -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
         $(FONTCONFIG_CFLAGS) \
         $(CUPS_CFLAGS)
 
@@ -459,7 +458,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
       #
 
   LIBAWT_HEADLESS_CFLAGS := $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) $(X_CFLAGS) \
-      -DHEADLESS=true -DPACKAGE_PATH=\"$(PACKAGE_PATH)\"
+      -DHEADLESS=true
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
