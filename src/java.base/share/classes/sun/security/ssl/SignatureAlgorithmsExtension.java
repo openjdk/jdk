@@ -525,7 +525,7 @@ final class SignatureAlgorithmsExtension {
             // signatures appearing in certificates.
             SignatureSchemesSpec certSpec =
                     (SignatureSchemesSpec)chc.handshakeExtensions.get(
-                            SSLExtension.CH_SIGNATURE_ALGORITHMS_CERT);
+                            SSLExtension.CR_SIGNATURE_ALGORITHMS_CERT);
             if (certSpec == null) {
                 chc.peerRequestedCertSignSchemes = sss;
                 chc.handshakeSession.setPeerSupportedSignatureAlgorithms(sss);
