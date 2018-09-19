@@ -113,24 +113,16 @@ public class AccessTest {
             if (!Modifier.isFinal(f.getModifiers())) {
                 throw new RuntimeException("not a final field");
             }
-            makeFinalNonFinal(f);
         }
         public Void call() throws Exception {
             Members obj = isStatic ? null : new Members();
             try {
                 f.set(obj, 20);
-                checkValue(obj, 20);
+                throw new RuntimeException("IllegalAccessException expected");
             } catch (IllegalAccessException e) {
-                throw e;
+                // expected
             }
             return null;
-        }
-
-        void checkValue(Object obj, int expected) throws Exception {
-            int value = (int) f.get(obj);
-            if (value != expected) {
-                throw new RuntimeException("unexpectd value: " + value);
-            }
         }
     }
 
@@ -155,17 +147,6 @@ public class AccessTest {
     public static class PrivateStaticFinalField extends FinalField {
         public PrivateStaticFinalField() throws Exception {
             super("privateStaticFinalField");
-        }
-    }
-
-    private static void makeFinalNonFinal(Field f) throws ReflectiveOperationException {
-        Field modifiers = Field.class.getDeclaredField("modifiers");
-        modifiers.setAccessible(true);
-        modifiers.set(f, modifiers.getInt(f) & ~Modifier.FINAL);
-        f.setAccessible(true);
-
-        if (Modifier.isFinal(f.getModifiers())) {
-            throw new RuntimeException("should be a non-final field");
         }
     }
 }

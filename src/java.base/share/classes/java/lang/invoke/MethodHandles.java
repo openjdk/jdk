@@ -54,6 +54,7 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -642,6 +643,10 @@ public class MethodHandles {
 
         /** The allowed sorts of members which may be looked up (PUBLIC, etc.). */
         private final int allowedModes;
+
+        static {
+            Reflection.registerFieldsToFilter(Lookup.class, Set.of("lookupClass", "allowedModes"));
+        }
 
         /** A single-bit mask representing {@code public} access,
          *  which may contribute to the result of {@link #lookupModes lookupModes}.

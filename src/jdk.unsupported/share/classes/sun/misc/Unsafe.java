@@ -33,6 +33,7 @@ import jdk.internal.reflect.Reflection;
 import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;
+import java.util.Set;
 
 
 /**
@@ -56,7 +57,7 @@ import java.lang.reflect.Field;
 public final class Unsafe {
 
     static {
-        Reflection.registerMethodsToFilter(Unsafe.class, "getUnsafe");
+        Reflection.registerMethodsToFilter(Unsafe.class, Set.of("getUnsafe"));
     }
 
     private Unsafe() {}
