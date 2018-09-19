@@ -42,7 +42,7 @@ CT_MODULES := $(DOCS_MODULES)
 # Get the complete module source path:
 CT_MODULESOURCEPATH := $(call GetModuleSrcPath)
 
-CT_DATA_DESCRIPTION ?= $(TOPDIR)/make/data/symbols/symbols
+CT_DATA_DESCRIPTION += $(TOPDIR)/make/data/symbols/symbols
 
 COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports jdk.compiler.interim/com.sun.tools.javac.api=ALL-UNNAMED \
