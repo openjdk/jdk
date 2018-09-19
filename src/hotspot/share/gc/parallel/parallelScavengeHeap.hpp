@@ -206,7 +206,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   HeapWord** end_addr() const { return !UseNUMA ? young_gen()->end_addr() : (HeapWord**)-1; }
 
   void ensure_parsability(bool retire_tlabs);
-  void accumulate_statistics_all_tlabs();
   void resize_all_tlabs();
 
   bool supports_tlab_allocation() const { return true; }

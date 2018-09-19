@@ -57,7 +57,6 @@ public:
   static ZCollectedHeap* heap();
 
   using CollectedHeap::ensure_parsability;
-  using CollectedHeap::accumulate_statistics_all_tlabs;
   using CollectedHeap::resize_all_tlabs;
 
   ZCollectedHeap(ZCollectorPolicy* policy);

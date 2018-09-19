@@ -2484,7 +2484,6 @@ void G1CollectedHeap::gc_prologue(bool full) {
 
   // Fill TLAB's and such
   double start = os::elapsedTime();
-  accumulate_statistics_all_tlabs();
   ensure_parsability(true);
   g1_policy()->phase_times()->record_prepare_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
 }

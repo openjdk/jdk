@@ -476,32 +476,28 @@ void CollectedHeap::ensure_parsability(bool retire_tlabs) {
   // started allocating (nothing much to verify) or we have
   // started allocating but are now a full-fledged JavaThread
   // (and have thus made our TLAB's) available for filling.
-  assert(SafepointSynchronize::is_at_safepoint() ||
-         !is_init_completed(),
+  assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
          "Should only be called at a safepoint or at start-up"
          " otherwise concurrent mutator activity may make heap "
          " unparsable again");
-  const bool use_tlab = UseTLAB;
+
+  if (UseTLAB && retire_tlabs) {
+    // Accumulate statistics before retiring
+    ThreadLocalAllocBuffer::accumulate_statistics_before_gc();
+  }
+
   // The main thread starts allocating via a TLAB even before it
   // has added itself to the threads list at vm boot-up.
   JavaThreadIteratorWithHandle jtiwh;
-  assert(!use_tlab || jtiwh.length() > 0,
+  assert(jtiwh.length() > 0,
          "Attempt to fill tlabs before main thread has been added"
          " to threads list is doomed to failure!");
   BarrierSet *bs = BarrierSet::barrier_set();
   for (; JavaThread *thread = jtiwh.next(); ) {
-     if (use_tlab) thread->tlab().make_parsable(retire_tlabs);
+     if (UseTLAB) {
+       thread->tlab().make_parsable(retire_tlabs);
+     }
      bs->make_parsable(thread);
-  }
-}
-
-void CollectedHeap::accumulate_statistics_all_tlabs() {
-  if (UseTLAB) {
-    assert(SafepointSynchronize::is_at_safepoint() ||
-         !is_init_completed(),
-         "should only accumulate statistics on tlabs at safepoint");
-
-    ThreadLocalAllocBuffer::accumulate_statistics_before_gc();
   }
 }
 

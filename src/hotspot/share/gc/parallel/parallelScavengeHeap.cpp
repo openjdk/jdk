@@ -488,10 +488,6 @@ HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t reques
   return result;
 }
 
-void ParallelScavengeHeap::accumulate_statistics_all_tlabs() {
-  CollectedHeap::accumulate_statistics_all_tlabs();
-}
-
 void ParallelScavengeHeap::resize_all_tlabs() {
   CollectedHeap::resize_all_tlabs();
 }

@@ -300,7 +300,6 @@ void ZObjectAllocator::retire_tlabs() {
   // Retire TLABs
   if (UseTLAB) {
     ZCollectedHeap* heap = ZCollectedHeap::heap();
-    heap->accumulate_statistics_all_tlabs();
     heap->ensure_parsability(true /* retire_tlabs */);
     heap->resize_all_tlabs();
   }
