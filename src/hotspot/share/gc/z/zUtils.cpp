@@ -22,8 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/collectedHeap.hpp"
-#include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -39,11 +37,4 @@ uintptr_t ZUtils::alloc_aligned(size_t alignment, size_t size) {
   memset(res, 0, size);
 
   return (uintptr_t)res;
-}
-
-void ZUtils::insert_filler_object(uintptr_t addr, size_t size) {
-  const size_t fill_size_in_words = bytes_to_words(size);
-  if (fill_size_in_words >= CollectedHeap::min_fill_size()) {
-    CollectedHeap::fill_with_objects((HeapWord*)ZAddress::good(addr), fill_size_in_words);
-  }
 }

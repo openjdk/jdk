@@ -285,11 +285,6 @@ inline uintptr_t ZPage::alloc_object(size_t size) {
 
   _top = new_top;
 
-  // Fill alignment padding if needed
-  if (aligned_size != size) {
-    ZUtils::insert_filler_object(addr + size, aligned_size - size);
-  }
-
   return ZAddress::good(addr);
 }
 
@@ -308,11 +303,6 @@ inline uintptr_t ZPage::alloc_object_atomic(size_t size) {
 
     const uintptr_t prev_top = Atomic::cmpxchg(new_top, &_top, addr);
     if (prev_top == addr) {
-      // Fill alignment padding if needed
-      if (aligned_size != size) {
-        ZUtils::insert_filler_object(addr + size, aligned_size - size);
-      }
-
       // Success
       return ZAddress::good(addr);
     }
