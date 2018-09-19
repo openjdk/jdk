@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
-#include "classfile/compactHashtable.inline.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "logging/logMessage.hpp"
 #include "memory/heapShared.inline.hpp"
@@ -35,6 +35,7 @@
 #include "utilities/numberSeq.hpp"
 #include <sys/stat.h>
 
+#if INCLUDE_CDS
 /////////////////////////////////////////////////////
 //
 // The compact hash table writer implementations
@@ -170,33 +171,6 @@ void CompactHashtableWriter::dump(SimpleCompactHashtable *cht, const char* table
 
 /////////////////////////////////////////////////////////////
 //
-// Customization for dumping Symbol and String tables
-
-void CompactSymbolTableWriter::add(unsigned int hash, Symbol *symbol) {
-  uintx deltax = MetaspaceShared::object_delta(symbol);
-  // When the symbols are stored into the archive, we already check that
-  // they won't be more than MAX_SHARED_DELTA from the base address, or
-  // else the dumping would have been aborted.
-  assert(deltax <= MAX_SHARED_DELTA, "must not be");
-  u4 delta = u4(deltax);
-
-  CompactHashtableWriter::add(hash, delta);
-}
-
-void CompactStringTableWriter::add(unsigned int hash, oop string) {
-  CompactHashtableWriter::add(hash, CompressedOops::encode(string));
-}
-
-void CompactSymbolTableWriter::dump(CompactHashtable<Symbol*, char> *cht) {
-  CompactHashtableWriter::dump(cht, "symbol");
-}
-
-void CompactStringTableWriter::dump(CompactHashtable<oop, char> *cht) {
-  CompactHashtableWriter::dump(cht, "string");
-}
-
-/////////////////////////////////////////////////////////////
-//
 // The CompactHashtable implementation
 //
 
@@ -207,95 +181,7 @@ void SimpleCompactHashtable::serialize(SerializeClosure* soc) {
   soc->do_ptr((void**)&_buckets);
   soc->do_ptr((void**)&_entries);
 }
-
-bool SimpleCompactHashtable::exists(u4 value) {
-  assert(!DumpSharedSpaces, "run-time only");
-
-  if (_entry_count == 0) {
-    return false;
-  }
-
-  unsigned int hash = (unsigned int)value;
-  int index = hash % _bucket_count;
-  u4 bucket_info = _buckets[index];
-  u4 bucket_offset = BUCKET_OFFSET(bucket_info);
-  int bucket_type = BUCKET_TYPE(bucket_info);
-  u4* entry = _entries + bucket_offset;
-
-  if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
-    return (entry[0] == value);
-  } else {
-    u4*entry_max = _entries + BUCKET_OFFSET(_buckets[index + 1]);
-    while (entry <entry_max) {
-      if (entry[1] == value) {
-        return true;
-      }
-      entry += 2;
-    }
-    return false;
-  }
-}
-
-template <class I>
-inline void SimpleCompactHashtable::iterate(const I& iterator) {
-  for (u4 i = 0; i < _bucket_count; i++) {
-    u4 bucket_info = _buckets[i];
-    u4 bucket_offset = BUCKET_OFFSET(bucket_info);
-    int bucket_type = BUCKET_TYPE(bucket_info);
-    u4* entry = _entries + bucket_offset;
-
-    if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
-      iterator.do_value(_base_address, entry[0]);
-    } else {
-      u4*entry_max = _entries + BUCKET_OFFSET(_buckets[i + 1]);
-      while (entry < entry_max) {
-        iterator.do_value(_base_address, entry[1]);
-        entry += 2;
-      }
-    }
-  }
-}
-
-template <class T, class N> void CompactHashtable<T, N>::serialize(SerializeClosure* soc) {
-  SimpleCompactHashtable::serialize(soc);
-  soc->do_u4(&_type);
-}
-
-class CompactHashtable_SymbolIterator {
-  SymbolClosure* const _closure;
-public:
-  CompactHashtable_SymbolIterator(SymbolClosure *cl) : _closure(cl) {}
-  inline void do_value(address base_address, u4 offset) const {
-    Symbol* sym = (Symbol*)((void*)(base_address + offset));
-    _closure->do_symbol(&sym);
-  }
-};
-
-template <class T, class N> void CompactHashtable<T, N>::symbols_do(SymbolClosure *cl) {
-  CompactHashtable_SymbolIterator iterator(cl);
-  iterate(iterator);
-}
-
-class CompactHashtable_OopIterator {
-  OopClosure* const _closure;
-public:
-  CompactHashtable_OopIterator(OopClosure *cl) : _closure(cl) {}
-  inline void do_value(address base_address, u4 offset) const {
-    narrowOop v = (narrowOop)offset;
-    oop obj = HeapShared::decode_from_archive(v);
-    _closure->do_oop(&obj);
-  }
-};
-
-template <class T, class N> void CompactHashtable<T, N>::oops_do(OopClosure* cl) {
-  assert(_type == _string_table || _bucket_count == 0, "sanity");
-  CompactHashtable_OopIterator iterator(cl);
-  iterate(iterator);
-}
-
-// Explicitly instantiate these types
-template class CompactHashtable<Symbol*, char>;
-template class CompactHashtable<oop, char>;
+#endif // INCLUDE_CDS
 
 #ifndef O_BINARY       // if defined (Win32) use binary files.
 #define O_BINARY 0     // otherwise do nothing.

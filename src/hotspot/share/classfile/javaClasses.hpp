@@ -114,8 +114,8 @@ class java_lang_String : AllStatic {
   static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Instance creation
-  static Handle create_from_unicode(jchar* unicode, int len, TRAPS);
-  static oop    create_oop_from_unicode(jchar* unicode, int len, TRAPS);
+  static Handle create_from_unicode(const jchar* unicode, int len, TRAPS);
+  static oop    create_oop_from_unicode(const jchar* unicode, int len, TRAPS);
   static Handle create_from_str(const char* utf8_str, TRAPS);
   static oop    create_oop_from_str(const char* utf8_str, TRAPS);
   static Handle create_from_symbol(Symbol* symbol, TRAPS);
@@ -189,7 +189,7 @@ class java_lang_String : AllStatic {
 
   static unsigned int hash_code(oop java_string);
 
-  static bool equals(oop java_string, jchar* chars, int len);
+  static bool equals(oop java_string, const jchar* chars, int len);
   static bool equals(oop str1, oop str2);
 
   // Conversion between '.' and '/' formats
