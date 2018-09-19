@@ -84,15 +84,13 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
      * {@inheritDoc}
      */
     protected void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
-            String tableSummary, Content body, ModuleElement mdle) {
+            String tableSummary, Content main, ModuleElement mdle) {
         Content profNameContent = new StringContent(mdle.getQualifiedName().toString());
         Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
                 getTargetModuleLink("classFrame", profNameContent, mdle));
         heading.addContent(Contents.SPACE);
         heading.addContent(contents.packagesLabel);
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
-                ? HtmlTree.MAIN(HtmlStyle.indexContainer, heading)
-                : HtmlTree.DIV(HtmlStyle.indexContainer, heading);
+        HtmlTree htmlTree = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(contents.packagesLabel);
         List<PackageElement> packages = new ArrayList<>(modules.get(mdle));
@@ -102,7 +100,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
             }
         }
         htmlTree.addContent(ul);
-        body.addContent(htmlTree);
+        main.addContent(htmlTree);
     }
 
     /**
@@ -157,7 +155,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addNavigationBarHeader(Content body) {
+    protected void addNavigationBarHeader(Content header) {
         Content headerContent;
         if (configuration.packagesheader.length() > 0) {
             headerContent = new RawHtml(replaceDocRootDir(configuration.packagesheader));
@@ -166,7 +164,7 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
         }
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.bar, headerContent);
-        body.addContent(heading);
+        header.addContent(heading);
     }
 
     /**
@@ -232,8 +230,8 @@ public class ModulePackageIndexFrameWriter extends AbstractModuleIndexWriter {
     /**
      * {@inheritDoc}
      */
-    protected void addNavigationBarFooter(Content body) {
+    protected void addNavigationBarFooter(Content footer) {
         Content p = HtmlTree.P(Contents.SPACE);
-        body.addContent(p);
+        footer.addContent(p);
     }
 }

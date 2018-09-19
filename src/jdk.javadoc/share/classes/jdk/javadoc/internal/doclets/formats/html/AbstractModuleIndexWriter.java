@@ -33,6 +33,7 @@ import java.util.SortedMap;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -81,30 +82,30 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     /**
      * Adds the navigation bar header to the documentation tree.
      *
-     * @param body the document tree to which the navigation bar header will be added
+     * @param header the document tree to which the navigation bar header will be added
      */
-    protected abstract void addNavigationBarHeader(Content body);
+    protected abstract void addNavigationBarHeader(Content header);
 
     /**
      * Adds the navigation bar footer to the documentation tree.
      *
-     * @param body the document tree to which the navigation bar footer will be added
+     * @param footer the document tree to which the navigation bar footer will be added
      */
-    protected abstract void addNavigationBarFooter(Content body);
+    protected abstract void addNavigationBarFooter(Content footer);
 
     /**
      * Adds the overview header to the documentation tree.
      *
-     * @param body the document tree to which the overview header will be added
+     * @param main the document tree to which the overview header will be added
      */
-    protected abstract void addOverviewHeader(Content body);
+    protected abstract void addOverviewHeader(Content main);
 
     /**
      * Adds the modules list to the documentation tree.
      *
-     * @param body the document tree to which the modules list will be added
+     * @param main the document tree to which the modules list will be added
      */
-    protected abstract void addModulesList(Content body);
+    protected abstract void addModulesList(Content main);
 
     /**
      * Adds the module packages list to the documentation tree.
@@ -112,11 +113,11 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param modules the set of modules
      * @param text caption for the table
      * @param tableSummary summary for the table
-     * @param body the document tree to which the modules list will be added
+     * @param main the document tree to which the modules list will be added
      * @param mdle the module being documented
      */
     protected abstract void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
-            String tableSummary, Content body, ModuleElement mdle);
+            String tableSummary, Content main, ModuleElement mdle);
 
     /**
      * Generate and prints the contents in the module index file. Call appropriate
@@ -130,11 +131,17 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     protected void buildModuleIndexFile(String title, boolean includeScript) throws DocFileIOException {
         String windowOverview = configuration.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
-        addNavigationBarHeader(body);
-        addOverviewHeader(body);
-        addIndex(body);
-        addOverview(body);
-        addNavigationBarFooter(body);
+        Content header = createTagIfAllowed(HtmlTag.HEADER, HtmlTree::HEADER, ContentBuilder::new);
+        addNavigationBarHeader(header);
+        Content main = createTagIfAllowed(HtmlTag.MAIN, HtmlTree::MAIN, ContentBuilder::new);
+        addOverviewHeader(main);
+        addIndex(header, main);
+        addOverview(main);
+        Content footer = createTagIfAllowed(HtmlTag.FOOTER, HtmlTree::FOOTER, ContentBuilder::new);
+        addNavigationBarFooter(footer);
+        body.addContent(header);
+        body.addContent(main);
+        body.addContent(footer);
         printHtmlDocument(configuration.metakeywords.getOverviewMetaKeywords(title,
                 configuration.doctitle), includeScript, body);
     }
@@ -153,11 +160,17 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
             boolean includeScript, ModuleElement mdle) throws DocFileIOException {
         String windowOverview = configuration.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
-        addNavigationBarHeader(body);
-        addOverviewHeader(body);
-        addModulePackagesIndex(body, mdle);
-        addOverview(body);
-        addNavigationBarFooter(body);
+        Content header = createTagIfAllowed(HtmlTag.HEADER, HtmlTree::HEADER, ContentBuilder::new);
+        addNavigationBarHeader(header);
+        Content main = createTagIfAllowed(HtmlTag.MAIN, HtmlTree::MAIN, ContentBuilder::new);
+        addOverviewHeader(main);
+        addModulePackagesIndex(header, main, mdle);
+        addOverview(main);
+        Content footer = createTagIfAllowed(HtmlTag.FOOTER, HtmlTree::FOOTER, ContentBuilder::new);
+        addNavigationBarFooter(footer);
+        body.addContent(header);
+        body.addContent(main);
+        body.addContent(footer);
         printHtmlDocument(configuration.metakeywords.getOverviewMetaKeywords(title,
                 configuration.doctitle), includeScript, body);
     }
@@ -165,33 +178,35 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
     /**
      * Default to no overview, override to add overview.
      *
-     * @param body the document tree to which the overview will be added
+     * @param main the document tree to which the overview will be added
      */
-    protected void addOverview(Content body) { }
+    protected void addOverview(Content main) { }
 
     /**
      * Adds the frame or non-frame module index to the documentation tree.
      *
-     * @param body the document tree to which the index will be added
+     * @param header the document tree to which the navigational links will be added
+     * @param main the document tree to which the modules list will be added
      */
-    protected void addIndex(Content body) {
+    protected void addIndex(Content header, Content main) {
         addIndexContents(configuration.modules, "doclet.Module_Summary",
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Module_Summary"),
-                configuration.getText("doclet.modules")), body);
+                configuration.getText("doclet.modules")), header, main);
     }
 
     /**
      * Adds the frame or non-frame module packages index to the documentation tree.
      *
-     * @param body the document tree to which the index will be added
+     * @param header the document tree to which the navigational links will be added
+     * @param main the document tree to which the module packages list will be added
      * @param mdle the module being documented
      */
-    protected void addModulePackagesIndex(Content body, ModuleElement mdle) {
+    protected void addModulePackagesIndex(Content header, Content main, ModuleElement mdle) {
         addModulePackagesIndexContents("doclet.Module_Summary",
                 configuration.getText("doclet.Member_Table_Summary",
                 configuration.getText("doclet.Module_Summary"),
-                configuration.getText("doclet.modules")), body, mdle);
+                configuration.getText("doclet.modules")), header, main, mdle);
     }
 
     /**
@@ -201,20 +216,19 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      * @param modules the modules to be documented
      * @param text string which will be used as the heading
      * @param tableSummary summary for the table
-     * @param body the document tree to which the index contents will be added
+     * @param header the document tree to which the navgational links will be added
+     * @param main the document tree to which the modules list will be added
      */
     protected void addIndexContents(Collection<ModuleElement> modules, String text,
-            String tableSummary, Content body) {
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
-                ? HtmlTree.NAV()
-                : new HtmlTree(HtmlTag.DIV);
+            String tableSummary, Content header, Content main) {
+        HtmlTree htmlTree = (HtmlTree)createTagIfAllowed(HtmlTag.NAV, HtmlTree::NAV, () -> new HtmlTree(HtmlTag.DIV));
         htmlTree.setStyle(HtmlStyle.indexNav);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         addAllClassesLink(ul);
         addAllPackagesLink(ul);
         htmlTree.addContent(ul);
-        body.addContent(htmlTree);
-        addModulesList(body);
+        header.addContent(htmlTree);
+        addModulesList(main);
     }
 
     /**
@@ -223,22 +237,21 @@ public abstract class AbstractModuleIndexWriter extends HtmlDocletWriter {
      *
      * @param text string which will be used as the heading
      * @param tableSummary summary for the table
-     * @param body the document tree to which the index contents will be added
+     * @param header the document tree to which the navigational links will be added
+     * @param main the document tree to which the module packages list will be added
      * @param mdle the module being documented
      */
     protected void addModulePackagesIndexContents(String text,
-            String tableSummary, Content body, ModuleElement mdle) {
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
-                ? HtmlTree.NAV()
-                : new HtmlTree(HtmlTag.DIV);
+            String tableSummary, Content header, Content main, ModuleElement mdle) {
+        HtmlTree htmlTree = (HtmlTree)createTagIfAllowed(HtmlTag.NAV, HtmlTree::NAV, () -> new HtmlTree(HtmlTag.DIV));
         htmlTree.setStyle(HtmlStyle.indexNav);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         addAllClassesLink(ul);
         addAllPackagesLink(ul);
         addAllModulesLink(ul);
         htmlTree.addContent(ul);
-        body.addContent(htmlTree);
-        addModulePackagesList(modules, text, tableSummary, body, mdle);
+        header.addContent(htmlTree);
+        addModulePackagesList(modules, text, tableSummary, main, mdle);
     }
 
     /**

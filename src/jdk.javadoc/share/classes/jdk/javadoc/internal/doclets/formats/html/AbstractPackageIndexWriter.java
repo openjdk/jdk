@@ -29,6 +29,7 @@ import java.util.*;
 
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlConstants;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTag;
@@ -78,9 +79,9 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     /**
      * Adds the navigation bar header to the documentation tree.
      *
-     * @param body the document tree to which the navigation bar header will be added
+     * @param header the document tree to which the navigation bar header will be added
      */
-    protected abstract void addNavigationBarHeader(Content body);
+    protected abstract void addNavigationBarHeader(Content header);
 
     /**
      * Adds the navigation bar footer to the documentation tree.
@@ -92,16 +93,16 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     /**
      * Adds the overview header to the documentation tree.
      *
-     * @param body the document tree to which the overview header will be added
+     * @param footer the document tree to which the overview header will be added
      */
-    protected abstract void addOverviewHeader(Content body);
+    protected abstract void addOverviewHeader(Content footer);
 
     /**
      * Adds the packages list to the documentation tree.
      *
-     * @param body the document tree to which the packages list will be added
+     * @param main the document tree to which the packages list will be added
      */
-    protected abstract void addPackagesList(Content body);
+    protected abstract void addPackagesList(Content main);
 
     /**
      * Generate and prints the contents in the package index file. Call appropriate
@@ -115,11 +116,17 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     protected void buildPackageIndexFile(String title, boolean includeScript) throws DocFileIOException {
         String windowOverview = configuration.getText(title);
         Content body = getBody(includeScript, getWindowTitle(windowOverview));
-        addNavigationBarHeader(body);
-        addOverviewHeader(body);
-        addIndex(body);
-        addOverview(body);
-        addNavigationBarFooter(body);
+        Content header = createTagIfAllowed(HtmlTag.HEADER, HtmlTree::HEADER, ContentBuilder::new);
+        addNavigationBarHeader(header);
+        Content main = createTagIfAllowed(HtmlTag.MAIN, HtmlTree::MAIN, ContentBuilder::new);
+        addOverviewHeader(main);
+        addIndex(header, main);
+        addOverview(main);
+        Content footer = createTagIfAllowed(HtmlTag.FOOTER, HtmlTree::FOOTER, ContentBuilder::new);
+        addNavigationBarFooter(footer);
+        body.addContent(header);
+        body.addContent(main);
+        body.addContent(footer);
         printHtmlDocument(configuration.metakeywords.getOverviewMetaKeywords(title,
                 configuration.doctitle), includeScript, body);
     }
@@ -127,30 +134,30 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
     /**
      * Default to no overview, override to add overview.
      *
-     * @param body the document tree to which the overview will be added
+     * @param main the document tree to which the overview will be added
      */
-    protected void addOverview(Content body) { }
+    protected void addOverview(Content main) { }
 
     /**
      * Adds the frame or non-frame package index to the documentation tree.
      *
-     * @param body the document tree to which the index will be added
+     * @param header the document tree to which the navigation links will be added
+     * @param main the document tree to which the packages list will be added
      */
-    protected void addIndex(Content body) {
-        addIndexContents(body);
+    protected void addIndex(Content header, Content main) {
+        addIndexContents(header, main);
     }
 
     /**
      * Adds package index contents. Call appropriate methods from
      * the sub-classes. Adds it to the body HtmlTree
      *
-     * @param body the document tree to which the index contents will be added
+     * @param header the document tree to which navigation links will be added
+     * @param main the document tree to which the packages list will be added
      */
-    protected void addIndexContents(Content body) {
+    protected void addIndexContents(Content header, Content main) {
         if (!packages.isEmpty()) {
-            HtmlTree htmlTree = (configuration.allowTag(HtmlTag.NAV))
-                    ? HtmlTree.NAV()
-                    : new HtmlTree(HtmlTag.DIV);
+            HtmlTree htmlTree = (HtmlTree)createTagIfAllowed(HtmlTag.NAV, HtmlTree::NAV, () -> new HtmlTree(HtmlTag.DIV));
             htmlTree.setStyle(HtmlStyle.indexNav);
             HtmlTree ul = new HtmlTree(HtmlTag.UL);
             addAllClassesLink(ul);
@@ -158,8 +165,8 @@ public abstract class AbstractPackageIndexWriter extends HtmlDocletWriter {
                 addAllModulesLink(ul);
             }
             htmlTree.addContent(ul);
-            body.addContent(htmlTree);
-            addPackagesList(body);
+            header.addContent(htmlTree);
+            addPackagesList(main);
         }
     }
 
