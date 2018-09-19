@@ -31,20 +31,15 @@ $(eval $(call IncludeCustomExtension, lib/Lib-java.instrument.gmk))
 ################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  # Statically link the C runtime so that there are not dependencies on modules
-  # not on the search patch when invoked from the Windows system directory
-  # (or elsewhere).
-  LIBINSTRUMENT_CFLAGS_JDKLIB := $(filter-out -MD, $(CFLAGS_JDKLIB))
   # equivalent of strcasecmp is stricmp on Windows
   LIBINSTRUMENT_CFLAGS := -Dstrcasecmp=stricmp
-else
-  LIBINSTRUMENT_CFLAGS_JDKLIB := $(CFLAGS_JDKLIB)
+  WINDOWS_JLI_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     NAME := instrument, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(LIBINSTRUMENT_CFLAGS_JDKLIB) $(LIBINSTRUMENT_CFLAGS), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(LIBINSTRUMENT_CFLAGS), \
     CFLAGS_debug := -DJPLIS_LOGGING, \
     CFLAGS_release := -DNO_JPLIS_LOGGING, \
     EXTRA_HEADER_DIRS := java.base:libjli, \
@@ -66,11 +61,13 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     LIBS_macosx := -ljli -liconv -framework Cocoa -framework Security \
         -framework ApplicationServices, \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB) advapi32.lib \
-        $(call FindStaticLib, java.base, jli_static), \
+        $(WINDOWS_JLI_LIB), \
 ))
 
-ifneq ($(filter $(OPENJDK_TARGET_OS), windows aix), )
+ifeq ($(OPENJDK_TARGET_OS), aix)
   $(BUILD_LIBINSTRUMENT): $(call FindStaticLib, java.base, jli_static)
+else ifeq ($(OPENJDK_TARGET_OS), windows)
+  $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli)
 else
   $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli, /jli)
 endif

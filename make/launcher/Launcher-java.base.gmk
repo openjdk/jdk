@@ -43,8 +43,6 @@ $(eval $(call SetupBuildLauncher, java, \
     VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs, \
     OPTIMIZATION := HIGH, \
-    WINDOWS_STATIC_LINK := true, \
-    NO_JAVA_MS := true, \
 ))
 
 $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX): $(BUILD_LAUNCHER_java)
@@ -60,8 +58,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       LIBS_windows := user32.lib comctl32.lib, \
       EXTRA_RC_FLAGS := $(JAVA_RC_FLAGS), \
       VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
-      WINDOWS_STATIC_LINK := true, \
-      NO_JAVA_MS := true, \
   ))
 endif
 
