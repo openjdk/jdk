@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,15 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.MouseEvent;
 import java.awt.event.MouseAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowAdapter;
+import java.awt.event.MouseEvent;
 
 public class FrameBorderCounter {
 
@@ -59,6 +58,7 @@ public class FrameBorderCounter {
                 background.setVisible(true);
             }
         });
+        robot.waitForIdle();
         EventQueue.invokeAndWait(new Runnable() {
             public void run() {
                 frame = new Frame("Frame");
