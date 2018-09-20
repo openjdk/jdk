@@ -357,8 +357,6 @@ endif
 # The fast floor code loses precision.
 LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR
 
-LCMS_CFLAGS_JDKLIB := $(filter-out -xc99=%none, $(CFLAGS_JDKLIB))
-
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
   # By including it explicitly, all other files will be excluded.
@@ -374,7 +372,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     NAME := lcms, \
     INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(LCMS_CFLAGS_JDKLIB) \
+    CFLAGS := $(CFLAGS_JDKLIB) \
         $(LCMS_CFLAGS), \
     CFLAGS_solaris := -xc99=no_lib, \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
