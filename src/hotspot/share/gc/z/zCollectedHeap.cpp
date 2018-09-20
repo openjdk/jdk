@@ -117,6 +117,10 @@ bool ZCollectedHeap::is_in_closed_subset(const void* p) const {
   return is_in(p);
 }
 
+void ZCollectedHeap::fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap) {
+  // Does nothing, not a parsable heap
+}
+
 HeapWord* ZCollectedHeap::allocate_new_tlab(size_t min_size, size_t requested_size, size_t* actual_size) {
   const size_t size_in_bytes = ZUtils::words_to_bytes(align_object_size(requested_size));
   const uintptr_t addr = _heap.alloc_tlab(size_in_bytes);

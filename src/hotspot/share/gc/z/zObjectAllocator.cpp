@@ -22,7 +22,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.inline.hpp"
@@ -41,8 +40,6 @@
 
 static const ZStatCounter ZCounterUndoObjectAllocationSucceeded("Memory", "Undo Object Allocation Succeeded", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterUndoObjectAllocationFailed("Memory", "Undo Object Allocation Failed", ZStatUnitOpsPerSecond);
-static const ZStatSubPhase ZSubPhasePauseRetireTLABS("Pause Retire TLABS");
-static const ZStatSubPhase ZSubPhasePauseRemapTLABS("Pause Remap TLABS");
 
 ZObjectAllocator::ZObjectAllocator(uint nworkers) :
     _nworkers(nworkers),
@@ -293,16 +290,8 @@ size_t ZObjectAllocator::remaining() const {
   return 0;
 }
 
-void ZObjectAllocator::retire_tlabs() {
-  ZStatTimer timer(ZSubPhasePauseRetireTLABS);
+void ZObjectAllocator::retire_pages() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-
-  // Retire TLABs
-  if (UseTLAB) {
-    ZCollectedHeap* heap = ZCollectedHeap::heap();
-    heap->ensure_parsability(true /* retire_tlabs */);
-    heap->resize_all_tlabs();
-  }
 
   // Reset used
   _used.set_all(0);
@@ -311,19 +300,4 @@ void ZObjectAllocator::retire_tlabs() {
   _shared_medium_page.set(NULL);
   _shared_small_page.set_all(NULL);
   _worker_small_page.set_all(NULL);
-}
-
-static void remap_tlab_address(HeapWord** p) {
-  *p = (HeapWord*)ZAddress::good_or_null((uintptr_t)*p);
-}
-
-void ZObjectAllocator::remap_tlabs() {
-  ZStatTimer timer(ZSubPhasePauseRemapTLABS);
-  assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
-
-  if (UseTLAB) {
-    for (JavaThreadIteratorWithHandle iter; JavaThread* thread = iter.next(); ) {
-      thread->tlab().addresses_do(remap_tlab_address);
-    }
-  }
 }

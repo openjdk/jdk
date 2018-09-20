@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,33 +21,22 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zAddress.hpp"
-#include "gc/z/zBarrierSet.hpp"
-#include "gc/z/zCPU.hpp"
-#include "gc/z/zGlobals.hpp"
-#include "gc/z/zInitialize.hpp"
-#include "gc/z/zLargePages.hpp"
-#include "gc/z/zNUMA.hpp"
-#include "gc/z/zStat.hpp"
-#include "gc/z/zStatTLAB.hpp"
-#include "gc/z/zTracer.hpp"
-#include "logging/log.hpp"
-#include "runtime/vm_version.hpp"
+#ifndef SHARE_GC_Z_ZSTATTLAB_HPP
+#define SHARE_GC_Z_ZSTATTLAB_HPP
 
-ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
-  log_info(gc, init)("Initializing %s", ZGCName);
-  log_info(gc, init)("Version: %s (%s)",
-                     Abstract_VM_Version::vm_release(),
-                     Abstract_VM_Version::jdk_debug_level());
+#include "gc/shared/threadLocalAllocBuffer.hpp"
+#include "gc/z/zValue.hpp"
+#include "memory/allocation.hpp"
 
-  // Early initialization
-  ZAddressMasks::initialize();
-  ZNUMA::initialize();
-  ZCPU::initialize();
-  ZStatValue::initialize();
-  ZStatTLAB::initialize();
-  ZTracer::initialize();
-  ZLargePages::initialize();
-  ZBarrierSet::set_barrier_set(barrier_set);
-}
+class ZStatTLAB : public AllStatic {
+private:
+  static ZPerWorker<ThreadLocalAllocStats>* _stats;
+
+public:
+  static void initialize();
+  static void reset();
+  static ThreadLocalAllocStats* get();
+  static void publish();
+};
+
+#endif // SHARE_GC_Z_ZSTATTLAB_HPP

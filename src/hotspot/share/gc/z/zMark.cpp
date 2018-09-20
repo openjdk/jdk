@@ -32,6 +32,7 @@
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
 #include "gc/z/zStat.hpp"
+#include "gc/z/zStatTLAB.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zThread.hpp"
 #include "gc/z/zUtils.inline.hpp"
@@ -119,11 +120,25 @@ void ZMark::prepare_mark() {
 
 class ZMarkRootsIteratorClosure : public ZRootsIteratorClosure {
 public:
+  ZMarkRootsIteratorClosure() {
+    ZStatTLAB::reset();
+  }
+
+  ~ZMarkRootsIteratorClosure() {
+    ZStatTLAB::publish();
+  }
+
   virtual void do_thread(Thread* thread) {
     ZRootsIteratorClosure::do_thread(thread);
 
     // Update thread local address bad mask
     ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+
+    // Retire TLAB
+    if (UseTLAB && thread->is_Java_thread()) {
+      thread->tlab().retire(ZStatTLAB::get());
+      thread->tlab().resize();
+    }
   }
 
   virtual void do_oop(oop* p) {
@@ -137,8 +152,9 @@ public:
 
 class ZMarkRootsTask : public ZTask {
 private:
-  ZMark* const   _mark;
-  ZRootsIterator _roots;
+  ZMark* const              _mark;
+  ZRootsIterator            _roots;
+  ZMarkRootsIteratorClosure _cl;
 
 public:
   ZMarkRootsTask(ZMark* mark) :
@@ -147,8 +163,7 @@ public:
       _roots() {}
 
   virtual void work() {
-    ZMarkRootsIteratorClosure cl;
-    _roots.oops_do(&cl);
+    _roots.oops_do(&_cl);
 
     // Flush and free worker stacks. Needed here since
     // the set of workers executing during root scanning

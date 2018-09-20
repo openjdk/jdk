@@ -273,12 +273,12 @@ void ZHeap::mark_start() {
   // Update statistics
   ZStatSample(ZSamplerHeapUsedBeforeMark, used());
 
-  // Retire TLABs
-  _object_allocator.retire_tlabs();
-
   // Flip address view
   ZAddressMasks::flip_to_marked();
   flip_views();
+
+  // Retire allocating pages
+  _object_allocator.retire_pages();
 
   // Reset allocated/reclaimed/used statistics
   _page_allocator.reset_statistics();
@@ -474,9 +474,6 @@ void ZHeap::relocate_start() {
   // Flip address view
   ZAddressMasks::flip_to_remapped();
   flip_views();
-
-  // Remap TLABs
-  _object_allocator.remap_tlabs();
 
   // Enter relocate phase
   ZGlobalPhase = ZPhaseRelocate;
