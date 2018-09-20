@@ -60,14 +60,16 @@ define SetupTestFilesCompilationBody
   ifeq ($$($1_TYPE), LIBRARY)
     $1_PREFIX = lib
     $1_OUTPUT_SUBDIR := lib
-    $1_CFLAGS += $(CFLAGS_TESTLIB)
-    $1_LDFLAGS := $(LDFLAGS_TESTLIB) $(call SET_SHARED_LIBRARY_ORIGIN)
+    $1_BASE_CFLAGS := $(CFLAGS_JDKLIB)
+    $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKLIB)
+    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN)
     $1_COMPILATION_TYPE := LIBRARY
   else ifeq ($$($1_TYPE), PROGRAM)
     $1_PREFIX = exe
     $1_OUTPUT_SUBDIR := bin
-    $1_CFLAGS += $(CFLAGS_TESTEXE)
-    $1_LDFLAGS := $(LDFLAGS_TESTEXE)
+    $1_BASE_CFLAGS := $(CFLAGS_JDKEXE)
+    $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKEXE)
+    $1_LDFLAGS := $(LDFLAGS_JDKEXE) $(LDFLAGS_TESTEXE)
     $1_COMPILATION_TYPE := EXECUTABLE
   else
     $$(error Unknown type: $$($1_TYPE))
@@ -92,8 +94,11 @@ define SetupTestFilesCompilationBody
         INCLUDE_FILES := $$(notdir $$(file)), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \
-        CFLAGS := $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
+        CFLAGS := $$($1_BASE_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
+        CXXFLAGS := $$($1_BASE_CXXFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$(name)), \
+        DISABLED_WARNINGS_CXX_solstudio := wvarhidenmem, \
+        DISABLED_WARNINGS_CXX_gcc := format, \
         LIBS := $$($1_LIBS_$$(name)), \
         TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
