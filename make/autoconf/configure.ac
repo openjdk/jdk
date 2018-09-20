@@ -91,7 +91,6 @@ BASIC_SETUP_PATHS
 JDKOPT_SETUP_OPEN_OR_CUSTOM
 
 # These are needed to be able to create a configuration name (and thus the output directory)
-JDKOPT_SETUP_JDK_VARIANT
 JDKOPT_SETUP_DEBUG_LEVEL
 HOTSPOT_SETUP_JVM_VARIANTS
 

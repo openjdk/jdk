@@ -862,7 +862,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
       AC_MSG_RESULT([in default location])
-      CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JDK_VARIANT}-${JVM_VARIANTS_WITH_AND}-${DEBUG_LEVEL}"
+      CONF_NAME="${OPENJDK_TARGET_OS}-${OPENJDK_TARGET_CPU}-${JVM_VARIANTS_WITH_AND}-${DEBUG_LEVEL}"
     else
       AC_MSG_RESULT([in build directory with custom name])
     fi

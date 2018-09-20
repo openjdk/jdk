@@ -254,10 +254,6 @@ RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 DEBUG_LEVEL:=@DEBUG_LEVEL@
 HOTSPOT_DEBUG_LEVEL:=@HOTSPOT_DEBUG_LEVEL@
 
-# This is the JDK variant to build.
-# The JDK variant is a name for a specific set of modules to be compiled for the JDK.
-JDK_VARIANT:=@JDK_VARIANT@
-
 # Which JVM variants to build (space-separated list)
 JVM_VARIANTS := @JVM_VARIANTS@
 JVM_VARIANT_MAIN := @JVM_VARIANT_MAIN@
