@@ -84,6 +84,9 @@ const char *env_list[] = {
   "LD_LIBRARY_PATH", "LD_PRELOAD", "SHELL", "DISPLAY",
   "HOSTTYPE", "OSTYPE", "ARCH", "MACHTYPE",
 
+  // defined on AIX
+  "LIBPATH", "LDR_PRELOAD", "LDR_PRELOAD64",
+
   // defined on Linux
   "LD_ASSUME_KERNEL", "_JAVA_SR_SIGNUM",
 
