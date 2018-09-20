@@ -172,7 +172,7 @@ endif
 
 ifeq ($(STATIC_BUILD), true)
   JAVA_BASE_EXPORT_SYMBOLS_SRC := \
-      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli/$(LIBRARY_PREFIX)jli.symbols \
+      $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)jli.symbols \
       $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)java.symbols \
       $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)net.symbols \
       $(SUPPORT_OUTPUTDIR)/modules_libs/java.base/$(LIBRARY_PREFIX)nio.symbols \
@@ -205,4 +205,4 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       DEST := $(call FindLibDirForModule, $(MODULE)), \
   ))
   TARGETS += $(COPY_TZMAPPINGS)
-endif 
+endif

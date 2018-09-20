@@ -31,5 +31,4 @@ $(eval $(call SetupBuildLauncher, jconsole, \
                  --add-modules ALL-DEFAULT \
 		 -Djconsole.showOutputViewer, \
     CFLAGS_windows := -DJAVAW, \
-    LIBS_windows := user32.lib, \
 ))

@@ -180,39 +180,16 @@ TARGETS += $(BUILD_LIBJIMAGE)
 
 ##########################################################################################
 
-ifeq ($(call check-jvm-variant, zero), true)
-  ERGO_FAMILY := zero
-else
-  ifeq ($(OPENJDK_TARGET_CPU_ARCH), x86)
-    ERGO_FAMILY := i586
-  else
-    ERGO_FAMILY := $(OPENJDK_TARGET_CPU_ARCH)
-  endif
-endif
-LIBJLI_ALL_ERGO := $(wildcard $(addsuffix /ergo_*.c, $(LIBJLI_SRC_DIRS)))
-LIBJLI_EXCLUDE_ERGO := $(filter-out %/ergo_$(ERGO_FAMILY).c, $(LIBJLI_ALL_ERGO))
-# If all specialized ergo files are excluded, use generic ergo
-ifeq ($(LIBJLI_ALL_ERGO), $(LIBJLI_EXCLUDE_ERGO))
-  LIBJLI_CFLAGS += -DUSE_GENERIC_ERGO
-endif
-LIBJLI_EXCLUDE_FILES += $(notdir $(LIBJLI_EXCLUDE_ERGO))
-
 ifeq ($(OPENJDK_TARGET_OS), macosx)
-  LIBJLI_EXCLUDE_FILES += java_md_solinux.c ergo.c ergo_i586.c
-
-  BUILD_LIBJLI_java_md_macosx.c_CFLAGS := -x objective-c
-  BUILD_LIBJLI_STATIC_java_md_macosx.c_CFLAGS := -x objective-c
+  LIBJLI_EXCLUDE_FILES += java_md_solinux.c
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  LIBJLI_OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE)
   # Supply the name of the C runtime lib.
   LIBJLI_CFLAGS += -DMSVCR_DLL_NAME='"$(notdir $(MSVCR_DLL))"'
   ifneq ($(MSVCP_DLL), )
     LIBJLI_CFLAGS += -DMSVCP_DLL_NAME='"$(notdir $(MSVCP_DLL))"'
   endif
-else
-  LIBJLI_OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE)/jli
 endif
 
 LIBJLI_CFLAGS += $(LIBZ_CFLAGS)
@@ -231,7 +208,7 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     NAME := jli, \
-    OUTPUT_DIR := $(LIBJLI_OUTPUT_DIR), \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
     EXCLUDE_FILES := $(LIBJLI_EXCLUDE_FILES), \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
     OPTIMIZATION := HIGH, \
@@ -241,8 +218,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
         E_STATEMENT_NOT_REACHED, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
-    LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
     LIBS_unix := $(LIBZ_LIBS), \
     LIBS_linux := $(LIBDL) -lpthread, \
     LIBS_solaris := $(LIBDL), \

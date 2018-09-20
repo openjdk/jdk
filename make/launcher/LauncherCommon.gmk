@@ -25,15 +25,6 @@
 
 include JdkNativeCompilation.gmk
 
-ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/../lib/jli)
-
-# Applications expect to be able to link against libjawt without invoking
-# System.loadLibrary("jawt") first. This was the behaviour described in the
-# devloper documentation of JAWT and what worked with OpenJDK6.
-ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
-  ORIGIN_ARG += $(call SET_EXECUTABLE_ORIGIN,/../lib)
-endif
-
 # Tell the compiler not to export any functions unless declared so in
 # the source code. On Windows, this is the default and cannot be changed.
 # On Mac, we have always exported all symbols, probably due to oversight
@@ -86,8 +77,6 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 #     compile time defines exceeding Visual Studio 2013 limitations.
 # CFLAGS   Additional CFLAGS
 # CFLAGS_windows   Additional CFLAGS_windows
-# LIBS_unix   Additional LIBS_unix
-# LIBS_windows   Additional LIBS_windows
 # LDFLAGS_solaris Additional LDFLAGS_solaris
 # RC_FLAGS   Additional RC_FLAGS
 # MACOSX_SIGNED   On macosx, sign this binary
@@ -119,7 +108,6 @@ define SetupBuildLauncherBody
       $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_LAUNCHER_CLASS), "$$a"$(COMMA) )) }'
   $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
 
-  $1_LIBS :=
   ifeq ($(OPENJDK_TARGET_OS), macosx)
     ifeq ($$($1_MACOSX_SIGNED), true)
       $1_PLIST_FILE := Info-privileged.plist
@@ -128,8 +116,8 @@ define SetupBuildLauncherBody
       $1_PLIST_FILE := Info-cmdline.plist
     endif
 
-    $1_LDFLAGS += -Wl,-all_load \
-        -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
+    $1_LDFLAGS += -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
+
     ifeq ($(STATIC_BUILD), true)
       $1_LDFLAGS += -exported_symbols_list \
               $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
@@ -143,13 +131,6 @@ define SetupBuildLauncherBody
           -framework SystemConfiguration \
           -lstdc++ -liconv
     endif
-    $1_LIBS += -framework Cocoa -framework Security \
-        -framework ApplicationServices
-  endif
-
-  ifeq ($(OPENJDK_TARGET_OS), aix)
-    $1_LDFLAGS += -L$(SUPPORT_OUTPUTDIR)/native/java.base
-    $1_LIBS += -ljli_static
   endif
 
   ifeq ($(USE_EXTERNAL_LIBZ), true)
@@ -172,22 +153,23 @@ define SetupBuildLauncherBody
       CFLAGS_solaris := -KPIC -DHAVE_GETHRTIME, \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       LDFLAGS := $$(LDFLAGS_JDKEXE) \
-          $$(ORIGIN_ARG) \
+          $$(call SET_EXECUTABLE_ORIGIN) \
           $$($1_LDFLAGS), \
-      LDFLAGS_linux := \
-          -L$(call FindLibDirForModule, java.base)/jli, \
-      LDFLAGS_macosx := \
-          -L$(call FindLibDirForModule, java.base)/jli, \
-      LDFLAGS_solaris := $$($1_LDFLAGS_solaris) \
-          -L$(call FindLibDirForModule, java.base)/jli, \
+      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
+          -L$(call FindLibDirForModule, java.base), \
+      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
+          -L$(call FindLibDirForModule, java.base), \
+      LDFLAGS_solaris := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
+          -L$(call FindLibDirForModule, java.base), \
+      LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
       LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
-      LIBS_unix := $$($1_LIBS_unix), \
-      LIBS_linux := -lpthread -ljli $(LIBDL), \
-      LIBS_macosx := -ljli, \
+      LIBS_linux := -ljli -lpthread $(LIBDL), \
+      LIBS_macosx := -ljli -framework Cocoa -framework Security \
+          -framework ApplicationServices, \
       LIBS_solaris := -ljli -lthread $(LIBDL), \
+      LIBS_aix := -ljli_static, \
       LIBS_windows := $$($1_WINDOWS_JLI_LIB) \
-          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib advapi32.lib \
-          $$($1_LIBS_windows), \
+          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib, \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
       EXTRA_RC_FLAGS := $$($1_EXTRA_RC_FLAGS), \

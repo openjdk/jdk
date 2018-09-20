@@ -46,12 +46,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN) \
         $(LIBINSTRUMENT_LDFLAGS), \
-    LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/jli) \
-        -L$(call FindLibDirForModule, java.base)/jli, \
-    LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/jli) \
-        -L$(call FindLibDirForModule, java.base)/jli, \
-    LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN,/jli) \
-        -L$(call FindLibDirForModule, java.base)/jli, \
+    LDFLAGS_linux := -L$(call FindLibDirForModule, java.base), \
+    LDFLAGS_solaris := -L$(call FindLibDirForModule, java.base), \
+    LDFLAGS_macosx := -L$(call FindLibDirForModule, java.base), \
     LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_unix := -ljava -ljvm $(LIBZ_LIBS), \
@@ -66,10 +63,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBINSTRUMENT, \
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
   $(BUILD_LIBINSTRUMENT): $(call FindStaticLib, java.base, jli_static)
-else ifeq ($(OPENJDK_TARGET_OS), windows)
-  $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli)
 else
-  $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli, /jli)
+  $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, jli)
 endif
 $(BUILD_LIBINSTRUMENT): $(call FindLib, java.base, java)
 
