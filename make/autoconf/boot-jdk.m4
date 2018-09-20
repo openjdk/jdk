@@ -74,7 +74,18 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           BOOT_JDK_FOUND=no
         else
           # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $HEAD -n 1`
+          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $HEAD -n 1`
+          if [ [[ "$BOOT_JDK_VERSION" =~ "Picked up" ]] ]; then
+            AC_MSG_NOTICE([You have _JAVA_OPTIONS or JAVA_TOOL_OPTIONS set. This can mess up the build. Please use --with-boot-jdk-jvmargs instead.])
+            AC_MSG_NOTICE([Java reports: "$BOOT_JDK_VERSION".])
+            AC_MSG_ERROR([Cannot continue])
+          fi
+          if [ [[ "$BOOT_JDK_VERSION" =~ "Unrecognized option" ]] ]; then
+            AC_MSG_NOTICE([The specified --with-boot-jdk-jvmargs is invalid for the tested java])
+            AC_MSG_NOTICE([Error message: "$BOOT_JDK_VERSION".])
+            AC_MSG_NOTICE([Please fix arguments, or point to an explicit boot JDK which accept these arguments])
+            AC_MSG_ERROR([Cannot continue])
+          fi
 
           # Extra M4 quote needed to protect [] in grep expression.
           [FOUND_CORRECT_VERSION=`$ECHO $BOOT_JDK_VERSION \
@@ -90,7 +101,7 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
             AC_MSG_CHECKING([for Boot JDK])
             AC_MSG_RESULT([$BOOT_JDK])
             AC_MSG_CHECKING([Boot JDK version])
-            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" $USER_BOOT_JDK_OPTIONS -version 2>&1 | $TR '\n\r' '  '`
             AC_MSG_RESULT([$BOOT_JDK_VERSION])
           fi # end check jdk version
         fi # end check javac
@@ -283,6 +294,11 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
   AC_ARG_WITH(boot-jdk, [AS_HELP_STRING([--with-boot-jdk],
       [path to Boot JDK (used to bootstrap build) @<:@probed@:>@])])
 
+  AC_ARG_WITH(boot-jdk-jvmargs, [AS_HELP_STRING([--with-boot-jdk-jvmargs],
+  [specify additional arguments to be passed to Boot JDK tools @<:@none@:>@])])
+
+  USER_BOOT_JDK_OPTIONS="$with_boot_jdk_jvmargs"
+
   # We look for the Boot JDK through various means, going from more certain to
   # more of a guess-work. After each test, BOOT_JDK_FOUND is set to "yes" if
   # we detected something (if so, the path to the jdk is in BOOT_JDK). But we
@@ -372,10 +388,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   # Specify jvm options for anything that is run with the Boot JDK.
   # Not all JVM:s accept the same arguments on the command line.
   #
-  AC_ARG_WITH(boot-jdk-jvmargs, [AS_HELP_STRING([--with-boot-jdk-jvmargs],
-  [specify JVM arguments to be passed to all java invocations of boot JDK, overriding the default values,
-  e.g --with-boot-jdk-jvmargs="-Xmx8G -enableassertions"])])
-
   AC_MSG_CHECKING([flags for boot jdk java command] )
 
   # Force en-US environment
@@ -389,8 +401,8 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
     ADD_JVM_ARG_IF_OK([-Xshare:auto],boot_jdk_jvmargs,[$JAVA])
   fi
 
-  # Apply user provided options.
-  ADD_JVM_ARG_IF_OK([$with_boot_jdk_jvmargs],boot_jdk_jvmargs,[$JAVA])
+  # Finally append user provided options to allow them to override.
+  ADD_JVM_ARG_IF_OK([$USER_BOOT_JDK_OPTIONS],boot_jdk_jvmargs,[$JAVA])
 
   AC_MSG_RESULT([$boot_jdk_jvmargs])
 
