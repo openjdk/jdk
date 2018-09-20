@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/macro.hpp"

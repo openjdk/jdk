@@ -1727,7 +1727,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       uint step_size = AllocatePrefetchStepSize;
       uint distance = 0;
 
-      for ( uint i = 0; i < lines; i++ ) {
+      for ( intx i = 0; i < lines; i++ ) {
         prefetch_adr = new AddPNode( old_pf_wm, new_pf_wmt,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
@@ -1780,7 +1780,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       contended_phi_rawmem = prefetch;
       Node *prefetch_adr;
       distance = step_size;
-      for ( uint i = 1; i < lines; i++ ) {
+      for ( intx i = 1; i < lines; i++ ) {
         prefetch_adr = new AddPNode( cache_adr, cache_adr,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
@@ -1796,7 +1796,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       // Generate several prefetch instructions.
       uint step_size = AllocatePrefetchStepSize;
       uint distance = AllocatePrefetchDistance;
-      for ( uint i = 0; i < lines; i++ ) {
+      for ( intx i = 0; i < lines; i++ ) {
         prefetch_adr = new AddPNode( old_eden_top, new_eden_top,
                                             _igvn.MakeConX(distance) );
         transform_later(prefetch_adr);
