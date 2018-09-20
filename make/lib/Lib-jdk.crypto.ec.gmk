@@ -28,23 +28,13 @@ include LibCommon.gmk
 ################################################################################
 
 ifeq ($(ENABLE_INTREE_EC), true)
-  # On sol-sparc...all libraries are compiled with -xregs=no%appl
-  # (set in CFLAGS_REQUIRED_sparc) except libsunec.so
-  ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
-    BUILD_LIBSUNEC_CFLAGS_JDKLIB := $(filter-out -xregs=no%appl, $(CFLAGS_JDKLIB))
-    BUILD_LIBSUNEC_CXXFLAGS_JDKLIB := $(filter-out -xregs=no%appl, $(CXXFLAGS_JDKLIB))
-  else
-    BUILD_LIBSUNEC_CFLAGS_JDKLIB := $(CFLAGS_JDKLIB)
-    BUILD_LIBSUNEC_CXXFLAGS_JDKLIB := $(CXXFLAGS_JDKLIB)
-  endif
-
   $(eval $(call SetupJdkLibrary, BUILD_LIBSUNEC, \
       NAME := sunec, \
       TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(BUILD_LIBSUNEC_CFLAGS_JDKLIB) \
+      CFLAGS := $(CFLAGS_JDKLIB) \
           -DMP_API_COMPATIBLE -DNSS_ECC_MORE_THAN_SUITE_B, \
-      CXXFLAGS := $(BUILD_LIBSUNEC_CXXFLAGS_JDKLIB), \
+      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
       DISABLED_WARNINGS_gcc := sign-compare implicit-fallthrough, \
       DISABLED_WARNINGS_microsoft := 4101 4244 4146 4018, \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
