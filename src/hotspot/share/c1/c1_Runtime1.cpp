@@ -847,8 +847,32 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
 // call into patch_code and complete the patching process by copying
 // the patch body back into the main part of the nmethod and resume
 // executing.
+
+// NB:
 //
+// Patchable instruction sequences inherently exhibit race conditions,
+// where thread A is patching an instruction at the same time thread B
+// is executing it.  The algorithms we use ensure that any observation
+// that B can make on any intermediate states during A's patching will
+// always end up with a correct outcome.  This is easiest if there are
+// few or no intermediate states.  (Some inline caches have two
+// related instructions that must be patched in tandem.  For those,
+// intermediate states seem to be unavoidable, but we will get the
+// right answer from all possible observation orders.)
 //
+// When patching the entry instruction at the head of a method, or a
+// linkable call instruction inside of a method, we try very hard to
+// use a patch sequence which executes as a single memory transaction.
+// This means, in practice, that when thread A patches an instruction,
+// it should patch a 32-bit or 64-bit word that somehow overlaps the
+// instruction or is contained in it.  We believe that memory hardware
+// will never break up such a word write, if it is naturally aligned
+// for the word being written.  We also know that some CPUs work very
+// hard to create atomic updates even of naturally unaligned words,
+// but we don't want to bet the farm on this always working.
+//
+// Therefore, if there is any chance of a race condition, we try to
+// patch only naturally aligned words, as single, full-word writes.
 
 JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_id ))
   NOT_PRODUCT(_patch_code_slowcase_cnt++;)
@@ -907,7 +931,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
     // We need to only cover T_LONG and T_DOUBLE fields, as we can
     // break access atomicity only for them.
 
-    // Strictly speaking, the deoptimizaation on 64-bit platforms
+    // Strictly speaking, the deoptimization on 64-bit platforms
     // is unnecessary, and T_LONG stores on 32-bit platforms need
     // to be handled by special patching code when AlwaysAtomicAccesses
     // becomes product feature. At this point, we are still going
