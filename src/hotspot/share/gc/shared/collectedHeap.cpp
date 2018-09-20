@@ -468,37 +468,23 @@ oop CollectedHeap::class_allocate(Klass* klass, int size, TRAPS) {
 }
 
 void CollectedHeap::ensure_parsability(bool retire_tlabs) {
-  // The second disjunct in the assertion below makes a concession
-  // for the start-up verification done while the VM is being
-  // created. Callers be careful that you know that mutators
-  // aren't going to interfere -- for instance, this is permissible
-  // if we are still single-threaded and have either not yet
-  // started allocating (nothing much to verify) or we have
-  // started allocating but are now a full-fledged JavaThread
-  // (and have thus made our TLAB's) available for filling.
   assert(SafepointSynchronize::is_at_safepoint() || !is_init_completed(),
-         "Should only be called at a safepoint or at start-up"
-         " otherwise concurrent mutator activity may make heap "
-         " unparsable again");
+         "Should only be called at a safepoint or at start-up");
 
-  if (UseTLAB && retire_tlabs) {
-    // Accumulate statistics before retiring
-    ThreadLocalAllocBuffer::accumulate_statistics_before_gc();
+  ThreadLocalAllocStats stats;
+
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next();) {
+    BarrierSet::barrier_set()->make_parsable(thread);
+    if (UseTLAB) {
+      if (retire_tlabs) {
+        thread->tlab().retire(&stats);
+      } else {
+        thread->tlab().make_parsable();
+      }
+    }
   }
 
-  // The main thread starts allocating via a TLAB even before it
-  // has added itself to the threads list at vm boot-up.
-  JavaThreadIteratorWithHandle jtiwh;
-  assert(jtiwh.length() > 0,
-         "Attempt to fill tlabs before main thread has been added"
-         " to threads list is doomed to failure!");
-  BarrierSet *bs = BarrierSet::barrier_set();
-  for (; JavaThread *thread = jtiwh.next(); ) {
-     if (UseTLAB) {
-       thread->tlab().make_parsable(retire_tlabs);
-     }
-     bs->make_parsable(thread);
-  }
+  stats.publish();
 }
 
 void CollectedHeap::resize_all_tlabs() {

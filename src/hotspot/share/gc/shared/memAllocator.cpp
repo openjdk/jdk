@@ -320,7 +320,7 @@ HeapWord* MemAllocator::allocate_inside_tlab_slow(Allocation& allocation) const 
   // To minimize fragmentation, the last TLAB may be smaller than the rest.
   size_t new_tlab_size = tlab.compute_size(_word_size);
 
-  tlab.clear_before_allocation();
+  tlab.retire_before_allocation();
 
   if (new_tlab_size == 0) {
     return NULL;

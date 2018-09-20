@@ -1989,7 +1989,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   remove_stack_guard_pages();
 
   if (UseTLAB) {
-    tlab().make_parsable(true);  // retire TLAB
+    tlab().retire();
   }
 
   if (JvmtiEnv::environments_might_exist()) {
@@ -2045,7 +2045,7 @@ void JavaThread::cleanup_failed_attach_current_thread() {
   remove_stack_guard_pages();
 
   if (UseTLAB) {
-    tlab().make_parsable(true);  // retire TLAB, if any
+    tlab().retire();
   }
 
   BarrierSet::barrier_set()->on_thread_detach(this);
