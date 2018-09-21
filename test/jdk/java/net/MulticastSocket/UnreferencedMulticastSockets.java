@@ -120,6 +120,7 @@ public class UnreferencedMulticastSockets {
         thr.start();
 
         MulticastSocket client = new MulticastSocket(0);
+        System.out.printf("  client bound port: %d%n", client.getLocalPort());
         client.connect(svr.getHost(), svr.getPort());
         pendingSockets.add(new NamedWeak(client, pendingQueue, "clientMulticastSocket"));
         extractRefs(client, "clientMulticastSocket");
