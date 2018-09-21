@@ -716,28 +716,6 @@ void G1ConcurrentMark::clear_prev_bitmap(WorkGang* workers) {
   clear_bitmap(_prev_mark_bitmap, workers, false);
 }
 
-class CheckBitmapClearHRClosure : public HeapRegionClosure {
-  G1CMBitMap* _bitmap;
- public:
-  CheckBitmapClearHRClosure(G1CMBitMap* bitmap) : _bitmap(bitmap) {
-  }
-
-  virtual bool do_heap_region(HeapRegion* r) {
-    // This closure can be called concurrently to the mutator, so we must make sure
-    // that the result of the getNextMarkedWordAddress() call is compared to the
-    // value passed to it as limit to detect any found bits.
-    // end never changes in G1.
-    HeapWord* end = r->end();
-    return _bitmap->get_next_marked_addr(r->bottom(), end) != end;
-  }
-};
-
-bool G1ConcurrentMark::next_mark_bitmap_is_clear() {
-  CheckBitmapClearHRClosure cl(_next_mark_bitmap);
-  _g1h->heap_region_iterate(&cl);
-  return cl.is_complete();
-}
-
 class NoteStartOfMarkHRClosure : public HeapRegionClosure {
 public:
   bool do_heap_region(HeapRegion* r) {
