@@ -229,7 +229,7 @@ public class SourceLauncherTest extends TestRunner {
         Files.createDirectories(base);
         Path file = base.resolve("NoClass.java");
         Files.write(file, List.of("package p;"));
-        testError(file, "", "error: no class declared in file");
+        testError(file, "", "error: no class declared in source file");
     }
 
     @Test
