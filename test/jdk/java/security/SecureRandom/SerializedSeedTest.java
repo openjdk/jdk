@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8141039
- * @library /lib/testlibrary
+ * @library /test/lib
  * @summary When random number is generated through the a SecureRandom instance
  *          as well from it's serialized instance in the same time then the
  *          generated random numbers should be different when one or both are
@@ -39,7 +39,7 @@ import java.io.ByteArrayInputStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.Security;
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 public class SerializedSeedTest {
 

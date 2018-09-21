@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.apps.LingeredApp;
 
@@ -29,11 +29,11 @@ import jdk.test.lib.apps.LingeredApp;
  * @test
  * @summary This test verifies jps usage and checks that appropriate error message is shown
  *          when running jps with illegal arguments.
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules jdk.jartool/sun.tools.jar
  *          java.management
  *          java.base/jdk.internal.misc
- * @build jdk.testlibrary.* jdk.test.lib.apps.* JpsHelper
+ * @build jdk.test.lib.apps.* JpsHelper
  * @run driver TestJpsSanity
  */
 public class TestJpsSanity {

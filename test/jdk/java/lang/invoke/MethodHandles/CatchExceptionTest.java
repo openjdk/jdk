@@ -24,7 +24,7 @@
 package test.java.lang.invoke.MethodHandles;
 
 import jdk.test.lib.TimeLimitedRunner;
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import test.java.lang.invoke.lib.CodeCacheOverflowProcessor;
 import test.java.lang.invoke.lib.Helper;
@@ -43,7 +43,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /* @test
- * @library /lib/testlibrary /java/lang/invoke/common /test/lib
+ * @library /java/lang/invoke/common /test/lib
  * @build jdk.test.lib.TimeLimitedRunner
  * @compile CatchExceptionTest.java
  * @run main/othervm -esa test.java.lang.invoke.MethodHandles.CatchExceptionTest

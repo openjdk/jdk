@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
  * @bug     8073056
  * @summary Repeating annotations throws java.security.AccessControlException with a SecurityManager
  *
- * @library /lib/testlibrary
- * @build jdk.testlibrary.Asserts
+ * @library /test/lib
+ * @build jdk.test.lib.Asserts
  * @run main RepeatingWithSecurityManager
  * @run main/othervm RepeatingWithSecurityManager "withSM"
  */
@@ -35,7 +35,7 @@
 import java.lang.annotation.*;
 import java.util.*;
 
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 public class RepeatingWithSecurityManager {
     public static void main(String[] args) throws Exception {

@@ -27,12 +27,11 @@
  * @summary Test hashing of extended characters in Serviceability Agent.
  * @requires vm.hasSAandCanAttach
  * @library /test/lib
- * @library /lib/testlibrary
  * @compile -encoding utf8 HeapDumpTest.java
  * @run main/timeout=240 HeapDumpTest
  */
 
-import static jdk.testlibrary.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertTrue;
 
 import java.io.IOException;
 import java.io.File;

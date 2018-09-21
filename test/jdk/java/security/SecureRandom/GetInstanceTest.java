@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8141039
- * @library /lib/testlibrary
+ * @library /test/lib
  * @summary SecureRandom supports multiple getInstance method including
  *          getInstanceStrong() method. This test verifies a set of possible
  *          cases for getInstance with different SecureRandom mechanism
@@ -39,7 +39,7 @@ import java.security.DrbgParameters;
 import static java.security.DrbgParameters.Capability.*;
 import java.security.Security;
 import java.util.Arrays;
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 public class GetInstanceTest {
 

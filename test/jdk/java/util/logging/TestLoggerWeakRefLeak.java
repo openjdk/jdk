@@ -25,7 +25,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import static jdk.testlibrary.Asserts.assertGreaterThan;
+import static jdk.test.lib.Asserts.assertGreaterThan;
 import jdk.test.lib.process.ProcessTools;
 
 import com.sun.tools.attach.AttachNotSupportedException;
@@ -37,7 +37,6 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * @test
  * @bug 6942989
  * @summary Check for WeakReference leak in Logger and anonymous Logger objects
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules jdk.attach/sun.tools.attach
  *          java.logging

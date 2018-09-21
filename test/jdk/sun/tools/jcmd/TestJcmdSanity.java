@@ -21,7 +21,7 @@
  * questions.
  */
 
-import static jdk.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,10 +40,8 @@ import jdk.test.lib.Utils;
  * @summary Unit test for jcmd utility. The test will send different diagnostic
  * command requests to the current java process.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build jdk.testlibrary.*
  * @run main/othervm -XX:+UsePerfData TestJcmdSanity
  */
 public class TestJcmdSanity {

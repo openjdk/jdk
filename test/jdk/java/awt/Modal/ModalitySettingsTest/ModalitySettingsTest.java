@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 import java.awt.*;
-import static jdk.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 /*
  * @test
@@ -30,7 +30,7 @@ import static jdk.testlibrary.Asserts.*;
  * @bug 8047367
  * @summary Check modality settings for Window and Dialog.
  *
- * @library ../../../../lib/testlibrary/
+ * @library /test/lib
  * @run main ModalitySettingsTest
  */
 

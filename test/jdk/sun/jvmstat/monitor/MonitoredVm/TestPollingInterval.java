@@ -26,7 +26,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import sun.jvmstat.monitor.MonitorException;
@@ -41,10 +41,8 @@ import sun.jvmstat.monitor.VmIdentifier;
  * @bug 6672135
  * @summary setInterval() for local MonitoredHost and local MonitoredVm
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build jdk.testlibrary.*
  * @build jdk.test.lib.apps.*
  * @run main TestPollingInterval
  */

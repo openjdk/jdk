@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -30,7 +30,7 @@ import java.util.Arrays;
 /**
  * @test
  * @bug 8051408
- * @library /lib/testlibrary
+ * @library /test/lib
  * @summary testing HmacSHA512/224 and HmacSHA512/256.
  */
 public class HmacSHA512 {

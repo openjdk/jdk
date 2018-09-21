@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,8 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 
-import static jdk.testlibrary.Asserts.assertNull;
-import static jdk.testlibrary.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertNull;
+import static jdk.test.lib.Asserts.assertTrue;
 
 /*
  * @test
@@ -41,7 +41,8 @@ import static jdk.testlibrary.Asserts.assertTrue;
  * @key headful
  * @summary Make sure that modifier key mask is set when robot press
  *          some key with one or more modifiers.
- * @library ../../../../lib/testlibrary/
+ * @library /lib/testlibrary
+ * @library /test/lib
  * @build ExtendedRobot
  * @run main ModifierRobotKeyTest
  */
