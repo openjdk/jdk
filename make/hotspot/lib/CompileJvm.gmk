@@ -80,6 +80,25 @@ CFLAGS_VM_VERSION := \
     #
 
 ################################################################################
+# Disabled warnings
+
+DISABLED_WARNINGS_gcc := extra all
+ifeq ($(call check-jvm-feature, zero), true)
+  DISABLED_WARNINGS_gcc += return-type
+endif
+
+DISABLED_WARNINGS_clang := extra all tautological-compare deprecated-declarations
+
+DISABLED_WARNINGS_solstudio :=
+
+DISABLED_WARNINGS_xlc := 1540-0216 1540-0198 1540-1090 1540-1639 1540-1088 \
+    1500-010
+
+DISABLED_WARNINGS_microsoft :=
+
+
+
+################################################################################
 # Platform specific setup
 
 # ARM source selection
@@ -115,7 +134,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   endif
   # Exclude warnings in devstudio 12.6
   ifeq ($(CC_VERSION_NUMBER), 5.15)
-    DISABLED_WARNINGS_solstudio := SEC_ARR_OUTSIDE_BOUND_READ \
+    DISABLED_WARNINGS_solstudio += SEC_ARR_OUTSIDE_BOUND_READ \
       SEC_ARR_OUTSIDE_BOUND_WRITE
   endif
 endif
@@ -158,10 +177,11 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBJVM, \
     CFLAGS := $(JVM_CFLAGS), \
     vm_version.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
-    DISABLED_WARNINGS_clang := tautological-compare, \
+    DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
+    DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_solstudio := $(DISABLED_WARNINGS_solstudio), \
-    DISABLED_WARNINGS_xlc := 1540-0216 1540-0198 1540-1090 1540-1639 \
-        1540-1088 1500-010, \
+    DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
+    DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
     LDFLAGS := $(JVM_LDFLAGS), \
     LIBS := $(JVM_LIBS), \

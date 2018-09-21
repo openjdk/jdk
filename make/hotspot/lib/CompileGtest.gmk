@@ -73,11 +73,14 @@ $(eval $(call SetupNativeCompilation, BUILD_GTEST_LIBJVM, \
     CFLAGS_windows := -EHsc, \
     CFLAGS_solaris := -DGTEST_HAS_EXCEPTIONS=0 -library=stlport4, \
     CFLAGS_macosx := -DGTEST_OS_MAC=1, \
-    DISABLED_WARNINGS_gcc := undef, \
-    DISABLED_WARNINGS_clang := undef switch format-nonliteral \
-        tautological-undefined-compare $(BUILD_LIBJVM_DISABLED_WARNINGS_clang), \
-    DISABLED_WARNINGS_solstudio := identexpected, \
-    DISABLED_WARNINGS_CXX_microsoft := 4996, \
+    DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc) \
+        undef, \
+    DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang) \
+        undef switch format-nonliteral tautological-undefined-compare, \
+    DISABLED_WARNINGS_solstudio := $(DISABLED_WARNINGS_solstudio) \
+        identexpected, \
+    DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft) \
+        4996, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LDFLAGS_solaris := -library=stlport4 $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JVM_LIBS), \

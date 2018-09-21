@@ -139,6 +139,14 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
   fi
 
+  # Setup warning flags
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    LDFLAGS_WARNINGS_ARE_ERRORS="-Wl,-z,fatal-warnings"
+  else
+    LDFLAGS_WARNINGS_ARE_ERRORS=""
+  fi
+  AC_SUBST(LDFLAGS_WARNINGS_ARE_ERRORS)
+
   # Setup LDFLAGS for linking executables
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     EXECUTABLE_LDFLAGS="$EXECUTABLE_LDFLAGS -Wl,--allow-shlib-undefined"
