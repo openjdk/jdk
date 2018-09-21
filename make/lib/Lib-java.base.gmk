@@ -130,6 +130,7 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
   ifeq ($(STATIC_BUILD), false)
     $(eval $(call SetupJdkLibrary, BUILD_LIBJSIG, \
         NAME := jsig, \
+        OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBJSIG_CFLAGS), \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
