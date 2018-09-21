@@ -5,6 +5,8 @@ tests:
     - daily
   commands:
     - cd make && ant build
+    - mkdir -p ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+    - cp -vR ../dist ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
   sharedEnviroment:
       MAXJDOC: ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
   clusterParameters:
