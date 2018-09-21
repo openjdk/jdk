@@ -209,12 +209,14 @@ public class CreateSymbols {
      * {@code ctDescriptionFile}, using the file as a recipe to create the sigfiles.
      */
     @SuppressWarnings("unchecked")
-    public void createSymbols(String ctDescriptionFileExtra, String ctDescriptionFile, String ctSymLocation, CtSymKind ctSymKind) throws IOException {
+    public void createSymbols(String ctDescriptionFileExtra, String ctDescriptionFile, String ctSymLocation) throws IOException {
         LoadDescriptions data = load(ctDescriptionFileExtra != null ? Paths.get(ctDescriptionFileExtra)
                                                                     : null,
                                      Paths.get(ctDescriptionFile), null);
 
         splitHeaders(data.classes);
+
+        Map<String, Map<Character, String>> package2Version2Module = new HashMap<>();
 
         for (ModuleDescription md : data.modules.values()) {
             for (ModuleHeaderDescription mhd : md.header) {
@@ -224,26 +226,41 @@ public class CreateSymbols {
                                         md,
                                         mhd,
                                         versionsList);
+                mhd.exports.stream().forEach(pkg -> {
+                    for (char v : mhd.versions.toCharArray()) {
+                        package2Version2Module.computeIfAbsent(pkg, dummy -> new HashMap<>()).put(v, md.name);
+                    }
+                });
             }
         }
 
         for (ClassDescription classDescription : data.classes) {
+            Map<Character, String> version2Module = package2Version2Module.getOrDefault(classDescription.packge().replace('.', '/'), Collections.emptyMap());
             for (ClassHeaderDescription header : classDescription.header) {
-                switch (ctSymKind) {
-                    case JOINED_VERSIONS:
-                        Set<String> jointVersions = new HashSet<>();
-                        jointVersions.add(header.versions);
-                        limitJointVersion(jointVersions, classDescription.fields);
-                        limitJointVersion(jointVersions, classDescription.methods);
-                        writeClassesForVersions(ctSymLocation, classDescription, header, jointVersions);
-                        break;
-                    case SEPARATE:
-                        Set<String> versions = new HashSet<>();
-                        for (char v : header.versions.toCharArray()) {
-                            versions.add("" + v);
+                Set<String> jointVersions = new HashSet<>();
+                jointVersions.add(header.versions);
+                limitJointVersion(jointVersions, classDescription.fields);
+                limitJointVersion(jointVersions, classDescription.methods);
+                Map<String, StringBuilder> module2Versions = new HashMap<>();
+                for (char v : header.versions.toCharArray()) {
+                    String module = version2Module.get(v);
+                    if (module == null) {
+                        if (v >= '9') {
+                            throw new AssertionError("No module for " + classDescription.name +
+                                                     " and version " + v);
                         }
-                        writeClassesForVersions(ctSymLocation, classDescription, header, versions);
-                        break;
+                        module = version2Module.get('9');
+                        if (module == null) {
+                            module = "java.base";
+                        }
+                    }
+                    module2Versions.computeIfAbsent(module, dummy -> new StringBuilder()).append(v);
+                }
+                for (Entry<String, StringBuilder> e : module2Versions.entrySet()) {
+                    Set<String> currentVersions = new HashSet<>(jointVersions);
+                    limitJointVersion(currentVersions, e.getValue().toString());
+                    currentVersions = currentVersions.stream().filter(vers -> !disjoint(vers, e.getValue().toString())).collect(Collectors.toSet());
+                    writeClassesForVersions(ctSymLocation, classDescription, header, e.getKey(), currentVersions);
                 }
             }
         }
@@ -591,7 +608,7 @@ public class CreateSymbols {
                     newHeader.innerClasses = header.innerClasses;
                     newHeader.runtimeAnnotations = header.runtimeAnnotations;
                     newHeader.signature = header.signature;
-                    newHeader.versions = reduce(versions, header.versions);
+                    newHeader.versions = reduce(header.versions, versions);
 
                     newHeaders.add(newHeader);
                 }
@@ -603,26 +620,30 @@ public class CreateSymbols {
 
     void limitJointVersion(Set<String> jointVersions, List<? extends FeatureDescription> features) {
         for (FeatureDescription feature : features) {
-            for (String version : jointVersions) {
-                if (!containsAll(feature.versions, version) &&
-                    !disjoint(feature.versions, version)) {
-                    StringBuilder featurePart = new StringBuilder();
-                    StringBuilder otherPart = new StringBuilder();
-                    for (char v : version.toCharArray()) {
-                        if (feature.versions.indexOf(v) != (-1)) {
-                            featurePart.append(v);
-                        } else {
-                            otherPart.append(v);
-                        }
+            limitJointVersion(jointVersions, feature.versions);
+        }
+    }
+
+    void limitJointVersion(Set<String> jointVersions, String versions) {
+        for (String version : jointVersions) {
+            if (!containsAll(versions, version) &&
+                !disjoint(versions, version)) {
+                StringBuilder featurePart = new StringBuilder();
+                StringBuilder otherPart = new StringBuilder();
+                for (char v : version.toCharArray()) {
+                    if (versions.indexOf(v) != (-1)) {
+                        featurePart.append(v);
+                    } else {
+                        otherPart.append(v);
                     }
-                    jointVersions.remove(version);
-                    if (featurePart.length() == 0 || otherPart.length() == 0) {
-                        throw new AssertionError();
-                    }
-                    jointVersions.add(featurePart.toString());
-                    jointVersions.add(otherPart.toString());
-                    break;
                 }
+                jointVersions.remove(version);
+                if (featurePart.length() == 0 || otherPart.length() == 0) {
+                    throw new AssertionError();
+                }
+                jointVersions.add(featurePart.toString());
+                jointVersions.add(otherPart.toString());
+                break;
             }
         }
     }
@@ -646,10 +667,11 @@ public class CreateSymbols {
     void writeClassesForVersions(String ctSymLocation,
                                  ClassDescription classDescription,
                                  ClassHeaderDescription header,
+                                 String module,
                                  Iterable<String> versions)
             throws IOException {
         for (String ver : versions) {
-            writeClass(ctSymLocation, classDescription, header, ver);
+            writeClass(ctSymLocation, classDescription, header, module, ver);
         }
     }
 
@@ -661,11 +683,6 @@ public class CreateSymbols {
         for (String ver : versions) {
             writeModule(ctSymLocation, moduleDescription, header, ver);
         }
-    }
-
-    public enum CtSymKind {
-        JOINED_VERSIONS,
-        SEPARATE;
     }
 
     //<editor-fold defaultstate="collapsed" desc="Class Writing">
@@ -697,7 +714,7 @@ public class CreateSymbols {
                 attributes);
 
         Path outputClassFile = Paths.get(ctSymLocation,
-                                         version + "-modules",
+                                         version,
                                          moduleDescription.name,
                                          "module-info" + EXTENSION);
 
@@ -713,6 +730,7 @@ public class CreateSymbols {
     void writeClass(String ctSymLocation,
                     ClassDescription classDescription,
                     ClassHeaderDescription header,
+                    String module,
                     String version) throws IOException {
         List<CPInfo> constantPool = new ArrayList<>();
         constantPool.add(null);
@@ -765,7 +783,13 @@ public class CreateSymbols {
                 methods.toArray(new Method[0]),
                 attributes);
 
-        Path outputClassFile = Paths.get(ctSymLocation, version, classDescription.name + EXTENSION);
+        Path outputClassFile = Paths.get(ctSymLocation, version);
+
+        if (module != null) {
+            outputClassFile = outputClassFile.resolve(module);
+        }
+
+        outputClassFile = outputClassFile.resolve(classDescription.name + EXTENSION);
 
         Files.createDirectories(outputClassFile.getParent());
 
@@ -3652,8 +3676,7 @@ public class CreateSymbols {
 
                 new CreateSymbols().createSymbols(ctDescriptionFileExtra,
                                                   ctDescriptionFile,
-                                                  ctSymLocation,
-                                                  CtSymKind.JOINED_VERSIONS);
+                                                  ctSymLocation);
                 break;
         }
     }
