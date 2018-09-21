@@ -94,6 +94,11 @@ public abstract class JdbTest {
         try {
             setup();
             runCases();
+        } catch (Throwable e) {
+            jdb.log("=======================================");
+            jdb.log("Exception thrown during test execution: " + e.getMessage());
+            jdb.log("=======================================");
+            throw e;
         } finally {
             shutdown();
         }

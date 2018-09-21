@@ -73,9 +73,9 @@ public class Jdb implements AutoCloseable {
 
     private static final String lineSeparator = System.getProperty("line.separator");
     // wait time before check jdb output (in ms)
-    private static long sleepTime = 1000;
+    private static final long sleepTime = 1000;
     // max time to wait for  jdb output (in ms)
-    private static long timeout = 60000;
+    private static final long timeout = Utils.adjustTimeout(60000);
 
     // pattern for message of a breakpoint hit
     public static final String BREAKPOINT_HIT = "Breakpoint hit:";
@@ -215,7 +215,7 @@ public class Jdb implements AutoCloseable {
             throw new RuntimeException("Attempt to send command '" + cmd.cmd + "' to terminated jdb");
         }
 
-        System.out.println("> " + cmd.cmd);
+        log("> " + cmd.cmd);
 
         inputWriter.println(cmd.cmd);
 
@@ -251,13 +251,13 @@ public class Jdb implements AutoCloseable {
         command(JdbCommand.quit());
     }
 
-    private void log(String s) {
+    void log(String s) {
         System.out.println(s);
     }
 
     private void logJdb(List<String> reply) {
         jdbOutput.addAll(reply);
-        reply.forEach(s -> System.out.println("[jdb] " + s));
+        reply.forEach(s -> log("[jdb] " + s));
     }
 
     // returns the whole jdb output as a string
