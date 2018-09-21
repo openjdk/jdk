@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ public class ReportSocketClosed {
         byte[]  array = {21,22,23};
 
         try {
-            soc = new DatagramSocket(4001);
+            soc = new DatagramSocket(0);
             sin = InetAddress.getLocalHost();
             soc.close();
         } catch (Exception e) {
