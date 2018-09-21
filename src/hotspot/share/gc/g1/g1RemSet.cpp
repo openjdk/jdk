@@ -40,6 +40,7 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
@@ -339,6 +340,7 @@ void G1ScanRSForRegionClosure::scan_card(MemRegion mr, uint region_idx_for_card)
 }
 
 void G1ScanRSForRegionClosure::scan_rem_set_roots(HeapRegion* r) {
+  EventGCPhaseParallel event;
   uint const region_idx = r->hrm_index();
 
   if (_scan_state->claim_iter(region_idx)) {
@@ -392,10 +394,13 @@ void G1ScanRSForRegionClosure::scan_rem_set_roots(HeapRegion* r) {
 
     scan_card(mr, region_idx_for_card);
   }
+  event.commit(GCId::current(), _worker_i, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::ScanRS));
 }
 
 void G1ScanRSForRegionClosure::scan_strong_code_roots(HeapRegion* r) {
+  EventGCPhaseParallel event;
   r->strong_code_roots_do(_pss->closures()->weak_codeblobs());
+  event.commit(GCId::current(), _worker_i, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::CodeRoots));
 }
 
 bool G1ScanRSForRegionClosure::do_heap_region(HeapRegion* r) {

@@ -27,6 +27,7 @@
 
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/weakProcessorPhaseTimes.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
@@ -190,6 +191,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads);
   void note_gc_start();
   void print();
+  static const char* phase_name(GCParPhases phase);
 
   // record the time a phase took in seconds
   void record_time_secs(GCParPhases phase, uint worker_i, double secs);
@@ -385,6 +387,7 @@ protected:
   G1GCPhaseTimes::GCParPhases _phase;
   G1GCPhaseTimes* _phase_times;
   uint _worker_id;
+  EventGCPhaseParallel _event;
 public:
   G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id);
   virtual ~G1GCParPhaseTimesTracker();

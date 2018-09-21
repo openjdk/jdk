@@ -435,6 +435,13 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
+  <Event name="GCPhaseParallel" category="Java Virtual Machine, GC, Phases" label="GC Phase Parallel"
+         startTime="true" thread="true" description="GC phases for parallel workers">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId"/>
+    <Field type="uint" name="gcWorkerId" label="GC Worker Identifier" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+  
   <Event name="AllocationRequiringGC" category="Java Virtual Machine, GC, Detailed" label="Allocation Requiring GC" thread="true" stackTrace="true"
     startTime="false">
     <Field type="uint" name="gcId" label="Pending GC Identifier" relation="GcId" />

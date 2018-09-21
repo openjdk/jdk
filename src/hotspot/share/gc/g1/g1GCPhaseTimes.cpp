@@ -465,6 +465,48 @@ void G1GCPhaseTimes::print() {
   }
 }
 
+const char* G1GCPhaseTimes::phase_name(GCParPhases phase) {
+  static const char* names[] = {
+      "GCWorkerStart",
+      "ExtRootScan",
+      "ThreadRoots",
+      "StringTableRoots",
+      "UniverseRoots",
+      "JNIRoots",
+      "ObjectSynchronizerRoots",
+      "ManagementRoots",
+      "SystemDictionaryRoots",
+      "CLDGRoots",
+      "JVMTIRoots",
+      "CMRefRoots",
+      "WaitForStrongCLD",
+      "WeakCLDRoots",
+      "SATBFiltering",
+      "UpdateRS",
+      "ScanHCC",
+      "ScanRS",
+      "CodeRoots",
+#if INCLUDE_AOT
+      "AOTCodeRoots",
+#endif
+      "ObjCopy",
+      "Termination",
+      "Other",
+      "GCWorkerTotal",
+      "GCWorkerEnd",
+      "StringDedupQueueFixup",
+      "StringDedupTableFixup",
+      "RedirtyCards",
+      "YoungFreeCSet",
+      "NonYoungFreeCSet"
+      //GCParPhasesSentinel only used to tell end of enum
+      };
+
+  STATIC_ASSERT(ARRAY_SIZE(names) == G1GCPhaseTimes::GCParPhasesSentinel); // GCParPhases enum and corresponding string array should have the same "length", this tries to assert it
+
+  return names[phase];
+}
+
 G1EvacPhaseWithTrimTimeTracker::G1EvacPhaseWithTrimTimeTracker(G1ParScanThreadState* pss, Tickspan& total_time, Tickspan& trim_time) :
   _pss(pss),
   _start(Ticks::now()),
@@ -490,7 +532,7 @@ void G1EvacPhaseWithTrimTimeTracker::stop() {
 }
 
 G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id) :
-  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id) {
+  _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event() {
   if (_phase_times != NULL) {
     _start_time = Ticks::now();
   }
@@ -499,6 +541,7 @@ G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, 
 G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
   if (_phase_times != NULL) {
     _phase_times->record_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
+    _event.commit(GCId::current(), _worker_id, G1GCPhaseTimes::phase_name(_phase));
   }
 }
 
