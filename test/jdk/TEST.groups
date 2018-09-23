@@ -351,7 +351,6 @@ jdk_svc = \
 
 jdk_awt = \
     java/awt \
-    com/sun/awt \
     com/apple/eawt \
     com/apple/laf \
     sun/awt
@@ -489,8 +488,7 @@ jdk_stable = \
     :jdk_sound \
     :jdk_sctp \
     javax/accessibility \
-    com/sun/java/swing \
-    com/sun/awt
+    com/sun/java/swing
 
 needs_g1gc = \
   jdk/jfr/event/gc/refstat/TestRefStatEventWithG1ConcurrentMark.java \
