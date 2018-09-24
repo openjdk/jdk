@@ -2764,6 +2764,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   assert(length == R4, "code assumption");
 #endif // AARCH64
 
+  __ resolve(ACCESS_READ, src);
+  __ resolve(ACCESS_WRITE, dst);
+
   CodeStub* stub = op->stub();
 
   int flags = op->flags();
@@ -3129,6 +3132,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
+    __ resolve(ACCESS_READ | ACCESS_WRITE, obj);
     int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());
