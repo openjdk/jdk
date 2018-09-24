@@ -2359,8 +2359,11 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
           ShouldNotReachHere();
       }
     } else if (opr2->is_single_cpu()) {
-      if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY || opr1->type() == T_METADATA || opr1->type() == T_ADDRESS) {
-        assert(opr2->type() == T_OBJECT || opr2->type() == T_ARRAY || opr2->type() == T_METADATA || opr2->type() == T_ADDRESS, "incompatibe type");
+      if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY) {
+        assert(opr2->type() == T_OBJECT || opr2->type() == T_ARRAY, "incompatibe type");
+        __ cmpoop(opr1->as_register(), opr2->as_register());
+      } else if (opr1->type() == T_METADATA || opr1->type() == T_ADDRESS) {
+        assert(opr2->type() == T_METADATA || opr2->type() == T_ADDRESS, "incompatibe type");
         __ cmp(opr1->as_register(), opr2->as_register());
       } else {
         assert(opr2->type() != T_OBJECT && opr2->type() != T_ARRAY && opr2->type() != T_METADATA && opr2->type() != T_ADDRESS, "incompatibe type");

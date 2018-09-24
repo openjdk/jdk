@@ -162,3 +162,7 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
+void BarrierSetAssembler::obj_equals(MacroAssembler* masm,
+                                     Register obj1, Register obj2) {
+  __ cmp(obj1, obj2);
+}

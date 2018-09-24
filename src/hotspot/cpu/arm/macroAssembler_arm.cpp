@@ -1037,6 +1037,11 @@ void MacroAssembler::sign_extend(Register rd, Register rn, int bits) {
 
 #ifndef AARCH64
 
+void MacroAssembler::cmpoop(Register obj1, Register obj2) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->obj_equals(this, obj1, obj2);
+}
+
 void MacroAssembler::long_move(Register rd_lo, Register rd_hi,
                                Register rn_lo, Register rn_hi,
                                AsmCondition cond) {
@@ -2268,6 +2273,11 @@ void MacroAssembler::char_arrays_equals(Register ary1, Register ary2,
                                         Register limit, Register result,
                                       Register chr1, Register chr2, Label& Ldone) {
   Label Lvector, Lloop;
+
+  // if (ary1 == ary2)
+  //     return true;
+  cmpoop(ary1, ary2);
+  b(Ldone, eq);
 
   // Note: limit contains number of bytes (2*char_elements) != 0.
   tst(limit, 0x2); // trailing character ?

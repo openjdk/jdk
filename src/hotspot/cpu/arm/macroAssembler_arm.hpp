@@ -1246,6 +1246,8 @@ public:
   }
 
 #ifndef AARCH64
+  void cmpoop(Register obj1, Register obj2);
+
   void long_move(Register rd_lo, Register rd_hi,
                  Register rn_lo, Register rn_hi,
                  AsmCondition cond = al);
