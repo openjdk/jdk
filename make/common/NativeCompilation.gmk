@@ -594,9 +594,13 @@ define SetupNativeCompilationBody
   # Pick up disabled warnings, if possible on this platform.
   ifneq ($(DISABLE_WARNING_PREFIX), )
     $1_EXTRA_CFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), \
+        $$(DISABLED_WARNINGS) \
+        $$(DISABLED_WARNINGS_C) \
         $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)) \
         $$($1_DISABLED_WARNINGS_C_$(TOOLCHAIN_TYPE)))
     $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), \
+        $$(DISABLED_WARNINGS) \
+        $$(DISABLED_WARNINGS_CXX) \
         $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)) \
         $$($1_DISABLED_WARNINGS_CXX_$(TOOLCHAIN_TYPE)))
   endif
@@ -614,6 +618,7 @@ define SetupNativeCompilationBody
   ifeq ($$($1_WARNINGS_AS_ERRORS_$(TOOLCHAIN_TYPE)), true)
     $1_EXTRA_CFLAGS += $(CFLAGS_WARNINGS_ARE_ERRORS)
     $1_EXTRA_CXXFLAGS += $(CFLAGS_WARNINGS_ARE_ERRORS)
+    $1_EXTRA_LDFLAGS += $(LDFLAGS_WARNINGS_ARE_ERRORS)
   endif
 
   ifeq (NONE, $$($1_OPTIMIZATION))
@@ -780,8 +785,8 @@ define SetupNativeCompilationBody
 
   # Pickup extra OPENJDK_TARGET_OS_TYPE and/or OPENJDK_TARGET_OS dependent variables
   # for LDFLAGS and LIBS
-  $1_EXTRA_LDFLAGS := $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS))
-  $1_EXTRA_LIBS := $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS))
+  $1_EXTRA_LDFLAGS += $$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS))
+  $1_EXTRA_LIBS += $$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS))
   ifneq ($$($1_REAL_MAPFILE), )
     $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
   endif

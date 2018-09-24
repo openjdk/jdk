@@ -36,9 +36,7 @@
         4. Pop a currently executed frame.
 
 */
-#ifdef __cplusplus
 extern "C" {
-#endif
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS202/hs203t001/MyObject"
 #define CLASS_NAME "Lnsk/jvmti/scenarios/hotswap/HS202/hs203t001/MyObject;"
 #define METHOD_NAME "leaveMonitor"
@@ -227,6 +225,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS202_hs202t001_hs202t001_resumeThread(JNIEnv *
     return retvalue;
 }
 
-#ifdef __cplusplus
 }
-#endif

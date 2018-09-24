@@ -131,7 +131,7 @@ template <typename S, typename T>
 class ZValueIterator;
 
 template <typename S, typename T>
-class ZValue {
+class ZValue : public CHeapObj<mtGC> {
 private:
   const uintptr_t _addr;
 

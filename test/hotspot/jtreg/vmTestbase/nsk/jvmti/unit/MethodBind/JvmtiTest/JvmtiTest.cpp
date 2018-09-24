@@ -26,27 +26,8 @@
 #include "jvmti.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_ARG1(x)
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_ARG1(x) x
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
-
-#define JVMTI_ENV_ARG JNI_ENV_ARG
-#define JVMTI_ENV_ARG1 JNI_ENV_ARG1
-#define JVMTI_ENV_PTR JNI_ENV_PTR
 
 #define JVMTI_ERROR_CHECK(str,res) if ( res != JVMTI_ERROR_NONE) { printf(str); printf("%d\n",res); return res;}
 #define JVMTI_ERROR_CHECK_EXPECTED_ERROR(str,res,err) if ( res != err) { printf(str); printf("unexpected error %d\n",res); return res;}
@@ -161,8 +142,7 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
         }
     }
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res < 0) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -170,24 +150,24 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
 
 
     /* Add capabilities */
-    res = JVMTI_ENV_PTR(jvmti)->GetPotentialCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->GetPotentialCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetPotentialCapabilities returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->AddCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->AddCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("AddCapabilities returned error", res);
 
     /* Enable events */
     init_callbacks();
-    res = JVMTI_ENV_PTR(jvmti)->SetEventCallbacks(JVMTI_ENV_ARG(jvmti, &callbacks), sizeof(callbacks));
+    res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_VM_INIT,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_VM_DEATH,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for vm death event returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_NATIVE_METHOD_BIND,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for native method bind event returned error", res);
 
     return JNI_OK;
@@ -207,7 +187,7 @@ Java_nsk_jvmti_unit_MethodBind_JvmtiTest_CreateRawMonitor(JNIEnv * env, jclass c
 
     sprintf(sz, "Rawmonitor-%d",i);
     debug_printf("jvmti create raw monitor \n");
-    ret = JVMTI_ENV_PTR(jvmti)->CreateRawMonitor(JVMTI_ENV_ARG(jvmti, sz), &jraw_monitor[i]);
+    ret = jvmti->CreateRawMonitor(sz, &jraw_monitor[i]);
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: ForceGarbageCollection %d \n", ret);
@@ -220,7 +200,7 @@ Java_nsk_jvmti_unit_MethodBind_JvmtiTest_RawMonitorEnter(JNIEnv * env, jclass cl
     jvmtiError ret;
 
     debug_printf("jvmti Raw monitor enter \n");
-    ret = JVMTI_ENV_PTR(jvmti)->RawMonitorEnter(JVMTI_ENV_ARG(jvmti, jraw_monitor[i]));
+    ret = jvmti->RawMonitorEnter(jraw_monitor[i]);
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Raw monitor enter %d \n", ret);
@@ -233,7 +213,7 @@ Java_nsk_jvmti_unit_MethodBind_JvmtiTest_RawMonitorExit(JNIEnv * env, jclass cls
     jvmtiError ret;
 
     debug_printf("jvmti raw monitor exit \n");
-    ret = JVMTI_ENV_PTR(jvmti)->RawMonitorExit(JVMTI_ENV_ARG(jvmti, jraw_monitor[i]));
+    ret = jvmti->RawMonitorExit(jraw_monitor[i]);
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: RawMonitorExit %d \n", ret);
@@ -246,7 +226,7 @@ Java_nsk_jvmti_unit_MethodBind_JvmtiTest_RawMonitorWait(JNIEnv * env, jclass cls
     jvmtiError ret;
 
     debug_printf("jvmti RawMonitorWait \n");
-    ret = JVMTI_ENV_PTR(jvmti)->RawMonitorWait(JVMTI_ENV_ARG(jvmti, jraw_monitor[i]), -1);
+    ret = jvmti->RawMonitorWait(jraw_monitor[i], -1);
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: RawMonitorWait %d \n", ret);
@@ -259,7 +239,7 @@ Java_nsk_jvmti_unit_MethodBind_JvmtiTest_RawMonitorNotify(JNIEnv * env, jclass c
     jvmtiError ret;
 
     debug_printf("jvmti RawMonitorNotify \n");
-    ret = JVMTI_ENV_PTR(jvmti)->RawMonitorNotifyAll(JVMTI_ENV_ARG(jvmti, jraw_monitor[i]));
+    ret = jvmti->RawMonitorNotifyAll(jraw_monitor[i]);
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: RawMonitorNotify %d \n", ret);
@@ -273,7 +253,7 @@ Java_nsk_jvmti_unit_MethodBind_JvmtiTest_GetFrameCount(JNIEnv * env, jclass cls,
     jint count;
 
     debug_printf("jvmti GetFrameCount \n");
-    ret = JVMTI_ENV_PTR(jvmti)->GetFrameCount(JVMTI_ENV_ARG(jvmti, (jthread)thr),  &count);
+    ret = jvmti->GetFrameCount((jthread) thr,  &count);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: GetFrameCount returned  %d \n", ret);
         iGlobalStatus = 2;
@@ -288,21 +268,21 @@ print_method_name(jmethodID mid) {
     char *mname;
     char *signature;
     char *clname = (char*) "unknown";
-    ret = JVMTI_ENV_PTR(jvmti)->GetMethodDeclaringClass(JVMTI_ENV_ARG(jvmti, mid), &klass);
+    ret = jvmti->GetMethodDeclaringClass(mid, &klass);
     if (ret != JVMTI_ERROR_NONE) {
       printf("Error: GetMethodDeclaringClass %d  \n", ret);
       iGlobalStatus = 2;
       return;
     }
 
-    ret = JVMTI_ENV_PTR(jvmti)->GetClassSignature(JVMTI_ENV_ARG(jvmti, klass), &clname, NULL);
+    ret = jvmti->GetClassSignature(klass, &clname, NULL);
     if (ret != JVMTI_ERROR_NONE) {
       printf("Error: GetClassSignature %d  \n", ret);
       iGlobalStatus = 2;
       return;
     }
 
-    ret = JVMTI_ENV_PTR(jvmti)->GetMethodName(JVMTI_ENV_ARG(jvmti, mid), &mname, &signature, NULL);
+    ret = jvmti->GetMethodName(mid, &mname, &signature, NULL);
     if (ret != JVMTI_ERROR_NONE) {
       printf("Error: GetMethodName %d  \n", ret);
       iGlobalStatus = 2;
@@ -321,19 +301,20 @@ Java_nsk_jvmti_unit_MethodBind_JvmtiTest_GetStackTrace(JNIEnv * env, jclass cls,
     jint count;
 
 
-    ret = JVMTI_ENV_PTR(jvmti)->Allocate(JVMTI_ENV_ARG(jvmti, sizeof(jvmtiFrameInfo) * max_count), (unsigned char**)&stack_buffer);
+    ret = jvmti->Allocate(sizeof(jvmtiFrameInfo) * max_count,
+                          (unsigned char**) &stack_buffer);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Allocate failed with  %d \n", ret);
         iGlobalStatus = 2;
     }
 
-    ret = JVMTI_ENV_PTR(jvmti)->GetStackTrace(JVMTI_ENV_ARG(jvmti, thr), 0, max_count , stack_buffer, &count);
+    ret = jvmti->GetStackTrace(thr, 0, max_count, stack_buffer, &count);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: GetStackTrace %d \n", ret);
         iGlobalStatus = 2;
     }
 
-    ret = JVMTI_ENV_PTR(jvmti)->Deallocate(JVMTI_ENV_ARG(jvmti, (unsigned char *)stack_buffer));
+    ret = jvmti->Deallocate((unsigned char *) stack_buffer);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Deallocate failed with  %d \n", ret);
         iGlobalStatus = 2;
@@ -347,6 +328,4 @@ Java_nsk_jvmti_unit_MethodBind_JvmtiTest_SaveThreadInfo(JNIEnv * env, jclass cls
 
 }
 
-#ifdef __cplusplus
 }
-#endif

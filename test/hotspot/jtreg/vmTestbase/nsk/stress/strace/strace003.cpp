@@ -24,9 +24,7 @@
 #include <stdio.h>
 #include "nsk_strace.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static const char *Stest_cn="nsk/stress/strace/strace003";
 static const char *Slongparam="(J)V";
@@ -89,6 +87,4 @@ Java_nsk_stress_strace_strace003Thread_recursiveMethod(JNIEnv *env, jobject obj)
     SET_INT_FIELD(obj, threadClass, "currentDepth", currDepth);
 }
 
-#ifdef __cplusplus
 }
-#endif

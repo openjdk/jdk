@@ -33,9 +33,7 @@
 #endif /* _WIN32 */
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Class:     vm_share_ProcessUtils
@@ -261,6 +259,4 @@ JNIEXPORT jint JNICALL Java_vm_share_ProcessUtils_getWindowsPid
 #endif /* _WIN32 */
 }
 
-#ifdef __cplusplus
 }
-#endif

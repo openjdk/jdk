@@ -26,9 +26,7 @@
 
 #ifndef _Included_hs204t002
 #define _Included_hs204t002
-#ifdef __cplusplus
 extern "C" {
-#endif
 /*
  * Class:     hs204t002
  * Method:    setBreakPoint
@@ -37,7 +35,5 @@ extern "C" {
 JNIEXPORT void JNICALL Java_hs204t002_setBreakPoint
   (JNIEnv *, jclass, jclass);
 
-#ifdef __cplusplus
 }
-#endif
 #endif

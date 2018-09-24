@@ -30,9 +30,7 @@
 #define PASSED 0
 #define STATUS_FAILED 2
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ========================================================================== */
 
@@ -208,6 +206,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 /* ========================================================================== */
 
-#ifdef __cplusplus
 }
-#endif

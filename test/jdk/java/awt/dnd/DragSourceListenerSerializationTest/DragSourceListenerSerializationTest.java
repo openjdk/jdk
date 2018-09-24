@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@
   @bug 4422345 8039083
   @summary tests serialization of DragSourceListeners
   @author das@sparc.spb.su area=dnd
-  @library ../../../../lib/testlibrary
-  @build jdk.testlibrary.Asserts
+  @library /test/lib
+  @build jdk.test.lib.Asserts
   @run main/othervm DragSourceListenerSerializationTest
 */
 
@@ -58,7 +58,7 @@ import java.util.TooManyListenersException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static jdk.testlibrary.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertEquals;
 
 public class DragSourceListenerSerializationTest {
     public static void main(String[] args) throws Exception {

@@ -34,14 +34,10 @@
 #include <sys/types.h>
 #include <jni.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT jlong
 JNICALL Java_nsk_share_NativeUtils_getCurrentPID(JNIEnv * jni, jobject  jobj) {
         return (jlong) getpid();
 }
-#ifdef __cplusplus
 }
-#endif

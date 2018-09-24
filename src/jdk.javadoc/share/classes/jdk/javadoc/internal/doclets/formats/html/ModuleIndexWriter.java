@@ -57,11 +57,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 public class ModuleIndexWriter extends AbstractModuleIndexWriter {
 
     /**
-     * HTML tree for main tag.
-     */
-    private final HtmlTree htmlTree = HtmlTree.MAIN();
-
-    /**
      * Construct the ModuleIndexWriter.
      * @param configuration the configuration object
      * @param filename the name of the generated file
@@ -85,22 +80,22 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     /**
      * Add the module index.
      *
-     * @param body the documentation tree to which the index will be added
+     * @param header the documentation tree to which the navigational links will be added
+     * @param main the documentation tree to which the modules list will be added
      */
     @Override
-    protected void addIndex(Content body) {
-        addIndexContents(body);
+    protected void addIndex(Content header, Content main) {
+        addIndexContents(header, main);
     }
 
     /**
      * Adds module index contents.
      *
-     * @param body the document tree to which the index contents will be added
+     * @param header the document tree to which the navigational links will be added
+     * @param main the document tree to which the modules list will be added
      */
-    protected void addIndexContents(Content body) {
-        HtmlTree htmltree = (configuration.allowTag(HtmlTag.NAV))
-                ? HtmlTree.NAV()
-                : new HtmlTree(HtmlTag.DIV);
+    protected void addIndexContents(Content header, Content main) {
+        HtmlTree htmltree = (HtmlTree)createTagIfAllowed(HtmlTag.NAV, HtmlTree::NAV, () -> new HtmlTree(HtmlTag.DIV));
         htmltree.setStyle(HtmlStyle.indexNav);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         addAllClassesLink(ul);
@@ -108,17 +103,17 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
             addAllModulesLink(ul);
         }
         htmltree.addContent(ul);
-        body.addContent(htmltree);
-        addModulesList(body);
+        header.addContent(htmltree);
+        addModulesList(main);
     }
 
     /**
      * Add the list of modules.
      *
-     * @param body the content tree to which the module list will be added
+     * @param main the content tree to which the module list will be added
      */
     @Override
-    protected void addModulesList(Content body) {
+    protected void addModulesList(Content main) {
         Map<String, SortedSet<ModuleElement>> groupModuleMap
                 = configuration.group.groupModules(configuration.modules);
 
@@ -154,11 +149,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
             }
 
             Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table.toContent());
-            if (configuration.allowTag(HtmlTag.MAIN)) {
-                htmlTree.addContent(div);
-            } else {
-                body.addContent(div);
-            }
+            main.addContent(div);
 
             if (table.needsScript()) {
                 mainBodyScript.append(table.getScript());
@@ -171,20 +162,16 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      * summary at the top of the page and generate a link to the description,
      * which is added at the end of this page.
      *
-     * @param body the documentation tree to which the overview header will be added
+     * @param main the documentation tree to which the overview header will be added
      */
     @Override
-    protected void addOverviewHeader(Content body) {
-        addConfigurationTitle(body);
+    protected void addOverviewHeader(Content main) {
+        addConfigurationTitle(main);
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.setStyle(HtmlStyle.contentContainer);
             addOverviewComment(div);
-            if (configuration.allowTag(HtmlTag.MAIN)) {
-                htmlTree.addContent(div);
-            } else {
-                body.addContent(div);
-            }
+            main.addContent(div);
         }
     }
 
@@ -202,58 +189,34 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     }
 
     /**
-     * For HTML 5, add the htmlTree to the body. For HTML 4, do nothing.
-     *
-     * @param body the documentation tree to which the overview will be added
-     */
-    @Override
-    protected void addOverview(Content body) {
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            body.addContent(htmlTree);
-        }
-    }
-
-    /**
      * Adds the top text (from the -top option), the upper
      * navigation bar, and then the title (from the"-title"
      * option), at the top of page.
      *
-     * @param body the documentation tree to which the navigation bar header will be added
+     * @param header the documentation tree to which the navigation bar header will be added
      */
     @Override
-    protected void addNavigationBarHeader(Content body) {
-        Content tree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : body;
-        addTop(tree);
+    protected void addNavigationBarHeader(Content header) {
+        addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        tree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            body.addContent(tree);
-        }
+        header.addContent(navBar.getContent(true));
     }
 
     /**
      * Adds the lower navigation bar and the bottom text
      * (from the -bottom option) at the bottom of page.
      *
-     * @param body the documentation tree to which the navigation bar footer will be added
+     * @param footer the documentation tree to which the navigation bar footer will be added
      */
     @Override
-    protected void addNavigationBarFooter(Content body) {
-        Content htmltree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : body;
+    protected void addNavigationBarFooter(Content footer) {
         navBar.setUserFooter(getUserHeaderFooter(false));
-        htmltree.addContent(navBar.getContent(false));
-        addBottom(htmltree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            body.addContent(htmltree);
-        }
+        footer.addContent(navBar.getContent(false));
+        addBottom(footer);
     }
 
     @Override
     protected void addModulePackagesList(Map<ModuleElement, Set<PackageElement>> modules, String text,
-            String tableSummary, Content body, ModuleElement mdle) {
+            String tableSummary, Content main, ModuleElement mdle) {
     }
 }

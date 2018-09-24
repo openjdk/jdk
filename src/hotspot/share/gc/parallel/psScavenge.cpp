@@ -279,7 +279,6 @@ bool PSScavenge::invoke_no_policy() {
   assert(!AlwaysTenure || _tenuring_threshold == 0, "Sanity");
 
   // Fill in TLABs
-  heap->accumulate_statistics_all_tlabs();
   heap->ensure_parsability(true);  // retire TLABs
 
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {

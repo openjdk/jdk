@@ -27,39 +27,19 @@
 #include "jni_tools.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_ARG1(x)
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_ARG1(x) x
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
-
-#define JVMTI_ENV_ARG  JNI_ENV_ARG
-#define JVMTI_ENV_ARG1 JNI_ENV_ARG1
-#define JVMTI_ENV_PTR  JNI_ENV_PTR
 
 #define STATUS_FAILED 2
 #define PASSED 0
 
 #define JVMTI_ERROR_CHECK(str,res)   \
-    if ( res != JVMTI_ERROR_NONE) {  \
+    if (res != JVMTI_ERROR_NONE) {  \
         printf("%s %d\n" ,str, res); \
         return res;                  \
     }
 
 #define JVMTI_ERROR_CHECK_EXPECTED_ERROR(str,res,err) \
-    if ( res != err) {                                \
+    if (res != err) {                                \
         printf("%s unexpected error %d\n", str, res); \
         return res;                                   \
     }
@@ -105,18 +85,17 @@ JNIEXPORT jint JNI_OnLoad_getallstktr001(JavaVM *jvm, char *options, void *reser
 jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
     jint res;
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res < 0) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
 
     /* Add capabilities */
-    res = JVMTI_ENV_PTR(jvmti)->GetPotentialCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->GetPotentialCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetPotentialCapabilities returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->AddCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->AddCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetPotentialCapabilities returned error", res);
 
     return JNI_OK;
@@ -139,8 +118,7 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_CreateRawMonitor(
     char sz[128];
 
     sprintf(sz, "Raw-monitor");
-    ret = JVMTI_ENV_PTR(jvmti)->CreateRawMonitor(JVMTI_ENV_ARG(jvmti, sz),
-                                                 &jraw_monitor);
+    ret = jvmti->CreateRawMonitor(sz, &jraw_monitor);
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Raw monitor create %d \n", ret);
@@ -154,7 +132,7 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_RawMonitorEnter(
 {
     jvmtiError ret;
 
-    ret = JVMTI_ENV_PTR(jvmti)->RawMonitorEnter(JVMTI_ENV_ARG(jvmti, jraw_monitor));
+    ret = jvmti->RawMonitorEnter(jraw_monitor);
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Raw monitor enter %d \n", ret);
@@ -168,7 +146,7 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_RawMonitorExit(
 {
     jvmtiError ret;
 
-    ret = JVMTI_ENV_PTR(jvmti)->RawMonitorExit(JVMTI_ENV_ARG(jvmti, jraw_monitor));
+    ret = jvmti->RawMonitorExit(jraw_monitor);
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: RawMonitorExit %d \n", ret);
@@ -273,16 +251,14 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_GetAllStackTraces(
     jvmtiError ret;
     int ti;
 
-    ret = JVMTI_ENV_PTR(jvmti)->GetAllStackTraces(JVMTI_ENV_ARG(jvmti, MAX_FRAMES_CNT),
-                                                  &stack_buf1,
-                                                  &threads_count);
+    ret = jvmti->GetAllStackTraces(MAX_FRAMES_CNT, &stack_buf1, &threads_count);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: GetAllStackTraces %d \n", ret);
         iGlobalStatus = STATUS_FAILED;
     }
 
-    ret = JVMTI_ENV_PTR(jvmti)->Allocate(JVMTI_ENV_ARG(jvmti, sizeof(jthread) * threads_count),
-                                         (unsigned char**)&thread_list);
+    ret = jvmti->Allocate(sizeof(jthread) * threads_count,
+                          (unsigned char**) &thread_list);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Allocate failed with  %d \n", ret);
         iGlobalStatus = STATUS_FAILED;
@@ -290,8 +266,7 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_GetAllStackTraces(
 
     for (ti = 0; ti < threads_count; ti++) {
         thread_list[ti] =
-          (jthread)JNI_ENV_PTR(env)->NewGlobalRef(
-                     JNI_ENV_ARG(env, stack_buf1[ti].thread));
+          (jthread)env->NewGlobalRef(stack_buf1[ti].thread);
     }
 }
 
@@ -302,16 +277,15 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_GetThreadsInfo(
     jvmtiError ret;
     int ti;
 
-    ret = JVMTI_ENV_PTR(jvmti)->Allocate(JVMTI_ENV_ARG(jvmti, sizeof(jvmtiThreadInfo) * threads_count),
-                                         (unsigned char**)&thread_info);
+    ret = jvmti->Allocate(sizeof(jvmtiThreadInfo) * threads_count,
+                          (unsigned char**)&thread_info);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Allocate failed with  %d \n", ret);
         iGlobalStatus = STATUS_FAILED;
     }
 
     for (ti = 0; ti < threads_count; ti++) {
-        ret = JVMTI_ENV_PTR(jvmti)->GetThreadInfo(JVMTI_ENV_ARG(jvmti, thread_list[ti]),
-                                                  &thread_info[ti]);
+        ret = jvmti->GetThreadInfo(thread_list[ti], &thread_info[ti]);
         if (ret != JVMTI_ERROR_NONE) {
             printf("Error: GetThreadInfo %d \n", ret);
             iGlobalStatus = STATUS_FAILED;
@@ -327,11 +301,8 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_GetThreadListStackTraces(
 {
     jvmtiError ret;
 
-    ret = JVMTI_ENV_PTR(jvmti)->GetThreadListStackTraces(
-                                                  JVMTI_ENV_ARG(jvmti, threads_count),
-                                                  thread_list,
-                                                  MAX_FRAMES_CNT,
-                                                  &stack_buf2);
+    ret = jvmti->GetThreadListStackTraces(
+        threads_count, thread_list, MAX_FRAMES_CNT, &stack_buf2);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: GetThreadListStackTraces %d \n", ret);
         iGlobalStatus = STATUS_FAILED;
@@ -344,7 +315,7 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_ForceGC(
      JNIEnv * env, jclass cls)
 {
     jvmtiError ret;
-    ret = JVMTI_ENV_PTR(jvmti)->ForceGarbageCollection(JVMTI_ENV_ARG1(jvmti));
+    ret = jvmti->ForceGarbageCollection();
 
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: ForceGarbageCollection %d \n", ret);
@@ -365,30 +336,28 @@ Java_nsk_jvmti_unit_GetAllStackTraces_getallstktr001_DeallocateBuffers(
 {
     jvmtiError ret;
 
-    ret = JVMTI_ENV_PTR(jvmti)->Deallocate(JVMTI_ENV_ARG(jvmti, (unsigned char *)stack_buf1));
+    ret = jvmti->Deallocate((unsigned char *) stack_buf1);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Deallocate stack_buf1 failed with  %d \n", ret);
         iGlobalStatus = STATUS_FAILED;
     }
 
-    ret = JVMTI_ENV_PTR(jvmti)->Deallocate(JVMTI_ENV_ARG(jvmti, (unsigned char *)stack_buf2));
+    ret = jvmti->Deallocate((unsigned char *) stack_buf2);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Deallocate stack_buf2 failed with  %d \n", ret);
         iGlobalStatus = STATUS_FAILED;
     }
 
-    ret = JVMTI_ENV_PTR(jvmti)->Deallocate(JVMTI_ENV_ARG(jvmti, (unsigned char *)thread_info));
+    ret = jvmti->Deallocate((unsigned char *) thread_info);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Deallocate thread_info failed with  %d \n", ret);
         iGlobalStatus = STATUS_FAILED;
     }
-    ret = JVMTI_ENV_PTR(jvmti)->Deallocate(JVMTI_ENV_ARG(jvmti, (unsigned char *)thread_list));
+    ret = jvmti->Deallocate((unsigned char *) thread_list);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: Deallocate thread_list failed with  %d \n", ret);
         iGlobalStatus = STATUS_FAILED;
     }
 }
 
-#ifdef __cplusplus
 }
-#endif

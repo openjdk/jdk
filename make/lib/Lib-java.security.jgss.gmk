@@ -31,6 +31,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
     NAME := j2gss, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB), \
+    DISABLED_WARNINGS_gcc := undef, \
+    DISABLED_WARNINGS_clang := undef, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBDL), \

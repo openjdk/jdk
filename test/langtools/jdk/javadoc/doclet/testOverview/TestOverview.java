@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8173302 8182765 8196202
+ * @bug 8173302 8182765 8196202 8210047
  * @summary make sure the overview-summary and module-summary pages don't
  *          don't have the See link, and the overview is copied correctly.
  * @library ../lib
@@ -95,10 +95,10 @@ public class TestOverview extends JavadocTester {
 
     void checkOverview() {
         checkOutput("overview-summary.html", true,
-                "<div class=\"header\">\n"
+                "<main role=\"main\">\n"
+                + "<div class=\"header\">\n"
                 + "<h1 class=\"title\">Document Title</h1>\n"
                 + "</div>\n"
-                + "<main role=\"main\">\n"
                 + "<div class=\"contentContainer\">\n"
                 + "<div class=\"block\">This is line1. This is line 2.</div>\n"
                 + "</div>\n"

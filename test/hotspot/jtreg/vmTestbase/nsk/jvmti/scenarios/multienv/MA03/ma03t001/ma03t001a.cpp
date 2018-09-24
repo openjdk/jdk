@@ -30,9 +30,7 @@
 #define PASSED 0
 #define STATUS_FAILED 2
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ========================================================================== */
 
@@ -151,6 +149,4 @@ Agent_OnUnload(JavaVM *jvm)
 
 /* ========================================================================== */
 
-#ifdef __cplusplus
 }
-#endif

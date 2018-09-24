@@ -26,9 +26,7 @@
 #include <stdlib.h>
 #include "jnihelper.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 JNIEXPORT jboolean JNICALL
 Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jint LIMIT) {
@@ -86,6 +84,4 @@ Java_nsk_stress_jni_JNIter006_refs (JNIEnv *env, jobject jobj, jobject tobj, jin
     return res;
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * Used by BootClassPath.sh.
  *
  * Given a "work directory" this class creates a sub-directory with a
- * name that uses locale specific characters. It the creates a jar
+ * name that uses locale specific characters. It then creates a jar
  * manifest file in the work directory with a Boot-Class-Path that
  * encodes the created sub-directory. Finally it creates a file
  * "boot.dir" in the work directory with the name of the sub-directory.
@@ -51,6 +51,13 @@ public class Setup {
 
         String bootDir = workDir + fileSeparator + bootClassPath;
 
+        /*
+         * Environment variable settings ("null" if unset)
+         */
+        System.out.println("Env vars:");
+        System.out.println("  LANG=" + System.getenv("LANG"));
+        System.out.println("  LC_ALL=" + System.getenv("LC_ALL"));
+        System.out.println("  LC_CTYPE=" + System.getenv("LC_CTYPE"));
 
         /*
          * Create sub-directory

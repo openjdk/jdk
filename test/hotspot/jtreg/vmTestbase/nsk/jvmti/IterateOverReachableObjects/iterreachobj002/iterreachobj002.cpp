@@ -27,9 +27,7 @@
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static JNIEnv *jni = NULL;
 static jvmtiEnv *jvmti = NULL;
@@ -513,6 +511,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 /* ============================================================================= */
 
-#ifdef __cplusplus
 }
-#endif

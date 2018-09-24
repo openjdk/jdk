@@ -1639,9 +1639,9 @@ public class ClassReader {
         }
         ListBuffer<CompoundAnnotationProxy> proxies = new ListBuffer<>();
         for (CompoundAnnotationProxy proxy : annotations) {
-            if (proxy.type.tsym == syms.proprietaryType.tsym)
+            if (proxy.type.tsym.flatName() == syms.proprietaryType.tsym.flatName())
                 sym.flags_field |= PROPRIETARY;
-            else if (proxy.type.tsym == syms.profileType.tsym) {
+            else if (proxy.type.tsym.flatName() == syms.profileType.tsym.flatName()) {
                 if (profile != Profile.DEFAULT) {
                     for (Pair<Name, Attribute> v : proxy.values) {
                         if (v.fst == names.value && v.snd instanceof Attribute.Constant) {
@@ -2645,8 +2645,6 @@ public class ClassReader {
     }
 
     protected ClassSymbol enterClass(Name name) {
-        if (syms.proprietaryType.tsym.flatName() == name)
-            return (ClassSymbol) syms.proprietaryType.tsym;
         return syms.enterClass(currentModule, name);
     }
 

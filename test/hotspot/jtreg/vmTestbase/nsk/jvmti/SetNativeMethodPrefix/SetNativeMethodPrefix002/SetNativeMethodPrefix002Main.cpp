@@ -29,9 +29,7 @@
 #include "jvmti_tools.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ============================================================================= */
 
@@ -49,6 +47,4 @@ Java_nsk_jvmti_SetNativeMethodPrefix_SetNativeMethodPrefix002_foo1 (
     return FOO;
 }
 
-#ifdef __cplusplus
 }
-#endif

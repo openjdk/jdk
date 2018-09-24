@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import test.java.awt.event.helpers.lwcomponents.LWList;
 
 import java.util.ArrayList;
 
-import static jdk.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 /*
  * @test
@@ -44,7 +44,8 @@ import static jdk.testlibrary.Asserts.*;
  *          number when the mouse buttons are pressed and getModifiers()
  *          returns correct modifiers
  *
- * @library ../../../../../lib/testlibrary/  ../../helpers/lwcomponents/
+ * @library /lib/testlibrary/ ../../helpers/lwcomponents/
+ * @library /test/lib
  * @build LWComponent
  * @build LWButton
  * @build LWList

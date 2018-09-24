@@ -21,7 +21,7 @@
  * questions.
  */
 
-import static jdk.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -38,10 +38,8 @@ import jdk.test.lib.Utils;
  * @summary Unit test for jcmd utility. Tests jcmd options which do not send
  * requests to a specific JVM process.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build jdk.testlibrary.*
  * @run main TestJcmdDefaults
  */
 public class TestJcmdDefaults {

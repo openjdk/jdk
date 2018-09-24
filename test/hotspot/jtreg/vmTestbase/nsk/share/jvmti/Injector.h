@@ -279,9 +279,7 @@ enum {
     BCI_MODE_ALLOC  = 2
 };
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /**
  * Class file transformer. Transforms a classfile image from old_bytes
@@ -305,8 +303,6 @@ extern "C" {
 int Inject(const u1* old_bytes, const jint old_length,
     u1** new_bytes, jint* new_length, int bci_mode);
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* _NSK_SHARE_JVMTI_INJECTOR_H_ */

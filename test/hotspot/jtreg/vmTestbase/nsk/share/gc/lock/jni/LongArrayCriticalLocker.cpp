@@ -25,9 +25,7 @@
 #include <time.h>
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jfieldID objFieldId = NULL;
 
@@ -83,6 +81,4 @@ JNIEXPORT jlong JNICALL Java_nsk_share_gc_lock_jni_LongArrayCriticalLocker_criti
         return hash;
 }
 
-#ifdef __cplusplus
 }
-#endif

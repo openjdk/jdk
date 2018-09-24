@@ -46,10 +46,8 @@ extern char **environ;
  *      entries, but actual strings can be more efficient (with many compilers).
  */
 #ifdef __solaris__
-static const char *system_dir   = "/usr/jdk";
 static const char *user_dir     = "/jdk";
 #else /* !__solaris__, i.e. Linux, AIX,.. */
-static const char *system_dir   = "/usr/java";
 static const char *user_dir     = "/java";
 #endif
 

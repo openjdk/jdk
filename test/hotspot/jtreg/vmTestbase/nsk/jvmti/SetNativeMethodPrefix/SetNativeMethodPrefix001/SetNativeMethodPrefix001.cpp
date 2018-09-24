@@ -30,9 +30,7 @@
 #include "jvmti_tools.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FOO 1
 #define WRAPPED_FOO 2
@@ -367,6 +365,4 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

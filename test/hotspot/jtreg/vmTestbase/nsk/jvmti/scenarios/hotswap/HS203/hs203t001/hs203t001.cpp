@@ -39,9 +39,7 @@
         4. Pop a currently executed frame. Stepping should be continued
         on invoke instruction.
 */
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS203/hs203t001/MyThread"
 
@@ -234,6 +232,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t001_hs203t001_resumeThread(JNIEnv *
     return retvalue;
 }
 
-#ifdef __cplusplus
 }
-#endif

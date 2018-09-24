@@ -31,9 +31,7 @@
 /*
 hs202t002:
 */
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS202/hs202t002/MyThread"
 #define CLASS_NAME "Lnsk/jvmti/scenarios/hotswap/HS202/hs202t002/MyThread;"
@@ -200,6 +198,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS202_hs202t002_hs202t002_isThreadSuspended(JNI
     return suspended == thread_suspend_status;
 }
 
-#ifdef __cplusplus
 }
-#endif

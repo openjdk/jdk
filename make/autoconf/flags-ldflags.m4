@@ -51,9 +51,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS],
 
   FLAGS_SETUP_LDFLAGS_CPU_DEP([BUILD], [OPENJDK_BUILD_])
 
-  LDFLAGS_TESTLIB="$LDFLAGS_JDKLIB"
-  LDFLAGS_TESTEXE="$LDFLAGS_JDKEXE ${TARGET_LDFLAGS_JDK_LIBPATH}"
-  AC_SUBST(LDFLAGS_TESTLIB)
+  LDFLAGS_TESTEXE="${TARGET_LDFLAGS_JDK_LIBPATH}"
   AC_SUBST(LDFLAGS_TESTEXE)
 ])
 
@@ -74,10 +72,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     # Add -z defs, to forbid undefined symbols in object files.
     BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,defs"
 
-    BASIC_LDFLAGS_JVM_ONLY="-Wl,-z,noexecstack -Wl,-O1 -Wl,-z,relro"
+    BASIC_LDFLAGS_JVM_ONLY="-Wl,-O1 -Wl,-z,relro"
 
-    BASIC_LDFLAGS_JDK_LIB_ONLY="-Wl,-z,noexecstack"
-    LIBJSIG_NOEXECSTACK_LDFLAGS="-Wl,-z,noexecstack"
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     BASIC_LDFLAGS_JVM_ONLY="-mno-omit-leaf-frame-pointer -mstack-alignment=16 \
@@ -101,6 +97,12 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS="-nologo -opt:ref"
     BASIC_LDFLAGS_JDK_ONLY="-incremental:no"
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
+  fi
+
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    if test -n "$HAS_NOEXECSTACK"; then
+      BASIC_LDFLAGS="$BASIC_LDFLAGS -Wl,-z,noexecstack"
+    fi
   fi
 
   # Setup OS-dependent LDFLAGS
@@ -136,6 +138,14 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       DEBUGLEVEL_LDFLAGS_JVM_ONLY="$DEBUGLEVEL_LDFLAGS_JVM_ONLY -bbigtoc"
     fi
   fi
+
+  # Setup warning flags
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    LDFLAGS_WARNINGS_ARE_ERRORS="-Wl,-z,fatal-warnings"
+  else
+    LDFLAGS_WARNINGS_ARE_ERRORS=""
+  fi
+  AC_SUBST(LDFLAGS_WARNINGS_ARE_ERRORS)
 
   # Setup LDFLAGS for linking executables
   if test "x$TOOLCHAIN_TYPE" = xgcc; then

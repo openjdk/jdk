@@ -31,9 +31,7 @@
 #include "JVMTITools.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define STATUS_FAILED 2
 #define PASSED 0
@@ -243,6 +241,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

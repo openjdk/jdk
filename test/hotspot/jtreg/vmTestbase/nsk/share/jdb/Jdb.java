@@ -291,7 +291,7 @@ public class Jdb extends LocalProcess implements Finalizable {
                 jdbCommand += lineSeparator;
             } else {
                 // we don't want to log the line separator
-                logCmd = jdbCommand.substring(0, jdbCommand.length() - 1);
+                logCmd = jdbCommand.substring(0, jdbCommand.length() - lineSeparator.length());
             }
             launcher.getLog().display("Sending command: " + logCmd);
 
@@ -698,7 +698,7 @@ public class Jdb extends LocalProcess implements Finalizable {
             int i = string.indexOf(lineSeparator, ind);
             if (i >= 0) {
                 v.add(string.substring(ind, i));
-                ind = i + 1;
+                ind = i + lineSeparator.length();
             } else {
                 v.add(string.substring(ind));
                 break;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@
  * @summary This is a simple check if a chain of dialogs having different
  *          modality types block each other properly.
  *
- * @library ../helpers ../../../../lib/testlibrary/
+ * @library ../helpers /lib/testlibrary/
+ * @library /test/lib
  * @build ExtendedRobot
  * @build Flag
  * @build TestDialog
@@ -39,7 +40,7 @@
 
 
 import java.awt.*;
-import static jdk.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
 
 public class MultipleDialogs5Test {

@@ -77,12 +77,10 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * {@inheritDoc}
      */
     @Override
-    protected void addPackagesList(Content body) {
+    protected void addPackagesList(Content main) {
         Content heading = HtmlTree.HEADING(HtmlConstants.PACKAGE_HEADING, true,
                 contents.packagesLabel);
-        HtmlTree htmlTree = (configuration.allowTag(HtmlTag.MAIN))
-                ? HtmlTree.MAIN(HtmlStyle.indexContainer, heading)
-                : HtmlTree.DIV(HtmlStyle.indexContainer, heading);
+        HtmlTree htmlTree = HtmlTree.DIV(HtmlStyle.indexContainer, heading);
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.setTitle(contents.packagesLabel);
         for (PackageElement aPackage : packages) {
@@ -94,7 +92,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
             }
         }
         htmlTree.addContent(ul);
-        body.addContent(htmlTree);
+        main.addContent(htmlTree);
     }
 
     /**
@@ -124,7 +122,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * {@inheritDoc}
      */
     @Override
-    protected void addNavigationBarHeader(Content body) {
+    protected void addNavigationBarHeader(Content header) {
         Content headerContent;
         if (configuration.packagesheader.length() > 0) {
             headerContent = new RawHtml(replaceDocRootDir(configuration.packagesheader));
@@ -133,7 +131,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
         }
         Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, true,
                 HtmlStyle.bar, headerContent);
-        body.addContent(heading);
+        header.addContent(heading);
     }
 
     /**
@@ -175,8 +173,8 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
      * {@inheritDoc}
      */
     @Override
-    protected void addNavigationBarFooter(Content body) {
+    protected void addNavigationBarFooter(Content footer) {
         Content p = HtmlTree.P(Contents.SPACE);
-        body.addContent(p);
+        footer.addContent(p);
     }
 }

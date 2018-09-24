@@ -343,12 +343,9 @@ void VM_Version::platform_features() {
 
   uint32_t av = avs[AV_HW1_IDX];
 
-  // These are SPARC V8 legacy features.
-
-  assert((av & AV_SPARC_MUL32)  == 0, "unsupported V8");
-  assert((av & AV_SPARC_DIV32)  == 0, "unsupported V8");
-  assert((av & AV_SPARC_FSMULD) == 0, "unsupported V8");
-  assert((av & AV_SPARC_V8PLUS) == 0, "unsupported V8");
+  // Obsolete and 32b legacy mode capabilites NOT probed here, despite being
+  // set by Solaris 11.4 (onward) also on V9; AV_SPARC_MUL32, AV_SPARC_DIV32
+  // and AV_SPARC_FSMULD (and AV_SPARC_V8PLUS).
 
   if (av & AV_SPARC_POPC) features |= ISA_popc_msk;
   if (av & AV_SPARC_VIS)  features |= ISA_vis1_msk;

@@ -150,7 +150,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   heap->trace_heap_before_gc(_gc_tracer);
 
   // Fill in TLABs
-  heap->accumulate_statistics_all_tlabs();
   heap->ensure_parsability(true);  // retire TLABs
 
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {

@@ -29,9 +29,7 @@
 #include "jvmti_tools.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define STATIC_FIELD 0x0008
 
@@ -607,6 +605,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

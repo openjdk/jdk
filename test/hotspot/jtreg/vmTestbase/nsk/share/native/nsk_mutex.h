@@ -24,9 +24,7 @@
 #ifndef NSK_MUTEX_H
 #define NSK_MUTEX_H
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /**
  * Structure to hold mutex data (the content is platform-specific)
@@ -54,8 +52,6 @@ void MUTEX_release(MUTEX* mutex);
 void MUTEX_destroy(MUTEX* mutex);
 
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif

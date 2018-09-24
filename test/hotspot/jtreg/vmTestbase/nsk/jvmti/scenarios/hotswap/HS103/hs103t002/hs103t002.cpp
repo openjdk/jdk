@@ -33,9 +33,7 @@
 #include "jvmti_tools.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS103/hs103t002/MyThread"
 #define SEARCH_NAME "nsk/jvmti/scenarios/hotswap/HS103/hs103t002/MyThread"
@@ -178,6 +176,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS103_hs103t002_hs103t002_startAgentThread(JNIE
   return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

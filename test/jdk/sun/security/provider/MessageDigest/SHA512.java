@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -29,7 +29,7 @@ import java.util.Arrays;
 /**
  * @test
  * @bug 8051408
- * @library /lib/testlibrary
+ * @library /test/lib
  * @summary testing SHA-512/224 and SHA-512/256.
  */
 public class SHA512 {

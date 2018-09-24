@@ -27,9 +27,7 @@
 #include <jni_tools.h>
 #include <nsk_tools.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * This function can be used to inform AOD framework that some non-critical for test logic
@@ -76,8 +74,6 @@ int nsk_aod_agentFinished(JNIEnv* jni, const char* agentName, int success);
 
 JNIEnv* nsk_aod_createJNIEnv(JavaVM* vm);
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* END OF NSK_SHARE_AOD_H */

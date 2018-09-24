@@ -30,9 +30,7 @@
 #include "jvmti_tools.h"
 #include "mlvmJvmtiUtils.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jvmtiEnv* gJvmtiEnv = NULL;
 
@@ -205,6 +203,4 @@ jint Agent_Initialize(JavaVM * vm, char * options, void * reserved) {
 
     return JNI_OK;
 }
-#ifdef __cplusplus
 }
-#endif

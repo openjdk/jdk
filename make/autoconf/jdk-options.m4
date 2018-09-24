@@ -33,19 +33,8 @@
 # modules to compile into the JDK.
 AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VARIANT],
 [
-  AC_MSG_CHECKING([which variant of the JDK to build])
-  AC_ARG_WITH([jdk-variant], [AS_HELP_STRING([--with-jdk-variant],
-      [JDK variant to build (normal) @<:@normal@:>@])])
-
-  if test "x$with_jdk_variant" = xnormal || test "x$with_jdk_variant" = x; then
-    JDK_VARIANT="normal"
-  else
-    AC_MSG_ERROR([The available JDK variants are: normal])
-  fi
-
-  AC_SUBST(JDK_VARIANT)
-
-  AC_MSG_RESULT([$JDK_VARIANT])
+  # Deprecated in JDK 12
+  BASIC_DEPRECATED_ARG_WITH([jdk-variant])
 ])
 
 ###############################################################################

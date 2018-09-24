@@ -2359,8 +2359,11 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
           ShouldNotReachHere();
       }
     } else if (opr2->is_single_cpu()) {
-      if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY || opr1->type() == T_METADATA || opr1->type() == T_ADDRESS) {
-        assert(opr2->type() == T_OBJECT || opr2->type() == T_ARRAY || opr2->type() == T_METADATA || opr2->type() == T_ADDRESS, "incompatibe type");
+      if (opr1->type() == T_OBJECT || opr1->type() == T_ARRAY) {
+        assert(opr2->type() == T_OBJECT || opr2->type() == T_ARRAY, "incompatibe type");
+        __ cmpoop(opr1->as_register(), opr2->as_register());
+      } else if (opr1->type() == T_METADATA || opr1->type() == T_ADDRESS) {
+        assert(opr2->type() == T_METADATA || opr2->type() == T_ADDRESS, "incompatibe type");
         __ cmp(opr1->as_register(), opr2->as_register());
       } else {
         assert(opr2->type() != T_OBJECT && opr2->type() != T_ARRAY && opr2->type() != T_METADATA && opr2->type() != T_ADDRESS, "incompatibe type");
@@ -2761,6 +2764,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   assert(length == R4, "code assumption");
 #endif // AARCH64
 
+  __ resolve(ACCESS_READ, src);
+  __ resolve(ACCESS_WRITE, dst);
+
   CodeStub* stub = op->stub();
 
   int flags = op->flags();
@@ -3126,6 +3132,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     __ b(*op->stub()->entry());
   } else if (op->code() == lir_lock) {
     assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
+    __ resolve(ACCESS_READ | ACCESS_WRITE, obj);
     int null_check_offset = __ lock_object(hdr, obj, lock, tmp, *op->stub()->entry());
     if (op->info() != NULL) {
       add_debug_info_for_null_check(null_check_offset, op->info());

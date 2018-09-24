@@ -25,6 +25,11 @@
 
 package java.lang;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+
 /**
  * Thrown when an application tries to load in a class through its
  * string name using:
@@ -57,15 +62,6 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      private static final long serialVersionUID = 9176873029745254542L;
 
     /**
-     * This field holds the exception ex if the
-     * ClassNotFoundException(String s, Throwable ex) constructor was
-     * used to instantiate the object
-     * @serial
-     * @since 1.2
-     */
-    private Throwable ex;
-
-    /**
      * Constructs a <code>ClassNotFoundException</code> with no detail message.
      */
     public ClassNotFoundException() {
@@ -92,8 +88,7 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      * @since 1.2
      */
     public ClassNotFoundException(String s, Throwable ex) {
-        super(s, null);  //  Disallow initCause
-        this.ex = ex;
+        super(s, ex);  //  Disallow initCause
     }
 
     /**
@@ -108,18 +103,42 @@ public class ClassNotFoundException extends ReflectiveOperationException {
      * @since 1.2
      */
     public Throwable getException() {
-        return ex;
+        return super.getCause();
     }
 
     /**
-     * Returns the cause of this exception (the exception that was raised
-     * if an error occurred while attempting to load the class; otherwise
-     * {@code null}).
+     * Serializable fields for ClassNotFoundException.
      *
-     * @return  the cause of this exception.
-     * @since   1.4
+     * @serialField ex Throwable
      */
-    public Throwable getCause() {
-        return ex;
+    private static final ObjectStreamField[] serialPersistentFields = {
+        new ObjectStreamField("ex", Throwable.class)
+    };
+
+    /*
+     * Reconstitutes the ClassNotFoundException instance from a stream
+     * and initialize the cause properly when deserializing from an older
+     * version.
+     *
+     * The getException and getCause method returns the private "ex" field
+     * in the older implementation and ClassNotFoundException::cause
+     * was set to null.
+     */
+    private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField fields = s.readFields();
+        Throwable exception = (Throwable) fields.get("ex", null);
+        if (exception != null) {
+            setCause(exception);
+        }
+    }
+
+    /*
+     * To maintain compatibility with older implementation, write a serial
+     * "ex" field with the cause as the value.
+     */
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        ObjectOutputStream.PutField fields = out.putFields();
+        fields.put("ex", super.getCause());
+        out.writeFields();
     }
 }

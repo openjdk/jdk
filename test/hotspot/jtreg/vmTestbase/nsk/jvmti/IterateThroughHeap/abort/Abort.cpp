@@ -29,9 +29,7 @@
 #include "jvmti_tools.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static int timeout = 0;
 
@@ -159,6 +157,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

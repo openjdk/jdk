@@ -79,7 +79,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "memory/metaspaceShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -1079,9 +1079,10 @@ void G1CollectedHeap::verify_after_full_collection() {
   // the full GC has compacted objects and updated TAMS but not updated
   // the prev bitmap.
   if (G1VerifyBitmaps) {
-    GCTraceTime(Debug, gc)("Clear Bitmap for Verification");
+    GCTraceTime(Debug, gc)("Clear Prev Bitmap for Verification");
     _cm->clear_prev_bitmap(workers());
   }
+  // This call implicitly verifies that the next bitmap is clear after Full GC.
   _verifier->check_bitmaps("Full GC End");
 
   // At this point there should be no regions in the
@@ -2484,7 +2485,6 @@ void G1CollectedHeap::gc_prologue(bool full) {
 
   // Fill TLAB's and such
   double start = os::elapsedTime();
-  accumulate_statistics_all_tlabs();
   ensure_parsability(true);
   g1_policy()->phase_times()->record_prepare_tlab_time_ms((os::elapsedTime() - start) * 1000.0);
 }

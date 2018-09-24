@@ -30,7 +30,7 @@
 #include "runtime/perfData.hpp"
 #include "runtime/vm_version.hpp"
 
-class GlobalTLABStats;
+class ThreadLocalAllocStats;
 
 // ThreadLocalAllocBuffer: a descriptor for thread-local storage used by
 // the threads for allocation.
@@ -71,8 +71,7 @@ private:
 
   AdaptiveWeightedAverage _allocation_fraction;  // fraction of eden allocated in tlabs
 
-  void accumulate_statistics();
-  void initialize_statistics();
+  void reset_statistics();
 
   void set_start(HeapWord* start)                { _start = start; }
   void set_end(HeapWord* end)                    { _end = end; }
@@ -92,12 +91,13 @@ private:
   // Make parsable and release it.
   void reset();
 
-  // Resize based on amount of allocation, etc.
-  void resize();
-
   void invariants() const { assert(top() >= start() && top() <= end(), "invalid tlab"); }
 
   void initialize(HeapWord* start, HeapWord* top, HeapWord* end);
+
+  void insert_filler();
+
+  void accumulate_and_reset_statistics(ThreadLocalAllocStats* stats);
 
   void print_stats(const char* tag);
 
@@ -110,9 +110,6 @@ private:
   int slow_refill_waste() const { return _slow_refill_waste; }
   int gc_waste() const          { return _gc_waste; }
   int slow_allocations() const  { return _slow_allocations; }
-
-  static GlobalTLABStats* _global_stats;
-  static GlobalTLABStats* global_stats() { return _global_stats; }
 
 public:
   ThreadLocalAllocBuffer() : _allocated_before_last_gc(0), _allocation_fraction(TLABAllocationWeight) {
@@ -162,17 +159,17 @@ public:
   // Initialization at startup
   static void startup_initialization();
 
-  // Make an in-use tlab parsable, optionally retiring and/or zapping it.
-  void make_parsable(bool retire, bool zap = true);
+  // Make an in-use tlab parsable.
+  void make_parsable();
+
+  // Retire an in-use tlab and optionally collect statistics.
+  void retire(ThreadLocalAllocStats* stats = NULL);
 
   // Retire in-use tlab before allocation of a new tlab
-  void clear_before_allocation();
+  void retire_before_allocation();
 
-  // Accumulate statistics across all tlabs before gc
-  static void accumulate_statistics_before_gc();
-
-  // Resize tlabs for all threads
-  static void resize_all_tlabs();
+  // Resize based on amount of allocation, etc.
+  void resize();
 
   void fill(HeapWord* start, HeapWord* top, size_t new_size);
   void initialize();
@@ -199,88 +196,52 @@ public:
   void verify();
 };
 
-class GlobalTLABStats: public CHeapObj<mtThread> {
+class ThreadLocalAllocStats : public StackObj {
 private:
+  static PerfVariable* _perf_allocating_threads;
+  static PerfVariable* _perf_total_refills;
+  static PerfVariable* _perf_max_refills;
+  static PerfVariable* _perf_total_allocations;
+  static PerfVariable* _perf_total_gc_waste;
+  static PerfVariable* _perf_max_gc_waste;
+  static PerfVariable* _perf_total_slow_refill_waste;
+  static PerfVariable* _perf_max_slow_refill_waste;
+  static PerfVariable* _perf_total_fast_refill_waste;
+  static PerfVariable* _perf_max_fast_refill_waste;
+  static PerfVariable* _perf_total_slow_allocations;
+  static PerfVariable* _perf_max_slow_allocations;
 
-  // Accumulate perfdata in private variables because
-  // PerfData should be write-only for security reasons
-  // (see perfData.hpp)
-  unsigned _allocating_threads;
-  unsigned _total_refills;
-  unsigned _max_refills;
-  size_t   _total_allocation;
-  size_t   _total_gc_waste;
-  size_t   _max_gc_waste;
-  size_t   _total_slow_refill_waste;
-  size_t   _max_slow_refill_waste;
-  size_t   _total_fast_refill_waste;
-  size_t   _max_fast_refill_waste;
-  unsigned _total_slow_allocations;
-  unsigned _max_slow_allocations;
+  static AdaptiveWeightedAverage _allocating_threads_avg;
 
-  PerfVariable* _perf_allocating_threads;
-  PerfVariable* _perf_total_refills;
-  PerfVariable* _perf_max_refills;
-  PerfVariable* _perf_allocation;
-  PerfVariable* _perf_gc_waste;
-  PerfVariable* _perf_max_gc_waste;
-  PerfVariable* _perf_slow_refill_waste;
-  PerfVariable* _perf_max_slow_refill_waste;
-  PerfVariable* _perf_fast_refill_waste;
-  PerfVariable* _perf_max_fast_refill_waste;
-  PerfVariable* _perf_slow_allocations;
-  PerfVariable* _perf_max_slow_allocations;
-
-  AdaptiveWeightedAverage _allocating_threads_avg;
+  unsigned int _allocating_threads;
+  unsigned int _total_refills;
+  unsigned int _max_refills;
+  size_t       _total_allocations;
+  size_t       _total_gc_waste;
+  size_t       _max_gc_waste;
+  size_t       _total_fast_refill_waste;
+  size_t       _max_fast_refill_waste;
+  size_t       _total_slow_refill_waste;
+  size_t       _max_slow_refill_waste;
+  unsigned int _total_slow_allocations;
+  unsigned int _max_slow_allocations;
 
 public:
-  GlobalTLABStats();
+  static void initialize();
+  static unsigned int allocating_threads_avg();
 
-  // Initialize all counters
-  void initialize();
+  ThreadLocalAllocStats();
 
-  // Write all perf counters to the perf_counters
+  void update_fast_allocations(unsigned int refills,
+                               size_t allocations,
+                               size_t gc_waste,
+                               size_t fast_refill_waste,
+                               size_t slow_refill_waste);
+  void update_slow_allocations(unsigned int allocations);
+  void update(const ThreadLocalAllocStats& other);
+
+  void reset();
   void publish();
-
-  void print();
-
-  // Accessors
-  unsigned allocating_threads_avg() {
-    return MAX2((unsigned)(_allocating_threads_avg.average() + 0.5), 1U);
-  }
-
-  size_t allocation() {
-    return _total_allocation;
-  }
-
-  // Update methods
-
-  void update_allocating_threads() {
-    _allocating_threads++;
-  }
-  void update_number_of_refills(unsigned value) {
-    _total_refills += value;
-    _max_refills    = MAX2(_max_refills, value);
-  }
-  void update_allocation(size_t value) {
-    _total_allocation += value;
-  }
-  void update_gc_waste(size_t value) {
-    _total_gc_waste += value;
-    _max_gc_waste    = MAX2(_max_gc_waste, value);
-  }
-  void update_fast_refill_waste(size_t value) {
-    _total_fast_refill_waste += value;
-    _max_fast_refill_waste    = MAX2(_max_fast_refill_waste, value);
-  }
-  void update_slow_refill_waste(size_t value) {
-    _total_slow_refill_waste += value;
-    _max_slow_refill_waste    = MAX2(_max_slow_refill_waste, value);
-  }
-  void update_slow_allocations(unsigned value) {
-    _total_slow_allocations += value;
-    _max_slow_allocations    = MAX2(_max_slow_allocations, value);
-  }
 };
 
 #endif // SHARE_VM_GC_SHARED_THREADLOCALALLOCBUFFER_HPP

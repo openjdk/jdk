@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8192920 8204588
+ * @bug 8192920 8204588 8210275
  * @summary Test source mode
  * @modules jdk.compiler jdk.jlink
  * @run main SourceMode
@@ -247,6 +247,31 @@ public class SourceMode extends TestHelper {
         if (!tr.isOK())
             error(tr, "Command failed");
         if (!tr.contains("HelloWorld.java"))
+            error(tr, "Expected output not found");
+        show(tr);
+    }
+
+    // java --source N -cp ... HelloWorld
+    @Test
+    void testSourceClasspath() throws IOException {
+        starting("testSourceClasspath");
+        Path base = Files.createDirectories(Paths.get("testSourceClasspath"));
+        Path src = Files.createDirectories(base.resolve("src"));
+        Path srcfile = src.resolve("java.java");
+        createFile(srcfile, List.of(
+                "class HelloWorld {",
+                "    public static void main(String... args) {",
+                "        System.out.println(\"Hello World\");",
+                "    }",
+                "}"
+        ));
+        Path classes = base.resolve("classes");
+        compile("-d", classes.toString(), srcfile.toString());
+        TestResult tr =
+            doExec(javaCmd, "--source", thisVersion, "-cp", classes.toString(), "HelloWorld");
+        if (tr.isOK())
+            error(tr, "Command succeeded unexpectedly");
+        if (!tr.contains("file not found: HelloWorld"))
             error(tr, "Expected output not found");
         show(tr);
     }

@@ -26,27 +26,8 @@
 #include "jvmti.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_ARG1(x)
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_ARG1(x) x
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
-
-#define JVMTI_ENV_ARG JNI_ENV_ARG
-#define JVMTI_ENV_ARG1 JNI_ENV_ARG1
-#define JVMTI_ENV_PTR JNI_ENV_PTR
 
 #define JVMTI_ERROR_CHECK(str,res) if ( res != JVMTI_ERROR_NONE) { printf(str); printf(" %d\n",res); return res;}
 #define JVMTI_ERROR_CHECK_EXPECTED_ERROR(str,res,err) if ( res != err) { printf(str); printf("unexpected error %d\n",res); return res;}
@@ -80,7 +61,7 @@ void debug_printf(const char *fmt, ...) {
 void JNICALL vmInit(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread) {
     jvmtiError res;
     debug_printf("VMInit event received\n");
-    res = JVMTI_ENV_PTR(jvmti_env)->DisposeEnvironment(JVMTI_ENV_ARG1(jvmti_env));
+    res = jvmti_env->DisposeEnvironment();
     JVMTI_ERROR_CHECK_VOID("DisposeEnvironment returned error", res);
 }
 
@@ -115,8 +96,7 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
         }
     }
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res < 0) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -124,34 +104,33 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
 
     /* Enable event call backs. */
     init_callbacks();
-    res = JVMTI_ENV_PTR(jvmti)->SetEventCallbacks(JVMTI_ENV_ARG(jvmti, &callbacks), sizeof(callbacks));
+    res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
     /* Add capabilities */
-    res = JVMTI_ENV_PTR(jvmti)->GetPotentialCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->GetPotentialCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetPotentialCapabilities returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->AddCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->AddCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetAddCapabilities returned error", res);
 
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_VM_INIT,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->GetSystemProperties(JVMTI_ENV_ARG(jvmti, &count), &properties);
+    res = jvmti->GetSystemProperties(&count, &properties);
 
     JVMTI_ERROR_CHECK("GetSystemProperties returned error", res);
 
     for (i=0; i< count; i++) {
         char *value;
 
-        res = JVMTI_ENV_PTR(jvmti)->GetSystemProperty(JVMTI_ENV_ARG(jvmti, (const char *)properties[i]), &value);
+        res = jvmti->GetSystemProperty((const char *) properties[i], &value);
         JVMTI_ERROR_CHECK("GetSystemProperty returned error", res);
         debug_printf(" %s    %s \n", properties[i], value);
 
-        res = JVMTI_ENV_PTR(jvmti)->SetSystemProperty(JVMTI_ENV_ARG(jvmti, (const char *)properties[i]), value);
+        res = jvmti->SetSystemProperty((const char *) properties[i], value);
         debug_printf("SetSystemProperty returned error %d\n", res);
-
      }
 
     return JNI_OK;
@@ -164,6 +143,4 @@ Java_nsk_jvmti_unit_functions_Dispose_JvmtiTest_GetResult(JNIEnv * env, jclass c
 }
 
 
-#ifdef __cplusplus
 }
-#endif

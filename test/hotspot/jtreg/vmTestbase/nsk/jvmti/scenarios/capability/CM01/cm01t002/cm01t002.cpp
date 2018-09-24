@@ -27,9 +27,7 @@
 #include "agent_common.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define CAPABILITY can_get_bytecodes
 #define CAPABILITY_STR "can_get_bytecodes"
@@ -658,6 +656,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 /* ========================================================================== */
 
-#ifdef __cplusplus
 }
-#endif

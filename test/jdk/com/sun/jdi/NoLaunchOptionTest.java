@@ -21,7 +21,7 @@
  * questions.
  */
 
-import static jdk.testlibrary.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertFalse;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -31,11 +31,10 @@ import jdk.test.lib.process.ProcessTools;
  * @summary    Test for -Xrunjdwp:[onthrow,onuncaught] suboptions require launch suboption
  * @author     Tim Bell
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
  * @run compile -g NoLaunchOptionTest.java
- * @build jdk.testlibrary.* VMConnection
+ * @build VMConnection
  * @run driver NoLaunchOptionTest
  */
 public class NoLaunchOptionTest extends Object {

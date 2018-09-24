@@ -25,21 +25,6 @@
 
 include JdkNativeCompilation.gmk
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN)
-else
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-  endif
-  ORIGIN_ARG := $(call SET_EXECUTABLE_ORIGIN,/../lib/jli)
-
-  # Applications expect to be able to link against libjawt without invoking
-  # System.loadLibrary("jawt") first. This was the behaviour described in the
-  # devloper documentation of JAWT and what worked with OpenJDK6.
-  ifneq ($(findstring $(OPENJDK_TARGET_OS), linux solaris), )
-    ORIGIN_ARG += $(call SET_EXECUTABLE_ORIGIN,/../lib)
-  endif
-endif
-
 # Tell the compiler not to export any functions unless declared so in
 # the source code. On Windows, this is the default and cannot be changed.
 # On Mac, we have always exported all symbols, probably due to oversight
@@ -92,16 +77,12 @@ JAVA_MANIFEST := $(TOPDIR)/src/java.base/windows/native/launcher/java.manifest
 #     compile time defines exceeding Visual Studio 2013 limitations.
 # CFLAGS   Additional CFLAGS
 # CFLAGS_windows   Additional CFLAGS_windows
-# LIBS_unix   Additional LIBS_unix
-# LIBS_windows   Additional LIBS_windows
 # LDFLAGS_solaris Additional LDFLAGS_solaris
 # RC_FLAGS   Additional RC_FLAGS
 # MACOSX_SIGNED   On macosx, sign this binary
-# WINDOWS_STATIC_LINK   On windows, link statically with C runtime and libjli.
 # OPTIMIZATION   Override default optimization level (LOW)
 # OUTPUT_DIR   Override default output directory
 # VERSION_INFO_RESOURCE   Override default Windows resource file
-# NO_JAVA_MS   Do not add -ms8m to JAVA_ARGS.
 SetupBuildLauncher = $(NamedParamsMacroTemplate)
 define SetupBuildLauncherBody
   # Setup default values (unless overridden)
@@ -109,27 +90,24 @@ define SetupBuildLauncherBody
     $1_OPTIMIZATION := LOW
   endif
 
-  ifneq ($$($1_NO_JAVA_MS), true)
-    # The norm is to append -ms8m, unless otherwise instructed.
-    $1_JAVA_ARGS += -ms8m
-  endif
-
   ifeq ($$($1_MAIN_MODULE), )
     $1_MAIN_MODULE := $(MODULE)
   endif
 
-  ifneq ($$($1_JAVA_ARGS), )
-    ifneq ($$($1_EXTRA_JAVA_ARGS), )
-      $1_EXTRA_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
-        $$(addprefix -J, $$($1_EXTRA_JAVA_ARGS)), "$$a"$(COMMA) )) }'
-      $1_CFLAGS += -DEXTRA_JAVA_ARGS=$$($1_EXTRA_JAVA_ARGS_STR)
-    endif
-    $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
-        $$(addprefix -J, $$($1_JAVA_ARGS)) -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS), "$$a"$(COMMA) )) }'
-    $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
+  $1_JAVA_ARGS += -ms8m
+  ifneq ($$($1_MAIN_CLASS), )
+    $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
-  $1_LIBS :=
+  ifneq ($$($1_EXTRA_JAVA_ARGS), )
+    $1_EXTRA_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
+      $$(addprefix -J, $$($1_EXTRA_JAVA_ARGS)), "$$a"$(COMMA) )) }'
+    $1_CFLAGS += -DEXTRA_JAVA_ARGS=$$($1_EXTRA_JAVA_ARGS_STR)
+  endif
+  $1_JAVA_ARGS_STR := '{ $$(strip $$(foreach a, \
+      $$(addprefix -J, $$($1_JAVA_ARGS)) $$($1_LAUNCHER_CLASS), "$$a"$(COMMA) )) }'
+  $1_CFLAGS += -DJAVA_ARGS=$$($1_JAVA_ARGS_STR)
+
   ifeq ($(OPENJDK_TARGET_OS), macosx)
     ifeq ($$($1_MACOSX_SIGNED), true)
       $1_PLIST_FILE := Info-privileged.plist
@@ -138,9 +116,8 @@ define SetupBuildLauncherBody
       $1_PLIST_FILE := Info-cmdline.plist
     endif
 
-    $1_CFLAGS += -DPACKAGE_PATH='"$(PACKAGE_PATH)"'
-    $1_LDFLAGS += -Wl,-all_load \
-        -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
+    $1_LDFLAGS += -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
+
     ifeq ($(STATIC_BUILD), true)
       $1_LDFLAGS += -exported_symbols_list \
               $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
@@ -153,35 +130,20 @@ define SetupBuildLauncherBody
           -framework Foundation \
           -framework SystemConfiguration \
           -lstdc++ -liconv
-    else
-      $1_LIBS += $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a
     endif
-    $1_LIBS += -framework Cocoa -framework Security \
-        -framework ApplicationServices
-  endif
-
-  ifeq ($(OPENJDK_TARGET_OS), aix)
-    $1_LDFLAGS += -L$(SUPPORT_OUTPUTDIR)/native/java.base
-    $1_LIBS += -ljli_static
   endif
 
   ifeq ($(USE_EXTERNAL_LIBZ), true)
     $1_LIBS += -lz
   endif
 
-  ifeq ($$($1_WINDOWS_STATIC_LINK), true)
-    $1_CFLAGS += $(filter-out -MD, $(CFLAGS_JDKEXE))
-    $1_WINDOWS_JLI_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/jli_static.lib
-  else
-    $1_CFLAGS += $(CFLAGS_JDKEXE)
-    $1_WINDOWS_JLI_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
-  endif
+  $1_WINDOWS_JLI_LIB := $(SUPPORT_OUTPUTDIR)/native/java.base/libjli/jli.lib
 
   $$(eval $$(call SetupJdkExecutable, BUILD_LAUNCHER_$1, \
       NAME := $1, \
       EXTRA_FILES := $(LAUNCHER_SRC)/main.c, \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
-      CFLAGS := $$($1_CFLAGS) \
+      CFLAGS := $$(CFLAGS_JDKEXE) $$($1_CFLAGS) \
           $(LAUNCHER_CFLAGS) \
           $(VERSION_CFLAGS) \
           -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"' \
@@ -190,20 +152,25 @@ define SetupBuildLauncherBody
       CFLAGS_linux := -fPIC, \
       CFLAGS_solaris := -KPIC -DHAVE_GETHRTIME, \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
+      DISABLED_WARNINGS_gcc := unused-function, \
       LDFLAGS := $$(LDFLAGS_JDKEXE) \
-          $$(ORIGIN_ARG) \
+          $$(call SET_EXECUTABLE_ORIGIN) \
           $$($1_LDFLAGS), \
-      LDFLAGS_linux := \
-          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
-      LDFLAGS_solaris := $$($1_LDFLAGS_solaris) \
-          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base/jli, \
+      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
+          -L$(call FindLibDirForModule, java.base), \
+      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
+          -L$(call FindLibDirForModule, java.base), \
+      LDFLAGS_solaris := $$(call SET_EXECUTABLE_ORIGIN,/../lib) \
+          -L$(call FindLibDirForModule, java.base), \
+      LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
       LIBS := $(JDKEXE_LIBS) $$($1_LIBS), \
-      LIBS_unix := $$($1_LIBS_unix), \
-      LIBS_linux := -lpthread -ljli $(LIBDL), \
+      LIBS_linux := -ljli -lpthread $(LIBDL), \
+      LIBS_macosx := -ljli -framework Cocoa -framework Security \
+          -framework ApplicationServices, \
       LIBS_solaris := -ljli -lthread $(LIBDL), \
+      LIBS_aix := -ljli_static, \
       LIBS_windows := $$($1_WINDOWS_JLI_LIB) \
-          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib advapi32.lib \
-          $$($1_LIBS_windows), \
+          $(SUPPORT_OUTPUTDIR)/native/java.base/libjava/java.lib, \
       OUTPUT_DIR := $$($1_OUTPUT_DIR), \
       VERSIONINFO_RESOURCE := $$($1_VERSION_INFO_RESOURCE), \
       EXTRA_RC_FLAGS := $$($1_EXTRA_RC_FLAGS), \
@@ -215,7 +182,7 @@ define SetupBuildLauncherBody
   $1 += $$(BUILD_LAUNCHER_$1)
   TARGETS += $$($1)
 
-  ifneq (,$(filter $(OPENJDK_TARGET_OS), macosx aix))
+  ifeq ($(OPENJDK_TARGET_OS), aix)
     $$(BUILD_LAUNCHER_$1): $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a
   endif
 

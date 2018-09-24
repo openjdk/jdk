@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@
  * @bug 8058595
  * @summary Test that AnnotatedType.getAnnotatedOwnerType() works as expected
  *
- * @library /lib/testlibrary
- * @build jdk.testlibrary.Asserts
+ * @library /test/lib
+ * @build jdk.test.lib.Asserts
  * @run main GetAnnotatedOwnerType
  */
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 public class GetAnnotatedOwnerType<Dummy> {
     public @TA("generic") GetAnnotatedOwnerType<String> . @TB("generic") Nested<Integer> genericField;

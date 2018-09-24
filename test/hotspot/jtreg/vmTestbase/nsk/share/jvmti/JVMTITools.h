@@ -26,9 +26,7 @@
 
 #include "jvmti.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /**
  * Return string representation of given JVMTI event constant.
@@ -60,8 +58,6 @@ const char* TranslateRootKind(jvmtiHeapRootKind root);
  */
 const char* TranslateObjectRefKind(jvmtiObjectReferenceKind ref);
 
-#ifdef __cplusplus
 }
-#endif
 
 #endif /* _NSK_SHARE_JVMTI_JVMTITOOLS_H_ */

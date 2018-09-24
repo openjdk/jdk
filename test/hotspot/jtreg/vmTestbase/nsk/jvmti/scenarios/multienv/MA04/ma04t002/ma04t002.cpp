@@ -31,9 +31,7 @@
 #define STATUS_FAILED 2
 #define SAMPLE_TAG ((jlong) 111111)
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ========================================================================== */
 
@@ -348,6 +346,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 /* ========================================================================== */
 
-#ifdef __cplusplus
 }
-#endif

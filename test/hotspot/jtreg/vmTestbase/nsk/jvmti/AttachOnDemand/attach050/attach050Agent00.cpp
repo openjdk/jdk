@@ -30,9 +30,7 @@
 
 #define ON_UNLOAD_MARKER "attach050.on_unload"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * This agent gets JVMTI environment and calls nsk_aod_agentLoaded and
@@ -94,6 +92,4 @@ Agent_OnUnload(JavaVM *jvm)
     fflush(stdout);
 }
 
-#ifdef __cplusplus
 }
-#endif

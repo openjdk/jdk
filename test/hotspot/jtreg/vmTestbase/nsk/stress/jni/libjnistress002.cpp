@@ -25,9 +25,7 @@
 #include <stdio.h>
 #include "jnihelper.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 jobject NewObjectWrapper(JNIEnv *env, jclass clazz, jmethodID methodID, ...) {
   va_list ap;
@@ -105,6 +103,4 @@ Java_nsk_stress_jni_JNIter002_jniobjects (JNIEnv *env, jobject jobj, jstring jst
   return obj;
 }
 
-#ifdef __cplusplus
 }
-#endif

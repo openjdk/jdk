@@ -173,7 +173,7 @@ void MethodHandles::jump_to_lambda_form(MacroAssembler* _masm,
     // assert(sizeof(u2) == sizeof(Method::_size_of_parameters), "");
     Label L;
     __ ldr(tmp, __ receiver_argument_address(Rparams, tmp, tmp));
-    __ cmp(tmp, recv);
+    __ cmpoop(tmp, recv);
     __ b(L, eq);
     __ stop("receiver not on stack");
     __ bind(L);

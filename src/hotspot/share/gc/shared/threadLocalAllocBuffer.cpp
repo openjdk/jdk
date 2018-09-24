@@ -32,18 +32,9 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/copy.hpp"
 
-// Thread-Local Edens support
-
-// static member initialization
-size_t           ThreadLocalAllocBuffer::_max_size       = 0;
-int              ThreadLocalAllocBuffer::_reserve_for_allocation_prefetch = 0;
-unsigned         ThreadLocalAllocBuffer::_target_refills = 0;
-GlobalTLABStats* ThreadLocalAllocBuffer::_global_stats   = NULL;
-
-void ThreadLocalAllocBuffer::clear_before_allocation() {
-  _slow_refill_waste += (unsigned)remaining();
-  make_parsable(true);   // also retire the TLAB
-}
+size_t       ThreadLocalAllocBuffer::_max_size = 0;
+int          ThreadLocalAllocBuffer::_reserve_for_allocation_prefetch = 0;
+unsigned int ThreadLocalAllocBuffer::_target_refills = 0;
 
 size_t ThreadLocalAllocBuffer::remaining() {
   if (end() == NULL) {
@@ -53,22 +44,7 @@ size_t ThreadLocalAllocBuffer::remaining() {
   return pointer_delta(hard_end(), top());
 }
 
-void ThreadLocalAllocBuffer::accumulate_statistics_before_gc() {
-  global_stats()->initialize();
-
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    thread->tlab().accumulate_statistics();
-    thread->tlab().initialize_statistics();
-  }
-
-  // Publish new stats if some allocation occurred.
-  if (global_stats()->allocation() != 0) {
-    global_stats()->publish();
-    global_stats()->print();
-  }
-}
-
-void ThreadLocalAllocBuffer::accumulate_statistics() {
+void ThreadLocalAllocBuffer::accumulate_and_reset_statistics(ThreadLocalAllocStats* stats) {
   Thread* thr     = thread();
   size_t capacity = Universe::heap()->tlab_capacity(thr);
   size_t used     = Universe::heap()->tlab_used(thr);
@@ -95,55 +71,55 @@ void ThreadLocalAllocBuffer::accumulate_statistics() {
       double alloc_frac = MIN2(1.0, (double) allocated_since_last_gc / used);
       _allocation_fraction.sample(alloc_frac);
     }
-    global_stats()->update_allocating_threads();
-    global_stats()->update_number_of_refills(_number_of_refills);
-    global_stats()->update_allocation(_allocated_size);
-    global_stats()->update_gc_waste(_gc_waste);
-    global_stats()->update_slow_refill_waste(_slow_refill_waste);
-    global_stats()->update_fast_refill_waste(_fast_refill_waste);
 
+    stats->update_fast_allocations(_number_of_refills,
+                                   _allocated_size,
+                                   _gc_waste,
+                                   _fast_refill_waste,
+                                   _slow_refill_waste);
   } else {
     assert(_number_of_refills == 0 && _fast_refill_waste == 0 &&
            _slow_refill_waste == 0 && _gc_waste          == 0,
            "tlab stats == 0");
   }
-  global_stats()->update_slow_allocations(_slow_allocations);
+
+  stats->update_slow_allocations(_slow_allocations);
+
+  reset_statistics();
 }
 
-// Fills the current tlab with a dummy filler array to create
-// an illusion of a contiguous Eden and optionally retires the tlab.
-// Waste accounting should be done in caller as appropriate; see,
-// for example, clear_before_allocation().
-void ThreadLocalAllocBuffer::make_parsable(bool retire, bool zap) {
+void ThreadLocalAllocBuffer::insert_filler() {
+  assert(end() != NULL, "Must not be retired");
+  Universe::heap()->fill_with_dummy_object(top(), hard_end(), true);
+}
+
+void ThreadLocalAllocBuffer::make_parsable() {
   if (end() != NULL) {
     invariants();
-
-    if (retire) {
-      thread()->incr_allocated_bytes(used_bytes());
-    }
-
-    Universe::heap()->fill_with_dummy_object(top(), hard_end(), retire && zap);
-
-    if (retire || ZeroTLAB) {  // "Reset" the TLAB
-      set_start(NULL);
-      set_top(NULL);
-      set_pf_top(NULL);
-      set_end(NULL);
-      set_allocation_end(NULL);
+    if (ZeroTLAB) {
+      retire();
+    } else {
+      insert_filler();
     }
   }
-  assert(!(retire || ZeroTLAB)  ||
-         (start() == NULL && end() == NULL && top() == NULL &&
-          _allocation_end == NULL),
-         "TLAB must be reset");
 }
 
-void ThreadLocalAllocBuffer::resize_all_tlabs() {
-  if (ResizeTLAB) {
-    for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-      thread->tlab().resize();
-    }
+void ThreadLocalAllocBuffer::retire(ThreadLocalAllocStats* stats) {
+  if (stats != NULL) {
+    accumulate_and_reset_statistics(stats);
   }
+
+  if (end() != NULL) {
+    invariants();
+    thread()->incr_allocated_bytes(used_bytes());
+    insert_filler();
+    initialize(NULL, NULL, NULL);
+  }
+}
+
+void ThreadLocalAllocBuffer::retire_before_allocation() {
+  _slow_refill_waste += (unsigned int)remaining();
+  retire();
 }
 
 void ThreadLocalAllocBuffer::resize() {
@@ -166,7 +142,7 @@ void ThreadLocalAllocBuffer::resize() {
   set_refill_waste_limit(initial_refill_waste_limit());
 }
 
-void ThreadLocalAllocBuffer::initialize_statistics() {
+void ThreadLocalAllocBuffer::reset_statistics() {
   _number_of_refills = 0;
   _fast_refill_waste = 0;
   _slow_refill_waste = 0;
@@ -207,21 +183,17 @@ void ThreadLocalAllocBuffer::initialize() {
 
   set_desired_size(initial_desired_size());
 
-  // Following check is needed because at startup the main
-  // thread is initialized before the heap is.  The initialization for
-  // this thread is redone in startup_initialization below.
-  if (Universe::heap() != NULL) {
-    size_t capacity   = Universe::heap()->tlab_capacity(thread()) / HeapWordSize;
-    double alloc_frac = desired_size() * target_refills() / (double) capacity;
-    _allocation_fraction.sample(alloc_frac);
-  }
+  size_t capacity = Universe::heap()->tlab_capacity(thread()) / HeapWordSize;
+  double alloc_frac = desired_size() * target_refills() / (double) capacity;
+  _allocation_fraction.sample(alloc_frac);
 
   set_refill_waste_limit(initial_refill_waste_limit());
 
-  initialize_statistics();
+  reset_statistics();
 }
 
 void ThreadLocalAllocBuffer::startup_initialization() {
+  ThreadLocalAllocStats::initialize();
 
   // Assuming each thread's active tlab is, on average,
   // 1/2 full at a GC
@@ -229,8 +201,6 @@ void ThreadLocalAllocBuffer::startup_initialization() {
   // We need to set initial target refills to 2 to avoid a GC which causes VM
   // abort during VM initialization.
   _target_refills = MAX2(_target_refills, 2U);
-
-  _global_stats = new GlobalTLABStats();
 
 #ifdef COMPILER2
   // If the C2 compiler is present, extra space is needed at the end of
@@ -270,9 +240,9 @@ size_t ThreadLocalAllocBuffer::initial_desired_size() {
 
   if (TLABSize > 0) {
     init_sz = TLABSize / HeapWordSize;
-  } else if (global_stats() != NULL) {
+  } else {
     // Initial size is a function of the average number of allocating threads.
-    unsigned nof_threads = global_stats()->allocating_threads_avg();
+    unsigned int nof_threads = ThreadLocalAllocStats::allocating_threads_avg();
 
     init_sz  = (Universe::heap()->tlab_capacity(thread()) / HeapWordSize) /
                       (nof_threads * target_refills());
@@ -346,123 +316,148 @@ HeapWord* ThreadLocalAllocBuffer::hard_end() {
   return _allocation_end + alignment_reserve();
 }
 
-GlobalTLABStats::GlobalTLABStats() :
-  _allocating_threads_avg(TLABAllocationWeight) {
+PerfVariable* ThreadLocalAllocStats::_perf_allocating_threads;
+PerfVariable* ThreadLocalAllocStats::_perf_total_refills;
+PerfVariable* ThreadLocalAllocStats::_perf_max_refills;
+PerfVariable* ThreadLocalAllocStats::_perf_total_allocations;
+PerfVariable* ThreadLocalAllocStats::_perf_total_gc_waste;
+PerfVariable* ThreadLocalAllocStats::_perf_max_gc_waste;
+PerfVariable* ThreadLocalAllocStats::_perf_total_slow_refill_waste;
+PerfVariable* ThreadLocalAllocStats::_perf_max_slow_refill_waste;
+PerfVariable* ThreadLocalAllocStats::_perf_total_fast_refill_waste;
+PerfVariable* ThreadLocalAllocStats::_perf_max_fast_refill_waste;
+PerfVariable* ThreadLocalAllocStats::_perf_total_slow_allocations;
+PerfVariable* ThreadLocalAllocStats::_perf_max_slow_allocations;
+AdaptiveWeightedAverage ThreadLocalAllocStats::_allocating_threads_avg(0);
 
-  initialize();
+static PerfVariable* create_perf_variable(const char* name, PerfData::Units unit, TRAPS) {
+  ResourceMark rm;
+  return PerfDataManager::create_variable(SUN_GC, PerfDataManager::counter_name("tlab", name), unit, THREAD);
+}
 
+void ThreadLocalAllocStats::initialize() {
+  _allocating_threads_avg = AdaptiveWeightedAverage(TLABAllocationWeight);
   _allocating_threads_avg.sample(1); // One allocating thread at startup
 
   if (UsePerfData) {
-
     EXCEPTION_MARK;
-    ResourceMark rm;
-
-    char* cname = PerfDataManager::counter_name("tlab", "allocThreads");
-    _perf_allocating_threads =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_None, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "fills");
-    _perf_total_refills =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_None, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "maxFills");
-    _perf_max_refills =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_None, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "alloc");
-    _perf_allocation =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "gcWaste");
-    _perf_gc_waste =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "maxGcWaste");
-    _perf_max_gc_waste =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "slowWaste");
-    _perf_slow_refill_waste =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "maxSlowWaste");
-    _perf_max_slow_refill_waste =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "fastWaste");
-    _perf_fast_refill_waste =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "maxFastWaste");
-    _perf_max_fast_refill_waste =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_Bytes, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "slowAlloc");
-    _perf_slow_allocations =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_None, CHECK);
-
-    cname = PerfDataManager::counter_name("tlab", "maxSlowAlloc");
-    _perf_max_slow_allocations =
-      PerfDataManager::create_variable(SUN_GC, cname, PerfData::U_None, CHECK);
+    _perf_allocating_threads      = create_perf_variable("allocThreads", PerfData::U_None,  CHECK);
+    _perf_total_refills           = create_perf_variable("fills",        PerfData::U_None,  CHECK);
+    _perf_max_refills             = create_perf_variable("maxFills",     PerfData::U_None,  CHECK);
+    _perf_total_allocations       = create_perf_variable("alloc",        PerfData::U_Bytes, CHECK);
+    _perf_total_gc_waste          = create_perf_variable("gcWaste",      PerfData::U_Bytes, CHECK);
+    _perf_max_gc_waste            = create_perf_variable("maxGcWaste",   PerfData::U_Bytes, CHECK);
+    _perf_total_slow_refill_waste = create_perf_variable("slowWaste",    PerfData::U_Bytes, CHECK);
+    _perf_max_slow_refill_waste   = create_perf_variable("maxSlowWaste", PerfData::U_Bytes, CHECK);
+    _perf_total_fast_refill_waste = create_perf_variable("fastWaste",    PerfData::U_Bytes, CHECK);
+    _perf_max_fast_refill_waste   = create_perf_variable("maxFastWaste", PerfData::U_Bytes, CHECK);
+    _perf_total_slow_allocations  = create_perf_variable("slowAlloc",    PerfData::U_None,  CHECK);
+    _perf_max_slow_allocations    = create_perf_variable("maxSlowAlloc", PerfData::U_None,  CHECK);
   }
 }
 
-void GlobalTLABStats::initialize() {
-  // Clear counters summarizing info from all threads
+ThreadLocalAllocStats::ThreadLocalAllocStats() :
+    _allocating_threads(0),
+    _total_refills(0),
+    _max_refills(0),
+    _total_allocations(0),
+    _total_gc_waste(0),
+    _max_gc_waste(0),
+    _total_fast_refill_waste(0),
+    _max_fast_refill_waste(0),
+    _total_slow_refill_waste(0),
+    _max_slow_refill_waste(0),
+    _total_slow_allocations(0),
+    _max_slow_allocations(0) {}
+
+unsigned int ThreadLocalAllocStats::allocating_threads_avg() {
+  return MAX2((unsigned int)(_allocating_threads_avg.average() + 0.5), 1U);
+}
+
+void ThreadLocalAllocStats::update_fast_allocations(unsigned int refills,
+                                       size_t allocations,
+                                       size_t gc_waste,
+                                       size_t fast_refill_waste,
+                                       size_t slow_refill_waste) {
+  _allocating_threads      += 1;
+  _total_refills           += refills;
+  _max_refills              = MAX2(_max_refills, refills);
+  _total_allocations       += allocations;
+  _total_gc_waste          += gc_waste;
+  _max_gc_waste             = MAX2(_max_gc_waste, gc_waste);
+  _total_fast_refill_waste += fast_refill_waste;
+  _max_fast_refill_waste    = MAX2(_max_fast_refill_waste, fast_refill_waste);
+  _total_slow_refill_waste += slow_refill_waste;
+  _max_slow_refill_waste    = MAX2(_max_slow_refill_waste, slow_refill_waste);
+}
+
+void ThreadLocalAllocStats::update_slow_allocations(unsigned int allocations) {
+  _total_slow_allocations += allocations;
+  _max_slow_allocations    = MAX2(_max_slow_allocations, allocations);
+}
+
+void ThreadLocalAllocStats::update(const ThreadLocalAllocStats& other) {
+  _allocating_threads      += other._allocating_threads;
+  _total_refills           += other._total_refills;
+  _max_refills              = MAX2(_max_refills, other._max_refills);
+  _total_allocations       += other._total_allocations;
+  _total_gc_waste          += other._total_gc_waste;
+  _max_gc_waste             = MAX2(_max_gc_waste, other._max_gc_waste);
+  _total_fast_refill_waste += other._total_fast_refill_waste;
+  _max_fast_refill_waste    = MAX2(_max_fast_refill_waste, other._max_fast_refill_waste);
+  _total_slow_refill_waste += other._total_slow_refill_waste;
+  _max_slow_refill_waste    = MAX2(_max_slow_refill_waste, other._max_slow_refill_waste);
+  _total_slow_allocations  += other._total_slow_allocations;
+  _max_slow_allocations     = MAX2(_max_slow_allocations, other._max_slow_allocations);
+}
+
+void ThreadLocalAllocStats::reset() {
   _allocating_threads      = 0;
   _total_refills           = 0;
   _max_refills             = 0;
-  _total_allocation        = 0;
+  _total_allocations       = 0;
   _total_gc_waste          = 0;
   _max_gc_waste            = 0;
-  _total_slow_refill_waste = 0;
-  _max_slow_refill_waste   = 0;
   _total_fast_refill_waste = 0;
   _max_fast_refill_waste   = 0;
+  _total_slow_refill_waste = 0;
+  _max_slow_refill_waste   = 0;
   _total_slow_allocations  = 0;
   _max_slow_allocations    = 0;
 }
 
-void GlobalTLABStats::publish() {
-  _allocating_threads_avg.sample(_allocating_threads);
-  if (UsePerfData) {
-    _perf_allocating_threads   ->set_value(_allocating_threads);
-    _perf_total_refills        ->set_value(_total_refills);
-    _perf_max_refills          ->set_value(_max_refills);
-    _perf_allocation           ->set_value(_total_allocation);
-    _perf_gc_waste             ->set_value(_total_gc_waste);
-    _perf_max_gc_waste         ->set_value(_max_gc_waste);
-    _perf_slow_refill_waste    ->set_value(_total_slow_refill_waste);
-    _perf_max_slow_refill_waste->set_value(_max_slow_refill_waste);
-    _perf_fast_refill_waste    ->set_value(_total_fast_refill_waste);
-    _perf_max_fast_refill_waste->set_value(_max_fast_refill_waste);
-    _perf_slow_allocations     ->set_value(_total_slow_allocations);
-    _perf_max_slow_allocations ->set_value(_max_slow_allocations);
-  }
-}
-
-void GlobalTLABStats::print() {
-  Log(gc, tlab) log;
-  if (!log.is_debug()) {
+void ThreadLocalAllocStats::publish() {
+  if (_total_allocations == 0) {
     return;
   }
 
-  size_t waste = _total_gc_waste + _total_slow_refill_waste + _total_fast_refill_waste;
-  double waste_percent = percent_of(waste, _total_allocation);
-  log.debug("TLAB totals: thrds: %d  refills: %d max: %d"
-            " slow allocs: %d max %d waste: %4.1f%%"
-            " gc: " SIZE_FORMAT "B max: " SIZE_FORMAT "B"
-            " slow: " SIZE_FORMAT "B max: " SIZE_FORMAT "B"
-            " fast: " SIZE_FORMAT "B max: " SIZE_FORMAT "B",
-            _allocating_threads,
-            _total_refills, _max_refills,
-            _total_slow_allocations, _max_slow_allocations,
-            waste_percent,
-            _total_gc_waste * HeapWordSize,
-            _max_gc_waste * HeapWordSize,
-            _total_slow_refill_waste * HeapWordSize,
-            _max_slow_refill_waste * HeapWordSize,
-            _total_fast_refill_waste * HeapWordSize,
-            _max_fast_refill_waste * HeapWordSize);
+  _allocating_threads_avg.sample(_allocating_threads);
+
+  const size_t waste = _total_gc_waste + _total_slow_refill_waste + _total_fast_refill_waste;
+  const double waste_percent = percent_of(waste, _total_allocations);
+  log_debug(gc, tlab)("TLAB totals: thrds: %d  refills: %d max: %d"
+                      " slow allocs: %d max %d waste: %4.1f%%"
+                      " gc: " SIZE_FORMAT "B max: " SIZE_FORMAT "B"
+                      " slow: " SIZE_FORMAT "B max: " SIZE_FORMAT "B"
+                      " fast: " SIZE_FORMAT "B max: " SIZE_FORMAT "B",
+                      _allocating_threads, _total_refills, _max_refills,
+                      _total_slow_allocations, _max_slow_allocations, waste_percent,
+                      _total_gc_waste * HeapWordSize, _max_gc_waste * HeapWordSize,
+                      _total_slow_refill_waste * HeapWordSize, _max_slow_refill_waste * HeapWordSize,
+                      _total_fast_refill_waste * HeapWordSize, _max_fast_refill_waste * HeapWordSize);
+
+  if (UsePerfData) {
+    _perf_allocating_threads      ->set_value(_allocating_threads);
+    _perf_total_refills           ->set_value(_total_refills);
+    _perf_max_refills             ->set_value(_max_refills);
+    _perf_total_allocations       ->set_value(_total_allocations);
+    _perf_total_gc_waste          ->set_value(_total_gc_waste);
+    _perf_max_gc_waste            ->set_value(_max_gc_waste);
+    _perf_total_slow_refill_waste ->set_value(_total_slow_refill_waste);
+    _perf_max_slow_refill_waste   ->set_value(_max_slow_refill_waste);
+    _perf_total_fast_refill_waste ->set_value(_total_fast_refill_waste);
+    _perf_max_fast_refill_waste   ->set_value(_max_fast_refill_waste);
+    _perf_total_slow_allocations  ->set_value(_total_slow_allocations);
+    _perf_max_slow_allocations    ->set_value(_max_slow_allocations);
+  }
 }

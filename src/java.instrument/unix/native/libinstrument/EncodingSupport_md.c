@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ utfError(char *file, int line, char *message)
 static void
 utfInitialize(void)
 {
-    char *codeset;
+    const char* codeset;
 
     /* Set the locale from the environment */
     (void)setlocale(LC_ALL, "");
@@ -76,6 +76,20 @@ utfInitialize(void)
     }
 
     UTF_DEBUG(("Codeset = %s\n", codeset));
+
+#ifdef MACOSX
+    /* On Mac, if US-ASCII, but with no env hints, use UTF-8 */
+    const char* env_lang = getenv("LANG");
+    const char* env_lc_all = getenv("LC_ALL");
+    const char* env_lc_ctype = getenv("LC_CTYPE");
+
+    if (strcmp(codeset,"US-ASCII") == 0 &&
+        (env_lang == NULL || strlen(env_lang) == 0) &&
+        (env_lc_all == NULL || strlen(env_lc_all) == 0) &&
+        (env_lc_ctype == NULL || strlen(env_lc_ctype) == 0)) {
+        codeset = "UTF-8";
+    }
+#endif
 
     /* If we don't need this, skip it */
     if (strcmp(codeset, "UTF-8") == 0 || strcmp(codeset, "utf8") == 0 ) {
@@ -146,6 +160,7 @@ iconvConvert(iconv_t ic, char *bytes, int len, char *output, int outputMaxLen)
         }
 
         /* Failed to do the conversion */
+        UTF_DEBUG(("iconv() failed to do the conversion\n"));
         return -1;
     }
 

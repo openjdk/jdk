@@ -638,7 +638,7 @@ awtJNI_GetFontData(JNIEnv * env, jobject font, char **errmsg)
 
             /* XXX: sometimes XLoadQueryFont returns a bogus font structure */
             /* with negative ascent. */
-            if (xfont == (Font) NULL || xfont->ascent < 0) {
+            if (xfont == NULL || xfont->ascent < 0) {
                 if (xfont != NULL) {
                     XFreeFont(display, xfont);
                 }

@@ -137,9 +137,6 @@ class CollectedHeap : public CHeapObj<mtInternal> {
                                       size_t requested_size,
                                       size_t* actual_size);
 
-  // Accumulate statistics on all tlabs.
-  virtual void accumulate_statistics_all_tlabs();
-
   // Reinitialize tlabs before resuming mutators.
   virtual void resize_all_tlabs();
 

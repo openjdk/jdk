@@ -27,9 +27,7 @@
 #include "agent_common.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* The test adds all capabilities suitable for profiling at OnLoad phase:
  *
@@ -776,6 +774,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 /* ========================================================================== */
 
-#ifdef __cplusplus
 }
-#endif

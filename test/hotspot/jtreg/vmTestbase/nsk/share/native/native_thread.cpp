@@ -52,9 +52,7 @@ typedef  pthread_t  THREAD_ID;
 
 /***************************************************************/
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /**
  * A mirror to control a thread.
@@ -206,6 +204,4 @@ void THREAD_sleep(int seconds) {
 
 /***************************************************************/
 
-#ifdef __cplusplus
 }
-#endif

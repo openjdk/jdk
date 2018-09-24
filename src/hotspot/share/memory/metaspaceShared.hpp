@@ -125,7 +125,7 @@ class MetaspaceShared : AllStatic {
   }
 #endif
 
-  static bool is_archive_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  inline static bool is_archive_object(oop p) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static bool is_heap_object_archiving_allowed() {
     CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedOops && UseCompressedClassPointers);)

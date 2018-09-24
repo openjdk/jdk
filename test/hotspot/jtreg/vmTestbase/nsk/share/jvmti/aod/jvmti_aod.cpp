@@ -24,9 +24,7 @@
 #include <stdlib.h>
 #include <jvmti_aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 void nsk_jvmti_aod_disableEventAndFinish(const char* agentName, jvmtiEvent event, int success, jvmtiEnv *jvmti, JNIEnv* jni) {
     if (!nsk_jvmti_aod_disableEvent(jvmti, event))
@@ -347,6 +345,4 @@ void printCapabilities(jvmtiCapabilities caps) {
     #undef printCap
 }
 
-#ifdef __cplusplus
 }
-#endif

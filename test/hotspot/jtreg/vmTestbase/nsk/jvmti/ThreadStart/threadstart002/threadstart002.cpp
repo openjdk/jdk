@@ -30,9 +30,7 @@
 #include "agent_common.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -542,6 +540,4 @@ Java_nsk_jvmti_ThreadStart_threadstart002_check(JNIEnv *env, jclass cls) {
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

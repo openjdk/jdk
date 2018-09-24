@@ -27,9 +27,7 @@
 #include "agent_common.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define CAPABILITY can_get_source_file_name
 #define CAPABILITY_STR "can_get_source_file_name"
@@ -657,6 +655,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 /* ========================================================================== */
 
-#ifdef __cplusplus
 }
-#endif

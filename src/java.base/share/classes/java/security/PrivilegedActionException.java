@@ -25,6 +25,12 @@
 
 package java.security;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import jdk.internal.misc.SharedSecrets;
+
 /**
  * This exception is thrown by
  * {@code doPrivileged(PrivilegedExceptionAction)} and
@@ -53,19 +59,13 @@ public class PrivilegedActionException extends Exception {
     private static final long serialVersionUID = 4724086851538908602L;
 
     /**
-     * @serial
-     */
-    private Exception exception;
-
-    /**
      * Constructs a new PrivilegedActionException &quot;wrapping&quot;
      * the specific Exception.
      *
      * @param exception The exception thrown
      */
     public PrivilegedActionException(Exception exception) {
-        super((Throwable)null);  // Disallow initCause
-        this.exception = exception;
+        super(null, exception);  // Disallow initCause
     }
 
     /**
@@ -84,23 +84,49 @@ public class PrivilegedActionException extends Exception {
      *                                            AccessControlContext)
      */
     public Exception getException() {
-        return exception;
-    }
-
-    /**
-     * Returns the cause of this exception (the exception thrown by
-     * the privileged computation that resulted in this
-     * {@code PrivilegedActionException}).
-     *
-     * @return  the cause of this exception.
-     * @since   1.4
-     */
-    public Throwable getCause() {
-        return exception;
+        return (Exception)super.getCause();
     }
 
     public String toString() {
         String s = getClass().getName();
-        return (exception != null) ? (s + ": " + exception.toString()) : s;
+        Throwable cause = super.getCause();
+        return (cause != null) ? (s + ": " + cause.toString()) : s;
+    }
+
+
+    /**
+     * Serializable fields for UndeclaredThrowableException.
+     *
+     * @serialField undeclaredThrowable Throwable
+     */
+    private static final ObjectStreamField[] serialPersistentFields = {
+        new ObjectStreamField("exception", Exception.class)
+    };
+
+    /*
+     * Reconstitutes the PrivilegedActionException instance from a stream
+     * and initialize the cause properly when deserializing from an older
+     * version.
+     *
+     * The getException and getCause method returns the private "exception"
+     * field in the older implementation and PrivilegedActionException::cause
+     * was set to null.
+     */
+    private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField fields = s.readFields();
+        Exception exception = (Exception) fields.get("exception", null);
+        if (exception != null) {
+            SharedSecrets.getJavaLangAccess().setCause(this, exception);
+        }
+    }
+
+    /*
+     * To maintain compatibility with older implementation, write a serial
+     * "exception" field with the cause as the value.
+     */
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        ObjectOutputStream.PutField fields = out.putFields();
+        fields.put("exception", super.getCause());
+        out.writeFields();
     }
 }

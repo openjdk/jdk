@@ -31,9 +31,7 @@
 #include "jvmti_tools.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS301/hs301t002/MyClass"
 #define DIR_NAME "newclass"
 #define PATH_FORMAT "%s%02d/%s"
@@ -102,6 +100,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS301_hs301t002_hs301t002_redefine(JNIEnv * jni
     return ret;
 }
 
-#ifdef __cplusplus
 }
-#endif

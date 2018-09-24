@@ -192,6 +192,11 @@ public:
 
   virtual Node* resolve(GraphKit* kit, Node* n, DecoratorSet decorators) const { return n; }
 
+  virtual Node* obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem, Node* toobig_false, Node* size_in_bytes,
+                             Node*& i_o, Node*& needgc_ctrl,
+                             Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
+                             intx prefetch_lines) const;
+
   // These are general helper methods used by C2
   virtual bool array_copy_requires_gc_barriers(BasicType type) const { return false; }
 

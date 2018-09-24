@@ -161,14 +161,35 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
     microsoft)
       DISABLE_WARNING_PREFIX="-wd"
       CFLAGS_WARNINGS_ARE_ERRORS="-WX"
+
+      WARNINGS_ENABLE_ALL="-W3"
+      DISABLED_WARNINGS="4800"
       ;;
+
     solstudio)
       DISABLE_WARNING_PREFIX="-erroff="
-      CFLAGS_WARNINGS_ARE_ERRORS="-errtags -errwarn=%all"
+      CFLAGS_WARNINGS_ARE_ERRORS="-errwarn=%all"
+
+      WARNINGS_ENABLE_ALL_CFLAGS="-v"
+      WARNINGS_ENABLE_ALL_CXXFLAGS="+w"
+
+      DISABLED_WARNINGS_C=""
+      DISABLED_WARNINGS_CXX=""
       ;;
+
     gcc)
       DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+
+      # Additional warnings that are not activated by -Wall and -Wextra
+      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare \
+          -Wunused-function -Wundef -Wunused-value -Wreturn-type"
+      WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
+      WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
+      WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
+
+      DISABLED_WARNINGS="unused-parameter unused"
+
       # Repeate the check for the BUILD_CC and BUILD_CXX. Need to also reset
       # CFLAGS since any target specific flags will likely not work with the
       # build compiler
@@ -183,18 +204,40 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       CXX="$CXX_OLD"
       CFLAGS="$CFLAGS_OLD"
       ;;
+
     clang)
       DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+
+      # Additional warnings that are not activated by -Wall and -Wextra
+      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare -Wreorder \
+          -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
+      WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
+
+      DISABLED_WARNINGS="unused-parameter unused"
+
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        # missing-method-return-type triggers in JavaNativeFoundation framework
+        DISABLED_WARNINGS="$DISABLED_WARNINGS missing-method-return-type"
+      fi
+
       ;;
+
     xlc)
       DISABLE_WARNING_PREFIX="-qsuppress="
       CFLAGS_WARNINGS_ARE_ERRORS="-qhalt=w"
+
+      # Possibly a better subset than "all" is "lan:trx:ret:zea:cmp:ret"
+      WARNINGS_ENABLE_ALL="-qinfo=all -qformat=all"
+      DISABLED_WARNINGS=""
       ;;
   esac
   AC_SUBST(DISABLE_WARNING_PREFIX)
   AC_SUBST(BUILD_CC_DISABLE_WARNING_PREFIX)
   AC_SUBST(CFLAGS_WARNINGS_ARE_ERRORS)
+  AC_SUBST(DISABLED_WARNINGS)
+  AC_SUBST(DISABLED_WARNINGS_C)
+  AC_SUBST(DISABLED_WARNINGS_CXX)
 ])
 
 AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
@@ -386,17 +429,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS],
 	IF_FALSE: [FDLIBM_CFLAGS=""])
   fi
   AC_SUBST(FDLIBM_CFLAGS)
-
-  # Tests are only ever compiled for TARGET
-  CFLAGS_TESTLIB="$CFLAGS_JDKLIB"
-  CXXFLAGS_TESTLIB="$CXXFLAGS_JDKLIB"
-  CFLAGS_TESTEXE="$CFLAGS_JDKEXE"
-  CXXFLAGS_TESTEXE="$CXXFLAGS_JDKEXE"
-
-  AC_SUBST(CFLAGS_TESTLIB)
-  AC_SUBST(CFLAGS_TESTEXE)
-  AC_SUBST(CXXFLAGS_TESTLIB)
-  AC_SUBST(CXXFLAGS_TESTEXE)
 ])
 
 ################################################################################
@@ -523,11 +555,14 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    TOOLCHAIN_CFLAGS_JDK="-mt"
-    TOOLCHAIN_CFLAGS_JDK_CONLY="-xc99=%none -xCC -Xa -v -W0,-noglobal" # C only
+    TOOLCHAIN_FLAGS="-errtags -errfmt"
+    TOOLCHAIN_CFLAGS="-errshort=tags"
+
+    TOOLCHAIN_CFLAGS_JDK="-mt $TOOLCHAIN_FLAGS"
+    TOOLCHAIN_CFLAGS_JDK_CONLY="-xc99=%none -xCC -Xa -W0,-noglobal $TOOLCHAIN_CFLAGS" # C only
     TOOLCHAIN_CFLAGS_JDK_CXXONLY="-features=no%except -norunpath -xnolib" # CXX only
     TOOLCHAIN_CFLAGS_JVM="-template=no%extdef -features=no%split_init \
-        -library=stlport4 -mt -features=no%except"
+        -library=stlport4 -mt -features=no%except $TOOLCHAIN_FLAGS"
     if test "x$DEBUG_LEVEL" = xslowdebug; then
       # Previously -g was used instead of -g0 for slowdebug; this is equivalent
       # to setting +d.
@@ -535,6 +570,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    # Suggested additions: -qsrcmsg to get improved error reporting
     TOOLCHAIN_CFLAGS_JDK="-qchars=signed -qfullpath -qsaveopt"  # add on both CFLAGS
     TOOLCHAIN_CFLAGS_JVM="-qtune=balanced \
         -qalias=noansi -qstrict -qtls=default -qlanglvl=c99vla \
@@ -546,37 +582,24 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 
   # CFLAGS WARNINGS STUFF
   # Set JVM_CFLAGS warning handling
-  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-    # COMMON to gcc and clang
-    WARNING_CFLAGS_JVM="-Wpointer-arith -Wsign-compare -Wunused-function"
-    if ! HOTSPOT_CHECK_JVM_VARIANT(zero); then
-      # Non-zero builds have stricter warnings
-      WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wundef -Wformat=2"
-    fi
-
-  fi
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    WARNING_CFLAGS_JDK="-Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2"
-    WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wunused-value -Woverloaded-virtual -Wreorder"
+    WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL_CFLAGS"
+    WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXXFLAGS"
+    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_CXXFLAGS"
 
-    if ! HOTSPOT_CHECK_JVM_VARIANT(zero); then
-      # Non-zero builds have stricter warnings
-      WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wreturn-type"
-    fi
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wno-deprecated -Wreorder"
-    if test "x$OPENJDK_TARGET_OS" = xlinux; then
-      WARNING_CFLAGS_JVM="$WARNING_CFLAGS_JVM -Wno-sometimes-uninitialized"
-      WARNING_CFLAGS_JDK="-Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2"
-    fi
+    WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
+
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    WARNING_CFLAGS_JDK_CONLY="-errshort=tags"
-    WARNING_CFLAGS_JDK_CXXONLY="+w"
-    WARNING_CFLAGS_JDK="-errtags=yes -errfmt"
+    WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL_CFLAGS"
+    WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXXFLAGS"
+    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_CXXFLAGS"
+
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    WARNING_CFLAGS="-W3"
-    WARNING_CFLAGS_JDK="-wd4800"
-    WARNING_CFLAGS_JVM="-wd4800"
+    WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
+
+  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+    WARNING_CFLAGS=""  # currently left empty
   fi
 
   # Set some additional per-OS defines.

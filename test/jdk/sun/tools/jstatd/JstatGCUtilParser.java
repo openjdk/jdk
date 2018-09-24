@@ -22,10 +22,10 @@
  */
 
 import java.util.Arrays;
-
-import jdk.test.lib.Utils;
-import static jdk.testlibrary.Asserts.*;
 import java.text.NumberFormat;
+
+import static jdk.test.lib.Asserts.*;
+import jdk.test.lib.Utils;
 
 /**
  * The helper class for parsing following output from command 'jstat -gcutil':

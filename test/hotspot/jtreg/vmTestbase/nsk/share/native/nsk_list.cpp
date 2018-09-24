@@ -27,9 +27,7 @@
 #include "nsk_list.h"
 #include "nsk_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define NSK_LIST_INIT_COUNT 20
 
@@ -136,8 +134,6 @@ const void* nsk_list_get(const void *plist, int i) {
     return NULL;
 }
 
-#ifdef __cplusplus
 }
-#endif
 
 /* ============================================================================= */

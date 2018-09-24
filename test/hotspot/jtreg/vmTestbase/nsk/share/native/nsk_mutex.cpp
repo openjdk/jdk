@@ -24,9 +24,7 @@
 #include <stdlib.h>
 #include "nsk_mutex.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #ifndef _WIN32
 
@@ -92,6 +90,4 @@ void MUTEX_destroy(MUTEX* mutex)
 
 #endif // _WIN32
 
-#ifdef __cplusplus
 }
-#endif

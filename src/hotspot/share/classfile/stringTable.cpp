@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
-#include "classfile/compactHashtable.inline.hpp"
+#include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -35,7 +35,8 @@
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
-#include "memory/metaspaceShared.hpp"
+#include "memory/heapShared.inline.hpp"
+#include "memory/metaspaceShared.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
@@ -62,9 +63,22 @@
 // If we have as many dead items as 50% of the number of bucket
 #define CLEAN_DEAD_HIGH_WATER_MARK 0.5
 
+#if INCLUDE_CDS_JAVA_HEAP
+inline oop read_string_from_compact_hashtable(address base_address, u4 offset) {
+  assert(sizeof(narrowOop) == sizeof(offset), "must be");
+  narrowOop v = (narrowOop)offset;
+  return HeapShared::decode_from_archive(v);
+}
+
+static CompactHashtable<
+  const jchar*, oop,
+  read_string_from_compact_hashtable,
+  java_lang_String::equals
+> _shared_table;
+#endif
+
 // --------------------------------------------------------------------------
 StringTable* StringTable::_the_table = NULL;
-CompactHashtable<oop, char> StringTable::_shared_table;
 volatile bool StringTable::_shared_string_mapped = false;
 volatile bool StringTable::_alt_hash = false;
 
@@ -134,7 +148,7 @@ class StringTableLookupJchar : StackObj {
       *is_dead = true;
       return false;
     }
-    bool equals = java_lang_String::equals(val_oop, (jchar*)_str, _len);
+    bool equals = java_lang_String::equals(val_oop, _str, _len);
     if (!equals) {
       return false;
     }
@@ -236,7 +250,7 @@ oop StringTable::lookup(Symbol* symbol) {
   return lookup(chars, length);
 }
 
-oop StringTable::lookup(jchar* name, int len) {
+oop StringTable::lookup(const jchar* name, int len) {
   unsigned int hash = java_lang_String::hash_code(name, len);
   oop string = StringTable::the_table()->lookup_shared(name, len, hash);
   if (string != NULL) {
@@ -263,7 +277,7 @@ class StringTableGet : public StackObj {
   }
 };
 
-oop StringTable::do_lookup(jchar* name, int len, uintx hash) {
+oop StringTable::do_lookup(const jchar* name, int len, uintx hash) {
   Thread* thread = Thread::current();
   StringTableLookupJchar lookup(thread, hash, name, len);
   StringTableGet stg(thread);
@@ -308,7 +322,7 @@ oop StringTable::intern(const char* utf8_string, TRAPS) {
   return result;
 }
 
-oop StringTable::intern(Handle string_or_null_h, jchar* name, int len, TRAPS) {
+oop StringTable::intern(Handle string_or_null_h, const jchar* name, int len, TRAPS) {
   // shared table always uses java_lang_String::hash_code
   unsigned int hash = java_lang_String::hash_code(name, len);
   oop found_string = StringTable::the_table()->lookup_shared(name, len, hash);
@@ -346,7 +360,7 @@ class StringTableCreateEntry : public StackObj {
   }
 };
 
-oop StringTable::do_intern(Handle string_or_null_h, jchar* name,
+oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
                            int len, uintx hash, TRAPS) {
   HandleMark hm(THREAD);  // cleanup strings created
   Handle string_h;
@@ -775,10 +789,10 @@ int StringtableDCmd::num_arguments() {
 
 // Sharing
 #if INCLUDE_CDS_JAVA_HEAP
-oop StringTable::lookup_shared(jchar* name, int len, unsigned int hash) {
+oop StringTable::lookup_shared(const jchar* name, int len, unsigned int hash) {
   assert(hash == java_lang_String::hash_code(name, len),
          "hash must be computed using java_lang_String::hash_code");
-  return _shared_table.lookup((const char*)name, hash, len);
+  return _shared_table.lookup(name, hash, len);
 }
 
 oop StringTable::create_archived_string(oop s, Thread* THREAD) {
@@ -804,6 +818,15 @@ oop StringTable::create_archived_string(oop s, Thread* THREAD) {
   java_lang_String::set_value_raw(new_s, new_v);
   return new_s;
 }
+
+class CompactStringTableWriter: public CompactHashtableWriter {
+public:
+  CompactStringTableWriter(int num_entries, CompactHashtableStats* stats) :
+    CompactHashtableWriter(num_entries, stats) {}
+  void add(unsigned int hash, oop string) {
+    CompactHashtableWriter::add(hash, CompressedOops::encode(string));
+  }
+};
 
 struct CopyToArchive : StackObj {
   CompactStringTableWriter* _writer;
@@ -849,11 +872,10 @@ void StringTable::write_to_archive() {
 
   // Copy the interned strings into the "string space" within the java heap
   copy_shared_string_table(&writer);
-  writer.dump(&_shared_table);
+  writer.dump(&_shared_table, "string");
 }
 
 void StringTable::serialize(SerializeClosure* soc) {
-  _shared_table.set_type(CompactHashtable<oop, char>::_string_table);
   _shared_table.serialize(soc);
 
   if (soc->writing()) {
@@ -864,7 +886,17 @@ void StringTable::serialize(SerializeClosure* soc) {
   }
 }
 
+class SharedStringIterator {
+  OopClosure* _oop_closure;
+public:
+  SharedStringIterator(OopClosure* f) : _oop_closure(f) {}
+  void do_value(oop string) {
+    _oop_closure->do_oop(&string);
+  }
+};
+
 void StringTable::shared_oops_do(OopClosure* f) {
-  _shared_table.oops_do(f);
+  SharedStringIterator iter(f);
+  _shared_table.iterate(&iter);
 }
 #endif //INCLUDE_CDS_JAVA_HEAP

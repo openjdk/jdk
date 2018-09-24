@@ -34,9 +34,7 @@
 3. Upon accessing the field by the initializer, redefine the class and pop a currently executed
  frame of the initializer within incoming FieldAccess callback.
 */
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define METHOD_NAME "loadClass"
 #define SIGNATURE "(Ljava/lang/String;)Ljava/lang/Class;"
@@ -200,6 +198,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS204_hs204t004_hs204t004_popFrame(JNIEnv * jni
 }
 
 
-#ifdef __cplusplus
 }
-#endif

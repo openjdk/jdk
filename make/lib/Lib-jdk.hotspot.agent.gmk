@@ -54,7 +54,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     NAME := saproc, \
     OPTIMIZATION := HIGH, \
     DISABLED_WARNINGS_microsoft := 4267, \
-    DISABLED_WARNINGS_gcc := sign-compare, \
+    DISABLED_WARNINGS_gcc := sign-compare pointer-arith, \
+    DISABLED_WARNINGS_clang := sign-compare pointer-arith format-nonliteral, \
     DISABLED_WARNINGS_CXX_solstudio := truncwarn unknownpragma, \
     CFLAGS := $(CFLAGS_JDKLIB) $(SA_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \

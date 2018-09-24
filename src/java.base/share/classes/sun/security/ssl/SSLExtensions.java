@@ -333,7 +333,7 @@ final class SSLExtensions {
             return "<no extension>";
         } else {
             StringBuilder builder = new StringBuilder(512);
-            if (logMap != null) {
+            if (logMap != null && !logMap.isEmpty()) {
                 for (Map.Entry<Integer, byte[]> en : logMap.entrySet()) {
                     SSLExtension ext = SSLExtension.valueOf(
                             handshakeMessage.handshakeType(), en.getKey());

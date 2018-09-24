@@ -30,21 +30,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -73,8 +60,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -158,15 +144,13 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     if (printdump == JNI_TRUE) {
         printf("\n Check methods of interface:\n");
     }
-    interf = JNI_ENV_PTR(env)->FindClass(JNI_ENV_ARG(env,
-        "nsk/jvmti/unit/GetLineNumberTable/Interface004"));
+    interf = env->FindClass("nsk/jvmti/unit/GetLineNumberTable/Interface004");
     if (interf == NULL) {
         printf("Cannot get Interface class!\n");
         return STATUS_FAILED;
     }
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "instanceMeth0", "()I");
+    mid = env->GetMethodID(cls, "instanceMeth0", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -174,8 +158,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     checkGetLineNumberTable(mid, "instanceMeth0", 1,
         JVMTI_ERROR_ABSENT_INFORMATION);
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "instanceMeth1", "()I");
+    mid = env->GetMethodID(cls, "instanceMeth1", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -186,14 +169,13 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     if (printdump == JNI_TRUE) {
         printf("\n Check methods of abstract class:\n");
     }
-    abstr = JNI_ENV_PTR(env)->GetSuperclass(JNI_ENV_ARG(env, cls));
+    abstr = env->GetSuperclass(cls);
     if (abstr == NULL) {
         printf("Cannot get super class!\n");
         return STATUS_FAILED;
     }
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, abstr),
-        "instanceMeth0", "()I");
+    mid = env->GetMethodID(abstr, "instanceMeth0", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -201,8 +183,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     checkGetLineNumberTable(mid, "instanceMeth0", 1,
         JVMTI_ERROR_ABSENT_INFORMATION);
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, abstr),
-        "instanceMeth1", "()I");
+    mid = env->GetMethodID(abstr, "instanceMeth1", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -213,8 +194,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     if (printdump == JNI_TRUE) {
         printf("\n Check methods of regular class:\n");
     }
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "instanceMeth0", "()I");
+    mid = env->GetMethodID(cls, "instanceMeth0", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -222,8 +202,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     checkGetLineNumberTable(mid, "instanceMeth0", 0,
         JVMTI_ERROR_ABSENT_INFORMATION);
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "instanceMeth1", "()I");
+    mid = env->GetMethodID(cls, "instanceMeth1", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -231,8 +210,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     checkGetLineNumberTable(mid, "instanceMeth1", 0,
         JVMTI_ERROR_ABSENT_INFORMATION);
 
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "instanceMeth2", "()I");
+    mid = env->GetMethodID(cls, "instanceMeth2", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -243,8 +221,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     if (printdump == JNI_TRUE) {
         printf("\n Check native methods of regular class:\n");
     }
-    mid = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-        "instanceNativeMeth", "()I");
+    mid = env->GetMethodID(cls, "instanceNativeMeth", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -252,8 +229,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     checkGetLineNumberTable(mid, "instanceNativeMeth", 1,
         JVMTI_ERROR_NATIVE_METHOD);
 
-    mid = JNI_ENV_PTR(env)->GetStaticMethodID(JNI_ENV_ARG(env, cls),
-        "staticNativeMeth", "()I");
+    mid = env->GetStaticMethodID(cls, "staticNativeMeth", "()I");
     if (mid == NULL) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
@@ -268,6 +244,4 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     return result;
 }
 
-#ifdef __cplusplus
 }
-#endif

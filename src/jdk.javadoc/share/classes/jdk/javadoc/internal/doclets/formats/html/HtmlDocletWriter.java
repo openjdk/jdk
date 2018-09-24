@@ -29,6 +29,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import jdk.javadoc.internal.doclets.formats.html.markup.TableHeader;
 
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -2104,5 +2105,21 @@ public class HtmlDocletWriter {
 
     Script getMainBodyScript() {
         return mainBodyScript;
+    }
+
+    /**
+     * Creates the HTML tag if the tag is supported by this specific HTML version
+     * otherwise return the Content instance provided by Supplier ifNotSupported.
+     * @param tag the HTML tag
+     * @param ifSupported create this instance if HTML tag is supported
+     * @param ifNotSupported create this instance if HTML tag is not supported
+     * @return
+     */
+    protected Content createTagIfAllowed(HtmlTag tag, Supplier<Content> ifSupported, Supplier<Content> ifNotSupported) {
+        if (configuration.allowTag(tag)) {
+            return ifSupported.get();
+        } else {
+            return ifNotSupported.get();
+        }
     }
 }

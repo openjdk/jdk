@@ -25,8 +25,10 @@
 #include "precompiled.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/macro.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "utilities/macros.hpp"
 
@@ -600,4 +602,131 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool i
   } else {
     kit->set_all_memory(n);
   }
+}
+
+Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* ctrl, Node* mem, Node* toobig_false, Node* size_in_bytes,
+                                 Node*& i_o, Node*& needgc_ctrl,
+                                 Node*& fast_oop_ctrl, Node*& fast_oop_rawmem,
+                                 intx prefetch_lines) const {
+
+  Node* eden_top_adr;
+  Node* eden_end_adr;
+
+  macro->set_eden_pointers(eden_top_adr, eden_end_adr);
+
+  // Load Eden::end.  Loop invariant and hoisted.
+  //
+  // Note: We set the control input on "eden_end" and "old_eden_top" when using
+  //       a TLAB to work around a bug where these values were being moved across
+  //       a safepoint.  These are not oops, so they cannot be include in the oop
+  //       map, but they can be changed by a GC.   The proper way to fix this would
+  //       be to set the raw memory state when generating a  SafepointNode.  However
+  //       this will require extensive changes to the loop optimization in order to
+  //       prevent a degradation of the optimization.
+  //       See comment in memnode.hpp, around line 227 in class LoadPNode.
+  Node *eden_end = macro->make_load(ctrl, mem, eden_end_adr, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+
+  // We need a Region for the loop-back contended case.
+  enum { fall_in_path = 1, contended_loopback_path = 2 };
+  Node *contended_region;
+  Node *contended_phi_rawmem;
+  if (UseTLAB) {
+    contended_region = toobig_false;
+    contended_phi_rawmem = mem;
+  } else {
+    contended_region = new RegionNode(3);
+    contended_phi_rawmem = new PhiNode(contended_region, Type::MEMORY, TypeRawPtr::BOTTOM);
+    // Now handle the passing-too-big test.  We fall into the contended
+    // loop-back merge point.
+    contended_region    ->init_req(fall_in_path, toobig_false);
+    contended_phi_rawmem->init_req(fall_in_path, mem);
+    macro->transform_later(contended_region);
+    macro->transform_later(contended_phi_rawmem);
+  }
+
+  // Load(-locked) the heap top.
+  // See note above concerning the control input when using a TLAB
+  Node *old_eden_top = UseTLAB
+    ? new LoadPNode      (ctrl, contended_phi_rawmem, eden_top_adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM, MemNode::unordered)
+    : new LoadPLockedNode(contended_region, contended_phi_rawmem, eden_top_adr, MemNode::acquire);
+
+  macro->transform_later(old_eden_top);
+  // Add to heap top to get a new heap top
+  Node *new_eden_top = new AddPNode(macro->top(), old_eden_top, size_in_bytes);
+  macro->transform_later(new_eden_top);
+  // Check for needing a GC; compare against heap end
+  Node *needgc_cmp = new CmpPNode(new_eden_top, eden_end);
+  macro->transform_later(needgc_cmp);
+  Node *needgc_bol = new BoolNode(needgc_cmp, BoolTest::ge);
+  macro->transform_later(needgc_bol);
+  IfNode *needgc_iff = new IfNode(contended_region, needgc_bol, PROB_UNLIKELY_MAG(4), COUNT_UNKNOWN);
+  macro->transform_later(needgc_iff);
+
+  // Plug the failing-heap-space-need-gc test into the slow-path region
+  Node *needgc_true = new IfTrueNode(needgc_iff);
+  macro->transform_later(needgc_true);
+  needgc_ctrl = needgc_true;
+
+  // No need for a GC.  Setup for the Store-Conditional
+  Node *needgc_false = new IfFalseNode(needgc_iff);
+  macro->transform_later(needgc_false);
+
+  i_o = macro->prefetch_allocation(i_o, needgc_false, contended_phi_rawmem,
+                                   old_eden_top, new_eden_top, prefetch_lines);
+
+  Node* fast_oop = old_eden_top;
+
+  // Store (-conditional) the modified eden top back down.
+  // StorePConditional produces flags for a test PLUS a modified raw
+  // memory state.
+  if (UseTLAB) {
+    Node* store_eden_top =
+      new StorePNode(needgc_false, contended_phi_rawmem, eden_top_adr,
+                     TypeRawPtr::BOTTOM, new_eden_top, MemNode::unordered);
+    macro->transform_later(store_eden_top);
+    fast_oop_ctrl = needgc_false; // No contention, so this is the fast path
+    fast_oop_rawmem = store_eden_top;
+  } else {
+    Node* store_eden_top =
+      new StorePConditionalNode(needgc_false, contended_phi_rawmem, eden_top_adr,
+                                new_eden_top, fast_oop/*old_eden_top*/);
+    macro->transform_later(store_eden_top);
+    Node *contention_check = new BoolNode(store_eden_top, BoolTest::ne);
+    macro->transform_later(contention_check);
+    store_eden_top = new SCMemProjNode(store_eden_top);
+    macro->transform_later(store_eden_top);
+
+    // If not using TLABs, check to see if there was contention.
+    IfNode *contention_iff = new IfNode (needgc_false, contention_check, PROB_MIN, COUNT_UNKNOWN);
+    macro->transform_later(contention_iff);
+    Node *contention_true = new IfTrueNode(contention_iff);
+    macro->transform_later(contention_true);
+    // If contention, loopback and try again.
+    contended_region->init_req(contended_loopback_path, contention_true);
+    contended_phi_rawmem->init_req(contended_loopback_path, store_eden_top);
+
+    // Fast-path succeeded with no contention!
+    Node *contention_false = new IfFalseNode(contention_iff);
+    macro->transform_later(contention_false);
+    fast_oop_ctrl = contention_false;
+
+    // Bump total allocated bytes for this thread
+    Node* thread = new ThreadLocalNode();
+    macro->transform_later(thread);
+    Node* alloc_bytes_adr = macro->basic_plus_adr(macro->top()/*not oop*/, thread,
+                                                  in_bytes(JavaThread::allocated_bytes_offset()));
+    Node* alloc_bytes = macro->make_load(fast_oop_ctrl, store_eden_top, alloc_bytes_adr,
+                                         0, TypeLong::LONG, T_LONG);
+#ifdef _LP64
+    Node* alloc_size = size_in_bytes;
+#else
+    Node* alloc_size = new ConvI2LNode(size_in_bytes);
+    macro->transform_later(alloc_size);
+#endif
+    Node* new_alloc_bytes = new AddLNode(alloc_bytes, alloc_size);
+    macro->transform_later(new_alloc_bytes);
+    fast_oop_rawmem = macro->make_store(fast_oop_ctrl, store_eden_top, alloc_bytes_adr,
+                                        0, new_alloc_bytes, T_LONG);
+  }
+  return fast_oop;
 }

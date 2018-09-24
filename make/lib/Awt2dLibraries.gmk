@@ -55,6 +55,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(BUILD_LIBMLIB_CFLAGS), \
+    DISABLED_WARNINGS_gcc := unused-function, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
@@ -225,8 +226,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc := sign-compare unused-result maybe-uninitialized \
-        format-nonliteral parentheses, \
-    DISABLED_WARNINGS_clang := logical-op-parentheses extern-initializer, \
+        format-nonliteral parentheses unused-value unused-function, \
+    DISABLED_WARNINGS_clang := logical-op-parentheses extern-initializer \
+        sign-compare format-nonliteral, \
     DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE, \
     DISABLED_WARNINGS_microsoft := 4244 4267 4996, \
     ASFLAGS := $(LIBAWT_ASFLAGS), \
@@ -292,7 +294,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx), )
         #
 
     LIBAWT_XAWT_CFLAGS += -DXAWT -DXAWT_HACK \
-        -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
         $(FONTCONFIG_CFLAGS) \
         $(CUPS_CFLAGS)
 
@@ -335,7 +336,9 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx), )
         DISABLED_WARNINGS_gcc := type-limits pointer-to-int-cast \
             unused-result maybe-uninitialized format \
             format-security int-to-pointer-cast parentheses \
-            implicit-fallthrough, \
+            implicit-fallthrough undef unused-function, \
+        DISABLED_WARNINGS_clang := parentheses format undef \
+            logical-op-parentheses format-nonliteral int-conversion, \
         DISABLED_WARNINGS_solstudio := E_DECLARATION_IN_CODE \
             E_ASSIGNMENT_TYPE_MISMATCH E_NON_CONST_INIT, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -358,8 +361,6 @@ endif
 # The fast floor code loses precision.
 LCMS_CFLAGS=-DCMS_DONT_USE_FAST_FLOOR
 
-LCMS_CFLAGS_JDKLIB := $(filter-out -xc99=%none, $(CFLAGS_JDKLIB))
-
 ifeq ($(USE_EXTERNAL_LCMS), true)
   # If we're using an external library, we'll just need the wrapper part.
   # By including it explicitly, all other files will be excluded.
@@ -375,7 +376,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     NAME := lcms, \
     INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(LCMS_CFLAGS_JDKLIB) \
+    CFLAGS := $(CFLAGS_JDKLIB) \
         $(LCMS_CFLAGS), \
     CFLAGS_solaris := -xc99=no_lib, \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
@@ -383,8 +384,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
         common/awt/debug \
         libawt/java2d, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := format-nonliteral type-limits misleading-indentation, \
-    DISABLED_WARNINGS_clang := tautological-compare, \
+    DISABLED_WARNINGS_gcc := format-nonliteral type-limits \
+        misleading-indentation undef unused-function, \
+    DISABLED_WARNINGS_clang := tautological-compare format-nonliteral undef, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     DISABLED_WARNINGS_microsoft := 4819, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -459,7 +461,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
       #
 
   LIBAWT_HEADLESS_CFLAGS := $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) $(X_CFLAGS) \
-      -DHEADLESS=true -DPACKAGE_PATH=\"$(PACKAGE_PATH)\"
+      -DHEADLESS=true
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
@@ -469,6 +471,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBAWT_HEADLESS_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
+      DISABLED_WARNINGS_gcc := unused-function, \
       DISABLED_WARNINGS_xlc := 1506-356, \
       DISABLED_WARNINGS_solstudio := E_EMPTY_TRANSLATION_UNIT, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -607,11 +610,13 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
     WARNINGS_AS_ERRORS_xlc := false, \
     DISABLED_WARNINGS_gcc := sign-compare int-to-pointer-cast \
-        type-limits missing-field-initializers implicit-fallthrough strict-aliasing, \
+        type-limits missing-field-initializers implicit-fallthrough \
+        strict-aliasing undef unused-function, \
     DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
         maybe-uninitialized, \
     DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
-        tautological-constant-out-of-range-compare int-to-pointer-cast, \
+        tautological-constant-out-of-range-compare int-to-pointer-cast \
+        sign-compare undef missing-field-initializers, \
     DISABLED_WARNINGS_C_solstudio = \
         E_INTEGER_OVERFLOW_DETECTED \
         E_ARG_INCOMPATIBLE_WITH_ARG_L \
@@ -718,6 +723,7 @@ else # OPENJDK_TARGET_OS not windows
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(JAWT_CFLAGS), \
+      DISABLED_WARNINGS_clang := sign-compare, \
       EXTRA_HEADER_DIRS := \
           include \
           common/awt, \
@@ -851,8 +857,9 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc := sign-compare type-limits unused-result \
-          maybe-uninitialized shift-negative-value implicit-fallthrough, \
-      DISABLED_WARNINGS_clang := incompatible-pointer-types, \
+          maybe-uninitialized shift-negative-value implicit-fallthrough \
+          unused-function, \
+      DISABLED_WARNINGS_clang := incompatible-pointer-types sign-compare, \
       DISABLED_WARNINGS_solstudio := E_NEWLINE_NOT_LAST E_DECLARATION_IN_CODE \
           E_STATEMENT_NOT_REACHED, \
       DISABLED_WARNINGS_microsoft := 4018 4244 4267, \
@@ -911,7 +918,9 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       EXTRA_HEADER_DIRS := $(LIBAWT_LWAWT_EXTRA_HEADER_DIRS), \
       DISABLED_WARNINGS_clang := incomplete-implementation enum-conversion \
           deprecated-declarations objc-method-access bitwise-op-parentheses \
-          incompatible-pointer-types parentheses-equality extra-tokens, \
+          incompatible-pointer-types parentheses-equality extra-tokens \
+          sign-compare semicolon-before-method-body format-nonliteral undef \
+          pointer-arith, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -L$(INSTALL_LIBRARIES_HERE), \
@@ -952,7 +961,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       EXTRA_HEADER_DIRS := \
           libawt_lwawt/awt \
           libosxapp, \
-      DISABLED_WARNINGS_clang := deprecated-declarations, \
+      DISABLED_WARNINGS_clang := deprecated-declarations sign-compare, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -Wl$(COMMA)-rpath$(COMMA)@loader_path \

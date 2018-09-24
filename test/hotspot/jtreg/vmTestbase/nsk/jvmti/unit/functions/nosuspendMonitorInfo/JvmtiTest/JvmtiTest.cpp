@@ -26,27 +26,8 @@
 #include "jvmti.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_ARG1(x)
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_ARG1(x) x
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
-
-#define JVMTI_ENV_ARG JNI_ENV_ARG
-#define JVMTI_ENV_ARG1 JNI_ENV_ARG1
-#define JVMTI_ENV_PTR JNI_ENV_PTR
 
 #define JVMTI_ERROR_CHECK(str,res) if ( res != JVMTI_ERROR_NONE) { printf(str); printf("%d\n",res); return res;}
 #define JVMTI_ERROR_CHECK_EXPECTED_ERROR(str,res,err) if ( res != err) { printf(str); printf("unexpected error %d\n",res); return res;}
@@ -134,8 +115,7 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
         }
     }
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res < 0) {
         debug_printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -143,21 +123,21 @@ jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
 
 
     /* Add capabilities */
-    res = JVMTI_ENV_PTR(jvmti)->GetPotentialCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->GetPotentialCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetPotentialCapabilities returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->AddCapabilities(JVMTI_ENV_ARG(jvmti, &jvmti_caps));
+    res = jvmti->AddCapabilities(&jvmti_caps);
     JVMTI_ERROR_CHECK("GetPotentialCapabilities returned error", res);
 
     /* Enable events */
     init_callbacks();
-    res = JVMTI_ENV_PTR(jvmti)->SetEventCallbacks(JVMTI_ENV_ARG(jvmti, &callbacks), sizeof(callbacks));
+    res = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     JVMTI_ERROR_CHECK("SetEventCallbacks returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_VM_INIT,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for VM_INIT returned error", res);
 
-    res = JVMTI_ENV_PTR(jvmti)->SetEventNotificationMode(JVMTI_ENV_ARG(jvmti,JVMTI_ENABLE),JVMTI_EVENT_VM_DEATH,NULL);
+    res = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
     JVMTI_ERROR_CHECK("SetEventNotificationMode for vm death event returned error", res);
 
     return JNI_OK;
@@ -179,7 +159,7 @@ Java_nsk_jvmti_unit_functions_nosuspendMonitorInfo_JvmtiTest_CheckMonitorInfo(JN
   debug_printf(" jvmti GetMonitorInfo \n");
 
 
-    ret = JVMTI_ENV_PTR(jvmti)->GetOwnedMonitorInfo(JVMTI_ENV_ARG(jvmti, thr), &count , &owned_monitor);
+    ret = jvmti->GetOwnedMonitorInfo(thr, &count, &owned_monitor);
     if (ret != JVMTI_ERROR_NONE) {
         printf("Error: GetMonitorInfo %d \n", ret);
         iGlobalStatus = 2;
@@ -190,9 +170,9 @@ Java_nsk_jvmti_unit_functions_nosuspendMonitorInfo_JvmtiTest_CheckMonitorInfo(JN
         iGlobalStatus = 2;
     }
 
-    if (expected_count !=0 ) {
+    if (expected_count !=0) {
 
-        ret = JVMTI_ENV_PTR(jvmti)->GetCurrentContendedMonitor(JVMTI_ENV_ARG(jvmti, thr), owned_monitor);
+        ret = jvmti->GetCurrentContendedMonitor(thr, owned_monitor);
         if (ret != JVMTI_ERROR_NONE) {
             printf("Error: GetContendedMonitorInfo %d \n", ret);
             iGlobalStatus = 2;
@@ -201,6 +181,4 @@ Java_nsk_jvmti_unit_functions_nosuspendMonitorInfo_JvmtiTest_CheckMonitorInfo(JN
 
 }
 
-#ifdef __cplusplus
 }
-#endif

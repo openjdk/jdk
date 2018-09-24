@@ -31,9 +31,7 @@
 #include "nsk_list.h"
 #include "nsk_mutex.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ============================================================================= */
 
@@ -252,6 +250,4 @@ Agent_OnUnload(JavaVM *jvm)
     }
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -26,23 +26,8 @@
 #include "jvmti.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_ARG1(x)
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_ARG1(x) x
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 
 jvmtiEnv *jvmti;
@@ -61,8 +46,7 @@ JNIEXPORT jint JNI_OnLoad_JvmtiTest(JavaVM *jvm, char *options, void *reserved) 
 jint Agent_Initialize(JavaVM * jvm, char *options, void *reserved) {
     jint res;
 
-    res = JNI_ENV_PTR(jvm)->
-        GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti), JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res < 0) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -83,6 +67,4 @@ Agent_OnUnload(JavaVM *jvm)
 }
 
 
-#ifdef __cplusplus
 }
-#endif

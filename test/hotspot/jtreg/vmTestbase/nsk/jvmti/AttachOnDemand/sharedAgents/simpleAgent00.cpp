@@ -28,9 +28,7 @@
 #include <aod.h>
 #include <jvmti_aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /*
  * Simple agent, doesn't perform any specific checks,
@@ -77,6 +75,4 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

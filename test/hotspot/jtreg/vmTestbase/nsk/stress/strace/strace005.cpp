@@ -25,9 +25,7 @@
 #include "nsk_strace.h"
 #include "nsk_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static const char *Stest_cn="nsk/stress/strace/strace005";
 static jclass stackOverflowErrorClass;
@@ -102,6 +100,4 @@ Java_nsk_stress_strace_strace005Thread_recursiveMethod2(JNIEnv *env, jobject obj
     SET_INT_FIELD(obj, threadClass, "currentDepth", currDepth);
 }
 
-#ifdef __cplusplus
 }
-#endif

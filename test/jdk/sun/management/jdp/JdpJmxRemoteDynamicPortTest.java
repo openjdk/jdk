@@ -27,10 +27,9 @@
  * @summary Verify a non-zero value is assigned to jmxremote.port
  *          when VM is started with jmxremote.port=0.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build jdk.testlibrary.* ClientConnection JdpTestUtil JdpTestCase JdpJmxRemoteDynamicPortTestCase DynamicLauncher
+ * @build ClientConnection JdpTestUtil JdpTestCase JdpJmxRemoteDynamicPortTestCase DynamicLauncher
  * @run main/othervm JdpJmxRemoteDynamicPortTest
  */
 

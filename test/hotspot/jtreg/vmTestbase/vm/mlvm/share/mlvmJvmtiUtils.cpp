@@ -30,9 +30,7 @@
 #include "jvmti_tools.h"
 #include "mlvmJvmtiUtils.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst) {
     const char * pStr;
@@ -125,6 +123,4 @@ void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate) {
     return tls;
 }
 
-#ifdef __cplusplus
 }
-#endif

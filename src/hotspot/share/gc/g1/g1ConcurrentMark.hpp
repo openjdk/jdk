@@ -544,10 +544,6 @@ public:
   // Clear the previous marking bitmap during safepoint.
   void clear_prev_bitmap(WorkGang* workers);
 
-  // Return whether the next mark bitmap has no marks set. To be used for assertions
-  // only. Will not yield to pause requests.
-  bool next_mark_bitmap_is_clear();
-
   // These two methods do the work that needs to be done at the start and end of the
   // initial mark pause.
   void pre_initial_mark();

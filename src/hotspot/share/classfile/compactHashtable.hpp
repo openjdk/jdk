@@ -29,7 +29,14 @@
 #include "oops/symbol.hpp"
 #include "utilities/hashtable.hpp"
 
-template <class T, class N> class CompactHashtable;
+
+template <
+  typename K,
+  typename V,
+  V (*DECODE)(address base_address, u4 offset),
+  bool (*EQUALS)(V value, K key, int len)
+  >
+class CompactHashtable;
 class NumberSeq;
 class SimpleCompactHashtable;
 class SerializeClosure;
@@ -43,6 +50,7 @@ public:
   int bucket_bytes;
 };
 
+#if INCLUDE_CDS
 /////////////////////////////////////////////////////////////////////////
 //
 // The compact hash table writer. Used at dump time for writing out
@@ -108,9 +116,6 @@ public:
   ~CompactHashtableWriter();
 
   void add(unsigned int hash, u4 value);
-  void add(u4 value) {
-    add((unsigned int)value, value);
-  }
 
 private:
   void allocate_table();
@@ -118,24 +123,8 @@ private:
 
 public:
   void dump(SimpleCompactHashtable *cht, const char* table_name);
-  const char* table_name();
 };
-
-class CompactSymbolTableWriter: public CompactHashtableWriter {
-public:
-  CompactSymbolTableWriter(int num_buckets, CompactHashtableStats* stats) :
-    CompactHashtableWriter(num_buckets, stats) {}
-  void add(unsigned int hash, Symbol *symbol);
-  void dump(CompactHashtable<Symbol*, char> *cht);
-};
-
-class CompactStringTableWriter: public CompactHashtableWriter {
-public:
-  CompactStringTableWriter(int num_entries, CompactHashtableStats* stats) :
-    CompactHashtableWriter(num_entries, stats) {}
-  void add(unsigned int hash, oop string);
-  void dump(CompactHashtable<oop, char> *cht);
-};
+#endif // INCLUDE_CDS
 
 #define REGULAR_BUCKET_TYPE       0
 #define VALUE_ONLY_BUCKET_TYPE    1
@@ -148,8 +137,7 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// CompactHashtable is used to stored the CDS archive's symbol/string table. Used
-// at runtime only to access the compact table from the archive.
+// CompactHashtable is used to store the CDS archive's symbol/string tables.
 //
 // Because these tables are read-only (no entries can be added/deleted) at run-time
 // and tend to have large number of entries, we try to minimize the footprint
@@ -225,56 +213,82 @@ public:
     _entries = entries;
   }
 
-  template <class I> inline void iterate(const I& iterator);
-
-  bool exists(u4 value);
-
   // For reading from/writing to the CDS archive
-  void serialize(SerializeClosure* soc);
+  void serialize(SerializeClosure* soc) NOT_CDS_RETURN;
 
   inline bool empty() {
     return (_entry_count == 0);
   }
 };
 
-template <class T, class N> class CompactHashtable : public SimpleCompactHashtable {
+template <
+  typename K,
+  typename V,
+  V (*DECODE)(address base_address, u4 offset),
+  bool (*EQUALS)(V value, K key, int len)
+  >
+class CompactHashtable : public SimpleCompactHashtable {
   friend class VMStructs;
 
-public:
-  enum CompactHashtableType {
-    _symbol_table = 0,
-    _string_table = 1
-  };
+  V decode(u4 offset) const {
+    return DECODE(_base_address, offset);
+  }
 
-private:
-  u4 _type;
-
-  inline Symbol* decode_entry(CompactHashtable<Symbol*, char>* const t,
-                              u4 offset, const char* name, int len);
-
-  inline oop decode_entry(CompactHashtable<oop, char>* const t,
-                          u4 offset, const char* name, int len);
 public:
   CompactHashtable() : SimpleCompactHashtable() {}
 
-  void set_type(CompactHashtableType type) {
-    _type = (u4)type;
+  // Lookup a value V from the compact table using key K
+  inline V lookup(K key, unsigned int hash, int len) const {
+    if (_entry_count > 0) {
+      int index = hash % _bucket_count;
+      u4 bucket_info = _buckets[index];
+      u4 bucket_offset = BUCKET_OFFSET(bucket_info);
+      int bucket_type = BUCKET_TYPE(bucket_info);
+      u4* entry = _entries + bucket_offset;
+
+      if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
+        V value = decode(entry[0]);
+        if (EQUALS(value, key, len)) {
+          return value;
+        }
+      } else {
+        // This is a regular bucket, which has more than one
+        // entries. Each entry is a pair of entry (hash, offset).
+        // Seek until the end of the bucket.
+        u4* entry_max = _entries + BUCKET_OFFSET(_buckets[index + 1]);
+        while (entry < entry_max) {
+          unsigned int h = (unsigned int)(entry[0]);
+          if (h == hash) {
+            V value = decode(entry[1]);
+            if (EQUALS(value, key, len)) {
+              return value;
+            }
+          }
+          entry += 2;
+        }
+      }
+    }
+    return NULL;
   }
 
-  // Lookup an entry from the compact table
-  inline T lookup(const N* name, unsigned int hash, int len);
+  template <class ITER>
+  inline void iterate(ITER* iter) const {
+    for (u4 i = 0; i < _bucket_count; i++) {
+      u4 bucket_info = _buckets[i];
+      u4 bucket_offset = BUCKET_OFFSET(bucket_info);
+      int bucket_type = BUCKET_TYPE(bucket_info);
+      u4* entry = _entries + bucket_offset;
 
-  // iterate over symbols
-  void symbols_do(SymbolClosure *cl);
-
-  // iterate over strings
-  void oops_do(OopClosure* f);
-
-  // For reading from/writing to the CDS archive
-  void serialize(SerializeClosure* soc);
-
-  uintx base_address() {
-    return (uintx) _base_address;
+      if (bucket_type == VALUE_ONLY_BUCKET_TYPE) {
+        iter->do_value(decode(entry[0]));
+      } else {
+        u4*entry_max = _entries + BUCKET_OFFSET(_buckets[i + 1]);
+        while (entry < entry_max) {
+          iter->do_value(decode(entry[1]));
+          entry += 2;
+        }
+      }
+    }
   }
 };
 

@@ -91,6 +91,7 @@ public class unwatch002 extends JdbTest {
     static final String DEBUGGEE_CLASS2    = DEBUGGEE_CLASS + "$CheckedFields";
     static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
     static final String LAST_BREAK         = DEBUGGEE_CLASS + ".breakHere";
+    static final String expectedPrompt     = "main[1]";
 
     static String[] checkedFields  = { "FS1" };
     static String[] checkedFields2 = { "FT1", "FV1" };
@@ -113,7 +114,7 @@ public class unwatch002 extends JdbTest {
 
 //        jdb.contToExit((checkedFields.length *2)  + (checkedFields2.length *2) + 2);
         for (int i = 0; i < (checkedFields.length *2 + checkedFields2.length*2 + 2); i++) {
-            reply = jdb.receiveReplyFor(JdbCommand.cont);
+            reply = jdb.receiveReplyForWithMessageWait(JdbCommand.cont, expectedPrompt);
         }
 
         unwatchFields (DEBUGGEE_CLASS, checkedFields);

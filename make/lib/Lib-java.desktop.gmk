@@ -66,6 +66,8 @@ ifneq ($(OPENJDK_TARGET_OS), aix)
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBJSOUND_CFLAGS), \
       CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
+      DISABLED_WARNINGS_gcc := undef, \
+      DISABLED_WARNINGS_clang := undef, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS_unix := -ljava -ljvm, \
@@ -92,7 +94,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB), \
       DISABLED_WARNINGS_clang := objc-method-access objc-root-class \
-          deprecated-declarations, \
+          deprecated-declarations format-nonliteral, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := \

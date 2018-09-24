@@ -25,6 +25,11 @@
 
 package java.lang;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+
 /**
  * Signals that an unexpected exception has occurred in a static initializer.
  * An <code>ExceptionInInitializerError</code> is thrown to indicate that an
@@ -48,23 +53,13 @@ public class ExceptionInInitializerError extends LinkageError {
     private static final long serialVersionUID = 1521711792217232256L;
 
     /**
-     * This field holds the exception if the
-     * ExceptionInInitializerError(Throwable thrown) constructor was
-     * used to instantiate the object
-     *
-     * @serial
-     *
-     */
-    private Throwable exception;
-
-    /**
      * Constructs an <code>ExceptionInInitializerError</code> with
      * <code>null</code> as its detail message string and with no saved
      * throwable object.
      * A detail message is a String that describes this particular exception.
      */
     public ExceptionInInitializerError() {
-        initCause(null);  // Disallow subsequent initCause
+        initCause(null); // Disallow subsequent initCause
     }
 
     /**
@@ -76,23 +71,20 @@ public class ExceptionInInitializerError extends LinkageError {
      * @param thrown The exception thrown
      */
     public ExceptionInInitializerError(Throwable thrown) {
-        initCause(null);  // Disallow subsequent initCause
-        this.exception = thrown;
+        super(null, thrown); // Disallow subsequent initCause
     }
 
     /**
-     * Constructs an ExceptionInInitializerError with the specified detail
+     * Constructs an {@code ExceptionInInitializerError} with the specified detail
      * message string.  A detail message is a String that describes this
      * particular exception. The detail message string is saved for later
      * retrieval by the {@link Throwable#getMessage()} method. There is no
      * saved throwable object.
      *
-     *
      * @param s the detail message
      */
     public ExceptionInInitializerError(String s) {
-        super(s);
-        initCause(null);  // Disallow subsequent initCause
+        super(s, null);  // Disallow subsequent initCause
     }
 
     /**
@@ -109,18 +101,43 @@ public class ExceptionInInitializerError extends LinkageError {
      *         throwable object.
      */
     public Throwable getException() {
-        return exception;
+        return super.getCause();
     }
 
     /**
-     * Returns the cause of this error (the exception that occurred
-     * during a static initialization that caused this error to be created).
+     * Serializable fields for ExceptionInInitializerError.
      *
-     * @return  the cause of this error or <code>null</code> if the
-     *          cause is nonexistent or unknown.
-     * @since   1.4
+     * @serialField exception Throwable
      */
-    public Throwable getCause() {
-        return exception;
+    private static final ObjectStreamField[] serialPersistentFields = {
+        new ObjectStreamField("exception", Throwable.class)
+    };
+
+    /*
+     * Reconstitutes the ExceptionInInitializerError instance from a stream
+     * and initialize the cause properly when deserializing from an older
+     * version.
+     *
+     * The getException and getCause method returns the private "exception"
+     * field in the older implementation and ExceptionInInitializerError::cause
+     * was set to null.
+     */
+    private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField fields = s.readFields();
+        Throwable exception = (Throwable) fields.get("exception", null);
+        if (exception != null) {
+            setCause(exception);
+        }
     }
+
+    /*
+     * To maintain compatibility with older implementation, write a serial
+     * "exception" field with the cause as the value.
+     */
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        ObjectOutputStream.PutField fields = out.putFields();
+        fields.put("exception", super.getCause());
+        out.writeFields();
+    }
+
 }

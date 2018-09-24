@@ -90,7 +90,6 @@ void C1_MacroAssembler::try_allocate(Register obj, Register obj_end, Register tm
     tlab_allocate(obj, obj_end, tmp1, size_expression, slow_case);
   } else {
     eden_allocate(obj, obj_end, tmp1, tmp2, size_expression, slow_case);
-    incr_allocated_bytes(size_expression, tmp1);
   }
 }
 

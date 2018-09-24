@@ -57,11 +57,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Group;
 public class PackageIndexWriter extends AbstractPackageIndexWriter {
 
     /**
-     * HTML tree for main tag.
-     */
-    private final HtmlTree htmlTree = HtmlTree.MAIN();
-
-    /**
      * Construct the PackageIndexWriter. Also constructs the grouping
      * information as provided on the command line by "-group" option. Stores
      * the order of groups specified by the user.
@@ -90,18 +85,19 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * Depending upon the grouping information and their titles, add
      * separate table indices for each package group.
      *
-     * @param body the documentation tree to which the index will be added
+     * @param header the documentation tree to which the navigational links will be added
+     * @param main the documentation tree to which the packages list will be added
      */
     @Override
-    protected void addIndex(Content body) {
-        addIndexContents(body);
+    protected void addIndex(Content header, Content main) {
+        addIndexContents(header, main);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    protected void addPackagesList(Content body) {
+    protected void addPackagesList(Content main) {
         Map<String, SortedSet<PackageElement>> groupPackageMap
                 = configuration.group.groupPackages(packages);
 
@@ -136,11 +132,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
             }
 
             Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table.toContent());
-            if (configuration.allowTag(HtmlTag.MAIN)) {
-                htmlTree.addContent(div);
-            } else {
-                body.addContent(div);
-            }
+            main.addContent(div);
 
             if (table.needsScript()) {
                 getMainBodyScript().append(table.getScript());
@@ -153,20 +145,16 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
      * summary at the top of the page and generate a link to the description,
      * which is added at the end of this page.
      *
-     * @param body the documentation tree to which the overview header will be added
+     * @param main the documentation tree to which the overview header will be added
      */
     @Override
-    protected void addOverviewHeader(Content body) {
-        addConfigurationTitle(body);
+    protected void addOverviewHeader(Content main) {
+        addConfigurationTitle(main);
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
             HtmlTree div = new HtmlTree(HtmlTag.DIV);
             div.setStyle(HtmlStyle.contentContainer);
             addOverviewComment(div);
-            if (configuration.allowTag(HtmlTag.MAIN)) {
-                htmlTree.addContent(div);
-            } else {
-                body.addContent(div);
-            }
+            main.addContent(div);
         }
     }
 
@@ -184,53 +172,29 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
     }
 
     /**
-     * For HTML 5, add the htmlTree to the body. For HTML 4, do nothing.
-     *
-     * @param body the documentation tree to which the overview will be added
-     */
-    @Override
-    protected void addOverview(Content body) {
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            body.addContent(htmlTree);
-        }
-    }
-
-    /**
      * Adds the top text (from the -top option), the upper
      * navigation bar, and then the title (from the"-title"
      * option), at the top of page.
      *
-     * @param body the documentation tree to which the navigation bar header will be added
+     * @param header the documentation tree to which the navigation bar header will be added
      */
     @Override
-    protected void addNavigationBarHeader(Content body) {
-        Content tree = (configuration.allowTag(HtmlTag.HEADER))
-                ? HtmlTree.HEADER()
-                : body;
-        addTop(tree);
+    protected void addNavigationBarHeader(Content header) {
+        addTop(header);
         navBar.setUserHeader(getUserHeaderFooter(true));
-        tree.addContent(navBar.getContent(true));
-        if (configuration.allowTag(HtmlTag.HEADER)) {
-            body.addContent(tree);
-        }
+        header.addContent(navBar.getContent(true));
     }
 
     /**
      * Adds the lower navigation bar and the bottom text
      * (from the -bottom option) at the bottom of page.
      *
-     * @param body the documentation tree to which the navigation bar footer will be added
+     * @param footer the documentation tree to which the navigation bar footer will be added
      */
     @Override
-    protected void addNavigationBarFooter(Content body) {
-        Content tree = (configuration.allowTag(HtmlTag.FOOTER))
-                ? HtmlTree.FOOTER()
-                : body;
+    protected void addNavigationBarFooter(Content footer) {
         navBar.setUserFooter(getUserHeaderFooter(false));
-        tree.addContent(navBar.getContent(false));
-        addBottom(tree);
-        if (configuration.allowTag(HtmlTag.FOOTER)) {
-            body.addContent(tree);
-        }
+        footer.addContent(navBar.getContent(false));
+        addBottom(footer);
     }
 }

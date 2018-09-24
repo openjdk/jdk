@@ -3383,12 +3383,19 @@ void PhaseIdealLoop::reorg_offsets(IdealLoopTree *loop) {
       if (dom_lca(exit, u_ctrl) != exit) continue;
       // Hit!  Refactor use to use the post-incremented tripcounter.
       // Compute a post-increment tripcounter.
-      Node *opaq = new Opaque2Node( C, cle->incr() );
-      register_new_node(opaq, exit);
+      Node* c = exit;
+      if (cl->is_strip_mined()) {
+        IdealLoopTree* outer_loop = get_loop(cl->outer_loop());
+        if (!outer_loop->is_member(u_loop)) {
+          c = cl->outer_loop_exit();
+        }
+      }
+      Node *opaq = new Opaque2Node(C, cle->incr());
+      register_new_node(opaq, c);
       Node *neg_stride = _igvn.intcon(-cle->stride_con());
       set_ctrl(neg_stride, C->root());
-      Node *post = new AddINode( opaq, neg_stride);
-      register_new_node(post, exit);
+      Node *post = new AddINode(opaq, neg_stride);
+      register_new_node(post, c);
       _igvn.rehash_node_delayed(use);
       for (uint j = 1; j < use->req(); j++) {
         if (use->in(j) == phi)

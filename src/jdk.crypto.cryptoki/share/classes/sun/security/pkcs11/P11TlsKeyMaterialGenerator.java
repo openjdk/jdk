@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import sun.security.internal.interfaces.TlsMasterSecret;
 
 import static sun.security.pkcs11.TemplateManager.*;
 import sun.security.pkcs11.wrapper.*;
+
 import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
 
 /**
@@ -60,6 +61,8 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
     // mechanism id
     private long mechanism;
+
+    private int tlsVersion;
 
     // parameter spec
     @SuppressWarnings("deprecation")
@@ -96,14 +99,14 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
         }
 
         TlsKeyMaterialParameterSpec spec = (TlsKeyMaterialParameterSpec)params;
-        int version = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
+        tlsVersion = (spec.getMajorVersion() << 8) | spec.getMinorVersion();
 
-        if ((version == 0x0300 && !supportSSLv3) || (version < 0x0300) ||
-            (version > 0x0302)) {
+        if ((tlsVersion == 0x0300 && !supportSSLv3) ||
+                (tlsVersion < 0x0300) || (tlsVersion > 0x0303)) {
              throw new InvalidAlgorithmParameterException
                     ("Only" + (supportSSLv3? " SSL 3.0,": "") +
-                     " TLS 1.0, and TLS 1.1 are supported (0x" +
-                     Integer.toHexString(version) + ")");
+                     " TLS 1.0, TLS 1.1 and TLS 1.2 are supported (" +
+                     tlsVersion + ")");
         }
         try {
             p11Key = P11SecretKeyFactory.convertKey
@@ -112,8 +115,11 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             throw new InvalidAlgorithmParameterException("init() failed", e);
         }
         this.spec = spec;
-        this.mechanism = (version == 0x0300)?
-            CKM_SSL3_KEY_AND_MAC_DERIVE : CKM_TLS_KEY_AND_MAC_DERIVE;
+        if (tlsVersion == 0x0300) {
+            mechanism = CKM_SSL3_KEY_AND_MAC_DERIVE;
+        } else if (tlsVersion == 0x0301 || tlsVersion == 0x0302) {
+            mechanism = CKM_TLS_KEY_AND_MAC_DERIVE;
+        }
     }
 
     protected void engineInit(int keysize, SecureRandom random) {
@@ -141,8 +147,18 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
 
         CK_SSL3_RANDOM_DATA random = new CK_SSL3_RANDOM_DATA
                             (spec.getClientRandom(), spec.getServerRandom());
-        CK_SSL3_KEY_MAT_PARAMS params = new CK_SSL3_KEY_MAT_PARAMS
-                            (macBits, keyBits, ivBits, isExportable, random);
+        Object params = null;
+        CK_MECHANISM ckMechanism = null;
+        if (tlsVersion < 0x0303) {
+            params = new CK_SSL3_KEY_MAT_PARAMS
+                    (macBits, keyBits, ivBits, isExportable, random);
+            ckMechanism = new CK_MECHANISM(mechanism, (CK_SSL3_KEY_MAT_PARAMS)params);
+        } else if (tlsVersion == 0x0303) {
+            params = new CK_TLS12_KEY_MAT_PARAMS
+                    (macBits, keyBits, ivBits, isExportable, random,
+                    Functions.getHashMechId(spec.getPRFHashAlg()));
+            ckMechanism = new CK_MECHANISM(mechanism, (CK_TLS12_KEY_MAT_PARAMS)params);
+        }
 
         String cipherAlgorithm = spec.getCipherAlgorithm();
         long keyType = P11SecretKeyFactory.getKeyType(cipherAlgorithm);
@@ -173,10 +189,15 @@ public final class P11TlsKeyMaterialGenerator extends KeyGeneratorSpi {
             attributes = token.getAttributes
                 (O_GENERATE, CKO_SECRET_KEY, keyType, attributes);
             // the returned keyID is a dummy, ignore
-            long keyID = token.p11.C_DeriveKey(session.id(),
-                new CK_MECHANISM(mechanism, params), p11Key.keyID, attributes);
+            token.p11.C_DeriveKey(session.id(),
+                ckMechanism, p11Key.keyID, attributes);
 
-            CK_SSL3_KEY_MAT_OUT out = params.pReturnedKeyMaterial;
+            CK_SSL3_KEY_MAT_OUT out = null;
+            if (params instanceof CK_SSL3_KEY_MAT_PARAMS) {
+                out = ((CK_SSL3_KEY_MAT_PARAMS)params).pReturnedKeyMaterial;
+            } else if (params instanceof CK_TLS12_KEY_MAT_PARAMS) {
+                out = ((CK_TLS12_KEY_MAT_PARAMS)params).pReturnedKeyMaterial;
+            }
             // Note that the MAC keys do not inherit all attributes from the
             // template, but they do inherit the sensitive/extractable/token
             // flags, which is all P11Key cares about.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,11 @@
 
 import java.lang.SuppressWarnings;
 
-import static jdk.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 
-/* @test
+/*
+ * @test
+ * @library /test/lib
  * @summary Tests the different assertions in the Assert class
  */
 public class AssertsTest {

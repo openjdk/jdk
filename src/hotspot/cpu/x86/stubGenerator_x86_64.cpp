@@ -1171,6 +1171,8 @@ class StubGenerator: public StubCodeGenerator {
   // Registers r9 and r10 are used to save rdi and rsi on Windows, which latter
   // are non-volatile.  r9 and r10 should not be used by the caller.
   //
+  DEBUG_ONLY(bool regs_in_thread;)
+
   void setup_arg_regs(int nargs = 3) {
     const Register saved_rdi = r9;
     const Register saved_rsi = r10;
@@ -1191,9 +1193,11 @@ class StubGenerator: public StubCodeGenerator {
     assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
            "unexpected argument registers");
 #endif
+    DEBUG_ONLY(regs_in_thread = false;)
   }
 
   void restore_arg_regs() {
+    assert(!regs_in_thread, "wrong call to restore_arg_regs");
     const Register saved_rdi = r9;
     const Register saved_rsi = r10;
 #ifdef _WIN64
@@ -1202,6 +1206,38 @@ class StubGenerator: public StubCodeGenerator {
 #endif
   }
 
+  // This is used in places where r10 is a scratch register, and can
+  // be adapted if r9 is needed also.
+  void setup_arg_regs_using_thread() {
+    const Register saved_r15 = r9;
+#ifdef _WIN64
+    __ mov(saved_r15, r15);  // r15 is callee saved and needs to be restored
+    __ get_thread(r15_thread);
+    assert(c_rarg0 == rcx && c_rarg1 == rdx && c_rarg2 == r8 && c_rarg3 == r9,
+           "unexpected argument registers");
+    __ movptr(Address(r15_thread, in_bytes(JavaThread::windows_saved_rdi_offset())), rdi);
+    __ movptr(Address(r15_thread, in_bytes(JavaThread::windows_saved_rsi_offset())), rsi);
+
+    __ mov(rdi, rcx); // c_rarg0
+    __ mov(rsi, rdx); // c_rarg1
+    __ mov(rdx, r8);  // c_rarg2
+#else
+    assert(c_rarg0 == rdi && c_rarg1 == rsi && c_rarg2 == rdx && c_rarg3 == rcx,
+           "unexpected argument registers");
+#endif
+    DEBUG_ONLY(regs_in_thread = true;)
+  }
+
+  void restore_arg_regs_using_thread() {
+    assert(regs_in_thread, "wrong call to restore_arg_regs");
+    const Register saved_r15 = r9;
+#ifdef _WIN64
+    __ get_thread(r15_thread);
+    __ movptr(rsi, Address(r15_thread, in_bytes(JavaThread::windows_saved_rsi_offset())));
+    __ movptr(rdi, Address(r15_thread, in_bytes(JavaThread::windows_saved_rdi_offset())));
+    __ mov(r15, saved_r15);  // r15 is callee saved and needs to be restored
+#endif
+  }
 
   // Copy big chunks forward
   //
@@ -1829,8 +1865,8 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    setup_arg_regs(); // from => rdi, to => rsi, count => rdx
-                      // r9 and r10 may be used to save non-volatile registers
+    setup_arg_regs_using_thread(); // from => rdi, to => rsi, count => rdx
+                                   // r9 is used to save r15_thread
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
     if (dest_uninitialized) {
@@ -1870,7 +1906,7 @@ class StubGenerator: public StubCodeGenerator {
 
   __ BIND(L_exit);
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, dword_count);
-    restore_arg_regs();
+    restore_arg_regs_using_thread();
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ vzeroupper();
     __ xorptr(rax, rax); // return 0
@@ -1923,8 +1959,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     array_overlap_test(nooverlap_target, Address::times_4);
-    setup_arg_regs(); // from => rdi, to => rsi, count => rdx
-                      // r9 and r10 may be used to save non-volatile registers
+    setup_arg_regs_using_thread(); // from => rdi, to => rsi, count => rdx
+                                   // r9 is used to save r15_thread
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY;
     if (dest_uninitialized) {
@@ -1963,7 +1999,7 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
       __ jmp(L_exit);
     }
-    restore_arg_regs();
+    restore_arg_regs_using_thread();
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
@@ -1975,7 +2011,7 @@ class StubGenerator: public StubCodeGenerator {
 
   __ BIND(L_exit);
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, dword_count);
-    restore_arg_regs();
+    restore_arg_regs_using_thread();
     inc_counter_np(SharedRuntime::_jint_array_copy_ctr); // Update counter after rscratch1 is free
     __ xorptr(rax, rax); // return 0
     __ vzeroupper();
@@ -2026,8 +2062,8 @@ class StubGenerator: public StubCodeGenerator {
       BLOCK_COMMENT("Entry:");
     }
 
-    setup_arg_regs(); // from => rdi, to => rsi, count => rdx
-                      // r9 and r10 may be used to save non-volatile registers
+    setup_arg_regs_using_thread(); // from => rdi, to => rsi, count => rdx
+                                     // r9 is used to save r15_thread
     // 'from', 'to' and 'qword_count' are now valid
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
@@ -2058,7 +2094,7 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
       __ jmp(L_exit);
     } else {
-      restore_arg_regs();
+      restore_arg_regs_using_thread();
       inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
       __ vzeroupper();
@@ -2071,7 +2107,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_exit);
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, qword_count);
-    restore_arg_regs();
+    restore_arg_regs_using_thread();
     if (is_oop) {
       inc_counter_np(SharedRuntime::_oop_array_copy_ctr); // Update counter after rscratch1 is free
     } else {
@@ -2119,8 +2155,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     array_overlap_test(nooverlap_target, Address::times_8);
-    setup_arg_regs(); // from => rdi, to => rsi, count => rdx
-                      // r9 and r10 may be used to save non-volatile registers
+    setup_arg_regs_using_thread(); // from => rdi, to => rsi, count => rdx
+                                   // r9 is used to save r15_thread
     // 'from', 'to' and 'qword_count' are now valid
 
     DecoratorSet decorators = IN_HEAP | IS_ARRAY | ARRAYCOPY_DISJOINT;
@@ -2147,7 +2183,7 @@ class StubGenerator: public StubCodeGenerator {
     if (is_oop) {
       __ jmp(L_exit);
     } else {
-      restore_arg_regs();
+      restore_arg_regs_using_thread();
       inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); // Update counter after rscratch1 is free
       __ xorptr(rax, rax); // return 0
       __ vzeroupper();
@@ -2160,7 +2196,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ BIND(L_exit);
     bs->arraycopy_epilogue(_masm, decorators, type, from, to, qword_count);
-    restore_arg_regs();
+    restore_arg_regs_using_thread();
     if (is_oop) {
       inc_counter_np(SharedRuntime::_oop_array_copy_ctr); // Update counter after rscratch1 is free
     } else {
@@ -2276,11 +2312,22 @@ class StubGenerator: public StubCodeGenerator {
     enum {
       saved_r13_offset,
       saved_r14_offset,
+      saved_r10_offset,
       saved_rbp_offset
     };
     __ subptr(rsp, saved_rbp_offset * wordSize);
     __ movptr(Address(rsp, saved_r13_offset * wordSize), r13);
     __ movptr(Address(rsp, saved_r14_offset * wordSize), r14);
+    __ movptr(Address(rsp, saved_r10_offset * wordSize), r10);
+
+#ifdef ASSERT
+      Label L2;
+      __ get_thread(r14);
+      __ cmpptr(r15_thread, r14);
+      __ jcc(Assembler::equal, L2);
+      __ stop("StubRoutines::call_stub: r15_thread is modified by call");
+      __ bind(L2);
+#endif // ASSERT
 
     // check that int operands are properly extended to size_t
     assert_clean_int(length, rax);
@@ -2372,6 +2419,7 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_done);
     __ movptr(r13, Address(rsp, saved_r13_offset * wordSize));
     __ movptr(r14, Address(rsp, saved_r14_offset * wordSize));
+    __ movptr(r10, Address(rsp, saved_r10_offset * wordSize));
     restore_arg_regs();
     inc_counter_np(SharedRuntime::_checkcast_array_copy_ctr); // Update counter after rscratch1 is free
     __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -5197,9 +5245,9 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-       setup_arg_regs(4); // x => rdi, len => rsi, z => rdx
-                          // zlen => rcx
-                          // r9 and r10 may be used to save non-volatile registers
+    setup_arg_regs(4); // x => rdi, len => rsi, z => rdx
+                       // zlen => rcx
+                       // r9 and r10 may be used to save non-volatile registers
     __ movptr(r8, rdx);
     __ square_to_len(x, len, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, rdx, rax);
 

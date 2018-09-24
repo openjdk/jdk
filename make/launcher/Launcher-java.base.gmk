@@ -38,13 +38,10 @@ JAVA_RC_FLAGS += -I$(TOPDIR)/src/java.base/windows/native/launcher/icons
 $(eval $(call SetupBuildLauncher, java, \
     CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
     LDFLAGS_solaris := -R$(OPENWIN_HOME)/lib$(OPENJDK_TARGET_CPU_ISADIR), \
-    LIBS_windows := user32.lib comctl32.lib, \
     EXTRA_RC_FLAGS := $(JAVA_RC_FLAGS), \
     VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs, \
     OPTIMIZATION := HIGH, \
-    WINDOWS_STATIC_LINK := true, \
-    NO_JAVA_MS := true, \
 ))
 
 $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX): $(BUILD_LAUNCHER_java)
@@ -57,11 +54,8 @@ TARGETS += $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX)
 ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupBuildLauncher, javaw, \
       CFLAGS := -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
-      LIBS_windows := user32.lib comctl32.lib, \
       EXTRA_RC_FLAGS := $(JAVA_RC_FLAGS), \
       VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
-      WINDOWS_STATIC_LINK := true, \
-      NO_JAVA_MS := true, \
   ))
 endif
 

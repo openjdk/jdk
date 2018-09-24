@@ -25,9 +25,7 @@
 #include <time.h>
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 static jfieldID objFieldId = NULL;
 
@@ -73,6 +71,4 @@ JNIEXPORT void JNICALL Java_nsk_share_gc_lock_jniref_JNIGlobalRefLocker_critical
         env->SetObjectField(o, objFieldId, obj);
 }
 
-#ifdef __cplusplus
 }
-#endif

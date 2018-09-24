@@ -30,9 +30,7 @@
 #include "JVMTITools.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 #define FILE_NAME "nsk/jvmti/scenarios/hotswap/HS203/hs203t004/MyThread"
 #define CLASS_NAME "Lnsk/jvmti/scenarios/hotswap/HS203/hs203t004/MyThread;"
 #define METHOD_NAME "doTask2"
@@ -257,6 +255,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t004_hs203t004_resumeThread(JNIEnv *
     return retvalue;
 }
 
-#ifdef __cplusplus
 }
-#endif

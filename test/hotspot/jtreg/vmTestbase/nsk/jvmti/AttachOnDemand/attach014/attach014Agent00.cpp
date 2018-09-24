@@ -28,9 +28,7 @@
 #include <aod.h>
 #include <jvmti_aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define LOADED_CLASS_NAME "Lnsk/jvmti/AttachOnDemand/attach014/ClassToLoad;"
 
@@ -122,6 +120,4 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -1326,7 +1326,9 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCmp(arg, "-cp") == 0) {
             REPORT_ERROR (has_arg_any_len, ARG_ERROR1, arg);
             SetClassPath(value);
-            mode = LM_CLASS;
+            if (mode != LM_SOURCE) {
+                mode = LM_CLASS;
+            }
         } else if (JLI_StrCmp(arg, "--list-modules") == 0) {
             listModules = JNI_TRUE;
         } else if (JLI_StrCmp(arg, "--show-resolved-modules") == 0) {

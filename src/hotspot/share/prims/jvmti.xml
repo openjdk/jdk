@@ -24,7 +24,7 @@
 -->
 
 <!DOCTYPE specification [
-   <!ELEMENT specification (title, intro*, functionsection, errorsection,
+   <!ELEMENT specification (title, copyright, intro*, functionsection, errorsection,
                             eventsection, datasection, issuessection, changehistory)>
    <!ATTLIST specification label CDATA #REQUIRED
                            majorversion CDATA #REQUIRED
@@ -33,6 +33,8 @@
 
    <!ELEMENT title (#PCDATA|jvmti|tm)*>
    <!ATTLIST title subtitle CDATA #REQUIRED>
+
+   <!ELEMENT copyright ANY>
 
    <!ELEMENT intro ANY>
    <!ATTLIST intro id CDATA #IMPLIED
@@ -364,6 +366,10 @@
   <title subtitle="Version">
     <tm>JVM</tm> Tool Interface
   </title>
+
+  <copyright>
+    Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+  </copyright>
 
   <intro id="whatIs" label="What is the JVM Tool Interface?">
     The <tm>JVM</tm> Tool Interface (<jvmti/>)

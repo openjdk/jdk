@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -112,11 +112,23 @@ public class CK_MECHANISM {
         init(mechanism, params);
     }
 
+    public CK_MECHANISM(long mechanism, CK_TLS12_MASTER_KEY_DERIVE_PARAMS params) {
+        init(mechanism, params);
+    }
+
     public CK_MECHANISM(long mechanism, CK_SSL3_KEY_MAT_PARAMS params) {
         init(mechanism, params);
     }
 
+    public CK_MECHANISM(long mechanism, CK_TLS12_KEY_MAT_PARAMS params) {
+        init(mechanism, params);
+    }
+
     public CK_MECHANISM(long mechanism, CK_TLS_PRF_PARAMS params) {
+        init(mechanism, params);
+    }
+
+    public CK_MECHANISM(long mechanism, CK_TLS_MAC_PARAMS params) {
         init(mechanism, params);
     }
 

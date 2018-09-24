@@ -28,9 +28,7 @@
 #include <aod.h>
 #include <jvmti_aod.h>
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define OBJECTS_FOR_ALLOCATION_TEST_CLASS_NAME "Lnsk/jvmti/AttachOnDemand/attach022/ClassForAllocationEventsTest;"
 
@@ -232,6 +230,4 @@ Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved)
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

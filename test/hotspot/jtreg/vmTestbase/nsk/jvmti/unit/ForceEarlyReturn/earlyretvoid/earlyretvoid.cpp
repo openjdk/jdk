@@ -27,21 +27,8 @@
 #include "agent_common.h"
 #include "JVMTITools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
-#ifndef JNI_ENV_ARG
-
-#ifdef __cplusplus
-#define JNI_ENV_ARG(x, y) y
-#define JNI_ENV_PTR(x) x
-#else
-#define JNI_ENV_ARG(x,y) x, y
-#define JNI_ENV_PTR(x) (*x)
-#endif
-
-#endif
 
 #define PASSED 0
 #define STATUS_FAILED 2
@@ -260,8 +247,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         printdump = JNI_TRUE;
     }
 
-    res = JNI_ENV_PTR(jvm)->GetEnv(JNI_ENV_ARG(jvm, (void **) &jvmti),
-        JVMTI_VERSION_1_1);
+    res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
     if (res != JNI_OK || jvmti == NULL) {
         printf("Wrong error code from a valid call to GetEnv!\n");
         return JNI_ERR;
@@ -325,15 +311,13 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretvoid_getReady(
         return;
     }
 
-    midRun = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-         "run", "()V");
+    midRun = env->GetMethodID(cls, "run", "()V");
     if (midRun == NULL) {
         printf("Cannot find Method ID for method run\n");
         RETURN_FAILED;
     }
 
-    midCheckPoint = JNI_ENV_PTR(env)->GetMethodID(JNI_ENV_ARG(env, cls),
-         "checkPoint", "()V");
+    midCheckPoint = env->GetMethodID(cls, "checkPoint", "()V");
     if (midCheckPoint == NULL) {
         printf("Cannot find Method ID for method checkPoint\n");
         RETURN_FAILED;
@@ -369,6 +353,4 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretvoid_check(JNIEnv *env, jclass cls)
     return errCode;
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -381,8 +381,6 @@ void G1ConcurrentMarkThread::run_service() {
       if (!_cm->has_aborted()) {
         G1ConcPhase p(G1ConcurrentPhase::CLEANUP_FOR_NEXT_MARK, this);
         _cm->cleanup_for_next_mark();
-      } else {
-        assert(!G1VerifyBitmaps || _cm->next_mark_bitmap_is_clear(), "Next mark bitmap must be clear");
       }
     }
 

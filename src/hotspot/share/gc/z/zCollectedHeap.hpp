@@ -56,10 +56,6 @@ private:
 public:
   static ZCollectedHeap* heap();
 
-  using CollectedHeap::ensure_parsability;
-  using CollectedHeap::accumulate_statistics_all_tlabs;
-  using CollectedHeap::resize_all_tlabs;
-
   ZCollectedHeap(ZCollectorPolicy* policy);
   virtual Name kind() const;
   virtual const char* name() const;
@@ -78,6 +74,8 @@ public:
   virtual bool is_scavengable(oop obj);
   virtual bool is_in(const void* p) const;
   virtual bool is_in_closed_subset(const void* p) const;
+
+  virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
 
   virtual HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded);
   virtual MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,

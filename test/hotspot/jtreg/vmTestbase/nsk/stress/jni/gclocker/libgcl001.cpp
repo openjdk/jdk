@@ -24,9 +24,7 @@
 #include <stdlib.h>
 #include "jnihelper.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 // compare most java primitive value types
 #define COMP(type) \
@@ -203,6 +201,4 @@ JNIEXPORT jint JNICALL Java_nsk_stress_jni_gclocker_JNIWorker_NativeCall___3DLja
     BODY(jdouble)
 }
 
-#ifdef __cplusplus
 }
-#endif

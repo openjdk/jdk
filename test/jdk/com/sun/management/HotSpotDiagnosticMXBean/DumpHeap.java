@@ -21,8 +21,8 @@
  * questions.
  */
 
-import static jdk.testlibrary.Asserts.assertTrue;
-import static jdk.testlibrary.Asserts.fail;
+import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.fail;
 
 import java.io.File;
 import java.lang.management.*;
@@ -37,9 +37,7 @@ import com.sun.management.HotSpotDiagnosticMXBean;
  * @test
  * @bug 6455258
  * @summary Sanity test for com.sun.management.HotSpotDiagnosticMXBean.dumpHeap method
- * @library /lib/testlibrary
  * @library /test/lib
- * @build jdk.testlibrary.*
  * @build jdk.test.lib.hprof.*
  * @build jdk.test.lib.hprof.model.*
  * @build jdk.test.lib.hprof.parser.*

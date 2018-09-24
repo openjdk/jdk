@@ -40,6 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class EchoHandler implements HttpHandler {
+    static final Path CWD = Paths.get(".");
     public EchoHandler() {}
 
     @Override
@@ -53,7 +54,7 @@ public class EchoHandler implements HttpHandler {
             map1.add("X-Hello", "world");
             map1.add("X-Bye", "universe");
             String fixedrequest = map.getFirst("XFixed");
-            File outfile = File.createTempFile("foo", "bar");
+            File outfile = Files.createTempFile(CWD, "foo", "bar").toFile();
             FileOutputStream fos = new FileOutputStream(outfile);
             int count = (int) is.transferTo(fos);
             is.close();

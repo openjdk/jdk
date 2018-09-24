@@ -27,9 +27,7 @@
 #include <stdio.h>
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define FIND_CLASS(_class, _className)\
     if (!NSK_JNI_VERIFY(env, (_class = \
@@ -526,6 +524,4 @@ extern "C" {
         return threadState;
     }
 
-#ifdef __cplusplus
 }
-#endif

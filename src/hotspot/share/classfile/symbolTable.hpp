@@ -84,7 +84,6 @@ public:
   operator Symbol*()                             { return _temp; }
 };
 
-template <class T, class N> class CompactHashtable;
 class CompactSymbolTableWriter;
 class SerializeClosure;
 
@@ -108,8 +107,6 @@ private:
 
   // The symbol table
   static SymbolTable* _the_table;
-  // Shared symbol table.
-  static CompactHashtable<Symbol*, char> _shared_table;
   static volatile bool _lookup_shared_first;
   static volatile bool _alt_hash;
 

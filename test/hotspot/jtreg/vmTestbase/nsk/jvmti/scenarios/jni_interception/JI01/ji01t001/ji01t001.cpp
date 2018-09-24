@@ -33,9 +33,7 @@
 #include "jvmti_tools.h"
 #include "nsk_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ====================================================================== */
 
@@ -455,6 +453,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

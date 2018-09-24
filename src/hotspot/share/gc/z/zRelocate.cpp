@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zOopClosures.inline.hpp"
 #include "gc/z/zPage.hpp"
@@ -34,9 +36,38 @@
 ZRelocate::ZRelocate(ZWorkers* workers) :
     _workers(workers) {}
 
+class ZRelocateRootsIteratorClosure : public ZRootsIteratorClosure {
+private:
+  static void remap_address(HeapWord** p) {
+    *p = (HeapWord*)ZAddress::good_or_null((uintptr_t)*p);
+  }
+
+public:
+  virtual void do_thread(Thread* thread) {
+    ZRootsIteratorClosure::do_thread(thread);
+
+    // Update thread local address bad mask
+    ZThreadLocalData::set_address_bad_mask(thread, ZAddressBadMask);
+
+    // Remap TLAB
+    if (UseTLAB && thread->is_Java_thread()) {
+      thread->tlab().addresses_do(remap_address);
+    }
+  }
+
+  virtual void do_oop(oop* p) {
+    ZBarrier::relocate_barrier_on_root_oop_field(p);
+  }
+
+  virtual void do_oop(narrowOop* p) {
+    ShouldNotReachHere();
+  }
+};
+
 class ZRelocateRootsTask : public ZTask {
 private:
-  ZRootsIterator _roots;
+  ZRootsIterator                _roots;
+  ZRelocateRootsIteratorClosure _cl;
 
 public:
   ZRelocateRootsTask() :
@@ -46,8 +77,7 @@ public:
   virtual void work() {
     // During relocation we need to visit the JVMTI
     // export weak roots to rehash the JVMTI tag map
-    ZRelocateRootOopClosure cl;
-    _roots.oops_do(&cl, true /* visit_jvmti_weak_export */);
+    _roots.oops_do(&_cl, true /* visit_jvmti_weak_export */);
   }
 };
 

@@ -28,12 +28,12 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
 
-import jdk.test.lib.thread.ProcessThread;
-import static jdk.testlibrary.Asserts.*;
+import static jdk.test.lib.Asserts.*;
 import jdk.test.lib.Utils;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.thread.ProcessThread;
 
 /**
  * The base class for tests of jstatd.

@@ -32,10 +32,9 @@
  * @test JdpOffTest.java
  * @summary Assert that no JDP packets are sent to the default address and port.
  *
- * @library /lib/testlibrary
  * @library /test/lib
  *
- * @build jdk.testlibrary.* ClientConnection JdpTestUtil JdpTestCase JdpOffTestCase DynamicLauncher
+ * @build ClientConnection JdpTestUtil JdpTestCase JdpOffTestCase DynamicLauncher
  * @run main/othervm JdpOffTest
  */
 

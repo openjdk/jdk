@@ -48,7 +48,8 @@ public class TestCheckJDK {
 
     static void checkExecStack(Path file) {
         String filename = file.toString();
-        if (filename.endsWith(".so")) {
+        Path parent = file.getParent();
+        if (parent.endsWith("bin") || filename.endsWith(".so")) {
             if (!WB.checkLibSpecifiesNoexecstack(filename)) {
                 System.out.println("Library does not have the noexecstack bit set: " + filename);
                 testPassed = false;

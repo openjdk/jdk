@@ -336,8 +336,12 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
     CC_OUT_OPTION='-o$(SPACE)'
     # When linking, how to specify the output
     LD_OUT_OPTION='-o$(SPACE)'
-    # When archiving, how to specify the to be create static archive for object files.
-    AR_OUT_OPTION='rcs$(SPACE)'
+    # When archiving, how to specify the destination static archive.
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      AR_OUT_OPTION='-r -cs$(SPACE)'
+    else
+      AR_OUT_OPTION='-rcs$(SPACE)'
+    fi
   fi
   AC_SUBST(CC_OUT_OPTION)
   AC_SUBST(LD_OUT_OPTION)

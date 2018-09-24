@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,47 @@ final class P11TlsPrfGenerator extends KeyGeneratorSpi {
         if (spec == null) {
             throw new IllegalStateException("TlsPrfGenerator must be initialized");
         }
-        byte[] label = P11Util.getBytesUTF8(spec.getLabel());
+
         byte[] seed = spec.getSeed();
+
+        // TLS 1.2
+        if (mechanism == CKM_TLS_MAC) {
+            SecretKey k = null;
+            int ulServerOrClient = 0;
+            if (spec.getLabel().equals("server finished")) {
+                ulServerOrClient = 1;
+            }
+            if (spec.getLabel().equals("client finished")) {
+                ulServerOrClient = 2;
+            }
+
+            if (ulServerOrClient != 0) {
+                // Finished message
+                CK_TLS_MAC_PARAMS params = new CK_TLS_MAC_PARAMS(
+                        Functions.getHashMechId(spec.getPRFHashAlg()),
+                        spec.getOutputLength(), ulServerOrClient);
+                Session session = null;
+                try {
+                    session = token.getOpSession();
+                    token.p11.C_SignInit(session.id(),
+                            new CK_MECHANISM(mechanism, params), p11Key.keyID);
+                    token.p11.C_SignUpdate(session.id(), 0, seed, 0, seed.length);
+                    byte[] out = token.p11.C_SignFinal
+                                        (session.id(), spec.getOutputLength());
+                    k = new SecretKeySpec(out, "TlsPrf");
+                } catch (PKCS11Exception e) {
+                    throw new ProviderException("Could not calculate PRF", e);
+                } finally {
+                    token.releaseSession(session);
+                }
+            } else {
+                throw new ProviderException("Only Finished message authentication code"+
+                                            " generation supported for TLS 1.2.");
+            }
+            return k;
+        }
+
+        byte[] label = P11Util.getBytesUTF8(spec.getLabel());
 
         if (mechanism == CKM_NSS_TLS_PRF_GENERAL) {
             Session session = null;

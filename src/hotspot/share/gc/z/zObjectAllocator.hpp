@@ -72,8 +72,7 @@ public:
   size_t used() const;
   size_t remaining() const;
 
-  void retire_tlabs();
-  void remap_tlabs();
+  void retire_pages();
 };
 
 #endif // SHARE_GC_Z_ZOBJECTALLOCATOR_HPP

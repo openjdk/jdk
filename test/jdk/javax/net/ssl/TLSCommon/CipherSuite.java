@@ -27,6 +27,8 @@ public enum CipherSuite {
             0x1302, Protocol.TLSV1_3, Protocol.TLSV1_3),
     TLS_AES_128_GCM_SHA256(
             0x1301, Protocol.TLSV1_3, Protocol.TLSV1_3),
+    TLS_CHACHA20_POLY1305_SHA256(
+            0x1303, Protocol.TLSV1_3, Protocol.TLSV1_3),
     TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256(
             0xCCAA, Protocol.TLSV1_2, Protocol.TLSV1_2),
     TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256(

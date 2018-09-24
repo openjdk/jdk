@@ -28,9 +28,7 @@
 #include "JVMTITools.h"
 #include "jni_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define DIR_NAME "newclass"
 #define PATH_FORMAT "%s%02d/%s"
@@ -94,6 +92,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS104_hs104t002_hs104t002_redefineClasses(
     }
 }
 
-#ifdef __cplusplus
 }
-#endif

@@ -37,9 +37,7 @@
    frame within FieldAccess/FieldModification callback.
 
 */
-#ifdef __cplusplus
 extern "C" {
-#endif
 #define DIR_NAME "newclass"
 #define PATH_FORMAT "%s%02d/%s"
 
@@ -227,6 +225,4 @@ Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t003_hs203t003_resumeThread(JNIEnv *
     return retvalue;
 }
 
-#ifdef __cplusplus
 }
-#endif

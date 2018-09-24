@@ -25,7 +25,7 @@
 /**
  * @test
  * @requires vm.cds
- * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/appcds
+ * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
  *          jdk.jlink
@@ -39,7 +39,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 
 public class AddReads {
 

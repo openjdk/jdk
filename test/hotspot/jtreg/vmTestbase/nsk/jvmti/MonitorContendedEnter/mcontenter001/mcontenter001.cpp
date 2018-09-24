@@ -27,9 +27,7 @@
 #include "agent_common.h"
 #include "jvmti_tools.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 /* ========================================================================== */
 
@@ -265,6 +263,4 @@ JNIEXPORT jint JNICALL Java_nsk_jvmti_MonitorContendedEnter_mcontenter001_getEve
 
 /* ========================================================================== */
 
-#ifdef __cplusplus
 }
-#endif

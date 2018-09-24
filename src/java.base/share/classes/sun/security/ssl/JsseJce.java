@@ -130,6 +130,11 @@ final class JsseJce {
     static final String CIPHER_AES_GCM = "AES/GCM/NoPadding";
 
     /**
+     * JCE transformation string for ChaCha20-Poly1305
+     */
+    static final String CIPHER_CHACHA20_POLY1305 = "ChaCha20-Poly1305";
+
+    /**
      * JCA identifier string for DSA, i.e. a DSA with SHA-1.
      */
     static final String SIGNATURE_DSA = "DSA";

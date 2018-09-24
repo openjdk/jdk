@@ -21,8 +21,8 @@
  * questions.
  */
 
-import static jdk.testlibrary.Asserts.assertGreaterThan;
-import static jdk.testlibrary.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertGreaterThan;
+import static jdk.test.lib.Asserts.assertTrue;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -38,7 +38,7 @@ import java.util.List;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jdk.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
 /**

@@ -29,9 +29,7 @@
 #include "jvmti_tools.h"
 #include "agent_common.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 #define TEST_OBJECT_TAG 0x8000
 #define EXPECTED_NON_PRIMITIVES_COUNT 1
@@ -313,6 +311,4 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   return JNI_OK;
 }
 
-#ifdef __cplusplus
 }
-#endif

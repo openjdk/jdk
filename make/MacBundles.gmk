@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -65,13 +65,13 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 	$(call LogInfo, Creating link $(patsubst $(OUTPUTDIR)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(LN) -s ../Home/lib/jli/libjli.dylib $@
+	$(LN) -s ../Home/lib/libjli.dylib $@
 
   $(JRE_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib:
 	$(call LogInfo, Creating link $(patsubst $(OUTPUTDIR)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(LN) -s ../Home/lib/jli/libjli.dylib $@
+	$(LN) -s ../Home/lib/libjli.dylib $@
 
   $(eval $(call SetupTextFileProcessing, BUILD_JDK_PLIST, \
       SOURCE_FILES := $(MACOSX_PLIST_SRC)/JDK-Info.plist, \
