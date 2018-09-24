@@ -32,7 +32,7 @@
 #import <Cocoa/Cocoa.h>
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
-@interface NSApplicationAWT : NSApplication <NSUserNotificationCenterDelegate> {
+JNIEXPORT @interface NSApplicationAWT : NSApplication <NSUserNotificationCenterDelegate> {
     NSString *fApplicationName;
     NSWindow *eventTransparentWindow;
     NSTimeInterval dummyEventTimestamp;
@@ -57,5 +57,5 @@
 
 @end
 
-void OSXAPP_SetApplicationDelegate(id <NSApplicationDelegate> delegate);
+JNIEXPORT void OSXAPP_SetApplicationDelegate(id <NSApplicationDelegate> delegate);
 

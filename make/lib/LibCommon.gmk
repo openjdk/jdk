@@ -46,11 +46,9 @@ ifeq ($(TOOLCHAIN_TYPE), gcc)
   LDFLAGS_JDKLIB += -Wl,--exclude-libs,ALL
   EXPORT_ALL_SYMBOLS := -fvisibility=default
 else ifeq ($(TOOLCHAIN_TYPE), clang)
-  ifneq ($(OPENJDK_TARGET_OS), macosx)
-    CFLAGS_JDKLIB += -fvisibility=hidden
-    CXXFLAGS_JDKLIB += -fvisibility=hidden
-    EXPORT_ALL_SYMBOLS := -fvisibility=default
-  endif
+  CFLAGS_JDKLIB += -fvisibility=hidden
+  CXXFLAGS_JDKLIB += -fvisibility=hidden
+  EXPORT_ALL_SYMBOLS := -fvisibility=default
 else ifeq ($(TOOLCHAIN_TYPE), solstudio)
   CFLAGS_JDKLIB += -xldscope=hidden
   CXXFLAGS_JDKLIB += -xldscope=hidden

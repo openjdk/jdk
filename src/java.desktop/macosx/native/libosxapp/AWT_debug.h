@@ -26,9 +26,11 @@
 #ifndef macosx_port_awt_debug_h
 #define macosx_port_awt_debug_h
 
+#include "jni.h"
+
 #import <Cocoa/Cocoa.h>
 
-bool ShouldPrintVerboseDebugging();
+JNIEXPORT bool ShouldPrintVerboseDebugging();
 
 #define kInternalError "java/lang/InternalError"
 
