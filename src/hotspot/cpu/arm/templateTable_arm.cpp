@@ -4885,6 +4885,8 @@ void TemplateTable::monitorenter() {
   // check for NULL object
   __ null_check(Robj, Rtemp);
 
+  __ resolve(IS_NOT_NULL, Robj);
+
   const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
   assert (entry_size % StackAlignmentInBytes == 0, "keep stack alignment");
   Label allocate_monitor, allocated;
@@ -5014,6 +5016,8 @@ void TemplateTable::monitorexit() {
 
   // check for NULL object
   __ null_check(Robj, Rtemp);
+
+  __ resolve(IS_NOT_NULL, Robj);
 
   const int entry_size = (frame::interpreter_frame_monitor_size() * wordSize);
   Label found, throw_exception;

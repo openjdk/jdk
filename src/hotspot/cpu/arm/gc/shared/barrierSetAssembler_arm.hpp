@@ -68,6 +68,10 @@ public:
   );
 
   virtual void barrier_stubs_init() {}
+
+  virtual void resolve(MacroAssembler* masm, DecoratorSet decorators, Register obj) {
+    // Default implementation does not need to do anything.
+  }
 };
 
 #endif // CPU_ARM_GC_SHARED_BARRIERSETASSEMBLER_ARM_HPP

@@ -605,6 +605,7 @@ void TemplateInterpreterGenerator::lock_method() {
 #endif // AARCH64
     __ load_mirror(R0, Rmethod, Rtemp);
     __ bind(done);
+    __ resolve(IS_NOT_NULL, R0);
   }
 
   // add space for monitor & lock

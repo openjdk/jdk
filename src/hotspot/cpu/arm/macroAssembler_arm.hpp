@@ -1056,6 +1056,10 @@ public:
   void access_load_at(BasicType type, DecoratorSet decorators, Address src, Register dst, Register tmp1, Register tmp2, Register tmp3);
   void access_store_at(BasicType type, DecoratorSet decorators, Address obj, Register new_val, Register tmp1, Register tmp2, Register tmp3, bool is_null);
 
+  // Resolves obj for access. Result is placed in the same register.
+  // All other registers are preserved.
+  void resolve(DecoratorSet decorators, Register obj);
+
 #ifdef AARCH64
   void encode_heap_oop(Register dst, Register src);
   void encode_heap_oop(Register r) {
