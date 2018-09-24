@@ -37,6 +37,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBUNPACK, \
     CFLAGS_release := -DPRODUCT, \
     EXTRA_HEADER_DIRS := $(call GetJavaHeaderDir, java.base), \
     DISABLED_WARNINGS_gcc := implicit-fallthrough, \
+    DISABLED_WARNINGS_clang := format-nonliteral, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -map:$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpack.map -debug, \

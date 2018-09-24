@@ -59,6 +59,7 @@ $(eval $(call SetupNativeCompilation, BUILD_LIBFDLIBM, \
     CFLAGS_windows_debug := -DLOGGING, \
     CFLAGS_aix := -qfloat=nomaf, \
     DISABLED_WARNINGS_gcc := sign-compare misleading-indentation array-bounds, \
+    DISABLED_WARNINGS_clang := sign-compare, \
     DISABLED_WARNINGS_microsoft := 4146 4244 4018, \
     ARFLAGS := $(ARFLAGS), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libfdlibm, \
@@ -77,7 +78,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB), \
-    DISABLED_WARNINGS_gcc := implicit-fallthrough, \
+    DISABLED_WARNINGS_gcc := implicit-fallthrough unused-function, \
     DISABLED_WARNINGS_microsoft := 4244 4267, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -105,7 +106,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     EXTRA_HEADER_DIRS := libfdlibm, \
     WARNINGS_AS_ERRORS_xlc := false, \
-    DISABLED_WARNINGS_gcc := unused-result, \
+    DISABLED_WARNINGS_gcc := unused-result unused-function, \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -148,6 +149,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBZ_CFLAGS), \
     CFLAGS_unix := $(BUILD_LIBZIP_MMAP) -UDEBUG, \
+    DISABLED_WARNINGS_gcc := unused-function, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \
@@ -213,6 +215,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     EXTRA_FILES := $(LIBJLI_EXTRA_FILES), \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS), \
+    DISABLED_WARNINGS_gcc := unused-function, \
+    DISABLED_WARNINGS_clang := sometimes-uninitialized format-nonliteral, \
     DISABLED_WARNINGS_solstudio := \
         E_ASM_DISABLES_OPTIMIZATION \
         E_STATEMENT_NOT_REACHED, \

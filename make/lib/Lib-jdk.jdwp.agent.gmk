@@ -53,6 +53,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     NAME := jdwp, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB) -DJDWP_LOGGING, \
+    DISABLED_WARNINGS_gcc := unused-function, \
+    DISABLED_WARNINGS_clang := sometimes-uninitialized format-nonliteral \
+        self-assign, \
     EXTRA_HEADER_DIRS := \
       include \
       libjdwp/export, \

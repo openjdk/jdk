@@ -82,14 +82,24 @@ CFLAGS_VM_VERSION := \
 ################################################################################
 # Disabled warnings
 
-DISABLED_WARNINGS_gcc := extra all
+DISABLED_WARNINGS_gcc := extra parentheses comment unknown-pragmas address \
+    delete-non-virtual-dtor char-subscripts array-bounds int-in-bool-context \
+    ignored-qualifiers  missing-field-initializers implicit-fallthrough \
+    empty-body strict-overflow sequence-point maybe-uninitialized \
+    misleading-indentation
+
 ifeq ($(call check-jvm-feature, zero), true)
-  DISABLED_WARNINGS_gcc += return-type
+  DISABLED_WARNINGS_gcc += return-type switch
 endif
 
-DISABLED_WARNINGS_clang := extra all tautological-compare deprecated-declarations
+DISABLED_WARNINGS_clang := tautological-compare deprecated-declarations \
+    undefined-var-template sometimes-uninitialized unknown-pragmas \
+    delete-non-virtual-dtor missing-braces char-subscripts \
+    ignored-qualifiers missing-field-initializers mismatched-tags
 
-DISABLED_WARNINGS_solstudio :=
+DISABLED_WARNINGS_solstudio := labelnotused hidef w_novirtualdescr inlafteruse \
+    unknownpragma doubunder w_enumnotused w_toomanyenumnotused \
+    wvarhidenmem wunreachable wnoretvalue notemsource
 
 DISABLED_WARNINGS_xlc := 1540-0216 1540-0198 1540-1090 1540-1639 1540-1088 \
     1500-010

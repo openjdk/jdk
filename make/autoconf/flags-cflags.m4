@@ -181,8 +181,12 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
-      WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2"
-      WARNINGS_ENABLE_ADDITIONAL_JVM="-Wpointer-arith -Wsign-compare -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual -Wreorder -Wreturn-type"
+      # Additional warnings that are not activated by -Wall and -Wextra
+      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare \
+          -Wunused-function -Wundef -Wunused-value -Wreturn-type"
+      WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
+      WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
+      WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
       DISABLED_WARNINGS="unused-parameter unused"
 
@@ -205,10 +209,18 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       DISABLE_WARNING_PREFIX="-Wno-"
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
 
-      WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2"
-      WARNINGS_ENABLE_ADDITIONAL_JVM="-Wpointer-arith -Wsign-compare -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual -Wreorder"
+      # Additional warnings that are not activated by -Wall and -Wextra
+      WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wsign-compare -Wreorder \
+          -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
+      WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
       DISABLED_WARNINGS="unused-parameter unused"
+
+      if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+        # missing-method-return-type triggers in JavaNativeFoundation framework
+        DISABLED_WARNINGS="$DISABLED_WARNINGS missing-method-return-type"
+      fi
+
       ;;
 
     xlc)
@@ -571,23 +583,21 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   # CFLAGS WARNINGS STUFF
   # Set JVM_CFLAGS warning handling
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    WARNING_CFLAGS_JDK="$WARNINGS_ENABLE_ALL"
-    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL $WARNINGS_ENABLE_ADDITIONAL_JVM"
+    WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL_CFLAGS"
+    WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXXFLAGS"
+    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_CXXFLAGS"
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    if test "x$OPENJDK_TARGET_OS" = xlinux; then
-      WARNING_CFLAGS_JDK="$WARNINGS_ENABLE_ALL"
-    else
-      WARNING_CFLAGS_JDK="" # currently left empty
-    fi
-    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL $WARNINGS_ENABLE_ADDITIONAL_JVM"
+    WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
 
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL_CFLAGS"
     WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXXFLAGS"
-    WARNING_CFLAGS_JVM="" # currently left empty
+    WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_CXXFLAGS"
+
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     WARNING_CFLAGS="$WARNINGS_ENABLE_ALL"
+
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     WARNING_CFLAGS=""  # currently left empty
   fi

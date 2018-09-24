@@ -74,6 +74,8 @@ ifeq ($(call check-jvm-feature, dtrace), true)
         TOOLCHAIN := $(TOOLCHAIN_BUILD), \
         LDFLAGS := -m64, \
         CFLAGS := -m64 $(JVM_CFLAGS), \
+        DISABLED_WARNINGS_solstudio := hidef w_novirtualdescr unknownpragma \
+            doubunder nokeyworddefine wunreachable, \
         EXTRA_DEPS := $(JVMTI_H), \
         OBJECT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets/objs, \
         OUTPUT_DIR := $(JVM_VARIANT_OUTPUTDIR)/tools/dtrace-gen-offsets, \

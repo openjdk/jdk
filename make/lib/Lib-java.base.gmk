@@ -43,8 +43,9 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     NAME := net, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB), \
-    DISABLED_WARNINGS_gcc := format-nonliteral, \
-    DISABLED_WARNINGS_clang := parentheses-equality constant-logical-operand, \
+    DISABLED_WARNINGS_gcc := format-nonliteral unused-function, \
+    DISABLED_WARNINGS_clang := parentheses-equality constant-logical-operand \
+        format-nonliteral undef, \
     DISABLED_WARNINGS_microsoft := 4244 4047 4133 4996, \
     DISABLED_WARNINGS_solstudio := E_ARG_INCOMPATIBLE_WITH_ARG_L, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -71,6 +72,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     OPTIMIZATION := HIGH, \
     WARNINGS_AS_ERRORS_xlc := false, \
     CFLAGS := $(CFLAGS_JDKLIB), \
+    DISABLED_WARNINGS_gcc := undef, \
+    DISABLED_WARNINGS_clang := undef, \
     EXTRA_HEADER_DIRS := \
         libnio/ch \
         libnio/fs \
@@ -104,7 +107,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
         NAME := osxsecurity, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB), \
-        DISABLED_WARNINGS_clang := deprecated-declarations, \
+        DISABLED_WARNINGS_clang := deprecated-declarations \
+            missing-method-return-type, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
@@ -132,6 +136,7 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
         NAME := jsig, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB) $(LIBJSIG_CFLAGS), \
+        DISABLED_WARNINGS_gcc := undef, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS_linux := $(LIBDL), \

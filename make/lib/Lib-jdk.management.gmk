@@ -48,6 +48,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     NAME := management_ext, \
     OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_EXT_CFLAGS), \
+    DISABLED_WARNINGS_clang := format-nonliteral, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \

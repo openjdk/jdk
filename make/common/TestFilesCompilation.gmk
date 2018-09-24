@@ -97,8 +97,10 @@ define SetupTestFilesCompilationBody
         CFLAGS := $$($1_BASE_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         CXXFLAGS := $$($1_BASE_CXXFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         LDFLAGS := $$($1_LDFLAGS) $$($1_LDFLAGS_$$(name)), \
+        DISABLED_WARNINGS_gcc := format undef unused-function unused-value, \
+        DISABLED_WARNINGS_clang := undef format-nonliteral \
+            missing-field-initializers sometimes-uninitialized, \
         DISABLED_WARNINGS_CXX_solstudio := wvarhidenmem, \
-        DISABLED_WARNINGS_CXX_gcc := format, \
         LIBS := $$($1_LIBS_$$(name)), \
         TOOLCHAIN := $(if $$(filter %.cpp, $$(file)), TOOLCHAIN_LINK_CXX, TOOLCHAIN_DEFAULT), \
         OPTIMIZATION := $$(if $$($1_OPTIMIZATION_$$(name)),$$($1_OPTIMIZATION_$$(name)),LOW), \
