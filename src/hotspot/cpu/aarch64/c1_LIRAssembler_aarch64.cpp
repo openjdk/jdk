@@ -2792,7 +2792,10 @@ void LIR_Assembler::align_backward_branch_target() {
 }
 
 
-void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
+void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
+  // tmp must be unused
+  assert(tmp->is_illegal(), "wasting a register if tmp is allocated");
+
   if (left->is_single_cpu()) {
     assert(dest->is_single_cpu(), "expect single result reg");
     __ negw(dest->as_register(), left->as_register());

@@ -816,7 +816,10 @@ public:
   static bool supports_avx512cd() { return (_features & CPU_AVX512CD) != 0; }
   static bool supports_avx512bw() { return (_features & CPU_AVX512BW) != 0; }
   static bool supports_avx512vl() { return (_features & CPU_AVX512VL) != 0; }
-  static bool supports_avx512vlbw() { return (supports_avx512bw() && supports_avx512vl()); }
+  static bool supports_avx512vlbw() { return (supports_evex() && supports_avx512bw() && supports_avx512vl()); }
+  static bool supports_avx512vldq() { return (supports_evex() && supports_avx512dq() && supports_avx512vl()); }
+  static bool supports_avx512vlbwdq() { return (supports_evex() && supports_avx512vl() &&
+                                                supports_avx512bw() && supports_avx512dq()); }
   static bool supports_avx512novl() { return (supports_evex() && !supports_avx512vl()); }
   static bool supports_avx512nobw() { return (supports_evex() && !supports_avx512bw()); }
   static bool supports_avx256only() { return (supports_avx2() && !supports_evex()); }

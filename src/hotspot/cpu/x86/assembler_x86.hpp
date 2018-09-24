@@ -2097,6 +2097,7 @@ private:
 
   // Andn packed integers
   void pandn(XMMRegister dst, XMMRegister src);
+  void vpandn(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   // Or packed integers
   void por(XMMRegister dst, XMMRegister src);
@@ -2134,6 +2135,7 @@ private:
   void vextracti32x4(Address dst, XMMRegister src, uint8_t imm8);
   void vextracti64x2(XMMRegister dst, XMMRegister src, uint8_t imm8);
   void vextracti64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
+  void vextracti64x4(Address dst, XMMRegister src, uint8_t imm8);
 
   // vextractf forms
   void vextractf128(XMMRegister dst, XMMRegister src, uint8_t imm8);
@@ -2144,28 +2146,24 @@ private:
   void vextractf64x4(XMMRegister dst, XMMRegister src, uint8_t imm8);
   void vextractf64x4(Address dst, XMMRegister src, uint8_t imm8);
 
-  // legacy xmm sourced word/dword replicate
-  void vpbroadcastw(XMMRegister dst, XMMRegister src);
-  void vpbroadcastd(XMMRegister dst, XMMRegister src);
-
   // xmm/mem sourced byte/word/dword/qword replicate
-  void evpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpbroadcastb(XMMRegister dst, Address src, int vector_len);
-  void evpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpbroadcastw(XMMRegister dst, Address src, int vector_len);
-  void evpbroadcastd(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpbroadcastd(XMMRegister dst, Address src, int vector_len);
-  void evpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpbroadcastq(XMMRegister dst, Address src, int vector_len);
+  void vpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpbroadcastb(XMMRegister dst, Address src, int vector_len);
+  void vpbroadcastw(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpbroadcastw(XMMRegister dst, Address src, int vector_len);
+  void vpbroadcastd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpbroadcastd(XMMRegister dst, Address src, int vector_len);
+  void vpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpbroadcastq(XMMRegister dst, Address src, int vector_len);
 
   void evbroadcasti64x2(XMMRegister dst, XMMRegister src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, Address src, int vector_len);
 
   // scalar single/double precision replicate
-  void evpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpbroadcastss(XMMRegister dst, Address src, int vector_len);
-  void evpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
-  void evpbroadcastsd(XMMRegister dst, Address src, int vector_len);
+  void vpbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpbroadcastss(XMMRegister dst, Address src, int vector_len);
+  void vpbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
+  void vpbroadcastsd(XMMRegister dst, Address src, int vector_len);
 
   // gpr sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, Register src, int vector_len);

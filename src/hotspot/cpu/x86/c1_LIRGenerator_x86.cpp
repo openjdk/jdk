@@ -320,7 +320,21 @@ void LIRGenerator::do_NegateOp(NegateOp* x) {
   value.set_destroys_register();
   value.load_item();
   LIR_Opr reg = rlock(x);
-  __ negate(value.result(), reg);
+
+  LIR_Opr tmp = LIR_OprFact::illegalOpr;
+#ifdef _LP64
+  if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
+    if (x->type()->tag() == doubleTag) {
+      tmp = new_register(T_DOUBLE);
+      __ move(LIR_OprFact::doubleConst(-0.0), tmp);
+    }
+    else if (x->type()->tag() == floatTag) {
+      tmp = new_register(T_FLOAT);
+      __ move(LIR_OprFact::floatConst(-0.0), tmp);
+    }
+  }
+#endif
+  __ negate(value.result(), reg, tmp);
 
   set_result(x, round_item(reg));
 }
@@ -748,8 +762,17 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
   LIR_Opr calc_input = value.result();
   LIR_Opr calc_result = rlock_result(x);
 
+  LIR_Opr tmp = LIR_OprFact::illegalOpr;
+#ifdef _LP64
+  if (UseAVX > 2 && (!VM_Version::supports_avx512vl()) &&
+      (x->id() == vmIntrinsics::_dabs)) {
+    tmp = new_register(T_DOUBLE);
+    __ move(LIR_OprFact::doubleConst(-0.0), tmp);
+  }
+#endif
+
   switch(x->id()) {
-    case vmIntrinsics::_dabs:   __ abs  (calc_input, calc_result, LIR_OprFact::illegalOpr); break;
+    case vmIntrinsics::_dabs:   __ abs  (calc_input, calc_result, tmp); break;
     case vmIntrinsics::_dsqrt:  __ sqrt (calc_input, calc_result, LIR_OprFact::illegalOpr); break;
     default:                    ShouldNotReachHere();
   }

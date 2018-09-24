@@ -911,7 +911,6 @@ enum LIR_Code {
       , lir_null_check
       , lir_return
       , lir_leal
-      , lir_neg
       , lir_branch
       , lir_cond_float_branch
       , lir_move
@@ -939,6 +938,7 @@ enum LIR_Code {
       , lir_rem
       , lir_sqrt
       , lir_abs
+      , lir_neg
       , lir_tan
       , lir_log10
       , lir_logic_and
@@ -2075,7 +2075,6 @@ class LIR_List: public CompilationResourceObj {
 
   void branch_destination(Label* lbl)            { append(new LIR_OpLabel(lbl)); }
 
-  void negate(LIR_Opr from, LIR_Opr to)          { append(new LIR_Op1(lir_neg, from, to)); }
   void leal(LIR_Opr from, LIR_Opr result_reg, LIR_PatchCode patch_code = lir_patch_none, CodeEmitInfo* info = NULL) { append(new LIR_Op1(lir_leal, from, result_reg, T_ILLEGAL, patch_code, info)); }
 
   // result is a stack location for old backend and vreg for UseLinearScan
@@ -2159,6 +2158,7 @@ class LIR_List: public CompilationResourceObj {
                LIR_Opr t1, LIR_Opr t2, LIR_Opr result = LIR_OprFact::illegalOpr);
 
   void abs (LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_abs , from, tmp, to)); }
+  void negate(LIR_Opr from, LIR_Opr to, LIR_Opr tmp = LIR_OprFact::illegalOpr)              { append(new LIR_Op2(lir_neg, from, tmp, to)); }
   void sqrt(LIR_Opr from, LIR_Opr to, LIR_Opr tmp)                { append(new LIR_Op2(lir_sqrt, from, tmp, to)); }
   void fmad(LIR_Opr from, LIR_Opr from1, LIR_Opr from2, LIR_Opr to) { append(new LIR_Op3(lir_fmad, from, from1, from2, to)); }
   void fmaf(LIR_Opr from, LIR_Opr from1, LIR_Opr from2, LIR_Opr to) { append(new LIR_Op3(lir_fmaf, from, from1, from2, to)); }
