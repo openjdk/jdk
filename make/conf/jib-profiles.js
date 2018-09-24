@@ -961,9 +961,9 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "zip",
             classifier: "distribution",
             revision: "3.0-SNAPSHOT",
-            environment_name: "JIB_JAR",
+            environment_name: "JIB_HOME",
             environment_value: input.get("jib", "install_path")
-                + "/jib-3.0-SNAPSHOT-distribution/lib/jib-3.0-SNAPSHOT.jar"
+                + "/jib-3.0-SNAPSHOT-distribution"
         },
 
         ant: {

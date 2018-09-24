@@ -531,8 +531,8 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += $$(addprefix -exclude:, $$($1_JTREG_PROBLEM_LIST))
   endif
 
-  ifneq ($$(JIB_JAR), )
-    $1_JTREG_BASIC_OPTIONS += -cpa:$$(JIB_JAR)
+  ifneq ($$(JIB_HOME), )
+    $1_JTREG_BASIC_OPTIONS += -e:JIB_HOME=$$(JIB_HOME)
   endif
 
   $1_JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_GRAAL_DIR=${TEST_IMAGE_DIR}/hotspot/jtreg/graal

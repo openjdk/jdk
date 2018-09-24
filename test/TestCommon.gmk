@@ -453,8 +453,8 @@ JTREG_BASIC_OPTIONS += -e:TEST_IMAGE_GRAAL_DIR=${TEST_IMAGE_DIR}/hotspot/jtreg/g
 
 # Set other vm and test options
 JTREG_TEST_OPTIONS += $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
-ifneq ($(JIB_JAR), )
-  JTREG_BASIC_OPTIONS += -cpa:$(shell $(GETMIXEDPATH) "$(JIB_JAR)")
+ifneq ($(JIB_HOME), )
+  JTREG_BASIC_OPTIONS += -e:JIB_HOME=$(shell $(GETMIXEDPATH) "$(JIB_HOME)")
 endif
 ifeq ($(IGNORE_MARKED_TESTS), true)
   # Option to tell jtreg to not run tests marked with "ignore"
