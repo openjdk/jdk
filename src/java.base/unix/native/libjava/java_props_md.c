@@ -348,8 +348,14 @@ static int ParseLocale(JNIEnv* env, int cat, char ** std_language, char ** std_s
          * file to correctly read UTF-8 files using the default encoding (see
          * 8011194).
          */
-        if (strcmp(p,"US-ASCII") == 0 && getenv("LANG") == NULL &&
-            getenv("LC_ALL") == NULL && getenv("LC_CTYPE") == NULL) {
+        const char* env_lang = getenv("LANG");
+        const char* env_lc_all = getenv("LC_ALL");
+        const char* env_lc_ctype = getenv("LC_CTYPE");
+
+        if (strcmp(p,"US-ASCII") == 0 &&
+            (env_lang == NULL || strlen(env_lang) == 0) &&
+            (env_lc_all == NULL || strlen(env_lc_all) == 0) &&
+            (env_lc_ctype == NULL || strlen(env_lc_ctype) == 0)) {
             *std_encoding = "UTF-8";
         }
 #endif

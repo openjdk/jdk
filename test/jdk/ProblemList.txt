@@ -517,8 +517,6 @@ java/lang/StringCoding/CheckEncodings.sh                        7008363 generic-
 java/lang/instrument/RedefineBigClass.sh                        8065756 generic-all
 java/lang/instrument/RetransformBigClass.sh                     8065756 generic-all
 
-java/lang/instrument/BootClassPath/BootClassPathTest.sh         8072130 macosx-all
-
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 
