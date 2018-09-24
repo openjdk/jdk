@@ -822,6 +822,15 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   return stub_start_addr;
 }
 
+void MacroAssembler::c2bool(Register x) {
+  // implements x == 0 ? 0 : 1
+  // note: must only look at least-significant byte of x
+  //       since C-style booleans are stored in one byte
+  //       only! (was bug)
+  tst(x, 0xff);
+  cset(x, Assembler::NE);
+}
+
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   // address const_ptr = long_constant((jlong)Universe::non_oop_word());

@@ -782,6 +782,9 @@ public:
 
   void resolve_jobject(Register value, Register thread, Register tmp);
 
+  // C 'boolean' to Java boolean: x == 0 ? 0 : 1
+  void c2bool(Register x);
+
   // oop manipulations
   void load_klass(Register dst, Register src);
   void store_klass(Register dst, Register src);
