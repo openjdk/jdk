@@ -361,8 +361,6 @@ public:
 
   void zero_memory(Register start, Register end, Register tmp);
 
-  void incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register tmp);
-
   static bool needs_explicit_null_check(intptr_t offset);
 
   void arm_stack_overflow_check(int frame_size_in_bytes, Register tmp);

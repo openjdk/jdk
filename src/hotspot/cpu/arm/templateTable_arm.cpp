@@ -4502,12 +4502,7 @@ void TemplateTable::_new() {
     const Register Rtlab_end = R2_tmp;
     assert_different_registers(Robj, Rsize, Rklass, Rtlab_top, Rtlab_end);
 
-    __ ldr(Robj, Address(Rthread, JavaThread::tlab_top_offset()));
-    __ ldr(Rtlab_end, Address(Rthread, in_bytes(JavaThread::tlab_end_offset())));
-    __ add(Rtlab_top, Robj, Rsize);
-    __ cmp(Rtlab_top, Rtlab_end);
-    __ b(slow_case, hi);
-    __ str(Rtlab_top, Address(Rthread, JavaThread::tlab_top_offset()));
+    __ tlab_allocate(Robj, Rtlab_top, Rtlab_end, Rsize, slow_case);
     if (ZeroTLAB) {
       // the fields have been already cleared
       __ b(initialize_header);
@@ -4523,34 +4518,7 @@ void TemplateTable::_new() {
       const Register Rheap_end = Rtemp;
       assert_different_registers(Robj, Rklass, Rsize, Rheap_top_addr, Rheap_top, Rheap_end, LR);
 
-      // heap_end now (re)loaded in the loop since also used as a scratch register in the CAS
-      __ ldr_literal(Rheap_top_addr, Lheap_top_addr);
-
-      Label retry;
-      __ bind(retry);
-
-#ifdef AARCH64
-      __ ldxr(Robj, Rheap_top_addr);
-#else
-      __ ldr(Robj, Address(Rheap_top_addr));
-#endif // AARCH64
-
-      __ ldr(Rheap_end, Address(Rheap_top_addr, (intptr_t)Universe::heap()->end_addr()-(intptr_t)Universe::heap()->top_addr()));
-      __ add(Rheap_top, Robj, Rsize);
-      __ cmp(Rheap_top, Rheap_end);
-      __ b(slow_case, hi);
-
-      // Update heap top atomically.
-      // If someone beats us on the allocation, try again, otherwise continue.
-#ifdef AARCH64
-      __ stxr(Rtemp2, Rheap_top, Rheap_top_addr);
-      __ cbnz_w(Rtemp2, retry);
-#else
-      __ atomic_cas_bool(Robj, Rheap_top, Rheap_top_addr, 0, Rheap_end/*scratched*/);
-      __ b(retry, ne);
-#endif // AARCH64
-
-      __ incr_allocated_bytes(Rsize, Rtemp);
+      __ eden_allocate(Robj, Rheap_top, Rheap_top_addr, Rheap_end, Rsize, slow_case);
     }
   }
 

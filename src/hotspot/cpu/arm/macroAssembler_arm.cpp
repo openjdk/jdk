@@ -1256,68 +1256,15 @@ void MacroAssembler::null_check(Register reg, Register tmp, int offset) {
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
 void MacroAssembler::eden_allocate(Register obj, Register obj_end, Register tmp1, Register tmp2,
                                  RegisterOrConstant size_expression, Label& slow_case) {
-  if (!Universe::heap()->supports_inline_contig_alloc()) {
-    b(slow_case);
-    return;
-  }
-
-  CollectedHeap* ch = Universe::heap();
-
-  const Register top_addr = tmp1;
-  const Register heap_end = tmp2;
-
-  if (size_expression.is_register()) {
-    assert_different_registers(obj, obj_end, top_addr, heap_end, size_expression.as_register());
-  } else {
-    assert_different_registers(obj, obj_end, top_addr, heap_end);
-  }
-
-  bool load_const = AARCH64_ONLY(false) NOT_AARCH64(VM_Version::supports_movw() ); // TODO-AARCH64 check performance
-  if (load_const) {
-    mov_address(top_addr, (address)Universe::heap()->top_addr(), symbolic_Relocation::eden_top_reference);
-  } else {
-    ldr(top_addr, Address(Rthread, JavaThread::heap_top_addr_offset()));
-  }
-  // Calculate new heap_top by adding the size of the object
-  Label retry;
-  bind(retry);
-
-#ifdef AARCH64
-  ldxr(obj, top_addr);
-#else
-  ldr(obj, Address(top_addr));
-#endif // AARCH64
-
-  ldr(heap_end, Address(top_addr, (intptr_t)ch->end_addr() - (intptr_t)ch->top_addr()));
-  add_rc(obj_end, obj, size_expression);
-  // Check if obj_end wrapped around, i.e., obj_end < obj. If yes, jump to the slow case.
-  cmp(obj_end, obj);
-  b(slow_case, lo);
-  // Update heap_top if allocation succeeded
-  cmp(obj_end, heap_end);
-  b(slow_case, hi);
-
-#ifdef AARCH64
-  stxr(heap_end/*scratched*/, obj_end, top_addr);
-  cbnz_w(heap_end, retry);
-#else
-  atomic_cas_bool(obj, obj_end, top_addr, 0, heap_end/*scratched*/);
-  b(retry, ne);
-#endif // AARCH64
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->eden_allocate(this, obj, obj_end, tmp1, tmp2, size_expression, slow_case);
 }
 
 // Puts address of allocated object into register `obj` and end of allocated object into register `obj_end`.
 void MacroAssembler::tlab_allocate(Register obj, Register obj_end, Register tmp1,
                                  RegisterOrConstant size_expression, Label& slow_case) {
-  const Register tlab_end = tmp1;
-  assert_different_registers(obj, obj_end, tlab_end);
-
-  ldr(obj, Address(Rthread, JavaThread::tlab_top_offset()));
-  ldr(tlab_end, Address(Rthread, JavaThread::tlab_end_offset()));
-  add_rc(obj_end, obj, size_expression);
-  cmp(obj_end, tlab_end);
-  b(slow_case, hi);
-  str(obj_end, Address(Rthread, JavaThread::tlab_top_offset()));
+  BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->tlab_allocate(this, obj, obj_end, tmp1, size_expression, slow_case);
 }
 
 // Fills memory regions [start..end] with zeroes. Clobbers `start` and `tmp` registers.
@@ -1360,52 +1307,6 @@ void MacroAssembler::zero_memory(Register start, Register end, Register tmp) {
   cmp(ptr, end);
   str(tmp, Address(ptr, wordSize, post_indexed), lo);
   b(loop, lo);
-#endif // AARCH64
-}
-
-void MacroAssembler::incr_allocated_bytes(RegisterOrConstant size_in_bytes, Register tmp) {
-#ifdef AARCH64
-  ldr(tmp, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-  add_rc(tmp, tmp, size_in_bytes);
-  str(tmp, Address(Rthread, in_bytes(JavaThread::allocated_bytes_offset())));
-#else
-  // Bump total bytes allocated by this thread
-  Label done;
-
-  // Borrow the Rthread for alloc counter
-  Register Ralloc = Rthread;
-  add(Ralloc, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
-  ldr(tmp, Address(Ralloc));
-  adds(tmp, tmp, size_in_bytes);
-  str(tmp, Address(Ralloc), cc);
-  b(done, cc);
-
-  // Increment the high word and store single-copy atomically (that is an unlikely scenario on typical embedded systems as it means >4GB has been allocated)
-  // To do so ldrd/strd instructions used which require an even-odd pair of registers. Such a request could be difficult to satisfy by
-  // allocating those registers on a higher level, therefore the routine is ready to allocate a pair itself.
-  Register low, high;
-  // Select ether R0/R1 or R2/R3
-
-  if (size_in_bytes.is_register() && (size_in_bytes.as_register() == R0 || size_in_bytes.as_register() == R1)) {
-    low = R2;
-    high  = R3;
-  } else {
-    low = R0;
-    high  = R1;
-  }
-  push(RegisterSet(low, high));
-
-  ldrd(low, Address(Ralloc));
-  adds(low, low, size_in_bytes);
-  adc(high, high, 0);
-  strd(low, Address(Ralloc));
-
-  pop(RegisterSet(low, high));
-
-  bind(done);
-
-  // Unborrow the Rthread
-  sub(Rthread, Ralloc, in_bytes(JavaThread::allocated_bytes_offset()));
 #endif // AARCH64
 }
 

@@ -569,7 +569,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
           __ ldr_u32(obj_size, Address(klass, Klass::layout_helper_offset()));
           __ eden_allocate(result, obj_end, tmp1, tmp2, obj_size, slow_case);        // initializes result and obj_end
-          __ incr_allocated_bytes(obj_size, tmp2);
           __ initialize_object(result, obj_end, klass, noreg /* len */, tmp1, tmp2,
                                instanceOopDesc::header_size() * HeapWordSize, -1,
                                /* is_tlab_allocated */ false);
@@ -658,7 +657,6 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
           // eden_allocate destroys tmp2, so reload header_size after allocation
           // eden_allocate initializes result and obj_end
           __ eden_allocate(result, obj_end, tmp1, tmp2, arr_size, slow_case);
-          __ incr_allocated_bytes(arr_size, tmp2);
           __ ldrb(tmp2, Address(klass, in_bytes(Klass::layout_helper_offset()) +
                                        Klass::_lh_header_size_shift / BitsPerByte));
           __ initialize_object(result, obj_end, klass, length, tmp1, tmp2, tmp2, -1, /* is_tlab_allocated */ false);
