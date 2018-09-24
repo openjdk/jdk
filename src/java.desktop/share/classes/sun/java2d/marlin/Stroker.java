@@ -141,7 +141,6 @@ final class Stroker implements PathConsumer2D, MarlinConst {
      * <code>JOIN_MITER</code>, <code>JOIN_ROUND</code> or
      * <code>JOIN_BEVEL</code>.
      * @param miterLimit the desired miter limit
-     * @param scale scaling factor applied to clip boundaries
      * @param subdivideCurves true to indicate to subdivide curves, false if dasher does
      * @return this instance
      */
@@ -150,7 +149,6 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                  final int capStyle,
                  final int joinStyle,
                  final float miterLimit,
-                 final float scale,
                  final boolean subdivideCurves)
     {
         this.out = pc2d;
@@ -171,7 +169,6 @@ final class Stroker implements PathConsumer2D, MarlinConst {
 
         if (rdrCtx.doClip) {
             // Adjust the clipping rectangle with the stroker margin (miter limit, width)
-            float rdrOffX = 0.0f, rdrOffY = 0.0f;
             float margin = lineWidth2;
 
             if (capStyle == CAP_SQUARE) {
@@ -180,22 +177,20 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             if ((joinStyle == JOIN_MITER) && (margin < limit)) {
                 margin = limit;
             }
-            if (scale != 1.0f) {
-                margin *= scale;
-                rdrOffX = scale * Renderer.RDR_OFFSET_X;
-                rdrOffY = scale * Renderer.RDR_OFFSET_Y;
-            }
-            // add a small rounding error:
-            margin += 1e-3f;
 
             // bounds as half-open intervals: minX <= x < maxX and minY <= y < maxY
             // adjust clip rectangle (ymin, ymax, xmin, xmax):
             final float[] _clipRect = rdrCtx.clipRect;
-            _clipRect[0] -= margin - rdrOffY;
-            _clipRect[1] += margin + rdrOffY;
-            _clipRect[2] -= margin - rdrOffX;
-            _clipRect[3] += margin + rdrOffX;
+            _clipRect[0] -= margin;
+            _clipRect[1] += margin;
+            _clipRect[2] -= margin;
+            _clipRect[3] += margin;
             this.clipRect = _clipRect;
+
+            if (MarlinConst.DO_LOG_CLIP) {
+                MarlinUtils.logInfo("clipRect (stroker): "
+                                    + Arrays.toString(rdrCtx.clipRect));
+            }
 
             // initialize curve splitter here for stroker & dasher:
             if (DO_CLIP_SUBDIVIDER) {
@@ -306,13 +301,9 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         // If it is >=0, we know that abs(ext) is <= 90 degrees, so we only
         // need 1 curve to approximate the circle section that joins omx,omy
         // and mx,my.
-        final int numCurves = (cosext >= 0.0f) ? 1 : 2;
-
-        switch (numCurves) {
-        case 1:
+        if (cosext >= 0.0f) {
             drawBezApproxForArc(cx, cy, omx, omy, mx, my, rev);
-            break;
-        case 2:
+        } else {
             // we need to split the arc into 2 arcs spanning the same angle.
             // The point we want will be one of the 2 intersections of the
             // perpendicular bisector of the chord (omx,omy)->(mx,my) and the
@@ -341,8 +332,6 @@ final class Stroker implements PathConsumer2D, MarlinConst {
             }
             drawBezApproxForArc(cx, cy, omx, omy, mmx, mmy, rev);
             drawBezApproxForArc(cx, cy, mmx, mmy, mx, my, rev);
-            break;
-        default:
         }
     }
 
