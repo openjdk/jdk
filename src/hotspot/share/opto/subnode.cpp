@@ -1522,6 +1522,37 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new BoolNode( ncmp, _test._test );
   }
 
+  // Change "bool eq/ne (cmp (phi (X -X) 0))" into "bool eq/ne (cmp X 0)"
+  // since zero check of conditional negation of an integer is equal to
+  // zero check of the integer directly.
+  if ((_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+      (cop == Op_CmpI) &&
+      (cmp2_type == TypeInt::ZERO) &&
+      (cmp1_op == Op_Phi)) {
+    // There should be a diamond phi with true path at index 1 or 2
+    PhiNode *phi = cmp1->as_Phi();
+    int idx_true = phi->is_diamond_phi();
+    if (idx_true != 0) {
+      // True input is in(idx_true) while false input is in(3 - idx_true)
+      Node *tin = phi->in(idx_true);
+      Node *fin = phi->in(3 - idx_true);
+      if ((tin->Opcode() == Op_SubI) &&
+          (phase->type(tin->in(1)) == TypeInt::ZERO) &&
+          (tin->in(2) == fin)) {
+        // Found conditional negation at true path, create a new CmpINode without that
+        Node *ncmp = phase->transform(new CmpINode(fin, cmp2));
+        return new BoolNode(ncmp, _test._test);
+      }
+      if ((fin->Opcode() == Op_SubI) &&
+          (phase->type(fin->in(1)) == TypeInt::ZERO) &&
+          (fin->in(2) == tin)) {
+        // Found conditional negation at false path, create a new CmpINode without that
+        Node *ncmp = phase->transform(new CmpINode(tin, cmp2));
+        return new BoolNode(ncmp, _test._test);
+      }
+    }
+  }
+
   // Change (-A vs 0) into (A vs 0) by commuting the test.  Disallow in the
   // most general case because negating 0x80000000 does nothing.  Needed for
   // the CmpF3/SubI/CmpI idiom.
