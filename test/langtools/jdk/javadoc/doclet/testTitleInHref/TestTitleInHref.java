@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4714257 8164407
+ * @bug 4714257 8164407 8205593
  * @summary Test to make sure that the title attribute shows up in links.
  * @author jamieh
  * @library ../lib
@@ -43,6 +43,7 @@ public class TestTitleInHref extends JavadocTester {
     void test() {
         String uri = "http://java.sun.com/j2se/1.4/docs/api";
         javadoc("-d", "out",
+                "-source", "8",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,
                 "pkg");

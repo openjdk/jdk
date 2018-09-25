@@ -610,7 +610,7 @@ public class HtmlDocletWriter {
             return links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
                     label);
         } else {
-            DocLink crossPkgLink = getCrossPackageLink(utils.getPackageName(packageElement));
+            DocLink crossPkgLink = getCrossPackageLink(packageElement);
             if (crossPkgLink != null) {
                 return links.createLink(crossPkgLink, label);
             } else {
@@ -693,11 +693,10 @@ public class HtmlDocletWriter {
 
     /*************************************************************
      * Return a class cross link to external class documentation.
-     * The name must be fully qualified to determine which package
-     * the class is in.  The -link option does not allow users to
+     * The -link option does not allow users to
      * link to external classes in the "default" package.
      *
-     * @param qualifiedClassName the qualified name of the external class.
+     * @param classElement the class element
      * @param refMemName the name of the member being referenced.  This should
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
@@ -705,19 +704,15 @@ public class HtmlDocletWriter {
      * @param code true if the label should be code font.
      * @return the link
      */
-    public Content getCrossClassLink(String qualifiedClassName, String refMemName,
+    public Content getCrossClassLink(TypeElement classElement, String refMemName,
                                     Content label, boolean strong, boolean code) {
-        String className = "";
-        String packageName = qualifiedClassName == null ? "" : qualifiedClassName;
-        int periodIndex;
-        while ((periodIndex = packageName.lastIndexOf('.')) != -1) {
-            className = packageName.substring(periodIndex + 1, packageName.length()) +
-                (className.length() > 0 ? "." + className : "");
+        if (classElement != null) {
+            String className = utils.getSimpleName(classElement);
+            PackageElement packageElement = utils.containingPackage(classElement);
             Content defaultLabel = new StringContent(className);
             if (code)
                 defaultLabel = HtmlTree.CODE(defaultLabel);
-            packageName = packageName.substring(0, periodIndex);
-            if (getCrossPackageLink(packageName) != null) {
+            if (getCrossPackageLink(packageElement) != null) {
                 /*
                 The package exists in external documentation, so link to the external
                 class (assuming that it exists).  This is definitely a limitation of
@@ -725,13 +720,13 @@ public class HtmlDocletWriter {
                 exists, but no way to determine if the external class exists.  We just
                 have to assume that it does.
                 */
-                DocLink link = configuration.extern.getExternalLink(packageName, pathToRoot,
+                DocLink link = configuration.extern.getExternalLink(packageElement, pathToRoot,
                                 className + ".html", refMemName);
                 return links.createLink(link,
                     (label == null) || label.isEmpty() ? defaultLabel : label,
                     strong,
-                    resources.getText("doclet.Href_Class_Or_Interface_Title", packageName),
-                    "", true);
+                    resources.getText("doclet.Href_Class_Or_Interface_Title",
+                        utils.getPackageName(packageElement)), "", true);
             }
         }
         return null;
@@ -744,14 +739,14 @@ public class HtmlDocletWriter {
         return configuration.extern.isExternal(typeElement);
     }
 
-    public DocLink getCrossPackageLink(String pkgName) {
-        return configuration.extern.getExternalLink(pkgName, pathToRoot,
+    public DocLink getCrossPackageLink(PackageElement element) {
+        return configuration.extern.getExternalLink(element, pathToRoot,
             DocPaths.PACKAGE_SUMMARY.getPath());
     }
 
-    public DocLink getCrossModuleLink(String mdleName) {
-        return configuration.extern.getExternalLink(mdleName, pathToRoot,
-            docPaths.moduleSummary(mdleName).getPath());
+    public DocLink getCrossModuleLink(ModuleElement element) {
+        return configuration.extern.getExternalLink(element, pathToRoot,
+            docPaths.moduleSummary(utils.getModuleName(element)).getPath());
     }
 
     /**
@@ -1024,17 +1019,13 @@ public class HtmlDocletWriter {
                 return getPackageLink(refPackage, label);
             } else {
                 // @see is not referencing an included class, module or package. Check for cross links.
-                Content classCrossLink;
                 DocLink elementCrossLink = (configuration.extern.isModule(refClassName))
-                        ? getCrossModuleLink(refClassName) : getCrossPackageLink(refClassName);
+                        ? getCrossModuleLink(utils.elementUtils.getModuleElement(refClassName)) :
+                        (refPackage != null) ? getCrossPackageLink(refPackage) : null;
                 if (elementCrossLink != null) {
                     // Element cross link found
                     return links.createLink(elementCrossLink,
                             (label.isEmpty() ? text : label), true);
-                } else if ((classCrossLink = getCrossClassLink(refClassName,
-                        refMemName, label, false, !isLinkPlain)) != null) {
-                    // Class cross link found (possibly to a member in the class)
-                    return classCrossLink;
                 } else {
                     // No cross link found so print warning
                     messages.warning(ch.getDocTreePath(see),

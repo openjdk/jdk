@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4720957 5020118 8026567 8038976 8184969 8164407 8182765
+ * @bug 4720957 5020118 8026567 8038976 8184969 8164407 8182765 8205593
  * @summary Test to make sure that -link and -linkoffline link to
  * right files, and URLs with and without trailing slash are accepted.
  * @author jamieh
@@ -61,6 +61,7 @@ public class TestLinkOption extends JavadocTester {
         String out1 = "out1";
         String url = "http://acme.com/jdk/";
         javadoc("-d", out1,
+                "-source", "8",
                 "-classpath", mylib,
                 "-sourcepath", testSrc,
                 "-linkoffline", url, testSrc + "/jdk",
@@ -113,6 +114,7 @@ public class TestLinkOption extends JavadocTester {
 
         String out1_html4 = "out1-html4";
         javadoc("-d", out1_html4,
+                "-source", "8",
                 "-html4",
                 "-classpath", mylib,
                 "-sourcepath", testSrc,

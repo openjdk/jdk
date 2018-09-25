@@ -111,7 +111,7 @@ public class LinkFactoryImpl extends LinkFactory {
             }
         } else {
             Content crossLink = m_writer.getCrossClassLink(
-                typeElement.getQualifiedName().toString(), classLinkInfo.where,
+                typeElement, classLinkInfo.where,
                 label, classLinkInfo.isStrong, true);
             if (crossLink != null) {
                 link.addContent(crossLink);
