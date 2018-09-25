@@ -74,9 +74,11 @@ import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
+import java.time.format.ResolverStyle;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -133,13 +135,22 @@ public class TestDateTimeFormatterBuilderWithLocale {
 
     @Test(dataProvider="mapTextLookup")
     public void test_appendText_mapTextLookup(ChronoLocalDate date, Locale locale) {
-        final String new1st = "1st";
-        Map<Long, String> yearMap = new HashMap<>();
-        yearMap.put(1L, new1st);
-        builder.appendText(ChronoField.YEAR_OF_ERA, yearMap);
+        final String firstYear = "firstYear";
+        final String firstMonth = "firstMonth";
+        final String firstYearMonth = firstYear + firstMonth;
+        final long first = 1L;
 
-        String actual = date.format(builder.toFormatter(locale));
-        assertEquals(actual, new1st);
+        DateTimeFormatter formatter = builder
+            .appendText(ChronoField.YEAR_OF_ERA, Map.of(first, firstYear))
+            .appendText(ChronoField.MONTH_OF_YEAR, Map.of(first, firstMonth))
+            .toFormatter(locale)
+            .withResolverStyle(ResolverStyle.STRICT);
+
+        assertEquals(date.format(formatter), firstYearMonth);
+
+        TemporalAccessor ta = formatter.parse(firstYearMonth);
+        assertEquals(ta.getLong(ChronoField.YEAR_OF_ERA), first);
+        assertEquals(ta.getLong(ChronoField.MONTH_OF_YEAR), first);
     }
 
 
