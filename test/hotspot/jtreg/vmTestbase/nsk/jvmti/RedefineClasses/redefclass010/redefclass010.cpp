@@ -152,8 +152,7 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
                     methodsInfo[i].m_name, methodsInfo[i].m_sign);
         }
         if (methodsInfo[i].mid == NULL) {
-            printf("%s: Failed to get the method ID for the%s%s method\
- \"%s\", signature \"%s\"\n",
+            printf("%s: Failed to get the method ID for the%s%s method \"%s\", signature \"%s\"\n",
                 __FILE__, (vrb==2)?" original ":" ", methodsInfo[i].inst?"instance":"static",
                 methodsInfo[i].m_name, methodsInfo[i].m_sign);
             return STATUS_FAILED;
@@ -170,8 +169,8 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
             return STATUS_FAILED;
         } else {
             if (count != methodsInfo[i].lcount) {
-                printf("TEST %s %s method \"%s\", signature \"%s\":\
- found %d lines in the LineNumberTable, expected %d\n",
+                printf(
+                    "TEST %s %s method \"%s\", signature \"%s\": found %d lines in the LineNumberTable, expected %d\n",
                     (vrb==2)?"BUG: original ":"FAILED:",
                     methodsInfo[i].inst?"instance":"static",
                     methodsInfo[i].m_name, methodsInfo[i].m_sign,
@@ -180,8 +179,9 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
                 continue;
             }
             else if (vrb == 1)
-                printf("\nChecking line numbers in the LineNumberTable of the %s method\
- \"%s\", signature \"%s\" ...\n\toverall number of lines: %d as expected\n",
+                printf(
+                    "\nChecking line numbers in the LineNumberTable of the %s method \"%s\", signature \"%s\" ...\n"
+                    "\toverall number of lines: %d as expected\n",
                     methodsInfo[i].inst?"instance":"static",
                     methodsInfo[i].m_name, methodsInfo[i].m_sign, count);
 
@@ -192,8 +192,9 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[], jint vrb) {
                     chkval = redf_ln[i][j];
 
                 if (ln_table[j].line_number != chkval) {
-                    printf("TEST %s %s method \"%s\", signature \"%s\": entry #%d\
- has value %d in the LineNumberTable, expected %d\n",
+                    printf(
+                        "TEST %s %s method \"%s\", signature \"%s\": "
+                        "entry #%d has value %d in the LineNumberTable, expected %d\n",
                         (vrb==2)?"BUG: original":"FAILED:",
                         methodsInfo[i].inst?"instance":"static",
                         methodsInfo[i].m_name, methodsInfo[i].m_sign,

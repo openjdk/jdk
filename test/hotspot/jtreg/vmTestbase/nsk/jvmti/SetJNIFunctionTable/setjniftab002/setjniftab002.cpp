@@ -78,11 +78,12 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab002_check(JNIEnv *env, jobject obj)
        only since JDK 1.2 */
     if (verbose)
         printf("\nb) Checking the function with the detached thread ...\n\ndetaching the main thread ...\n");
-    if ((res = vm->DetachCurrentThread()) != JNI_OK)
-        printf("(%s,%d): Warning: DetachCurrentThread() returns: %d\n\
-\tcheck with the detached main thread skipped\n",
+    if ((res = vm->DetachCurrentThread()) != JNI_OK) {
+        printf(
+            "(%s,%d): Warning: DetachCurrentThread() returns: %d\n"
+            "\tcheck with the detached main thread skipped\n",
             __FILE__, __LINE__, res);
-    else {
+    } else {
         redirect(env, JVMTI_ERROR_UNATTACHED_THREAD);
 
         if (verbose)

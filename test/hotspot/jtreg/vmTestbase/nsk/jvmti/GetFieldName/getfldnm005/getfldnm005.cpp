@@ -103,8 +103,12 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls,
 
         if (strcmp(fld_sig[idx][2], sign) != 0 ||
                 strcmp(fld_sig[idx][3], (gen_sign==NULL)?"NULL":gen_sign) != 0) {
-            NSK_COMPLAIN6("TEST FAILED: %s field \"%s\" \
-has\n\tsignature: \"%s\"\n\tgeneric signature: \"%s\"\n\n\tExpected: \"%s\"\n\t\t\"%s\"\n\n",
+            NSK_COMPLAIN6(
+                "TEST FAILED: %s field \"%s\" has\n"
+                "\tsignature: \"%s\"\n"
+                "\tgeneric signature: \"%s\"\n\n"
+                "\tExpected: \"%s\"\n"
+                "\t\t\"%s\"\n\n",
                (instance==0)?"instance":"static",
                 fld_sig[idx][0],
                 sign, (gen_sign==NULL)?"NULL":gen_sign,

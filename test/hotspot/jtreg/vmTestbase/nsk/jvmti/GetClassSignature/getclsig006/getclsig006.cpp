@@ -69,8 +69,12 @@ static int checkSig(JNIEnv *jni_env, jclass testedCls, int idx) {
 
         if (strcmp(class_sig[idx][1], sign) != 0 ||
                 strcmp(class_sig[idx][2], (gen_sign==NULL)?"NULL":gen_sign) != 0) {
-            NSK_COMPLAIN5("TEST FAILED: class: \"%s\" \
-has\n\tsignature: \"%s\"\n\tgeneric signature: \"%s\"\n\n\tExpected: \"%s\"\n\t\"%s\"\n\n",
+            NSK_COMPLAIN5(
+                "TEST FAILED: class: \"%s\" has\n"
+                "\tsignature: \"%s\"\n"
+                "\tgeneric signature: \"%s\"\n\n"
+                "\tExpected: \"%s\"\n"
+                "\t\"%s\"\n\n",
                 class_sig[idx][0],
                 sign, (gen_sign==NULL)?"NULL":gen_sign,
                 class_sig[idx][1], class_sig[idx][2]);

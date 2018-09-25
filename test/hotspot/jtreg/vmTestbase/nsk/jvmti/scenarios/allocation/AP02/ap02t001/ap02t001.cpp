@@ -118,8 +118,10 @@ static void runIterations (jvmtiEnv* jvmti, jclass testedClass, jint exp_count) 
 
     if (obj_count != exp_count) {
         nsk_jvmti_setFailStatus();
-        NSK_COMPLAIN3("IterateOverInstancesOfClass found unexpected number of %s objects: %d\n\t\
-expected number: %d\n\n", TESTED_CLASS, obj_count, exp_count);
+        NSK_COMPLAIN3(
+            "IterateOverInstancesOfClass found unexpected number of %s objects: %d\n"
+            "\texpected number: %d\n\n",
+            TESTED_CLASS, obj_count, exp_count);
     } else {
         NSK_DISPLAY2("Number of %s objects IterateOverInstancesOfClass has found: %d\n\n", TESTED_CLASS,
             obj_count);
@@ -139,8 +141,10 @@ expected number: %d\n\n", TESTED_CLASS, obj_count, exp_count);
 
     if (obj_count != exp_count) {
         nsk_jvmti_setFailStatus();
-        NSK_COMPLAIN3("IterateOverHeap found unexpected number of %s objects: %d\n\t\
-expected number: %d\n\n", TESTED_CLASS, obj_count, exp_count);
+        NSK_COMPLAIN3(
+            "IterateOverHeap found unexpected number of %s objects: %d\n"
+            "\texpected number: %d\n\n",
+            TESTED_CLASS, obj_count, exp_count);
     } else {
         NSK_DISPLAY2("Number of %s objects IterateOverHeap has found: %d\n\n", TESTED_CLASS, obj_count);
     }
@@ -159,8 +163,10 @@ expected number: %d\n\n", TESTED_CLASS, obj_count, exp_count);
 
     if (obj_count != exp_count) {
         nsk_jvmti_setFailStatus();
-        NSK_COMPLAIN3("IterateOverReachableObjects found unexpected number of %s objects: %d\n\t\
-expected number: %d\n\n", TESTED_CLASS, obj_count, exp_count);
+        NSK_COMPLAIN3(
+            "IterateOverReachableObjects found unexpected number of %s objects: %d\n"
+            "\texpected number: %d\n\n",
+            TESTED_CLASS, obj_count, exp_count);
     } else {
         NSK_DISPLAY2("Number of %s objects IterateOverReachableObjects has found: %d\n\n", TESTED_CLASS,
             obj_count);

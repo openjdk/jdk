@@ -112,8 +112,8 @@ Java_nsk_jvmti_RedefineClasses_redefclass003_makeRedefinition(JNIEnv *env, jclas
             classDef.class_byte_count);
     if ((err = (jvmti->RedefineClasses(1, &classDef))) != JVMTI_ERROR_NONE) {
         if (err == JVMTI_ERROR_UNSUPPORTED_REDEFINITION_SCHEMA_CHANGED) {
-            printf("Warning: unrestrictedly redefinition of classes is not implemented,\n\
-\tso the test has no results.\n");
+            printf("Warning: unrestrictedly redefinition of classes is not implemented,\n"
+                   "\tso the test has no results.\n");
             no_results = 1;
         }
         else {
@@ -157,9 +157,13 @@ Java_nsk_jvmti_RedefineClasses_redefclass003_checkNewFields(JNIEnv *env,
         printf("\tlongComplNewFld = %" LL "d, expected 44\n", longFld);
         return STATUS_FAILED;
     } else {
-        if (vrb == 1)
-            printf("Completely new static variables:\n\
-\tintComplNewFld = %d\n\tlongComplNewFld = %" LL "d\n", intFld, longFld);
+        if (vrb == 1) {
+            printf(
+                "Completely new static variables:\n"
+                "\tintComplNewFld = %d\n"
+                "\tlongComplNewFld = %" LL "d\n",
+                intFld, longFld);
+        }
         return PASSED;
     }
 }

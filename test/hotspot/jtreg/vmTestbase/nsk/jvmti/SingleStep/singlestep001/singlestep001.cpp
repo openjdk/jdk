@@ -88,9 +88,10 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
                           "failed to obtain a class signature\n");
 
         if (sig != NULL && (strcmp(sig, CLASS_SIG) == 0)) {
-            NSK_DISPLAY1("ClassLoad event received for the class \"%s\"\n\
-\tsetting breakpoint ...\n",
-                         sig);
+            NSK_DISPLAY1(
+                "ClassLoad event received for the class \"%s\"\n"
+                "\tsetting breakpoint ...\n",
+                sig);
             setBP(jvmti_env, env, klass);
         }
     }
@@ -161,9 +162,11 @@ SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
     }
 
     if (sig != NULL) {
-        NSK_DISPLAY3("\tmethod name: \"%s\"\n\tsignature: \"%s\"\n\
-\tmethod declaring class: \"%s\"\n",
-                methNam, methSig, sig);
+        NSK_DISPLAY3(
+            "\tmethod name: \"%s\"\n"
+            "\tsignature: \"%s\"\n"
+            "\tmethod declaring class: \"%s\"\n",
+            methNam, methSig, sig);
 
         if (stepEv[1] == 1) {
             result = STATUS_FAILED;
@@ -180,8 +183,9 @@ SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
                 (strcmp(methSig,METHOD_SIGS[1]) == 0) &&
                 (strcmp(sig,CLASS_SIG) == 0)) {
             stepEv[1]++;
-            NSK_DISPLAY1("CHECK PASSED: SingleStep event received for the method \"%s\" as expected\n\
-\tdisabling the event generation\n",
+            NSK_DISPLAY1(
+                "CHECK PASSED: SingleStep event received for the method \"%s\" as expected\n"
+                "\tdisabling the event generation\n",
                 methNam);
             if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
                     jvmti_env, JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, thread))) {

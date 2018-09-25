@@ -94,9 +94,10 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
                           "failed to obtain a class signature\n");
 
         if (sig != NULL && (strcmp(sig, CLASS_SIG) == 0)) {
-            NSK_DISPLAY1("ClassLoad event received for the class \"%s\"\n\
-\tsetting breakpoints ...\n",
-                         sig);
+            NSK_DISPLAY1(
+                "ClassLoad event received for the class \"%s\"\n"
+                "\tsetting breakpoints ...\n",
+                sig);
             setBP(jvmti_env, env, klass);
         }
     }
@@ -126,8 +127,9 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
             strcmp(thr_info.name,THREAD_NAME) != 0 ||
             thr_info.is_daemon==JNI_TRUE) {
         result = checkStatus = STATUS_FAILED;
-        NSK_COMPLAIN2("TEST FAILED: Breakpoint event with unexpected thread info:\n\
-\tname: \"%s\"\ttype: %s thread\n\n",
+        NSK_COMPLAIN2(
+            "TEST FAILED: Breakpoint event with unexpected thread info:\n"
+            "\tname: \"%s\"\ttype: %s thread\n\n",
             (thr_info.name == NULL)?"NULL":thr_info.name,
             (thr_info.is_daemon==JNI_TRUE)?"deamon":"user");
     }
@@ -161,9 +163,10 @@ Breakpoint(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
     if (clsSig == NULL ||
             strcmp(clsSig,CLASS_SIG) != 0) {
         result = checkStatus = STATUS_FAILED;
-        NSK_COMPLAIN1("TEST FAILED: Breakpoint event with unexpected class signature:\n\
-\t\"%s\"\n\n",
-            (clsSig == NULL)?"NULL":clsSig);
+        NSK_COMPLAIN1(
+            "TEST FAILED: Breakpoint event with unexpected class signature:\n"
+            "\t\"%s\"\n\n",
+            (clsSig == NULL) ? "NULL" : clsSig);
     }
     else
         NSK_DISPLAY1("CHECK PASSED: class signature: \"%s\"\n",
@@ -220,8 +223,10 @@ Java_nsk_jvmti_Breakpoint_breakpoint001_check(
     for (i=0; i<METH_NUM; i++) {
         if (bpEvents[i] != 1) {
             result = STATUS_FAILED;
-            NSK_COMPLAIN3("TEST FAILED: wrong number of Breakpoint events\n\
-\tfor the method \"%s %s\":\n\t\tgot: %d\texpected: 1\n",
+            NSK_COMPLAIN3(
+                "TEST FAILED: wrong number of Breakpoint events\n"
+                "\tfor the method \"%s %s\":\n"
+                "\t\tgot: %d\texpected: 1\n",
                 METHODS[i][0], METHODS[i][1], bpEvents[i]);
         }
         else

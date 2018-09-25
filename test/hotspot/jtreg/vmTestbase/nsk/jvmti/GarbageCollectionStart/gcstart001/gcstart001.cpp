@@ -52,8 +52,9 @@ GarbageCollectionStart(jvmtiEnv *jvmti_env) {
 
     if (gcstart != (gcfinish+1)) {
         result = STATUS_FAILED;
-        NSK_COMPLAIN2("TEST FAILED: GarbageCollectionStart event has no a matched pair GarbageCollectionFinish:\n\
-\t%d GarbageCollectionStart events\t%d GarbageCollectionFinish events\n\n",
+        NSK_COMPLAIN2(
+            "TEST FAILED: GarbageCollectionStart event has no a matched pair GarbageCollectionFinish:\n"
+            "\t%d GarbageCollectionStart events\t%d GarbageCollectionFinish events\n\n",
             gcstart, gcfinish);
     }
     else
@@ -68,8 +69,9 @@ GarbageCollectionFinish(jvmtiEnv *jvmti_env) {
 
     if (gcstart != gcfinish) {
         result = STATUS_FAILED;
-        NSK_COMPLAIN2("TEST FAILED: GarbageCollectionFinish event has no a matched pair GarbageCollectionStart:\n\
-\t%d GarbageCollectionStart events\t%d GarbageCollectionFinish events\n\n",
+        NSK_COMPLAIN2(
+            "TEST FAILED: GarbageCollectionFinish event has no a matched pair GarbageCollectionStart:\n"
+            "\t%d GarbageCollectionStart events\t%d GarbageCollectionFinish events\n\n",
             gcstart, gcfinish);
     }
     else
@@ -81,8 +83,9 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
     NSK_DISPLAY0("VMDeath event received\n");
 
     if (gcstart != gcfinish || result == STATUS_FAILED) {
-        NSK_COMPLAIN2("TEST FAILED: some GarbageCollectionFinish events have no a matched pair GarbageCollectionStart:\n\
-\t%d GarbageCollectionStart events\t%d GarbageCollectionFinish events\n\n",
+        NSK_COMPLAIN2(
+            "TEST FAILED: some GarbageCollectionFinish events have no a matched pair GarbageCollectionStart:\n"
+            "\t%d GarbageCollectionStart events\t%d GarbageCollectionFinish events\n\n",
             gcstart, gcfinish);
 
         exit(95 + STATUS_FAILED);

@@ -165,8 +165,9 @@ static void envStorageFunc(jvmtiEnv *jvmti_env, const char *msg) {
     else {
         if (obtainedData != storedData) {
             result = STATUS_FAILED;
-            NSK_COMPLAIN3("TEST FAILED: %s: obtained an environment local storage has unexpected pointer:\n\
-got: 0x%p\texpected: 0x%p\n\n",
+            NSK_COMPLAIN3(
+                "TEST FAILED: %s: obtained an environment local storage has unexpected pointer:\n"
+                "got: 0x%p\texpected: 0x%p\n\n",
                 msg, (void*) obtainedData, (void*) storedData);
         }
         else
@@ -203,18 +204,23 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
     NSK_DISPLAY0("VMDeath event received\n");
 
     if (clsUnloaded == JNI_TRUE) {
-        if (objfree == 0)
-            NSK_DISPLAY1("Warning: no ObjectFree events for a tagged object\n\
-\twhich class \"%s\" has been detected for unloading\n\n",
+        if (objfree == 0) {
+            NSK_DISPLAY1(
+                "Warning: no ObjectFree events for a tagged object\n"
+                "\twhich class \"%s\" has been detected for unloading\n\n",
                 CLASS_SIG);
-        else
-            NSK_DISPLAY2("CHECK PASSED: %d ObjectFree event(s) received for a tagged object\n\
-\twhich class \"%s\" has been detected for unloading\n\n",
+        } else {
+            NSK_DISPLAY2(
+                "CHECK PASSED: %d ObjectFree event(s) received for a tagged object\n"
+                "\twhich class \"%s\" has been detected for unloading\n\n",
                 objfree, CLASS_SIG);
-    } else
-        NSK_DISPLAY1("Warning: unloading of the tested class \"%s\" has not been detected,\n\
-\tso the test has no results\n",
-            CLASS_SIG);
+        }
+    } else {
+         NSK_DISPLAY1(
+             "Warning: unloading of the tested class \"%s\" has not been detected,\n"
+             "\tso the test has no results\n",
+             CLASS_SIG);
+    }
 
     if (result == STATUS_FAILED)
         exit(95 + STATUS_FAILED);

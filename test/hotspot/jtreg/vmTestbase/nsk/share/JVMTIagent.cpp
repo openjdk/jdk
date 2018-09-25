@@ -167,12 +167,13 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread, jclass klass) {
         else {
             if (shortTestName != NULL) {
                 if (strstr((const char*) cls_sig, shortTestName) != NULL) {
-                    display(0, "#### JVMTIagent: found test class matched with \"%s\"\n\
-<JVMTIagent>\tsignature=%s\n",
-                        shortTestName, cls_sig);
+                    display(0,
+                            "#### JVMTIagent: found test class matched with \"%s\"\n"
+                            "<JVMTIagent>\tsignature=%s\n",
+                            shortTestName, cls_sig);
                     clsByteCount = allocClsInfo(jni_env, cls_sig, klass);
                     display(0, "#### JVMTIagent: %d bytes defining the class have been successfully loaded\n",
-                        clsByteCount);
+                            clsByteCount);
                 }
             }
         }
@@ -534,33 +535,38 @@ Java_nsk_share_RASagent_setHotSwapMode(JNIEnv *jni_env, jclass cls,
             return 0;
         case HOTSWAP_EVERY_METHOD_ENTRY:
             stress_lev = 2;
-            display(0, "#### JVMTIagent: hotswapping class in every method entry event enabled ####\n\
-<JVMTIagent>\tHotSwap stress level: %d\n",
-                stress_lev);
+            display(0,
+                    "#### JVMTIagent: hotswapping class in every method entry event enabled ####\n"
+                    "<JVMTIagent>\tHotSwap stress level: %d\n",
+                    stress_lev);
             break;
         case HOTSWAP_EVERY_METHOD_ENTRY_FOR_EVERY_CLASS:
             stress_lev = 2;
-            display(0, "#### JVMTIagent: hotswapping class in every method entry event for every class enabled ####\n\
-<JVMTIagent>\tHotSwap stress level: %d\n",
-                stress_lev);
+            display(0,
+                    "#### JVMTIagent: hotswapping class in every method entry event for every class enabled ####\n"
+                    "<JVMTIagent>\tHotSwap stress level: %d\n",
+                    stress_lev);
             break;
         case HOTSWAP_EVERY_SINGLE_STEP:
             stress_lev = 3;
-            display(0, "#### JVMTIagent: hotswapping class in every single step event enabled ####\n\
-<JVMTIagent>\tHotSwap stress level: %d\n",
-                stress_lev);
+            display(0,
+                    "#### JVMTIagent: hotswapping class in every single step event enabled ####\n"
+                    "<JVMTIagent>\tHotSwap stress level: %d\n",
+                    stress_lev);
             break;
         case HOTSWAP_EVERY_EXCEPTION:
             stress_lev = 4;
-            display(0, "#### JVMTIagent: hotswapping class in every exception event enabled ####\n\
-<JVMTIagent>\tHotSwap stress level: %d\n",
-                stress_lev);
+            display(0,
+                    "#### JVMTIagent: hotswapping class in every exception event enabled ####\n"
+                    "<JVMTIagent>\tHotSwap stress level: %d\n",
+                    stress_lev);
             break;
         case HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS:
             stress_lev = 40;
-            display(0, "#### JVMTIagent: hotswapping class in every exception event for every class enabled ####\n\
-<JVMTIagent>\tHotSwap stress level: %d\n",
-                stress_lev);
+            display(0,
+                    "#### JVMTIagent: hotswapping class in every exception event for every class enabled ####\n"
+                    "<JVMTIagent>\tHotSwap stress level: %d\n",
+                    stress_lev);
             break;
         default:
             printf("ERROR(%s,%d): JVMTIagent: unknown value of HotSwap stress level: \"%d\"\n",
@@ -741,9 +747,10 @@ static int doHotSwap(JNIEnv *jni_env, jclass redefCls, jint bCount,
     classDef.class_byte_count = bCount;
     classDef.class_bytes = (unsigned char*) classBytes;
 
-    display(0, "#### JVMTIagent: >>>>>>>> Invoke RedefineClasses():\n\
-<JVMTIagent>\tnew class byte count=%d\n",
-        classDef.class_byte_count);
+    display(0,
+            "#### JVMTIagent: >>>>>>>> Invoke RedefineClasses():\n"
+            "<JVMTIagent>\tnew class byte count=%d\n",
+            classDef.class_byte_count);
     if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RedefineClasses,
             jvmti, 1, &classDef)))
         return 1;

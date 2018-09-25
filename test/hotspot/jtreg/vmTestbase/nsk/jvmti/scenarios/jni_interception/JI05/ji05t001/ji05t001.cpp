@@ -112,9 +112,10 @@ static void doRedirect(JNIEnv *env, jvmtiEnv *jvmti, int indx) {
         env->FatalError("failed to get redirected JNI function table");
     }
 
-    NSK_DISPLAY1("%s JVMTI env: doRedirect: the JNI function table obtained successfully\n\
-\toverwriting the function GetVersion() ...\n",
-        (indx==0)?"first":"second");
+    NSK_DISPLAY1(
+        "%s JVMTI env: doRedirect: the JNI function table obtained successfully\n"
+        "\toverwriting the function GetVersion() ...\n",
+        (indx == 0) ? "first" : "second");
     redir_jni_functions[indx]->GetVersion =
         (indx==0)?MyGetVersionA:MyGetVersionB;
 
@@ -139,8 +140,9 @@ static void provokeIntercept(JNIEnv *env, const char *name) {
 
 static int checkIntercept(int indx, int env_num, int exCalls) {
     if (redir_calls[indx] == exCalls) {
-        NSK_DISPLAY5("\nCHECK PASSED: GetVersion() interception set in the %s JVMTI env %s properly:\n\
-\t%d interception(s) with the%s%s JVMTI env as expected\n",
+        NSK_DISPLAY5(
+            "\nCHECK PASSED: GetVersion() interception set in the %s JVMTI env %s properly:\n"
+            "\t%d interception(s) with the%s%s JVMTI env as expected\n",
             (indx==0)?"first":"second",
             (exCalls==0)?"overwritten by another environment":"works",
             redir_calls[indx],
@@ -149,8 +151,9 @@ static int checkIntercept(int indx, int env_num, int exCalls) {
     }
     else {
         result = STATUS_FAILED;
-        NSK_COMPLAIN6("\nTEST FAILED: GetVersion() interception set in the %s JVMTI env doesn't %s properly:\n\
-\t%d interception(s) with the%s%s JVMTI env instead of %d as expected\n",
+        NSK_COMPLAIN6(
+            "\nTEST FAILED: GetVersion() interception set in the %s JVMTI env doesn't %s properly:\n"
+            "\t%d interception(s) with the%s%s JVMTI env instead of %d as expected\n",
             (indx==0)?"first":"second",
             (exCalls==0)?"overwritten by another environment":"work",
             redir_calls[indx],
@@ -259,8 +262,9 @@ static int agentA(void *context) {
 
     /* intercept the JNI function table */
     /* check the interception set in another JVMTI env */
-    NSK_DISPLAY0("\n>>> TEST CASE #1) First JVMTI env: checking the redirection set in the same env ...\n\
-\nagent A (first JVMTI env): redirecting the function table ...\n");
+    NSK_DISPLAY0(
+        "\n>>> TEST CASE #1) First JVMTI env: checking the redirection set in the same env ...\n"
+        "\nagent A (first JVMTI env): redirecting the function table ...\n");
     doRedirect(env, jvmti[0], 0);
 
     /* check that the interception has been set properly */
@@ -343,8 +347,9 @@ static int agentB(void *context) {
     NSK_DISPLAY0("\n<<< TEST CASE #2) done\n");
 
     /* intercept the JNI function table */
-    NSK_DISPLAY0("\n>>> TEST CASE #3) Second JVMTI env: checking the redirection set in the same env ...\n\
-\nagent B (second JVMTI env): redirecting the function table ...\n");
+    NSK_DISPLAY0(
+        "\n>>> TEST CASE #3) Second JVMTI env: checking the redirection set in the same env ...\n"
+        "\nagent B (second JVMTI env): redirecting the function table ...\n");
     doRedirect(env, jvmti[1], 1);
 
     for (i=0; i<AGENTS; i++) {

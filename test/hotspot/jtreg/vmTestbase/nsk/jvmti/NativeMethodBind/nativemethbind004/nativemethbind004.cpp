@@ -138,22 +138,29 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_NativeMethodBind_nativemethbind004_check(
         JNIEnv *env, jobject obj) {
 
-    if (origCalls == 0)
-        NSK_DISPLAY0("CHECK PASSED: original nativeMethod() to be redirected\n\
-\thas not been invoked as expected\n");
-    else {
+    if (origCalls == 0) {
+        NSK_DISPLAY0(
+            "CHECK PASSED: original nativeMethod() to be redirected\n"
+            "\thas not been invoked as expected\n");
+    } else {
         result = STATUS_FAILED;
-        NSK_COMPLAIN1("TEST FAILED: nativeMethod() has not been redirected by the NativeMethodBind:\n\
-\t%d calls\texpected: 0\n\n", origCalls);
+        NSK_COMPLAIN1(
+            "TEST FAILED: nativeMethod() has not been redirected by the NativeMethodBind:\n"
+            "\t%d calls\texpected: 0\n\n",
+            origCalls);
     }
 
-    if (redirCalls == 1)
-        NSK_DISPLAY1("CHECK PASSED: nativeMethod() has been redirected by the NativeMethodBind:\n\
-\t%d calls of redirected method as expected\n", redirCalls);
-    else {
+    if (redirCalls == 1) {
+        NSK_DISPLAY1(
+            "CHECK PASSED: nativeMethod() has been redirected by the NativeMethodBind:\n"
+            "\t%d calls of redirected method as expected\n",
+            redirCalls);
+    } else {
         result = STATUS_FAILED;
-        NSK_COMPLAIN1("TEST FAILED: nativeMethod() has not been redirected by the NativeMethodBind:\n\
-\t%d calls of redirected method\texpected: 1\n\n", redirCalls);
+        NSK_COMPLAIN1(
+            "TEST FAILED: nativeMethod() has not been redirected by the NativeMethodBind:\n"
+            "\t%d calls of redirected method\texpected: 1\n\n",
+            redirCalls);
     }
 
     return result;
