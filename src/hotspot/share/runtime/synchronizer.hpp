@@ -105,7 +105,6 @@ class ObjectSynchronizer : AllStatic {
   static void reenter (Handle obj, intptr_t recursion, TRAPS);
 
   // thread-specific and global objectMonitor free list accessors
-  static void verifyInUse(Thread * Self);
   static ObjectMonitor * omAlloc(Thread * Self);
   static void omRelease(Thread * Self, ObjectMonitor * m,
                         bool FromPerThreadAlloc);

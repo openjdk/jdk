@@ -543,10 +543,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_notify:
   case vmIntrinsics::_notifyAll:
-    if (ObjectMonitor::Knob_InlineNotify) {
-      return inline_notify(intrinsic_id());
-    }
-    return false;
+    return inline_notify(intrinsic_id());
 
   case vmIntrinsics::_addExactI:                return inline_math_addExactI(false /* add */);
   case vmIntrinsics::_addExactL:                return inline_math_addExactL(false /* add */);

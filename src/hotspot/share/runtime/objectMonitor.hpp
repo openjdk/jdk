@@ -195,11 +195,6 @@ class ObjectMonitor {
   static PerfCounter * _sync_Deflations;
   static PerfLongVariable * _sync_MonExtant;
 
-  static int Knob_ExitRelease;
-  static int Knob_InlineNotify;
-  static int Knob_Verbose;
-  static int Knob_VerifyInUse;
-  static int Knob_VerifyMatch;
   static int Knob_SpinLimit;
 
   void* operator new (size_t size) throw();

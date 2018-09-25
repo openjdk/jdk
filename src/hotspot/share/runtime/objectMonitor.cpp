@@ -101,39 +101,15 @@
 // The knob* variables are effectively final.  Once set they should
 // never be modified hence.  Consider using __read_mostly with GCC.
 
-int ObjectMonitor::Knob_ExitRelease  = 0;
-int ObjectMonitor::Knob_InlineNotify = 1;
-int ObjectMonitor::Knob_Verbose      = 0;
-int ObjectMonitor::Knob_VerifyInUse  = 0;
-int ObjectMonitor::Knob_VerifyMatch  = 0;
 int ObjectMonitor::Knob_SpinLimit    = 5000;    // derived by an external tool -
 
-static int Knob_ReportSettings      = 0;
-static int Knob_SpinBase            = 0;       // Floor AKA SpinMin
-static int Knob_SpinBackOff         = 0;       // spin-loop backoff
-static int Knob_CASPenalty          = -1;      // Penalty for failed CAS
-static int Knob_OXPenalty           = -1;      // Penalty for observed _owner change
-static int Knob_SpinSetSucc         = 1;       // spinners set the _succ field
-static int Knob_SpinEarly           = 1;
-static int Knob_SuccEnabled         = 1;       // futile wake throttling
-static int Knob_SuccRestrict        = 0;       // Limit successors + spinners to at-most-one
-static int Knob_MaxSpinners         = -1;      // Should be a function of # CPUs
 static int Knob_Bonus               = 100;     // spin success bonus
 static int Knob_BonusB              = 100;     // spin success bonus
 static int Knob_Penalty             = 200;     // spin failure penalty
 static int Knob_Poverty             = 1000;
-static int Knob_SpinAfterFutile     = 1;       // Spin after returning from park()
 static int Knob_FixedSpin           = 0;
-static int Knob_OState              = 3;       // Spinner checks thread state of _owner
-static int Knob_UsePause            = 1;
-static int Knob_ExitPolicy          = 0;
 static int Knob_PreSpin             = 10;      // 20-100 likely better
-static int Knob_ResetEvent          = 0;
-static int BackOffMask              = 0;
 
-static int Knob_FastHSSEC           = 0;
-static int Knob_MoveNotifyee        = 2;       // notify() - disposition of notifyee
-static int Knob_QMode               = 0;       // EntryList-cxq policy - queue discipline
 static volatile int InitDone        = 0;
 
 // -----------------------------------------------------------------------------
@@ -299,7 +275,7 @@ void ObjectMonitor::enter(TRAPS) {
   // transitions.  The following spin is strictly optional ...
   // Note that if we acquire the monitor from an initial spin
   // we forgo posting JVMTI events and firing DTRACE probes.
-  if (Knob_SpinEarly && TrySpin (Self) > 0) {
+  if (TrySpin(Self) > 0) {
     assert(_owner == Self, "invariant");
     assert(_recursions == 0, "invariant");
     assert(((oop)(object()))->mark() == markOopDesc::encode(this), "invariant");
@@ -461,7 +437,7 @@ void ObjectMonitor::EnterI(TRAPS) {
   // to the owner.  This has subtle but beneficial affinity
   // effects.
 
-  if (TrySpin (Self) > 0) {
+  if (TrySpin(Self) > 0) {
     assert(_owner == Self, "invariant");
     assert(_succ != Self, "invariant");
     assert(_Responsible != Self, "invariant");
@@ -583,20 +559,14 @@ void ObjectMonitor::EnterI(TRAPS) {
     // We can defer clearing _succ until after the spin completes
     // TrySpin() must tolerate being called with _succ == Self.
     // Try yet another round of adaptive spinning.
-    if ((Knob_SpinAfterFutile & 1) && TrySpin(Self) > 0) break;
+    if (TrySpin(Self) > 0) break;
 
     // We can find that we were unpark()ed and redesignated _succ while
     // we were spinning.  That's harmless.  If we iterate and call park(),
     // park() will consume the event and return immediately and we'll
     // just spin again.  This pattern can repeat, leaving _succ to simply
-    // spin on a CPU.  Enable Knob_ResetEvent to clear pending unparks().
-    // Alternately, we can sample fired() here, and if set, forgo spinning
-    // in the next iteration.
+    // spin on a CPU.
 
-    if ((Knob_ResetEvent & 1) && Self->_ParkEvent->fired()) {
-      Self->_ParkEvent->reset();
-      OrderAccess::fence();
-    }
     if (_succ == Self) _succ = NULL;
 
     // Invariant: after clearing _succ a thread *must* retry _owner before parking.
@@ -675,9 +645,7 @@ void ObjectMonitor::EnterI(TRAPS) {
 // contended slow-path from EnterI().  We use ReenterI() only for
 // monitor reentry in wait().
 //
-// In the future we should reconcile EnterI() and ReenterI(), adding
-// Knob_Reset and Knob_SpinAfterFutile support and restructuring the
-// loop accordingly.
+// In the future we should reconcile EnterI() and ReenterI().
 
 void ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
   assert(Self != NULL, "invariant");
@@ -929,181 +897,60 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
   for (;;) {
     assert(THREAD == _owner, "invariant");
 
-    if (Knob_ExitPolicy == 0) {
-      // release semantics: prior loads and stores from within the critical section
-      // must not float (reorder) past the following store that drops the lock.
-      // On SPARC that requires MEMBAR #loadstore|#storestore.
-      // But of course in TSO #loadstore|#storestore is not required.
-      // I'd like to write one of the following:
-      // A.  OrderAccess::release() ; _owner = NULL
-      // B.  OrderAccess::loadstore(); OrderAccess::storestore(); _owner = NULL;
-      // Unfortunately OrderAccess::release() and OrderAccess::loadstore() both
-      // store into a _dummy variable.  That store is not needed, but can result
-      // in massive wasteful coherency traffic on classic SMP systems.
-      // Instead, I use release_store(), which is implemented as just a simple
-      // ST on x64, x86 and SPARC.
-      OrderAccess::release_store(&_owner, (void*)NULL);   // drop the lock
-      OrderAccess::storeload();                        // See if we need to wake a successor
-      if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
-        return;
-      }
-      // Other threads are blocked trying to acquire the lock.
+    // release semantics: prior loads and stores from within the critical section
+    // must not float (reorder) past the following store that drops the lock.
+    // On SPARC that requires MEMBAR #loadstore|#storestore.
+    // But of course in TSO #loadstore|#storestore is not required.
+    OrderAccess::release_store(&_owner, (void*)NULL);   // drop the lock
+    OrderAccess::storeload();                        // See if we need to wake a successor
+    if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
+      return;
+    }
+    // Other threads are blocked trying to acquire the lock.
 
-      // Normally the exiting thread is responsible for ensuring succession,
-      // but if other successors are ready or other entering threads are spinning
-      // then this thread can simply store NULL into _owner and exit without
-      // waking a successor.  The existence of spinners or ready successors
-      // guarantees proper succession (liveness).  Responsibility passes to the
-      // ready or running successors.  The exiting thread delegates the duty.
-      // More precisely, if a successor already exists this thread is absolved
-      // of the responsibility of waking (unparking) one.
-      //
-      // The _succ variable is critical to reducing futile wakeup frequency.
-      // _succ identifies the "heir presumptive" thread that has been made
-      // ready (unparked) but that has not yet run.  We need only one such
-      // successor thread to guarantee progress.
-      // See http://www.usenix.org/events/jvm01/full_papers/dice/dice.pdf
-      // section 3.3 "Futile Wakeup Throttling" for details.
-      //
-      // Note that spinners in Enter() also set _succ non-null.
-      // In the current implementation spinners opportunistically set
-      // _succ so that exiting threads might avoid waking a successor.
-      // Another less appealing alternative would be for the exiting thread
-      // to drop the lock and then spin briefly to see if a spinner managed
-      // to acquire the lock.  If so, the exiting thread could exit
-      // immediately without waking a successor, otherwise the exiting
-      // thread would need to dequeue and wake a successor.
-      // (Note that we'd need to make the post-drop spin short, but no
-      // shorter than the worst-case round-trip cache-line migration time.
-      // The dropped lock needs to become visible to the spinner, and then
-      // the acquisition of the lock by the spinner must become visible to
-      // the exiting thread).
+    // Normally the exiting thread is responsible for ensuring succession,
+    // but if other successors are ready or other entering threads are spinning
+    // then this thread can simply store NULL into _owner and exit without
+    // waking a successor.  The existence of spinners or ready successors
+    // guarantees proper succession (liveness).  Responsibility passes to the
+    // ready or running successors.  The exiting thread delegates the duty.
+    // More precisely, if a successor already exists this thread is absolved
+    // of the responsibility of waking (unparking) one.
+    //
+    // The _succ variable is critical to reducing futile wakeup frequency.
+    // _succ identifies the "heir presumptive" thread that has been made
+    // ready (unparked) but that has not yet run.  We need only one such
+    // successor thread to guarantee progress.
+    // See http://www.usenix.org/events/jvm01/full_papers/dice/dice.pdf
+    // section 3.3 "Futile Wakeup Throttling" for details.
+    //
+    // Note that spinners in Enter() also set _succ non-null.
+    // In the current implementation spinners opportunistically set
+    // _succ so that exiting threads might avoid waking a successor.
+    // Another less appealing alternative would be for the exiting thread
+    // to drop the lock and then spin briefly to see if a spinner managed
+    // to acquire the lock.  If so, the exiting thread could exit
+    // immediately without waking a successor, otherwise the exiting
+    // thread would need to dequeue and wake a successor.
+    // (Note that we'd need to make the post-drop spin short, but no
+    // shorter than the worst-case round-trip cache-line migration time.
+    // The dropped lock needs to become visible to the spinner, and then
+    // the acquisition of the lock by the spinner must become visible to
+    // the exiting thread).
 
-      // It appears that an heir-presumptive (successor) must be made ready.
-      // Only the current lock owner can manipulate the EntryList or
-      // drain _cxq, so we need to reacquire the lock.  If we fail
-      // to reacquire the lock the responsibility for ensuring succession
-      // falls to the new owner.
-      //
-      if (!Atomic::replace_if_null(THREAD, &_owner)) {
-        return;
-      }
-    } else {
-      if ((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != NULL) {
-        OrderAccess::release_store(&_owner, (void*)NULL);   // drop the lock
-        OrderAccess::storeload();
-        // Ratify the previously observed values.
-        if (_cxq == NULL || _succ != NULL) {
-          return;
-        }
-
-        // inopportune interleaving -- the exiting thread (this thread)
-        // in the fast-exit path raced an entering thread in the slow-enter
-        // path.
-        // We have two choices:
-        // A.  Try to reacquire the lock.
-        //     If the CAS() fails return immediately, otherwise
-        //     we either restart/rerun the exit operation, or simply
-        //     fall-through into the code below which wakes a successor.
-        // B.  If the elements forming the EntryList|cxq are TSM
-        //     we could simply unpark() the lead thread and return
-        //     without having set _succ.
-        if (!Atomic::replace_if_null(THREAD, &_owner)) {
-          return;
-        }
-      }
+    // It appears that an heir-presumptive (successor) must be made ready.
+    // Only the current lock owner can manipulate the EntryList or
+    // drain _cxq, so we need to reacquire the lock.  If we fail
+    // to reacquire the lock the responsibility for ensuring succession
+    // falls to the new owner.
+    //
+    if (!Atomic::replace_if_null(THREAD, &_owner)) {
+      return;
     }
 
     guarantee(_owner == THREAD, "invariant");
 
     ObjectWaiter * w = NULL;
-    int QMode = Knob_QMode;
-
-    if (QMode == 2 && _cxq != NULL) {
-      // QMode == 2 : cxq has precedence over EntryList.
-      // Try to directly wake a successor from the cxq.
-      // If successful, the successor will need to unlink itself from cxq.
-      w = _cxq;
-      assert(w != NULL, "invariant");
-      assert(w->TState == ObjectWaiter::TS_CXQ, "Invariant");
-      ExitEpilog(Self, w);
-      return;
-    }
-
-    if (QMode == 3 && _cxq != NULL) {
-      // Aggressively drain cxq into EntryList at the first opportunity.
-      // This policy ensure that recently-run threads live at the head of EntryList.
-      // Drain _cxq into EntryList - bulk transfer.
-      // First, detach _cxq.
-      // The following loop is tantamount to: w = swap(&cxq, NULL)
-      w = _cxq;
-      for (;;) {
-        assert(w != NULL, "Invariant");
-        ObjectWaiter * u = Atomic::cmpxchg((ObjectWaiter*)NULL, &_cxq, w);
-        if (u == w) break;
-        w = u;
-      }
-      assert(w != NULL, "invariant");
-
-      ObjectWaiter * q = NULL;
-      ObjectWaiter * p;
-      for (p = w; p != NULL; p = p->_next) {
-        guarantee(p->TState == ObjectWaiter::TS_CXQ, "Invariant");
-        p->TState = ObjectWaiter::TS_ENTER;
-        p->_prev = q;
-        q = p;
-      }
-
-      // Append the RATs to the EntryList
-      // TODO: organize EntryList as a CDLL so we can locate the tail in constant-time.
-      ObjectWaiter * Tail;
-      for (Tail = _EntryList; Tail != NULL && Tail->_next != NULL;
-           Tail = Tail->_next)
-        /* empty */;
-      if (Tail == NULL) {
-        _EntryList = w;
-      } else {
-        Tail->_next = w;
-        w->_prev = Tail;
-      }
-
-      // Fall thru into code that tries to wake a successor from EntryList
-    }
-
-    if (QMode == 4 && _cxq != NULL) {
-      // Aggressively drain cxq into EntryList at the first opportunity.
-      // This policy ensure that recently-run threads live at the head of EntryList.
-
-      // Drain _cxq into EntryList - bulk transfer.
-      // First, detach _cxq.
-      // The following loop is tantamount to: w = swap(&cxq, NULL)
-      w = _cxq;
-      for (;;) {
-        assert(w != NULL, "Invariant");
-        ObjectWaiter * u = Atomic::cmpxchg((ObjectWaiter*)NULL, &_cxq, w);
-        if (u == w) break;
-        w = u;
-      }
-      assert(w != NULL, "invariant");
-
-      ObjectWaiter * q = NULL;
-      ObjectWaiter * p;
-      for (p = w; p != NULL; p = p->_next) {
-        guarantee(p->TState == ObjectWaiter::TS_CXQ, "Invariant");
-        p->TState = ObjectWaiter::TS_ENTER;
-        p->_prev = q;
-        q = p;
-      }
-
-      // Prepend the RATs to the EntryList
-      if (_EntryList != NULL) {
-        q->_next = _EntryList;
-        _EntryList->_prev = q;
-      }
-      _EntryList = w;
-
-      // Fall thru into code that tries to wake a successor from EntryList
-    }
 
     w = _EntryList;
     if (w != NULL) {
@@ -1150,34 +997,14 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
     // TODO-FIXME: consider changing EntryList from a DLL to a CDLL so
     // we have faster access to the tail.
 
-    if (QMode == 1) {
-      // QMode == 1 : drain cxq to EntryList, reversing order
-      // We also reverse the order of the list.
-      ObjectWaiter * s = NULL;
-      ObjectWaiter * t = w;
-      ObjectWaiter * u = NULL;
-      while (t != NULL) {
-        guarantee(t->TState == ObjectWaiter::TS_CXQ, "invariant");
-        t->TState = ObjectWaiter::TS_ENTER;
-        u = t->_next;
-        t->_prev = u;
-        t->_next = s;
-        s = t;
-        t = u;
-      }
-      _EntryList  = s;
-      assert(s != NULL, "invariant");
-    } else {
-      // QMode == 0 or QMode == 2
-      _EntryList = w;
-      ObjectWaiter * q = NULL;
-      ObjectWaiter * p;
-      for (p = w; p != NULL; p = p->_next) {
-        guarantee(p->TState == ObjectWaiter::TS_CXQ, "Invariant");
-        p->TState = ObjectWaiter::TS_ENTER;
-        p->_prev = q;
-        q = p;
-      }
+    _EntryList = w;
+    ObjectWaiter * q = NULL;
+    ObjectWaiter * p;
+    for (p = w; p != NULL; p = p->_next) {
+      guarantee(p->TState == ObjectWaiter::TS_CXQ, "Invariant");
+      p->TState = ObjectWaiter::TS_ENTER;
+      p->_prev = q;
+      q = p;
     }
 
     // In 1-0 mode we need: ST EntryList; MEMBAR #storestore; ST _owner = NULL
@@ -1226,22 +1053,8 @@ void ObjectMonitor::exit(bool not_suspended, TRAPS) {
 //       ST Self->_suspend_equivalent = false
 //       MEMBAR
 //       LD Self_>_suspend_flags
-//
-// UPDATE 2007-10-6: since I've replaced the native Mutex/Monitor subsystem
-// with a more efficient implementation, the need to use "FastHSSEC" has
-// decreased. - Dave
-
 
 bool ObjectMonitor::ExitSuspendEquivalent(JavaThread * jSelf) {
-  const int Mode = Knob_FastHSSEC;
-  if (Mode && !jSelf->is_external_suspend()) {
-    assert(jSelf->is_suspend_equivalent(), "invariant");
-    jSelf->clear_suspend_equivalent();
-    if (2 == Mode) OrderAccess::storeload();
-    if (!jSelf->is_external_suspend()) return false;
-    // We raced a suspension -- fall thru into the slow path
-    jSelf->set_suspend_equivalent();
-  }
   return jSelf->handle_special_suspend_equivalent_condition();
 }
 
@@ -1255,7 +1068,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   // 2. ST _owner = NULL
   // 3. unpark(wakee)
 
-  _succ = Knob_SuccEnabled ? Wakee->_thread : NULL;
+  _succ = Wakee->_thread;
   ParkEvent * Trigger = Wakee->_event;
 
   // Hygiene -- once we've set _owner = NULL we can't safely dereference Wakee again.
@@ -1346,12 +1159,6 @@ void ObjectMonitor::reenter(intptr_t recursions, TRAPS) {
 void ObjectMonitor::check_slow(TRAPS) {
   assert(THREAD != _owner && !THREAD->is_lock_owned((address) _owner), "must not be owner");
   THROW_MSG(vmSymbols::java_lang_IllegalMonitorStateException(), "current thread not owner");
-}
-
-static int Adjust(volatile int * adr, int dx) {
-  int v;
-  for (v = *adr; Atomic::cmpxchg(v + dx, adr, v) != v; v = *adr) /* empty */;
-  return v;
 }
 
 static void post_monitor_wait_event(EventJavaMonitorWait* event,
@@ -1599,8 +1406,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
 // we might just dequeue a thread from the WaitSet and directly unpark() it.
 
 void ObjectMonitor::INotify(Thread * Self) {
-  const int policy = Knob_MoveNotifyee;
-
   Thread::SpinAcquire(&_WaitSetLock, "WaitSet - notify");
   ObjectWaiter * iterator = DequeueWaiter();
   if (iterator != NULL) {
@@ -1611,9 +1416,9 @@ void ObjectMonitor::INotify(Thread * Self) {
     //     or head (policy == 0).
     // b.  push it onto the front of the _cxq (policy == 2).
     // For now we use (b).
-    if (policy != 4) {
-      iterator->TState = ObjectWaiter::TS_ENTER;
-    }
+
+    iterator->TState = ObjectWaiter::TS_ENTER;
+
     iterator->_notified = 1;
     iterator->_notifier_tid = JFR_THREAD_ID(Self);
 
@@ -1624,67 +1429,19 @@ void ObjectMonitor::INotify(Thread * Self) {
       assert(list != iterator, "invariant");
     }
 
-    if (policy == 0) {       // prepend to EntryList
-      if (list == NULL) {
-        iterator->_next = iterator->_prev = NULL;
-        _EntryList = iterator;
-      } else {
-        list->_prev = iterator;
-        iterator->_next = list;
-        iterator->_prev = NULL;
-        _EntryList = iterator;
-      }
-    } else if (policy == 1) {      // append to EntryList
-      if (list == NULL) {
-        iterator->_next = iterator->_prev = NULL;
-        _EntryList = iterator;
-      } else {
-        // CONSIDER:  finding the tail currently requires a linear-time walk of
-        // the EntryList.  We can make tail access constant-time by converting to
-        // a CDLL instead of using our current DLL.
-        ObjectWaiter * tail;
-        for (tail = list; tail->_next != NULL; tail = tail->_next) {}
-        assert(tail != NULL && tail->_next == NULL, "invariant");
-        tail->_next = iterator;
-        iterator->_prev = tail;
-        iterator->_next = NULL;
-      }
-    } else if (policy == 2) {      // prepend to cxq
-      if (list == NULL) {
-        iterator->_next = iterator->_prev = NULL;
-        _EntryList = iterator;
-      } else {
-        iterator->TState = ObjectWaiter::TS_CXQ;
-        for (;;) {
-          ObjectWaiter * front = _cxq;
-          iterator->_next = front;
-          if (Atomic::cmpxchg(iterator, &_cxq, front) == front) {
-            break;
-          }
-        }
-      }
-    } else if (policy == 3) {      // append to cxq
+    // prepend to cxq
+    if (list == NULL) {
+      iterator->_next = iterator->_prev = NULL;
+      _EntryList = iterator;
+    } else {
       iterator->TState = ObjectWaiter::TS_CXQ;
       for (;;) {
-        ObjectWaiter * tail = _cxq;
-        if (tail == NULL) {
-          iterator->_next = NULL;
-          if (Atomic::replace_if_null(iterator, &_cxq)) {
-            break;
-          }
-        } else {
-          while (tail->_next != NULL) tail = tail->_next;
-          tail->_next = iterator;
-          iterator->_prev = tail;
-          iterator->_next = NULL;
+        ObjectWaiter * front = _cxq;
+        iterator->_next = front;
+        if (Atomic::cmpxchg(iterator, &_cxq, front) == front) {
           break;
         }
       }
-    } else {
-      ParkEvent * ev = iterator->_event;
-      iterator->TState = ObjectWaiter::TS_RUN;
-      OrderAccess::fence();
-      ev->unpark();
     }
 
     // _WaitSetLock protects the wait queue, not the EntryList.  We could
@@ -1695,9 +1452,7 @@ void ObjectMonitor::INotify(Thread * Self) {
     // on _WaitSetLock so it's not profitable to reduce the length of the
     // critical section.
 
-    if (policy < 4) {
-      iterator->wait_reenter_begin(this);
-    }
+    iterator->wait_reenter_begin(this);
   }
   Thread::SpinRelease(&_WaitSetLock);
 }
@@ -1854,33 +1609,19 @@ int ObjectMonitor::TrySpin(Thread * Self) {
   // hold the duration constant but vary the frequency.
 
   ctr = _SpinDuration;
-  if (ctr < Knob_SpinBase) ctr = Knob_SpinBase;
   if (ctr <= 0) return 0;
 
-  if (Knob_SuccRestrict && _succ != NULL) return 0;
-  if (Knob_OState && NotRunnable (Self, (Thread *) _owner)) {
+  if (NotRunnable(Self, (Thread *) _owner)) {
     return 0;
-  }
-
-  int MaxSpin = Knob_MaxSpinners;
-  if (MaxSpin >= 0) {
-    if (_Spinner > MaxSpin) {
-      return 0;
-    }
-    // Slightly racy, but benign ...
-    Adjust(&_Spinner, 1);
   }
 
   // We're good to spin ... spin ingress.
   // CONSIDER: use Prefetch::write() to avoid RTS->RTO upgrades
   // when preparing to LD...CAS _owner, etc and the CAS is likely
   // to succeed.
-  int hits    = 0;
-  int msk     = 0;
-  int caspty  = Knob_CASPenalty;
-  int oxpty   = Knob_OXPenalty;
-  int sss     = Knob_SpinSetSucc;
-  if (sss && _succ == NULL) _succ = Self;
+  if (_succ == NULL) {
+    _succ = Self;
+  }
   Thread * prv = NULL;
 
   // There are three ways to exit the following loop:
@@ -1903,32 +1644,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
       if (SafepointMechanism::poll(Self)) {
         goto Abort;           // abrupt spin egress
       }
-      if (Knob_UsePause & 1) SpinPause();
-    }
-
-    if (Knob_UsePause & 2) SpinPause();
-
-    // Exponential back-off ...  Stay off the bus to reduce coherency traffic.
-    // This is useful on classic SMP systems, but is of less utility on
-    // N1-style CMT platforms.
-    //
-    // Trade-off: lock acquisition latency vs coherency bandwidth.
-    // Lock hold times are typically short.  A histogram
-    // of successful spin attempts shows that we usually acquire
-    // the lock early in the spin.  That suggests we want to
-    // sample _owner frequently in the early phase of the spin,
-    // but then back-off and sample less frequently as the spin
-    // progresses.  The back-off makes a good citizen on SMP big
-    // SMP systems.  Oversampling _owner can consume excessive
-    // coherency bandwidth.  Relatedly, if we _oversample _owner we
-    // can inadvertently interfere with the the ST m->owner=null.
-    // executed by the lock owner.
-    if (ctr & msk) continue;
-    ++hits;
-    if ((hits & 0xF) == 0) {
-      // The 0xF, above, corresponds to the exponent.
-      // Consider: (msk+1)|msk
-      msk = ((msk << 2)|3) & BackOffMask;
+      SpinPause();
     }
 
     // Probe _owner with TATAS
@@ -1947,10 +1663,9 @@ int ObjectMonitor::TrySpin(Thread * Self) {
       if (ox == NULL) {
         // The CAS succeeded -- this thread acquired ownership
         // Take care of some bookkeeping to exit spin state.
-        if (sss && _succ == Self) {
+        if (_succ == Self) {
           _succ = NULL;
         }
-        if (MaxSpin > 0) Adjust(&_Spinner, -1);
 
         // Increase _SpinDuration :
         // The spin was successful (profitable) so we tend toward
@@ -1968,22 +1683,17 @@ int ObjectMonitor::TrySpin(Thread * Self) {
       }
 
       // The CAS failed ... we can take any of the following actions:
-      // * penalize: ctr -= Knob_CASPenalty
+      // * penalize: ctr -= CASPenalty
       // * exit spin with prejudice -- goto Abort;
       // * exit spin without prejudice.
       // * Since CAS is high-latency, retry again immediately.
       prv = ox;
-      if (caspty == -2) break;
-      if (caspty == -1) goto Abort;
-      ctr -= caspty;
-      continue;
+      goto Abort;
     }
 
     // Did lock ownership change hands ?
     if (ox != prv && prv != NULL) {
-      if (oxpty == -2) break;
-      if (oxpty == -1) goto Abort;
-      ctr -= oxpty;
+      goto Abort;
     }
     prv = ox;
 
@@ -1991,10 +1701,12 @@ int ObjectMonitor::TrySpin(Thread * Self) {
     // The owner must be executing in order to drop the lock.
     // Spinning while the owner is OFFPROC is idiocy.
     // Consider: ctr -= RunnablePenalty ;
-    if (Knob_OState && NotRunnable (Self, ox)) {
+    if (NotRunnable(Self, ox)) {
       goto Abort;
     }
-    if (sss && _succ == NULL) _succ = Self;
+    if (_succ == NULL) {
+      _succ = Self;
+    }
   }
 
   // Spin failed with prejudice -- reduce _SpinDuration.
@@ -2012,8 +1724,7 @@ int ObjectMonitor::TrySpin(Thread * Self) {
   }
 
  Abort:
-  if (MaxSpin >= 0) Adjust(&_Spinner, -1);
-  if (sss && _succ == Self) {
+  if (_succ == Self) {
     _succ = NULL;
     // Invariant: after setting succ=null a contending thread
     // must recheck-retry _owner before parking.  This usually happens
@@ -2204,29 +1915,6 @@ void ObjectMonitor::Initialize() {
   }
 }
 
-static char * kvGet(char * kvList, const char * Key) {
-  if (kvList == NULL) return NULL;
-  size_t n = strlen(Key);
-  char * Search;
-  for (Search = kvList; *Search; Search += strlen(Search) + 1) {
-    if (strncmp (Search, Key, n) == 0) {
-      if (Search[n] == '=') return Search + n + 1;
-      if (Search[n] == 0)   return(char *) "1";
-    }
-  }
-  return NULL;
-}
-
-static int kvGetInt(char * kvList, const char * Key, int Default) {
-  char * v = kvGet(kvList, Key);
-  int rslt = v ? ::strtol(v, NULL, 0) : Default;
-  if (Knob_ReportSettings && v != NULL) {
-    tty->print_cr("INFO: SyncKnob: %s %d(%d)", Key, rslt, Default) ;
-    tty->flush();
-  }
-  return rslt;
-}
-
 void ObjectMonitor::DeferredInitialize() {
   if (InitDone > 0) return;
   if (Atomic::cmpxchg (-1, &InitDone, 0) != 0) {
@@ -2237,70 +1925,13 @@ void ObjectMonitor::DeferredInitialize() {
   // One-shot global initialization ...
   // The initialization is idempotent, so we don't need locks.
   // In the future consider doing this via os::init_2().
-  // SyncKnobs consist of <Key>=<Value> pairs in the style
-  // of environment variables.  Start by converting ':' to NUL.
 
-  if (SyncKnobs == NULL) SyncKnobs = "";
-
-  size_t sz = strlen(SyncKnobs);
-  char * knobs = (char *) os::malloc(sz + 2, mtInternal);
-  if (knobs == NULL) {
-    vm_exit_out_of_memory(sz + 2, OOM_MALLOC_ERROR, "Parse SyncKnobs");
-    guarantee(0, "invariant");
-  }
-  strcpy(knobs, SyncKnobs);
-  knobs[sz+1] = 0;
-  for (char * p = knobs; *p; p++) {
-    if (*p == ':') *p = 0;
-  }
-
-  #define SETKNOB(x) { Knob_##x = kvGetInt(knobs, #x, Knob_##x); }
-  SETKNOB(ReportSettings);
-  SETKNOB(ExitRelease);
-  SETKNOB(InlineNotify);
-  SETKNOB(Verbose);
-  SETKNOB(VerifyInUse);
-  SETKNOB(VerifyMatch);
-  SETKNOB(FixedSpin);
-  SETKNOB(SpinLimit);
-  SETKNOB(SpinBase);
-  SETKNOB(SpinBackOff);
-  SETKNOB(CASPenalty);
-  SETKNOB(OXPenalty);
-  SETKNOB(SpinSetSucc);
-  SETKNOB(SuccEnabled);
-  SETKNOB(SuccRestrict);
-  SETKNOB(Penalty);
-  SETKNOB(Bonus);
-  SETKNOB(BonusB);
-  SETKNOB(Poverty);
-  SETKNOB(SpinAfterFutile);
-  SETKNOB(UsePause);
-  SETKNOB(SpinEarly);
-  SETKNOB(OState);
-  SETKNOB(MaxSpinners);
-  SETKNOB(PreSpin);
-  SETKNOB(ExitPolicy);
-  SETKNOB(QMode);
-  SETKNOB(ResetEvent);
-  SETKNOB(MoveNotifyee);
-  SETKNOB(FastHSSEC);
-  #undef SETKNOB
-
-  if (os::is_MP()) {
-    BackOffMask = (1 << Knob_SpinBackOff) - 1;
-    if (Knob_ReportSettings) {
-      tty->print_cr("INFO: BackOffMask=0x%X", BackOffMask);
-    }
-    // CONSIDER: BackOffMask = ROUNDUP_NEXT_POWER2 (ncpus-1)
-  } else {
+  if (!os::is_MP()) {
     Knob_SpinLimit = 0;
-    Knob_SpinBase  = 0;
     Knob_PreSpin   = 0;
     Knob_FixedSpin = -1;
   }
 
-  os::free(knobs);
   OrderAccess::fence();
   InitDone = 1;
 }

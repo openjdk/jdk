@@ -1050,38 +1050,12 @@ static void InduceScavenge(Thread * Self, const char * Whence) {
   // TODO: assert thread state is reasonable
 
   if (ForceMonitorScavenge == 0 && Atomic::xchg (1, &ForceMonitorScavenge) == 0) {
-    if (ObjectMonitor::Knob_Verbose) {
-      tty->print_cr("INFO: Monitor scavenge - Induced STW @%s (%d)",
-                    Whence, ForceMonitorScavenge) ;
-      tty->flush();
-    }
     // Induce a 'null' safepoint to scavenge monitors
     // Must VM_Operation instance be heap allocated as the op will be enqueue and posted
     // to the VMthread and have a lifespan longer than that of this activation record.
     // The VMThread will delete the op when completed.
     VMThread::execute(new VM_ScavengeMonitors());
-
-    if (ObjectMonitor::Knob_Verbose) {
-      tty->print_cr("INFO: Monitor scavenge - STW posted @%s (%d)",
-                    Whence, ForceMonitorScavenge) ;
-      tty->flush();
-    }
   }
-}
-
-void ObjectSynchronizer::verifyInUse(Thread *Self) {
-  ObjectMonitor* mid;
-  int in_use_tally = 0;
-  for (mid = Self->omInUseList; mid != NULL; mid = mid->FreeNext) {
-    in_use_tally++;
-  }
-  assert(in_use_tally == Self->omInUseCount, "in-use count off");
-
-  int free_tally = 0;
-  for (mid = Self->omFreeList; mid != NULL; mid = mid->FreeNext) {
-    free_tally++;
-  }
-  assert(free_tally == Self->omFreeCount, "free count off");
 }
 
 ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
@@ -1110,9 +1084,6 @@ ObjectMonitor* ObjectSynchronizer::omAlloc(Thread * Self) {
         m->FreeNext = Self->omInUseList;
         Self->omInUseList = m;
         Self->omInUseCount++;
-        if (ObjectMonitor::Knob_VerifyInUse) {
-          verifyInUse(Self);
-        }
       } else {
         m->FreeNext = NULL;
       }
@@ -1250,9 +1221,6 @@ void ObjectSynchronizer::omRelease(Thread * Self, ObjectMonitor * m,
         }
         extracted = true;
         Self->omInUseCount--;
-        if (ObjectMonitor::Knob_VerifyInUse) {
-          verifyInUse(Self);
-        }
         break;
       }
     }
@@ -1763,14 +1731,6 @@ void ObjectSynchronizer::finish_deflate_idle_monitors(DeflateMonitorCounters* co
 
   // Consider: audit gFreeList to ensure that gMonitorFreeCount and list agree.
 
-  if (ObjectMonitor::Knob_Verbose) {
-    tty->print_cr("INFO: Deflate: InCirc=%d InUse=%d Scavenged=%d "
-                  "ForceMonitorScavenge=%d : pop=%d free=%d",
-                  counters->nInCirculation, counters->nInuse, counters->nScavenged, ForceMonitorScavenge,
-                  gMonitorPopulation, gMonitorFreeCount);
-    tty->flush();
-  }
-
   ForceMonitorScavenge = 0;    // Reset
 
   OM_PERFDATA_OP(Deflations, inc(counters->nScavenged));
@@ -1796,9 +1756,6 @@ void ObjectSynchronizer::deflate_thread_local_monitors(Thread* thread, DeflateMo
   // Adjust counters
   counters->nInCirculation += thread->omInUseCount;
   thread->omInUseCount -= deflated_count;
-  if (ObjectMonitor::Knob_VerifyInUse) {
-    verifyInUse(thread);
-  }
   counters->nScavenged += deflated_count;
   counters->nInuse += thread->omInUseCount;
 
@@ -1827,15 +1784,6 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
   ReleaseJavaMonitorsClosure(Thread* thread) : THREAD(thread) {}
   void do_monitor(ObjectMonitor* mid) {
     if (mid->owner() == THREAD) {
-      if (ObjectMonitor::Knob_VerifyMatch != 0) {
-        ResourceMark rm;
-        Handle obj(THREAD, (oop) mid->object());
-        tty->print("INFO: unexpected locked object:");
-        javaVFrame::print_locked_object_class_name(tty, obj, "locked");
-        fatal("exiting JavaThread=" INTPTR_FORMAT
-              " unexpectedly owns ObjectMonitor=" INTPTR_FORMAT,
-              p2i(THREAD), p2i(mid));
-      }
       (void)mid->complete_exit(CHECK);
     }
   }

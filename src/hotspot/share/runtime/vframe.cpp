@@ -255,11 +255,6 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
           }
         }
         print_locked_object_class_name(st, Handle(THREAD, monitor->owner()), lock_state);
-        if (ObjectMonitor::Knob_Verbose && mark != NULL) {
-          st->print("\t- lockbits=");
-          mark->print_on(st);
-          st->cr();
-        }
 
         found_first_monitor = true;
       }
