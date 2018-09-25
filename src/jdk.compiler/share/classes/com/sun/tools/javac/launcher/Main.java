@@ -50,8 +50,6 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,6 +61,8 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.NoSuchElementException;
 import java.util.ResourceBundle;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.NestingKind;
@@ -399,9 +399,6 @@ public class Main {
         ClassLoader cl = context.getClassLoader(ClassLoader.getSystemClassLoader());
         try {
             Class<?> appClass = Class.forName(mainClassName, true, cl);
-            if (appClass.getClassLoader() != cl) {
-                throw new Fault(Errors.UnexpectedClass(mainClassName));
-            }
             Method main = appClass.getDeclaredMethod("main", String[].class);
             int PUBLIC_STATIC = Modifier.PUBLIC | Modifier.STATIC;
             if ((main.getModifiers() & PUBLIC_STATIC) != PUBLIC_STATIC) {
@@ -535,26 +532,103 @@ public class Main {
     }
 
     /**
-     * An in-memory classloader, that uses an in-memory cache written by {@link MemoryFileManager}.
+     * An in-memory classloader, that uses an in-memory cache of classes written by
+     * {@link MemoryFileManager}.
      *
-     * <p>The classloader uses the standard parent-delegation model, just providing
-     * {@code findClass} to find classes in the in-memory cache.
+     * <p>The classloader inverts the standard parent-delegation model, giving preference
+     * to classes defined in the source file before classes known to the parent (such
+     * as any like-named classes that might be found on the application class path.)
      */
     private static class MemoryClassLoader extends ClassLoader {
         /**
-         * The map of classes known to this class loader, indexed by
+         * The map of all classes found in the source file, indexed by
          * {@link ClassLoader#name binary name}.
          */
-        private final Map<String, byte[]> map;
+        private final Map<String, byte[]> sourceFileClasses;
 
-        MemoryClassLoader(Map<String, byte[]> map, ClassLoader parent) {
+        MemoryClassLoader(Map<String, byte[]> sourceFileClasses, ClassLoader parent) {
             super(parent);
-            this.map = map;
+            this.sourceFileClasses = sourceFileClasses;
+        }
+
+        /**
+         * Override loadClass to check for classes defined in the source file
+         * before checking for classes in the parent class loader,
+         * including those on the classpath.
+         *
+         * {@code loadClass(String name)} calls this method, and so will have the same behavior.
+         *
+         * @param name the name of the class to load
+         * @param resolve whether or not to resolve the class
+         * @return the class
+         * @throws ClassNotFoundException if the class is not found
+         */
+        @Override
+        protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            synchronized (getClassLoadingLock(name)) {
+                Class<?> c = findLoadedClass(name);
+                if (c == null) {
+                    if (sourceFileClasses.containsKey(name)) {
+                        c = findClass(name);
+                    } else {
+                        c = getParent().loadClass(name);
+                    }
+                    if (resolve) {
+                        resolveClass(c);
+                    }
+                }
+                return c;
+            }
+        }
+
+
+        /**
+         * Override getResource to check for resources (i.e. class files) defined in the
+         * source file before checking resources in the parent class loader,
+         * including those on the class path.
+         *
+         * {@code getResourceAsStream(String name)} calls this method,
+         * and so will have the same behavior.
+         *
+         * @param name the name of the resource
+         * @return a URL for the resource, or null if not found
+         */
+        @Override
+        public URL getResource(String name) {
+            if (sourceFileClasses.containsKey(toBinaryName(name))) {
+                return findResource(name);
+            } else {
+                return getParent().getResource(name);
+            }
+        }
+
+        /**
+         * Override getResources to check for resources (i.e. class files) defined in the
+         * source file before checking resources in the parent class loader,
+         * including those on the class path.
+         *
+         * @param name the name of the resource
+         * @return an enumeration of the resources in this loader and in the application class loader
+         */
+        @Override
+        public Enumeration<URL> getResources(String name) throws IOException {
+            URL u = findResource(name);
+            Enumeration<URL> e = getParent().getResources(name);
+            if (u == null) {
+                return e;
+            } else {
+                List<URL> list = new ArrayList<>();
+                list.add(u);
+                while (e.hasMoreElements()) {
+                    list.add(e.nextElement());
+                }
+                return Collections.enumeration(list);
+            }
         }
 
         @Override
         protected Class<?> findClass(String name) throws ClassNotFoundException {
-            byte[] bytes = map.get(name);
+            byte[] bytes = sourceFileClasses.get(name);
             if (bytes == null) {
                 throw new ClassNotFoundException(name);
             }
@@ -564,7 +638,7 @@ public class Main {
         @Override
         public URL findResource(String name) {
             String binaryName = toBinaryName(name);
-            if (binaryName == null || map.get(binaryName) == null) {
+            if (binaryName == null || sourceFileClasses.get(binaryName) == null) {
                 return null;
             }
 
@@ -628,7 +702,7 @@ public class Main {
                 if (!u.getProtocol().equalsIgnoreCase(PROTOCOL)) {
                     throw new IllegalArgumentException(u.toString());
                 }
-                return new MemoryURLConnection(u, map.get(toBinaryName(u.getPath())));
+                return new MemoryURLConnection(u, sourceFileClasses.get(toBinaryName(u.getPath())));
             }
 
         }

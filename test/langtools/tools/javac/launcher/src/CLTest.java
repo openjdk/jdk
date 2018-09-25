@@ -43,38 +43,38 @@ import java.util.*;
 import com.sun.tools.classfile.ClassFile;
 
 public class CLTest {
-        public static void main(String... args) throws Exception {
-                try {
-                        new CLTest().run();
-                } catch (Throwable t) {
-                        t.printStackTrace();
-                        System.exit(1);
-                }
+    public static void main(String... args) throws Exception {
+        try {
+            new CLTest().run();
+        } catch (Throwable t) {
+            t.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    void run() throws Exception {
+        String[] names = {
+                "p/q/CLTest.class",
+                "p/q/CLTest$Inner.class",
+                "p/q/CLTest2.class",
+                "java/lang/Object.class",
+                "UNKNOWN.class",
+                "UNKNOWN"
+        };
+
+        for (String name : names) {
+            testGetResource(name);
+            testGetResources(name);
+            testGetResourceAsStream(name);
         }
 
-        void run() throws Exception {
-                String[] names = {
-                                "p/q/CLTest.class",
-                                "p/q/CLTest$Inner.class",
-                                "p/q/CLTest2.class",
-                                "java/lang/Object.class",
-                                "UNKNOWN.class",
-                                "UNKNOWN"
-                };
-
-                for (String name : names) {
-                        testGetResource(name);
-                        testGetResources(name);
-                        testGetResourceAsStream(name);
-                }
-
-                if (errors > 0) {
-                        throw new Exception(errors + " errors found");
-                }
+        if (errors > 0) {
+            throw new Exception(errors + " errors found");
         }
+    }
 
     void testGetResource(String name) {
-                System.err.println("testGetResource: " + name);
+        System.err.println("testGetResource: " + name);
         try {
             ClassLoader cl = getClass().getClassLoader();
             URL u = cl.getResource(name);
@@ -95,7 +95,7 @@ public class CLTest {
     }
 
     void testGetResources(String name) {
-                System.err.println("testGetResources: " + name);
+        System.err.println("testGetResources: " + name);
         try {
             ClassLoader cl = getClass().getClassLoader();
             Enumeration<URL> e = cl.getResources(name);
