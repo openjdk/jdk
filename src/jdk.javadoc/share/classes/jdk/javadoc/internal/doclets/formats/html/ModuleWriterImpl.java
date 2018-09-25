@@ -396,14 +396,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         (utils.getBlockTags(mdle, DocTree.Kind.PROVIDES)).forEach((tree) -> {
             TypeElement t = ch.getServiceType(configuration, tree);
             if (t != null) {
-                providesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(configuration, tree), false));
+                providesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(configuration, tree), false, true));
             }
         });
         // Generate the map of all services listed using @uses, and the description.
         (utils.getBlockTags(mdle, DocTree.Kind.USES)).forEach((tree) -> {
             TypeElement t = ch.getServiceType(configuration, tree);
             if (t != null) {
-                usesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(configuration, tree), false));
+                usesTrees.put(t, commentTagsToContent(tree, mdle, ch.getDescription(configuration, tree), false, true));
             }
         });
     }

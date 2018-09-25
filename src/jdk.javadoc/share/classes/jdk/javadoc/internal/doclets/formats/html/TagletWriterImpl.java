@@ -71,12 +71,18 @@ public class TagletWriterImpl extends TagletWriter {
     private final HtmlDocletWriter htmlWriter;
     private final HtmlConfiguration configuration;
     private final Utils utils;
+    private final boolean inSummary;
 
     public TagletWriterImpl(HtmlDocletWriter htmlWriter, boolean isFirstSentence) {
+        this(htmlWriter, isFirstSentence, false);
+    }
+
+    public TagletWriterImpl(HtmlDocletWriter htmlWriter, boolean isFirstSentence, boolean inSummary) {
         super(isFirstSentence);
         this.htmlWriter = htmlWriter;
         configuration = htmlWriter.configuration;
         this.utils = configuration.utils;
+        this.inSummary = inSummary;
     }
 
     /**
@@ -107,53 +113,58 @@ public class TagletWriterImpl extends TagletWriter {
         String desc = ch.getText(itt.getDescription());
 
         String anchorName = htmlWriter.links.getName(tagText);
-        Content result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
-        if (configuration.createindex && !tagText.isEmpty()) {
-            SearchIndexItem si = new SearchIndexItem();
-            si.setLabel(tagText);
-            si.setDescription(desc);
-            DocPaths docPaths = configuration.docPaths;
-            new SimpleElementVisitor9<Void, Void>() {
-                @Override
-                public Void visitModule(ModuleElement e, Void p) {
-                    si.setUrl(docPaths.moduleSummary(e).getPath() + "#" + anchorName);
-                    si.setHolder(utils.getFullyQualifiedName(element));
-                    return null;
-                }
+        Content result = null;
+        if (isFirstSentence && inSummary) {
+            result = new StringContent(tagText);
+        } else {
+            result = HtmlTree.A_ID(HtmlStyle.searchTagResult, anchorName, new StringContent(tagText));
+            if (configuration.createindex && !tagText.isEmpty()) {
+                SearchIndexItem si = new SearchIndexItem();
+                si.setLabel(tagText);
+                si.setDescription(desc);
+                DocPaths docPaths = configuration.docPaths;
+                new SimpleElementVisitor9<Void, Void>() {
+                    @Override
+                    public Void visitModule(ModuleElement e, Void p) {
+                        si.setUrl(docPaths.moduleSummary(e).getPath() + "#" + anchorName);
+                        si.setHolder(utils.getFullyQualifiedName(element));
+                        return null;
+                    }
 
-                @Override
-                public Void visitPackage(PackageElement e, Void p) {
-                    si.setUrl(docPaths.forPackage(e).getPath()
-                            + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
-                    si.setHolder(utils.getSimpleName(element));
-                    return null;
-                }
+                    @Override
+                    public Void visitPackage(PackageElement e, Void p) {
+                        si.setUrl(docPaths.forPackage(e).getPath()
+                                + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
+                        si.setHolder(utils.getSimpleName(element));
+                        return null;
+                    }
 
-                @Override
-                public Void visitType(TypeElement e, Void p) {
-                    si.setUrl(docPaths.forClass(e).getPath() + "#" + anchorName);
-                    si.setHolder(utils.getFullyQualifiedName(e));
-                    return null;
-                }
+                    @Override
+                    public Void visitType(TypeElement e, Void p) {
+                        si.setUrl(docPaths.forClass(e).getPath() + "#" + anchorName);
+                        si.setHolder(utils.getFullyQualifiedName(e));
+                        return null;
+                    }
 
-                @Override
-                public Void visitVariable(VariableElement e, Void p) {
-                    TypeElement te = utils.getEnclosingTypeElement(e);
-                    si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
-                    si.setHolder(utils.getFullyQualifiedName(e) + "." + utils.getSimpleName(e));
-                    return null;
-                }
+                    @Override
+                    public Void visitVariable(VariableElement e, Void p) {
+                        TypeElement te = utils.getEnclosingTypeElement(e);
+                        si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
+                        si.setHolder(utils.getFullyQualifiedName(e) + "." + utils.getSimpleName(e));
+                        return null;
+                    }
 
-                @Override
-                protected Void defaultAction(Element e, Void p) {
-                    TypeElement te = utils.getEnclosingTypeElement(e);
-                    si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
-                    si.setHolder(utils.getFullyQualifiedName(e));
-                    return null;
-                }
-            }.visit(element);
-            si.setCategory(configuration.getContent("doclet.SearchTags").toString());
-            configuration.tagSearchIndex.add(si);
+                    @Override
+                    protected Void defaultAction(Element e, Void p) {
+                        TypeElement te = utils.getEnclosingTypeElement(e);
+                        si.setUrl(docPaths.forClass(te).getPath() + "#" + anchorName);
+                        si.setHolder(utils.getFullyQualifiedName(e));
+                        return null;
+                    }
+                }.visit(element);
+                si.setCategory(configuration.getContent("doclet.SearchTags").toString());
+                configuration.tagSearchIndex.add(si);
+            }
         }
         return result;
     }
@@ -236,7 +247,7 @@ public class TagletWriterImpl extends TagletWriter {
         body.addContent(HtmlTree.CODE(new RawHtml(paramName)));
         body.addContent(" - ");
         List<? extends DocTree> description = ch.getDescription(configuration, paramTag);
-        body.addContent(htmlWriter.commentTagsToContent(paramTag, element, description, false));
+        body.addContent(htmlWriter.commentTagsToContent(paramTag, element, description, false, inSummary));
         HtmlTree result = HtmlTree.DD(body);
         return result;
     }
@@ -264,7 +275,7 @@ public class TagletWriterImpl extends TagletWriter {
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.returnLabel,
                 new StringContent(configuration.getText("doclet.Returns")))));
         result.addContent(HtmlTree.DD(htmlWriter.commentTagsToContent(
-                returnTag, element, ch.getDescription(configuration, returnTag), false)));
+                returnTag, element, ch.getDescription(configuration, returnTag), false, inSummary)));
         return result;
     }
 
@@ -333,7 +344,7 @@ public class TagletWriterImpl extends TagletWriter {
                 body.addContent(", ");
             }
             List<? extends DocTree> bodyTags = ch.getBody(configuration, simpleTag);
-            body.addContent(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, false));
+            body.addContent(htmlWriter.commentTagsToContent(simpleTag, element, bodyTags, false, inSummary));
             many = true;
         }
         result.addContent(HtmlTree.DD(body));
@@ -348,7 +359,7 @@ public class TagletWriterImpl extends TagletWriter {
         result.addContent(HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.simpleTagLabel, new RawHtml(header))));
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(configuration, simpleTag);
-        Content body = htmlWriter.commentTagsToContent(simpleTag, element, description, false);
+        Content body = htmlWriter.commentTagsToContent(simpleTag, element, description, false, inSummary);
         result.addContent(HtmlTree.DD(body));
         return result;
     }
@@ -382,7 +393,7 @@ public class TagletWriterImpl extends TagletWriter {
         }
         body.addContent(HtmlTree.CODE(excName));
         List<? extends DocTree> description = ch.getDescription(configuration, throwsTag);
-        Content desc = htmlWriter.commentTagsToContent(throwsTag, element, description, false);
+        Content desc = htmlWriter.commentTagsToContent(throwsTag, element, description, false, inSummary);
         if (desc != null && !desc.isEmpty()) {
             body.addContent(" - ");
             body.addContent(desc);
@@ -429,7 +440,7 @@ public class TagletWriterImpl extends TagletWriter {
     public Content commentTagsToOutput(DocTree holderTag,
         Element holder, List<? extends DocTree> tags, boolean isFirstSentence) {
         return htmlWriter.commentTagsToContent(holderTag, holder,
-                tags, isFirstSentence);
+                tags, isFirstSentence, inSummary);
     }
 
     /**

@@ -355,10 +355,22 @@ public class HtmlDocletWriter {
     /**
      * Returns a TagletWriter that knows how to write HTML.
      *
+     * @param isFirstSentence  true if we want to write the first sentence
      * @return a TagletWriter that knows how to write HTML.
      */
     public TagletWriter getTagletWriterInstance(boolean isFirstSentence) {
         return new TagletWriterImpl(this, isFirstSentence);
+    }
+
+    /**
+     * Returns a TagletWriter that knows how to write HTML.
+     *
+     * @param isFirstSentence  true if we want to write the first sentence
+     * @param inSummary  true if tags are to be added in a summary section
+     * @return a TagletWriter
+     */
+    public TagletWriter getTagletWriterInstance(boolean isFirstSentence, boolean inSummary) {
+        return new TagletWriterImpl(this, isFirstSentence, inSummary);
     }
 
     /**
@@ -1127,7 +1139,7 @@ public class HtmlDocletWriter {
     public void addInlineComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(configuration, tag);
-        addCommentTags(element, tag, description, false, false, htmltree);
+        addCommentTags(element, tag, description, false, false, false, htmltree);
     }
 
     /**
@@ -1151,7 +1163,7 @@ public class HtmlDocletWriter {
      */
     public void addInlineDeprecatedComment(Element e, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(e);
-        addCommentTags(e, ch.getBody(configuration, tag), true, false, htmltree);
+        addCommentTags(e, ch.getBody(configuration, tag), true, false, false, htmltree);
     }
 
     /**
@@ -1172,13 +1184,13 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the summary will be added
      */
     public void addSummaryComment(Element element, List<? extends DocTree> firstSentenceTags, Content htmltree) {
-        addCommentTags(element, firstSentenceTags, false, true, htmltree);
+        addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
     }
 
     public void addSummaryDeprecatedComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> body = ch.getBody(configuration, tag);
-        addCommentTags(element, ch.getFirstSentenceTrees(configuration, body), true, true, htmltree);
+        addCommentTags(element, ch.getFirstSentenceTrees(configuration, body), true, true, true, htmltree);
     }
 
     /**
@@ -1188,7 +1200,7 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the inline comments will be added
      */
     public void addInlineComment(Element element, Content htmltree) {
-        addCommentTags(element, utils.getFullBody(element), false, false, htmltree);
+        addCommentTags(element, utils.getFullBody(element), false, false, false, htmltree);
     }
 
     /**
@@ -1198,11 +1210,12 @@ public class HtmlDocletWriter {
      * @param tags the first sentence tags for the doc
      * @param depr true if it is deprecated
      * @param first true if the first sentence tags should be added
+     * @param inSummary true if the comment tags are added into the summary section
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, List<? extends DocTree> tags, boolean depr,
-            boolean first, Content htmltree) {
-        addCommentTags(element, null, tags, depr, first, htmltree);
+            boolean first, boolean inSummary, Content htmltree) {
+        addCommentTags(element, null, tags, depr, first, inSummary, htmltree);
     }
 
     /**
@@ -1213,15 +1226,16 @@ public class HtmlDocletWriter {
      * @param tags the first sentence tags for the doc
      * @param depr true if it is deprecated
      * @param first true if the first sentence tags should be added
+     * @param inSummary true if the comment tags are added into the summary section
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
-            boolean first, Content htmltree) {
+            boolean first, boolean inSummary, Content htmltree) {
         if(configuration.nocomment){
             return;
         }
         Content div;
-        Content result = commentTagsToContent(null, element, tags, first);
+        Content result = commentTagsToContent(null, element, tags, first, inSummary);
         if (depr) {
             div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
             htmltree.addContent(div);
@@ -1267,10 +1281,10 @@ public class HtmlDocletWriter {
     private boolean commentRemoved = false;
 
     /**
-     * Converts inline tags and text to text strings, expanding the
+     * Converts inline tags and text to Content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
-     * to non-inline tags.
+     * to block tags.
      *
      * @param holderTag    specific tag where comment resides
      * @param element    specific element where comment resides
@@ -1281,6 +1295,25 @@ public class HtmlDocletWriter {
      */
     public Content commentTagsToContent(DocTree holderTag, Element element,
             List<? extends DocTree> tags, boolean isFirstSentence) {
+        return commentTagsToContent(holderTag, element, tags, isFirstSentence, false);
+    }
+
+    /**
+     * Converts inline tags and text to text strings, expanding the
+     * inline tags along the way.  Called wherever text can contain
+     * an inline tag, such as in comments or in free-form text arguments
+     * to block tags.
+     *
+     * @param holderTag    specific tag where comment resides
+     * @param element    specific element where comment resides
+     * @param tags   array of text tags and inline tags (often alternating)
+    present in the text of interest for this element
+     * @param isFirstSentence  true if text is first sentence
+     * @param inSummary   if the comment tags are added into the summary section
+     * @return a Content object
+     */
+    public Content commentTagsToContent(DocTree holderTag, Element element,
+            List<? extends DocTree> tags, boolean isFirstSentence, boolean inSummary) {
 
         final Content result = new ContentBuilder() {
             @Override
@@ -1445,7 +1478,7 @@ public class HtmlDocletWriter {
                 public Boolean visitIndex(IndexTree node, Content p) {
                     Content output = TagletWriter.getInlineTagOutput(element,
                             configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence));
+                            getTagletWriterInstance(isFirstSentence, inSummary));
                     if (output != null) {
                         result.addContent(output);
                     }
