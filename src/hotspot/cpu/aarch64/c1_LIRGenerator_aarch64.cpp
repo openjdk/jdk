@@ -440,17 +440,26 @@ void LIRGenerator::do_ArithmeticOp_Long(ArithmeticOp* x) {
 
   if (x->op() == Bytecodes::_ldiv || x->op() == Bytecodes::_lrem) {
 
-    // the check for division by zero destroys the right operand
-    right.set_destroys_register();
-
-    // check for division by zero (destroys registers of right operand!)
-    CodeEmitInfo* info = state_for(x);
-
     left.load_item();
-    right.load_item();
-
-    __ cmp(lir_cond_equal, right.result(), LIR_OprFact::longConst(0));
-    __ branch(lir_cond_equal, T_LONG, new DivByZeroStub(info));
+    bool need_zero_check = true;
+    if (right.is_constant()) {
+      jlong c = right.get_jlong_constant();
+      // no need to do div-by-zero check if the divisor is a non-zero constant
+      if (c != 0) need_zero_check = false;
+      // do not load right if the divisor is a power-of-2 constant
+      if (c > 0 && is_power_of_2_long(c)) {
+        right.dont_load_item();
+      } else {
+        right.load_item();
+      }
+    } else {
+      right.load_item();
+    }
+    if (need_zero_check) {
+      CodeEmitInfo* info = state_for(x);
+      __ cmp(lir_cond_equal, right.result(), LIR_OprFact::longConst(0));
+      __ branch(lir_cond_equal, T_LONG, new DivByZeroStub(info));
+    }
 
     rlock_result(x);
     switch (x->op()) {
@@ -506,19 +515,32 @@ void LIRGenerator::do_ArithmeticOp_Int(ArithmeticOp* x) {
   // do not need to load right, as we can handle stack and constants
   if (x->op() == Bytecodes::_idiv || x->op() == Bytecodes::_irem) {
 
-    right_arg->load_item();
     rlock_result(x);
+    bool need_zero_check = true;
+    if (right.is_constant()) {
+      jint c = right.get_jint_constant();
+      // no need to do div-by-zero check if the divisor is a non-zero constant
+      if (c != 0) need_zero_check = false;
+      // do not load right if the divisor is a power-of-2 constant
+      if (c > 0 && is_power_of_2(c)) {
+        right_arg->dont_load_item();
+      } else {
+        right_arg->load_item();
+      }
+    } else {
+      right_arg->load_item();
+    }
+    if (need_zero_check) {
+      CodeEmitInfo* info = state_for(x);
+      __ cmp(lir_cond_equal, right_arg->result(), LIR_OprFact::longConst(0));
+      __ branch(lir_cond_equal, T_INT, new DivByZeroStub(info));
+    }
 
-    CodeEmitInfo* info = state_for(x);
-    LIR_Opr tmp = new_register(T_INT);
-    __ cmp(lir_cond_equal, right_arg->result(), LIR_OprFact::longConst(0));
-    __ branch(lir_cond_equal, T_INT, new DivByZeroStub(info));
-    info = state_for(x);
-
+    LIR_Opr ill = LIR_OprFact::illegalOpr;
     if (x->op() == Bytecodes::_irem) {
-      __ irem(left_arg->result(), right_arg->result(), x->operand(), tmp, NULL);
+      __ irem(left_arg->result(), right_arg->result(), x->operand(), ill, NULL);
     } else if (x->op() == Bytecodes::_idiv) {
-      __ idiv(left_arg->result(), right_arg->result(), x->operand(), tmp, NULL);
+      __ idiv(left_arg->result(), right_arg->result(), x->operand(), ill, NULL);
     }
 
   } else if (x->op() == Bytecodes::_iadd || x->op() == Bytecodes::_isub) {
