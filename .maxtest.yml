@@ -5,5 +5,11 @@ tests:
     - daily
   commands:
     - cd make && ant build
-  sharedEnviroment:
+    - mkdir -p ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+    - cp -vR ../dist ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+  sharedEnvironment:
       MAXJDOC: ${MAXTEST_ROOT}/${BUILD_TAG}/maxjdoc
+  clusterParameters:
+    cpus: 1.0
+    mem: 1024.0
+    centos6: 1.0
