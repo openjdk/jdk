@@ -59,6 +59,8 @@ applications/ctw/modules/jdk_jconsole.java 8189604 windows-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
+compiler/whitebox/ForceNMethodSweepTest.java 8211129 generic-all
+
 #############################################################################
 
 # :hotspot_gc
