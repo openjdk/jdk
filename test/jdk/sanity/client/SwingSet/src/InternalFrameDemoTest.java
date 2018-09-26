@@ -138,6 +138,9 @@ public class InternalFrameDemoTest {
                 orignalSize.height - PARENT_FRAME_NEW_SIZE_DELTA);
         parentFrameOperator.resize(newSize.width, newSize.height);
         parentFrameOperator.waitComponentSize(newSize);
+        // TODO This is a workaround for JDK-8210638, this delay has to remove
+        // after fixing this bug, this is an unstable code.
+        TestHelpers.delayBetweenFrameStateChange();
         // keeping some delay before checking the internal frame property
         // as it is a negative scenario
         Thread.sleep(DELAY);
@@ -145,26 +148,41 @@ public class InternalFrameDemoTest {
         // Resizing parent frame back to original size
         parentFrameOperator.resize(orignalSize.width, orignalSize.height);
         parentFrameOperator.waitComponentSize(orignalSize);
+        // TODO This is a workaround for JDK-8210638, this delay has to remove
+        // after fixing this bug, this is an unstable code.
+        TestHelpers.delayBetweenFrameStateChange();
 
         // Iconifying the parent frame and verifying the iconified status of the internal
         // frame(it should not be iconified)
         parentFrameOperator.iconify();
+        // TODO This is a workaround for JDK-8210638, this delay has to remove
+        // after fixing this bug, this is an unstable code.
+        TestHelpers.delayBetweenFrameStateChange();
         // keeping some delay before checking the internal frame property
         // as it is a negative scenario
         Thread.sleep(DELAY);
         assertFalse("Internal Frame should not be iconified when parent frame"
                 + " alone is iconified.", internalFrameOperator.isIcon());
         parentFrameOperator.deiconify();
+        // TODO This is a workaround for JDK-8210638, this delay has to remove
+        // after fixing this bug, this is an unstable code.
+        TestHelpers.delayBetweenFrameStateChange();
 
         // Maximizing the parent frame and verifying the maximized status of the internal
         // frame(it should not be maximized)
         parentFrameOperator.maximize();
+        // TODO This is a workaround for JDK-8210638, this delay has to remove
+        // after fixing this bug, this is an unstable code.
+        TestHelpers.delayBetweenFrameStateChange();
         // keeping some delay before checking the internal frame property
         // as it is a negative scenario
         Thread.sleep(DELAY);
         assertFalse("Internal Frame should not be maximized when parent frame"
                 + " alone is maximized.", internalFrameOperator.isMaximum());
         parentFrameOperator.demaximize();
+        // TODO This is a workaround for JDK-8210638, this delay has to remove
+        // after fixing this bug, this is an unstable code.
+        TestHelpers.delayBetweenFrameStateChange();
 
         // Relocating the parent frame and verifying the location of the internal
         // frame(it should not be changed the location)
@@ -173,6 +191,9 @@ public class InternalFrameDemoTest {
                 (orignalLocation.y + PARENT_FRAME_NEW_LOCATION_DELTA));
         parentFrameOperator.move(newLocation.x, newLocation.y);
         parentFrameOperator.waitComponentLocation(newLocation);
+        // TODO This is a workaround for JDK-8210638, this delay has to remove
+        // after fixing this bug, this is an unstable code.
+        TestHelpers.delayBetweenFrameStateChange();
         // keeping some delay before checking the internal frame property
         // as it is a negative scenario
         Thread.sleep(DELAY);
@@ -180,15 +201,19 @@ public class InternalFrameDemoTest {
         // Moving back parent frame to original location
         parentFrameOperator.move(orignalLocation.x, orignalLocation.y);
         parentFrameOperator.waitComponentLocation(orignalLocation);
+        // TODO This is a workaround for JDK-8210638, this delay has to remove
+        // after fixing this bug, this is an unstable code.
+        TestHelpers.delayBetweenFrameStateChange();
     }
 
     /**
      * Verifying different actions on the internal frame.
      *
      * @param internalFrameOperator : internal fame operator
+     * @throws InterruptedException
      */
-    private void checkInternalFrameAction(
-            JInternalFrameOperator internalFrameOperator) {
+    private void checkInternalFrameAction(JInternalFrameOperator
+            internalFrameOperator) throws InterruptedException {
         // Verifying maximize and demaximize actions
         internalFrameOperator.waitStateOnQueue(comp
                 -> ((JInternalFrame)comp).isMaximizable());
