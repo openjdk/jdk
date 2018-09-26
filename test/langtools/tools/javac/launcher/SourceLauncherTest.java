@@ -244,7 +244,7 @@ public class SourceLauncherTest extends TestRunner {
                 .className(sourceFile.toString())
                 .run(Task.Expect.SUCCESS)
                 .getOutput(Task.OutputKind.STDOUT);
-        checkEqual("stdout", log.trim().replace(tb.lineSeparator, "\n"),
+        checkEqual("stdout", log.trim(),
                 "user.dir=" + System.getProperty("user.dir") + "\n" +
                 "exception: java.security.AccessControlException: " +
                     "access denied (\"java.util.PropertyPermission\" \"user.dir\" \"write\")");
