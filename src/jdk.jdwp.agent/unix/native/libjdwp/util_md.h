@@ -33,7 +33,7 @@
 #include <sys/types.h>
 #ifdef _ALLBSD_SOURCE
 #include <machine/endian.h>
-#elif __linux__
+#elif defined(__linux__)
 #include <endian.h>
 #endif
 
