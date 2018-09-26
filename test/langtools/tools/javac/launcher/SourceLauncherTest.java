@@ -250,6 +250,22 @@ public class SourceLauncherTest extends TestRunner {
                     "access denied (\"java.util.PropertyPermission\" \"user.dir\" \"write\")");
     }
 
+    public void testSystemProperty(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "class ShowProperty {\n" +
+            "    public static void main(String... args) {\n" +
+            "        System.out.println(System.getProperty(\"jdk.launcher.sourcefile\"));\n" +
+            "    }\n" +
+            "}");
+
+        Path file = base.resolve("ShowProperty.java");
+        String log = new JavaTask(tb)
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(), file.toAbsolutePath().toString());
+    }
+
     void testSuccess(Path file, String expect) throws IOException {
         Result r = run(file, Collections.emptyList(), List.of("1", "2", "3"));
         checkEqual("stdout", r.stdOut, expect);

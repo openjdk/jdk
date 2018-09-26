@@ -399,6 +399,7 @@ public class Main {
      */
     private void execute(String mainClassName, String[] appArgs, Context context)
             throws Fault, InvocationTargetException {
+        System.setProperty("jdk.launcher.sourcefile", context.file.toString());
         ClassLoader cl = context.getClassLoader(ClassLoader.getSystemClassLoader());
         try {
             Class<?> appClass = Class.forName(mainClassName, true, cl);
