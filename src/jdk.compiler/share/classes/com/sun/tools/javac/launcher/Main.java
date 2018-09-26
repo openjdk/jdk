@@ -50,6 +50,9 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -182,7 +185,7 @@ public class Main {
     public void run(String[] runtimeArgs, String[] args) throws Fault, InvocationTargetException {
         Path file = getFile(args);
 
-        Context context = new Context();
+        Context context = new Context(file.toAbsolutePath());
         String mainClassName = compile(file, getJavacOpts(runtimeArgs), context);
 
         String[] appArgs = Arrays.copyOfRange(args, 1, args.length);
@@ -193,7 +196,7 @@ public class Main {
      * Returns the path for the filename found in the first of an array of arguments.
      *
      * @param args the array
-     * @return the path
+     * @return the path, as given in the array of args
      * @throws Fault if there is a problem determining the path, or if the file does not exist
      */
     private Path getFile(String[] args) throws Fault {
@@ -478,14 +481,19 @@ public class Main {
      * a class loader.
      */
     private static class Context {
-        private Map<String, byte[]> inMemoryClasses = new HashMap<>();
+        private final Path file;
+        private final Map<String, byte[]> inMemoryClasses = new HashMap<>();
+
+        Context(Path file) {
+            this.file = file;
+        }
 
         JavaFileManager getFileManager(StandardJavaFileManager delegate) {
             return new MemoryFileManager(inMemoryClasses, delegate);
         }
 
         ClassLoader getClassLoader(ClassLoader parent) {
-            return new MemoryClassLoader(inMemoryClasses, parent);
+            return new MemoryClassLoader(inMemoryClasses, parent, file);
         }
     }
 
@@ -546,9 +554,22 @@ public class Main {
          */
         private final Map<String, byte[]> sourceFileClasses;
 
-        MemoryClassLoader(Map<String, byte[]> sourceFileClasses, ClassLoader parent) {
+        /**
+         * A minimal protection domain, specifying a code source of the source file itself,
+         * used for classes found in the source file and defined by this loader.
+         */
+        private final ProtectionDomain domain;
+
+        MemoryClassLoader(Map<String, byte[]> sourceFileClasses, ClassLoader parent, Path file) {
             super(parent);
             this.sourceFileClasses = sourceFileClasses;
+            CodeSource codeSource;
+            try {
+                codeSource = new CodeSource(file.toUri().toURL(), (CodeSigner[]) null);
+            } catch (MalformedURLException e) {
+                codeSource = null;
+            }
+            domain = new ProtectionDomain(codeSource, null, this, null);
         }
 
         /**
@@ -632,7 +653,7 @@ public class Main {
             if (bytes == null) {
                 throw new ClassNotFoundException(name);
             }
-            return defineClass(name, bytes, 0, bytes.length);
+            return defineClass(name, bytes, 0, bytes.length, domain);
         }
 
         @Override
