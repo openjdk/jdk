@@ -175,7 +175,7 @@ org.graalvm.compiler.replacements.test.classfile.ClassfileBytecodeProviderTest  
 org.graalvm.compiler.replacements.test.classfile.RedefineIntrinsicTest           8205081
 
 org.graalvm.compiler.core.test.deopt.CompiledMethodTest          8202955
-org.graalvm.compiler.core.test.CountedLoopTest                   8199885
+org.graalvm.compiler.core.test.CountedLoopTest                   8211179
 org.graalvm.compiler.debug.test.DebugContextTest                 8203504
 
 org.graalvm.compiler.hotspot.test.GraalOSRTest                   8206947
