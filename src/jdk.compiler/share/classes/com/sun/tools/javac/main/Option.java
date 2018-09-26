@@ -328,7 +328,7 @@ public enum Option {
 
     ENCODING("-encoding", "opt.arg.encoding", "opt.encoding", STANDARD, FILEMANAGER),
 
-    SOURCE("-source", "opt.arg.release", "opt.source", STANDARD, BASIC) {
+    SOURCE("--source -source", "opt.arg.release", "opt.source", STANDARD, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
             Source source = Source.lookup(operand);
@@ -349,7 +349,7 @@ public enum Option {
         }
     },
 
-    TARGET("-target", "opt.arg.release", "opt.target", STANDARD, BASIC) {
+    TARGET("--target -target", "opt.arg.release", "opt.target", STANDARD, BASIC) {
         @Override
         public void process(OptionHelper helper, String option, String operand) throws InvalidValueException {
             Target target = Target.lookup(operand);

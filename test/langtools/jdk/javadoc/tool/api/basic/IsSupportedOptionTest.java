@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6493690
+ * @bug 6493690 8210555
  * @summary javadoc should have a javax.tools.Tool service provider
  * @modules java.compiler
  *          jdk.compiler
@@ -48,6 +48,8 @@ public class IsSupportedOptionTest extends APITest {
     @Test
     public void test() throws Exception {
         DocumentationTool tool = ToolProvider.getSystemDocumentationTool();
+        check(tool, "-source", 1);
+        check(tool, "--source", 1);
         check(tool, "-sourcepath", 1);
         check(tool, "-verbose", 0);
         check(tool, "-ZZZ", -1);

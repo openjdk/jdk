@@ -146,7 +146,7 @@ public enum ToolOption {
         }
     },
 
-    SOURCE("-source", STANDARD, true) {
+    SOURCE("--source -source", STANDARD, true) {
         @Override
         public void process(Helper helper, String arg) throws InvalidValueException {
             Option.SOURCE.process(helper.getOptionHelper(), primaryName, arg);

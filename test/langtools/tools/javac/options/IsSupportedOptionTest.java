@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8189782
+ * @bug 8189782 8210555
  * @summary Test for isSupportedOption
  * @modules java.compiler
  *          jdk.compiler
@@ -44,6 +44,9 @@ public class IsSupportedOptionTest {
     public void run() throws Exception {
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         check(tool, "-source", 1);
+        check(tool, "--source", 1);
+        check(tool, "-target", 1);
+        check(tool, "--target", 1);
         check(tool, "--add-modules", 1);
         check(tool, "-verbose", 0);
         check(tool, "-proc:none", 0);

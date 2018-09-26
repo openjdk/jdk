@@ -380,8 +380,8 @@ public class Start extends ToolOption.Helper {
         String platformString = compOpts.get("--release");
 
         if (platformString != null) {
-            if (compOpts.isSet("-source")) {
-                usageError("main.release.bootclasspath.conflict", "-source");
+            if (compOpts.isSet(Option.SOURCE.primaryName)) {
+                usageError("main.release.bootclasspath.conflict", Option.SOURCE.primaryName);
             }
             if (fileManagerOpts.containsKey(Option.BOOT_CLASS_PATH)) {
                 usageError("main.release.bootclasspath.conflict", Option.BOOT_CLASS_PATH.getPrimaryName());
