@@ -433,7 +433,9 @@ public class Flags {
         SYSTEM_MODULE(Flags.SYSTEM_MODULE),
         DEPRECATED_ANNOTATION(Flags.DEPRECATED_ANNOTATION),
         DEPRECATED_REMOVAL(Flags.DEPRECATED_REMOVAL),
-        HAS_RESOURCE(Flags.HAS_RESOURCE);
+        HAS_RESOURCE(Flags.HAS_RESOURCE),
+        POTENTIALLY_AMBIGUOUS(Flags.POTENTIALLY_AMBIGUOUS),
+        ANONCONSTR_BASED(Flags.ANONCONSTR_BASED);
 
         Flag(long flag) {
             this.value = flag;
