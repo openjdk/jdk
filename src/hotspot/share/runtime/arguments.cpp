@@ -3851,6 +3851,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   UNSUPPORTED_OPTION(UseLargePages);
 #endif
 
+#if defined(AIX)
+  UNSUPPORTED_OPTION(AllocateHeapAt);
+#endif
+
   ArgumentsExt::report_unsupported_options();
 
 #ifndef PRODUCT
