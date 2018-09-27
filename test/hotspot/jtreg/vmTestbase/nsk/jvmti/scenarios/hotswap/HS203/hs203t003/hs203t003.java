@@ -62,7 +62,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class hs203t003 extends RedefineAgent {
 
     public native boolean popThreadFrame(Thread thread);
-        public native boolean resumeThread(Thread thread);
+    public native boolean isSuspended(Thread thread);
+    public native boolean resumeThread(Thread thread);
 
 
     public hs203t003(String[] arg) {
@@ -82,10 +83,10 @@ public class hs203t003 extends RedefineAgent {
         MyThread mt = new MyThread();
         try {
             mt.start();
-            // check if we can can pop the thread.
-            // we can not do redefine/pop frame on run method.
+            // Check if we can can pop the thread.
+            // We can not do redefine/pop frame on run method.
             while (!MyThread.resume.get());
-            // sleep for some few secs to get redefined.
+            // Sleep for some few secs to get redefined.
             while (!isRedefined()) {
                 if (!agentStatus()) {
                     System.out.println("Failed to redefine class");
@@ -93,10 +94,26 @@ public class hs203t003 extends RedefineAgent {
                 }
                 Thread.sleep(100);
             }
-            popThreadFrame(mt); // pop the frame.
-            resumeThread(mt);   // resume the thread.
+            // Wait for the thread to be suspended.
+            while (!isSuspended(mt)) {
+                if (!agentStatus()) {
+                    System.out.println("Failed to suspend thread");
+                    return passed;
+                }
+                Thread.sleep(100);
+            }
+            // Pop the frame.
+            if (!popThreadFrame(mt)) {
+                System.out.println("Failed to pop a frame = "
+                                   + mt.threadState);
+            }
+            // Resume the thread.
+            if(!resumeThread(mt)) {
+                System.out.println("Failed to resume the thread = "
+                                   + mt.threadState);
+            }
+            // Wait till the other thread completes its execution.
             mt.join();
-            // wait till the other thread completes its execution.
             System.out.println("Thread state after popping/redefining = "
                                + mt.threadState);
         } catch(Exception ie) {

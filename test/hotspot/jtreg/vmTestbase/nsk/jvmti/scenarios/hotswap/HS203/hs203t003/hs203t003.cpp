@@ -174,6 +174,23 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
     return JNI_OK;
 }
 
+JNIEXPORT jboolean JNICALL
+Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t003_hs203t003_isSuspended(JNIEnv * jni,
+        jclass clas,
+        jthread thread) {
+    jboolean retvalue;
+    jint state;
+    retvalue = JNI_FALSE;
+    if ( ! NSK_JVMTI_VERIFY( NSK_CPP_STUB3(GetThreadState, jvmti, thread, &state) )  ) {
+        nsk_printf(" Agent :: Error while getting thread state.\n");
+        nsk_jvmti_agentFailed();
+    } else {
+        if ( state & JVMTI_THREAD_STATE_SUSPENDED) {
+          retvalue = JNI_TRUE;
+        }
+    }
+    return retvalue;
+}
 
 JNIEXPORT jboolean JNICALL
 Java_nsk_jvmti_scenarios_hotswap_HS203_hs203t003_hs203t003_popThreadFrame(JNIEnv * jni,
