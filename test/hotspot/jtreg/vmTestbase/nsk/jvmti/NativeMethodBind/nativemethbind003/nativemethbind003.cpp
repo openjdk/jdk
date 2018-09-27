@@ -124,14 +124,18 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
 
     if (bindEv[0] != bindEv[1]) {
         result = STATUS_FAILED;
-        NSK_COMPLAIN5("TEST FAILED: wrong NativeMethodBind events\n\
-\tfor tested method \"%s %s\" bound with \"%s\":\n\
-\tgot: %d\texpected: %d\n\n",
+        NSK_COMPLAIN5(
+            "TEST FAILED: wrong NativeMethodBind events\n"
+            "\tfor tested method \"%s %s\" bound with \"%s\":\n"
+            "\tgot: %d\texpected: %d\n\n",
             METHODS[0], METHODS[1], CLASS_SIG, bindEv[0], bindEv[1]);
-    } else
-        NSK_DISPLAY4("CHECK PASSED: %d NativeMethodBind event(s)\n\
-\tfor tested method \"%s %s\" bound with \"%s\"\n\tas expected\n",
+    } else {
+        NSK_DISPLAY4(
+            "CHECK PASSED: %d NativeMethodBind event(s)\n"
+            "\tfor tested method \"%s %s\" bound with \"%s\"\n"
+            "\tas expected\n",
             bindEv[0], METHODS[0], METHODS[1], CLASS_SIG);
+    }
 
     if (result == STATUS_FAILED)
         exit(95 + STATUS_FAILED);
@@ -151,8 +155,9 @@ Java_nsk_jvmti_NativeMethodBind_nativemethbind003_registerNative(
     jclass testedCls = NULL;
     JNINativeMethod meth;
 
-    NSK_DISPLAY1("Inside the registerNative()\n\
-Finding class \"%s\" ...\n", CLASS_SIG);
+    NSK_DISPLAY1("Inside the registerNative()\n"
+                 "Finding class \"%s\" ...\n",
+                 CLASS_SIG);
     if (!NSK_JNI_VERIFY(env, (testedCls =
             NSK_CPP_STUB2(FindClass, env, CLASS_SIG)) != NULL)) {
         result = STATUS_FAILED;
@@ -165,8 +170,9 @@ Finding class \"%s\" ...\n", CLASS_SIG);
     meth.signature = (char*) METHODS[1];
     meth.fnPtr = (void*) nativeMethod;
 
-    NSK_DISPLAY3("Calling RegisterNatives() with \"%s %s\"\n\
-\tfor class \"%s\" ...\n",
+    NSK_DISPLAY3(
+        "Calling RegisterNatives() with \"%s %s\"\n"
+        "\tfor class \"%s\" ...\n",
         METHODS[0], METHODS[1], CLASS_SIG);
     if (!NSK_JNI_VERIFY_VOID(env, (NSK_CPP_STUB4(RegisterNatives,
             env, testedCls, &meth, 1)) != 0)) {

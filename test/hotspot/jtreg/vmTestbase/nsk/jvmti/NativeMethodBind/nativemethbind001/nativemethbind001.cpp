@@ -110,8 +110,9 @@ NativeMethodBind(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
                 (strcmp(methSig,METHODS[i][1]) == 0)) {
             bindEv[i][0]++;
 
-            NSK_DISPLAY1("CHECK PASSED: NativeMethodBind event received for the method:\n\
-\t\"%s\" as expected\n",
+            NSK_DISPLAY1(
+                "CHECK PASSED: NativeMethodBind event received for the method:\n"
+                "\t\"%s\" as expected\n",
                 methNam);
             break;
         }
@@ -163,8 +164,8 @@ Java_nsk_jvmti_NativeMethodBind_nativemethbind001_nativeMethod(
         meth.signature = (char *) METHODS[1][1];
         meth.fnPtr = (void *) &anotherNativeMethod;
 
-        NSK_DISPLAY3("Calling RegisterNatives() with \"%s %s\"\n\
-\tfor class \"%s\" ...\n",
+        NSK_DISPLAY3("Calling RegisterNatives() with \"%s %s\"\n"
+                     "\tfor class \"%s\" ...\n",
             METHODS[1][0], METHODS[1][1], CLASS_SIG);
         if (!NSK_JNI_VERIFY_VOID(env, (NSK_CPP_STUB4(RegisterNatives,
                 env, testedCls, &meth, 1)) != 0)) {
@@ -187,8 +188,9 @@ Java_nsk_jvmti_NativeMethodBind_nativemethbind001_check(
         }
         else {
             result = STATUS_FAILED;
-            NSK_COMPLAIN3("TEST FAILED: wrong number of NativeMethodBind events for the method \"%s\":\n\
-got: %d\texpected: %d\n\n",
+            NSK_COMPLAIN3(
+                "TEST FAILED: wrong number of NativeMethodBind events for the method \"%s\":\n"
+                "got: %d\texpected: %d\n\n",
                 METHODS[i][0], bindEv[i][0], bindEv[i][1]);
         }
 

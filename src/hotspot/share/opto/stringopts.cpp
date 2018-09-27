@@ -1547,7 +1547,7 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
 
 // Compress copy contents of the byte/char String str into dst_array starting at index start.
 Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* dst_array, Node* dst_coder, Node* start) {
-  Node* src_array = kit.load_String_value(kit.control(), str);
+  Node* src_array = kit.load_String_value(str, true);
   src_array = kit.access_resolve(src_array, ACCESS_READ);
 
   IdealKit ideal(&kit, true, true);
@@ -1580,7 +1580,7 @@ Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* dst_array, No
     // Non-constant source string
     if (CompactStrings) {
       // Emit runtime check for coder
-      Node* coder = kit.load_String_coder(__ ctrl(), str);
+      Node* coder = kit.load_String_coder(str, true);
       __ if_then(coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1)); {
         // Source is Latin1
         copy_latin1_string(kit, ideal, src_array, count, dst_array, dst_coder, start);
@@ -1796,8 +1796,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           // replace the argument with the null checked version
           arg = null_string;
           sc->set_argument(argi, arg);
-          count = kit.load_String_length(kit.control(), arg);
-          arg_coder = kit.load_String_coder(kit.control(), arg);
+          count = kit.load_String_length(arg, true);
+          arg_coder = kit.load_String_coder(arg, true);
         } else if (!type->higher_equal(TypeInstPtr::NOTNULL)) {
           // s = s != null ? s : "null";
           // length = length + (s.count - s.offset);
@@ -1820,14 +1820,14 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           // replace the argument with the null checked version
           arg = phi;
           sc->set_argument(argi, arg);
-          count = kit.load_String_length(kit.control(), arg);
-          arg_coder = kit.load_String_coder(kit.control(), arg);
+          count = kit.load_String_length(arg, true);
+          arg_coder = kit.load_String_coder(arg, true);
         } else {
           // A corresponding nullcheck will be connected during IGVN MemNode::Ideal_common_DU_postCCP
           // kit.control might be a different test, that can be hoisted above the actual nullcheck
           // in case, that the control input is not null, Ideal_common_DU_postCCP will not look for a nullcheck.
-          count = kit.load_String_length(NULL, arg);
-          arg_coder = kit.load_String_coder(NULL, arg);
+          count = kit.load_String_length(arg, false);
+          arg_coder = kit.load_String_coder(arg, false);
         }
         if (arg->is_Con()) {
           // Constant string. Get constant coder and length.
@@ -1918,7 +1918,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
          sc->mode(0) == StringConcat::StringNullCheckMode)) {
       // Handle the case when there is only a single String argument.
       // In this case, we can just pull the value from the String itself.
-      dst_array = kit.load_String_value(kit.control(), sc->argument(0));
+      dst_array = kit.load_String_value(sc->argument(0), true);
     } else {
       // Allocate destination byte array according to coder
       dst_array = allocate_byte_array(kit, NULL, __ LShiftI(length, coder));
@@ -1959,8 +1959,8 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     }
 
     // Initialize the string
-    kit.store_String_value(kit.control(), result, dst_array);
-    kit.store_String_coder(kit.control(), result, coder);
+    kit.store_String_value(result, dst_array);
+    kit.store_String_coder(result, coder);
 
     // The value field is final. Emit a barrier here to ensure that the effect
     // of the initialization is committed to memory before any code publishes

@@ -236,16 +236,19 @@ int nsk_aod_agentFinished(JNIEnv* jni, const char* agentName, int success) {
     jstring agentNameString;
 
     if (!targetAppClass) {
-        NSK_COMPLAIN1("%s: TEST LOGIC ERROR: method 'agentFinished' was called before "\
-                "targetAppClass was initialized\n", agentName);
+        NSK_COMPLAIN1(
+            "%s: TEST LOGIC ERROR: method 'agentFinished' was called before "
+            "targetAppClass was initialized\n",
+            agentName);
         return NSK_FALSE;
     }
 
     if (internalError && success) {
         success = 0;
-        NSK_COMPLAIN1("Status of agent '%s' is 'passed', but some error happened during test execution "\
-                "(see log for details), change agent status to 'failed'\n",
-                agentName);
+        NSK_COMPLAIN1(
+            "Status of agent '%s' is 'passed', but some error happened during test execution "
+            "(see log for details), change agent status to 'failed'\n",
+            agentName);
     }
 
     NSK_DISPLAY2("Agent %s finished (success: %d)\n", agentName, success);

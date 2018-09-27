@@ -542,6 +542,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "CheckAssertionStatusDirectives",JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
@@ -577,6 +578,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "EmitSync",                      JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "SyncVerbose",                   JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "SyncFlags",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "SyncKnobs",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },

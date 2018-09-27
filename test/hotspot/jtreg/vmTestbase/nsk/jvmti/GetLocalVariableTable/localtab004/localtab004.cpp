@@ -107,8 +107,7 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
                 jni_env, testedCls,
                 methInfo[i].m_name, methInfo[i].m_sign);
         if (methInfo[i].mid == NULL) {
-            NSK_COMPLAIN3("TEST FAILURE: unable to get the method ID for the %s method\
- \"%s\", signature \"%s\"\n\n",
+            NSK_COMPLAIN3("TEST FAILURE: unable to get the method ID for the %s method \"%s\", signature \"%s\"\n\n",
                 methInfo[i].inst?"instance":"static",
                 methInfo[i].m_name, methInfo[i].m_sign);
             return STATUS_FAILED;
@@ -124,8 +123,9 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
         } else {
             if (count != methInfo[i].vcount) {
                 totRes = STATUS_FAILED;
-                NSK_COMPLAIN5("TEST FAILED: %s method \"%s\", signature \"%s\":\
- found %d vars in the LocalVariableTable, expected %d\n\tHere are the found vars:\n",
+                NSK_COMPLAIN5(
+                    "TEST FAILED: %s method \"%s\", signature \"%s\": found %d vars in the LocalVariableTable, expected %d\n"
+                    "\tHere are the found vars:\n",
                     methInfo[i].inst?"instance":"static",
                     methInfo[i].m_name, methInfo[i].m_sign,
                     count, methInfo[i].vcount);
@@ -136,18 +136,21 @@ static int checkAttr(JNIEnv *jni_env, jclass testedCls) {
 
                 continue;
             }
-            else
-                NSK_DISPLAY4("Checking vars in the LocalVariableTable of the %s method \"%s\",\
- signature \"%s\" ...\n\tfound %d local vars as expected\n",
+            else {
+                NSK_DISPLAY4(
+                    "Checking vars in the LocalVariableTable of the %s method \"%s\", signature \"%s\" ...\n"
+                    "\tfound %d local vars as expected\n",
                     methInfo[i].inst?"instance":"static",
                     methInfo[i].m_name, methInfo[i].m_sign, count);
+            }
 
             for (j=0; j<count; j++) {
                 for (k=0; k<count; k++) {
                     if (strcmp(lv_table[j].name, methInfo[i].vars[k].v_name) == 0) {
                         if (strcmp(lv_table[j].signature, methInfo[i].vars[k].v_sign) != 0) {
-                            NSK_COMPLAIN6("TEST FAILED: %s method: \"%s\", signature: \"%s\": var \"%s\"\
- has signature \"%s\" in the LocalVariableTable, expected \"%s\"\n\n",
+                            NSK_COMPLAIN6(
+                                "TEST FAILED: %s method: \"%s\", signature: \"%s\": var \"%s\" "
+                                "has signature \"%s\" in the LocalVariableTable, expected \"%s\"\n\n",
                                 methInfo[i].inst?"instance":"static",
                                 methInfo[i].m_name, methInfo[i].m_sign,
                                 lv_table[j].name, lv_table[j].signature,

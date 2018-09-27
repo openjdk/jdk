@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IntSummaryStatistics;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -96,7 +98,7 @@ public class CollectorsTest extends OpTestCase {
         @Override
         void assertValue(R value, Supplier<Stream<T>> source, boolean ordered) throws ReflectiveOperationException {
             downstream.assertValue(value,
-                                   () -> source.get().map(mapper::apply),
+                                   () -> source.get().map(mapper),
                                    ordered);
         }
     }
@@ -114,7 +116,7 @@ public class CollectorsTest extends OpTestCase {
         @Override
         void assertValue(R value, Supplier<Stream<T>> source, boolean ordered) throws ReflectiveOperationException {
             downstream.assertValue(value,
-                                   () -> source.get().flatMap(mapper::apply),
+                                   () -> source.get().flatMap(mapper),
                                    ordered);
         }
     }
@@ -284,6 +286,27 @@ public class CollectorsTest extends OpTestCase {
             else {
                 assertEquals(value, reduced.get());
             }
+        }
+    }
+
+    static class TeeingAssertion<T, R1, R2, RR> extends CollectorAssertion<T, RR> {
+        private final Collector<T, ?, R1> c1;
+        private final Collector<T, ?, R2> c2;
+        private final BiFunction<? super R1, ? super R2, ? extends RR> finisher;
+
+        TeeingAssertion(Collector<T, ?, R1> c1, Collector<T, ?, R2> c2,
+                               BiFunction<? super R1, ? super R2, ? extends RR> finisher) {
+            this.c1 = c1;
+            this.c2 = c2;
+            this.finisher = finisher;
+        }
+
+        @Override
+        void assertValue(RR value, Supplier<Stream<T>> source, boolean ordered) {
+            R1 r1 = source.get().collect(c1);
+            R2 r2 = source.get().collect(c2);
+            RR expected = finisher.apply(r1, r2);
+            assertEquals(value, expected);
         }
     }
 
@@ -746,4 +769,42 @@ public class CollectorsTest extends OpTestCase {
         catch (UnsupportedOperationException ignored) { }
     }
 
+    @Test(dataProvider = "StreamTestData<Integer>", dataProviderClass = StreamTestDataProvider.class)
+    public void testTeeing(String name, TestData.OfRef<Integer> data) throws ReflectiveOperationException {
+        Collector<Integer, ?, Long> summing = Collectors.summingLong(Integer::valueOf);
+        Collector<Integer, ?, Long> counting = Collectors.counting();
+        Collector<Integer, ?, Integer> min = collectingAndThen(Collectors.<Integer>minBy(Comparator.naturalOrder()),
+                opt -> opt.orElse(Integer.MAX_VALUE));
+        Collector<Integer, ?, Integer> max = collectingAndThen(Collectors.<Integer>maxBy(Comparator.naturalOrder()),
+                opt -> opt.orElse(Integer.MIN_VALUE));
+        Collector<Integer, ?, String> joining = mapping(String::valueOf, Collectors.joining(", ", "[", "]"));
+
+        Collector<Integer, ?, Map.Entry<Long, Long>> sumAndCount = Collectors.teeing(summing, counting, Map::entry);
+        Collector<Integer, ?, Map.Entry<Integer, Integer>> minAndMax = Collectors.teeing(min, max, Map::entry);
+        Collector<Integer, ?, Double> averaging = Collectors.teeing(summing, counting,
+                (sum, count) -> ((double)sum) / count);
+        Collector<Integer, ?, String> summaryStatistics = Collectors.teeing(sumAndCount, minAndMax,
+                (sumCountEntry, minMaxEntry) -> new IntSummaryStatistics(
+                        sumCountEntry.getValue(), minMaxEntry.getKey(),
+                        minMaxEntry.getValue(), sumCountEntry.getKey()).toString());
+        Collector<Integer, ?, String> countAndContent = Collectors.teeing(counting, joining,
+                (count, content) -> count+": "+content);
+
+        assertCollect(data, sumAndCount, stream -> {
+            List<Integer> list = stream.collect(toList());
+            return Map.entry(list.stream().mapToLong(Integer::intValue).sum(), (long) list.size());
+        });
+        assertCollect(data, averaging, stream -> stream.mapToInt(Integer::intValue).average().orElse(Double.NaN));
+        assertCollect(data, summaryStatistics,
+                stream -> stream.mapToInt(Integer::intValue).summaryStatistics().toString());
+        assertCollect(data, countAndContent, stream -> {
+            List<Integer> list = stream.collect(toList());
+            return list.size()+": "+list;
+        });
+
+        Function<Integer, Integer> classifier = i -> i % 3;
+        exerciseMapCollection(data, groupingBy(classifier, sumAndCount),
+                new GroupingByAssertion<>(classifier, Map.class,
+                        new TeeingAssertion<>(summing, counting, Map::entry)));
+    }
 }

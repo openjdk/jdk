@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 import com.sun.tools.javac.launcher.Main;
 
@@ -191,6 +192,80 @@ public class SourceLauncherTest extends TestRunner {
         checkEqual("stdout", log.trim(), "Hello World! [1, 2, 3]");
     }
 
+    @Test
+    public void testCodeSource(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "import java.net.URL;\n" +
+            "class ShowCodeSource {\n" +
+            "    public static void main(String... args) {\n" +
+            "        URL u = ShowCodeSource.class.getProtectionDomain().getCodeSource().getLocation();\n" +
+            "        System.out.println(u);\n" +
+            "    }\n" +
+            "}");
+
+        Path file = base.resolve("ShowCodeSource.java");
+        String log = new JavaTask(tb)
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(), file.toAbsolutePath().toUri().toURL().toString());
+    }
+
+    @Test
+    public void testPermissions(Path base) throws IOException {
+        Path policyFile = base.resolve("test.policy");
+        Path sourceFile = base.resolve("TestPermissions.java");
+
+        tb.writeFile(policyFile,
+            "grant codeBase \"jrt:/jdk.compiler\" {\n" +
+            "    permission java.security.AllPermission;\n" +
+            "};\n" +
+            "grant codeBase \"" + sourceFile.toUri().toURL() + "\" {\n" +
+            "    permission java.util.PropertyPermission \"user.dir\", \"read\";\n" +
+            "};\n");
+
+        tb.writeJavaFiles(base,
+            "import java.net.URL;\n" +
+            "class TestPermissions {\n" +
+            "    public static void main(String... args) {\n" +
+            "        System.out.println(\"user.dir=\" + System.getProperty(\"user.dir\"));\n" +
+            "        try {\n" +
+            "            System.setProperty(\"user.dir\", \"\");\n" +
+            "            System.out.println(\"no exception\");\n" +
+            "            System.exit(1);\n" +
+            "        } catch (SecurityException e) {\n" +
+            "            System.out.println(\"exception: \" + e);\n" +
+            "        }\n" +
+            "    }\n" +
+            "}");
+
+        String log = new JavaTask(tb)
+                .vmOptions("-Djava.security.manager", "-Djava.security.policy=" + policyFile)
+                .className(sourceFile.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(),
+                "user.dir=" + System.getProperty("user.dir") + "\n" +
+                "exception: java.security.AccessControlException: " +
+                    "access denied (\"java.util.PropertyPermission\" \"user.dir\" \"write\")");
+    }
+
+    public void testSystemProperty(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "class ShowProperty {\n" +
+            "    public static void main(String... args) {\n" +
+            "        System.out.println(System.getProperty(\"jdk.launcher.sourcefile\"));\n" +
+            "    }\n" +
+            "}");
+
+        Path file = base.resolve("ShowProperty.java");
+        String log = new JavaTask(tb)
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(), file.toAbsolutePath().toString());
+    }
+
     void testSuccess(Path file, String expect) throws IOException {
         Result r = run(file, Collections.emptyList(), List.of("1", "2", "3"));
         checkEqual("stdout", r.stdOut, expect);
@@ -233,22 +308,98 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
-    public void testWrongClass(Path base) throws IOException {
+    public void testLoadClass(Path base) throws IOException {
+        Path src1 = base.resolve("src1");
+        Path file1 = src1.resolve("LoadClass.java");
+        tb.writeJavaFiles(src1,
+                "class LoadClass {\n"
+                + "    public static void main(String... args) {\n"
+                + "        System.out.println(\"on classpath\");\n"
+                + "    };\n"
+                + "}\n");
+        Path classes1 = Files.createDirectories(base.resolve("classes"));
+        new JavacTask(tb)
+                .outdir(classes1)
+                .files(file1)
+                .run();
+        String log1 = new JavaTask(tb)
+                .classpath(classes1.toString())
+                .className("LoadClass")
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log1.trim(),
+                "on classpath");
+
+        Path src2 = base.resolve("src2");
+        Path file2 = src2.resolve("LoadClass.java");
+        tb.writeJavaFiles(src2,
+                "class LoadClass {\n"
+                + "    public static void main(String... args) {\n"
+                + "        System.out.println(\"in source file\");\n"
+                + "    };\n"
+                + "}\n");
+        String log2 = new JavaTask(tb)
+                .classpath(classes1.toString())
+                .className(file2.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log2.trim(),
+                "in source file");
+    }
+
+    @Test
+    public void testGetResource(Path base) throws IOException {
         Path src = base.resolve("src");
-        Path file = src.resolve("WrongClass.java");
-        tb.writeJavaFiles(src, "class WrongClass { }");
+        Path file = src.resolve("GetResource.java");
+        tb.writeJavaFiles(src,
+                "class GetResource {\n"
+                + "    public static void main(String... args) {\n"
+                + "        System.out.println(GetResource.class.getClassLoader().getResource(\"GetResource.class\"));\n"
+                + "    };\n"
+                + "}\n");
         Path classes = Files.createDirectories(base.resolve("classes"));
         new JavacTask(tb)
                 .outdir(classes)
                 .files(file)
                 .run();
+
         String log = new JavaTask(tb)
                 .classpath(classes.toString())
                 .className(file.toString())
-                .run(Task.Expect.FAIL)
-                .getOutput(Task.OutputKind.STDERR);
-        checkEqual("stderr", log.trim(),
-                "error: class found on application class path: WrongClass");
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkMatch("stdout", log.trim(),
+                Pattern.compile("sourcelauncher-memoryclassloader[0-9]+:GetResource.class"));
+    }
+
+    @Test
+    public void testGetResources(Path base) throws IOException {
+        Path src = base.resolve("src");
+        Path file = src.resolve("GetResources.java");
+        tb.writeJavaFiles(src,
+                "import java.io.*; import java.net.*; import java.util.*;\n"
+                + "class GetResources {\n"
+                + "    public static void main(String... args) throws IOException {\n"
+                + "        Enumeration<URL> e =\n"
+                + "            GetResources.class.getClassLoader().getResources(\"GetResources.class\");\n"
+                + "        while (e.hasMoreElements()) System.out.println(e.nextElement());\n"
+                + "    };\n"
+                + "}\n");
+        Path classes = Files.createDirectories(base.resolve("classes"));
+        new JavacTask(tb)
+                .outdir(classes)
+                .files(file)
+                .run();
+
+        List<String> log = new JavaTask(tb)
+                .classpath(classes.toString())
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutputLines(Task.OutputKind.STDOUT);
+        checkMatch("stdout:0", log.get(0).trim(),
+                Pattern.compile("sourcelauncher-memoryclassloader[0-9]+:GetResources.class"));
+        checkMatch("stdout:1", log.get(1).trim(),
+                Pattern.compile("file:/.*/testGetResources/classes/GetResources.class"));
     }
 
     @Test
@@ -294,7 +445,37 @@ public class SourceLauncherTest extends TestRunner {
         checkEmpty("stdout", r.stdOut);
         checkEqual("stderr", r.stdErr, expectStdErr);
         checkFault("exception", r.exception, "error: compilation failed");
+    }
 
+    @Test
+    public void testClassNotFound(Path base) throws IOException {
+        Path src = base.resolve("src");
+        Path file = src.resolve("ClassNotFound.java");
+        tb.writeJavaFiles(src,
+                "class ClassNotFound {\n"
+                + "    public static void main(String... args) {\n"
+                + "        try {\n"
+                + "            Class.forName(\"NoSuchClass\");\n"
+                + "            System.out.println(\"no exception\");\n"
+                + "            System.exit(1);\n"
+                + "        } catch (ClassNotFoundException e) {\n"
+                + "            System.out.println(\"Expected exception thrown: \" + e);\n"
+                + "        }\n"
+                + "    };\n"
+                + "}\n");
+        Path classes = Files.createDirectories(base.resolve("classes"));
+        new JavacTask(tb)
+                .outdir(classes)
+                .files(file)
+                .run();
+
+        String log = new JavaTask(tb)
+                .classpath(classes.toString())
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(),
+                "Expected exception thrown: java.lang.ClassNotFoundException: NoSuchClass");
     }
 
     // For any source file that is invoked through the OS shebang mechanism, invalid shebang
@@ -471,9 +652,15 @@ public class SourceLauncherTest extends TestRunner {
     void checkEqual(String name, String found, String expect) {
         expect = expect.replace("\n", tb.lineSeparator);
         out.println(name + ": " + found);
-        out.println(name + ": " + found);
         if (!expect.equals(found)) {
             error("Unexpected output; expected: " + expect);
+        }
+    }
+
+    void checkMatch(String name, String found, Pattern expect) {
+        out.println(name + ": " + found);
+        if (!expect.matcher(found).matches()) {
+            error("Unexpected output; expected match for: " + expect);
         }
     }
 

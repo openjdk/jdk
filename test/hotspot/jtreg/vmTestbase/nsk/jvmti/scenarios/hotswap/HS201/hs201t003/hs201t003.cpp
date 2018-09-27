@@ -80,12 +80,12 @@ static int expectedMeth(jvmtiEnv *jvmti_env, const char *event,
         return 0;
     }
 
-    if ((strcmp(name, expMeth) == 0) &&
-            (strcmp(sig, expSig) == 0)) {
-        NSK_DISPLAY4("===== %s event received for the tested method:\n\
-\tID=0x%p name=\"%s\" signature=\"%s\"\n",
+    if ((strcmp(name, expMeth) == 0) && (strcmp(sig, expSig) == 0)) {
+        NSK_DISPLAY4(
+            "===== %s event received for the tested method:\n"
+            "\tID=0x%p name=\"%s\" signature=\"%s\"\n",
             event, (void*) method, name, sig);
-         methFound = 1;
+        methFound = 1;
     }
     else
         methFound = 0;
@@ -129,8 +129,9 @@ static void doHotSwap(jvmtiEnv *jvmti_env,
     classDef.class_byte_count = bytesCount;
     classDef.class_bytes = (unsigned char*) clsBytes;
 
-    NSK_DISPLAY2("[%s] >>>>> Invoke RedefineClasses():\n\
-\tnew class byte count=%d\n",
+    NSK_DISPLAY2(
+        "[%s] >>>>> Invoke RedefineClasses():\n"
+        "\tnew class byte count=%d\n",
         event, classDef.class_byte_count);
     if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RedefineClasses,
             jvmti, 1, &classDef))) {
@@ -162,8 +163,9 @@ static void doChecks(jvmtiEnv *jvmti_env,
         nsk_jvmti_setFailStatus();
         return;
     }
-    NSK_DISPLAY3("[%s] method bytes count=%d\n\
-\tbytes count of the redefined method=%d\n",
+    NSK_DISPLAY3(
+        "[%s] method bytes count=%d\n"
+        "\tbytes count of the redefined method=%d\n",
         event, methBytesCount, redefMethBytesCount);
     if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
            jvmti_env, (unsigned char*) methBytes)))

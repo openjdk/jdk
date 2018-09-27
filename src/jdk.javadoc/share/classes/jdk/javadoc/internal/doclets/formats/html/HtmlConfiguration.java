@@ -209,12 +209,6 @@ public class HtmlConfiguration extends BaseConfiguration {
     public HtmlVersion htmlVersion = null;
 
     /**
-     * Flag to enable/disable use of module directories when generating docs for modules
-     * Default: on (module directories are enabled).
-     */
-    public boolean useModuleDirectories = true;
-
-    /**
      * Collected set of doclint options
      */
     public Map<Doclet.Option, String> doclintOpts = new LinkedHashMap<>();
@@ -838,13 +832,6 @@ public class HtmlConfiguration extends BaseConfiguration {
                         reporter.print(ERROR, getText("doclet.Option_doclint_package_invalid_arg"));
                         return false;
                     }
-                    return true;
-                }
-            },
-            new XOption(resources, "--no-module-directories") {
-                @Override
-                public boolean process(String option, List<String> args) {
-                    useModuleDirectories = false;
                     return true;
                 }
             }

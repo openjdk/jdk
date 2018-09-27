@@ -1025,37 +1025,17 @@ int LIR_Assembler::array_element_size(BasicType type) const {
   return exact_log2(elem_size);
 }
 
-void LIR_Assembler::arithmetic_idiv(LIR_Op3* op, bool is_irem) {
-  Register Rdividend = op->in_opr1()->as_register();
-  Register Rdivisor  = op->in_opr2()->as_register();
-  Register Rscratch  = op->in_opr3()->as_register();
-  Register Rresult   = op->result_opr()->as_register();
-  int divisor = -1;
-
-  /*
-  TODO: For some reason, using the Rscratch that gets passed in is
-  not possible because the register allocator does not see the tmp reg
-  as used, and assignes it the same register as Rdividend. We use rscratch1
-   instead.
-
-  assert(Rdividend != Rscratch, "");
-  assert(Rdivisor  != Rscratch, "");
-  */
-
-  if (Rdivisor == noreg && is_power_of_2(divisor)) {
-    // convert division by a power of two into some shifts and logical operations
-  }
-
-  __ corrected_idivl(Rresult, Rdividend, Rdivisor, is_irem, rscratch1);
-}
 
 void LIR_Assembler::emit_op3(LIR_Op3* op) {
   switch (op->code()) {
   case lir_idiv:
-    arithmetic_idiv(op, false);
-    break;
   case lir_irem:
-    arithmetic_idiv(op, true);
+    arithmetic_idiv(op->code(),
+                    op->in_opr1(),
+                    op->in_opr2(),
+                    op->in_opr3(),
+                    op->result_opr(),
+                    op->info());
     break;
   case lir_fmad:
     __ fmaddd(op->result_opr()->as_double_reg(),
@@ -1752,16 +1732,43 @@ void LIR_Assembler::arith_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       }
 
     } else if (right->is_constant()) {
-      jlong c = right->as_constant_ptr()->as_jlong_bits();
+      jlong c = right->as_constant_ptr()->as_jlong();
       Register dreg = as_reg(dest);
-      assert(code == lir_add || code == lir_sub, "mismatched arithmetic op");
-      if (c == 0 && dreg == lreg_lo) {
-        COMMENT("effective nop elided");
-        return;
-      }
       switch (code) {
-        case lir_add: __ add(dreg, lreg_lo, c); break;
-        case lir_sub: __ sub(dreg, lreg_lo, c); break;
+        case lir_add:
+        case lir_sub:
+          if (c == 0 && dreg == lreg_lo) {
+            COMMENT("effective nop elided");
+            return;
+          }
+          code == lir_add ? __ add(dreg, lreg_lo, c) : __ sub(dreg, lreg_lo, c);
+          break;
+        case lir_div:
+          assert(c > 0 && is_power_of_2_long(c), "divisor must be power-of-2 constant");
+          if (c == 1) {
+            // move lreg_lo to dreg if divisor is 1
+            __ mov(dreg, lreg_lo);
+          } else {
+            unsigned int shift = exact_log2_long(c);
+            // use rscratch1 as intermediate result register
+            __ asr(rscratch1, lreg_lo, 63);
+            __ add(rscratch1, lreg_lo, rscratch1, Assembler::LSR, 64 - shift);
+            __ asr(dreg, rscratch1, shift);
+          }
+          break;
+        case lir_rem:
+          assert(c > 0 && is_power_of_2_long(c), "divisor must be power-of-2 constant");
+          if (c == 1) {
+            // move 0 to dreg if divisor is 1
+            __ mov(dreg, zr);
+          } else {
+            // use rscratch1 as intermediate result register
+            __ negs(rscratch1, lreg_lo);
+            __ andr(dreg, lreg_lo, c - 1);
+            __ andr(rscratch1, rscratch1, c - 1);
+            __ csneg(dreg, dreg, rscratch1, Assembler::MI);
+          }
+          break;
         default:
           ShouldNotReachHere();
       }
@@ -1862,7 +1869,51 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
 
 
 
-void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr temp, LIR_Opr result, CodeEmitInfo* info) { Unimplemented(); }
+void LIR_Assembler::arithmetic_idiv(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr illegal, LIR_Opr result, CodeEmitInfo* info) {
+
+  // opcode check
+  assert((code == lir_idiv) || (code == lir_irem), "opcode must be idiv or irem");
+  bool is_irem = (code == lir_irem);
+
+  // operand check
+  assert(left->is_single_cpu(),   "left must be register");
+  assert(right->is_single_cpu() || right->is_constant(),  "right must be register or constant");
+  assert(result->is_single_cpu(), "result must be register");
+  Register lreg = left->as_register();
+  Register dreg = result->as_register();
+
+  // power-of-2 constant check and codegen
+  if (right->is_constant()) {
+    int c = right->as_constant_ptr()->as_jint();
+    assert(c > 0 && is_power_of_2(c), "divisor must be power-of-2 constant");
+    if (is_irem) {
+      if (c == 1) {
+        // move 0 to dreg if divisor is 1
+        __ movw(dreg, zr);
+      } else {
+        // use rscratch1 as intermediate result register
+        __ negsw(rscratch1, lreg);
+        __ andw(dreg, lreg, c - 1);
+        __ andw(rscratch1, rscratch1, c - 1);
+        __ csnegw(dreg, dreg, rscratch1, Assembler::MI);
+      }
+    } else {
+      if (c == 1) {
+        // move lreg to dreg if divisor is 1
+        __ movw(dreg, lreg);
+      } else {
+        unsigned int shift = exact_log2(c);
+        // use rscratch1 as intermediate result register
+        __ asrw(rscratch1, lreg, 31);
+        __ addw(rscratch1, lreg, rscratch1, Assembler::LSR, 32 - shift);
+        __ asrw(dreg, rscratch1, shift);
+      }
+    }
+  } else {
+    Register rreg = right->as_register();
+    __ corrected_idivl(dreg, lreg, rreg, is_irem, rscratch1);
+  }
+}
 
 
 void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, LIR_Op2* op) {
@@ -2792,7 +2843,10 @@ void LIR_Assembler::align_backward_branch_target() {
 }
 
 
-void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
+void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
+  // tmp must be unused
+  assert(tmp->is_illegal(), "wasting a register if tmp is allocated");
+
   if (left->is_single_cpu()) {
     assert(dest->is_single_cpu(), "expect single result reg");
     __ negw(dest->as_register(), left->as_register());

@@ -827,9 +827,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           "Use LWP-based instead of libthread-based synchronization "       \
           "(SPARC only)")                                                   \
                                                                             \
-  experimental(ccstr, SyncKnobs, NULL,                                      \
-               "(Unstable) Various monitor synchronization tunables")       \
-                                                                            \
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
           range(0, max_jint)                                                \
                                                                             \

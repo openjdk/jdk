@@ -1924,7 +1924,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Unpack native results.
   switch (ret_type) {
-  case T_BOOLEAN: __ ubfx(r0, r0, 0, 8);             break;
+  case T_BOOLEAN: __ c2bool(r0);                     break;
   case T_CHAR   : __ ubfx(r0, r0, 0, 16);            break;
   case T_BYTE   : __ sbfx(r0, r0, 0, 8);             break;
   case T_SHORT  : __ sbfx(r0, r0, 0, 16);            break;

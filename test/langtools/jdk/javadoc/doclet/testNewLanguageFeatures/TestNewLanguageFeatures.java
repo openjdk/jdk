@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4789689 4905985 4927164 4827184 4993906 5004549 7025314 7010344 8025633 8026567 8162363
- *           8175200 8186332 8182765 8196202 8187288
+ *           8175200 8186332 8182765 8196202 8187288 8173730
  * @summary  Run Javadoc on a set of source files that demonstrate new
  *           language features.  Check the output to ensure that the new
  *           language features are properly documented.
@@ -93,7 +93,6 @@ public class TestNewLanguageFeatures extends JavadocTester {
                 // Automatically insert documentation for values() and valueOf().
                 "Returns an array containing the constants of this enum type,",
                 "Returns the enum constant of this type with the specified name",
-                "for (Coin c : Coin.values())",
                 "Overloaded valueOf() method has correct documentation.",
                 "Overloaded values method  has correct documentation.",
                 "<pre class=\"methodSignature\">public static&nbsp;<a href=\"Coin.html\" title=\"enum in pkg\">Coin</a>" +

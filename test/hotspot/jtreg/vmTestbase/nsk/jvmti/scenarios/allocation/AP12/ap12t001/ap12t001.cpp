@@ -64,8 +64,10 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
     NSK_DISPLAY0("VMDeath event received\n");
 
     if (obj_free != EXP_OBJ_FREE) {
-        NSK_COMPLAIN2("Received unexpected number of ObjectFree events: %d\n\t\
-expected number: %d", obj_free, EXP_OBJ_FREE);
+        NSK_COMPLAIN2(
+            "Received unexpected number of ObjectFree events: %d\n"
+            "\texpected number: %d\n",
+            obj_free, EXP_OBJ_FREE);
         exit(95 + STATUS_FAILED);
     }
 

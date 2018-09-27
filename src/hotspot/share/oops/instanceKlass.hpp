@@ -1180,7 +1180,7 @@ public:
   bool on_stack() const { return _constants->on_stack(); }
 
   // callbacks for actions during class unloading
-  static void notify_unload_class(InstanceKlass* ik);
+  static void unload_class(InstanceKlass* ik);
   static void release_C_heap_structures(InstanceKlass* ik);
 
   // Naming

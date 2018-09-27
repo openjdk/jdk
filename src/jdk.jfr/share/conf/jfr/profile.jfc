@@ -382,6 +382,11 @@
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
 
+    <event name="jdk.GCPhaseParallel">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+    
     <event name="jdk.G1BasicIHOP">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>

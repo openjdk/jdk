@@ -29,8 +29,10 @@ import java.io.*;
 import java.net.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.tools.Diagnostic;
 import javax.tools.DocumentationTool;
@@ -59,7 +61,8 @@ public class Extern {
      * Map element names onto Extern Item objects.
      * Lazily initialized.
      */
-    private Map<String, Item> elementToItemMap;
+    private Map<String, Item> moduleItems = new HashMap<>();
+    private Map<String, Map<String, Item>> packageItems = new HashMap<>();
 
     /**
      * The global configuration information for this run.
@@ -85,17 +88,12 @@ public class Extern {
          * The URL or the directory path at which the element documentation will be
          * avaliable.
          */
-        final String path;
+        final DocPath path;
 
         /**
          * If given path is directory path then true else if it is a URL then false.
          */
         final boolean relative;
-
-        /**
-         * If the item is a module then true else if it is a package then false.
-         */
-        boolean isModule = false;
 
         /**
          * Constructor to build a Extern Item object and map it with the element name.
@@ -106,19 +104,11 @@ public class Extern {
          * @param path        URL or Directory path from where the "element-list"
          * file is picked.
          * @param relative    True if path is URL, false if directory path.
-         * @param isModule    True if the item is a module. False if it is a package.
          */
-        Item(String elementName, String path, boolean relative, boolean isModule) {
+        Item(String elementName, DocPath path, boolean relative) {
             this.elementName = elementName;
             this.path = path;
             this.relative = relative;
-            this.isModule = isModule;
-            if (elementToItemMap == null) {
-                elementToItemMap = new HashMap<>();
-            }
-            if (!elementToItemMap.containsKey(elementName)) { // save the previous
-                elementToItemMap.put(elementName, this);        // mapped location
-            }
         }
 
         /**
@@ -126,7 +116,7 @@ public class Extern {
          */
         @Override
         public String toString() {
-            return elementName + (relative? " -> " : " => ") + path;
+            return elementName + (relative? " -> " : " => ") + path.getPath();
         }
     }
 
@@ -141,14 +131,15 @@ public class Extern {
      * @return true if the element is externally documented
      */
     public boolean isExternal(Element element) {
-        if (elementToItemMap == null) {
+        if (packageItems.isEmpty()) {
             return false;
         }
         PackageElement pe = configuration.utils.containingPackage(element);
         if (pe.isUnnamed()) {
             return false;
         }
-        return elementToItemMap.get(configuration.utils.getPackageName(pe)) != null;
+
+        return findElementItem(pe) != null;
     }
 
     /**
@@ -158,25 +149,25 @@ public class Extern {
      * @return true if the element is a module
      */
     public boolean isModule(String elementName) {
-        Item elem = findElementItem(elementName);
-        return (elem == null) ? false : elem.isModule;
+        Item elem = moduleItems.get(elementName);
+        return (elem == null) ? false : true;
     }
 
     /**
      * Convert a link to be an external link if appropriate.
      *
-     * @param elemName The element name.
+     * @param element The element .
      * @param relativepath    The relative path.
      * @param filename    The link to convert.
      * @return if external return converted link else return null
      */
-    public DocLink getExternalLink(String elemName, DocPath relativepath, String filename) {
-        return getExternalLink(elemName, relativepath, filename, null);
+    public DocLink getExternalLink(Element element, DocPath relativepath, String filename) {
+        return getExternalLink(element, relativepath, filename, null);
     }
 
-    public DocLink getExternalLink(String elemName, DocPath relativepath, String filename,
+    public DocLink getExternalLink(Element element, DocPath relativepath, String filename,
             String memberName) {
-        Item fnd = findElementItem(elemName);
+        Item fnd = findElementItem(element);
         if (fnd == null)
             return null;
 
@@ -184,7 +175,7 @@ public class Extern {
         // to contain external URLs!
         DocPath p = fnd.relative ?
                 relativepath.resolve(fnd.path).resolve(filename) :
-                DocPath.create(fnd.path).resolve(filename);
+                fnd.path.resolve(filename);
         return new DocLink(p, "is-external=true", memberName);
     }
 
@@ -266,13 +257,20 @@ public class Extern {
     /**
      * Get the Extern Item object associated with this element name.
      *
-     * @param elemName Element name.
+     * @param element Element
      */
-    private Item findElementItem(String elemName) {
-        if (elementToItemMap == null) {
-            return null;
+    private Item findElementItem(Element element) {
+        Item item = null;
+        if (element instanceof ModuleElement) {
+            item = moduleItems.get(configuration.utils.getModuleName((ModuleElement)element));
         }
-        return elementToItemMap.get(elemName);
+        else if (element instanceof PackageElement) {
+            PackageElement packageElement = (PackageElement)element;
+            ModuleElement moduleElement = configuration.utils.containingModule(packageElement);
+            Map<String, Item> pkgMap = packageItems.get(configuration.utils.getModuleName(moduleElement));
+            item = (pkgMap != null) ? pkgMap.get(configuration.utils.getPackageName(packageElement)) : null;
+        }
+        return item;
     }
 
     /**
@@ -370,23 +368,34 @@ public class Extern {
      * @throws IOException if there is a problem reading or closing the stream
      */
     private void readElementList(InputStream input, String path, boolean relative)
-                         throws IOException {
+                         throws Fault, IOException {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(input))) {
-            in.lines().forEach((elemname) -> {
+            String elemname = null;
+            String moduleName = null;
+            DocPath elempath = null;
+            DocPath basePath  = DocPath.create(path);
+            while ((elemname = in.readLine()) != null) {
                 if (elemname.length() > 0) {
-                    boolean module;
-                    String elempath;
+                    elempath = basePath;
                     if (elemname.startsWith(DocletConstants.MODULE_PREFIX)) {
-                        elemname = elemname.replace(DocletConstants.MODULE_PREFIX, "");
-                        elempath = path;
-                        module = true;
+                        moduleName = elemname.replace(DocletConstants.MODULE_PREFIX, "");
+                        Item item = new Item(moduleName, elempath, relative);
+                        moduleItems.put(moduleName, item);
                     } else {
-                        elempath = path + elemname.replace('.', '/') + '/';
-                        module = false;
+                        DocPath pkgPath = DocPath.create(elemname.replace('.', '/'));
+                        if (configuration.useModuleDirectories && moduleName != null) {
+                            elempath = elempath.resolve(DocPath.create(moduleName).resolve(pkgPath));
+                        } else {
+                            elempath = elempath.resolve(pkgPath);
+                        }
+                        checkLinkCompatibility(elemname, moduleName, path);
+                        Item item = new Item(elemname, elempath, relative);
+                        packageItems.computeIfAbsent(moduleName == null ?
+                            DocletConstants.DEFAULT_ELEMENT_NAME : moduleName, k -> new TreeMap<>())
+                            .put(elemname, item);
                     }
-                    Item ignore = new Item(elemname, elempath, relative, module);
                 }
-            });
+            }
         }
     }
 
@@ -398,6 +407,20 @@ public class Extern {
         } catch (MalformedURLException e) {
             //Since exception is thrown, this must be a directory path.
             return false;
+        }
+    }
+
+    private void checkLinkCompatibility(String packageName, String moduleName, String path) throws Fault {
+        PackageElement pe = configuration.utils.elementUtils.getPackageElement(packageName);
+        if (pe != null) {
+            ModuleElement me = (ModuleElement)pe.getEnclosingElement();
+            if (me == null || me.isUnnamed()) {
+                if (moduleName != null)
+                    throw new Fault(configuration.getText("doclet.linkMismatch_PackagedLinkedtoModule",
+                            path), null);
+            } else if (moduleName == null)
+                throw new Fault(configuration.getText("doclet.linkMismatch_ModuleLinkedtoPackage",
+                        path), null);
         }
     }
 }

@@ -351,11 +351,12 @@ Java_nsk_jvmti_SetJNIFunctionTable_setjniftab001_check(JNIEnv *env, jobject obj)
     if (verbose)
         printf("\nb) Checking the assertion inside main thread detached and attached again ...\n\ndetaching the main thread ...\n");
 
-    if ((res = vm->DetachCurrentThread()) != 0)
-        printf("(%s,%d): Warning: DetachCurrentThread() returns: %d\n\
-\tcheck with the detached main thread skipped\n",
+    if ((res = vm->DetachCurrentThread()) != 0) {
+        printf(
+            "(%s,%d): Warning: DetachCurrentThread() returns: %d\n"
+            "\tcheck with the detached main thread skipped\n",
             __FILE__, __LINE__, res);
-    else {
+    } else {
         if (verbose)
             printf("\nattaching the main thread again ...\n");
         if ((res = vm->AttachCurrentThread((void **) &nextEnv, (void *) 0)) != 0) {

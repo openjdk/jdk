@@ -2417,7 +2417,10 @@ static void clear_all_breakpoints(Method* m) {
 }
 #endif
 
-void InstanceKlass::notify_unload_class(InstanceKlass* ik) {
+void InstanceKlass::unload_class(InstanceKlass* ik) {
+  // Release dependencies.
+  ik->dependencies().remove_all_dependents();
+
   // notify the debugger
   if (JvmtiExport::should_post_class_unload()) {
     JvmtiExport::post_class_unload(ik);
@@ -2462,16 +2465,8 @@ void InstanceKlass::release_C_heap_structures() {
     FreeHeap(jmeths);
   }
 
-  // Release dependencies.
-  // It is desirable to use DC::remove_all_dependents() here, but, unfortunately,
-  // it is not safe (see JDK-8143408). The problem is that the klass dependency
-  // context can contain live dependencies, since there's a race between nmethod &
-  // klass unloading. If the klass is dead when nmethod unloading happens, relevant
-  // dependencies aren't removed from the context associated with the class (see
-  // nmethod::flush_dependencies). It ends up during klass unloading as seemingly
-  // live dependencies pointing to unloaded nmethods and causes a crash in
-  // DC::remove_all_dependents() when it touches unloaded nmethod.
-  dependencies().wipe();
+  assert(_dep_context == DependencyContext::EMPTY,
+         "dependencies should already be cleaned");
 
 #if INCLUDE_JVMTI
   // Deallocate breakpoint records

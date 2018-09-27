@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4652655 4857717 8025633 8026567 8071982 8164407 8182765
+ * @bug 4652655 4857717 8025633 8026567 8071982 8164407 8182765 8205593
  * @summary This test verifies that class cross references work properly.
  * @author jamieh
  * @library ../lib
@@ -45,6 +45,7 @@ public class TestClassCrossReferences extends JavadocTester {
     @Test
     void test() {
         javadoc("-d", "out",
+                "-source", "8",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,
@@ -60,7 +61,7 @@ public class TestClassCrossReferences extends JavadocTester {
                 + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external class BigDecimal</code></a>",
                 "<a href=\"" + uri + "java/math/BigInteger.html?is-external=true#gcd(java.math.BigInteger)\" "
                 + "title=\"class or interface in java.math\" class=\"externalLink\"><code>Link to external member gcd</code></a>",
-                "<a href=\"" + uri + "javax/tools/SimpleJavaFileObject.html?is-external=true#URI\" "
+                "<a href=\"" + uri + "javax/tools/SimpleJavaFileObject.html?is-external=true#uri\" "
                 + "title=\"class or interface in javax.tools\" class=\"externalLink\"><code>Link to external member URI</code></a>",
                 "<dl>\n"
                 + "<dt><span class=\"overrideSpecifyLabel\">Overrides:</span></dt>\n"
@@ -69,8 +70,22 @@ public class TestClassCrossReferences extends JavadocTester {
     }
 
     @Test
+    void test_error() {
+        javadoc("-d", "out-error",
+                "-Xdoclint:none",
+                "-sourcepath", testSrc,
+                "-linkoffline", uri, testSrc,
+                testSrc("C.java"));
+        checkExit(Exit.ERROR);
+        checkOutput(Output.OUT, true,
+                "The code being documented uses modules but the packages defined"
+                + " in http://docs.oracle.com/javase/8/docs/api/ are in the unnamed module");
+    }
+
+    @Test
     void test_html4() {
         javadoc("-d", "out-html4",
+                "-source", "8",
                 "-html4",
                 "-Xdoclint:none",
                 "-sourcepath", testSrc,

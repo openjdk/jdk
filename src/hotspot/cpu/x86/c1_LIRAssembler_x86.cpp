@@ -68,7 +68,6 @@ static jlong *float_signflip_pool  = double_quadword(&fp_signmask_pool[3*2], (jl
 static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], (jlong)UCONST64(0x8000000000000000), (jlong)UCONST64(0x8000000000000000));
 
 
-
 NEEDS_CLEANUP // remove this definitions ?
 const Register IC_Klass    = rax;   // where the IC klass is cached
 const Register SYNC_header = rax;   // synchronization header
@@ -650,7 +649,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_FLOAT: {
       if (dest->is_single_xmm()) {
-        if (c->is_zero_float()) {
+        if (LP64_ONLY(UseAVX < 2 &&) c->is_zero_float()) {
           __ xorps(dest->as_xmm_float_reg(), dest->as_xmm_float_reg());
         } else {
           __ movflt(dest->as_xmm_float_reg(),
@@ -672,7 +671,7 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_DOUBLE: {
       if (dest->is_double_xmm()) {
-        if (c->is_zero_double()) {
+        if (LP64_ONLY(UseAVX < 2 &&) c->is_zero_double()) {
           __ xorpd(dest->as_xmm_double_reg(), dest->as_xmm_double_reg());
         } else {
           __ movdbl(dest->as_xmm_double_reg(),
@@ -2395,16 +2394,24 @@ void LIR_Assembler::arith_fpu_implementation(LIR_Code code, int left_index, int 
 }
 
 
-void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, LIR_Opr dest, LIR_Op* op) {
+void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_Opr dest, LIR_Op* op) {
   if (value->is_double_xmm()) {
     switch(code) {
       case lir_abs :
         {
-          if (dest->as_xmm_double_reg() != value->as_xmm_double_reg()) {
-            __ movdbl(dest->as_xmm_double_reg(), value->as_xmm_double_reg());
+#ifdef _LP64
+          if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
+            assert(tmp->is_valid(), "need temporary");
+            __ vpandn(dest->as_xmm_double_reg(), tmp->as_xmm_double_reg(), value->as_xmm_double_reg(), 2);
+          } else {
+#endif
+            if (dest->as_xmm_double_reg() != value->as_xmm_double_reg()) {
+              __ movdbl(dest->as_xmm_double_reg(), value->as_xmm_double_reg());
+            }
+            assert(!tmp->is_valid(), "do not need temporary");
+            __ andpd(dest->as_xmm_double_reg(),
+                     ExternalAddress((address)double_signmask_pool));
           }
-          __ andpd(dest->as_xmm_double_reg(),
-                    ExternalAddress((address)double_signmask_pool));
         }
         break;
 
@@ -3734,7 +3741,7 @@ void LIR_Assembler::align_backward_branch_target() {
 }
 
 
-void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
+void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {
   if (left->is_single_cpu()) {
     __ negl(left->as_register());
     move_regs(left->as_register(), dest->as_register());
@@ -3759,24 +3766,36 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
 #endif // _LP64
 
   } else if (dest->is_single_xmm()) {
-    if (left->as_xmm_float_reg() != dest->as_xmm_float_reg()) {
-      __ movflt(dest->as_xmm_float_reg(), left->as_xmm_float_reg());
+#ifdef _LP64
+    if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
+      assert(tmp->is_valid(), "need temporary");
+      assert_different_registers(left->as_xmm_float_reg(), tmp->as_xmm_float_reg());
+      __ vpxor(dest->as_xmm_float_reg(), tmp->as_xmm_float_reg(), left->as_xmm_float_reg(), 2);
     }
-    if (UseAVX > 0) {
-      __ vnegatess(dest->as_xmm_float_reg(), dest->as_xmm_float_reg(),
-                   ExternalAddress((address)float_signflip_pool));
-    } else {
+    else
+#endif
+    {
+      assert(!tmp->is_valid(), "do not need temporary");
+      if (left->as_xmm_float_reg() != dest->as_xmm_float_reg()) {
+        __ movflt(dest->as_xmm_float_reg(), left->as_xmm_float_reg());
+      }
       __ xorps(dest->as_xmm_float_reg(),
                ExternalAddress((address)float_signflip_pool));
     }
   } else if (dest->is_double_xmm()) {
-    if (left->as_xmm_double_reg() != dest->as_xmm_double_reg()) {
-      __ movdbl(dest->as_xmm_double_reg(), left->as_xmm_double_reg());
+#ifdef _LP64
+    if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
+      assert(tmp->is_valid(), "need temporary");
+      assert_different_registers(left->as_xmm_double_reg(), tmp->as_xmm_double_reg());
+      __ vpxor(dest->as_xmm_double_reg(), tmp->as_xmm_double_reg(), left->as_xmm_double_reg(), 2);
     }
-    if (UseAVX > 0) {
-      __ vnegatesd(dest->as_xmm_double_reg(), dest->as_xmm_double_reg(),
-                   ExternalAddress((address)double_signflip_pool));
-    } else {
+    else
+#endif
+    {
+      assert(!tmp->is_valid(), "do not need temporary");
+      if (left->as_xmm_double_reg() != dest->as_xmm_double_reg()) {
+        __ movdbl(dest->as_xmm_double_reg(), left->as_xmm_double_reg());
+      }
       __ xorpd(dest->as_xmm_double_reg(),
                ExternalAddress((address)double_signflip_pool));
     }

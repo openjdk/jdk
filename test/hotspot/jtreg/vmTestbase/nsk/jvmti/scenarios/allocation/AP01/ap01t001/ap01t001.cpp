@@ -64,8 +64,10 @@ VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
     NSK_DISPLAY0("VMDeath event received\n");
 
     if (obj_free != (EXP_OBJ_NUMBER - 1) ) {
-        NSK_COMPLAIN2("Received unexpected number of ObjectFree events: %d\n\t\
-expected number: %d", obj_free, (EXP_OBJ_NUMBER - 1));
+        NSK_COMPLAIN2(
+            "Received unexpected number of ObjectFree events: %d\n"
+            "\texpected number: %d\n",
+            obj_free, (EXP_OBJ_NUMBER - 1));
         exit(95 + STATUS_FAILED);
     }
 
@@ -247,8 +249,11 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     if (obj_count != EXP_OBJ_NUMBER) {
         nsk_jvmti_setFailStatus();
-        NSK_COMPLAIN2("IterateOverInstancesOfClass found unexpected number of objects: %d\n\t\
-expected number: %d\n\n",  obj_count, EXP_OBJ_NUMBER);
+        NSK_COMPLAIN2(
+            "IterateOverInstancesOfClass found unexpected number of objects: %d\n"
+            "\texpected number: %d\n\n",
+            obj_count, EXP_OBJ_NUMBER);
+
     } else {
         NSK_DISPLAY1("Number of objects IterateOverInstancesOfClass has found: %d\n\n", obj_count);
     }
@@ -267,8 +272,10 @@ expected number: %d\n\n",  obj_count, EXP_OBJ_NUMBER);
 
     if (obj_count != EXP_OBJ_NUMBER) {
         nsk_jvmti_setFailStatus();
-        NSK_COMPLAIN2("IterateOverHeap found unexpected number of objects: %d\n\t\
-expected number: %d\n\n",  obj_count, EXP_OBJ_NUMBER);
+        NSK_COMPLAIN2(
+            "IterateOverHeap found unexpected number of objects: %d\n"
+            "\texpected number: %d\n\n",
+            obj_count, EXP_OBJ_NUMBER);
     } else {
         NSK_DISPLAY1("Number of objects IterateOverHeap has found: %d\n\n", obj_count);
     }
@@ -287,8 +294,10 @@ expected number: %d\n\n",  obj_count, EXP_OBJ_NUMBER);
 
     if (obj_count != EXP_OBJ_NUMBER) {
         nsk_jvmti_setFailStatus();
-        NSK_COMPLAIN2("IterateOverReachableObjects found unexpected number of objects: %d\n\t\
-expected number: %d\n\n",  obj_count, EXP_OBJ_NUMBER);
+        NSK_COMPLAIN2(
+            "IterateOverReachableObjects found unexpected number of objects: %d\n"
+            "\texpected number: %d\n\n",
+            obj_count, EXP_OBJ_NUMBER);
     } else {
         NSK_DISPLAY1("Number of objects IterateOverReachableObjects has found: %d\n\n", obj_count);
     }

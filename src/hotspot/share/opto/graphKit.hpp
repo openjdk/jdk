@@ -572,8 +572,7 @@ class GraphKit : public Phase {
 
   // Perform decorated accesses
 
-  Node* access_store_at(Node* ctl,
-                        Node* obj,   // containing obj
+  Node* access_store_at(Node* obj,   // containing obj
                         Node* adr,   // actual adress to store val at
                         const TypePtr* adr_type,
                         Node* val,
@@ -593,8 +592,7 @@ class GraphKit : public Phase {
                     BasicType bt,
                     DecoratorSet decorators);
 
-  Node* access_atomic_cmpxchg_val_at(Node* ctl,
-                                     Node* obj,
+  Node* access_atomic_cmpxchg_val_at(Node* obj,
                                      Node* adr,
                                      const TypePtr* adr_type,
                                      int alias_idx,
@@ -604,8 +602,7 @@ class GraphKit : public Phase {
                                      BasicType bt,
                                      DecoratorSet decorators);
 
-  Node* access_atomic_cmpxchg_bool_at(Node* ctl,
-                                      Node* obj,
+  Node* access_atomic_cmpxchg_bool_at(Node* obj,
                                       Node* adr,
                                       const TypePtr* adr_type,
                                       int alias_idx,
@@ -615,8 +612,7 @@ class GraphKit : public Phase {
                                       BasicType bt,
                                       DecoratorSet decorators);
 
-  Node* access_atomic_xchg_at(Node* ctl,
-                              Node* obj,
+  Node* access_atomic_xchg_at(Node* obj,
                               Node* adr,
                               const TypePtr* adr_type,
                               int alias_idx,
@@ -625,8 +621,7 @@ class GraphKit : public Phase {
                               BasicType bt,
                               DecoratorSet decorators);
 
-  Node* access_atomic_add_at(Node* ctl,
-                             Node* obj,
+  Node* access_atomic_add_at(Node* obj,
                              Node* adr,
                              const TypePtr* adr_type,
                              int alias_idx,
@@ -635,7 +630,7 @@ class GraphKit : public Phase {
                              BasicType bt,
                              DecoratorSet decorators);
 
-  void access_clone(Node* ctl, Node* src, Node* dst, Node* size, bool is_array);
+  void access_clone(Node* src, Node* dst, Node* size, bool is_array);
 
   Node* access_resolve(Node* n, DecoratorSet decorators);
 
@@ -849,11 +844,11 @@ class GraphKit : public Phase {
                   bool deoptimize_on_exception = false);
 
   // java.lang.String helpers
-  Node* load_String_length(Node* ctrl, Node* str);
-  Node* load_String_value(Node* ctrl, Node* str);
-  Node* load_String_coder(Node* ctrl, Node* str);
-  void store_String_value(Node* ctrl, Node* str, Node* value);
-  void store_String_coder(Node* ctrl, Node* str, Node* value);
+  Node* load_String_length(Node* str, bool set_ctrl);
+  Node* load_String_value(Node* str, bool set_ctrl);
+  Node* load_String_coder(Node* str, bool set_ctrl);
+  void store_String_value(Node* str, Node* value);
+  void store_String_coder(Node* str, Node* value);
   Node* capture_memory(const TypePtr* src_type, const TypePtr* dst_type);
   Node* compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count);
   void inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count);

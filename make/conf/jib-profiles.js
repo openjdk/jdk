@@ -840,7 +840,7 @@ var getJibProfilesDependencies = function (input, common) {
         linux_x64: "gcc7.3.0-OEL6.4+1.0",
         macosx_x64: "Xcode9.4-MacOSX10.13+1.0",
         solaris_x64: "SS12u4-Solaris11u1+1.0",
-        solaris_sparcv9: "SS12u4-Solaris11u1+1.1",
+        solaris_sparcv9: "SS12u6-Solaris11u3+1.0",
         windows_x64: "VS2017-15.5.5+1.0",
         linux_aarch64: (input.profile != null && input.profile.indexOf("arm64") >= 0
                     ? "gcc-linaro-aarch64-linux-gnu-4.8-2013.11_linux+1.0"
@@ -961,9 +961,9 @@ var getJibProfilesDependencies = function (input, common) {
             ext: "zip",
             classifier: "distribution",
             revision: "3.0-SNAPSHOT",
-            environment_name: "JIB_JAR",
+            environment_name: "JIB_HOME",
             environment_value: input.get("jib", "install_path")
-                + "/jib-3.0-SNAPSHOT-distribution/lib/jib-3.0-SNAPSHOT.jar"
+                + "/jib-3.0-SNAPSHOT-distribution"
         },
 
         ant: {

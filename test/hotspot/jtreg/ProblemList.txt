@@ -59,6 +59,8 @@ applications/ctw/modules/jdk_jconsole.java 8189604 windows-all
 
 compiler/cpuflags/TestAESIntrinsicsOnSupportedConfig.java 8190680 generic-all
 
+compiler/whitebox/ForceNMethodSweepTest.java 8211129 generic-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -84,6 +86,7 @@ runtime/appcds/javaldr/GCDuringDump.java 8208778 macosx-x64
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 runtime/RedefineTests/RedefineRunningMethods.java 8208778 macosx-x64
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
+runtime/XCheckJniJsig/XCheckJSig.java 8211084 macosx-x64
 
 #############################################################################
 

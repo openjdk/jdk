@@ -3656,6 +3656,15 @@ operand regF() %{
    interface(REG_INTER);
 %}
 
+// Float register operands
+operand vlRegF() %{
+   constraint(ALLOC_IN_RC(float_reg_vl));
+   match(RegF);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
 // Double register operands
 operand regD() %{
    constraint(ALLOC_IN_RC(double_reg));
@@ -3665,9 +3674,27 @@ operand regD() %{
    interface(REG_INTER);
 %}
 
+// Double register operands
+operand vlRegD() %{
+   constraint(ALLOC_IN_RC(double_reg_vl));
+   match(RegD);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
 // Vectors
 operand vecS() %{
-  constraint(ALLOC_IN_RC(vectors_reg));
+  constraint(ALLOC_IN_RC(vectors_reg_vlbwdq));
+  match(VecS);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+// Vectors
+operand legVecS() %{
+  constraint(ALLOC_IN_RC(vectors_reg_legacy));
   match(VecS);
 
   format %{ %}
@@ -3675,7 +3702,15 @@ operand vecS() %{
 %}
 
 operand vecD() %{
-  constraint(ALLOC_IN_RC(vectord_reg));
+  constraint(ALLOC_IN_RC(vectord_reg_vlbwdq));
+  match(VecD);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand legVecD() %{
+  constraint(ALLOC_IN_RC(vectord_reg_legacy));
   match(VecD);
 
   format %{ %}
@@ -3683,7 +3718,15 @@ operand vecD() %{
 %}
 
 operand vecX() %{
-  constraint(ALLOC_IN_RC(vectorx_reg));
+  constraint(ALLOC_IN_RC(vectorx_reg_vlbwdq));
+  match(VecX);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand legVecX() %{
+  constraint(ALLOC_IN_RC(vectorx_reg_legacy));
   match(VecX);
 
   format %{ %}
@@ -3691,7 +3734,15 @@ operand vecX() %{
 %}
 
 operand vecY() %{
-  constraint(ALLOC_IN_RC(vectory_reg));
+  constraint(ALLOC_IN_RC(vectory_reg_vlbwdq));
+  match(VecY);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand legVecY() %{
+  constraint(ALLOC_IN_RC(vectory_reg_legacy));
   match(VecY);
 
   format %{ %}
@@ -5287,6 +5338,26 @@ instruct loadF(regF dst, memory mem)
   ins_pipe(pipe_slow); // XXX
 %}
 
+// Load Float
+instruct MoveF2VL(vlRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveVL2F(regF dst, vlRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 // Load Double
 instruct loadD_partial(regD dst, memory mem)
 %{
@@ -5312,6 +5383,26 @@ instruct loadD(regD dst, memory mem)
     __ movdbl($dst$$XMMRegister, $mem$$Address);
   %}
   ins_pipe(pipe_slow); // XXX
+%}
+
+// Load Double
+instruct MoveD2VL(vlRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveVL2D(regD dst, vlRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
 %}
 
 // Load Effective Address
@@ -10858,7 +10949,7 @@ instruct rep_stos_large(rcx_RegL cnt, rdi_RegP base, regD tmp, rax_RegI zero,
 %}
 
 instruct string_compareL(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
-                         rax_RegI result, regD tmp1, rFlagsReg cr)
+                         rax_RegI result, legVecS tmp1, rFlagsReg cr)
 %{
   predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -10874,7 +10965,7 @@ instruct string_compareL(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI c
 %}
 
 instruct string_compareU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
-                         rax_RegI result, regD tmp1, rFlagsReg cr)
+                         rax_RegI result, legVecS tmp1, rFlagsReg cr)
 %{
   predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -10890,7 +10981,7 @@ instruct string_compareU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI c
 %}
 
 instruct string_compareLU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
-                          rax_RegI result, regD tmp1, rFlagsReg cr)
+                          rax_RegI result, legVecS tmp1, rFlagsReg cr)
 %{
   predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -10906,7 +10997,7 @@ instruct string_compareLU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI 
 %}
 
 instruct string_compareUL(rsi_RegP str1, rdx_RegI cnt1, rdi_RegP str2, rcx_RegI cnt2,
-                          rax_RegI result, regD tmp1, rFlagsReg cr)
+                          rax_RegI result, legVecS tmp1, rFlagsReg cr)
 %{
   predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -10923,7 +11014,7 @@ instruct string_compareUL(rsi_RegP str1, rdx_RegI cnt1, rdi_RegP str2, rcx_RegI 
 
 // fast search of substring with known size.
 instruct string_indexof_conL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI int_cnt2,
-                             rbx_RegI result, regD vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
+                             rbx_RegI result, legVecS vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
 %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
@@ -10952,7 +11043,7 @@ instruct string_indexof_conL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI i
 
 // fast search of substring with known size.
 instruct string_indexof_conU(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI int_cnt2,
-                             rbx_RegI result, regD vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
+                             rbx_RegI result, legVecS vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
 %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
@@ -10981,7 +11072,7 @@ instruct string_indexof_conU(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI i
 
 // fast search of substring with known size.
 instruct string_indexof_conUL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI int_cnt2,
-                             rbx_RegI result, regD vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
+                             rbx_RegI result, legVecS vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
 %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
@@ -11009,7 +11100,7 @@ instruct string_indexof_conUL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI 
 %}
 
 instruct string_indexofL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI cnt2,
-                         rbx_RegI result, regD vec, rcx_RegI tmp, rFlagsReg cr)
+                         rbx_RegI result, legVecS vec, rcx_RegI tmp, rFlagsReg cr)
 %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -11026,7 +11117,7 @@ instruct string_indexofL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI c
 %}
 
 instruct string_indexofU(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI cnt2,
-                         rbx_RegI result, regD vec, rcx_RegI tmp, rFlagsReg cr)
+                         rbx_RegI result, legVecS vec, rcx_RegI tmp, rFlagsReg cr)
 %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -11043,7 +11134,7 @@ instruct string_indexofU(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI c
 %}
 
 instruct string_indexofUL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI cnt2,
-                         rbx_RegI result, regD vec, rcx_RegI tmp, rFlagsReg cr)
+                         rbx_RegI result, legVecS vec, rcx_RegI tmp, rFlagsReg cr)
 %{
   predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
@@ -11060,7 +11151,7 @@ instruct string_indexofUL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI 
 %}
 
 instruct string_indexofU_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
-                              rbx_RegI result, regD vec1, regD vec2, regD vec3, rcx_RegI tmp, rFlagsReg cr)
+                              rbx_RegI result, legVecS vec1, legVecS vec2, legVecS vec3, rcx_RegI tmp, rFlagsReg cr)
 %{
   predicate(UseSSE42Intrinsics);
   match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
@@ -11075,7 +11166,7 @@ instruct string_indexofU_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
 
 // fast string equals
 instruct string_equals(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI result,
-                       regD tmp1, regD tmp2, rbx_RegI tmp3, rFlagsReg cr)
+                       legVecS tmp1, legVecS tmp2, rbx_RegI tmp3, rFlagsReg cr)
 %{
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
@@ -11091,7 +11182,7 @@ instruct string_equals(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI resu
 
 // fast array equals
 instruct array_equalsB(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
-                       regD tmp1, regD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
+                       legVecS tmp1, legVecS tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
@@ -11107,7 +11198,7 @@ instruct array_equalsB(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
 %}
 
 instruct array_equalsC(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
-                      regD tmp1, regD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
+                      legVecS tmp1, legVecS tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
@@ -11123,7 +11214,7 @@ instruct array_equalsC(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
 %}
 
 instruct has_negatives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
-                      regD tmp1, regD tmp2, rbx_RegI tmp3, rFlagsReg cr)
+                      legVecS tmp1, legVecS tmp2, rbx_RegI tmp3, rFlagsReg cr)
 %{
   match(Set result (HasNegatives ary1 len));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
@@ -11138,7 +11229,7 @@ instruct has_negatives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
 %}
 
 // fast char[] to byte[] compression
-instruct string_compress(rsi_RegP src, rdi_RegP dst, rdx_RegI len, regD tmp1, regD tmp2, regD tmp3, regD tmp4,
+instruct string_compress(rsi_RegP src, rdi_RegP dst, rdx_RegI len, legVecS tmp1, legVecS tmp2, legVecS tmp3, legVecS tmp4,
                          rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
@@ -11154,7 +11245,7 @@ instruct string_compress(rsi_RegP src, rdi_RegP dst, rdx_RegI len, regD tmp1, re
 
 // fast byte[] to char[] inflation
 instruct string_inflate(Universe dummy, rsi_RegP src, rdi_RegP dst, rdx_RegI len,
-                        regD tmp1, rcx_RegI tmp2, rFlagsReg cr) %{
+                        legVecS tmp1, rcx_RegI tmp2, rFlagsReg cr) %{
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
 
@@ -11168,7 +11259,7 @@ instruct string_inflate(Universe dummy, rsi_RegP src, rdi_RegP dst, rdx_RegI len
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(rsi_RegP src, rdi_RegP dst, rdx_RegI len,
-                          regD tmp1, regD tmp2, regD tmp3, regD tmp4,
+                          legVecS tmp1, legVecS tmp2, legVecS tmp3, legVecS tmp4,
                           rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
   match(Set result (EncodeISOArray src (Binary dst len)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);

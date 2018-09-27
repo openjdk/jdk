@@ -166,10 +166,10 @@ public class Analyzer {
                 res = EnumSet.allOf(AnalyzerMode.class);
             }
             for (AnalyzerMode mode : values()) {
-                if (modes.contains(mode.opt)) {
-                    res.add(mode);
-                } else if (modes.contains("-" + mode.opt) || !mode.feature.allowedInSource(source)) {
+                if (modes.contains("-" + mode.opt) || !mode.feature.allowedInSource(source)) {
                     res.remove(mode);
+                } else if (modes.contains(mode.opt)) {
+                    res.add(mode);
                 }
             }
             return res;

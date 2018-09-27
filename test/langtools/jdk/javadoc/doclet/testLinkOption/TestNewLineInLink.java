@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4739870
+ * @bug 4739870 8205593
  * @summary Make sure that a new line may act as a separator between
  * link and label.
  * @author jamieh
@@ -43,6 +43,7 @@ public class TestNewLineInLink extends JavadocTester {
     @Test
     void test() {
         javadoc("-d", "out",
+                "-source", "8",
                 "-sourcepath", testSrc,
                 "-linkoffline", "http://www.java.sun.com/j2se/1.4/docs/api", testSrc("jdk"),
                 "testNewLineInLink");

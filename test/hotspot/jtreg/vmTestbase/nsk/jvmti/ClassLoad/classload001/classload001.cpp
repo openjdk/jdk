@@ -133,8 +133,9 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *env, jthread thread, jclass klass) {
     else if ((i = findSig(sig, 0)) != -1) {
         result = STATUS_FAILED;
         primClsEvents[i]++;
-        NSK_COMPLAIN1("TEST FAILED: JVMTI_EVENT_CLASS_LOAD event received for\n\
-\t a primitive class/array of primitive types with the signature \"%s\"\n",
+        NSK_COMPLAIN1(
+            "TEST FAILED: JVMTI_EVENT_CLASS_LOAD event received for\n"
+            "\t a primitive class/array of primitive types with the signature \"%s\"\n",
             sig);
     }
 

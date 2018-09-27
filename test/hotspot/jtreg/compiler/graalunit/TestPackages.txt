@@ -6,7 +6,7 @@ AsmAmd64      org.graalvm.compiler.asm.amd64.test
 AsmSparc      org.graalvm.compiler.asm.sparc.test
 CoreAmd64     org.graalvm.compiler.core.amd64.test
 CoreSparc     org.graalvm.compiler.core.sparc.test @requires vm.simpleArch == "sparcv9"
-Core          org.graalvm.compiler.core.test
+Core          org.graalvm.compiler.core.test       @requires !vm.graal.enabled
 Debug         org.graalvm.compiler.debug.test
 Graph         org.graalvm.compiler.graph.test      @requires vm.graal.enabled
 HotspotAmd64  org.graalvm.compiler.hotspot.amd64.test

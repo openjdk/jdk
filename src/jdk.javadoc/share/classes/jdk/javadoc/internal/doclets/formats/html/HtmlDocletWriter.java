@@ -355,10 +355,22 @@ public class HtmlDocletWriter {
     /**
      * Returns a TagletWriter that knows how to write HTML.
      *
+     * @param isFirstSentence  true if we want to write the first sentence
      * @return a TagletWriter that knows how to write HTML.
      */
     public TagletWriter getTagletWriterInstance(boolean isFirstSentence) {
         return new TagletWriterImpl(this, isFirstSentence);
+    }
+
+    /**
+     * Returns a TagletWriter that knows how to write HTML.
+     *
+     * @param isFirstSentence  true if we want to write the first sentence
+     * @param inSummary  true if tags are to be added in a summary section
+     * @return a TagletWriter
+     */
+    public TagletWriter getTagletWriterInstance(boolean isFirstSentence, boolean inSummary) {
+        return new TagletWriterImpl(this, isFirstSentence, inSummary);
     }
 
     /**
@@ -610,7 +622,7 @@ public class HtmlDocletWriter {
             return links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
                     label);
         } else {
-            DocLink crossPkgLink = getCrossPackageLink(utils.getPackageName(packageElement));
+            DocLink crossPkgLink = getCrossPackageLink(packageElement);
             if (crossPkgLink != null) {
                 return links.createLink(crossPkgLink, label);
             } else {
@@ -693,11 +705,10 @@ public class HtmlDocletWriter {
 
     /*************************************************************
      * Return a class cross link to external class documentation.
-     * The name must be fully qualified to determine which package
-     * the class is in.  The -link option does not allow users to
+     * The -link option does not allow users to
      * link to external classes in the "default" package.
      *
-     * @param qualifiedClassName the qualified name of the external class.
+     * @param classElement the class element
      * @param refMemName the name of the member being referenced.  This should
      * be null or empty string if no member is being referenced.
      * @param label the label for the external link.
@@ -705,19 +716,15 @@ public class HtmlDocletWriter {
      * @param code true if the label should be code font.
      * @return the link
      */
-    public Content getCrossClassLink(String qualifiedClassName, String refMemName,
+    public Content getCrossClassLink(TypeElement classElement, String refMemName,
                                     Content label, boolean strong, boolean code) {
-        String className = "";
-        String packageName = qualifiedClassName == null ? "" : qualifiedClassName;
-        int periodIndex;
-        while ((periodIndex = packageName.lastIndexOf('.')) != -1) {
-            className = packageName.substring(periodIndex + 1, packageName.length()) +
-                (className.length() > 0 ? "." + className : "");
+        if (classElement != null) {
+            String className = utils.getSimpleName(classElement);
+            PackageElement packageElement = utils.containingPackage(classElement);
             Content defaultLabel = new StringContent(className);
             if (code)
                 defaultLabel = HtmlTree.CODE(defaultLabel);
-            packageName = packageName.substring(0, periodIndex);
-            if (getCrossPackageLink(packageName) != null) {
+            if (getCrossPackageLink(packageElement) != null) {
                 /*
                 The package exists in external documentation, so link to the external
                 class (assuming that it exists).  This is definitely a limitation of
@@ -725,13 +732,13 @@ public class HtmlDocletWriter {
                 exists, but no way to determine if the external class exists.  We just
                 have to assume that it does.
                 */
-                DocLink link = configuration.extern.getExternalLink(packageName, pathToRoot,
+                DocLink link = configuration.extern.getExternalLink(packageElement, pathToRoot,
                                 className + ".html", refMemName);
                 return links.createLink(link,
                     (label == null) || label.isEmpty() ? defaultLabel : label,
                     strong,
-                    resources.getText("doclet.Href_Class_Or_Interface_Title", packageName),
-                    "", true);
+                    resources.getText("doclet.Href_Class_Or_Interface_Title",
+                        utils.getPackageName(packageElement)), "", true);
             }
         }
         return null;
@@ -744,14 +751,14 @@ public class HtmlDocletWriter {
         return configuration.extern.isExternal(typeElement);
     }
 
-    public DocLink getCrossPackageLink(String pkgName) {
-        return configuration.extern.getExternalLink(pkgName, pathToRoot,
+    public DocLink getCrossPackageLink(PackageElement element) {
+        return configuration.extern.getExternalLink(element, pathToRoot,
             DocPaths.PACKAGE_SUMMARY.getPath());
     }
 
-    public DocLink getCrossModuleLink(String mdleName) {
-        return configuration.extern.getExternalLink(mdleName, pathToRoot,
-            docPaths.moduleSummary(mdleName).getPath());
+    public DocLink getCrossModuleLink(ModuleElement element) {
+        return configuration.extern.getExternalLink(element, pathToRoot,
+            docPaths.moduleSummary(utils.getModuleName(element)).getPath());
     }
 
     /**
@@ -1024,17 +1031,13 @@ public class HtmlDocletWriter {
                 return getPackageLink(refPackage, label);
             } else {
                 // @see is not referencing an included class, module or package. Check for cross links.
-                Content classCrossLink;
                 DocLink elementCrossLink = (configuration.extern.isModule(refClassName))
-                        ? getCrossModuleLink(refClassName) : getCrossPackageLink(refClassName);
+                        ? getCrossModuleLink(utils.elementUtils.getModuleElement(refClassName)) :
+                        (refPackage != null) ? getCrossPackageLink(refPackage) : null;
                 if (elementCrossLink != null) {
                     // Element cross link found
                     return links.createLink(elementCrossLink,
                             (label.isEmpty() ? text : label), true);
-                } else if ((classCrossLink = getCrossClassLink(refClassName,
-                        refMemName, label, false, !isLinkPlain)) != null) {
-                    // Class cross link found (possibly to a member in the class)
-                    return classCrossLink;
                 } else {
                     // No cross link found so print warning
                     messages.warning(ch.getDocTreePath(see),
@@ -1136,7 +1139,7 @@ public class HtmlDocletWriter {
     public void addInlineComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> description = ch.getDescription(configuration, tag);
-        addCommentTags(element, tag, description, false, false, htmltree);
+        addCommentTags(element, tag, description, false, false, false, htmltree);
     }
 
     /**
@@ -1160,7 +1163,7 @@ public class HtmlDocletWriter {
      */
     public void addInlineDeprecatedComment(Element e, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(e);
-        addCommentTags(e, ch.getBody(configuration, tag), true, false, htmltree);
+        addCommentTags(e, ch.getBody(configuration, tag), true, false, false, htmltree);
     }
 
     /**
@@ -1181,13 +1184,13 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the summary will be added
      */
     public void addSummaryComment(Element element, List<? extends DocTree> firstSentenceTags, Content htmltree) {
-        addCommentTags(element, firstSentenceTags, false, true, htmltree);
+        addCommentTags(element, firstSentenceTags, false, true, true, htmltree);
     }
 
     public void addSummaryDeprecatedComment(Element element, DocTree tag, Content htmltree) {
         CommentHelper ch = utils.getCommentHelper(element);
         List<? extends DocTree> body = ch.getBody(configuration, tag);
-        addCommentTags(element, ch.getFirstSentenceTrees(configuration, body), true, true, htmltree);
+        addCommentTags(element, ch.getFirstSentenceTrees(configuration, body), true, true, true, htmltree);
     }
 
     /**
@@ -1197,7 +1200,7 @@ public class HtmlDocletWriter {
      * @param htmltree the documentation tree to which the inline comments will be added
      */
     public void addInlineComment(Element element, Content htmltree) {
-        addCommentTags(element, utils.getFullBody(element), false, false, htmltree);
+        addCommentTags(element, utils.getFullBody(element), false, false, false, htmltree);
     }
 
     /**
@@ -1207,11 +1210,12 @@ public class HtmlDocletWriter {
      * @param tags the first sentence tags for the doc
      * @param depr true if it is deprecated
      * @param first true if the first sentence tags should be added
+     * @param inSummary true if the comment tags are added into the summary section
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, List<? extends DocTree> tags, boolean depr,
-            boolean first, Content htmltree) {
-        addCommentTags(element, null, tags, depr, first, htmltree);
+            boolean first, boolean inSummary, Content htmltree) {
+        addCommentTags(element, null, tags, depr, first, inSummary, htmltree);
     }
 
     /**
@@ -1222,15 +1226,16 @@ public class HtmlDocletWriter {
      * @param tags the first sentence tags for the doc
      * @param depr true if it is deprecated
      * @param first true if the first sentence tags should be added
+     * @param inSummary true if the comment tags are added into the summary section
      * @param htmltree the documentation tree to which the comment tags will be added
      */
     private void addCommentTags(Element element, DocTree holderTag, List<? extends DocTree> tags, boolean depr,
-            boolean first, Content htmltree) {
+            boolean first, boolean inSummary, Content htmltree) {
         if(configuration.nocomment){
             return;
         }
         Content div;
-        Content result = commentTagsToContent(null, element, tags, first);
+        Content result = commentTagsToContent(null, element, tags, first, inSummary);
         if (depr) {
             div = HtmlTree.DIV(HtmlStyle.deprecationComment, result);
             htmltree.addContent(div);
@@ -1276,10 +1281,10 @@ public class HtmlDocletWriter {
     private boolean commentRemoved = false;
 
     /**
-     * Converts inline tags and text to text strings, expanding the
+     * Converts inline tags and text to Content, expanding the
      * inline tags along the way.  Called wherever text can contain
      * an inline tag, such as in comments or in free-form text arguments
-     * to non-inline tags.
+     * to block tags.
      *
      * @param holderTag    specific tag where comment resides
      * @param element    specific element where comment resides
@@ -1290,6 +1295,25 @@ public class HtmlDocletWriter {
      */
     public Content commentTagsToContent(DocTree holderTag, Element element,
             List<? extends DocTree> tags, boolean isFirstSentence) {
+        return commentTagsToContent(holderTag, element, tags, isFirstSentence, false);
+    }
+
+    /**
+     * Converts inline tags and text to text strings, expanding the
+     * inline tags along the way.  Called wherever text can contain
+     * an inline tag, such as in comments or in free-form text arguments
+     * to block tags.
+     *
+     * @param holderTag    specific tag where comment resides
+     * @param element    specific element where comment resides
+     * @param tags   array of text tags and inline tags (often alternating)
+    present in the text of interest for this element
+     * @param isFirstSentence  true if text is first sentence
+     * @param inSummary   if the comment tags are added into the summary section
+     * @return a Content object
+     */
+    public Content commentTagsToContent(DocTree holderTag, Element element,
+            List<? extends DocTree> tags, boolean isFirstSentence, boolean inSummary) {
 
         final Content result = new ContentBuilder() {
             @Override
@@ -1454,7 +1478,7 @@ public class HtmlDocletWriter {
                 public Boolean visitIndex(IndexTree node, Content p) {
                     Content output = TagletWriter.getInlineTagOutput(element,
                             configuration.tagletManager, holderTag, tag,
-                            getTagletWriterInstance(isFirstSentence));
+                            getTagletWriterInstance(isFirstSentence, inSummary));
                     if (output != null) {
                         result.addContent(output);
                     }

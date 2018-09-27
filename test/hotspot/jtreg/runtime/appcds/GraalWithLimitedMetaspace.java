@@ -87,7 +87,6 @@ public class GraalWithLimitedMetaspace {
 
     static void dumpLoadedClasses(String[] expectedClasses) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
-          TestCommon.makeCommandLineForAppCDS(
             "-XX:DumpLoadedClassList=" + CLASSLIST_FILE,
             // trigger JVMCI runtime init so that JVMCI classes will be
             // included in the classlist
@@ -95,7 +94,7 @@ public class GraalWithLimitedMetaspace {
             "-cp",
             TESTJAR,
             TESTNAME,
-            TEST_OUT));
+            TEST_OUT);
 
         OutputAnalyzer output = TestCommon.executeAndLog(pb, "dump-loaded-classes")
             .shouldHaveExitValue(0)
@@ -113,7 +112,6 @@ public class GraalWithLimitedMetaspace {
 
     static void dumpArchive() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true,
-          TestCommon.makeCommandLineForAppCDS(
             "-cp",
             TESTJAR,
             "-XX:SharedClassListFile=" + CLASSLIST_FILE,
@@ -121,7 +119,7 @@ public class GraalWithLimitedMetaspace {
             "-Xlog:cds",
             "-Xshare:dump",
             "-XX:MetaspaceSize=12M",
-            "-XX:MaxMetaspaceSize=12M"));
+            "-XX:MaxMetaspaceSize=12M");
 
         OutputAnalyzer output = TestCommon.executeAndLog(pb, "dump-archive");
         int exitValue = output.getExitValue();

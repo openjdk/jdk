@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4369014 4851991 8164407
+ * @bug 4369014 4851991 8164407 8205593
  * @summary Determine if the docRoot inline tag works properly.
  * If docRoot performs as documented, the test passes.
  * Make sure that the docRoot tag works with the -bottom option.
@@ -47,6 +47,7 @@ public class TestDocRootInlineTag extends JavadocTester {
 
         javadoc("-bottom", "The value of @docRoot is \"{@docRoot}\"",
                 "-d", "out",
+                "-source", "8",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,
                 testSrc("TestDocRootTag.java"), "pkg");

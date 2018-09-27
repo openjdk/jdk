@@ -802,7 +802,13 @@ public final class DateTimeFormatterBuilder {
                 return store.getText(value, style);
             }
             @Override
-            public Iterator<Entry<String, Long>> getTextIterator(TemporalField field, TextStyle style, Locale locale) {
+            public Iterator<Entry<String, Long>> getTextIterator(Chronology chrono,
+                    TemporalField field, TextStyle style, Locale locale) {
+                return store.getTextIterator(style);
+            }
+            @Override
+            public Iterator<Entry<String, Long>> getTextIterator(TemporalField field,
+                    TextStyle style, Locale locale) {
                 return store.getTextIterator(style);
             }
         };

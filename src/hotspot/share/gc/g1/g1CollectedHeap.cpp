@@ -3169,18 +3169,24 @@ void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj,
 }
 
 bool G1ParEvacuateFollowersClosure::offer_termination() {
+  EventGCPhaseParallel event;
   G1ParScanThreadState* const pss = par_scan_state();
   start_term_time();
   const bool res = terminator()->offer_termination();
   end_term_time();
+  event.commit(GCId::current(), pss->worker_id(), G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination));
   return res;
 }
 
 void G1ParEvacuateFollowersClosure::do_void() {
+  EventGCPhaseParallel event;
   G1ParScanThreadState* const pss = par_scan_state();
   pss->trim_queue();
+  event.commit(GCId::current(), pss->worker_id(), G1GCPhaseTimes::phase_name(G1GCPhaseTimes::ObjCopy));
   do {
+    EventGCPhaseParallel event;
     pss->steal_and_trim_queue(queues());
+    event.commit(GCId::current(), pss->worker_id(), G1GCPhaseTimes::phase_name(G1GCPhaseTimes::ObjCopy));
   } while (!offer_termination());
 }
 
@@ -4050,6 +4056,7 @@ public:
         break;
       }
 
+      EventGCPhaseParallel event;
       double start_time = os::elapsedTime();
 
       end = MIN2(end, _num_work_items);
@@ -4064,9 +4071,11 @@ public:
         if (is_young) {
           young_time += time_taken;
           has_young_time = true;
+          event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::YoungFreeCSet));
         } else {
           non_young_time += time_taken;
           has_non_young_time = true;
+          event.commit(GCId::current(), worker_id, G1GCPhaseTimes::phase_name(G1GCPhaseTimes::NonYoungFreeCSet));
         }
         start_time = end_time;
       }

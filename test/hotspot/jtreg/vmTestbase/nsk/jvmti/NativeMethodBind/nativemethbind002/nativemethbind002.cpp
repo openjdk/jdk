@@ -67,8 +67,9 @@ NativeMethodBind(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
     if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetPhase,
             jvmti_env, &phase))) {
         result = STATUS_FAILED;
-        NSK_COMPLAIN0("TEST FAILED: unable to obtain phase of the VM execution\n\
-\tduring NativeMethodBind callback\n\n");
+        NSK_COMPLAIN0(
+            "TEST FAILED: unable to obtain phase of the VM execution\n"
+            "\tduring NativeMethodBind callback\n\n");
         unlock(jvmti_env, jni_env);
         return;
     }
@@ -103,10 +104,12 @@ void JNICALL
 VMDeath(jvmtiEnv *jvmti_env, JNIEnv *env) {
     NSK_DISPLAY0("VMDeath event received\n");
 
-    if (wrongBindEv != 0)
-        NSK_COMPLAIN1("TEST FAILED: there are %d NativeMethodBind events\n\
-sent during non-start or non-live phase of the VM execution\n",
+    if (wrongBindEv != 0) {
+        NSK_COMPLAIN1(
+            "TEST FAILED: there are %d NativeMethodBind events\n"
+            "sent during non-start or non-live phase of the VM execution\n",
             wrongBindEv);
+    }
 
     if (result == STATUS_FAILED)
         exit(95 + STATUS_FAILED);

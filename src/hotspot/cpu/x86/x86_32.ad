@@ -4101,6 +4101,15 @@ operand regF() %{
   interface(REG_INTER);
 %}
 
+// Float register operands
+operand vlRegF() %{
+   constraint(ALLOC_IN_RC(float_reg_vl));
+   match(RegF);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
 // XMM Double register operands
 operand regD() %{
   predicate( UseSSE>=2 );
@@ -4110,9 +4119,26 @@ operand regD() %{
   interface(REG_INTER);
 %}
 
+// Double register operands
+operand vlRegD() %{
+   constraint(ALLOC_IN_RC(double_reg_vl));
+   match(RegD);
+
+   format %{ %}
+   interface(REG_INTER);
+%}
+
 // Vectors : note, we use legacy registers to avoid extra (unneeded in 32-bit VM)
 // runtime code generation via reg_class_dynamic.
 operand vecS() %{
+  constraint(ALLOC_IN_RC(vectors_reg_legacy));
+  match(VecS);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand legVecS() %{
   constraint(ALLOC_IN_RC(vectors_reg_legacy));
   match(VecS);
 
@@ -4128,6 +4154,14 @@ operand vecD() %{
   interface(REG_INTER);
 %}
 
+operand legVecD() %{
+  constraint(ALLOC_IN_RC(vectord_reg_legacy));
+  match(VecD);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 operand vecX() %{
   constraint(ALLOC_IN_RC(vectorx_reg_legacy));
   match(VecX);
@@ -4136,7 +4170,23 @@ operand vecX() %{
   interface(REG_INTER);
 %}
 
+operand legVecX() %{
+  constraint(ALLOC_IN_RC(vectorx_reg_legacy));
+  match(VecX);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 operand vecY() %{
+  constraint(ALLOC_IN_RC(vectory_reg_legacy));
+  match(VecY);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand legVecY() %{
   constraint(ALLOC_IN_RC(vectory_reg_legacy));
   match(VecY);
 
@@ -6515,6 +6565,26 @@ instruct storeD(memory mem, regD src) %{
   ins_pipe( pipe_slow );
 %}
 
+// Load Double
+instruct MoveD2VL(vlRegD dst, regD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Double
+instruct MoveVL2D(regD dst, vlRegD src) %{
+  match(Set dst src);
+  format %{ "movsd $dst,$src\t! load double (8 bytes)" %}
+  ins_encode %{
+    __ movdbl($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
 // Store XMM register to memory (single-precision floating point)
 // MOVSS instruction
 instruct storeF(memory mem, regF src) %{
@@ -6526,6 +6596,26 @@ instruct storeF(memory mem, regF src) %{
     __ movflt($mem$$Address, $src$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
+%}
+
+// Load Float
+instruct MoveF2VL(vlRegF dst, regF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
+%}
+
+// Load Float
+instruct MoveVL2F(regF dst, vlRegF src) %{
+  match(Set dst src);
+  format %{ "movss $dst,$src\t! load float (4 bytes)" %}
+  ins_encode %{
+    __ movflt($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe( fpu_reg_reg );
 %}
 
 // Store Float

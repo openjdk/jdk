@@ -502,6 +502,7 @@ needs_g1gc = \
   jdk/jfr/event/gc/collection/TestYoungGarbageCollectionEventWithG1New.java \
   jdk/jfr/event/gc/collection/TestGCEventMixedWithG1FullCollection.java \
   jdk/jfr/event/gc/collection/TestGCEventMixedWithG1ConcurrentMark.java \
+  jdk/jfr/event/gc/collection/TestG1ParallelPhases.java \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1FullCollection.java \
   jdk/jfr/event/gc/objectcount/TestObjectCountAfterGCEventWithG1ConcurrentMark.java \
   jdk/jfr/event/gc/heapsummary/TestHeapSummaryEventG1.java

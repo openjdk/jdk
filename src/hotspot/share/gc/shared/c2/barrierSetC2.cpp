@@ -310,7 +310,7 @@ void C2Access::fixup_decorators() {
 
 //--------------------------- atomic operations---------------------------------
 
-static void pin_atomic_op(C2AtomicAccess& access) {
+void BarrierSetC2::pin_atomic_op(C2AtomicAccess& access) const {
   if (!access.needs_pinning()) {
     return;
   }

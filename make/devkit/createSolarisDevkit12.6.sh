@@ -34,18 +34,19 @@
 # install in a separate temporary image.
 #
 # The Solaris Studio installation must contain at least these packages:
-# developer/developerstudio-126/backend               12.6-1.0.0.0               i--
-# developer/developerstudio-126/c++                   12.6-1.0.0.0               i--
-# developer/developerstudio-126/cc                    12.6-1.0.0.0               i--
-# developer/developerstudio-126/dbx (solarisstudio)   12.6-1.0.0.0               i--
-# developer/developerstudio-126/library/c++-libs      12.6-1.0.0.0               i--
-# developer/developerstudio-126/library/math-libs     12.6-1.0.0.0               i--
-# developer/developerstudio-126/library/c-libs        12.6-1.0.0.0               i--
-# developer/developerstudio-126/library/studio-gccrt  12.6-1.0.0.0               i--
-# developer/developerstudio-126/studio-common         12.6-1.0.0.0               i--
-# developer/developerstudio-126/studio-ja             12.6-1.0.0.0               i--
-# developer/developerstudio-126/studio-legal          12.6-1.0.0.0               i--
-# developer/developerstudio-126/studio-zhCN           12.6-1.0.0.0               i--
+#developer/developerstudio-126/backend                12.6-1.0.0.1
+#developer/developerstudio-126/c++                    12.6-1.0.2.0
+#developer/developerstudio-126/cc                     12.6-1.0.1.0
+#developer/developerstudio-126/dbx                    12.6-1.0.0.1
+#developer/developerstudio-126/library/c++-libs       12.6-1.0.2.0
+#developer/developerstudio-126/library/c-libs         12.6-1.0.0.1
+#developer/developerstudio-126/library/f90-libs       12.6-1.0.0.1
+#developer/developerstudio-126/library/math-libs      12.6-1.0.0.1
+#developer/developerstudio-126/library/studio-gccrt   12.6-1.0.0.1
+#developer/developerstudio-126/studio-common          12.6-1.0.0.1
+#developer/developerstudio-126/studio-ja              12.6-1.0.0.1
+#developer/developerstudio-126/studio-legal           12.6-1.0.0.1
+#developer/developerstudio-126/studio-zhCN            12.6-1.0.0.1
 #
 # erik.joelsson@oracle.com
 
@@ -93,7 +94,7 @@ if [ ! -d $INSTALL_ROOT ]; then
   pkg -R $INSTALL_ROOT set-publisher -P -g ${PUBLISHER_URI} solaris
   sudo pkg -R $INSTALL_ROOT install --accept entire@$SOLARIS_ENTIRE_VERSION \
       system/install developer/gnu-binutils system/library/mmheap system/picl \
-      developer/assembler
+      developer/assembler system/library/freetype-2
 else
   echo "Skipping installing packages"
 fi

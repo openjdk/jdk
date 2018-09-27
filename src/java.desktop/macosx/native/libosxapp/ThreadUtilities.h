@@ -26,6 +26,8 @@
 #ifndef __THREADUTILITIES_H
 #define __THREADUTILITIES_H
 
+#include "jni.h"
+
 #import <pthread.h>
 
 #import "AWT_debug.h"
@@ -135,6 +137,6 @@ __attribute__((visibility("default")))
 + (void)performOnMainThread:(SEL)aSelector on:(id)target withObject:(id)arg waitUntilDone:(BOOL)wait;
 @end
 
-void OSXAPP_SetJavaVM(JavaVM *vm);
+JNIEXPORT void OSXAPP_SetJavaVM(JavaVM *vm);
 
 #endif /* __THREADUTILITIES_H */

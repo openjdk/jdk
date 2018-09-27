@@ -174,6 +174,13 @@ public enum ToolOption {
     SOURCE("-source", true) {
         @Override
         public void process(Helper helper, String arg) {
+            helper.setCompilerOpt("--source", arg);
+        }
+    },
+
+    SOURCE2("--source", true) {
+        @Override
+        public void process(Helper helper, String arg) {
             helper.setCompilerOpt(opt, arg);
         }
     },

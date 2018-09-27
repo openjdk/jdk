@@ -403,7 +403,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
       __ movdl(xmm0, rcx);
       __ movl(rcx, 0xffff);
       __ kmovwl(k1, rcx);
-      __ evpbroadcastd(xmm0, xmm0, Assembler::AVX_512bit);
+      __ vpbroadcastd(xmm0, xmm0, Assembler::AVX_512bit);
       __ evmovdqul(xmm7, xmm0, Assembler::AVX_512bit);
 #ifdef _LP64
       __ evmovdqul(xmm8, xmm0, Assembler::AVX_512bit);
@@ -885,7 +885,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (supports_sha() && UseSHA) {
+  if (supports_sha() && supports_sse4_1() && UseSHA) {
     if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
     }
@@ -894,7 +894,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
   }
 
-  if (UseSHA) {
+  if (supports_sse4_1() && UseSHA) {
     if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
     }

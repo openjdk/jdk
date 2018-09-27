@@ -117,6 +117,7 @@ class NMethodSweeper : public AllStatic {
 
   static void mark_active_nmethods();      // Invoked at the end of each safepoint
   static CodeBlobClosure* prepare_mark_active_nmethods();
+  static CodeBlobClosure* prepare_reset_hotness_counters();
   static void sweeper_loop();
   static void notify(int code_blob_type);  // Possibly start the sweeper thread.
   static void force_sweep();

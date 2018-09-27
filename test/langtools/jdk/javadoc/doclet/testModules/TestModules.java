@@ -26,7 +26,7 @@
  * @bug 8154119 8154262 8156077 8157987 8154261 8154817 8135291 8155995 8162363
  *      8168766 8168688 8162674 8160196 8175799 8174974 8176778 8177562 8175218
  *      8175823 8166306 8178043 8181622 8183511 8169819 8074407 8183037 8191464
-        8164407 8192007 8182765 8196200 8196201 8196202 8196202
+        8164407 8192007 8182765 8196200 8196201 8196202 8196202 8205593 8202462
  * @summary Test modules support in javadoc.
  * @author bpatel
  * @library ../lib
@@ -252,13 +252,11 @@ public class TestModules extends JavadocTester {
      */
     @Test
     void testAggregatorModuleSummary() {
-        setAutomaticCheckLinks(false); // @ignore JDK-8202628
         javadoc("-d", "out-aggregatorModuleSummary",
                 "-use",
                 "--module-source-path", testSrc,
                 "--expand-requires", "transitive",
                 "--module", "moduleT");
-        setAutomaticCheckLinks(true); // @ignore JDK-8202628
         checkExit(Exit.OK);
         checkAggregatorModuleSummary();
     }
@@ -1071,7 +1069,7 @@ public class TestModules extends JavadocTester {
                 + "<th class=\"colSecond\" scope=\"row\"><a href=\"../moduleA/module-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
-                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>\n"
+                + "phrase search phrase.</div>\n"
                 + "</td>\n"
                 + "</tr>\n"
                 + "<tr class=\"rowColor\">\n"
@@ -1164,7 +1162,7 @@ public class TestModules extends JavadocTester {
                 + "<dt><a href=\"moduleA/module-summary.html\">moduleA</a> - module moduleA</dt>\n"
                 + "<dd>\n"
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
-                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>\n"
+                + "phrase search phrase.</div>\n"
                 + "</dd>\n"
                 + "<dt><a href=\"moduleB/module-summary.html\">moduleB</a> - module moduleB</dt>\n"
                 + "<dd>\n"
@@ -1193,7 +1191,7 @@ public class TestModules extends JavadocTester {
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleA/module-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
-                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>\n"
+                + "phrase search phrase.</div>\n"
                 + "</td>",
                 "<th class=\"colFirst\" scope=\"row\"><a href=\"moduleB/module-summary.html\">moduleB</a></th>\n"
                 + "<td class=\"colLast\">\n"
@@ -1235,7 +1233,7 @@ public class TestModules extends JavadocTester {
                 + "<th class=\"colSecond\" scope=\"row\"><a href=\"../moduleA/module-summary.html\">moduleA</a></th>\n"
                 + "<td class=\"colLast\">\n"
                 + "<div class=\"block\">This is a test description for the moduleA module with a Search "
-                + "phrase <a id=\"searchphrase\" class=\"searchTagResult\">search phrase</a>.</div>\n"
+                + "phrase search phrase.</div>\n"
                 + "</td>",
                 "<table class=\"requiresSummary\">\n"
                 + "<caption><span>Requires</span><span class=\"tabEnd\">&nbsp;</span></caption>\n"
@@ -1617,10 +1615,10 @@ public class TestModules extends JavadocTester {
 
     void checkLinkOffline() {
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
-                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java/lang/String.html?is-external=true\" "
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/String.html?is-external=true\" "
                 + "title=\"class or interface in java.lang\" class=\"externalLink\"><code>Link to String Class</code></a>");
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
-                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java/lang/package-summary.html?is-external=true\" "
+                "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/java/lang/package-summary.html?is-external=true\" "
                 + "class=\"externalLink\"><code>Link to java.lang package</code></a>");
         checkOutput("moduleB/testpkg3mdlB/package-summary.html", true,
                 "<a href=\"https://docs.oracle.com/javase/9/docs/api/java.base/module-summary.html?is-external=true\" "

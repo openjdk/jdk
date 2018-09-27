@@ -28,6 +28,7 @@ package java.util;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import jdk.internal.util.ArraysSupport;
 
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BinaryOperator;
@@ -4288,21 +4289,41 @@ public class Arrays {
     // Misc
 
     /**
-     * Returns a fixed-size list backed by the specified array.  (Changes to
-     * the returned list "write through" to the array.)  This method acts
-     * as bridge between array-based and collection-based APIs, in
-     * combination with {@link Collection#toArray}.  The returned list is
-     * serializable and implements {@link RandomAccess}.
+     * Returns a fixed-size list backed by the specified array. Changes made to
+     * the array will be visible in the returned list, and changes made to the
+     * list will be visible in the array. The returned list is
+     * {@link Serializable} and implements {@link RandomAccess}.
+     *
+     * <p>The returned list implements the optional {@code Collection} methods, except
+     * those that would change the size of the returned list. Those methods leave
+     * the list unchanged and throw {@link UnsupportedOperationException}.
+     *
+     * @apiNote
+     * This method acts as bridge between array-based and collection-based
+     * APIs, in combination with {@link Collection#toArray}.
+     *
+     * <p>This method provides a way to wrap an existing array:
+     * <pre>{@code
+     *     Integer[] numbers = ...
+     *     ...
+     *     List<Integer> values = Arrays.asList(numbers);
+     * }</pre>
      *
      * <p>This method also provides a convenient way to create a fixed-size
      * list initialized to contain several elements:
-     * <pre>
-     *     List&lt;String&gt; stooges = Arrays.asList("Larry", "Moe", "Curly");
-     * </pre>
+     * <pre>{@code
+     *     List<String> stooges = Arrays.asList("Larry", "Moe", "Curly");
+     * }</pre>
+     *
+     * <p><em>The list returned by this method is modifiable.</em>
+     * To create an unmodifiable list, use
+     * {@link Collections#unmodifiableList Collections.unmodifiableList}
+     * or <a href="List.html#unmodifiable">Unmodifiable Lists</a>.
      *
      * @param <T> the class of the objects in the array
      * @param a the array by which the list will be backed
      * @return a list view of the specified array
+     * @throws NullPointerException if the specified array is {@code null}
      */
     @SafeVarargs
     @SuppressWarnings("varargs")

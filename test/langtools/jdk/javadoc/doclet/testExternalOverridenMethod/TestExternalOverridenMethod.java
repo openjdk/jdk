@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4857717 8025633 8026567 8164407 8182765
+ * @bug 4857717 8025633 8026567 8164407 8182765 8205593
  * @summary Test to make sure that externally overriden and implemented methods
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
@@ -45,6 +45,7 @@ public class TestExternalOverridenMethod extends JavadocTester {
     @Test
     void test() {
         javadoc("-d", "out",
+                "-source","8",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,
                 "pkg");
@@ -67,6 +68,7 @@ public class TestExternalOverridenMethod extends JavadocTester {
     @Test
     void test_html4() {
         javadoc("-d", "out-html4",
+                "-source", "8",
                 "-html4",
                 "-sourcepath", testSrc,
                 "-linkoffline", uri, testSrc,

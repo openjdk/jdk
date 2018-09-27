@@ -25,14 +25,15 @@
 
 package java.util.jar;
 
-import java.io.FilterInputStream;
 import java.io.DataOutputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Map;
+
+import sun.security.util.SecurityProperties;
 
 /**
  * The Manifest class is used to maintain Manifest entry names and their
@@ -47,16 +48,24 @@ import java.util.Iterator;
  * @since   1.2
  */
 public class Manifest implements Cloneable {
+
+    private static final boolean jarInfoInExceptionText =
+        SecurityProperties.includedInExceptions("jar");
+
     // manifest main attributes
     private Attributes attr = new Attributes();
 
     // manifest entries
     private Map<String, Attributes> entries = new HashMap<>();
 
+    // name of the corresponding jar archive if available.
+    private final String jarFilename;
+
     /**
      * Constructs a new, empty Manifest.
      */
     public Manifest() {
+        jarFilename = null;
     }
 
     /**
@@ -66,7 +75,20 @@ public class Manifest implements Cloneable {
      * @throws IOException if an I/O error has occurred
      */
     public Manifest(InputStream is) throws IOException {
+        this();
         read(is);
+    }
+
+    /**
+     * Constructs a new Manifest from the specified input stream.
+     *
+     * @param is the input stream containing manifest data
+     * @param jarFilename the name of the corresponding jar archive if available
+     * @throws IOException if an I/O error has occured
+     */
+    Manifest(InputStream is, String jarFilename) throws IOException {
+        read(is);
+        this.jarFilename = jarFilename;
     }
 
     /**
@@ -75,6 +97,7 @@ public class Manifest implements Cloneable {
      * @param man the Manifest to copy
      */
     public Manifest(Manifest man) {
+        this();
         attr.putAll(man.getMainAttributes());
         entries.putAll(man.getEntries());
     }
@@ -179,6 +202,14 @@ public class Manifest implements Cloneable {
         return;
     }
 
+    static String getErrorPosition(String filename, final int lineNumber) {
+        if (filename == null || !jarInfoInExceptionText) {
+            return "line " + lineNumber;
+        }
+
+        return "manifest of " + filename + ":" + lineNumber;
+    }
+
     /**
      * Reads the Manifest from the specified InputStream. The entry
      * names and attributes read will be merged in with the current
@@ -193,7 +224,7 @@ public class Manifest implements Cloneable {
         // Line buffer
         byte[] lbuf = new byte[512];
         // Read the main attributes for the manifest
-        attr.read(fis, lbuf);
+        int lineNumber = attr.read(fis, lbuf, jarFilename, 0);
         // Total number of entries, attributes read
         int ecount = 0, acount = 0;
         // Average size of entry attributes
@@ -206,8 +237,11 @@ public class Manifest implements Cloneable {
 
         while ((len = fis.readLine(lbuf)) != -1) {
             byte c = lbuf[--len];
+            lineNumber++;
+
             if (c != '\n' && c != '\r') {
-                throw new IOException("manifest line too long");
+                throw new IOException("manifest line too long ("
+                           + getErrorPosition(jarFilename, lineNumber) + ")");
             }
             if (len > 0 && lbuf[len-1] == '\r') {
                 --len;
@@ -220,7 +254,8 @@ public class Manifest implements Cloneable {
             if (name == null) {
                 name = parseName(lbuf, len);
                 if (name == null) {
-                    throw new IOException("invalid manifest format");
+                    throw new IOException("invalid manifest format"
+                              + getErrorPosition(jarFilename, lineNumber) + ")");
                 }
                 if (fis.peek() == ' ') {
                     // name is wrapped
@@ -246,7 +281,7 @@ public class Manifest implements Cloneable {
                 attr = new Attributes(asize);
                 entries.put(name, attr);
             }
-            attr.read(fis, lbuf);
+            lineNumber = attr.read(fis, lbuf, jarFilename, lineNumber);
             ecount++;
             acount += attr.size();
             //XXX: Fix for when the average is 0. When it is 0,

@@ -25,7 +25,7 @@
  * @test
  * @summary
  * @requires vm.opt.final.EnableJVMCI == true
- *
+ * @requires !vm.graal.enabled
  * @modules jdk.internal.vm.compiler
  *
  * @library /test/lib /compiler/graalunit /

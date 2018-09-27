@@ -128,6 +128,7 @@ public class EventNames {
     public final static String G1EvacuationOldStatistics = PREFIX + "G1EvacuationOldStatistics";
     public final static String G1BasicIHOP = PREFIX + "G1BasicIHOP";
     public final static String AllocationRequiringGC = PREFIX + "AllocationRequiringGC";
+    public final static String GCPhaseParallel = PREFIX + "GCPhaseParallel";
 
     // Compiler
     public final static String Compilation = PREFIX + "Compilation";

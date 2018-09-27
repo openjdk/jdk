@@ -198,8 +198,9 @@ static void envStorageFunc(jvmtiEnv *jvmti_env, const char *msg) {
     else {
         if (obtainedData != storedData) {
             result = STATUS_FAILED;
-            NSK_COMPLAIN3("TEST FAILED: %s: obtained an environment local storage has unexpected pointer:\n\
-got: 0x%p\texpected: 0x%p\n\n",
+            NSK_COMPLAIN3(
+                "TEST FAILED: %s: obtained an environment local storage has unexpected pointer:\n"
+                "got: 0x%p\texpected: 0x%p\n\n",
                 msg, (void*) obtainedData, (void*) storedData);
         }
         else

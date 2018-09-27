@@ -37,14 +37,14 @@
   #include <pthread.h>
   /* Also defined in net/linux_close.c */
   #define INTERRUPT_SIGNAL (__SIGRTMAX - 2)
-#elif _AIX
+#elif defined(_AIX)
   #include <pthread.h>
   /* Also defined in net/aix_close.c */
   #define INTERRUPT_SIGNAL (SIGRTMAX - 1)
-#elif __solaris__
+#elif defined(__solaris__)
   #include <thread.h>
   #define INTERRUPT_SIGNAL (SIGRTMAX - 2)
-#elif _ALLBSD_SOURCE
+#elif defined(_ALLBSD_SOURCE)
   #include <pthread.h>
   /* Also defined in net/bsd_close.c */
   #define INTERRUPT_SIGNAL SIGIO

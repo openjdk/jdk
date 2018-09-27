@@ -866,8 +866,7 @@ public class Navigation {
                         contents.packageLabel)));
             } else {
                 DocLink crossPkgLink = configuration.extern.getExternalLink(
-                        configuration.utils.getPackageName(packageElement), pathToRoot,
-                        DocPaths.PACKAGE_SUMMARY.getPath());
+                        packageElement, pathToRoot, DocPaths.PACKAGE_SUMMARY.getPath());
                 if (crossPkgLink != null) {
                     tree.addContent(HtmlTree.LI(links.createLink(crossPkgLink, contents.packageLabel)));
                 } else {

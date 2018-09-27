@@ -155,8 +155,8 @@ static void doRedirect(JNIEnv *env) {
         env->FatalError("failed to get redirected JNI function table");
     }
 
-    NSK_DISPLAY0("doRedirect: the JNI function table obtained successfully\n\
-\toverwriting the function MonitorEnter ...\n");
+    NSK_DISPLAY0("doRedirect: the JNI function table obtained successfully\n"
+                 "\toverwriting the function MonitorEnter ...\n");
 
     redir_jni_functions->MonitorEnter = MyMonitorEnter;
 
@@ -173,14 +173,16 @@ static void doRedirect(JNIEnv *env) {
 
 static void checkCall(int exMonEntCalls) {
     if (monent_calls >= exMonEntCalls) {
-        NSK_DISPLAY1("CHECK PASSED: the tested JNI function MonitorEnter() has been redirected:\n\
-\tat least %d intercepted call(s) as expected",
+        NSK_DISPLAY1(
+            "CHECK PASSED: the tested JNI function MonitorEnter() has been redirected:\n"
+            "\tat least %d intercepted call(s) as expected",
             monent_calls);
     }
     else {
         result = STATUS_FAILED;
-        NSK_COMPLAIN2("TEST FAILED: the tested JNI function MonitorEnter() has not been redirected properly:\n\
-\tonly %d intercepted call(s) instead of at least %d as expected\n",
+        NSK_COMPLAIN2(
+            "TEST FAILED: the tested JNI function MonitorEnter() has not been redirected properly:\n"
+            "\tonly %d intercepted call(s) instead of at least %d as expected\n",
             monent_calls, exMonEntCalls);
     }
 }
@@ -194,8 +196,9 @@ static int waitingThread(void *context) {
     /* 4932877 fix in accordance with ANSI C: thread context of type void* -> int* -> int */
     int indx = *((int *) context);
 
-    NSK_DISPLAY1("waitingThread: thread #%d started\n\
-\tattaching the thread to the VM ...\n",
+    NSK_DISPLAY1(
+        "waitingThread: thread #%d started\n"
+        "\tattaching the thread to the VM ...\n",
         indx);
     if ((res = vm->AttachCurrentThread((void **) &env, (void *) 0)) != 0) {
         NSK_COMPLAIN1("TEST FAILURE: waitingThread: AttachCurrentThread() returns: %d\n",
@@ -239,8 +242,9 @@ static int ownerThread(void *context) {
         THREAD_return(STATUS_FAILED);
 
     monEntered = 1; /* the monitor has been entered */
-    NSK_DISPLAY1("ownerThread: entered the monitor: monEntered=%d\n\
-\twaiting ...\n",
+    NSK_DISPLAY1(
+        "ownerThread: entered the monitor: monEntered=%d\n"
+        "\twaiting ...\n",
         monEntered);
     do {
         THREAD_sleep(1);
@@ -372,8 +376,8 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI06_ji06t001_check(JNIEnv *env, jobj
     }
 
 /* begin the testing */
-    NSK_DISPLAY0(">>> TEST CASE a) Trying to redirect the JNI function ...\n\
-\nstarting redirector thread ...\n");
+    NSK_DISPLAY0(">>> TEST CASE a) Trying to redirect the JNI function ...\n\n"
+                 "starting redirector thread ...\n");
     redirThr = THREAD_new(redirectorThread, redirContext);
     if (THREAD_start(redirThr) == NULL) {
         NSK_COMPLAIN0("TEST FAILURE: cannot start redirector thread\n");
@@ -408,8 +412,8 @@ Java_nsk_jvmti_scenarios_jni_1interception_JI06_ji06t001_check(JNIEnv *env, jobj
     NSK_DISPLAY0("<<<\n\n");
 
 /*  verification of the interception */
-    NSK_DISPLAY0(">>> TEST CASE b) Exercising the interception ...\n\
-\nmain thread: trying to enter the monitor ...\n");
+    NSK_DISPLAY0(">>> TEST CASE b) Exercising the interception ...\n\n"
+                 "main thread: trying to enter the monitor ...\n");
     if (enterMonitor(env, "mainThread") == STATUS_FAILED)
         exitCode = STATUS_FAILED;
     NSK_DISPLAY0("main thread: entered the monitor\n");
