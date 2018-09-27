@@ -36,15 +36,15 @@ void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst) {
     const char * pStr;
         jsize len;
 
-    if ( ! NSK_VERIFY((pStr = NSK_CPP_STUB3(GetStringUTFChars, pEnv, src, NULL)) != NULL) ) {
+    if ( ! NSK_VERIFY((pStr = pEnv->GetStringUTFChars(src, NULL)) != NULL) ) {
         return;
     }
 
-    len = NSK_CPP_STUB2(GetStringUTFLength, pEnv, src) + 1;
+    len = pEnv->GetStringUTFLength(src) + 1;
     *dst = (char*) malloc(len);
     strncpy(*dst, pStr, len);
 
-    NSK_CPP_STUB3(ReleaseStringUTFChars, pEnv, src, pStr);
+    pEnv->ReleaseStringUTFChars(src, pStr);
 }
 
 struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
@@ -53,17 +53,17 @@ struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
     jclass clazz;
     struct MethodName * mn;
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB5(GetMethodName, pJvmtiEnv, method, &szName, NULL, NULL)) ) {
+    if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodName(method, &szName, NULL, NULL)) ) {
         return NULL;
     }
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetMethodDeclaringClass, pJvmtiEnv, method, &clazz)) ) {
-        NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, pJvmtiEnv, (unsigned char*) szName));
+    if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->GetMethodDeclaringClass(method, &clazz)) ) {
+        NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szName));
         return NULL;
     }
 
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature, pJvmtiEnv, clazz, &szSignature, NULL)) ) {
-        NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, pJvmtiEnv, (unsigned char*) szName));
+    if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->GetClassSignature(clazz, &szSignature, NULL)) ) {
+        NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szName));
         return NULL;
     }
 
@@ -71,8 +71,8 @@ struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method) {
     strncpy(mn->methodName, szName, sizeof(mn->methodName));
     strncpy(mn->classSig, szSignature, sizeof(mn->classSig));
 
-    NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, pJvmtiEnv, (unsigned char*) szName));
-    NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate, pJvmtiEnv, (unsigned char*) szSignature));
+    NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szName));
+    NSK_JVMTI_VERIFY(pJvmtiEnv->Deallocate((unsigned char*) szSignature));
     return mn;
 }
 
@@ -107,7 +107,7 @@ char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation locati
 
 void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate) {
     void * tls;
-    if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetThreadLocalStorage, pJvmtiEnv, thread, &tls)) )
+    if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->GetThreadLocalStorage(thread, &tls)) )
         return NULL;
 
     if ( ! tls) {
@@ -116,7 +116,7 @@ void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate) {
 
         memset(tls, 0, sizeToAllocate);
 
-        if ( ! NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetThreadLocalStorage, pJvmtiEnv, thread, tls)) )
+        if ( ! NSK_JVMTI_VERIFY(pJvmtiEnv->SetThreadLocalStorage(thread, tls)) )
             return NULL;
     }
 

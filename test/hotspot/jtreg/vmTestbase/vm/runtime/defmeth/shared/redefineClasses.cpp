@@ -56,23 +56,23 @@ Java_vm_runtime_defmeth_shared_Util_redefineClassIntl(JNIEnv *env, jclass clazz,
 
     classDef.klass = clazzToRedefine;
     if (!NSK_JNI_VERIFY(env,
-            (classDef.class_byte_count = /* jsize */ NSK_CPP_STUB2(GetArrayLength, env, bytecodeArray)) > 0)) {
+            (classDef.class_byte_count = /* jsize */ env->GetArrayLength(bytecodeArray)) > 0)) {
         return JNI_FALSE;
     }
 
     if (!NSK_JNI_VERIFY(env,
-            (classDef.class_bytes = (const unsigned char *) /* jbyte* */ NSK_CPP_STUB3(GetByteArrayElements, env, bytecodeArray, NULL)) != NULL)) {
+            (classDef.class_bytes = (const unsigned char *) /* jbyte* */ env->GetByteArrayElements(bytecodeArray, NULL)) != NULL)) {
         return JNI_FALSE;
     }
 
     if (!NSK_JVMTI_VERIFY(
-            NSK_CPP_STUB3(RedefineClasses, test_jvmti, 1, &classDef))) {
+            test_jvmti->RedefineClasses(1, &classDef))) {
         result = JNI_FALSE;
     }
 
     // Need to cleanup reference to byte[] whether RedefineClasses succeeded or not
     if (!NSK_JNI_VERIFY_VOID(env,
-            NSK_CPP_STUB4(ReleaseByteArrayElements, env, bytecodeArray, (jbyte*)classDef.class_bytes, JNI_ABORT))) {
+            env->ReleaseByteArrayElements(bytecodeArray, (jbyte*)classDef.class_bytes, JNI_ABORT))) {
         return JNI_FALSE;
     }
 
@@ -91,12 +91,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     memset(&caps, 0, sizeof(jvmtiCapabilities));
     caps.can_redefine_classes = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            test_jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(test_jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            test_jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(test_jvmti->GetCapabilities(&caps)))
         return JNI_ERR;
 
     if (!caps.can_redefine_classes)
