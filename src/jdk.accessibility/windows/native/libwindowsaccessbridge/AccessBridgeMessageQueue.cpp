@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "AccessBridgePackages.h"               // for debugging only
 #include <windows.h>
 #include <malloc.h>
+#include <new>
 
 DEBUG_CODE(extern HWND theDialogWindow);
 extern "C" {
@@ -46,6 +47,9 @@ AccessBridgeQueueElement::AccessBridgeQueueElement(char *buf, int size) {
     next = (AccessBridgeQueueElement *) 0;
     previous = (AccessBridgeQueueElement *) 0;
     buffer = (char *) malloc(bufsize);
+    if (buffer == NULL) {
+        throw std::bad_alloc();
+    }
     memcpy(buffer, buf, bufsize);
 }
 
