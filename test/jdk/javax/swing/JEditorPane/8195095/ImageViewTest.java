@@ -24,7 +24,7 @@
 /**
  * @test
  * @key headful
- * @bug 8195095 8206238
+ * @bug 8195095 8206238 8208638
  * @summary Tests if Images are scaled correctly in JEditorPane.
  * @run main ImageViewTest
  */
@@ -51,8 +51,11 @@ public class ImageViewTest {
             f.add(editorPane);
             f.setSize(WIDTH + 20, HEIGHT + 40);
             f.setLocationRelativeTo(null);
-
             f.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            //This line will trigger the imageupdate, and consequently, the view
+            //will be populated with the appropriate color when the pixel color
+            //is queried by robot.
+            editorPane.getUI().getPreferredSize(editorPane);
             f.setVisible(true);
         });
 
