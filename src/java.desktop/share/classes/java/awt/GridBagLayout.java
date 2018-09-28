@@ -84,7 +84,7 @@ import java.util.Arrays;
  *
  * Use {@code GridBagConstraints.RELATIVE} to specify
  * that the component's display area will be from {@code gridx}
- * to the next to the last cell in its row (for {@code gridwidth}
+ * to the next to the last cell in its row (for {@code gridwidth})
  * or from {@code gridy} to the next to the last cell in its
  * column (for {@code gridheight}).
  *
