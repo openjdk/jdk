@@ -114,6 +114,7 @@ class Linux {
   static void print_distro_info(outputStream* st);
   static void print_libversion_info(outputStream* st);
   static void print_proc_sys_info(outputStream* st);
+  static void print_ld_preload_file(outputStream* st);
 
  public:
   static bool _stack_is_executable;

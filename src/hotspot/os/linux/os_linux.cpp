@@ -1877,10 +1877,14 @@ void* os::get_default_process_handle() {
   return (void*)::dlopen(NULL, RTLD_LAZY);
 }
 
-static bool _print_ascii_file(const char* filename, outputStream* st) {
+static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
     return false;
+  }
+
+  if (hdr != NULL) {
+    st->print_cr("%s", hdr);
   }
 
   char buf[33];
@@ -1974,6 +1978,8 @@ void os::print_os_info(outputStream* st) {
   os::Linux::print_full_memory_info(st);
 
   os::Linux::print_proc_sys_info(st);
+
+  os::Linux::print_ld_preload_file(st);
 
   os::Linux::print_container_info(st);
 }
@@ -2130,6 +2136,11 @@ void os::Linux::print_proc_sys_info(outputStream* st) {
 void os::Linux::print_full_memory_info(outputStream* st) {
   st->print("\n/proc/meminfo:\n");
   _print_ascii_file("/proc/meminfo", st);
+  st->cr();
+}
+
+void os::Linux::print_ld_preload_file(outputStream* st) {
+  _print_ascii_file("/etc/ld.so.preload", st, "\n/etc/ld.so.preload:");
   st->cr();
 }
 
