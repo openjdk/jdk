@@ -2996,6 +2996,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   switch (code) {
   case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
   case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
   }
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
