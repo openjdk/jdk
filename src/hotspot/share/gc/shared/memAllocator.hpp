@@ -34,9 +34,9 @@
 // These fascilities are used for allocating, and initializing newly allocated objects.
 
 class MemAllocator: StackObj {
+protected:
   class Allocation;
 
-protected:
   CollectedHeap* const _heap;
   Thread* const        _thread;
   Klass* const         _klass;
