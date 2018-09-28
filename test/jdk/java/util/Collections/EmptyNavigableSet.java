@@ -45,6 +45,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
@@ -369,7 +370,7 @@ public class EmptyNavigableSet {
 
         assertSame(emptyNavigableSetArray, result);
 
-        assertTrue(result[0] == null);
+        assertNull(result[0]);
     }
 
     @DataProvider(name = "NavigableSet<?>", parallel = true)

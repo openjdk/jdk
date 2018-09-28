@@ -1187,7 +1187,7 @@ public class ReentrantLockTest extends JSR166TestCase {
                     await(cond, awaitMethod);
                     throw new AssertionError("should throw");
                 }
-                catch (IllegalMonitorStateException expected) {}
+                catch (IllegalMonitorStateException success) {}
                 catch (Throwable fail) { threadUnexpectedException(fail); }}};
         Thread rogueThread = new Thread(rogue, "rogue");
         threads.add(rogueThread);

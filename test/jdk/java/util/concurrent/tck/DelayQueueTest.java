@@ -96,7 +96,7 @@ public class DelayQueueTest extends JSR166TestCase {
         // suppress [overrides] javac warning
         public int hashCode() { return pseudodelay; }
         public long getDelay(TimeUnit ignore) {
-            return Integer.MIN_VALUE + pseudodelay;
+            return (long) Integer.MIN_VALUE + pseudodelay;
         }
         public String toString() {
             return String.valueOf(pseudodelay);

@@ -109,29 +109,33 @@ public class RecursiveTaskTest extends JSR166TestCase {
         } catch (Throwable fail) { threadUnexpectedException(fail); }
     }
 
-    <T> void checkCompletedNormally(RecursiveTask<T> a, T expected) {
+    <T> void checkCompletedNormally(RecursiveTask<T> a, T expectedValue) {
         assertTrue(a.isDone());
         assertFalse(a.isCancelled());
         assertTrue(a.isCompletedNormally());
         assertFalse(a.isCompletedAbnormally());
         assertNull(a.getException());
-        assertSame(expected, a.getRawResult());
-        assertSame(expected, a.join());
+        assertSame(expectedValue, a.getRawResult());
+        assertSame(expectedValue, a.join());
         assertFalse(a.cancel(false));
         assertFalse(a.cancel(true));
+
+        T v1 = null, v2 = null;
         try {
-            assertSame(expected, a.get());
-            assertSame(expected, a.get(randomTimeout(), randomTimeUnit()));
+            v1 = a.get();
+            v2 = a.get(randomTimeout(), randomTimeUnit());
         } catch (Throwable fail) { threadUnexpectedException(fail); }
+        assertSame(expectedValue, v1);
+        assertSame(expectedValue, v2);
     }
 
     /**
      * Waits for the task to complete, and checks that when it does,
      * it will have an Integer result equals to the given int.
      */
-    void checkCompletesNormally(RecursiveTask<Integer> a, int expected) {
+    void checkCompletesNormally(RecursiveTask<Integer> a, int expectedValue) {
         Integer r = a.join();
-        assertEquals(expected, (int) r);
+        assertEquals(expectedValue, (int) r);
         checkCompletedNormally(a, r);
     }
 
@@ -139,9 +143,9 @@ public class RecursiveTaskTest extends JSR166TestCase {
      * Like checkCompletesNormally, but verifies that the task has
      * already completed.
      */
-    void checkCompletedNormally(RecursiveTask<Integer> a, int expected) {
+    void checkCompletedNormally(RecursiveTask<Integer> a, int expectedValue) {
         Integer r = a.getRawResult();
-        assertEquals(expected, (int) r);
+        assertEquals(expectedValue, (int) r);
         checkCompletedNormally(a, r);
     }
 
