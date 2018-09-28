@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"

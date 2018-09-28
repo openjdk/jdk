@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
