@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8027634
+ * @bug 8027634 8210810
  * @summary Verify syntax of argument file
  * @build TestHelper
  * @run main ArgFileSyntax
@@ -40,6 +40,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ArgFileSyntax extends TestHelper {
+    // Buffer size in args.c readArgFile() method
+    private static final int ARG_FILE_PARSER_BUF_SIZE = 4096;
+
     private File createArgFile(List<String> lines) throws IOException {
         File argFile = new File("argfile");
         argFile.delete();
@@ -186,7 +189,7 @@ public class ArgFileSyntax extends TestHelper {
         String bag = "-Dgarbage=";
         String ver = "-version";
         // a token 8192 long
-        char[] data = new char[8192 - bag.length()];
+        char[] data = new char[2*ARG_FILE_PARSER_BUF_SIZE - bag.length()];
         Arrays.fill(data, 'O');
         List<String> scratch = new ArrayList<>();
         scratch.add("-Xmx32m");
@@ -194,12 +197,22 @@ public class ArgFileSyntax extends TestHelper {
         scratch.add(ver);
         rv.add(Collections.nCopies(2, scratch));
 
-        data = new char[8192 + 1024];
+        data = new char[2*ARG_FILE_PARSER_BUF_SIZE + 1024];
         Arrays.fill(data, 'O');
         scratch = new ArrayList<>();
         scratch.add(bag + String.valueOf(data));
         scratch.add(ver);
         rv.add(Collections.nCopies(2, scratch));
+
+        // 8210810: position escaping character at boundary
+        // reserve space for quote and backslash
+        data = new char[ARG_FILE_PARSER_BUF_SIZE - bag.length() - 2];
+        Arrays.fill(data, 'O');
+        scratch = new ArrayList<>();
+        String filling = String.valueOf(data);
+        scratch.add(bag + "'" + filling + "\\\\aaa\\\\'");
+        scratch.add(ver);
+        rv.add(List.of(scratch, List.of(bag + filling + "\\aaa\\", ver)));
 
         return rv;
     }

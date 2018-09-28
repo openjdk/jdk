@@ -263,6 +263,8 @@ static char* nextToken(__ctx_args *pctx) {
                 }
                 JLI_List_addSubstring(pctx->parts, anchor, nextc - anchor);
                 pctx->state = IN_ESCAPE;
+                // anchor after backslash character
+                anchor = nextc + 1;
                 break;
             case '\'':
             case '"':
