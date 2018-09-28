@@ -87,8 +87,8 @@ class StubGenerator: public StubCodeGenerator {
     case T_INT:     inc_counter_np(SharedRuntime::_jint_array_copy_ctr); return;
     case T_LONG:    inc_counter_np(SharedRuntime::_jlong_array_copy_ctr); return;
     case T_OBJECT:  inc_counter_np(SharedRuntime::_oop_array_copy_ctr); return;
+    default:        ShouldNotReachHere();
     }
-    ShouldNotReachHere();
 #endif //PRODUCT
   }
 
