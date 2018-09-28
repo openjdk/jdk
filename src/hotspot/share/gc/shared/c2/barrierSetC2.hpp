@@ -197,7 +197,12 @@ public:
                              intx prefetch_lines) const;
 
   // These are general helper methods used by C2
-  virtual bool array_copy_requires_gc_barriers(BasicType type) const { return false; }
+  enum ArrayCopyPhase {
+    Parsing,
+    Optimization,
+    Expansion
+  };
+  virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const { return false; }
 
   // Support for GC barriers emitted during parsing
   virtual bool has_load_barriers() const { return false; }
