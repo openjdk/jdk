@@ -79,6 +79,7 @@ public class ClhsdbCDSCore {
             CDSTestUtils.createArchiveAndCheck(opts);
 
             String[] jArgs = {
+                "-Xmx512m",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:SharedArchiveFile=" + SHARED_ARCHIVE_NAME,
                 "-XX:+CreateCoredumpOnCrash",
