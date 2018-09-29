@@ -51,7 +51,7 @@ import javax.swing.JComponent;
  * SynthLookAndFeel.setStyleFactory(new MyStyleFactory());
  * </pre>
  *
- * @see SynthStyleFactory
+ * @see SynthLookAndFeel
  * @see SynthStyle
  *
  * @since 1.5
