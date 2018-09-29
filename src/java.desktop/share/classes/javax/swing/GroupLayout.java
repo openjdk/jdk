@@ -430,7 +430,7 @@ public class GroupLayout implements LayoutManager2 {
      * indicates that if {@code component} is not visible it should
      * not be treated as part of the layout. A value of {@code false}
      * indicates that {@code component} is positioned and sized
-     * regardless of it's visibility.  A value of {@code null}
+     * regardless of its visibility.  A value of {@code null}
      * indicates the value specified by the single argument method {@code
      * setHonorsVisibility} should be used.
      * <p>
@@ -667,7 +667,7 @@ public class GroupLayout implements LayoutManager2 {
     }
 
     /**
-     * Creates and returns a {@code ParallelGroup} that aligns it's
+     * Creates and returns a {@code ParallelGroup} that aligns its
      * elements along the baseline.
      *
      * @param resizable whether the group is resizable
@@ -2373,12 +2373,12 @@ public class GroupLayout implements LayoutManager2 {
 
 
     /**
-     * A {@code Group} that aligns and sizes it's children.
-     * {@code ParallelGroup} aligns it's children in
+     * A {@code Group} that aligns and sizes its children.
+     * {@code ParallelGroup} aligns its children in
      * four possible ways: along the baseline, centered, anchored to the
      * leading edge, or anchored to the trailing edge.
      * <h3>Baseline</h3>
-     * A {@code ParallelGroup} that aligns it's children along the
+     * A {@code ParallelGroup} that aligns its children along the
      * baseline must first decide where the baseline is
      * anchored. The baseline can either be anchored to the top, or
      * anchored to the bottom of the group. That is, the distance between the
@@ -2415,7 +2415,7 @@ public class GroupLayout implements LayoutManager2 {
      * {@code maxDescent} is the maximum descent (preferred height - baseline)
      * of all elements that have a baseline and are aligned along the baseline.
      * <p>
-     * A {@code ParallelGroup} that aligns it's elements along the baseline
+     * A {@code ParallelGroup} that aligns its elements along the baseline
      * is only useful along the vertical axis. If you create a
      * baseline group and use it along the horizontal axis an
      * {@code IllegalStateException} is thrown when you ask
