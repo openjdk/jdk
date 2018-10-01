@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import java.util.concurrent.Executor;
 
 public class StubConnection implements Connection {
 
+    private boolean autoCommit = false;
+
     @Override
     public Statement createStatement() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -65,12 +67,14 @@ public class StubConnection implements Connection {
 
     @Override
     public void setAutoCommit(boolean autoCommit) throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        System.out.println("**** in StubConnection.setAutoCommit");
+        this.autoCommit = autoCommit;
     }
 
     @Override
     public boolean getAutoCommit() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        System.out.println("*** in StubConnection.getAutoCommit");
+        return autoCommit;
     }
 
     @Override
