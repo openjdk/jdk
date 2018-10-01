@@ -183,7 +183,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool keep_alive() const       { return _keep_alive > 0; }
 
   oop holder_phantom() const;
-  void classes_do(void f(Klass*));
+  void classes_do(void f(Klass* const));
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
   void methods_do(void f(Method*));
