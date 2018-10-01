@@ -70,6 +70,7 @@
 
 #include "unpack.h"
 
+#define STATIC_ASSERT(COND) typedef char static_assertion[(COND)?1:-1]
 
 // tags, in canonical order:
 static const byte TAGS_IN_ORDER[] = {
@@ -564,14 +565,14 @@ void unpacker::read_file_header() {
     FIRST_READ  = MAGIC_BYTES + AH_LENGTH_MIN
   };
 
-  assert(AH_LENGTH_MIN    == 15); // # of UNSIGNED5 fields required after archive_magic
+  STATIC_ASSERT(AH_LENGTH_MIN    == 15); // # of UNSIGNED5 fields required after archive_magic
   // An absolute minimum null archive is magic[4], {minver,majver,options}[3],
   // archive_size[0], cp_counts[8], class_counts[4], for a total of 19 bytes.
   // (Note that archive_size is optional; it may be 0..10 bytes in length.)
   // The first read must capture everything up through the options field.
   // This happens to work even if {minver,majver,options} is a pathological
   // 15 bytes long.  Legal pack files limit those three fields to 1+1+2 bytes.
-  assert(FIRST_READ >= MAGIC_BYTES + AH_LENGTH_0 * B_MAX);
+  STATIC_ASSERT(FIRST_READ >= MAGIC_BYTES + AH_LENGTH_0 * B_MAX);
 
   // Up through archive_size, the largest possible archive header is
   // magic[4], {minver,majver,options}[4], archive_size[10].
@@ -581,7 +582,7 @@ void unpacker::read_file_header() {
   // a byte, we probably will fail to allocate the buffer, since it
   // will be many gigabytes long.  This is a practical, not an
   // architectural limit to Pack200 archive sizes.
-  assert(FIRST_READ >= MAGIC_BYTES + AH_LENGTH_0_MAX + 2*B_MAX);
+  STATIC_ASSERT(FIRST_READ >= MAGIC_BYTES + AH_LENGTH_0_MAX + 2*B_MAX);
 
   bool foreign_buf = (read_input_fn == null);
   byte initbuf[(int)FIRST_READ + (int)C_SLOP + 200];  // 200 is for JAR I/O
