@@ -587,6 +587,9 @@ void SharedRuntime::save_native_result(MacroAssembler * masm,
     case T_DOUBLE:
       __ freg2mem_opt(Z_FRET, memaddr);
       break;
+    default:
+      ShouldNotReachHere();
+      break;
   }
 }
 
@@ -615,6 +618,9 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm,
       break;
     case T_DOUBLE:
       __ mem2freg_opt(Z_FRET, memaddr);
+      break;
+    default:
+      ShouldNotReachHere();
       break;
   }
 }
