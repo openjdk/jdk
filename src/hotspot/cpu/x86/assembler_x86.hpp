@@ -871,11 +871,6 @@ private:
   void clear_managed(void) { _is_managed = false; }
   bool is_managed(void) { return _is_managed; }
 
-  // Following functions are for stub code use only
-  void set_vector_masking(void) { _vector_masking = true; }
-  void clear_vector_masking(void) { _vector_masking = false; }
-  bool is_vector_masking(void) { return _vector_masking; }
-
   void lea(Register dst, Address src);
 
   void mov(Register dst, Register src);
@@ -2210,7 +2205,7 @@ public:
     int vector_len,     // The length of vector to be applied in encoding - for both AVX and EVEX
     bool rex_vex_w,     // Width of data: if 32-bits or less, false, else if 64-bit or specially defined, true
     bool legacy_mode,   // Details if either this instruction is conditionally encoded to AVX or earlier if true else possibly EVEX
-    bool no_reg_mask,   // when true, k0 is used when EVEX encoding is chosen, else k1 is used under the same condition
+    bool no_reg_mask,   // when true, k0 is used when EVEX encoding is chosen, else embedded_opmask_register_specifier is used
     bool uses_vl)       // This instruction may have legacy constraints based on vector length for EVEX
     :
       _avx_vector_len(vector_len),
@@ -2225,7 +2220,7 @@ public:
       _evex_encoding(0),
       _is_clear_context(true),
       _is_extended_context(false),
-      _embedded_opmask_register_specifier(1), // hard code k1, it will be initialized for now
+      _embedded_opmask_register_specifier(0), // hard code k0
       _current_assembler(NULL) {
     if (UseAVX < 3) _legacy_mode = true;
   }

@@ -153,12 +153,6 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(saved_rsi, rsi);
     __ movptr(saved_rbx, rbx);
 
-    // provide initial value for required masks
-    if (UseAVX > 2) {
-      __ movl(rbx, 0xffff);
-      __ kmovwl(k1, rbx);
-    }
-
     // save and initialize %mxcsr
     if (sse_save) {
       Label skip_ldmx;
@@ -679,12 +673,7 @@ class StubGenerator: public StubCodeGenerator {
   void xmm_copy_forward(Register from, Register to_from, Register qword_count) {
     assert( UseSSE >= 2, "supported cpu only" );
     Label L_copy_64_bytes_loop, L_copy_64_bytes, L_copy_8_bytes, L_exit;
-    if (UseAVX > 2) {
-      __ push(rbx);
-      __ movl(rbx, 0xffff);
-      __ kmovwl(k1, rbx);
-      __ pop(rbx);
-    }
+
     // Copy 64-byte chunks
     __ jmpb(L_copy_64_bytes);
     __ align(OptoLoopAlignment);
@@ -2115,14 +2104,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();   // required for proper stackwalking of RuntimeStub frame
 
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rdx, 0xffff);
-      __ kmovdl(k1, rdx);
-    }
-
     __ movptr(from, from_param);
     __ movptr(key, key_param);
 
@@ -2221,14 +2202,6 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_temp4  = xmm5;
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rdx, 0xffff);
-      __ kmovdl(k1, rdx);
-    }
 
     __ movptr(from, from_param);
     __ movptr(key, key_param);
@@ -2355,14 +2328,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     handleSOERegisters(true /*saving*/);
-
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rdx, 0xffff);
-      __ kmovdl(k1, rdx);
-    }
 
     // load registers from incoming parameters
     const Address  from_param(rbp, 8+0);
@@ -2532,14 +2497,6 @@ class StubGenerator: public StubCodeGenerator {
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     handleSOERegisters(true /*saving*/);
 
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rdx, 0xffff);
-      __ kmovdl(k1, rdx);
-    }
-
     // load registers from incoming parameters
     const Address  from_param(rbp, 8+0);
     const Address  to_param  (rbp, 8+4);
@@ -2692,14 +2649,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
     handleSOERegisters(true /*saving*/); // save rbx, rsi, rdi
-
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rdx, 0xffff);
-      __ kmovdl(k1, rdx);
-    }
 
     // load registers from incoming parameters
     const Address  from_param(rbp, 8+0);
@@ -3153,14 +3102,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter();
     handleSOERegisters(true);  // Save registers
-
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rdx, 0xffff);
-      __ kmovdl(k1, rdx);
-    }
 
     __ movptr(state, state_param);
     __ movptr(subkeyH, subkeyH_param);

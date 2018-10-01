@@ -3267,6 +3267,7 @@ void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
 }
 
 void MacroAssembler::setvectmask(Register dst, Register src) {
+  guarantee(PostLoopMultiversioning == true, "must be");
   Assembler::movl(dst, 1);
   Assembler::shlxl(dst, dst, src);
   Assembler::decl(dst);
@@ -3275,6 +3276,7 @@ void MacroAssembler::setvectmask(Register dst, Register src) {
 }
 
 void MacroAssembler::restorevectmask() {
+  guarantee(PostLoopMultiversioning == true, "must be");
   Assembler::knotwl(k1, k0);
 }
 
@@ -5026,7 +5028,7 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
   // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
   vzeroupper();
   // Reset k1 to 0xffff.
-  if (VM_Version::supports_evex()) {
+  if (PostLoopMultiversioning && VM_Version::supports_evex()) {
     push(rcx);
     movl(rcx, 0xffff);
     kmovwl(k1, rcx);
@@ -6681,8 +6683,6 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
     VM_Version::supports_avx512vlbw() &&
     VM_Version::supports_bmi2()) {
 
-    set_vector_masking();  // opening of the stub context for programming mask registers
-
     Label test_64_loop, test_tail;
     Register tmp3_aliased = len;
 
@@ -6711,15 +6711,12 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
     testl(tmp1, -1);
     jcc(Assembler::zero, FALSE_LABEL);
 
-    // Save k1
-    kmovql(k3, k1);
-
     // ~(~0 << len) applied up to two times (for 32-bit scenario)
 #ifdef _LP64
     mov64(tmp3_aliased, 0xFFFFFFFFFFFFFFFF);
     shlxq(tmp3_aliased, tmp3_aliased, tmp1);
     notq(tmp3_aliased);
-    kmovql(k1, tmp3_aliased);
+    kmovql(k3, tmp3_aliased);
 #else
     Label k_init;
     jmp(k_init);
@@ -6728,7 +6725,7 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
     // data required to compose 64 1's to the instruction stream
     // We emit 64 byte wide series of elements from 0..63 which later on would
     // be used as a compare targets with tail count contained in tmp1 register.
-    // Result would be a k1 register having tmp1 consecutive number or 1
+    // Result would be a k register having tmp1 consecutive number or 1
     // counting from least significant bit.
     address tmp = pc();
     emit_int64(0x0706050403020100);
@@ -6744,18 +6741,14 @@ void MacroAssembler::has_negatives(Register ary1, Register len,
     lea(len, InternalAddress(tmp));
     // create mask to test for negative byte inside a vector
     evpbroadcastb(vec1, tmp1, Assembler::AVX_512bit);
-    evpcmpgtb(k1, vec1, Address(len, 0), Assembler::AVX_512bit);
+    evpcmpgtb(k3, vec1, Address(len, 0), Assembler::AVX_512bit);
 
 #endif
-    evpcmpgtb(k2, k1, vec2, Address(ary1, 0), Assembler::AVX_512bit);
-    ktestq(k2, k1);
-    // Restore k1
-    kmovql(k1, k3);
+    evpcmpgtb(k2, k3, vec2, Address(ary1, 0), Assembler::AVX_512bit);
+    ktestq(k2, k3);
     jcc(Assembler::notZero, TRUE_LABEL);
 
     jmp(FALSE_LABEL);
-
-    clear_vector_masking();   // closing of the stub context for programming mask registers
   } else {
     movl(result, len); // copy
 
@@ -7197,10 +7190,6 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
     {
       assert( UseSSE >= 2, "supported cpu only" );
       Label L_fill_32_bytes_loop, L_check_fill_8_bytes, L_fill_8_bytes_loop, L_fill_8_bytes;
-      if (UseAVX > 2) {
-        movl(rtmp, 0xffff);
-        kmovwl(k1, rtmp);
-      }
       movdl(xtmp, value);
       if (UseAVX > 2 && UseUnalignedLoadStores) {
         // Fill 64-byte chunks
@@ -7945,7 +7934,6 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
       VM_Version::supports_avx512vlbw()) {
     Label VECTOR64_LOOP, VECTOR64_NOT_EQUAL, VECTOR32_TAIL;
 
-    set_vector_masking();  // opening of the stub context for programming mask registers
     cmpq(length, 64);
     jcc(Assembler::less, VECTOR32_TAIL);
     movq(tmp1, length);
@@ -7968,19 +7956,15 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
 
     //bind(VECTOR64_TAIL);
     // AVX512 code to compare upto 63 byte vectors.
-    // Save k1
-    kmovql(k3, k1);
     mov64(tmp2, 0xFFFFFFFFFFFFFFFF);
     shlxq(tmp2, tmp2, tmp1);
     notq(tmp2);
-    kmovql(k1, tmp2);
+    kmovql(k3, tmp2);
 
-    evmovdqub(rymm0, k1, Address(obja, result), Assembler::AVX_512bit);
-    evpcmpeqb(k7, k1, rymm0, Address(objb, result), Assembler::AVX_512bit);
+    evmovdqub(rymm0, k3, Address(obja, result), Assembler::AVX_512bit);
+    evpcmpeqb(k7, k3, rymm0, Address(objb, result), Assembler::AVX_512bit);
 
-    ktestql(k7, k1);
-    // Restore k1
-    kmovql(k1, k3);
+    ktestql(k7, k3);
     jcc(Assembler::below, SAME_TILL_END);     // not mismatch
 
     bind(VECTOR64_NOT_EQUAL);
@@ -7991,7 +7975,6 @@ void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register 
     shrq(result);
     jmp(DONE);
     bind(VECTOR32_TAIL);
-    clear_vector_masking();   // closing of the stub context for programming mask registers
   }
 
   cmpq(length, 8);
@@ -8752,11 +8735,6 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
   // context for the registers used, where all instructions below are using 128-bit mode
   // On EVEX without VL and BW, these instructions will all be AVX.
-  if (VM_Version::supports_avx512vlbw()) {
-    movl(tmp, 0xffff);
-    kmovwl(k1, tmp);
-  }
-
   lea(table, ExternalAddress(StubRoutines::crc_table_addr()));
   notl(crc); // ~crc
   cmpl(len, 16);
@@ -9418,9 +9396,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     VM_Version::supports_avx512vlbw() &&
     VM_Version::supports_bmi2()) {
 
-    set_vector_masking();  // opening of the stub context for programming mask registers
-
-    Label copy_32_loop, copy_loop_tail, restore_k1_return_zero, below_threshold;
+    Label copy_32_loop, copy_loop_tail, below_threshold;
 
     // alignment
     Label post_alignment;
@@ -9433,9 +9409,6 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     // Create mask to test for Unicode chars inside zmm vector
     movl(result, 0x00FF);
     evpbroadcastw(tmp2Reg, result, Assembler::AVX_512bit);
-
-    // Save k1
-    kmovql(k3, k1);
 
     testl(len, -64);
     jcc(Assembler::zero, post_alignment);
@@ -9453,14 +9426,14 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     movl(result, 0xFFFFFFFF);
     shlxl(result, result, tmp5);
     notl(result);
-    kmovdl(k1, result);
+    kmovdl(k3, result);
 
-    evmovdquw(tmp1Reg, k1, Address(src, 0), Assembler::AVX_512bit);
-    evpcmpuw(k2, k1, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
-    ktestd(k2, k1);
-    jcc(Assembler::carryClear, restore_k1_return_zero);
+    evmovdquw(tmp1Reg, k3, Address(src, 0), Assembler::AVX_512bit);
+    evpcmpuw(k2, k3, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    ktestd(k2, k3);
+    jcc(Assembler::carryClear, return_zero);
 
-    evpmovwb(Address(dst, 0), k1, tmp1Reg, Assembler::AVX_512bit);
+    evpmovwb(Address(dst, 0), k3, tmp1Reg, Assembler::AVX_512bit);
 
     addptr(src, tmp5);
     addptr(src, tmp5);
@@ -9483,7 +9456,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     evmovdquw(tmp1Reg, Address(src, len, Address::times_2), Assembler::AVX_512bit);
     evpcmpuw(k2, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
     kortestdl(k2, k2);
-    jcc(Assembler::carryClear, restore_k1_return_zero);
+    jcc(Assembler::carryClear, return_zero);
 
     // All elements in current processed chunk are valid candidates for
     // compression. Write a truncated byte elements to the memory.
@@ -9494,8 +9467,6 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     bind(copy_loop_tail);
     // bail out when there is nothing to be done
     testl(tmp5, 0xFFFFFFFF);
-    // Restore k1
-    kmovql(k1, k3);
     jcc(Assembler::zero, return_length);
 
     movl(len, tmp5);
@@ -9505,24 +9476,15 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     shlxl(result, result, len);
     notl(result);
 
-    kmovdl(k1, result);
+    kmovdl(k3, result);
 
-    evmovdquw(tmp1Reg, k1, Address(src, 0), Assembler::AVX_512bit);
-    evpcmpuw(k2, k1, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
-    ktestd(k2, k1);
-    jcc(Assembler::carryClear, restore_k1_return_zero);
+    evmovdquw(tmp1Reg, k3, Address(src, 0), Assembler::AVX_512bit);
+    evpcmpuw(k2, k3, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
+    ktestd(k2, k3);
+    jcc(Assembler::carryClear, return_zero);
 
-    evpmovwb(Address(dst, 0), k1, tmp1Reg, Assembler::AVX_512bit);
-    // Restore k1
-    kmovql(k1, k3);
+    evpmovwb(Address(dst, 0), k3, tmp1Reg, Assembler::AVX_512bit);
     jmp(return_length);
-
-    bind(restore_k1_return_zero);
-    // Restore k1
-    kmovql(k1, k3);
-    jmp(return_zero);
-
-    clear_vector_masking();   // closing of the stub context for programming mask registers
 
     bind(below_threshold);
   }
@@ -9637,8 +9599,6 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
     VM_Version::supports_avx512vlbw() &&
     VM_Version::supports_bmi2()) {
 
-    set_vector_masking();  // opening of the stub context for programming mask registers
-
     Label copy_32_loop, copy_tail;
     Register tmp3_aliased = len;
 
@@ -9670,22 +9630,15 @@ void MacroAssembler::byte_array_inflate(Register src, Register dst, Register len
     testl(tmp2, -1); // we don't destroy the contents of tmp2 here
     jcc(Assembler::zero, done);
 
-    // Save k1
-    kmovql(k2, k1);
-
     // ~(~0 << length), where length is the # of remaining elements to process
     movl(tmp3_aliased, -1);
     shlxl(tmp3_aliased, tmp3_aliased, tmp2);
     notl(tmp3_aliased);
-    kmovdl(k1, tmp3_aliased);
-    evpmovzxbw(tmp1, k1, Address(src, 0), Assembler::AVX_512bit);
-    evmovdquw(Address(dst, 0), k1, tmp1, Assembler::AVX_512bit);
+    kmovdl(k2, tmp3_aliased);
+    evpmovzxbw(tmp1, k2, Address(src, 0), Assembler::AVX_512bit);
+    evmovdquw(Address(dst, 0), k2, tmp1, Assembler::AVX_512bit);
 
-    // Restore k1
-    kmovql(k1, k2);
     jmp(done);
-
-    clear_vector_masking();   // closing of the stub context for programming mask registers
   }
   if (UseSSE42Intrinsics) {
     Label copy_16_loop, copy_8_loop, copy_bytes, copy_new_tail, copy_tail;

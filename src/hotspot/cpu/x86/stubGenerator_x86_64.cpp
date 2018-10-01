@@ -254,10 +254,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(r13_save, r13);
     __ movptr(r14_save, r14);
     __ movptr(r15_save, r15);
-    if (UseAVX > 2) {
-      __ movl(rbx, 0xffff);
-      __ kmovwl(k1, rbx);
-    }
+
 #ifdef _WIN64
     int last_reg = 15;
     if (UseAVX > 2) {
@@ -1257,10 +1254,6 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
     if (UseUnalignedLoadStores) {
       Label L_end;
-      if (UseAVX > 2) {
-        __ movl(to, 0xffff);
-        __ kmovwl(k1, to);
-      }
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
       if (UseAVX > 2) {
@@ -1341,10 +1334,6 @@ class StubGenerator: public StubCodeGenerator {
     __ align(OptoLoopAlignment);
     if (UseUnalignedLoadStores) {
       Label L_end;
-      if (UseAVX > 2) {
-        __ movl(to, 0xffff);
-        __ kmovwl(k1, to);
-      }
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
       if (UseAVX > 2) {
@@ -3005,14 +2994,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rax, 0xffff);
-      __ kmovql(k1, rax);
-    }
-
     // keylen could be only {11, 13, 15} * 4 = {44, 52, 60}
     __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
 
@@ -3106,14 +3087,6 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_temp4  = xmm5;
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rax, 0xffff);
-      __ kmovql(k1, rax);
-    }
 
     // keylen could be only {11, 13, 15} * 4 = {44, 52, 60}
     __ movl(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
@@ -3226,14 +3199,6 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_key13  = as_XMMRegister(XMM_REG_NUM_KEY_FIRST+13);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rax, 0xffff);
-      __ kmovql(k1, rax);
-    }
 
 #ifdef _WIN64
     // on win64, fill len_reg from stack position
@@ -3427,14 +3392,6 @@ class StubGenerator: public StubCodeGenerator {
     const XMMRegister xmm_key_last  = as_XMMRegister(XMM_REG_NUM_KEY_LAST);
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rax, 0xffff);
-      __ kmovql(k1, rax);
-    }
 
 #ifdef _WIN64
     // on win64, fill len_reg from stack position
@@ -3901,14 +3858,6 @@ class StubGenerator: public StubCodeGenerator {
     Label L_exit;
 
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-        __ movl(rax, 0xffff);
-        __ kmovql(k1, rax);
-    }
 
 #ifdef _WIN64
     // allocate spill slots for r13, r14
@@ -4484,14 +4433,6 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
 
     __ enter();
 
-    // For EVEX with VL and BW, provide a standard mask, VL = 128 will guide the merge
-    // context for the registers used, where all instructions below are using 128-bit mode
-    // On EVEX without VL and BW, these instructions will all be AVX.
-    if (VM_Version::supports_avx512vlbw()) {
-      __ movl(rax, 0xffff);
-      __ kmovql(k1, rax);
-    }
-
     __ movdqu(xmm_temp10, ExternalAddress(StubRoutines::x86::ghash_long_swap_mask_addr()));
 
     __ movdqu(xmm_temp0, Address(state, 0));
@@ -4761,7 +4702,6 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     __ push(r13);
     __ push(r14);
     __ push(r15);
-    __ push(rbx);
 
     // arguments
     const Register source = c_rarg0; // Source Array
@@ -4790,8 +4730,6 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     __ cmpl(length, 0);
     __ jcc(Assembler::lessEqual, L_exit);
 
-    // Save k1 value in rbx
-    __ kmovql(rbx, k1);
     __ lea(r11, ExternalAddress(StubRoutines::x86::base64_charset_addr()));
     // check if base64 charset(isURL=0) or base64 url charset(isURL=1) needs to be loaded
     __ cmpl(isURL, 0);
@@ -4802,7 +4740,7 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     __ BIND(L_processdata);
     __ movdqu(xmm16, ExternalAddress(StubRoutines::x86::base64_gather_mask_addr()));
     // Set 64 bits of K register.
-    __ evpcmpeqb(k1, xmm16, xmm16, Assembler::AVX_512bit);
+    __ evpcmpeqb(k3, xmm16, xmm16, Assembler::AVX_512bit);
     __ evmovdquq(xmm12, ExternalAddress(StubRoutines::x86::base64_bswap_mask_addr()), Assembler::AVX_256bit, r13);
     __ evmovdquq(xmm13, ExternalAddress(StubRoutines::x86::base64_right_shift_mask_addr()), Assembler::AVX_512bit, r13);
     __ evmovdquq(xmm14, ExternalAddress(StubRoutines::x86::base64_left_shift_mask_addr()), Assembler::AVX_512bit, r13);
@@ -4881,17 +4819,17 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     __ vextracti64x4(xmm4, xmm5, 1);
     __ vpmovzxwd(xmm7, xmm4, Assembler::AVX_512bit);
 
-    __ kmovql(k2, k1);
+    __ kmovql(k2, k3);
     __ evpgatherdd(xmm4, k2, Address(r11, xmm0, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k1);
+    __ kmovql(k2, k3);
     __ evpgatherdd(xmm5, k2, Address(r11, xmm1, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k1);
+    __ kmovql(k2, k3);
     __ evpgatherdd(xmm8, k2, Address(r11, xmm2, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k1);
+    __ kmovql(k2, k3);
     __ evpgatherdd(xmm9, k2, Address(r11, xmm3, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k1);
+    __ kmovql(k2, k3);
     __ evpgatherdd(xmm10, k2, Address(r11, xmm6, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k1);
+    __ kmovql(k2, k3);
     __ evpgatherdd(xmm11, k2, Address(r11, xmm7, Address::times_4, 0), Assembler::AVX_512bit);
 
     //Down convert dword to byte. Final output is 16*6 = 96 bytes long
@@ -4927,9 +4865,9 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     __ vpmovzxwd(xmm6, xmm9, Assembler::AVX_512bit);
     __ vextracti64x4(xmm9, xmm1, 1);
     __ vpmovzxwd(xmm5, xmm9,  Assembler::AVX_512bit);
-    __ kmovql(k2, k1);
+    __ kmovql(k2, k3);
     __ evpgatherdd(xmm8, k2, Address(r11, xmm6, Address::times_4, 0), Assembler::AVX_512bit);
-    __ kmovql(k2, k1);
+    __ kmovql(k2, k3);
     __ evpgatherdd(xmm10, k2, Address(r11, xmm5, Address::times_4, 0), Assembler::AVX_512bit);
     __ evpmovdb(Address(dest, dp, Address::times_1, 0), xmm8, Assembler::AVX_512bit);
     __ evpmovdb(Address(dest, dp, Address::times_1, 16), xmm10, Assembler::AVX_512bit);
@@ -4985,9 +4923,6 @@ address generate_cipherBlockChaining_decryptVectorAESCrypt() {
     __ addq(source, 3);
     __ jmp(L_process3);
     __ BIND(L_exit);
-    // restore k1 register value
-    __ kmovql(k1, rbx);
-    __ pop(rbx);
     __ pop(r15);
     __ pop(r14);
     __ pop(r13);
