@@ -335,7 +335,6 @@ void NMethodSweeper::do_stack_scanning() {
       VM_MarkActiveNMethods op;
       VMThread::execute(&op);
     }
-    _should_sweep = true;
   }
 }
 
@@ -452,7 +451,7 @@ void NMethodSweeper::possibly_sweep() {
   // allocations go to the non-profiled heap and we must be make sure that there is
   // enough space.
   double free_percent = 1 / CodeCache::reverse_free_ratio(CodeBlobType::MethodNonProfiled) * 100;
-  if (free_percent <= StartAggressiveSweepingAt) {
+  if (free_percent <= StartAggressiveSweepingAt || forced || _should_sweep) {
     do_stack_scanning();
   }
 
