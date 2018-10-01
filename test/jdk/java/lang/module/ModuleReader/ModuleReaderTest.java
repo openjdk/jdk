@@ -23,11 +23,13 @@
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.module
  *          jdk.compiler
  *          jdk.jlink
- * @build ModuleReaderTest jdk.test.lib.compiler.CompilerUtils JarUtils
+ * @build ModuleReaderTest
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.JarUtils
  * @run testng ModuleReaderTest
  * @summary Basic tests for java.lang.module.ModuleReader
  */
@@ -55,6 +57,7 @@ import java.util.spi.ToolProvider;
 
 import jdk.internal.module.ModulePath;
 import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.JarUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

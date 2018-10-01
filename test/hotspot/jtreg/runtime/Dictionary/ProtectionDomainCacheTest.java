@@ -26,9 +26,9 @@
  * @bug 8151486
  * @summary Call Class.forName() on the system classloader from a class loaded
  *          from a custom classloader, using the current class's protection domain.
- * @library /test/jdk/lib/testlibrary
  * @library /test/lib
- * @build jdk.test.lib.Utils JarUtils
+ * @build jdk.test.lib.Utils
+ *        jdk.test.lib.util.JarUtils
  * @build ClassForName ProtectionDomainCacheTest
  * @run main/othervm/policy=test.policy -XX:+UnlockDiagnosticVMOptions -XX:VerifySubSet=dictionary -XX:+VerifyAfterGC -Xlog:gc+verify=debug,protectiondomain=trace,class+unload:gc.log -Djava.security.manager ProtectionDomainCacheTest
  */
@@ -41,6 +41,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import jdk.test.lib.Utils;
+import jdk.test.lib.util.JarUtils;
 
 /*
  * Create .jar, load ClassForName from .jar using a URLClassLoader

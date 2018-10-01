@@ -26,10 +26,9 @@
  * @bug 8168423
  * @summary Different types of ClassLoader running with(out) SecurityManager and
  *          (in)valid security policy file.
- * @library /lib/testlibrary
  * @library /test/lib
  * @modules java.base/jdk.internal.module
- * @build JarUtils
+ * @build jdk.test.lib.util.JarUtils
  * @build TestClassLoader TestClient
  * @run main ClassLoaderTest -noPolicy
  * @run main ClassLoaderTest -validPolicy
@@ -51,6 +50,7 @@ import java.util.LinkedList;
 import java.util.List;
 import jdk.internal.module.ModuleInfoWriter;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.JarUtils;
 
 public class ClassLoaderTest {
 

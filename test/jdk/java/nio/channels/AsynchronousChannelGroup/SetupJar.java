@@ -26,6 +26,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
+import jdk.test.lib.util.JarUtils;
+
 public class SetupJar {
     public static void main(String args[]) throws Exception {
         String cp = System.getProperty("test.class.path");

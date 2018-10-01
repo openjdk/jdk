@@ -26,14 +26,13 @@
  * @bug 4429040 4591027 4814743
  * @summary Unit test for charset providers
  * @library /test/lib
- *          /lib/testlibrary
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.JDKToolFinder
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- *        JarUtils
+ *        jdk.test.lib.util.JarUtils
  *        FooCharset FooProvider CharsetTest
  * @run driver SetupJar
  * @run testng CharsetProviderBasicTest

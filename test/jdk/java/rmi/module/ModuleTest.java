@@ -23,9 +23,11 @@
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @build jdk.test.lib.process.ProcessTools
- *        ModuleTest jdk.test.lib.compiler.CompilerUtils JarUtils
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.JarUtils
+ *        ModuleTest
  * @run testng ModuleTest
  * @summary Basic tests for using rmi in module world
  */
@@ -37,6 +39,7 @@ import static org.testng.Assert.assertTrue;
 import java.io.File;
 import java.nio.file.Paths;
 import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.JarUtils;
 
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;

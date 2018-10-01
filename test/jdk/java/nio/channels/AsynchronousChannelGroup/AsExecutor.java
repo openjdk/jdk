@@ -25,8 +25,9 @@
  * @test
  * @bug 4607272
  * @summary tests tasks can be submitted to a channel group's thread pool.
- * @library /lib/testlibrary bootlib
- * @build JarUtils PrivilegedThreadFactory Attack
+ * @library /test/lib bootlib
+ * @build PrivilegedThreadFactory Attack
+ *        jdk.test.lib.util.JarUtils
  * @run driver SetupJar
  * @run main/othervm -Xbootclasspath/a:privileged.jar AsExecutor
  */

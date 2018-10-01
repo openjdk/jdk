@@ -24,9 +24,9 @@
 /**
  * @test
  * @modules java.scripting
- * @library modules /lib/testlibrary
+ * @library modules /test/lib
  * @build bananascript/*
- * @build JarUtils
+ * @build jdk.test.lib.util.JarUtils
  * @compile classpath/pearscript/org/pear/PearScriptEngineFactory.java
  *          classpath/pearscript/org/pear/PearScript.java
  * @run testng/othervm ModulesTest
@@ -52,6 +52,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.script.ScriptEngineFactory;
+
+import jdk.test.lib.util.JarUtils;
 
 import org.testng.annotations.Test;
 import org.testng.annotations.BeforeTest;

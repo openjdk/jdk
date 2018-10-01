@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 4413434
- * @library /lib/testlibrary
- * @build JarUtils SetupJar Boot
+ * @library /test/lib
+ * @build jdk.test.lib.util.JarUtils SetupJar Boot
  * @run driver SetupJar
  * @run main/othervm -Xbootclasspath/a:boot.jar ConsTest
  * @summary Verify that generated java.lang.reflect implementation classes do
@@ -38,6 +38,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
+
+import jdk.test.lib.util.JarUtils;
 
 public class ConsTest implements Serializable {
     public static void main(String[] args) throws Exception {

@@ -40,6 +40,7 @@ import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Builder;
 import jdk.internal.module.ModuleInfoWriter;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.JarUtils;
 
 
 /*
@@ -47,9 +48,9 @@ import jdk.test.lib.process.ProcessTools;
  * @bug 8130360 8183310
  * @summary Test security provider in different combination of modular option
  *          defined with(out) service description.
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.module
- * @build JarUtils TestProvider TestClient
+ * @build jdk.test.lib.util.JarUtils TestProvider TestClient
  * @run main SecurityProviderModularTest CL true
  * @run main SecurityProviderModularTest CL false
  * @run main SecurityProviderModularTest SL true

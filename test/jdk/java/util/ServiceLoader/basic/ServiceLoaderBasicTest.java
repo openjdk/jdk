@@ -25,8 +25,9 @@
  * @test
  * @bug 4640520 6354623 7198496
  * @summary Unit test for java.util.ServiceLoader
- * @library /lib/testlibrary /test/lib
- * @build JarUtils jdk.test.lib.process.*
+ * @library /test/lib
+ * @build jdk.test.lib.process.*
+ *        jdk.test.lib.util.JarUtils
  *        Basic Load FooService FooProvider1 FooProvider2 FooProvider3 BarProvider
  * @run testng ServiceLoaderBasicTest
  */
@@ -41,6 +42,7 @@ import java.util.List;
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.JarUtils;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;

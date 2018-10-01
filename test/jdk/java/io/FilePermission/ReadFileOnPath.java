@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8164705
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
@@ -34,12 +34,14 @@
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
+ *        jdk.test.lib.util.JarUtils
  * @run main ReadFileOnPath
  * @summary Still able to read file on the same path
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.compiler.CompilerUtils;
+import jdk.test.lib.util.JarUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;

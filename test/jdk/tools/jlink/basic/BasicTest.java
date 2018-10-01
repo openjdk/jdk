@@ -25,13 +25,14 @@
  * @test
  * @summary Basic test of jlink to create jmods and images
  * @author Andrei Eremeev
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.module
  *          jdk.jlink
  *          jdk.compiler
  * @build jdk.test.lib.process.ProcessTools
  *        jdk.test.lib.process.OutputAnalyzer
- *        JarUtils jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.compiler.CompilerUtils
+ *        jdk.test.lib.util.JarUtils
  * @run main BasicTest
  */
 
@@ -48,6 +49,7 @@ import java.util.spi.ToolProvider;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.JarUtils;
 
 public class BasicTest {
     static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")

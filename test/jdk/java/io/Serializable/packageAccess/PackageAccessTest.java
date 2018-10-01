@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 4765255
- * @library /lib/testlibrary
- * @build JarUtils A B C D PackageAccessTest
+ * @library /test/lib
+ * @build jdk.test.lib.util.JarUtils A B C D PackageAccessTest
  * @run main PackageAccessTest
  * @summary Verify proper functioning of package equality checks used to
  *          determine accessibility of superclass constructor and inherited
@@ -45,6 +45,8 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import jdk.test.lib.util.JarUtils;
 
 public class PackageAccessTest {
 

@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 4413434
- * @library /lib/testlibrary
- * @build JarUtils Foo
+ * @library /test/lib
+ * @build jdk.test.lib.util.JarUtils Foo
  * @run main DeserializeButtonTest
  * @summary Verify that class loaded outside of application class loader is
  *          correctly resolved during deserialization when read in by custom
@@ -37,6 +37,8 @@ import java.net.URLClassLoader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
+import jdk.test.lib.util.JarUtils;
 
 public class DeserializeButtonTest {
     public static void main(String[] args) throws Exception {
