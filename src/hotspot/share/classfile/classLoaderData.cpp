@@ -338,6 +338,11 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
   for (Klass* k = OrderAccess::load_acquire(&_klasses); k != NULL; k = k->next_link()) {
     // Do not filter ArrayKlass oops here...
     if (k->is_array_klass() || (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded())) {
+#ifdef ASSERT
+      oop m = k->java_mirror();
+      assert(m != NULL, "NULL mirror");
+      assert(m->is_a(SystemDictionary::Class_klass()), "invalid mirror");
+#endif
       klass_closure->do_klass(k);
     }
   }
