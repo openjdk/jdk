@@ -85,6 +85,8 @@ final class RendererContext extends ReentrantContext implements IRendererContext
     boolean closedPath = false;
     // clip rectangle (ymin, ymax, xmin, xmax):
     final float[] clipRect = new float[4];
+    // clip inverse scale (mean) to adjust length checks
+    float clipInvScale = 0.0f;
     // CurveBasicMonotonizer instance
     final CurveBasicMonotonizer monotonizer;
     // CurveClipSplitter instance
@@ -159,6 +161,7 @@ final class RendererContext extends ReentrantContext implements IRendererContext
         stroking   = 0;
         doClip     = false;
         closedPath = false;
+        clipInvScale = 0.0f;
 
         // if context is maked as DIRTY:
         if (dirty) {

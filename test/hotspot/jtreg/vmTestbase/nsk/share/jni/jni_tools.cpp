@@ -53,11 +53,11 @@ int nsk_jni_check_exception(JNIEnv* jni, const char file[], int line)
 {
     jthrowable throwable;
 
-    NSK_TRACE(throwable = NSK_CPP_STUB1(ExceptionOccurred, jni));
+    NSK_TRACE(throwable = jni->ExceptionOccurred());
     if (throwable != NULL) {
         nsk_lcomplain(file, line, "Exception in JNI call (cleared):\n");
-        NSK_TRACE(NSK_CPP_STUB1(ExceptionDescribe, jni));
-        NSK_TRACE(NSK_CPP_STUB1(ExceptionClear, jni));
+        NSK_TRACE(jni->ExceptionDescribe());
+        NSK_TRACE(jni->ExceptionClear());
         return NSK_TRUE;
     }
     return NSK_FALSE;

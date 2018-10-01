@@ -94,7 +94,7 @@ for accesing JVM native environment:
 
     // jvm->GetEnv(jvm, &env, version)
     if (!NSK_VERIFY(
-            NSK_CPP_STUB3(GetEnv, jvm, &env, JNI_VERSION_1_2) == JNI_OK)) {
+            jvm->GetEnv(&env, JNI_VERSION_1_2) == JNI_OK)) {
         return JNI_ERR;
     }
 

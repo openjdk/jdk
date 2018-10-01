@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,19 +295,10 @@ public final class AWTAccessor {
          */
         void updateWindow(Window window);
 
-        /** Get the size of the security warning.
-         */
-        Dimension getSecurityWarningSize(Window w);
-
         /**
          * Set the size of the security warning.
          */
         void setSecurityWarningSize(Window w, int width, int height);
-
-        /** Set the position of the security warning.
-         */
-        void setSecurityWarningPosition(Window w, Point2D point,
-                float alignmentX, float alignmentY);
 
         /** Request to recalculate the new position of the security warning for
          * the given window size/location as reported by the native system.

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "gc/parallel/gcTaskManager.hpp"

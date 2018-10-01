@@ -874,7 +874,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
                                                       progressString);
 
         if (progressBar.getOrientation() == JProgressBar.HORIZONTAL) {
-            return new Point(x + Math.round(width/2 - stringWidth/2),
+            return new Point(x + (int)Math.round(width/2.0 - stringWidth/2.0),
                              y + ((height +
                                  fontSizer.getAscent() -
                                  fontSizer.getLeading() -
@@ -882,7 +882,7 @@ public class BasicProgressBarUI extends ProgressBarUI {
         } else { // VERTICAL
             return new Point(x + ((width - fontSizer.getAscent() +
                     fontSizer.getLeading() + fontSizer.getDescent()) / 2),
-                    y + Math.round(height/2 - stringWidth/2));
+                    y + (int)Math.round(height/2.0 - stringWidth/2.0));
         }
     }
 

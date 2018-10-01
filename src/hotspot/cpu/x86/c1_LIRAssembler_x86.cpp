@@ -2403,8 +2403,9 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr tmp, LIR_
           if (UseAVX > 2 && !VM_Version::supports_avx512vl()) {
             assert(tmp->is_valid(), "need temporary");
             __ vpandn(dest->as_xmm_double_reg(), tmp->as_xmm_double_reg(), value->as_xmm_double_reg(), 2);
-          } else {
+          } else
 #endif
+          {
             if (dest->as_xmm_double_reg() != value->as_xmm_double_reg()) {
               __ movdbl(dest->as_xmm_double_reg(), value->as_xmm_double_reg());
             }

@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "jfr/leakprofiler/utilities/saveRestore.hpp"
 #include "oops/oop.inline.hpp"
 

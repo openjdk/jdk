@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,18 +169,9 @@ public abstract class GraphicsEnvironment {
                 String nm = System.getProperty("java.awt.headless");
 
                 if (nm == null) {
-                    /* No need to ask for DISPLAY when run in a browser */
-                    if (System.getProperty("javaplugin.version") != null) {
-                        headless = defaultHeadless = Boolean.FALSE;
-                    } else {
-                        String osName = System.getProperty("os.name");
-                        if (osName.contains("OS X") && "sun.awt.HToolkit".equals(
-                                System.getProperty("awt.toolkit")))
-                        {
-                            headless = defaultHeadless = Boolean.TRUE;
-                        } else {
-                            final String display = System.getenv("DISPLAY");
-                            headless = defaultHeadless =
+                    final String osName = System.getProperty("os.name");
+                    final String display = System.getenv("DISPLAY");
+                    headless = defaultHeadless =
                                 ("Linux".equals(osName) ||
                                  "SunOS".equals(osName) ||
                                  "FreeBSD".equals(osName) ||
@@ -188,8 +179,6 @@ public abstract class GraphicsEnvironment {
                                  "OpenBSD".equals(osName) ||
                                  "AIX".equals(osName)) &&
                                  (display == null || display.trim().isEmpty());
-                        }
-                    }
                 } else {
                     headless = Boolean.valueOf(nm);
                 }

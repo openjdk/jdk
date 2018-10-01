@@ -870,8 +870,8 @@ void LIRGenerator::do_ArithmeticOp(ArithmeticOp* x) {
     case doubleTag:  do_ArithmeticOp_FPU(x);  return;
     case longTag:    do_ArithmeticOp_Long(x); return;
     case intTag:     do_ArithmeticOp_Int(x);  return;
+    default:         ShouldNotReachHere();    return;
   }
-  ShouldNotReachHere();
 }
 
 

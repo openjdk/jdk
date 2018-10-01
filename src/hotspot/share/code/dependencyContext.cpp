@@ -218,18 +218,6 @@ int DependencyContext::remove_all_dependents() {
   return marked;
 }
 
-void DependencyContext::wipe() {
-  assert_locked_or_safepoint(CodeCache_lock);
-  nmethodBucket* b = dependencies();
-  set_dependencies(NULL);
-  set_has_stale_entries(false);
-  while (b != NULL) {
-    nmethodBucket* next = b->next();
-    delete b;
-    b = next;
-  }
-}
-
 #ifndef PRODUCT
 void DependencyContext::print_dependent_nmethods(bool verbose) {
   int idx = 0;

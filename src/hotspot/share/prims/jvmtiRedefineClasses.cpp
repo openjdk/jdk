@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"

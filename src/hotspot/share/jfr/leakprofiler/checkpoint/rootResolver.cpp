@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "aot/aotLoader.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOop.hpp"

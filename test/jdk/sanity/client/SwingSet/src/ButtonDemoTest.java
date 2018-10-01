@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import javax.swing.ButtonModel;
 import javax.swing.JButton;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import static org.testng.AssertJUnit.*;
 import org.testng.annotations.Test;
@@ -93,8 +94,9 @@ public class ButtonDemoTest {
         "isArmed = false, isEnabled = true, isPressed = false, isSelected = false"
     };
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
 
         new ClassReference(ButtonDemo.class.getCanonicalName()).startApplication();
 

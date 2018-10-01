@@ -24,20 +24,26 @@
 /*
  * @test
  * @key headful
- * @bug 4816114
+ * @bug 4816114 8203904
  * @summary REGRESSION: Regression in divider location behavior when JSplitPane is resized
  * @author Andrey Pikalev
  * @run main bug4816114
  */
 
-import javax.swing.*;
-import java.awt.*;
-import java.lang.reflect.*;
-
+import java.awt.Robot;
+import java.awt.Dimension;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import javax.swing.JFrame;
+import javax.swing.JButton;
+import javax.swing.SwingUtilities;
+import javax.swing.JSplitPane;
+import javax.swing.BorderFactory;
+import java.lang.reflect.InvocationTargetException;
 
 public class bug4816114 {
 
-    JFrame fr;
+    static JFrame fr;
     JSplitPane splitPane;
 
     boolean[] resized = new boolean[] { false, false, false,
@@ -49,43 +55,49 @@ public class bug4816114 {
     static bug4816114 test = new bug4816114();
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException, AWTException {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                test.createAndShowGUI();
+        try {
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    test.createAndShowGUI();
+                }
+            });
+            Robot robot = new Robot();
+            robot.waitForIdle();
+            Thread.sleep(1000);
+            Thread.sleep(2000);
+
+            step++;
+            test.doTest(150, 300);
+
+            step++;
+            test.doTest(650, 300);
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+                public void run() {
+                    test.splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
+                }
+            });
+
+            step++;
+            test.doTest(300, 650);
+
+            step++;
+            test.doTest(300, 150);
+
+            step++;
+            test.doTest(300, 650);
+
+            if ( !test.isPassed() ) {
+                throw new Error("The divider location is wrong.");
             }
-        });
-        Robot robot = new Robot();
-        robot.waitForIdle();
-        Thread.sleep(1000);
-        Thread.sleep(2000);
-
-        step++;
-        test.doTest(150, 300);
-
-        step++;
-        test.doTest(650, 300);
-
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                test.splitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
-            }
-        });
-
-        step++;
-        test.doTest(300, 650);
-
-        step++;
-        test.doTest(300, 150);
-
-        step++;
-        test.doTest(300, 650);
-
-        if ( !test.isPassed() ) {
-            throw new Error("The divider location is wrong.");
+        } finally {
+            SwingUtilities.invokeAndWait(() -> fr.dispose());
         }
     }
+
     public void createAndShowGUI() {
         fr = new JFrame("Test");
+        fr.setUndecorated(true);
 
         splitPane = new TestSplitPane();
         splitPane.setOrientation(JSplitPane.HORIZONTAL_SPLIT);

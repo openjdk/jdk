@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,9 @@ import java.io.OptionalDataException;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.UndeclaredThrowableException;
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Permission;
-import java.security.ProtectionDomain;
 import java.security.PrivilegedAction;
-import jdk.internal.misc.SharedSecrets;
-import jdk.internal.misc.JavaSecurityAccess;
 
 /**
  * ReflectionFactory supports custom serialization.
@@ -142,66 +137,6 @@ public class ReflectionFactory {
      */
     public final MethodHandle readObjectForSerialization(Class<?> cl) {
         return delegate.readObjectForSerialization(cl);
-    }
-
-    /**
-     * Invokes the supplied constructor, adding the provided protection domains
-     * to the invocation stack before invoking {@code Constructor::newInstance}.
-     * If no {@linkplain System#getSecurityManager() security manager} is present,
-     * or no domains are provided, then this method simply calls
-     * {@code cons.newInstance()}. Otherwise, it invokes the provided constructor
-     * with privileges at the intersection of the current context and the provided
-     * protection domains.
-     *
-     * @param cons A constructor obtained from {@code
-     *        newConstructorForSerialization} or {@code
-     *        newConstructorForExternalization}.
-     * @param domains An array of protection domains that limit the privileges
-     *        with which the constructor is invoked. Can be {@code null}
-     *        or empty, in which case privileges are only limited by the
-     *        {@linkplain AccessController#getContext() current context}.
-     *
-     * @return A new object built from the provided constructor.
-     *
-     * @throws NullPointerException if {@code cons} is {@code null}.
-     * @throws InstantiationException if thrown by {@code cons.newInstance()}.
-     * @throws InvocationTargetException if thrown by {@code cons.newInstance()}.
-     * @throws IllegalAccessException if thrown by {@code cons.newInstance()}.
-     */
-    public final Object newInstanceForSerialization(Constructor<?> cons,
-                                                    ProtectionDomain[] domains)
-        throws InstantiationException, InvocationTargetException, IllegalAccessException
-    {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm == null || domains == null || domains.length == 0) {
-            return cons.newInstance();
-        } else {
-            JavaSecurityAccess jsa = SharedSecrets.getJavaSecurityAccess();
-            PrivilegedAction<?> pea = () -> {
-                try {
-                    return cons.newInstance();
-                } catch (InstantiationException
-                         | InvocationTargetException
-                         | IllegalAccessException x) {
-                    throw new UndeclaredThrowableException(x);
-                }
-            }; // Can't use PrivilegedExceptionAction with jsa
-            try {
-                return jsa.doIntersectionPrivilege(pea,
-                           AccessController.getContext(),
-                           new AccessControlContext(domains));
-            } catch (UndeclaredThrowableException x) {
-                Throwable cause = x.getCause();
-                 if (cause instanceof InstantiationException)
-                    throw (InstantiationException) cause;
-                if (cause instanceof InvocationTargetException)
-                    throw (InvocationTargetException) cause;
-                if (cause instanceof IllegalAccessException)
-                    throw (IllegalAccessException) cause;
-                // not supposed to happen
-                throw x;
-            }
-        }
     }
 
     /**

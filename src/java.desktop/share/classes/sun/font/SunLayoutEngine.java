@@ -35,6 +35,7 @@ import java.awt.geom.Point2D;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Locale;
+import java.util.WeakHashMap;
 
 /*
  * different ways to do this
@@ -148,17 +149,30 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
         this.key = key;
     }
 
+    static WeakHashMap<Font2D, Boolean> aatInfo = new WeakHashMap<>();
+
     private boolean isAAT(Font2D font) {
+       Boolean aatObj;
+       synchronized (aatInfo) {
+           aatObj = aatInfo.get(font);
+       }
+       if (aatObj != null) {
+          return aatObj.booleanValue();
+       }
+       boolean aat = false;
        if (font instanceof TrueTypeFont) {
            TrueTypeFont ttf = (TrueTypeFont)font;
-           return ttf.getDirectoryEntry(TrueTypeFont.morxTag) != null ||
+           aat =  ttf.getDirectoryEntry(TrueTypeFont.morxTag) != null ||
                   ttf.getDirectoryEntry(TrueTypeFont.mortTag) != null;
        } else if (font instanceof PhysicalFont) {
            PhysicalFont pf = (PhysicalFont)font;
-           return pf.getTableBytes(TrueTypeFont.morxTag) != null ||
+           aat =  pf.getTableBytes(TrueTypeFont.morxTag) != null ||
                   pf.getTableBytes(TrueTypeFont.mortTag) != null;
        }
-       return false;
+       synchronized (aatInfo) {
+           aatInfo.put(font, Boolean.valueOf(aat));
+       }
+       return aat;
     }
 
     public void layout(FontStrikeDesc desc, float[] mat, float ptSize, int gmask,

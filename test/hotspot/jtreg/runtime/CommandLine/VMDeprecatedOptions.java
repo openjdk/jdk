@@ -46,6 +46,7 @@ public class VMDeprecatedOptions {
         {"InitialRAMFraction",        "64"},
         {"AssumeMP",                  "false"},
         {"UseMembar",                 "true"},
+        {"TLABStats",                 "false"},
 
         // deprecated alias flags (see also aliased_jvm_flags):
         {"DefaultMaxRAMFraction", "4"},

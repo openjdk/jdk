@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,14 +21,17 @@
  * questions.
  */
 
-import sun.awt.AWTPermissions;
-import java.security.Permission;
+/**
+ * @test
+ * @bug 8211102
+ * @summary Verify javac does not crash in lambda analyzer
+ * @compile -Werror -XDfind=lambda -source 7 -Xlint:-options T8211102.java
+ */
+import java.util.*;
 
-public class CustomSecurityManager extends SecurityManager {
-    @Override
-    public void checkPermission(Permission perm) {
-        if (perm.implies(AWTPermissions.TOPLEVEL_WINDOW_PERMISSION)) {
-            throw new SecurityException();
-        }
+public class T8211102 {
+    private void t(boolean b) {
+        (b ? Collections.emptyList()
+           : new Iterable<String>() { public Iterator<String> iterator() { return null; } }).toString();
     }
 }

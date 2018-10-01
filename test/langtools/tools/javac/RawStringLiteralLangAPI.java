@@ -49,27 +49,41 @@ public class RawStringLiteralLangAPI {
     /*
      * Check that correct/incorrect syntax is properly detected
      */
+    enum Test {
+        t0(false, "`*`*`"),
+        t1(false, "`\\u2022`\\u2022`"),
+        t2(false, "``*`*`"),
+        t3(false, "``\\u2022`\\u2022`"),
+        t4(false, "`*`*``"),
+        t5(false, "`\\u2022`\\u2022``"),
+        t6(true, "``*`*``"),
+        t7(true, "``\\u2022`\\u2022``"),
+        t8(true, "`*``*`"),
+        t9(true, "`\\u2022``\\u2022`"),
+        ;
+
+        Test(boolean pass, String string) {
+            this.pass = pass;
+            this.string = string;
+        }
+
+        boolean pass;
+        String string;
+    }
     static void test1() {
-        int[] n = new int[] { 1, 2, 3, 4, 5, 10, 16, 32, 1000, 10000 };
-        String[] s = new String[] { "a", "ab", "abc", "\u2022", "*".repeat(1000), "*".repeat(10000) };
-        for (int i : n) {
-        for (int j : n) {
-        for (int k : n) {
-        for (String a : s)  {
-        for (String b : s) {
+        for (Test t : Test.values()) {
             String code =
                     "public class RawStringLiteralTest {\n" +
                             "    public static void main(String... args) {\n" +
-                            "        String xxx = " +
-                            "`".repeat(i) + a + "`".repeat(j) + b + "`".repeat(k) + ";\n" +
+                            "        String xxx = " + t.string + ";\n" +
                             "    }\n" +
                             "}\n";
-            if (i == k && j != i) {
+            if (t.pass) {
                 compPass(code);
             } else {
                 compFail(code);
             }
-        }}}}}
+        }
     }
 
     /*
@@ -97,7 +111,6 @@ public class RawStringLiteralLangAPI {
                 "    public static void main(String... args) {\n" +
                 "        String xxx = `abc\u0000");
     }
-
 
     /*
      * Check line terminator translation

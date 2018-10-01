@@ -851,6 +851,130 @@ public interface CompletionStage<T> {
         (Function<Throwable, ? extends T> fn);
 
     /**
+     * Returns a new CompletionStage that, when this stage completes
+     * exceptionally, is executed with this stage's exception as the
+     * argument to the supplied function, using this stage's default
+     * asynchronous execution facility.  Otherwise, if this stage
+     * completes normally, then the returned stage also completes
+     * normally with the same value.
+     *
+     * @implSpec The default implementation invokes {@link #handle},
+     * relaying to {@link #handleAsync} on exception, then {@link
+     * #thenCompose} for result.
+     *
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage if this CompletionStage completed
+     * exceptionally
+     * @return the new CompletionStage
+     * @since 12
+     */
+    public default CompletionStage<T> exceptionallyAsync
+        (Function<Throwable, ? extends T> fn) {
+        return handle((r, ex) -> (ex == null)
+                      ? this
+                      : this.<T>handleAsync((r1, ex1) -> fn.apply(ex1)))
+            .thenCompose(Function.identity());
+    }
+
+    /**
+     * Returns a new CompletionStage that, when this stage completes
+     * exceptionally, is executed with this stage's exception as the
+     * argument to the supplied function, using the supplied Executor.
+     * Otherwise, if this stage completes normally, then the returned
+     * stage also completes normally with the same value.
+     *
+     * @implSpec The default implementation invokes {@link #handle},
+     * relaying to {@link #handleAsync} on exception, then {@link
+     * #thenCompose} for result.
+     *
+     * @param fn the function to use to compute the value of the
+     * returned CompletionStage if this CompletionStage completed
+     * exceptionally
+     * @param executor the executor to use for asynchronous execution
+     * @return the new CompletionStage
+     * @since 12
+     */
+    public default CompletionStage<T> exceptionallyAsync
+        (Function<Throwable, ? extends T> fn, Executor executor) {
+        return handle((r, ex) -> (ex == null)
+                      ? this
+                      : this.<T>handleAsync((r1, ex1) -> fn.apply(ex1), executor))
+            .thenCompose(Function.identity());
+    }
+
+    /**
+     * Returns a new CompletionStage that, when this stage completes
+     * exceptionally, is composed using the results of the supplied
+     * function applied to this stage's exception.
+     *
+     * @implSpec The default implementation invokes {@link #handle},
+     * invoking the given function on exception, then {@link
+     * #thenCompose} for result.
+     *
+     * @param fn the function to use to compute the returned
+     * CompletionStage if this CompletionStage completed exceptionally
+     * @return the new CompletionStage
+     * @since 12
+     */
+    public default CompletionStage<T> exceptionallyCompose
+        (Function<Throwable, ? extends CompletionStage<T>> fn) {
+        return handle((r, ex) -> (ex == null)
+                      ? this
+                      : fn.apply(ex))
+            .thenCompose(Function.identity());
+    }
+
+    /**
+     * Returns a new CompletionStage that, when this stage completes
+     * exceptionally, is composed using the results of the supplied
+     * function applied to this stage's exception, using this stage's
+     * default asynchronous execution facility.
+     *
+     * @implSpec The default implementation invokes {@link #handle},
+     * relaying to {@link #handleAsync} on exception, then {@link
+     * #thenCompose} for result.
+     *
+     * @param fn the function to use to compute the returned
+     * CompletionStage if this CompletionStage completed exceptionally
+     * @return the new CompletionStage
+     * @since 12
+     */
+    public default CompletionStage<T> exceptionallyComposeAsync
+        (Function<Throwable, ? extends CompletionStage<T>> fn) {
+        return handle((r, ex) -> (ex == null)
+                      ? this
+                      : this.handleAsync((r1, ex1) -> fn.apply(ex1))
+                        .thenCompose(Function.identity()))
+            .thenCompose(Function.identity());
+    }
+
+    /**
+     * Returns a new CompletionStage that, when this stage completes
+     * exceptionally, is composed using the results of the supplied
+     * function applied to this stage's exception, using the
+     * supplied Executor.
+     *
+     * @implSpec The default implementation invokes {@link #handle},
+     * relaying to {@link #handleAsync} on exception, then {@link
+     * #thenCompose} for result.
+     *
+     * @param fn the function to use to compute the returned
+     * CompletionStage if this CompletionStage completed exceptionally
+     * @param executor the executor to use for asynchronous execution
+     * @return the new CompletionStage
+     * @since 12
+     */
+    public default CompletionStage<T> exceptionallyComposeAsync
+        (Function<Throwable, ? extends CompletionStage<T>> fn,
+         Executor executor) {
+        return handle((r, ex) -> (ex == null)
+                      ? this
+                      : this.handleAsync((r1, ex1) -> fn.apply(ex1), executor)
+                        .thenCompose(Function.identity()))
+            .thenCompose(Function.identity());
+    }
+
+    /**
      * Returns a {@link CompletableFuture} maintaining the same
      * completion properties as this stage. If this stage is already a
      * CompletableFuture, this method may return this stage itself.

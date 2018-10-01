@@ -128,7 +128,6 @@ java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-a
 java/awt/FileDialog/8003399/bug8003399.java 8198334 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
-java/awt/dnd/BadSerializaionTest/BadSerializationTest.java 8039082 generic-all
 java/awt/dnd/MissingEventsOnModalDialog/MissingEventsOnModalDialogTest.java 8164464 linux-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.html 8171510 macosx-all
 javax/swing/dnd/7171812/bug7171812.java 8041447 macosx-all
@@ -558,7 +557,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8207404 aix-all
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
 java/net/Socket/LingerTest.java                                 8208690 generic-all
-sun/net/www/http/HttpClient/MultiThreadTest.java                8208690 generic-all
 
 ############################################################################
 
@@ -680,6 +678,7 @@ sun/security/pkcs11/tls/TestLeadingZeroesP11.java               8204203 windows-
 sun/security/pkcs11/tls/TestMasterSecret.java                   8204203 windows-all
 sun/security/pkcs11/tls/TestPRF.java                            8204203 windows-all
 sun/security/pkcs11/tls/TestPremaster.java                      8204203 windows-all
+sun/security/tools/keytool/NssTest.java                         8204203 windows-all
 
 ############################################################################
 
@@ -687,7 +686,6 @@ sun/security/pkcs11/tls/TestPremaster.java                      8204203 windows-
 javax/sound/sampled/DirectAudio/bug6372428.java                      8055097 generic-all
 javax/sound/sampled/Clip/bug5070081.java                             8055097 generic-all
 javax/sound/sampled/DataLine/LongFramePosition.java                  8055097 generic-all
-javax/sound/sampled/Clip/AutoCloseTimeCheck.java                     8207150 generic-all
 
 javax/sound/sampled/Clip/Drain/ClipDrain.java          7062792 generic-all
 

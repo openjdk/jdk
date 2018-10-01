@@ -351,6 +351,11 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_FEATURES],
     AC_MSG_RESULT([no])
   fi
 
+  # Disable unsupported GCs for Zero
+  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+    DISABLED_JVM_FEATURES="$DISABLED_JVM_FEATURES epsilongc g1gc zgc"
+  fi
+
   # Turn on additional features based on other parts of configure
   if test "x$INCLUDE_DTRACE" = "xtrue"; then
     JVM_FEATURES="$JVM_FEATURES dtrace"

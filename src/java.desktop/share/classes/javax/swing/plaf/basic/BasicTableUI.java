@@ -1872,7 +1872,12 @@ public class BasicTableUI extends TableUI
             // and if there is any selected rows
             if (rMax != (table.getRowCount() - 1) &&
                     (table.getSelectedRow() == -1)) {
-                rMax = rMax - 1;
+                // Do not decrement rMax if rMax becomes
+                // less than or equal to rMin
+                // else cells will not be painted
+                if (rMax - rMin > 1) {
+                    rMax = rMax - 1;
+                }
             }
         }
 

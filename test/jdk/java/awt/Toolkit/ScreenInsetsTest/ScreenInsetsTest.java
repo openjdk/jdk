@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,13 @@
   @run main ScreenInsetsTest
 */
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Frame;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
+import java.awt.Rectangle;
+import java.awt.Toolkit;
 
 import test.java.awt.regtesthelpers.Util;
 
@@ -41,21 +46,33 @@ public class ScreenInsetsTest
 {
     public static void main(String[] args)
     {
-        if (!Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_BOTH))
-        {
-            // this state is used in the test - sorry
-            return;
-        }
-
         boolean passed = true;
 
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
-        for (GraphicsDevice gd : gds)
-        {
+        for (GraphicsDevice gd : gds) {
+
             GraphicsConfiguration gc = gd.getDefaultConfiguration();
             Rectangle gcBounds = gc.getBounds();
             Insets gcInsets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+            int left = gcInsets.left;
+            int right = gcInsets.right;
+            int bottom = gcInsets.bottom;
+            int top = gcInsets.top;
+            if (left < 0 || right < 0 || bottom < 0 || top < 0) {
+                throw new RuntimeException("Negative value: " + gcInsets);
+            }
+            int maxW = gcBounds.width / 3;
+            int maxH = gcBounds.height / 3;
+            if (left > maxW || right > maxW || bottom > maxH || top > maxH) {
+                throw new RuntimeException("Big value: " + gcInsets);
+            }
+
+            if (!Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.MAXIMIZED_BOTH))
+            {
+                // this state is used in the test - sorry
+                continue;
+            }
 
             Frame f = new Frame("Test", gc);
             f.setUndecorated(true);

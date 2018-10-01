@@ -2339,18 +2339,26 @@ public class StyleSheet extends StyleContext {
          */
         void drawShape(Graphics g, CSS.Value type, int ax, int ay, int aw,
                        int ah, float align) {
-            // Align to bottom of shape.
-            int gap = isLeftToRight ? - (bulletgap + 8) : (aw + bulletgap);
+            final Object origAA = ((Graphics2D) g).getRenderingHint(
+                                             RenderingHints.KEY_ANTIALIASING);
+            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                            RenderingHints.VALUE_ANTIALIAS_ON);
+            int size = g.getFont().getSize();
+
+            // Position shape to the middle of the html text.
+            int gap = isLeftToRight ? - (bulletgap + size/3) : (aw + bulletgap);
             int x = ax + gap;
-            int y = Math.max(ay, ay + (int)(align * ah) - 8);
+            int y = Math.max(ay, ay + (int)Math.ceil(ah/2));
 
             if (type == CSS.Value.SQUARE) {
-                g.drawRect(x, y, 8, 8);
+                g.drawRect(x, y, size/3, size/3);
             } else if (type == CSS.Value.CIRCLE) {
-                g.drawOval(x, y, 8, 8);
+                g.drawOval(x, y, size/3, size/3);
             } else {
-                g.fillOval(x, y, 8, 8);
+                g.fillOval(x, y, size/3, size/3);
             }
+            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                              origAA);
         }
 
         /**

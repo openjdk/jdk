@@ -131,7 +131,8 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     case T_BYTE:    slow_case_addr = jni_GetByteField_addr();    break;
     case T_CHAR:    slow_case_addr = jni_GetCharField_addr();    break;
     case T_SHORT:   slow_case_addr = jni_GetShortField_addr();   break;
-    case T_INT:     slow_case_addr = jni_GetIntField_addr();
+    case T_INT:     slow_case_addr = jni_GetIntField_addr();     break;
+    default:        ShouldNotReachHere();
   }
   // tail call
   __ jump (ExternalAddress(slow_case_addr));

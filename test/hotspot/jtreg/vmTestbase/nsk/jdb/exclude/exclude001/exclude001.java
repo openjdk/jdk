@@ -61,9 +61,9 @@
  * @run driver jdk.test.lib.FileInstaller . .
  * @build nsk.jdb.exclude.exclude001.exclude001
  *        nsk.jdb.exclude.exclude001.exclude001a
- * @run main/othervm/timeout=420 PropertyResolvingWrapper nsk.jdb.exclude.exclude001.exclude001
+ * @run main/othervm/timeout=600 PropertyResolvingWrapper nsk.jdb.exclude.exclude001.exclude001
  *      -arch=${os.family}-${os.simpleArch}
- *      -waittime=7
+ *      -waittime=10
  *      -debugee.vmkind=java
  *      -transport.address=dynamic
  *      -jdb=${test.jdk}/bin/jdb
@@ -129,7 +129,7 @@ public class exclude001 extends JdbTest {
             oldExclude = reply[0];
 
             for (int testCase = 0; testCase < exclude001a.numThreads; testCase++) {
-
+                String expectedPrompt = MYTHREAD + "-" + testCase + "[1]";
                 reply = jdb.receiveReplyFor(JdbCommand.cont);
 
                 if (jdb.isAtBreakpoint(reply, LAST_BREAK)) {
@@ -153,14 +153,14 @@ public class exclude001 extends JdbTest {
                                 reply = jdb.receiveReplyFor(JdbCommand.exclude + "javax.*,sun.*,com.sun.*,jdk.*");
                                 break;
                         case 2: // allow sun.*
-                                reply = jdb.receiveReplyFor(JdbCommand.exclude + "java.*,javax.*,com.sun.*,jdk.");
+                                reply = jdb.receiveReplyFor(JdbCommand.exclude + "java.*,javax.*,com.sun.*,jdk.*");
                                 break;
                         }
 
                         reply = jdb.receiveReplyFor(JdbCommand.trace + "methods " + threads[0]);
 
                         while (true) {
-                            reply = jdb.receiveReplyFor(JdbCommand.cont);
+                            reply = jdb.receiveReplyForWithMessageWait(JdbCommand.cont, expectedPrompt);
 
                             grep = new Paragrep(reply);
                             count = grep.find(JAVA_CORE_METHOD);

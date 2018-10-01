@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,14 +547,15 @@ final class DirectAudioDevice extends AbstractMixer {
                 getEventDispatcher().addLineMonitor(this);
             }
 
-            doIO = true;
-
-            // need to set Active and Started
-            // note: the current API always requires that
-            //       Started and Active are set at the same time...
-            if (isSource && stoppedWritten) {
-                setStarted(true);
-                setActive(true);
+            synchronized(lock) {
+                doIO = true;
+                // need to set Active and Started
+                // note: the current API always requires that
+                //       Started and Active are set at the same time...
+                if (isSource && stoppedWritten) {
+                    setStarted(true);
+                    setActive(true);
+                }
             }
 
             if (Printer.trace) Printer.trace("<< DirectDL: implStart() succeeded");
@@ -582,10 +583,10 @@ final class DirectAudioDevice extends AbstractMixer {
                 // read/write thread, that's why isStartedRunning()
                 // cannot be used
                 doIO = false;
+                setActive(false);
+                setStarted(false);
                 lock.notifyAll();
             }
-            setActive(false);
-            setStarted(false);
             stoppedWritten = false;
 
             if (Printer.trace) Printer.trace(" << DirectDL: implStop() succeeded");
@@ -731,12 +732,14 @@ final class DirectAudioDevice extends AbstractMixer {
             if ((long)off + (long)len > (long)b.length) {
                 throw new ArrayIndexOutOfBoundsException(b.length);
             }
-
-            if (!isActive() && doIO) {
-                // this is not exactly correct... would be nicer
-                // if the native sub system sent a callback when IO really starts
-                setActive(true);
-                setStarted(true);
+            synchronized(lock) {
+                if (!isActive() && doIO) {
+                    // this is not exactly correct... would be nicer
+                    // if the native sub system sent a callback when IO really
+                    // starts
+                    setActive(true);
+                    setStarted(true);
+                }
             }
             int written = 0;
             while (!flushing) {
@@ -957,11 +960,14 @@ final class DirectAudioDevice extends AbstractMixer {
             if ((long)off + (long)len > (long)b.length) {
                 throw new ArrayIndexOutOfBoundsException(b.length);
             }
-            if (!isActive() && doIO) {
-                // this is not exactly correct... would be nicer
-                // if the native sub system sent a callback when IO really starts
-                setActive(true);
-                setStarted(true);
+            synchronized(lock) {
+                if (!isActive() && doIO) {
+                    // this is not exactly correct... would be nicer
+                    // if the native sub system sent a callback when IO really
+                    // starts
+                    setActive(true);
+                    setStarted(true);
+                }
             }
             int read = 0;
             while (doIO && !flushing) {

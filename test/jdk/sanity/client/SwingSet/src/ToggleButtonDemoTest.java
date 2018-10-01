@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import com.sun.swingset3.demos.togglebutton.LayoutControlPanel;
 import com.sun.swingset3.demos.togglebutton.ToggleButtonDemo;
 import static com.sun.swingset3.demos.togglebutton.ToggleButtonDemo.*;
 import java.util.function.BiFunction;
+import javax.swing.UIManager;
 import org.jemmy2ext.JemmyExt.ByClassChooser;
 import static org.jemmy2ext.JemmyExt.EXACT_STRING_COMPARATOR;
 import static org.jemmy2ext.JemmyExt.getBorderTitledJPanelOperator;
@@ -65,8 +66,9 @@ import org.testng.annotations.Listeners;
 @Listeners(GuiTestListener.class)
 public class ToggleButtonDemoTest {
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
         new ClassReference(ToggleButtonDemo.class.getCanonicalName()).startApplication();
 
         JFrameOperator mainFrame = new JFrameOperator(ToggleButtonDemo.class.getAnnotation(DemoProperties.class).value());

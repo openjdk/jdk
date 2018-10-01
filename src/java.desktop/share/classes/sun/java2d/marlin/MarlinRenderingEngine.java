@@ -31,6 +31,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
 import java.security.AccessController;
+import java.util.Arrays;
 import static sun.java2d.marlin.MarlinUtils.logInfo;
 import sun.awt.geom.PathConsumer2D;
 import sun.java2d.ReentrantContextProvider;
@@ -333,7 +334,6 @@ public final class MarlinRenderingEngine extends RenderingEngine
 
         int dashLen = -1;
         boolean recycleDashes = false;
-        float scale = 1.0f;
 
         if (at != null && !at.isIdentity()) {
             final double a = at.getScaleX();
@@ -366,7 +366,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
             // a*b == -c*d && a*a+c*c == b*b+d*d. In the actual check below, we
             // leave a bit of room for error.
             if (nearZero(a*b + c*d) && nearZero(a*a + c*c - (b*b + d*d))) {
-                scale = (float) Math.sqrt(a*a + c*c);
+                final float scale = (float) Math.sqrt(a*a + c*c);
 
                 if (dashes != null) {
                     recycleDashes = true;
@@ -421,7 +421,7 @@ public final class MarlinRenderingEngine extends RenderingEngine
         pc2d = transformerPC2D.deltaTransformConsumer(pc2d, strokerat);
 
         // stroker will adjust the clip rectangle (width / miter limit):
-        pc2d = rdrCtx.stroker.init(pc2d, width, caps, join, miterlimit, scale,
+        pc2d = rdrCtx.stroker.init(pc2d, width, caps, join, miterlimit,
                 (dashes == null));
 
         // Curve Monotizer:
@@ -831,10 +831,26 @@ public final class MarlinRenderingEngine extends RenderingEngine
                 // Define the initial clip bounds:
                 final float[] clipRect = rdrCtx.clipRect;
 
-                clipRect[0] = clip.getLoY();
-                clipRect[1] = clip.getLoY() + clip.getHeight();
-                clipRect[2] = clip.getLoX();
-                clipRect[3] = clip.getLoX() + clip.getWidth();
+                // Adjust the clipping rectangle with the renderer offsets
+                final float rdrOffX = Renderer.RDR_OFFSET_X;
+                final float rdrOffY = Renderer.RDR_OFFSET_Y;
+
+                // add a small rounding error:
+                final float margin = 1e-3f;
+
+                clipRect[0] = clip.getLoY()
+                                - margin + rdrOffY;
+                clipRect[1] = clip.getLoY() + clip.getHeight()
+                                + margin + rdrOffY;
+                clipRect[2] = clip.getLoX()
+                                - margin + rdrOffX;
+                clipRect[3] = clip.getLoX() + clip.getWidth()
+                                + margin + rdrOffX;
+
+                if (MarlinConst.DO_LOG_CLIP) {
+                    MarlinUtils.logInfo("clipRect (clip): "
+                                        + Arrays.toString(rdrCtx.clipRect));
+                }
 
                 // Enable clipping:
                 rdrCtx.doClip = true;

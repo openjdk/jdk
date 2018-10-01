@@ -46,6 +46,7 @@ class _AppMenuBarHandler {
 
     private static native void nativeSetMenuState(final int menu, final boolean visible, final boolean enabled);
     private static native void nativeSetDefaultMenuBar(final long menuBarPeer);
+    private static native void nativeActivateDefaultMenuBar(final long menuBarPeer);
 
     static final _AppMenuBarHandler instance = new _AppMenuBarHandler();
     static _AppMenuBarHandler getInstance() {
@@ -78,26 +79,18 @@ class _AppMenuBarHandler {
 
     void setDefaultMenuBar(final JMenuBar menuBar) {
         installDefaultMenuBar(menuBar);
-        if (menuBar == null) {
-            return;
-        }
+    }
 
+    static boolean isMenuBarActivationNeeded() {
         // scan the current frames, and see if any are foreground
         final Frame[] frames = Frame.getFrames();
         for (final Frame frame : frames) {
             if (frame.isVisible() && !isFrameMinimized(frame)) {
-                return;
+                return false;
             }
         }
 
-        // if we have no foreground frames, then we have to "kick" the menubar
-        final JFrame pingFrame = new JFrame();
-        pingFrame.getRootPane().putClientProperty("Window.alpha", Float.valueOf(0.0f));
-        pingFrame.setUndecorated(true);
-        pingFrame.setVisible(true);
-        pingFrame.toFront();
-        pingFrame.setVisible(false);
-        pingFrame.dispose();
+        return true;
     }
 
     static boolean isFrameMinimized(final Frame frame) {
@@ -150,6 +143,11 @@ class _AppMenuBarHandler {
 
         // grab the pointer to the CMenuBar, and retain it in native
         ((CMenuBar) peer).execute(_AppMenuBarHandler::nativeSetDefaultMenuBar);
+
+        // if there is no currently active frame, install the default menu bar in the application main menu
+        if (isMenuBarActivationNeeded()) {
+            ((CMenuBar) peer).execute(_AppMenuBarHandler::nativeActivateDefaultMenuBar);
+        }
     }
 
     void setAboutMenuItemVisible(final boolean present) {

@@ -29,6 +29,7 @@
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciSymbol.hpp"
 #include "classfile/compactHashtable.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"

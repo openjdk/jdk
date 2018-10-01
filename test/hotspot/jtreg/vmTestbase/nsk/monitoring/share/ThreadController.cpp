@@ -31,131 +31,121 @@ extern "C" {
 
 #define FIND_CLASS(_class, _className)\
     if (!NSK_JNI_VERIFY(env, (_class = \
-            NSK_CPP_STUB2(FindClass, env, _className)) != NULL))\
+            env->FindClass(_className)) != NULL))\
         return
 
 #define GET_OBJECT_CLASS(_class, _obj)\
     if (!NSK_JNI_VERIFY(env, (_class = \
-            NSK_CPP_STUB2(GetObjectClass, env, _obj)) != NULL))\
+            env->GetObjectClass(_obj)) != NULL))\
         return
 
 #define GET_STATIC_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
     if (!NSK_JNI_VERIFY(env, (_fieldID = \
-            NSK_CPP_STUB4(GetStaticFieldID, env, _class,\
-                _fieldName, _fieldSig)) != NULL))\
+            env->GetStaticFieldID(_class, _fieldName, _fieldSig)) != NULL))\
         return
 
 #define GET_STATIC_OBJ_FIELD(_value, _class, _fieldName, _fieldSig)\
     GET_STATIC_FIELD_ID(field, _class, _fieldName, _fieldSig);\
-    _value = NSK_CPP_STUB3(GetStaticObjectField, env, _class, \
-                                field)
+    _value = env->GetStaticObjectField(_class, field)
 
 #define GET_STATIC_BOOL_FIELD(_value, _class, _fieldName)\
     GET_STATIC_FIELD_ID(field, _class, _fieldName, "Z");\
-    _value = NSK_CPP_STUB3(GetStaticBooleanField, env, _class, field)
+    _value = env->GetStaticBooleanField(_class, field)
 
 #define GET_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
     if (!NSK_JNI_VERIFY(env, (_fieldID = \
-            NSK_CPP_STUB4(GetFieldID, env, _class,\
-                _fieldName, _fieldSig)) != NULL))\
+            env->GetFieldID(_class, _fieldName, _fieldSig)) != NULL))\
         return
 
 #define GET_INT_FIELD(_value, _obj, _class, _fieldName)\
     GET_FIELD_ID(field, _class, _fieldName, "I");\
-    _value = NSK_CPP_STUB3(GetIntField, env, _obj, field)
+    _value = env->GetIntField(_obj, field)
 
 #define GET_BOOL_FIELD(_value, _obj, _class, _fieldName)\
     GET_FIELD_ID(field, _class, _fieldName, "Z");\
-    _value = NSK_CPP_STUB3(GetBooleanField, env, _obj, field)
+    _value = env->GetBooleanField(_obj, field)
 
 #define GET_LONG_FIELD(_value, _obj, _class, _fieldName)\
     GET_FIELD_ID(field, _class, _fieldName, "J");\
-    _value = NSK_CPP_STUB3(GetLongField, env, _obj, field)
+    _value = env->GetLongField(_obj, field)
 
 #define GET_STATIC_INT_FIELD(_value, _class, _fieldName)\
     GET_STATIC_FIELD_ID(field, _class, _fieldName, "I");\
-    _value = NSK_CPP_STUB3(GetStaticIntField, env, _class, field)
+    _value = env->GetStaticIntField(_class, field)
 
 #define SET_INT_FIELD(_obj, _class, _fieldName, _newValue)\
     GET_FIELD_ID(field, _class, _fieldName, "I");\
-    NSK_CPP_STUB4(SetIntField, env, _obj, field, _newValue)
+    env->SetIntField(_obj, field, _newValue)
 
 #define GET_OBJ_FIELD(_value, _obj, _class, _fieldName, _fieldSig)\
     GET_FIELD_ID(field, _class, _fieldName, _fieldSig);\
-    _value = NSK_CPP_STUB3(GetObjectField, env, _obj, field)
+    _value = env->GetObjectField(_obj, field)
 
 
 #define GET_ARR_ELEMENT(_arr, _index)\
-    NSK_CPP_STUB3(GetObjectArrayElement, env, _arr, _index)
+    env->GetObjectArrayElement(_arr, _index)
 
 #define SET_ARR_ELEMENT(_arr, _index, _newValue)\
-    NSK_CPP_STUB4(SetObjectArrayElement, env, _arr, _index, _newValue)
+    env->SetObjectArrayElement(_arr, _index, _newValue)
 
 #define GET_STATIC_METHOD_ID(_methodID, _class, _methodName, _sig)\
     if (!NSK_JNI_VERIFY(env, (_methodID = \
-            NSK_CPP_STUB4(GetStaticMethodID, env, _class,\
-                _methodName, _sig)) != NULL))\
+            env->GetStaticMethodID(_class, _methodName, _sig)) != NULL))\
         return
 
 #define GET_METHOD_ID(_methodID, _class, _methodName, _sig)\
     if (!NSK_JNI_VERIFY(env, (_methodID = \
-            NSK_CPP_STUB4(GetMethodID, env, _class,\
-                _methodName, _sig)) != NULL))\
+            env->GetMethodID(_class, _methodName, _sig)) != NULL))\
         return
 
 #define CALL_STATIC_VOID_NOPARAM(_class, _methodName)\
     GET_STATIC_METHOD_ID(method, _class, _methodName, "()V");\
-    if (!NSK_JNI_VERIFY_VOID(env, NSK_CPP_STUB3(CallStaticVoidMethod, env,\
-                            _class, method)))\
+    if (!NSK_JNI_VERIFY_VOID(env, env->CallStaticVoidMethod(_class, method)))\
         return
 
 #define CALL_STATIC_VOID(_class, _methodName, _sig, _param)\
     GET_STATIC_METHOD_ID(method, _class, _methodName, _sig);\
-    if (!NSK_JNI_VERIFY_VOID(env, NSK_CPP_STUB4(CallStaticVoidMethod, env,\
-                                                    _class, method, _param)))\
+    if (!NSK_JNI_VERIFY_VOID(env, env->CallStaticVoidMethod(_class, method, _param)))\
         return
 
 #define CALL_STATIC_OBJ(_value, _class, _methodName, _sig, _param)\
     GET_STATIC_METHOD_ID(method, _class, _methodName, _sig);\
-    _value = NSK_CPP_STUB4(CallStaticObjectMethod, env, _class, method, _param)
+    _value = env->CallStaticObjectMethod(_class, method, _param)
 
 #define CALL_VOID_NOPARAM(_obj, _class, _methodName)\
     GET_METHOD_ID(method, _class, _methodName, "()V");\
-    if (!NSK_JNI_VERIFY_VOID(env, NSK_CPP_STUB3(CallVoidMethod, env, _obj,\
-                                                    method)))\
+    if (!NSK_JNI_VERIFY_VOID(env, env->CallVoidMethod(_obj, method)))\
         return
 
 #define CALL_VOID(_obj, _class, _methodName, _sig, _param)\
     GET_METHOD_ID(method, _class, _methodName, "()V");\
-    if (!NSK_JNI_VERIFY_VOID(env, NSK_CPP_STUB4(CallVoidMethod, env, _obj,\
-                                                    method, _param)))\
+    if (!NSK_JNI_VERIFY_VOID(env, env->CallVoidMethod(_obj, method, _param)))\
         return
 
 #define CALL_VOID2(_obj, _class, _methodName, _sig, _param1, _param2)\
     GET_METHOD_ID(method, _class, _methodName, _sig);\
-    if (!NSK_JNI_VERIFY_VOID(env, NSK_CPP_STUB5(CallVoidMethod, env, _obj, \
-                                                    method, _param1, _param2)))\
+    if (!NSK_JNI_VERIFY_VOID(env, env->CallVoidMethod(_obj, method, _param1, _param2)))\
         return
 
 #define CALL_INT_NOPARAM(_value, _obj, _class, _methodName)\
     GET_METHOD_ID(method, _class, _methodName, "()I");\
-    _value = NSK_CPP_STUB3(CallIntMethod, env, _obj, method)
+    _value = env->CallIntMethod(_obj, method)
 
 #define NEW_OBJ(_obj, _class, _constructorName, _sig, _params)\
     GET_METHOD_ID(method, _class, _constructorName, _sig);\
     if (!NSK_JNI_VERIFY(env, (_obj = \
-            NSK_CPP_STUB4(NewObject, env, _class, method, _params)) != NULL))\
+            env->NewObject(_class, method, _params)) != NULL))\
         return
 
 #define MONITOR_ENTER(x) \
-    NSK_JNI_VERIFY(env, NSK_CPP_STUB2(MonitorEnter, env, x) == 0)
+    NSK_JNI_VERIFY(env, env->MonitorEnter(x) == 0)
 
 #define MONITOR_EXIT(x) \
-    NSK_JNI_VERIFY(env, NSK_CPP_STUB2(MonitorExit, env, x) == 0)
+    NSK_JNI_VERIFY(env, env->MonitorExit(x) == 0)
 
 #define TRACE(msg)\
    GET_OBJ_FIELD(logger, obj, threadClass, "logger", "Lnsk/share/Log$Logger;");\
-   jmsg = NSK_CPP_STUB2(NewStringUTF, env, msg);\
+   jmsg = env->NewStringUTF(msg);\
    CALL_VOID2(logger, loggerClass, "trace",\
                            "(ILjava/lang/String;)V", 50, jmsg)
 
@@ -497,29 +487,29 @@ extern "C" {
         jint state;
 
         if(!NSK_VERIFY(
-             NSK_CPP_STUB2(GetJavaVM, env, &vm) == 0)) {
+             env->GetJavaVM(&vm) == 0)) {
             return NULL;
         }
 
         if(!NSK_VERIFY(
-             NSK_CPP_STUB3(GetEnv, vm, (void **)&jvmti, JVMTI_VERSION_1)
+             vm->GetEnv((void **)&jvmti, JVMTI_VERSION_1)
                     == JNI_OK)) {
             return NULL;
         }
 
         if(!NSK_VERIFY(
-             NSK_CPP_STUB3(GetThreadState, jvmti, (jthread)thread, &state)
+             jvmti->GetThreadState((jthread)thread, &state)
              == JVMTI_ERROR_NONE)) {
             return NULL;
         }
 
         stateName = getStateName(env, state);
-        if (!NSK_JNI_VERIFY(env, (ThreadState = NSK_CPP_STUB2(FindClass, env, "java/lang/Thread$State")) != NULL))
+        if (!NSK_JNI_VERIFY(env, (ThreadState = env->FindClass("java/lang/Thread$State")) != NULL))
             return NULL;
 
-        if (!NSK_JNI_VERIFY(env, (method = NSK_CPP_STUB4(GetStaticMethodID, env, ThreadState, "valueOf", "(Ljava/lang/String;)Ljava/lang/Thread$State;")) != NULL))
+        if (!NSK_JNI_VERIFY(env, (method = env->GetStaticMethodID(ThreadState, "valueOf", "(Ljava/lang/String;)Ljava/lang/Thread$State;")) != NULL))
             return NULL;
-        threadState = NSK_CPP_STUB4(CallStaticObjectMethod, env, ThreadState, method, stateName);
+        threadState = env->CallStaticObjectMethod(ThreadState, method, stateName);
 
         return threadState;
     }

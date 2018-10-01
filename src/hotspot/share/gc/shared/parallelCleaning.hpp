@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_SHARED_PARALLELCLEANING_HPP
 #define SHARE_VM_GC_SHARED_PARALLELCLEANING_HPP
 
+#include "classfile/classLoaderDataGraph.inline.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/workgroup.hpp"

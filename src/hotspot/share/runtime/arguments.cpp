@@ -542,6 +542,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
   { "CheckAssertionStatusDirectives",JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
@@ -3848,6 +3849,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(_ALLBSD_SOURCE) || defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.
   UNSUPPORTED_OPTION(UseLargePages);
+#endif
+
+#if defined(AIX)
+  UNSUPPORTED_OPTION(AllocateHeapAt);
 #endif
 
   ArgumentsExt::report_unsupported_options();

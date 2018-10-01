@@ -192,6 +192,80 @@ public class SourceLauncherTest extends TestRunner {
         checkEqual("stdout", log.trim(), "Hello World! [1, 2, 3]");
     }
 
+    @Test
+    public void testCodeSource(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "import java.net.URL;\n" +
+            "class ShowCodeSource {\n" +
+            "    public static void main(String... args) {\n" +
+            "        URL u = ShowCodeSource.class.getProtectionDomain().getCodeSource().getLocation();\n" +
+            "        System.out.println(u);\n" +
+            "    }\n" +
+            "}");
+
+        Path file = base.resolve("ShowCodeSource.java");
+        String log = new JavaTask(tb)
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(), file.toAbsolutePath().toUri().toURL().toString());
+    }
+
+    @Test
+    public void testPermissions(Path base) throws IOException {
+        Path policyFile = base.resolve("test.policy");
+        Path sourceFile = base.resolve("TestPermissions.java");
+
+        tb.writeFile(policyFile,
+            "grant codeBase \"jrt:/jdk.compiler\" {\n" +
+            "    permission java.security.AllPermission;\n" +
+            "};\n" +
+            "grant codeBase \"" + sourceFile.toUri().toURL() + "\" {\n" +
+            "    permission java.util.PropertyPermission \"user.dir\", \"read\";\n" +
+            "};\n");
+
+        tb.writeJavaFiles(base,
+            "import java.net.URL;\n" +
+            "class TestPermissions {\n" +
+            "    public static void main(String... args) {\n" +
+            "        System.out.println(\"user.dir=\" + System.getProperty(\"user.dir\"));\n" +
+            "        try {\n" +
+            "            System.setProperty(\"user.dir\", \"\");\n" +
+            "            System.out.println(\"no exception\");\n" +
+            "            System.exit(1);\n" +
+            "        } catch (SecurityException e) {\n" +
+            "            System.out.println(\"exception: \" + e);\n" +
+            "        }\n" +
+            "    }\n" +
+            "}");
+
+        String log = new JavaTask(tb)
+                .vmOptions("-Djava.security.manager", "-Djava.security.policy=" + policyFile)
+                .className(sourceFile.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(),
+                "user.dir=" + System.getProperty("user.dir") + "\n" +
+                "exception: java.security.AccessControlException: " +
+                    "access denied (\"java.util.PropertyPermission\" \"user.dir\" \"write\")");
+    }
+
+    public void testSystemProperty(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+            "class ShowProperty {\n" +
+            "    public static void main(String... args) {\n" +
+            "        System.out.println(System.getProperty(\"jdk.launcher.sourcefile\"));\n" +
+            "    }\n" +
+            "}");
+
+        Path file = base.resolve("ShowProperty.java");
+        String log = new JavaTask(tb)
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(), file.toAbsolutePath().toString());
+    }
+
     void testSuccess(Path file, String expect) throws IOException {
         Result r = run(file, Collections.emptyList(), List.of("1", "2", "3"));
         checkEqual("stdout", r.stdOut, expect);

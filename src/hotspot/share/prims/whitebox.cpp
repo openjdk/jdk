@@ -26,7 +26,7 @@
 
 #include <new>
 
-#include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/protectionDomainCache.hpp"
 #include "classfile/stringTable.hpp"

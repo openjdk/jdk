@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ public interface ListeningConnector extends Connector {
      * {@link #startListening} may allow
      * multiple target VM to become connected.
      *
-     * @return <code>true</code> if multiple connections are supported;
-     * <code>false</code> otherwise.
+     * @return {@code true} if multiple connections are supported;
+     * {@code false} otherwise.
      */
     boolean supportsMultipleConnections();
 
@@ -70,7 +70,7 @@ public interface ListeningConnector extends Connector {
      * {@link #accept} (using the same argument map as is passed to this
      * method).
      * <p>
-     * If <code>arguments</code> contains addressing information. and
+     * If {@code arguments} contains addressing information and
      * only one connection will be accepted, the {@link #accept accept} method
      * can be called immediately without calling this method.
      *

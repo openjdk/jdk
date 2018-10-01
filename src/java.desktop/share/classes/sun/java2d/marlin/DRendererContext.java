@@ -85,6 +85,8 @@ final class DRendererContext extends ReentrantContext implements IRendererContex
     boolean closedPath = false;
     // clip rectangle (ymin, ymax, xmin, xmax):
     final double[] clipRect = new double[4];
+    // clip inverse scale (mean) to adjust length checks
+    double clipInvScale = 0.0d;
     // CurveBasicMonotonizer instance
     final CurveBasicMonotonizer monotonizer;
     // CurveClipSplitter instance
@@ -104,7 +106,6 @@ final class DRendererContext extends ReentrantContext implements IRendererContex
     final RendererStats stats;
 
     final PathConsumer2DAdapter p2dAdapter = new PathConsumer2DAdapter();
-
 
     /**
      * Constructor
@@ -162,6 +163,7 @@ final class DRendererContext extends ReentrantContext implements IRendererContex
         stroking   = 0;
         doClip     = false;
         closedPath = false;
+        clipInvScale = 0.0d;
 
         // if context is maked as DIRTY:
         if (dirty) {

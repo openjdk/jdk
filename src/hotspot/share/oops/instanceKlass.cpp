@@ -686,15 +686,6 @@ bool InstanceKlass::verify_code(TRAPS) {
   return Verifier::verify(this, should_verify_class(), THREAD);
 }
 
-
-// Used exclusively by the shared spaces dump mechanism to prevent
-// classes mapped into the shared regions in new VMs from appearing linked.
-
-void InstanceKlass::unlink_class() {
-  assert(is_linked(), "must be linked");
-  _init_state = loaded;
-}
-
 void InstanceKlass::link_class(TRAPS) {
   assert(is_loaded(), "must be loaded");
   if (!is_linked()) {
@@ -2300,10 +2291,12 @@ void InstanceKlass::remove_unshareable_info() {
     return;
   }
 
-  // Unlink the class
-  if (is_linked()) {
-    unlink_class();
-  }
+  // Reset to the 'allocated' state to prevent any premature accessing to
+  // a shared class at runtime while the class is still being loaded and
+  // restored. A class' init_state is set to 'loaded' at runtime when it's
+  // being added to class hierarchy (see SystemDictionary:::add_to_hierarchy()).
+  _init_state = allocated;
+
   {
     MutexLocker ml(Compile_lock);
     init_implementor();
@@ -2350,6 +2343,10 @@ void InstanceKlass::remove_java_mirror() {
 }
 
 void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+  // SystemDictionary::add_to_hierarchy() sets the init_state to loaded
+  // before the InstanceKlass is added to the SystemDictionary. Make
+  // sure the current state is <loaded.
+  assert(!is_loaded(), "invalid init state");
   set_package(loader_data, CHECK);
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
 
@@ -2417,7 +2414,10 @@ static void clear_all_breakpoints(Method* m) {
 }
 #endif
 
-void InstanceKlass::notify_unload_class(InstanceKlass* ik) {
+void InstanceKlass::unload_class(InstanceKlass* ik) {
+  // Release dependencies.
+  ik->dependencies().remove_all_dependents();
+
   // notify the debugger
   if (JvmtiExport::should_post_class_unload()) {
     JvmtiExport::post_class_unload(ik);
@@ -2462,16 +2462,8 @@ void InstanceKlass::release_C_heap_structures() {
     FreeHeap(jmeths);
   }
 
-  // Release dependencies.
-  // It is desirable to use DC::remove_all_dependents() here, but, unfortunately,
-  // it is not safe (see JDK-8143408). The problem is that the klass dependency
-  // context can contain live dependencies, since there's a race between nmethod &
-  // klass unloading. If the klass is dead when nmethod unloading happens, relevant
-  // dependencies aren't removed from the context associated with the class (see
-  // nmethod::flush_dependencies). It ends up during klass unloading as seemingly
-  // live dependencies pointing to unloaded nmethods and causes a crash in
-  // DC::remove_all_dependents() when it touches unloaded nmethod.
-  dependencies().wipe();
+  assert(_dep_context == DependencyContext::EMPTY,
+         "dependencies should already be cleaned");
 
 #if INCLUDE_JVMTI
   // Deallocate breakpoint records

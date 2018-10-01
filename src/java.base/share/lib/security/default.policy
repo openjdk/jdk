@@ -140,10 +140,6 @@ grant codeBase "jrt:/jdk.crypto.cryptoki" {
     permission java.io.FilePermission "<<ALL FILES>>", "read";
 };
 
-grant codeBase "jrt:/jdk.desktop" {
-    permission java.lang.RuntimePermission "accessClassInPackage.com.sun.awt";
-};
-
 grant codeBase "jrt:/jdk.dynalink" {
     permission java.security.AllPermission;
 };

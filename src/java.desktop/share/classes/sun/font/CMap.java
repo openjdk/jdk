@@ -566,6 +566,7 @@ abstract class CMap {
 
         char getGlyph(int charCode) {
 
+            final int origCharCode = charCode;
             int index = 0;
             char glyphCode = 0;
 
@@ -637,8 +638,8 @@ abstract class CMap {
                     }
                 }
             }
-            if (glyphCode != 0) {
-            //System.err.println("cc="+Integer.toHexString((int)charCode) + " gc="+(int)glyphCode);
+            if (glyphCode == 0) {
+              glyphCode = getFormatCharGlyph(origCharCode);
             }
             return glyphCode;
         }
@@ -804,6 +805,7 @@ abstract class CMap {
         }
 
         char getGlyph(int charCode) {
+            final int origCharCode = charCode;
             int controlGlyph = getControlCodeGlyph(charCode, true);
             if (controlGlyph >= 0) {
                 return (char)controlGlyph;
@@ -859,7 +861,7 @@ abstract class CMap {
                     return glyphCode;
                 }
             }
-            return 0;
+            return getFormatCharGlyph(origCharCode);
         }
     }
 
@@ -883,6 +885,7 @@ abstract class CMap {
          }
 
          char getGlyph(int charCode) {
+            final int origCharCode = charCode;
             int controlGlyph = getControlCodeGlyph(charCode, true);
             if (controlGlyph >= 0) {
                 return (char)controlGlyph;
@@ -894,7 +897,7 @@ abstract class CMap {
 
              charCode -= firstCode;
              if (charCode < 0 || charCode >= entryCount) {
-                  return 0;
+                  return getFormatCharGlyph(origCharCode);
              } else {
                   return glyphIdArray[charCode];
              }
@@ -1032,6 +1035,7 @@ abstract class CMap {
         }
 
         char getGlyph(int charCode) {
+            final int origCharCode = charCode;
             int controlGlyph = getControlCodeGlyph(charCode, false);
             if (controlGlyph >= 0) {
                 return (char)controlGlyph;
@@ -1057,7 +1061,7 @@ abstract class CMap {
                     (startGlyphID[range] + (charCode - startCharCode[range]));
             }
 
-            return 0;
+            return getFormatCharGlyph(origCharCode);
         }
 
     }
@@ -1079,16 +1083,21 @@ abstract class CMap {
             case 0x000a:
             case 0x000d: return CharToGlyphMapper.INVISIBLE_GLYPH_ID;
             }
-        } else if (charCode >= 0x200c) {
+         } else if (noSurrogates && charCode >= 0xFFFF) {
+            return 0;
+        }
+        return -1;
+    }
+
+    final char getFormatCharGlyph(int charCode) {
+        if (charCode >= 0x200c) {
             if ((charCode <= 0x200f) ||
                 (charCode >= 0x2028 && charCode <= 0x202e) ||
                 (charCode >= 0x206a && charCode <= 0x206f)) {
-                return CharToGlyphMapper.INVISIBLE_GLYPH_ID;
-            } else if (noSurrogates && charCode >= 0xFFFF) {
-                return 0;
+                return (char)CharToGlyphMapper.INVISIBLE_GLYPH_ID;
             }
         }
-        return -1;
+        return 0;
     }
 
     static class UVS {

@@ -205,28 +205,27 @@ int nsk_aod_agentLoaded(JNIEnv* jni, const char* agentName) {
          */
         jclass localTargetAppClass;
         if (!NSK_JNI_VERIFY(jni, (localTargetAppClass =
-            NSK_CPP_STUB2(FindClass, jni, TARGET_APP_CLASS_NAME)) != NULL)) {
+            jni->FindClass(TARGET_APP_CLASS_NAME)) != NULL)) {
             return NSK_FALSE;
         }
 
         if (!NSK_JNI_VERIFY(jni, (targetAppClass = (jclass)
-            NSK_CPP_STUB2(NewGlobalRef, jni, localTargetAppClass)) != NULL)) {
+            jni->NewGlobalRef(localTargetAppClass)) != NULL)) {
             return NSK_FALSE;
         }
     }
 
     if (agentLoadedMethod == NULL) {
         if (!NSK_JNI_VERIFY(jni, (agentLoadedMethod =
-            NSK_CPP_STUB4(GetStaticMethodID, jni, targetAppClass,
-                    AGENT_LOADED_METHOD_NAME, AGENT_LOADED_METHOD_SIGNATURE)) != NULL))
+            jni->GetStaticMethodID(targetAppClass, AGENT_LOADED_METHOD_NAME, AGENT_LOADED_METHOD_SIGNATURE)) != NULL))
             return NSK_FALSE;
     }
 
     if (!NSK_JNI_VERIFY(jni, (agentNameString =
-        NSK_CPP_STUB2(NewStringUTF, jni, agentName)) != NULL))
+        jni->NewStringUTF(agentName)) != NULL))
         return NSK_FALSE;
 
-    NSK_CPP_STUB4(CallStaticVoidMethod, jni, targetAppClass, agentLoadedMethod, agentNameString);
+    jni->CallStaticVoidMethod(targetAppClass, agentLoadedMethod, agentNameString);
 
     return NSK_TRUE;
 }
@@ -255,16 +254,14 @@ int nsk_aod_agentFinished(JNIEnv* jni, const char* agentName, int success) {
 
     if (agentFinishedMethod == NULL) {
         if (!NSK_JNI_VERIFY(jni, (agentFinishedMethod =
-            NSK_CPP_STUB4(GetStaticMethodID, jni, targetAppClass,
-                    AGENT_FINISHED_METHOD_NAME, AGENT_FINISHED_METHOD_SIGNATURE)) != NULL))
+            jni->GetStaticMethodID(targetAppClass, AGENT_FINISHED_METHOD_NAME, AGENT_FINISHED_METHOD_SIGNATURE)) != NULL))
             return NSK_FALSE;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (agentNameString = NSK_CPP_STUB2(NewStringUTF, jni, agentName)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (agentNameString = jni->NewStringUTF(agentName)) != NULL))
         return NSK_FALSE;
 
-    NSK_CPP_STUB5(CallStaticVoidMethod, jni, targetAppClass,
-            agentFinishedMethod, agentNameString, success ? JNI_TRUE : JNI_FALSE);
+    jni->CallStaticVoidMethod(targetAppClass, agentFinishedMethod, agentNameString, success ? JNI_TRUE : JNI_FALSE);
 
     return NSK_TRUE;
 }
@@ -277,7 +274,7 @@ int nsk_aod_agentFinished(JNIEnv* jni, const char* agentName, int success) {
 
 JNIEnv* nsk_aod_createJNIEnv(JavaVM* vm) {
     JNIEnv* jni;
-    NSK_CPP_STUB3(GetEnv, vm, (void**)&jni, JNI_VERSION_1_2);
+    vm->GetEnv((void**)&jni, JNI_VERSION_1_2);
 
     NSK_VERIFY(jni != NULL);
 

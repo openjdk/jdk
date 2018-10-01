@@ -22,10 +22,9 @@
  */
 
 /*
- *
- *
- * @summary Testing keytool
+ * @test
  * @author weijun.wang
+ * @summary Testing keytool
  *
  * Run through autotest.sh and manualtest.sh
  *
@@ -54,6 +53,12 @@
  *
  * ATTENTION:
  * NSS PKCS11 config file are changed, DSA not supported now.
+ *
+ * @library /test/lib
+ * @modules java.base/sun.security.tools.keytool
+ *          java.base/sun.security.util
+ *          java.base/sun.security.x509
+ * @run main/othervm/timeout=600 -Dfile KeyToolTest
  */
 
 import java.nio.file.Files;
@@ -67,6 +72,7 @@ import java.util.*;
 import java.security.cert.X509Certificate;
 import jdk.test.lib.util.FileUtils;
 import sun.security.util.ObjectIdentifier;
+
 
 public class KeyToolTest {
 

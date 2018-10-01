@@ -542,7 +542,6 @@ public:
   void initialize(TRAPS);
   void link_class(TRAPS);
   bool link_class_or_fail(TRAPS); // returns false on failure
-  void unlink_class();
   void rewrite_class(TRAPS);
   void link_methods(TRAPS);
   Method* class_initializer() const;
@@ -1180,7 +1179,7 @@ public:
   bool on_stack() const { return _constants->on_stack(); }
 
   // callbacks for actions during class unloading
-  static void notify_unload_class(InstanceKlass* ik);
+  static void unload_class(InstanceKlass* ik);
   static void release_C_heap_structures(InstanceKlass* ik);
 
   // Naming

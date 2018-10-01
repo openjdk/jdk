@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import static com.sun.swingset3.demos.list.ListDemo.DEMO_TITLE;
 
 import java.awt.Component;
 import javax.swing.JList;
+import javax.swing.UIManager;
 
 import org.netbeans.jemmy.ClassReference;
 import org.netbeans.jemmy.ComponentChooser;
@@ -67,14 +68,16 @@ public class ListDemoTest {
             public boolean checkComponent(Component comp) {
                 return getUIValue(listOp, (JList list) -> list.getModel().getSize()) == size;
             }
+
             public String getDescription() {
                 return "Model size to be equal to " + size;
             }
         });
     }
 
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
 
         new ClassReference(ListDemo.class.getCanonicalName()).startApplication();
 

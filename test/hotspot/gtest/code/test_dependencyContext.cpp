@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ class TestDependencyContext {
   }
 
   ~TestDependencyContext() {
-    dependencies().wipe();
+    wipe();
     CodeCache_lock->unlock();
   }
 
@@ -63,6 +63,18 @@ class TestDependencyContext {
     return ctx.find_stale_entries();
   }
 #endif
+
+  void wipe() {
+    DependencyContext ctx(&_dependency_context);
+    nmethodBucket* b = ctx.dependencies();
+    ctx.set_dependencies(NULL);
+    ctx.set_has_stale_entries(false);
+    while (b != NULL) {
+      nmethodBucket* next = b->next();
+      delete b;
+      b = next;
+    }
+  }
 };
 
 static void test_remove_dependent_nmethod(int id, bool delete_immediately) {

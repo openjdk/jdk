@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -393,16 +393,6 @@ public class Window extends Container implements Accessible {
      */
     private transient volatile int securityWarningWidth = 0;
     private transient volatile int securityWarningHeight = 0;
-
-    /**
-     * These fields represent the desired location for the security
-     * warning if this window is untrusted.
-     * See com.sun.awt.SecurityWarning for more details.
-     */
-    private transient double securityWarningPointX = 2.0;
-    private transient double securityWarningPointY = 0.0;
-    private transient float securityWarningAlignmentX = RIGHT_ALIGNMENT;
-    private transient float securityWarningAlignmentY = TOP_ALIGNMENT;
 
     static {
         /* ensure that the necessary native libraries are loaded */
@@ -3127,10 +3117,6 @@ public class Window extends Container implements Accessible {
 
          this.securityWarningWidth = 0;
          this.securityWarningHeight = 0;
-         this.securityWarningPointX = 2.0;
-         this.securityWarningPointY = 0.0;
-         this.securityWarningAlignmentX = RIGHT_ALIGNMENT;
-         this.securityWarningAlignmentY = TOP_ALIGNMENT;
 
          deserializeResources(s);
     }
@@ -4031,9 +4017,9 @@ public class Window extends Container implements Accessible {
     private Point2D calculateSecurityWarningPosition(double x, double y,
             double w, double h)
     {
-        // The position according to the spec of SecurityWarning.setPosition()
-        double wx = x + w * securityWarningAlignmentX + securityWarningPointX;
-        double wy = y + h * securityWarningAlignmentY + securityWarningPointY;
+         // The desired location for the security warning
+        double wx = x + w * RIGHT_ALIGNMENT + 2.0;
+        double wy = y + h * TOP_ALIGNMENT + 0.0;
 
         // First, make sure the warning is not too far from the window bounds
         wx = Window.limit(wx,
@@ -4068,31 +4054,10 @@ public class Window extends Container implements Accessible {
                 window.updateWindow();
             }
 
-            public Dimension getSecurityWarningSize(Window window) {
-                return new Dimension(window.securityWarningWidth,
-                        window.securityWarningHeight);
-            }
-
             public void setSecurityWarningSize(Window window, int width, int height)
             {
                 window.securityWarningWidth = width;
                 window.securityWarningHeight = height;
-            }
-
-            public void setSecurityWarningPosition(Window window,
-                    Point2D point, float alignmentX, float alignmentY)
-            {
-                window.securityWarningPointX = point.getX();
-                window.securityWarningPointY = point.getY();
-                window.securityWarningAlignmentX = alignmentX;
-                window.securityWarningAlignmentY = alignmentY;
-
-                synchronized (window.getTreeLock()) {
-                    WindowPeer peer = (WindowPeer) window.peer;
-                    if (peer != null) {
-                        peer.repositionSecurityWarning();
-                    }
-                }
             }
 
             public Point2D calculateSecurityWarningPosition(Window window,

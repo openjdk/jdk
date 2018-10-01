@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,12 +121,6 @@ final class LWTextFieldPeer
 
     @SuppressWarnings("serial")// Safe: outer class is non-serializable.
     private final class JPasswordFieldDelegate extends JPasswordField {
-
-        // Empty non private constructor was added because access to this
-        // class shouldn't be emulated by a synthetic accessor method.
-        JPasswordFieldDelegate() {
-            super();
-        }
 
         @Override
         public void replaceSelection(String content) {
