@@ -477,6 +477,7 @@ public class GenerateJfrFiles {
             out.write("");
             out.write("#else // !INCLUDE_JFR");
             out.write("");
+            out.write("template <typename T>");
             out.write("class JfrEvent {");
             out.write(" public:");
             out.write("  JfrEvent() {}");
@@ -497,103 +498,83 @@ public class GenerateJfrFiles {
 
     private static void printTypes(Printer out, Metadata metadata, boolean empty) {
         for (TypeElement t : metadata.getStructs()) {
-            if (empty) {
-                out.write("");
-                printEmptyType(out, t);
-            } else {
-                printType(out, t);
-            }
+            printType(out, t, empty);
             out.write("");
         }
         for (EventElement e : metadata.getEvents()) {
-            if (empty) {
-                printEmptyEvent(out, e);
-            } else {
-                printEvent(out, e);
-            }
+            printEvent(out, e, empty);
             out.write("");
         }
     }
 
-    private static void printEmptyEvent(Printer out, EventElement event) {
-        out.write("class Event" + event.name + " : public JfrEvent");
-        out.write("{");
-        out.write(" public:");
-        out.write("  Event" + event.name + "(EventStartTime ignore=TIMED) {}");
-        if (event.startTime) {
-            StringJoiner sj = new StringJoiner(",\n    ");
-            for (FieldElement f : event.fields) {
-                sj.add(f.getParameterType());
-            }
-            out.write("  Event" + event.name + "(");
-            out.write("    " + sj.toString() + ") { }");
-        }
-        for (FieldElement f : event.fields) {
-            out.write("  void set_" + f.name + "(" + f.getParameterType() + ") { }");
-        }
-        out.write("};");
-    }
-
-    private static void printEmptyType(Printer out, TypeElement t) {
+    private static void printType(Printer out, TypeElement t, boolean empty) {
         out.write("struct JfrStruct" + t.name);
         out.write("{");
+        if (!empty) {
+          out.write(" private:");
+          for (FieldElement f : t.fields) {
+              printField(out, f);
+          }
+          out.write("");
+        }
         out.write(" public:");
         for (FieldElement f : t.fields) {
-            out.write("  void set_" + f.name + "(" + f.getParameterType() + ") { }");
-        }
-        out.write("};");
-    }
-
-    private static void printType(Printer out, TypeElement t) {
-        out.write("struct JfrStruct" + t.name);
-        out.write("{");
-        out.write(" private:");
-        for (FieldElement f : t.fields) {
-            printField(out, f);
+           printTypeSetter(out, f, empty);
         }
         out.write("");
-        out.write(" public:");
-        for (FieldElement f : t.fields) {
-            printTypeSetter(out, f);
+        if (!empty) {
+          printWriteData(out, t.fields);
         }
-        out.write("");
-        printWriteData(out, t.fields);
         out.write("};");
         out.write("");
     }
 
-    private static void printEvent(Printer out, EventElement event) {
+    private static void printEvent(Printer out, EventElement event, boolean empty) {
         out.write("class Event" + event.name + " : public JfrEvent<Event" + event.name + ">");
         out.write("{");
-        out.write(" private:");
-        for (FieldElement f : event.fields) {
-            printField(out, f);
+        if (!empty) {
+          out.write(" private:");
+          for (FieldElement f : event.fields) {
+              printField(out, f);
+          }
+          out.write("");
         }
-        out.write("");
         out.write(" public:");
-        out.write("  static const bool hasThread = " + event.thread + ";");
-        out.write("  static const bool hasStackTrace = " + event.stackTrace + ";");
-        out.write("  static const bool isInstant = " + !event.startTime + ";");
-        out.write("  static const bool hasCutoff = " + event.cutoff + ";");
-        out.write("  static const bool isRequestable = " + event.periodic + ";");
-        out.write("  static const JfrEventId eventId = Jfr" + event.name + "Event;");
-        out.write("");
-        out.write("  Event" + event.name + "(EventStartTime timing=TIMED) : JfrEvent<Event" + event.name + ">(timing) {}");
+        if (!empty) {
+          out.write("  static const bool hasThread = " + event.thread + ";");
+          out.write("  static const bool hasStackTrace = " + event.stackTrace + ";");
+          out.write("  static const bool isInstant = " + !event.startTime + ";");
+          out.write("  static const bool hasCutoff = " + event.cutoff + ";");
+          out.write("  static const bool isRequestable = " + event.periodic + ";");
+          out.write("  static const JfrEventId eventId = Jfr" + event.name + "Event;");
+          out.write("");
+        }
+        if (!empty) {
+          out.write("  Event" + event.name + "(EventStartTime timing=TIMED) : JfrEvent<Event" + event.name + ">(timing) {}");
+        } else {
+          out.write("  Event" + event.name + "(EventStartTime timing=TIMED) {}");
+        }
         out.write("");
         int index = 0;
         for (FieldElement f : event.fields) {
             out.write("  void set_" + f.name + "(" + f.getParameterType() + " " + f.getParameterName() + ") {");
-            out.write("    this->_" + f.name + " = " + f.getParameterName() + ";");
-            out.write("    DEBUG_ONLY(set_field_bit(" + index++ + "));");
+            if (!empty) {
+              out.write("    this->_" + f.name + " = " + f.getParameterName() + ";");
+              out.write("    DEBUG_ONLY(set_field_bit(" + index++ + "));");
+            }
             out.write("  }");
         }
         out.write("");
-        printWriteData(out, event.fields);
-        out.write("");
+        if (!empty) {
+          printWriteData(out, event.fields);
+          out.write("");
+        }
         out.write("  using JfrEvent<Event" + event.name + ">::commit; // else commit() is hidden by overloaded versions in this class");
-        printConstructor2(out, event);
-        printCommitMethod(out, event);
-        printVerify(out, event.fields);
+        printConstructor2(out, event, empty);
+        printCommitMethod(out, event, empty);
+        if (!empty) {
+          printVerify(out, event.fields);
+        }
         out.write("};");
     }
 
@@ -610,8 +591,12 @@ public class GenerateJfrFiles {
         out.write("  }");
     }
 
-    private static void printTypeSetter(Printer out, FieldElement field) {
-        out.write("  void set_" + field.name + "(" + field.getParameterType() + " new_value) { this->_" + field.name + " = new_value; }");
+    private static void printTypeSetter(Printer out, FieldElement field, boolean empty) {
+        if (!empty) {
+          out.write("  void set_" + field.name + "(" + field.getParameterType() + " new_value) { this->_" + field.name + " = new_value; }");
+        } else {
+          out.write("  void set_" + field.name + "(" + field.getParameterType() + " new_value) { }");
+        }
     }
 
     private static void printVerify(Printer out, List<FieldElement> fields) {
@@ -626,7 +611,7 @@ public class GenerateJfrFiles {
         out.write("#endif");
     }
 
-    private static void printCommitMethod(Printer out, EventElement event) {
+    private static void printCommitMethod(Printer out, EventElement event, boolean empty) {
         if (event.startTime) {
             StringJoiner sj = new StringJoiner(",\n              ");
             for (FieldElement f : event.fields) {
@@ -634,12 +619,14 @@ public class GenerateJfrFiles {
             }
             out.write("");
             out.write("  void commit(" + sj.toString() + ") {");
-            out.write("    if (should_commit()) {");
-            for (FieldElement f : event.fields) {
-                out.write("      set_" + f.name + "(" + f.name + ");");
+            if (!empty) {
+              out.write("    if (should_commit()) {");
+              for (FieldElement f : event.fields) {
+                  out.write("      set_" + f.name + "(" + f.name + ");");
+              }
+              out.write("      commit();");
+              out.write("    }");
             }
-            out.write("      commit();");
-            out.write("    }");
             out.write("  }");
         }
         out.write("");
@@ -652,22 +639,24 @@ public class GenerateJfrFiles {
             sj.add(f.getParameterType() + " " + f.name);
         }
         out.write("  static void commit(" + sj.toString() + ") {");
-        out.write("    Event" + event.name + " me(UNTIMED);");
-        out.write("");
-        out.write("    if (me.should_commit()) {");
-        if (event.startTime) {
-            out.write("      me.set_starttime(startTicks);");
-            out.write("      me.set_endtime(endTicks);");
+        if (!empty) {
+          out.write("    Event" + event.name + " me(UNTIMED);");
+          out.write("");
+          out.write("    if (me.should_commit()) {");
+          if (event.startTime) {
+              out.write("      me.set_starttime(startTicks);");
+              out.write("      me.set_endtime(endTicks);");
+          }
+          for (FieldElement f : event.fields) {
+              out.write("      me.set_" + f.name + "(" + f.name + ");");
+          }
+          out.write("      me.commit();");
+          out.write("    }");
         }
-        for (FieldElement f : event.fields) {
-            out.write("      me.set_" + f.name + "(" + f.name + ");");
-        }
-        out.write("      me.commit();");
-        out.write("    }");
         out.write("  }");
     }
 
-    private static void printConstructor2(Printer out, EventElement event) {
+    private static void printConstructor2(Printer out, EventElement event, boolean empty) {
         if (!event.startTime) {
             out.write("");
             out.write("");
@@ -679,12 +668,16 @@ public class GenerateJfrFiles {
             for (FieldElement f : event.fields) {
                 sj.add(f.getParameterType() + " " + f.name);
             }
-            out.write("    " + sj.toString() + ") : JfrEvent<Event" + event.name + ">(TIMED) {");
-            out.write("    if (should_commit()) {");
-            for (FieldElement f : event.fields) {
-                out.write("      set_" + f.name + "(" + f.name + ");");
+            if (!empty) {
+              out.write("    " + sj.toString() + ") : JfrEvent<Event" + event.name + ">(TIMED) {");
+              out.write("    if (should_commit()) {");
+              for (FieldElement f : event.fields) {
+                  out.write("      set_" + f.name + "(" + f.name + ");");
+              }
+              out.write("    }");
+            } else {
+              out.write("    " + sj.toString() + ") {");
             }
-            out.write("    }");
             out.write("  }");
         }
     }
