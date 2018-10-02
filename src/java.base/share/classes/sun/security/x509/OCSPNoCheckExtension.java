@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ import sun.security.util.*;
  * lifetime of the responder's certificate. The CA does so by including
  * the extension id-pkix-ocsp-nocheck. This SHOULD be a non-critical
  * extension. The value of the extension should be NULL. CAs issuing
- * such a certificate should realized that a compromise of the
- * responder's key, is as serious as the compromise of a CA key used to
+ * such a certificate should realize that a compromise of the
+ * responder's key is as serious as the compromise of a CA key used to
  * sign CRLs, at least for the validity period of this certificate. CA's
  * may choose to issue this type of certificate with a very short
  * lifetime and renew it frequently.

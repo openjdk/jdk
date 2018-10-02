@@ -849,8 +849,7 @@ public final class SSLSocketImpl
          *
          * This implementation is somewhat less efficient than possible, but
          * not badly so (redundant copy).  We reuse the read() code to keep
-         * things simpler. Note that SKIP_ARRAY is static and may garbled by
-         * concurrent use, but we are not interested in the data anyway.
+         * things simpler.
          */
         @Override
         public synchronized long skip(long n) throws IOException {

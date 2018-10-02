@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import javax.security.auth.x500.X500Principal;
  * are as fast (or marginally faster) than for the standard
  * CollectionCertStore. Certificate subjects and CRL issuers
  * were found to be specified in most searches used internally by the
- * CertPath provider. Additional attributes could indexed if there are
+ * CertPath provider. Additional attributes could be indexed if there are
  * queries that justify the effort.
  *
  * <li>Changes to the specified Collection after construction time are

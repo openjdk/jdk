@@ -384,7 +384,7 @@ mh.invokeExact(System.out, "Hello, world.");
  * A method handle can be obtained on a method, constructor, or field
  * which is declared with Java generic types.
  * As with the Core Reflection API, the type of the method handle
- * will constructed from the erasure of the source-level type.
+ * will be constructed from the erasure of the source-level type.
  * When a method handle is invoked, the types of its arguments
  * or the return value cast type may be generic types or type instances.
  * If this occurs, the compiler will replace those

@@ -1013,7 +1013,7 @@ public abstract class SSLEngine {
      * an instance of this class, but before the {@code SSLSession} has
      * been completely initialized and made available via {@code getSession}.
      * For example, the list of valid signature algorithms may restrict
-     * the type of certificates that can used during TrustManager
+     * the type of certificates that can be used during TrustManager
      * decisions, or the maximum TLS/DTLS fragment packet sizes can be
      * resized to better support the network environment.
      * <p>
