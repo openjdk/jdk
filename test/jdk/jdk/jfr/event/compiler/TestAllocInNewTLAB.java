@@ -43,14 +43,12 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm -XX:+UseTLAB -XX:TLABSize=100k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=1 jdk.jfr.event.compiler.TestAllocInNewTLAB
- * @run main/othervm -XX:+UseTLAB -XX:TLABSize=100k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=1 -XX:-FastTLABRefill jdk.jfr.event.compiler.TestAllocInNewTLAB
  * @run main/othervm -XX:+UseTLAB -XX:TLABSize=100k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=1 -Xint jdk.jfr.event.compiler.TestAllocInNewTLAB
  */
 
 /**
  * Test that when an object is allocated in a new Thread Local Allocation Buffer (TLAB)
- * an event will be triggered. The test is done for C1-compiler,
- * C2-compiler (-XX:-FastTLABRefill) and interpreted mode (-Xint).
+ * an event will be triggered. The test is done for default and interpreted mode (-Xint).
  *
  * To force objects to be allocated in a new TLAB:
  *      the size of TLAB is set to 100k (-XX:TLABSize=100k);

@@ -45,7 +45,7 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.gc == "null"
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
- * @run main/othervm -XX:TLABSize=2k -XX:-FastTLABRefill jdk.jfr.event.oldobject.TestLargeRootSet
+ * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestLargeRootSet
  */
 public class TestLargeRootSet {
 
