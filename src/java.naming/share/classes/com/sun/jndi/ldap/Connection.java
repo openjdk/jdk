@@ -337,17 +337,17 @@ public final class Connection implements Runnable {
         // then reset the timeout.
         if (socket instanceof SSLSocket) {
             SSLSocket sslSocket = (SSLSocket) socket;
-            int socketTimeout = sslSocket.getSoTimeout();
             if (!IS_HOSTNAME_VERIFICATION_DISABLED) {
                 SSLParameters param = sslSocket.getSSLParameters();
                 param.setEndpointIdentificationAlgorithm("LDAPS");
                 sslSocket.setSSLParameters(param);
             }
             if (connectTimeout > 0) {
+                int socketTimeout = sslSocket.getSoTimeout();
                 sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
+                sslSocket.startHandshake();
+                sslSocket.setSoTimeout(socketTimeout);
             }
-            sslSocket.startHandshake();
-            sslSocket.setSoTimeout(socketTimeout);
         }
         return socket;
     }
