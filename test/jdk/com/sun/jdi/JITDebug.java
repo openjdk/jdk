@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,27 @@
  */
 
 /*
- *  Note 1: JITDebug.java is no longer a standalone regression test,
- *  due to chronic test failures on win32 platforms.  When testing,
- *  use the wrapper script (JITDebug.sh) instead, which will in turn
- *  invoke this program.
+ * Note: What seems to be an excessive use of System.xxx.flush();
+ * is actually necessary to combat lost output on win32 systems.
  *
- *  The problems are related to inconsistent use of "SystemRoot"
- *  versus "SYSTEMROOT" environment variables in different win32 O/S
- *  installations.  Refer to the Comments and Evaluation on bugs
- *  4522770 and 4461673 for more information.
+ * @test
+ * @bug 4291701 4376819 4422312 4522770
+ * @summary Test JIT debugging -
+ * assure that launching on uncaught exception works
  *
- *  Undefined SystemRoot in a win32 environment causes the O/S socket()
- *  layer to fail with WSAEPROVIDERFAILEDINIT.  The workaround used by
- *  JITDebug.sh and JITDebug.java is to select the dt_shmem transport
- *  on any win32 platform where SystemRoot is not found.
+ * @library /test/lib
  *
- *  Note 2: What seems to be an excessive use of System.xxx.flush();
- *  is actually necessary to combat lost output on win32 systems.
- *
- *  @t e s t
- *  @bug 4291701 4376819 4422312 4522770
- *  @summary Test JIT debugging -
- *  assure that launching on uncaught exception works
- *
- *  @author Robert Field
- *  @run driver JITDebug
+ * @author Robert Field
+ * @run main/othervm JITDebug
  */
 
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
+
 import java.util.*;
-import java.io.*;
 
 /*
  * This class implements three separate small programs, each
@@ -97,7 +87,13 @@ public class JITDebug {
             }
         case 3:
             if (args[0].equals("DEBUGGER")) {
-                trivialDebugger(args[2]);
+                // launched by using "-agentlib:" "launch" sub-option:
+                // The following strings are appended to the string given in this argument (space-delimited).
+                // They can aid the launched debugger in establishing a connection with this VM.
+                // The resulting string is executed.
+                // - The value of the transport sub-option.
+                // - The value of the address sub-option (or the generated address if one is not given)
+                trivialDebugger(args[1], args[2]);
                 return true;
             } else {
                 return false;
@@ -108,69 +104,23 @@ public class JITDebug {
     }
 
     void testLaunch() {
-        class DisplayOutput extends Thread {
-            InputStream in;
-
-            DisplayOutput(InputStream in) {
-                this.in = in;
-            }
-
-            public void run() {
-                try {
-                    transfer();
-                } catch (IOException exc) {
-                    new RuntimeException("Unexpected exception: " + exc);
-                }
-            }
-
-            void transfer() throws IOException {
-                int ch;
-                while ((ch = in.read()) != -1) {
-                    System.out.print((char)ch);
-                }
-                in.close();
-            }
-        }
-        String transportMethod = System.getProperty("TRANSPORT_METHOD");
-        if (transportMethod == null) {
-            transportMethod = "dt_socket"; //Default to socket transport.
-        }
-        String javaExe = System.getProperty("java.home") +
-                         File.separator + "bin" + File.separator +"java";
-        List largs = new ArrayList();
-        largs.add(javaExe);
-        largs.add("-agentlib:jdwp=transport=" + transportMethod + ",server=y,onuncaught=y," +
-                  "launch=" +
-                  javaExe + " -DTRANSPORT_METHOD=" + transportMethod + " " +
-                  this.getClass().getName() + " DEBUGGER ");
-        largs.add("JITDebug");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true);
+        List largs = pb.command();
+        largs.add("-classpath");
+        largs.add(Utils.TEST_CLASSES);
+        String javaExe = JDKToolFinder.getJDKTool("java");
+        largs.add("-agentlib:jdwp=transport=dt_socket,server=y,onuncaught=y," +
+                  "launch=" + javaExe + " " + this.getClass().getName() + " DEBUGGER ");
+        largs.add(this.getClass().getName());
         largs.add("TARGET");
-        System.out.println("Launching: " + largs);
-        String[] sargs = (String[])largs.toArray(new String[largs.size()]);
-        Runtime rt = Runtime.getRuntime();
         try {
-            Process proc = rt.exec(VMConnection.insertDebuggeeVMOptions(sargs));
-            DisplayOutput inThread = new DisplayOutput(proc.getInputStream());
-            DisplayOutput erThread = new DisplayOutput(proc.getErrorStream());
-            inThread.start();  // transfer all in&err
-            erThread.start();
-            inThread.join();  // make sure they are done
-            erThread.join();
-            int exitValue = proc.waitFor();
-            if (exitValue != 0) {
-                throw new RuntimeException("Failure exit status: " +
-                                           exitValue);
-            }
-        } catch (Exception exc) {
+            ProcessTools.executeCommand(pb)
+                    .shouldHaveExitValue(0);
+        } catch (Throwable exc) {
             throw new RuntimeException("Unexpected exception: " + exc);
         }
         System.out.println("JIT Debugging test PASSED");
     }
-
-    void displayOutput(InputStream in) throws IOException {
-
-    }
-
 
     // Target VM code
     void debugTarget() {
@@ -180,9 +130,8 @@ public class JITDebug {
         throw new RuntimeException("Start-up onuncaught handling");
     }
 
-    void trivialDebugger(String transportAddress) {
+    void trivialDebugger(String transportMethod, String transportAddress) {
         System.out.println("trivial debugger started");
-        String transportMethod = System.getProperty("TRANSPORT_METHOD");
         String connectorName = null;
         if ("dt_shmem".equals(transportMethod)) {
             connectorName = "com.sun.jdi.SharedMemoryAttach";
@@ -209,7 +158,7 @@ public class JITDebug {
     }
 
     void doAttach(String connectorName, AttachingConnector conn, String transportAddress) {
-        Map connArgs = conn.defaultArguments();
+        Map<String, Connector.Argument> connArgs = conn.defaultArguments();
         if ("com.sun.jdi.SharedMemoryAttach".equals(connectorName)) {
             Connector.Argument portArg = (Connector.Argument)connArgs.get("name");
             portArg.setValue(transportAddress);
@@ -234,7 +183,7 @@ public class JITDebug {
     void hang() {
         try {
             // ten minute nap
-            Thread.currentThread().sleep(10 * 60 * 1000);
+            Thread.sleep(10 * 60 * 1000);
         } catch (InterruptedException exc) {
             // shouldn't happen
         }

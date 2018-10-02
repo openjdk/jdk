@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,22 @@
  * @author Robert Field
  *
  * @library ..
+ * @library /test/lib
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g RedefineTest.java
- * @run shell RedefineSetUp.sh
  * @run driver RedefineTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
+import jdk.test.lib.Utils;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.io.*;
 
@@ -268,9 +275,25 @@ public class RedefineTest extends TestScaffold {
         return;
     }
 
+    // prepares .class file for redefined RedefineSubTarg class:
+    // - compiles <fileName>.java from test source dir;
+    // - saves compiled class <fileName>.class.
+    protected void prepareRedefinedClass(String fileName) throws Exception {
+        Path srcJavaFile = Paths.get(Utils.TEST_SRC).resolve(fileName + ".java");
+        Path dstClassFile = Paths.get(".").resolve(fileName + ".class");
+        byte[] compiledData = InMemoryJavaCompiler.compile("RedefineSubTarg",
+                new String(Files.readAllBytes(srcJavaFile), StandardCharsets.UTF_8),
+                "-g");
+        Files.write(dstClassFile, compiledData);
+    }
+
     /********** test core **********/
 
     protected void runTests() throws Exception {
+        // prepare redefined .class files
+        prepareRedefinedClass("Different_RedefineSubTarg");
+        prepareRedefinedClass("SchemaChange_RedefineSubTarg");
+        prepareRedefinedClass("RedefineSubTarg");
 
         BreakpointEvent bpe = startToMain("RedefineTarg");
         targetClass = bpe.location().declaringType();
