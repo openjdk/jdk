@@ -556,8 +556,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8207404 aix-all
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
-java/net/Socket/LingerTest.java                                 8208690 generic-all
-
 ############################################################################
 
 # jdk_nio
