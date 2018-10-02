@@ -1688,7 +1688,13 @@ void os::win32::print_windows_version(outputStream* st) {
     if (is_workstation) {
       st->print("10");
     } else {
-      st->print("Server 2016");
+      // distinguish Windows Server 2016 and 2019 by build number
+      // Windows server 2019 GA 10/2018 build number is 17763
+      if (build_number > 17762) {
+        st->print("Server 2019");
+      } else {
+        st->print("Server 2016");
+      }
     }
     break;
 
