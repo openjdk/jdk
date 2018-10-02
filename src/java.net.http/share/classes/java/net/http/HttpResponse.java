@@ -515,7 +515,7 @@ public interface HttpResponse<T> {
          * @throws IllegalArgumentException if an invalid set of open options
          *          are specified
          * @throws SecurityException If a security manager has been installed
-         *          and it denies {@link SecurityManager#checkWrite(String)
+         *          and it denies {@linkplain SecurityManager#checkWrite(String)
          *          write access} to the file.
          */
         public static BodyHandler<Path> ofFile(Path file, OpenOption... openOptions) {
@@ -541,7 +541,7 @@ public interface HttpResponse<T> {
          * @param file the file to store the body in
          * @return a response body handler
          * @throws SecurityException If a security manager has been installed
-         *          and it denies {@link SecurityManager#checkWrite(String)
+         *          and it denies {@linkplain SecurityManager#checkWrite(String)
          *          write access} to the file.
          */
         public static BodyHandler<Path> ofFile(Path file) {
@@ -656,7 +656,7 @@ public interface HttpResponse<T> {
 
         /**
          * Returns a {@code BodyHandler<byte[]>} that returns a
-         * {@link BodySubscriber BodySubscriber}&lt;{@code byte[]}&gt; obtained
+         * {@link BodySubscriber BodySubscriber}{@code <byte[]>} obtained
          * from {@link BodySubscribers#ofByteArray() BodySubscribers.ofByteArray()}.
          *
          * <p> When the {@code HttpResponse} object is returned, the body has
@@ -695,7 +695,7 @@ public interface HttpResponse<T> {
          * <p> When the {@code HttpResponse} object is returned, the response
          * headers will have been completely read, but the body may not have
          * been fully received yet. The {@link #body()} method returns a
-         * {@link Publisher Publisher<List<ByteBuffer>>} from which the body
+         * {@link Publisher Publisher}{@code <List<ByteBuffer>>} from which the body
          * response bytes can be obtained as they are received. The publisher
          * can and must be subscribed to only once.
          *
@@ -794,7 +794,7 @@ public interface HttpResponse<T> {
          * {@code CompletableFuture} that completes with the response
          * corresponding to the key's push request. A push request is rejected /
          * cancelled if there is already an entry in the map whose key is
-         * {@link HttpRequest#equals equal} to it. A push request is
+         * {@linkplain HttpRequest#equals equal} to it. A push request is
          * rejected / cancelled if it  does not have the same origin as its
          * initiating request.
          *
@@ -839,7 +839,7 @@ public interface HttpResponse<T> {
      * Java type {@code T}.
      *
      * <p> The {@link #getBody()} method returns a
-     * {@link CompletionStage}&lt;{@code T}&gt; that provides the response body
+     * {@link CompletionStage}{@code <T>} that provides the response body
      * object. The {@code CompletionStage} must be obtainable at any time. When
      * it completes depends on the nature of type {@code T}. In many cases,
      * when {@code T} represents the entire body after being consumed then
@@ -850,7 +850,7 @@ public interface HttpResponse<T> {
      *
      * @apiNote To ensure that all resources associated with the corresponding
      * HTTP exchange are properly released, an implementation of {@code
-     * BodySubscriber} should ensure to {@link Flow.Subscription#request
+     * BodySubscriber} should ensure to {@linkplain Flow.Subscription#request
      * request} more data until one of {@link #onComplete() onComplete} or
      * {@link #onError(Throwable) onError} are signalled, or {@link
      * Flow.Subscription#request cancel} its {@linkplain
@@ -1077,7 +1077,7 @@ public interface HttpResponse<T> {
          * @throws IllegalArgumentException if an invalid set of open options
          *          are specified
          * @throws SecurityException if a security manager has been installed
-         *          and it denies {@link SecurityManager#checkWrite(String)
+         *          and it denies {@linkplain SecurityManager#checkWrite(String)
          *          write access} to the file
          */
         public static BodySubscriber<Path> ofFile(Path file, OpenOption... openOptions) {
@@ -1103,7 +1103,7 @@ public interface HttpResponse<T> {
          * @param file the file to store the body in
          * @return a body subscriber
          * @throws SecurityException if a security manager has been installed
-         *          and it denies {@link SecurityManager#checkWrite(String)
+         *          and it denies {@linkplain SecurityManager#checkWrite(String)
          *          write access} to the file
          */
         public static BodySubscriber<Path> ofFile(Path file) {
@@ -1160,7 +1160,7 @@ public interface HttpResponse<T> {
 
         /**
          * Returns a {@code BodySubscriber} which streams the response body as
-         * a {@link Stream Stream<String>}, where each string in the stream
+         * a {@link Stream Stream}{@code <String>}, where each string in the stream
          * corresponds to a line as defined by {@link BufferedReader#lines()}.
          *
          * <p> The {@link HttpResponse} using this subscriber is available
@@ -1178,7 +1178,7 @@ public interface HttpResponse<T> {
          *
          * @param charset the character set to use when converting bytes to characters
          * @return a body subscriber that streams the response body as a
-         *         {@link Stream Stream<String>}.
+         *         {@link Stream Stream}{@code <String>}.
          *
          * @see BufferedReader#lines()
          */
