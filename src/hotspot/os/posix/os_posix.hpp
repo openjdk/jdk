@@ -116,6 +116,18 @@ public:
   // Returns true if either given uid is effective uid and given gid is
   // effective gid, or if given uid is root.
   static bool matches_effective_uid_and_gid_or_root(uid_t uid, gid_t gid);
+
+#ifdef SUPPORTS_CLOCK_MONOTONIC
+
+  static bool supports_monotonic_clock();
+  static int clock_gettime(clockid_t clock_id, struct timespec *tp);
+  static int clock_getres(clockid_t clock_id, struct timespec *tp);
+
+#else
+
+  static bool supports_monotonic_clock() { return false; }
+
+#endif
 };
 
 // On POSIX platforms the signal handler is global so we just do the write.

@@ -43,7 +43,6 @@ class Linux {
 
   static void check_signal_handler(int sig);
 
-  static int (*_clock_gettime)(clockid_t, struct timespec *);
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
   static int (*_pthread_setname_np)(pthread_t, const char*);
 
@@ -190,15 +189,8 @@ class Linux {
   static bool manually_expand_stack(JavaThread * t, address addr);
   static int max_register_window_saves_before_flushing();
 
-  // Real-time clock functions
-  static void clock_init(void);
-
   // fast POSIX clocks support
   static void fast_thread_clock_init(void);
-
-  static int clock_gettime(clockid_t clock_id, struct timespec *tp) {
-    return _clock_gettime ? _clock_gettime(clock_id, tp) : -1;
-  }
 
   static int pthread_getcpuclockid(pthread_t tid, clockid_t *clock_id) {
     return _pthread_getcpuclockid ? _pthread_getcpuclockid(tid, clock_id) : -1;

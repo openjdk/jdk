@@ -141,7 +141,7 @@ inline struct hostent* os::get_host_by_name(char* name) {
 }
 
 inline bool os::supports_monotonic_clock() {
-  return Linux::_clock_gettime != NULL;
+  return os::Posix::supports_monotonic_clock();
 }
 
 inline void os::exit(int num) {
