@@ -33,7 +33,7 @@
  *          jdk.jartool/sun.tools.jar
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile ../test-classes/Hello.java ../test-classes/HelloMore.java
- * @run main JigsawOptionsCombo
+ * @run driver JigsawOptionsCombo
  */
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;

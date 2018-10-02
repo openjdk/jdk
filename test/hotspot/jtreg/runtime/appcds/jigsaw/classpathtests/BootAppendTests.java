@@ -35,7 +35,7 @@
  * @compile src/com/sun/tools/javac/MyMain.jasm
  * @compile src/sun/nio/cs/ext/MyClass.java
  * @compile src/sun/nio/cs/ext1/MyClass.java
- * @run main BootAppendTests
+ * @run driver BootAppendTests
  */
 
 import java.io.File;

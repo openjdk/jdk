@@ -34,7 +34,7 @@
  * @compile MirrorWithReferenceFieldsApp.java
  * @run driver ClassFileInstaller -jar app.jar MirrorWithReferenceFieldsApp
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run main MirrorWithReferenceFieldsTest
+ * @run driver MirrorWithReferenceFieldsTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

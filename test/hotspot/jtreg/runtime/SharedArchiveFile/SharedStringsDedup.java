@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main SharedStringsDedup
+ * @run driver SharedStringsDedup
  */
 
 import jdk.test.lib.cds.CDSTestUtils;

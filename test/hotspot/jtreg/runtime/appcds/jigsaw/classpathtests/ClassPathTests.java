@@ -34,7 +34,7 @@
  * @compile src/com/sun/tools/javac/Main.jasm
  * @compile src/com/sun/tools/javac/MyMain.jasm
  * @compile ../../../SharedArchiveFile/javax/annotation/processing/FilerException.jasm
- * @run main ClassPathTests
+ * @run driver ClassPathTests
  * @summary AppCDS tests for testing classpath/package conflicts
  */
 

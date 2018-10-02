@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.misc
  * @library ../..
  * @library /test/lib
- * @run main OverrideTests
+ * @run driver OverrideTests
  * @summary AppCDS tests for overriding archived classes with -p and --upgrade-module-path
  */
 

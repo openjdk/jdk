@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main NonBootLoaderClasses
+ * @run driver NonBootLoaderClasses
  */
 
 import jdk.test.lib.cds.CDSOptions;

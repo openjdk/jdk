@@ -31,7 +31,7 @@
  * @modules java.management
  *          jdk.jartool/sun.tools.jar
  * @build HelloString
- * @run main SharedStringsBasic
+ * @run driver SharedStringsBasic
  * @run main/othervm -XX:+UseStringDeduplication SharedStringsBasic
  * @run main/othervm -XX:-CompactStrings SharedStringsBasic
  */

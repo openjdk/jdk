@@ -31,7 +31,7 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @run main SysDictCrash
+ * @run driver SysDictCrash
  * @run main/othervm -XX:+UseStringDeduplication SysDictCrash
  * @run main/othervm -XX:-CompactStrings SysDictCrash
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  *          jdk.jartool/sun.tools.jar
  *          java.instrument
  * @build TransformUtil TransformerAgent ParallelLoad
- * @run main ParallelLoadAndTransformTest
+ * @run driver ParallelLoadAndTransformTest
  */
 import java.util.List;
 import java.util.stream.Collectors;

@@ -31,7 +31,7 @@
  * @modules java.management
  *          jdk.jartool/sun.tools.jar
  * @build HelloString
- * @run main FlagCombo
+ * @run driver FlagCombo
  */
 
 /**
@@ -44,7 +44,7 @@
  * @modules java.management
  *          jdk.jartool/sun.tools.jar
  * @build HelloString
- * @run main FlagCombo noJfr
+ * @run driver FlagCombo noJfr
  */
 
 import jdk.test.lib.BuildHelper;

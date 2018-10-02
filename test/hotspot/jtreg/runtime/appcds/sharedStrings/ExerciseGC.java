@@ -32,7 +32,7 @@
  *          jdk.jartool/sun.tools.jar
  * @build HelloStringGC sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ExerciseGC
+ * @run driver ExerciseGC
  * @run main/othervm -XX:+UseStringDeduplication ExerciseGC
  * @run main/othervm -XX:-CompactStrings ExerciseGC
  */

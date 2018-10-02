@@ -33,7 +33,7 @@
  * @compile test-classes/ProtDomain.java
  * @compile test-classes/ProtDomainB.java
  * @compile test-classes/JimageClassProtDomain.java
- * @run main ProtectionDomain
+ * @run driver ProtectionDomain
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

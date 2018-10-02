@@ -32,9 +32,9 @@
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
- * @run main RedefineClassHelper
+ * @run driver RedefineClassHelper
  * @build sun.hotspot.WhiteBox RedefineRunningMethods_SharedHelper
- * @run main RedefineRunningMethods_Shared
+ * @run driver RedefineRunningMethods_Shared
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

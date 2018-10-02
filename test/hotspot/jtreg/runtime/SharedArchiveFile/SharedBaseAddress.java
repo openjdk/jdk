@@ -29,7 +29,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main SharedBaseAddress
+ * @run driver SharedBaseAddress
  */
 
 import jdk.test.lib.cds.CDSTestUtils;

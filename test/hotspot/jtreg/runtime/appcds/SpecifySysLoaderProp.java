@@ -32,7 +32,7 @@
  * @compile test-classes/TestClassLoader.java
  * @compile test-classes/ReportMyLoader.java
  * @compile test-classes/TrySwitchMyLoader.java
- * @run main SpecifySysLoaderProp
+ * @run driver SpecifySysLoaderProp
  */
 
 import java.io.*;

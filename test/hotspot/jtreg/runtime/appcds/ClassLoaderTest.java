@@ -36,7 +36,7 @@
  * @compile test-classes/BootClassPathAppendHelper.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ClassLoaderTest
+ * @run driver ClassLoaderTest
  */
 
 import java.io.File;

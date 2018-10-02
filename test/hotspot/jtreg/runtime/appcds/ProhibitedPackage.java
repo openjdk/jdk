@@ -31,7 +31,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/ProhibitedHelper.java test-classes/Prohibited.jasm
- * @run main ProhibitedPackage
+ * @run driver ProhibitedPackage
  */
 
 import jdk.test.lib.cds.CDSOptions;

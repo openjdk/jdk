@@ -34,7 +34,7 @@
  * @compile PrimitiveTypesApp.java
  * @run driver ClassFileInstaller -jar app.jar PrimitiveTypesApp FieldsTest
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run main PrimitiveTypesTest
+ * @run driver PrimitiveTypesTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

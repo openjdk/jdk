@@ -29,7 +29,7 @@
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
  *          jdk.jlink
- * @run main MainModuleOnly
+ * @run driver MainModuleOnly
  * @summary Test some scenarios with a main modular jar specified in the --module-path and -cp options in the command line.
  */
 

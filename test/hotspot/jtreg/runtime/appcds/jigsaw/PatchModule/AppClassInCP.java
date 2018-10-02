@@ -34,7 +34,7 @@
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  * @build PatchMain
- * @run main AppClassInCP
+ * @run driver AppClassInCP
  */
 
 import java.io.File;

@@ -32,7 +32,7 @@
  * @modules java.management
  *          jdk.jartool/sun.tools.jar
  * @compile MyOuter.java MyException.java
- * @run main DumpTimeVerifyFailure
+ * @run driver DumpTimeVerifyFailure
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

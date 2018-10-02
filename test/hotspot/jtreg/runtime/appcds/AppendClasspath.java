@@ -32,7 +32,7 @@
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @compile test-classes/HelloMore.java
- * @run main AppendClasspath
+ * @run driver AppendClasspath
  */
 
 import java.io.File;

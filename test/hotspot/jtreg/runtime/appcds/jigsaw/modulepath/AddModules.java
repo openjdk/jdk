@@ -29,7 +29,7 @@
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
  *          jdk.jlink
- * @run main AddModules
+ * @run driver AddModules
  * @summary sanity test the --add-modules option
  */
 

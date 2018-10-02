@@ -28,7 +28,7 @@
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main DumpSharedDictionary
+ * @run driver DumpSharedDictionary
  */
 
 import jdk.test.lib.cds.CDSTestUtils;

@@ -32,7 +32,7 @@
  *          jdk.jartool/sun.tools.jar
  * @build HelloStringPlus sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main SharedStringsBasicPlus
+ * @run driver SharedStringsBasicPlus
  * @run main/othervm -XX:+UseStringDeduplication SharedStringsBasicPlus
  * @run main/othervm -XX:-CompactStrings SharedStringsBasicPlus
  */

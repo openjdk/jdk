@@ -36,7 +36,7 @@
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/MyThread.java
  * @compile test-classes/TestWithProfilerHelper.java
- * @run main TestWithProfiler
+ * @run driver TestWithProfiler
  */
 
 import jdk.test.lib.BuildHelper;
