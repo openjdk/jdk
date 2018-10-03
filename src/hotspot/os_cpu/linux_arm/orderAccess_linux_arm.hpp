@@ -50,17 +50,12 @@
 //
 // inline void _OrderAccess_dsb() {
 //    volatile intptr_t dummy = 0;
-//    if (os::is_MP()) {
-//      __asm__ volatile (
-//        "mcr p15, 0, %0, c7, c10, 4"
-//        : : "r" (dummy) : "memory");
-//    }
+//    __asm__ volatile (
+//      "mcr p15, 0, %0, c7, c10, 4"
+//      : : "r" (dummy) : "memory");
 // }
 
 inline static void dmb_sy() {
-   if (!os::is_MP()) {
-     return;
-   }
 #ifdef AARCH64
    __asm__ __volatile__ ("dmb sy" : : : "memory");
 #else
@@ -82,9 +77,6 @@ inline static void dmb_sy() {
 }
 
 inline static void dmb_st() {
-   if (!os::is_MP()) {
-     return;
-   }
 #ifdef AARCH64
    __asm__ __volatile__ ("dmb st" : : : "memory");
 #else
@@ -108,9 +100,6 @@ inline static void dmb_st() {
 // Load-Load/Store barrier
 inline static void dmb_ld() {
 #ifdef AARCH64
-   if (!os::is_MP()) {
-     return;
-   }
    __asm__ __volatile__ ("dmb ld" : : : "memory");
 #else
    dmb_sy();

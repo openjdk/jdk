@@ -1030,8 +1030,7 @@ void MacroAssembler::andptr(Register dst, int32_t imm32) {
 }
 
 void MacroAssembler::atomic_incl(Address counter_addr) {
-  if (os::is_MP())
-    lock();
+  lock();
   incrementl(counter_addr);
 }
 
@@ -1046,8 +1045,7 @@ void MacroAssembler::atomic_incl(AddressLiteral counter_addr, Register scr) {
 
 #ifdef _LP64
 void MacroAssembler::atomic_incq(Address counter_addr) {
-  if (os::is_MP())
-    lock();
+  lock();
   incrementq(counter_addr);
 }
 
@@ -1213,9 +1211,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   get_thread(tmp_reg);
   orptr(tmp_reg, swap_reg);
 #endif
-  if (os::is_MP()) {
-    lock();
-  }
+  lock();
   cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
   // If the biasing toward our thread failed, this means that
   // another thread succeeded in biasing it toward itself and we
@@ -1248,9 +1244,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   orptr(tmp_reg, swap_reg);
   movptr(swap_reg, saved_mark_addr);
 #endif
-  if (os::is_MP()) {
-    lock();
-  }
+  lock();
   cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
   // If the biasing toward our thread failed, then another thread
   // succeeded in biasing it toward itself and we need to revoke that
@@ -1278,9 +1272,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   // bits in this situation. Should attempt to preserve them.
   NOT_LP64( movptr(swap_reg, saved_mark_addr); )
   load_prototype_header(tmp_reg, obj_reg);
-  if (os::is_MP()) {
-    lock();
-  }
+  lock();
   cmpxchgptr(tmp_reg, mark_addr); // compare tmp_reg and swap_reg
   // Fall through to the normal CAS-based lock, because no matter what
   // the result of the above CAS, some thread must have succeeded in
@@ -1376,9 +1368,7 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register tmpReg,
   if (method_data != NULL) {
     // set rtm_state to "no rtm" in MDO
     mov_metadata(tmpReg, method_data);
-    if (os::is_MP()) {
-      lock();
-    }
+    lock();
     orl(Address(tmpReg, MethodData::rtm_state_offset_in_bytes()), NoRTM);
   }
   jmpb(L_done);
@@ -1392,9 +1382,7 @@ void MacroAssembler::rtm_abort_ratio_calculation(Register tmpReg,
   if (method_data != NULL) {
     // set rtm_state to "always rtm" in MDO
     mov_metadata(tmpReg, method_data);
-    if (os::is_MP()) {
-      lock();
-    }
+    lock();
     orl(Address(tmpReg, MethodData::rtm_state_offset_in_bytes()), UseRTM);
   }
   bind(L_done);
@@ -1605,9 +1593,7 @@ void MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Regi
   get_thread(scrReg);
   Register threadReg = scrReg;
 #endif
-  if (os::is_MP()) {
-    lock();
-  }
+  lock();
   cmpxchgptr(threadReg, Address(boxReg, owner_offset)); // Updates tmpReg
 
   if (RTMRetryCount > 0) {
@@ -1767,9 +1753,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
   // Attempt stack-locking ...
   orptr (tmpReg, markOopDesc::unlocked_value);
   movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
-  if (os::is_MP()) {
-    lock();
-  }
+  lock();
   cmpxchgptr(boxReg, Address(objReg, oopDesc::mark_offset_in_bytes()));      // Updates tmpReg
   if (counters != NULL) {
     cond_inc32(Assembler::equal,
@@ -1826,9 +1810,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
   // we later store "Self" into m->Owner.  Transiently storing a stack address
   // (rsp or the address of the box) into  m->owner is harmless.
   // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
-  if (os::is_MP()) {
-    lock();
-  }
+  lock();
   cmpxchgptr(scrReg, Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   movptr(Address(scrReg, 0), 3);          // box->_displaced_header = 3
   // If we weren't able to swing _owner from NULL to the BasicLock
@@ -1851,9 +1833,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
   movq(scrReg, tmpReg);
   xorq(tmpReg, tmpReg);
 
-  if (os::is_MP()) {
-    lock();
-  }
+  lock();
   cmpxchgptr(r15_thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   // Unconditionally set box->_displaced_header = markOopDesc::unused_mark().
   // Without cast to int32_t movptr will destroy r10 which is typically obj.
@@ -2000,9 +1980,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
   // The "box" value on the stack is stable, so we can reload
   // and be assured we observe the same value as above.
   movptr(tmpReg, Address(boxReg, 0));
-  if (os::is_MP()) {
-    lock();
-  }
+  lock();
   cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
   // Intention fall-thru into DONE_LABEL
 
@@ -2036,16 +2014,16 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
 
   xorptr(boxReg, boxReg);
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
-  if (os::is_MP()) {
-    // Memory barrier/fence
-    // Dekker pivot point -- fulcrum : ST Owner; MEMBAR; LD Succ
-    // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
-    // This is faster on Nehalem and AMD Shanghai/Barcelona.
-    // See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
-    // We might also restructure (ST Owner=0;barrier;LD _Succ) to
-    // (mov box,0; xchgq box, &m->Owner; LD _succ) .
-    lock(); addl(Address(rsp, 0), 0);
-  }
+
+  // Memory barrier/fence
+  // Dekker pivot point -- fulcrum : ST Owner; MEMBAR; LD Succ
+  // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
+  // This is faster on Nehalem and AMD Shanghai/Barcelona.
+  // See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
+  // We might also restructure (ST Owner=0;barrier;LD _Succ) to
+  // (mov box,0; xchgq box, &m->Owner; LD _succ) .
+  lock(); addl(Address(rsp, 0), 0);
+
   cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
   jccb  (Assembler::notZero, LSuccess);
 
@@ -2063,7 +2041,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
 
   // box is really RAX -- the following CMPXCHG depends on that binding
   // cmpxchg R,[M] is equivalent to rax = CAS(M,rax,R)
-  if (os::is_MP()) { lock(); }
+  lock();
   cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   // There's no successor so we tried to regrab the lock.
   // If that didn't work, then another thread grabbed the
@@ -2081,7 +2059,7 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
 
   bind  (Stacked);
   movptr(tmpReg, Address (boxReg, 0));      // re-fetch
-  if (os::is_MP()) { lock(); }
+  lock();
   cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
 
 #endif
@@ -2633,13 +2611,11 @@ void MacroAssembler::cmpoop(Register src1, jobject src2) {
 
 void MacroAssembler::locked_cmpxchgptr(Register reg, AddressLiteral adr) {
   if (reachable(adr)) {
-    if (os::is_MP())
-      lock();
+    lock();
     cmpxchgptr(reg, as_Address(adr));
   } else {
     lea(rscratch1, adr);
-    if (os::is_MP())
-      lock();
+    lock();
     cmpxchgptr(reg, Address(rscratch1, 0));
   }
 }

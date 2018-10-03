@@ -526,7 +526,6 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "AssumeMP",                     JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
   { "MonitorInUseLists",            JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
   { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -549,6 +548,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
+  { "AssumeMP",                      JDK_Version::jdk(10),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "UnlinkSymbolsALot",             JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "AllowNonVirtualCalls",          JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "PrintSafepointStatistics",      JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },

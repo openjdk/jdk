@@ -2804,11 +2804,7 @@ instruct onspinwait() %{
 
   format %{
     $$template
-    if (os::is_MP()) {
-      $$emit$$"pause\t! membar_onspinwait"
-    } else {
-      $$emit$$"MEMBAR-onspinwait ! (empty encoding)"
-    }
+    $$emit$$"pause\t! membar_onspinwait"
   %}
   ins_encode %{
     __ pause();

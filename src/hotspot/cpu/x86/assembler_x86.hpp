@@ -1345,40 +1345,38 @@ private:
 
   // Serializes memory and blows flags
   void membar(Membar_mask_bits order_constraint) {
-    if (os::is_MP()) {
-      // We only have to handle StoreLoad
-      if (order_constraint & StoreLoad) {
-        // All usable chips support "locked" instructions which suffice
-        // as barriers, and are much faster than the alternative of
-        // using cpuid instruction. We use here a locked add [esp-C],0.
-        // This is conveniently otherwise a no-op except for blowing
-        // flags, and introducing a false dependency on target memory
-        // location. We can't do anything with flags, but we can avoid
-        // memory dependencies in the current method by locked-adding
-        // somewhere else on the stack. Doing [esp+C] will collide with
-        // something on stack in current method, hence we go for [esp-C].
-        // It is convenient since it is almost always in data cache, for
-        // any small C.  We need to step back from SP to avoid data
-        // dependencies with other things on below SP (callee-saves, for
-        // example). Without a clear way to figure out the minimal safe
-        // distance from SP, it makes sense to step back the complete
-        // cache line, as this will also avoid possible second-order effects
-        // with locked ops against the cache line. Our choice of offset
-        // is bounded by x86 operand encoding, which should stay within
-        // [-128; +127] to have the 8-byte displacement encoding.
-        //
-        // Any change to this code may need to revisit other places in
-        // the code where this idiom is used, in particular the
-        // orderAccess code.
+    // We only have to handle StoreLoad
+    if (order_constraint & StoreLoad) {
+      // All usable chips support "locked" instructions which suffice
+      // as barriers, and are much faster than the alternative of
+      // using cpuid instruction. We use here a locked add [esp-C],0.
+      // This is conveniently otherwise a no-op except for blowing
+      // flags, and introducing a false dependency on target memory
+      // location. We can't do anything with flags, but we can avoid
+      // memory dependencies in the current method by locked-adding
+      // somewhere else on the stack. Doing [esp+C] will collide with
+      // something on stack in current method, hence we go for [esp-C].
+      // It is convenient since it is almost always in data cache, for
+      // any small C.  We need to step back from SP to avoid data
+      // dependencies with other things on below SP (callee-saves, for
+      // example). Without a clear way to figure out the minimal safe
+      // distance from SP, it makes sense to step back the complete
+      // cache line, as this will also avoid possible second-order effects
+      // with locked ops against the cache line. Our choice of offset
+      // is bounded by x86 operand encoding, which should stay within
+      // [-128; +127] to have the 8-byte displacement encoding.
+      //
+      // Any change to this code may need to revisit other places in
+      // the code where this idiom is used, in particular the
+      // orderAccess code.
 
-        int offset = -VM_Version::L1_line_size();
-        if (offset < -128) {
-          offset = -128;
-        }
-
-        lock();
-        addl(Address(rsp, offset), 0);// Assert the lock# signal here
+      int offset = -VM_Version::L1_line_size();
+      if (offset < -128) {
+        offset = -128;
       }
+
+      lock();
+      addl(Address(rsp, offset), 0);// Assert the lock# signal here
     }
   }
 

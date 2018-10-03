@@ -972,7 +972,6 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     return ip;
 
   case 0xF0:                    // Lock
-    assert(os::is_MP(), "only on MP");
     goto again_after_prefix;
 
   case 0xF3:                    // For SSE

@@ -1563,8 +1563,6 @@ FixedSizeCodeBlock::~FixedSizeCodeBlock() {
 // Serializes memory.
 // tmp register is not used on AArch64, this parameter is provided solely for better compatibility with 32-bit ARM
 void MacroAssembler::membar(Membar_mask_bits order_constraint, Register tmp) {
-  if (!os::is_MP()) return;
-
   // TODO-AARCH64 investigate dsb vs dmb effects
   if (order_constraint == StoreStore) {
     dmb(DMB_st);
@@ -1585,7 +1583,6 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint,
                             Register tmp,
                             bool preserve_flags,
                             Register load_tgt) {
-  if (!os::is_MP()) return;
 
   if (order_constraint == StoreStore) {
     dmb(DMB_st, tmp);

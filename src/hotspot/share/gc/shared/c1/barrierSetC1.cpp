@@ -135,7 +135,7 @@ LIR_Opr BarrierSetC1::atomic_add_at(LIRAccess& access, LIRItem& value) {
 
 void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
   DecoratorSet decorators = access.decorators();
-  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses) && os::is_MP();
+  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses);
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   LIRGenerator* gen = access.gen();
@@ -144,7 +144,7 @@ void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
     value = gen->mask_boolean(access.base().opr(), value, access.access_emit_info());
   }
 
-  if (is_volatile && os::is_MP()) {
+  if (is_volatile) {
     __ membar_release();
   }
 
@@ -163,7 +163,7 @@ void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
 void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   LIRGenerator *gen = access.gen();
   DecoratorSet decorators = access.decorators();
-  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses) && os::is_MP();
+  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses);
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
@@ -181,7 +181,7 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
     __ load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info(), patch_code);
   }
 
-  if (is_volatile && os::is_MP()) {
+  if (is_volatile) {
     __ membar_acquire();
   }
 

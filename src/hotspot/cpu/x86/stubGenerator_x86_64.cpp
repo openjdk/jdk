@@ -607,7 +607,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     __ movl(rax, c_rarg2);
-   if ( os::is_MP() ) __ lock();
+    __ lock();
     __ cmpxchgl(c_rarg0, Address(c_rarg1, 0));
     __ ret(0);
 
@@ -633,7 +633,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     __ movsbq(rax, c_rarg2);
-   if ( os::is_MP() ) __ lock();
+    __ lock();
     __ cmpxchgb(c_rarg0, Address(c_rarg1, 0));
     __ ret(0);
 
@@ -659,7 +659,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     __ movq(rax, c_rarg2);
-   if ( os::is_MP() ) __ lock();
+    __ lock();
     __ cmpxchgq(c_rarg0, Address(c_rarg1, 0));
     __ ret(0);
 
@@ -680,7 +680,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     __ movl(rax, c_rarg0);
-   if ( os::is_MP() ) __ lock();
+    __ lock();
     __ xaddl(Address(c_rarg1, 0), c_rarg0);
     __ addl(rax, c_rarg0);
     __ ret(0);
@@ -702,7 +702,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     __ movptr(rax, c_rarg0); // Copy to eax we need a return value anyhow
-   if ( os::is_MP() ) __ lock();
+    __ lock();
     __ xaddptr(Address(c_rarg1, 0), c_rarg0);
     __ addptr(rax, c_rarg0);
     __ ret(0);

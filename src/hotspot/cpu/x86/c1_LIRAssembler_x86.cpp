@@ -1906,9 +1906,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     assert(op->new_value()->as_register_lo() == rbx, "wrong register");
     assert(op->new_value()->as_register_hi() == rcx, "wrong register");
     Register addr = op->addr()->as_register();
-    if (os::is_MP()) {
-      __ lock();
-    }
+    __ lock();
     NOT_LP64(__ cmpxchg8(Address(addr, 0)));
 
   } else if (op->code() == lir_cas_int || op->code() == lir_cas_obj ) {
@@ -1928,24 +1926,18 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
         __ encode_heap_oop(cmpval);
         __ mov(rscratch1, newval);
         __ encode_heap_oop(rscratch1);
-        if (os::is_MP()) {
-          __ lock();
-        }
+        __ lock();
         // cmpval (rax) is implicitly used by this instruction
         __ cmpxchgl(rscratch1, Address(addr, 0));
       } else
 #endif
       {
-        if (os::is_MP()) {
-          __ lock();
-        }
+        __ lock();
         __ cmpxchgptr(newval, Address(addr, 0));
       }
     } else {
       assert(op->code() == lir_cas_int, "lir_cas_int expected");
-      if (os::is_MP()) {
-        __ lock();
-      }
+      __ lock();
       __ cmpxchgl(newval, Address(addr, 0));
     }
 #ifdef _LP64
@@ -1958,9 +1950,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     assert(cmpval != newval, "cmp and new values must be in different registers");
     assert(cmpval != addr, "cmp and addr must be in different registers");
     assert(newval != addr, "new value and addr must be in different registers");
-    if (os::is_MP()) {
-      __ lock();
-    }
+    __ lock();
     __ cmpxchgq(newval, Address(addr, 0));
 #endif // _LP64
   } else {
@@ -2804,28 +2794,26 @@ void LIR_Assembler::comp_fl2i(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Op
 
 
 void LIR_Assembler::align_call(LIR_Code code) {
-  if (os::is_MP()) {
-    // make sure that the displacement word of the call ends up word aligned
-    int offset = __ offset();
-    switch (code) {
-      case lir_static_call:
-      case lir_optvirtual_call:
-      case lir_dynamic_call:
-        offset += NativeCall::displacement_offset;
-        break;
-      case lir_icvirtual_call:
-        offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size;
-      break;
-      case lir_virtual_call:  // currently, sparc-specific for niagara
-      default: ShouldNotReachHere();
-    }
-    __ align(BytesPerWord, offset);
+  // make sure that the displacement word of the call ends up word aligned
+  int offset = __ offset();
+  switch (code) {
+  case lir_static_call:
+  case lir_optvirtual_call:
+  case lir_dynamic_call:
+    offset += NativeCall::displacement_offset;
+    break;
+  case lir_icvirtual_call:
+    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size;
+    break;
+  case lir_virtual_call:  // currently, sparc-specific for niagara
+  default: ShouldNotReachHere();
   }
+  __ align(BytesPerWord, offset);
 }
 
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
-  assert(!os::is_MP() || (__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
+  assert((__ offset() + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
   __ call(AddressLiteral(op->addr(), rtype));
   add_call_info(code_offset(), op->info());
@@ -2835,8 +2823,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
   __ ic_call(op->addr());
   add_call_info(code_offset(), op->info());
-  assert(!os::is_MP() ||
-         (__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
+  assert((__ offset() - NativeCall::instruction_size + NativeCall::displacement_offset) % BytesPerWord == 0,
          "must be aligned");
 }
 
@@ -2856,14 +2843,13 @@ void LIR_Assembler::emit_static_call_stub() {
   }
 
   int start = __ offset();
-  if (os::is_MP()) {
-    // make sure that the displacement word of the call ends up word aligned
-    __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
-  }
+
+  // make sure that the displacement word of the call ends up word aligned
+  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
   __ relocate(static_stub_Relocation::spec(call_pc, false /* is_aot */));
   __ mov_metadata(rbx, (Metadata*)NULL);
   // must be set to -1 at code generation time
-  assert(!os::is_MP() || ((__ offset() + 1) % BytesPerWord) == 0, "must be aligned on MP");
+  assert(((__ offset() + 1) % BytesPerWord) == 0, "must be aligned");
   // On 64bit this will die since it will take a movq & jmp, must be only a jmp
   __ jump(RuntimeAddress(__ pc()));
 
@@ -3992,9 +3978,7 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
 
   if (data->type() == T_INT) {
     if (code == lir_xadd) {
-      if (os::is_MP()) {
-        __ lock();
-      }
+      __ lock();
       __ xaddl(as_Address(src->as_address_ptr()), data->as_register());
     } else {
       __ xchgl(data->as_register(), as_Address(src->as_address_ptr()));
@@ -4017,9 +4001,7 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
 #ifdef _LP64
     assert(data->as_register_lo() == data->as_register_hi(), "should be a single register");
     if (code == lir_xadd) {
-      if (os::is_MP()) {
-        __ lock();
-      }
+      __ lock();
       __ xaddq(as_Address(src->as_address_ptr()), data->as_register_lo());
     } else {
       __ xchgq(data->as_register_lo(), as_Address(src->as_address_ptr()));

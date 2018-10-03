@@ -614,17 +614,12 @@ inline void MacroAssembler::ldfl(FloatRegisterImpl::Width w, Register s1, Regist
 // returns if membar generates anything, obviously this code should mirror
 // membar below.
 inline bool MacroAssembler::membar_has_effect( Membar_mask_bits const7a ) {
-  if (!os::is_MP())
-    return false;  // Not needed on single CPU
   const Membar_mask_bits effective_mask =
       Membar_mask_bits(const7a & ~(LoadLoad | LoadStore | StoreStore));
   return (effective_mask != 0);
 }
 
 inline void MacroAssembler::membar( Membar_mask_bits const7a ) {
-  // Uniprocessors do not need memory barriers
-  if (!os::is_MP())
-    return;
   // Weakened for current Sparcs and TSO.  See the v9 manual, sections 8.4.3,
   // 8.4.4.3, a.31 and a.50.
   // Under TSO, setting bit 3, 2, or 0 is redundant, so the only value

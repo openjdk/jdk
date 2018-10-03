@@ -2371,17 +2371,16 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     //     didn't see any synchronization is progress, and escapes.
     __ set(_thread_in_native_trans, G3_scratch);
     __ st(G3_scratch, G2_thread, JavaThread::thread_state_offset());
-    if(os::is_MP()) {
-      if (UseMembar) {
-        // Force this write out before the read below
-        __ membar(Assembler::StoreLoad);
-      } else {
-        // Write serialization page so VM thread can do a pseudo remote membar.
-        // We use the current thread pointer to calculate a thread specific
-        // offset to write to within the page. This minimizes bus traffic
-        // due to cache line collision.
-        __ serialize_memory(G2_thread, G1_scratch, G3_scratch);
-      }
+
+    if (UseMembar) {
+      // Force this write out before the read below
+      __ membar(Assembler::StoreLoad);
+    } else {
+      // Write serialization page so VM thread can do a pseudo remote membar.
+      // We use the current thread pointer to calculate a thread specific
+      // offset to write to within the page. This minimizes bus traffic
+      // due to cache line collision.
+      __ serialize_memory(G2_thread, G1_scratch, G3_scratch);
     }
 
     Label L;

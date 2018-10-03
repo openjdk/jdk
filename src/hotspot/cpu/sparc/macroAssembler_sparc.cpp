@@ -2786,7 +2786,7 @@ void MacroAssembler::compiler_unlock_object(Register Roop, Register Rmark,
    delayed()->
    st_ptr(G0, Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
 
-   if (os::is_MP()) { membar(StoreLoad); }
+   membar(StoreLoad);
    // Check that _succ is (or remains) non-zero
    ld_ptr(Address(Rmark, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), Rscratch);
    andcc(Rscratch, Rscratch, G0);

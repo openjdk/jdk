@@ -202,9 +202,7 @@ void NativeCall::replace_mt_safe(address instr_addr, address code_buffer) {
   assert (instr_addr != NULL, "illegal address for code patching");
 
   NativeCall* n_call =  nativeCall_at (instr_addr); // checking that it is a call
-  if (os::is_MP()) {
-    guarantee((intptr_t)instr_addr % BytesPerWord == 0, "must be aligned");
-  }
+  guarantee((intptr_t)instr_addr % BytesPerWord == 0, "must be aligned");
 
   // First patch dummy jmp in place
   unsigned char patch[4];
@@ -262,67 +260,14 @@ void NativeCall::set_destination_mt_safe(address dest) {
   assert(Patching_lock->is_locked() ||
          SafepointSynchronize::is_at_safepoint(), "concurrent code patching");
   // Both C1 and C2 should now be generating code which aligns the patched address
-  // to be within a single cache line except that C1 does not do the alignment on
-  // uniprocessor systems.
+  // to be within a single cache line.
   bool is_aligned = ((uintptr_t)displacement_address() + 0) / cache_line_size ==
                     ((uintptr_t)displacement_address() + 3) / cache_line_size;
 
-  guarantee(!os::is_MP() || is_aligned, "destination must be aligned");
+  guarantee(is_aligned, "destination must be aligned");
 
-  if (is_aligned) {
-    // Simple case:  The destination lies within a single cache line.
-    set_destination(dest);
-  } else if ((uintptr_t)instruction_address() / cache_line_size ==
-             ((uintptr_t)instruction_address()+1) / cache_line_size) {
-    // Tricky case:  The instruction prefix lies within a single cache line.
-    intptr_t disp = dest - return_address();
-#ifdef AMD64
-    guarantee(disp == (intptr_t)(jint)disp, "must be 32-bit offset");
-#endif // AMD64
-
-    int call_opcode = instruction_address()[0];
-
-    // First patch dummy jump in place:
-    {
-      u_char patch_jump[2];
-      patch_jump[0] = 0xEB;       // jmp rel8
-      patch_jump[1] = 0xFE;       // jmp to self
-
-      assert(sizeof(patch_jump)==sizeof(short), "sanity check");
-      *(short*)instruction_address() = *(short*)patch_jump;
-    }
-    // Invalidate.  Opteron requires a flush after every write.
-    wrote(0);
-
-    // (Note: We assume any reader which has already started to read
-    // the unpatched call will completely read the whole unpatched call
-    // without seeing the next writes we are about to make.)
-
-    // Next, patch the last three bytes:
-    u_char patch_disp[5];
-    patch_disp[0] = call_opcode;
-    *(int32_t*)&patch_disp[1] = (int32_t)disp;
-    assert(sizeof(patch_disp)==instruction_size, "sanity check");
-    for (int i = sizeof(short); i < instruction_size; i++)
-      instruction_address()[i] = patch_disp[i];
-
-    // Invalidate.  Opteron requires a flush after every write.
-    wrote(sizeof(short));
-
-    // (Note: We assume that any reader which reads the opcode we are
-    // about to repatch will also read the writes we just made.)
-
-    // Finally, overwrite the jump:
-    *(short*)instruction_address() = *(short*)patch_disp;
-    // Invalidate.  Opteron requires a flush after every write.
-    wrote(0);
-
-    debug_only(verify());
-    guarantee(destination() == dest, "patch succeeded");
-  } else {
-    // Impossible:  One or the other must be atomically writable.
-    ShouldNotReachHere();
-  }
+  // The destination lies within a single cache line.
+  set_destination(dest);
 }
 
 

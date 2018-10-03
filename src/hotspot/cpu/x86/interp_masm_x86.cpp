@@ -1191,7 +1191,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
     assert(lock_offset == 0,
            "displaced header must be first word in BasicObjectLock");
 
-    if (os::is_MP()) lock();
+    lock();
     cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     if (PrintBiasedLockingStatistics) {
       cond_inc32(Assembler::zero,
@@ -1288,7 +1288,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
     jcc(Assembler::zero, done);
 
     // Atomic swap back the old header
-    if (os::is_MP()) lock();
+    lock();
     cmpxchgptr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
     // zero for simple unlock of a stack-lock case

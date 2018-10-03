@@ -79,17 +79,15 @@ class InterfaceSupport: AllStatic {
  private:
   static void serialize_thread_state_internal(JavaThread* thread, bool needs_exception_handler) {
     // Make sure new state is seen by VM thread
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force a fence between the write above and read below
-        OrderAccess::fence();
+    if (UseMembar) {
+      // Force a fence between the write above and read below
+      OrderAccess::fence();
+    } else {
+      // store to serialize page so VM thread can do pseudo remote membar
+      if (needs_exception_handler) {
+        os::write_memory_serialize_page_with_handler(thread);
       } else {
-        // store to serialize page so VM thread can do pseudo remote membar
-        if (needs_exception_handler) {
-          os::write_memory_serialize_page_with_handler(thread);
-        } else {
-          os::write_memory_serialize_page(thread);
-        }
+        os::write_memory_serialize_page(thread);
       }
     }
   }

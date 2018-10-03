@@ -2748,9 +2748,7 @@ public:
   virtual void verify() const {
     // make sure code pattern is actually a call imm32 instruction
     _call->verify();
-    if (os::is_MP()) {
-      _call->verify_alignment();
-    }
+    _call->verify_alignment();
   }
 
   virtual void verify_resolve_call(address dest) const {

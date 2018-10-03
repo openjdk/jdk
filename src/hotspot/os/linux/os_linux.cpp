@@ -267,8 +267,7 @@ pid_t os::Linux::gettid() {
 
 // Most versions of linux have a bug where the number of processors are
 // determined by looking at the /proc file system.  In a chroot environment,
-// the system call returns 1.  This causes the VM to act as if it is
-// a single processor and elide locking (see is_MP() call).
+// the system call returns 1.
 static bool unsafe_chroot_detected = false;
 static const char *unstable_chroot_error = "/proc file system not found.\n"
                      "Java may be unstable running multithreaded in a chroot "
