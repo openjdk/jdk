@@ -3242,8 +3242,9 @@ void MacroAssembler::movq(XMMRegister dst, AddressLiteral src) {
   }
 }
 
+#ifdef COMPILER2
 void MacroAssembler::setvectmask(Register dst, Register src) {
-  guarantee(PostLoopMultiversioning == true, "must be");
+  guarantee(PostLoopMultiversioning, "must be");
   Assembler::movl(dst, 1);
   Assembler::shlxl(dst, dst, src);
   Assembler::decl(dst);
@@ -3252,9 +3253,10 @@ void MacroAssembler::setvectmask(Register dst, Register src) {
 }
 
 void MacroAssembler::restorevectmask() {
-  guarantee(PostLoopMultiversioning == true, "must be");
+  guarantee(PostLoopMultiversioning, "must be");
   Assembler::knotwl(k1, k0);
 }
+#endif // COMPILER2
 
 void MacroAssembler::movdbl(XMMRegister dst, AddressLiteral src) {
   if (reachable(src)) {
@@ -5004,12 +5006,15 @@ void MacroAssembler::restore_cpu_control_state_after_jni() {
   // Clear upper bits of YMM registers to avoid SSE <-> AVX transition penalty.
   vzeroupper();
   // Reset k1 to 0xffff.
+
+#ifdef COMPILER2
   if (PostLoopMultiversioning && VM_Version::supports_evex()) {
     push(rcx);
     movl(rcx, 0xffff);
     kmovwl(k1, rcx);
     pop(rcx);
   }
+#endif // COMPILER2
 
 #ifndef _LP64
   // Either restore the x87 floating pointer control word after returning
