@@ -31,10 +31,12 @@
   * @run driver ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+  *                   -XX:CompileThreshold=10000
   *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=020
   *                    compiler.profiling.TestTypeProfiling
   * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
   *                   -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+  *                   -XX:CompileThreshold=10000
   *                   -server -XX:-TieredCompilation -XX:TypeProfileLevel=200
   *                    compiler.profiling.TestTypeProfiling
   */

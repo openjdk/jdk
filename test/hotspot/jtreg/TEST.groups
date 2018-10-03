@@ -139,7 +139,8 @@ tier1_compiler_3 = \
   -compiler/runtime/Test6826736.java
 
 tier1_compiler_not_xcomp = \
-  compiler/aot
+  compiler/aot \
+  compiler/profiling
 
 tier1_compiler_not_cms = \
   compiler/aot \
