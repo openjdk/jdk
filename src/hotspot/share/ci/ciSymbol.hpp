@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ private:
   void print_impl(outputStream* st);
 
   // This is public in Symbol* but private here, because the base can move:
-  const jbyte* base();
+  const u1* base();
 
   // Make a ciSymbol from a C string (implementation).
   static ciSymbol* make_impl(const char* s);
@@ -77,8 +77,8 @@ public:
   // The text of the symbol as ascii with all non-printable characters quoted as \u####
   const char* as_quoted_ascii();
 
-  // Return the i-th utf8 byte, where i < utf8_length
-  int         byte_at(int i);
+  // Return the i-th utf byte as a char, where i < utf8_length
+  char        char_at(int i);
 
   // Tests if the symbol starts with the given prefix.
   bool starts_with(const char* prefix, int len) const;

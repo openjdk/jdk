@@ -120,7 +120,7 @@ bool VerificationType::is_reference_assignable_from(
 VerificationType VerificationType::get_component(ClassVerifier *context, TRAPS) const {
   assert(is_array() && name()->utf8_length() >= 2, "Must be a valid array");
   Symbol* component;
-  switch (name()->byte_at(1)) {
+  switch (name()->char_at(1)) {
     case 'Z': return VerificationType(Boolean);
     case 'B': return VerificationType(Byte);
     case 'C': return VerificationType(Char);

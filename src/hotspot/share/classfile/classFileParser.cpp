@@ -655,7 +655,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             "Illegal zero length constant pool entry at %d in class %s",
             name_index, CHECK);
 
-          if (sig->byte_at(0) == JVM_SIGNATURE_FUNC) {
+          if (sig->char_at(0) == JVM_SIGNATURE_FUNC) {
             // Format check method name and signature
             verify_legal_method_name(name, CHECK);
             verify_legal_method_signature(name, sig, CHECK);
@@ -682,7 +682,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           // CONSTANT_Dynamic's name and signature are verified above, when iterating NameAndType_info.
           // Need only to be sure signature is non-zero length and the right type.
           if (signature->utf8_length() == 0 ||
-              signature->byte_at(0) == JVM_SIGNATURE_FUNC) {
+              signature->char_at(0) == JVM_SIGNATURE_FUNC) {
             throwIllegalSignature("CONSTANT_Dynamic", name, signature, CHECK);
           }
         }
@@ -707,7 +707,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             // Field name and signature are verified above, when iterating NameAndType_info.
             // Need only to be sure signature is non-zero length and the right type.
             if (signature->utf8_length() == 0 ||
-                signature->byte_at(0) == JVM_SIGNATURE_FUNC) {
+                signature->char_at(0) == JVM_SIGNATURE_FUNC) {
               throwIllegalSignature("Field", name, signature, CHECK);
             }
           }
@@ -716,7 +716,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
             // Method name and signature are verified above, when iterating NameAndType_info.
             // Need only to be sure signature is non-zero length and the right type.
             if (signature->utf8_length() == 0 ||
-                signature->byte_at(0) != JVM_SIGNATURE_FUNC) {
+                signature->char_at(0) != JVM_SIGNATURE_FUNC) {
               throwIllegalSignature("Method", name, signature, CHECK);
             }
           }
@@ -724,7 +724,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           const unsigned int name_len = name->utf8_length();
           if (tag == JVM_CONSTANT_Methodref &&
               name_len != 0 &&
-              name->byte_at(0) == '<' &&
+              name->char_at(0) == '<' &&
               name != vmSymbols::object_initializer_name()) {
             classfile_parse_error(
               "Bad method name at constant pool index %u in class file %s",
@@ -942,7 +942,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
 
         // Don't need to check legal name because it's checked when parsing constant pool.
         // But need to make sure it's not an array type.
-        guarantee_property(unresolved_klass->byte_at(0) != JVM_SIGNATURE_ARRAY,
+        guarantee_property(unresolved_klass->char_at(0) != JVM_SIGNATURE_ARRAY,
                            "Bad interface name in class file %s", CHECK);
 
         // Call resolve_super so classcircularity is checked
@@ -3752,7 +3752,7 @@ const InstanceKlass* ClassFileParser::parse_super_class(ConstantPool* const cp,
       if (need_verify)
         is_array = super_klass->is_array_klass();
     } else if (need_verify) {
-      is_array = (cp->klass_name_at(super_class_index)->byte_at(0) == JVM_SIGNATURE_ARRAY);
+      is_array = (cp->klass_name_at(super_class_index)->char_at(0) == JVM_SIGNATURE_ARRAY);
     }
     if (need_verify) {
       guarantee_property(!is_array,
@@ -5379,7 +5379,7 @@ int ClassFileParser::verify_legal_method_signature(const Symbol* name,
     // The first non-signature thing better be a ')'
     if ((length > 0) && (*p++ == JVM_SIGNATURE_ENDFUNC)) {
       length--;
-      if (name->utf8_length() > 0 && name->byte_at(0) == '<') {
+      if (name->utf8_length() > 0 && name->char_at(0) == '<') {
         // All internal methods must return void
         if ((length == 1) && (p[0] == JVM_SIGNATURE_VOID)) {
           return args_size;
@@ -5796,7 +5796,7 @@ void ClassFileParser::prepend_host_package_name(const InstanceKlass* unsafe_anon
 void ClassFileParser::fix_unsafe_anonymous_class_name(TRAPS) {
   assert(_unsafe_anonymous_host != NULL, "Expected an unsafe anonymous class");
 
-  const jbyte* anon_last_slash = UTF8::strrchr(_class_name->base(),
+  const jbyte* anon_last_slash = UTF8::strrchr((const jbyte*)_class_name->base(),
                                                _class_name->utf8_length(), '/');
   if (anon_last_slash == NULL) {  // Unnamed package
     prepend_host_package_name(_unsafe_anonymous_host, CHECK);
@@ -6119,7 +6119,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   // It has been checked when constant pool is parsed.
   // However, make sure it is not an array type.
   if (_need_verify) {
-    guarantee_property(_class_name->byte_at(0) != JVM_SIGNATURE_ARRAY,
+    guarantee_property(_class_name->char_at(0) != JVM_SIGNATURE_ARRAY,
                        "Bad class name in class file %s",
                        CHECK);
   }

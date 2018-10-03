@@ -1451,7 +1451,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
   Symbol*  symbol  = constant_pool->symbol_at(index);
 
   // class name?
-  if (symbol->byte_at(0) != '(') {
+  if (symbol->char_at(0) != '(') {
     Handle protection_domain (THREAD, constant_pool->pool_holder()->protection_domain());
     SystemDictionary::resolve_or_null(symbol, class_loader, protection_domain, CHECK);
     return;

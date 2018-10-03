@@ -378,7 +378,7 @@ class SignatureStream : public StackObj {
     }
 
     _begin = _end;
-    int t = sig->byte_at(_begin);
+    int t = sig->char_at(_begin);
     switch (t) {
       case 'B': _type = T_BYTE;    break;
       case 'C': _type = T_CHAR;    break;
@@ -405,8 +405,8 @@ class SignatureStream : public StackObj {
   enum FailureMode { ReturnNull, CNFException, NCDFError };
   Klass* as_klass(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
   oop as_java_mirror(Handle class_loader, Handle protection_domain, FailureMode failure_mode, TRAPS);
-  const jbyte* raw_bytes()  { return _signature->bytes() + _begin; }
-  int          raw_length() { return _end - _begin; }
+  const u1* raw_bytes()  { return _signature->bytes() + _begin; }
+  int       raw_length() { return _end - _begin; }
 
   // return same as_symbol except allocation of new symbols is avoided.
   Symbol* as_symbol_or_null();

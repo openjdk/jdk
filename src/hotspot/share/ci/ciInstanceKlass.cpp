@@ -116,7 +116,7 @@ ciInstanceKlass::ciInstanceKlass(ciSymbol* name,
                                  jobject loader, jobject protection_domain)
   : ciKlass(name, T_OBJECT)
 {
-  assert(name->byte_at(0) != '[', "not an instance klass");
+  assert(name->char_at(0) != '[', "not an instance klass");
   _init_state = (InstanceKlass::ClassState)0;
   _nonstatic_field_size = -1;
   _has_nonstatic_fields = false;
@@ -299,7 +299,7 @@ bool ciInstanceKlass::is_in_package_impl(const char* packagename, int len) {
     return false;
 
   // Test for trailing '/'
-  if ((char) name()->byte_at(len) != '/')
+  if (name()->char_at(len) != '/')
     return false;
 
   // Make sure it's not actually in a subpackage:

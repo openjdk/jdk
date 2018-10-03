@@ -79,7 +79,7 @@ void Symbol::operator delete(void *p) {
 bool Symbol::starts_with(const char* prefix, int len) const {
   if (len > utf8_length()) return false;
   while (len-- > 0) {
-    if (prefix[len] != (char) byte_at(len))
+    if (prefix[len] != char_at(len))
       return false;
   }
   assert(len == -1, "we should be at the beginning");
@@ -117,7 +117,7 @@ char* Symbol::as_C_string(char* buf, int size) const {
   if (size > 0) {
     int len = MIN2(size - 1, utf8_length());
     for (int i = 0; i < len; i++) {
-      buf[i] = byte_at(i);
+      buf[i] = char_at(i);
     }
     buf[len] = '\0';
   }
@@ -311,7 +311,7 @@ void Symbol::print_value_on(outputStream* st) const {
   } else {
     st->print("'");
     for (int i = 0; i < utf8_length(); i++) {
-      st->print("%c", byte_at(i));
+      st->print("%c", char_at(i));
     }
     st->print("'");
   }

@@ -537,7 +537,7 @@ bool MethodHandles::is_basic_type_signature(Symbol* sig) {
   assert(vmSymbols::object_signature()->equals(OBJ_SIG), "");
   const int len = sig->utf8_length();
   for (int i = 0; i < len; i++) {
-    switch (sig->byte_at(i)) {
+    switch (sig->char_at(i)) {
     case 'L':
       // only java/lang/Object is valid here
       if (sig->index_of_at(i, OBJ_SIG, OBJ_SIG_LEN) != i)
@@ -563,8 +563,8 @@ Symbol* MethodHandles::lookup_basic_type_signature(Symbol* sig, bool keep_last_a
   } else if (is_basic_type_signature(sig)) {
     sig->increment_refcount();
     return sig;  // that was easy
-  } else if (sig->byte_at(0) != '(') {
-    BasicType bt = char2type(sig->byte_at(0));
+  } else if (sig->char_at(0) != '(') {
+    BasicType bt = char2type(sig->char_at(0));
     if (is_subword_type(bt)) {
       bsig = vmSymbols::int_signature();
     } else {
@@ -615,7 +615,7 @@ void MethodHandles::print_as_basic_type_signature_on(outputStream* st,
   int array = 0;
   bool prev_type = false;
   for (int i = 0; i < len; i++) {
-    char ch = sig->byte_at(i);
+    char ch = sig->char_at(i);
     switch (ch) {
     case '(': case ')':
       prev_type = false;
@@ -630,7 +630,7 @@ void MethodHandles::print_as_basic_type_signature_on(outputStream* st,
       {
         if (prev_type)  st->put(',');
         int start = i+1, slash = start;
-        while (++i < len && (ch = sig->byte_at(i)) != ';') {
+        while (++i < len && (ch = sig->char_at(i)) != ';') {
           if (ch == '/' || ch == '.' || ch == '$')  slash = i+1;
         }
         if (slash < i)  start = slash;
@@ -638,7 +638,7 @@ void MethodHandles::print_as_basic_type_signature_on(outputStream* st,
           st->put('L');
         } else {
           for (int j = start; j < i; j++)
-            st->put(sig->byte_at(j));
+            st->put(sig->char_at(j));
           prev_type = true;
         }
         break;
@@ -975,7 +975,7 @@ int MethodHandles::find_MemberNames(Klass* k,
   }
   if (sig != NULL) {
     if (sig->utf8_length() == 0)  return 0; // a match is not possible
-    if (sig->byte_at(0) == '(')
+    if (sig->char_at(0) == '(')
       match_flags &= ~(IS_FIELD | IS_TYPE);
     else
       match_flags &= ~(IS_CONSTRUCTOR | IS_METHOD);
@@ -1456,7 +1456,7 @@ JVM_ENTRY(void, MHN_copyOutBootstrapArguments(JNIEnv* env, jobject igcls,
           {
             Symbol* type = caller->constants()->signature_ref_at(bss_index_in_pool);
             Handle th;
-            if (type->byte_at(0) == '(') {
+            if (type->char_at(0) == '(') {
               th = SystemDictionary::find_method_handle_type(type, caller, CHECK);
             } else {
               th = SystemDictionary::find_java_mirror_for_type(type, caller, SignatureStream::NCDFError, CHECK);

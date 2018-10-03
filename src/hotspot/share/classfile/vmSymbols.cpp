@@ -212,7 +212,7 @@ void vmSymbols::serialize(SerializeClosure* soc) {
 BasicType vmSymbols::signature_type(const Symbol* s) {
   assert(s != NULL, "checking");
   if (s->utf8_length() == 1) {
-    BasicType result = char2type(s->byte_at(0));
+    BasicType result = char2type(s->char_at(0));
     if (is_java_primitive(result) || result == T_VOID) {
       assert(s == _type_signatures[result], "");
       return result;

@@ -2601,7 +2601,7 @@ Handle SystemDictionary::find_java_mirror_for_type(Symbol* signature,
   if (type->utf8_length() == 1) {
 
     // It's a primitive.  (Void has a primitive mirror too.)
-    char ch = (char) type->byte_at(0);
+    char ch = type->char_at(0);
     assert(is_java_primitive(char2type(ch)) || ch == 'V', "");
     return Handle(THREAD, find_java_mirror_for_type(ch));
 
