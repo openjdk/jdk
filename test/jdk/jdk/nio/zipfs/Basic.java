@@ -43,7 +43,7 @@ import java.util.Map;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 /**
  * @test
- * @bug 8038500 8040059 8150366 8150496 8147539
+ * @bug 8038500 8040059 8150366 8150496 8147539 8211385
  * @summary Basic test for zip provider
  *
  * @modules jdk.zipfs
@@ -89,15 +89,29 @@ public class Basic {
 
         // Test: DirectoryStream
         found = false;
+
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(fs.getPath("/"))) {
             for (Path entry: stream) {
                 found = entry.toString().equals("/META-INF");
                 if (found) break;
             }
         }
-
         if (!found)
             throw new RuntimeException("Expected file not found");
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(fs.getPath("META-INF"))) {
+            for (Path entry: stream) {
+                if (entry.toString().equals("/META-INF/services"))
+                    throw new RuntimeException("child path should be relative");
+            }
+        }
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(fs.getPath("/META-INF"))) {
+            for (Path entry: stream) {
+                if (entry.toString().equals("META-INF/services"))
+                    throw new RuntimeException("child path should be absolute");
+            }
+        }
 
         // Test: copy file from zip file to current (scratch) directory
         Path source = fs.getPath("/META-INF/services/java.nio.file.spi.FileSystemProvider");
@@ -133,6 +147,8 @@ public class Basic {
         try {
             fs.provider().checkAccess(fs.getPath("/missing"), AccessMode.READ);
         } catch (ClosedFileSystemException x) { }
+
+        Files.deleteIfExists(jarFile);
     }
 
     // FileVisitor that pretty prints a file tree

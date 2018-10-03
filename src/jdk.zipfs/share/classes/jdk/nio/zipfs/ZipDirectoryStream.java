@@ -41,21 +41,21 @@ import java.io.IOException;
 class ZipDirectoryStream implements DirectoryStream<Path> {
 
     private final ZipFileSystem zipfs;
-    private final byte[] path;
+    private final ZipPath dir;
     private final DirectoryStream.Filter<? super Path> filter;
     private volatile boolean isClosed;
     private volatile Iterator<Path> itr;
 
-    ZipDirectoryStream(ZipPath zipPath,
+    ZipDirectoryStream(ZipPath dir,
                        DirectoryStream.Filter<? super java.nio.file.Path> filter)
         throws IOException
     {
-        this.zipfs = zipPath.getFileSystem();
-        this.path = zipPath.getResolvedPath();
+        this.zipfs = dir.getFileSystem();
+        this.dir = dir;
         this.filter = filter;
         // sanity check
-        if (!zipfs.isDirectory(path))
-            throw new NotDirectoryException(zipPath.toString());
+        if (!zipfs.isDirectory(dir.getResolvedPath()))
+            throw new NotDirectoryException(dir.toString());
     }
 
     @Override
@@ -66,7 +66,7 @@ class ZipDirectoryStream implements DirectoryStream<Path> {
             throw new IllegalStateException("Iterator has already been returned");
 
         try {
-            itr = zipfs.iteratorOf(path, filter);
+            itr = zipfs.iteratorOf(dir, filter);
         } catch (IOException e) {
             throw new IllegalStateException(e);
         }
@@ -97,6 +97,5 @@ class ZipDirectoryStream implements DirectoryStream<Path> {
     public synchronized void close() throws IOException {
         isClosed = true;
     }
-
 
 }

@@ -399,23 +399,32 @@ class ZipFileSystem extends FileSystem {
     }
 
     // returns the list of child paths of "path"
-    Iterator<Path> iteratorOf(byte[] path,
+    Iterator<Path> iteratorOf(ZipPath dir,
                               DirectoryStream.Filter<? super Path> filter)
         throws IOException
     {
         beginWrite();    // iteration of inodes needs exclusive lock
         try {
             ensureOpen();
+            byte[] path = dir.getResolvedPath();
             IndexNode inode = getInode(path);
             if (inode == null)
                 throw new NotDirectoryException(getString(path));
             List<Path> list = new ArrayList<>();
             IndexNode child = inode.child;
             while (child != null) {
-                // assume all path from zip file itself is "normalized"
-                ZipPath zp = new ZipPath(this, child.name, true);
-                if (filter == null || filter.accept(zp))
-                    list.add(zp);
+                // (1) assume all path from zip file itself is "normalized"
+                // (2) IndexNode.name is absolute. see IndexNode(byte[],int,int)
+                // (3) if parent "dir" is relative when ZipDirectoryStream
+                //     is created, the returned child path needs to be relative
+                //     as well.
+                byte[] cname = child.name;
+                if (!dir.isAbsolute()) {
+                    cname = Arrays.copyOfRange(cname, 1, cname.length);
+                }
+                ZipPath zpath = new ZipPath(this, cname, true);
+                if (filter == null || filter.accept(zpath))
+                    list.add(zpath);
                 child = child.sibling;
             }
             return list.iterator();
