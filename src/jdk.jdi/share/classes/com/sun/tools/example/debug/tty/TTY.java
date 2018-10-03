@@ -464,6 +464,8 @@ public class TTY implements EventNotifier {
                         } else if (cmd.equals("resume")) {
                             evaluator.commandResume(t);
                         } else if (cmd.equals("cont")) {
+                            MessageOutput.printPrompt(true);
+                            showPrompt = false;
                             evaluator.commandCont();
                         } else if (cmd.equals("threadgroups")) {
                             evaluator.commandThreadGroups();
@@ -474,10 +476,16 @@ public class TTY implements EventNotifier {
                         } else if (cmd.equals("ignore")) {
                             evaluator.commandIgnoreException(t);
                         } else if (cmd.equals("step")) {
+                            MessageOutput.printPrompt(true);
+                            showPrompt = false;
                             evaluator.commandStep(t);
                         } else if (cmd.equals("stepi")) {
+                            MessageOutput.printPrompt(true);
+                            showPrompt = false;
                             evaluator.commandStepi();
                         } else if (cmd.equals("next")) {
+                            MessageOutput.printPrompt(true);
+                            showPrompt = false;
                             evaluator.commandNext();
                         } else if (cmd.equals("kill")) {
                             evaluator.commandKill(t);
