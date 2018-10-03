@@ -136,7 +136,6 @@ static JVMFlag::Error CMSReservedAreaConstraintFunc(const char* name, size_t val
       return JVMFlag::VIOLATES_CONSTRAINT;
     }
   }
-
   return JVMFlag::SUCCESS;
 }
 
@@ -151,12 +150,11 @@ JVMFlag::Error CMSRescanMultipleConstraintFunc(size_t value, bool verbose) {
     if (value % HeapWordSize != 0) {
       JVMFlag::printError(verbose,
                           "CMSRescanMultiple (" SIZE_FORMAT ") must be "
-                          "a multiple of " SIZE_FORMAT "\n",
+                          "a multiple of %d\n",
                           value, HeapWordSize);
       status = JVMFlag::VIOLATES_CONSTRAINT;
     }
   }
-
   return status;
 }
 
