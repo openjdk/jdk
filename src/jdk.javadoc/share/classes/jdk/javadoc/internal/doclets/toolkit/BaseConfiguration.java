@@ -399,6 +399,10 @@ public abstract class BaseConfiguration {
         // Utils needs docEnv, safe to init now.
         utils = new Utils(this);
 
+        if (!javafx) {
+            javafx = isJavaFXMode();
+        }
+
         // Once docEnv and Utils have been initialized, others should be safe.
         cmtUtils = new CommentUtils(this);
         workArounds = new WorkArounds(this);
@@ -1346,5 +1350,20 @@ public abstract class BaseConfiguration {
 
     public synchronized VisibleMemberTable getVisibleMemberTable(TypeElement te) {
         return visibleMemberCache.getVisibleMemberTable(te);
+    }
+
+    /**
+     * Determines if JavaFX is available in the compilation environment.
+     * @return true if JavaFX is available
+     */
+    public boolean isJavaFXMode() {
+        TypeElement observable = utils.elementUtils.getTypeElement("javafx.beans.Observable");
+        if (observable != null) {
+            ModuleElement javafxModule = utils.elementUtils.getModuleOf(observable);
+            if (javafxModule == null || javafxModule.isUnnamed() || javafxModule.getQualifiedName().contentEquals("javafx.base")) {
+                return true;
+            }
+        }
+        return false;
     }
 }
