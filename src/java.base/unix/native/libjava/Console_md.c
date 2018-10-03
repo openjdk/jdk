@@ -56,7 +56,7 @@ Java_java_io_Console_echo(JNIEnv *env,
         JNU_ThrowIOExceptionWithLastError(env, "tcgetattr failed");
         return !on;
     }
-    old = (tio.c_lflag & ECHO);
+    old = (tio.c_lflag & ECHO) != 0;
     if (on) {
         tio.c_lflag |= ECHO;
     } else {
