@@ -52,6 +52,7 @@
  * same name and package.
  */
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,6 +62,8 @@ import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+
+import jtreg.SkippedException;
 
 
 public class ClassPathTests {
@@ -83,7 +86,7 @@ public class ClassPathTests {
     private static String testArchiveName;
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Throwable {
         ClassPathTests tests = new ClassPathTests();
         tests.dumpArchive();
 
@@ -92,7 +95,16 @@ public class ClassPathTests {
         for (Method m : methods) {
             if (m.getName().startsWith("test")) {
                 System.out.println("About to run test method: " + m.getName());
-                m.invoke(tests);
+                try {
+                    m.invoke(tests);
+                } catch (InvocationTargetException ite) {
+                    Throwable throwable = ite.getCause();
+                    if (throwable instanceof SkippedException) {
+                        throw throwable;
+                    } else {
+                        throw ite;
+                    }
+                }
                 numOfTestMethodsRun++;
             }
         }
