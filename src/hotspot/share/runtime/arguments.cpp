@@ -526,7 +526,6 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MonitorInUseLists",            JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
   { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -560,6 +559,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SyncVerbose",                   JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "SyncFlags",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "SyncKnobs",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "MonitorInUseLists",             JDK_Version::jdk(10),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },

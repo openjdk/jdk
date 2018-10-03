@@ -827,8 +827,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool, MonitorInUseLists, true, "Track Monitors for Deflation")    \
-                                                                            \
   experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
                 "Percentage of used monitors before triggering cleanup "    \
                 "safepoint which deflates monitors (0 is off). "            \
