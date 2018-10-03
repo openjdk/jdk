@@ -170,6 +170,8 @@ public class JInternalFrameOperator extends JComponentOperator
      */
     protected JButtonOperator closeOper = null;
 
+    protected JButtonOperator popupButtonOper = null;
+
     /**
      * A title operator.
      */
@@ -202,9 +204,8 @@ public class JInternalFrameOperator extends JComponentOperator
      * @param index an index between appropriate ones.
      */
     public JInternalFrameOperator(ContainerOperator<?> cont, ComponentChooser chooser, int index) {
-        this((JInternalFrame) cont.
-                waitSubComponent(new JInternalFrameFinder(chooser),
-                        index));
+        this(waitJInternalFrame((Container)cont.getSource(),
+                chooser, index));
         copyEnvironment(cont);
     }
 
@@ -255,7 +256,7 @@ public class JInternalFrameOperator extends JComponentOperator
      *
      */
     public JInternalFrameOperator(ContainerOperator<?> cont, int index) {
-        this((JInternalFrame) waitComponent(cont,
+        this(waitJInternalFrame((Container)cont.getSource(),
                 new JInternalFrameFinder(),
                 index));
         copyEnvironment(cont);
@@ -665,6 +666,11 @@ public class JInternalFrameOperator extends JComponentOperator
     public JButtonOperator getCloseButton() {
         initOperators();
         return closeOper;
+    }
+
+    public JButtonOperator getPopupButton() {
+        initOperators();
+        return popupButtonOper;
     }
 
     /**
@@ -1413,21 +1419,27 @@ public class JInternalFrameOperator extends JComponentOperator
                         return "JInternalFrameOperator.initOperators.ComponentChooser{description = " + getDescription() + '}';
                     }
                 }) != null) {
-                    minOper = new JButtonOperator(titleOperator,
-                            new JComponentByTipFinder(MINIMIZE_BUTTON_TOOLTIP));
-                    if (((JInternalFrame) getSource()).isMaximizable()) {
-                        maxOper = new JButtonOperator(titleOperator,
-                                new JComponentByTipFinder(MAXIMIZE_BUTTON_TOOLTIP));
+                    if("Motif".equals(UIManager.getLookAndFeel().getID())) {
+                        popupButtonOper = new JButtonOperator(titleOperator, 0);
                     } else {
-                        maxOper = null;
+                        minOper = new JButtonOperator(titleOperator,
+                            new JComponentByTipFinder(MINIMIZE_BUTTON_TOOLTIP));
+                        if (((JInternalFrame) getSource()).isMaximizable()) {
+                            maxOper = new JButtonOperator(titleOperator,
+                                new JComponentByTipFinder(MAXIMIZE_BUTTON_TOOLTIP));
+                        } else {
+                            maxOper = null;
+                        }
                     }
                 } else {
                     minOper = null;
                     maxOper = null;
                 }
                 if (isClosable()) {
-                    closeOper = new JButtonOperator(titleOperator,
+                    if(!"Motif".equals(UIManager.getLookAndFeel().getID())) {
+                        closeOper = new JButtonOperator(titleOperator,
                             new JComponentByTipFinder(CLOSE_BUTTON_TOOLTIP));
+                    }
                 } else {
                     closeOper = null;
                 }
@@ -1588,23 +1600,24 @@ public class JInternalFrameOperator extends JComponentOperator
         }
 
         /**
-         * Creates an operator for the correspondent intenal frame.
+         * Creates an operator for the correspondent internal frame.
          *
          * @return an operator.
          */
         public JInternalFrame getInternalFrame() {
-            return ((JInternalFrame) getEventDispatcher().
-                    invokeExistingMethod("getInternalFrame",
-                            null,
-                            null,
-                            output));
+            return (runMapping(new MapAction<JInternalFrame>("getInternalFrame") {
+                @Override
+                public JInternalFrame map() {
+                    return ((JInternalFrame.JDesktopIcon) getSource()).getInternalFrame();
+                }
+            }));
         }
 
         /**
          * Pushs the deiconifying button.
          */
         public void pushButton() {
-            new JButtonOperator(this).push();
+            this.clickMouse(2);
         }
     }
 
