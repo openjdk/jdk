@@ -46,7 +46,7 @@ public class CDSJDITest {
             // These first three properties are setup by jtreg, and must be passed
             // to the JDI test subprocess because it needs them in order to
             // pass them to the subprocess it will create for the debuggee. This
-            // is how the JPRT -javaopts are passed to the debggee. See
+            // is how the -javaopts are passed to the debuggee. See
             // VMConnection.getDebuggeeVMOptions().
             getPropOpt("test.classes"),
             getPropOpt("test.java.opts"),

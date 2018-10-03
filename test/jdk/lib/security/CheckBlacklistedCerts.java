@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,8 +59,7 @@ public class CheckBlacklistedCerts {
         // All certs in the pem files
         Set<Certificate> blacklisted = new HashSet<>();
 
-        // Hopefully src comes with test, but it might be missing if doing
-        // a -testonly JPRT job.
+        // Assumes the full src is available
         File[] blacklists = {
             new File(System.getProperty("test.src"),
                 "../../../make/data/blacklistedcertsconverter/blacklisted.certs.pem"),

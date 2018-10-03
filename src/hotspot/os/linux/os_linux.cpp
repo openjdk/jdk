@@ -1569,9 +1569,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
         // This is OK - No Java threads have been created yet, and hence no
         // stack guard pages to fix.
         //
-        // This should happen only when you are building JDK7 using a very
-        // old version of JDK6 (e.g., with JPRT) and running test_gamma.
-        //
         // Dynamic loader will make all stacks executable after
         // this function returns, and will not do that again.
         assert(Threads::number_of_threads() == 0, "no Java threads should exist yet.");

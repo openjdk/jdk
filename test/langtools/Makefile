@@ -12,10 +12,6 @@
 # build, and set TESTBOOTCLASSPATH to the compiled langtools classes --
 # for example build/classes or dist/lib/classes.jar.
 
-# JPRT
-# JPRT may invoke this Makefile directly, as part of a langtools build,
-# or indirectly, via FOREST/test/Makefile, as part of a control build.
-
 # Get OS/ARCH specifics
 OSNAME = $(shell uname -s)
 ifeq ($(OSNAME), SunOS)
@@ -71,12 +67,6 @@ endif
 # Root of this test area (important to use full paths in some places)
 TEST_ROOT := $(shell pwd $(CYGPATH) )
 
-# Default bundle of all test results (passed or not) (JPRT only)
-ifdef JPRT_JOB_ID
-  JPRT_CLEAN = clean
-  JPRT_ARCHIVE_BUNDLE = $(TEST_ROOT)/JPRT_ARCHIVE_BUNDLE.zip
-endif
-
 ifeq ($(PLATFORM), windows)
   SLASH_JAVA = J:
 else
@@ -85,9 +75,7 @@ endif
 
 # Default JTREG to run
 ifndef JTREG_HOME
-  ifdef JPRT_JTREG_HOME
-    JTREG_HOME = $(JPRT_JTREG_HOME)
-  else ifdef JT_HOME
+  ifdef JT_HOME
     JTREG_HOME = $(JT_HOME)
   else
     JTREG_HOME = $(SLASH_JAVA)/re/jtreg/4.2/promoted/latest/
@@ -108,11 +96,7 @@ endif
 
 # Default JCK to run
 ifndef JCK_HOME
-  ifdef JPRT_JCK_HOME
-    JCK_HOME = $(JPRT_JCK_HOME)
-  else
-    JCK_HOME = $(SLASH_JAVA)/re/jck/8/promoted/latest/binaries
-  endif
+  JCK_HOME = $(SLASH_JAVA)/re/jck/8/promoted/latest/binaries
 endif
 
 # Default JDK for JTREG and JCK
@@ -120,21 +104,13 @@ endif
 # JT_JAVA is the version of java used to run jtreg/JCK. 
 #
 ifndef JT_JAVA
-  ifdef JPRT_JAVA_HOME
-    JT_JAVA = $(JPRT_JAVA_HOME)
-  else
-    JT_JAVA = $(SLASH_JAVA)/re/jdk/1.9.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
-  endif
+  JT_JAVA = $(SLASH_JAVA)/re/jdk/1.9.0/archive/fcs/binaries/$(PLATFORM)-$(ARCH)
 endif
 
 # Default JDK to test
-ifdef JPRT_IMPORT_PRODUCT_HOME
-  TESTJAVA = $(JPRT_IMPORT_PRODUCT_HOME)
-else
-  TESTJAVA = $(SLASH_JAVA)/re/jdk/1.9.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
-endif
+TESTJAVA = $(SLASH_JAVA)/re/jdk/1.9.0/promoted/latest/binaries/$(PLATFORM)-$(ARCH)
 
-# PRODUCT_HOME is a JPRT variable pointing to a directory containing the output from
+# PRODUCT_HOME is a variable pointing to a directory containing the output from
 # make/Makefile
 # For langtools, this is a directory containing build and dist
 # For a control build, this is build/$(PRODUCT)-$(ARCH)/XYZ-image
@@ -199,12 +175,7 @@ ifdef JCK_GROUP_SIZE
 ###    -jtoptions:-Ejck.env.runtime.testCompile.groupMode.groupSize=$(JCK_GROUP_SIZE)
 endif
 
-# Timeouts -- by default, increase test timeouts when running on JPRT
-ifdef JPRT_JOB_ID
-  ifndef JTREG_TIMEOUT_FACTOR
-    JTREG_TIMEOUT_FACTOR = 3
-  endif
-endif
+# Timeouts
 ifdef JTREG_TIMEOUT_FACTOR
   JTREG_OPTIONS += -timeoutFactor:$(JTREG_TIMEOUT_FACTOR)
 endif
@@ -266,16 +237,16 @@ ifeq ($(DATA_MODEL), 32)
 endif
 
 # Default make rule -- warning, may take a while
-all: $(JPRT_CLEAN) jtreg-tests jck-compiler-tests jck-runtime-tests $(JPRT_ARCHIVE_BUNDLE) all-summary
+all: jtreg-tests jck-compiler-tests jck-runtime-tests all-summary
 	@echo "Testing completed successfully"
 
-jtreg apt javac javadoc javah javap jdeps: $(JPRT_CLEAN) jtreg-tests $(JPRT_ARCHIVE_BUNDLE) jtreg-summary
+jtreg apt javac javadoc javah javap jdeps: jtreg-tests jtreg-summary
 	@echo "Testing completed successfully"
 
-jck-compiler: $(JPRT_CLEAN) jck-compiler-tests $(JPRT_ARCHIVE_BUNDLE) jck-compiler-summary
+jck-compiler: jck-compiler-tests jck-compiler-summary
 	@echo "Testing completed successfully"
 
-jck-runtime: $(JPRT_CLEAN) jck-runtime-tests $(JPRT_ARCHIVE_BUNDLE) jck-runtime-summary
+jck-runtime: jck-runtime-tests jck-runtime-summary
 	@echo "Testing completed successfully"
 
 # a way to select tests from outside
@@ -286,7 +257,7 @@ ifdef TEST_SELECTION
   JCK_RUNTIME_TESTDIRS = $(TEST_SELECTION)
 endif
 
-# for use with JPRT -testrule
+# convenience targets
 all:		JTREG_TESTDIRS = .
 jtreg:		JTREG_TESTDIRS ?= .
 apt:		JTREG_TESTDIRS = tools/apt
@@ -476,15 +447,8 @@ all-summary: FRC
 	    $(EXIT) 1
 	fi
 
-# Bundle up the results
-$(JPRT_ARCHIVE_BUNDLE): FRC
-	@rm -f $@
-	@mkdir -p $(@D)
-	( cd $(TEST_OUTPUT_DIR) && zip -q -r $@ . )
-
 # Cleanup
 clean:
-	rm -f $(JPRT_ARCHIVE_BUNDLE)
 
 # Used to force a target rules to run
 FRC:
