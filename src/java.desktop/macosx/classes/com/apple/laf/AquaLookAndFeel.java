@@ -274,7 +274,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         // <rdar://problem/5189013> Entire Java application window refreshes when moving off Shortcut menu item
         final Boolean useOpaqueComponents = Boolean.TRUE;
 
-        final Boolean buttonShouldBeOpaque = AquaUtils.shouldUseOpaqueButtons() ? Boolean.TRUE : Boolean.FALSE;
+        final Boolean buttonShouldBeOpaque = Boolean.FALSE;
 
         // *** List value objects
         final Object listCellRendererActiveValue = new UIDefaults.ActiveValue(){

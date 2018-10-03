@@ -37,8 +37,6 @@ import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
 
-import jdk.internal.loader.ClassLoaders;
-
 import sun.awt.AppContext;
 
 import sun.lwawt.macosx.CPlatformWindow;
@@ -284,7 +282,6 @@ final class AquaUtils {
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
             final BufferedImage img = new BufferedImage(width + blur * 2, height + blur * 2, BufferedImage.TYPE_INT_ARGB_PRE);
             paintToImage(img, x, y, width, height);
-//            debugFrame("border", img);
             g.drawImage(img, -blur, -blur, null);
         }
 
@@ -325,7 +322,6 @@ final class AquaUtils {
 
             final BufferedImage i = new BufferedImage(templateWidth, templateHeight, BufferedImage.TYPE_INT_ARGB_PRE);
             super.paintBorder(null, i.getGraphics(), 0, 0, templateWidth, templateHeight);
-//            debugFrame("slices", i);
             slices = new SlicedImageControl(i, leftCut, topCut, rightCut, bottomCut, false);
         }
 
@@ -333,29 +329,6 @@ final class AquaUtils {
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int width, final int height) {
             slices.paint(g, x, y, width, height);
         }
-    }
-
-//    static void debugFrame(String name, Image image) {
-//        JFrame f = new JFrame(name);
-//        f.setContentPane(new JLabel(new ImageIcon(image)));
-//        f.pack();
-//        f.setVisible(true);
-//    }
-
-    // special casing naughty applications, like InstallAnywhere
-    // <rdar://problem/4851533> REGR: JButton: Myst IV: the buttons of 1.0.3 updater have redraw issue
-    static boolean shouldUseOpaqueButtons() {
-        // can we use ClassLoader.getSystemClassLoader here?
-        final ClassLoader launcherClassLoader = ClassLoaders.appClassLoader();
-        if (classExists(launcherClassLoader, "com.installshield.wizard.platform.macosx.MacOSXUtils")) return true;
-        return false;
-    }
-
-    private static boolean classExists(final ClassLoader classLoader, final String clazzName) {
-        try {
-            return Class.forName(clazzName, false, classLoader) != null;
-        } catch (final Throwable ignored) { }
-        return false;
     }
 
     private static final RecyclableSingleton<Method> getJComponentGetFlagMethod = new RecyclableSingleton<Method>() {
