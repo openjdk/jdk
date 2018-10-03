@@ -130,6 +130,10 @@ public:
   virtual void on_thread_detach(JavaThread* thread) {}
   virtual void make_parsable(JavaThread* thread) {}
 
+#ifdef CHECK_UNHANDLED_OOPS
+  virtual bool oop_equals_operator_allowed() { return true; }
+#endif
+
 public:
   // Print a description of the memory for the barrier set
   virtual void print_on(outputStream* st) const = 0;

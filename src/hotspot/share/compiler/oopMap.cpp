@@ -350,7 +350,7 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
         // implicit null check is used in compiled code.
         // The narrow_oop_base could be NULL or be the address
         // of the page below heap depending on compressed oops mode.
-        if (base_loc != NULL && *base_loc != (oop)NULL && !Universe::is_narrow_oop_base(*base_loc)) {
+        if (base_loc != NULL && *base_loc != NULL && !Universe::is_narrow_oop_base(*base_loc)) {
           derived_oop_fn(base_loc, derived_loc);
         }
         oms.next();
@@ -371,7 +371,7 @@ void OopMapSet::all_do(const frame *fr, const RegisterMap *reg_map,
       guarantee(loc != NULL, "missing saved register");
       if ( omv.type() == OopMapValue::oop_value ) {
         oop val = *loc;
-        if (val == (oop)NULL || Universe::is_narrow_oop_base(val)) {
+        if (val == NULL || Universe::is_narrow_oop_base(val)) {
           // Ignore NULL oops and decoded NULL narrow oops which
           // equal to Universe::narrow_oop_base when a narrow oop
           // implicit null check is used in compiled code.
@@ -769,7 +769,7 @@ void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {
   assert(Universe::heap()->is_in_or_null(*base_loc), "not an oop");
   assert(derived_loc != base_loc, "Base and derived in same location");
   if (_active) {
-    assert(*derived_loc != (oop)base_loc, "location already added");
+    assert(*derived_loc != (void*)base_loc, "location already added");
     assert(_list != NULL, "list must exist");
     intptr_t offset = value_of_loc(derived_loc) - value_of_loc(base_loc);
     // This assert is invalid because derived pointers can be

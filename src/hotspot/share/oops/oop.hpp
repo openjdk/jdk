@@ -153,6 +153,8 @@ class oopDesc {
 
   inline static bool equals(oop o1, oop o2) { return Access<>::equals(o1, o2); }
 
+  inline static bool equals_raw(oop o1, oop o2) { return RawAccess<>::equals(o1, o2); }
+
   // Access to fields in a instanceOop through these methods.
   template <DecoratorSet decorator>
   oop obj_field_access(int offset) const;

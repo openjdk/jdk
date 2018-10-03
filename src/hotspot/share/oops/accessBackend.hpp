@@ -410,7 +410,7 @@ public:
 
   static oop resolve(oop obj) { return obj; }
 
-  static bool equals(oop o1, oop o2) { return o1 == o2; }
+  static bool equals(oop o1, oop o2) { return (void*)o1 == (void*)o2; }
 };
 
 // Below is the implementation of the first 4 steps of the template pipeline:
