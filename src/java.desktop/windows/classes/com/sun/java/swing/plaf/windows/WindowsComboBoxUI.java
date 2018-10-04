@@ -154,7 +154,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             comboBox.addMouseListener(rolloverListener);
             arrowButton.addMouseListener(rolloverListener);
             // set empty border as default to see vista animated border
-            comboBox.setBorder(new EmptyBorder(0,0,0,0));
+            comboBox.setBorder(new EmptyBorder(1,1,1,1));
         }
     }
 
@@ -366,12 +366,20 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
                 if (XPStyle.getXP() != null && arrowButton != null) {
                     Dimension d = parent.getSize();
                     Insets insets = getInsets();
-                    int buttonWidth = arrowButton.getPreferredSize().width;
-                    arrowButton.setBounds(WindowsGraphicsUtils.isLeftToRight((JComboBox)parent)
-                                          ? (d.width - insets.right - buttonWidth)
-                                          : insets.left,
-                                          insets.top,
-                                          buttonWidth, d.height - insets.top - insets.bottom);
+
+                    int borderInsetsCorrection = 0;
+                    if (((JComboBox)parent).getBorder() instanceof EmptyBorder) {
+                        borderInsetsCorrection = 1;
+                    }
+                    arrowButton.setBounds(
+                        WindowsGraphicsUtils.isLeftToRight((JComboBox)parent)
+                            ? (d.width - (insets.right - borderInsetsCorrection)
+                                - arrowButton.getPreferredSize().width)
+                            : insets.left - borderInsetsCorrection,
+                            insets.top - borderInsetsCorrection,
+                            arrowButton.getPreferredSize().width,
+                            d.height - (insets.top - borderInsetsCorrection) -
+                                    (insets.bottom - borderInsetsCorrection));
                 }
             }
         };
