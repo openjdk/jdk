@@ -398,6 +398,12 @@ public class ReflectionFactory {
         return langReflectAccess().getExecutableSharedParameterTypes(ex);
     }
 
+    public <T> T newInstance(Constructor<T> ctor, Object[] args, Class<?> caller)
+        throws IllegalAccessException, InstantiationException, InvocationTargetException
+    {
+        return langReflectAccess().newInstance(ctor, args, caller);
+    }
+
     //--------------------------------------------------------------------------
     //
     // Routines used by serialization

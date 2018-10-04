@@ -77,7 +77,8 @@ public class ReflectionCallerCacheTest {
             { "AccessTest$PublicFinalField"},
             { "AccessTest$PrivateFinalField"},
             { "AccessTest$PublicStaticFinalField"},
-            { "AccessTest$PrivateStaticFinalField"}
+            { "AccessTest$PrivateStaticFinalField"},
+            { "AccessTest$NewInstance"}
         };
     }
 
