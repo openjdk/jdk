@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,6 +347,27 @@ bool HandshakeState::vmthread_can_process_handshake(JavaThread* target) {
          target->is_ext_suspended();
 }
 
+static bool possibly_vmthread_can_process_handshake(JavaThread* target) {
+  // An externally suspended thread cannot be resumed while the
+  // Threads_lock is held so it is safe.
+  // Note that this method is allowed to produce false positives.
+  assert(Threads_lock->owned_by_self(), "Not holding Threads_lock.");
+  if (target->is_ext_suspended()) {
+    return true;
+  }
+  switch (target->thread_state()) {
+  case _thread_in_native:
+    // native threads are safe if they have no java stack or have walkable stack
+    return !target->has_last_Java_frame() || target->frame_anchor()->walkable();
+
+  case _thread_blocked:
+    return true;
+
+  default:
+    return false;
+  }
+}
+
 bool HandshakeState::claim_handshake_for_vmthread() {
   if (!_semaphore.trywait()) {
     return false;
@@ -366,7 +387,7 @@ void HandshakeState::process_by_vmthread(JavaThread* target) {
     return;
   }
 
-  if (!vmthread_can_process_handshake(target)) {
+  if (!possibly_vmthread_can_process_handshake(target)) {
     // JT is observed in an unsafe state, it must notice the handshake itself
     return;
   }
