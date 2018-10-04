@@ -487,6 +487,21 @@ bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
 }
 #endif // PRODUCT
 
+bool ClassLoaderDataGraph::is_valid(ClassLoaderData* loader_data) {
+  DEBUG_ONLY( if (!VMError::is_error_reported()) { assert_locked_or_safepoint(ClassLoaderDataGraph_lock); } )
+  if (loader_data != NULL) {
+    if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
+      return true;
+    }
+    for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
+      if (loader_data == data) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 // Move class loader data from main list to the unloaded list for unloading
 // and deallocation later.
 bool ClassLoaderDataGraph::do_unloading(bool do_cleaning) {

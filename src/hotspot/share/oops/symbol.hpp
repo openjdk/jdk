@@ -255,6 +255,8 @@ class Symbol : public MetaspaceObj {
   void print()         { print_on(tty);       }
   void print_value()   { print_value_on(tty); }
 
+  static bool is_valid(Symbol* s);
+
 #ifndef PRODUCT
   // Empty constructor to create a dummy symbol object on stack
   // only for getting its vtable pointer.

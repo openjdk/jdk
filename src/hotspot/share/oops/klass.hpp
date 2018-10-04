@@ -715,6 +715,10 @@ protected:
 
   virtual void oop_verify_on(oop obj, outputStream* st);
 
+  // for error reporting
+  static Klass* decode_klass_raw(narrowKlass narrow_klass);
+  static bool is_valid(Klass* k);
+
   static bool is_null(narrowKlass obj);
   static bool is_null(Klass* obj);
 

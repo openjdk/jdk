@@ -334,6 +334,13 @@ class oopDesc {
     assert(has_klass_gap(), "only applicable to compressed klass pointers");
     return klass_offset_in_bytes() + sizeof(narrowKlass);
   }
+
+  // for error reporting
+  static oop   decode_oop_raw(narrowOop narrow_oop);
+  static void* load_klass_raw(oop obj);
+  static void* load_oop_raw(oop obj, int offset);
+  static bool  is_valid(oop obj);
+  static oop   oop_or_null(address addr);
 };
 
 #endif // SHARE_VM_OOPS_OOP_HPP

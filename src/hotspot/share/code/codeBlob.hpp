@@ -221,6 +221,7 @@ public:
   virtual void print() const                     { print_on(tty); };
   virtual void print_on(outputStream* st) const;
   virtual void print_value_on(outputStream* st) const;
+  void dump_for_addr(address addr, outputStream* st, bool verbose) const;
   void print_code();
 
   // Print the comment associated with offset on stream, if there is one
