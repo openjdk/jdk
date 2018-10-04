@@ -76,8 +76,8 @@ define add_file_to_copy
     $1_COPY_$$($2_TARGET) := 1
     # Now we can setup the dependency that will trigger the copying.
     $$($1_BIN)$$($1_MODULE_SUBDIR)$$($2_TARGET) : $2
-	$(MKDIR) -p $$(@D)
-	$(CP) $$< $$@
+	$$(call LogInfo, Copying $$(patsubst $(OUTPUTDIR)/%,%, $$@))
+	$$(install-file)
 	$(CHMOD) -f ug+w $$@
 
     # And do not forget this target
@@ -120,7 +120,8 @@ define add_file_to_clean
   ifneq ($$($1_CLEAN_$$($2_TARGET)), 1)
     $1_CLEAN_$$($2_TARGET) := 1
     $$($1_BIN)$$($1_MODULE_SUBDIR)$$($2_TARGET) : $2
-	$(MKDIR) -p $$(@D)
+	$$(call LogInfo, Cleaning $$(patsubst $(OUTPUTDIR)/%,%, $$@))
+	$$(call MakeTargetDir)
 	export LC_ALL=C ; ( $(CAT) $$< && $(ECHO) "" ) \
 	    | $(SED) -e 's/\([^\\]\):/\1\\:/g' -e 's/\([^\\]\)=/\1\\=/g' \
 	        -e 's/\([^\\]\)!/\1\\!/g' -e 's/^[ 	]*#.*/#/g' \
