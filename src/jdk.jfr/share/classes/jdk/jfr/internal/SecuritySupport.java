@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.Reader;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -71,6 +72,7 @@ import jdk.jfr.Recording;
  */
 public final class SecuritySupport {
     private final static Unsafe unsafe = Unsafe.getUnsafe();
+    private final static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private final static Module JFR_MODULE = Event.class.getModule();
     public  final static SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
 
@@ -381,8 +383,17 @@ public final class SecuritySupport {
         unsafe.ensureClassInitialized(clazz);
     }
 
-    static Class<?> defineClass(String name, byte[] bytes, ClassLoader classLoader) {
-        return unsafe.defineClass(name, bytes, 0, bytes.length, classLoader, null);
+    static Class<?> defineClass(Class<?> lookupClass, byte[] bytes) {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
+            @Override
+            public Class<?> run() {
+                try {
+                    return MethodHandles.privateLookupIn(lookupClass, LOOKUP).defineClass(bytes);
+                } catch (IllegalAccessException e) {
+                    throw new InternalError(e);
+                }
+            }
+        });
     }
 
     static Thread createThreadWitNoPermissions(String threadName, Runnable runnable) {

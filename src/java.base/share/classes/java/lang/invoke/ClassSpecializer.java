@@ -37,7 +37,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -578,23 +577,17 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             InvokerBytecodeGenerator.maybeDump(classBCName(className), classFile);
             Class<?> speciesCode;
 
-            ClassLoader cl = topClass().getClassLoader();
-            ProtectionDomain pd = null;
-            if (cl != null) {
-                pd = AccessController.doPrivileged(
-                        new PrivilegedAction<>() {
-                            @Override
-                            public ProtectionDomain run() {
-                                return topClass().getProtectionDomain();
-                            }
-                        });
-            }
-            try {
-                speciesCode = UNSAFE.defineClass(className, classFile, 0, classFile.length, cl, pd);
-            } catch (Exception ex) {
-                throw newInternalError(ex);
-            }
-
+            MethodHandles.Lookup lookup = IMPL_LOOKUP.in(topClass());
+            speciesCode = AccessController.doPrivileged(new PrivilegedAction<>() {
+                @Override
+                public Class<?> run() {
+                    try {
+                        return lookup.defineClass(classFile);
+                    } catch (Exception ex) {
+                        throw newInternalError(ex);
+                    }
+                }
+            });
             return speciesCode.asSubclass(topClass());
         }
 

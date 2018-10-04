@@ -32,6 +32,9 @@
  *          java.base/jdk.internal.vm.annotation
  *          java.base/jdk.internal.misc
  *
+ * @library ../jsr292/patches
+ * @build java.base/java.lang.invoke.MethodHandleHelper
+ *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
  *                                 -Xbatch -XX:-TieredCompilation
  *                                 -XX:+FoldStableValues
@@ -64,6 +67,9 @@ import jdk.internal.vm.annotation.Stable;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 
+import java.lang.invoke.MethodHandleHelper;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -393,8 +399,9 @@ public class UnsafeGetConstantField {
         }
 
         Test generate() {
-            Class<?> c = U.defineClass(className, classFile, 0, classFile.length, THIS_CLASS.getClassLoader(), null);
             try {
+                Lookup lookup = MethodHandleHelper.IMPL_LOOKUP.in(MethodHandles.class);
+                Class<?> c = lookup.defineClass(classFile);
                 return (Test) c.newInstance();
             } catch(Exception e) {
                 throw new Error(e);

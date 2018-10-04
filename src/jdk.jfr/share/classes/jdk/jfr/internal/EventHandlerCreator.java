@@ -134,7 +134,7 @@ final class EventHandlerCreator {
         buildWriteMethod();
         byte[] bytes = classWriter.toByteArray();
         ASMToolkit.logASM(className, bytes);
-        return SecuritySupport.defineClass(className, bytes, Event.class.getClassLoader()).asSubclass(EventHandler.class);
+        return SecuritySupport.defineClass(EventHandler.class, bytes).asSubclass(EventHandler.class);
     }
 
     public static EventHandler instantiateEventHandler(Class<? extends EventHandler> handlerClass, boolean registered, EventType eventType, EventControl eventControl) throws Error {
