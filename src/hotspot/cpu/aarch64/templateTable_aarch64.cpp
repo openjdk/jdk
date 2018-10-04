@@ -412,7 +412,7 @@ void TemplateTable::fast_aldc(bool wide)
     // Stash null_sentinel address to get its value later
     __ movptr(rarg, (uintptr_t)Universe::the_null_sentinel_addr());
     __ ldr(tmp, Address(rarg));
-    __ cmp(result, tmp);
+    __ cmpoop(result, tmp);
     __ br(Assembler::NE, notNull);
     __ mov(result, 0);  // NULL object reference
     __ bind(notNull);
@@ -2329,6 +2329,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   switch (code) {
   case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
   case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
   }
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
@@ -2953,6 +2954,7 @@ void TemplateTable::jvmti_post_fast_field_mod()
     case Bytecodes::_fast_dputfield: __ pop_d(); break;
     case Bytecodes::_fast_fputfield: __ pop_f(); break;
     case Bytecodes::_fast_lputfield: __ pop_l(r0); break;
+    default: break;
     }
     __ bind(L2);
   }

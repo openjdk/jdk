@@ -25,6 +25,8 @@
 
 package propertiesparser.gen;
 
+import static java.util.stream.Collectors.toList;
+
 import propertiesparser.parser.Message;
 import propertiesparser.parser.MessageFile;
 import propertiesparser.parser.MessageInfo;
@@ -44,11 +46,12 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.TreeSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Properties;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -150,7 +153,11 @@ public class ClassGenerator {
     public void generateFactory(MessageFile messageFile, File outDir) {
         Map<FactoryKind, List<Map.Entry<String, Message>>> groupedEntries =
                 messageFile.messages.entrySet().stream()
-                        .collect(Collectors.groupingBy(e -> FactoryKind.parseFrom(e.getKey().split("\\.")[1])));
+                        .collect(
+                                Collectors.groupingBy(
+                                        e -> FactoryKind.parseFrom(e.getKey().split("\\.")[1]),
+                                        TreeMap::new,
+                                        toList()));
         //generate nested classes
         List<String> nestedDecls = new ArrayList<>();
         Set<String> importedTypes = new TreeSet<>();

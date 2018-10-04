@@ -123,6 +123,7 @@ public class TestHeapDumpForInvokeDynamic {
         try {
             List<String> vmArgs = new ArrayList<String>();
             vmArgs.add("-XX:+UsePerfData");
+            vmArgs.add("-Xmx512m");
             vmArgs.addAll(Utils.getVmOptions());
 
             theApp = new LingeredAppWithInvokeDynamic();

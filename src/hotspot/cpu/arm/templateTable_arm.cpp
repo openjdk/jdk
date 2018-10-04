@@ -2996,6 +2996,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   switch (code) {
   case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
   case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+  default: break;
   }
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
@@ -3145,15 +3146,11 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register Rindex   = R5_tmp;
   const Register Rflags   = R5_tmp;
 
-  const bool gen_volatile_check = os::is_MP();
-
   resolve_cache_and_index(byte_no, Rcache, Rindex, sizeof(u2));
   jvmti_post_field_access(Rcache, Rindex, is_static, false);
   load_field_cp_cache_entry(Rcache, Rindex, Roffset, Rflags, Robj, is_static);
 
-  if (gen_volatile_check) {
-    __ mov(Rflagsav, Rflags);
-  }
+  __ mov(Rflagsav, Rflags);
 
   if (!is_static) pop_and_check_object(Robj);
 
@@ -3390,16 +3387,13 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(Done);
 
-  if (gen_volatile_check) {
-    // Check for volatile field
-    Label notVolatile;
-    __ tbz(Rflagsav, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
+  // Check for volatile field
+  Label notVolatile;
+  __ tbz(Rflagsav, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
 
-    volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
+  volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
 
-    __ bind(notVolatile);
-  }
-
+  __ bind(notVolatile);
 }
 
 void TemplateTable::getfield(int byte_no) {
@@ -3491,22 +3485,18 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register Rindex   = R5_tmp;
   const Register Rflags   = R5_tmp;
 
-  const bool gen_volatile_check = os::is_MP();
-
   resolve_cache_and_index(byte_no, Rcache, Rindex, sizeof(u2));
   jvmti_post_field_mod(Rcache, Rindex, is_static);
   load_field_cp_cache_entry(Rcache, Rindex, Roffset, Rflags, Robj, is_static);
 
-  if (gen_volatile_check) {
-    // Check for volatile field
-    Label notVolatile;
-    __ mov(Rflagsav, Rflags);
-    __ tbz(Rflagsav, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
+  // Check for volatile field
+  Label notVolatile;
+  __ mov(Rflagsav, Rflags);
+  __ tbz(Rflagsav, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
 
-    volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore | MacroAssembler::LoadStore), Rtemp);
+  volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore | MacroAssembler::LoadStore), Rtemp);
 
-    __ bind(notVolatile);
-  }
+  __ bind(notVolatile);
 
   Label Done, Lint, shouldNotReachHere;
   Label Ltable, Lbtos, Lztos, Lctos, Lstos, Litos, Lltos, Lftos, Ldtos, Latos;
@@ -3732,36 +3722,33 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(Done);
 
-  if (gen_volatile_check) {
-    Label notVolatile;
-    if (is_static) {
-      // Just check for volatile. Memory barrier for static final field
-      // is handled by class initialization.
-      __ tbz(Rflagsav, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
-      volatile_barrier(MacroAssembler::StoreLoad, Rtemp);
-      __ bind(notVolatile);
-    } else {
-      // Check for volatile field and final field
-      Label skipMembar;
+  Label notVolatile2;
+  if (is_static) {
+    // Just check for volatile. Memory barrier for static final field
+    // is handled by class initialization.
+    __ tbz(Rflagsav, ConstantPoolCacheEntry::is_volatile_shift, notVolatile2);
+    volatile_barrier(MacroAssembler::StoreLoad, Rtemp);
+    __ bind(notVolatile2);
+  } else {
+    // Check for volatile field and final field
+    Label skipMembar;
 
-      __ tst(Rflagsav, 1 << ConstantPoolCacheEntry::is_volatile_shift |
-                       1 << ConstantPoolCacheEntry::is_final_shift);
-      __ b(skipMembar, eq);
+    __ tst(Rflagsav, 1 << ConstantPoolCacheEntry::is_volatile_shift |
+           1 << ConstantPoolCacheEntry::is_final_shift);
+    __ b(skipMembar, eq);
 
-      __ tbz(Rflagsav, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
+    __ tbz(Rflagsav, ConstantPoolCacheEntry::is_volatile_shift, notVolatile2);
 
-      // StoreLoad barrier after volatile field write
-      volatile_barrier(MacroAssembler::StoreLoad, Rtemp);
-      __ b(skipMembar);
+    // StoreLoad barrier after volatile field write
+    volatile_barrier(MacroAssembler::StoreLoad, Rtemp);
+    __ b(skipMembar);
 
-      // StoreStore barrier after final field write
-      __ bind(notVolatile);
-      volatile_barrier(MacroAssembler::StoreStore, Rtemp);
+    // StoreStore barrier after final field write
+    __ bind(notVolatile2);
+    volatile_barrier(MacroAssembler::StoreStore, Rtemp);
 
-      __ bind(skipMembar);
-    }
+    __ bind(skipMembar);
   }
-
 }
 
 void TemplateTable::putfield(int byte_no) {
@@ -3831,31 +3818,25 @@ void TemplateTable::fast_storefield(TosState state) {
   const Register Rflags  = Rtmp_save0; // R4/R19
   const Register Robj    = R5_tmp;
 
-  const bool gen_volatile_check = os::is_MP();
-
   // access constant pool cache
   __ get_cache_and_index_at_bcp(Rcache, Rindex, 1);
 
   __ add(Rcache, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
 
-  if (gen_volatile_check) {
-    // load flags to test volatile
-    __ ldr_u32(Rflags, Address(Rcache, base + ConstantPoolCacheEntry::flags_offset()));
-  }
+  // load flags to test volatile
+  __ ldr_u32(Rflags, Address(Rcache, base + ConstantPoolCacheEntry::flags_offset()));
 
   // replace index with field offset from cache entry
   __ ldr(Roffset, Address(Rcache, base + ConstantPoolCacheEntry::f2_offset()));
 
-  if (gen_volatile_check) {
-    // Check for volatile store
-    Label notVolatile;
-    __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
+  // Check for volatile store
+  Label notVolatile;
+  __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
 
-    // TODO-AARCH64 on AArch64, store-release instructions can be used to get rid of this explict barrier
-    volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore | MacroAssembler::LoadStore), Rtemp);
+  // TODO-AARCH64 on AArch64, store-release instructions can be used to get rid of this explict barrier
+  volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore | MacroAssembler::LoadStore), Rtemp);
 
-    __ bind(notVolatile);
-  }
+  __ bind(notVolatile);
 
   // Get object from stack
   pop_and_check_object(Robj);
@@ -3902,27 +3883,24 @@ void TemplateTable::fast_storefield(TosState state) {
       ShouldNotReachHere();
   }
 
-  if (gen_volatile_check) {
-    Label notVolatile;
-    Label skipMembar;
-    __ tst(Rflags, 1 << ConstantPoolCacheEntry::is_volatile_shift |
-                   1 << ConstantPoolCacheEntry::is_final_shift);
-    __ b(skipMembar, eq);
+  Label notVolatile2;
+  Label skipMembar;
+  __ tst(Rflags, 1 << ConstantPoolCacheEntry::is_volatile_shift |
+         1 << ConstantPoolCacheEntry::is_final_shift);
+  __ b(skipMembar, eq);
 
-    __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
+  __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile2);
 
-    // StoreLoad barrier after volatile field write
-    volatile_barrier(MacroAssembler::StoreLoad, Rtemp);
-    __ b(skipMembar);
+  // StoreLoad barrier after volatile field write
+  volatile_barrier(MacroAssembler::StoreLoad, Rtemp);
+  __ b(skipMembar);
 
-    // StoreStore barrier after final field write
-    __ bind(notVolatile);
-    volatile_barrier(MacroAssembler::StoreStore, Rtemp);
+  // StoreStore barrier after final field write
+  __ bind(notVolatile2);
+  volatile_barrier(MacroAssembler::StoreStore, Rtemp);
 
-    __ bind(skipMembar);
-  }
+  __ bind(skipMembar);
 }
-
 
 void TemplateTable::fast_accessfield(TosState state) {
   transition(atos, state);
@@ -3953,18 +3931,14 @@ void TemplateTable::fast_accessfield(TosState state) {
   const Register Rindex  = R3_tmp;
   const Register Roffset = R3_tmp;
 
-  const bool gen_volatile_check = os::is_MP();
-
   // access constant pool cache
   __ get_cache_and_index_at_bcp(Rcache, Rindex, 1);
   // replace index with field offset from cache entry
   __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
   __ ldr(Roffset, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::f2_offset()));
 
-  if (gen_volatile_check) {
-    // load flags to test volatile
-    __ ldr_u32(Rflags, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  }
+  // load flags to test volatile
+  __ ldr_u32(Rflags, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
 
   __ verify_oop(Robj);
   __ null_check(Robj, Rtemp);
@@ -4007,16 +3981,14 @@ void TemplateTable::fast_accessfield(TosState state) {
       ShouldNotReachHere();
   }
 
-  if (gen_volatile_check) {
-    // Check for volatile load
-    Label notVolatile;
-    __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
+  // Check for volatile load
+  Label notVolatile;
+  __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
 
-    // TODO-AARCH64 on AArch64, load-acquire instructions can be used to get rid of this explict barrier
-    volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
+  // TODO-AARCH64 on AArch64, load-acquire instructions can be used to get rid of this explict barrier
+  volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
 
-    __ bind(notVolatile);
-  }
+  __ bind(notVolatile);
 }
 
 
@@ -4038,12 +4010,8 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
   __ ldr(Roffset, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::f2_offset()));
 
-  const bool gen_volatile_check = os::is_MP();
-
-  if (gen_volatile_check) {
-    // load flags to test volatile
-    __ ldr_u32(Rflags, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  }
+  // load flags to test volatile
+  __ ldr_u32(Rflags, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
 
   // make sure exception is reported in correct bcp range (getfield is next instruction)
   __ add(Rbcp, Rbcp, 1);
@@ -4051,32 +4019,30 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ sub(Rbcp, Rbcp, 1);
 
 #ifdef AARCH64
-  if (gen_volatile_check) {
-    Label notVolatile;
-    __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
+  Label notVolatile;
+  __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
 
-    __ add(Rtemp, Robj, Roffset);
+  __ add(Rtemp, Robj, Roffset);
 
-    if (state == itos) {
+  if (state == itos) {
+    __ ldar_w(R0_tos, Rtemp);
+  } else if (state == atos) {
+    if (UseCompressedOops) {
       __ ldar_w(R0_tos, Rtemp);
-    } else if (state == atos) {
-      if (UseCompressedOops) {
-        __ ldar_w(R0_tos, Rtemp);
-        __ decode_heap_oop(R0_tos);
-      } else {
-        __ ldar(R0_tos, Rtemp);
-      }
-      __ verify_oop(R0_tos);
-    } else if (state == ftos) {
-      __ ldar_w(R0_tos, Rtemp);
-      __ fmov_sw(S0_tos, R0_tos);
+      __ decode_heap_oop(R0_tos);
     } else {
-      ShouldNotReachHere();
+      __ ldar(R0_tos, Rtemp);
     }
-    __ b(done);
-
-    __ bind(notVolatile);
+    __ verify_oop(R0_tos);
+  } else if (state == ftos) {
+    __ ldar_w(R0_tos, Rtemp);
+    __ fmov_sw(S0_tos, R0_tos);
+  } else {
+    ShouldNotReachHere();
   }
+  __ b(done);
+
+  __ bind(notVolatile);
 #endif // AARCH64
 
   if (state == itos) {
@@ -4099,15 +4065,13 @@ void TemplateTable::fast_xaccess(TosState state) {
   }
 
 #ifndef AARCH64
-  if (gen_volatile_check) {
-    // Check for volatile load
-    Label notVolatile;
-    __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
+  // Check for volatile load
+  Label notVolatile;
+  __ tbz(Rflags, ConstantPoolCacheEntry::is_volatile_shift, notVolatile);
 
-    volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
+  volatile_barrier(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
 
-    __ bind(notVolatile);
-  }
+  __ bind(notVolatile);
 #endif // !AARCH64
 
   __ bind(done);

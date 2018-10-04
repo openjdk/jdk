@@ -45,10 +45,10 @@ public class ObsoleteFlagErrorMessage {
 
     // Case 2: Newly obsolete flags should be recognized as newly obsolete (8073989)
     ProcessBuilder pb2 = ProcessTools.createJavaProcessBuilder(
-        "-XX:+SafepointSpinBeforeYield", "-version");
+        "-XX:+EmitSync", "-version");
 
     OutputAnalyzer output2 = new OutputAnalyzer(pb2.start());
     output2.shouldContain("Ignoring option").shouldContain("support was removed");
-    output2.shouldContain("SafepointSpinBeforeYield");
+    output2.shouldContain("EmitSync");
   }
 }

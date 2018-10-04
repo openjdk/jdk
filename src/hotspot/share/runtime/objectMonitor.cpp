@@ -110,7 +110,7 @@ static int Knob_Poverty             = 1000;
 static int Knob_FixedSpin           = 0;
 static int Knob_PreSpin             = 10;      // 20-100 likely better
 
-static volatile int InitDone        = 0;
+DEBUG_ONLY(static volatile bool InitDone = false;)
 
 // -----------------------------------------------------------------------------
 // Theory of operations -- Monitors lists, thread residency, etc:
@@ -428,7 +428,7 @@ void ObjectMonitor::EnterI(TRAPS) {
     return;
   }
 
-  DeferredInitialize();
+  assert(InitDone, "Unexpectedly not initialized");
 
   // We try one round of spinning *before* enqueueing Self.
   //
@@ -1102,7 +1102,7 @@ intptr_t ObjectMonitor::complete_exit(TRAPS) {
   assert(Self->is_Java_thread(), "Must be Java thread!");
   JavaThread *jt = (JavaThread *)THREAD;
 
-  DeferredInitialize();
+  assert(InitDone, "Unexpectedly not initialized");
 
   if (THREAD != _owner) {
     if (THREAD->is_lock_owned ((address)_owner)) {
@@ -1186,7 +1186,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   assert(Self->is_Java_thread(), "Must be Java thread!");
   JavaThread *jt = (JavaThread *)THREAD;
 
-  DeferredInitialize();
+  assert(InitDone, "Unexpectedly not initialized");
 
   // Throw IMSX or IEX.
   CHECK_OWNER();
@@ -1888,9 +1888,14 @@ PerfLongVariable * ObjectMonitor::_sync_MonExtant              = NULL;
 // be protected - like so many things - by the MonitorCache_lock.
 
 void ObjectMonitor::Initialize() {
-  static int InitializationCompleted = 0;
-  assert(InitializationCompleted == 0, "invariant");
-  InitializationCompleted = 1;
+  assert(!InitDone, "invariant");
+
+  if (!os::is_MP()) {
+    Knob_SpinLimit = 0;
+    Knob_PreSpin   = 0;
+    Knob_FixedSpin = -1;
+  }
+
   if (UsePerfData) {
     EXCEPTION_MARK;
 #define NEWPERFCOUNTER(n)                                                \
@@ -1913,26 +1918,6 @@ void ObjectMonitor::Initialize() {
 #undef NEWPERFCOUNTER
 #undef NEWPERFVARIABLE
   }
+
+  DEBUG_ONLY(InitDone = true;)
 }
-
-void ObjectMonitor::DeferredInitialize() {
-  if (InitDone > 0) return;
-  if (Atomic::cmpxchg (-1, &InitDone, 0) != 0) {
-    while (InitDone != 1) /* empty */;
-    return;
-  }
-
-  // One-shot global initialization ...
-  // The initialization is idempotent, so we don't need locks.
-  // In the future consider doing this via os::init_2().
-
-  if (!os::is_MP()) {
-    Knob_SpinLimit = 0;
-    Knob_PreSpin   = 0;
-    Knob_FixedSpin = -1;
-  }
-
-  OrderAccess::fence();
-  InitDone = 1;
-}
-

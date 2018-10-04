@@ -31,7 +31,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
- * @run main TraceLongClasspath
+ * @run driver TraceLongClasspath
  */
 
 import java.io.File;

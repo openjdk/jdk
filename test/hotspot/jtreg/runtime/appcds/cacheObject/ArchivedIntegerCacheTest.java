@@ -34,7 +34,7 @@
  * @compile CheckIntegerCacheApp.java
  * @run driver ClassFileInstaller -jar integer.jar CheckIntegerCacheApp
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run main ArchivedIntegerCacheTest
+ * @run driver ArchivedIntegerCacheTest
  */
 
 import java.nio.file.Files;

@@ -103,7 +103,7 @@ char* NativeLookup::long_jni_name(const methodHandle& method) {
   st.print("__");
   // find ')'
   int end;
-  for (end = 0; end < signature->utf8_length() && signature->byte_at(end) != ')'; end++);
+  for (end = 0; end < signature->utf8_length() && signature->char_at(end) != ')'; end++);
   // skip first '('
   mangle_name_on(&st, signature, 1, end);
   return st.as_string();
@@ -288,7 +288,7 @@ address NativeLookup::lookup_critical_entry(const methodHandle& method) {
 
   Symbol* signature = method->signature();
   for (int end = 0; end < signature->utf8_length(); end++) {
-    if (signature->byte_at(end) == 'L') {
+    if (signature->char_at(end) == 'L') {
       // Don't allow object types
       return NULL;
     }

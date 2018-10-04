@@ -186,6 +186,7 @@ void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* 
   }
 }
 
-bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(BasicType type) const {
-  return !use_ReduceInitialCardMarks();
+bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const {
+  bool is_oop = type == T_OBJECT || type == T_ARRAY;
+  return is_oop && (!tightly_coupled_alloc || !use_ReduceInitialCardMarks());
 }

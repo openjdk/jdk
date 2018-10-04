@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/resourceArea.hpp"

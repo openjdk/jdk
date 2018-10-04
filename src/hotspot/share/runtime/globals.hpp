@@ -247,9 +247,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
           range(8, 256)                                                     \
           constraint(ObjectAlignmentInBytesConstraintFunc,AtParse)          \
                                                                             \
-  product(bool, AssumeMP, true,                                             \
-          "(Deprecated) Instruct the VM to assume multiple processors are available")\
-                                                                            \
   /* UseMembar is theoretically a temp flag used for memory barrier      */ \
   /* removal testing.  It was supposed to be removed before FCS but has  */ \
   /* been re-added (see 6401008)                                         */ \
@@ -829,8 +826,6 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
                                                                             \
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
           range(0, max_jint)                                                \
-                                                                            \
-  product(bool, MonitorInUseLists, true, "Track Monitors for Deflation")    \
                                                                             \
   experimental(intx, MonitorUsedDeflationThreshold, 90,                     \
                 "Percentage of used monitors before triggering cleanup "    \

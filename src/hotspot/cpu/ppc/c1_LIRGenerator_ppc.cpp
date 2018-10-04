@@ -535,8 +535,8 @@ void LIRGenerator::do_ArithmeticOp(ArithmeticOp* x) {
     case doubleTag: do_ArithmeticOp_FPU(x);  return;
     case longTag:   do_ArithmeticOp_Long(x); return;
     case intTag:    do_ArithmeticOp_Int(x);  return;
+    default: ShouldNotReachHere();
   }
-  ShouldNotReachHere();
 }
 
 
@@ -735,39 +735,39 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         break;
       } // else fallthru
     }
+    case vmIntrinsics::_dsin:   // fall through
+    case vmIntrinsics::_dcos:   // fall through
+    case vmIntrinsics::_dtan:   // fall through
+    case vmIntrinsics::_dlog:   // fall through
     case vmIntrinsics::_dlog10: // fall through
-    case vmIntrinsics::_dlog: // fall through
-    case vmIntrinsics::_dsin: // fall through
-    case vmIntrinsics::_dtan: // fall through
-    case vmIntrinsics::_dcos: // fall through
     case vmIntrinsics::_dexp: {
       assert(x->number_of_arguments() == 1, "wrong type");
 
       address runtime_entry = NULL;
       switch (x->id()) {
-      case vmIntrinsics::_dsqrt:
-        runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
-        break;
-      case vmIntrinsics::_dsin:
-        runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
-        break;
-      case vmIntrinsics::_dcos:
-        runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
-        break;
-      case vmIntrinsics::_dtan:
-        runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
-        break;
-      case vmIntrinsics::_dlog:
-        runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
-        break;
-      case vmIntrinsics::_dlog10:
-        runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
-        break;
-      case vmIntrinsics::_dexp:
-        runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
-        break;
-      default:
-        ShouldNotReachHere();
+        case vmIntrinsics::_dsqrt:
+          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);
+          break;
+        case vmIntrinsics::_dsin:
+          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);
+          break;
+        case vmIntrinsics::_dcos:
+          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);
+          break;
+        case vmIntrinsics::_dtan:
+          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);
+          break;
+        case vmIntrinsics::_dlog:
+          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);
+          break;
+        case vmIntrinsics::_dlog10:
+          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog10);
+          break;
+        case vmIntrinsics::_dexp:
+          runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dexp);
+          break;
+        default:
+          ShouldNotReachHere();
       }
 
       LIR_Opr result = call_runtime(x->argument_at(0), runtime_entry, x->type(), NULL);
@@ -781,6 +781,8 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       set_result(x, result);
       break;
     }
+    default:
+      break;
   }
 }
 

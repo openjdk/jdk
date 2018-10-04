@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -694,7 +696,7 @@ void DumperSupport:: write_header(DumpWriter* writer, hprofTag tag, u4 len) {
 
 // returns hprof tag for the given type signature
 hprofTag DumperSupport::sig2tag(Symbol* sig) {
-  switch (sig->byte_at(0)) {
+  switch (sig->char_at(0)) {
     case JVM_SIGNATURE_CLASS    : return HPROF_NORMAL_OBJECT;
     case JVM_SIGNATURE_ARRAY    : return HPROF_NORMAL_OBJECT;
     case JVM_SIGNATURE_BYTE     : return HPROF_BYTE;
@@ -819,7 +821,7 @@ u4 DumperSupport::instance_size(Klass* k) {
   for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
-      switch (sig->byte_at(0)) {
+      switch (sig->char_at(0)) {
         case JVM_SIGNATURE_CLASS   :
         case JVM_SIGNATURE_ARRAY   : size += oopSize; break;
 
@@ -887,7 +889,7 @@ void DumperSupport::dump_static_fields(DumpWriter* writer, Klass* k) {
       writer->write_u1(sig2tag(sig));       // type
 
       // value
-      dump_field_value(writer, sig->byte_at(0), ik->java_mirror(), fld.offset());
+      dump_field_value(writer, sig->char_at(0), ik->java_mirror(), fld.offset());
     }
   }
 
@@ -923,7 +925,7 @@ void DumperSupport::dump_instance_fields(DumpWriter* writer, oop o) {
   for (FieldStream fld(ik, false, false); !fld.eos(); fld.next()) {
     if (!fld.access_flags().is_static()) {
       Symbol* sig = fld.signature();
-      dump_field_value(writer, sig->byte_at(0), o, fld.offset());
+      dump_field_value(writer, sig->char_at(0), o, fld.offset());
     }
   }
 }

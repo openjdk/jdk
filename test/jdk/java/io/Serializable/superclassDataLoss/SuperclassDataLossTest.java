@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 4325590
- * @library /lib/testlibrary
- * @build JarUtils A B
+ * @library /test/lib
+ * @build jdk.test.lib.util.JarUtils A B
  * @run main SuperclassDataLossTest
  * @summary Verify that superclass data is not lost when incoming superclass
  *          descriptor is matched with local class that is not a superclass of
@@ -46,6 +46,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+
+import jdk.test.lib.util.JarUtils;
 
 class MixedSuperclassStream extends ObjectInputStream {
     private boolean ldr12A;

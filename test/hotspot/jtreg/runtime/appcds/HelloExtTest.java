@@ -35,7 +35,7 @@
  * @compile test-classes/HelloExt.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main HelloExtTest
+ * @run driver HelloExtTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

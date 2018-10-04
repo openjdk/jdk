@@ -42,8 +42,8 @@ JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(intx value, bool verbose) {
   if (value >= (intx)os::vm_page_size()) {
     JVMFlag::printError(verbose,
                         "ObjectAlignmentInBytes (" INTX_FORMAT ") must be "
-                        "less than page size (" INTX_FORMAT ")\n",
-                        value, (intx)os::vm_page_size());
+                        "less than page size (%d)\n",
+                        value, os::vm_page_size());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
@@ -79,7 +79,7 @@ JVMFlag::Error BiasedLockingStartupDelayFunc(intx value, bool verbose) {
   if ((value % PeriodicTask::interval_gran) != 0) {
     JVMFlag::printError(verbose,
                         "BiasedLockingStartupDelay (" INTX_FORMAT ") must be "
-                        "evenly divisible by PeriodicTask::interval_gran (" INTX_FORMAT ")\n",
+                        "evenly divisible by PeriodicTask::interval_gran (%d)\n",
                         value, PeriodicTask::interval_gran);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
@@ -123,7 +123,7 @@ JVMFlag::Error PerfDataSamplingIntervalFunc(intx value, bool verbose) {
   if ((value % PeriodicTask::interval_gran != 0)) {
     JVMFlag::printError(verbose,
                         "PerfDataSamplingInterval (" INTX_FORMAT ") must be "
-                        "evenly divisible by PeriodicTask::interval_gran (" INTX_FORMAT ")\n",
+                        "evenly divisible by PeriodicTask::interval_gran (%d)\n",
                         value, PeriodicTask::interval_gran);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {

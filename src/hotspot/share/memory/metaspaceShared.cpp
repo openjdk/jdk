@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classListParser.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/dictionary.hpp"

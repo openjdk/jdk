@@ -394,11 +394,9 @@ class PatchingStub: public CodeStub {
       _id(id)
     , _info(NULL)
     , _index(index) {
-    if (os::is_MP()) {
-      // force alignment of patch sites on MP hardware so we
-      // can guarantee atomic writes to the patch site.
-      align_patch_site(masm);
-    }
+    // force alignment of patch sites so we
+    // can guarantee atomic writes to the patch site.
+    align_patch_site(masm);
     _pc_start = masm->pc();
     masm->bind(_patch_site_entry);
   }

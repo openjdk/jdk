@@ -4330,7 +4330,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       Node* alloc_obj = new_array(obj_klass, obj_length, 0, &obj_size);  // no arguments to push
 
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      if (bs->array_copy_requires_gc_barriers(T_OBJECT)) {
+      if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, true, BarrierSetC2::Parsing)) {
         // If it is an oop array, it requires very special treatment,
         // because gc barriers are required when accessing the array.
         Node* is_obja = generate_objArray_guard(obj_klass, (RegionNode*)NULL);

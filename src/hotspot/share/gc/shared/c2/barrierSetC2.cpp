@@ -598,6 +598,7 @@ void BarrierSetC2::clone(GraphKit* kit, Node* src, Node* dst, Node* size, bool i
   ac->set_clonebasic();
   Node* n = kit->gvn().transform(ac);
   if (n == ac) {
+    ac->_adr_type = TypeRawPtr::BOTTOM;
     kit->set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
   } else {
     kit->set_all_memory(n);

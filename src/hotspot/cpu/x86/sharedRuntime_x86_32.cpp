@@ -2007,12 +2007,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Save (object->mark() | 1) into BasicLock's displaced header
     __ movptr(Address(lock_reg, mark_word_offset), swap_reg);
 
-    if (os::is_MP()) {
-      __ lock();
-    }
-
     // src -> dest iff dest == rax, else rax, <- dest
     // *obj_reg = lock_reg iff *obj_reg == rax, else rax, = *(obj_reg)
+    __ lock();
     __ cmpxchgptr(lock_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ jcc(Assembler::equal, lock_done);
 
@@ -2091,19 +2088,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   //     didn't see any synchronization is progress, and escapes.
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
 
-  if(os::is_MP()) {
-    if (UseMembar) {
-      // Force this write out before the read below
-      __ membar(Assembler::Membar_mask_bits(
-           Assembler::LoadLoad | Assembler::LoadStore |
-           Assembler::StoreLoad | Assembler::StoreStore));
-    } else {
-      // Write serialization page so VM thread can do a pseudo remote membar.
-      // We use the current thread pointer to calculate a thread specific
-      // offset to write to within the page. This minimizes bus traffic
-      // due to cache line collision.
-      __ serialize_memory(thread, rcx);
-    }
+  if (UseMembar) {
+    // Force this write out before the read below
+    __ membar(Assembler::Membar_mask_bits(
+              Assembler::LoadLoad | Assembler::LoadStore |
+              Assembler::StoreLoad | Assembler::StoreStore));
+  } else {
+    // Write serialization page so VM thread can do a pseudo remote membar.
+    // We use the current thread pointer to calculate a thread specific
+    // offset to write to within the page. This minimizes bus traffic
+    // due to cache line collision.
+    __ serialize_memory(thread, rcx);
   }
 
   if (AlwaysRestoreFPU) {
@@ -2199,12 +2194,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ lea(rax, Address(rbp, lock_slot_rbp_offset));
 
     // Atomic swap old header if oop still contains the stack lock
-    if (os::is_MP()) {
-    __ lock();
-    }
-
     // src -> dest iff dest == rax, else rax, <- dest
     // *obj_reg = rbx, iff *obj_reg == rax, else rax, = *(obj_reg)
+    __ lock();
     __ cmpxchgptr(rbx, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
     __ jcc(Assembler::notEqual, slow_path_unlock);
 

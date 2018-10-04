@@ -137,7 +137,6 @@ julong os::Linux::_physical_memory = 0;
 address   os::Linux::_initial_thread_stack_bottom = NULL;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 
-int (*os::Linux::_clock_gettime)(clockid_t, struct timespec *) = NULL;
 int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = NULL;
 int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = NULL;
 Mutex* os::Linux::_createThread_lock = NULL;
@@ -268,8 +267,7 @@ pid_t os::Linux::gettid() {
 
 // Most versions of linux have a bug where the number of processors are
 // determined by looking at the /proc file system.  In a chroot environment,
-// the system call returns 1.  This causes the VM to act as if it is
-// a single processor and elide locking (see is_MP() call).
+// the system call returns 1.
 static bool unsafe_chroot_detected = false;
 static const char *unstable_chroot_error = "/proc file system not found.\n"
                      "Java may be unstable running multithreaded in a chroot "
@@ -1173,6 +1171,10 @@ void os::Linux::capture_initial_stack(size_t max_size) {
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
+#ifndef SUPPORTS_CLOCK_MONOTONIC
+#error "Build platform doesn't support clock_gettime and related functionality"
+#endif
+
 // Time since start-up in seconds to a fine granularity.
 // Used by VMSelfDestructTimer and the MemProfiler.
 double os::elapsedTime() {
@@ -1218,62 +1220,6 @@ void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
   nanos = jlong(time.tv_usec) * 1000;
 }
 
-
-#ifndef CLOCK_MONOTONIC
-  #define CLOCK_MONOTONIC (1)
-#endif
-
-void os::Linux::clock_init() {
-  // we do dlopen's in this particular order due to bug in linux
-  // dynamical loader (see 6348968) leading to crash on exit
-  void* handle = dlopen("librt.so.1", RTLD_LAZY);
-  if (handle == NULL) {
-    handle = dlopen("librt.so", RTLD_LAZY);
-  }
-
-  if (handle) {
-    int (*clock_getres_func)(clockid_t, struct timespec*) =
-           (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
-    int (*clock_gettime_func)(clockid_t, struct timespec*) =
-           (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_gettime");
-    if (clock_getres_func && clock_gettime_func) {
-      // See if monotonic clock is supported by the kernel. Note that some
-      // early implementations simply return kernel jiffies (updated every
-      // 1/100 or 1/1000 second). It would be bad to use such a low res clock
-      // for nano time (though the monotonic property is still nice to have).
-      // It's fixed in newer kernels, however clock_getres() still returns
-      // 1/HZ. We check if clock_getres() works, but will ignore its reported
-      // resolution for now. Hopefully as people move to new kernels, this
-      // won't be a problem.
-      struct timespec res;
-      struct timespec tp;
-      if (clock_getres_func (CLOCK_MONOTONIC, &res) == 0 &&
-          clock_gettime_func(CLOCK_MONOTONIC, &tp)  == 0) {
-        // yes, monotonic clock is supported
-        _clock_gettime = clock_gettime_func;
-        return;
-      } else {
-        // close librt if there is no monotonic clock
-        dlclose(handle);
-      }
-    }
-  }
-  warning("No monotonic clock was available - timed services may " \
-          "be adversely affected if the time-of-day clock changes");
-}
-
-#ifndef SYS_clock_getres
-  #if defined(X86) || defined(PPC64) || defined(S390)
-    #define SYS_clock_getres AMD64_ONLY(229) IA32_ONLY(266) PPC64_ONLY(247) S390_ONLY(261)
-    #define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
-  #else
-    #warning "SYS_clock_getres not defined for this platform, disabling fast_thread_cpu_time"
-    #define sys_clock_getres(x,y)  -1
-  #endif
-#else
-  #define sys_clock_getres(x,y)  ::syscall(SYS_clock_getres, x, y)
-#endif
-
 void os::Linux::fast_thread_clock_init() {
   if (!UseLinuxPosixThreadCPUClocks) {
     return;
@@ -1284,17 +1230,17 @@ void os::Linux::fast_thread_clock_init() {
       (int(*)(pthread_t, clockid_t *)) dlsym(RTLD_DEFAULT, "pthread_getcpuclockid");
 
   // Switch to using fast clocks for thread cpu time if
-  // the sys_clock_getres() returns 0 error code.
+  // the clock_getres() returns 0 error code.
   // Note, that some kernels may support the current thread
   // clock (CLOCK_THREAD_CPUTIME_ID) but not the clocks
   // returned by the pthread_getcpuclockid().
-  // If the fast Posix clocks are supported then the sys_clock_getres()
+  // If the fast Posix clocks are supported then the clock_getres()
   // must return at least tp.tv_sec == 0 which means a resolution
   // better than 1 sec. This is extra check for reliability.
 
   if (pthread_getcpuclockid_func &&
       pthread_getcpuclockid_func(_main_thread, &clockid) == 0 &&
-      sys_clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
+      os::Posix::clock_getres(clockid, &tp) == 0 && tp.tv_sec == 0) {
     _supports_fast_thread_cpu_time = true;
     _pthread_getcpuclockid = pthread_getcpuclockid_func;
   }
@@ -1303,7 +1249,7 @@ void os::Linux::fast_thread_clock_init() {
 jlong os::javaTimeNanos() {
   if (os::supports_monotonic_clock()) {
     struct timespec tp;
-    int status = Linux::clock_gettime(CLOCK_MONOTONIC, &tp);
+    int status = os::Posix::clock_gettime(CLOCK_MONOTONIC, &tp);
     assert(status == 0, "gettime error");
     jlong result = jlong(tp.tv_sec) * (1000 * 1000 * 1000) + jlong(tp.tv_nsec);
     return result;
@@ -1622,9 +1568,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
         // This is OK - No Java threads have been created yet, and hence no
         // stack guard pages to fix.
         //
-        // This should happen only when you are building JDK7 using a very
-        // old version of JDK6 (e.g., with JPRT) and running test_gamma.
-        //
         // Dynamic loader will make all stacks executable after
         // this function returns, and will not do that again.
         assert(Threads::number_of_threads() == 0, "no Java threads should exist yet.");
@@ -1877,10 +1820,14 @@ void* os::get_default_process_handle() {
   return (void*)::dlopen(NULL, RTLD_LAZY);
 }
 
-static bool _print_ascii_file(const char* filename, outputStream* st) {
+static bool _print_ascii_file(const char* filename, outputStream* st, const char* hdr = NULL) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
     return false;
+  }
+
+  if (hdr != NULL) {
+    st->print_cr("%s", hdr);
   }
 
   char buf[33];
@@ -1974,6 +1921,8 @@ void os::print_os_info(outputStream* st) {
   os::Linux::print_full_memory_info(st);
 
   os::Linux::print_proc_sys_info(st);
+
+  os::Linux::print_ld_preload_file(st);
 
   os::Linux::print_container_info(st);
 }
@@ -2130,6 +2079,11 @@ void os::Linux::print_proc_sys_info(outputStream* st) {
 void os::Linux::print_full_memory_info(outputStream* st) {
   st->print("\n/proc/meminfo:\n");
   _print_ascii_file("/proc/meminfo", st);
+  st->cr();
+}
+
+void os::Linux::print_ld_preload_file(outputStream* st) {
+  _print_ascii_file("/etc/ld.so.preload", st, "\n/etc/ld.so.preload:");
   st->cr();
 }
 
@@ -2471,7 +2425,7 @@ void* os::user_handler() {
 static struct timespec create_semaphore_timespec(unsigned int sec, int nsec) {
   struct timespec ts;
   // Semaphore's are always associated with CLOCK_REALTIME
-  os::Linux::clock_gettime(CLOCK_REALTIME, &ts);
+  os::Posix::clock_gettime(CLOCK_REALTIME, &ts);
   // see os_posix.cpp for discussion on overflow checking
   if (sec >= MAX_SECS) {
     ts.tv_sec += MAX_SECS;
@@ -4704,7 +4658,7 @@ void os::Linux::install_signal_handlers() {
 
 jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
   struct timespec tp;
-  int rc = os::Linux::clock_gettime(clockid, &tp);
+  int rc = os::Posix::clock_gettime(clockid, &tp);
   assert(rc == 0, "clock_gettime is expected to return 0 code");
 
   return (tp.tv_sec * NANOSECS_PER_SEC) + tp.tv_nsec;
@@ -4976,14 +4930,19 @@ void os::init(void) {
   // _main_thread points to the thread that created/loaded the JVM.
   Linux::_main_thread = pthread_self();
 
-  Linux::clock_init();
-  initial_time_count = javaTimeNanos();
-
   // retrieve entry point for pthread_setname_np
   Linux::_pthread_setname_np =
     (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
 
   os::Posix::init();
+
+  initial_time_count = javaTimeNanos();
+
+  // Always warn if no monotonic clock available
+  if (!os::Posix::supports_monotonic_clock()) {
+    warning("No monotonic clock was available - timed services may "    \
+            "be adversely affected if the time-of-day clock changes");
+  }
 }
 
 // To install functions for atexit system call

@@ -28,7 +28,7 @@
  * @requires vm.cds
  * @library /test/lib
  * @compile test-classes/Hello.java
- * @run main DirClasspathTest
+ * @run driver DirClasspathTest
  */
 
 import jdk.test.lib.Platform;

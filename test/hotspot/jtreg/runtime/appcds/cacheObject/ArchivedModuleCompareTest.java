@@ -32,7 +32,7 @@
  *          jdk.jartool/sun.tools.jar
  * @compile PrintSystemModulesApp.java
  * @run driver ClassFileInstaller -jar app.jar PrintSystemModulesApp
- * @run main ArchivedModuleCompareTest
+ * @run driver ArchivedModuleCompareTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

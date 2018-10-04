@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * @compile test-classes/C1.java
  * @compile test-classes/C2.java
  * @compile test-classes/PackageSealingTest.java
- * @run main PackageSealing
+ * @run driver PackageSealing
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

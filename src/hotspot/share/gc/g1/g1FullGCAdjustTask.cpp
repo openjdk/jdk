@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1FullCollector.hpp"

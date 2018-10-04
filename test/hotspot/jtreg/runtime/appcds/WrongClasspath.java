@@ -31,7 +31,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
- * @run main WrongClasspath
+ * @run driver WrongClasspath
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

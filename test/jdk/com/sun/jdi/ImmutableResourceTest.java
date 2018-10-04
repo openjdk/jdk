@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,18 @@
  * questions.
  */
 
-/**
+/*
+ * @test
+ * @bug        6287579
+ * @summary    SubClasses of ListResourceBundle should fix getContents()
  *
+ * @modules jdk.jdi/com.sun.tools.example.debug.tty
  *
- *  This isn't the test case: ImmutableResourceTest.sh is.
- *  Refer to ImmutableResourceTest.sh when running this test.
+ * @compile --add-exports jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED -g ImmutableResourceTest.java
  *
- *  @bug        6287579
- *  @summary    SubClasses of ListResourceBundle should fix getContents()
- *
- *  @author Tim Bell
- *
+ * @run main/othervm --add-exports jdk.jdi/com.sun.tools.example.debug.tty=ALL-UNNAMED ImmutableResourceTest
  */
+
 import java.util.ResourceBundle;
 
 public class ImmutableResourceTest {

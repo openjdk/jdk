@@ -608,10 +608,10 @@ protected:
 
   static bool os_supports_avx_vectors() {
     bool retVal = false;
+    int nreg = 2 LP64_ONLY(+2);
     if (supports_evex()) {
       // Verify that OS save/restore all bits of EVEX registers
       // during signal processing.
-      int nreg = 2 LP64_ONLY(+2);
       retVal = true;
       for (int i = 0; i < 16 * nreg; i++) { // 64 bytes per zmm register
         if (_cpuid_info.zmm_save[i] != ymm_test_value()) {
@@ -622,7 +622,6 @@ protected:
     } else if (supports_avx()) {
       // Verify that OS save/restore all bits of AVX registers
       // during signal processing.
-      int nreg = 2 LP64_ONLY(+2);
       retVal = true;
       for (int i = 0; i < 8 * nreg; i++) { // 32 bytes per ymm register
         if (_cpuid_info.ymm_save[i] != ymm_test_value()) {
@@ -634,7 +633,6 @@ protected:
       if (retVal == false) {
         // Verify that OS save/restore all bits of EVEX registers
         // during signal processing.
-        int nreg = 2 LP64_ONLY(+2);
         retVal = true;
         for (int i = 0; i < 16 * nreg; i++) { // 64 bytes per zmm register
           if (_cpuid_info.zmm_save[i] != ymm_test_value()) {

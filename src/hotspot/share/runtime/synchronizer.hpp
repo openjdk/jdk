@@ -168,8 +168,6 @@ class ObjectSynchronizer : AllStatic {
   // count of entries in gOmInUseList
   static int gOmInUseCount;
 
-  // Process oops in all monitors
-  static void global_oops_do(OopClosure* f);
   // Process oops in all global used monitors (i.e. moribund thread's monitors)
   static void global_used_oops_do(OopClosure* f);
   // Process oops in monitors on the given list

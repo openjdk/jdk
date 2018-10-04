@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
@@ -1047,6 +1048,9 @@ void G1CollectedHeap::prepare_heap_for_mutators() {
 
   // Rebuild the strong code root lists for each region
   rebuild_strong_code_roots();
+
+  // Purge code root memory
+  purge_code_root_memory();
 
   // Start a new incremental collection set for the next pause
   start_new_collection_set();

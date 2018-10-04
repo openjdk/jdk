@@ -31,7 +31,7 @@
  * @compile ArrayTestHelper.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main ArrayTest
+ * @run driver ArrayTest
  */
 
 import java.util.List;

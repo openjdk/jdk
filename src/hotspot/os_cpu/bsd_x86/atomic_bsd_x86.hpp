@@ -136,7 +136,7 @@ inline T Atomic::PlatformCmpxchg<8>::operator()(T exchange_value,
 
 extern "C" {
   // defined in bsd_x86.s
-  int64_t _Atomic_cmpxchg_long(int64_t, volatile int64_t*, int64_t, bool);
+  int64_t _Atomic_cmpxchg_long(int64_t, volatile int64_t*, int64_t);
   void _Atomic_move_long(const volatile int64_t* src, volatile int64_t* dst);
 }
 

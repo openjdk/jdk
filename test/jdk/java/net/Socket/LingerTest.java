@@ -109,38 +109,45 @@ public class LingerTest {
         Socket s2 = ss.accept();
 
         // setup conditions for untransmitted data and lengthy
-            // linger interval
-            s1.setSendBufferSize(128*1024);
+        // linger interval
+        s1.setSendBufferSize(128*1024);
         s1.setSoLinger(true, 30);
         s2.setReceiveBufferSize(1*1024);
 
         // start sender
-            Thread thr = new Thread(new Sender(s1));
-        thr.start();
+        Thread senderThread = new Thread(new Sender(s1));
+        senderThread.start();
 
         // other thread that will connect after 5 seconds.
-            Other other = new Other(ss.getLocalPort(), 5000);
-        thr = new Thread(other);
-        thr.start();
+        Other other = new Other(ss.getLocalPort(), 5000);
+        Thread otherThread = new Thread(other);
+        otherThread.start();
 
         // give sender time to queue the data
-            System.out.println ("Main sleep 1000");
-            Thread.sleep(1000);
-            System.out.println ("Main continue");
+        System.out.println ("Main sleep 1000");
+        Thread.sleep(1000);
+        System.out.println ("Main continue");
 
         // close the socket asynchronously
-            (new Thread(new Closer(s1))).start();
+        Thread closerThread = new Thread(new Closer(s1));
+        closerThread.start();
 
-            System.out.println ("Main sleep 15000");
+        System.out.println ("Main sleep 15000");
         // give other time to run
-            Thread.sleep(15000);
-            System.out.println ("Main closing serversocket");
+        Thread.sleep(15000);
+        System.out.println ("Main closing serversocket");
 
         ss.close();
         // check that other is done
-            if (!other.connected()) {
+        if (!other.connected()) {
             throw new RuntimeException("Other thread is blocked");
         }
+
+        // await termination of all test related threads
+        senderThread.join(60_000);
+        otherThread.join(60_000);
+        closerThread.join(60_000);
+
         System.out.println ("Main ends");
     }
 }

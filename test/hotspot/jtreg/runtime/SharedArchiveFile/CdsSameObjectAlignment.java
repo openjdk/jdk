@@ -30,7 +30,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main CdsSameObjectAlignment
+ * @run driver CdsSameObjectAlignment
  */
 
 import jdk.test.lib.Platform;

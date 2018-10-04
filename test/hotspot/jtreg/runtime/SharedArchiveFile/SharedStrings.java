@@ -31,7 +31,7 @@
  *          java.management
  * @build SharedStringsWb sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller -jar whitebox.jar sun.hotspot.WhiteBox
- * @run main SharedStrings
+ * @run driver SharedStrings
  */
 
 import jdk.test.lib.cds.CDSTestUtils;

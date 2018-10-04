@@ -94,7 +94,7 @@ JVMFlag::Error AllocatePrefetchDistanceConstraintFunc(intx value, bool verbose) 
   if (value < 0 || value > 512) {
     JVMFlag::printError(verbose,
                         "AllocatePrefetchDistance (" INTX_FORMAT ") must be "
-                        "between 0 and " INTX_FORMAT "\n",
+                        "between 0 and %d\n",
                         AllocatePrefetchDistance, 512);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
@@ -162,7 +162,7 @@ JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) 
       JVMFlag::printError(verbose,
                           "CompileThreshold * (InterpreterProfilePercentage - OnStackReplacePercentage) / 100 = "
                           INTX_FORMAT " "
-                          "must be between 0 and " INTX_FORMAT ", try changing "
+                          "must be between 0 and %d, try changing "
                           "CompileThreshold, InterpreterProfilePercentage, and/or OnStackReplacePercentage\n",
                           (CompileThreshold * (OnStackReplacePercentage - InterpreterProfilePercentage)) / 100,
                           INT_MAX >> InvocationCounter::count_shift);
@@ -182,7 +182,7 @@ JVMFlag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) 
     if (backward_branch_limit < 0) {
       JVMFlag::printError(verbose,
                           "CompileThreshold * OnStackReplacePercentage / 100 = " INTX_FORMAT " "
-                          "must be between 0 and " INTX_FORMAT ", try changing "
+                          "must be between 0 and %d, try changing "
                           "CompileThreshold and/or OnStackReplacePercentage\n",
                           (CompileThreshold * OnStackReplacePercentage) / 100,
                           INT_MAX >> InvocationCounter::count_shift);
@@ -395,8 +395,8 @@ JVMFlag::Error RTMTotalCountIncrRateConstraintFunc(int value, bool verbose) {
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking && !is_power_of_2(RTMTotalCountIncrRate)) {
     JVMFlag::printError(verbose,
-                        "RTMTotalCountIncrRate (" INTX_FORMAT
-                        ") must be a power of 2, resetting it to 64\n",
+                        "RTMTotalCountIncrRate (%d) must be "
+                        "a power of 2, resetting it to 64\n",
                         RTMTotalCountIncrRate);
     FLAG_SET_DEFAULT(RTMTotalCountIncrRate, 64);
   }

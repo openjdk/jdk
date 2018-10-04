@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"

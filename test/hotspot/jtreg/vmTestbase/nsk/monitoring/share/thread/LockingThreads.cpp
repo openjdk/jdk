@@ -27,34 +27,31 @@ extern "C" {
 
 #define FIND_CLASS(_class, _className)\
         if (!NSK_JNI_VERIFY(env, (_class = \
-             NSK_CPP_STUB2(FindClass, env, _className)) != NULL))\
+             env->FindClass(_className)) != NULL))\
                 return
 
 #define GET_OBJECT_CLASS(_class, _obj)\
         if (!NSK_JNI_VERIFY(env, (_class = \
-             NSK_CPP_STUB2(GetObjectClass, env, _obj)) != NULL))\
+             env->GetObjectClass(_obj)) != NULL))\
                 return
 
 #define GET_OBJ_FIELD(_value, _obj, _class, _fieldName, _fieldSig)\
         GET_FIELD_ID(field, _class, _fieldName, _fieldSig);\
-        _value = NSK_CPP_STUB3(GetObjectField, env, _obj, field)
+        _value = env->GetObjectField(_obj, field)
 
 #define GET_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
         if (!NSK_JNI_VERIFY(env, (_fieldID = \
-             NSK_CPP_STUB4(GetFieldID, env, _class,\
-             _fieldName, _fieldSig)) != NULL))\
+             env->GetFieldID(_class, _fieldName, _fieldSig)) != NULL))\
                 return
 
 #define GET_METHOD_ID(_methodID, _class, _methodName, _sig)\
         if (!NSK_JNI_VERIFY(env, (_methodID = \
-             NSK_CPP_STUB4(GetMethodID, env, _class,\
-             _methodName, _sig)) != NULL))\
+             env->GetMethodID(_class, _methodName, _sig)) != NULL))\
                 return
 
 #define CALL_VOID_NOPARAM(_obj, _class, _methodName)\
             GET_METHOD_ID(method, _class, _methodName, "()V");\
-        if (!NSK_JNI_VERIFY_VOID(env, NSK_CPP_STUB3(CallVoidMethod, env, _obj,\
-             method)))\
+        if (!NSK_JNI_VERIFY_VOID(env, env->CallVoidMethod(_obj, method)))\
                 return
 /*
  * Class:     nsk_monitoring_share_thread_LockingThreads_Thread1

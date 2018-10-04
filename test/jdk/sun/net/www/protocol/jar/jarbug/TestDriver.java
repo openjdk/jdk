@@ -25,7 +25,6 @@
  * @test
  * @bug 4361044 4388202 4418643 4523159 4730642
  * @library /test/lib
- *          /lib/testlibrary
  * @modules jdk.compiler
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.Utils
@@ -34,7 +33,8 @@
  *        jdk.test.lib.JDKToolLauncher
  *        jdk.test.lib.Platform
  *        jdk.test.lib.process.*
- *        src.test.src.TestDriver JarUtils
+ *        jdk.test.lib.util.JarUtils
+ *        src.test.src.TestDriver
  * @summary various resource and classloading bugs related to jar files
  * @run main/othervm TestDriver
  */
@@ -42,6 +42,7 @@
 import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.JarUtils;
 
 import java.io.File;
 import java.nio.file.Files;

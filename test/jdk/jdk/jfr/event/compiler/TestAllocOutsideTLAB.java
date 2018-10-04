@@ -42,15 +42,13 @@ import jdk.test.lib.jfr.Events;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -XX:+UseTLAB -XX:-FastTLABRefill -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.compiler.TestAllocOutsideTLAB
- * @run main/othervm -XX:+UseTLAB -XX:-FastTLABRefill -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.compiler.TestAllocOutsideTLAB
- * @run main/othervm -XX:+UseTLAB -XX:-FastTLABRefill -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 -Xint jdk.jfr.event.compiler.TestAllocOutsideTLAB
+ * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 jdk.jfr.event.compiler.TestAllocOutsideTLAB
+ * @run main/othervm -XX:+UseTLAB -XX:TLABSize=90k -XX:-ResizeTLAB -XX:TLABRefillWasteFraction=256 -Xint jdk.jfr.event.compiler.TestAllocOutsideTLAB
  */
 
 /**
  * Test that an event is triggered when an object is allocated outside a
- * Thread Local Allocation Buffer (TLAB). The test is done for C1-compiler,
- * C2-compiler (-XX:-FastTLABRefill) and interpreted mode (-Xint).
+ * Thread Local Allocation Buffer (TLAB). The test is done for default interpreted mode (-Xint).
  *
  * To force objects to be allocated outside TLAB:
  *      the size of TLAB is set to 90k (-XX:TLABSize=90k);

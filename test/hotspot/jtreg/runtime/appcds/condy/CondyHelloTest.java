@@ -31,7 +31,7 @@
  * @build sun.hotspot.WhiteBox CondyHelloTest CondyHelloApp
  * @run driver ClassFileInstaller -jar condy_hello.jar CondyHello CondyHelloApp
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run main CondyHelloTest
+ * @run driver CondyHelloTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

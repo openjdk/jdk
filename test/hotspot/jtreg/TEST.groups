@@ -139,7 +139,8 @@ tier1_compiler_3 = \
   -compiler/runtime/Test6826736.java
 
 tier1_compiler_not_xcomp = \
-  compiler/aot
+  compiler/aot \
+  compiler/profiling
 
 tier1_compiler_not_cms = \
   compiler/aot \
@@ -258,7 +259,7 @@ hotspot_cds = \
 hotspot_appcds = \
   runtime/appcds/
 
-# A subset of AppCDS tests to be run in JPRT push
+# A subset of AppCDS tests to be run in tier1
 tier1_runtime_appcds = \
   runtime/appcds/HelloTest.java \
   runtime/appcds/sharedStrings/SharedStringsBasic.java \

@@ -105,7 +105,7 @@ abstract class DSA extends SignatureSpi {
      * Construct a blank DSA object that will use the specified
      * signature format. {@code p1363Format} should be {@code true} to
      * use the IEEE P1363 format. If {@code p1363Format} is {@code false},
-     * the DER-encoded ASN.1 format will used. The DSA object must be
+     * the DER-encoded ASN.1 format will be used. The DSA object must be
      * initialized before being usable for signing or verifying.
      */
     DSA(MessageDigest md, boolean p1363Format) {

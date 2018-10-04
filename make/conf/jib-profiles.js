@@ -525,8 +525,7 @@ var getJibProfilesProfiles = function (input, common, data) {
             profiles[maketestName].default_make_targets = [ "test-make" ];
         });
 
-    // Profiles for building the zero jvm variant. These are used for verification
-    // in JPRT.
+    // Profiles for building the zero jvm variant. These are used for verification.
     var zeroProfiles = {
         "linux-x64-zero": {
             target_os: "linux",
@@ -733,18 +732,8 @@ var getJibProfilesProfiles = function (input, common, data) {
         });
     });
 
-    // Profiles used to run tests. Used in JPRT and Mach 5.
+    // Profiles used to run tests.
     var testOnlyProfiles = {
-        "run-test-jprt": {
-            target_os: input.build_os,
-            target_cpu: input.build_cpu,
-            dependencies: [ "jtreg", "gnumake", "boot_jdk", "devkit", "jib" ],
-            labels: "test",
-            environment: {
-                "JT_JAVA": common.boot_jdk_home
-            }
-        },
-
         "run-test": {
             target_os: input.build_os,
             target_cpu: input.build_cpu,
@@ -806,7 +795,6 @@ var getJibProfilesProfiles = function (input, common, data) {
                 + "/Xcode.app/Contents/Developer/usr/bin"
         };
         profiles["run-test"] = concatObjects(profiles["run-test"], macosxRunTestExtra);
-        profiles["run-test-jprt"] = concatObjects(profiles["run-test-jprt"], macosxRunTestExtra);
         profiles["run-test-prebuilt"] = concatObjects(profiles["run-test-prebuilt"], macosxRunTestExtra);
     }
     // On windows we want the debug symbols available at test time

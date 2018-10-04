@@ -34,7 +34,7 @@
  *        RedefineClassApp
  *        InstrumentationClassFileTransformer
  *        InstrumentationRegisterClassFileTransformer
- * @run main RedefineClassTest
+ * @run driver RedefineClassTest
  */
 
 import com.sun.tools.attach.VirtualMachine;

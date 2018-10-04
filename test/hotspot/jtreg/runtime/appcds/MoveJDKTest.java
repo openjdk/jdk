@@ -32,7 +32,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
- * @run main MoveJDKTest
+ * @run driver MoveJDKTest
  */
 
 // This test works only on Linux because it depends on symlinks and the name of the hotspot DLL (libjvm.so).

@@ -37,7 +37,7 @@
  * @run driver ClassFileInstaller -jar app.jar CheckCachedMirrorApp
  * @run driver ClassFileInstaller -jar hello.jar Hello
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run main CheckCachedMirrorTest
+ * @run driver CheckCachedMirrorTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

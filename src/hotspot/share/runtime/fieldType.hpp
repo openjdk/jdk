@@ -58,14 +58,14 @@ class FieldType: public AllStatic {
   static BasicType basic_type(Symbol* signature);
 
   // Testing
-  static bool is_array(Symbol* signature) { return signature->utf8_length() > 1 && signature->byte_at(0) == '[' && is_valid_array_signature(signature); }
+  static bool is_array(Symbol* signature) { return signature->utf8_length() > 1 && signature->char_at(0) == '[' && is_valid_array_signature(signature); }
 
   static bool is_obj(Symbol* signature) {
      int sig_length = signature->utf8_length();
      // Must start with 'L' and end with ';'
      return (sig_length >= 2 &&
-             (signature->byte_at(0) == 'L') &&
-             (signature->byte_at(sig_length - 1) == ';'));
+             (signature->char_at(0) == 'L') &&
+             (signature->char_at(sig_length - 1) == ';'));
   }
 
   // Parse field and extract array information. Works for T_ARRAY only.

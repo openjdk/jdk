@@ -2809,7 +2809,7 @@ void ClassVerifier::verify_invoke_instructions(
     }
   }
 
-  if (method_name->byte_at(0) == '<') {
+  if (method_name->char_at(0) == '<') {
     // Make sure <init> can only be invoked by invokespecial
     if (opcode != Bytecodes::_invokespecial ||
         method_name != vmSymbols::object_initializer_name()) {

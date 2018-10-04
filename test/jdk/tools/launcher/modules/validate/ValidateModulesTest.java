@@ -25,8 +25,8 @@
  * @test
  * @bug 8178380 8194937
  * @modules java.xml
- * @library src /lib/testlibrary /test/lib
- * @build ValidateModulesTest hello/* JarUtils
+ * @library src /test/lib
+ * @build ValidateModulesTest hello/* jdk.test.lib.util.JarUtils
  * @run testng ValidateModulesTest
  * @summary Basic test for java --validate-modules
  */
@@ -38,6 +38,7 @@ import java.nio.file.Path;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.util.JarUtils;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;

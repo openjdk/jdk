@@ -34,7 +34,7 @@
  *          jdk.jartool/sun.tools.jar
  * @requires os.family != "mac"
  * @compile test-classes/Hello.java
- * @run main CaseSensitiveClassPath
+ * @run driver CaseSensitiveClassPath
  */
 
 import java.nio.file.FileAlreadyExistsException;

@@ -189,8 +189,12 @@ public class MessageOutput {
     }
 
     static void printPrompt() {
+        printPrompt(false);
+    }
+
+    static void printPrompt(boolean simple) {
         ThreadInfo threadInfo = ThreadInfo.getCurrentThreadInfo();
-        if (threadInfo == null) {
+        if (simple || threadInfo == null) {
             System.out.print
                 (MessageOutput.format("jdb prompt with no current thread"));
         } else {

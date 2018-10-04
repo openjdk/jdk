@@ -29,7 +29,7 @@
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
  *          jdk.jlink
- * @run main ModulePathAndCP
+ * @run driver ModulePathAndCP
  * @summary 2 sets of tests: one with only --module-path in the command line;
  *          another with both -cp and --module-path in the command line.
  */

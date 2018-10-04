@@ -33,7 +33,7 @@
  * @compile InternStringTest.java
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main InternSharedString
+ * @run driver InternSharedString
  * @run main/othervm -XX:+UseStringDeduplication InternSharedString
  * @run main/othervm -XX:-CompactStrings InternSharedString
  */

@@ -206,7 +206,7 @@ public final class ExtendedSocketOptions {
 
                 if (option == SO_FLOW_SLA) {
                     assert flowSupported;
-                    SocketFlow flow = checkValueType(value, option.type());
+                    SocketFlow flow = checkValueType(value, SocketFlow.class);
                     setFlowOption(fd, flow);
                 } else if (option == TCP_QUICKACK) {
                     setQuickAckOption(fd, (boolean) value);
@@ -254,7 +254,7 @@ public final class ExtendedSocketOptions {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> T checkValueType(Object value, Class<?> type) {
+    private static <T> T checkValueType(Object value, Class<T> type) {
         if (!type.isAssignableFrom(value.getClass())) {
             String s = "Found: " + value.getClass() + ", Expected: " + type;
             throw new IllegalArgumentException(s);

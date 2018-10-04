@@ -5316,8 +5316,7 @@ instruct loadConD(regD dst, immD src, iRegP tmp) %{
 // Prefetch instructions.
 // Must be safe to execute with invalid address (cannot fault).
 
-instruct prefetchAlloc_mp( memoryP mem ) %{
-  predicate(os::is_MP());
+instruct prefetchAlloc( memoryP mem ) %{
   match( PrefetchAllocation mem );
   ins_cost(MEMORY_REF_COST);
   size(4);
@@ -5328,23 +5327,6 @@ instruct prefetchAlloc_mp( memoryP mem ) %{
     __ prfm(pstl1keep, $mem$$Address);
 #else
     __ pldw($mem$$Address);
-#endif
-  %}
-  ins_pipe(iload_mem);
-%}
-
-instruct prefetchAlloc_sp( memoryP mem ) %{
-  predicate(!os::is_MP());
-  match( PrefetchAllocation mem );
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-
-  format %{ "PLD $mem\t! Prefetch allocation" %}
-  ins_encode %{
-#ifdef AARCH64
-    __ prfm(pstl1keep, $mem$$Address);
-#else
-    __ pld($mem$$Address);
 #endif
   %}
   ins_pipe(iload_mem);

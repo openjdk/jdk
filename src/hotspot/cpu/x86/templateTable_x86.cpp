@@ -448,7 +448,7 @@ void TemplateTable::fast_aldc(bool wide) {
     Label notNull;
     ExternalAddress null_sentinel((address)Universe::the_null_sentinel_addr());
     __ movptr(tmp, null_sentinel);
-    __ cmpptr(tmp, result);
+    __ cmpoop(tmp, result);
     __ jccb(Assembler::notEqual, notNull);
     __ xorptr(result, result);  // NULL object reference
     __ bind(notNull);
@@ -2714,7 +2714,6 @@ void TemplateTable::_return(TosState state) {
 
 void TemplateTable::volatile_barrier(Assembler::Membar_mask_bits order_constraint ) {
   // Helper function to insert a is-volatile test and memory barrier
-  if(!os::is_MP()) return;    // Not needed on single CPU
   __ membar(order_constraint);
 }
 
@@ -3493,13 +3492,12 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ get_cache_and_index_at_bcp(rcx, rbx, 1);
   // replace index with field offset from cache entry
   // [jk] not needed currently
-  // if (os::is_MP()) {
-  //   __ movl(rdx, Address(rcx, rbx, Address::times_8,
-  //                        in_bytes(ConstantPoolCache::base_offset() +
-  //                                 ConstantPoolCacheEntry::flags_offset())));
-  //   __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
-  //   __ andl(rdx, 0x1);
-  // }
+  // __ movl(rdx, Address(rcx, rbx, Address::times_8,
+  //                      in_bytes(ConstantPoolCache::base_offset() +
+  //                               ConstantPoolCacheEntry::flags_offset())));
+  // __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
+  // __ andl(rdx, 0x1);
+  //
   __ movptr(rbx, Address(rcx, rbx, Address::times_ptr,
                          in_bytes(ConstantPoolCache::base_offset() +
                                   ConstantPoolCacheEntry::f2_offset())));
@@ -3544,13 +3542,11 @@ void TemplateTable::fast_accessfield(TosState state) {
     ShouldNotReachHere();
   }
   // [jk] not needed currently
-  // if (os::is_MP()) {
   //   Label notVolatile;
   //   __ testl(rdx, rdx);
   //   __ jcc(Assembler::zero, notVolatile);
   //   __ membar(Assembler::LoadLoad);
   //   __ bind(notVolatile);
-  //};
 }
 
 void TemplateTable::fast_xaccess(TosState state) {
@@ -3585,17 +3581,15 @@ void TemplateTable::fast_xaccess(TosState state) {
   }
 
   // [jk] not needed currently
-  // if (os::is_MP()) {
-  //   Label notVolatile;
-  //   __ movl(rdx, Address(rcx, rdx, Address::times_8,
-  //                        in_bytes(ConstantPoolCache::base_offset() +
-  //                                 ConstantPoolCacheEntry::flags_offset())));
-  //   __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
-  //   __ testl(rdx, 0x1);
-  //   __ jcc(Assembler::zero, notVolatile);
-  //   __ membar(Assembler::LoadLoad);
-  //   __ bind(notVolatile);
-  // }
+  // Label notVolatile;
+  // __ movl(rdx, Address(rcx, rdx, Address::times_8,
+  //                      in_bytes(ConstantPoolCache::base_offset() +
+  //                               ConstantPoolCacheEntry::flags_offset())));
+  // __ shrl(rdx, ConstantPoolCacheEntry::is_volatile_shift);
+  // __ testl(rdx, 0x1);
+  // __ jcc(Assembler::zero, notVolatile);
+  // __ membar(Assembler::LoadLoad);
+  // __ bind(notVolatile);
 
   __ decrement(rbcp);
 }

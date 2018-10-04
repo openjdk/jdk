@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -852,7 +853,7 @@ ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
     if (!fld.access_flags().is_static()) {
       continue;
     }
-    field_map->add(max_field_index - index, fld.signature()->byte_at(0), fld.offset());
+    field_map->add(max_field_index - index, fld.signature()->char_at(0), fld.offset());
   }
   return field_map;
 }
@@ -878,7 +879,7 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
     if (fld.access_flags().is_static()) {
       continue;
     }
-    field_map->add(max_field_index - index, fld.signature()->byte_at(0), fld.offset());
+    field_map->add(max_field_index - index, fld.signature()->char_at(0), fld.offset());
   }
 
   return field_map;

@@ -34,7 +34,7 @@
  * @bug 8025642
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main CdsDifferentObjectAlignment
+ * @run driver CdsDifferentObjectAlignment
  */
 
 import jdk.test.lib.cds.CDSTestUtils;

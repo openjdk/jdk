@@ -34,7 +34,7 @@
  * @compile CheckArchivedModuleApp.java
  * @run driver ClassFileInstaller -jar app.jar CheckArchivedModuleApp
  * @run driver ClassFileInstaller -jar WhiteBox.jar sun.hotspot.WhiteBox
- * @run main ArchivedModuleWithCustomImageTest
+ * @run driver ArchivedModuleWithCustomImageTest
  */
 
 import java.io.File;

@@ -2417,6 +2417,8 @@ void TemplateTable::resolve_cache_and_index(int byte_no,
   switch (code) {
     case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
     case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+    default:
+      break;
   }
 
   {
@@ -3212,6 +3214,8 @@ void TemplateTable::jvmti_post_fast_field_mod() {
       break;
     case Bytecodes::_fast_lputfield:
       __ pop_l(Z_tos);
+      break;
+    default:
       break;
   }
 

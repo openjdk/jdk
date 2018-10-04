@@ -33,7 +33,7 @@
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @run build TestCommon JarBuilder
- * @run main OldClassTest
+ * @run driver OldClassTest
  */
 
 import java.io.File;

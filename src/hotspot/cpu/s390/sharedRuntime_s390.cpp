@@ -587,6 +587,9 @@ void SharedRuntime::save_native_result(MacroAssembler * masm,
     case T_DOUBLE:
       __ freg2mem_opt(Z_FRET, memaddr);
       break;
+    default:
+      ShouldNotReachHere();
+      break;
   }
 }
 
@@ -615,6 +618,9 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm,
       break;
     case T_DOUBLE:
       __ mem2freg_opt(Z_FRET, memaddr);
+      break;
+    default:
+      ShouldNotReachHere();
       break;
   }
 }
@@ -2155,18 +2161,17 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     save_native_result(masm, ret_type, workspace_slot_offset); // Make Z_R2 available as work reg.
 
-    if (os::is_MP()) {
-      if (UseMembar) {
-        // Force this write out before the read below.
-        __ z_fence();
-      } else {
-        // Write serialization page so VM thread can do a pseudo remote membar.
-        // We use the current thread pointer to calculate a thread specific
-        // offset to write to within the page. This minimizes bus traffic
-        // due to cache line collision.
-        __ serialize_memory(Z_thread, Z_R1, Z_R2);
-      }
+    if (UseMembar) {
+      // Force this write out before the read below.
+      __ z_fence();
+    } else {
+      // Write serialization page so VM thread can do a pseudo remote membar.
+      // We use the current thread pointer to calculate a thread specific
+      // offset to write to within the page. This minimizes bus traffic
+      // due to cache line collision.
+      __ serialize_memory(Z_thread, Z_R1, Z_R2);
     }
+
     __ safepoint_poll(sync, Z_R1);
 
     __ load_and_test_int(Z_R0, Address(Z_thread, JavaThread::suspend_flags_offset()));

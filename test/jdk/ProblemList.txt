@@ -102,7 +102,7 @@
 #  1. Make sure test passes on all platforms with samevm, or mark it othervm
 #  2. Make sure test passes on all platforms when run with it's entire group
 #  3. Make sure both VMs are tested, -server and -client, if possible
-#  4. Use a tool like JPRT or something to verify these results
+#  4. Use your favorite build and test system to verify these results
 #  5. Delete lines in this file, include the changes with your test changes
 #
 # You may need to repeat your testing 2 or even 3 times to verify good
@@ -556,9 +556,6 @@ java/net/MulticastSocket/SetGetNetworkInterfaceTest.java        8207404 aix-all
 
 java/net/DatagramSocket/SendDatagramToBadAddress.java           7143960 macosx-all
 
-java/net/Socket/LingerTest.java                                 8208690 generic-all
-sun/net/www/http/HttpClient/MultiThreadTest.java                8208690 generic-all
-
 ############################################################################
 
 # jdk_nio
@@ -679,6 +676,7 @@ sun/security/pkcs11/tls/TestLeadingZeroesP11.java               8204203 windows-
 sun/security/pkcs11/tls/TestMasterSecret.java                   8204203 windows-all
 sun/security/pkcs11/tls/TestPRF.java                            8204203 windows-all
 sun/security/pkcs11/tls/TestPremaster.java                      8204203 windows-all
+sun/security/tools/keytool/NssTest.java                         8204203 windows-all
 
 ############################################################################
 

@@ -635,8 +635,7 @@ mmx_acs_CopyLeft:
 
         # Support for int64_t Atomic::cmpxchg(int64_t exchange_value,
         #                                     volatile int64_t* dest,
-        #                                     int64_t compare_value,
-        #                                     bool is_MP)
+        #                                     int64_t compare_value)
         #
         .p2align 4,,15
         ELF_TYPE(_Atomic_cmpxchg_long,@function)
@@ -649,10 +648,8 @@ SYMBOL(_Atomic_cmpxchg_long):
         movl     24(%esp), %eax    # 24(%esp) : compare_value (low)
         movl     28(%esp), %edx    # 28(%esp) : compare_value (high)
         movl     20(%esp), %edi    # 20(%esp) : dest
-        cmpl     $0, 32(%esp)      # 32(%esp) : is_MP
-        je       1f
         lock
-1:      cmpxchg8b (%edi)
+        cmpxchg8b (%edi)
         popl     %edi
         popl     %ebx
         ret

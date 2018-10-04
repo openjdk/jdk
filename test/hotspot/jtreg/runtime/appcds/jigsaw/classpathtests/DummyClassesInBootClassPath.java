@@ -34,7 +34,7 @@
  * @compile ../../../SharedArchiveFile/javax/annotation/processing/FilerException.jasm
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- * @run main DummyClassesInBootClassPath
+ * @run driver DummyClassesInBootClassPath
  */
 
 import java.io.File;

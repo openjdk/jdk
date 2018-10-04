@@ -80,8 +80,8 @@ import java.util.function.Consumer;
  * <p> A key is added to its selector's cancelled-key set when it is cancelled,
  * whether by closing its channel or by invoking its {@link SelectionKey#cancel
  * cancel} method.  Cancelling a key will cause its channel to be deregistered
- * during the next selection operation, at which time the key will removed from
- * all of the selector's key sets.
+ * during the next selection operation, at which time the key will be removed
+ * from all of the selector's key sets.
  *
  * <a id="sks"></a><p> Keys are added to the selected-key set by selection
  * operations.  A key may be removed directly from the selected-key set by

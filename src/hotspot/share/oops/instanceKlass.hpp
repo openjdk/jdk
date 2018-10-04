@@ -542,7 +542,6 @@ public:
   void initialize(TRAPS);
   void link_class(TRAPS);
   bool link_class_or_fail(TRAPS); // returns false on failure
-  void unlink_class();
   void rewrite_class(TRAPS);
   void link_methods(TRAPS);
   Method* class_initializer() const;

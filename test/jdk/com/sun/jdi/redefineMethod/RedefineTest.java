@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,23 @@
  * @author Robert Field
  *
  * @library ..
+ * @library /test/lib
  *
  * @run build TestScaffold VMConnection TargetListener TargetAdapter
  * @run compile -g RedefineTest.java
- * @run shell RedefineSetUp.sh
  * @run driver RedefineTest -repeat 3
  * @run driver RedefineTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
+import jdk.test.lib.Utils;
+import jdk.test.lib.compiler.InMemoryJavaCompiler;
+
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.io.*;
 
@@ -205,15 +212,9 @@ public class RedefineTest extends TestScaffold {
     }
 
 
-    void doRedefine(String fileName) throws Exception {
-        File phyl = new File(fileName);
-        byte[] bytes = new byte[(int)phyl.length()];
-        InputStream in = new FileInputStream(phyl);
-        in.read(bytes);
-        in.close();
-
+    void doRedefine(byte[] compiledClass) throws Exception {
         Map map = new HashMap();
-        map.put(findReferenceType("RedefineSubTarg"), bytes);
+        map.put(findReferenceType("RedefineSubTarg"), compiledClass);
 
         try {
             for (int i = 0; i < redefineRepeat; ++i) {
@@ -240,9 +241,18 @@ public class RedefineTest extends TestScaffold {
         }
     }
 
+    private byte[] compileRedefinedClass(String srcJavaFile) throws Exception {
+        Path src = Paths.get(Utils.TEST_SRC).resolve(srcJavaFile);
+        return InMemoryJavaCompiler.compile("RedefineSubTarg",
+                new String(Files.readAllBytes(src), StandardCharsets.UTF_8),
+                "-g", "-classpath", Utils.TEST_CLASSES);
+    }
+
     /********** test core **********/
 
     protected void runTests() throws Exception {
+        byte[] compiled_Different_RedefineSubTarg = compileRedefinedClass("Different_RedefineSubTarg.java");
+        byte[] compiled_RedefineSubTarg = compileRedefinedClass("RedefineSubTarg.java");
 
         startToMain("RedefineTarg");
 
@@ -252,7 +262,7 @@ public class RedefineTest extends TestScaffold {
         checkFrames(thread, before);
 
         println("------ After Redefine ------");
-        doRedefine("Different_RedefineSubTarg.class");
+        doRedefine(compiled_Different_RedefineSubTarg);
         checkFrames(thread, after);
 
         println("------ Static 2 ------");
@@ -268,7 +278,7 @@ public class RedefineTest extends TestScaffold {
         checkFrames(thread, refresh);
 
         println("------ Breakpoints ------");
-        doRedefine("RedefineSubTarg.class");
+        doRedefine(compiled_RedefineSubTarg);
         for (int i = 0; i < bps.length; ++i) {
             setBP(bps[i]);
         }

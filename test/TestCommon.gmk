@@ -118,7 +118,7 @@ else
   ABS_TEST_OUTPUT_DIR := $(ABS_PLATFORM_BUILD_ROOT)/testoutput/$(UNIQUE_DIR)
 endif
 
-# Expect JPRT to set PRODUCT_HOME (the product or jdk in this case to test)
+# If unset, set up the PRODUCT_HOME variable to the jdk to test
 ifndef PRODUCT_HOME
   # Try to use images/jdk if it exists
   ABS_JDK_IMAGE = $(ABS_PLATFORM_BUILD_ROOT)/images/jdk
@@ -145,28 +145,12 @@ ifeq ($(PLATFORM), windows)
   JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH='$(_NT_SYMBOL_PATH)'
 endif
 
-# Expect JPRT to set JPRT_PRODUCT_ARGS (e.g. -server etc.)
-#   Should be passed into 'java' only.
-#   Could include: -d64 -server -client OR any java option
-ifdef JPRT_PRODUCT_ARGS
-  JAVA_ARGS = $(JPRT_PRODUCT_ARGS)
-endif
-
-# Expect JPRT to set JPRT_PRODUCT_VM_ARGS (e.g. -Xcomp etc.)
-#   Should be passed into anything running the vm (java, javac, javadoc, ...).
-ifdef JPRT_PRODUCT_VM_ARGS
-  JAVA_VM_ARGS = $(JPRT_PRODUCT_VM_ARGS)
-endif
-
 ifneq ($(NATIVE_TEST_PATH), )
   # jtreg -nativepath <dir>
   #
-  # Local make tests will be TEST_IMAGE_DIR and JPRT with jprt.use.reg.test.bundle=true
-  # should be JPRT_TESTNATIVE_PATH
+  # Local make tests will be TEST_IMAGE_DIR
   ifdef TEST_IMAGE_DIR
     TESTNATIVE_DIR = $(TEST_IMAGE_DIR)
-  else ifdef JPRT_TESTNATIVE_PATH
-    TESTNATIVE_DIR = $(JPRT_TESTNATIVE_PATH)
   endif
   ifdef TESTNATIVE_DIR
     JTREG_NATIVE_PATH = -nativepath:$(shell $(GETMIXEDPATH) "$(TESTNATIVE_DIR)/$(NATIVE_TEST_PATH)")
@@ -206,11 +190,6 @@ ifeq ($(GENERATE_CDS_ARCHIVE), true)
   CDS_VM_ARGS := -XX:+UnlockDiagnosticVMOptions -XX:SharedArchiveFile=$(shell $(GETMIXEDPATH) "$(CDS_ARCHIVE_FILE)")
   JTREG_TEST_OPTIONS += $(addprefix -vmoption:, $(CDS_VM_ARGS))
   TEST_PREREQS += $(CDS_ARCHIVE_FILE)
-endif
-
-# Expect JPRT to set JPRT_ARCHIVE_BUNDLE (path to zip bundle for results)
-ifdef JPRT_ARCHIVE_BUNDLE
-  ARCHIVE_BUNDLE = $(JPRT_ARCHIVE_BUNDLE)
 endif
 
 # How to create the test bundle (pass or fail, we want to create this)
@@ -340,9 +319,6 @@ clean:
 # Expect JT_HOME to be set for jtreg tests. (home for jtreg)
 ifndef JT_HOME
   JT_HOME = $(SLASH_JAVA)/re/jtreg/$(USE_JTREG_VERSION)/promoted/latest/binaries/jtreg
-  ifdef JPRT_JTREG_HOME
-    JT_HOME = $(JPRT_JTREG_HOME)
-  endif
 endif
 
 # Problematic tests to be excluded
@@ -358,7 +334,7 @@ endif
 
 # ------------------------------------------------------------------
 
-# When called from JPRT the TESTDIRS variable is set to the jtreg tests to run
+# The TESTDIRS variable can be used to select the jtreg tests to run
 ifdef TESTDIRS
   TEST_SELECTION = $(TESTDIRS)
 endif

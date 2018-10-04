@@ -1029,7 +1029,9 @@ public class SubmissionPublisherTest extends JSR166TestCase {
             public void onComplete() {}
         }
         pub.subscribe(new Sub());
-        CompletableFuture.runAsync(() -> pub.submit(Boolean.TRUE));
+        checkTimedGet(
+            CompletableFuture.runAsync(() -> pub.submit(Boolean.TRUE)),
+            null);
         await(finished);
     }
 }

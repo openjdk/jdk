@@ -446,10 +446,8 @@ void LIR_Assembler::emit_rtcall(LIR_OpRTCall* op) {
 void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
   verify_oop_map(op->info());
 
-  if (os::is_MP()) {
-    // must align calls sites, otherwise they can't be updated atomically on MP hardware
-    align_call(op->code());
-  }
+  // must align calls sites, otherwise they can't be updated atomically
+  align_call(op->code());
 
   // emit the static call stub stuff out of line
   emit_static_call_stub();

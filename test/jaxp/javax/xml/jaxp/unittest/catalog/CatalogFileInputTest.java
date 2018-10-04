@@ -42,9 +42,11 @@ import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogManager;
 import javax.xml.catalog.CatalogResolver;
+
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
-import jaxp.library.JarUtils;
 import jaxp.library.SimpleHttpServer;
+import jdk.test.lib.util.JarUtils;
+
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -56,10 +58,10 @@ import org.xml.sax.InputSource;
 /*
  * @test
  * @bug 8151154 8171243
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest /test/lib
  * @run testng/othervm catalog.CatalogFileInputTest
  * @summary Verifies that the Catalog API accepts valid URIs only;
-            Verifies that the CatalogFeatures' builder throws
+ *          Verifies that the CatalogFeatures' builder throws
  *          IllegalArgumentException on invalid file inputs.
  *          This test was splitted from CatalogTest.java due to
  *          JDK-8168968, it has to only run without SecurityManager

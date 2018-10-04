@@ -3068,13 +3068,13 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     break;
 
   case vmIntrinsics::_loadFence :
-    if (os::is_MP()) __ membar_acquire();
+    __ membar_acquire();
     break;
   case vmIntrinsics::_storeFence:
-    if (os::is_MP()) __ membar_release();
+    __ membar_release();
     break;
   case vmIntrinsics::_fullFence :
-    if (os::is_MP()) __ membar();
+    __ membar();
     break;
   case vmIntrinsics::_onSpinWait:
     __ on_spin_wait();
@@ -3623,18 +3623,16 @@ LIR_Opr LIRGenerator::call_runtime(BasicTypeArray* signature, LIRItemList* args,
 }
 
 void LIRGenerator::do_MemBar(MemBar* x) {
-  if (os::is_MP()) {
-    LIR_Code code = x->code();
-    switch(code) {
-      case lir_membar_acquire   : __ membar_acquire(); break;
-      case lir_membar_release   : __ membar_release(); break;
-      case lir_membar           : __ membar(); break;
-      case lir_membar_loadload  : __ membar_loadload(); break;
-      case lir_membar_storestore: __ membar_storestore(); break;
-      case lir_membar_loadstore : __ membar_loadstore(); break;
-      case lir_membar_storeload : __ membar_storeload(); break;
-      default                   : ShouldNotReachHere(); break;
-    }
+  LIR_Code code = x->code();
+  switch(code) {
+  case lir_membar_acquire   : __ membar_acquire(); break;
+  case lir_membar_release   : __ membar_release(); break;
+  case lir_membar           : __ membar(); break;
+  case lir_membar_loadload  : __ membar_loadload(); break;
+  case lir_membar_storestore: __ membar_storestore(); break;
+  case lir_membar_loadstore : __ membar_loadstore(); break;
+  case lir_membar_storeload : __ membar_storeload(); break;
+  default                   : ShouldNotReachHere(); break;
   }
 }
 

@@ -28,6 +28,8 @@ import java.nio.file.Paths;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.CREATE;
 
+import jdk.test.lib.util.JarUtils;
+
 public class SetupJar {
 
     private static final String PROVIDER

@@ -32,7 +32,7 @@
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  * @build PatchMain
- * @run main TwoJars
+ * @run driver TwoJars
  */
 
 import java.io.File;

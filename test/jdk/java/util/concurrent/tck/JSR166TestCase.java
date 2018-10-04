@@ -1415,9 +1415,11 @@ public class JSR166TestCase extends TestCase {
      */
     <T> void checkTimedGet(Future<T> f, T expectedValue, long timeoutMillis) {
         long startTime = System.nanoTime();
+        T actual = null;
         try {
-            assertEquals(expectedValue, f.get(timeoutMillis, MILLISECONDS));
+            actual = f.get(timeoutMillis, MILLISECONDS);
         } catch (Throwable fail) { threadUnexpectedException(fail); }
+        assertEquals(expectedValue, actual);
         if (millisElapsedSince(startTime) > timeoutMillis/2)
             throw new AssertionError("timed get did not return promptly");
     }
@@ -1596,13 +1598,15 @@ public class JSR166TestCase extends TestCase {
     }
 
     public void await(CountDownLatch latch, long timeoutMillis) {
+        boolean timedOut = false;
         try {
-            if (!latch.await(timeoutMillis, MILLISECONDS))
-                fail("timed out waiting for CountDownLatch for "
-                     + (timeoutMillis/1000) + " sec");
+            timedOut = !latch.await(timeoutMillis, MILLISECONDS);
         } catch (Throwable fail) {
             threadUnexpectedException(fail);
         }
+        if (timedOut)
+            fail("timed out waiting for CountDownLatch for "
+                 + (timeoutMillis/1000) + " sec");
     }
 
     public void await(CountDownLatch latch) {
@@ -1610,13 +1614,15 @@ public class JSR166TestCase extends TestCase {
     }
 
     public void await(Semaphore semaphore) {
+        boolean timedOut = false;
         try {
-            if (!semaphore.tryAcquire(LONG_DELAY_MS, MILLISECONDS))
-                fail("timed out waiting for Semaphore for "
-                     + (LONG_DELAY_MS/1000) + " sec");
+            timedOut = !semaphore.tryAcquire(LONG_DELAY_MS, MILLISECONDS);
         } catch (Throwable fail) {
             threadUnexpectedException(fail);
         }
+        if (timedOut)
+            fail("timed out waiting for Semaphore for "
+                 + (LONG_DELAY_MS/1000) + " sec");
     }
 
     public void await(CyclicBarrier barrier) {
@@ -1802,17 +1808,17 @@ public class JSR166TestCase extends TestCase {
 
     @SuppressWarnings("unchecked")
     <T> T serialClone(T o) {
+        T clone = null;
         try {
             ObjectInputStream ois = new ObjectInputStream
                 (new ByteArrayInputStream(serialBytes(o)));
-            T clone = (T) ois.readObject();
-            if (o == clone) assertImmutable(o);
-            assertSame(o.getClass(), clone.getClass());
-            return clone;
+            clone = (T) ois.readObject();
         } catch (Throwable fail) {
             threadUnexpectedException(fail);
-            return null;
         }
+        if (o == clone) assertImmutable(o);
+        else assertSame(o.getClass(), clone.getClass());
+        return clone;
     }
 
     /**
@@ -1831,7 +1837,7 @@ public class JSR166TestCase extends TestCase {
             (new ByteArrayInputStream(bos.toByteArray()));
         T clone = (T) ois.readObject();
         if (o == clone) assertImmutable(o);
-        assertSame(o.getClass(), clone.getClass());
+        else assertSame(o.getClass(), clone.getClass());
         return clone;
     }
 

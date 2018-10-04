@@ -35,7 +35,7 @@
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  * @compile test-classes/Hello.java
  * @compile test-classes/JvmtiApp.java
- * @run main JvmtiAddPath
+ * @run driver JvmtiAddPath
  */
 
 import java.io.File;

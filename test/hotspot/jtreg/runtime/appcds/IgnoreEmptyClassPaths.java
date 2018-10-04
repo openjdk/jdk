@@ -32,7 +32,7 @@
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
  * @compile test-classes/HelloMore.java
- * @run main IgnoreEmptyClassPaths
+ * @run driver IgnoreEmptyClassPaths
  */
 
 import java.io.File;

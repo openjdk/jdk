@@ -37,15 +37,15 @@ import jdk.internal.module.ModuleInfoWriter;
 import java.util.stream.Stream;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-
+import jdk.test.lib.util.JarUtils;
 
 /*
  * @test
  * @bug 8078813 8183310
  * @summary Test custom JAAS login module with all possible modular option.
- * @library /lib/testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.module
- * @build JarUtils
+ * @build jdk.test.lib.util.JarUtils
  * @build TestLoginModule JaasClient
  * @run main JaasModularClientTest false
  * @run main JaasModularClientTest true

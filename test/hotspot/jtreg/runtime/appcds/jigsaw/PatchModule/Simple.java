@@ -32,7 +32,7 @@
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  * @build PatchMain
- * @run main Simple
+ * @run driver Simple
  */
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;

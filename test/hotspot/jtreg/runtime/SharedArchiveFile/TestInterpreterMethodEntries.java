@@ -30,7 +30,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main TestInterpreterMethodEntries
+ * @run driver TestInterpreterMethodEntries
  */
 
 import java.lang.Math;

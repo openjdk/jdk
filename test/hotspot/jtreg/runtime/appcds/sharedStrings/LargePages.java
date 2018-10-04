@@ -31,7 +31,7 @@
  * @modules java.management
  *          jdk.jartool/sun.tools.jar
  * @build HelloString
- * @run main LargePages
+ * @run driver LargePages
  * @run main/othervm -XX:+UseStringDeduplication LargePages
  * @run main/othervm -XX:-CompactStrings LargePages
  */

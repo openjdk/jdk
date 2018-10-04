@@ -24,8 +24,9 @@
 /**
  * @test
  * @modules jdk.zipfs
- * @library /lib/testlibrary
- * @build ModulesInCustomFileSystem JarUtils m1/* m2/*
+ * @library /test/lib
+ * @build ModulesInCustomFileSystem m1/* m2/*
+ *        jdk.test.lib.util.JarUtils
  * @run testng/othervm ModulesInCustomFileSystem
  * @summary Test ModuleFinder to find modules in a custom file system
  */
@@ -42,6 +43,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Set;
+
+import jdk.test.lib.util.JarUtils;
 
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;

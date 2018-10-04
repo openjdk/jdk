@@ -29,7 +29,7 @@
  * @modules jdk.compiler
  *          jdk.jartool/sun.tools.jar
  *          jdk.jlink
- * @run main AddOpens
+ * @run driver AddOpens
  * @summary sanity test the --add-opens option
  */
 

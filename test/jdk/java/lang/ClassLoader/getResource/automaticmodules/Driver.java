@@ -23,8 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary /test/lib
- * @build Driver Main JarUtils
+ * @library /test/lib
+ * @build Driver Main
+ *        jdk.test.lib.util.JarUtils
  * @run main Driver
  * @summary Test ClassLoader.getResourceXXX to locate resources in an automatic
  *          module
@@ -39,6 +40,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.util.JarUtils;
 
 /**
  * The driver creates a JAR file containing p/Foo.class, p/foo.properties,

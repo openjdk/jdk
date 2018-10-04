@@ -112,9 +112,9 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
   Symbol* base_name_sym = element_name->get_symbol();
   char* name;
 
-  if (base_name_sym->byte_at(0) == '[' ||
-      (base_name_sym->byte_at(0) == 'L' &&  // watch package name 'Lxx'
-       base_name_sym->byte_at(element_len-1) == ';')) {
+  if (base_name_sym->char_at(0) == '[' ||
+      (base_name_sym->char_at(0) == 'L' &&  // watch package name 'Lxx'
+       base_name_sym->char_at(element_len-1) == ';')) {
 
     int new_len = element_len + dimension + 1; // for the ['s and '\0'
     name = CURRENT_THREAD_ENV->name_buffer(new_len);

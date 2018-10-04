@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ size_t AdjoiningGenerations::reserved_byte_size() {
 }
 
 void log_before_expansion(bool old, size_t expand_in_bytes, size_t change_in_bytes, size_t max_size) {
-  Log(heap, ergo) log;
+  Log(gc, ergo, heap) log;
   if (!log.is_debug()) {
    return;
   }
@@ -136,7 +136,7 @@ void log_before_expansion(bool old, size_t expand_in_bytes, size_t change_in_byt
 }
 
 void log_after_expansion(bool old, size_t max_size) {
-  Log(heap, ergo) log;
+  Log(gc, ergo, heap) log;
   if (!log.is_debug()) {
    return;
   }

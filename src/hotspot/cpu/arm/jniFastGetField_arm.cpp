@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,13 +127,9 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   __ bic(R1, R1, JNIHandles::weak_tag_mask);
 #endif
 
-  if (os::is_MP()) {
-    // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
-    __ andr(Rtmp1, Rsafept_cnt, (unsigned)1);
-    __ ldr(Robj, Address(R1, Rtmp1));
-  } else {
-    __ ldr(Robj, Address(R1));
-  }
+  // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
+  __ andr(Rtmp1, Rsafept_cnt, (unsigned)1);
+  __ ldr(Robj, Address(R1, Rtmp1));
 
 #ifdef AARCH64
   __ add(Robj, Robj, AsmOperand(R2, lsr, 2));
@@ -198,25 +194,21 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
       ShouldNotReachHere();
   }
 
-  if(os::is_MP()) {
-      // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
+  // Address dependency restricts memory access ordering. It's cheaper than explicit LoadLoad barrier
 #if defined(__ABI_HARD__) && !defined(AARCH64)
-    if (type == T_FLOAT || type == T_DOUBLE) {
-      __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
-      __ fmrrd(Rres, Rres_hi, D0);
-      __ eor(Rtmp2, Rres, Rres);
-      __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr, Rtmp2));
-    } else
+  if (type == T_FLOAT || type == T_DOUBLE) {
+    __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
+    __ fmrrd(Rres, Rres_hi, D0);
+    __ eor(Rtmp2, Rres, Rres);
+    __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr, Rtmp2));
+  } else
 #endif // __ABI_HARD__ && !AARCH64
-    {
+  {
 #ifndef AARCH64
-      __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
+    __ ldr_literal(Rsafepoint_counter_addr, safepoint_counter_addr);
 #endif // !AARCH64
-      __ eor(Rtmp2, Rres, Rres);
-      __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr, Rtmp2));
-    }
-  } else {
-    __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr));
+    __ eor(Rtmp2, Rres, Rres);
+    __ ldr_s32(Rsafept_cnt2, Address(Rsafepoint_counter_addr, Rtmp2));
   }
   __ cmp(Rsafept_cnt2, Rsafept_cnt);
 #ifdef AARCH64

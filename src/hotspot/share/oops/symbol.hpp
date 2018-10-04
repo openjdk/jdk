@@ -112,7 +112,7 @@ class Symbol : public MetaspaceObj {
   // in high half word. length is the number of UTF8 characters in the symbol
   volatile uint32_t _length_and_refcount;
   short _identity_hash;
-  jbyte _body[2];
+  u1 _body[2];
 
   enum {
     // max_symbol_length must fit into the top 16 bits of _length_and_refcount
@@ -128,7 +128,7 @@ class Symbol : public MetaspaceObj {
     return (int)heap_word_size(byte_size(length));
   }
 
-  void byte_at_put(int index, int value) {
+  void byte_at_put(int index, u1 value) {
     assert(index >=0 && index < length(), "symbol index overflow");
     _body[index] = value;
   }
@@ -148,7 +148,7 @@ class Symbol : public MetaspaceObj {
 
  public:
   // Low-level access (used with care, since not GC-safe)
-  const jbyte* base() const { return &_body[0]; }
+  const u1* base() const { return &_body[0]; }
 
   int size()                { return size(utf8_length()); }
   int byte_size()           { return byte_size(utf8_length()); }
@@ -176,12 +176,16 @@ class Symbol : public MetaspaceObj {
     return (refcount() == PERM_REFCOUNT);
   }
 
-  int byte_at(int index) const {
+  // Function char_at() returns the Symbol's selected u1 byte as a char type.
+  //
+  // Note that all multi-byte chars have the sign bit set on all their bytes.
+  // No single byte chars have their sign bit set.
+  char char_at(int index) const {
     assert(index >=0 && index < length(), "symbol index overflow");
-    return base()[index];
+    return (char)base()[index];
   }
 
-  const jbyte* bytes() const { return base(); }
+  const u1* bytes() const { return base(); }
 
   int utf8_length() const { return length(); }
 
@@ -190,7 +194,7 @@ class Symbol : public MetaspaceObj {
     int l = utf8_length();
     if (l != len) return false;
     while (l-- > 0) {
-      if (str[l] != (char) byte_at(l))
+      if (str[l] != char_at(l))
         return false;
     }
     assert(l == -1, "we should be at the beginning");

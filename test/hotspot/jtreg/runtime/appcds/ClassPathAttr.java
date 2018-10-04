@@ -30,7 +30,7 @@
  * @modules java.base/jdk.internal.misc
  *          java.management
  *          jdk.jartool/sun.tools.jar
- * @run main ClassPathAttr
+ * @run driver ClassPathAttr
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

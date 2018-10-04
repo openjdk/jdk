@@ -135,7 +135,7 @@ LIR_Opr BarrierSetC1::atomic_add_at(LIRAccess& access, LIRItem& value) {
 
 void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
   DecoratorSet decorators = access.decorators();
-  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses) && os::is_MP();
+  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses);
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   LIRGenerator* gen = access.gen();
@@ -144,7 +144,7 @@ void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
     value = gen->mask_boolean(access.base().opr(), value, access.access_emit_info());
   }
 
-  if (is_volatile && os::is_MP()) {
+  if (is_volatile) {
     __ membar_release();
   }
 
@@ -163,7 +163,7 @@ void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
 void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   LIRGenerator *gen = access.gen();
   DecoratorSet decorators = access.decorators();
-  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses) && os::is_MP();
+  bool is_volatile = (((decorators & MO_SEQ_CST) != 0) || AlwaysAtomicAccesses);
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
@@ -181,7 +181,7 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
     __ load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info(), patch_code);
   }
 
-  if (is_volatile && os::is_MP()) {
+  if (is_volatile) {
     __ membar_acquire();
   }
 
@@ -296,6 +296,10 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
   if (gen_pre_barrier) {
     // We can have generate one runtime check here. Let's start with
     // the offset check.
+    // Allocate temp register to base and load it here, otherwise
+    // control flow below may confuse register allocator.
+    LIR_Opr base_reg = gen->new_register(T_OBJECT);
+    __ move(base.result(), base_reg);
     if (gen_offset_check) {
       // if (offset != referent_offset) -> continue
       // If offset is an int then we can do the comparison with the
@@ -318,14 +322,14 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
     if (gen_source_check) {
       // offset is a const and equals referent offset
       // if (source == null) -> continue
-      __ cmp(lir_cond_equal, base.result(), LIR_OprFact::oopConst(NULL));
+      __ cmp(lir_cond_equal, base_reg, LIR_OprFact::oopConst(NULL));
       __ branch(lir_cond_equal, T_OBJECT, cont->label());
     }
     LIR_Opr src_klass = gen->new_register(T_METADATA);
     if (gen_type_check) {
       // We have determined that offset == referent_offset && src != null.
       // if (src->_klass->_reference_type == REF_NONE) -> continue
-      __ move(new LIR_Address(base.result(), oopDesc::klass_offset_in_bytes(), T_ADDRESS), src_klass);
+      __ move(new LIR_Address(base_reg, oopDesc::klass_offset_in_bytes(), T_ADDRESS), src_klass);
       LIR_Address* reference_type_addr = new LIR_Address(src_klass, in_bytes(InstanceKlass::reference_type_offset()), T_BYTE);
       LIR_Opr reference_type = gen->new_register(T_INT);
       __ move(reference_type_addr, reference_type);

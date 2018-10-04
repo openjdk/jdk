@@ -65,7 +65,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   // test if object header is still the same (i.e. unlocked), and if so, store the
   // displaced header address in the object header - if it is not the same, get the
   // object header instead
-  if (os::is_MP()) MacroAssembler::lock(); // must be immediately before cmpxchg!
+  MacroAssembler::lock(); // must be immediately before cmpxchg!
   cmpxchgptr(disp_hdr, Address(obj, hdr_offset));
   // if the object header was the same, we're done
   if (PrintBiasedLockingStatistics) {
@@ -126,7 +126,7 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   // test if object header is pointing to the displaced header, and if so, restore
   // the displaced header in the object - if the object header is not pointing to
   // the displaced header, get the object header instead
-  if (os::is_MP()) MacroAssembler::lock(); // must be immediately before cmpxchg!
+  MacroAssembler::lock(); // must be immediately before cmpxchg!
   cmpxchgptr(hdr, Address(obj, hdr_offset));
   // if the object header was not pointing to the displaced header,
   // we do unlocking via runtime call

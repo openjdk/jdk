@@ -1442,8 +1442,11 @@ class Assembler : public AbstractAssembler {
     bcondNotPositive =  bcondNotHigh,
     bcondNotOrdered  =  1,  // float comparisons
     bcondOrdered     = 14,  // float comparisons
-    bcondLowOrNotOrdered  =  bcondLow|bcondNotOrdered,  // float comparisons
-    bcondHighOrNotOrdered =  bcondHigh|bcondNotOrdered, // float comparisons
+    bcondLowOrNotOrdered  =  bcondLow  | bcondNotOrdered,  // float comparisons
+    bcondHighOrNotOrdered =  bcondHigh | bcondNotOrdered,  // float comparisons
+    bcondNotLowOrNotOrdered   =  bcondNotLow   | bcondNotOrdered,  // float comparisons
+    bcondNotHighOrNotOrdered  =  bcondNotHigh  | bcondNotOrdered,  // float comparisons
+    bcondNotEqualOrNotOrdered =  bcondNotEqual | bcondNotOrdered,  // float comparisons
     // unsigned arithmetic calculation instructions
     // Mask bit#0 is not used by these instructions.
     // There is no indication of overflow for these instr.

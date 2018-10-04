@@ -1950,24 +1950,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   //     didn't see any synchronization is progress, and escapes.
   __ mov(rscratch1, _thread_in_native_trans);
 
-  if(os::is_MP()) {
-    if (UseMembar) {
-      __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
-
-      // Force this write out before the read below
-      __ dmb(Assembler::ISH);
-    } else {
-      __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
-      __ stlrw(rscratch1, rscratch2);
-
-      // Write serialization page so VM thread can do a pseudo remote membar.
-      // We use the current thread pointer to calculate a thread specific
-      // offset to write to within the page. This minimizes bus traffic
-      // due to cache line collision.
-      __ serialize_memory(rthread, r2);
-    }
-  } else {
+  if (UseMembar) {
     __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
+
+    // Force this write out before the read below
+    __ dmb(Assembler::ISH);
+  } else {
+    __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
+    __ stlrw(rscratch1, rscratch2);
+
+    // Write serialization page so VM thread can do a pseudo remote membar.
+    // We use the current thread pointer to calculate a thread specific
+    // offset to write to within the page. This minimizes bus traffic
+    // due to cache line collision.
+    __ serialize_memory(rthread, r2);
   }
 
   // check for safepoint operation in progress and/or pending suspend requests

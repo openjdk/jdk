@@ -39,7 +39,7 @@
  * @run driver ClassFileInstaller ClassUnloadCommon
  * @run driver ClassFileInstaller ClassUnloadCommon$1
  * @run driver ClassFileInstaller ClassUnloadCommon$TestFailure
- * @run main UnloadUnregisteredLoaderTest
+ * @run driver UnloadUnregisteredLoaderTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;

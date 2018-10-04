@@ -31,7 +31,7 @@
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/Hello.java
- * @run main BootClassPathMismatch
+ * @run driver BootClassPathMismatch
  */
 
 import jdk.test.lib.cds.CDSOptions;

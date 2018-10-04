@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,13 +39,16 @@
 
 import java.net.*;
 import java.io.*;
+import java.time.Duration;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MultiThreadTest extends Thread {
 
     /*
      * Is debugging enabled - start with -d to enable.
      */
-    static boolean debug = false;
+    static boolean debug = true; // disable debug once stability proven
 
     static Object threadlock = new Object ();
     static int threadCounter = 0;
@@ -82,8 +85,7 @@ public class MultiThreadTest extends Thread {
     int requests;
 
     MultiThreadTest(int port, int requests) throws Exception {
-        uri = "http://localhost:" +
-                     port + "/foo.html";
+        uri = "http://localhost:" + port + "/foo.html";
 
         b = new byte [256];
         this.requests = requests;
@@ -93,7 +95,9 @@ public class MultiThreadTest extends Thread {
         }
     }
 
-    public void run () {
+    public void run() {
+        long start = System.nanoTime();
+
         try {
             for (int i=0; i<requests; i++) {
                 doRequest (uri);
@@ -108,11 +112,13 @@ public class MultiThreadTest extends Thread {
                 }
             }
         }
+        debug("client: end - " + Duration.ofNanos(System.nanoTime() - start));
     }
 
     static int threads=5;
 
     public static void main(String args[]) throws Exception {
+        long start = System.nanoTime();
 
         int x = 0, arg_len = args.length;
         int requests = 20;
@@ -157,6 +163,11 @@ public class MultiThreadTest extends Thread {
         if  (reqs != threads*requests) {
             throw new RuntimeException ("Expected "+ threads*requests+ " requests: got " +reqs);
         }
+        for (Thread worker : svr.workers()) {
+            worker.join(60_000);
+        }
+
+        debug("main thread end - " + Duration.ofNanos(System.nanoTime() - start));
     }
 }
 
@@ -168,9 +179,14 @@ public class MultiThreadTest extends Thread {
         ServerSocket ss;
         int connectionCount;
         boolean shutdown = false;
+        private Queue<Worker> workers = new ConcurrentLinkedQueue<>();
 
         Server(ServerSocket ss) {
             this.ss = ss;
+        }
+
+        public Queue<Worker> workers() {
+            return workers;
         }
 
         public synchronized int connectionCount() {
@@ -203,11 +219,12 @@ public class MultiThreadTest extends Thread {
                     }
 
                     int id;
+                    Worker w;
                     synchronized (this) {
                         id = connectionCount++;
+                        w = new Worker(s, id);
+                        workers.add(w);
                     }
-
-                    Worker w = new Worker(s, id);
                     w.start();
                     MultiThreadTest.debug("server: Started worker " + id);
                 }
@@ -236,7 +253,7 @@ public class MultiThreadTest extends Thread {
         }
 
         static int requests = 0;
-        static Object rlock = new Object();
+        static final Object rlock = new Object();
 
         public static int getRequests () {
             synchronized (rlock) {
@@ -249,7 +266,7 @@ public class MultiThreadTest extends Thread {
             }
         }
 
-        int readUntil (InputStream in, char[] seq) throws IOException {
+        int readUntil(InputStream in, char[] seq) throws IOException {
             int i=0, count=0;
             while (true) {
                 int c = in.read();
@@ -268,10 +285,12 @@ public class MultiThreadTest extends Thread {
         }
 
         public void run() {
+            long start = System.nanoTime();
+
             try {
                 int max = 400;
                 byte b[] = new byte[1000];
-                InputStream in = new BufferedInputStream (s.getInputStream());
+                InputStream in = new BufferedInputStream(s.getInputStream());
                 // response to client
                 PrintStream out = new PrintStream(
                                     new BufferedOutputStream(
@@ -282,7 +301,7 @@ public class MultiThreadTest extends Thread {
                     // read entire request from client
                     int n=0;
 
-                    n = readUntil (in, new char[] {'\r','\n', '\r','\n'});
+                    n = readUntil(in, new char[] {'\r','\n', '\r','\n'});
 
                     if (n <= 0) {
                         MultiThreadTest.debug("worker: " + id + ": Shutdown");
@@ -299,11 +318,11 @@ public class MultiThreadTest extends Thread {
                     out.print("Transfer-Encoding: chunked\r\n");
                     out.print("Content-Type: text/html\r\n");
                     out.print("Connection: Keep-Alive\r\n");
-                    out.print ("Keep-Alive: timeout=15, max="+max+"\r\n");
+                    out.print("Keep-Alive: timeout=15, max="+max+"\r\n");
                     out.print("\r\n");
-                    out.print ("6\r\nHello \r\n");
-                    out.print ("5\r\nWorld\r\n");
-                    out.print ("0\r\n\r\n");
+                    out.print("6\r\nHello \r\n");
+                    out.print("5\r\nWorld\r\n");
+                    out.print("0\r\n\r\n");
                     out.flush();
 
                     if (--max == 0) {
@@ -318,6 +337,8 @@ public class MultiThreadTest extends Thread {
                 try {
                     s.close();
                 } catch (Exception e) { }
+                MultiThreadTest.debug("worker: " + id  + " end - " +
+                            Duration.ofNanos(System.nanoTime() - start));
             }
         }
     }

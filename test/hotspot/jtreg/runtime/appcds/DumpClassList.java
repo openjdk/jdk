@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  * @compile test-classes/ArrayListTest.java
- * @run main DumpClassList
+ * @run driver DumpClassList
  */
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;

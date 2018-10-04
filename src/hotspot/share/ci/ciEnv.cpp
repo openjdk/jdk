@@ -399,8 +399,8 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
 
   // Now we need to check the SystemDictionary
   Symbol* sym = name->get_symbol();
-  if (sym->byte_at(0) == 'L' &&
-    sym->byte_at(sym->utf8_length()-1) == ';') {
+  if (sym->char_at(0) == 'L' &&
+    sym->char_at(sym->utf8_length()-1) == ';') {
     // This is a name from a signature.  Strip off the trimmings.
     // Call recursive to keep scope of strippedsym.
     TempNewSymbol strippedsym = SymbolTable::new_symbol(sym->as_utf8()+1,
@@ -427,7 +427,7 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
 
   // setup up the proper type to return on OOM
   ciKlass* fail_type;
-  if (sym->byte_at(0) == '[') {
+  if (sym->char_at(0) == '[') {
     fail_type = _unloaded_ciobjarrayklass;
   } else {
     fail_type = _unloaded_ciinstance_klass;
@@ -453,8 +453,8 @@ ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
   // we must build an array type around it.  The CI requires array klasses
   // to be loaded if their element klasses are loaded, except when memory
   // is exhausted.
-  if (sym->byte_at(0) == '[' &&
-      (sym->byte_at(1) == '[' || sym->byte_at(1) == 'L')) {
+  if (sym->char_at(0) == '[' &&
+      (sym->char_at(1) == '[' || sym->char_at(1) == 'L')) {
     // We have an unloaded array.
     // Build it on the fly if the element class exists.
     TempNewSymbol elem_sym = SymbolTable::new_symbol(sym->as_utf8()+1,

@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main SharedStringsRunAuto
+ * @run driver SharedStringsRunAuto
  */
 
 import jdk.test.lib.cds.CDSTestUtils;

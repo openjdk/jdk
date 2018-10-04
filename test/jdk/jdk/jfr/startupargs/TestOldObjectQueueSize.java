@@ -42,9 +42,9 @@ import jdk.test.lib.jfr.Events;
  * @library /test/lib
  * @key jfr
  *
- * @run main/othervm -XX:TLABSize=2k -XX:-FastTLABRefill -XX:FlightRecorderOptions=old-object-queue-size=0 jdk.jfr.startupargs.TestOldObjectQueueSize off
- * @run main/othervm -XX:TLABSize=2k -Xlog:gc+tlab=trace -XX:-FastTLABRefill -XX:FlightRecorderOptions=old-object-queue-size=10000 jdk.jfr.startupargs.TestOldObjectQueueSize many
- * @run main/othervm -XX:TLABSize=2k -Xlog:gc+tlab=trace -XX:-FastTLABRefill -XX:FlightRecorderOptions=old-object-queue-size=1000000 jdk.jfr.startupargs.TestOldObjectQueueSize many
+ * @run main/othervm -XX:TLABSize=2k -XX:FlightRecorderOptions=old-object-queue-size=0 jdk.jfr.startupargs.TestOldObjectQueueSize off
+ * @run main/othervm -XX:TLABSize=2k -Xlog:gc+tlab=trace -XX:FlightRecorderOptions=old-object-queue-size=10000 jdk.jfr.startupargs.TestOldObjectQueueSize many
+ * @run main/othervm -XX:TLABSize=2k -Xlog:gc+tlab=trace -XX:FlightRecorderOptions=old-object-queue-size=1000000 jdk.jfr.startupargs.TestOldObjectQueueSize many
  */
 public class TestOldObjectQueueSize {
 

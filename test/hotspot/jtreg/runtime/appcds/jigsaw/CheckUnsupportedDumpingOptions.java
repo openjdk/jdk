@@ -32,7 +32,7 @@
  *          jdk.jartool/sun.tools.jar
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile ../test-classes/Hello.java
- * @run main CheckUnsupportedDumpingOptions
+ * @run driver CheckUnsupportedDumpingOptions
  */
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;

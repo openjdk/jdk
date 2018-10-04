@@ -37,7 +37,7 @@
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @compile ../../test-classes/EmptyClassHelper.java
  * @compile ../../test-classes/com/sun/tools/javac/Main.jasm
- * @run main EmptyClassInBootClassPath
+ * @run driver EmptyClassInBootClassPath
  */
 
 import java.io.File;

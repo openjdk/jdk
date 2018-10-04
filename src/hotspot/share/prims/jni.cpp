@@ -3779,13 +3779,7 @@ void copy_jni_function_table(const struct JNINativeInterface_ *new_jni_NativeInt
 void quicken_jni_functions() {
   // Replace Get<Primitive>Field with fast versions
   if (UseFastJNIAccessors && !JvmtiExport::can_post_field_access()
-      && !VerifyJNIFields && !CountJNICalls && !CheckJNICalls
-#if defined(_WINDOWS) && defined(IA32) && defined(COMPILER2)
-      // windows x86 currently needs SEH wrapper and the gain of the fast
-      // versions currently isn't certain for server vm on uniprocessor.
-      && os::is_MP()
-#endif
-  ) {
+      && !VerifyJNIFields && !CountJNICalls && !CheckJNICalls) {
     address func;
     func = JNI_FastGetField::generate_fast_get_boolean_field();
     if (func != (address)-1) {
@@ -3918,9 +3912,7 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
 
   // We use Atomic::xchg rather than Atomic::add/dec since on some platforms
   // the add/dec implementations are dependent on whether we are running
-  // on a multiprocessor, and at this stage of initialization the os::is_MP
-  // function used to determine this will always return false. Atomic::xchg
-  // does not have this problem.
+  // on a multiprocessor Atomic::xchg does not have this problem.
   if (Atomic::xchg(1, &vm_created) == 1) {
     return JNI_EEXIST;   // already created, or create attempt in progress
   }

@@ -29,7 +29,7 @@
  * @library /test/hotspot/jtreg/runtime/appcds /test/lib
  * @modules jdk.jartool/sun.tools.jar
  * @build HelloString
- * @run main SharedStringsStress
+ * @run driver SharedStringsStress
  * @run main/othervm -XX:+UseStringDeduplication SharedStringsStress
  * @run main/othervm -XX:-CompactStrings SharedStringsStress
  */

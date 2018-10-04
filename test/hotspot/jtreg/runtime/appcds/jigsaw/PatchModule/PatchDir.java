@@ -33,7 +33,7 @@
  * @modules java.base/jdk.internal.misc
  *          jdk.jartool/sun.tools.jar
  * @build PatchMain
- * @run main PatchDir
+ * @run driver PatchDir
  */
 
 import java.io.File;

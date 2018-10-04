@@ -160,10 +160,8 @@ ClassLoad(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thread, jclass klass) {
         lock(jni_env);
         display(0, "#### JVMTIagent: ClassLoad: >>>>>>>> entered the raw monitor \"eventLock\" ####\n");
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature,
-                jvmti_env, klass, &cls_sig, /*&generic*/NULL)))
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to get class signature\n");
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(klass, &cls_sig, /*&generic*/NULL)))
+            jni_env->FatalError("JVMTIagent: failed to get class signature\n");
         else {
             if (shortTestName != NULL) {
                 if (strstr((const char*) cls_sig, shortTestName) != NULL) {
@@ -245,14 +243,11 @@ Exception(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thr,
 
     if (hotswap == HOTSWAP_EVERY_EXCEPTION ||
             hotswap == HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetMethodDeclaringClass,
-                jvmti_env, method, &decl_clazz)))
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to get method declaring class\n");
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(method, &decl_clazz)))
+            jni_env->FatalError("JVMTIagent: failed to get method declaring class\n");
 
         if (findAndHotSwap(jni_env, decl_clazz) != 0)
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to hotswap class\n");
+            jni_env->FatalError("JVMTIagent: failed to hotswap class\n");
     }
 }
 
@@ -419,14 +414,11 @@ SingleStep(jvmtiEnv *jvmti_env, JNIEnv* jni_env, jthread thread,
     getVerdict(jni_env, "SingleStep");
 
     if (hotswap == HOTSWAP_EVERY_SINGLE_STEP) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetMethodDeclaringClass,
-                jvmti_env, method, &decl_clazz)))
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to get method declaring class\n");
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(method, &decl_clazz)))
+            jni_env->FatalError("JVMTIagent: failed to get method declaring class\n");
 
         if (findAndHotSwap(jni_env, decl_clazz) != 0)
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to hotswap class\n");
+            jni_env->FatalError("JVMTIagent: failed to hotswap class\n");
     }
 }
 
@@ -443,14 +435,11 @@ MethodEntry(jvmtiEnv *jvmti_env, JNIEnv *jni_env,
 
     if (hotswap == HOTSWAP_EVERY_METHOD_ENTRY ||
             hotswap == HOTSWAP_EVERY_METHOD_ENTRY_FOR_EVERY_CLASS) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetMethodDeclaringClass,
-                jvmti_env, method, &decl_clazz)))
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to get method declaring class\n");
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(method, &decl_clazz)))
+            jni_env->FatalError("JVMTIagent: failed to get method declaring class\n");
 
         if (findAndHotSwap(jni_env, decl_clazz) != 0)
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to hotswap class\n");
+            jni_env->FatalError("JVMTIagent: failed to hotswap class\n");
     }
 }
 
@@ -477,30 +466,23 @@ ExceptionCatch(jvmtiEnv *jvmti_env, JNIEnv *jni_env, jthread thr,
 
     if (hotswap == HOTSWAP_EVERY_EXCEPTION ||
             hotswap == HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS) {
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(GetMethodDeclaringClass,
-                jvmti_env, method, &decl_clazz)))
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to get method declaring class\n");
+        if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(method, &decl_clazz)))
+            jni_env->FatalError("JVMTIagent: failed to get method declaring class\n");
 
         if (findAndHotSwap(jni_env, decl_clazz) != 0)
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to hotswap class\n");
+            jni_env->FatalError("JVMTIagent: failed to hotswap class\n");
     }
 }
 /************************/
 
 static void lock(JNIEnv *jni_env) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorEnter,
-            jvmti, eventLock)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "JVMTIagent: failed to enter a raw monitor\n");
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorEnter(eventLock)))
+        jni_env->FatalError("JVMTIagent: failed to enter a raw monitor\n");
 }
 
 static void unlock(JNIEnv *jni_env) {
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(RawMonitorExit,
-            jvmti, eventLock)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "JVMTIagent: failed to exit a raw monitor\n");
+    if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventLock)))
+        jni_env->FatalError("JVMTIagent: failed to exit a raw monitor\n");
 }
 
 JNIEXPORT jint JNICALL
@@ -516,10 +498,8 @@ Java_nsk_share_RASagent_setHotSwapMode(JNIEnv *jni_env, jclass cls,
     }
 
     /* get supported JVMTI capabilities */
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(GetCapabilities,
-            jvmti, &capabil)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "JVMTIagent: failed to get capabilities\n");
+    if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&capabil)))
+        jni_env->FatalError("JVMTIagent: failed to get capabilities\n");
     if (capabil.can_redefine_classes != 1) { /* ???????????? */
         printf("ERROR: JVMTIagent: Class File Redefinition (HotSwap) is not implemented in this VM\n");
         return 1;
@@ -574,16 +554,14 @@ Java_nsk_share_RASagent_setHotSwapMode(JNIEnv *jni_env, jclass cls,
             return 1;
     }
 
-    if (!NSK_JNI_VERIFY(jni_env, (shortTestName = NSK_CPP_STUB3(GetStringUTFChars,
-            jni_env, shortName, NULL)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (shortTestName = jni_env->GetStringUTFChars(shortName, NULL)) != NULL)) {
         printf("ERROR: JVMTIagent: unable to get UTF-8 characters of the string\n");
         return 1;
     }
     display(0, "#### JVMTIagent: short name of current test is \"%s\"\n",
         shortTestName);
 
-    if (!NSK_JNI_VERIFY(jni_env, (rasCls = NSK_CPP_STUB2(NewGlobalRef,
-            jni_env, cls)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, (rasCls = jni_env->NewGlobalRef(cls)) != NULL)) {
         printf("ERROR JVMTIagent: unable to create a new global reference of the class \"RASagent\"\n");
         return 1;
     }
@@ -605,37 +583,31 @@ static jint allocClsInfo(JNIEnv *jni_env, char *cls_sig, jclass clazz) {
 
     if ((_clsInfo = (class_info*)
             malloc(sizeof(class_info))) == NULL)
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "JVMTIagent: cannot allocate memory for class_info\n");
+        jni_env->FatalError("JVMTIagent: cannot allocate memory for class_info\n");
 
     /* fill the structure class_info */
     _clsInfo->clazzsig = cls_sig;
 
-    if (!NSK_JNI_VERIFY(jni_env, ((*_clsInfo).cls = NSK_CPP_STUB2(NewGlobalRef,
-            jni_env, clazz)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni_env, ((*_clsInfo).cls = jni_env->NewGlobalRef(clazz)) != NULL)) {
         printf("ERROR: JVMTIagent: unable to create a new global reference of class \"%s\"\n",
             _clsInfo->clazzsig);
         free(_clsInfo);
         deallocClsInfo(jni_env);
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "JVMTIagent: unable to create a new global reference of class\n");
+        jni_env->FatalError("JVMTIagent: unable to create a new global reference of class\n");
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (mid =
-        NSK_CPP_STUB4(GetStaticMethodID, jni_env, rasCls,
-            "loadFromClassFile", "(Ljava/lang/String;)[B")) != NULL))
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "JVMTIagent: unable to get ID of the method \"loadFromClassFile\"\n");
+        jni_env->GetStaticMethodID(rasCls, "loadFromClassFile", "(Ljava/lang/String;)[B")) != NULL))
+        jni_env->FatalError("JVMTIagent: unable to get ID of the method \"loadFromClassFile\"\n");
 
-    classBytes = (jbyteArray) NSK_CPP_STUB4(CallStaticObjectMethod,
-        jni_env, rasCls, mid, NSK_CPP_STUB2(NewStringUTF, jni_env, cls_sig));
+    classBytes = (jbyteArray) jni_env->CallStaticObjectMethod(rasCls, mid, jni_env->NewStringUTF(cls_sig));
 
     clearJavaException(jni_env);
 
-    (*_clsInfo).bCount = NSK_CPP_STUB2(GetArrayLength, jni_env, classBytes);
+    (*_clsInfo).bCount = jni_env->GetArrayLength(classBytes);
 
     (*_clsInfo).clsBytes =
-        NSK_CPP_STUB3(GetByteArrayElements, jni_env, classBytes, &isCopy);
+        jni_env->GetByteArrayElements(classBytes, &isCopy);
 
     _clsInfo->next = NULL;
 
@@ -653,17 +625,15 @@ static jint allocClsInfo(JNIEnv *jni_env, char *cls_sig, jclass clazz) {
 static void deallocClsInfo(JNIEnv *jni_env) {
     class_info *clsInfoCurr = clsInfoFst;
 
-    NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni_env, rasCls));
+    NSK_TRACE(jni_env->DeleteGlobalRef(rasCls));
 
     while(clsInfoCurr != NULL) {
         class_info *_clsInfo = clsInfoCurr;
 
-        if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                jvmti, (unsigned char*) clsInfoCurr->clazzsig)))
-            NSK_CPP_STUB2(FatalError, jni_env,
-                "JVMTIagent: failed to deallocate memory for clazzsig\n");
+        if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) clsInfoCurr->clazzsig)))
+            jni_env->FatalError("JVMTIagent: failed to deallocate memory for clazzsig\n");
 
-        NSK_TRACE(NSK_CPP_STUB2(DeleteGlobalRef, jni_env, clsInfoCurr->cls));
+        NSK_TRACE(jni_env->DeleteGlobalRef(clsInfoCurr->cls));
 
         clsInfoCurr = (class_info*) clsInfoCurr->next;
 
@@ -679,10 +649,8 @@ static int findAndHotSwap(JNIEnv *jni_env, jclass clazz) {
     class_info *clsInfoCurr = clsInfoFst;
 
     display(1, "\n#### JVMTIagent: findAndHotSwap: obtaining class signature of class to be hotswap ...\n");
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(GetClassSignature,
-            jvmti, clazz, &clazzsig, /*&generic*/NULL)))
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "JVMTIagent: findAndHotSwap: failed to get class signature\n");
+    if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(clazz, &clazzsig, /*&generic*/NULL)))
+        jni_env->FatalError("JVMTIagent: findAndHotSwap: failed to get class signature\n");
     else {
         display(1, "#### JVMTIagent: findAndHotSwap: ... class signature obtained: \"%s\"\n",
             clazzsig);
@@ -696,10 +664,8 @@ static int findAndHotSwap(JNIEnv *jni_env, jclass clazz) {
                     hotswap == HOTSWAP_EVERY_EXCEPTION_FOR_EVERY_CLASS) {
                 display(1, "\n#### JVMTIagent: findAndHotSwap: going to hotswap tested class \"%s\" during execution of class \"%s\" ...\n",
                     clsInfoCurr->clazzsig, clazzsig);
-                if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                        jvmti, (unsigned char*) clazzsig)))
-                    NSK_CPP_STUB2(FatalError, jni_env,
-                        "JVMTIagent: findAndHotSwap: failed to deallocate memory for clazzsig\n");
+                if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) clazzsig)))
+                    jni_env->FatalError("JVMTIagent: findAndHotSwap: failed to deallocate memory for clazzsig\n");
 
                 if (doHotSwap(jni_env, clsInfoCurr->cls,
                         clsInfoCurr->bCount, clsInfoCurr->clsBytes) != 0) {
@@ -712,10 +678,8 @@ static int findAndHotSwap(JNIEnv *jni_env, jclass clazz) {
                     display(0, "\n#### JVMTIagent: findAndHotSwap: tested class found \"%s\" ...\n",
                         clazzsig);
 
-                    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(Deallocate,
-                            jvmti, (unsigned char*) clazzsig)))
-                        NSK_CPP_STUB2(FatalError, jni_env,
-                            "JVMTIagent: findAndHotSwap: failed to deallocate memory for clazzsig\n");
+                    if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*) clazzsig)))
+                        jni_env->FatalError("JVMTIagent: findAndHotSwap: failed to deallocate memory for clazzsig\n");
 
                     display(0, "\n#### JVMTIagent: findAndHotSwap: going to hotswap tested class \"%s\" ...\n",
                         clsInfoCurr->clazzsig);
@@ -751,8 +715,7 @@ static int doHotSwap(JNIEnv *jni_env, jclass redefCls, jint bCount,
             "#### JVMTIagent: >>>>>>>> Invoke RedefineClasses():\n"
             "<JVMTIagent>\tnew class byte count=%d\n",
             classDef.class_byte_count);
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(RedefineClasses,
-            jvmti, 1, &classDef)))
+    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(jvmti->RedefineClasses(1, &classDef)))
         return 1;
 
     display(0, "#### JVMTIagent: <<<<<<<< RedefineClasses() is successfully done ####\n");
@@ -772,8 +735,7 @@ static int addStressEvents() {
 
             callbacks.SingleStep = &SingleStep;
 
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-                    jvmti, JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
+            if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL)))
                 return JNI_ERR;
 
             stepEventSet = JNI_TRUE;
@@ -789,8 +751,7 @@ static int addStressEvents() {
 
             callbacks.MethodEntry = &MethodEntry;
 
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-                    jvmti, JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL)))
+            if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL)))
                 return JNI_ERR;
 
             display(0, "#### JVMTIagent: ... setting MethodEntry events done\n");
@@ -800,8 +761,7 @@ static int addStressEvents() {
 
             callbacks.MethodExit = &MethodExit;
 
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-                    jvmti, JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL)))
+            if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_EXIT, NULL)))
                 return JNI_ERR;
 
             display(0, "#### JVMTIagent: ... setting MethodExit events done\n");
@@ -817,8 +777,7 @@ static int addStressEvents() {
 
             callbacks.ExceptionCatch = &ExceptionCatch;
 
-            if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-                    jvmti, JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL)))
+            if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL)))
                 return JNI_ERR;
 
             excCatchEventSet = JNI_TRUE;
@@ -827,8 +786,7 @@ static int addStressEvents() {
         }
     }
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
     else
         return 0;
@@ -856,8 +814,7 @@ static int enableEventsCaps() {
     caps.can_generate_native_method_bind_events = 1;
     caps.can_generate_object_free_events = 1;
     caps.can_generate_vm_object_alloc_events = 1;
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB2(AddCapabilities,
-            jvmti, &caps)))
+    if (!NSK_JVMTI_VERIFY(jvmti->AddCapabilities(&caps)))
         return JNI_ERR;
 
     /* Breakpoint events */
@@ -865,8 +822,7 @@ static int enableEventsCaps() {
 
     callbacks.Breakpoint = &Breakpoint;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting Breakpoint events done\n");
 
@@ -875,8 +831,7 @@ static int enableEventsCaps() {
 
     callbacks.ClassFileLoadHook = &ClassFileLoadHook;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting ClassFileLoadHook events done\n");
 
@@ -885,8 +840,7 @@ static int enableEventsCaps() {
 
     callbacks.ClassLoad = &ClassLoad;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting ClassLoad events done\n");
 
@@ -895,8 +849,7 @@ static int enableEventsCaps() {
 
     callbacks.ClassPrepare = &ClassPrepare;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting ClassPrepare events done\n");
 
@@ -905,8 +858,7 @@ static int enableEventsCaps() {
 
     callbacks.CompiledMethodLoad = &CompiledMethodLoad;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting CompiledMethodLoad events done\n");
 
@@ -915,8 +867,7 @@ static int enableEventsCaps() {
 
     callbacks.CompiledMethodUnload = &CompiledMethodUnload;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_UNLOAD, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_UNLOAD, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting CompiledMethodUnload events done\n");
 
@@ -925,8 +876,7 @@ static int enableEventsCaps() {
 
     callbacks.DataDumpRequest = &DataDumpRequest;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_DATA_DUMP_REQUEST, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_DATA_DUMP_REQUEST, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting DataDumpRequest events done\n");
 
@@ -935,8 +885,7 @@ static int enableEventsCaps() {
 
     callbacks.DynamicCodeGenerated = &DynamicCodeGenerated;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_DYNAMIC_CODE_GENERATED, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_DYNAMIC_CODE_GENERATED, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting DynamicCodeGenerated events done\n");
 
@@ -945,8 +894,7 @@ static int enableEventsCaps() {
 
     callbacks.Exception = &Exception;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting Exception events done\n");
 
@@ -955,8 +903,7 @@ static int enableEventsCaps() {
 
     callbacks.FieldAccess = &FieldAccess;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting FieldAccess events done\n");
 
@@ -965,8 +912,7 @@ static int enableEventsCaps() {
 
     callbacks.FieldModification = &FieldModification;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting FieldModification events done\n");
 
@@ -975,8 +921,7 @@ static int enableEventsCaps() {
 
     callbacks.FramePop = &FramePop;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting FramePop events done\n");
 
@@ -985,8 +930,7 @@ static int enableEventsCaps() {
 
     callbacks.GarbageCollectionFinish = &GarbageCollectionFinish;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting GarbageCollectionFinish events done\n");
 
@@ -995,8 +939,7 @@ static int enableEventsCaps() {
 
     callbacks.GarbageCollectionStart = &GarbageCollectionStart;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting GarbageCollectionStart events done\n");
 
@@ -1005,8 +948,7 @@ static int enableEventsCaps() {
 
     callbacks.MonitorContendedEnter = &MonitorContendedEnter;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting MonitorContendedEnter events done\n");
 
@@ -1015,8 +957,7 @@ static int enableEventsCaps() {
 
     callbacks.MonitorContendedEntered = &MonitorContendedEntered;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting MonitorContendedEntered events done\n");
 
@@ -1025,8 +966,7 @@ static int enableEventsCaps() {
 
     callbacks.MonitorWait = &MonitorWait;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAIT, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting MonitorWait events done\n");
 
@@ -1035,8 +975,7 @@ static int enableEventsCaps() {
 
     callbacks.MonitorWaited = &MonitorWaited;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_MONITOR_WAITED, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting MonitorWaited events done\n");
 
@@ -1045,8 +984,7 @@ static int enableEventsCaps() {
 
     callbacks.NativeMethodBind = &NativeMethodBind;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting NativeMethodBind events done\n");
 
@@ -1055,8 +993,7 @@ static int enableEventsCaps() {
 
     callbacks.ObjectFree = &ObjectFree;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting ObjectFree events done\n");
 
@@ -1065,8 +1002,7 @@ static int enableEventsCaps() {
 
     callbacks.ThreadEnd = &ThreadEnd;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting ThreadEnd events done\n");
 
@@ -1075,8 +1011,7 @@ static int enableEventsCaps() {
 
     callbacks.ThreadStart = &ThreadStart;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting ThreadStart events done\n");
 
@@ -1085,8 +1020,7 @@ static int enableEventsCaps() {
 
     callbacks.VMDeath = &VMDeath;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting VMDeath events done\n");
 
@@ -1095,8 +1029,7 @@ static int enableEventsCaps() {
 
     callbacks.VMInit = &VMInit;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting VMInit events done\n");
 
@@ -1105,8 +1038,7 @@ static int enableEventsCaps() {
 
     callbacks.VMStart = &VMStart;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting VMStart events done\n");
 
@@ -1115,26 +1047,23 @@ static int enableEventsCaps() {
 
     callbacks.VMObjectAlloc = &VMObjectAlloc;
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB4(SetEventNotificationMode,
-            jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, NULL)))
         return JNI_ERR;
     display(0, "#### JVMTIagent: ... setting VMObjectAlloc events done\n");
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(SetEventCallbacks,
-            jvmti, &callbacks, sizeof(callbacks))))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
     return 0;
 }
 
 static void clearJavaException(JNIEnv* jni_env) {
-    if (NSK_CPP_STUB1(ExceptionOccurred, jni_env)) {
+    if (jni_env->ExceptionOccurred()) {
 
-        NSK_CPP_STUB1(ExceptionDescribe, jni_env);
-        NSK_CPP_STUB1(ExceptionClear, jni_env);
+        jni_env->ExceptionDescribe();
+        jni_env->ExceptionClear();
 
-        NSK_CPP_STUB2(FatalError, jni_env,
-            "JVMTIagent: exception occurred in java code, aborting\n");
+        jni_env->FatalError("JVMTIagent: exception occurred in java code, aborting\n");
     }
 }
 
@@ -1229,7 +1158,7 @@ static void getVerdict(JNIEnv *jni_env, const char *evnt) {
             exit(97);
         }
         else
-            NSK_CPP_STUB2(FatalError, jni_env, error_msg);
+            jni_env->FatalError(error_msg);
     }
 }
 
@@ -1257,8 +1186,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
     doSetup(options);
 
-    if (!NSK_JVMTI_VERIFY(NSK_CPP_STUB3(CreateRawMonitor,
-            jvmti, "_event_lock", &eventLock)))
+    if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_event_lock", &eventLock)))
         return JNI_ERR;
 
     if (enableEventsCaps() == 0 && addStressEvents() == 0) {

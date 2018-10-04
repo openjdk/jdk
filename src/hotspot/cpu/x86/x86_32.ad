@@ -2087,8 +2087,7 @@ encode %{
   %}
 
   enc_class lock_prefix( ) %{
-    if( os::is_MP() )
-      emit_opcode(cbuf,0xF0);         // [Lock]
+    emit_opcode(cbuf,0xF0);         // [Lock]
   %}
 
   // Cmp-xchg long value.
@@ -2102,8 +2101,7 @@ encode %{
     emit_opcode(cbuf,0x87);
     emit_opcode(cbuf,0xD9);
     // [Lock]
-    if( os::is_MP() )
-      emit_opcode(cbuf,0xF0);
+    emit_opcode(cbuf,0xF0);
     // CMPXCHG8 [Eptr]
     emit_opcode(cbuf,0x0F);
     emit_opcode(cbuf,0xC7);
@@ -2115,8 +2113,7 @@ encode %{
 
   enc_class enc_cmpxchg(eSIRegP mem_ptr) %{
     // [Lock]
-    if( os::is_MP() )
-      emit_opcode(cbuf,0xF0);
+    emit_opcode(cbuf,0xF0);
 
     // CMPXCHG [Eptr]
     emit_opcode(cbuf,0x0F);
@@ -2126,8 +2123,7 @@ encode %{
 
   enc_class enc_cmpxchgb(eSIRegP mem_ptr) %{
     // [Lock]
-    if( os::is_MP() )
-      emit_opcode(cbuf,0xF0);
+    emit_opcode(cbuf,0xF0);
 
     // CMPXCHGB [Eptr]
     emit_opcode(cbuf,0x0F);
@@ -2137,8 +2133,7 @@ encode %{
 
   enc_class enc_cmpxchgw(eSIRegP mem_ptr) %{
     // [Lock]
-    if( os::is_MP() )
-      emit_opcode(cbuf,0xF0);
+    emit_opcode(cbuf,0xF0);
 
     // 16-bit mode
     emit_opcode(cbuf, 0x66);
@@ -6764,11 +6759,7 @@ instruct membar_volatile(eFlagsReg cr) %{
 
   format %{
     $$template
-    if (os::is_MP()) {
-      $$emit$$"LOCK ADDL [ESP + #0], 0\t! membar_volatile"
-    } else {
-      $$emit$$"MEMBAR-volatile ! (empty encoding)"
-    }
+    $$emit$$"LOCK ADDL [ESP + #0], 0\t! membar_volatile"
   %}
   ins_encode %{
     __ membar(Assembler::StoreLoad);
@@ -7373,8 +7364,7 @@ instruct storeLConditional( memory mem, eADXRegL oldval, eBCXRegL newval, eFlags
     //       rcx as the high order word of the new value to store but
     //       our register encoding uses rbx.
     __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
-    if( os::is_MP() )
-      __ lock();
+    __ lock();
     __ cmpxchg8($mem$$Address);
     __ xchgl(as_Register(EBX_enc), as_Register(ECX_enc));
   %}
@@ -7499,7 +7489,7 @@ instruct xaddB_no_res( memory mem, Universe dummy, immI add, eFlagsReg cr) %{
   effect(KILL cr);
   format %{ "ADDB  [$mem],$add" %}
   ins_encode %{
-    if (os::is_MP()) { __ lock(); }
+    __ lock();
     __ addb($mem$$Address, $add$$constant);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -7511,7 +7501,7 @@ instruct xaddB( memory mem, xRegI newval, eFlagsReg cr) %{
   effect(KILL cr);
   format %{ "XADDB  [$mem],$newval" %}
   ins_encode %{
-    if (os::is_MP()) { __ lock(); }
+    __ lock();
     __ xaddb($mem$$Address, $newval$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -7523,7 +7513,7 @@ instruct xaddS_no_res( memory mem, Universe dummy, immI add, eFlagsReg cr) %{
   effect(KILL cr);
   format %{ "ADDS  [$mem],$add" %}
   ins_encode %{
-    if (os::is_MP()) { __ lock(); }
+    __ lock();
     __ addw($mem$$Address, $add$$constant);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -7534,7 +7524,7 @@ instruct xaddS( memory mem, rRegI newval, eFlagsReg cr) %{
   effect(KILL cr);
   format %{ "XADDS  [$mem],$newval" %}
   ins_encode %{
-    if (os::is_MP()) { __ lock(); }
+    __ lock();
     __ xaddw($mem$$Address, $newval$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -7546,7 +7536,7 @@ instruct xaddI_no_res( memory mem, Universe dummy, immI add, eFlagsReg cr) %{
   effect(KILL cr);
   format %{ "ADDL  [$mem],$add" %}
   ins_encode %{
-    if (os::is_MP()) { __ lock(); }
+    __ lock();
     __ addl($mem$$Address, $add$$constant);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -7557,7 +7547,7 @@ instruct xaddI( memory mem, rRegI newval, eFlagsReg cr) %{
   effect(KILL cr);
   format %{ "XADDL  [$mem],$newval" %}
   ins_encode %{
-    if (os::is_MP()) { __ lock(); }
+    __ lock();
     __ xaddl($mem$$Address, $newval$$Register);
   %}
   ins_pipe( pipe_cmpxchg );

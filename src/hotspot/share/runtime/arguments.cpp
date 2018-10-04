@@ -526,8 +526,6 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
   { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
-  { "AssumeMP",                     JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MonitorInUseLists",            JDK_Version::jdk(10),JDK_Version::undefined(), JDK_Version::undefined() },
   { "MaxRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "MinRAMFraction",               JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -540,34 +538,16 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
-  { "MustCallLoadClassInternal",    JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "UnsyncloadClass",              JDK_Version::jdk(10), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::undefined(), JDK_Version::undefined() },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
-  { "CheckAssertionStatusDirectives",JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "PrintMallocFree",               JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "PrintMalloc",                   JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "ShowSafepointMsgs",             JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "FastTLABRefill",                JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "SafepointSpinBeforeYield",      JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "CheckEndorsedAndExtDirs",       JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "DeferThrSuspendLoopCount",      JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "DeferPollingPageLoopCount",     JDK_Version::jdk(10),     JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "TraceScavenge",                 JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
   { "PermSize",                      JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "MaxPermSize",                   JDK_Version::undefined(), JDK_Version::jdk(8),  JDK_Version::undefined() },
   { "SharedReadWriteSize",           JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedReadOnlySize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscDataSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
   { "SharedMiscCodeSize",            JDK_Version::undefined(), JDK_Version::jdk(10), JDK_Version::undefined() },
-  { "UseUTCFileTimestamp",           JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "InlineNotify",                  JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "EnableTracing",                 JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "UseLockedTracing",              JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "NativeMonitorTimeout",          JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "NativeMonitorSpinLimit",        JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
-  { "NativeMonitorFlags",            JDK_Version::undefined(), JDK_Version::jdk(11), JDK_Version::jdk(12) },
+  { "AssumeMP",                      JDK_Version::jdk(10),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "UnlinkSymbolsALot",             JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "AllowNonVirtualCalls",          JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "PrintSafepointStatistics",      JDK_Version::jdk(11),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
@@ -579,6 +559,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "SyncVerbose",                   JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "SyncFlags",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
   { "SyncKnobs",                     JDK_Version::undefined(), JDK_Version::jdk(12), JDK_Version::jdk(13) },
+  { "MonitorInUseLists",             JDK_Version::jdk(10),     JDK_Version::jdk(12), JDK_Version::jdk(13) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -3849,6 +3830,10 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
 
 #if defined(_ALLBSD_SOURCE) || defined(AIX)  // UseLargePages is not yet supported on BSD and AIX.
   UNSUPPORTED_OPTION(UseLargePages);
+#endif
+
+#if defined(AIX)
+  UNSUPPORTED_OPTION(AllocateHeapAt);
 #endif
 
   ArgumentsExt::report_unsupported_options();

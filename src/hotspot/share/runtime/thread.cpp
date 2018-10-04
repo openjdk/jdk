@@ -851,11 +851,9 @@ void Thread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
   f->do_oop((oop*)&_pending_exception);
   handle_area()->oops_do(f);
 
-  if (MonitorInUseLists) {
-    // When using thread local monitor lists, we scan them here,
-    // and the remaining global monitors in ObjectSynchronizer::oops_do().
-    ObjectSynchronizer::thread_local_used_oops_do(this, f);
-  }
+  // We scan thread local monitor lists here, and the remaining global
+  // monitors in ObjectSynchronizer::oops_do().
+  ObjectSynchronizer::thread_local_used_oops_do(this, f);
 }
 
 void Thread::metadata_handles_do(void f(Metadata*)) {

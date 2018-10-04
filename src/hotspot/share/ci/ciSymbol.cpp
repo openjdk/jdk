@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,14 +68,14 @@ const char* ciSymbol::as_quoted_ascii() {
 
 // ------------------------------------------------------------------
 // ciSymbol::base
-const jbyte* ciSymbol::base() {
+const u1* ciSymbol::base() {
   GUARDED_VM_ENTRY(return get_symbol()->base();)
 }
 
 // ------------------------------------------------------------------
-// ciSymbol::byte_at
-int ciSymbol::byte_at(int i) {
-  GUARDED_VM_ENTRY(return get_symbol()->byte_at(i);)
+// ciSymbol::char_at
+char ciSymbol::char_at(int i) {
+  GUARDED_VM_ENTRY(return get_symbol()->char_at(i);)
 }
 
 // ------------------------------------------------------------------

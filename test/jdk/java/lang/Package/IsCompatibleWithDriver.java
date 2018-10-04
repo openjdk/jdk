@@ -25,10 +25,9 @@
  * @test
  * @bug 4227825 4785473
  * @summary Test behaviour of Package.isCompatibleWith().
- * @library /lib/testlibrary
  * @library /test/lib
  * @build A IsCompatibleWith
- *        JarUtils
+ *        jdk.test.lib.util.JarUtils
  *        jdk.test.lib.process.*
  * @run main IsCompatibleWithDriver
  */
@@ -44,6 +43,7 @@ import java.nio.file.Files;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.util.JarUtils;
 
 public class IsCompatibleWithDriver {
     public static void main(String args[]) throws Throwable {

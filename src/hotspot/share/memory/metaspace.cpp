@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
-
 #include "aot/aotLoader.hpp"
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

@@ -4629,7 +4629,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * <li>Examine and collect the suffixes of the step, pred, and fini parameter lists, after removing the iteration variable types.
      * (They must have the form {@code (V... A*)}; collect the {@code (A*)} parts only.)
      * <li>Do not collect suffixes from step, pred, and fini parameter lists that do not begin with all the iteration variable types.
-     * (These types will checked in step 2, along with all the clause function types.)
+     * (These types will be checked in step 2, along with all the clause function types.)
      * <li>Omitted clause functions are ignored.  (Equivalently, they are deemed to have empty parameter lists.)
      * <li>All of the collected parameter lists must be effectively identical.
      * <li>The longest parameter list (which is necessarily unique) is called the "external parameter list" ({@code (A...)}).

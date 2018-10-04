@@ -1609,9 +1609,24 @@ static void pthread_init_common(void) {
 // This means we have clockid_t, clock_gettime et al and CLOCK_MONOTONIC
 
 static int (*_clock_gettime)(clockid_t, struct timespec *);
+static int (*_clock_getres)(clockid_t, struct timespec *);
 static int (*_pthread_condattr_setclock)(pthread_condattr_t *, clockid_t);
 
 static bool _use_clock_monotonic_condattr;
+
+// Exported clock functionality
+
+int os::Posix::clock_gettime(clockid_t clock_id, struct timespec *tp) {
+  return _clock_gettime != NULL ? _clock_gettime(clock_id, tp) : -1;
+}
+
+int os::Posix::clock_getres(clockid_t clock_id, struct timespec *tp) {
+  return _clock_getres != NULL ? _clock_getres(clock_id, tp) : -1;
+}
+
+bool os::Posix::supports_monotonic_clock() {
+  return _clock_gettime != NULL;
+}
 
 // Determine what POSIX API's are present and do appropriate
 // configuration.
@@ -1619,8 +1634,6 @@ void os::Posix::init(void) {
 
   // NOTE: no logging available when this is called. Put logging
   // statements in init_2().
-
-  // Copied from os::Linux::clock_init(). The duplication is temporary.
 
   // 1. Check for CLOCK_MONOTONIC support.
 
@@ -1642,6 +1655,7 @@ void os::Posix::init(void) {
   }
 
   _clock_gettime = NULL;
+  _clock_getres = NULL;
 
   int (*clock_getres_func)(clockid_t, struct timespec*) =
     (int(*)(clockid_t, struct timespec*))dlsym(handle, "clock_getres");
@@ -1656,6 +1670,7 @@ void os::Posix::init(void) {
         clock_gettime_func(CLOCK_MONOTONIC, &tp) == 0) {
       // Yes, monotonic clock is supported.
       _clock_gettime = clock_gettime_func;
+      _clock_getres = clock_getres_func;
     } else {
 #ifdef NEEDS_LIBRT
       // Close librt if there is no monotonic clock.

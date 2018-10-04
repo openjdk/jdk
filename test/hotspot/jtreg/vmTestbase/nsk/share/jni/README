@@ -46,7 +46,7 @@ for invokation of JNI functions:
 
     // jni->FindClass(jni, class_name)
     if (!NSK_JNI_VERIFY(jni,
-            NSK_CPP_STUB2(FindClass, jni, class_name) != NULL)) {
+            jni->FindClass(class_name) != NULL)) {
         return JNI_ERR;
     }
 
@@ -54,7 +54,7 @@ or with saving obtained data:
 
     // cls = jni->FindClass(jni, class_name)
     if (!NSK_JNI_VERIFY(jni, (cls =
-            NSK_CPP_STUB2(FindClass, jni, class_name)) != NULL)) {
+            jni->FindClass(class_name)) != NULL)) {
         return JNI_ERR;
     }
 

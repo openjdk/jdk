@@ -31,7 +31,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main ArchiveDoesNotExist
+ * @run driver ArchiveDoesNotExist
  */
 
 import jdk.test.lib.cds.CDSOptions;
