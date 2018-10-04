@@ -315,6 +315,14 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
     static JNF_MEMBER_CACHE(jm_setCopiesAttribute, sjc_CPrinterJob, "setCopiesAttribute", "(I)V");
     static JNF_MEMBER_CACHE(jm_setCollated, sjc_CPrinterJob, "setCollated", "(Z)V");
     static JNF_MEMBER_CACHE(jm_setPageRangeAttribute, sjc_CPrinterJob, "setPageRangeAttribute", "(IIZ)V");
+    static JNF_MEMBER_CACHE(jm_setPrintToFile, sjc_CPrinterJob, "setPrintToFile", "(Z)V");
+
+    NSPrintJobDispositionValue jobDisposition = [src jobDisposition];
+    if (jobDisposition == NSPrintSaveJob) {
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, true);
+    } else {
+        JNFCallVoidMethod(env, dstPrinterJob, jm_setPrintToFile, false);
+    }
 
     // get the selected printer's name, and set the appropriate PrintService on the Java side
     NSString *name = [[src printer] name];

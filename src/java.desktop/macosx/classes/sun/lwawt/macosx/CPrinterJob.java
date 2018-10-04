@@ -246,10 +246,14 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
+    boolean isPrintToFile = false;
+    private void setPrintToFile(boolean printToFile) {
+        isPrintToFile = printToFile;
+    }
+
     @Override
     public void print(PrintRequestAttributeSet attributes) throws PrinterException {
         // NOTE: Some of this code is copied from RasterPrinterJob.
-
 
         // this code uses javax.print APIs
         // this will make it print directly to the printer
@@ -257,7 +261,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         // However if the printer is a StreamPrintService, its the right path.
         PrintService psvc = getPrintService();
 
-        if (psvc == null) {
+        if (psvc == null && !isPrintToFile) {
             throw new PrinterException("No print service found.");
         }
 
