@@ -8341,8 +8341,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
     "cmpxchg $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval"
   %}
   ins_encode %{
-    __ uxtbw(rscratch2, $oldval$$Register);
-    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, /*acquire*/ false, /*release*/ true,
                /*weak*/ false, $res$$Register);
     __ sxtbw($res$$Register, $res$$Register);
@@ -8358,8 +8357,7 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
     "cmpxchg $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval"
   %}
   ins_encode %{
-    __ uxthw(rscratch2, $oldval$$Register);
-    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::halfword, /*acquire*/ false, /*release*/ true,
                /*weak*/ false, $res$$Register);
     __ sxthw($res$$Register, $res$$Register);
@@ -8436,8 +8434,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ uxtbw(rscratch2, $oldval$$Register);
-    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::byte, /*acquire*/ false, /*release*/ true,
                /*weak*/ true, noreg);
     __ csetw($res$$Register, Assembler::EQ);
@@ -8454,8 +8451,7 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
     "csetw $res, EQ\t# $res <-- (EQ ? 1 : 0)"
   %}
   ins_encode %{
-    __ uxthw(rscratch2, $oldval$$Register);
-    __ cmpxchg($mem$$Register, rscratch2, $newval$$Register,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register,
                Assembler::halfword, /*acquire*/ false, /*release*/ true,
                /*weak*/ true, noreg);
     __ csetw($res$$Register, Assembler::EQ);

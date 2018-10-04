@@ -1020,7 +1020,10 @@ public:
                enum operand_size size,
                bool acquire, bool release, bool weak,
                Register result);
+private:
+  void compare_eq(Register rn, Register rm, enum operand_size size);
 
+public:
   // Calls
 
   address trampoline_call(Address entry, CodeBuffer *cbuf = NULL);
