@@ -66,6 +66,9 @@ Java_sun_font_NativeStrike_createNullScalerContext
 
    NativeScalerContext *context =
        (NativeScalerContext*)malloc(sizeof(NativeScalerContext));
+   if (context == NULL) {
+        return (jlong)(uintptr_t)0L;
+   }
    context->xFont = NULL;
    context->minGlyph = 0;
    context->maxGlyph = 0;
@@ -92,6 +95,10 @@ Java_sun_font_NativeStrike_createScalerContext
     (*env)->GetByteArrayRegion(env, xlfdBytes, 0, len, (jbyte*)xlfd);
     xlfd[len] = '\0';
     context = (NativeScalerContext*)malloc(sizeof(NativeScalerContext));
+    if (context == NULL) {
+        free(xlfd);
+        return (jlong)(uintptr_t)0L;
+    }
 
     AWTLoadFont (xlfd, &(context->xFont));
     free(xlfd);
@@ -232,10 +239,15 @@ JNIEXPORT jfloat JNICALL
 Java_sun_font_NativeFont_getGlyphAdvance
    (JNIEnv *env, jobject font2D, jlong pScalerContext, jint glyphCode) {
 
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
-    AWTFont xFont = (AWTFont)context->xFont;
     AWTChar xcs = NULL;
     jfloat advance = 0.0f;
+    AWTFont xFont;
+    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    if (context == NULL) {
+        return advance;
+    } else {
+        xFont = (AWTFont)context->xFont;
+    }
 
     if (xFont == NULL || context->ptSize == NO_POINTSIZE) {
         return advance;
@@ -271,9 +283,14 @@ JNIEXPORT jlong JNICALL
 Java_sun_font_NativeFont_getGlyphImageNoDefault
     (JNIEnv *env, jobject font2D, jlong pScalerContext, jint glyphCode) {
 
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
-    AWTFont xFont = context->xFont;
     AWTChar2b xChar;
+    AWTFont xFont;
+    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    if (context == NULL) {
+        return (jlong)0;
+    } else {
+        xFont = (AWTFont)context->xFont;
+    }
 
     if (xFont == NULL || context->ptSize == NO_POINTSIZE) {
         return (jlong)0;
@@ -292,9 +309,14 @@ JNIEXPORT jlong JNICALL
 Java_sun_font_NativeFont_getGlyphImage
     (JNIEnv *env, jobject font2D, jlong pScalerContext, jint glyphCode) {
 
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
-    AWTFont xFont = context->xFont;
     AWTChar2b xChar;
+    AWTFont xFont;
+    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    if (context == NULL) {
+        return (jlong)0;
+    } else {
+        xFont = (AWTFont)context->xFont;
+    }
 
     if (xFont == NULL || context->ptSize == NO_POINTSIZE) {
         return (jlong)0;
@@ -313,10 +335,15 @@ JNIEXPORT jobject JNICALL
   Java_sun_font_NativeFont_getFontMetrics
     (JNIEnv *env, jobject font2D, jlong pScalerContext) {
 
-    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
-    AWTFont xFont = (AWTFont)context->xFont;
     jfloat j0=0, j1=1, ay=j0, dy=j0, mx=j0;
     jobject metrics;
+    AWTFont xFont;
+    NativeScalerContext *context = (NativeScalerContext*)pScalerContext;
+    if (context == NULL) {
+        return NULL;
+    } else {
+        xFont = (AWTFont)context->xFont;
+    }
 
     if (xFont == NULL) {
         return NULL;
