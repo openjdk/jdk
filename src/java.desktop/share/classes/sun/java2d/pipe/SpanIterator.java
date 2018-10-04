@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public interface SpanIterator {
      *     {PathMinX, PathMinY, PathMaxX, PathMaxY}.
      * </pre>
      */
-    public void getPathBox(int pathbox[]);
+    public void getPathBox(int[] pathbox);
 
     /**
      * This method constrains the spans returned by nextSpan() to the
@@ -64,7 +64,7 @@ public interface SpanIterator {
      *     {SpanMinX, SpanMinY, SpanMaxX, SpanMaxY}.
      * </pre>
      */
-    public boolean nextSpan(int spanbox[]);
+    public boolean nextSpan(int[] spanbox);
 
     /**
      * This method tells the iterator that it may skip all spans

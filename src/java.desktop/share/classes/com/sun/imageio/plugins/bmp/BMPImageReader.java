@@ -122,7 +122,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
     private long bitmapStart;
     private long compression;
     private long imageSize;
-    private byte palette[];
+    private byte[] palette;
     private int imageType;
     private int numBands;
     private boolean isBottomUp;
@@ -655,7 +655,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             }
 
             // Create IndexColorModel from the palette.
-            byte r[], g[], b[];
+            byte[] r, g, b;
             if (imageType == VERSION_2_1_BIT ||
                 imageType == VERSION_2_4_BIT ||
                 imageType == VERSION_2_8_BIT) {
@@ -885,9 +885,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             noTransform &=  destinationRegion.equals(raster.getBounds());
         }
 
-        byte bdata[] = null; // buffer for byte data
-        short sdata[] = null; // buffer for short data
-        int idata[] = null; // buffer for int data
+        byte[] bdata = null; // buffer for byte data
+        short[] sdata = null; // buffer for short data
+        int[] idata = null; // buffer for int data
 
         // the sampleModel can be null in case of embedded image
         if (sampleModel != null) {
@@ -1368,7 +1368,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
     }
 
-    private void read16Bit(short sdata[]) throws IOException {
+    private void read16Bit(short[] sdata) throws IOException {
         // Padding bytes at the end of each scanline
         // width * bitsPerPixel should be divisible by 32
         int padding = width * 2 % 4;
@@ -1434,7 +1434,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
     }
 
-    private void read32Bit(int idata[]) throws IOException {
+    private void read32Bit(int[] idata) throws IOException {
         if (noTransform) {
             int j = isBottomUp ? (height -1) * width : 0;
 
@@ -1490,7 +1490,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
     }
 
-    private void readRLE8(byte bdata[]) throws IOException {
+    private void readRLE8(byte[] bdata) throws IOException {
         // If imageSize field is not provided, calculate it.
         int imSize = (int)imageSize;
         if (imSize == 0) {
@@ -1506,7 +1506,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         }
 
         // Read till we have the whole image
-        byte values[] = new byte[imSize];
+        byte[] values = new byte[imSize];
         int bytesRead = 0;
         iis.readFully(values, 0, imSize);
 
@@ -1562,7 +1562,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                             byte[] values,
                             byte[] bdata) throws IOException {
 
-        byte val[] = new byte[width];
+        byte[] val = new byte[width];
         int count = 0, l = 0;
         int value;
         boolean flag = false;
@@ -1864,7 +1864,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                 // Ensure to check if the source index-count, does not
                 // exceed the source image size
                 if (count < imSize) {
-                    int alternate[] = { (values[count] & 0xf0) >> 4,
+                    int[] alternate = { (values[count] & 0xf0) >> 4,
                                         values[count] & 0x0f };
                     for (int i=0; (i < value) && (l < width); i++) {
                         val[l++] = (byte)alternate[i & 1];

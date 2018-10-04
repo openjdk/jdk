@@ -945,7 +945,7 @@ public final class XChoicePeer extends XComponentPeer implements ChoicePeer, Top
         public void paintPeer(Graphics g) {
             //System.out.println("UC.paint()");
             Choice choice = (Choice)target;
-            Color colors[] = XChoicePeer.this.getGUIcolors();
+            Color[] colors = XChoicePeer.this.getGUIcolors();
             draw3DRect(g, getSystemColors(), 0, 0, width - 1, height - 1, true);
             draw3DRect(g, getSystemColors(), 1, 1, width - 3, height - 3, true);
 

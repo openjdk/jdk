@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class ShortLookupTable extends LookupTable {
      * Constants
      */
 
-    short data[][];
+    short[][] data;
 
     /**
      * Constructs a ShortLookupTable object from an array of short
@@ -60,7 +60,7 @@ public class ShortLookupTable extends LookupTable {
      * @param data an array of short arrays representing a lookup
      *        table for each band
      */
-    public ShortLookupTable(int offset, short data[][]) {
+    public ShortLookupTable(int offset, short[][] data) {
         super(offset,data.length);
         numComponents = data.length;
         numEntries    = data[0].length;
@@ -81,7 +81,7 @@ public class ShortLookupTable extends LookupTable {
      *        before indexing into the arrays
      * @param data an array of shorts
      */
-    public ShortLookupTable(int offset, short data[]) {
+    public ShortLookupTable(int offset, short[] data) {
         super(offset,data.length);
         numComponents = 1;
         numEntries    = data.length;

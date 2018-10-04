@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,10 +92,10 @@ public class LoopPipe
     }
 
     public void drawPolyline(SunGraphics2D sg2d,
-                             int xPoints[], int yPoints[],
+                             int[] xPoints, int[] yPoints,
                              int nPoints)
     {
-        int nPointsArray[] = { nPoints };
+        int[] nPointsArray = { nPoints };
         sg2d.loops.drawPolygonsLoop.DrawPolygons(sg2d, sg2d.getSurfaceData(),
                                                  xPoints, yPoints,
                                                  nPointsArray, 1,
@@ -104,10 +104,10 @@ public class LoopPipe
     }
 
     public void drawPolygon(SunGraphics2D sg2d,
-                            int xPoints[], int yPoints[],
+                            int[] xPoints, int[] yPoints,
                             int nPoints)
     {
-        int nPointsArray[] = { nPoints };
+        int[] nPointsArray = { nPoints };
         sg2d.loops.drawPolygonsLoop.DrawPolygons(sg2d, sg2d.getSurfaceData(),
                                                  xPoints, yPoints,
                                                  nPointsArray, 1,
@@ -149,7 +149,7 @@ public class LoopPipe
     }
 
     public void fillPolygon(SunGraphics2D sg2d,
-                            int xPoints[], int yPoints[],
+                            int[] xPoints, int[] yPoints,
                             int nPoints)
     {
         ShapeSpanIterator sr = getFillSSI(sg2d);
@@ -333,7 +333,7 @@ public class LoopPipe
                 return;
             }
         }
-        int spanbox[] = new int[4];
+        int[] spanbox = new int[4];
         SurfaceData sd = sg2d.getSurfaceData();
         while (si.nextSpan(spanbox)) {
             int x = spanbox[0];

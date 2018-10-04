@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class Cursor implements java.io.Serializable {
       * method should be used instead.
       */
     @Deprecated
-    protected static Cursor predefined[] = new Cursor[14];
+    protected static Cursor[] predefined = new Cursor[14];
 
     /**
      * This field is a private replacement for 'predefined' array.

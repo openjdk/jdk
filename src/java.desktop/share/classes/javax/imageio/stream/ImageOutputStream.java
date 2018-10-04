@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * {@code null}.
      * @exception IOException if an I/O error occurs.
      */
-    void write(byte b[]) throws IOException;
+    void write(byte[] b) throws IOException;
 
     /**
      * Writes a sequence of bytes to the stream at the current
@@ -114,7 +114,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * {@code null}.
      * @exception IOException if an I/O error occurs.
      */
-    void write(byte b[], int off, int len) throws IOException;
+    void write(byte[] b, int off, int len) throws IOException;
 
     /**
      * Writes a {@code boolean} value to the stream.  If

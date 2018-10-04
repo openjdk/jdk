@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,11 +195,11 @@ public class ColorEditor extends Panel implements PropertyEditor {
     }
 
 
-    private String colorNames[] = { " ", "white", "lightGray", "gray", "darkGray",
+    private String[] colorNames = { " ", "white", "lightGray", "gray", "darkGray",
                         "black", "red", "pink", "orange",
                         "yellow", "green", "magenta", "cyan",
                         "blue"};
-    private Color colors[] = { null, Color.white, Color.lightGray, Color.gray, Color.darkGray,
+    private Color[] colors = { null, Color.white, Color.lightGray, Color.gray, Color.darkGray,
                         Color.black, Color.red, Color.pink, Color.orange,
                         Color.yellow, Color.green, Color.magenta, Color.cyan,
                         Color.blue};

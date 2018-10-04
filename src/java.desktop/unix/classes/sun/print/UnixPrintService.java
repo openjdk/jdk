@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
 
     private static int MAXCOPIES = 1000;
 
-    private static final MediaSizeName mediaSizes[] = {
+    private static final MediaSizeName[] mediaSizes = {
         MediaSizeName.NA_LETTER,
         MediaSizeName.TABLOID,
         MediaSizeName.LEDGER,
@@ -224,7 +224,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
 
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobsSysV() {
         String command = "/usr/bin/lpstat -a " + printer;
-        String results[]= PrintServiceLookupProvider.execCmd(command);
+        String[] results= PrintServiceLookupProvider.execCmd(command);
 
         if (results != null && results.length > 0) {
             if (results[0].startsWith(printer + " accepting requests")) {
@@ -257,7 +257,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
 
         String command = "/usr/sbin/lpc status " + printer
             + lpcStatusCom[PrintServiceLookupProvider.cmdIndex];
-        String results[]= PrintServiceLookupProvider.execCmd(command);
+        String[] results= PrintServiceLookupProvider.execCmd(command);
 
         if (results != null && results.length > 0) {
             if (PrintServiceLookupProvider.cmdIndex ==
@@ -305,7 +305,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobsAIX() {
         // On AIX there should not be a blank after '-a'.
         String command = "/usr/bin/lpstat -a" + printer;
-        String results[]= PrintServiceLookupProvider.execCmd(command);
+        String[] results= PrintServiceLookupProvider.execCmd(command);
 
         // Remove headers and bogus entries added by remote printers.
         results = filterPrinterNamesAIX(results);
@@ -355,7 +355,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
 
     private QueuedJobCount getQueuedJobCountSysV() {
         String command = "/usr/bin/lpstat -R " + printer;
-        String results[]= PrintServiceLookupProvider.execCmd(command);
+        String[] results= PrintServiceLookupProvider.execCmd(command);
         int qlen = (results == null) ? 0 : results.length;
 
         return new QueuedJobCount(qlen);
@@ -372,7 +372,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         int qlen = 0;
         String command = "/usr/sbin/lpc status " + printer
             + lpcQueueCom[PrintServiceLookupProvider.cmdIndex];
-        String results[] = PrintServiceLookupProvider.execCmd(command);
+        String[] results = PrintServiceLookupProvider.execCmd(command);
 
         if (results != null && results.length > 0) {
             String queued;
@@ -400,7 +400,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     private QueuedJobCount getQueuedJobCountAIX() {
         // On AIX there should not be a blank after '-a'.
         String command = "/usr/bin/lpstat -a" + printer;
-        String results[]=  PrintServiceLookupProvider.execCmd(command);
+        String[] results=  PrintServiceLookupProvider.execCmd(command);
 
         // Remove headers and bogus entries added by remote printers.
         results = filterPrinterNamesAIX(results);
@@ -794,7 +794,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         } else if (category == JobName.class) {
             return new JobName("Java Printing", null);
         } else if (category == JobSheets.class) {
-            JobSheets arr[] = new JobSheets[2];
+            JobSheets[] arr = new JobSheets[2];
             arr[0] = JobSheets.NONE;
             arr[1] = JobSheets.STANDARD;
             return arr;

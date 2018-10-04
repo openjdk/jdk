@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,7 +279,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
             return;
         }
         int sx, sy;
-        Color colors[] = getGUIcolors();
+        Color[] colors = getGUIcolors();
 
         if (sp.getScrollbarDisplayPolicy() == ScrollPane.SCROLLBARS_NEVER) {
             sx = -x;
@@ -353,7 +353,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
     }
     void repaintScrollBars() {
         Graphics g = getGraphics();
-        Color colors[] = getGUIcolors();
+        Color[] colors = getGUIcolors();
         if (g != null) {
             try {
                 paintScrollBars(g, colors);
@@ -364,7 +364,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
     }
     public void repaintScrollbarRequest(XScrollbar sb) {
         Graphics g = getGraphics();
-        Color colors[] = getGUIcolors();
+        Color[] colors = getGUIcolors();
         if (g != null) {
             try {
                 if (sb == vsb) {
@@ -397,7 +397,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
      * @param colors the colors used to draw the scrollbar
      * @param paintAll paint the whole scrollbar if true, just the thumb if false
      */
-    void paintHorScrollbar(Graphics g, Color colors[], boolean paintAll) {
+    void paintHorScrollbar(Graphics g, Color[] colors, boolean paintAll) {
         if (hsbSpace <= 0) {
             return;
         }
@@ -433,7 +433,7 @@ class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollb
      * @param colors the colors used to draw the scrollbar
      * @param paintAll paint the whole scrollbar if true, just the thumb if false
      */
-    void paintVerScrollbar(Graphics g, Color colors[], boolean paintAll) {
+    void paintVerScrollbar(Graphics g, Color[] colors, boolean paintAll) {
         if (vsbSpace <= 0) {
             return;
         }

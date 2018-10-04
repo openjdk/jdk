@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1054,7 +1054,7 @@ import javax.swing.text.*;
         /**
          * Set the layout arrays to use for holding layout results
          */
-        public void setLayoutArrays(int offsets[], int spans[], int targetSpan) {
+        public void setLayoutArrays(int[] offsets, int[] spans, int targetSpan) {
             this.offsets = offsets;
             this.spans = spans;
             updatePercentagesAndAdjustmentWeights(targetSpan);

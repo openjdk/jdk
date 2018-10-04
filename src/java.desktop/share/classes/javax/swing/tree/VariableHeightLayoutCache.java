@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,7 +409,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeNodesChanged(TreeModelEvent e) {
         if(e != null) {
-            int               changedIndexs[]  = e.getChildIndices();
+            int[]             changedIndexs  = e.getChildIndices();
             TreeStateNode     changedNode = getNodeForPath(
                     SwingUtilities2.getTreePath(e, getModel()), false, false);
 
@@ -456,7 +456,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeNodesInserted(TreeModelEvent e) {
         if(e != null) {
-            int               changedIndexs[] = e.getChildIndices();
+            int[]             changedIndexs = e.getChildIndices();
             TreeStateNode     changedParentNode = getNodeForPath(
                     SwingUtilities2.getTreePath(e, getModel()), false, false);
             /* Only need to update the children if the node has been
@@ -522,7 +522,7 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeNodesRemoved(TreeModelEvent e) {
         if(e != null) {
-            int               changedIndexs[];
+            int[]             changedIndexs;
             TreeStateNode     changedParentNode;
 
             changedIndexs = e.getChildIndices();

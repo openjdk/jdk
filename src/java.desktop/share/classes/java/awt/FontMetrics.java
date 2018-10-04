@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,7 +332,7 @@ public abstract class FontMetrics implements java.io.Serializable {
         if (ch < 256) {
             return getWidths()[ch];
         }
-        char data[] = {ch};
+        char[] data = {ch};
         return charsWidth(data, 0, 1);
     }
 
@@ -355,7 +355,7 @@ public abstract class FontMetrics implements java.io.Serializable {
      */
     public int stringWidth(String str) {
         int len = str.length();
-        char data[] = new char[len];
+        char[] data = new char[len];
         str.getChars(0, len, data, 0);
         return charsWidth(data, 0, len);
     }
@@ -383,7 +383,7 @@ public abstract class FontMetrics implements java.io.Serializable {
      * @see       #bytesWidth(byte[], int, int)
      * @see       #stringWidth(String)
      */
-    public int charsWidth(char data[], int off, int len) {
+    public int charsWidth(char[] data, int off, int len) {
         return stringWidth(new String(data, off, len));
     }
 
@@ -410,7 +410,7 @@ public abstract class FontMetrics implements java.io.Serializable {
      * @see       #stringWidth(String)
      */
     @SuppressWarnings("deprecation")
-    public int bytesWidth(byte data[], int off, int len) {
+    public int bytesWidth(byte[] data, int off, int len) {
         return stringWidth(new String(data, 0, off, len));
     }
 
@@ -426,7 +426,7 @@ public abstract class FontMetrics implements java.io.Serializable {
      *                 described by this {@code FontMetrics} object.
      */
     public int[] getWidths() {
-        int widths[] = new int[256];
+        int[] widths = new int[256];
         for (char ch = 0 ; ch < 256 ; ch++) {
             widths[ch] = charWidth(ch);
         }

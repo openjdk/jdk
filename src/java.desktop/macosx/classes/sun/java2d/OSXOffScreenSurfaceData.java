@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,7 @@ public class OSXOffScreenSurfaceData extends OSXSurfaceData // implements Raster
                 int pixelSize = cm.getPixelSize();
                 int numOfComponents = cm.getNumColorComponents();
                 if ((numOfComponents == 3) && (cm instanceof ComponentColorModel) && (sm instanceof PixelInterleavedSampleModel)) {
-                    int sizes[] = cm.getComponentSize();
+                    int[] sizes = cm.getComponentSize();
                     boolean validsizes = (sizes[0] == 8) && (sizes[1] == 8) && (sizes[2] == 8);
                     int[] offs = ((ComponentSampleModel) sm).getBandOffsets();
                     int numBands = raster.getNumBands();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,7 +774,7 @@ class HTMLCodec extends InputStream {
                                                 iSelStart = -1;
 
         bufferedStream.mark(BYTE_BUFFER_LEN);
-        String astEntries[] = new String[] {
+        String[] astEntries = new String[] {
                 //common
                 VERSION,
                 START_HTML,

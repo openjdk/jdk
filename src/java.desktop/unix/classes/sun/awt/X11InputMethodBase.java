@@ -127,7 +127,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     // Initialize highlight mapping table
     static {
         @SuppressWarnings({"unchecked", "rawtypes"})
-        Map<TextAttribute, ?> styles[] = new Map[4];
+        Map<TextAttribute, ?>[] styles = new Map[4];
         HashMap<TextAttribute, Object> map;
 
         // UNSELECTED_RAW_TEXT_HIGHLIGHT
@@ -490,7 +490,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     //       to insure that it cannot be overridden by client subclasses.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     abstract void dispatchComposedText(String chgText,
-                                           int chgStyles[],
+                                           int[] chgStyles,
                                            int chgOffset,
                                            int chgLength,
                                            int caretPosition,

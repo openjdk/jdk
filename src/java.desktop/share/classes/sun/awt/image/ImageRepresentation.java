@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -284,7 +284,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         DataBufferInt dbi = new DataBufferInt(size);
         // Note that stealData() requires a markDirty() afterwards
         // since we modify the data in it.
-        int newpixels[] = SunWritableRaster.stealData(dbi, 0);
+        int[] newpixels = SunWritableRaster.stealData(dbi, 0);
         if (cmodel instanceof IndexColorModel &&
             biRaster instanceof ByteComponentRaster &&
             biRaster.getNumDataElements() == 1)
@@ -312,7 +312,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
         isSameCM = false;
         cmodel = ColorModel.getRGBdefault();
 
-        int bandMasks[] = {0x00ff0000,
+        int[] bandMasks = {0x00ff0000,
                            0x0000ff00,
                            0x000000ff,
                            0xff000000};
@@ -344,7 +344,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
 
     public void setPixels(int x, int y, int w, int h,
                           ColorModel model,
-                          byte pix[], int off, int scansize) {
+                          byte[] pix, int off, int scansize) {
         int lineOff=off;
         int poff;
         int[] newLUT=null;
@@ -541,7 +541,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
 
 
     public void setPixels(int x, int y, int w, int h, ColorModel model,
-                          int pix[], int off, int scansize)
+                          int[] pix, int off, int scansize)
     {
         int lineOff=off;
         int poff;
@@ -662,7 +662,7 @@ public class ImageRepresentation extends ImageWatched implements ImageConsumer
                                                       0x0000ff00,
                                                       0x000000ff);
 
-            int bandmasks[] = {0x00ff0000, 0x0000ff00, 0x000000ff};
+            int[] bandmasks = {0x00ff0000, 0x0000ff00, 0x000000ff};
             WritableRaster opRaster = Raster.createPackedRaster(db, w, h, w,
                                                                 bandmasks,
                                                                 null);

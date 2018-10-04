@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public class FileDialog extends Dialog {
     static {
         AWTAccessor.setFileDialogAccessor(
             new AWTAccessor.FileDialogAccessor() {
-                public void setFiles(FileDialog fileDialog, File files[]) {
+                public void setFiles(FileDialog fileDialog, File[] files) {
                     fileDialog.setFiles(files);
                 }
                 public void setFile(FileDialog fileDialog, String file) {
@@ -497,7 +497,7 @@ public class FileDialog extends Dialog {
      * @see #getFiles
      * @since 1.7
      */
-    private void setFiles(File files[]) {
+    private void setFiles(File[] files) {
         synchronized (getObjectLock()) {
             this.files = files;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public class ToolTipManager extends MouseAdapter implements MouseMotionListener 
     // Point(20000, 20000))
     private GraphicsConfiguration getDrawingGC(Point toFind) {
         GraphicsEnvironment env = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice devices[] = env.getScreenDevices();
+        GraphicsDevice[] devices = env.getScreenDevices();
         for (GraphicsDevice device : devices) {
             GraphicsConfiguration config = device.getDefaultConfiguration();
             Rectangle rect = config.getBounds();

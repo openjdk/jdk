@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class TracedEventQueue extends EventQueue {
     static boolean trace = false;
 
     // The list of event IDs to ignore when tracing.
-    static int suppressedIDs[] = null;
+    static int[] suppressedIDs = null;
 
     static {
         String s = Toolkit.getProperty("AWT.IgnoreEventIDs", "");

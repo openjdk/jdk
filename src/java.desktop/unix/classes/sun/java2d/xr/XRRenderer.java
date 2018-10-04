@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
     }
 
     public void drawPolyline(SunGraphics2D sg2d,
-                             int xpoints[], int ypoints[], int npoints) {
+                             int[] xpoints, int[] ypoints, int npoints) {
         Path2D.Float p2d = new Path2D.Float();
         if (npoints > 1) {
             p2d.moveTo(xpoints[0], ypoints[0]);
@@ -119,7 +119,7 @@ public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
     }
 
     public void drawPolygon(SunGraphics2D sg2d,
-                            int xpoints[], int ypoints[], int npoints) {
+                            int[] xpoints, int[] ypoints, int npoints) {
         draw(sg2d, new Polygon(xpoints, ypoints, npoints));
     }
 
@@ -163,7 +163,7 @@ public class XRRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe {
     }
 
     public void fillPolygon(SunGraphics2D sg2d,
-                            int xpoints[], int ypoints[], int npoints) {
+                            int[] xpoints, int[] ypoints, int npoints) {
         fill(sg2d, new Polygon(xpoints, ypoints, npoints));
     }
 

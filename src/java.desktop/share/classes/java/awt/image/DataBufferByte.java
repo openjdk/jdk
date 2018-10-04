@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,10 @@ import static sun.java2d.StateTrackable.State.*;
 public final class DataBufferByte extends DataBuffer
 {
     /** The default data bank. */
-    byte data[];
+    byte[] data;
 
     /** All data banks */
-    byte bankdata[][];
+    byte[][] bankdata;
 
     /**
      * Constructs a byte-based {@code DataBuffer} with a single bank and the
@@ -109,7 +109,7 @@ public final class DataBufferByte extends DataBuffer
      * @param dataArray The byte array for the {@code DataBuffer}.
      * @param size The size of the {@code DataBuffer} bank.
      */
-    public DataBufferByte(byte dataArray[], int size) {
+    public DataBufferByte(byte[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_BYTE, size);
         data = dataArray;
         bankdata = new byte[1][];
@@ -133,7 +133,7 @@ public final class DataBufferByte extends DataBuffer
      * @param offset The offset into the {@code dataArray}. {@code dataArray}
      * must have at least {@code offset} + {@code size} elements.
      */
-    public DataBufferByte(byte dataArray[], int size, int offset){
+    public DataBufferByte(byte[] dataArray, int size, int offset){
         super(UNTRACKABLE, TYPE_BYTE, size, 1, offset);
         data = dataArray;
         bankdata = new byte[1][];
@@ -154,7 +154,7 @@ public final class DataBufferByte extends DataBuffer
      * @param dataArray The byte arrays for the {@code DataBuffer}.
      * @param size The size of the banks in the {@code DataBuffer}.
      */
-    public DataBufferByte(byte dataArray[][], int size) {
+    public DataBufferByte(byte[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_BYTE, size, dataArray.length);
         bankdata = dataArray.clone();
         data = bankdata[0];
@@ -179,7 +179,7 @@ public final class DataBufferByte extends DataBuffer
      * @param size The size of the banks in the {@code DataBuffer}.
      * @param offsets The offsets into each array.
      */
-    public DataBufferByte(byte dataArray[][], int size, int offsets[]) {
+    public DataBufferByte(byte[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_BYTE, size, dataArray.length, offsets);
         bankdata = dataArray.clone();
         data = bankdata[0];

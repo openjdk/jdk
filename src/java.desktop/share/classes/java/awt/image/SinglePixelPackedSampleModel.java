@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,13 +66,13 @@ import java.util.Arrays;
 public class SinglePixelPackedSampleModel extends SampleModel
 {
     /** Bit masks for all bands of the image data. */
-    private int bitMasks[];
+    private int[] bitMasks;
 
     /** Bit Offsets for all bands of the image data. */
-    private int bitOffsets[];
+    private int[] bitOffsets;
 
     /** Bit sizes for all the bands of the image data. */
-    private int bitSizes[];
+    private int[] bitSizes;
 
     /** Maximum bit size. */
     private int maxBitSize;
@@ -106,7 +106,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
      *         {@code DataBuffer.TYPE_INT}
      */
     public SinglePixelPackedSampleModel(int dataType, int w, int h,
-                                   int bitMasks[]) {
+                                   int[] bitMasks) {
         this(dataType, w, h, w, bitMasks);
         if (dataType != DataBuffer.TYPE_BYTE &&
             dataType != DataBuffer.TYPE_USHORT &&
@@ -140,7 +140,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
      *         {@code DataBuffer.TYPE_INT}
      */
     public SinglePixelPackedSampleModel(int dataType, int w, int h,
-                                   int scanlineStride, int bitMasks[]) {
+                                   int scanlineStride, int[] bitMasks) {
         super(dataType, w, h, bitMasks.length);
         if (dataType != DataBuffer.TYPE_BYTE &&
             dataType != DataBuffer.TYPE_USHORT &&
@@ -306,12 +306,12 @@ public class SinglePixelPackedSampleModel extends SampleModel
      *                                  greater than the number of bands in
      *                                  the sample model.
      */
-    public SampleModel createSubsetSampleModel(int bands[]) {
+    public SampleModel createSubsetSampleModel(int[] bands) {
         if (bands.length > numBands)
             throw new RasterFormatException("There are only " +
                                             numBands +
                                             " bands");
-        int newBitMasks[] = new int[bands.length];
+        int[] newBitMasks = new int[bands.length];
         for (int i=0; i<bands.length; i++)
             newBitMasks[i] = bitMasks[bands[i]];
 
@@ -426,12 +426,12 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * @return all samples for the specified pixel.
      * @see #setPixel(int, int, int[], DataBuffer)
      */
-    public int [] getPixel(int x, int y, int iArray[], DataBuffer data) {
+    public int [] getPixel(int x, int y, int[] iArray, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        int pixels[];
+        int[] pixels;
         if (iArray == null) {
             pixels = new int [numBands];
         } else {
@@ -460,7 +460,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * @see #setPixels(int, int, int, int, int[], DataBuffer)
      */
     public int[] getPixels(int x, int y, int w, int h,
-                           int iArray[], DataBuffer data) {
+                           int[] iArray, DataBuffer data) {
         int x1 = x + w;
         int y1 = y + h;
 
@@ -470,7 +470,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        int pixels[];
+        int[] pixels;
         if (iArray != null) {
            pixels = iArray;
         } else {
@@ -532,13 +532,13 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * @see #setSamples(int, int, int, int, int, int[], DataBuffer)
      */
     public int[] getSamples(int x, int y, int w, int h, int b,
-                           int iArray[], DataBuffer data) {
+                           int[] iArray, DataBuffer data) {
         // Bounds check for 'b' will be performed automatically
         if ((x < 0) || (y < 0) || (x + w > width) || (y + h > height)) {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        int samples[];
+        int[] samples;
         if (iArray != null) {
            samples = iArray;
         } else {
@@ -634,7 +634,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * @see #getPixel(int, int, int[], DataBuffer)
      */
     public void setPixel(int x, int y,
-                         int iArray[],
+                         int[] iArray,
                          DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
             throw new ArrayIndexOutOfBoundsException
@@ -663,7 +663,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * @see #getPixels(int, int, int, int, int[], DataBuffer)
      */
     public void setPixels(int x, int y, int w, int h,
-                          int iArray[], DataBuffer data) {
+                          int[] iArray, DataBuffer data) {
         int x1 = x + w;
         int y1 = y + h;
 
@@ -732,7 +732,7 @@ public class SinglePixelPackedSampleModel extends SampleModel
      * @see #getSamples(int, int, int, int, int, int[], DataBuffer)
      */
     public void setSamples(int x, int y, int w, int h, int b,
-                          int iArray[], DataBuffer data) {
+                          int[] iArray, DataBuffer data) {
         // Bounds check for 'b' will be performed automatically
         if ((x < 0) || (y < 0) || (x + w > width) || (y + h > height)) {
             throw new ArrayIndexOutOfBoundsException

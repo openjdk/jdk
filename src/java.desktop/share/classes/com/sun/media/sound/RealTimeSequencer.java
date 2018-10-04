@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1126,7 +1126,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
                 }
                 return;
             }
-            int temp[] = new int[ controllers.length + c.length ];
+            int[] temp = new int[ controllers.length + c.length ];
             int elements;
 
             // first add what we have
@@ -1149,7 +1149,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
                 }
             }
             // now keep only the elements we need
-            int newc[] = new int[ elements ];
+            int[] newc = new int[ elements ];
             for(int i=0; i<elements; i++){
                 newc[i] = temp[i];
             }
@@ -1161,7 +1161,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
             if (c==null) {
                 controllers = new int[0];
             } else {
-                int temp[] = new int[ controllers.length ];
+                int[] temp = new int[ controllers.length ];
                 int elements = 0;
 
 
@@ -1178,7 +1178,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
                     }
                 }
                 // now keep only the elements remaining
-                int newc[] = new int[ elements ];
+                int[] newc = new int[ elements ];
                 for(int i=0; i<elements; i++) {
                     newc[i] = temp[i];
                 }
@@ -1195,7 +1195,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
                 return null;
             }
 
-            int c[] = new int[controllers.length];
+            int[] c = new int[controllers.length];
 
             for(int i=0; i<controllers.length; i++){
                 c[i] = controllers[i];

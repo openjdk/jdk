@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -254,7 +254,7 @@ public class Raster {
                                                          int w, int h,
                                                          int scanlineStride,
                                                          int pixelStride,
-                                                         int bandOffsets[],
+                                                         int[] bandOffsets,
                                                          Point location) {
         DataBuffer d;
 
@@ -365,8 +365,8 @@ public class Raster {
     public static WritableRaster createBandedRaster(int dataType,
                                                     int w, int h,
                                                     int scanlineStride,
-                                                    int bankIndices[],
-                                                    int bandOffsets[],
+                                                    int[] bankIndices,
+                                                    int[] bandOffsets,
                                                     Point location) {
         DataBuffer d;
         int bands = bandOffsets.length;
@@ -450,7 +450,7 @@ public class Raster {
      */
     public static WritableRaster createPackedRaster(int dataType,
                                                     int w, int h,
-                                                    int bandMasks[],
+                                                    int[] bandMasks,
                                                     Point location) {
         DataBuffer d;
 
@@ -628,7 +628,7 @@ public class Raster {
                                                          int w, int h,
                                                          int scanlineStride,
                                                          int pixelStride,
-                                                         int bandOffsets[],
+                                                         int[] bandOffsets,
                                                          Point location)
     {
         if (dataBuffer == null) {
@@ -701,8 +701,8 @@ public class Raster {
     public static WritableRaster createBandedRaster(DataBuffer dataBuffer,
                                                     int w, int h,
                                                     int scanlineStride,
-                                                    int bankIndices[],
-                                                    int bandOffsets[],
+                                                    int[] bankIndices,
+                                                    int[] bandOffsets,
                                                     Point location)
     {
         if (dataBuffer == null) {
@@ -784,7 +784,7 @@ public class Raster {
     public static WritableRaster createPackedRaster(DataBuffer dataBuffer,
                                                     int w, int h,
                                                     int scanlineStride,
-                                                    int bandMasks[],
+                                                    int[] bandMasks,
                                                     Point location)
     {
         if (dataBuffer == null) {
@@ -1397,7 +1397,7 @@ public class Raster {
     public Raster createChild(int parentX, int parentY,
                               int width, int height,
                               int childMinX, int childMinY,
-                              int bandList[]) {
+                              int[] bandList) {
         if (parentX < this.minX) {
             throw new RasterFormatException("parentX lies outside raster");
         }
@@ -1601,7 +1601,7 @@ public class Raster {
      * @throws ArrayIndexOutOfBoundsException if the coordinates are not
      * in bounds, or if iArray is too small to hold the output.
      */
-    public int[] getPixel(int x, int y, int iArray[]) {
+    public int[] getPixel(int x, int y, int[] iArray) {
         return sampleModel.getPixel(x - sampleModelTranslateX,
                                     y - sampleModelTranslateY,
                                     iArray, dataBuffer);
@@ -1621,7 +1621,7 @@ public class Raster {
      * @throws ArrayIndexOutOfBoundsException if the coordinates are not
      * in bounds, or if fArray is too small to hold the output.
      */
-    public float[] getPixel(int x, int y, float fArray[]) {
+    public float[] getPixel(int x, int y, float[] fArray) {
         return sampleModel.getPixel(x - sampleModelTranslateX,
                                     y - sampleModelTranslateY,
                                     fArray, dataBuffer);
@@ -1640,7 +1640,7 @@ public class Raster {
      * @throws ArrayIndexOutOfBoundsException if the coordinates are not
      * in bounds, or if dArray is too small to hold the output.
      */
-    public double[] getPixel(int x, int y, double dArray[]) {
+    public double[] getPixel(int x, int y, double[] dArray) {
         return sampleModel.getPixel(x - sampleModelTranslateX,
                                     y - sampleModelTranslateY,
                                     dArray, dataBuffer);
@@ -1662,7 +1662,7 @@ public class Raster {
      * @throws ArrayIndexOutOfBoundsException if the coordinates are not
      * in bounds, or if iArray is too small to hold the output.
      */
-    public int[] getPixels(int x, int y, int w, int h, int iArray[]) {
+    public int[] getPixels(int x, int y, int w, int h, int[] iArray) {
         return sampleModel.getPixels(x - sampleModelTranslateX,
                                      y - sampleModelTranslateY, w, h,
                                      iArray, dataBuffer);
@@ -1685,7 +1685,7 @@ public class Raster {
      * in bounds, or if fArray is too small to hold the output.
      */
     public float[] getPixels(int x, int y, int w, int h,
-                             float fArray[]) {
+                             float[] fArray) {
         return sampleModel.getPixels(x - sampleModelTranslateX,
                                      y - sampleModelTranslateY, w, h,
                                      fArray, dataBuffer);
@@ -1708,7 +1708,7 @@ public class Raster {
      * in bounds, or if dArray is too small to hold the output.
      */
     public double[] getPixels(int x, int y, int w, int h,
-                              double dArray[]) {
+                              double[] dArray) {
         return sampleModel.getPixels(x - sampleModelTranslateX,
                                      y - sampleModelTranslateY,
                                      w, h, dArray, dataBuffer);
@@ -1798,7 +1798,7 @@ public class Raster {
      * hold the output.
      */
     public int[] getSamples(int x, int y, int w, int h, int b,
-                            int iArray[]) {
+                            int[] iArray) {
         return sampleModel.getSamples(x - sampleModelTranslateX,
                                       y - sampleModelTranslateY,
                                       w, h, b, iArray,
@@ -1825,7 +1825,7 @@ public class Raster {
      * hold the output.
      */
     public float[] getSamples(int x, int y, int w, int h, int b,
-                              float fArray[]) {
+                              float[] fArray) {
         return sampleModel.getSamples(x - sampleModelTranslateX,
                                       y - sampleModelTranslateY,
                                       w, h, b, fArray, dataBuffer);
@@ -1851,7 +1851,7 @@ public class Raster {
      * hold the output.
      */
     public double[] getSamples(int x, int y, int w, int h, int b,
-                               double dArray[]) {
+                               double[] dArray) {
          return sampleModel.getSamples(x - sampleModelTranslateX,
                                        y - sampleModelTranslateY,
                                        w, h, b, dArray, dataBuffer);

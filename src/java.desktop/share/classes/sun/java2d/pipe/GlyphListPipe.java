@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public abstract class GlyphListPipe implements TextPipe {
 
         float devx, devy;
         if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-            double origin[] = {x + info.originX, y + info.originY};
+            double[] origin = {x + info.originX, y + info.originY};
             sg2d.transform.transform(origin, 0, origin, 0, 1);
             devx = (float)origin[0];
             devy = (float)origin[1];
@@ -76,7 +76,7 @@ public abstract class GlyphListPipe implements TextPipe {
     }
 
     public void drawChars(SunGraphics2D sg2d,
-                          char data[], int offset, int length,
+                          char[] data, int offset, int length,
                           int ix, int iy)
     {
         FontInfo info = sg2d.getFontInfo();
@@ -87,7 +87,7 @@ public abstract class GlyphListPipe implements TextPipe {
             return;
         }
         if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-            double origin[] = {ix + info.originX, iy + info.originY};
+            double[] origin = {ix + info.originX, iy + info.originY};
             sg2d.transform.transform(origin, 0, origin, 0, 1);
             x = (float) origin[0];
             y = (float) origin[1];
@@ -119,7 +119,7 @@ public abstract class GlyphListPipe implements TextPipe {
             return;
         }
         if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
-            double origin[] = {x, y};
+            double[] origin = {x, y};
             sg2d.transform.transform(origin, 0, origin, 0, 1);
             x = (float) origin[0];
             y = (float) origin[1];

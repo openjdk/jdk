@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public final class GeneralRenderer {
     }
 
     static void doDrawPoly(SurfaceData sData, PixelWriter pw,
-                           int xPoints[], int yPoints[], int off, int nPoints,
+                           int[] xPoints, int[] yPoints, int off, int nPoints,
                            Region clip, int transx, int transy, boolean close)
     {
         int mx, my, x1, y1;
@@ -381,7 +381,7 @@ public final class GeneralRenderer {
         int num = gl.getNumGlyphs();
         for (int i = 0; i < num; i++) {
             gl.setGlyphIndex(i);
-            int metrics[] = gl.getMetrics();
+            int[] metrics = gl.getMetrics();
             int gx1 = metrics[0];
             int gy1 = metrics[1];
             int w = metrics[2];
@@ -399,7 +399,7 @@ public final class GeneralRenderer {
             if (gx2 > cx2) gx2 = cx2;
             if (gy2 > cy2) gy2 = cy2;
             if (gx2 > gx1 && gy2 > gy1) {
-                byte alpha[] = gl.getGrayBits();
+                byte[] alpha = gl.getGrayBits();
                 w -= (gx2 - gx1);
                 for (int y = gy1; y < gy2; y++) {
                     for (int x = gx1; x < gx2; x++) {
@@ -724,7 +724,7 @@ class SetFillSpansANY extends FillSpans {
     {
         PixelWriter pw = GeneralRenderer.createSolidPixelWriter(sg2d, sData);
 
-        int span[] = new int[4];
+        int[] span = new int[4];
         while (si.nextSpan(span)) {
             GeneralRenderer.doSetRect(sData, pw,
                                       span[0], span[1], span[2], span[3]);
@@ -764,8 +764,8 @@ class SetDrawPolygonsANY extends DrawPolygons {
     }
 
     public void DrawPolygons(SunGraphics2D sg2d, SurfaceData sData,
-                             int xPoints[], int yPoints[],
-                             int nPoints[], int numPolys,
+                             int[] xPoints, int[] yPoints,
+                             int[] nPoints, int numPolys,
                              int transx, int transy,
                              boolean close)
     {
@@ -869,7 +869,7 @@ class XorFillSpansANY extends FillSpans {
     {
         PixelWriter pw = GeneralRenderer.createXorPixelWriter(sg2d, sData);
 
-        int span[] = new int[4];
+        int[] span = new int[4];
         while (si.nextSpan(span)) {
             GeneralRenderer.doSetRect(sData, pw,
                                       span[0], span[1], span[2], span[3]);
@@ -909,8 +909,8 @@ class XorDrawPolygonsANY extends DrawPolygons {
     }
 
     public void DrawPolygons(SunGraphics2D sg2d, SurfaceData sData,
-                             int xPoints[], int yPoints[],
-                             int nPoints[], int numPolys,
+                             int[] xPoints, int[] yPoints,
+                             int[] nPoints, int numPolys,
                              int transx, int transy,
                              boolean close)
     {

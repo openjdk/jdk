@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,14 +96,14 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
             if (menuItem.isEnabled() == false) return;
 
             final MenuSelectionManager manager = e.getMenuSelectionManager();
-            final MenuElement path[] = e.getPath();
+            final MenuElement[] path = e.getPath();
 
             // In Aqua, we always respect the menu's delay, if one is set.
             // Doesn't matter how the menu is clicked on or otherwise moused over.
             final Point p = e.getPoint();
             if (p.x >= 0 && p.x < menuItem.getWidth() && p.y >= 0 && p.y < menuItem.getHeight()) {
                 final JMenu menu = (JMenu)menuItem;
-                final MenuElement selectedPath[] = manager.getSelectedPath();
+                final MenuElement[] selectedPath = manager.getSelectedPath();
                 if (!(selectedPath.length > 0 && selectedPath[selectedPath.length - 1] == menu.getPopupMenu())) {
                     if (menu.getDelay() == 0) {
                         appendPath(path, menu.getPopupMenu());
@@ -124,7 +124,7 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
     }
 
     static void appendPath(final MenuElement[] path, final MenuElement elem) {
-        final MenuElement newPath[] = new MenuElement[path.length + 1];
+        final MenuElement[] newPath = new MenuElement[path.length + 1];
         System.arraycopy(path, 0, newPath, 0, path.length);
         newPath[path.length] = elem;
         MenuSelectionManager.defaultManager().setSelectedPath(newPath);
@@ -144,7 +144,7 @@ public class AquaMenuUI extends BasicMenuUI implements AquaMenuPainter.Client {
             if (!menu.isEnabled()) return;
 
             final MenuSelectionManager manager = MenuSelectionManager.defaultManager();
-            final MenuElement selectedPath[] = manager.getSelectedPath();
+            final MenuElement[] selectedPath = manager.getSelectedPath();
 
             // In Aqua, we always have a menu delay, regardless of where the menu is.
             if (!(selectedPath.length > 0 && selectedPath[selectedPath.length - 1] == menu.getPopupMenu())) {

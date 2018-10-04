@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ public class FontEditor extends Panel implements java.beans.PropertyEditor {
     private Choice styleChoser;
     private Choice sizeChoser;
 
-    private String fonts[];
+    private String[] fonts;
     private String[] styleNames = { "plain", "bold", "italic" };
     private int[] styles = { Font.PLAIN, Font.BOLD, Font.ITALIC };
     private int[] pointSizes = { 3, 5, 8, 10, 12, 14, 18, 24, 36, 48 };

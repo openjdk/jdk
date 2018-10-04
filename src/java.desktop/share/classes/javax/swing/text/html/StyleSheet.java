@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1514,9 +1514,9 @@ public class StyleSheet extends StyleContext {
         int numElements = elements.size();
         // Build three arrays, one for tags, one for class's, and one for
         // id's
-        String tags[] = new String[numElements];
-        String ids[] = new String[numElements];
-        String classes[] = new String[numElements];
+        String[] tags = new String[numElements];
+        String[] ids = new String[numElements];
+        String[] classes = new String[numElements];
         for (int counter = 0; counter < numElements; counter++) {
             Element e = elements.elementAt(counter);
             AttributeSet attr = e.getAttributes();
@@ -2447,7 +2447,7 @@ public class StyleSheet extends StyleContext {
         }
 
         /* list of roman numerals */
-        static final char romanChars[][] = {
+        static final char[][] romanChars = {
             {'i', 'v'},
             {'x', 'l' },
             {'c', 'd' },
@@ -3410,8 +3410,8 @@ public class StyleSheet extends StyleContext {
      * The HTML/CSS size model has seven slots
      * that one can assign sizes to.
      */
-    static final int sizeMapDefault[] = { 8, 10, 12, 14, 18, 24, 36 };
+    static final int[] sizeMapDefault = { 8, 10, 12, 14, 18, 24, 36 };
 
-    private int sizeMap[] = sizeMapDefault;
+    private int[] sizeMap = sizeMapDefault;
     private boolean w3cLengthUnits = false;
 }

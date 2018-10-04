@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -553,7 +553,7 @@ public class HTML {
          */
         public static final Tag COMMENT = new Tag("comment");
 
-        static final Tag allTags[]  = {
+        static final Tag[] allTags  = {
             A, ADDRESS, APPLET, AREA, B, BASE, BASEFONT, BIG,
             BLOCKQUOTE, BODY, BR, CAPTION, CENTER, CITE, CODE,
             DD, DFN, DIR, DIV, DL, DT, EM, FONT, FORM, FRAME,
@@ -1060,7 +1060,7 @@ public class HTML {
         public static final Attribute COMMENT = new Attribute("comment");
         static final Attribute MEDIA = new Attribute("media");
 
-        static final Attribute allAttributes[] = {
+        static final Attribute[] allAttributes = {
             FACE,
             COMMENT,
             SIZE,

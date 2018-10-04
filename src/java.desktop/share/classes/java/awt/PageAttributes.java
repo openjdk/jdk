@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public final class PageAttributes implements Cloneable {
         private static final int I_COLOR = 0;
         private static final int I_MONOCHROME = 1;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "color", "monochrome"
         };
 
@@ -167,7 +167,7 @@ public final class PageAttributes implements Cloneable {
         private static final int I_MONARCH_ENVELOPE = 73;
         private static final int I_PERSONAL_ENVELOPE = 74;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "iso-4a0", "iso-2a0", "iso-a0", "iso-a1", "iso-a2", "iso-a3",
             "iso-a4", "iso-a5", "iso-a6", "iso-a7", "iso-a8", "iso-a9",
             "iso-a10", "iso-b0", "iso-b1", "iso-b2", "iso-b3", "iso-b4",
@@ -812,7 +812,7 @@ public final class PageAttributes implements Cloneable {
         private static final int I_PORTRAIT = 0;
         private static final int I_LANDSCAPE = 1;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "portrait", "landscape"
         };
 
@@ -842,7 +842,7 @@ public final class PageAttributes implements Cloneable {
         private static final int I_PHYSICAL = 0;
         private static final int I_PRINTABLE = 1;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "physical", "printable"
         };
 
@@ -870,7 +870,7 @@ public final class PageAttributes implements Cloneable {
         private static final int I_NORMAL = 1;
         private static final int I_DRAFT = 2;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "high", "normal", "draft"
         };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public abstract class SpanShapeRenderer implements ShapeDrawPipe {
     public abstract void endSequence(Object ctx);
 
     public void renderRect(SunGraphics2D sg, Rectangle2D r) {
-        double corners[] = {
+        double[] corners = {
             r.getX(), r.getY(), r.getWidth(), r.getHeight(),
         };
         corners[2] += corners[0];
@@ -146,7 +146,7 @@ public abstract class SpanShapeRenderer implements ShapeDrawPipe {
             corners[3] = corners[1];
             corners[1] = t;
         }
-        int abox[] = {
+        int[] abox = {
             (int) corners[0],
             (int) corners[1],
             (int) corners[2],
@@ -180,7 +180,7 @@ public abstract class SpanShapeRenderer implements ShapeDrawPipe {
                             ShapeSpanIterator sr)
     {
         Object context = null;
-        int abox[] = new int[4];
+        int[] abox = new int[4];
         try {
             sr.getPathBox(abox);
             Rectangle devR = new Rectangle(abox[0], abox[1],

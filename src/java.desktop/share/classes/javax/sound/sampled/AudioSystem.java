@@ -676,7 +676,7 @@ public class AudioSystem {
         List<FormatConversionProvider> codecs = getFormatConversionProviders();
         Vector<AudioFormat.Encoding> encodings = new Vector<>();
 
-        AudioFormat.Encoding encs[] = null;
+        AudioFormat.Encoding[] encs = null;
 
         // gather from all the codecs
         for(int i=0; i<codecs.size(); i++ ) {
@@ -1084,7 +1084,7 @@ public class AudioSystem {
                 returnTypesSet.add(fileTypes[j]);
             }
         }
-        AudioFileFormat.Type returnTypes[] =
+        AudioFileFormat.Type[] returnTypes =
             returnTypesSet.toArray(new AudioFileFormat.Type[0]);
         return returnTypes;
     }
@@ -1133,7 +1133,7 @@ public class AudioSystem {
                 returnTypesSet.add(fileTypes[j]);
             }
         }
-        AudioFileFormat.Type returnTypes[] =
+        AudioFileFormat.Type[] returnTypes =
             returnTypesSet.toArray(new AudioFileFormat.Type[0]);
         return returnTypes;
     }

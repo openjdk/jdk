@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ public class MenuSelectionManager {
      * @return an array of MenuElement objects representing the selected path
      */
     public MenuElement[] getSelectedPath() {
-        MenuElement res[] = new MenuElement[selection.size()];
+        MenuElement[] res = new MenuElement[selection.size()];
         int i,c;
         for(i=0,c=selection.size();i<c;i++)
             res[i] = selection.elementAt(i);
@@ -223,8 +223,8 @@ public class MenuSelectionManager {
         Rectangle r2;
         int cWidth,cHeight;
         MenuElement menuElement;
-        MenuElement subElements[];
-        MenuElement path[];
+        MenuElement[] subElements;
+        MenuElement[] path;
         int selectionSize;
         p = event.getPoint();
 
@@ -292,7 +292,7 @@ public class MenuSelectionManager {
                             path[k] = tmp.elementAt(k);
                     }
                     path[i+1] = subElements[j];
-                    MenuElement currentSelection[] = getSelectedPath();
+                    MenuElement[] currentSelection = getSelectedPath();
 
                     // Enter/exit detection -- needs tuning...
                     if (currentSelection[currentSelection.length-1] !=
@@ -347,11 +347,11 @@ public class MenuSelectionManager {
         }
     }
 
-    private void printMenuElementArray(MenuElement path[]) {
+    private void printMenuElementArray(MenuElement[] path) {
         printMenuElementArray(path, false);
     }
 
-    private void printMenuElementArray(MenuElement path[], boolean dumpStack) {
+    private void printMenuElementArray(MenuElement[] path, boolean dumpStack) {
         System.out.println("Path is(");
         int i, j;
         for(i=0,j=path.length; i<j ;i++){
@@ -396,7 +396,7 @@ public class MenuSelectionManager {
         Rectangle r2;
         int cWidth,cHeight;
         MenuElement menuElement;
-        MenuElement subElements[];
+        MenuElement[] subElements;
         int selectionSize;
 
         SwingUtilities.convertPointToScreen(p,source);
@@ -504,7 +504,7 @@ public class MenuSelectionManager {
     }
 
     private boolean isComponentPartOfCurrentMenu(MenuElement root,Component c) {
-        MenuElement children[];
+        MenuElement[] children;
         int i,d;
 
         if (root == null)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public final class DataBufferNIOInt extends DataBuffer {
     IntBuffer data;
 
     /** All data banks */
-    IntBuffer bankdata[];
+    IntBuffer[] bankdata;
 
     /**
      * Constructs an integer-based {@code DataBuffer} with a single bank

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2605,7 +2605,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
                 }
                 Rectangle2D.Float shape =
                     new Rectangle2D.Float(r.x, r.y, r.width, r.height);
-                Position.Bias bias[] = new Position.Bias[1];
+                Position.Bias[] bias = new Position.Bias[1];
                 return view.viewToModel(p.x, p.y, shape, bias);
             } else {
                 return -1;

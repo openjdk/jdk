@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,10 +79,10 @@ public class RegionClipSpanIterator implements SpanIterator {
     int rgnbndslox, rgnbndsloy, rgnbndshix, rgnbndshiy;
 
     // The array used to hold coordinates from the region iterator
-    int rgnbox[] = new int[4];
+    int[] rgnbox = new int[4];
 
     // The array used to hold coordinates from the span iterator
-    int spanbox[] = new int[4];
+    int[] spanbox = new int[4];
 
     // True if the next iterator span should be read on the next
     // iteration of the main nextSpan() loop
@@ -138,7 +138,7 @@ public class RegionClipSpanIterator implements SpanIterator {
      * Gets the bbox of the available path segments, clipped to the
      * Region.
      */
-    public void getPathBox(int pathbox[]) {
+    public void getPathBox(int[] pathbox) {
         int[] rgnbox = new int[4];
         rgn.getBounds(rgnbox);
         spanIter.getPathBox(pathbox);
@@ -174,7 +174,7 @@ public class RegionClipSpanIterator implements SpanIterator {
      * Fetches the next span that needs to be operated on.
      * If the return value is false then there are no more spans.
      */
-    public boolean nextSpan(int resultbox[]) {
+    public boolean nextSpan(int[] resultbox) {
         if (done) {
             return false;
         }

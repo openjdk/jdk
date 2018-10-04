@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,7 +253,7 @@ public class BasicMenuUI extends BasicMenuItemUI
     }
 
     private static void appendPath(MenuElement[] path, MenuElement elem) {
-        MenuElement newPath[] = new MenuElement[path.length+1];
+        MenuElement[] newPath = new MenuElement[path.length+1];
         System.arraycopy(path, 0, newPath, 0, path.length);
         newPath[path.length] = elem;
         MenuSelectionManager.defaultManager().setSelectedPath(newPath);
@@ -293,8 +293,8 @@ public class BasicMenuUI extends BasicMenuItemUI
             if(force) {
                 Container cnt = menu.getParent();
                 if(cnt != null && cnt instanceof JMenuBar) {
-                    MenuElement me[];
-                    MenuElement subElements[];
+                    MenuElement[] me;
+                    MenuElement[] subElements;
 
                     subElements = menu.getPopupMenu().getSubElements();
                     if(subElements.length > 0) {
@@ -312,7 +312,7 @@ public class BasicMenuUI extends BasicMenuItemUI
                     defaultManager.setSelectedPath(me);
                 }
             } else {
-                MenuElement path[] = defaultManager.getSelectedPath();
+                MenuElement[] path = defaultManager.getSelectedPath();
                 if(path.length > 0 && path[path.length-1] == menu) {
                     appendPath(path, menu.getPopupMenu());
                 }
@@ -503,7 +503,7 @@ public class BasicMenuUI extends BasicMenuItemUI
                 } else {
                     Container cnt = menu.getParent();
                     if(cnt != null && cnt instanceof JMenuBar) {
-                        MenuElement me[] = new MenuElement[2];
+                        MenuElement[] me = new MenuElement[2];
                         me[0]=(MenuElement)cnt;
                         me[1]=menu;
                         manager.setSelectedPath(me);
@@ -511,7 +511,7 @@ public class BasicMenuUI extends BasicMenuItemUI
                 }
             }
 
-            MenuElement selectedPath[] = manager.getSelectedPath();
+            MenuElement[] selectedPath = manager.getSelectedPath();
             if (selectedPath.length > 0 &&
                 selectedPath[selectedPath.length-1] != menu.getPopupMenu()) {
 
@@ -559,7 +559,7 @@ public class BasicMenuUI extends BasicMenuItemUI
 
             MenuSelectionManager manager =
                 MenuSelectionManager.defaultManager();
-            MenuElement selectedPath[] = manager.getSelectedPath();
+            MenuElement[] selectedPath = manager.getSelectedPath();
             if (!menu.isTopLevelMenu()) {
                 if(!(selectedPath.length > 0 &&
                      selectedPath[selectedPath.length-1] ==
@@ -574,7 +574,7 @@ public class BasicMenuUI extends BasicMenuItemUI
             } else {
                 if(selectedPath.length > 0 &&
                    selectedPath[0] == menu.getParent()) {
-                    MenuElement newPath[] = new MenuElement[3];
+                    MenuElement[] newPath = new MenuElement[3];
                     // A top level menu's parent is by definition
                     // a JMenuBar
                     newPath[0] = (MenuElement)menu.getParent();
@@ -615,13 +615,13 @@ public class BasicMenuUI extends BasicMenuItemUI
                 return;
 
             MenuSelectionManager manager = e.getMenuSelectionManager();
-            MenuElement path[] = e.getPath();
+            MenuElement[] path = e.getPath();
 
             Point p = e.getPoint();
             if(p.x >= 0 && p.x < menuItem.getWidth() &&
                p.y >= 0 && p.y < menuItem.getHeight()) {
                 JMenu menu = (JMenu)menuItem;
-                MenuElement selectedPath[] = manager.getSelectedPath();
+                MenuElement[] selectedPath = manager.getSelectedPath();
                 if(!(selectedPath.length > 0 &&
                      selectedPath[selectedPath.length-1] ==
                      menu.getPopupMenu())) {
@@ -665,19 +665,19 @@ public class BasicMenuUI extends BasicMenuItemUI
             }
 
             char key = Character.toLowerCase((char)menuItem.getMnemonic());
-            MenuElement path[] = e.getPath();
+            MenuElement[] path = e.getPath();
             if (key == Character.toLowerCase(e.getKeyChar())) {
                 JPopupMenu popupMenu = ((JMenu)menuItem).getPopupMenu();
                 ArrayList<MenuElement> newList = new ArrayList<>(Arrays.asList(path));
                 newList.add(popupMenu);
-                MenuElement subs[] = popupMenu.getSubElements();
+                MenuElement[] subs = popupMenu.getSubElements();
                 MenuElement sub =
                         BasicPopupMenuUI.findEnabledChild(subs, -1, true);
                 if(sub != null) {
                     newList.add(sub);
                 }
                 MenuSelectionManager manager = e.getMenuSelectionManager();
-                MenuElement newPath[] = new MenuElement[0];;
+                MenuElement[] newPath = new MenuElement[0];;
                 newPath = newList.toArray(newPath);
                 manager.setSelectedPath(newPath);
                 e.consume();

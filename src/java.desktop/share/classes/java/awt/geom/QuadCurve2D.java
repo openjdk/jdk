@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -664,7 +664,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      *          values in the specified array at the specified index.
      * @since 1.2
      */
-    public static double getFlatnessSq(double coords[], int offset) {
+    public static double getFlatnessSq(double[] coords, int offset) {
         return Line2D.ptSegDistSq(coords[offset + 0], coords[offset + 1],
                                   coords[offset + 4], coords[offset + 5],
                                   coords[offset + 2], coords[offset + 3]);
@@ -682,7 +682,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      *          specified array at the specified offset.
      * @since 1.2
      */
-    public static double getFlatness(double coords[], int offset) {
+    public static double getFlatness(double[] coords, int offset) {
         return Line2D.ptSegDist(coords[offset + 0], coords[offset + 1],
                                 coords[offset + 4], coords[offset + 5],
                                 coords[offset + 2], coords[offset + 3]);
@@ -797,9 +797,9 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      * the 6 right coordinates
      * @since 1.2
      */
-    public static void subdivide(double src[], int srcoff,
-                                 double left[], int leftoff,
-                                 double right[], int rightoff) {
+    public static void subdivide(double[] src, int srcoff,
+                                 double[] left, int leftoff,
+                                 double[] right, int rightoff) {
         double x1 = src[srcoff + 0];
         double y1 = src[srcoff + 1];
         double ctrlx = src[srcoff + 2];
@@ -851,7 +851,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      *          a constant
      * @since 1.2
      */
-    public static int solveQuadratic(double eqn[]) {
+    public static int solveQuadratic(double[] eqn) {
         return solveQuadratic(eqn, eqn);
     }
 
@@ -875,7 +875,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      *  a constant.
      * @since 1.3
      */
-    public static int solveQuadratic(double eqn[], double res[]) {
+    public static int solveQuadratic(double[] eqn, double[] res) {
         double a = eqn[2];
         double b = eqn[1];
         double c = eqn[0];
@@ -1036,7 +1036,7 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      *     B = 2*CP - 2*C1
      *     A = C1 - 2*CP + C2
      */
-    private static void fillEqn(double eqn[], double val,
+    private static void fillEqn(double[] eqn, double val,
                                 double c1, double cp, double c2) {
         eqn[0] = c1 - val;
         eqn[1] = cp + cp - c1 - c1;
@@ -1053,10 +1053,10 @@ public abstract class QuadCurve2D implements Shape, Cloneable {
      * then any points which represent a point of inflection for that
      * quadratic equation are also ignored.
      */
-    private static int evalQuadratic(double vals[], int num,
+    private static int evalQuadratic(double[] vals, int num,
                                      boolean include0,
                                      boolean include1,
-                                     double inflect[],
+                                     double[] inflect,
                                      double c1, double ctrl, double c2) {
         int j = 0;
         for (int i = 0; i < num; i++) {

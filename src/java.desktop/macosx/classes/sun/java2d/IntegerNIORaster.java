@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ public class IntegerNIORaster extends SunWritableRaster {
 
     protected IntBuffer data;
 
-    public static WritableRaster createNIORaster(int w, int h, int bandMasks[], Point location) {
+    public static WritableRaster createNIORaster(int w, int h, int[] bandMasks, Point location) {
         if ((w <= 0) || (h <= 0)) {
             throw new IllegalArgumentException("Width (" + w + ") and height (" + h +
                                                ") cannot be <= 0");

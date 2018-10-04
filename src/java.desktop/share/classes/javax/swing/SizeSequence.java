@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ package javax.swing;
 public class SizeSequence {
 
     private static int[] emptyArray = new int[0];
-    private int a[];
+    private int[] a;
 
     /**
      * Creates a new <code>SizeSequence</code> object
@@ -360,7 +360,7 @@ public class SizeSequence {
      *   (<code>0 &lt;= start &lt; (getSizes().length)) AND (length &gt;= 0)</code>
      */
     public void insertEntries(int start, int length, int value) {
-        int sizes[] = getSizes();
+        int[] sizes = getSizes();
         int end = start + length;
         int n = a.length + length;
         a = new int[n];
@@ -390,7 +390,7 @@ public class SizeSequence {
      * @param length  the number of entries to be removed
      */
     public void removeEntries(int start, int length) {
-        int sizes[] = getSizes();
+        int[] sizes = getSizes();
         int end = start + length;
         int n = a.length - length;
         a = new int[n];

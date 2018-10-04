@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,10 @@ import static sun.java2d.StateTrackable.State.*;
 public final class DataBufferDouble extends DataBuffer {
 
     /** The array of data banks. */
-    double bankdata[][];
+    double[][] bankdata;
 
     /** A reference to the default data bank. */
-    double data[];
+    double[] data;
 
     /**
      * Constructs a {@code double}-based {@code DataBuffer}
@@ -104,7 +104,7 @@ public final class DataBufferDouble extends DataBuffer {
      *                  first and only bank of this {@code DataBuffer}.
      * @param size The number of elements of the array to be used.
      */
-    public DataBufferDouble(double dataArray[], int size) {
+    public DataBufferDouble(double[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_DOUBLE, size);
         data = dataArray;
         bankdata = new double[1][];
@@ -129,7 +129,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @param offset The offset of the first element of the array
      *               that will be used.
      */
-    public DataBufferDouble(double dataArray[], int size, int offset) {
+    public DataBufferDouble(double[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, 1, offset);
         data = dataArray;
         bankdata = new double[1][];
@@ -152,7 +152,7 @@ public final class DataBufferDouble extends DataBuffer {
      *        used as the banks of this {@code DataBuffer}.
      * @param size The number of elements of each array to be used.
      */
-    public DataBufferDouble(double dataArray[][], int size) {
+    public DataBufferDouble(double[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, dataArray.length);
         bankdata = dataArray.clone();
         data = bankdata[0];
@@ -176,7 +176,7 @@ public final class DataBufferDouble extends DataBuffer {
      * @param size The number of elements of each array to be used.
      * @param offsets An array of integer offsets, one for each bank.
      */
-    public DataBufferDouble(double dataArray[][], int size, int offsets[]) {
+    public DataBufferDouble(double[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_DOUBLE, size, dataArray.length, offsets);
         bankdata = dataArray.clone();
         data = bankdata[0];

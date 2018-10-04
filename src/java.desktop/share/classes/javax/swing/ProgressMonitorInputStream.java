@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class ProgressMonitorInputStream extends FilterInputStream
      * Overrides <code>FilterInputStream.read</code>
      * to update the progress monitor after the read.
      */
-    public int read(byte b[]) throws IOException {
+    public int read(byte[] b) throws IOException {
         int nr = in.read(b);
         if (nr > 0) monitor.setProgress(nread += nr);
         if (monitor.isCanceled()) {
@@ -141,7 +141,7 @@ public class ProgressMonitorInputStream extends FilterInputStream
      * Overrides <code>FilterInputStream.read</code>
      * to update the progress monitor after the read.
      */
-    public int read(byte b[],
+    public int read(byte[] b,
                     int off,
                     int len) throws IOException {
         int nr = in.read(b, off, len);

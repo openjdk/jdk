@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,7 +229,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @return the number of bits per sample.
      */
     public int[] getSampleSize() {
-        int sampleSize[] = {pixelBitStride};
+        int[] sampleSize = {pixelBitStride};
         return sampleSize;
     }
 
@@ -326,7 +326,7 @@ public class MultiPixelPackedSampleModel extends SampleModel
      * @throws IllegalArgumentException if {@code w} or
      *         {@code h} is not greater than 0
      */
-    public SampleModel createSubsetSampleModel(int bands[]) {
+    public SampleModel createSubsetSampleModel(int[] bands) {
         if (bands != null) {
            if (bands.length != 1)
             throw new RasterFormatException("MultiPixelPackedSampleModel has "
@@ -530,12 +530,12 @@ public class MultiPixelPackedSampleModel extends SampleModel
      *  are not in bounds
      * @see #setPixel(int, int, int[], DataBuffer)
      */
-    public int[] getPixel(int x, int y, int iArray[], DataBuffer data) {
+    public int[] getPixel(int x, int y, int[] iArray, DataBuffer data) {
         if ((x < 0) || (y < 0) || (x >= width) || (y >= height)) {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        int pixels[];
+        int[] pixels;
         if (iArray != null) {
            pixels = iArray;
         } else {

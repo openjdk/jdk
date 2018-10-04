@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ public interface ImageConsumer {
      * @see ColorModel
      */
     void setPixels(int x, int y, int w, int h,
-                   ColorModel model, byte pixels[], int off, int scansize);
+                   ColorModel model, byte[] pixels, int off, int scansize);
 
     /**
      * The pixels of the image are delivered using one or more calls
@@ -184,7 +184,7 @@ public interface ImageConsumer {
      * @see ColorModel
      */
     void setPixels(int x, int y, int w, int h,
-                   ColorModel model, int pixels[], int off, int scansize);
+                   ColorModel model, int[] pixels, int off, int scansize);
 
     /**
      * The imageComplete method is called when the ImageProducer is

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1606,7 +1606,7 @@ public abstract class FontConfiguration {
         }
     }
 
-    private static boolean contains(short IDs[], short id, int limit) {
+    private static boolean contains(short[] IDs, short id, int limit) {
         for (int i = 0; i < limit; i++) {
             if (IDs[i] == id) {
                 return true;
@@ -1758,7 +1758,7 @@ public abstract class FontConfiguration {
         return (short)(stringIDNum - 1);
     }
 
-    private static short getShortArrayID(short sa[]) {
+    private static short getShortArrayID(short[] sa) {
         char[] cc = new char[sa.length];
         for (int i = 0; i < sa.length; i ++) {
             cc[i] = (char)sa[i];

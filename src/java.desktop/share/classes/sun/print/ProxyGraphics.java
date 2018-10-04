@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -649,7 +649,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
      * @since       1.1
      */
-    public void drawPolyline(int xPoints[], int yPoints[],
+    public void drawPolyline(int[] xPoints, int[] yPoints,
                                       int nPoints) {
         g.drawPolyline(xPoints, yPoints, nPoints);
     }
@@ -673,7 +673,7 @@ public class ProxyGraphics extends Graphics {
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
      */
-    public void drawPolygon(int xPoints[], int yPoints[],
+    public void drawPolygon(int[] xPoints, int[] yPoints,
                                      int nPoints) {
         g.drawPolygon(xPoints, yPoints, nPoints);
     }
@@ -709,7 +709,7 @@ public class ProxyGraphics extends Graphics {
      * @param        nPoints   a the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
-    public void fillPolygon(int xPoints[], int yPoints[],
+    public void fillPolygon(int[] xPoints, int[] yPoints,
                                      int nPoints) {
         g.fillPolygon(xPoints, yPoints, nPoints);
     }
@@ -772,7 +772,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawString
      */
-    public void drawChars(char data[], int offset, int length, int x, int y) {
+    public void drawChars(char[] data, int offset, int length, int x, int y) {
         g.drawChars(data, offset, length, x, y);
     }
 
@@ -789,7 +789,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#drawChars
      * @see         java.awt.Graphics#drawString
      */
-    public void drawBytes(byte data[], int offset, int length, int x, int y) {
+    public void drawBytes(byte[] data, int offset, int length, int x, int y) {
         g.drawBytes(data, offset, length, x, y);
     }
 

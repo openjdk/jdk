@@ -98,7 +98,7 @@ public class DefaultListModel<E> extends AbstractListModel<E>
      * @param   anArray   the array into which the components get copied
      * @see Vector#copyInto(Object[])
      */
-    public void copyInto(Object anArray[]) {
+    public void copyInto(Object[] anArray) {
         delegate.copyInto(anArray);
     }
 

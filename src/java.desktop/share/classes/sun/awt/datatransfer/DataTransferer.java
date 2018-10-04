@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1152,7 +1152,7 @@ search:
 
             try (ByteArrayInputStream str = new ByteArrayInputStream(bytes))  {
 
-                URI uris[] = dragQueryURIs(str, format, localeTransferable);
+                URI[] uris = dragQueryURIs(str, format, localeTransferable);
                 if (uris == null) {
                     return null;
                 }
@@ -1295,7 +1295,7 @@ search:
                 && DataFlavor.javaFileListFlavor.equals(flavor))
         {
 
-            URI uris[] = dragQueryURIs(str, format, localeTransferable);
+            URI[] uris = dragQueryURIs(str, format, localeTransferable);
             if (uris == null) {
                 return null;
             }

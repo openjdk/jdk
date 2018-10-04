@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,7 +391,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      *
      * @see #getSubElements
      */
-    public void processMouseEvent(MouseEvent event,MenuElement path[],MenuSelectionManager manager) {
+    public void processMouseEvent(MouseEvent event,MenuElement[] path,MenuSelectionManager manager) {
     }
 
     /**
@@ -399,7 +399,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      *
      * @see #getSubElements
      */
-    public void processKeyEvent(KeyEvent e,MenuElement path[],MenuSelectionManager manager) {
+    public void processKeyEvent(KeyEvent e,MenuElement[] path,MenuSelectionManager manager) {
     }
 
     /**
@@ -420,7 +420,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      */
     @BeanProperty(bound = false)
     public MenuElement[] getSubElements() {
-        MenuElement result[];
+        MenuElement[] result;
         Vector<MenuElement> tmp = new Vector<MenuElement>();
         int c = getComponentCount();
         int i;
@@ -610,7 +610,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
             getSelectionModel().setSelectedIndex(i);
             JMenu menu = getMenu(i);
             if (menu != null) {
-                MenuElement me[] = new MenuElement[3];
+                MenuElement[] me = new MenuElement[3];
                 me[0] = JMenuBar.this;
                 me[1] = menu;
                 me[2] = menu.getPopupMenu();

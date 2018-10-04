@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ public class ByteComponentRaster extends SunWritableRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        byte outData[];
+        byte[] outData;
         if (obj == null) {
             outData = new byte[numDataElements];
         } else {
@@ -309,7 +309,7 @@ public class ByteComponentRaster extends SunWritableRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        byte outData[];
+        byte[] outData;
         if (obj == null) {
             outData = new byte[w*h*numDataElements];
         } else {
@@ -463,7 +463,7 @@ public class ByteComponentRaster extends SunWritableRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        byte inData[] = (byte[])obj;
+        byte[] inData = (byte[])obj;
         int off = (y-minY)*scanlineStride +
                   (x-minX)*pixelStride;
 
@@ -583,7 +583,7 @@ public class ByteComponentRaster extends SunWritableRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        byte inData[] = (byte[])obj;
+        byte[] inData = (byte[])obj;
         int yoff = (y-minY)*scanlineStride +
                    (x-minX)*pixelStride;
         int xoff;

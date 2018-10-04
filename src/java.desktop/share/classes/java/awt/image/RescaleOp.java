@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *        this {@code RescaleOp}
      * @return the scale factors of this {@code RescaleOp}.
      */
-    public final float[] getScaleFactors (float scaleFactors[]) {
+    public final float[] getScaleFactors (float[] scaleFactors) {
         if (scaleFactors == null) {
             return this.scaleFactors.clone();
         }
@@ -162,7 +162,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *        this {@code RescaleOp}
      * @return the offsets of this {@code RescaleOp}.
      */
-    public final float[] getOffsets(float offsets[]) {
+    public final float[] getOffsets(float[] offsets) {
         if (offsets == null) {
             return this.offsets.clone();
         }
@@ -190,8 +190,8 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *                  This will generally be 256 for byte and
      *                  65536 for short.
      */
-    private ByteLookupTable createByteLut(float scale[],
-                                          float off[],
+    private ByteLookupTable createByteLut(float[] scale,
+                                          float[] off,
                                           int   nBands,
                                           int   nElems) {
 
@@ -237,8 +237,8 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *                  This will generally be 256 for byte and
      *                  65536 for short.
      */
-    private ShortLookupTable createShortLut(float scale[],
-                                            float off[],
+    private ShortLookupTable createShortLut(float[] scale,
+                                            float[] off,
                                             int   nBands,
                                             int   nElems) {
 
@@ -562,8 +562,8 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
             //  REMIND: This must change if we ever support signed data types.
             //
             int nbits;
-            int dstMax[] = new int[numBands];
-            int dstMask[] = new int[numBands];
+            int[] dstMax = new int[numBands];
+            int[] dstMask = new int[numBands];
             SampleModel dstSM = dst.getSampleModel();
             for (int z=0; z<numBands; z++) {
                 nbits = dstSM.getSampleSize(z);

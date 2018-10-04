@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,7 +126,7 @@ public class ValidatePipe
     }
 
     public void drawPolyline(SunGraphics2D sg,
-                             int xPoints[], int yPoints[],
+                             int[] xPoints, int[] yPoints,
                              int nPoints) {
         if (validate(sg)) {
             sg.drawpipe.drawPolyline(sg, xPoints, yPoints, nPoints);
@@ -134,7 +134,7 @@ public class ValidatePipe
     }
 
     public void drawPolygon(SunGraphics2D sg,
-                            int xPoints[], int yPoints[],
+                            int[] xPoints, int[] yPoints,
                             int nPoints) {
         if (validate(sg)) {
             sg.drawpipe.drawPolygon(sg, xPoints, yPoints, nPoints);
@@ -142,7 +142,7 @@ public class ValidatePipe
     }
 
     public void fillPolygon(SunGraphics2D sg,
-                            int xPoints[], int yPoints[],
+                            int[] xPoints, int[] yPoints,
                             int nPoints) {
         if (validate(sg)) {
             sg.fillpipe.fillPolygon(sg, xPoints, yPoints, nPoints);
@@ -172,7 +172,7 @@ public class ValidatePipe
         }
     }
     public void drawChars(SunGraphics2D sg,
-                                char data[], int offset, int length,
+                                char[] data, int offset, int length,
                                 int x, int y) {
         if (validate(sg)) {
             sg.textpipe.drawChars(sg, data, offset, length, x, y);

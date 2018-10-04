@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,10 @@ public interface PixelDrawPipe {
                         int startAngle, int arcAngle);
 
     public void drawPolyline(SunGraphics2D sg,
-                             int xPoints[], int yPoints[],
+                             int[] xPoints, int[] yPoints,
                              int nPoints);
 
     public void drawPolygon(SunGraphics2D sg,
-                            int xPoints[], int yPoints[],
+                            int[] xPoints, int[] yPoints,
                             int nPoints);
 }

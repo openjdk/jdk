@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,14 +114,14 @@ public class Type1Font extends FileFont {
                several capital letters because current expansion algorithm do not support this.
                (namely we have omited MM aka "Multiple Master", OsF aka "Oldstyle figures",
                            OS aka "Oldstyle", SC aka "Small caps" and  DS aka "Display" */
-        String nm[] = {"Black", "Bold", "Book", "Demi", "Heavy", "Light",
+        String[] nm = {"Black", "Bold", "Book", "Demi", "Heavy", "Light",
                        "Meduium", "Nord", "Poster", "Regular", "Super", "Thin",
                        "Compressed", "Condensed", "Compact", "Extended", "Narrow",
                        "Inclined", "Italic", "Kursiv", "Oblique", "Upright", "Sloped",
                        "Semi", "Ultra", "Extra",
                        "Alternate", "Alternate", "Deutsche Fraktur", "Expert", "Inline", "Ornaments",
                        "Outline", "Roman", "Rounded", "Script", "Shaded", "Swash", "Titling", "Typewriter"};
-        String abbrv[] = {"Blk", "Bd", "Bk", "Dm", "Hv", "Lt",
+        String[] abbrv = {"Blk", "Bd", "Bk", "Dm", "Hv", "Lt",
                           "Md", "Nd", "Po", "Rg", "Su", "Th",
                           "Cm", "Cn", "Ct", "Ex", "Nr",
                           "Ic", "It", "Ks", "Obl", "Up", "Sl",
@@ -131,7 +131,7 @@ public class Type1Font extends FileFont {
        /* This is only subset of names from nm[] because we want to distinguish things
            like "Lucida Sans TypeWriter Bold" and "Lucida Sans Bold".
            Names from "Design and/or special purpose" group are omitted. */
-       String styleTokens[] = {"Black", "Bold", "Book", "Demi", "Heavy", "Light",
+       String[] styleTokens = {"Black", "Bold", "Book", "Demi", "Heavy", "Light",
                        "Medium", "Nord", "Poster", "Regular", "Super", "Thin",
                        "Compressed", "Condensed", "Compact", "Extended", "Narrow",
                        "Inclined", "Italic", "Kursiv", "Oblique", "Upright", "Sloped", "Slanted",

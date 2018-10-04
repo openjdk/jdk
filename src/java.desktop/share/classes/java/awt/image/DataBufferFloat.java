@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,10 +52,10 @@ import static sun.java2d.StateTrackable.State.*;
 public final class DataBufferFloat extends DataBuffer {
 
     /** The array of data banks. */
-    float bankdata[][];
+    float[][] bankdata;
 
     /** A reference to the default data bank. */
-    float data[];
+    float[] data;
 
     /**
      * Constructs a {@code float}-based {@code DataBuffer}
@@ -105,7 +105,7 @@ public final class DataBufferFloat extends DataBuffer {
      *                  first and only bank of this {@code DataBuffer}.
      * @param size The number of elements of the array to be used.
      */
-    public DataBufferFloat(float dataArray[], int size) {
+    public DataBufferFloat(float[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_FLOAT, size);
         data = dataArray;
         bankdata = new float[1][];
@@ -131,7 +131,7 @@ public final class DataBufferFloat extends DataBuffer {
      * @param offset The offset of the first element of the array
      *               that will be used.
      */
-    public DataBufferFloat(float dataArray[], int size, int offset) {
+    public DataBufferFloat(float[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_FLOAT, size, 1, offset);
         data = dataArray;
         bankdata = new float[1][];
@@ -154,7 +154,7 @@ public final class DataBufferFloat extends DataBuffer {
      *                  used as the banks of this {@code DataBuffer}.
      * @param size The number of elements of each array to be used.
      */
-    public DataBufferFloat(float dataArray[][], int size) {
+    public DataBufferFloat(float[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_FLOAT, size, dataArray.length);
         bankdata = dataArray.clone();
         data = bankdata[0];
@@ -178,7 +178,7 @@ public final class DataBufferFloat extends DataBuffer {
      * @param size The number of elements of each array to be used.
      * @param offsets An array of integer offsets, one for each bank.
      */
-    public DataBufferFloat(float dataArray[][], int size, int offsets[]) {
+    public DataBufferFloat(float[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_FLOAT, size,dataArray.length, offsets);
         bankdata = dataArray.clone();
         data = bankdata[0];

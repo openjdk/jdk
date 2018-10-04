@@ -418,7 +418,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         if (!GraphicsEnvironment.isHeadless()) {
             String mainClassName = null;
 
-            StackTraceElement trace[] = (new Throwable()).getStackTrace();
+            StackTraceElement[] trace = (new Throwable()).getStackTrace();
             int bottom = trace.length - 1;
             if (bottom >= 0) {
                 mainClassName = trace[bottom].getClassName();
@@ -1949,7 +1949,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         final int shiftLock = keysymToPrimaryKeycode(XKeySymConstants.XK_Shift_Lock);
         final int capsLock  = keysymToPrimaryKeycode(XKeySymConstants.XK_Caps_Lock);
 
-        final int modmask[] = { XConstants.ShiftMask, XConstants.LockMask, XConstants.ControlMask, XConstants.Mod1Mask,
+        final int[] modmask = { XConstants.ShiftMask, XConstants.LockMask, XConstants.ControlMask, XConstants.Mod1Mask,
             XConstants.Mod2Mask, XConstants.Mod3Mask, XConstants.Mod4Mask, XConstants.Mod5Mask };
 
         log.fine("In setupModifierMap");

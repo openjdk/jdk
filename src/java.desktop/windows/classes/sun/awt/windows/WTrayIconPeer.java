@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
     void createNativeImage(BufferedImage bimage) {
         Raster raster = bimage.getRaster();
         byte[] andMask = new byte[TRAY_ICON_MASK_SIZE];
-        int  pixels[] = ((DataBufferInt)raster.getDataBuffer()).getData();
+        int[]  pixels = ((DataBufferInt)raster.getDataBuffer()).getData();
         int npixels = pixels.length;
         int ficW = raster.getWidth();
 

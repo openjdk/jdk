@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,8 +118,8 @@ abstract class MultipleGradientPaintContext implements PaintContext {
     private int transparencyTest;
 
     /** Color space conversion lookup tables. */
-    private static final int SRGBtoLinearRGB[] = new int[256];
-    private static final int LinearRGBtoSRGB[] = new int[256];
+    private static final int[] SRGBtoLinearRGB = new int[256];
+    private static final int[] LinearRGBtoSRGB = new int[256];
 
     static {
         // build the tables
@@ -187,7 +187,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
             // (incorrect) results than to throw an exception and/or no-op
             tInv = new AffineTransform();
         }
-        double m[] = new double[6];
+        double[] m = new double[6];
         tInv.getMatrix(m);
         a00 = (float)m[0];
         a10 = (float)m[1];
@@ -651,7 +651,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
         return raster;
     }
 
-    protected abstract void fillRaster(int pixels[], int off, int adjust,
+    protected abstract void fillRaster(int[] pixels, int off, int adjust,
                                        int x, int y, int w, int h);
 
 

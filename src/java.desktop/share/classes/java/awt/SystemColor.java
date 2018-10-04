@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,7 +431,7 @@ public final class SystemColor extends Color implements java.io.Serializable {
      */
     private transient int index;
 
-    private static SystemColor systemColorObjects [] = {
+    private static SystemColor[] systemColorObjects  = {
         SystemColor.desktop,
         SystemColor.activeCaption,
         SystemColor.activeCaptionText,

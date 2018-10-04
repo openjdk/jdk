@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ abstract class RTFParser extends AbstractFilter
   public abstract void endgroup();
 
   // table of non-text characters in rtf
-  static final boolean rtfSpecialsTable[];
+  static final boolean[] rtfSpecialsTable;
   static {
     rtfSpecialsTable = noSpecialsTable.clone();
     rtfSpecialsTable['\n'] = true;
@@ -191,7 +191,7 @@ abstract class RTFParser extends AbstractFilter
           break;
         }
         if (!Character.isLetter(ch)) {
-          char newstring[] = new char[1];
+          char[] newstring = new char[1];
           newstring[0] = ch;
           if (!handleKeyword(new String(newstring))) {
             warning("Unknown keyword: " + newstring + " (" + (byte)ch + ")");

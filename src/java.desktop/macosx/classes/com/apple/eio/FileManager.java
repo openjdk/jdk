@@ -110,7 +110,7 @@ public class FileManager {
         public static int OSTypeToInt(String type) {
         int result = 0;
 
-                byte b[] = { (byte) 0, (byte) 0, (byte) 0, (byte) 0 };
+                byte[] b = { (byte) 0, (byte) 0, (byte) 0, (byte) 0 };
                 int len = type.length();
                 if (len > 0) {
                         if (len > 4) len = 4;

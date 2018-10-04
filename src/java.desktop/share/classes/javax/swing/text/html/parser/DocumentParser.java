@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ public class DocumentParser extends javax.swing.text.html.parser.Parser {
     }
 
 
-    protected void handleComment(char text[]) {
+    protected void handleComment(char[] text) {
         if (debugFlag) {
             debug("comment: ->" + new String(text) + "<-"
                   + " pos: " + getCurrentPos());
@@ -257,7 +257,7 @@ public class DocumentParser extends javax.swing.text.html.parser.Parser {
     /**
      * Handle Text.
      */
-    protected void handleText(char data[]) {
+    protected void handleText(char[] data) {
         if (data != null) {
             if (inscript != 0) {
                 callback.handleComment(data, getBlockStartPosition());

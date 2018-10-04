@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        short outData[];
+        short[] outData;
         if (obj == null) {
             outData = new short[numDataElements];
         } else {
@@ -281,7 +281,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        short outData[];
+        short[] outData;
         if (obj == null) {
             outData = new short[w*h*numDataElements];
         } else {
@@ -434,7 +434,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        short inData[] = (short[])obj;
+        short[] inData = (short[])obj;
         int off = (y-minY)*scanlineStride +
                   (x-minX)*pixelStride;
         for (int i = 0; i < numDataElements; i++) {
@@ -531,7 +531,7 @@ public class ShortInterleavedRaster extends ShortComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        short inData[] = (short[])obj;
+        short[] inData = (short[])obj;
         int yoff = (y-minY)*scanlineStride +
                    (x-minX)*pixelStride;
         int xoff;

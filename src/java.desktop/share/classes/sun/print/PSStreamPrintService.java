@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class PSStreamPrintService extends StreamPrintService
 
     private static int MAXCOPIES = 1000;
 
-    private static final MediaSizeName mediaSizes[] = {
+    private static final MediaSizeName[] mediaSizes = {
         MediaSizeName.NA_LETTER,
         MediaSizeName.TABLOID,
         MediaSizeName.LEDGER,

@@ -675,7 +675,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         int largestAmt = 0;
         int curScreenNum = ((X11GraphicsDevice)getGraphicsConfiguration().getDevice()).getScreen();
         int newScreenNum = 0;
-        GraphicsDevice gds[] = XToolkit.localEnv.getScreenDevices();
+        GraphicsDevice[] gds = XToolkit.localEnv.getScreenDevices();
         GraphicsConfiguration newGC = null;
         Rectangle screenBounds;
 

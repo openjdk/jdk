@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -219,7 +219,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see #getRGBColorComponents
      * @see #getRGBComponents
      */
-    private float frgbvalue[] = null;
+    private float[] frgbvalue = null;
 
     /**
      * The color value in the native {@code ColorSpace} as
@@ -231,7 +231,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see #getRGBColorComponents
      * @see #getRGBComponents
      */
-    private float fvalue[] = null;
+    private float[] fvalue = null;
 
     /**
      * The alpha value as a {@code float} component.
@@ -514,7 +514,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see #getComponents
      * @see #getColorComponents
      */
-    public Color(ColorSpace cspace, float components[], float alpha) {
+    public Color(ColorSpace cspace, float[] components, float alpha) {
         boolean rangeError = false;
         String badComponentString = "";
         int n = cspace.getNumComponents();
@@ -1110,7 +1110,7 @@ public class Color implements Paint, java.io.Serializable {
         if (cs == null) {
             cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         }
-        float f[];
+        float[] f;
         if (fvalue == null) {
             f = new float[3];
             f[0] = ((float)getRed())/255f;
@@ -1119,8 +1119,8 @@ public class Color implements Paint, java.io.Serializable {
         } else {
             f = fvalue;
         }
-        float tmp[] = cs.toCIEXYZ(f);
-        float tmpout[] = cspace.fromCIEXYZ(tmp);
+        float[] tmp = cs.toCIEXYZ(f);
+        float[] tmpout = cspace.fromCIEXYZ(tmp);
         if (compArray == null) {
             compArray = new float[tmpout.length + 1];
         }
@@ -1154,7 +1154,7 @@ public class Color implements Paint, java.io.Serializable {
         if (cs == null) {
             cs = ColorSpace.getInstance(ColorSpace.CS_sRGB);
         }
-        float f[];
+        float[] f;
         if (fvalue == null) {
             f = new float[3];
             f[0] = ((float)getRed())/255f;
@@ -1163,8 +1163,8 @@ public class Color implements Paint, java.io.Serializable {
         } else {
             f = fvalue;
         }
-        float tmp[] = cs.toCIEXYZ(f);
-        float tmpout[] = cspace.fromCIEXYZ(tmp);
+        float[] tmp = cs.toCIEXYZ(f);
+        float[] tmpout = cspace.fromCIEXYZ(tmp);
         if (compArray == null) {
             return tmpout;
         }

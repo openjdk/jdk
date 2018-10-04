@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,7 +287,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
                 item.map(bounds, textOrigin);
             }
         }
-        XMenuItemPeer mappedVector[] = new XMenuItemPeer[mappedCnt];
+        XMenuItemPeer[] mappedVector = new XMenuItemPeer[mappedCnt];
         System.arraycopy(itemVector, 0, mappedVector, 0, mappedCnt);
         MappingData mappingData = new MappingData(mappedVector, BAR_SPACING_TOP + itemHeight + BAR_SPACING_BOTTOM);
         return mappingData;

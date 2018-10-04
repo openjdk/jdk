@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public class DrawImage implements DrawImagePipe
             // Transform source bounds by extraAT,
             // then translate the bounds again by x, y
             // then transform the bounds again by sg.transform
-            double coords[] = new double[] {
+            double[] coords = new double[] {
                 0, 0, imgw, imgh,
             };
             extraAT.transform(coords, 0, coords, 0, 2);
@@ -241,7 +241,7 @@ public class DrawImage implements DrawImagePipe
         // Note that we use (0,0,w,h) instead of (sx1,sy1,sx2,sy2)
         // because the transform is already translated such that
         // the origin is where sx1, sy1 should go.
-        double coords[] = new double[6];
+        double[] coords = new double[6];
         /* index:  0  1    2  3    4  5  */
         /* coord: (0, 0), (w, h), (0, h) */
         coords[2] = sx2 - sx1;
@@ -276,7 +276,7 @@ public class DrawImage implements DrawImagePipe
                                      int sx1, int sy1,
                                      int sx2, int sy2,
                                      Color bgColor, int interpType,
-                                     double coords[])
+                                     double[] coords)
     {
         double dx1 = coords[0];
         double dy1 = coords[1];

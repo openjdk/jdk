@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,8 +311,8 @@ public class DirectColorModel extends PackedColorModel {
      * components as float values between 0.0 and 1.0.
      */
     private float[] getDefaultRGBComponents(int pixel) {
-        int components[] = getComponents(pixel, null, 0);
-        float norm[] = getNormalizedComponents(components, 0, null, 0);
+        int[] components = getComponents(pixel, null, 0);
+        float[] norm = getNormalizedComponents(components, 0, null, 0);
         // Note that getNormalizedComponents returns non-premultiplied values
         return colorSpace.toRGB(norm);
     }
@@ -371,7 +371,7 @@ public class DirectColorModel extends PackedColorModel {
         } else if (is_LinearRGB) {
             return getsRGBComponentFromLinearRGB(pixel, 0);
         }
-        float rgb[] = getDefaultRGBComponents(pixel);
+        float[] rgb = getDefaultRGBComponents(pixel);
         return (int) (rgb[0] * 255.0f + 0.5f);
     }
 
@@ -394,7 +394,7 @@ public class DirectColorModel extends PackedColorModel {
         } else if (is_LinearRGB) {
             return getsRGBComponentFromLinearRGB(pixel, 1);
         }
-        float rgb[] = getDefaultRGBComponents(pixel);
+        float[] rgb = getDefaultRGBComponents(pixel);
         return (int) (rgb[1] * 255.0f + 0.5f);
     }
 
@@ -417,7 +417,7 @@ public class DirectColorModel extends PackedColorModel {
         } else if (is_LinearRGB) {
             return getsRGBComponentFromLinearRGB(pixel, 2);
         }
-        float rgb[] = getDefaultRGBComponents(pixel);
+        float[] rgb = getDefaultRGBComponents(pixel);
         return (int) (rgb[2] * 255.0f + 0.5f);
     }
 
@@ -457,7 +457,7 @@ public class DirectColorModel extends PackedColorModel {
                 | (getGreen(pixel) << 8)
                 | (getBlue(pixel) << 0);
         }
-        float rgb[] = getDefaultRGBComponents(pixel);
+        float[] rgb = getDefaultRGBComponents(pixel);
         return (getAlpha(pixel) << 24)
             | (((int) (rgb[0] * 255.0f + 0.5f)) << 16)
             | (((int) (rgb[1] * 255.0f + 0.5f)) << 8)
@@ -499,15 +499,15 @@ public class DirectColorModel extends PackedColorModel {
         int pixel=0;
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               byte bdata[] = (byte[])inData;
+               byte[] bdata = (byte[])inData;
                pixel = bdata[0] & 0xff;
             break;
             case DataBuffer.TYPE_USHORT:
-               short sdata[] = (short[])inData;
+               short[] sdata = (short[])inData;
                pixel = sdata[0] & 0xffff;
             break;
             case DataBuffer.TYPE_INT:
-               int idata[] = (int[])inData;
+               int[] idata = (int[])inData;
                pixel = idata[0];
             break;
             default:
@@ -552,15 +552,15 @@ public class DirectColorModel extends PackedColorModel {
         int pixel=0;
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               byte bdata[] = (byte[])inData;
+               byte[] bdata = (byte[])inData;
                pixel = bdata[0] & 0xff;
             break;
             case DataBuffer.TYPE_USHORT:
-               short sdata[] = (short[])inData;
+               short[] sdata = (short[])inData;
                pixel = sdata[0] & 0xffff;
             break;
             case DataBuffer.TYPE_INT:
-               int idata[] = (int[])inData;
+               int[] idata = (int[])inData;
                pixel = idata[0];
             break;
             default:
@@ -605,15 +605,15 @@ public class DirectColorModel extends PackedColorModel {
         int pixel=0;
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               byte bdata[] = (byte[])inData;
+               byte[] bdata = (byte[])inData;
                pixel = bdata[0] & 0xff;
             break;
             case DataBuffer.TYPE_USHORT:
-               short sdata[] = (short[])inData;
+               short[] sdata = (short[])inData;
                pixel = sdata[0] & 0xffff;
             break;
             case DataBuffer.TYPE_INT:
-               int idata[] = (int[])inData;
+               int[] idata = (int[])inData;
                pixel = idata[0];
             break;
             default:
@@ -655,15 +655,15 @@ public class DirectColorModel extends PackedColorModel {
         int pixel=0;
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               byte bdata[] = (byte[])inData;
+               byte[] bdata = (byte[])inData;
                pixel = bdata[0] & 0xff;
             break;
             case DataBuffer.TYPE_USHORT:
-               short sdata[] = (short[])inData;
+               short[] sdata = (short[])inData;
                pixel = sdata[0] & 0xffff;
             break;
             case DataBuffer.TYPE_INT:
-               int idata[] = (int[])inData;
+               int[] idata = (int[])inData;
                pixel = idata[0];
             break;
             default:
@@ -703,15 +703,15 @@ public class DirectColorModel extends PackedColorModel {
         int pixel=0;
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               byte bdata[] = (byte[])inData;
+               byte[] bdata = (byte[])inData;
                pixel = bdata[0] & 0xff;
             break;
             case DataBuffer.TYPE_USHORT:
-               short sdata[] = (short[])inData;
+               short[] sdata = (short[])inData;
                pixel = sdata[0] & 0xffff;
             break;
             case DataBuffer.TYPE_INT:
-               int idata[] = (int[])inData;
+               int[] idata = (int[])inData;
                pixel = idata[0];
             break;
             default:
@@ -758,7 +758,7 @@ public class DirectColorModel extends PackedColorModel {
     public Object getDataElements(int rgb, Object pixel) {
         //REMIND: maybe more efficient not to use int array for
         //DataBuffer.TYPE_USHORT and DataBuffer.TYPE_INT
-        int intpixel[] = null;
+        int[] intpixel = null;
         if (transferType == DataBuffer.TYPE_INT &&
             pixel != null) {
             intpixel = (int[])pixel;
@@ -876,7 +876,7 @@ public class DirectColorModel extends PackedColorModel {
 
         switch (transferType) {
             case DataBuffer.TYPE_BYTE: {
-               byte bdata[];
+               byte[] bdata;
                if (pixel == null) {
                    bdata = new byte[1];
                } else {
@@ -886,7 +886,7 @@ public class DirectColorModel extends PackedColorModel {
                return bdata;
             }
             case DataBuffer.TYPE_USHORT:{
-               short sdata[];
+               short[] sdata;
                if (pixel == null) {
                    sdata = new short[1];
                } else {
@@ -979,15 +979,15 @@ public class DirectColorModel extends PackedColorModel {
         int intpixel=0;
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               byte bdata[] = (byte[])pixel;
+               byte[] bdata = (byte[])pixel;
                intpixel = bdata[0] & 0xff;
             break;
             case DataBuffer.TYPE_USHORT:
-               short sdata[] = (short[])pixel;
+               short[] sdata = (short[])pixel;
                intpixel = sdata[0] & 0xffff;
             break;
             case DataBuffer.TYPE_INT:
-               int idata[] = (int[])pixel;
+               int[] idata = (int[])pixel;
                intpixel = idata[0];
             break;
             default:
@@ -1118,29 +1118,29 @@ public class DirectColorModel extends PackedColorModel {
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
                if (obj instanceof byte[]) {
-                   byte bdata[] = (byte[])obj;
+                   byte[] bdata = (byte[])obj;
                    bdata[0] = (byte)(pixel&0xff);
                    return bdata;
                } else {
-                   byte bdata[] = {(byte)(pixel&0xff)};
+                   byte[] bdata = {(byte)(pixel&0xff)};
                    return bdata;
                }
             case DataBuffer.TYPE_USHORT:
                if (obj instanceof short[]) {
-                   short sdata[] = (short[])obj;
+                   short[] sdata = (short[])obj;
                    sdata[0] = (short)(pixel&0xffff);
                    return sdata;
                } else {
-                   short sdata[] = {(short)(pixel&0xffff)};
+                   short[] sdata = {(short)(pixel&0xffff)};
                    return sdata;
                }
             case DataBuffer.TYPE_INT:
                if (obj instanceof int[]) {
-                   int idata[] = (int[])obj;
+                   int[] idata = (int[])obj;
                    idata[0] = pixel;
                    return idata;
                } else {
-                   int idata[] = {pixel};
+                   int[] idata = {pixel};
                    return idata;
                }
             default:
@@ -1190,8 +1190,8 @@ public class DirectColorModel extends PackedColorModel {
         int rminX = raster.getMinX();
         int rY = raster.getMinY();
         int rX;
-        int pixel[] = null;
-        int zpixel[] = null;
+        int[] pixel = null;
+        int[] zpixel = null;
 
         if (isAlphaPremultiplied) {
             // Must mean that we are currently not premultiplied so

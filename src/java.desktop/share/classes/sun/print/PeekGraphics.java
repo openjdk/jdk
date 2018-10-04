@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -747,7 +747,7 @@ public class PeekGraphics extends Graphics2D
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
      * @since       1.1
      */
-   public void drawPolyline(int xPoints[], int yPoints[],
+   public void drawPolyline(int[] xPoints, int[] yPoints,
                              int nPoints) {
         if (nPoints > 0) {
             int x = xPoints[0];
@@ -782,7 +782,7 @@ public class PeekGraphics extends Graphics2D
      * @see          java.awt.Graphics#drawPolyline
      * @since        1.0
      */
-    public void drawPolygon(int xPoints[], int yPoints[],
+    public void drawPolygon(int[] xPoints, int[] yPoints,
                             int nPoints) {
         if (nPoints > 0) {
             drawPolyline(xPoints, yPoints, nPoints);
@@ -813,7 +813,7 @@ public class PeekGraphics extends Graphics2D
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      * @since        1.0
      */
-    public void fillPolygon(int xPoints[], int yPoints[],
+    public void fillPolygon(int[] xPoints, int[] yPoints,
                             int nPoints) {
         if (nPoints > 0) {
             int minX = xPoints[0];

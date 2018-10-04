@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ class RoundRectIterator implements PathIterator {
     //     4 values for each point {v0, v1, v2, v3}:
     //         point = (x + v0 * w + v1 * arcWidth,
     //                  y + v2 * h + v3 * arcHeight);
-    private static double ctrlpts[][] = {
+    private static double[][] ctrlpts = {
         {  0.0,  0.0,  0.0,  0.5 },
         {  0.0,  0.0,  1.0, -0.5 },
         {  0.0,  0.0,  1.0, -acv,
@@ -110,7 +110,7 @@ class RoundRectIterator implements PathIterator {
            0.0,  0.0,  0.0,  0.5 },
         {},
     };
-    private static int types[] = {
+    private static int[] types = {
         SEG_MOVETO,
         SEG_LINETO, SEG_CUBICTO,
         SEG_LINETO, SEG_CUBICTO,
@@ -141,7 +141,7 @@ class RoundRectIterator implements PathIterator {
         if (isDone()) {
             throw new NoSuchElementException("roundrect iterator out of bounds");
         }
-        double ctrls[] = ctrlpts[index];
+        double[] ctrls = ctrlpts[index];
         int nc = 0;
         for (int i = 0; i < ctrls.length; i += 4) {
             coords[nc++] = (float) (x + ctrls[i + 0] * w + ctrls[i + 1] * aw);
@@ -175,7 +175,7 @@ class RoundRectIterator implements PathIterator {
         if (isDone()) {
             throw new NoSuchElementException("roundrect iterator out of bounds");
         }
-        double ctrls[] = ctrlpts[index];
+        double[] ctrls = ctrlpts[index];
         int nc = 0;
         for (int i = 0; i < ctrls.length; i += 4) {
             coords[nc++] = (x + ctrls[i + 0] * w + ctrls[i + 1] * aw);

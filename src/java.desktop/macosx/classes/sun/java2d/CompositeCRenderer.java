@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,11 +84,11 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         draw(sg2d, arc);
     }
 
-    public synchronized void drawPolyline(SunGraphics2D sg2d, int xpoints[], int ypoints[], int npoints) {
+    public synchronized void drawPolyline(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         doPolygon(sg2d, xpoints, ypoints, npoints, false, false);
     }
 
-    public synchronized void drawPolygon(SunGraphics2D sg2d, int xpoints[], int ypoints[], int npoints) {
+    public synchronized void drawPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         doPolygon(sg2d, xpoints, ypoints, npoints, true, false);
     }
 
@@ -120,11 +120,11 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         fill(sg2d, arc);
     }
 
-    public synchronized void fillPolygon(SunGraphics2D sg2d, int xpoints[], int ypoints[], int npoints) {
+    public synchronized void fillPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         doPolygon(sg2d, xpoints, ypoints, npoints, true, true);
     }
 
-    public synchronized void doPolygon(SunGraphics2D sg2d, int xpoints[], int ypoints[], int npoints, boolean ispolygon, boolean isfill) {
+    public synchronized void doPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints, boolean ispolygon, boolean isfill) {
         GeneralPath gp = new GeneralPath(Path2D.WIND_NON_ZERO, npoints);
         gp.moveTo(xpoints[0], ypoints[0]);
         for (int i = 1; i < npoints; i++) {
@@ -196,7 +196,7 @@ public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, Pixe
         drawGlyphVector(sg2d, sg2d.getFont().createGlyphVector(sg2d.getFontRenderContext(), str), x, y);
     }
 
-    public synchronized void drawChars(SunGraphics2D sg2d, char data[], int offset, int length, int x, int y) {
+    public synchronized void drawChars(SunGraphics2D sg2d, char[] data, int offset, int length, int x, int y) {
         drawString(sg2d, new String(data, offset, length), x, y);
     }
 

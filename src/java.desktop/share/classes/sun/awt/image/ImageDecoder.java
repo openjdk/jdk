@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public abstract class ImageDecoder {
     }
 
     protected int setPixels(int x, int y, int w, int h, ColorModel model,
-                            byte pix[], int off, int scansize) {
+                            byte[] pix, int off, int scansize) {
         source.latchConsumers(this);
         ImageConsumerQueue cq = null;
         int count = 0;
@@ -130,7 +130,7 @@ public abstract class ImageDecoder {
     }
 
     protected int setPixels(int x, int y, int w, int h, ColorModel model,
-                            int pix[], int off, int scansize) {
+                            int[] pix, int off, int scansize) {
         source.latchConsumers(this);
         ImageConsumerQueue cq = null;
         int count = 0;

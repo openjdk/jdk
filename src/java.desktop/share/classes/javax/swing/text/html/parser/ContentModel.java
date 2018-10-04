@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,8 +156,8 @@ public final class ContentModel implements Serializable {
          }
      }
 
-     private boolean valSet[];
-     private boolean val[];
+     private boolean[] valSet;
+     private boolean[] val;
      // A cache used by first().  This cache was found to speed parsing
      // by about 10% (based on measurements of the 4-12 code base after
      // buffering was fixed).
@@ -264,7 +264,7 @@ public final class ContentModel implements Serializable {
           case ',':
           case '|':
           case '&':
-            char data[] = {' ', (char)type, ' '};
+            char[] data = {' ', (char)type, ' '};
             String str = "";
             for (ContentModel m = (ContentModel)content ; m != null ; m = m.next) {
                 str = str + m;

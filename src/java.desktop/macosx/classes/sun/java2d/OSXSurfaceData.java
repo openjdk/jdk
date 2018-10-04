@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -605,14 +605,14 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
 
                     this.fGraphicsStatesInt.put(kColorStateIndex, kColorLinearGradient);
                     int numColor = color.getColors().length;
-                    int colorArray[] = new int[numColor];
+                    int[] colorArray = new int[numColor];
                     for (int i = 0; i < numColor; i++) {
                         colorArray[i] = color.getColors()[i].getRGB();
                     }
                     this.fGraphicsStatesObject[kColorArrayIndex] = colorArray;
 
                     int numFractions = color.getFractions().length;
-                    float fractionArray[] = new float[numFractions];
+                    float[] fractionArray = new float[numFractions];
                     for (int i = 0; i < numFractions; i++) {
                         fractionArray[i] = color.getFractions()[i];
                     }
@@ -639,14 +639,14 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
 
                     this.fGraphicsStatesInt.put(kColorStateIndex, kColorRadialGradient);
                     int numColor = color.getColors().length;
-                    int colorArray[] = new int[numColor];
+                    int[] colorArray = new int[numColor];
                     for (int i = 0; i < numColor; i++) {
                         colorArray[i] = color.getColors()[i].getRGB();
                     }
                     this.fGraphicsStatesObject[kColorArrayIndex] = colorArray;
 
                     int numStops = color.getFractions().length;
-                    float stopsArray[] = new float[numStops];
+                    float[] stopsArray = new float[numStops];
                     for (int i = 0; i < numStops; i++) {
                         stopsArray[i] = color.getFractions()[i];
                     }
@@ -1031,7 +1031,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         renderer.doArc(this, x, y, width, height, startAngle, arcAngle, type, isfill);
     }
 
-    public void doPolygon(CRenderer renderer, SunGraphics2D sg2d, int xpoints[], int ypoints[], int npoints, boolean ispolygon, boolean isfill) {
+    public void doPolygon(CRenderer renderer, SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints, boolean ispolygon, boolean isfill) {
         // System.err.println("--- doPolygon");
 
         if ((isfill) && (isCustomPaint(sg2d))) {
@@ -1127,7 +1127,7 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
         renderer.doDrawGlyphs(this, nativeStrikePtr, gv, x, y);
     }
 
-    public void drawUnicodes(CTextPipe renderer, SunGraphics2D sg2d, long nativeStrikePtr, char unicodes[], int offset, int length, float x, float y) {
+    public void drawUnicodes(CTextPipe renderer, SunGraphics2D sg2d, long nativeStrikePtr, char[] unicodes, int offset, int length, float x, float y) {
         // System.err.println("--- drawUnicodes "+(new String(unicodes, offset, length)));
         setupGraphicsState(sg2d, kUnicodes, sg2d.font, 0, 0, fBounds.width, fBounds.height);
         if (length == 1) {

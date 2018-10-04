@@ -42,14 +42,14 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     public int[] getSelectedIndexes() {
         List l = (List)target;
         int len = l.getItemCount();
-        int sel[] = new int[len];
+        int[] sel = new int[len];
         int nsel = 0;
         for (int i = 0 ; i < len ; i++) {
             if (isSelected(i)) {
                 sel[nsel++] = i;
             }
         }
-        int selected[] = new int[nsel];
+        int[] selected = new int[nsel];
         System.arraycopy(sel, 0, selected, 0, nsel);
         return selected;
     }
@@ -147,7 +147,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
         setMultipleSelections(li.isMultipleMode());
 
         // select the item if necessary.
-        int sel[] = li.getSelectedIndexes();
+        int[] sel = li.getSelectedIndexes();
         for (int i = 0 ; i < sel.length ; i++) {
             select(sel[i]);
         }

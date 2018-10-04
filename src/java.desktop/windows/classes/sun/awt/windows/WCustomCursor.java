@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ final class WCustomCursor extends CustomCursor {
         Raster  raster = bimage.getRaster();
         DataBuffer buffer = raster.getDataBuffer();
         // REMIND: native code should use ScanStride _AND_ width
-        int data[] = ((DataBufferInt)buffer).getData();
+        int[] data = ((DataBufferInt)buffer).getData();
 
         byte[] andMask = new byte[w * h / 8];
         int npixels = pixels.length;

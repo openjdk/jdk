@@ -80,7 +80,7 @@ public final class ScriptRun
     private int scriptLimit;
     private int scriptCode;
 
-    private int stack[];         // stack used to handle paired punctuation if encountered
+    private int[] stack;         // stack used to handle paired punctuation if encountered
     private int parenSP;
 
     public ScriptRun() {
@@ -354,7 +354,7 @@ public final class ScriptRun
     }
 
     // all common
-    private static int pairedChars[] = {
+    private static int[] pairedChars = {
         0x0028, 0x0029, // ascii paired punctuation  // common
         0x003c, 0x003e, // common
         0x005b, 0x005d, // common

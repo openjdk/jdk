@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public class MaskFill extends GraphicsPrimitive
                              SurfaceData sData,
                              Composite comp,
                              int x, int y, int w, int h,
-                             byte mask[], int offset, int scan)
+                             byte[] mask, int offset, int scan)
         {
             BufferedImage dstBI =
                 new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
     /**
      * MIDI parser types.
      */
-    private static final int types[] = {
+    private static final int[] types = {
         MIDI_TYPE_0,
         MIDI_TYPE_1
     };
@@ -96,8 +96,8 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
      */
     @Override
     public int[] getMidiFileTypes(Sequence sequence){
-        int typesArray[];
-        Track tracks[] = sequence.getTracks();
+        int[] typesArray;
+        Track[] tracks = sequence.getTracks();
 
         if( tracks.length==1 ) {
             typesArray = new int[2];
@@ -149,7 +149,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
     //=================================================================================
 
     private InputStream getFileStream(int type, Sequence sequence) throws IOException {
-        Track tracks[] = sequence.getTracks();
+        Track[] tracks = sequence.getTracks();
         int bytesBuilt = 0;
         int headerLength = 14;
         int length = 0;
@@ -160,7 +160,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
         DataOutputStream    hdos = null;
         PipedInputStream    headerStream = null;
 
-        InputStream         trackStreams [] = null;
+        InputStream[]         trackStreams  = null;
         InputStream         trackStream = null;
         InputStream fStream = null;
 
@@ -344,7 +344,7 @@ public final class StandardMidiFileWriter extends MidiFileWriter {
             int metatype;
             int data1, data2;
             int length;
-            byte data[] = null;
+            byte[] data = null;
             ShortMessage shortMessage = null;
             MetaMessage  metaMessage  = null;
             SysexMessage sysexMessage = null;

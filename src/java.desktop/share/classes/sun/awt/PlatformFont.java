@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public abstract class PlatformFont implements FontPeer {
      * @param offset offset of first character of interest
      * @param len number of characters to convert
      */
-    public CharsetString[] makeMultiCharsetString(char str[], int offset, int len) {
+    public CharsetString[] makeMultiCharsetString(char[] str, int offset, int len) {
         return makeMultiCharsetString(str, offset, len, true);
     }
 
@@ -137,7 +137,7 @@ public abstract class PlatformFont implements FontPeer {
      * then return null.
      * This is used to choose alternative means of displaying the text.
      */
-    public CharsetString[] makeMultiCharsetString(char str[], int offset, int len,
+    public CharsetString[] makeMultiCharsetString(char[] str, int offset, int len,
                                                   boolean allowDefault) {
 
         if (len < 1) {

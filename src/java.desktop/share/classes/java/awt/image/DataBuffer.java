@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,13 +103,13 @@ public abstract class DataBuffer {
     protected int size;
 
     /** Offsets into all banks. */
-    protected int offsets[];
+    protected int[] offsets;
 
     /* The current StateTrackable state. */
     StateTrackableDelegate theTrackable;
 
     /** Size of the data types indexed by DataType tags defined above. */
-    private static final int dataTypeSize[] = {8,16,16,32,32,64};
+    private static final int[] dataTypeSize = {8,16,16,32,32,64};
 
     /** Returns the size (in bits) of the data type, given a datatype tag.
       * @param type the value of one of the defined datatype tags
@@ -246,7 +246,7 @@ public abstract class DataBuffer {
      *  @throws ArrayIndexOutOfBoundsException if {@code numBanks}
      *          does not equal the length of {@code offsets}
      */
-    protected DataBuffer(int dataType, int size, int numBanks, int offsets[]) {
+    protected DataBuffer(int dataType, int size, int numBanks, int[] offsets) {
         this(UNTRACKABLE, dataType, size, numBanks, offsets);
     }
 
@@ -268,7 +268,7 @@ public abstract class DataBuffer {
      *  @since 1.7
      */
     DataBuffer(State initialState,
-               int dataType, int size, int numBanks, int offsets[])
+               int dataType, int size, int numBanks, int[] offsets)
     {
         if (numBanks != offsets.length) {
             throw new ArrayIndexOutOfBoundsException("Number of banks" +
@@ -498,15 +498,15 @@ public abstract class DataBuffer {
         } else if (obj == null) {
             return null;
         } else if (obj instanceof short[]) {
-            short sdata[] = (short[])obj;
-            int idata[] = new int[sdata.length];
+            short[] sdata = (short[])obj;
+            int[] idata = new int[sdata.length];
             for (int i = 0; i < sdata.length; i++) {
                 idata[i] = (int)sdata[i] & 0xffff;
             }
             return idata;
         } else if (obj instanceof byte[]) {
-            byte bdata[] = (byte[])obj;
-            int idata[] = new int[bdata.length];
+            byte[] bdata = (byte[])obj;
+            int[] idata = new int[bdata.length];
             for (int i = 0; i < bdata.length; i++) {
                 idata[i] = 0xff & (int)bdata[i];
             }

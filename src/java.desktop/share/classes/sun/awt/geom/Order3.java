@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ final class Order3 extends Curve {
     private double ycoeff2;
     private double ycoeff3;
 
-    public static void insert(Vector<Curve> curves, double tmp[],
+    public static void insert(Vector<Curve> curves, double[] tmp,
                               double x0, double y0,
                               double cx0, double cy0,
                               double cx1, double cy1,
@@ -160,7 +160,7 @@ final class Order3 extends Curve {
      */
     public static int getHorizontalParams(double c0, double cp0,
                                           double cp1, double c1,
-                                          double ret[]) {
+                                          double[] ret) {
         if (c0 <= cp0 && cp0 <= cp1 && cp1 <= c1) {
             return 0;
         }
@@ -191,7 +191,7 @@ final class Order3 extends Curve {
      * parametric subranges [0..t] and [t..1].  Store the results back
      * into the array at coords[pos...pos+7] and coords[pos+6...pos+13].
      */
-    public static void split(double coords[], int pos, double t) {
+    public static void split(double[] coords, int pos, double t) {
         double x0, y0, cx0, cy0, cx1, cy1, x1, y1;
         coords[pos+12] = x1 = coords[pos+6];
         coords[pos+13] = y1 = coords[pos+7];
@@ -529,7 +529,7 @@ final class Order3 extends Curve {
     }
 
     public double nextVertical(double t0, double t1) {
-        double eqn[] = {xcoeff1, 2 * xcoeff2, 3 * xcoeff3};
+        double[] eqn = {xcoeff1, 2 * xcoeff2, 3 * xcoeff3};
         int numroots = QuadCurve2D.solveQuadratic(eqn, eqn);
         for (int i = 0; i < numroots; i++) {
             if (eqn[i] > t0 && eqn[i] < t1) {
@@ -541,7 +541,7 @@ final class Order3 extends Curve {
 
     public void enlarge(Rectangle2D r) {
         r.add(x0, y0);
-        double eqn[] = {xcoeff1, 2 * xcoeff2, 3 * xcoeff3};
+        double[] eqn = {xcoeff1, 2 * xcoeff2, 3 * xcoeff3};
         int numroots = QuadCurve2D.solveQuadratic(eqn, eqn);
         for (int i = 0; i < numroots; i++) {
             double t = eqn[i];
@@ -556,7 +556,7 @@ final class Order3 extends Curve {
         if (ystart <= y0 && yend >= y1) {
             return getWithDirection(dir);
         }
-        double eqn[] = new double[14];
+        double[] eqn = new double[14];
         double t0, t1;
         t0 = TforY(ystart);
         t1 = TforY(yend);
@@ -608,7 +608,7 @@ final class Order3 extends Curve {
         return new Order3(x0, y0, cx0, cy0, cx1, cy1, x1, y1, -direction);
     }
 
-    public int getSegment(double coords[]) {
+    public int getSegment(double[] coords) {
         if (direction == INCREASING) {
             coords[0] = cx0;
             coords[1] = cy0;

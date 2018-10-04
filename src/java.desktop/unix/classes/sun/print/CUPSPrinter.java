@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ public class CUPSPrinter  {
     static String[] getDefaultPrinter() {
         // Try to get user/lpoptions-defined printer name from CUPS
         // if not user-set, then go for server default destination
-        String printerInfo[] = new String[2];
+        String[] printerInfo = new String[2];
         printerInfo[0] = getCupsDefaultPrinter();
 
         if (printerInfo[0] != null) {
@@ -298,7 +298,7 @@ public class CUPSPrinter  {
                     return null;
                 }
 
-                AttributeClass attCl[] = {
+                AttributeClass[] attCl = {
                     AttributeClass.ATTRIBUTES_CHARSET,
                     AttributeClass.ATTRIBUTES_NATURAL_LANGUAGE,
                     new AttributeClass("requested-attributes",
@@ -397,7 +397,7 @@ public class CUPSPrinter  {
                     return null;
                 }
 
-                AttributeClass attCl[] = {
+                AttributeClass[] attCl = {
                     AttributeClass.ATTRIBUTES_CHARSET,
                     AttributeClass.ATTRIBUTES_NATURAL_LANGUAGE,
                     new AttributeClass("requested-attributes",

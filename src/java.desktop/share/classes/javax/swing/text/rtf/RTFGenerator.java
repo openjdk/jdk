@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -496,7 +496,7 @@ protected void checkControlWord(MutableAttributeSet currentAttributes,
 
 protected void checkControlWords(MutableAttributeSet currentAttributes,
                                  AttributeSet newAttributes,
-                                 RTFAttribute words[],
+                                 RTFAttribute[] words,
                                  int domain)
     throws IOException
 {
@@ -596,7 +596,7 @@ void updateParagraphAttributes(MutableAttributeSet current,
                       RTFAttributes.attributes, RTFAttribute.D_PARAGRAPH);
 
     if (oldTabs != newTabs && newTabs != null) {
-        TabStop tabs[] = (TabStop[])newTabs;
+        TabStop[] tabs = (TabStop[])newTabs;
         int index;
         for(index = 0; index < tabs.length; index ++) {
             TabStop tab = tabs[index];

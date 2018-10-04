@@ -540,7 +540,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         Win32GraphicsDevice oldDev = winGraphicsConfig.getDevice();
 
         Win32GraphicsDevice newDev;
-        GraphicsDevice devs[] = GraphicsEnvironment
+        GraphicsDevice[] devs = GraphicsEnvironment
             .getLocalGraphicsEnvironment()
             .getScreenDevices();
         // Occasionally during device addition/removal getScreenImOn can return

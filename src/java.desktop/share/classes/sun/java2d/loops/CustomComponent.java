@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ class OpaqueCopyAnyToArgb extends Blit {
         // assert(icr.getPixelStride() == 1);
         srcx -= dstx;
         srcy -= dsty;
-        int span[] = new int[4];
+        int[] span = new int[4];
         while (si.nextSpan(span)) {
             int rowoff = icr.getDataOffset(0) + span[1] * dstScan + span[0];
             for (int y = span[1]; y < span[3]; y++) {
@@ -191,7 +191,7 @@ class OpaqueCopyArgbToAny extends Blit {
         // assert(icr.getPixelStride() == 1);
         srcx -= dstx;
         srcy -= dsty;
-        int span[] = new int[4];
+        int[] span = new int[4];
         while (si.nextSpan(span)) {
             int rowoff = (icr.getDataOffset(0) +
                           (srcy + span[1]) * srcScan +
@@ -250,7 +250,7 @@ class XorCopyArgbToAny extends Blit {
         // assert(icr.getPixelStride() == 1);
         srcx -= dstx;
         srcy -= dsty;
-        int span[] = new int[4];
+        int[] span = new int[4];
         while (si.nextSpan(span)) {
             int rowoff = (icr.getDataOffset(0) +
                           (srcy + span[1]) * srcScan +

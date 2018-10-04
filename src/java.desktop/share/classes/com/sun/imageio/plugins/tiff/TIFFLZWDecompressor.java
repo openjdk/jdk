@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     private static final int EOI_CODE   = 257;
     private static final int FIRST_CODE = 258;
 
-    private static final int andTable[] = {
+    private static final int[] andTable = {
         511,
         1023,
         2047,
@@ -53,7 +53,7 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     private int srcIndex;
     private int dstIndex;
 
-    private byte stringTable[][];
+    private byte[][] stringTable;
     private int tableIndex, bitsToGet = 9;
 
     private int nextData = 0;
@@ -215,7 +215,7 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     /**
      * Write out the string just uncompressed.
      */
-    public void writeString(byte string[]) {
+    public void writeString(byte[] string) {
         if(dstIndex < dstData.length) {
             int maxIndex = Math.min(string.length,
                                     dstData.length - dstIndex);
@@ -229,9 +229,9 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     /**
      * Add a new string to the string table.
      */
-    public void addStringToTable(byte oldString[], byte newString) {
+    public void addStringToTable(byte[] oldString, byte newString) {
         int length = oldString.length;
-        byte string[] = new byte[length + 1];
+        byte[] string = new byte[length + 1];
         System.arraycopy(oldString, 0, string, 0, length);
         string[length] = newString;
 
@@ -250,7 +250,7 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     /**
      * Add a new string to the string table.
      */
-    public void addStringToTable(byte string[]) {
+    public void addStringToTable(byte[] string) {
         // Add this new String to the table
         stringTable[tableIndex++] = string;
 
@@ -266,9 +266,9 @@ class TIFFLZWDecompressor extends TIFFDecompressor {
     /**
      * Append {@code newString} to the end of {@code oldString}.
      */
-    public byte[] composeString(byte oldString[], byte newString) {
+    public byte[] composeString(byte[] oldString, byte newString) {
         int length = oldString.length;
-        byte string[] = new byte[length + 1];
+        byte[] string = new byte[length + 1];
         System.arraycopy(oldString, 0, string, 0, length);
         string[length] = newString;
 

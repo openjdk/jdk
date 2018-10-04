@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ final class ScreenMenu extends Menu
     private ScreenMenuPropertyListener fPropertyListener;
 
     // Array of child hashes used to see if we need to recreate the Menu.
-    private int childHashArray[];
+    private int[] childHashArray;
 
     ScreenMenu(final JMenu invoker) {
         super(invoker.getText());
@@ -85,7 +85,7 @@ final class ScreenMenu extends Menu
      * we do not get notified of it, because EDT is busy in our code. We only need to update if the menu contents have changed in some
      * way, such as the number of menu items, the text of the menuitems, icon, shortcut etc.
      */
-    private static boolean needsUpdate(final Component items[], final int childHashArray[]) {
+    private static boolean needsUpdate(final Component[] items, final int[] childHashArray) {
       if (items == null || childHashArray == null) {
         return true;
       }

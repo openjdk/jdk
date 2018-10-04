@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
         case SunGraphics2D.TRANSFORM_GENERIC:
         case SunGraphics2D.TRANSFORM_TRANSLATESCALE:
             {
-                double coords[] = {ux1, uy1, ux2, uy2};
+                double[] coords = {ux1, uy1, ux2, uy2};
                 sg2d.transform.transform(coords, 0, coords, 0, 2);
                 x1 = coords[0];
                 y1 = coords[1];
@@ -257,7 +257,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
                 // dy = 0; already
             }
             // delta transform the transposed (90 degree rotated) unit vector
-            double unitvector[] = {dy/len, -dx/len};
+            double[] unitvector = {dy/len, -dx/len};
             sg2d.transform.deltaTransform(unitvector, 0, unitvector, 0, 1);
             lw *= len(unitvector[0], unitvector[1]);
         }

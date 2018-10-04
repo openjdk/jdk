@@ -565,7 +565,7 @@ public final class AWTAccessor {
         /*
          * Sets the files the user selects
          */
-        void setFiles(FileDialog fileDialog, File files[]);
+        void setFiles(FileDialog fileDialog, File[] files);
 
         /*
          * Sets the file the user selects

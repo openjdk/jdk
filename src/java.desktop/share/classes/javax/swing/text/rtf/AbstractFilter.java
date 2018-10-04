@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,17 +49,17 @@ import java.lang.*;
 abstract class AbstractFilter extends OutputStream
 {
     /** A table mapping bytes to characters */
-    protected char translationTable[];
+    protected char[] translationTable;
     /** A table indicating which byte values should be interpreted as
      *  characters and which should be treated as formatting codes */
-    protected boolean specialsTable[];
+    protected boolean[] specialsTable;
 
     /** A translation table which does ISO Latin-1 (trivial) */
-    static final char latin1TranslationTable[];
+    static final char[] latin1TranslationTable;
     /** A specials table which indicates that no characters are special */
-    static final boolean noSpecialsTable[];
+    static final boolean[] noSpecialsTable;
     /** A specials table which indicates that all characters are special */
-    static final boolean allSpecialsTable[];
+    static final boolean[] allSpecialsTable;
 
     static {
       int i;
@@ -93,7 +93,7 @@ abstract class AbstractFilter extends OutputStream
     public void readFromStream(InputStream in)
       throws IOException
     {
-        byte buf[];
+        byte[] buf;
         int count;
 
         buf = new byte[16384];
@@ -110,7 +110,7 @@ abstract class AbstractFilter extends OutputStream
     public void readFromReader(Reader in)
       throws IOException
     {
-        char buf[];
+        char[] buf;
         int count;
 
         buf = new char[2048];

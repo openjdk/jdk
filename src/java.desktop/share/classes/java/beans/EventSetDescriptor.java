@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
     public EventSetDescriptor(Class<?> sourceClass,
                 String eventSetName,
                 Class<?> listenerType,
-                String listenerMethodNames[],
+                String[] listenerMethodNames,
                 String addListenerMethodName,
                 String removeListenerMethodName)
                 throws IntrospectionException {
@@ -153,7 +153,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
     public EventSetDescriptor(Class<?> sourceClass,
                 String eventSetName,
                 Class<?> listenerType,
-                String listenerMethodNames[],
+                String[] listenerMethodNames,
                 String addListenerMethodName,
                 String removeListenerMethodName,
                 String getListenerMethodName)
@@ -215,7 +215,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
      */
     public EventSetDescriptor(String eventSetName,
                 Class<?> listenerType,
-                Method listenerMethods[],
+                Method[] listenerMethods,
                 Method addListenerMethod,
                 Method removeListenerMethod)
                 throws IntrospectionException {
@@ -243,7 +243,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
      */
     public EventSetDescriptor(String eventSetName,
                 Class<?> listenerType,
-                Method listenerMethods[],
+                Method[] listenerMethods,
                 Method addListenerMethod,
                 Method removeListenerMethod,
                 Method getListenerMethod)
@@ -285,7 +285,7 @@ public class EventSetDescriptor extends FeatureDescriptor {
      */
     public EventSetDescriptor(String eventSetName,
                 Class<?> listenerType,
-                MethodDescriptor listenerMethodDescriptors[],
+                MethodDescriptor[] listenerMethodDescriptors,
                 Method addListenerMethod,
                 Method removeListenerMethod)
                 throws IntrospectionException {

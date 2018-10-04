@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class FlatteningPathIterator implements PathIterator {
 
     int limit;                          // Maximum number of recursion levels
 
-    double hold[] = new double[14];     // The cache of interpolated coords
+    double[] hold = new double[14];     // The cache of interpolated coords
                                         // Note that this must be long enough
                                         // to store a full cubic segment and
                                         // a relative cubic segment to avoid
@@ -71,7 +71,7 @@ public class FlatteningPathIterator implements PathIterator {
                                         // returned in the next call to
                                         // currentSegment().
 
-    int levels[];                       // The recursion level at which
+    int[] levels;                       // The recursion level at which
                                         // each curve being held in storage
                                         // was generated.
 
@@ -175,7 +175,7 @@ public class FlatteningPathIterator implements PathIterator {
         if (holdIndex - want < 0) {
             int have = hold.length - holdIndex;
             int newsize = hold.length + GROW_SIZE;
-            double newhold[] = new double[newsize];
+            double[] newhold = new double[newsize];
             System.arraycopy(hold, holdIndex,
                              newhold, holdIndex + GROW_SIZE,
                              have);

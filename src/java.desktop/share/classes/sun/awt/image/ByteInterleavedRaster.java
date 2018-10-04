@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,7 +313,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        byte outData[];
+        byte[] outData;
         if (obj == null) {
             outData = new byte[numDataElements];
         } else {
@@ -541,7 +541,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        byte inData[] = (byte[])obj;
+        byte[] inData = (byte[])obj;
         int off = (y-minY)*scanlineStride +
                   (x-minX)*pixelStride;
 
@@ -871,7 +871,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        int samples[];
+        int[] samples;
         if (iArray != null) {
             samples = iArray;
         } else {
@@ -909,7 +909,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
         return samples;
     }
 
-    public void setSamples(int x, int y, int w, int h, int b, int iArray[]) {
+    public void setSamples(int x, int y, int w, int h, int b, int[] iArray) {
         if ((x < this.minX) || (y < this.minY) ||
             (x + w > this.maxX) || (y + h > this.maxY)) {
             throw new ArrayIndexOutOfBoundsException
@@ -954,7 +954,7 @@ public class ByteInterleavedRaster extends ByteComponentRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        int pixels[];
+        int[] pixels;
         if (iArray != null) {
             pixels = iArray;
         } else {

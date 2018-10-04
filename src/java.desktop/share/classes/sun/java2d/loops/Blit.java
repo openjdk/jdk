@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ public class Blit extends GraphicsPrimitive
             if (clip == null) {
                 clip = Region.getInstanceXYWH(dstx, dsty, width, height);
             }
-            int span[] = {dstx, dsty, dstx+width, dsty+height};
+            int[] span = {dstx, dsty, dstx+width, dsty+height};
             SpanIterator si = clip.getSpanIterator(span);
             srcx -= dstx;
             srcy -= dsty;

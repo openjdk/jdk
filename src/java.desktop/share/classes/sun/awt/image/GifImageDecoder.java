@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class GifImageDecoder extends ImageDecoder {
      * Read a number of bytes into a buffer.
      * @return number of bytes that were not read due to EOF or error
      */
-    private int readBytes(byte buf[], int off, int len) {
+    private int readBytes(byte[] buf, int off, int len) {
         while (len > 0) {
             try {
                 int n = input.read(buf, off, len);
@@ -102,11 +102,11 @@ public class GifImageDecoder extends ImageDecoder {
         return len;
     }
 
-    private static final int ExtractByte(byte buf[], int off) {
+    private static final int ExtractByte(byte[] buf, int off) {
         return (buf[off] & 0xFF);
     }
 
-    private static final int ExtractWord(byte buf[], int off) {
+    private static final int ExtractWord(byte[] buf, int off) {
         return (buf[off] & 0xFF) | ((buf[off + 1] & 0xFF) << 8);
     }
 
@@ -133,7 +133,7 @@ public class GifImageDecoder extends ImageDecoder {
                   case EXBLOCK:
                     switch (code = input.read()) {
                       case EX_GRAPHICS_CONTROL: {
-                        byte buf[] = new byte[6];
+                        byte[] buf = new byte[6];
                         if (readBytes(buf, 0, 6) != 0) {
                             return;//error("corrupt GIF file");
                         }
@@ -165,7 +165,7 @@ public class GifImageDecoder extends ImageDecoder {
                             if (n <= 0) {
                                 break;
                             }
-                            byte buf[] = new byte[n];
+                            byte[] buf = new byte[n];
                             if (readBytes(buf, 0, n) != 0) {
                                 return;//error("corrupt GIF file");
                             }
@@ -275,7 +275,7 @@ public class GifImageDecoder extends ImageDecoder {
      */
     private void readHeader() throws IOException, ImageFormatException {
         // Create a buffer
-        byte buf[] = new byte[13];
+        byte[] buf = new byte[13];
 
         // Read the header
         if (readBytes(buf, 0, 13) != 0) {
@@ -339,9 +339,9 @@ public class GifImageDecoder extends ImageDecoder {
         ImageConsumer.RANDOMPIXELORDER | ImageConsumer.COMPLETESCANLINES |
         ImageConsumer.SINGLEPASS | ImageConsumer.SINGLEFRAME;
 
-    private short prefix[]  = new short[4096];
-    private byte  suffix[]  = new byte[4096];
-    private byte  outCode[] = new byte[4097];
+    private short[] prefix  = new short[4096];
+    private byte[]  suffix  = new byte[4096];
+    private byte[]  outCode = new byte[4097];
 
     private static native void initIDs();
 
@@ -353,11 +353,11 @@ public class GifImageDecoder extends ImageDecoder {
 
     private native boolean parseImage(int x, int y, int width, int height,
                                       boolean interlace, int initCodeSize,
-                                      byte block[], byte rasline[],
+                                      byte[] block, byte[] rasline,
                                       IndexColorModel model);
 
     private int sendPixels(int x, int y, int width, int height,
-                           byte rasline[], ColorModel model) {
+                           byte[] rasline, ColorModel model) {
         int rasbeg, rasend, x2;
         if (y < 0) {
             height += y;
@@ -467,7 +467,7 @@ public class GifImageDecoder extends ImageDecoder {
         }
 
         // Allocate the buffer
-        byte block[] = new byte[256 + 3];
+        byte[] block = new byte[256 + 3];
 
         // Read the image descriptor
         if (readBytes(block, 0, 10) != 0) {
@@ -557,7 +557,7 @@ public class GifImageDecoder extends ImageDecoder {
             if ((height < global_height) && (model != null)) {
                 byte tpix = (byte)model.getTransparentPixel();
                 if (tpix >= 0) {
-                    byte trans_rasline[] = new byte[global_width];
+                    byte[] trans_rasline = new byte[global_width];
                     for (int i=0; i<global_width;i++) {
                         trans_rasline[i] = tpix;
                     }
@@ -579,7 +579,7 @@ public class GifImageDecoder extends ImageDecoder {
                                 x, y, width, height);
 
         // allocate the raster data
-        byte rasline[] = new byte[width];
+        byte[] rasline = new byte[width];
 
         if (verbose) {
             System.out.print("Reading a " + width + " by " + height + " " +

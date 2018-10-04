@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,11 @@ public abstract class ImageOutputStreamImpl
 
     public abstract void write(int b) throws IOException;
 
-    public void write(byte b[]) throws IOException {
+    public void write(byte[] b) throws IOException {
         write(b, 0, b.length);
     }
 
-    public abstract void write(byte b[], int off, int len) throws IOException;
+    public abstract void write(byte[] b, int off, int len) throws IOException;
 
     public void writeBoolean(boolean v) throws IOException {
         write(v ? 1 : 0);

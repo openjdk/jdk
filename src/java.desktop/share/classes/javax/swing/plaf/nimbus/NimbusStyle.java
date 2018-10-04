@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,7 +303,7 @@ public final class NimbusStyle extends SynthStyle {
         //there are no custom states or custom state ordering
         String statesString = (String)defaults.get(prefix + ".States");
         if (statesString != null) {
-            String s[] = statesString.split(",");
+            String[] s = statesString.split(",");
             for (int i=0; i<s.length; i++) {
                 s[i] = s[i].trim();
                 if (!State.isStandardStateName(s[i])) {

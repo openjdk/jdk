@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ public class BufferedImageFilter extends ImageFilter implements Cloneable {
 
     private void convertToRGB() {
         int size = width * height;
-        int newpixels[] = new int[size];
+        int[] newpixels = new int[size];
         if (bytePixels != null) {
             for (int i = 0; i < size; i++) {
                 newpixels[i] = this.model.getRGB(bytePixels[i] & 0xff);
@@ -159,7 +159,7 @@ public class BufferedImageFilter extends ImageFilter implements Cloneable {
                                     int, int)
      */
     public void setPixels(int x, int y, int w, int h,
-                          ColorModel model, byte pixels[], int off,
+                          ColorModel model, byte[] pixels, int off,
                           int scansize) {
         // Fix 4184230
         if (w < 0 || h < 0) {
@@ -246,7 +246,7 @@ public class BufferedImageFilter extends ImageFilter implements Cloneable {
                                     int, int)
      */
     public void setPixels(int x, int y, int w, int h,
-                          ColorModel model, int pixels[], int off,
+                          ColorModel model, int[] pixels, int off,
                           int scansize) {
         // Fix 4184230
         if (w < 0 || h < 0) {

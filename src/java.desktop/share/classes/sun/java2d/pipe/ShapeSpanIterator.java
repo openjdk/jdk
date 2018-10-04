@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public final class ShapeSpanIterator
      * path iterator.
      */
     public void appendPath(PathIterator pi) {
-        float coords[] = new float[6];
+        float[] coords = new float[6];
 
         setRule(pi.getWindingRule());
         while (!pi.isDone()) {
@@ -95,7 +95,7 @@ public final class ShapeSpanIterator
     /*
      * Appends the geometry from the indicated set of polygon points.
      */
-    public native void appendPoly(int xPoints[], int yPoints[], int nPoints,
+    public native void appendPoly(int[] xPoints, int[] yPoints, int nPoints,
                                   int xoff, int yoff);
 
     /*
@@ -143,13 +143,13 @@ public final class ShapeSpanIterator
      * Adds a single PathIterator segment to the internal list of
      * path element structures.
      */
-    public native void addSegment(int type, float coords[]);
+    public native void addSegment(int type, float[] coords);
 
     /*
      * Gets the bbox of the available path segments, clipped to the
      * OutputArea.
      */
-    public native void getPathBox(int pathbox[]);
+    public native void getPathBox(int[] pathbox);
 
     /*
      * Intersects the path box with the given bbox.
@@ -162,7 +162,7 @@ public final class ShapeSpanIterator
      * Fetches the next span that needs to be operated on.
      * If the return value is false then there are no more spans.
      */
-    public native boolean nextSpan(int spanbox[]);
+    public native boolean nextSpan(int[] spanbox);
 
     /**
      * This method tells the iterator that it may skip all spans

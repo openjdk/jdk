@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,7 +774,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
             // This is a popup menu with MenuElement children,
             // set selection path before popping up!
             if (isPopupMenu()) {
-                MenuElement me[] = new MenuElement[1];
+                MenuElement[] me = new MenuElement[1];
                 me[0] = this;
                 MenuSelectionManager.defaultManager().setSelectedPath(me);
             }
@@ -1371,7 +1371,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * <code>MenuElement</code> interface, but it not implemented.
      * @see MenuElement#processMouseEvent(MouseEvent, MenuElement[], MenuSelectionManager)
      */
-    public void processMouseEvent(MouseEvent event,MenuElement path[],MenuSelectionManager manager) {}
+    public void processMouseEvent(MouseEvent event,MenuElement[] path,MenuSelectionManager manager) {}
 
     /**
      * Processes a key event forwarded from the
@@ -1386,7 +1386,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @param manager   the <code>MenuSelectionManager</code>
      */
     @SuppressWarnings("deprecation")
-    public void processKeyEvent(KeyEvent e, MenuElement path[],
+    public void processKeyEvent(KeyEvent e, MenuElement[] path,
                                 MenuSelectionManager manager) {
         MenuKeyEvent mke = new MenuKeyEvent(e.getComponent(), e.getID(),
                                              e.getWhen(), e.getModifiers(),
@@ -1504,7 +1504,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      */
     @BeanProperty(bound = false)
     public MenuElement[] getSubElements() {
-        MenuElement result[];
+        MenuElement[] result;
         Vector<MenuElement> tmp = new Vector<MenuElement>();
         int c = getComponentCount();
         int i;

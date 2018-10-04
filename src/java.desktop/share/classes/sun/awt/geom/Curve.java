@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public abstract class Curve {
 
     public static void insertQuad(Vector<Curve> curves,
                                   double x0, double y0,
-                                  double coords[])
+                                  double[] coords)
     {
         double y1 = coords[3];
         if (y0 > y1) {
@@ -84,7 +84,7 @@ public abstract class Curve {
 
     public static void insertCubic(Vector<Curve> curves,
                                    double x0, double y0,
-                                   double coords[])
+                                   double[] coords)
     {
         double y1 = coords[5];
         if (y0 > y1) {
@@ -127,7 +127,7 @@ public abstract class Curve {
         if (pi.isDone()) {
             return 0;
         }
-        double coords[] = new double[6];
+        double[] coords = new double[6];
         if (pi.currentSegment(coords) != PathIterator.SEG_MOVETO) {
             throw new IllegalPathStateException("missing initial moveto "+
                                                 "in path definition");
@@ -384,7 +384,7 @@ public abstract class Curve {
         if (pi.isDone()) {
             return 0;
         }
-        double coords[] = new double[6];
+        double[] coords = new double[6];
         if (pi.currentSegment(coords) != PathIterator.SEG_MOVETO) {
             throw new IllegalPathStateException("missing initial moveto "+
                                                 "in path definition");
@@ -866,7 +866,7 @@ public abstract class Curve {
     public abstract Curve getReversedCurve();
     public abstract Curve getSubCurve(double ystart, double yend, int dir);
 
-    public int compareTo(Curve that, double yrange[]) {
+    public int compareTo(Curve that, double[] yrange) {
         /*
         System.out.println(this+".compareTo("+that+")");
         System.out.println("target range = "+yrange[0]+"=>"+yrange[1]);
@@ -1030,7 +1030,7 @@ public abstract class Curve {
 
     public static final double TMIN = 1E-3;
 
-    public boolean findIntersect(Curve that, double yrange[], double ymin,
+    public boolean findIntersect(Curve that, double[] yrange, double ymin,
                                  int slevel, int tlevel,
                                  double s0, double xs0, double ys0,
                                  double s1, double xs1, double ys1,
@@ -1202,5 +1202,5 @@ public abstract class Curve {
                 Math.max(Math.abs(v1), Math.abs(v2)) * 1E-10);
     }
 
-    public abstract int getSegment(double coords[]);
+    public abstract int getSegment(double[] coords);
 }

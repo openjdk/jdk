@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public final class JobAttributes implements Cloneable {
         private static final int I_RANGE = 1;
         private static final int I_SELECTION = 2;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "all", "range", "selection"
         };
 
@@ -103,7 +103,7 @@ public final class JobAttributes implements Cloneable {
         private static final int I_FILE = 0;
         private static final int I_PRINTER = 1;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "file", "printer"
         };
 
@@ -134,7 +134,7 @@ public final class JobAttributes implements Cloneable {
         private static final int I_NATIVE = 1;
         private static final int I_NONE = 2;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "common", "native", "none"
         };
 
@@ -170,7 +170,7 @@ public final class JobAttributes implements Cloneable {
         private static final int I_SEPARATE_DOCUMENTS_COLLATED_COPIES = 0;
         private static final int I_SEPARATE_DOCUMENTS_UNCOLLATED_COPIES = 1;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "separate-documents-collated-copies",
             "separate-documents-uncollated-copies"
         };
@@ -207,7 +207,7 @@ public final class JobAttributes implements Cloneable {
         private static final int I_TWO_SIDED_LONG_EDGE = 1;
         private static final int I_TWO_SIDED_SHORT_EDGE = 2;
 
-        private static final String NAMES[] = {
+        private static final String[] NAMES = {
             "one-sided", "two-sided-long-edge", "two-sided-short-edge"
         };
 

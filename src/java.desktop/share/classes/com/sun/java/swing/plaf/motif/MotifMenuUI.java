@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class MotifMenuUI extends BasicMenuUI
         return new MotifChangeHandler((JMenu)c, this);
     }
 
-    private boolean popupIsOpen(JMenu m,MenuElement me[]) {
+    private boolean popupIsOpen(JMenu m,MenuElement[] me) {
         int i;
         JPopupMenu pm = m.getPopupMenu();
 
@@ -111,7 +111,7 @@ public class MotifMenuUI extends BasicMenuUI
                     } else {
                         Container cnt = menu.getParent();
                         if(cnt != null && cnt instanceof JMenuBar) {
-                            MenuElement me[] = new MenuElement[2];
+                            MenuElement[] me = new MenuElement[2];
                             me[0]=(MenuElement)cnt;
                             me[1]=menu;
                             manager.setSelectedPath(me);
@@ -119,9 +119,9 @@ public class MotifMenuUI extends BasicMenuUI
                     }
                 }
 
-                MenuElement path[] = getPath();
+                MenuElement[] path = getPath();
                 if (path.length > 0) {
-                    MenuElement newPath[] = new MenuElement[path.length+1];
+                    MenuElement[] newPath = new MenuElement[path.length+1];
                     System.arraycopy(path,0,newPath,0,path.length);
                     newPath[path.length] = menu.getPopupMenu();
                     manager.setSelectedPath(newPath);

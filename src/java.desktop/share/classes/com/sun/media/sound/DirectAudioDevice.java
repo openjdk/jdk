@@ -1148,7 +1148,7 @@ final class DirectAudioDevice extends AbstractMixer {
                     // to be allocated)
                     int MAX_READ_LIMIT = 16384;
                     DirectBAOS dbaos  = new DirectBAOS();
-                    byte tmp[] = new byte[MAX_READ_LIMIT];
+                    byte[] tmp = new byte[MAX_READ_LIMIT];
                     int thisRead = 0;
                     while (thisRead >= 0) {
                         thisRead = stream.read(tmp, 0, tmp.length);

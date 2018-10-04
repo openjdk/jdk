@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -696,7 +696,7 @@ public abstract class Graphics {
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
      * @since       1.1
      */
-    public abstract void drawPolyline(int xPoints[], int yPoints[],
+    public abstract void drawPolyline(int[] xPoints, int[] yPoints,
                                       int nPoints);
 
     /**
@@ -718,7 +718,7 @@ public abstract class Graphics {
      * @see          java.awt.Graphics#fillPolygon
      * @see          java.awt.Graphics#drawPolyline
      */
-    public abstract void drawPolygon(int xPoints[], int yPoints[],
+    public abstract void drawPolygon(int[] xPoints, int[] yPoints,
                                      int nPoints);
 
     /**
@@ -752,7 +752,7 @@ public abstract class Graphics {
      * @param        nPoints   a the total number of points.
      * @see          java.awt.Graphics#drawPolygon(int[], int[], int)
      */
-    public abstract void fillPolygon(int xPoints[], int yPoints[],
+    public abstract void fillPolygon(int[] xPoints, int[] yPoints,
                                      int nPoints);
 
     /**
@@ -818,7 +818,7 @@ public abstract class Graphics {
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawString
      */
-    public void drawChars(char data[], int offset, int length, int x, int y) {
+    public void drawChars(char[] data, int offset, int length, int x, int y) {
         drawString(new String(data, offset, length), x, y);
     }
 
@@ -844,7 +844,7 @@ public abstract class Graphics {
      * @see         java.awt.Graphics#drawString
      */
     @SuppressWarnings("deprecation")
-    public void drawBytes(byte data[], int offset, int length, int x, int y) {
+    public void drawBytes(byte[] data, int offset, int length, int x, int y) {
         drawString(new String(data, 0, offset, length), x, y);
     }
 

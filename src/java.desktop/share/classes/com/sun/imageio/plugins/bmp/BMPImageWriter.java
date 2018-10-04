@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +295,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
 
         noTransform &= bgrOrder;
 
-        int sampleSize[] = sampleModel.getSampleSize();
+        int[] sampleSize = sampleModel.getSampleSize();
 
         //XXX: check more
 
@@ -322,7 +322,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                                   + BMPCompressionTypes.getName(compressionType));
         }
 
-        byte r[] = null, g[] = null, b[] = null, a[] = null;
+        byte[] r = null, g = null, b = null, a = null;
 
         if (compressionType == BI_BITFIELDS) {
             bitsPerPixel =
@@ -752,7 +752,7 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
     }
 
     private void writePixels(int l, int scanlineBytes, int bitsPerPixel,
-                             int pixels[],
+                             int[] pixels,
                              int padding, int numBands,
                              IndexColorModel icm) throws IOException {
         int pixel = 0;
@@ -867,9 +867,9 @@ public class BMPImageWriter extends ImageWriter implements BMPConstants {
                 // Case where IndexColorModel had > 256 colors.
                 int entries = icm.getMapSize();
 
-                byte r[] = new byte[entries];
-                byte g[] = new byte[entries];
-                byte b[] = new byte[entries];
+                byte[] r = new byte[entries];
+                byte[] g = new byte[entries];
+                byte[] b = new byte[entries];
 
                 icm.getReds(r);
                 icm.getGreens(g);

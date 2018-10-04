@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,7 +625,7 @@ final class XWM
      * Gaa, dirty dances...
      */
     static final XAtom XA_ICEWM_WINOPTHINT = new XAtom("_ICEWM_WINOPTHINT", false);
-    static final char opt[] = {
+    static final char[] opt = {
         'A','W','T','_','I','C','E','W','M','_','T','E','S','T','\0',
         'a','l','l','W','o','r','k','s','p','a','c','e','s','\0',
         '0','\0'

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,9 +134,9 @@ public class ShortBandedRaster extends SunWritableRaster {
         if (sampleModel instanceof BandedSampleModel) {
             BandedSampleModel bsm = (BandedSampleModel)sampleModel;
             this.scanlineStride = bsm.getScanlineStride();
-            int bankIndices[] = bsm.getBankIndices();
-            int bandOffsets[] = bsm.getBandOffsets();
-            int dOffsets[] = dataBuffer.getOffsets();
+            int[] bankIndices = bsm.getBankIndices();
+            int[] bandOffsets = bsm.getBandOffsets();
+            int[] dOffsets = dataBuffer.getOffsets();
             dataOffsets = new int[bankIndices.length];
             data = new short[bankIndices.length][];
             int xOffset = aRegion.x - origin.x;
@@ -225,7 +225,7 @@ public class ShortBandedRaster extends SunWritableRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        short outData[];
+        short[] outData;
         if (obj == null) {
             outData = new short[numDataElements];
         } else {
@@ -271,7 +271,7 @@ public class ShortBandedRaster extends SunWritableRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        short outData[];
+        short[] outData;
         if (obj == null) {
             outData = new short[numDataElements*w*h];
         } else {
@@ -411,7 +411,7 @@ public class ShortBandedRaster extends SunWritableRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        short inData[] = (short[])obj;
+        short[] inData = (short[])obj;
         int off = (y-minY)*scanlineStride + (x-minX);
         for (int i = 0; i < numDataElements; i++) {
             data[i][dataOffsets[i] + off] = inData[i];
@@ -508,7 +508,7 @@ public class ShortBandedRaster extends SunWritableRaster {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
-        short inData[] = (short[])obj;
+        short[] inData = (short[])obj;
         int yoff = (y-minY)*scanlineStride + (x-minX);
 
         for (int c = 0; c < numDataElements; c++) {
@@ -638,7 +638,7 @@ public class ShortBandedRaster extends SunWritableRaster {
     public WritableRaster createWritableChild(int x, int y,
                                               int width, int height,
                                               int x0, int y0,
-                                              int bandList[]) {
+                                              int[] bandList) {
 
         if (x < this.minX) {
             throw new RasterFormatException("x lies outside raster");
@@ -694,7 +694,7 @@ public class ShortBandedRaster extends SunWritableRaster {
     public Raster createChild (int x, int y,
                                int width, int height,
                                int x0, int y0,
-                               int bandList[]) {
+                               int[] bandList) {
         return createWritableChild(x, y, width, height, x0, y0, bandList);
     }
 

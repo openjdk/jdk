@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,7 @@ class MotifColorUtilities {
         }
         BufferedReader bfr = new BufferedReader(new FileReader(pFile));
 
-        int colors[] = new int[8];
+        int[] colors = new int[8];
         int r,g,b;
         String temp,color;
 

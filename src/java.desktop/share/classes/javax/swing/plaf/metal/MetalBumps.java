@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ class BumpBuffer {
                        Transparency.BITMASK);
         }
         else {
-            int cmap[] = { backColor.getRGB(), topColor.getRGB(),
+            int[] cmap = { backColor.getRGB(), topColor.getRGB(),
                            shadowColor.getRGB() };
             IndexColorModel icm = new IndexColorModel(8, 3, cmap, 0, false,
                       (backColor == MetalBumps.ALPHA) ? 0 : -1,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -594,7 +594,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         }
 
         private void setFSWindowsState(Window other, int state) {
-            GraphicsDevice gds[] =
+            GraphicsDevice[] gds =
                     GraphicsEnvironment.getLocalGraphicsEnvironment().
                     getScreenDevices();
             // check if the de/activation was caused by other

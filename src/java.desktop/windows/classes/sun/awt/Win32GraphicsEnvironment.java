@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,8 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     @Override
     public void displayChanged() {
         // getNumScreens() will return the correct current number of screens
-        GraphicsDevice newDevices[] = new GraphicsDevice[getNumScreens()];
-        GraphicsDevice oldScreens[] = screens;
+        GraphicsDevice[] newDevices = new GraphicsDevice[getNumScreens()];
+        GraphicsDevice[] oldScreens = screens;
         // go through the list of current devices and determine if they
         // could be reused, or will have to be replaced
         if (oldScreens != null) {

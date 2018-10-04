@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ public abstract class Crossings {
     public static final boolean debug = false;
 
     int limit = 0;
-    double yranges[] = new double[10];
+    double[] yranges = new double[10];
 
     double xlo, ylo, xhi, yhi;
 
@@ -119,7 +119,7 @@ public abstract class Crossings {
         //             0-2 horizontal splitting parameters
         //             OR
         //             3 parametric equation derivative coefficients
-        double coords[] = new double[23];
+        double[] coords = new double[23];
         double movx = 0;
         double movy = 0;
         double curx = 0;
@@ -239,7 +239,7 @@ public abstract class Crossings {
 
     private Vector<Curve> tmp = new Vector<>();
 
-    public boolean accumulateQuad(double x0, double y0, double coords[]) {
+    public boolean accumulateQuad(double x0, double y0, double[] coords) {
         if (y0 < ylo && coords[1] < ylo && coords[3] < ylo) {
             return false;
         }
@@ -269,7 +269,7 @@ public abstract class Crossings {
         return false;
     }
 
-    public boolean accumulateCubic(double x0, double y0, double coords[]) {
+    public boolean accumulateCubic(double x0, double y0, double[] coords) {
         if (y0 < ylo && coords[1] < ylo &&
             coords[3] < ylo && coords[5] < ylo)
         {
@@ -379,7 +379,7 @@ public abstract class Crossings {
             to += (limit-from);
             if (ystart < yend) {
                 if (to >= yranges.length) {
-                    double newranges[] = new double[to+10];
+                    double[] newranges = new double[to+10];
                     System.arraycopy(yranges, 0, newranges, 0, to);
                     yranges = newranges;
                 }
@@ -391,7 +391,7 @@ public abstract class Crossings {
     }
 
     public static final class NonZero extends Crossings {
-        private int crosscounts[];
+        private int[] crosscounts;
 
         public NonZero(double xlo, double ylo, double xhi, double yhi) {
             super(xlo, ylo, xhi, yhi);
@@ -430,8 +430,8 @@ public abstract class Crossings {
 
         public void insert(int cur, double lo, double hi, int dir) {
             int rem = limit - cur;
-            double oldranges[] = yranges;
-            int oldcounts[] = crosscounts;
+            double[] oldranges = yranges;
+            int[] oldcounts = crosscounts;
             if (limit >= yranges.length) {
                 yranges = new double[limit+10];
                 System.arraycopy(oldranges, 0, yranges, 0, cur);

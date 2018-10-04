@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ class ArrayTable implements Cloneable {
      * AbstractAction use to avoid having the same code in each class.
      */
     static void writeArrayTable(ObjectOutputStream s, ArrayTable table) throws IOException {
-        Object keys[];
+        Object[] keys;
 
         if (table == null || (keys = table.getKeys(null)) == null) {
             s.writeInt(0);

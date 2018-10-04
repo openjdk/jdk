@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,13 +74,13 @@ public class ReplicateScaleFilter extends ImageFilter {
      * An {@code int} array containing information about a
      * row of pixels.
      */
-    protected int srcrows[];
+    protected int[] srcrows;
 
     /**
      * An {@code int} array containing information about a
      * column of pixels.
      */
-    protected int srccols[];
+    protected int[] srccols;
 
     /**
      * A {@code byte} array initialized with a size of
@@ -185,7 +185,7 @@ public class ReplicateScaleFilter extends ImageFilter {
      * with the filtering operation.
      */
     public void setPixels(int x, int y, int w, int h,
-                          ColorModel model, byte pixels[], int off,
+                          ColorModel model, byte[] pixels, int off,
                           int scansize) {
         if (srcrows == null || srccols == null) {
             calculateMaps();
@@ -193,7 +193,7 @@ public class ReplicateScaleFilter extends ImageFilter {
         int sx, sy;
         int dx1 = (2 * x * destWidth + srcWidth - 1) / (2 * srcWidth);
         int dy1 = (2 * y * destHeight + srcHeight - 1) / (2 * srcHeight);
-        byte outpix[];
+        byte[] outpix;
         if (outpixbuf != null && outpixbuf instanceof byte[]) {
             outpix = (byte[]) outpixbuf;
         } else {
@@ -226,7 +226,7 @@ public class ReplicateScaleFilter extends ImageFilter {
      * with the filtering operation.
      */
     public void setPixels(int x, int y, int w, int h,
-                          ColorModel model, int pixels[], int off,
+                          ColorModel model, int[] pixels, int off,
                           int scansize) {
         if (srcrows == null || srccols == null) {
             calculateMaps();
@@ -234,7 +234,7 @@ public class ReplicateScaleFilter extends ImageFilter {
         int sx, sy;
         int dx1 = (2 * x * destWidth + srcWidth - 1) / (2 * srcWidth);
         int dy1 = (2 * y * destHeight + srcHeight - 1) / (2 * srcHeight);
-        int outpix[];
+        int[] outpix;
         if (outpixbuf != null && outpixbuf instanceof int[]) {
             outpix = (int[]) outpixbuf;
         } else {

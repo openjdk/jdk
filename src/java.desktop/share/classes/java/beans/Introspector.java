@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public class Introspector {
     private Class<?> beanClass;
     private BeanInfo explicitBeanInfo;
     private BeanInfo superBeanInfo;
-    private BeanInfo additionalBeanInfo[];
+    private BeanInfo[] additionalBeanInfo;
 
     private boolean propertyChangeSource = false;
 
@@ -322,7 +322,7 @@ public class Introspector {
                         Character.isUpperCase(name.charAt(0))){
             return name;
         }
-        char chars[] = name.toCharArray();
+        char[] chars = name.toCharArray();
         chars[0] = Character.toLowerCase(chars[0]);
         return new String(chars);
     }
@@ -459,9 +459,9 @@ public class Introspector {
         // event sets and locate PropertyChangeListeners before we
         // look for properties.
         BeanDescriptor bd = getTargetBeanDescriptor();
-        MethodDescriptor mds[] = getTargetMethodInfo();
-        EventSetDescriptor esds[] = getTargetEventInfo();
-        PropertyDescriptor pds[] = getTargetPropertyInfo();
+        MethodDescriptor[] mds = getTargetMethodInfo();
+        EventSetDescriptor[] esds = getTargetEventInfo();
+        PropertyDescriptor[] pds = getTargetPropertyInfo();
 
         int defaultEvent = getTargetDefaultEventIndex();
         int defaultProperty = getTargetDefaultPropertyIndex();
@@ -526,7 +526,7 @@ public class Introspector {
         processPropertyDescriptors();
 
         // Allocate and populate the result array.
-        PropertyDescriptor result[] =
+        PropertyDescriptor[] result =
                 properties.values().toArray(new PropertyDescriptor[properties.size()]);
 
         // Set the default index.
@@ -924,7 +924,7 @@ public class Introspector {
 
         if (explicitEvents == null && superBeanInfo != null) {
             // We have no explicit BeanInfo events.  Check with our parent.
-            EventSetDescriptor supers[] = superBeanInfo.getEventSetDescriptors();
+            EventSetDescriptor[] supers = superBeanInfo.getEventSetDescriptors();
             for (int i = 0 ; i < supers.length; i++) {
                 addEvent(supers[i]);
             }
@@ -935,7 +935,7 @@ public class Introspector {
         }
 
         for (int i = 0; i < additionalBeanInfo.length; i++) {
-            EventSetDescriptor additional[] = additionalBeanInfo[i].getEventSetDescriptors();
+            EventSetDescriptor[] additional = additionalBeanInfo[i].getEventSetDescriptors();
             if (additional != null) {
                 for (int j = 0 ; j < additional.length; j++) {
                     addEvent(additional[j]);
@@ -1020,14 +1020,14 @@ public class Introspector {
 
         if (explicitMethods == null && superBeanInfo != null) {
             // We have no explicit BeanInfo methods.  Check with our parent.
-            MethodDescriptor supers[] = superBeanInfo.getMethodDescriptors();
+            MethodDescriptor[] supers = superBeanInfo.getMethodDescriptors();
             for (int i = 0 ; i < supers.length; i++) {
                 addMethod(supers[i]);
             }
         }
 
         for (int i = 0; i < additionalBeanInfo.length; i++) {
-            MethodDescriptor additional[] = additionalBeanInfo[i].getMethodDescriptors();
+            MethodDescriptor[] additional = additionalBeanInfo[i].getMethodDescriptors();
             if (additional != null) {
                 for (int j = 0 ; j < additional.length; j++) {
                     addMethod(additional[j]);
@@ -1049,7 +1049,7 @@ public class Introspector {
         }
 
         // Allocate and populate the result array.
-        MethodDescriptor result[] = new MethodDescriptor[methods.size()];
+        MethodDescriptor[] result = new MethodDescriptor[methods.size()];
         result = methods.values().toArray(result);
 
         return result;
@@ -1155,7 +1155,7 @@ public class Introspector {
     private boolean isEventHandler(Method m) {
         // We assume that a method is an event handler if it has a single
         // argument, whose type inherit from java.util.Event.
-        Type argTypes[] = m.getGenericParameterTypes();
+        Type[] argTypes = m.getGenericParameterTypes();
         if (argTypes.length != 1) {
             return false;
         }
@@ -1171,7 +1171,7 @@ public class Introspector {
      * parameter list on a given class.
      */
     private static Method internalFindMethod(Class<?> start, String methodName,
-                                                 int argCount, Class<?> args[]) {
+                                                 int argCount, Class<?>[] args) {
         // For overriden methods we need to find the most derived version.
         // So we start with the given class and walk up the superclass chain.
         for (Class<?> cl = start; cl != null; cl = cl.getSuperclass()) {

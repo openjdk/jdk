@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeNodesChanged(TreeModelEvent e) {
         if(e != null) {
-            int                 changedIndexs[];
+            int[]               changedIndexs;
             FHTreeStateNode     changedParent = getNodeForPath
                                   (SwingUtilities2.getTreePath(e, getModel()), false, false);
             int                 maxCounter;
@@ -391,7 +391,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeNodesInserted(TreeModelEvent e) {
         if(e != null) {
-            int                 changedIndexs[];
+            int[]               changedIndexs;
             FHTreeStateNode     changedParent = getNodeForPath
                                   (SwingUtilities2.getTreePath(e, getModel()), false, false);
             int                 maxCounter;
@@ -430,7 +430,7 @@ public class FixedHeightLayoutCache extends AbstractLayoutCache {
      */
     public void treeNodesRemoved(TreeModelEvent e) {
         if(e != null) {
-            int                  changedIndexs[];
+            int[]                changedIndexs;
             int                  maxCounter;
             TreePath             parentPath = SwingUtilities2.getTreePath(e, getModel());
             FHTreeStateNode      changedParentNode = getNodeForPath

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2226,7 +2226,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
          */
         private static void updateWindowUI(Window window) {
             SwingUtilities.updateComponentTreeUI(window);
-            Window ownedWins[] = window.getOwnedWindows();
+            Window[] ownedWins = window.getOwnedWindows();
             for (Window w : ownedWins) {
                 updateWindowUI(w);
             }
@@ -2236,7 +2236,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
          * Updates the UIs of all the known Frames.
          */
         private static void updateAllUIs() {
-            Frame appFrames[] = Frame.getFrames();
+            Frame[] appFrames = Frame.getFrames();
             for (Frame frame : appFrames) {
                 updateWindowUI(frame);
             }

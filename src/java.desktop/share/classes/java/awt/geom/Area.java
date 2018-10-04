@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ public class Area implements Shape, Cloneable {
         //             0-2 horizontal splitting parameters
         //             OR
         //             3 parametric equation derivative coefficients
-        double coords[] = new double[23];
+        double[] coords = new double[23];
         double movx = 0, movy = 0;
         double curx = 0, cury = 0;
         double newx, newy;
@@ -702,8 +702,8 @@ class AreaIterator implements PathIterator {
         }
     }
 
-    public int currentSegment(float coords[]) {
-        double dcoords[] = new double[6];
+    public int currentSegment(float[] coords) {
+        double[] dcoords = new double[6];
         int segtype = currentSegment(dcoords);
         int numpoints = (segtype == SEG_CLOSE ? 0
                          : (segtype == SEG_QUADTO ? 2
@@ -715,7 +715,7 @@ class AreaIterator implements PathIterator {
         return segtype;
     }
 
-    public int currentSegment(double coords[]) {
+    public int currentSegment(double[] coords) {
         int segtype;
         int numpoints;
         if (prevcurve != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
                                             | COMPLETESCANLINES);
 
     private boolean passthrough;
-    private float reds[], greens[], blues[], alphas[];
+    private float[] reds, greens, blues, alphas;
     private int savedy;
     private int savedyrem;
 
@@ -208,7 +208,7 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
                 }
             }
             if ((dyrem -= amty) == 0) {
-                int outpix[] = calcRow();
+                int[] outpix = calcRow();
                 do {
                     consumer.setPixels(0, dy, destWidth, 1,
                                        rgbmodel, outpix, 0, destWidth);
@@ -244,7 +244,7 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
      * @see ReplicateScaleFilter
      */
     public void setPixels(int x, int y, int w, int h,
-                          ColorModel model, byte pixels[], int off,
+                          ColorModel model, byte[] pixels, int off,
                           int scansize) {
         if (passthrough) {
             super.setPixels(x, y, w, h, model, pixels, off, scansize);
@@ -270,7 +270,7 @@ public class AreaAveragingScaleFilter extends ReplicateScaleFilter {
      * @see ReplicateScaleFilter
      */
     public void setPixels(int x, int y, int w, int h,
-                          ColorModel model, int pixels[], int off,
+                          ColorModel model, int[] pixels, int off,
                           int scansize) {
         if (passthrough) {
             super.setPixels(x, y, w, h, model, pixels, off, scansize);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,7 +413,7 @@ public class WindowsScrollBarUI extends BasicScrollBarUI {
         }
 
         public Grid(Color fg, Color bg) {
-            int cmap[] = { fg.getRGB(), bg.getRGB() };
+            int[] cmap = { fg.getRGB(), bg.getRGB() };
             IndexColorModel icm = new IndexColorModel(8, 2, cmap, 0, false, -1,
                                                       DataBuffer.TYPE_BYTE);
             image = new BufferedImage(BUFFER_SIZE, BUFFER_SIZE,

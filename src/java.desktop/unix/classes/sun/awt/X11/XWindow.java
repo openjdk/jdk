@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1093,7 +1093,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     // called directly from this package, unlike handleKeyRelease.
     // un-final it if you need to override it in a subclass.
     final void handleKeyPress(XKeyEvent ev) {
-        long keysym[] = new long[2];
+        long[] keysym = new long[2];
         int unicodeKey = 0;
         keysym[0] = XConstants.NoSymbol;
 

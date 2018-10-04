@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,7 +187,7 @@ public abstract class Path2D implements Shape, Cloneable {
      * @since 1.6
      */
     public static class Float extends Path2D implements Serializable {
-        transient float floatCoords[];
+        transient float[] floatCoords;
 
         /**
          * Constructs a new empty single precision {@code Path2D} object
@@ -290,7 +290,7 @@ public abstract class Path2D implements Shape, Cloneable {
         @Override
         float[] cloneCoordsFloat(AffineTransform at) {
             // trim arrays:
-            float ret[];
+            float[] ret;
             if (at == null) {
                 ret = Arrays.copyOf(floatCoords, numCoords);
             } else {
@@ -303,7 +303,7 @@ public abstract class Path2D implements Shape, Cloneable {
         @Override
         double[] cloneCoordsDouble(AffineTransform at) {
             // trim arrays:
-            double ret[] = new double[numCoords];
+            double[] ret = new double[numCoords];
             if (at == null) {
                 for (int i = 0; i < numCoords; i++) {
                     ret[i] = floatCoords[i];
@@ -555,7 +555,7 @@ public abstract class Path2D implements Shape, Cloneable {
                 return 0;
             }
             double movx, movy, curx, cury, endx, endy;
-            float coords[] = floatCoords;
+            float[] coords = floatCoords;
             curx = movx = coords[0];
             cury = movy = coords[1];
             int crossings = 0;
@@ -634,7 +634,7 @@ public abstract class Path2D implements Shape, Cloneable {
             if (numTypes == 0) {
                 return 0;
             }
-            float coords[] = floatCoords;
+            float[] coords = floatCoords;
             double curx, cury, movx, movy, endx, endy;
             curx = movx = coords[0];
             cury = movy = coords[1];
@@ -736,7 +736,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @since 1.6
          */
         public final void append(PathIterator pi, boolean connect) {
-            float coords[] = new float[6];
+            float[] coords = new float[6];
             while (!pi.isDone()) {
                 switch (pi.currentSegment(coords)) {
                 case SEG_MOVETO:
@@ -1004,7 +1004,7 @@ public abstract class Path2D implements Shape, Cloneable {
         }
 
         static class CopyIterator extends Path2D.Iterator {
-            float floatCoords[];
+            float[] floatCoords;
 
             CopyIterator(Path2D.Float p2df) {
                 super(p2df);
@@ -1034,7 +1034,7 @@ public abstract class Path2D implements Shape, Cloneable {
         }
 
         static class TxIterator extends Path2D.Iterator {
-            float floatCoords[];
+            float[] floatCoords;
             AffineTransform affine;
 
             TxIterator(Path2D.Float p2df, AffineTransform at) {
@@ -1073,7 +1073,7 @@ public abstract class Path2D implements Shape, Cloneable {
      * @since 1.6
      */
     public static class Double extends Path2D implements Serializable {
-        transient double doubleCoords[];
+        transient double[] doubleCoords;
 
         /**
          * Constructs a new empty double precision {@code Path2D} object
@@ -1176,7 +1176,7 @@ public abstract class Path2D implements Shape, Cloneable {
         @Override
         float[] cloneCoordsFloat(AffineTransform at) {
             // trim arrays:
-            float ret[] = new float[numCoords];
+            float[] ret = new float[numCoords];
             if (at == null) {
                 for (int i = 0; i < numCoords; i++) {
                     ret[i] = (float) doubleCoords[i];
@@ -1190,7 +1190,7 @@ public abstract class Path2D implements Shape, Cloneable {
         @Override
         double[] cloneCoordsDouble(AffineTransform at) {
             // trim arrays:
-            double ret[];
+            double[] ret;
             if (at == null) {
                 ret = Arrays.copyOf(doubleCoords, numCoords);
             } else {
@@ -1330,7 +1330,7 @@ public abstract class Path2D implements Shape, Cloneable {
                 return 0;
             }
             double movx, movy, curx, cury, endx, endy;
-            double coords[] = doubleCoords;
+            double[] coords = doubleCoords;
             curx = movx = coords[0];
             cury = movy = coords[1];
             int crossings = 0;
@@ -1409,7 +1409,7 @@ public abstract class Path2D implements Shape, Cloneable {
             if (numTypes == 0) {
                 return 0;
             }
-            double coords[] = doubleCoords;
+            double[] coords = doubleCoords;
             double curx, cury, movx, movy, endx, endy;
             curx = movx = coords[0];
             cury = movy = coords[1];
@@ -1512,7 +1512,7 @@ public abstract class Path2D implements Shape, Cloneable {
          * @since 1.6
          */
         public final void append(PathIterator pi, boolean connect) {
-            double coords[] = new double[6];
+            double[] coords = new double[6];
             while (!pi.isDone()) {
                 switch (pi.currentSegment(coords)) {
                 case SEG_MOVETO:
@@ -1779,7 +1779,7 @@ public abstract class Path2D implements Shape, Cloneable {
         }
 
         static class CopyIterator extends Path2D.Iterator {
-            double doubleCoords[];
+            double[] doubleCoords;
 
             CopyIterator(Path2D.Double p2dd) {
                 super(p2dd);
@@ -1809,7 +1809,7 @@ public abstract class Path2D implements Shape, Cloneable {
         }
 
         static class TxIterator extends Path2D.Iterator {
-            double doubleCoords[];
+            double[] doubleCoords;
             AffineTransform affine;
 
             TxIterator(Path2D.Double p2dd, AffineTransform at) {
@@ -2537,8 +2537,8 @@ public abstract class Path2D implements Shape, Cloneable {
     {
         s.defaultWriteObject();
 
-        float fCoords[];
-        double dCoords[];
+        float[] fCoords;
+        double[] dCoords;
 
         if (isdbl) {
             dCoords = ((Path2D.Double) this).doubleCoords;
@@ -2726,7 +2726,7 @@ public abstract class Path2D implements Shape, Cloneable {
         int pointIdx;
         Path2D path;
 
-        static final int curvecoords[] = {2, 2, 4, 6, 0};
+        static final int[] curvecoords = {2, 2, 4, 6, 0};
 
         Iterator(Path2D path) {
             this.path = path;

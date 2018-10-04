@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import apple.laf.JRSUIConstants.Size;
 // TODO: no screen menu bar for now
 public class AquaMenuItemUI extends BasicMenuItemUI implements AquaMenuPainter.Client/*, ScreenMenuItemUI*/ {
     static final int kPlain = 0, kCheckBox = 1, kRadioButton = 2;
-    static final String sPropertyPrefixes[] = { "MenuItem", "CheckBoxMenuItem", "RadioButtonMenuItem" };
+    static final String[] sPropertyPrefixes = { "MenuItem", "CheckBoxMenuItem", "RadioButtonMenuItem" };
 
     boolean fIsScreenMenuItem = false;
     boolean fIsIndeterminate = false;

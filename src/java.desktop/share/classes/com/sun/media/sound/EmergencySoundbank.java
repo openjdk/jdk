@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -635,7 +635,7 @@ public final class EmergencySoundbank {
 
     public static SF2Layer new_guitar_pick(SF2Soundbank sf2) {
 
-        double datab[];
+        double[] datab;
 
         // Make treble part
         {
@@ -814,7 +814,7 @@ public final class EmergencySoundbank {
 
     public static SF2Layer new_piano_hammer(SF2Soundbank sf2) {
 
-        double datab[];
+        double[] datab;
 
         // Make treble part
         {
@@ -1803,8 +1803,8 @@ public final class EmergencySoundbank {
 
     public static SF2Layer new_timpani(SF2Soundbank sf2) {
 
-        double datab[];
-        double datah[];
+        double[] datab;
+        double[] datah;
 
         // Make Bass Part
         {
@@ -1891,8 +1891,8 @@ public final class EmergencySoundbank {
 
     public static SF2Layer new_melodic_toms(SF2Soundbank sf2) {
 
-        double datab[];
-        double datah[];
+        double[] datab;
+        double[] datah;
 
         // Make Bass Part
         {
@@ -1969,7 +1969,7 @@ public final class EmergencySoundbank {
     }
 
     public static SF2Layer new_reverse_cymbal(SF2Soundbank sf2) {
-        double datah[];
+        double[] datah;
         {
             int fftlen = 4096 * 4;
             double[] data = new double[2 * fftlen];
@@ -2012,8 +2012,8 @@ public final class EmergencySoundbank {
 
     public static SF2Layer new_snare_drum(SF2Soundbank sf2) {
 
-        double datab[];
-        double datah[];
+        double[] datab;
+        double[] datah;
 
         // Make Bass Part
         {
@@ -2088,8 +2088,8 @@ public final class EmergencySoundbank {
 
     public static SF2Layer new_bass_drum(SF2Soundbank sf2) {
 
-        double datab[];
-        double datah[];
+        double[] datab;
+        double[] datah;
 
         // Make Bass Part
         {
@@ -2162,8 +2162,8 @@ public final class EmergencySoundbank {
 
     public static SF2Layer new_tom(SF2Soundbank sf2) {
 
-        double datab[];
-        double datah[];
+        double[] datab;
+        double[] datah;
 
         // Make Bass Part
         {
@@ -2240,7 +2240,7 @@ public final class EmergencySoundbank {
     }
 
     public static SF2Layer new_closed_hihat(SF2Soundbank sf2) {
-        double datah[];
+        double[] datah;
 
         // Make treble part
         {
@@ -2291,7 +2291,7 @@ public final class EmergencySoundbank {
     }
 
     public static SF2Layer new_open_hihat(SF2Soundbank sf2) {
-        double datah[];
+        double[] datah;
         {
             int fftlen = 4096 * 4;
             double[] data = new double[2 * fftlen];
@@ -2332,7 +2332,7 @@ public final class EmergencySoundbank {
     }
 
     public static SF2Layer new_crash_cymbal(SF2Soundbank sf2) {
-        double datah[];
+        double[] datah;
         {
             int fftlen = 4096 * 4;
             double[] data = new double[2 * fftlen];
@@ -2372,7 +2372,7 @@ public final class EmergencySoundbank {
     }
 
     public static SF2Layer new_side_stick(SF2Soundbank sf2) {
-        double datab[];
+        double[] datab;
 
         // Make treble part
         {

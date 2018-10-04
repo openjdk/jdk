@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
         }
 
         long tray_window = tiPeer.getWindow();
-        long data[] = new long[] {XEmbedHelper.XEMBED_VERSION, XEmbedHelper.XEMBED_MAPPED};
+        long[] data = new long[] {XEmbedHelper.XEMBED_VERSION, XEmbedHelper.XEMBED_MAPPED};
         long data_ptr = Native.card32ToData(data);
 
         _XEMBED_INFO.setAtomData(tray_window, data_ptr, data.length);

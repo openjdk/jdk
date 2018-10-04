@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1735,7 +1735,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /** MediaSizeName / dmPaper */
     private int[] getWin32MediaAttrib() {
-        int wid_ht[] = {0, 0};
+        int[] wid_ht = {0, 0};
         if (attributes != null) {
             Media media = (Media)attributes.get(Media.class);
             if (media instanceof MediaSizeName) {

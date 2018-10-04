@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ abstract class XScrollbar {
      * @param colors the colors to use when painting the scrollbar
      * @param paintAll paint the whole scrollbar if true, just the thumb is false
      */
-    void paint(Graphics g, Color colors[], boolean paintAll) {
+    void paint(Graphics g, Color[] colors, boolean paintAll) {
         if (log.isLoggable(PlatformLogger.Level.FINER)) {
             log.finer("Painting scrollbar " + this);
         }

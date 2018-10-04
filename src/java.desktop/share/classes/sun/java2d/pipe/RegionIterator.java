@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class RegionIterator {
      * and recording the low and high Y coordinates of the
      * range in the array at locations 1 and 3 respectively.
      */
-    public boolean nextYRange(int range[]) {
+    public boolean nextYRange(int[] range) {
         curIndex += numXbands * 2;
         numXbands = 0;
         if (curIndex >= region.endIndex) {
@@ -88,7 +88,7 @@ public class RegionIterator {
      * found and recording the low and high X coordinates of
      * the range in the array at locations 0 and 2 respectively.
      */
-    public boolean nextXBand(int range[]) {
+    public boolean nextXBand(int[] range) {
         if (numXbands <= 0) {
             return false;
         }

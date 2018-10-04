@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,7 +230,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
 
     native void doPoly(SurfaceData sData, int[] xpoints, int[] ypoints, int npoints, boolean ispolygon, boolean isfill);
 
-    public void drawPolyline(SunGraphics2D sg2d, int xpoints[], int ypoints[], int npoints) {
+    public void drawPolyline(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
             surfaceData.doPolygon(this, sg2d, xpoints, ypoints, npoints, false, false);
@@ -244,7 +244,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
-    public void drawPolygon(SunGraphics2D sg2d, int xpoints[], int ypoints[], int npoints) {
+    public void drawPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
             surfaceData.doPolygon(this, sg2d, xpoints, ypoints, npoints, true, false);
@@ -259,7 +259,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
-    public void fillPolygon(SunGraphics2D sg2d, int xpoints[], int ypoints[], int npoints) {
+    public void fillPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
         surfaceData.doPolygon(this, sg2d, xpoints, ypoints, npoints, true, true);
     }

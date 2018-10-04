@@ -1477,7 +1477,7 @@ public class Window extends Container implements Accessible {
         return getOwnedWindows_NoClientCode();
     }
     final Window[] getOwnedWindows_NoClientCode() {
-        Window realCopy[];
+        Window[] realCopy;
 
         synchronized(ownedWindowList) {
             // Recall that ownedWindowList is actually a Vector of
@@ -1487,7 +1487,7 @@ public class Window extends Container implements Accessible {
             // all non-null get()s (realCopy with size realSize).
             int fullSize = ownedWindowList.size();
             int realSize = 0;
-            Window fullCopy[] = new Window[fullSize];
+            Window[] fullCopy = new Window[fullSize];
 
             for (int i = 0; i < fullSize; i++) {
                 fullCopy[realSize] = ownedWindowList.elementAt(i).get();
@@ -1555,14 +1555,14 @@ public class Window extends Container implements Accessible {
 
     private static Window[] getWindows(AppContext appContext) {
         synchronized (Window.class) {
-            Window realCopy[];
+            Window[] realCopy;
             @SuppressWarnings("unchecked")
             Vector<WeakReference<Window>> windowList =
                 (Vector<WeakReference<Window>>)appContext.get(Window.class);
             if (windowList != null) {
                 int fullSize = windowList.size();
                 int realSize = 0;
-                Window fullCopy[] = new Window[fullSize];
+                Window[] fullCopy = new Window[fullSize];
                 for (int i = 0; i < fullSize; i++) {
                     Window w = windowList.get(i).get();
                     if (w != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,10 +192,10 @@ public class RenderableImageProducer implements ImageProducer, Runnable {
 
         // Get RGB pixels from the raster scanline by scanline and
         // send to consumers.
-        int pix[] = new int[width];
+        int[] pix = new int[width];
         int i,j;
         int numBands = sampleModel.getNumBands();
-        int tmpPixel[] = new int[numBands];
+        int[] tmpPixel = new int[numBands];
         for (j = 0; j < height; j++) {
             for(i = 0; i < width; i++) {
                 sampleModel.getPixel(i, j, tmpPixel, dataBuffer);

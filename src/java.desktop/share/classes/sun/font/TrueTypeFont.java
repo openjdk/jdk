@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -614,7 +614,7 @@ public class TrueTypeFont extends FileFont {
      * the windows encodings we expect as the default encoding in
      * supported locales, so we only map the first of these fields.
      */
-    static final String encoding_mapping[] = {
+    static final String[] encoding_mapping = {
         "cp1252",    /*  0:Latin 1  */
         "cp1250",    /*  1:Latin 2  */
         "cp1251",    /*  2:Cyrillic */
@@ -662,7 +662,7 @@ public class TrueTypeFont extends FileFont {
      * from needing to map to this small and incomplete set of Windows
      * code pages which looks odd on non-Windows platforms.
      */
-    private static final String languages[][] = {
+    private static final String[][] languages = {
 
         /* cp1252/Latin 1 */
         { "en", "ca", "da", "de", "es", "fi", "fr", "is", "it",
@@ -709,7 +709,7 @@ public class TrueTypeFont extends FileFont {
         { "ko" },
     };
 
-    private static final String codePages[] = {
+    private static final String[] codePages = {
         "cp1252",
         "cp1250",
         "cp1251",

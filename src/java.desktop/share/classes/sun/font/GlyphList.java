@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,8 @@ public final class GlyphList {
     private static final int DEFAULT_LENGTH = 32;
 
     int glyphindex;
-    int metrics[];
-    byte graybits[];
+    int[] metrics;
+    byte[] graybits;
 
     /* A reference to the strike is needed for the case when the GlyphList
      * may be added to a queue for batch processing, (e.g. OpenGL) and we need
@@ -107,10 +107,10 @@ public final class GlyphList {
     int len = 0;
     int maxLen = 0;
     int maxPosLen = 0;
-    int glyphData[];
-    char chData[];
-    long images[];
-    float positions[];
+    int[] glyphData;
+    char[] chData;
+    long[] images;
+    float[] positions;
     float x, y;
     float gposx, gposy;
     boolean usePositions;

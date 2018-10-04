@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1067,7 +1067,7 @@ public class TransferHandler implements Serializable {
         } catch (IntrospectionException ex) {
             return null;
         }
-        PropertyDescriptor props[] = bi.getPropertyDescriptors();
+        PropertyDescriptor[] props = bi.getPropertyDescriptors();
         for (int i=0; i < props.length; i++) {
             if (propertyName.equals(props[i].getName())) {
                 Method reader = props[i].getReadMethod();

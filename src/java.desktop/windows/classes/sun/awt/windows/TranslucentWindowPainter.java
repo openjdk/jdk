@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ abstract class TranslucentWindowPainter {
 
             if (bb instanceof BufferedImage) {
                 BufferedImage bi = (BufferedImage)bb;
-                int data[] =
+                int[] data =
                     ((DataBufferInt)bi.getRaster().getDataBuffer()).getData();
                 peer.updateWindowImpl(data, bi.getWidth(), bi.getHeight());
                 return true;
@@ -222,7 +222,7 @@ abstract class TranslucentWindowPainter {
                         int w = viBB.getWidth();
                         int h = viBB.getHeight();
                         BufImgSurfaceData bisd = (BufImgSurfaceData)s;
-                        int data[] = ((DataBufferInt)bisd.getRaster(0,0,w,h).
+                        int[] data = ((DataBufferInt)bisd.getRaster(0,0,w,h).
                             getDataBuffer()).getData();
                         peer.updateWindowImpl(data, w, h);
                         return true;
@@ -233,7 +233,7 @@ abstract class TranslucentWindowPainter {
             // copy the passed image into our own buffer, then upload
             BufferedImage bi = (BufferedImage)clearImage(backBuffer);
 
-            int data[] =
+            int[] data =
                 ((DataBufferInt)bi.getRaster().getDataBuffer()).getData();
             peer.updateWindowImpl(data, bi.getWidth(), bi.getHeight());
 
@@ -332,7 +332,7 @@ abstract class TranslucentWindowPainter {
             if (bb instanceof DestSurfaceProvider) {
                 Surface s = ((DestSurfaceProvider)bb).getDestSurface();
                 if (s instanceof AccelSurface) {
-                    final boolean arr[] = { false };
+                    final boolean[] arr = { false };
                     final AccelSurface as = (AccelSurface)s;
                     final int w = as.getBounds().width;
                     final int h = as.getBounds().height;

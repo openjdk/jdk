@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,20 +42,20 @@ public class GridBagLayoutInfo implements java.io.Serializable {
 
     int width, height;          /* number of  cells: horizontal and vertical */
     int startx, starty;         /* starting point for layout */
-    int minWidth[];             /* largest minWidth in each column */
-    int minHeight[];            /* largest minHeight in each row */
-    double weightX[];           /* largest weight in each column */
-    double weightY[];           /* largest weight in each row */
+    int[] minWidth;             /* largest minWidth in each column */
+    int[] minHeight;            /* largest minHeight in each row */
+    double[] weightX;           /* largest weight in each column */
+    double[] weightY;           /* largest weight in each row */
     boolean hasBaseline;        /* Whether or not baseline layout has been
                                  * requested and one of the components
                                  * has a valid baseline. */
     // These are only valid if hasBaseline is true and are indexed by
     // row.
-    short baselineType[];       /* The type of baseline for a particular
+    short[] baselineType;       /* The type of baseline for a particular
                                  * row.  A mix of the BaselineResizeBehavior
                                  * constants (1 << ordinal()) */
-    int maxAscent[];            /* Max ascent (baseline). */
-    int maxDescent[];           /* Max descent (height - baseline) */
+    int[] maxAscent;            /* Max ascent (baseline). */
+    int[] maxDescent;           /* Max descent (height - baseline) */
 
     /**
      * Creates an instance of GridBagLayoutInfo representing {@code GridBagLayout}

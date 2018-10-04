@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,10 +113,10 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
 
 // Transient variables (recalculated each time TabbedPane is layed out)
 
-    protected int tabRuns[] = new int[10];
+    protected int[] tabRuns = new int[10];
     protected int runCount = 0;
     protected int selectedRun = -1;
-    protected Rectangle rects[] = new Rectangle[0];
+    protected Rectangle[] rects = new Rectangle[0];
     protected int maxTabHeight;
     protected int maxTabWidth;
 
@@ -864,8 +864,8 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
      * subtracting xCropLen[i] from (tab.y + tab.height) and adding yCropLen[i]
      * to (tab.x).
      */
-    private static int xCropLen[] = { 1, 1, 0, 0, 1, 1, 2, 2 };
-    private static int yCropLen[] = { 0, 3, 3, 6, 6, 9, 9, 12 };
+    private static int[] xCropLen = { 1, 1, 0, 0, 1, 1, 2, 2 };
+    private static int[] yCropLen = { 0, 3, 3, 6, 6, 9, 9, 12 };
     private static final int CROP_SEGMENT = 12;
 
     private static Polygon createCroppedTabShape(final int tabPlacement, final Rectangle tabRect, final int cropline) {
@@ -895,8 +895,8 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
             rcnt++;
         }
         final int npts = 2 + (rcnt * 8);
-        final int xp[] = new int[npts];
-        final int yp[] = new int[npts];
+        final int[] xp = new int[npts];
+        final int[] yp = new int[npts];
         int pcnt = 0;
 
         xp[pcnt] = ostart;

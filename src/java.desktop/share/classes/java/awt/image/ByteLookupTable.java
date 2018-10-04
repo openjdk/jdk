@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class ByteLookupTable extends LookupTable {
      * Constants
      */
 
-    byte data[][];
+    byte[][] data;
 
     /**
      * Constructs a ByteLookupTable object from an array of byte
@@ -63,7 +63,7 @@ public class ByteLookupTable extends LookupTable {
      *         is less than 0 or if the length of {@code data}
      *         is less than 1
      */
-    public ByteLookupTable(int offset, byte data[][]) {
+    public ByteLookupTable(int offset, byte[][] data) {
         super(offset,data.length);
         numComponents = data.length;
         numEntries    = data[0].length;
@@ -87,7 +87,7 @@ public class ByteLookupTable extends LookupTable {
      *         is less than 0 or if the length of {@code data}
      *         is less than 1
      */
-    public ByteLookupTable(int offset, byte data[]) {
+    public ByteLookupTable(int offset, byte[] data) {
         super(offset,data.length);
         numComponents = 1;
         numEntries    = data.length;

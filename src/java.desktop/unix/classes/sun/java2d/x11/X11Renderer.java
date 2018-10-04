@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ public class X11Renderer implements
                           int npoints, boolean isclosed);
 
     public void drawPolyline(SunGraphics2D sg2d,
-                             int xpoints[], int ypoints[],
+                             int[] xpoints, int[] ypoints,
                              int npoints)
     {
         SunToolkit.awtLock();
@@ -185,7 +185,7 @@ public class X11Renderer implements
     }
 
     public void drawPolygon(SunGraphics2D sg2d,
-                            int xpoints[], int ypoints[],
+                            int[] xpoints, int[] ypoints,
                             int npoints)
     {
         SunToolkit.awtLock();
@@ -275,7 +275,7 @@ public class X11Renderer implements
                           int npoints);
 
     public void fillPolygon(SunGraphics2D sg2d,
-                            int xpoints[], int ypoints[],
+                            int[] xpoints, int[] ypoints,
                             int npoints)
     {
         SunToolkit.awtLock();

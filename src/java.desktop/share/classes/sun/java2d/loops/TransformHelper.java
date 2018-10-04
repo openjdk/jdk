@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,7 +96,7 @@ public class TransformHelper extends GraphicsPrimitive
                                  AffineTransform itx, int txtype,
                                  int sx1, int sy1, int sx2, int sy2,
                                  int dx1, int dy1, int dx2, int dy2,
-                                 int edges[], int dxoff, int dyoff);
+                                 int[] edges, int dxoff, int dyoff);
 
     public GraphicsPrimitive makePrimitive(SurfaceType srctype,
                                            CompositeType comptype,
@@ -127,7 +127,7 @@ public class TransformHelper extends GraphicsPrimitive
                               AffineTransform itx, int txtype,
                               int sx1, int sy1, int sx2, int sy2,
                               int dx1, int dy1, int dx2, int dy2,
-                              int edges[], int dxoff, int dyoff)
+                              int[] edges, int dxoff, int dyoff)
         {
             tracePrimitive(target);
             target.Transform(output, src, dst, comp, clip, itx, txtype,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ import sun.print.SunMinMaxPage;
  */
 public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
-    private static final MediaType SIZES[] = {
+    private static final MediaType[] SIZES = {
         MediaType.ISO_4A0, MediaType.ISO_2A0, MediaType.ISO_A0,
         MediaType.ISO_A1, MediaType.ISO_A2, MediaType.ISO_A3,
         MediaType.ISO_A4, MediaType.ISO_A5, MediaType.ISO_A6,
@@ -118,7 +118,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
     /* This array maps the above array to the objects used by the
      * javax.print APIs
          */
-    private static final MediaSizeName JAVAXSIZES[] = {
+    private static final MediaSizeName[] JAVAXSIZES = {
         null, null, MediaSizeName.ISO_A0,
         MediaSizeName.ISO_A1, MediaSizeName.ISO_A2, MediaSizeName.ISO_A3,
         MediaSizeName.ISO_A4, MediaSizeName.ISO_A5, MediaSizeName.ISO_A6,
@@ -154,7 +154,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
 
     // widths and lengths in PostScript points (1/72 in.)
-    private static final int WIDTHS[] = {
+    private static final int[] WIDTHS = {
         /*iso-4a0*/ 4768, /*iso-2a0*/ 3370, /*iso-a0*/ 2384, /*iso-a1*/ 1684,
         /*iso-a2*/ 1191, /*iso-a3*/ 842, /*iso-a4*/ 595, /*iso-a5*/ 420,
         /*iso-a6*/ 298, /*iso-a7*/ 210, /*iso-a8*/ 147, /*iso-a9*/ 105,
@@ -179,7 +179,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
         /*invite-envelope*/ 624, /*italy-envelope*/ 312,
         /*monarch-envelope*/ 279, /*personal-envelope*/ 261
     };
-    private static final int LENGTHS[] = {
+    private static final int[] LENGTHS = {
         /*iso-4a0*/ 6741, /*iso-2a0*/ 4768, /*iso-a0*/ 3370, /*iso-a1*/ 2384,
         /*iso-a2*/ 1684, /*iso-a3*/ 1191, /*iso-a4*/ 842, /*iso-a5*/ 595,
         /*iso-a6*/ 420, /*iso-a7*/ 298, /*iso-a8*/ 210, /*iso-a9*/ 147,

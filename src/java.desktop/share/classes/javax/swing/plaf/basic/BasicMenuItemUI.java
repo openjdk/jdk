@@ -868,8 +868,8 @@ public class BasicMenuItemUI extends MenuItemUI
      */
     public MenuElement[] getPath() {
         MenuSelectionManager m = MenuSelectionManager.defaultManager();
-        MenuElement oldPath[] = m.getSelectedPath();
-        MenuElement newPath[];
+        MenuElement[] oldPath = m.getSelectedPath();
+        MenuElement[] newPath;
         int i = oldPath.length;
         if (i == 0)
             return new MenuElement[0];
@@ -905,7 +905,7 @@ public class BasicMenuItemUI extends MenuItemUI
         return newPath;
     }
 
-    void printMenuElementArray(MenuElement path[], boolean dumpStack) {
+    void printMenuElementArray(MenuElement[] path, boolean dumpStack) {
         System.out.println("Path is(");
         int i, j;
         for(i=0,j=path.length; i<j ;i++){
@@ -1089,9 +1089,9 @@ public class BasicMenuItemUI extends MenuItemUI
                 MenuSelectionManager.defaultManager().processMouseEvent(e);
             } else {
 
-                MenuElement path[] = manager.getSelectedPath();
+                MenuElement[] path = manager.getSelectedPath();
                 if (path.length > 1 && path[path.length-1] == menuItem) {
-                    MenuElement newPath[] = new MenuElement[path.length-1];
+                    MenuElement[] newPath = new MenuElement[path.length-1];
                     int i,c;
                     for(i=0,c=path.length-1;i<c;i++)
                         newPath[i] = path[i];
@@ -1111,12 +1111,12 @@ public class BasicMenuItemUI extends MenuItemUI
         //
         public void menuDragMouseEntered(MenuDragMouseEvent e) {
             MenuSelectionManager manager = e.getMenuSelectionManager();
-            MenuElement path[] = e.getPath();
+            MenuElement[] path = e.getPath();
             manager.setSelectedPath(path);
         }
         public void menuDragMouseDragged(MenuDragMouseEvent e) {
             MenuSelectionManager manager = e.getMenuSelectionManager();
-            MenuElement path[] = e.getPath();
+            MenuElement[] path = e.getPath();
             manager.setSelectedPath(path);
         }
         public void menuDragMouseExited(MenuDragMouseEvent e) {}
@@ -1125,7 +1125,7 @@ public class BasicMenuItemUI extends MenuItemUI
                 return;
             }
             MenuSelectionManager manager = e.getMenuSelectionManager();
-            MenuElement path[] = e.getPath();
+            MenuElement[] path = e.getPath();
             Point p = e.getPoint();
             if (p.x >= 0 && p.x < menuItem.getWidth() &&
                     p.y >= 0 && p.y < menuItem.getHeight()) {

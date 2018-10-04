@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -413,7 +413,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @param manager   the <code>MenuSelectionManager</code>
      */
     @SuppressWarnings("deprecation")
-    public void processMouseEvent(MouseEvent e,MenuElement path[],MenuSelectionManager manager) {
+    public void processMouseEvent(MouseEvent e,MenuElement[] path,MenuSelectionManager manager) {
         processMenuDragMouseEvent(
                  new MenuDragMouseEvent(e.getComponent(), e.getID(),
                                         e.getWhen(),
@@ -437,7 +437,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @param manager   the <code>MenuSelectionManager</code>
      */
     @SuppressWarnings("deprecation")
-    public void processKeyEvent(KeyEvent e,MenuElement path[],MenuSelectionManager manager) {
+    public void processKeyEvent(KeyEvent e,MenuElement[] path,MenuSelectionManager manager) {
         if (DEBUG) {
             System.out.println("in JMenuItem.processKeyEvent/3 for " + getText() +
                                    "  " + KeyStroke.getKeyStrokeForEvent(e));

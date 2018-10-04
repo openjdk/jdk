@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import sun.java2d.pipe.*;
 public class CTextPipe implements TextPipe {
     public native void doDrawString(SurfaceData sData, long nativeStrikePtr, String s, double x, double y);
     public native void doDrawGlyphs(SurfaceData sData, long nativeStrikePtr, GlyphVector gV, float x, float y);
-    public native void doUnicodes(SurfaceData sData, long nativeStrikePtr, char unicodes[], int offset, int length, float x, float y);
+    public native void doUnicodes(SurfaceData sData, long nativeStrikePtr, char[] unicodes, int offset, int length, float x, float y);
     public native void doOneUnicode(SurfaceData sData, long nativeStrikePtr, char aUnicode, float x, float y);
 
     long getNativeStrikePtr(final SunGraphics2D sg2d) {
@@ -95,7 +95,7 @@ public class CTextPipe implements TextPipe {
         sg2d.setFont(prevFont);
     }
 
-    public void drawChars(final SunGraphics2D sg2d, final char data[], final int offset, final int length, final int x, final int y) {
+    public void drawChars(final SunGraphics2D sg2d, final char[] data, final int offset, final int length, final int x, final int y) {
         final long nativeStrikePtr = getNativeStrikePtr(sg2d);
         if (OSXSurfaceData.IsSimpleColor(sg2d.paint) && nativeStrikePtr != 0) {
             final OSXSurfaceData surfaceData = (OSXSurfaceData)sg2d.getSurfaceData();
@@ -120,7 +120,7 @@ public class CTextPipe implements TextPipe {
             super.doDrawGlyphs(sData, nativeStrikePtr, gV, x, y);
         }
 
-        public void doUnicodes(final SurfaceData sData, final long nativeStrikePtr, final char unicodes[], final int offset, final int length, final float x, final float y) {
+        public void doUnicodes(final SurfaceData sData, final long nativeStrikePtr, final char[] unicodes, final int offset, final int length, final float x, final float y) {
             GraphicsPrimitive.tracePrimitive("QuartzDrawUnicodes");
             super.doUnicodes(sData, nativeStrikePtr, unicodes, offset, length, x, y);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ final class Order2 extends Curve {
     private double ycoeff1;
     private double ycoeff2;
 
-    public static void insert(Vector<Curve> curves, double tmp[],
+    public static void insert(Vector<Curve> curves, double[] tmp,
                               double x0, double y0,
                               double cx0, double cy0,
                               double x1, double y1,
@@ -109,7 +109,7 @@ final class Order2 extends Curve {
      * means outside of this method.
      */
     public static int getHorizontalParams(double c0, double cp, double c1,
-                                          double ret[]) {
+                                          double[] ret) {
         if (c0 <= cp && cp <= c1) {
             return 0;
         }
@@ -135,7 +135,7 @@ final class Order2 extends Curve {
      * parametric subranges [0..t] and [t..1].  Store the results back
      * into the array at coords[pos...pos+5] and coords[pos+4...pos+9].
      */
-    public static void split(double coords[], int pos, double t) {
+    public static void split(double[] coords, int pos, double t) {
         double x0, y0, cx, cy, x1, y1;
         coords[pos+8] = x1 = coords[pos+4];
         coords[pos+9] = y1 = coords[pos+5];
@@ -407,7 +407,7 @@ final class Order2 extends Curve {
         } else {
             t1 = TforY(yend, ycoeff0, ycoeff1, ycoeff2);
         }
-        double eqn[] = new double[10];
+        double[] eqn = new double[10];
         eqn[0] = x0;
         eqn[1] = y0;
         eqn[2] = cx0;
@@ -434,7 +434,7 @@ final class Order2 extends Curve {
         return new Order2(x0, y0, cx0, cy0, x1, y1, -direction);
     }
 
-    public int getSegment(double coords[]) {
+    public int getSegment(double[] coords) {
         coords[0] = cx0;
         coords[1] = cy0;
         if (direction == INCREASING) {

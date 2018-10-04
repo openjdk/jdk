@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class IconInfo {
     * returns scaled raw length.
      */
     private int getScaledRawLength(int w, int h) {
-        int scaledWidthAndHeight[] = getScaledWidthAndHeight(w, h);
+        int[] scaledWidthAndHeight = getScaledWidthAndHeight(w, h);
         return scaledWidthAndHeight[0] * scaledWidthAndHeight[1] + 2;
     }
 
@@ -237,7 +237,7 @@ public class IconInfo {
             new DirectColorModel(ColorSpace.getInstance(ColorSpace.CS_sRGB), 32,
                                  0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000,
                                  false, DataBuffer.TYPE_INT);
-        int scaledWidthAndHeight[] = getScaledWidthAndHeight(width, height);
+        int[] scaledWidthAndHeight = getScaledWidthAndHeight(width, height);
         width = scaledWidthAndHeight[0];
         height = scaledWidthAndHeight[1];
         DataBufferInt buffer = new DataBufferInt(width * height);

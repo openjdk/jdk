@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ class EllipseIterator implements PathIterator {
      */
     private static final double pcv = 0.5 + CtrlVal * 0.5;
     private static final double ncv = 0.5 - CtrlVal * 0.5;
-    private static double ctrlpts[][] = {
+    private static double[][] ctrlpts = {
         {  1.0,  pcv,  pcv,  1.0,  0.5,  1.0 },
         {  ncv,  1.0,  0.0,  pcv,  0.0,  0.5 },
         {  0.0,  ncv,  ncv,  0.0,  0.5,  0.0 },
@@ -119,7 +119,7 @@ class EllipseIterator implements PathIterator {
             return SEG_CLOSE;
         }
         if (index == 0) {
-            double ctrls[] = ctrlpts[3];
+            double[] ctrls = ctrlpts[3];
             coords[0] = (float) (x + ctrls[4] * w);
             coords[1] = (float) (y + ctrls[5] * h);
             if (affine != null) {
@@ -127,7 +127,7 @@ class EllipseIterator implements PathIterator {
             }
             return SEG_MOVETO;
         }
-        double ctrls[] = ctrlpts[index - 1];
+        double[] ctrls = ctrlpts[index - 1];
         coords[0] = (float) (x + ctrls[0] * w);
         coords[1] = (float) (y + ctrls[1] * h);
         coords[2] = (float) (x + ctrls[2] * w);
@@ -166,7 +166,7 @@ class EllipseIterator implements PathIterator {
             return SEG_CLOSE;
         }
         if (index == 0) {
-            double ctrls[] = ctrlpts[3];
+            double[] ctrls = ctrlpts[3];
             coords[0] = x + ctrls[4] * w;
             coords[1] = y + ctrls[5] * h;
             if (affine != null) {
@@ -174,7 +174,7 @@ class EllipseIterator implements PathIterator {
             }
             return SEG_MOVETO;
         }
-        double ctrls[] = ctrlpts[index - 1];
+        double[] ctrls = ctrlpts[index - 1];
         coords[0] = x + ctrls[0] * w;
         coords[1] = y + ctrls[1] * h;
         coords[2] = x + ctrls[2] * w;

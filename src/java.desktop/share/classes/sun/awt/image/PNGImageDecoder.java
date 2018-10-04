@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class PNGImageDecoder extends ImageDecoder
     private byte[] red_map, green_map, blue_map, alpha_map;
     private int transparentPixel = -1;
     private byte[]  transparentPixel_16 = null; // we need 6 bytes to store 16bpp value
-    private static ColorModel greyModels[] = new ColorModel[4];
+    private static ColorModel[] greyModels = new ColorModel[4];
   /* this is not needed
      PNGImageDecoder next;
      */
@@ -287,7 +287,7 @@ public class PNGImageDecoder extends ImageDecoder
                         if((cm=greyModels[llog]) == null) {
                             int size = 1<<(1<<llog);
 
-                            byte ramp[] = new byte[size];
+                            byte[] ramp = new byte[size];
                             for(int i = 0; i<size; i++) ramp[i] = (byte)(255*i/(size-1));
 
                             if (transparentPixel == -1) {
@@ -564,7 +564,7 @@ public class PNGImageDecoder extends ImageDecoder
         return !aborted;
     }
 
-    private void filterRow(byte rowByteBuffer[], byte[] prevRow,
+    private void filterRow(byte[] rowByteBuffer, byte[] prevRow,
                            int rowFilter, int rowByteWidth, int bytesPerSample)
         throws IOException {
         int x = 0;
@@ -684,7 +684,7 @@ public class PNGImageDecoder extends ImageDecoder
         fill();
         if(limit-pos>=n) return true;
         if(seenEOF) return false;
-        byte nin[] = new byte[n+100];
+        byte[] nin = new byte[n+100];
         System.arraycopy(inbuf,pos,nin,0,limit-pos);
         limit = limit-pos;
         pos = 0;

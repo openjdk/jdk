@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -860,7 +860,7 @@ public class UnixPrintJob implements CancelablePrintJob {
         int COPIES  = 0x8;
         int NOSHEET  = 0x10;
         int pFlags = 0;
-        String execCmd[];
+        String[] execCmd;
         int ncomps = 2; // minimum number of print args
         int n = 0;
 
@@ -1022,7 +1022,7 @@ public class UnixPrintJob implements CancelablePrintJob {
                  * Spool to the printer.
                  */
                 String fileName = spoolFile.getAbsolutePath();
-                String execCmd[] = printExecCmd(mDestination, mOptions,
+                String[] execCmd = printExecCmd(mDestination, mOptions,
                                mNoJobSheet, jobName, copies, fileName);
 
                 Process process = Runtime.getRuntime().exec(execCmd);

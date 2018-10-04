@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ public abstract class SimpleRenderedImage implements RenderedImage {
      * property names.
      */
     public String[] getPropertyNames(String prefix) {
-        String propertyNames[] = getPropertyNames();
+        String[] propertyNames = getPropertyNames();
         if (propertyNames == null) {
             return null;
         }
@@ -282,7 +282,7 @@ public abstract class SimpleRenderedImage implements RenderedImage {
         }
 
         // Copy the strings from the Vector over to a String array.
-        String prefixNames[] = new String[names.size()];
+        String[] prefixNames = new String[names.size()];
         int count = 0;
         for (Iterator<String> it = names.iterator(); it.hasNext(); ) {
             prefixNames[count++] = it.next();

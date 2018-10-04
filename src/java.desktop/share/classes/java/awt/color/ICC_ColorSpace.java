@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ public class ICC_ColorSpace extends ColorSpace {
         }
 
         int nc = this.getNumComponents();
-        short tmp[] = new short[nc];
+        short[] tmp = new short[nc];
         for (int i = 0; i < nc; i++) {
             tmp[i] = (short)
                 ((colorvalue[i] - minVal[i]) * invDiffMinMax[i] + 0.5f);
@@ -237,7 +237,7 @@ public class ICC_ColorSpace extends ColorSpace {
             }
         }
 
-        short tmp[] = new short[3];
+        short[] tmp = new short[3];
         for (int i = 0; i < 3; i++) {
             tmp[i] = (short) ((rgbvalue[i] * 65535.0f) + 0.5f);
         }
@@ -379,7 +379,7 @@ public class ICC_ColorSpace extends ColorSpace {
         }
 
         int nc = this.getNumComponents();
-        short tmp[] = new short[nc];
+        short[] tmp = new short[nc];
         for (int i = 0; i < nc; i++) {
             tmp[i] = (short)
                 ((colorvalue[i] - minVal[i]) * invDiffMinMax[i] + 0.5f);
@@ -522,7 +522,7 @@ public class ICC_ColorSpace extends ColorSpace {
             }
         }
 
-        short tmp[] = new short[3];
+        short[] tmp = new short[3];
         float ALMOST_TWO = 1.0f + (32767.0f / 32768.0f);
         float factor = 65535.0f / ALMOST_TWO;
         // For CIEXYZ, min = 0.0, max = ALMOST_TWO for all components

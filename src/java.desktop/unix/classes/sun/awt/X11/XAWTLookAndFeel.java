@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ class XAWTLookAndFeel extends MotifLookAndFeel {
         ColorUIResource controlDarker =  new ColorUIResource(SystemColor.controlDkShadow);
 
         Color back = table.getColor("control");
-        Color colors [] = XComponentPeer.getSystemColors();
+        Color[] colors  = XComponentPeer.getSystemColors();
         Color scrollBarBackground = colors[XComponentPeer.BACKGROUND_COLOR];
         Color trackColor = new Color(MotifColorUtilities.calculateSelectFromBackground(scrollBarBackground.getRed(), scrollBarBackground.getGreen(), scrollBarBackground.getBlue()));
         Border loweredBevelBorder = new MotifBorders.BevelBorder(false,

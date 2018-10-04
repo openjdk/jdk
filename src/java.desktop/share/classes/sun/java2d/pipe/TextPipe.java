@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,6 @@ public interface TextPipe {
     public void drawGlyphVector(SunGraphics2D g2d, GlyphVector g,
                                 float x, float y);
     public void drawChars(SunGraphics2D g2d,
-                          char data[], int offset, int length,
+                          char[] data, int offset, int length,
                           int x, int y);
 }

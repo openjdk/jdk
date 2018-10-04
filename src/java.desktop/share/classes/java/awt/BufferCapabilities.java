@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ public class BufferCapabilities implements Cloneable {
         private static int I_PRIOR = 2;
         private static int I_COPIED = 3;
 
-        private static final String NAMES[] =
+        private static final String[] NAMES =
             { "undefined", "background", "prior", "copied" };
 
         /**

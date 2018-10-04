@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1002,7 +1002,7 @@ public class ParagraphView extends FlowView implements TabExpander {
         @Override
         protected SizeRequirements calculateMajorAxisRequirements(int axis,
                 SizeRequirements r) {
-            int oldJustficationData[] = justificationData;
+            int[] oldJustficationData = justificationData;
             justificationData = null;
             SizeRequirements ret = super.calculateMajorAxisRequirements(axis, r);
             if (isJustifyEnabled()) {
@@ -1014,7 +1014,7 @@ public class ParagraphView extends FlowView implements TabExpander {
         @Override
         protected void layoutMajorAxis(int targetSpan, int axis,
                                        int[] offsets, int[] spans) {
-            int oldJustficationData[] = justificationData;
+            int[] oldJustficationData = justificationData;
             justificationData = null;
             super.layoutMajorAxis(targetSpan, axis, offsets, spans);
             if (! isJustifyEnabled()) {
@@ -1045,7 +1045,7 @@ public class ParagraphView extends FlowView implements TabExpander {
 
             int rowStartOffset = getStartOffset();
             int rowEndOffset = getEndOffset();
-            int spaceMap[] = new int[rowEndOffset - rowStartOffset];
+            int[] spaceMap = new int[rowEndOffset - rowStartOffset];
             Arrays.fill(spaceMap, 0);
             for (int i = getViewCount() - 1; i >= 0 ; i--) {
                 View view = getView(i);
@@ -1179,7 +1179,7 @@ public class ParagraphView extends FlowView implements TabExpander {
         //this should be the last index in justificationData
         static final int END_JUSTIFIABLE = 3;
 
-        int justificationData[] = null;
+        int[] justificationData = null;
     }
 
 }

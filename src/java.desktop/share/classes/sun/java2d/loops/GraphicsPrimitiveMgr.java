@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ import sun.java2d.SunGraphics2D;
 public final class GraphicsPrimitiveMgr {
 
     private static final boolean debugTrace = false;
-    private static GraphicsPrimitive primitives[];
-    private static GraphicsPrimitive generalPrimitives[];
+    private static GraphicsPrimitive[] primitives;
+    private static GraphicsPrimitive[] generalPrimitives;
     private static boolean needssort = true;
 
     private static native void initIDs(Class<?> GP, Class<?> ST, Class<?> CT,
@@ -320,7 +320,7 @@ public final class GraphicsPrimitiveMgr {
                            " total graphics primitives");
     }
 
-    public static void main(String argv[]) {
+    public static void main(String[] argv) {
         // REMIND: Should trigger loading of platform primitives somehow...
         if (needssort) {
             Arrays.sort(primitives, primSorter);

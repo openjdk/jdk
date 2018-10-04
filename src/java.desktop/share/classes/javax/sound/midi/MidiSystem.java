@@ -853,7 +853,7 @@ public class MidiSystem {
                 allTypes.add(types[j]);
             }
         }
-        int resultTypes[] = new int[allTypes.size()];
+        int[] resultTypes = new int[allTypes.size()];
         int index = 0;
         Iterator<Integer> iterator = allTypes.iterator();
         while (iterator.hasNext()) {
@@ -908,7 +908,7 @@ public class MidiSystem {
                 allTypes.add(types[j]);
             }
         }
-        int resultTypes[] = new int[allTypes.size()];
+        int[] resultTypes = new int[allTypes.size()];
         int index = 0;
         Iterator<Integer> iterator = allTypes.iterator();
         while (iterator.hasNext()) {

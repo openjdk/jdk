@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1858,7 +1858,7 @@ public final class SunGraphics2D
             // optimal test for most transforms and so the conservative
             // answer should not cause too much extra work.
 
-            double d[] = {
+            double[] d = {
                 x, y,
                 x+width, y,
                 x, y+height,
@@ -1905,7 +1905,7 @@ public final class SunGraphics2D
             clipRegion = devClip.getIntersection((Rectangle2D) usrClip);
         } else {
             PathIterator cpi = usrClip.getPathIterator(null);
-            int box[] = new int[4];
+            int[] box = new int[4];
             ShapeSpanIterator sr = LoopPipe.getFillSSI(this);
             try {
                 sr.setOutputArea(devClip);
@@ -1992,7 +1992,7 @@ public final class SunGraphics2D
             (tx.getType() & NON_RECTILINEAR_TRANSFORM_MASK) == 0)
         {
             Rectangle2D rect = (Rectangle2D) clip;
-            double matrix[] = new double[4];
+            double[] matrix = new double[4];
             matrix[0] = rect.getX();
             matrix[1] = rect.getY();
             matrix[2] = matrix[0] + rect.getWidth();
@@ -2351,7 +2351,7 @@ public final class SunGraphics2D
         }
     }
 
-    public void drawPolyline(int xPoints[], int yPoints[], int nPoints) {
+    public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
         try {
             drawpipe.drawPolyline(this, xPoints, yPoints, nPoints);
         } catch (InvalidPipeException e) {
@@ -2368,7 +2368,7 @@ public final class SunGraphics2D
         }
     }
 
-    public void drawPolygon(int xPoints[], int yPoints[], int nPoints) {
+    public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {
         try {
             drawpipe.drawPolygon(this, xPoints, yPoints, nPoints);
         } catch (InvalidPipeException e) {
@@ -2385,7 +2385,7 @@ public final class SunGraphics2D
         }
     }
 
-    public void fillPolygon(int xPoints[], int yPoints[], int nPoints) {
+    public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
         try {
             fillpipe.fillPolygon(this, xPoints, yPoints, nPoints);
         } catch (InvalidPipeException e) {
@@ -2586,7 +2586,7 @@ public final class SunGraphics2D
 
         Rectangle result = null;
         try {
-            double p[] = new double[8];
+            double[] p = new double[8];
             p[0] = p[2] = compClip.getLoX();
             p[4] = p[6] = compClip.getHiX();
             p[1] = p[5] = compClip.getLoY();
@@ -3016,7 +3016,7 @@ public final class SunGraphics2D
         }
     }
 
-    public void drawChars(char data[], int offset, int length, int x, int y) {
+    public void drawChars(char[] data, int offset, int length, int x, int y) {
 
         if (data == null) {
             throw new NullPointerException("char data is null");
@@ -3049,7 +3049,7 @@ public final class SunGraphics2D
         }
     }
 
-    public void drawBytes(byte data[], int offset, int length, int x, int y) {
+    public void drawBytes(byte[] data, int offset, int length, int x, int y) {
         if (data == null) {
             throw new NullPointerException("byte data is null");
         }
@@ -3057,7 +3057,7 @@ public final class SunGraphics2D
             throw new ArrayIndexOutOfBoundsException("bad offset/length");
         }
         /* Byte data is interpreted as 8-bit ASCII. Re-use drawChars loops */
-        char chData[] = new char[length];
+        char[] chData = new char[length];
         for (int i = length; i-- > 0; ) {
             chData[i] = (char)(data[i+offset] & 0xff);
         }

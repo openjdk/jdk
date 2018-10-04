@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import javax.imageio.stream.ImageOutputStream;
  */
 public class BitFile {
     ImageOutputStream output;
-    byte buffer[];
+    byte[] buffer;
     int index;
     int bitsLeft; // bits left at current index that are avail.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -405,7 +405,7 @@ public abstract class Font2D {
      */
     public void getFontMetrics(Font font, AffineTransform at,
                                Object aaHint, Object fmHint,
-                               float metrics[]) {
+                               float[] metrics) {
         /* This is called in just one place in Font with "at" == identity.
          * Perhaps this can be eliminated.
          */
@@ -449,7 +449,7 @@ public abstract class Font2D {
      *    metrics[3]: max advance
      */
     public void getFontMetrics(Font font, FontRenderContext frc,
-                               float metrics[]) {
+                               float[] metrics) {
         StrikeMetrics strikeMetrics = getStrike(font, frc).getFontMetrics();
         metrics[0] = strikeMetrics.getAscent();
         metrics[1] = strikeMetrics.getDescent();

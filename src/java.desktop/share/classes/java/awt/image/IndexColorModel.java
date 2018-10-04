@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ import java.util.Arrays;
  *
  */
 public class IndexColorModel extends ColorModel {
-    private int rgb[];
+    private int[] rgb;
     private int map_size;
     private int pixel_mask;
     private int transparent_index = -1;
@@ -166,7 +166,7 @@ public class IndexColorModel extends ColorModel {
      *         than 1
      */
     public IndexColorModel(int bits, int size,
-                           byte r[], byte g[], byte b[]) {
+                           byte[] r, byte[] g, byte[] b) {
         super(bits, opaqueBits,
               ColorSpace.getInstance(ColorSpace.CS_sRGB),
               false, false, OPAQUE,
@@ -206,7 +206,7 @@ public class IndexColorModel extends ColorModel {
      *          1
      */
     public IndexColorModel(int bits, int size,
-                           byte r[], byte g[], byte b[], int trans) {
+                           byte[] r, byte[] g, byte[] b, int trans) {
         super(bits, opaqueBits,
               ColorSpace.getInstance(ColorSpace.CS_sRGB),
               false, false, OPAQUE,
@@ -245,7 +245,7 @@ public class IndexColorModel extends ColorModel {
      *           than 1
      */
     public IndexColorModel(int bits, int size,
-                           byte r[], byte g[], byte b[], byte a[]) {
+                           byte[] r, byte[] g, byte[] b, byte[] a) {
         super (bits, alphaBits,
                ColorSpace.getInstance(ColorSpace.CS_sRGB),
                true, false, TRANSLUCENT,
@@ -284,7 +284,7 @@ public class IndexColorModel extends ColorModel {
      * @throws IllegalArgumentException if {@code size} is less
      *           than 1
      */
-    public IndexColorModel(int bits, int size, byte cmap[], int start,
+    public IndexColorModel(int bits, int size, byte[] cmap, int start,
                            boolean hasalpha) {
         this(bits, size, cmap, start, hasalpha, -1);
         if (bits < 1 || bits > 16) {
@@ -321,7 +321,7 @@ public class IndexColorModel extends ColorModel {
      * @throws IllegalArgumentException if {@code size} is less than
      *               1
      */
-    public IndexColorModel(int bits, int size, byte cmap[], int start,
+    public IndexColorModel(int bits, int size, byte[] cmap, int start,
                            boolean hasalpha, int trans) {
         // REMIND: This assumes the ordering: RGB[A]
         super(bits, opaqueBits,
@@ -406,7 +406,7 @@ public class IndexColorModel extends ColorModel {
      *           {@code DataBuffer.TYPE_USHORT}
      */
     public IndexColorModel(int bits, int size,
-                           int cmap[], int start,
+                           int[] cmap, int start,
                            boolean hasalpha, int trans, int transferType) {
         // REMIND: This assumes the ordering: RGB[A]
         super(bits, opaqueBits,
@@ -472,7 +472,7 @@ public class IndexColorModel extends ColorModel {
      *
      * @since 1.3
      */
-    public IndexColorModel(int bits, int size, int cmap[], int start,
+    public IndexColorModel(int bits, int size, int[] cmap, int start,
                            int transferType, BigInteger validBits) {
         super (bits, alphaBits,
                ColorSpace.getInstance(ColorSpace.CS_sRGB),
@@ -507,7 +507,7 @@ public class IndexColorModel extends ColorModel {
         calculatePixelMask();
     }
 
-    private void setRGBs(int size, byte r[], byte g[], byte b[], byte a[]) {
+    private void setRGBs(int size, byte[] r, byte[] g, byte[] b, byte[] a) {
         if (size < 1) {
             throw new IllegalArgumentException("Map size ("+size+
                                                ") must be >= 1");
@@ -544,7 +544,7 @@ public class IndexColorModel extends ColorModel {
         setTransparency(transparency);
     }
 
-    private void setRGBs(int size, int cmap[], int start, boolean hasalpha) {
+    private void setRGBs(int size, int[] cmap, int start, boolean hasalpha) {
         map_size = size;
         rgb = new int[calcRealMapSize(pixel_bits, size)];
         int j = start;
@@ -663,7 +663,7 @@ public class IndexColorModel extends ColorModel {
      * @param r the specified array into which the elements of the
      *      array of red color components are copied
      */
-    public final void getReds(byte r[]) {
+    public final void getReds(byte[] r) {
         for (int i = 0; i < map_size; i++) {
             r[i] = (byte) (rgb[i] >> 16);
         }
@@ -676,7 +676,7 @@ public class IndexColorModel extends ColorModel {
      * @param g the specified array into which the elements of the
      *      array of green color components are copied
      */
-    public final void getGreens(byte g[]) {
+    public final void getGreens(byte[] g) {
         for (int i = 0; i < map_size; i++) {
             g[i] = (byte) (rgb[i] >> 8);
         }
@@ -689,7 +689,7 @@ public class IndexColorModel extends ColorModel {
      * @param b the specified array into which the elements of the
      *      array of blue color components are copied
      */
-    public final void getBlues(byte b[]) {
+    public final void getBlues(byte[] b) {
         for (int i = 0; i < map_size; i++) {
             b[i] = (byte) rgb[i];
         }
@@ -702,7 +702,7 @@ public class IndexColorModel extends ColorModel {
      * @param a the specified array into which the elements of the
      *      array of alpha components are copied
      */
-    public final void getAlphas(byte a[]) {
+    public final void getAlphas(byte[] a) {
         for (int i = 0; i < map_size; i++) {
             a[i] = (byte) (rgb[i] >> 24);
         }
@@ -719,7 +719,7 @@ public class IndexColorModel extends ColorModel {
      *        values from this array of color and alpha components
      *        are copied.
      */
-    public final void getRGBs(int rgb[]) {
+    public final void getRGBs(int[] rgb) {
         System.arraycopy(this.rgb, 0, rgb, 0, map_size);
     }
 
@@ -841,7 +841,7 @@ public class IndexColorModel extends ColorModel {
     }
 
     private static final int CACHESIZE = 40;
-    private int lookupcache[] = new int[CACHESIZE];
+    private int[] lookupcache = new int[CACHESIZE];
 
     /**
      * Returns a data element array representation of a pixel in this
@@ -945,7 +945,7 @@ public class IndexColorModel extends ColorModel {
             // exact match.
 
             int smallestError = Integer.MAX_VALUE;
-            int lut[] = this.rgb;
+            int[] lut = this.rgb;
             int lutrgb;
             for (int i=0; i < map_size; i++) {
                 lutrgb = lut[i];
@@ -992,7 +992,7 @@ public class IndexColorModel extends ColorModel {
             // Euclidean distance formula.
 
             int smallestError = Integer.MAX_VALUE;
-            int lut[] = this.rgb;
+            int[] lut = this.rgb;
             for (int i=0; i < map_size; i++) {
                 int lutrgb = lut[i];
                 if (lutrgb == rgb) {
@@ -1162,15 +1162,15 @@ public class IndexColorModel extends ColorModel {
         int intpixel;
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               byte bdata[] = (byte[])pixel;
+               byte[] bdata = (byte[])pixel;
                intpixel = bdata[0] & 0xff;
             break;
             case DataBuffer.TYPE_USHORT:
-               short sdata[] = (short[])pixel;
+               short[] sdata = (short[])pixel;
                intpixel = sdata[0] & 0xffff;
             break;
             case DataBuffer.TYPE_INT:
-               int idata[] = (int[])pixel;
+               int[] idata = (int[])pixel;
                intpixel = idata[0];
             break;
             default:
@@ -1217,15 +1217,15 @@ public class IndexColorModel extends ColorModel {
         int pixel;
         switch (transferType) {
             case DataBuffer.TYPE_BYTE:
-               byte bdata[] = (byte[])inData;
+               byte[] bdata = (byte[])inData;
                pixel = bdata[0] & 0xff;
             break;
             case DataBuffer.TYPE_USHORT:
-               short sdata[] = (short[])inData;
+               short[] sdata = (short[])inData;
                pixel = sdata[0];
             break;
             case DataBuffer.TYPE_INT:
-               int idata[] = (int[])inData;
+               int[] idata = (int[])inData;
                pixel = idata[0];
             break;
             default:

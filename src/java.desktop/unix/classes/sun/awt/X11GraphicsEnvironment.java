@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -244,7 +244,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
         Boolean result = java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Boolean>() {
             public Boolean run() {
-                InetAddress remAddr[] = null;
+                InetAddress[] remAddr = null;
                 Enumeration<InetAddress> locals = null;
                 Enumeration<NetworkInterface> interfaces = null;
                 try {

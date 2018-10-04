@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class BasicRadioButtonMenuItemUI extends BasicMenuItemUI
      * @param path an array of {@code MenuElement}
      * @param manager an instance of {@code MenuSelectionManager}
      */
-    public void processMouseEvent(JMenuItem item,MouseEvent e,MenuElement path[],MenuSelectionManager manager) {
+    public void processMouseEvent(JMenuItem item,MouseEvent e,MenuElement[] path,MenuSelectionManager manager) {
         Point p = e.getPoint();
         if(p.x >= 0 && p.x < item.getWidth() &&
            p.y >= 0 && p.y < item.getHeight()) {
@@ -72,7 +72,7 @@ public class BasicRadioButtonMenuItemUI extends BasicMenuItemUI
             } else
                 manager.setSelectedPath(path);
         } else if(item.getModel().isArmed()) {
-            MenuElement newPath[] = new MenuElement[path.length-1];
+            MenuElement[] newPath = new MenuElement[path.length-1];
             int i,c;
             for(i=0,c=path.length-1;i<c;i++)
                 newPath[i] = path[i];

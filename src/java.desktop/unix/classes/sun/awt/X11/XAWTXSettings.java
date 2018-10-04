@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class XAWTXSettings extends XSettings implements XMSelectionListener {
                 if (log.isLoggable(PlatformLogger.Level.FINE)) {
                     log.fine("noItems = " + getter.getNumberOfItems());
                 }
-                byte array[] = Native.toBytes(ptr,getter.getNumberOfItems());
+                byte[] array = Native.toBytes(ptr,getter.getNumberOfItems());
                 if (array != null) {
                     settings = update(array);
                 }

@@ -145,7 +145,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
       */
      // MACOSX begin -- need to access these in subclass
      protected static final int CHANNELPOOLSIZE = 20;
-     protected FileFont fontFileCache[] = new FileFont[CHANNELPOOLSIZE];
+     protected FileFont[] fontFileCache = new FileFont[CHANNELPOOLSIZE];
      // MACOSX end
      private int lastPoolIndex = 0;
 

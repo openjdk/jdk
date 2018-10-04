@@ -66,7 +66,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     private long lastPlayCall = 0;
     private static final int MINIMUM_PLAY_DELAY = 30;
 
-    private byte loadedAudio[] = null;
+    private byte[] loadedAudio = null;
     private int loadedAudioByteLength = 0;
     private AudioFormat loadedAudioFormat = null;
 
@@ -383,7 +383,7 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
     private void readStream(AudioInputStream as) throws IOException {
 
         DirectBAOS baos = new DirectBAOS();
-        byte buffer[] = new byte[16384];
+        byte[] buffer = new byte[16384];
         int bytesRead = 0;
         int totalBytesRead = 0;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public class PixelToShapeConverter
                                          start, extent, Arc2D.PIE));
     }
 
-    private Shape makePoly(int xPoints[], int yPoints[],
+    private Shape makePoly(int[] xPoints, int[] yPoints,
                            int nPoints, boolean close) {
         GeneralPath gp = new GeneralPath(GeneralPath.WIND_EVEN_ODD);
         if (nPoints > 0) {
@@ -114,19 +114,19 @@ public class PixelToShapeConverter
     }
 
     public void drawPolyline(SunGraphics2D sg,
-                             int xPoints[], int yPoints[],
+                             int[] xPoints, int[] yPoints,
                              int nPoints) {
         outpipe.draw(sg, makePoly(xPoints, yPoints, nPoints, false));
     }
 
     public void drawPolygon(SunGraphics2D sg,
-                            int xPoints[], int yPoints[],
+                            int[] xPoints, int[] yPoints,
                             int nPoints) {
         outpipe.draw(sg, makePoly(xPoints, yPoints, nPoints, true));
     }
 
     public void fillPolygon(SunGraphics2D sg,
-                            int xPoints[], int yPoints[],
+                            int[] xPoints, int[] yPoints,
                             int nPoints) {
         outpipe.fill(sg, makePoly(xPoints, yPoints, nPoints, true));
     }

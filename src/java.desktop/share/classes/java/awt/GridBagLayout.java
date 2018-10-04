@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -442,7 +442,7 @@ java.io.Serializable {
      * @serial
      * @see #getLayoutDimensions()
      */
-    public int columnWidths[];
+    public int[] columnWidths;
 
     /**
      * This field holds the overrides to the row minimum
@@ -456,7 +456,7 @@ java.io.Serializable {
      * @serial
      * @see #getLayoutDimensions()
      */
-    public int rowHeights[];
+    public int[] rowHeights;
 
     /**
      * This field holds the overrides to the column weights.
@@ -471,7 +471,7 @@ java.io.Serializable {
      *
      * @serial
      */
-    public double columnWeights[];
+    public double[] columnWeights;
 
     /**
      * This field holds the overrides to the row weights.
@@ -486,7 +486,7 @@ java.io.Serializable {
      *
      * @serial
      */
-    public double rowWeights[];
+    public double[] rowWeights;
 
     /**
      * The component being positioned.  This is set before calling into
@@ -592,7 +592,7 @@ java.io.Serializable {
         if (layoutInfo == null)
             return new int[2][0];
 
-        int dim[][] = new int [2][];
+        int[][] dim = new int [2][];
         dim[0] = new int[layoutInfo.width];
         dim[1] = new int[layoutInfo.height];
 
@@ -618,7 +618,7 @@ java.io.Serializable {
         if (layoutInfo == null)
             return new double[2][0];
 
-        double weights[][] = new double [2][];
+        double[][] weights = new double [2][];
         weights[0] = new double[layoutInfo.width];
         weights[1] = new double[layoutInfo.height];
 
@@ -929,7 +929,7 @@ java.io.Serializable {
      */
 
     private long[]  preInitMaximumArraySizes(Container parent){
-        Component components[] = parent.getComponents();
+        Component[] components = parent.getComponents();
         Component comp;
         GridBagConstraints constraints;
         int curX, curY;
@@ -1003,7 +1003,7 @@ java.io.Serializable {
             Component comp;
             GridBagConstraints constraints;
             Dimension d;
-            Component components[] = parent.getComponents();
+            Component[] components = parent.getComponents();
             // Code below will address index curX+curWidth in the case of yMaxArray, weightY
             // ( respectively curY+curHeight for xMaxArray, weightX ) where
             //  curX in 0 to preInitMaximumArraySizes.y
@@ -2063,7 +2063,7 @@ java.io.Serializable {
         int compindex;
         GridBagConstraints constraints;
         Insets insets = parent.getInsets();
-        Component components[] = parent.getComponents();
+        Component[] components = parent.getComponents();
         Dimension d;
         Rectangle r = new Rectangle();
         int i, diffw, diffh;

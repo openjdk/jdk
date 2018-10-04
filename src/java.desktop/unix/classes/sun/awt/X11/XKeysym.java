@@ -1,7 +1,7 @@
 // This is a generated file: do not edit! Edit keysym2ucs.h if necessary.
 
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import sun.util.logging.PlatformLogger;
 
 public class XKeysym {
 
-    public static void main( String args[] ) {
+    public static void main( String[] args ) {
        System.out.println( "Cyrillc zhe:"+convertKeysym(0x06d6, 0));
        System.out.println( "Arabic sheen:"+convertKeysym(0x05d4, 0));
        System.out.println( "Latin a breve:"+convertKeysym(0x01e3, 0));

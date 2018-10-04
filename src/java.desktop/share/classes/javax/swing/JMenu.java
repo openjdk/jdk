@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1202,7 +1202,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         if(popupMenu == null)
             return new MenuElement[0];
         else {
-            MenuElement result[] = new MenuElement[1];
+            MenuElement[] result = new MenuElement[1];
             result[0] = popupMenu;
             return result;
         }
@@ -1285,7 +1285,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      *          button was pressed for
      */
     public void doClick(int pressTime) {
-        MenuElement me[] = buildMenuElementArray(this);
+        MenuElement[] me = buildMenuElementArray(this);
         MenuSelectionManager.defaultManager().setSelectedPath(me);
     }
 
@@ -1319,7 +1319,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
                 break;
             }
         }
-        MenuElement me[] = new MenuElement[elements.size()];
+        MenuElement[] me = new MenuElement[elements.size()];
         elements.copyInto(me);
         return me;
     }
@@ -1471,7 +1471,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
          * @return 1 if a menu is currently selected, else 0
          */
         public int getAccessibleSelectionCount() {
-            MenuElement me[] =
+            MenuElement[] me =
                 MenuSelectionManager.defaultManager().getSelectedPath();
             if (me != null) {
                 for (int i = 0; i < me.length; i++) {
@@ -1496,7 +1496,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
             if (i < 0 || i >= getItemCount()) {
                 return null;
             }
-            MenuElement me[] =
+            MenuElement[] me =
                 MenuSelectionManager.defaultManager().getSelectedPath();
             if (me != null) {
                 for (int j = 0; j < me.length; j++) {
@@ -1524,7 +1524,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
          */
         public boolean isAccessibleChildSelected(int i) {
             // if i is a sub-menu and is pop-ed up, return true, else false
-            MenuElement me[] =
+            MenuElement[] me =
                 MenuSelectionManager.defaultManager().getSelectedPath();
             if (me != null) {
                 JMenuItem mi = JMenu.this.getItem(i);
@@ -1556,7 +1556,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
             JMenuItem mi = getItem(i);
             if (mi != null) {
                 if (mi instanceof JMenu) {
-                    MenuElement me[] = buildMenuElementArray((JMenu) mi);
+                    MenuElement[] me = buildMenuElementArray((JMenu) mi);
                     MenuSelectionManager.defaultManager().setSelectedPath(me);
                 } else {
                     MenuSelectionManager.defaultManager().setSelectedPath(null);
@@ -1578,9 +1578,9 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
             JMenuItem mi = getItem(i);
             if (mi != null && mi instanceof JMenu) {
                 if (mi.isSelected()) {
-                    MenuElement old[] =
+                    MenuElement[] old =
                         MenuSelectionManager.defaultManager().getSelectedPath();
-                    MenuElement me[] = new MenuElement[old.length-2];
+                    MenuElement[] me = new MenuElement[old.length-2];
                     for (int j = 0; j < old.length -2; j++) {
                         me[j] = old[j];
                     }
@@ -1596,12 +1596,12 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         public void clearAccessibleSelection() {
             // if this menu is selected, reset selection to only go
             // to this menu; else do nothing
-            MenuElement old[] =
+            MenuElement[] old =
                 MenuSelectionManager.defaultManager().getSelectedPath();
             if (old != null) {
                 for (int j = 0; j < old.length; j++) {
                     if (old[j] == JMenu.this) {  // menu is in the selection!
-                        MenuElement me[] = new MenuElement[j+1];
+                        MenuElement[] me = new MenuElement[j+1];
                         System.arraycopy(old, 0, me, 0, j);
                         me[j] = JMenu.this.getPopupMenu();
                         MenuSelectionManager.defaultManager().setSelectedPath(me);

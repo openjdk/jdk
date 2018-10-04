@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public class GDIRenderer implements
                            int npoints, boolean isclosed);
 
     public void drawPolyline(SunGraphics2D sg2d,
-                             int xpoints[], int ypoints[],
+                             int[] xpoints, int[] ypoints,
                              int npoints)
     {
         try {
@@ -154,7 +154,7 @@ public class GDIRenderer implements
     }
 
     public void drawPolygon(SunGraphics2D sg2d,
-                            int xpoints[], int ypoints[],
+                            int[] xpoints, int[] ypoints,
                             int npoints)
     {
         try {
@@ -243,7 +243,7 @@ public class GDIRenderer implements
                            int npoints);
 
     public void fillPolygon(SunGraphics2D sg2d,
-                            int xpoints[], int ypoints[],
+                            int[] xpoints, int[] ypoints,
                             int npoints)
     {
         try {
@@ -291,7 +291,7 @@ public class GDIRenderer implements
     // by a native FillSpans method or a getHintedStrokeGeneralPath()
     // method that could be filled by the doShape method more quickly.
     public void doFillSpans(SunGraphics2D sg2d, SpanIterator si) {
-        int box[] = new int[4];
+        int[] box = new int[4];
         GDIWindowSurfaceData sd;
         try {
             sd = (GDIWindowSurfaceData)sg2d.surfaceData;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,9 @@ public class BufferedImageGraphicsConfig
     extends GraphicsConfiguration
 {
     private static final int numconfigs = BufferedImage.TYPE_BYTE_BINARY;
-    private static BufferedImageGraphicsConfig standardConfigs[] =
+    private static BufferedImageGraphicsConfig[] standardConfigs =
         new BufferedImageGraphicsConfig[numconfigs];
-    private static BufferedImageGraphicsConfig scaledConfigs[] =
+    private static BufferedImageGraphicsConfig[] scaledConfigs =
         new BufferedImageGraphicsConfig[numconfigs];
 
     public static BufferedImageGraphicsConfig getConfig(BufferedImage bImg) {

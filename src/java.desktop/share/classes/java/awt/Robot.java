@@ -511,7 +511,7 @@ public class Robot {
         AffineTransform tx = gc.getDefaultTransform();
         double uiScaleX = tx.getScaleX();
         double uiScaleY = tx.getScaleY();
-        int pixels[];
+        int[] pixels;
 
         if (uiScaleX == 1 && uiScaleY == 1) {
 
@@ -537,7 +537,7 @@ public class Robot {
             int sY = (int) Math.floor(screenRect.y * uiScaleY);
             int sWidth = (int) Math.ceil(screenRect.width * uiScaleX);
             int sHeight = (int) Math.ceil(screenRect.height * uiScaleY);
-            int temppixels[];
+            int[] temppixels;
             Rectangle scaledRect = new Rectangle(sX, sY, sWidth, sHeight);
             temppixels = peer.getRGBPixels(scaledRect);
 

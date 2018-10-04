@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class PixelInterleavedSampleModel extends ComponentSampleModel
                                        int w, int h,
                                        int pixelStride,
                                        int scanlineStride,
-                                       int bandOffsets[]) {
+                                       int[] bandOffsets) {
         super(dataType, w, h, pixelStride, scanlineStride, bandOffsets);
         int minBandOff=this.bandOffsets[0];
         int maxBandOff=this.bandOffsets[0];
@@ -154,8 +154,8 @@ public class PixelInterleavedSampleModel extends ComponentSampleModel
      * an image with a subset of the bands of the original
      * PixelInterleavedSampleModel/DataBuffer combination.
      */
-    public SampleModel createSubsetSampleModel(int bands[]) {
-        int newBandOffsets[] = new int[bands.length];
+    public SampleModel createSubsetSampleModel(int[] bands) {
+        int[] newBandOffsets = new int[bands.length];
         for (int i=0; i<bands.length; i++) {
             newBandOffsets[i] = bandOffsets[bands[i]];
         }

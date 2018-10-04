@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,7 +576,7 @@ final class ListHelper implements XScrollbarClient {
         return false;
     }
 
-    private void paintVSB(Graphics g, Color colors[], Rectangle bounds) {
+    private void paintVSB(Graphics g, Color[] colors, Rectangle bounds) {
         int height = bounds.height - 2*BORDER_WIDTH - (hsbVis ? (SCROLLBAR_WIDTH-2) : 0);
         Graphics ng = g.create();
 
@@ -592,7 +592,7 @@ final class ListHelper implements XScrollbarClient {
         }
     }
 
-    private void paintHSB(Graphics g, Color colors[], Rectangle bounds) {
+    private void paintHSB(Graphics g, Color[] colors, Rectangle bounds) {
 
     }
 

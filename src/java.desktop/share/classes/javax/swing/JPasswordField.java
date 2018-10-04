@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,7 +471,7 @@ public class JPasswordField extends JTextField {
             } else {
                 // Treat the text displayed in the JPasswordField
                 // as one word and sentence.
-                char password[] = getPassword();
+                char[] password = getPassword();
                 if (password == null ||
                     index < 0 || index >= password.length) {
                     return null;
@@ -582,7 +582,7 @@ public class JPasswordField extends JTextField {
             } else {
                 // Treat the text displayed in the JPasswordField
                 // as one word, sentence, line and attribute run
-                char password[] = getPassword();
+                char[] password = getPassword();
                 if (password == null ||
                     index < 0 || index >= password.length) {
                     return null;

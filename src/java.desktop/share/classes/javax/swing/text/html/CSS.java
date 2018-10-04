@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3373,9 +3373,9 @@ public class CSS implements Serializable {
         int n = iter.getCount();
         int adjustmentWeightsCount = LayoutIterator.WorstAdjustmentWeight + 1;
         //max gain we can get adjusting elements with adjustmentWeight <= i
-        long gain[] = new long[adjustmentWeightsCount];
+        long[] gain = new long[adjustmentWeightsCount];
         //max loss we can get adjusting elements with adjustmentWeight <= i
-        long loss[] = new long[adjustmentWeightsCount];
+        long[] loss = new long[adjustmentWeightsCount];
 
         for (int i = 0; i < adjustmentWeightsCount; i++) {
             gain[i] = loss[i] = 0;
@@ -3414,7 +3414,7 @@ public class CSS implements Serializable {
         // determine the adjustment to be made
         int allocated = targetSpan - totalSpacing;
         long desiredAdjustment = allocated - preferred;
-        long adjustmentsArray[] = (desiredAdjustment > 0) ? gain : loss;
+        long[] adjustmentsArray = (desiredAdjustment > 0) ? gain : loss;
         desiredAdjustment = Math.abs(desiredAdjustment);
         int adjustmentLevel = 0;
         for (;adjustmentLevel <= LayoutIterator.WorstAdjustmentWeight;

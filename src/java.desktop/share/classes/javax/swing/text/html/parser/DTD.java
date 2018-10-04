@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ class DTD implements DTDConstants {
      * @return the <code>Entity</code> requested or a new <code>Entity</code>
      *   if not found
      */
-    public Entity defineEntity(String name, int type, char data[]) {
+    public Entity defineEntity(String name, int type, char[] data) {
         Entity ent = entityHash.get(name);
         if (ent == null) {
             ent = new Entity(name, type, data);
@@ -304,7 +304,7 @@ class DTD implements DTDConstants {
      * @return the new character <code>Entity</code>
      */
     public Entity defEntity(String name, int type, int ch) {
-        char data[] = {(char)ch};
+        char[] data = {(char)ch};
         return defineEntity(name, type, data);
     }
 
@@ -317,7 +317,7 @@ class DTD implements DTDConstants {
      */
     protected Entity defEntity(String name, int type, String str) {
         int len = str.length();
-        char data[] = new char[len];
+        char[] data = new char[len];
         str.getChars(0, len, data, 0);
         return defineEntity(name, type, data);
     }

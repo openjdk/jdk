@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,7 +487,7 @@ public final class FontDesignMetrics extends FontMetrics {
         return (int) (0.5 + width);
     }
 
-    public int charsWidth(char data[], int off, int len) {
+    public int charsWidth(char[] data, int off, int len) {
 
         float width = 0;
         if (font.hasLayoutAttributes()) {
@@ -524,7 +524,7 @@ public final class FontDesignMetrics extends FontMetrics {
      * the arguments and that the text is simple and there are no
      * layout attributes, font transform etc.
      */
-    public Rectangle2D getSimpleBounds(char data[], int off, int len) {
+    public Rectangle2D getSimpleBounds(char[] data, int off, int len) {
 
         float width = 0;
         int limit = off + len;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,13 @@ class TIFFLZWUtil {
     byte[] dstData;
     int dstIndex = 0;
 
-    byte stringTable[][];
+    byte[][] stringTable;
     int tableIndex, bitsToGet = 9;
 
     int nextData = 0;
     int nextBits = 0;
 
-    private static final int andTable[] = {
+    private static final int[] andTable = {
         511,
         1023,
         2047,
@@ -143,7 +143,7 @@ class TIFFLZWUtil {
     /**
      * Write out the string just uncompressed.
      */
-    public void writeString(byte string[]) {
+    public void writeString(byte[] string) {
         ensureCapacity(string.length);
         for (int i = 0; i < string.length; i++) {
             dstData[dstIndex++] = string[i];
@@ -153,9 +153,9 @@ class TIFFLZWUtil {
     /**
      * Add a new string to the string table.
      */
-    public void addStringToTable(byte oldString[], byte newString) {
+    public void addStringToTable(byte[] oldString, byte newString) {
         int length = oldString.length;
-        byte string[] = new byte[length + 1];
+        byte[] string = new byte[length + 1];
         System.arraycopy(oldString, 0, string, 0, length);
         string[length] = newString;
 
@@ -174,7 +174,7 @@ class TIFFLZWUtil {
     /**
      * Add a new string to the string table.
      */
-    public void addStringToTable(byte string[]) {
+    public void addStringToTable(byte[] string) {
         // Add this new String to the table
         stringTable[tableIndex++] = string;
 
@@ -190,9 +190,9 @@ class TIFFLZWUtil {
     /**
      * Append {@code newString} to the end of {@code oldString}.
      */
-    public byte[] composeString(byte oldString[], byte newString) {
+    public byte[] composeString(byte[] oldString, byte newString) {
         int length = oldString.length;
-        byte string[] = new byte[length + 1];
+        byte[] string = new byte[length + 1];
         System.arraycopy(oldString, 0, string, 0, length);
         string[length] = newString;
 

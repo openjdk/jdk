@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class Polygon implements Shape, java.io.Serializable {
      * @see #addPoint(int, int)
      * @since 1.0
      */
-    public int xpoints[];
+    public int[] xpoints;
 
     /**
      * The array of Y coordinates.  The number of elements in
@@ -96,7 +96,7 @@ public class Polygon implements Shape, java.io.Serializable {
      * @see #addPoint(int, int)
      * @since 1.0
      */
-    public int ypoints[];
+    public int[] ypoints;
 
     /**
      * The bounds of this {@code Polygon}.
@@ -144,7 +144,7 @@ public class Polygon implements Shape, java.io.Serializable {
      *             {@code ypoints} is {@code null}.
      * @since 1.0
      */
-    public Polygon(int xpoints[], int ypoints[], int npoints) {
+    public Polygon(int[] xpoints, int[] ypoints, int npoints) {
         // Fix 4489009: should throw IndexOutOfBoundsException instead
         // of OutOfMemoryError if npoints is huge and > {x,y}points.length
         if (npoints > xpoints.length || npoints > ypoints.length) {
@@ -226,7 +226,7 @@ public class Polygon implements Shape, java.io.Serializable {
      * @param ypoints[] array of <i>y</i> coordinates
      * @param npoints the total number of points
      */
-    void calculateBounds(int xpoints[], int ypoints[], int npoints) {
+    void calculateBounds(int[] xpoints, int[] ypoints, int npoints) {
         int boundsMinX = Integer.MAX_VALUE;
         int boundsMinY = Integer.MAX_VALUE;
         int boundsMaxX = Integer.MIN_VALUE;

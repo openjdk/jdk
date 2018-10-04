@@ -398,8 +398,8 @@ public class BufImgSurfaceData extends SurfaceData {
     }
 
     private static final int CACHE_SIZE = 5;
-    private static RenderLoops loopcache[] = new RenderLoops[CACHE_SIZE];
-    private static SurfaceType typecache[] = new SurfaceType[CACHE_SIZE];
+    private static RenderLoops[] loopcache = new RenderLoops[CACHE_SIZE];
+    private static SurfaceType[] typecache = new SurfaceType[CACHE_SIZE];
     public static synchronized RenderLoops getSolidLoops(SurfaceType type) {
         for (int i = CACHE_SIZE - 1; i >= 0; i--) {
             SurfaceType t = typecache[i];

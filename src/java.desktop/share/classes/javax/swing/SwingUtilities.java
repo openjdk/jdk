@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,7 @@ public class SwingUtilities implements SwingConstants
             return null;
         }
         if (parent instanceof Container) {
-            Component components[] = ((Container)parent).getComponents();
+            Component[] components = ((Container)parent).getComponents();
             for (Component comp : components) {
                 if (comp != null && comp.isVisible()) {
                     Point loc = comp.getLocation();
@@ -606,7 +606,7 @@ public class SwingUtilities implements SwingConstants
 
         Rectangle t = new Rectangle();
         Rectangle a=null,b=null,c=null,d=null;
-        Rectangle result[];
+        Rectangle[] result;
         int rectCount = 0;
 
         /* rectA contains rectB */

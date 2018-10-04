@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class CInputMethod extends InputMethodAdapter {
     // Intitalize highlight mapping table and its mapper.
     static {
         @SuppressWarnings({"rawtypes", "unchecked"})
-        Map<TextAttribute, Integer> styles[] = new Map[4];
+        Map<TextAttribute, Integer>[] styles = new Map[4];
         HashMap<TextAttribute, Integer> map;
 
         // UNSELECTED_RAW_TEXT_HIGHLIGHT
@@ -613,7 +613,7 @@ public class CInputMethod extends InputMethodAdapter {
                     }
 
                     // Get the characters from the iterator
-                    char selectedText[] = new char[theIterator.getEndIndex() - theIterator.getBeginIndex()];
+                    char[] selectedText = new char[theIterator.getEndIndex() - theIterator.getBeginIndex()];
                     char current = theIterator.first();
                     int index = 0;
                     while (current != CharacterIterator.DONE) {

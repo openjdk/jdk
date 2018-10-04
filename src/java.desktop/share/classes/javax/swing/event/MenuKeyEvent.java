@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import java.awt.Component;
  */
 @SuppressWarnings("serial")
 public class MenuKeyEvent extends KeyEvent {
-    private MenuElement path[];
+    private MenuElement[] path;
     private MenuSelectionManager manager;
 
     /**
@@ -71,7 +71,7 @@ public class MenuKeyEvent extends KeyEvent {
      */
     public MenuKeyEvent(Component source, int id, long when, int modifiers,
                         int keyCode, char keyChar,
-                        MenuElement p[], MenuSelectionManager m) {
+                        MenuElement[] p, MenuSelectionManager m) {
         super(source, id, when, modifiers, keyCode, keyChar);
         path = p;
         manager = m;

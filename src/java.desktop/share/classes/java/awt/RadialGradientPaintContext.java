@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
      * @param x,y,w,h the area in device space for which colors are
      * generated.
      */
-    protected void fillRaster(int pixels[], int off, int adjust,
+    protected void fillRaster(int[] pixels, int off, int adjust,
                               int x, int y, int w, int h)
     {
         if (isSimpleFocus && isNonCyclic && isSimpleLookup) {
@@ -185,7 +185,7 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
      * point, the gradient is noncyclic, and the gradient lookup method is
      * fast (single array index, no conversion necessary).
      */
-    private void simpleNonCyclicFillRaster(int pixels[], int off, int adjust,
+    private void simpleNonCyclicFillRaster(int[] pixels, int off, int adjust,
                                            int x, int y, int w, int h)
     {
         /* We calculate sqrt(X^2 + Y^2) relative to the radius
@@ -301,7 +301,7 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
 
     // SQRT_LUT_SIZE must be a power of 2 for the test above to work.
     private static final int SQRT_LUT_SIZE = (1 << 11);
-    private static float sqrtLut[] = new float[SQRT_LUT_SIZE+1];
+    private static float[] sqrtLut = new float[SQRT_LUT_SIZE+1];
     static {
         for (int i = 0; i < sqrtLut.length; i++) {
             sqrtLut[i] = (float) Math.sqrt(i / ((float) SQRT_LUT_SIZE));
@@ -327,7 +327,7 @@ final class RadialGradientPaintContext extends MultipleGradientPaintContext {
      * formula produces the following set of equations.  Constant factors have
      * been extracted out of the inner loop.
      */
-    private void cyclicCircularGradientFillRaster(int pixels[], int off,
+    private void cyclicCircularGradientFillRaster(int[] pixels, int off,
                                                   int adjust,
                                                   int x, int y,
                                                   int w, int h)

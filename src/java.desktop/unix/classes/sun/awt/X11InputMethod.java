@@ -175,7 +175,7 @@ public abstract class X11InputMethod extends X11InputMethodBase {
     //       to insure that it cannot be overridden by client subclasses.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
     void dispatchComposedText(String chgText,
-                                           int chgStyles[],
+                                           int[] chgStyles,
                                            int chgOffset,
                                            int chgLength,
                                            int caretPosition,

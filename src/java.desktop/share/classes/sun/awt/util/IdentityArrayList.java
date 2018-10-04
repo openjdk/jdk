@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ public class IdentityArrayList<E> extends AbstractList<E>
         modCount++;
         int oldCapacity = elementData.length;
         if (minCapacity > oldCapacity) {
-            Object oldData[] = elementData;
+            Object[] oldData = elementData;
             int newCapacity = (oldCapacity * 3)/2 + 1;
             if (newCapacity < minCapacity)
                 newCapacity = minCapacity;

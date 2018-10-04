@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,10 +60,10 @@ import static sun.java2d.StateTrackable.State.*;
 public final class DataBufferUShort extends DataBuffer
 {
     /** The default data bank. */
-    short data[];
+    short[] data;
 
     /** All data banks */
-    short bankdata[][];
+    short[][] bankdata;
 
     /**
      * Constructs an unsigned-short based {@code DataBuffer} with a single bank and the
@@ -109,7 +109,7 @@ public final class DataBufferUShort extends DataBuffer
      * @param dataArray The unsigned-short array for the {@code DataBuffer}.
      * @param size The size of the {@code DataBuffer} bank.
      */
-    public DataBufferUShort(short dataArray[], int size) {
+    public DataBufferUShort(short[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_USHORT, size);
         if (dataArray == null) {
             throw new NullPointerException("dataArray is null");
@@ -135,7 +135,7 @@ public final class DataBufferUShort extends DataBuffer
      * @param size The size of the {@code DataBuffer} bank.
      * @param offset The offset into the {@code dataArray}.
      */
-    public DataBufferUShort(short dataArray[], int size, int offset) {
+    public DataBufferUShort(short[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_USHORT, size, 1, offset);
         if (dataArray == null) {
             throw new NullPointerException("dataArray is null");
@@ -163,7 +163,7 @@ public final class DataBufferUShort extends DataBuffer
      * @param dataArray The unsigned-short arrays for the {@code DataBuffer}.
      * @param size The size of the banks in the {@code DataBuffer}.
      */
-    public DataBufferUShort(short dataArray[][], int size) {
+    public DataBufferUShort(short[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_USHORT, size, dataArray.length);
         if (dataArray == null) {
             throw new NullPointerException("dataArray is null");
@@ -197,7 +197,7 @@ public final class DataBufferUShort extends DataBuffer
      * @param size The size of the banks in the {@code DataBuffer}.
      * @param offsets The offsets into each array.
      */
-    public DataBufferUShort(short dataArray[][], int size, int offsets[]) {
+    public DataBufferUShort(short[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_USHORT, size, dataArray.length, offsets);
         if (dataArray == null) {
             throw new NullPointerException("dataArray is null");

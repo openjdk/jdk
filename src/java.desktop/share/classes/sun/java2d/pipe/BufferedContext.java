@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -357,7 +357,7 @@ public abstract class BufferedContext {
             buf.putInt(0);
             int spanCount = 0;
             int remainingSpans = buf.remaining() / BYTES_PER_SPAN;
-            int span[] = new int[4];
+            int[] span = new int[4];
             SpanIterator si = clip.getSpanIterator();
             while (si.nextSpan(span)) {
                 if (remainingSpans == 0) {

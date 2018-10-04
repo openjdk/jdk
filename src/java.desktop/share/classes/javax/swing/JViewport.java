@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1809,7 +1809,7 @@ public class JViewport extends JComponent implements Accessible
 
             if(lastParent != null && parent instanceof JComponent &&
                !((JComponent)parent).isOptimizedDrawingEnabled()) {
-                Component comps[] = parent.getComponents();
+                Component[] comps = parent.getComponents();
                 int index = 0;
 
                 for(int i = comps.length - 1 ;i >= 0; i--) {

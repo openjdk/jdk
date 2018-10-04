@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -234,9 +234,9 @@ public abstract class SampleModel
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if iArray is too small to hold the output.
      */
-    public int[] getPixel(int x, int y, int iArray[], DataBuffer data) {
+    public int[] getPixel(int x, int y, int[] iArray, DataBuffer data) {
 
-        int pixels[];
+        int[] pixels;
 
         if (iArray != null)
             pixels = iArray;
@@ -698,10 +698,10 @@ public abstract class SampleModel
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if fArray is too small to hold the output.
      */
-    public float[] getPixel(int x, int y, float fArray[],
+    public float[] getPixel(int x, int y, float[] fArray,
                             DataBuffer data) {
 
-        float pixels[];
+        float[] pixels;
 
         if (fArray != null)
             pixels = fArray;
@@ -729,10 +729,10 @@ public abstract class SampleModel
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if dArray is too small to hold the output.
      */
-    public double[] getPixel(int x, int y, double dArray[],
+    public double[] getPixel(int x, int y, double[] dArray,
                              DataBuffer data) {
 
-        double pixels[];
+        double[] pixels;
 
         if(dArray != null)
             pixels = dArray;
@@ -764,9 +764,9 @@ public abstract class SampleModel
      * not in bounds, or if iArray is too small to hold the output.
      */
     public int[] getPixels(int x, int y, int w, int h,
-                           int iArray[], DataBuffer data) {
+                           int[] iArray, DataBuffer data) {
 
-        int pixels[];
+        int[] pixels;
         int Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -812,9 +812,9 @@ public abstract class SampleModel
      * not in bounds, or if fArray is too small to hold the output.
      */
     public float[] getPixels(int x, int y, int w, int h,
-                             float fArray[], DataBuffer data) {
+                             float[] fArray, DataBuffer data) {
 
-        float pixels[];
+        float[] pixels;
         int Offset = 0;
         int x1 = x + w;
         int y1 = y + h;
@@ -860,8 +860,8 @@ public abstract class SampleModel
      * not in bounds, or if dArray is too small to hold the output.
      */
     public double[] getPixels(int x, int y, int w, int h,
-                              double dArray[], DataBuffer data) {
-        double pixels[];
+                              double[] dArray, DataBuffer data) {
+        double[] pixels;
         int    Offset = 0;
         int x1 = x + w;
         int y1 = y + h;
@@ -976,8 +976,8 @@ public abstract class SampleModel
      * hold the output.
      */
     public int[] getSamples(int x, int y, int w, int h, int b,
-                            int iArray[], DataBuffer data) {
-        int pixels[];
+                            int[] iArray, DataBuffer data) {
+        int[] pixels;
         int Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -1024,9 +1024,9 @@ public abstract class SampleModel
      * hold the output.
      */
     public float[] getSamples(int x, int y, int w, int h,
-                              int b, float fArray[],
+                              int b, float[] fArray,
                               DataBuffer data) {
-        float pixels[];
+        float[] pixels;
         int   Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -1073,9 +1073,9 @@ public abstract class SampleModel
      * hold the output.
      */
     public double[] getSamples(int x, int y, int w, int h,
-                               int b, double dArray[],
+                               int b, double[] dArray,
                                DataBuffer data) {
-        double pixels[];
+        double[] pixels;
         int    Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -1114,7 +1114,7 @@ public abstract class SampleModel
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if iArray is too small to hold the input.
      */
-    public void setPixel(int x, int y, int iArray[], DataBuffer data) {
+    public void setPixel(int x, int y, int[] iArray, DataBuffer data) {
 
         for (int i=0; i<numBands; i++)
             setSample(x, y, i, iArray[i], data);
@@ -1134,7 +1134,7 @@ public abstract class SampleModel
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if fArray is too small to hold the input.
      */
-    public void setPixel(int x, int y, float fArray[], DataBuffer data) {
+    public void setPixel(int x, int y, float[] fArray, DataBuffer data) {
 
         for (int i=0; i<numBands; i++)
             setSample(x, y, i, fArray[i], data);
@@ -1153,7 +1153,7 @@ public abstract class SampleModel
      * @throws ArrayIndexOutOfBoundsException if the coordinates are
      * not in bounds, or if fArray is too small to hold the input.
      */
-    public void setPixel(int x, int y, double dArray[], DataBuffer data) {
+    public void setPixel(int x, int y, double[] dArray, DataBuffer data) {
 
         for (int i=0; i<numBands; i++)
             setSample(x, y, i, dArray[i], data);
@@ -1177,7 +1177,7 @@ public abstract class SampleModel
      * not in bounds, or if iArray is too small to hold the input.
      */
     public void setPixels(int x, int y, int w, int h,
-                          int iArray[], DataBuffer data) {
+                          int[] iArray, DataBuffer data) {
         int Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -1215,7 +1215,7 @@ public abstract class SampleModel
      * not in bounds, or if fArray is too small to hold the input.
      */
     public void setPixels(int x, int y, int w, int h,
-                          float fArray[], DataBuffer data) {
+                          float[] fArray, DataBuffer data) {
         int Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -1253,7 +1253,7 @@ public abstract class SampleModel
      * not in bounds, or if dArray is too small to hold the input.
      */
     public void setPixels(int x, int y, int w, int h,
-                          double dArray[], DataBuffer data) {
+                          double[] dArray, DataBuffer data) {
         int Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -1369,7 +1369,7 @@ public abstract class SampleModel
      * hold the input.
      */
     public void setSamples(int x, int y, int w, int h, int b,
-                           int iArray[], DataBuffer data) {
+                           int[] iArray, DataBuffer data) {
 
         int Offset=0;
         int x1 = x + w;
@@ -1407,7 +1407,7 @@ public abstract class SampleModel
      * hold the input.
      */
     public void setSamples(int x, int y, int w, int h, int b,
-                           float fArray[], DataBuffer data) {
+                           float[] fArray, DataBuffer data) {
         int Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -1445,7 +1445,7 @@ public abstract class SampleModel
      * hold the input.
      */
     public void setSamples(int x, int y, int w, int h, int b,
-                           double dArray[], DataBuffer data) {
+                           double[] dArray, DataBuffer data) {
         int Offset=0;
         int x1 = x + w;
         int y1 = y + h;
@@ -1483,7 +1483,7 @@ public abstract class SampleModel
      * @return a {@code SampleModel} with a subset of bands of this
      *         {@code SampleModel}.
      */
-    public abstract SampleModel createSubsetSampleModel(int bands[]);
+    public abstract SampleModel createSubsetSampleModel(int[] bands);
 
     /**
      * Creates a DataBuffer that corresponds to this SampleModel.

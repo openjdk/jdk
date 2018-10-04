@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5229,7 +5229,7 @@ public class X11GB18030_1 extends Charset {
             "\u99EC\u99ED\u99EE\u99EF\u99F0\u99F1\u99F2\u99F3"+
             "\u99F4\u99F5\u99F6\u99F7\u99F8\u0000\u99FA\u99FB";
 
-        private static final short index1[] = {
+        private static final short[] index1 = {
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
             17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
             33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
@@ -5248,7 +5248,7 @@ public class X11GB18030_1 extends Charset {
             145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160
         };
 
-        private static final String index2[] = {
+        private static final String[] index2 = {
             innerIndex0,
             innerIndex1,
             innerIndex2,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -382,7 +382,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
                 }
 
                 if(validCount > 0) {
-                    TreePath         newSelection[] = new TreePath[oldCount +
+                    TreePath[]         newSelection = new TreePath[oldCount +
                                                                   validCount];
 
                     /* And build the new selection. */
@@ -901,7 +901,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
                         }
                         else {
                             TreePath[] newSel = new TreePath[counter - min];
-                            int selectionIndex[] = rowMapper.getRowsForPaths(selection);
+                            int[] selectionIndex = rowMapper.getRowsForPaths(selection);
                             // find the actual selection pathes corresponded to the
                             // rows of the new selection
                             for (int i = 0; i < selectionIndex.length; i++) {

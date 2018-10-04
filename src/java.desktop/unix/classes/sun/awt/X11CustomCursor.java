@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public abstract class X11CustomCursor extends CustomCursor {
             }
         }
 
-        int tmp[] = new int[pixels.length];
+        int[] tmp = new int[pixels.length];
         for (int i=0; i<pixels.length; i++) {
             if ((pixels[i] & 0xff000000) == 0) {
                 tmp[i] = -1;
@@ -73,7 +73,7 @@ public abstract class X11CustomCursor extends CustomCursor {
 
         int fc = 0x000000;
         int bc = 0xffffff;
-        CCount cols[] = new CCount[pixels.length];
+        CCount[] cols = new CCount[pixels.length];
 
         int is = 0;
         int numColors = 0;

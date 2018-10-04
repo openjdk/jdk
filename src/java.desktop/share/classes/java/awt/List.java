@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @see #getSelectedIndexes()
      * @see #getSelectedIndex()
      */
-    int         selected[] = new int[0];
+    int[]         selected = new int[0];
 
     /**
      * This variable contains the value that will be used
@@ -321,7 +321,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @since        1.1
      */
     public synchronized String[] getItems() {
-        String itemCopies[] = new String[items.size()];
+        String[] itemCopies = new String[items.size()];
         items.copyInto(itemCopies);
         return itemCopies;
     }
@@ -488,7 +488,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @see           #isIndexSelected
      */
     public synchronized int getSelectedIndex() {
-        int sel[] = getSelectedIndexes();
+        int[] sel = getSelectedIndexes();
         return (sel.length == 1) ? sel[0] : -1;
     }
 
@@ -534,8 +534,8 @@ public class List extends Component implements ItemSelectable, Accessible {
      * @see           #isIndexSelected
      */
     public synchronized String[] getSelectedItems() {
-        int sel[] = getSelectedIndexes();
-        String str[] = new String[sel.length];
+        int[] sel = getSelectedIndexes();
+        String[] str = new String[sel.length];
         for (int i = 0 ; i < sel.length ; i++) {
             str[i] = getItem(sel[i]);
         }
@@ -602,7 +602,7 @@ public class List extends Component implements ItemSelectable, Accessible {
                         selected = new int[1];
                         selected[0] = index;
                     } else {
-                        int newsel[] = new int[selected.length + 1];
+                        int[] newsel = new int[selected.length + 1];
                         System.arraycopy(selected, 0, newsel, 0,
                                          selected.length);
                         newsel[selected.length] = index;
@@ -636,7 +636,7 @@ public class List extends Component implements ItemSelectable, Accessible {
 
         for (int i = 0 ; i < selected.length ; i++) {
             if (selected[i] == index) {
-                int newsel[] = new int[selected.length - 1];
+                int[] newsel = new int[selected.length - 1];
                 System.arraycopy(selected, 0, newsel, 0, i);
                 System.arraycopy(selected, i+1, newsel, i, selected.length - (i+1));
                 selected = newsel;
@@ -669,7 +669,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      */
     @Deprecated
     public boolean isSelected(int index) {
-        int sel[] = getSelectedIndexes();
+        int[] sel = getSelectedIndexes();
         for (int i = 0 ; i < sel.length ; i++) {
             if (sel[i] == index) {
                 return true;
@@ -1493,7 +1493,7 @@ public class List extends Component implements ItemSelectable, Accessible {
          */
          public void clearAccessibleSelection() {
              synchronized(List.this)  {
-                 int selectedIndexes[] = List.this.getSelectedIndexes();
+                 int[] selectedIndexes = List.this.getSelectedIndexes();
                  if (selectedIndexes == null)
                      return;
                  for (int i = selectedIndexes.length - 1; i >= 0; i--) {

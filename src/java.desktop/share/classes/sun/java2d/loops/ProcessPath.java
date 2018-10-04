@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -860,7 +860,7 @@ public class ProcessPath {
         /* Temporary array for holding parameters corresponding to the extreme
          * in X and Y points
          */
-        double params[] = new double[2];
+        double[] params = new double[2];
         int cnt = 0;
         double param;
 
@@ -1228,9 +1228,9 @@ public class ProcessPath {
         /* Temporary array for holding parameters corresponding to the extreme
          * in X and Y points
          */
-        double params[] = new double[4];
-        double eqn[] = new double[3];
-        double res[] = new double[2];
+        double[] params = new double[4];
+        double[] eqn = new double[3];
+        double[] res = new double[2];
         int cnt = 0;
 
         /* Simple check for monotonicity in X before searching for the extreme
@@ -1362,7 +1362,7 @@ public class ProcessPath {
         int X1, Y1, X2, Y2, X3, Y3, res;
         boolean clipped = false;
         float x3,y3;
-        float c[] = new float[]{x1, y1, x2, y2, 0, 0};
+        float[] c = new float[]{x1, y1, x2, y2, 0, 0};
 
         boolean lastClipped;
 
@@ -1466,11 +1466,11 @@ public class ProcessPath {
     private static boolean doProcessPath(ProcessHandler hnd,
                                          Path2D.Float p2df,
                                          float transXf, float transYf) {
-        float coords[] = new float[8];
-        float tCoords[] = new float[8];
-        float closeCoord[] = new float[] {0.0f, 0.0f};
-        float firstCoord[] = new float[2];
-        int pixelInfo[] = new int[5];
+        float[] coords = new float[8];
+        float[] tCoords = new float[8];
+        float[] closeCoord = new float[] {0.0f, 0.0f};
+        float[] firstCoord = new float[2];
+        int[] pixelInfo = new int[5];
         boolean subpathStarted = false;
         boolean skip = false;
         float lastX, lastY;
@@ -2043,7 +2043,7 @@ public class ProcessPath {
                 /* This function is used only for filling shapes, so there is no
                  * check for the type of clipping
                  */
-                int c[] = new int[]{x1, y1, x2, y2, 0, 0};
+                int[] c = new int[]{x1, y1, x2, y2, 0, 0};
                 outXMin = (int)(dhnd.xMinf * MDP_MULT);
                 outXMax = (int)(dhnd.xMaxf * MDP_MULT);
                 outYMin = (int)(dhnd.yMinf * MDP_MULT);

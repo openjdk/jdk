@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,10 @@ public class  XMSelection {
     Vector<XMSelectionListener> listeners;
 
     /* X atom array (one per screen) for this selection */
-    XAtom atoms[];
+    XAtom[] atoms;
 
     /* Window ids of selection owners */
-    long owners[];
+    long[] owners;
 
     /* event mask to set */
     long eventMask;

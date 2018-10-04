@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1344,7 +1344,7 @@ public class AffineTransform implements Cloneable, java.io.Serializable {
     // Utility methods to optimize rotate methods.
     // These tables translate the flags during predictable quadrant
     // rotations where the shear and scale values are swapped and negated.
-    private static final int rot90conversion[] = {
+    private static final int[] rot90conversion = {
         /* IDENTITY => */        APPLY_SHEAR,
         /* TRANSLATE (TR) => */  APPLY_SHEAR | APPLY_TRANSLATE,
         /* SCALE (SC) => */      APPLY_SHEAR,

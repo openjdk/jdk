@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public final class UlawCodec extends FormatConversionProvider {
     private static final byte[] ULAW_TABH = new byte[256];
     private static final byte[] ULAW_TABL = new byte[256];
 
-    private static final short seg_end[] = {
+    private static final short[] seg_end = {
             0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF, 0x1FFF, 0x3FFF, 0x7FFF
     };
 
@@ -83,7 +83,7 @@ public final class UlawCodec extends FormatConversionProvider {
     public AudioFormat.Encoding[] getTargetEncodings(AudioFormat sourceFormat){
         if( AudioFormat.Encoding.PCM_SIGNED.equals(sourceFormat.getEncoding()) ) {
             if( sourceFormat.getSampleSizeInBits() == 16 ) {
-                AudioFormat.Encoding enc[] = new AudioFormat.Encoding[1];
+                AudioFormat.Encoding[] enc = new AudioFormat.Encoding[1];
                 enc[0] = AudioFormat.Encoding.ULAW;
                 return enc;
             } else {
@@ -91,7 +91,7 @@ public final class UlawCodec extends FormatConversionProvider {
             }
         } else if (AudioFormat.Encoding.ULAW.equals(sourceFormat.getEncoding())) {
             if (sourceFormat.getSampleSizeInBits() == 8) {
-                AudioFormat.Encoding enc[] = new AudioFormat.Encoding[1];
+                AudioFormat.Encoding[] enc = new AudioFormat.Encoding[1];
                 enc[0] = AudioFormat.Encoding.PCM_SIGNED;
                 return enc;
             } else {
@@ -234,7 +234,7 @@ public final class UlawCodec extends FormatConversionProvider {
     private final class UlawCodecStream extends AudioInputStream {
 
         private static final int tempBufferSize = 64;
-        private byte tempBuffer [] = null;
+        private byte[] tempBuffer  = null;
 
         /**
          * True to encode to u-law, false to decode to linear.
@@ -244,8 +244,8 @@ public final class UlawCodec extends FormatConversionProvider {
         AudioFormat encodeFormat;
         AudioFormat decodeFormat;
 
-        byte tabByte1[] = null;
-        byte tabByte2[] = null;
+        byte[] tabByte1 = null;
+        byte[] tabByte2 = null;
         int highByte = 0;
         int lowByte  = 1;
 
@@ -305,7 +305,7 @@ public final class UlawCodec extends FormatConversionProvider {
          * $$jb 2/23/99
          * Used to determine segment number in uLaw encoding
          */
-        private short search(short val, short table[], short size) {
+        private short search(short val, short[] table, short size) {
             for(short i = 0; i < size; i++) {
                 if (val <= table[i]) { return i; }
             }

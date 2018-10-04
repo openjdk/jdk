@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
     Vector<File> directories = null;
     int fetchID = 0;
 
-    private final boolean fSortAscending[] = {true, true};
+    private final boolean[] fSortAscending = {true, true};
     // private boolean fSortAscending = true;
     private boolean fSortNames = true;
     private final String[] fColumnNames;

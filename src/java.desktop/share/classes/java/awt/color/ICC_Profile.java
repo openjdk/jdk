@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1016,7 +1016,7 @@ public class ICC_Profile implements Serializable {
      * contain valid ICC Profile data.
      */
     public static ICC_Profile getInstance(InputStream s) throws IOException {
-    byte profileData[];
+    byte[] profileData;
 
         if (s instanceof ProfileDeferralInfo) {
             /* hack to detect profiles whose loading can be deferred */
@@ -1032,10 +1032,10 @@ public class ICC_Profile implements Serializable {
 
 
     static byte[] getProfileDataFromStream(InputStream s) throws IOException {
-    byte profileData[];
+    byte[] profileData;
     int profileSize;
 
-        byte header[] = new byte[128];
+        byte[] header = new byte[128];
         int bytestoread = 128;
         int bytesread = 0;
         int n;
@@ -1098,7 +1098,7 @@ public class ICC_Profile implements Serializable {
 
 
     void activateDeferredProfile() throws ProfileDataException {
-        byte profileData[];
+        byte[] profileData;
         final String fileName = deferralInfo.filename;
 
         profileActivator = null;
@@ -1286,7 +1286,7 @@ public class ICC_Profile implements Serializable {
      */
     public void write(String fileName) throws IOException {
     FileOutputStream outputFile;
-    byte profileData[];
+    byte[] profileData;
 
         profileData = getData(); /* this will activate deferred
                                     profiles if necessary */
@@ -1305,7 +1305,7 @@ public class ICC_Profile implements Serializable {
      * stream.
      */
     public void write(OutputStream s) throws IOException {
-    byte profileData[];
+    byte[] profileData;
 
         profileData = getData(); /* this will activate deferred
                                     profiles if necessary */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,7 @@ public final class SoftReverb implements SoftAudioProcessor {
             this.feedback = feedback;
         }
 
-        public void processReplace(float inout[]) {
+        public void processReplace(float[] inout) {
             int len = inout.length;
             int delaybuffersize = this.delaybuffersize;
             int rovepos = this.rovepos;
@@ -102,7 +102,7 @@ public final class SoftReverb implements SoftAudioProcessor {
             this.rovepos = rovepos;
         }
 
-        public void processReplace(float in[], float out[]) {
+        public void processReplace(float[] in, float[] out) {
             int len = in.length;
             int delaybuffersize = this.delaybuffersize;
             int rovepos = this.rovepos;
@@ -138,7 +138,7 @@ public final class SoftReverb implements SoftAudioProcessor {
             filtercoeff2 = (1 - filtercoeff1)* feedback;
         }
 
-        public void processMix(float in[], float out[]) {
+        public void processMix(float[] in, float[] out) {
             int len = in.length;
             int delaybuffersize = this.delaybuffersize;
             int rovepos = this.rovepos;
@@ -159,7 +159,7 @@ public final class SoftReverb implements SoftAudioProcessor {
             this.rovepos = rovepos;
         }
 
-        public void processReplace(float in[], float out[]) {
+        public void processReplace(float[] in, float[] out) {
             int len = in.length;
             int delaybuffersize = this.delaybuffersize;
             int rovepos = this.rovepos;

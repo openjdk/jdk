@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,12 @@ public class XEmbedServerTester implements XEventDispatcher {
     int accel_key, accel_keysym, accel_mods;
     static Rectangle initialBounds = new Rectangle(0, 0, 100, 100);
     Robot robot;
-    Rectangle serverBounds[]; // first rectangle is for the server frame, second is for dummy frame, others are for its children
+    Rectangle[] serverBounds; // first rectangle is for the server frame, second is for dummy frame, others are for its children
     private static final int SERVER_BOUNDS = 0, OTHER_FRAME = 1, SERVER_FOCUS = 2, SERVER_MODAL = 3, MODAL_CLOSE = 4;
 
     LinkedList<Integer> events = new LinkedList<Integer>();
 
-    private XEmbedServerTester(Rectangle serverBounds[], long parent) {
+    private XEmbedServerTester(Rectangle[] serverBounds, long parent) {
         this.parent = parent;
         focusedKind = -1;
         focusedServerComponent = -1;
@@ -86,7 +86,7 @@ public class XEmbedServerTester implements XEventDispatcher {
         }
     }
 
-    public static XEmbedServerTester getTester(Rectangle serverBounds[], long parent) {
+    public static XEmbedServerTester getTester(Rectangle[] serverBounds, long parent) {
         return new XEmbedServerTester(serverBounds, parent);
     }
 

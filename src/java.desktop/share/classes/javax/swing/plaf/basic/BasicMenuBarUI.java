@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,8 +269,8 @@ public class BasicMenuBarUI extends MenuBarUI  {
             // TAKE_FOCUS
             JMenuBar menuBar = (JMenuBar)e.getSource();
             MenuSelectionManager defaultManager = MenuSelectionManager.defaultManager();
-            MenuElement me[];
-            MenuElement subElements[];
+            MenuElement[] me;
+            MenuElement[] subElements;
             JMenu menu = menuBar.getMenu(0);
             if (menu!=null) {
                     me = new MenuElement[3];
