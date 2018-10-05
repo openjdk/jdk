@@ -103,7 +103,7 @@ public class URLClassPath {
         DISABLE_ACC_CHECKING = p != null ? p.equals("true") || p.equals("") : false;
 
         // This property will be removed in a later release
-        p = props.getProperty("jdk.net.URLClassPath.disableClassPathURLCheck");
+        p = props.getProperty("jdk.net.URLClassPath.disableClassPathURLCheck", "true");
 
         DISABLE_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
         DEBUG_CP_URL_CHECK = "debug".equals(p);
