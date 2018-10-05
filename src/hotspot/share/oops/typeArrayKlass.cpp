@@ -99,19 +99,10 @@ TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, 
 
 typeArrayOop TypeArrayKlass::allocate_common(int length, bool do_zero, TRAPS) {
   assert(log2_element_size() >= 0, "bad scale");
-  if (length >= 0) {
-    if (length <= max_length()) {
-      size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
-      return (typeArrayOop)Universe::heap()->array_allocate(this, (int)size, length,
-                                                            do_zero, CHECK_NULL);
-    } else {
-      report_java_out_of_memory("Requested array size exceeds VM limit");
-      JvmtiExport::post_array_size_exhausted();
-      THROW_OOP_0(Universe::out_of_memory_error_array_size());
-    }
-  } else {
-    THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
-  }
+  check_array_allocation_length(length, max_length(), CHECK_NULL);
+  size_t size = typeArrayOopDesc::object_size(layout_helper(), length);
+  return (typeArrayOop)Universe::heap()->array_allocate(this, (int)size, length,
+                                                        do_zero, CHECK_NULL);
 }
 
 oop TypeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {

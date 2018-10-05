@@ -279,19 +279,34 @@ public abstract class HotSpotBackend extends Backend implements FrameMap.Referen
     public static final ForeignCallDescriptor VM_ERROR = new ForeignCallDescriptor("vm_error", void.class, Object.class, Object.class, long.class);
 
     /**
-     * New multi array stub call.
+     * New multi array stub that throws an {@link OutOfMemoryError} on allocation failure.
      */
     public static final ForeignCallDescriptor NEW_MULTI_ARRAY = new ForeignCallDescriptor("new_multi_array", Object.class, KlassPointer.class, int.class, Word.class);
 
     /**
-     * New array stub.
+     * New multi array stub that will return null on allocation failure.
+     */
+    public static final ForeignCallDescriptor NEW_MULTI_ARRAY_OR_NULL = new ForeignCallDescriptor("new_multi_array_or_null", Object.class, KlassPointer.class, int.class, Word.class);
+
+    /**
+     * New array stub that throws an {@link OutOfMemoryError} on allocation failure.
      */
     public static final ForeignCallDescriptor NEW_ARRAY = new ForeignCallDescriptor("new_array", Object.class, KlassPointer.class, int.class);
 
     /**
-     * New instance stub.
+     * New array stub that will return null on allocation failure.
+     */
+    public static final ForeignCallDescriptor NEW_ARRAY_OR_NULL = new ForeignCallDescriptor("new_array_or_null", Object.class, KlassPointer.class, int.class);
+
+    /**
+     * New instance stub that throws an {@link OutOfMemoryError} on allocation failure.
      */
     public static final ForeignCallDescriptor NEW_INSTANCE = new ForeignCallDescriptor("new_instance", Object.class, KlassPointer.class);
+
+    /**
+     * New instance stub that will return null on allocation failure.
+     */
+    public static final ForeignCallDescriptor NEW_INSTANCE_OR_NULL = new ForeignCallDescriptor("new_instance_or_null", Object.class, KlassPointer.class);
 
     /**
      * @see ResolveConstantStubCall

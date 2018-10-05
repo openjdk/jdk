@@ -240,14 +240,20 @@ public final class BinaryContainer implements SymbolTable {
         {"JVMCIRuntime::log_printf", "_aot_jvmci_runtime_log_printf"},
         {"JVMCIRuntime::vm_message", "_aot_jvmci_runtime_vm_message"},
         {"JVMCIRuntime::new_instance", "_aot_jvmci_runtime_new_instance"},
-        {"JVMCIRuntime::log_primitive", "_aot_jvmci_runtime_log_primitive"},
+        {"JVMCIRuntime::new_array", "_aot_jvmci_runtime_new_array"},
         {"JVMCIRuntime::new_multi_array", "_aot_jvmci_runtime_new_multi_array"},
-        {"JVMCIRuntime::validate_object", "_aot_jvmci_runtime_validate_object"},
+        {"JVMCIRuntime::dynamic_new_instance", "_aot_jvmci_runtime_dynamic_new_instance"},
         {"JVMCIRuntime::dynamic_new_array", "_aot_jvmci_runtime_dynamic_new_array"},
+        {"JVMCIRuntime::new_instance_or_null", "_aot_jvmci_runtime_new_instance_or_null"},
+        {"JVMCIRuntime::new_array_or_null", "_aot_jvmci_runtime_new_array_or_null"},
+        {"JVMCIRuntime::new_multi_array_or_null", "_aot_jvmci_runtime_new_multi_array_or_null"},
+        {"JVMCIRuntime::dynamic_new_instance_or_null", "_aot_jvmci_runtime_dynamic_new_instance_or_null"},
+        {"JVMCIRuntime::dynamic_new_array_or_null", "_aot_jvmci_runtime_dynamic_new_array_or_null"},
+        {"JVMCIRuntime::log_primitive", "_aot_jvmci_runtime_log_primitive"},
+        {"JVMCIRuntime::validate_object", "_aot_jvmci_runtime_validate_object"},
         {"JVMCIRuntime::write_barrier_pre", "_aot_jvmci_runtime_write_barrier_pre"},
         {"JVMCIRuntime::identity_hash_code", "_aot_jvmci_runtime_identity_hash_code"},
         {"JVMCIRuntime::write_barrier_post", "_aot_jvmci_runtime_write_barrier_post"},
-        {"JVMCIRuntime::dynamic_new_instance", "_aot_jvmci_runtime_dynamic_new_instance"},
         {"JVMCIRuntime::thread_is_interrupted", "_aot_jvmci_runtime_thread_is_interrupted"},
         {"JVMCIRuntime::exception_handler_for_pc", "_aot_jvmci_runtime_exception_handler_for_pc"},
         {"JVMCIRuntime::test_deoptimize_call_int", "_aot_jvmci_runtime_test_deoptimize_call_int"},
@@ -256,8 +262,7 @@ public final class BinaryContainer implements SymbolTable {
         {"JVMCIRuntime::throw_klass_external_name_exception", "_aot_jvmci_runtime_throw_klass_external_name_exception"},
         {"JVMCIRuntime::throw_class_cast_exception",          "_aot_jvmci_runtime_throw_class_cast_exception"},
 
-        {"JVMCIRuntime::vm_error", "_aot_jvmci_runtime_vm_error"},
-        {"JVMCIRuntime::new_array", "_aot_jvmci_runtime_new_array"}
+        {"JVMCIRuntime::vm_error", "_aot_jvmci_runtime_vm_error"}
     };
     //@formatter:on
 

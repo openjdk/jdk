@@ -514,6 +514,9 @@ protected:
   virtual Klass* array_klass_impl(bool or_null, int rank, TRAPS);
   virtual Klass* array_klass_impl(bool or_null, TRAPS);
 
+  // Error handling when length > max_length or length < 0
+  static void check_array_allocation_length(int length, int max_length, TRAPS);
+
   void set_vtable_length(int len) { _vtable_len= len; }
 
   vtableEntry* start_of_vtable() const;

@@ -436,14 +436,19 @@ void AOTCodeHeap::link_graal_runtime_symbols()  {
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_new_instance", address, JVMCIRuntime::new_instance);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_new_array", address, JVMCIRuntime::new_array);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_new_multi_array", address, JVMCIRuntime::new_multi_array);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_dynamic_new_instance", address, JVMCIRuntime::dynamic_new_instance);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_dynamic_new_array", address, JVMCIRuntime::dynamic_new_array);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_new_instance_or_null", address, JVMCIRuntime::new_instance_or_null);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_new_array_or_null", address, JVMCIRuntime::new_array_or_null);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_new_multi_array_or_null", address, JVMCIRuntime::new_multi_array_or_null);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_dynamic_new_instance_or_null", address, JVMCIRuntime::dynamic_new_instance_or_null);
+    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_dynamic_new_array_or_null", address, JVMCIRuntime::dynamic_new_array_or_null);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_validate_object", address, JVMCIRuntime::validate_object);
 #if INCLUDE_G1GC
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_write_barrier_pre", address, JVMCIRuntime::write_barrier_pre);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_write_barrier_post", address, JVMCIRuntime::write_barrier_post);
 #endif
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_identity_hash_code", address, JVMCIRuntime::identity_hash_code);
-    SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_dynamic_new_instance", address, JVMCIRuntime::dynamic_new_instance);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_thread_is_interrupted", address, JVMCIRuntime::thread_is_interrupted);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_exception_handler_for_pc", address, JVMCIRuntime::exception_handler_for_pc);
     SET_AOT_GLOBAL_SYMBOL_VALUE("_aot_jvmci_runtime_test_deoptimize_call_int", address, JVMCIRuntime::test_deoptimize_call_int);

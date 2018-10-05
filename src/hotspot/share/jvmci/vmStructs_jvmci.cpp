@@ -622,6 +622,12 @@
   declare_function(JVMCIRuntime::dynamic_new_array) \
   declare_function(JVMCIRuntime::dynamic_new_instance) \
   \
+  declare_function(JVMCIRuntime::new_instance_or_null) \
+  declare_function(JVMCIRuntime::new_array_or_null) \
+  declare_function(JVMCIRuntime::new_multi_array_or_null) \
+  declare_function(JVMCIRuntime::dynamic_new_array_or_null) \
+  declare_function(JVMCIRuntime::dynamic_new_instance_or_null) \
+  \
   declare_function(JVMCIRuntime::thread_is_interrupted) \
   declare_function(JVMCIRuntime::vm_message) \
   declare_function(JVMCIRuntime::identity_hash_code) \
