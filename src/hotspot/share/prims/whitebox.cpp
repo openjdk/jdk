@@ -1749,6 +1749,20 @@ WB_ENTRY(jobject, WB_GetMethodStringOption(JNIEnv* env, jobject wb, jobject meth
   return NULL;
 WB_END
 
+WB_ENTRY(jobject, WB_GetDefaultArchivePath(JNIEnv* env, jobject wb))
+  const char* p = Arguments::get_default_shared_archive_path();
+  ThreadToNativeFromVM ttn(thread);
+  jstring path_string = env->NewStringUTF(p);
+
+  CHECK_JNI_EXCEPTION_(env, NULL);
+
+  return path_string;
+WB_END
+
+WB_ENTRY(jboolean, WB_IsSharingEnabled(JNIEnv* env, jobject wb))
+  return UseSharedSpaces;
+WB_END
+
 WB_ENTRY(jboolean, WB_IsShared(JNIEnv* env, jobject wb, jobject obj))
   oop obj_oop = JNIHandles::resolve(obj);
   return MetaspaceShared::is_archive_object(obj_oop);
@@ -2185,6 +2199,9 @@ static JNINativeMethod methods[] = {
   {CC"getMethodStringOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/String;",
                                                       (void*)&WB_GetMethodStringOption},
+  {CC"getDefaultArchivePath",             CC"()Ljava/lang/String;",
+                                                      (void*)&WB_GetDefaultArchivePath},
+  {CC"isSharingEnabled",   CC"()Z",                   (void*)&WB_IsSharingEnabled},
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },

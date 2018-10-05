@@ -23,7 +23,7 @@
 
 #############################################################################
 #
-# Additional list of quarantined tests when CDS mode enabled.
+# Additional list of quarantined tests when non-CDS mode enabled.
 #
 #############################################################################
 

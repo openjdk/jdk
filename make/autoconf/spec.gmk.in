@@ -309,6 +309,8 @@ EXCLUDE_TRANSLATIONS := @EXCLUDE_TRANSLATIONS@
 
 BUILD_MANPAGES := @BUILD_MANPAGES@
 
+BUILD_CDS_ARCHIVE := @BUILD_CDS_ARCHIVE@
+
 # The boot jdk to use. This is overridden in bootcycle-spec.gmk. Make sure to keep
 # it in sync.
 BOOT_JDK:=@BOOT_JDK@

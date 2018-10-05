@@ -633,6 +633,7 @@ class Arguments : AllStatic {
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();
 
+  static char* get_default_shared_archive_path();
 
   // Operation modi
   static Mode mode()                        { return _mode; }

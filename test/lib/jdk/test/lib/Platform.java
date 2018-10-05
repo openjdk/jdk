@@ -325,6 +325,19 @@ public class Platform {
         }
     }
 
+    public static boolean isDefaultCDSArchiveSupported() {
+        return (is64bit()  &&
+                isServer() &&
+                (isLinux()   ||
+                 isOSX()     ||
+                 isSolaris() ||
+                 isWindows()) &&
+                !isZero()    &&
+                !isMinimal() &&
+                !isAArch64() &&
+                !isARM());
+    }
+
     /*
      * This should match the #if condition in ClassListParser::load_class_from_source().
      */

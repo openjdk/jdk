@@ -30,7 +30,7 @@
  *
  * @run main ItxtUtf8Test
  *
- * @run main/othervm/timeout=10 -Xmx4m ItxtUtf8Test truncate
+ * @run main/othervm/timeout=10 -Xmx6m ItxtUtf8Test truncate
  */
 
 import java.awt.image.BufferedImage;

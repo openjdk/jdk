@@ -385,6 +385,7 @@ compare_general_files() {
         ! -name "JavaUpdater" ! -name "JavaWSApplicationStub" \
         ! -name "jspawnhelper" ! -name "JavawsLauncher" ! -name "*.a" \
         ! -name "finish_installation" ! -name "Sparkle" ! -name "*.tar.gz" \
+        ! -name "classes.jsa" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 
     echo Other files with binary differences...

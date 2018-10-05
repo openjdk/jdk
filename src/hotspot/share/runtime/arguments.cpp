@@ -3450,21 +3450,27 @@ void Arguments::set_shared_spaces_flags() {
 
 // Sharing support
 // Construct the path to the archive
+char* Arguments::get_default_shared_archive_path() {
+  char *default_archive_path;
+  char jvm_path[JVM_MAXPATHLEN];
+  os::jvm_path(jvm_path, sizeof(jvm_path));
+  char *end = strrchr(jvm_path, *os::file_separator());
+  if (end != NULL) *end = '\0';
+  size_t jvm_path_len = strlen(jvm_path);
+  size_t file_sep_len = strlen(os::file_separator());
+  const size_t len = jvm_path_len + file_sep_len + 20;
+  default_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
+  if (default_archive_path != NULL) {
+    jio_snprintf(default_archive_path, len, "%s%sclasses.jsa",
+      jvm_path, os::file_separator());
+  }
+  return default_archive_path;
+}
+
 static char* get_shared_archive_path() {
   char *shared_archive_path;
   if (SharedArchiveFile == NULL) {
-    char jvm_path[JVM_MAXPATHLEN];
-    os::jvm_path(jvm_path, sizeof(jvm_path));
-    char *end = strrchr(jvm_path, *os::file_separator());
-    if (end != NULL) *end = '\0';
-    size_t jvm_path_len = strlen(jvm_path);
-    size_t file_sep_len = strlen(os::file_separator());
-    const size_t len = jvm_path_len + file_sep_len + 20;
-    shared_archive_path = NEW_C_HEAP_ARRAY(char, len, mtArguments);
-    if (shared_archive_path != NULL) {
-      jio_snprintf(shared_archive_path, len, "%s%sclasses.jsa",
-        jvm_path, os::file_separator());
-    }
+    shared_archive_path = Arguments::get_default_shared_archive_path();
   } else {
     shared_archive_path = os::strdup_check_oom(SharedArchiveFile, mtArguments);
   }
