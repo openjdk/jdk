@@ -565,7 +565,6 @@ java/nio/Buffer/EqualsCompareTest.java                          8193917 solaris-
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
 java/nio/channels/Selector/Wakeup.java                          6963118 windows-all
-java/nio/channels/Selector/RacyDeregister.java                  8201765 windows-all
 
 java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
