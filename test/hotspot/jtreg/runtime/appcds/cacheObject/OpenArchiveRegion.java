@@ -26,6 +26,9 @@
  * @test
  * @summary Test open archive heap regions
  * @requires vm.cds.archived.java.heap
+ * @comment This test explicitly chooses the type of GC to be used by sub-processes. It may conflict with the GC type set
+ * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
+ * vm options.
  * @requires (vm.gc=="null")
  * @library /test/lib /test/hotspot/jtreg/runtime/appcds
  * @modules java.base/jdk.internal.misc
