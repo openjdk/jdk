@@ -1,5 +1,5 @@
-#
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+
+# Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,32 @@
 # questions.
 #
 
+include $(SPEC)
+include MakeBase.gmk
+
 default: all
 
-include $(SPEC)
+COMPILE_COMMANDS := $(OUTPUTDIR)/compile_commands.json
 
-make-base:
-	+$(MAKE) -f TestMakeBase.gmk $(TEST_SUBTARGET)
+# Perform basic compile_commands.json validation:
+#  - should start with [ and end with ]
+#  - should contain at least one entry (opening {)
+#  - last entry should not have a trailing comma (end with })
+verify-compile-commands-json:
+	$(HEAD) -n 1 $(COMPILE_COMMANDS) | $(GREP) -q -e "^\[$$"
+	$(TAIL) -1 $(COMPILE_COMMANDS) | $(GREP) -q -e "^\]$$"
+	$(HEAD) -n 2 $(COMPILE_COMMANDS) | $(GREP) -q -e "{"
+	$(TAIL) -2 $(COMPILE_COMMANDS) | $(GREP) -q -e "}$$"
 
-java-compilation:
-	+$(MAKE) -f TestJavaCompilation.gmk $(TEST_SUBTARGET)
+# Ensure that no native shared library for hotspot was created during the
+# build. Checking hotspot only since on Windows the jdk folders are prepopulated
+# with CRT DLLs. Also note that this test requires a clean build folder.
+verify-no-shared-libraries:
+	$(FIND) $(OUTPUTDIR)/hotspot -type f -name "*$(SHARED_LIBRARY_SUFFIX)" \
+	    -exec false {} +
 
-copy-files:
-	+$(MAKE) -f TestCopyFiles.gmk $(TEST_SUBTARGET)
+TEST_TARGETS += verify-compile-commands-json verify-no-shared-libraries
 
-test-idea:
-	+$(MAKE) -f TestIdea.gmk $(TEST_SUBTARGET)
+all: $(TEST_TARGETS)
 
-test-compile-commands:
-	+$(MAKE) -f TestCompileCommands.gmk $(TEST_SUBTARGET)
-
-
-all: make-base java-compilation copy-files test-idea
-
-.PHONY: default all make-base java-compilation copy-files test-idea test-compile-commands
+.PHONY: default all verify-compile-commands

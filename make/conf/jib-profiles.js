@@ -522,7 +522,7 @@ var getJibProfilesProfiles = function (input, common, data) {
         .forEach(function (name) {
             var maketestName = name + "-testmake";
             profiles[maketestName] = concatObjects(profiles[name], testmakeBase);
-            profiles[maketestName].default_make_targets = [ "test-make" ];
+            profiles[maketestName].default_make_targets = [ "test-make", "test-compile-commands" ];
         });
 
     // Profiles for building the zero jvm variant. These are used for verification.

@@ -47,6 +47,29 @@ FindSrcDirsForComponent += \
       $(TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native/$(strip $2) \
       $(TOPDIR)/src/$(strip $1)/share/native/$(strip $2)))
 
+# Find a library
+# Param 1 - module name
+# Param 2 - library name
+# Param 3 - optional subdir for library
+FindLib = \
+    $(call FindLibDirForModule, \
+        $(strip $1))$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(SHARED_LIBRARY_SUFFIX)
+
+# Find a static library
+# Param 1 - module name
+# Param 2 - library name
+# Param 3 - optional subdir for library
+FindStaticLib = \
+    $(addprefix $(SUPPORT_OUTPUTDIR)/native/, \
+        $(strip $1)$(strip $3)/$(LIBRARY_PREFIX)$(strip $2)$(STATIC_LIBRARY_SUFFIX))
+
+# If only generating compile_commands.json, make these return empty to avoid
+# declaring dependencies.
+ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
+  FindLib =
+  FindStaticLib =
+endif
+
 GetJavaHeaderDir = \
   $(wildcard $(SUPPORT_OUTPUTDIR)/headers/$(strip $1))
 

@@ -739,11 +739,11 @@ else # OPENJDK_TARGET_OS not windows
   ifeq ($(ENABLE_HEADLESS_ONLY), false)
     $(BUILD_LIBJAWT): $(BUILD_LIBAWT_XAWT)
   else
-    $(BUILD_LIBJAWT): $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)awt_headless$(SHARED_LIBRARY_SUFFIX)
+    $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_headless)
   endif
 
   ifeq ($(OPENJDK_TARGET_OS), macosx)
-    $(BUILD_LIBJAWT): $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)awt_lwawt$(SHARED_LIBRARY_SUFFIX)
+   $(BUILD_LIBJAWT): $(call FindLib, $(MODULE), awt_lwawt)
   endif
 
 endif # OPENJDK_TARGET_OS

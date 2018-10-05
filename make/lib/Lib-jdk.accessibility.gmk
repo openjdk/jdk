@@ -55,7 +55,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
         VERSIONINFO_RESOURCE := $(ROOT_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )
 
-    $$(BUILD_JAVAACCESSBRIDGE$1): $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib
+    $$(BUILD_JAVAACCESSBRIDGE$1): $(call FindStaticLib, java.desktop, jawt, /libjawt)
 
     TARGETS += $$(BUILD_JAVAACCESSBRIDGE$1)
   endef

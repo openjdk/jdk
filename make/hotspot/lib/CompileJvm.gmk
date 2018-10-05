@@ -214,15 +214,17 @@ VM_VERSION_OBJ := $(JVM_OUTPUTDIR)/objs/vm_version$(OBJ_SUFFIX)
 $(VM_VERSION_OBJ): $(filter-out $(VM_VERSION_OBJ) $(JVM_MAPFILE), \
     $(BUILD_LIBJVM_TARGET_DEPS))
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  # It doesn't matter which jvm.lib file gets exported, but we need
-  # to pick just one.
-  ifeq ($(JVM_VARIANT), $(JVM_VARIANT_MAIN))
-    $(eval $(call SetupCopyFiles, COPY_JVM_LIB, \
-        DEST := $(LIB_OUTPUTDIR), \
-        FILES :=$(BUILD_LIBJVM_IMPORT_LIBRARY), \
-    ))
-    TARGETS += $(COPY_JVM_LIB)
+ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    # It doesn't matter which jvm.lib file gets exported, but we need
+    # to pick just one.
+    ifeq ($(JVM_VARIANT), $(JVM_VARIANT_MAIN))
+      $(eval $(call SetupCopyFiles, COPY_JVM_LIB, \
+          DEST := $(LIB_OUTPUTDIR), \
+          FILES :=$(BUILD_LIBJVM_IMPORT_LIBRARY), \
+      ))
+      TARGETS += $(COPY_JVM_LIB)
+    endif
   endif
 endif
 
@@ -261,44 +263,46 @@ TARGETS += $(BUILD_LIBJVM)
 # Search the output for the operator(s) of interest, to see where they are
 # referenced.
 
-ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang solstudio), )
+ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
+  ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang solstudio), )
 
-  DEMANGLED_REGEXP := [^:]operator (new|delete)
+    DEMANGLED_REGEXP := [^:]operator (new|delete)
 
-  # Running c++filt to find offending symbols in all files is too expensive,
-  # especially on Solaris, so use mangled names when looking for symbols.
-  # Save the demangling for when something is actually found.
-  ifeq ($(TOOLCHAIN_TYPE), solstudio)
-    MANGLED_SYMS := \
-        __1c2n6FL_pv_ \
-        __1c2N6FL_pv_ \
-        __1c2k6Fpv_v_ \
-        __1c2K6Fpv_v_ \
-        #
-    UNDEF_PATTERN := UNDEF
-  else
-    MANGLED_SYMS := \
-        _ZdaPv \
-        _ZdlPv \
-        _Znam \
-        _Znwm \
-        #
-    UNDEF_PATTERN := ' U '
+    # Running c++filt to find offending symbols in all files is too expensive,
+    # especially on Solaris, so use mangled names when looking for symbols.
+    # Save the demangling for when something is actually found.
+    ifeq ($(TOOLCHAIN_TYPE), solstudio)
+      MANGLED_SYMS := \
+          __1c2n6FL_pv_ \
+          __1c2N6FL_pv_ \
+          __1c2k6Fpv_v_ \
+          __1c2K6Fpv_v_ \
+          #
+      UNDEF_PATTERN := UNDEF
+    else
+      MANGLED_SYMS := \
+          _ZdaPv \
+          _ZdlPv \
+          _Znam \
+          _Znwm \
+          #
+      UNDEF_PATTERN := ' U '
+    endif
+
+    define SetupOperatorNewDeleteCheck
+        $1.op_check: $1
+	  if [ -n "`$(NM) $$< | $(GREP) $(addprefix -e , $(MANGLED_SYMS)) \
+	      | $(GREP) $(UNDEF_PATTERN)`" ]; then \
+	    $(ECHO) "$$<: Error: Use of global operators new and delete is not allowed in Hotspot:"; \
+	    $(NM) $$< | $(CXXFILT) | $(EGREP) '$(DEMANGLED_REGEXP)' | $(GREP) $(UNDEF_PATTERN); \
+	    $(ECHO) "See: $(TOPDIR)/make/hotspot/lib/CompileJvm.gmk"; \
+	    exit 1; \
+	  fi
+	  $(TOUCH) $$@
+
+      TARGETS += $1.op_check
+    endef
+
+    $(foreach o, $(BUILD_LIBJVM_ALL_OBJS), $(eval $(call SetupOperatorNewDeleteCheck,$o)))
   endif
-
-  define SetupOperatorNewDeleteCheck
-    $1.op_check: $1
-	if [ -n "`$(NM) $$< | $(GREP) $(addprefix -e , $(MANGLED_SYMS)) \
-	    | $(GREP) $(UNDEF_PATTERN)`" ]; then \
-	  $(ECHO) "$$<: Error: Use of global operators new and delete is not allowed in Hotspot:"; \
-	  $(NM) $$< | $(CXXFILT) | $(EGREP) '$(DEMANGLED_REGEXP)' | $(GREP) $(UNDEF_PATTERN); \
-	  $(ECHO) "See: $(TOPDIR)/make/hotspot/lib/CompileJvm.gmk"; \
-	  exit 1; \
-	fi
-	$(TOUCH) $$@
-
-    TARGETS += $1.op_check
-  endef
-
-  $(foreach o, $(BUILD_LIBJVM_ALL_OBJS), $(eval $(call SetupOperatorNewDeleteCheck,$o)))
 endif

@@ -100,5 +100,9 @@ $(eval $(call SetupCopyFiles, COPY_CONF, \
         $(TARGETS)), \
 ))
 
-all: $(TARGETS) $(COPY_LIBS_TO_BIN) $(COPY_LIBS_TO_LIB) \
-    $(COPY_INCLUDE) $(COPY_CMDS) $(COPY_CONF) $(LINK_LIBS_TO_LIB)
+ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
+  all: $(filter $(MAKESUPPORT_OUTPUTDIR)/compile-commands/%, $(TARGETS))
+else
+  all: $(TARGETS) $(COPY_LIBS_TO_BIN) $(COPY_LIBS_TO_LIB) \
+      $(COPY_INCLUDE) $(COPY_CMDS) $(COPY_CONF) $(LINK_LIBS_TO_LIB)
+endif
