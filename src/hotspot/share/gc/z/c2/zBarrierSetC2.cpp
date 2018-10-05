@@ -1427,6 +1427,10 @@ Node* ZBarrierSetC2::step_over_gc_barrier(Node* c) const {
   return c;
 }
 
+bool ZBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, ArrayCopyPhase phase) const {
+  return type == T_OBJECT || type == T_ARRAY;
+}
+
 // == Verification ==
 
 #ifdef ASSERT
