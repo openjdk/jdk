@@ -46,7 +46,6 @@ class OopClosure;
 class ScanClosure;
 class FastScanClosure;
 class FilteringClosure;
-class BarrierSet;
 class CMSIsAliveClosure;
 
 class PSPromotionManager;

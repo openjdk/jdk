@@ -36,6 +36,7 @@
 // and the snippet generator, a template is assigned to each bytecode which can be
 // used to generate the bytecode's implementation if needed.
 
+class BarrierSet;
 class InterpreterMacroAssembler;
 
 // A Template describes the properties of a code template for a given bytecode
