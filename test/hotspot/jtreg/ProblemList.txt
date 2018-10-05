@@ -84,7 +84,6 @@ runtime/appcds/javaldr/GCDuringDump.java 8208778 macosx-x64
 runtime/CompressedOops/UseCompressedOops.java 8079353 generic-all
 runtime/RedefineTests/RedefineRunningMethods.java 8208778 macosx-x64
 runtime/SharedArchiveFile/SASymbolTableTest.java 8193639 solaris-all
-runtime/XCheckJniJsig/XCheckJSig.java 8211084 macosx-x64
 
 #############################################################################
 

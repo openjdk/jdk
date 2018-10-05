@@ -312,7 +312,7 @@ JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *
 }
 
 /* The three functions for the jvm to call into. */
-void JVM_begin_signal_setting() {
+JNIEXPORT void JVM_begin_signal_setting() {
   signal_lock();
   sigemptyset(&jvmsigs);
   jvm_signal_installing = true;
@@ -320,7 +320,7 @@ void JVM_begin_signal_setting() {
   signal_unlock();
 }
 
-void JVM_end_signal_setting() {
+JNIEXPORT void JVM_end_signal_setting() {
   signal_lock();
   jvm_signal_installed = true;
   jvm_signal_installing = false;
@@ -328,7 +328,7 @@ void JVM_end_signal_setting() {
   signal_unlock();
 }
 
-struct sigaction *JVM_get_signal_action(int sig) {
+JNIEXPORT struct sigaction *JVM_get_signal_action(int sig) {
   allocate_sact();
   /* Does race condition make sense here? */
   if (sigismember(&jvmsigs, sig)) {
