@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package sun.awt.shell;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
+
 
 /**
  * @author Michael Martak
@@ -68,13 +70,13 @@ class ShellFolderManager {
             // Return the default shellfolder for a new filechooser
             File homeDir = new File(System.getProperty("user.home"));
             try {
-                return createShellFolder(homeDir);
+                return checkFile(createShellFolder(homeDir));
             } catch (FileNotFoundException e) {
-                return homeDir;
+                return checkFile(homeDir);
             }
         } else if (key.equals("roots")) {
             // The root(s) of the displayable hierarchy
-            return File.listRoots();
+            return checkFiles(File.listRoots());
         } else if (key.equals("fileChooserComboBoxFolders")) {
             // Return an array of ShellFolders representing the list to
             // show by default in the file chooser's combobox
@@ -84,9 +86,40 @@ class ShellFolderManager {
             // folders, such as Desktop, Documents, History, Network, Home, etc.
             // This is used in the shortcut panel of the filechooser on Windows 2000
             // and Windows Me
-            return new File[] { (File)get("fileChooserDefaultFolder") };
+            return checkFiles(new File[] { (File)get("fileChooserDefaultFolder") });
         }
+
         return null;
+    }
+
+    private static File checkFile(File f) {
+        SecurityManager sm = System.getSecurityManager();
+        return (sm == null || f == null) ? f : checkFile(f, sm);
+    }
+
+    private static File checkFile(File f, SecurityManager sm) {
+        try {
+            sm.checkRead(f.getPath());
+            if (f instanceof ShellFolder) {
+                ShellFolder sf = (ShellFolder)f;
+                if (sf.isLink()) {
+                    sm.checkRead(sf.getLinkLocation().getPath());
+                }
+            }
+            return f;
+        } catch (SecurityException | FileNotFoundException e) {
+            return null;
+        }
+    }
+
+    private static File[] checkFiles(File[] fs) {
+        SecurityManager sm = System.getSecurityManager();
+        return (sm == null || fs == null) ? fs : checkFiles(Stream.of(fs), sm);
+    }
+
+    private static File[] checkFiles(Stream<File> fs, SecurityManager sm) {
+        return fs.filter(f -> f != null && checkFile(f, sm) != null)
+                 .toArray(File[]::new);
     }
 
     /**

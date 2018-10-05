@@ -583,16 +583,27 @@ public abstract class FileSystemView {
     }
 
     /**
-     * Returns an array of files representing the values to show by default in
-     * the file chooser selector.
+     * Returns an array of files representing the values which will be shown
+     * in the file chooser selector.
      *
-     * @return an array of {@code File} objects.
-     * @throws SecurityException if the caller does not have necessary
-     *                           permissions
+     * @return an array of {@code File} objects. The array returned may be
+     * possibly empty if there are no appropriate permissions.
      * @since 9
      */
     public File[] getChooserComboBoxFiles() {
         return (File[]) ShellFolder.get("fileChooserComboBoxFolders");
+    }
+
+    /**
+     * Returns an array of files representing the values to show by default in
+     * the file chooser shortcuts panel.
+     *
+     * @return an array of {@code File} objects. The array returned may be
+     * possibly empty if there are no appropriate permissions.
+     * @since 12
+     */
+    final public File[] getChooserShortcutPanelFiles() {
+        return (File[]) ShellFolder.get("fileChooserShortcutPanelFolders");
     }
 
     /**

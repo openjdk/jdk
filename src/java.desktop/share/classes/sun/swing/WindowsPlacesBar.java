@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,36 @@
  */
 package sun.swing;
 
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.Color;
+import java.awt.Image;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.*;
+
+import java.io.File;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.filechooser.*;
+import javax.swing.JToolBar;
+import javax.swing.JFileChooser;
+import javax.swing.JToggleButton;
+import javax.swing.ButtonGroup;
+import javax.swing.UIManager;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.Box;
 
-import sun.awt.shell.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.BevelBorder;
+import javax.swing.filechooser.FileSystemView;
+
+import sun.awt.shell.ShellFolder;
 import sun.awt.OSInfo;
 
 /**
@@ -81,7 +98,7 @@ public class WindowsPlacesBar extends JToolBar
         setBackground(bgColor);
         FileSystemView fsv = fc.getFileSystemView();
 
-        files = (File[]) ShellFolder.get("fileChooserShortcutPanelFolders");
+        files = fsv.getChooserShortcutPanelFiles();
 
         buttons = new JToggleButton[files.length];
         buttonGroup = new ButtonGroup();

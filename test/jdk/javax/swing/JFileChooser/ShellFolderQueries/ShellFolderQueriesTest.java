@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8081722
+ * @bug 8081722 8182041
  * @summary Provide public API for file hierarchy provided by
  * sun.awt.shell.ShellFolder
  * @author Semyon Sadetsky
@@ -53,6 +53,7 @@ public class ShellFolderQueriesTest {
             System.out.println("Windows detected: will run shortcut test");
             testGet();
             testLink();
+            testShortcutPanelFiles();
         } else {
             testGet();
         }
@@ -117,6 +118,13 @@ public class ShellFolderQueriesTest {
                         "Link shouldn't be in FileChooser combobox, "
                                 + file.getPath());
             }
+        }
+    }
+
+    private static void testShortcutPanelFiles() {
+        File[] shortcuts = fsv.getChooserShortcutPanelFiles();
+        if (shortcuts.length == 0) {
+            throw new RuntimeException("No shortcut panel files found.");
         }
     }
 }
