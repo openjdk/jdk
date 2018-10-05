@@ -735,6 +735,14 @@ bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
 
   NOT_PRODUCT( klasses_seen++; )
 
+  // AOT does not support custom class loaders.
+  ClassLoaderData* cld = ik->class_loader_data();
+  if (!cld->is_builtin_class_loader_data()) {
+    log_trace(aot, class, load)("skip class  %s  for custom classloader %s (%p) tid=" INTPTR_FORMAT,
+                                ik->internal_name(), cld->loader_name(), cld, p2i(thread));
+    return false;
+  }
+
   AOTKlassData* klass_data = find_klass(ik);
   if (klass_data == NULL) {
     return false;
@@ -759,9 +767,10 @@ bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
 
   assert(klass_data->_class_id < _class_count, "invalid class id");
   AOTClass* aot_class = &_classes[klass_data->_class_id];
-  if (aot_class->_classloader != NULL && aot_class->_classloader != ik->class_loader_data()) {
-    log_trace(aot, class, load)("class  %s  in  %s already loaded for classloader %p vs %p tid=" INTPTR_FORMAT,
-                                ik->internal_name(), _lib->name(), aot_class->_classloader, ik->class_loader_data(), p2i(thread));
+  ClassLoaderData* aot_cld = aot_class->_classloader;
+  if (aot_cld != NULL && aot_cld != cld) {
+    log_trace(aot, class, load)("class  %s  in  %s already loaded for classloader %s (%p) vs %s (%p) tid=" INTPTR_FORMAT,
+                                ik->internal_name(), _lib->name(), aot_cld->loader_name(), aot_cld, cld->loader_name(), cld, p2i(thread));
     NOT_PRODUCT( aot_klasses_cl_miss++; )
     return false;
   }
@@ -774,9 +783,9 @@ bool AOTCodeHeap::load_klass_data(InstanceKlass* ik, Thread* thread) {
 
   NOT_PRODUCT( aot_klasses_found++; )
 
-  log_trace(aot, class, load)("found  %s  in  %s for classloader %p tid=" INTPTR_FORMAT, ik->internal_name(), _lib->name(), ik->class_loader_data(), p2i(thread));
+  log_trace(aot, class, load)("found  %s  in  %s for classloader %s (%p) tid=" INTPTR_FORMAT, ik->internal_name(), _lib->name(), cld->loader_name(), cld, p2i(thread));
 
-  aot_class->_classloader = ik->class_loader_data();
+  aot_class->_classloader = cld;
   // Set klass's Resolve (second) got cell.
   _klasses_got[klass_data->_got_index] = ik;
   if (ik->is_initialized()) {
