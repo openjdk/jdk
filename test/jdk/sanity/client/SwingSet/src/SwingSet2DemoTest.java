@@ -27,6 +27,7 @@ import static org.testng.Assert.assertTrue;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.ToolTipManager;
+import javax.swing.UIManager;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
 import org.jtregext.GuiTestListener;
@@ -58,7 +59,7 @@ import org.testng.annotations.Test;
  *          java.logging
  * @build org.jemmy2ext.JemmyExt
  * @build SwingSet2
- * @run testng SwingSet2DemoTest
+ * @run testng/timeout=600 SwingSet2DemoTest
  */
 @Listeners(GuiTestListener.class)
 public class SwingSet2DemoTest {
@@ -74,8 +75,9 @@ public class SwingSet2DemoTest {
      *
      * @throws Exception
      */
-    @Test
-    public void test() throws Exception {
+    @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
+    public void test(String lookAndFeel) throws Exception {
+        UIManager.setLookAndFeel(lookAndFeel);
 
         new ClassReference(SwingSet2.class.getCanonicalName()).startApplication();
         JFrameOperator frameOperator = new JFrameOperator(SwingSet2.FRAME_TITLE);

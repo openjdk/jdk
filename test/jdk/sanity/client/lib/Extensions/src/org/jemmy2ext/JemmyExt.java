@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,7 +406,7 @@ public class JemmyExt {
                 Window[] windows = Window.getWindows();
                 int windowCount = 0;
                 for (Window w : windows) {
-                    if (w.getClass().equals(JWindow.class)) {
+                    if (w.getClass().equals(JWindow.class) && ((JWindow)w).isShowing()) {
                         windowCount++;
                     }
                 }
@@ -427,7 +427,7 @@ public class JemmyExt {
                 Window[] windows = Window.getWindows();
                 int windowIndex = 0;
                 for (Window w : windows) {
-                    if (w.getClass().equals(JWindow.class)) {
+                    if (w.getClass().equals(JWindow.class) && ((JWindow)w).isShowing()) {
                         if (windowIndex == index) {
                             return (JWindow) w;
                         }
@@ -565,7 +565,7 @@ public class JemmyExt {
 
         @Override
         public boolean checkComponent(Component comp) {
-            return comp.getClass().equals(clazz);
+            return comp.getClass().equals(clazz) && comp.isShowing();
         }
 
         @Override
