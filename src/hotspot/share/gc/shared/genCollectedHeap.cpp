@@ -649,9 +649,6 @@ void GenCollectedHeap::do_collection(bool           full,
     // a whole heap collection.
     complete = complete || collected_old;
 
-    print_heap_change(young_prev_used, old_prev_used);
-    MetaspaceUtils::print_metaspace_change(metadata_prev_used);
-
     // Adjust generation sizes.
     if (collected_old) {
       _old_gen->compute_new_size();
@@ -666,6 +663,9 @@ void GenCollectedHeap::do_collection(bool           full,
       MetaspaceGC::compute_new_size();
       update_full_collections_completed();
     }
+
+    print_heap_change(young_prev_used, old_prev_used);
+    MetaspaceUtils::print_metaspace_change(metadata_prev_used);
 
     // Track memory usage and detect low memory after GC finishes
     MemoryService::track_memory_usage();
