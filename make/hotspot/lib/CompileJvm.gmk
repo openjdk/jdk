@@ -92,7 +92,7 @@ ifeq ($(call check-jvm-feature, zero), true)
   DISABLED_WARNINGS_gcc += return-type switch
 endif
 
-DISABLED_WARNINGS_clang := tautological-compare deprecated-declarations \
+DISABLED_WARNINGS_clang := tautological-compare \
     undefined-var-template sometimes-uninitialized unknown-pragmas \
     delete-non-virtual-dtor missing-braces char-subscripts \
     ignored-qualifiers missing-field-initializers mismatched-tags
