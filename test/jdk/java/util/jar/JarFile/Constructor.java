@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2018 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4842702
+ * @bug 4842702 8211765
  * @summary Check that constructors throw specified exceptions
  * @author Martin Buchholz
  */
@@ -62,6 +62,14 @@ public class Constructor {
         catch (IOException e) {}
 
         try { Unreached (new JarFile (new File ("NoSuchJar.jar"))); }
+        catch (IOException e) {}
+
+        // Test that an IOExcception is thrown when an invalid charater
+        // is part of the path on Windows and Unix
+        final String invalidOSPath = System.getProperty("os.name")
+                .startsWith("Windows") ? "C:\\*" : "foo\u0000bar";
+
+        try { Unreached (new JarFile (invalidOSPath)); }
         catch (IOException e) {}
     }
 }
