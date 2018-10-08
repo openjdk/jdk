@@ -753,6 +753,7 @@ abstract class KeyStore extends KeyStoreSpi {
     /**
      * Generates a certificate chain from the collection of
      * certificates and stores the result into a key entry.
+     * This method is called by native code in libsunmscapi.
      */
     private void generateCertificateChain(String alias,
         Collection<? extends Certificate> certCollection)
@@ -775,13 +776,15 @@ abstract class KeyStore extends KeyStoreSpi {
         catch (Throwable e)
         {
             // Ignore the exception and skip this entry
-            // TODO - throw CertificateException?
+            // If e is thrown, remember to deal with it in
+            // native code.
         }
     }
 
     /**
      * Generates RSA key and certificate chain from the private key handle,
      * collection of certificates and stores the result into key entries.
+     * This method is called by native code in libsunmscapi.
      */
     private void generateRSAKeyAndCertificateChain(String alias,
         long hCryptProv, long hCryptKey, int keyLength,
@@ -807,12 +810,14 @@ abstract class KeyStore extends KeyStoreSpi {
         catch (Throwable e)
         {
             // Ignore the exception and skip this entry
-            // TODO - throw CertificateException?
+            // If e is thrown, remember to deal with it in
+            // native code.
         }
     }
 
     /**
      * Generates certificates from byte data and stores into cert collection.
+     * This method is called by native code in libsunmscapi.
      *
      * @param data Byte data.
      * @param certCollection Collection of certificates.
@@ -836,12 +841,14 @@ abstract class KeyStore extends KeyStoreSpi {
         catch (CertificateException e)
         {
             // Ignore the exception and skip this certificate
-            // TODO - throw CertificateException?
+            // If e is thrown, remember to deal with it in
+            // native code.
         }
         catch (Throwable te)
         {
             // Ignore the exception and skip this certificate
-            // TODO - throw CertificateException?
+            // If e is thrown, remember to deal with it in
+            // native code.
         }
     }
 
